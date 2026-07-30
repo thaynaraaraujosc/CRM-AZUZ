@@ -10,13 +10,13 @@ import {
   IconAutomacoes,
   IconConfiguracoes,
   IconContatos,
-  IconConversas,
   IconEquipe,
   IconInicio,
   IconPipeline,
   IconRelatorios,
   IconTarefas,
   IconTrafego,
+  IconWhatsApp,
 } from "@/components/icons";
 
 type NavEntry = {
@@ -27,7 +27,7 @@ type NavEntry = {
 
 export const navEntries: NavEntry[] = [
   { href: "/inicio", label: "Início", Icon: IconInicio },
-  { href: "/conversas", label: "Conversas", Icon: IconConversas },
+  { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
   { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
   { href: "/acoes", label: "Ações", Icon: IconAcoes },
   { href: "/equipe", label: "Equipe", Icon: IconEquipe },

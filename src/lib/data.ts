@@ -270,166 +270,285 @@ export const pipeline: ColunaPipeline[] = [
 ];
 
 /* -------------------------------------------------------------------------- */
-/* Conversas                                                                  */
+/* WhatsApp (conversas)                                                       */
 /* -------------------------------------------------------------------------- */
 
-export type ConvCard = {
+export type ConvStatus =
+  | "Não respondido"
+  | "Em conversa"
+  | "Aguardando cliente"
+  | "Finalizado";
+
+export type ConvMensagem = {
+  tipo: "in" | "out" | "system";
+  texto: string;
+  hora: string;
+};
+
+export type Conversa = {
   id: string;
   initials: string;
   nome: string;
   canal: Canal;
+  contato: string;
   tempo: string;
-  mensagem: string;
+  status: ConvStatus;
   origem: Origem;
+  mensagens: ConvMensagem[];
+  atendentes: { nome: string; papel: string }[];
+  atendenteSelecionado: string;
+  tarefa: {
+    data: string;
+    oQueFazer: string;
+    valor: string;
+    responsavel: string;
+    anexo: { arquivo: string; detalhe: string } | null;
+  };
 };
 
-export type ColunaConversas = { titulo: string; cards: ConvCard[] };
-
-export const conversas: ColunaConversas[] = [
-  {
-    titulo: "Não respondido",
-    cards: [
-      {
-        id: "marcos-aurelio",
-        initials: "MA",
-        nome: "Marcos Aurélio",
-        canal: "WhatsApp",
-        tempo: "9 min",
-        mensagem: "Ainda tem horário essa semana pra avaliação?",
-        origem: "Meta Ads",
-      },
-      {
-        id: "camila-duarte",
-        initials: "CD",
-        nome: "Camila Duarte",
-        canal: "Instagram",
-        tempo: "14 min",
-        mensagem: "Quero saber o valor da consulta particular",
-        origem: "Instagram",
-      },
-      {
-        id: "lorena-bastos",
-        initials: "LB",
-        nome: "Lorena Bastos",
-        canal: "TikTok",
-        tempo: "31 min",
-        mensagem: "Comentou no vídeo · virou lead automático",
-        origem: "TikTok",
-      },
-    ],
-  },
-  {
-    titulo: "Em conversa",
-    cards: [
-      {
-        id: "fernando-lima",
-        initials: "FL",
-        nome: "Fernando Lima",
-        canal: "WhatsApp",
-        tempo: "6 min",
-        mensagem: "Ana: Perfeito, te encaixo quinta às 14h, pode ser?",
-        origem: "Meta Ads",
-      },
-      {
-        id: "beatriz-nogueira",
-        initials: "BN",
-        nome: "Beatriz Nogueira",
-        canal: "WhatsApp",
-        tempo: "21 min",
-        mensagem: "Bruno: Vou te mandar os valores certinho, um minuto",
-        origem: "Google Ads",
-      },
-    ],
-  },
-  {
-    titulo: "Aguardando cliente",
-    cards: [
-      {
-        id: "julia-prado",
-        initials: "JP",
-        nome: "Julia Prado",
-        canal: "WhatsApp",
-        tempo: "4 dias",
-        mensagem: "Bruno: Te enviei a proposta, fico no aguardo!",
-        origem: "Indicação",
-      },
-    ],
-  },
-  {
-    titulo: "Finalizado",
-    cards: [
-      {
-        id: "renata-farias",
-        initials: "RF",
-        nome: "Renata Farias",
-        canal: "WhatsApp",
-        tempo: "1h",
-        mensagem: "Obrigada, até sábado então! 🙏",
-        origem: "Meta Ads",
-      },
-      {
-        id: "paulo-lacerda",
-        initials: "PL",
-        nome: "Paulo Lacerda",
-        canal: "WhatsApp",
-        tempo: "2h",
-        mensagem: "Fechado! Passo amanhã pra assinar 🙌",
-        origem: "Google Ads",
-      },
-    ],
-  },
+const ATENDENTES_PADRAO = [
+  { nome: "Ana Ferreira", papel: "Gestora de tráfego" },
+  { nome: "Bruno Salles", papel: "Vendedor" },
+  { nome: "Dr. Hélio Marinho", papel: "Especialista" },
 ];
 
-export const conversaAberta = {
-  id: "marcos-aurelio",
-  initials: "MA",
-  nome: "Marcos Aurélio",
-  canal: "WhatsApp" as Canal,
-  telefone: "+55 62 9XXXX-XXXX",
-  mensagens: [
-    {
-      tipo: "in" as const,
-      texto: "Oi! Vi o anúncio de vocês sobre acompanhamento de diabetes",
-      hora: "09:14",
-    },
-    {
-      tipo: "in" as const,
-      texto: "Queria falar com o Dr. Hélio, um amigo meu é paciente dele",
-      hora: "09:15",
-    },
-    {
-      tipo: "system" as const,
-      texto: "Ana atribuiu essa conversa ao Dr. Hélio",
-      hora: "",
-    },
-    {
-      tipo: "out" as const,
-      texto:
-        "Olá! Tudo bem? Meu nome é Hélio, vou te acompanhar a partir de agora 🙂",
-      hora: "09:16 · automática",
-    },
-    {
-      tipo: "in" as const,
-      texto: "Ainda tem horário essa semana pra avaliação?",
-      hora: "09:20",
-    },
-  ],
-  atendentes: [
-    { nome: "Ana Ferreira", papel: "Gestora de tráfego" },
-    { nome: "Dr. Hélio Marinho", papel: "Especialista · pedido do próprio lead" },
-  ],
-  atendenteSelecionado: "Dr. Hélio Marinho",
-  tarefa: {
-    data: "01/08/2026 · 14h",
-    oQueFazer: "Retorno de avaliação — confirmar presença",
-    valor: "R$ 890,00",
-    responsavel: "Dr. Hélio Marinho",
-    anexo: {
-      arquivo: "receita_marcos_aurelio.pdf",
-      detalhe: "enviado pelo paciente · 09:15",
+export const conversas: Conversa[] = [
+  {
+    id: "marcos-aurelio",
+    initials: "MA",
+    nome: "Marcos Aurélio",
+    canal: "WhatsApp",
+    contato: "+55 62 9XXXX-XXXX",
+    tempo: "9 min",
+    status: "Não respondido",
+    origem: "Meta Ads",
+    mensagens: [
+      {
+        tipo: "in",
+        texto: "Oi! Vi o anúncio de vocês sobre acompanhamento de diabetes",
+        hora: "09:14",
+      },
+      {
+        tipo: "in",
+        texto: "Queria falar com o Dr. Hélio, um amigo meu é paciente dele",
+        hora: "09:15",
+      },
+      {
+        tipo: "system",
+        texto: "Ana atribuiu essa conversa ao Dr. Hélio",
+        hora: "",
+      },
+      {
+        tipo: "out",
+        texto:
+          "Olá! Tudo bem? Meu nome é Hélio, vou te acompanhar a partir de agora 🙂",
+        hora: "09:16 · automática",
+      },
+      {
+        tipo: "in",
+        texto: "Ainda tem horário essa semana pra avaliação?",
+        hora: "09:20",
+      },
+    ],
+    atendentes: [
+      { nome: "Ana Ferreira", papel: "Gestora de tráfego" },
+      { nome: "Dr. Hélio Marinho", papel: "Especialista · pedido do próprio lead" },
+    ],
+    atendenteSelecionado: "Dr. Hélio Marinho",
+    tarefa: {
+      data: "01/08/2026 · 14h",
+      oQueFazer: "Retorno de avaliação — confirmar presença",
+      valor: "R$ 890,00",
+      responsavel: "Dr. Hélio Marinho",
+      anexo: {
+        arquivo: "receita_marcos_aurelio.pdf",
+        detalhe: "enviado pelo paciente · 09:15",
+      },
     },
   },
-};
+  {
+    id: "camila-duarte",
+    initials: "CD",
+    nome: "Camila Duarte",
+    canal: "Instagram",
+    contato: "@camila.duarte",
+    tempo: "14 min",
+    status: "Não respondido",
+    origem: "Instagram",
+    mensagens: [
+      {
+        tipo: "in",
+        texto: "Quero saber o valor da consulta particular",
+        hora: "",
+      },
+    ],
+    atendentes: ATENDENTES_PADRAO,
+    atendenteSelecionado: "Ana Ferreira",
+    tarefa: {
+      data: "30 jul",
+      oQueFazer: "Responder valor da consulta particular",
+      valor: "—",
+      responsavel: "Ana Ferreira",
+      anexo: null,
+    },
+  },
+  {
+    id: "lorena-bastos",
+    initials: "LB",
+    nome: "Lorena Bastos",
+    canal: "TikTok",
+    contato: "@lorena.bastos",
+    tempo: "31 min",
+    status: "Não respondido",
+    origem: "TikTok",
+    mensagens: [
+      {
+        tipo: "system",
+        texto: "Comentou no vídeo · virou lead automático",
+        hora: "",
+      },
+    ],
+    atendentes: ATENDENTES_PADRAO,
+    atendenteSelecionado: "Ana Ferreira",
+    tarefa: {
+      data: "30 jul",
+      oQueFazer: "Fazer primeiro contato",
+      valor: "—",
+      responsavel: "Ana Ferreira",
+      anexo: null,
+    },
+  },
+  {
+    id: "fernando-lima",
+    initials: "FL",
+    nome: "Fernando Lima",
+    canal: "WhatsApp",
+    contato: "+55 62 9XXXX-XXXX",
+    tempo: "6 min",
+    status: "Em conversa",
+    origem: "Meta Ads",
+    mensagens: [
+      {
+        tipo: "out",
+        texto: "Perfeito, te encaixo quinta às 14h, pode ser?",
+        hora: "",
+      },
+    ],
+    atendentes: ATENDENTES_PADRAO,
+    atendenteSelecionado: "Ana Ferreira",
+    tarefa: {
+      data: "31 jul",
+      oQueFazer: "Confirmar presença de quinta",
+      valor: "—",
+      responsavel: "Ana Ferreira",
+      anexo: null,
+    },
+  },
+  {
+    id: "beatriz-nogueira",
+    initials: "BN",
+    nome: "Beatriz Nogueira",
+    canal: "WhatsApp",
+    contato: "+55 62 9XXXX-XXXX",
+    tempo: "21 min",
+    status: "Em conversa",
+    origem: "Google Ads",
+    mensagens: [
+      {
+        tipo: "out",
+        texto: "Vou te mandar os valores certinho, um minuto",
+        hora: "",
+      },
+    ],
+    atendentes: ATENDENTES_PADRAO,
+    atendenteSelecionado: "Bruno Salles",
+    tarefa: {
+      data: "29 jul",
+      oQueFazer: "Confirmar horário de amanhã",
+      valor: "R$ 1.240,00",
+      responsavel: "Bruno Salles",
+      anexo: null,
+    },
+  },
+  {
+    id: "julia-prado",
+    initials: "JP",
+    nome: "Julia Prado",
+    canal: "WhatsApp",
+    contato: "+55 62 9XXXX-XXXX",
+    tempo: "4 dias",
+    status: "Aguardando cliente",
+    origem: "Indicação",
+    mensagens: [
+      {
+        tipo: "out",
+        texto: "Te enviei a proposta, fico no aguardo!",
+        hora: "",
+      },
+    ],
+    atendentes: ATENDENTES_PADRAO,
+    atendenteSelecionado: "Bruno Salles",
+    tarefa: {
+      data: "28 jul",
+      oQueFazer: "Fazer follow-up da proposta",
+      valor: "R$ 2.100,00",
+      responsavel: "Bruno Salles",
+      anexo: null,
+    },
+  },
+  {
+    id: "renata-farias",
+    initials: "RF",
+    nome: "Renata Farias",
+    canal: "WhatsApp",
+    contato: "+55 62 9XXXX-XXXX",
+    tempo: "1h",
+    status: "Finalizado",
+    origem: "Meta Ads",
+    mensagens: [
+      {
+        tipo: "in",
+        texto: "Obrigada, até sábado então! 🙏",
+        hora: "",
+      },
+    ],
+    atendentes: ATENDENTES_PADRAO,
+    atendenteSelecionado: "Bruno Salles",
+    tarefa: {
+      data: "02 ago",
+      oQueFazer: "Ligar pra reagendar",
+      valor: "R$ 780,00",
+      responsavel: "Bruno Salles",
+      anexo: null,
+    },
+  },
+  {
+    id: "paulo-lacerda",
+    initials: "PL",
+    nome: "Paulo Lacerda",
+    canal: "WhatsApp",
+    contato: "+55 62 9XXXX-XXXX",
+    tempo: "2h",
+    status: "Finalizado",
+    origem: "Google Ads",
+    mensagens: [
+      {
+        tipo: "in",
+        texto: "Fechado! Passo amanhã pra assinar 🙌",
+        hora: "",
+      },
+    ],
+    atendentes: ATENDENTES_PADRAO,
+    atendenteSelecionado: "Bruno Salles",
+    tarefa: {
+      data: "31 jul",
+      oQueFazer: "Assinar contrato",
+      valor: "R$ 1.560,00",
+      responsavel: "Bruno Salles",
+      anexo: null,
+    },
+  },
+];
 
 /* -------------------------------------------------------------------------- */
 /* Tarefas                                                                    */
@@ -826,7 +945,7 @@ export const integracoes = [
     ],
   },
   {
-    grupo: "Comunicação — o que alimenta a caixa de Conversas",
+    grupo: "Comunicação — o que alimenta o WhatsApp",
     itens: [
       {
         logo: "wa",
