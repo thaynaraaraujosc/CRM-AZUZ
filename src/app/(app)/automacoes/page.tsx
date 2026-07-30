@@ -1,13 +1,29 @@
-import type { Metadata } from "next";
+"use client";
 
-import { automacoes } from "@/lib/data";
+import { useState } from "react";
+
+import {
+  acoesAutomacao,
+  automacaoIdeias,
+  automacoes,
+  gatilhosAutomacao,
+} from "@/lib/data";
 import { IconAutomacoes } from "@/components/icons";
-import { Toggle, Topbar } from "@/components/ui";
+import { ChipFilters, Toggle, Topbar } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Automações · CRM AZUZ" };
+type Ideia = (typeof automacaoIdeias)[number];
 
 export default function AutomacoesPage() {
   const ativas = automacoes.filter((a) => a.ativa).length;
+  const [construtorAberto, setConstrutorAberto] = useState(false);
+  const [ideiaEscolhida, setIdeiaEscolhida] = useState<Ideia | "zero" | null>(
+    null,
+  );
+
+  function fecharConstrutor() {
+    setConstrutorAberto(false);
+    setIdeiaEscolhida(null);
+  }
 
   return (
     <>
@@ -15,13 +31,163 @@ export default function AutomacoesPage() {
         title="Automações"
         sub={`${automacoes.length} automações · ${ativas} ativas — follow-up e movimentação de funil`}
         actions={
-          <button type="button" className="btn primary">
-            + Nova automação
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() => {
+              setConstrutorAberto((v) => !v);
+              setIdeiaEscolhida(null);
+            }}
+          >
+            {construtorAberto ? "Cancelar" : "+ Nova automação"}
           </button>
         }
       />
 
       <div className="content">
+        {construtorAberto ? (
+          <section className="open-conv mb14">
+            <div className="open-conv-h">
+              <div>
+                <p className="n">Nova automação</p>
+                <p className="s">
+                  Automatize qualquer movimento do funil ou das tarefas —
+                  escolha uma ideia ou comece do zero
+                </p>
+              </div>
+              <span
+                className="close"
+                style={{ cursor: "pointer" }}
+                onClick={fecharConstrutor}
+              >
+                Fechar ✕
+              </span>
+            </div>
+
+            {ideiaEscolhida === null ? (
+              <div className="media-picker" style={{ flexWrap: "wrap" }}>
+                {automacaoIdeias.map((ideia) => (
+                  <button
+                    type="button"
+                    key={ideia.titulo}
+                    className="media-opt"
+                    style={{ flex: "1 1 220px", textAlign: "left" }}
+                    onClick={() => setIdeiaEscolhida(ideia)}
+                  >
+                    <IconAutomacoes />
+                    <span className="l" style={{ display: "block" }}>
+                      {ideia.titulo}
+                    </span>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: 11,
+                        color: "var(--text-faint)",
+                        fontWeight: 500,
+                        marginTop: 4,
+                      }}
+                    >
+                      {ideia.descricao}
+                    </span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="media-opt"
+                  style={{ flex: "1 1 220px", textAlign: "left" }}
+                  onClick={() => setIdeiaEscolhida("zero")}
+                >
+                  <IconAutomacoes />
+                  <span className="l" style={{ display: "block" }}>
+                    Criar do zero
+                  </span>
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: 11,
+                      color: "var(--text-faint)",
+                      fontWeight: 500,
+                      marginTop: 4,
+                    }}
+                  >
+                    Você escolhe o gatilho e a ação, do início.
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="field">
+                  <label>Nome da automação</label>
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    type="text"
+                    defaultValue={
+                      ideiaEscolhida === "zero" ? "" : ideiaEscolhida.titulo
+                    }
+                    placeholder="Ex.: Lead novo → mensagem de boas-vindas"
+                  />
+                </div>
+                <div className="field">
+                  <label>Gatilho — quando disparar</label>
+                  <ChipFilters
+                    options={gatilhosAutomacao}
+                    initial={
+                      ideiaEscolhida !== "zero"
+                        ? gatilhosAutomacao.indexOf(ideiaEscolhida.gatilho)
+                        : 0
+                    }
+                  />
+                </div>
+                <div className="field">
+                  <label>Ação — o que fazer</label>
+                  <ChipFilters
+                    options={acoesAutomacao}
+                    initial={
+                      ideiaEscolhida !== "zero"
+                        ? acoesAutomacao.indexOf(ideiaEscolhida.acao)
+                        : 0
+                    }
+                  />
+                </div>
+                <div className="field">
+                  <label>Mensagem ou observação (opcional)</label>
+                  <textarea
+                    className="input"
+                    style={{ width: "100%", minHeight: 70, resize: "vertical" }}
+                    placeholder="Ex.: Oi! Recebemos sua mensagem, já já alguém te responde por aqui 💙"
+                    defaultValue={
+                      ideiaEscolhida !== "zero" ? ideiaEscolhida.descricao : ""
+                    }
+                  />
+                </div>
+                <div className="toggle-row">
+                  <span className="tl">Ativar assim que criar</span>
+                  <Toggle defaultOn label="Ativar assim que criar" />
+                </div>
+                <div className="section-foot">
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ flex: 1 }}
+                    onClick={() => setIdeiaEscolhida(null)}
+                  >
+                    ← Escolher outra ideia
+                  </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    style={{ flex: 1 }}
+                    onClick={fecharConstrutor}
+                  >
+                    Salvar automação
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+        ) : null}
+
         <div className="card">
           {automacoes.map((automacao) => (
             <div className="auto-row" key={automacao.titulo}>

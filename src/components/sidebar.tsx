@@ -28,11 +28,11 @@ type NavEntry = {
 export const navEntries: NavEntry[] = [
   { href: "/inicio", label: "Início", Icon: IconInicio },
   { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
+  { href: "/pipeline", label: "Pipeline", Icon: IconPipeline },
   { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
   { href: "/acoes", label: "Ações", Icon: IconAcoes },
   { href: "/equipe", label: "Equipe", Icon: IconEquipe },
   { href: "/contatos", label: "Contatos", Icon: IconContatos },
-  { href: "/pipeline", label: "Pipeline", Icon: IconPipeline },
   { href: "/trafego", label: "Tráfego", Icon: IconTrafego },
   { href: "/relatorios", label: "Relatórios", Icon: IconRelatorios },
   { href: "/automacoes", label: "Automações", Icon: IconAutomacoes },

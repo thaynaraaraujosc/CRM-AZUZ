@@ -554,6 +554,8 @@ export const conversas: Conversa[] = [
 /* Tarefas                                                                    */
 /* -------------------------------------------------------------------------- */
 
+export type Urgencia = "Baixa" | "Média" | "Alta";
+
 export type TaskCard = {
   id: string;
   titulo: string;
@@ -563,6 +565,9 @@ export type TaskCard = {
   responsavel: { nome: string; initials: string };
   valor?: string;
   concluida?: boolean;
+  urgencia: Urgencia;
+  descricao: string;
+  anexo: { arquivo: string; detalhe: string } | null;
 };
 
 export type ColunaTarefas = { titulo: string; cards: TaskCard[] };
@@ -579,6 +584,13 @@ export const tarefas: ColunaTarefas[] = [
         atrasada: true,
         responsavel: { nome: "Bruno Salles", initials: "BS" },
         valor: "R$ 2.100",
+        urgencia: "Alta",
+        descricao:
+          "Perguntar se ela já viu a proposta enviada e se ficou alguma dúvida sobre valores ou parcelamento. Ela pediu a proposta há 4 dias e ainda não respondeu.",
+        anexo: {
+          arquivo: "proposta_julia_prado.pdf",
+          detalhe: "enviada em 24/07",
+        },
       },
     ],
   },
@@ -591,6 +603,10 @@ export const tarefas: ColunaTarefas[] = [
         contato: "Camila Duarte",
         data: "30 jul",
         responsavel: { nome: "Ana Ferreira", initials: "AF" },
+        urgencia: "Média",
+        descricao:
+          "Responder o valor da consulta particular no Instagram e oferecer os horários livres dessa semana.",
+        anexo: null,
       },
     ],
   },
@@ -602,8 +618,15 @@ export const tarefas: ColunaTarefas[] = [
         titulo: "Retorno de avaliação — confirmar presença",
         contato: "Marcos Aurélio",
         data: "01 ago",
-        responsavel: { nome: "Dr. Hélio", initials: "DH" },
+        responsavel: { nome: "Dr. Hélio Marinho", initials: "DH" },
         valor: "R$ 890",
+        urgencia: "Alta",
+        descricao:
+          "Confirmar com o paciente se ele vai trazer os exames de sangue recentes antes do retorno. Reforçar o horário e perguntar se prefere lembrete por WhatsApp na véspera.",
+        anexo: {
+          arquivo: "receita_marcos_aurelio.pdf",
+          detalhe: "enviado pelo paciente · 09:15",
+        },
       },
       {
         id: "reagendar-renata",
@@ -612,6 +635,10 @@ export const tarefas: ColunaTarefas[] = [
         data: "02 ago",
         responsavel: { nome: "Bruno Salles", initials: "BS" },
         valor: "R$ 780",
+        urgencia: "Média",
+        descricao:
+          "Ligar pra reagendar o horário que ela não conseguiu comparecer e confirmar o novo dia por WhatsApp.",
+        anexo: null,
       },
     ],
   },
@@ -625,26 +652,14 @@ export const tarefas: ColunaTarefas[] = [
         data: "29 jul",
         responsavel: { nome: "Bruno Salles", initials: "BS" },
         concluida: true,
+        urgencia: "Baixa",
+        descricao:
+          "Confirmar por WhatsApp o horário de amanhã e reforçar os itens que ela precisa levar na consulta.",
+        anexo: null,
       },
     ],
   },
 ];
-
-export const tarefaAberta = {
-  id: "retorno-marcos",
-  titulo: "Retorno de avaliação — confirmar presença",
-  subtitulo: "Vinculada a Marcos Aurélio · atribuída a Dr. Hélio Marinho",
-  initials: "DH",
-  descricao:
-    "Confirmar com o paciente se ele vai trazer os exames de sangue recentes antes do retorno. Reforçar o horário e perguntar se prefere lembrete por WhatsApp na véspera.",
-  anexo: {
-    arquivo: "receita_marcos_aurelio.pdf",
-    detalhe: "enviado pelo paciente",
-  },
-  data: "01/08/2026 · 14h",
-  valor: "R$ 890,00",
-  responsavel: "Dr. Hélio Marinho",
-};
 
 /* -------------------------------------------------------------------------- */
 /* Ações (listas de transmissão)                                              */
@@ -702,70 +717,95 @@ export const acoesAnteriores = [
 export type Membro = {
   initials: string;
   nome: string;
+  email: string;
   papel: string;
   papelTipo: "admin" | "padrao" | "custom";
   papelNota?: string;
   leads: string;
   enxerga: string;
+  permissoes: string[];
   ativo: boolean;
   convitePendente?: boolean;
 };
+
+export const PERMISSOES_CRM = [
+  "Ver todas as conversas (não só as próprias)",
+  "Ver todos os leads e o pipeline",
+  "Gerar e ver relatórios",
+  "Ver o painel de tráfego",
+  "Criar e disparar ações (listas de transmissão)",
+  "Criar e editar automações",
+  "Convidar ou remover gente da equipe",
+  "Conectar ou desconectar integrações",
+];
 
 export const equipe: Membro[] = [
   {
     initials: "AF",
     nome: "Ana Ferreira",
+    email: "ana@clinicavitta.com.br",
     papel: "Admin",
     papelTipo: "admin",
     leads: "103",
     enxerga: "Todos os leads e relatórios",
+    permissoes: [...PERMISSOES_CRM],
     ativo: true,
   },
   {
     initials: "BS",
     nome: "Bruno Salles",
+    email: "bruno@clinicavitta.com.br",
     papel: "Vendedor",
     papelTipo: "padrao",
     leads: "62",
     enxerga: "Só os próprios leads",
+    permissoes: [],
     ativo: true,
   },
   {
     initials: "CM",
     nome: "Carla Mendes",
+    email: "carla@clinicavitta.com.br",
     papel: "Vendedor",
     papelTipo: "padrao",
     leads: "58",
     enxerga: "Só os próprios leads",
+    permissoes: [],
     ativo: true,
   },
   {
     initials: "HM",
     nome: "Dr. Hélio Marinho",
+    email: "helio@clinicavitta.com.br",
     papel: "Especialista",
     papelTipo: "custom",
     papelNota: "· personalizado",
     leads: "24",
     enxerga: "Conversas e tarefas atribuídas a ele",
+    permissoes: [],
     ativo: true,
   },
   {
     initials: "LV",
     nome: "Dr. Lucas Vitta",
+    email: "lucas@clinicavitta.com.br",
     papel: "Cliente",
     papelTipo: "padrao",
     leads: "—",
     enxerga: "Portal do cliente · só resultados",
+    permissoes: [],
     ativo: true,
   },
   {
     initials: "RA",
     nome: "Roberto Alves",
+    email: "roberto@clinicavitta.com.br",
     papel: "Estoquista",
     papelTipo: "custom",
     papelNota: "· personalizado",
     leads: "—",
     enxerga: "Nenhum módulo de vendas — papel criado do zero",
+    permissoes: [],
     ativo: false,
     convitePendente: true,
   },
@@ -789,16 +829,7 @@ export const convite = {
       descricao: "Só vê os próprios resultados, nunca a operação interna",
     },
   ],
-  permissoes: [
-    "Ver todas as conversas (não só as próprias)",
-    "Ver todos os leads e o pipeline",
-    "Gerar e ver relatórios",
-    "Ver o painel de tráfego",
-    "Criar e disparar ações (listas de transmissão)",
-    "Criar e editar automações",
-    "Convidar ou remover gente da equipe",
-    "Conectar ou desconectar integrações",
-  ],
+  permissoes: PERMISSOES_CRM,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -909,6 +940,51 @@ export const automacoes = [
     execucoes: "36 execuções",
     ativa: false,
   },
+];
+
+/** Ideias prontas mostradas ao clicar em "+ Nova automação" — além de criar do zero. */
+export const automacaoIdeias = [
+  {
+    titulo: "Lead novo → mensagem de boas-vindas",
+    descricao:
+      "Todo lead que entra por qualquer canal recebe uma primeira mensagem automática na hora.",
+    gatilho: "Novo lead entra",
+    acao: "Enviar mensagem automática",
+  },
+  {
+    titulo: "Aniversário do paciente",
+    descricao: "Manda uma mensagem automática no dia do aniversário de cada contato.",
+    gatilho: "Data especial do contato",
+    acao: "Enviar mensagem automática",
+  },
+  {
+    titulo: "Lembrete de consulta",
+    descricao: "Avisa o paciente 1 dia antes do horário marcado no Pipeline.",
+    gatilho: "Tarefa vence em 1 dia",
+    acao: "Enviar mensagem automática",
+  },
+  {
+    titulo: "Negócio parado há muito tempo",
+    descricao: "Se um negócio fica na mesma etapa por dias demais, avisa o responsável.",
+    gatilho: "Proposta há 3 dias sem mover",
+    acao: "Notificar responsável",
+  },
+];
+
+export const gatilhosAutomacao = [
+  "Novo lead entra",
+  "Lead sem resposta 2h",
+  "Proposta há 3 dias sem mover",
+  "Negócio fechado",
+  "Tarefa vence em 1 dia",
+  "Data especial do contato",
+];
+
+export const acoesAutomacao = [
+  "Enviar mensagem automática",
+  "Criar tarefa",
+  "Notificar responsável",
+  "Atribuir por rodízio da equipe",
 ];
 
 /* -------------------------------------------------------------------------- */
