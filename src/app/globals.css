@@ -5,21 +5,22 @@
    ========================================================================== */
 
 :root {
-  --navy: #0b1533;
-  --navy-raised: #121d43;
-  --navy-raised-2: #182552;
-  --navy-deep: #080e24;
+  --navy: #ffffff;
+  --navy-raised: #f5f7fb;
+  --navy-raised-2: #eaeefa;
+  --navy-deep: #ffffff;
 
   --blue: #2e6bff;
-  --blue-soft: rgba(46, 107, 255, 0.16);
-  --blue-soft-2: rgba(46, 107, 255, 0.09);
+  --blue-soft: rgba(46, 107, 255, 0.14);
+  --blue-soft-2: rgba(46, 107, 255, 0.08);
 
-  --line: rgba(245, 245, 245, 0.1);
-  --line-soft: rgba(245, 245, 245, 0.06);
+  --line: rgba(11, 21, 51, 0.1);
+  --line-soft: rgba(11, 21, 51, 0.06);
 
+  --ink: #0b1533;
   --white: #ffffff;
-  --text-muted: rgba(245, 245, 245, 0.56);
-  --text-faint: rgba(245, 245, 245, 0.36);
+  --text-muted: rgba(11, 21, 51, 0.64);
+  --text-faint: rgba(11, 21, 51, 0.44);
 
   --display: var(--font-display), Poppins, sans-serif;
   --body: var(--font-body), Montserrat, sans-serif;
@@ -39,7 +40,7 @@ body {
 body {
   margin: 0;
   background: var(--navy);
-  color: var(--white);
+  color: var(--ink);
   font-family: var(--body);
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
@@ -171,12 +172,12 @@ table {
 
 .nav-item:hover {
   background: var(--blue-soft-2);
-  color: var(--white);
+  color: var(--ink);
 }
 
 .nav-item.active {
   background: var(--blue-soft);
-  color: var(--white);
+  color: var(--ink);
 }
 
 .nav-item.active svg {
@@ -266,7 +267,7 @@ table {
   border: 0;
   outline: none;
   font: inherit;
-  color: var(--white);
+  color: var(--ink);
 }
 
 .search input::placeholder {
@@ -307,7 +308,7 @@ table {
 .btn.ghost {
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  color: var(--white);
+  color: var(--ink);
 }
 
 .btn.block {
@@ -1925,7 +1926,7 @@ table.tbl tbody tr:hover td {
   padding: 12px 14px;
   font-size: 13px;
   width: 100%;
-  color: var(--white);
+  color: var(--ink);
   font-family: var(--body);
   outline: none;
 }
