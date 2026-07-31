@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { conversas } from "@/lib/data";
+import { conversas, funis, localizarNoFunil } from "@/lib/data";
 import {
   CanalBadge,
   IconConfiguracoes,
@@ -10,10 +10,17 @@ import {
 } from "@/components/icons";
 import { RadioList, Toggle, Topbar } from "@/components/ui";
 
+// Funil canônico usado pra automação: independente de renomear ou criar
+// outros funis, é esse (o primeiro criado pela empresa) que aparece aqui
+// pra decidir a etapa do contato.
+const FUNIL_CANONICO = funis[0];
+
 export default function ConversasPage() {
   const [selectedId, setSelectedId] = useState(conversas[0].id);
+  const [infoAberto, setInfoAberto] = useState(false);
   const aberta = conversas.find((c) => c.id === selectedId) ?? conversas[0];
   const { tarefa } = aberta;
+  const localizacao = localizarNoFunil(aberta.nome);
 
   return (
     <>
@@ -71,9 +78,15 @@ export default function ConversasPage() {
                 {aberta.canal} · {aberta.contato}
               </p>
             </div>
-            <span className="gear-btn wa-main-gear">
+            <button
+              type="button"
+              className={`gear-btn wa-main-gear${infoAberto ? " active" : ""}`}
+              aria-pressed={infoAberto}
+              aria-label="Ver atributos do contato"
+              onClick={() => setInfoAberto((v) => !v)}
+            >
               <IconConfiguracoes />
-            </span>
+            </button>
           </div>
 
           <div className="chat-body">
@@ -89,6 +102,7 @@ export default function ConversasPage() {
           </div>
         </section>
 
+        {infoAberto ? (
         <aside className="wa-info">
           <div className="panel-h">
             <h4>Atribuir atendente</h4>
@@ -100,6 +114,22 @@ export default function ConversasPage() {
               descricao: a.papel,
             }))}
             initial={aberta.atendenteSelecionado}
+          />
+
+          <div className="panel-h divided">
+            <h4>Atribuir ao funil</h4>
+          </div>
+          <div className="field">
+            <label>Funil</label>
+            <div className="input">{FUNIL_CANONICO.nome}</div>
+          </div>
+          <RadioList
+            key={`funil-${aberta.id}`}
+            options={FUNIL_CANONICO.colunas.map((coluna) => ({
+              nome: coluna.titulo,
+              descricao: `${coluna.total} contatos nessa etapa`,
+            }))}
+            initial={localizacao?.etapa ?? FUNIL_CANONICO.colunas[0].titulo}
           />
 
           <div className="panel-h divided">
@@ -157,6 +187,7 @@ export default function ConversasPage() {
             </button>
           </div>
         </aside>
+        ) : null}
       </div>
     </>
   );

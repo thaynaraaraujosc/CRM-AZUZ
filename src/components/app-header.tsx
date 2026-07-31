@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import { automacoes, contatos, equipe, notificacoes, tarefas } from "@/lib/data";
 import { IconBell, IconSearch } from "@/components/icons";
+import { navEntries } from "@/components/sidebar";
 
 type SearchResult = { label: string; sub: string; href: string };
 
@@ -18,6 +19,9 @@ function normaliza(texto: string) {
 function useSearchIndex(): SearchResult[] {
   return useMemo(() => {
     const results: SearchResult[] = [];
+    navEntries.forEach((n) =>
+      results.push({ label: n.label, sub: "Funcionalidade", href: n.href }),
+    );
     contatos.forEach((c) =>
       results.push({ label: c.nome, sub: `Contato · ${c.origem}`, href: "/contatos" }),
     );

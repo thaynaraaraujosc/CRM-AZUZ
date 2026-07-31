@@ -29,12 +29,10 @@ export default function InicioPage() {
         </div>
 
         <div className="grid split2">
-          <div className="card">
+          <Link className="card card-link" href="/trafego">
             <div className="panel-h">
               <h4>Leads por dia · últimos 14 dias</h4>
-              <Link className="link" href="/trafego">
-                Ver tráfego
-              </Link>
+              <span className="link">Ver tráfego</span>
             </div>
             <div className="bars">
               {leadsPorDia.map(({ dia, altura, hoje }) => (
@@ -47,14 +45,12 @@ export default function InicioPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Link>
 
-          <div className="card">
+          <Link className="card card-link" href="/funil">
             <div className="panel-h">
               <h4>Funil · julho</h4>
-              <Link className="link" href="/funil">
-                Ver funil
-              </Link>
+              <span className="link">Ver funil</span>
             </div>
             <div className="funnel-mini">
               {funilJulho.map(({ etapa, total, largura }) => (
@@ -67,7 +63,7 @@ export default function InicioPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Link>
         </div>
 
         <div className="card mt14">
@@ -78,7 +74,7 @@ export default function InicioPage() {
             </Link>
           </div>
           {atividadeRecente.map((item) => (
-            <div className="activity-row" key={item.nome}>
+            <Link className="activity-row activity-row-link" href="/contatos" key={item.nome}>
               <div className="avatar">{item.initials}</div>
               <div className="body">
                 <p className="name">{item.nome}</p>
@@ -87,7 +83,7 @@ export default function InicioPage() {
               <span className={`pill${item.destaque ? " on" : ""}`}>
                 {item.pill}
               </span>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

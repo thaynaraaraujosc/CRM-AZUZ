@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ComponentType, type SVGProps } from "react";
+import { createPortal } from "react-dom";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type SVGProps,
+} from "react";
 
 import { currentUser, equipe, workspace } from "@/lib/data";
 import {
@@ -49,6 +56,14 @@ export function Sidebar() {
   const [workspaceAberto, setWorkspaceAberto] = useState(false);
   const [nomeEmpresa, setNomeEmpresa] = useState(workspace.name);
   const [segmento, setSegmento] = useState(workspace.segment);
+  const workspaceBtnRef = useRef<HTMLButtonElement>(null);
+  const [workspacePos, setWorkspacePos] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (!workspaceAberto || !workspaceBtnRef.current) return;
+    const rect = workspaceBtnRef.current.getBoundingClientRect();
+    setWorkspacePos({ top: rect.bottom + 8, left: rect.left, width: rect.width });
+  }, [workspaceAberto]);
 
   const outrosMembros = equipe.filter((m) => m.nome !== currentUser.name);
 
@@ -62,6 +77,7 @@ export function Sidebar() {
       <div className="dropdown-anchor">
         <button
           type="button"
+          ref={workspaceBtnRef}
           className="sb-workspace"
           onClick={() => setWorkspaceAberto((v) => !v)}
         >
@@ -69,13 +85,24 @@ export function Sidebar() {
           <p className="v">{nomeEmpresa}</p>
         </button>
 
-        {workspaceAberto ? (
-          <>
-            <div
-              onClick={() => setWorkspaceAberto(false)}
-              style={{ position: "fixed", inset: 0, zIndex: 50 }}
-            />
-            <div className="dropdown-pop" style={{ width: 300, padding: "4px 0" }}>
+        {workspaceAberto && typeof document !== "undefined"
+          ? createPortal(
+              <>
+                <div
+                  onClick={() => setWorkspaceAberto(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 200 }}
+                />
+                <div
+                  className="dropdown-pop"
+                  style={{
+                    position: "fixed",
+                    top: workspacePos.top,
+                    left: workspacePos.left,
+                    width: 300,
+                    padding: "4px 0",
+                    zIndex: 201,
+                  }}
+                >
               <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "14px 14px 10px" }}>
                 <div
                   className="avatar"
@@ -128,9 +155,11 @@ export function Sidebar() {
                 <label>Papel</label>
                 <div className="input">{currentUser.role}</div>
               </div>
-            </div>
-          </>
-        ) : null}
+                </div>
+              </>,
+              document.body,
+            )
+          : null}
       </div>
 
       <nav className="nav">

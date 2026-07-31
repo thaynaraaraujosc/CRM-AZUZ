@@ -396,6 +396,23 @@ table {
   border-radius: 14px;
 }
 
+.card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card-link:hover {
+  transform: translateY(-3px);
+  border-color: rgba(46, 107, 255, 0.5);
+  box-shadow: 0 12px 28px rgba(11, 21, 51, 0.16);
+}
+
+.card-link:hover .link {
+  text-decoration: underline;
+}
+
 .grid {
   display: grid;
   gap: 14px;
@@ -675,6 +692,18 @@ table {
 
 .activity-row:last-child {
   border-bottom: none;
+}
+
+.activity-row-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, padding-left 0.15s ease;
+}
+
+.activity-row-link:hover {
+  background: var(--blue-soft-2);
+  padding-left: 21px;
 }
 
 .activity-row .body {
@@ -986,16 +1015,20 @@ table.tbl tbody tr:hover td {
   flex: 0 0 auto;
   width: 22px;
   height: 22px;
+  border: none;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-faint);
   background: var(--navy);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
 .conv-card.open .gear-btn,
-.task-card.open .gear-btn {
+.task-card.open .gear-btn,
+.gear-btn.active {
   color: var(--blue);
   background: var(--blue-soft);
 }

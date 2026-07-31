@@ -197,18 +197,6 @@ export default function FunilPage() {
                 </>
               ) : null}
             </div>
-            <select
-              className="fsel"
-              value={funilAtivoId}
-              onChange={(e) => setFunilAtivoId(e.target.value)}
-              style={{ cursor: "pointer" }}
-            >
-              {funis.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.nome}
-                </option>
-              ))}
-            </select>
             <button
               type="button"
               className="btn ghost"
