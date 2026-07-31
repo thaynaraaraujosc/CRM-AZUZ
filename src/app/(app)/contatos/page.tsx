@@ -1,36 +1,177 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
-import { contatos, filtrosContatos, localizarNoFunil } from "@/lib/data";
+import { filtrosContatos } from "@/lib/data";
+import { useContatos } from "@/lib/contatos-context";
+import { useFunis } from "@/lib/funis-context";
 import { IconSearch } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
 
 export default function ContatosPage() {
+  return (
+    <Suspense fallback={null}>
+      <ContatosPageInner />
+    </Suspense>
+  );
+}
+
+function ContatosPageInner() {
+  const searchParams = useSearchParams();
+  const { contatos, criarContato } = useContatos();
+  const { funis } = useFunis();
   const [selecionado, setSelecionado] = useState<string | null>(null);
+  const [novoContatoAberto, setNovoContatoAberto] = useState(
+    () => searchParams.get("novoContato") === "1",
+  );
+  const [nomeNovo, setNomeNovo] = useState("");
+  const [emailNovo, setEmailNovo] = useState("");
+  const [whatsappNovo, setWhatsappNovo] = useState("");
+  const [nascimentoNovo, setNascimentoNovo] = useState("");
+  const [enderecoNovo, setEnderecoNovo] = useState("");
 
   const contato = contatos.find((c) => c.nome === selecionado) ?? null;
-  const noFunil = contato ? localizarNoFunil(contato.nome) : null;
+
+  function localizarNoFunilAtual(nomeContato: string) {
+    for (const f of funis) {
+      for (const coluna of f.colunas) {
+        if (coluna.cards.some((c) => c.nome === nomeContato)) {
+          return { funil: f.nome, etapa: coluna.titulo };
+        }
+      }
+    }
+    return null;
+  }
+
+  const noFunil = contato ? localizarNoFunilAtual(contato.nome) : null;
+
+  function salvarNovoContato() {
+    const nome = nomeNovo.trim();
+    if (!nome) return;
+    criarContato({
+      nome,
+      email: emailNovo.trim() || undefined,
+      whatsapp: whatsappNovo.trim() || undefined,
+      nascimento: nascimentoNovo.trim() || undefined,
+      endereco: enderecoNovo.trim() || undefined,
+    });
+    setNomeNovo("");
+    setEmailNovo("");
+    setWhatsappNovo("");
+    setNascimentoNovo("");
+    setEnderecoNovo("");
+    setNovoContatoAberto(false);
+  }
 
   return (
     <>
       <Topbar
         title="Contatos"
-        sub="247 contatos · visão 360° de cada lead"
+        sub={`${contatos.length} contatos · visão 360° de cada lead`}
         actions={
           <>
             <label className="search">
               <IconSearch />
               <input placeholder="Buscar contato…" aria-label="Buscar contato" />
             </label>
-            <button type="button" className="btn primary">
-              + Novo contato
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => setNovoContatoAberto((v) => !v)}
+            >
+              {novoContatoAberto ? "Cancelar" : "+ Novo contato"}
             </button>
           </>
         }
       />
 
       <div className="content">
+        {novoContatoAberto ? (
+          <section className="open-conv mb14">
+            <div className="open-conv-h">
+              <div>
+                <p className="n">Novo contato</p>
+                <p className="s">
+                  Esses dados também podem ser preenchidos depois, direto na
+                  conversa dele no WhatsApp
+                </p>
+              </div>
+              <span
+                className="close"
+                style={{ cursor: "pointer" }}
+                onClick={() => setNovoContatoAberto(false)}
+              >
+                Fechar ✕
+              </span>
+            </div>
+            <div className="field">
+              <label>Nome</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="text"
+                value={nomeNovo}
+                onChange={(e) => setNomeNovo(e.target.value)}
+                placeholder="Ex.: Marina Costa"
+              />
+            </div>
+            <div className="field">
+              <label>E-mail</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="email"
+                value={emailNovo}
+                onChange={(e) => setEmailNovo(e.target.value)}
+                placeholder="Ex.: marina@email.com"
+              />
+            </div>
+            <div className="field">
+              <label>Número do WhatsApp</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="text"
+                value={whatsappNovo}
+                onChange={(e) => setWhatsappNovo(e.target.value)}
+                placeholder="Ex.: (62) 9XXXX-XXXX"
+              />
+            </div>
+            <div className="field">
+              <label>Data de aniversário</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="text"
+                value={nascimentoNovo}
+                onChange={(e) => setNascimentoNovo(e.target.value)}
+                placeholder="Ex.: 14/03/1990"
+              />
+            </div>
+            <div className="field">
+              <label>Endereço</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="text"
+                value={enderecoNovo}
+                onChange={(e) => setEnderecoNovo(e.target.value)}
+                placeholder="Onde ele mora"
+              />
+            </div>
+            <div className="section-foot">
+              <button
+                type="button"
+                className="btn primary block"
+                onClick={salvarNovoContato}
+              >
+                Criar contato
+              </button>
+            </div>
+          </section>
+        ) : null}
+
         <ChipFilters options={filtrosContatos} />
 
         <div className="card mb14">
@@ -139,6 +280,22 @@ export default function ContatosPage() {
             <div className="field">
               <label>Valor</label>
               <div className="input">{contato.valor}</div>
+            </div>
+            <div className="field">
+              <label>E-mail</label>
+              <div className="input">{contato.email || "—"}</div>
+            </div>
+            <div className="field">
+              <label>Número do WhatsApp</label>
+              <div className="input">{contato.whatsapp || "—"}</div>
+            </div>
+            <div className="field">
+              <label>Data de aniversário</label>
+              <div className="input">{contato.nascimento || "—"}</div>
+            </div>
+            <div className="field">
+              <label>Endereço</label>
+              <div className="input">{contato.endereco || "—"}</div>
             </div>
           </section>
         ) : null}

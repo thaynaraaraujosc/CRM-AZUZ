@@ -141,6 +141,10 @@ export type Contato = {
   responsavel: string;
   ultima: string;
   valor: string;
+  email?: string;
+  whatsapp?: string;
+  nascimento?: string;
+  endereco?: string;
 };
 
 export const contatos: Contato[] = [
@@ -152,6 +156,10 @@ export const contatos: Contato[] = [
     responsavel: "Dr. Hélio Marinho",
     ultima: "Há 6 min",
     valor: "R$ 890",
+    email: "marcos.aurelio@gmail.com",
+    whatsapp: "(62) 9XXXX-XXXX",
+    nascimento: "14/03/1985",
+    endereco: "Goiânia, GO",
   },
   {
     initials: "BN",

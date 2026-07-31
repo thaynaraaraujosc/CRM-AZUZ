@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { conversas, type Funil } from "@/lib/data";
+import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import {
   CanalBadge,
@@ -37,6 +38,7 @@ export default function ConversasPage() {
 function ConversasPageInner() {
   const searchParams = useSearchParams();
   const { funis } = useFunis();
+  const { contatos, salvarDadosContato } = useContatos();
   const [selectedId, setSelectedId] = useState(() => {
     const nomeContato = searchParams.get("contato");
     const encontrada = nomeContato
@@ -50,20 +52,46 @@ function ConversasPageInner() {
   const { tarefa } = aberta;
   const localizacao = localizarNoFunil(funis, aberta.nome);
 
-  // Troca o funil selecionado no seletor toda vez que a conversa aberta
-  // muda, pra sempre abrir já mostrando o funil onde esse contato está
-  // (ajuste de estado a partir de uma mudança de prop — ver docs do React).
+  const contatoDaConversa = contatos.find((c) => c.nome === aberta.nome) ?? null;
+
+  // Troca o funil selecionado e os campos de dados do contato toda vez que
+  // a conversa aberta muda, pra sempre abrir já mostrando o funil/dados
+  // desse contato (ajuste de estado a partir de uma mudança de prop — ver
+  // docs do React).
   const [funilSelecionadoId, setFunilSelecionadoId] = useState(
     () => localizacao?.funilId ?? funis[0]?.id ?? "",
+  );
+  const [emailContato, setEmailContato] = useState(contatoDaConversa?.email ?? "");
+  const [whatsappContato, setWhatsappContato] = useState(
+    contatoDaConversa?.whatsapp ?? "",
+  );
+  const [nascimentoContato, setNascimentoContato] = useState(
+    contatoDaConversa?.nascimento ?? "",
+  );
+  const [enderecoContato, setEnderecoContato] = useState(
+    contatoDaConversa?.endereco ?? "",
   );
   const [abertaIdAnterior, setAbertaIdAnterior] = useState(aberta.id);
   if (aberta.id !== abertaIdAnterior) {
     setAbertaIdAnterior(aberta.id);
     setFunilSelecionadoId(localizacao?.funilId ?? funis[0]?.id ?? "");
+    setEmailContato(contatoDaConversa?.email ?? "");
+    setWhatsappContato(contatoDaConversa?.whatsapp ?? "");
+    setNascimentoContato(contatoDaConversa?.nascimento ?? "");
+    setEnderecoContato(contatoDaConversa?.endereco ?? "");
   }
 
   const funilSelecionado =
     funis.find((f) => f.id === funilSelecionadoId) ?? funis[0];
+
+  function salvarDados() {
+    salvarDadosContato(aberta.nome, {
+      email: emailContato.trim() || undefined,
+      whatsapp: whatsappContato.trim() || undefined,
+      nascimento: nascimentoContato.trim() || undefined,
+      endereco: enderecoContato.trim() || undefined,
+    });
+  }
 
   return (
     <>
@@ -158,6 +186,67 @@ function ConversasPageInner() {
             }))}
             initial={aberta.atendenteSelecionado}
           />
+
+          <div className="panel-h divided">
+            <h4>Dados do contato</h4>
+          </div>
+          <div className="field">
+            <label>Nome</label>
+            <div className="input">{aberta.nome}</div>
+          </div>
+          <div className="field">
+            <label>E-mail</label>
+            <input
+              className="input"
+              style={{ width: "100%" }}
+              type="email"
+              value={emailContato}
+              onChange={(e) => setEmailContato(e.target.value)}
+              placeholder="Peça e preencha aqui"
+            />
+          </div>
+          <div className="field">
+            <label>Número do WhatsApp</label>
+            <input
+              className="input"
+              style={{ width: "100%" }}
+              type="text"
+              value={whatsappContato}
+              onChange={(e) => setWhatsappContato(e.target.value)}
+              placeholder="Ex.: (62) 9XXXX-XXXX"
+            />
+          </div>
+          <div className="field">
+            <label>Data de aniversário</label>
+            <input
+              className="input"
+              style={{ width: "100%" }}
+              type="text"
+              value={nascimentoContato}
+              onChange={(e) => setNascimentoContato(e.target.value)}
+              placeholder="Ex.: 14/03/1990"
+            />
+          </div>
+          <div className="field">
+            <label>Endereço</label>
+            <input
+              className="input"
+              style={{ width: "100%" }}
+              type="text"
+              value={enderecoContato}
+              onChange={(e) => setEnderecoContato(e.target.value)}
+              placeholder="Onde ele mora"
+            />
+          </div>
+          <div className="section-foot">
+            <button
+              type="button"
+              className="btn ghost block"
+              onClick={salvarDados}
+            >
+              Salvar dados do contato
+            </button>
+          </div>
 
           <div className="panel-h divided">
             <h4>Atribuir ao funil</h4>

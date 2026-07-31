@@ -129,12 +129,12 @@ function CriarMenu() {
               <span className="r">Cadastra o workspace/clínica</span>
             </Link>
             <Link
-              href="/contatos"
+              href="/contatos?novoContato=1"
               className="dropdown-item"
               onClick={() => setOpen(false)}
             >
               <span className="n">Criar contato</span>
-              <span className="r">Abre a tela de Contatos</span>
+              <span className="r">Abre o formulário em Contatos</span>
             </Link>
             <Link
               href="/tarefas?nova=1"
