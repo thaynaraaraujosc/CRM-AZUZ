@@ -100,6 +100,35 @@ export const atividadeRecente = [
   },
 ];
 
+/** Central de notificações — sino no topo de todas as telas. */
+export const notificacoes = [
+  {
+    titulo: "Marcos Aurélio respondeu no WhatsApp",
+    meta: "há 6 min",
+    lida: false,
+  },
+  {
+    titulo: "Julia Prado — proposta parada há 4 dias",
+    meta: "há 1h",
+    lida: false,
+  },
+  {
+    titulo: "Roberto Alves ainda não aceitou o convite",
+    meta: "há 3h",
+    lida: false,
+  },
+  {
+    titulo: "Automação \"Follow-up sem resposta\" disparou 4 vezes hoje",
+    meta: "há 5h",
+    lida: true,
+  },
+  {
+    titulo: "Paulo Lacerda fechou negócio de R$ 1.560",
+    meta: "ontem",
+    lida: true,
+  },
+];
+
 /* -------------------------------------------------------------------------- */
 /* Contatos                                                                   */
 /* -------------------------------------------------------------------------- */
@@ -1127,6 +1156,41 @@ export const integracoes = [
       },
     ],
   },
+  {
+    grupo:
+      "Inteligência artificial — conecte a IA que sua equipe já usa, por API ou MCP",
+    itens: [
+      {
+        logo: "IA",
+        cor: "var(--blue)",
+        titulo: "Claude (Anthropic)",
+        sub: "Resume conversas e sugere resposta direto no WhatsApp",
+        status: "Conectado" as const,
+        acao: "Gerenciar",
+      },
+      {
+        logo: "IA",
+        titulo: "ChatGPT (OpenAI)",
+        sub: "Conecte com sua chave de API pra usar nas Automações",
+        status: "Não conectado" as const,
+        acao: "Conectar",
+      },
+      {
+        logo: "IA",
+        titulo: "Gemini (Google)",
+        sub: "Conecte com sua chave de API pra usar nas Automações",
+        status: "Não conectado" as const,
+        acao: "Conectar",
+      },
+      {
+        logo: "MCP",
+        titulo: "Servidor MCP personalizado",
+        sub: "Conecte qualquer IA que fale o protocolo MCP — cole a URL do servidor",
+        status: "Não conectado" as const,
+        acao: "Conectar",
+      },
+    ],
+  },
 ];
 
 export const apiKey = "sk_live_azuz_••••••••••••7f2a";
@@ -1149,5 +1213,25 @@ export const webhooks = [
     sub: "Mercado Pago, Asaas, Conta Azul e outras — chega no médio prazo",
     status: "Em breve" as const,
     acao: null,
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/* Azuz IA                                                                    */
+/* -------------------------------------------------------------------------- */
+
+export const azuzIaMensagens: { tipo: "in" | "out"; texto: string }[] = [
+  {
+    tipo: "in",
+    texto: "Oi, Ana! Sou a Azuz IA. Posso resumir conversas, sugerir resposta ou te dizer o que precisa de atenção hoje. O que você precisa?",
+  },
+  {
+    tipo: "out",
+    texto: "Quais leads estão esfriando essa semana?",
+  },
+  {
+    tipo: "in",
+    texto:
+      "A proposta da Julia Prado tá parada há 4 dias e a da Renata Farias vence amanhã. Quer que eu monte um follow-up pras duas?",
   },
 ];

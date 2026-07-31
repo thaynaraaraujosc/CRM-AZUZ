@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { ETAPAS_PADRAO_FUNIL, funis as funisIniciais } from "@/lib/data";
-import type { Funil } from "@/lib/data";
+import type { Funil, NegocioCard } from "@/lib/data";
 import { ChipFilters, Topbar } from "@/components/ui";
 
 const FILTROS_ORIGEM = [
@@ -14,6 +15,11 @@ const FILTROS_ORIGEM = [
   "Google Ads",
   "Indicação",
 ];
+
+const ORIGENS_NEGOCIO = FILTROS_ORIGEM.slice(1) as NegocioCard["origem"][];
+
+/** Mesmo dia de referência usado em todo o app (ver `today` em lib/data.ts). */
+const HOJE_ISO = "2026-07-30";
 
 function cloneFunis(lista: Funil[]): Funil[] {
   return lista.map((f) => ({
@@ -27,6 +33,13 @@ export default function FunilPage() {
   const [funilAtivoId, setFunilAtivoId] = useState(funisIniciais[0]?.id ?? "");
   const [novoFunilAberto, setNovoFunilAberto] = useState(false);
   const [nomeNovoFunil, setNomeNovoFunil] = useState("");
+  const [criarMenuAberto, setCriarMenuAberto] = useState(false);
+  const [novoNegocioAberto, setNovoNegocioAberto] = useState(false);
+  const [nomeNegocio, setNomeNegocio] = useState("");
+  const [valorNegocio, setValorNegocio] = useState("");
+  const [origemNegocio, setOrigemNegocio] = useState<NegocioCard["origem"]>(
+    ORIGENS_NEGOCIO[0],
+  );
   const [origemFiltro, setOrigemFiltro] = useState("Todas as origens");
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [dataDe, setDataDe] = useState("");
@@ -76,6 +89,32 @@ export default function FunilPage() {
     setNovoFunilAberto(false);
   }
 
+  function criarNegocio() {
+    const nome = nomeNegocio.trim();
+    if (!nome || !funilAtivo) return;
+    const novoCard: NegocioCard = {
+      id: `negocio-${Date.now()}`,
+      nome,
+      valor: valorNegocio.trim() || "—",
+      origem: origemNegocio,
+      dias: "Hoje",
+      data: HOJE_ISO,
+    };
+    setFunis((prev) =>
+      prev.map((f) => {
+        if (f.id !== funilAtivo.id) return f;
+        const colunas = f.colunas.map((c) => ({ ...c, cards: [...c.cards] }));
+        colunas[0].cards.push(novoCard);
+        colunas[0].total += 1;
+        return { ...f, colunas };
+      }),
+    );
+    setNomeNegocio("");
+    setValorNegocio("");
+    setOrigemNegocio(ORIGENS_NEGOCIO[0]);
+    setNovoNegocioAberto(false);
+  }
+
   function moverCard(colunaDestino: number) {
     if (!arrastando || !funilAtivo) return;
     const { coluna: colunaOrigem, card: indiceCard } = arrastando;
@@ -103,6 +142,61 @@ export default function FunilPage() {
         sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} ${totalVisivel === 1 ? "negócio" : "negócios"} ${filtroAtivo ? (totalVisivel === 1 ? "encontrado" : "encontrados") : "no funil"}`}
         actions={
           <>
+            <div className="dropdown-anchor">
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => setCriarMenuAberto((v) => !v)}
+              >
+                + Criar
+              </button>
+              {criarMenuAberto ? (
+                <>
+                  <div
+                    onClick={() => setCriarMenuAberto(false)}
+                    style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                  />
+                  <div className="dropdown-pop">
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => {
+                        setCriarMenuAberto(false);
+                        setNovoNegocioAberto(true);
+                      }}
+                    >
+                      <span className="n">Criar negociação</span>
+                      <span className="r">Entra na 1ª etapa do funil ativo</span>
+                    </button>
+                    <Link
+                      href="/configuracoes#workspace"
+                      className="dropdown-item"
+                      onClick={() => setCriarMenuAberto(false)}
+                    >
+                      <span className="n">Criar empresa</span>
+                      <span className="r">Cadastra o workspace/clínica</span>
+                    </Link>
+                    <Link
+                      href="/contatos"
+                      className="dropdown-item"
+                      onClick={() => setCriarMenuAberto(false)}
+                    >
+                      <span className="n">Criar contato</span>
+                      <span className="r">Abre a tela de Contatos</span>
+                    </Link>
+                    <Link
+                      href="/tarefas?nova=1"
+                      className="dropdown-item"
+                      onClick={() => setCriarMenuAberto(false)}
+                    >
+                      <span className="n">Criar tarefa</span>
+                      <span className="r">Abre o formulário em Tarefas</span>
+                    </Link>
+                  </div>
+                </>
+              ) : null}
+            </div>
             <select
               className="fsel"
               value={funilAtivoId}
@@ -173,6 +267,66 @@ export default function FunilPage() {
                 onClick={criarFunil}
               >
                 Criar funil
+              </button>
+            </div>
+          </section>
+        ) : null}
+
+        {novoNegocioAberto ? (
+          <section className="open-conv mb14">
+            <div className="open-conv-h">
+              <div>
+                <p className="n">Criar negociação</p>
+                <p className="s">
+                  Entra na etapa &quot;{funilAtivo?.colunas[0]?.titulo}&quot; do
+                  funil {funilAtivo?.nome}
+                </p>
+              </div>
+              <span
+                className="close"
+                style={{ cursor: "pointer" }}
+                onClick={() => setNovoNegocioAberto(false)}
+              >
+                Fechar ✕
+              </span>
+            </div>
+            <div className="field">
+              <label>Nome do contato</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="text"
+                value={nomeNegocio}
+                onChange={(e) => setNomeNegocio(e.target.value)}
+                placeholder="Ex.: Marina Costa"
+              />
+            </div>
+            <div className="field">
+              <label>Valor (opcional)</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="text"
+                value={valorNegocio}
+                onChange={(e) => setValorNegocio(e.target.value)}
+                placeholder="Ex.: R$ 890"
+              />
+            </div>
+            <div className="field">
+              <label>Origem</label>
+              <ChipFilters
+                options={ORIGENS_NEGOCIO}
+                initial={ORIGENS_NEGOCIO.indexOf(origemNegocio)}
+                onChange={(o) => setOrigemNegocio(o as NegocioCard["origem"])}
+              />
+            </div>
+            <div className="section-foot">
+              <button
+                type="button"
+                className="btn primary block"
+                onClick={criarNegocio}
+              >
+                Criar negociação
               </button>
             </div>
           </section>

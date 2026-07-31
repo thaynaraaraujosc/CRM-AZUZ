@@ -3,13 +3,11 @@ import type { Metadata } from "next";
 
 import {
   atividadeRecente,
-  currentUser,
   funilJulho,
   kpisInicio,
   leadsPorDia,
   today,
 } from "@/lib/data";
-import { IconBell } from "@/components/icons";
 import { Topbar } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Início · CRM AZUZ" };
@@ -17,19 +15,7 @@ export const metadata: Metadata = { title: "Início · CRM AZUZ" };
 export default function InicioPage() {
   return (
     <>
-      <Topbar
-        title="Início"
-        sub={today}
-        actions={
-          <>
-            <span className="icon-btn">
-              <span className="dot" />
-              <IconBell />
-            </span>
-            <span className="avatar">{currentUser.initials}</span>
-          </>
-        }
-      />
+      <Topbar title="Início" sub={today} />
 
       <div className="content">
         <div className="grid kpi4">

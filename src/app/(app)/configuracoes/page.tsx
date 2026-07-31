@@ -1,15 +1,21 @@
-import type { Metadata } from "next";
-import type { ReactNode } from "react";
+"use client";
 
-import { apiKey, integracoes, webhooks } from "@/lib/data";
+import { useState, type ReactNode } from "react";
+
+import {
+  apiKey,
+  currentUser,
+  integracoes,
+  webhooks,
+  workspace,
+} from "@/lib/data";
 import {
   IconCalendar,
+  IconCamera,
   IconInstagram,
   IconWhatsApp,
 } from "@/components/icons";
 import { Topbar } from "@/components/ui";
-
-export const metadata: Metadata = { title: "Configurações · CRM AZUZ" };
 
 const logos: Record<string, ReactNode> = {
   wa: <IconWhatsApp width={20} height={20} />,
@@ -18,14 +24,78 @@ const logos: Record<string, ReactNode> = {
 };
 
 export default function ConfiguracoesPage() {
+  const [nomeEmpresa, setNomeEmpresa] = useState(workspace.name);
+  const [segmento, setSegmento] = useState(workspace.segment);
+
   return (
     <>
       <Topbar
         title="Configurações"
-        sub="Integrações, contas de anúncio, calendário e API"
+        sub="Workspace, integrações, contas de anúncio, calendário e API"
       />
 
       <div className="content">
+        <div className="int-group" id="workspace">
+          <p className="int-group-h">
+            Workspace — a empresa/clínica que está usando esse CRM
+          </p>
+          <div className="card">
+            <div style={{ display: "flex", gap: 16, padding: "17px", alignItems: "center", flexWrap: "wrap" }}>
+              <div
+                className="avatar"
+                style={{ width: 56, height: 56, borderRadius: 14, fontSize: 18 }}
+              >
+                {nomeEmpresa
+                  .split(" ")
+                  .slice(0, 2)
+                  .map((p) => p[0])
+                  .join("")
+                  .toUpperCase()}
+              </div>
+              <button type="button" className="btn ghost">
+                <IconCamera width={15} height={15} />
+                Trocar foto
+              </button>
+            </div>
+            <div className="field">
+              <label>Nome da empresa</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="text"
+                value={nomeEmpresa}
+                onChange={(e) => setNomeEmpresa(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label>Segmento</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="text"
+                value={segmento}
+                onChange={(e) => setSegmento(e.target.value)}
+              />
+            </div>
+
+            <div className="panel-h divided">
+              <h4>Quem está logado agora</h4>
+            </div>
+            <div className="field">
+              <label>Nome</label>
+              <div className="input">{currentUser.name}</div>
+            </div>
+            <div className="field">
+              <label>E-mail</label>
+              <div className="input">{currentUser.email}</div>
+            </div>
+            <div className="field">
+              <label>Papel</label>
+              <div className="input">{currentUser.role}</div>
+            </div>
+          </div>
+        </div>
+
         {integracoes.map((grupo) => (
           <div className="int-group" key={grupo.grupo}>
             <p className="int-group-h">{grupo.grupo}</p>

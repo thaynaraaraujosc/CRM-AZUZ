@@ -17,7 +17,7 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "CRM AZUZ — Painel web",
   description:
-    "Painel web do CRM AZUZ: Início, WhatsApp, Funil, Tarefas, Ações, Equipe, Contatos, Tráfego, Relatórios, Automações e Configurações.",
+    "Painel web do CRM AZUZ: Início, WhatsApp, Funil, Tarefas, Ações, Equipe, Contatos, Tráfego, Relatórios, Automações, Azuz IA e Configurações.",
 };
 
 export default function RootLayout({

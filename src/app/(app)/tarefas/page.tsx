@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { equipe, tarefas as tarefasIniciais } from "@/lib/data";
 import type { ColunaTarefas } from "@/lib/data";
@@ -15,12 +16,15 @@ function cloneColunas(colunas: ColunaTarefas[]): ColunaTarefas[] {
   return colunas.map((c) => ({ ...c, cards: c.cards.map((card) => ({ ...card })) }));
 }
 
-export default function TarefasPage() {
+function TarefasContent() {
+  const searchParams = useSearchParams();
   const [colunas, setColunas] = useState<ColunaTarefas[]>(() =>
     cloneColunas(tarefasIniciais),
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [novaTarefaAberta, setNovaTarefaAberta] = useState(false);
+  const [novaTarefaAberta, setNovaTarefaAberta] = useState(
+    () => searchParams.get("nova") === "1",
+  );
   const [arrastando, setArrastando] = useState<{
     coluna: number;
     card: number;
@@ -323,5 +327,13 @@ export default function TarefasPage() {
         ) : null}
       </div>
     </>
+  );
+}
+
+export default function TarefasPage() {
+  return (
+    <Suspense fallback={null}>
+      <TarefasContent />
+    </Suspense>
   );
 }

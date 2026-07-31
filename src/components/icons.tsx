@@ -167,6 +167,35 @@ export function IconText(props: Props) {
   );
 }
 
+export function IconSparkle(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3v5M12 16v5M3 12h5M16 12h5" />
+      <path d="M12 8a4 4 0 0 0 4 4 4 4 0 0 0-4 4 4 4 0 0 0-4-4 4 4 0 0 0 4-4Z" />
+    </svg>
+  );
+}
+
+export function IconSwitch(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M7 4v10a3 3 0 0 0 3 3h9" />
+      <path d="m16 14 3 3-3 3" />
+      <path d="M17 20V10a3 3 0 0 0-3-3H5" />
+      <path d="m8 10-3-3 3-3" />
+    </svg>
+  );
+}
+
+export function IconCamera(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 8a2 2 0 0 1 2-2h1.5l1-1.5h9l1 1.5H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  );
+}
+
 export function IconCalendar(props: Props) {
   return (
     <svg {...base} {...props}>

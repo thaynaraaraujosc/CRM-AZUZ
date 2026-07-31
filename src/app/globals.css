@@ -124,11 +124,18 @@ table {
 }
 
 .sb-workspace {
+  display: block;
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 9px 10px;
   margin-bottom: 18px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sb-workspace:hover {
+  border-color: rgba(46, 107, 255, 0.5);
+  background: var(--blue-soft-2);
 }
 
 .sb-workspace .l {
@@ -2015,6 +2022,88 @@ table.tbl tbody tr:hover td {
 .login-foot a {
   color: var(--blue);
   font-weight: 600;
+}
+
+/* ---------------- Dropdowns flutuantes (busca, notificações, criar, conta) ---------------- */
+
+.dropdown-anchor {
+  position: relative;
+}
+
+.dropdown-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 280px;
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.18);
+  z-index: 60;
+}
+
+.dropdown-pop-right {
+  left: auto;
+  right: 0;
+  width: 320px;
+}
+
+.dropdown-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background: var(--navy-raised);
+}
+
+.dropdown-item .n {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.dropdown-item .r {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.sb-foot {
+  position: relative;
+}
+
+.sb-foot-toggle {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: var(--text-faint);
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.sb-foot-toggle:hover {
+  background: var(--navy-raised);
+  color: var(--ink);
+}
+
+.account-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 8px;
+  right: 8px;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.18);
+  overflow: hidden;
+  z-index: 60;
 }
 
 /* ---------------- Utilitários ---------------- */
