@@ -2094,6 +2094,20 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
+.plano-cancelado-pill {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #d64545;
+  background: rgba(214, 69, 69, 0.12);
+  padding: 2px 8px;
+  border-radius: 20px;
+  vertical-align: middle;
+}
+
 .int-row {
   display: flex;
   align-items: center;

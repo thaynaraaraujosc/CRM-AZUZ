@@ -1263,13 +1263,6 @@ export const planoAtual = {
   periodo: "por mês",
 };
 
-/** Quem processa a cobrança do cartão cadastrado. */
-export const PROCESSADORAS_PAGAMENTO = [
-  "Mercado Pago",
-  "Pagar.me",
-  "Outra instituição bancária",
-];
-
 /* -------------------------------------------------------------------------- */
 /* Azuz IA                                                                    */
 /* -------------------------------------------------------------------------- */

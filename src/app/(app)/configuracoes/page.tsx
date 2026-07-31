@@ -2,19 +2,13 @@
 
 import { useState, type ReactNode } from "react";
 
-import {
-  apiKey,
-  integracoes,
-  planoAtual,
-  PROCESSADORAS_PAGAMENTO,
-  webhooks,
-} from "@/lib/data";
+import { apiKey, integracoes, planoAtual, webhooks } from "@/lib/data";
 import {
   IconCalendar,
   IconInstagram,
   IconWhatsApp,
 } from "@/components/icons";
-import { ChipFilters, Topbar } from "@/components/ui";
+import { Topbar } from "@/components/ui";
 
 const logos: Record<string, ReactNode> = {
   wa: <IconWhatsApp width={20} height={20} />,
@@ -28,11 +22,21 @@ export default function ConfiguracoesPage() {
   const [nomeCartao, setNomeCartao] = useState("");
   const [validadeCartao, setValidadeCartao] = useState("");
   const [cvvCartao, setCvvCartao] = useState("");
-  const [processadora, setProcessadora] = useState(PROCESSADORAS_PAGAMENTO[0]);
   const [cartaoSalvo, setCartaoSalvo] = useState(false);
+  const [planoCancelado, setPlanoCancelado] = useState(false);
 
   function salvarCartao() {
     setCartaoSalvo(true);
+  }
+
+  function cancelarPlano() {
+    if (
+      window.confirm(
+        "Cancelar o plano? Você deixa de ser cobrado, mas perde acesso a partir do fim do período já pago.",
+      )
+    ) {
+      setPlanoCancelado(true);
+    }
   }
 
   return (
@@ -70,13 +74,43 @@ export default function ConfiguracoesPage() {
 
             <div className="plano-card">
               <div>
-                <p className="plano-nome">{planoAtual.nome}</p>
-                <p className="plano-desc">{planoAtual.descricao}</p>
+                <p className="plano-nome">
+                  {planoAtual.nome}
+                  {planoCancelado ? (
+                    <span className="plano-cancelado-pill">Cancelado</span>
+                  ) : null}
+                </p>
+                <p className="plano-desc">
+                  {planoCancelado
+                    ? "Sem novas cobranças — você continua com acesso até o fim do período já pago."
+                    : planoAtual.descricao}
+                </p>
               </div>
               <p className="plano-valor">
                 {planoAtual.valor}
                 <span>/{planoAtual.periodo.replace("por ", "")}</span>
               </p>
+            </div>
+
+            <div className="section-foot" style={{ paddingTop: 0 }}>
+              {planoCancelado ? (
+                <button
+                  type="button"
+                  className="btn ghost block"
+                  onClick={() => setPlanoCancelado(false)}
+                >
+                  Reativar assinatura
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn ghost block"
+                  style={{ color: "#d64545" }}
+                  onClick={cancelarPlano}
+                >
+                  Cancelar assinatura
+                </button>
+              )}
             </div>
 
             <div className="panel-h divided">
@@ -135,15 +169,6 @@ export default function ConfiguracoesPage() {
               </div>
             </div>
 
-            <div className="field">
-              <label>Processadora — quem recebe esse pagamento</label>
-              <ChipFilters
-                options={PROCESSADORAS_PAGAMENTO}
-                initial={PROCESSADORAS_PAGAMENTO.indexOf(processadora)}
-                onChange={(p) => setProcessadora(p)}
-              />
-            </div>
-
             <div className="section-foot">
               <button
                 type="button"
@@ -155,8 +180,7 @@ export default function ConfiguracoesPage() {
             </div>
             {cartaoSalvo ? (
               <p className="hint" style={{ padding: "0 17px 14px", color: "var(--blue)" }}>
-                Cartão salvo — cobranças de {planoAtual.valor} {planoAtual.periodo}{" "}
-                processadas via {processadora}.
+                Cartão salvo — cobranças de {planoAtual.valor} {planoAtual.periodo}.
               </p>
             ) : null}
           </section>
