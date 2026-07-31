@@ -1,35 +1,99 @@
-import type { Metadata } from "next";
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
 
 import {
-  periodoRelatorio,
   relatorioAutomatico,
   relatorioManual,
   relatoriosAnteriores,
 } from "@/lib/data";
 import { Topbar } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Relatórios · CRM AZUZ" };
+const MESES = [
+  "jan", "fev", "mar", "abr", "mai", "jun",
+  "jul", "ago", "set", "out", "nov", "dez",
+];
+
+function formata(iso: string) {
+  const [ano, mes, dia] = iso.split("-");
+  return `${dia} ${MESES[Number(mes) - 1]} ${ano}`;
+}
 
 export default function RelatoriosPage() {
+  const [dataDe, setDataDe] = useState("2026-07-01");
+  const [dataAte, setDataAte] = useState("2026-07-31");
+  const [editandoPeriodo, setEditandoPeriodo] = useState(false);
+
   return (
     <>
       <Topbar
         title="Relatórios"
         sub="Escolha o período pra montar na hora"
         actions={
-          <button type="button" className="btn primary">
+          <Link
+            className="btn primary"
+            href={`/relatorio-pdf?de=${dataDe}&ate=${dataAte}`}
+            target="_blank"
+          >
             Gerar PDF
-          </button>
+          </Link>
         }
       />
 
       <div className="content">
         <div className="grid rep-grid">
           <div>
-            <div className="date-picker">
-              {periodoRelatorio.de} <span className="arrow">→</span>{" "}
-              {periodoRelatorio.ate}
-            </div>
+            <button
+              type="button"
+              className="date-picker"
+              style={{ cursor: "pointer", width: "100%", textAlign: "left" }}
+              onClick={() => setEditandoPeriodo((v) => !v)}
+            >
+              {formata(dataDe)} <span className="arrow">→</span> {formata(dataAte)}
+            </button>
+
+            {editandoPeriodo ? (
+              <div className="card mb14" style={{ marginTop: 8 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 14,
+                    padding: 17,
+                    flexWrap: "wrap",
+                    alignItems: "flex-end",
+                  }}
+                >
+                  <div className="field" style={{ padding: 0, flex: "1 1 160px" }}>
+                    <label>De</label>
+                    <input
+                      className="input"
+                      style={{ width: "100%" }}
+                      type="date"
+                      value={dataDe}
+                      onChange={(e) => setDataDe(e.target.value)}
+                    />
+                  </div>
+                  <div className="field" style={{ padding: 0, flex: "1 1 160px" }}>
+                    <label>Até</label>
+                    <input
+                      className="input"
+                      style={{ width: "100%" }}
+                      type="date"
+                      value={dataAte}
+                      onChange={(e) => setDataAte(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={() => setEditandoPeriodo(false)}
+                  >
+                    Aplicar período
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             <div className="card mb14">
               <div className="panel-h">

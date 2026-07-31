@@ -12,6 +12,7 @@ export const workspace = {
   name: "Clínica Vitta",
   slug: "clinicavitta",
   segment: "Emagrecimento e diabetes",
+  email: "secretaria@clinicavitta.com.br",
 };
 
 export const currentUser = {
@@ -1010,8 +1011,8 @@ export const relatorioAutomatico = [
   { label: "Leads qualificados", value: "143" },
   { label: "Fecharam negócio", value: "36" },
   { label: "Valor vendido no CRM", value: "R$ 38.400" },
-  { label: "Receita vinda do tráfego pago", value: "R$ 13.440" },
-  { label: "Custo por venda (tráfego pago)", value: "R$ 267" },
+  { label: "Receita vinda de anúncio", value: "R$ 13.440" },
+  { label: "Receita vinda de indicação", value: "R$ 4.180" },
 ];
 
 export const relatorioManual = {
