@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 
 import { acaoRascunho, acoesAnteriores, segmentos } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
-import { IconDoc, IconImage, IconMic } from "@/components/icons";
+import { IconDoc, IconImage, IconMic, IconSearch } from "@/components/icons";
 import { MediaPicker, SegmentChips, Topbar } from "@/components/ui";
 
 const iconePorMidia = {
@@ -13,13 +13,30 @@ const iconePorMidia = {
   texto: <IconDoc />,
 };
 
+const CANAIS_ENVIO = [
+  { label: "WhatsApp", ativo: true },
+  { label: "Instagram", ativo: true },
+  { label: "E-mail", ativo: false },
+  { label: "SMS", ativo: false },
+];
+
 export default function AcoesPage() {
   const { contatos } = useContatos();
   const [selecionados, setSelecionados] = useState(
     () => new Set(contatos.map((c) => c.nome)),
   );
   const [listaAberta, setListaAberta] = useState(false);
+  const [buscaContato, setBuscaContato] = useState("");
   const [midia, setMidia] = useState("Imagem");
+  const [canaisEnvio, setCanaisEnvio] = useState(
+    () => CANAIS_ENVIO.filter((c) => c.ativo).map((c) => c.label),
+  );
+
+  const contatosFiltrados = buscaContato.trim()
+    ? contatos.filter((c) =>
+        c.nome.toLowerCase().includes(buscaContato.trim().toLowerCase()),
+      )
+    : contatos;
 
   const [arquivoImagem, setArquivoImagem] = useState<File | null>(null);
   const [arquivoAudio, setArquivoAudio] = useState<File | null>(null);
@@ -133,25 +150,45 @@ export default function AcoesPage() {
                       Começar do zero
                     </button>
                   </div>
+                  <div style={{ padding: "10px 17px", borderBottom: "1px solid var(--line-soft)" }}>
+                    <label className="search" style={{ width: "100%" }}>
+                      <IconSearch />
+                      <input
+                        placeholder="Pesquisar contato pelo nome…"
+                        aria-label="Pesquisar contato"
+                        value={buscaContato}
+                        onChange={(e) => setBuscaContato(e.target.value)}
+                      />
+                    </label>
+                  </div>
                   <div style={{ maxHeight: 280, overflowY: "auto" }}>
-                    {contatos.map((c) => (
-                      <label
-                        key={c.nome}
-                        className="activity-row"
-                        style={{ cursor: "pointer" }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selecionados.has(c.nome)}
-                          onChange={() => toggleContato(c.nome)}
-                        />
-                        <div className="avatar">{c.initials}</div>
-                        <div className="body">
-                          <p className="name">{c.nome}</p>
-                          <p className="meta">{c.origem}</p>
-                        </div>
-                      </label>
-                    ))}
+                    {contatosFiltrados.length === 0 ? (
+                      <p className="hint" style={{ padding: "12px 17px" }}>
+                        Nada encontrado pra &quot;{buscaContato}&quot;
+                      </p>
+                    ) : (
+                      contatosFiltrados.map((c) => (
+                        <label
+                          key={c.nome}
+                          className="activity-row"
+                          style={{ cursor: "pointer" }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selecionados.has(c.nome)}
+                            onChange={() => toggleContato(c.nome)}
+                          />
+                          <div className="avatar">{c.initials}</div>
+                          <div className="body">
+                            <p className="name">{c.nome}</p>
+                            <p className="meta">{c.origem}</p>
+                          </div>
+                          <span className={`pill${c.whatsapp ? " on" : ""}`}>
+                            {c.whatsapp ? "Número gravado" : "Sem número"}
+                          </span>
+                        </label>
+                      ))
+                    )}
                   </div>
                 </div>
               ) : null}
@@ -286,8 +323,20 @@ export default function AcoesPage() {
                 </div>
               </div>
               <div className="field">
+                <label>Canal de envio — pode escolher mais de um</label>
+                <SegmentChips
+                  options={CANAIS_ENVIO}
+                  onChange={(labels) => setCanaisEnvio(labels)}
+                />
+              </div>
+              <div className="field">
                 <label>Enviar</label>
-                <div className="input">{acaoRascunho.envio}</div>
+                <div className="input">
+                  Hoje às 18h ·{" "}
+                  {canaisEnvio.length > 0
+                    ? canaisEnvio.join(" e ")
+                    : "escolha pelo menos um canal"}
+                </div>
               </div>
               <div className="section-foot">
                 <button type="button" className="btn primary block">

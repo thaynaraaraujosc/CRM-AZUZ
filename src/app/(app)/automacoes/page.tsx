@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import {
   acoesAutomacao,
@@ -8,6 +9,7 @@ import {
   automacoes,
   gatilhosAutomacao,
 } from "@/lib/data";
+import { useFunis } from "@/lib/funis-context";
 import { IconAutomacoes } from "@/components/icons";
 import { ChipFilters, Toggle, Topbar } from "@/components/ui";
 
@@ -15,10 +17,25 @@ type Ideia = (typeof automacaoIdeias)[number];
 type Modelo = "lista" | "mapa-mental";
 
 export default function AutomacoesPage() {
+  return (
+    <Suspense fallback={null}>
+      <AutomacoesPageInner />
+    </Suspense>
+  );
+}
+
+function AutomacoesPageInner() {
+  const searchParams = useSearchParams();
+  const { funis } = useFunis();
+  const funilAlvoId = searchParams.get("criarPara");
+  const funilAlvo = funilAlvoId ? funis.find((f) => f.id === funilAlvoId) : null;
+
   const ativas = automacoes.filter((a) => a.ativa).length;
-  const [construtorAberto, setConstrutorAberto] = useState(false);
+  const [construtorAberto, setConstrutorAberto] = useState(
+    () => Boolean(funilAlvo),
+  );
   const [ideiaEscolhida, setIdeiaEscolhida] = useState<Ideia | "zero" | null>(
-    null,
+    () => (funilAlvo ? "zero" : null),
   );
   const [modelo, setModelo] = useState<Modelo>("lista");
   const [modeloMenuAberto, setModeloMenuAberto] = useState(false);
@@ -105,8 +122,9 @@ export default function AutomacoesPage() {
               <div>
                 <p className="n">Nova automação</p>
                 <p className="s">
-                  Automatize qualquer movimento do funil ou das tarefas —
-                  escolha uma ideia ou comece do zero
+                  {funilAlvo
+                    ? `Automação específica pro funil "${funilAlvo.nome}"`
+                    : "Automatize qualquer movimento do funil ou das tarefas — escolha uma ideia ou comece do zero"}
                 </p>
               </div>
               <span

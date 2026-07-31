@@ -261,6 +261,8 @@ export type Funil = {
   id: string;
   nome: string;
   colunas: ColunaFunil[];
+  /** Atendente responsável por esse funil — quem recebe as conversas/tarefas atribuídas a ele. */
+  responsavel?: string;
 };
 
 /** Modelo pré-pronto usado ao criar um funil novo. */
@@ -1013,6 +1015,34 @@ export const relatorioAutomatico = [
   { label: "Valor vendido no CRM", value: "R$ 38.400" },
   { label: "Receita vinda de anúncio", value: "R$ 13.440" },
   { label: "Receita vinda de indicação", value: "R$ 4.180" },
+];
+
+/** Cada origem tem seu próprio mini-relatório — a pessoa escolhe quais entram no PDF. */
+export const relatorioPorOrigem = [
+  {
+    id: "google",
+    label: "Google Ads",
+    stats: [
+      { label: "Leads via Google Ads", value: "98" },
+      { label: "Receita vinda do Google Ads", value: "R$ 7.140" },
+    ],
+  },
+  {
+    id: "facebook",
+    label: "Facebook / Instagram Ads",
+    stats: [
+      { label: "Leads via Meta Ads", value: "112" },
+      { label: "Receita vinda do Meta Ads", value: "R$ 6.300" },
+    ],
+  },
+  {
+    id: "vendedor",
+    label: "Ligação / Vendedor",
+    stats: [
+      { label: "Ligações realizadas", value: "64" },
+      { label: "Vendas fechadas por ligação", value: "R$ 9.800" },
+    ],
+  },
 ];
 
 export const relatorioManual = {

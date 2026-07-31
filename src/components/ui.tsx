@@ -121,10 +121,12 @@ export function RadioList({
   options,
   initial,
   bare = false,
+  onChange,
 }: {
   options: { nome: string; descricao?: string; boxed?: boolean }[];
   initial?: string;
   bare?: boolean;
+  onChange?: (nome: string) => void;
 }) {
   const [selected, setSelected] = useState(initial ?? options[0]?.nome);
   return (
@@ -143,7 +145,10 @@ export function RadioList({
             key={option.nome}
             className={classes}
             aria-pressed={selected === option.nome}
-            onClick={() => setSelected(option.nome)}
+            onClick={() => {
+              setSelected(option.nome);
+              onChange?.(option.nome);
+            }}
           >
             <span className={`radio${selected === option.nome ? " sel" : ""}`} />
             <span className="body">

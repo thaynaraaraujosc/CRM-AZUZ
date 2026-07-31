@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { conversas, type Funil } from "@/lib/data";
+import { conversas, type Funil, type NegocioCard } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import {
@@ -12,6 +12,9 @@ import {
   IconDoc,
 } from "@/components/icons";
 import { RadioList, Toggle, Topbar } from "@/components/ui";
+
+/** Mesmo dia de referência usado em todo o app (ver `today` em lib/data.ts). */
+const HOJE_ISO = "2026-07-30";
 
 function localizarNoFunil(
   listaFunis: Funil[],
@@ -37,8 +40,8 @@ export default function ConversasPage() {
 
 function ConversasPageInner() {
   const searchParams = useSearchParams();
-  const { funis } = useFunis();
-  const { contatos, salvarDadosContato } = useContatos();
+  const { funis, atribuirContatoAoFunil } = useFunis();
+  const { contatos, salvarDadosContato, atribuirAtendente } = useContatos();
   const [selectedId, setSelectedId] = useState(() => {
     const nomeContato = searchParams.get("contato");
     const encontrada = nomeContato
@@ -54,12 +57,36 @@ function ConversasPageInner() {
 
   const contatoDaConversa = contatos.find((c) => c.nome === aberta.nome) ?? null;
 
-  // Troca o funil selecionado e os campos de dados do contato toda vez que
-  // a conversa aberta muda, pra sempre abrir já mostrando o funil/dados
-  // desse contato (ajuste de estado a partir de uma mudança de prop — ver
-  // docs do React).
+  // Opções de atendente pra atribuir: as da conversa + quem já é responsável
+  // por algum funil (todo funil novo vira uma opção automaticamente aqui).
+  const nomesFunilAtendentes = funis
+    .map((f) => f.responsavel)
+    .filter((nome): nome is string => Boolean(nome));
+  const opcoesAtendente = [
+    ...aberta.atendentes,
+    ...nomesFunilAtendentes
+      .filter((nome) => !aberta.atendentes.some((a) => a.nome === nome))
+      .map((nome) => ({ nome, papel: "Responsável por um funil" })),
+  ];
+
+  function etapaPadraoPara(funilId: string) {
+    const f = funis.find((x) => x.id === funilId);
+    return localizacao && localizacao.funilId === funilId
+      ? localizacao.etapa
+      : f?.colunas[0]?.titulo ?? "";
+  }
+
+  // Troca o funil/etapa/atendente/dados selecionados toda vez que a conversa
+  // aberta muda, pra sempre abrir já mostrando as atribuições desse contato
+  // (ajuste de estado a partir de uma mudança de prop — ver docs do React).
   const [funilSelecionadoId, setFunilSelecionadoId] = useState(
     () => localizacao?.funilId ?? funis[0]?.id ?? "",
+  );
+  const [etapaSelecionada, setEtapaSelecionada] = useState(() =>
+    etapaPadraoPara(localizacao?.funilId ?? funis[0]?.id ?? ""),
+  );
+  const [atendenteSelecionado, setAtendenteSelecionado] = useState(
+    aberta.atendenteSelecionado,
   );
   const [emailContato, setEmailContato] = useState(contatoDaConversa?.email ?? "");
   const [whatsappContato, setWhatsappContato] = useState(
@@ -74,7 +101,10 @@ function ConversasPageInner() {
   const [abertaIdAnterior, setAbertaIdAnterior] = useState(aberta.id);
   if (aberta.id !== abertaIdAnterior) {
     setAbertaIdAnterior(aberta.id);
-    setFunilSelecionadoId(localizacao?.funilId ?? funis[0]?.id ?? "");
+    const funilId = localizacao?.funilId ?? funis[0]?.id ?? "";
+    setFunilSelecionadoId(funilId);
+    setEtapaSelecionada(etapaPadraoPara(funilId));
+    setAtendenteSelecionado(aberta.atendenteSelecionado);
     setEmailContato(contatoDaConversa?.email ?? "");
     setWhatsappContato(contatoDaConversa?.whatsapp ?? "");
     setNascimentoContato(contatoDaConversa?.nascimento ?? "");
@@ -84,6 +114,11 @@ function ConversasPageInner() {
   const funilSelecionado =
     funis.find((f) => f.id === funilSelecionadoId) ?? funis[0];
 
+  function trocarFunilSelecionado(novoFunilId: string) {
+    setFunilSelecionadoId(novoFunilId);
+    setEtapaSelecionada(etapaPadraoPara(novoFunilId));
+  }
+
   function salvarDados() {
     salvarDadosContato(aberta.nome, {
       email: emailContato.trim() || undefined,
@@ -91,6 +126,24 @@ function ConversasPageInner() {
       nascimento: nascimentoContato.trim() || undefined,
       endereco: enderecoContato.trim() || undefined,
     });
+  }
+
+  function salvarAtribuicao() {
+    atribuirAtendente(aberta.nome, atendenteSelecionado);
+    if (funilSelecionado && etapaSelecionada) {
+      const cardExistente = funilSelecionado.colunas
+        .flatMap((c) => c.cards)
+        .find((c) => c.nome === aberta.nome);
+      const novoCard: Omit<NegocioCard, "id"> & { id?: string } = {
+        id: cardExistente?.id,
+        nome: aberta.nome,
+        valor: cardExistente?.valor ?? "—",
+        origem: cardExistente?.origem ?? aberta.origem,
+        dias: cardExistente?.dias ?? "Hoje",
+        data: cardExistente?.data ?? HOJE_ISO,
+      };
+      atribuirContatoAoFunil(funilSelecionado.id, etapaSelecionada, novoCard);
+    }
   }
 
   return (
@@ -180,11 +233,12 @@ function ConversasPageInner() {
           </div>
           <RadioList
             key={aberta.id}
-            options={aberta.atendentes.map((a) => ({
+            options={opcoesAtendente.map((a) => ({
               nome: a.nome,
               descricao: a.papel,
             }))}
-            initial={aberta.atendenteSelecionado}
+            initial={atendenteSelecionado}
+            onChange={setAtendenteSelecionado}
           />
 
           <div className="panel-h divided">
@@ -257,7 +311,7 @@ function ConversasPageInner() {
               className="input"
               style={{ width: "100%", cursor: "pointer" }}
               value={funilSelecionado?.id}
-              onChange={(e) => setFunilSelecionadoId(e.target.value)}
+              onChange={(e) => trocarFunilSelecionado(e.target.value)}
             >
               {funis.map((f) => (
                 <option key={f.id} value={f.id}>
@@ -273,11 +327,8 @@ function ConversasPageInner() {
                 nome: coluna.titulo,
                 descricao: `${coluna.total} contatos nessa etapa`,
               }))}
-              initial={
-                localizacao && localizacao.funilId === funilSelecionado.id
-                  ? localizacao.etapa
-                  : funilSelecionado.colunas[0]?.titulo
-              }
+              initial={etapaSelecionada}
+              onChange={setEtapaSelecionada}
             />
           ) : null}
 
@@ -331,7 +382,11 @@ function ConversasPageInner() {
           </div>
 
           <div className="section-foot">
-            <button type="button" className="btn primary block">
+            <button
+              type="button"
+              className="btn primary block"
+              onClick={salvarAtribuicao}
+            >
               Salvar atribuição e tarefa
             </button>
           </div>

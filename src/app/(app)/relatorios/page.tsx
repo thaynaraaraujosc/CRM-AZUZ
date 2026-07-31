@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   relatorioAutomatico,
   relatorioManual,
+  relatorioPorOrigem,
   relatoriosAnteriores,
 } from "@/lib/data";
 import { Topbar } from "@/components/ui";
@@ -24,6 +25,20 @@ export default function RelatoriosPage() {
   const [dataDe, setDataDe] = useState("2026-07-01");
   const [dataAte, setDataAte] = useState("2026-07-31");
   const [editandoPeriodo, setEditandoPeriodo] = useState(false);
+  const [origensSelecionadas, setOrigensSelecionadas] = useState(
+    () => new Set(relatorioPorOrigem.map((o) => o.id)),
+  );
+
+  function alternarOrigem(id: string) {
+    setOrigensSelecionadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const origensParam = [...origensSelecionadas].join(",");
 
   return (
     <>
@@ -33,7 +48,7 @@ export default function RelatoriosPage() {
         actions={
           <Link
             className="btn primary"
-            href={`/relatorio-pdf?de=${dataDe}&ate=${dataAte}`}
+            href={`/relatorio-pdf?de=${dataDe}&ate=${dataAte}&origens=${origensParam}`}
             target="_blank"
           >
             Gerar PDF
@@ -106,6 +121,47 @@ export default function RelatoriosPage() {
                   <span className="sv">{stat.value}</span>
                 </div>
               ))}
+            </div>
+
+            <div className="card mb14">
+              <div className="panel-h">
+                <h4>Origem do relatório</h4>
+                <span className="badge-auto">Escolha o que entra no PDF</span>
+              </div>
+              <div className="filters-row" style={{ padding: "0 17px 14px" }}>
+                {relatorioPorOrigem.map((origem) => (
+                  <button
+                    type="button"
+                    key={origem.id}
+                    className={`fchip${origensSelecionadas.has(origem.id) ? " active" : ""}`}
+                    aria-pressed={origensSelecionadas.has(origem.id)}
+                    onClick={() => alternarOrigem(origem.id)}
+                  >
+                    {origem.label}
+                  </button>
+                ))}
+              </div>
+              {[...origensSelecionadas].length === 0 ? (
+                <p className="hint" style={{ padding: "0 17px 14px" }}>
+                  Nenhuma origem escolhida — o PDF sai só com os dados gerais
+                </p>
+              ) : (
+                relatorioPorOrigem
+                  .filter((o) => origensSelecionadas.has(o.id))
+                  .map((origem) => (
+                    <div key={origem.id}>
+                      <div className="panel-h divided">
+                        <h4>{origem.label}</h4>
+                      </div>
+                      {origem.stats.map((stat) => (
+                        <div className="stat-row" key={stat.label}>
+                          <span className="sl">{stat.label}</span>
+                          <span className="sv">{stat.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))
+              )}
             </div>
 
             <div className="card">

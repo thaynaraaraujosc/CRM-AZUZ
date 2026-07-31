@@ -1,22 +1,21 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { equipe, type NegocioCard } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
+import { IconConfiguracoes } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
 
-const FILTROS_ORIGEM = [
-  "Todas as origens",
+const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Instagram",
   "TikTok",
   "Meta Ads",
   "Google Ads",
   "Indicação",
 ];
-
-const ORIGENS_NEGOCIO = FILTROS_ORIGEM.slice(1) as NegocioCard["origem"][];
 
 /** Mesmo dia de referência usado em todo o app (ver `today` em lib/data.ts). */
 const HOJE_ISO = "2026-07-30";
@@ -30,8 +29,11 @@ export default function FunilPage() {
 }
 
 function FunilPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const { funis, setFunis, funilAtivoId, setFunilAtivoId } = useFunis();
+  const { funis, setFunis, funilAtivoId, setFunilAtivoId, excluirFunil } =
+    useFunis();
+  const [configAberto, setConfigAberto] = useState(false);
 
   const [novoFunilAberto, setNovoFunilAberto] = useState(false);
   const [atendenteNovoFunil, setAtendenteNovoFunil] = useState(
@@ -45,7 +47,7 @@ function FunilPageInner() {
   const [origemNegocio, setOrigemNegocio] = useState<NegocioCard["origem"]>(
     ORIGENS_NEGOCIO[0],
   );
-  const [origemFiltro, setOrigemFiltro] = useState("Todas as origens");
+  const [origensFiltro, setOrigensFiltro] = useState<Set<string>>(new Set());
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [dataDe, setDataDe] = useState("");
   const [dataAte, setDataAte] = useState("");
@@ -61,7 +63,7 @@ function FunilPageInner() {
   const funilAtivo = funis.find((f) => f.id === funilAtivoId) ?? funis[0];
 
   function passaNoFiltro(card: { origem: string; data: string }) {
-    if (origemFiltro !== "Todas as origens" && card.origem !== origemFiltro) {
+    if (origensFiltro.size > 0 && !origensFiltro.has(card.origem)) {
       return false;
     }
     if (dataDe && card.data < dataDe) return false;
@@ -69,8 +71,16 @@ function FunilPageInner() {
     return true;
   }
 
-  const filtroAtivo =
-    origemFiltro !== "Todas as origens" || dataDe !== "" || dataAte !== "";
+  function alternarOrigemFiltro(origem: string) {
+    setOrigensFiltro((prev) => {
+      const next = new Set(prev);
+      if (next.has(origem)) next.delete(origem);
+      else next.add(origem);
+      return next;
+    });
+  }
+
+  const filtroAtivo = origensFiltro.size > 0 || dataDe !== "" || dataAte !== "";
 
   const totalVisivel =
     funilAtivo?.colunas.reduce((soma, coluna) => {
@@ -86,6 +96,7 @@ function FunilPageInner() {
     const novo = {
       id: `funil-${Date.now()}`,
       nome: `Funil - ${responsavel}`,
+      responsavel,
       colunas: [
         { titulo: "Novo", total: 0, cards: [] },
         { titulo: "Qualificado", total: 0, cards: [] },
@@ -217,6 +228,60 @@ function FunilPageInner() {
             >
               {filtroAberto ? "Fechar filtro" : "+ Filtrar"}
             </button>
+            {funilAtivo ? (
+              <div className="dropdown-anchor">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label={`Configurações do funil ${funilAtivo.nome}`}
+                  onClick={() => setConfigAberto((v) => !v)}
+                >
+                  <IconConfiguracoes />
+                </button>
+                {configAberto ? (
+                  <>
+                    <div
+                      onClick={() => setConfigAberto(false)}
+                      style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                    />
+                    <div className="dropdown-pop dropdown-pop-right">
+                      <Link
+                        href={`/automacoes?criarPara=${funilAtivo.id}`}
+                        className="dropdown-item"
+                        onClick={() => setConfigAberto(false)}
+                      >
+                        <span className="n">Criar automação pra esse funil</span>
+                        <span className="r">Abre o construtor em Automações</span>
+                      </Link>
+                      <button
+                        type="button"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        disabled={funis.length <= 1}
+                        onClick={() => {
+                          if (funis.length <= 1) return;
+                          if (
+                            window.confirm(
+                              `Excluir o funil "${funilAtivo.nome}"? Os negócios dele somem junto.`,
+                            )
+                          ) {
+                            excluirFunil(funilAtivo.id);
+                          }
+                          setConfigAberto(false);
+                        }}
+                      >
+                        <span className="n">Excluir funil</span>
+                        <span className="r">
+                          {funis.length <= 1
+                            ? "Precisa ter pelo menos um funil"
+                            : "Remove esse funil e os negócios dele"}
+                        </span>
+                      </button>
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
           </>
         }
       />
@@ -380,12 +445,28 @@ function FunilPageInner() {
               <h4>Filtrar — qual origem e qual período</h4>
             </div>
             <div className="field">
-              <label>Origem do lead</label>
-              <ChipFilters
-                options={FILTROS_ORIGEM}
-                initial={FILTROS_ORIGEM.indexOf(origemFiltro)}
-                onChange={(opcao) => setOrigemFiltro(opcao)}
-              />
+              <label>Origem do lead — pode escolher mais de uma</label>
+              <div className="filters-row">
+                <button
+                  type="button"
+                  className={`fchip${origensFiltro.size === 0 ? " active" : ""}`}
+                  aria-pressed={origensFiltro.size === 0}
+                  onClick={() => setOrigensFiltro(new Set())}
+                >
+                  Todas as origens
+                </button>
+                {ORIGENS_NEGOCIO.map((origem) => (
+                  <button
+                    type="button"
+                    key={origem}
+                    className={`fchip${origensFiltro.has(origem) ? " active" : ""}`}
+                    aria-pressed={origensFiltro.has(origem)}
+                    onClick={() => alternarOrigemFiltro(origem)}
+                  >
+                    {origem}
+                  </button>
+                ))}
+              </div>
             </div>
             <div
               style={{
@@ -421,7 +502,7 @@ function FunilPageInner() {
                   type="button"
                   className="btn ghost"
                   onClick={() => {
-                    setOrigemFiltro("Todas as origens");
+                    setOrigensFiltro(new Set());
                     setDataDe("");
                     setDataAte("");
                   }}
@@ -506,6 +587,12 @@ function FunilPageInner() {
                       setArrastando({ coluna: colIndex, card: cardIndex })
                     }
                     onDragEnd={() => setArrastando(null)}
+                    onDoubleClick={() =>
+                      router.push(
+                        `/conversas?contato=${encodeURIComponent(card.nome)}`,
+                      )
+                    }
+                    title="Clique duas vezes pra abrir a conversa no WhatsApp"
                     style={{ cursor: "grab" }}
                   >
                     <span className="lr1">

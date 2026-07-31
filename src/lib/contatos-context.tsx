@@ -21,6 +21,8 @@ type ContatosContextValue = {
   setContatos: Dispatch<SetStateAction<Contato[]>>;
   /** Cria o contato se ainda não existir (ex.: alguém que só existe no WhatsApp), ou atualiza os dados dele. */
   salvarDadosContato: (nome: string, dados: Partial<DadosContato>) => void;
+  /** Atribui o atendente responsável por esse contato (cria o contato se for a primeira vez que ele aparece). */
+  atribuirAtendente: (nome: string, atendente: string) => void;
   criarContato: (dados: {
     nome: string;
     email?: string;
@@ -74,6 +76,29 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
     });
   }
 
+  function atribuirAtendente(nome: string, atendente: string) {
+    setContatos((prev) => {
+      const existe = prev.some((c) => c.nome === nome);
+      if (!existe) {
+        return [
+          ...prev,
+          {
+            initials: iniciais(nome),
+            nome,
+            origem: "Indicação" as const,
+            etapa: "Novo" as const,
+            responsavel: atendente,
+            ultima: "Agora",
+            valor: "—",
+          },
+        ];
+      }
+      return prev.map((c) =>
+        c.nome === nome ? { ...c, responsavel: atendente } : c,
+      );
+    });
+  }
+
   function criarContato(dados: {
     nome: string;
     email?: string;
@@ -101,7 +126,13 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
 
   return (
     <ContatosContext.Provider
-      value={{ contatos, setContatos, salvarDadosContato, criarContato }}
+      value={{
+        contatos,
+        setContatos,
+        salvarDadosContato,
+        atribuirAtendente,
+        criarContato,
+      }}
     >
       {children}
     </ContatosContext.Provider>

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import {
   relatorioAutomatico,
   relatorioManual,
+  relatorioPorOrigem,
   workspace,
 } from "@/lib/data";
 
@@ -43,6 +44,13 @@ function RelatorioPdfInner() {
   const searchParams = useSearchParams();
   const de = formata(searchParams.get("de"));
   const ate = formata(searchParams.get("ate"));
+  const origensParam = searchParams.get("origens");
+  const origensEscolhidas = new Set(
+    origensParam ? origensParam.split(",").filter(Boolean) : [],
+  );
+  const origensParaMostrar = relatorioPorOrigem.filter((o) =>
+    origensEscolhidas.has(o.id),
+  );
 
   return (
     <div className="pdf-screen">
@@ -88,6 +96,22 @@ function RelatorioPdfInner() {
             </tbody>
           </table>
         </section>
+
+        {origensParaMostrar.map((origem) => (
+          <section className="pdf-section" key={origem.id}>
+            <h2>{origem.label}</h2>
+            <table className="pdf-table">
+              <tbody>
+                {origem.stats.map((stat) => (
+                  <tr key={stat.label}>
+                    <td>{stat.label}</td>
+                    <td className="v">{stat.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        ))}
 
         <section className="pdf-section">
           <h2>Preenchido pela secretária</h2>
