@@ -4,9 +4,11 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import {
+  CANAIS_COMENTARIO,
   GATILHOS_ETAPA,
   TIPOS_ACAO_AUTOMACAO,
   UNIDADES_TEMPO,
+  type CanalComentario,
   type TipoAcaoAutomacao,
   type TipoGatilhoEtapa,
 } from "@/lib/data";
@@ -14,6 +16,7 @@ import {
   useAutomacoes,
   type AcaoAutomacao,
   type Automacao,
+  type RegraComentario,
 } from "@/lib/automacoes-context";
 import { useFunis } from "@/lib/funis-context";
 import { IconAutomacoes } from "@/components/icons";
@@ -69,6 +72,11 @@ function AutomacoesPageInner() {
     atualizarAutomacao,
     excluirAutomacao,
     alternarAtiva,
+    regrasComentario,
+    criarRegraComentario,
+    atualizarRegraComentario,
+    excluirRegraComentario,
+    alternarRegraComentarioAtiva,
   } = useAutomacoes();
 
   const funilParam = searchParams.get("funil");
@@ -216,6 +224,83 @@ function AutomacoesPageInner() {
       excluirAutomacao(automacao.id);
       if (editandoId === automacao.id) fecharEditor();
     }
+  }
+
+  const [regraEditorAberto, setRegraEditorAberto] = useState(false);
+  const [regraEditandoId, setRegraEditandoId] = useState<string | null>(null);
+  const [canalRegraForm, setCanalRegraForm] = useState<CanalComentario>(
+    CANAIS_COMENTARIO[0],
+  );
+  const [palavraChaveForm, setPalavraChaveForm] = useState("");
+  const [mensagemDirectForm, setMensagemDirectForm] = useState("");
+  const [ativaRegraForm, setAtivaRegraForm] = useState(true);
+  const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
+  const [proximoToastId, setProximoToastId] = useState(0);
+
+  function avisar(texto: string) {
+    const id = `toast-${proximoToastId}`;
+    setProximoToastId((v) => v + 1);
+    setToasts((prev) => [...prev, { id, texto }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  }
+
+  function fecharRegraEditor() {
+    setRegraEditorAberto(false);
+    setRegraEditandoId(null);
+  }
+
+  function abrirNovaRegra() {
+    setRegraEditandoId(null);
+    setCanalRegraForm(CANAIS_COMENTARIO[0]);
+    setPalavraChaveForm("");
+    setMensagemDirectForm("");
+    setAtivaRegraForm(true);
+    setRegraEditorAberto(true);
+  }
+
+  function abrirEdicaoRegra(regra: RegraComentario) {
+    setRegraEditandoId(regra.id);
+    setCanalRegraForm(regra.canal);
+    setPalavraChaveForm(regra.palavraChave);
+    setMensagemDirectForm(regra.mensagemDirect);
+    setAtivaRegraForm(regra.ativa);
+    setRegraEditorAberto(true);
+  }
+
+  function salvarRegra() {
+    const palavraChave = palavraChaveForm.trim().toUpperCase();
+    if (!palavraChave) return;
+    const dados = {
+      canal: canalRegraForm,
+      palavraChave,
+      mensagemDirect: mensagemDirectForm,
+      ativa: ativaRegraForm,
+    };
+    if (regraEditandoId) {
+      atualizarRegraComentario(regraEditandoId, dados);
+    } else {
+      criarRegraComentario(dados);
+    }
+    fecharRegraEditor();
+  }
+
+  function pedirExclusaoRegra(regra: RegraComentario) {
+    if (
+      window.confirm(
+        `Excluir a regra de comentário "${regra.palavraChave}" (${regra.canal})?`,
+      )
+    ) {
+      excluirRegraComentario(regra.id);
+      if (regraEditandoId === regra.id) fecharRegraEditor();
+    }
+  }
+
+  function testarRegra(regra: RegraComentario) {
+    avisar(
+      `Alguém comentou "${regra.palavraChave}" num post do ${regra.canal} → direct enviado automaticamente`,
+    );
   }
 
   return (
@@ -650,7 +735,190 @@ function AutomacoesPageInner() {
             );
           })}
         </div>
+
+        <div className="int-group" style={{ marginTop: 24 }}>
+          <p className="int-group-h">
+            Comentário vira Direct — Instagram e TikTok
+          </p>
+          <p className="hint mb14">
+            Quando alguém comenta a palavra-chave num post, o CRM manda essa
+            mensagem no direct/inbox automaticamente. Isso ainda é simulado
+            aqui — a conexão de verdade com a API oficial da Meta e do TikTok
+            entra depois que a estrutura estiver fechada.
+          </p>
+
+          {regraEditorAberto ? (
+            <section className="open-conv mb14">
+              <div className="open-conv-h">
+                <div>
+                  <p className="n">
+                    {regraEditandoId ? "Editar regra" : "Nova regra de comentário"}
+                  </p>
+                  <p className="s">Comentário com a palavra → direct automático</p>
+                </div>
+                <span
+                  className="close"
+                  style={{ cursor: "pointer" }}
+                  onClick={fecharRegraEditor}
+                >
+                  Fechar ✕
+                </span>
+              </div>
+
+              <div className="field">
+                <label>Canal</label>
+                <div className="filters-row">
+                  {CANAIS_COMENTARIO.map((canal) => (
+                    <button
+                      type="button"
+                      key={canal}
+                      className={`fchip${canalRegraForm === canal ? " active" : ""}`}
+                      aria-pressed={canalRegraForm === canal}
+                      onClick={() => setCanalRegraForm(canal)}
+                    >
+                      {canal}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="field">
+                <label>Palavra-chave no comentário</label>
+                <input
+                  className="input"
+                  style={{ width: "100%" }}
+                  type="text"
+                  placeholder="Ex.: QUERO"
+                  value={palavraChaveForm}
+                  onChange={(e) => setPalavraChaveForm(e.target.value)}
+                />
+              </div>
+
+              <div className="field">
+                <label>Mensagem enviada no direct</label>
+                <textarea
+                  className="input"
+                  style={{ width: "100%", minHeight: 70, resize: "vertical" }}
+                  placeholder="Ex.: Oi! Vi seu comentário 💙 Aqui está o link..."
+                  value={mensagemDirectForm}
+                  onChange={(e) => setMensagemDirectForm(e.target.value)}
+                />
+              </div>
+
+              <div className="toggle-row">
+                <span className="tl">
+                  {regraEditandoId ? "Regra ativa" : "Ativar assim que criar"}
+                </span>
+                <Toggle
+                  key={regraEditandoId ?? "nova-regra"}
+                  defaultOn={ativaRegraForm}
+                  label="Regra ativa"
+                  onToggle={setAtivaRegraForm}
+                />
+              </div>
+
+              <div className="section-foot">
+                {regraEditandoId ? (
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ flex: 1 }}
+                    onClick={() => {
+                      const regra = regrasComentario.find(
+                        (r) => r.id === regraEditandoId,
+                      );
+                      if (regra) pedirExclusaoRegra(regra);
+                    }}
+                  >
+                    Excluir regra
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn primary"
+                  style={{ flex: 1 }}
+                  onClick={salvarRegra}
+                >
+                  {regraEditandoId ? "Salvar alterações" : "Salvar regra"}
+                </button>
+              </div>
+            </section>
+          ) : null}
+
+          <button
+            type="button"
+            className="btn ghost mb14"
+            onClick={abrirNovaRegra}
+          >
+            + Nova regra de comentário
+          </button>
+
+          <div className="card">
+            {regrasComentario.length === 0 ? (
+              <p className="hint" style={{ padding: 17 }}>
+                Nenhuma regra criada ainda.
+              </p>
+            ) : (
+              regrasComentario.map((regra) => (
+                <div
+                  className="int-row"
+                  key={regra.id}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => abrirEdicaoRegra(regra)}
+                >
+                  <div className="int-body">
+                    <p className="int-title">
+                      {regra.canal} · comentário com &quot;{regra.palavraChave}
+                      &quot;
+                    </p>
+                    <p className="int-sub">{regra.mensagemDirect}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      testarRegra(regra);
+                    }}
+                  >
+                    Testar
+                  </button>
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <Toggle
+                      defaultOn={regra.ativa}
+                      label={`Ativar regra ${regra.palavraChave}`}
+                      onToggle={() => alternarRegraComentarioAtiva(regra.id)}
+                    />
+                  </span>
+                  <span
+                    role="button"
+                    aria-label={`Excluir regra ${regra.palavraChave}`}
+                    title="Excluir regra"
+                    style={{ cursor: "pointer", color: "var(--text-faint)" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      pedirExclusaoRegra(regra);
+                    }}
+                  >
+                    ✕
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
+
+      {toasts.length > 0 ? (
+        <div className="toast-stack">
+          {toasts.map((toast) => (
+            <div className="toast" key={toast.id}>
+              <IconAutomacoes width={14} height={14} />
+              {toast.texto}
+            </div>
+          ))}
+        </div>
+      ) : null}
     </>
   );
 }

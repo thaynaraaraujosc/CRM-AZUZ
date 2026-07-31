@@ -1120,6 +1120,10 @@ export const TIPOS_ACAO_AUTOMACAO: { tipo: TipoAcaoAutomacao; label: string }[] 
   { tipo: "mover_funil", label: "Mover card pra outro funil / vendedor" },
 ];
 
+/** Canais onde dá pra ler comentário público e responder no direct/inbox. */
+export const CANAIS_COMENTARIO = ["Instagram", "TikTok"] as const;
+export type CanalComentario = (typeof CANAIS_COMENTARIO)[number];
+
 /* -------------------------------------------------------------------------- */
 /* Configurações                                                              */
 /* -------------------------------------------------------------------------- */

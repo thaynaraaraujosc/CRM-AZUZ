@@ -7,7 +7,11 @@ import {
   type ReactNode,
 } from "react";
 
-import type { TipoAcaoAutomacao, TipoGatilhoEtapa } from "@/lib/data";
+import type {
+  CanalComentario,
+  TipoAcaoAutomacao,
+  TipoGatilhoEtapa,
+} from "@/lib/data";
 
 export type OpcaoResposta = {
   id: string;
@@ -45,6 +49,16 @@ export type Automacao = {
   execucoes: string;
 };
 
+/** Regra do tipo "comentou uma palavra-chave no post → recebe direct automático". */
+export type RegraComentario = {
+  id: string;
+  canal: CanalComentario;
+  palavraChave: string;
+  mensagemDirect: string;
+  ativa: boolean;
+  execucoes: string;
+};
+
 type AutomacoesContextValue = {
   automacoes: Automacao[];
   automacoesDaEtapa: (funilId: string, etapaId: string) => Automacao[];
@@ -61,6 +75,15 @@ type AutomacoesContextValue = {
   excluirAutomacoesDaEtapa: (funilId: string, etapaId: string) => void;
   /** Chamado quando um funil inteiro é apagado. */
   excluirAutomacoesDoFunil: (funilId: string) => void;
+
+  regrasComentario: RegraComentario[];
+  criarRegraComentario: (dados: Omit<RegraComentario, "id" | "execucoes">) => void;
+  atualizarRegraComentario: (
+    regraId: string,
+    dados: Partial<Omit<RegraComentario, "id">>,
+  ) => void;
+  excluirRegraComentario: (regraId: string) => void;
+  alternarRegraComentarioAtiva: (regraId: string) => void;
 };
 
 const AutomacoesContext = createContext<AutomacoesContextValue | null>(null);
@@ -114,6 +137,18 @@ const AUTOMACOES_INICIAIS: Automacao[] = [
   },
 ];
 
+const REGRAS_COMENTARIO_INICIAIS: RegraComentario[] = [
+  {
+    id: "regra-quero-agendar",
+    canal: "Instagram",
+    palavraChave: "QUERO",
+    mensagemDirect:
+      "Oi! Vi seu comentário 💙 Aqui está o link pra agendar sua consulta na Clínica Vitta: clinicavitta.com.br/agendar",
+    ativa: true,
+    execucoes: "18 execuções",
+  },
+];
+
 /**
  * Automações agora vivem dentro da etapa de um funil (não numa aba separada
  * por funil) — cada card de automação mostra o gatilho + as ações dentro da
@@ -122,6 +157,9 @@ const AUTOMACOES_INICIAIS: Automacao[] = [
  */
 export function AutomacoesProvider({ children }: { children: ReactNode }) {
   const [automacoes, setAutomacoes] = useState<Automacao[]>(AUTOMACOES_INICIAIS);
+  const [regrasComentario, setRegrasComentario] = useState<RegraComentario[]>(
+    REGRAS_COMENTARIO_INICIAIS,
+  );
 
   function automacoesDaEtapa(funilId: string, etapaId: string) {
     return automacoes.filter(
@@ -175,6 +213,32 @@ export function AutomacoesProvider({ children }: { children: ReactNode }) {
     setAutomacoes((prev) => prev.filter((a) => a.funilId !== funilId));
   }
 
+  function criarRegraComentario(dados: Omit<RegraComentario, "id" | "execucoes">) {
+    setRegrasComentario((prev) => [
+      ...prev,
+      { ...dados, id: `regra-${Date.now()}`, execucoes: "0 execuções" },
+    ]);
+  }
+
+  function atualizarRegraComentario(
+    regraId: string,
+    dados: Partial<Omit<RegraComentario, "id">>,
+  ) {
+    setRegrasComentario((prev) =>
+      prev.map((r) => (r.id === regraId ? { ...r, ...dados } : r)),
+    );
+  }
+
+  function excluirRegraComentario(regraId: string) {
+    setRegrasComentario((prev) => prev.filter((r) => r.id !== regraId));
+  }
+
+  function alternarRegraComentarioAtiva(regraId: string) {
+    setRegrasComentario((prev) =>
+      prev.map((r) => (r.id === regraId ? { ...r, ativa: !r.ativa } : r)),
+    );
+  }
+
   return (
     <AutomacoesContext.Provider
       value={{
@@ -187,6 +251,11 @@ export function AutomacoesProvider({ children }: { children: ReactNode }) {
         alternarAtiva,
         excluirAutomacoesDaEtapa,
         excluirAutomacoesDoFunil,
+        regrasComentario,
+        criarRegraComentario,
+        atualizarRegraComentario,
+        excluirRegraComentario,
+        alternarRegraComentarioAtiva,
       }}
     >
       {children}
