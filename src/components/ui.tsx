@@ -167,9 +167,11 @@ export function RadioList({
 export function MediaPicker({
   options,
   initial = 0,
+  onChange,
 }: {
   options: { label: string; icon: ReactNode }[];
   initial?: number;
+  onChange?: (label: string, index: number) => void;
 }) {
   const [selected, setSelected] = useState(initial);
   return (
@@ -180,7 +182,10 @@ export function MediaPicker({
           key={label}
           className={`media-opt${i === selected ? " on" : ""}`}
           aria-pressed={i === selected}
-          onClick={() => setSelected(i)}
+          onClick={() => {
+            setSelected(i);
+            onChange?.(label, i);
+          }}
         >
           {icon}
           <span className="l" style={{ display: "block" }}>
