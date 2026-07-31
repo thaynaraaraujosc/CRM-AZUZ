@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { currentUser, equipe, workspace } from "@/lib/data";
+import { useFunis } from "@/lib/funis-context";
 import {
   IconAcoes,
   IconAutomacoes,
@@ -52,6 +53,7 @@ export const navEntries: NavEntry[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { funis, funilAtivoId, setFunilAtivoId } = useFunis();
   const [contaAberta, setContaAberta] = useState(false);
   const [workspaceAberto, setWorkspaceAberto] = useState(false);
   const [nomeEmpresa, setNomeEmpresa] = useState(workspace.name);
@@ -166,15 +168,33 @@ export function Sidebar() {
         {navEntries.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
-            <Link
-              key={href}
-              href={href}
-              className={`nav-item${active ? " active" : ""}`}
-              aria-current={active ? "page" : undefined}
-            >
-              <Icon />
-              {label}
-            </Link>
+            <div key={href}>
+              <Link
+                href={href}
+                className={`nav-item${active ? " active" : ""}`}
+                aria-current={active ? "page" : undefined}
+              >
+                <Icon />
+                {label}
+              </Link>
+              {href === "/funil" ? (
+                <div className="nav-sublist">
+                  {funis.map((f) => {
+                    const subAtivo = active && f.id === funilAtivoId;
+                    return (
+                      <Link
+                        key={f.id}
+                        href="/funil"
+                        className={`nav-subitem${subAtivo ? " active" : ""}`}
+                        onClick={() => setFunilAtivoId(f.id)}
+                      >
+                        {f.nome}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
           );
         })}
       </nav>

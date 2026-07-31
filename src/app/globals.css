@@ -194,6 +194,38 @@ table {
   color: var(--blue);
 }
 
+.nav-sublist {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 2px 0 4px 30px;
+  border-left: 1px solid var(--line);
+  padding-left: 10px;
+}
+
+.nav-subitem {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 7px;
+  color: var(--text-faint);
+  font-size: 11.5px;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-subitem:hover {
+  background: var(--blue-soft-2);
+  color: var(--ink);
+}
+
+.nav-subitem.active {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
 .sb-foot {
   display: flex;
   align-items: center;
