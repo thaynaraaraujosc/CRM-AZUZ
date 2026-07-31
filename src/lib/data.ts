@@ -360,6 +360,25 @@ export const funis: Funil[] = [
   },
 ];
 
+/**
+ * Onde um contato está de verdade no funil — busca direto nos cards do
+ * funil (mesma fonte que a tela Funil usa), pra nunca dessincronizar da
+ * etapa mostrada em Contatos. É essa etapa que a automação usa pra decidir
+ * a próxima ação.
+ */
+export function localizarNoFunil(
+  nomeContato: string,
+): { funil: string; etapa: string } | null {
+  for (const f of funis) {
+    for (const coluna of f.colunas) {
+      if (coluna.cards.some((c) => c.nome === nomeContato)) {
+        return { funil: f.nome, etapa: coluna.titulo };
+      }
+    }
+  }
+  return null;
+}
+
 /* -------------------------------------------------------------------------- */
 /* WhatsApp (conversas)                                                       */
 /* -------------------------------------------------------------------------- */
