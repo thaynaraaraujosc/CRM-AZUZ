@@ -12,6 +12,7 @@ import { IconAutomacoes } from "@/components/icons";
 import { ChipFilters, Toggle, Topbar } from "@/components/ui";
 
 type Ideia = (typeof automacaoIdeias)[number];
+type Modelo = "lista" | "mapa-mental";
 
 export default function AutomacoesPage() {
   const ativas = automacoes.filter((a) => a.ativa).length;
@@ -19,6 +20,8 @@ export default function AutomacoesPage() {
   const [ideiaEscolhida, setIdeiaEscolhida] = useState<Ideia | "zero" | null>(
     null,
   );
+  const [modelo, setModelo] = useState<Modelo>("lista");
+  const [modeloMenuAberto, setModeloMenuAberto] = useState(false);
 
   function fecharConstrutor() {
     setConstrutorAberto(false);
@@ -31,16 +34,67 @@ export default function AutomacoesPage() {
         title="Automações"
         sub={`${automacoes.length} automações · ${ativas} ativas — follow-up e movimentação de funil`}
         actions={
-          <button
-            type="button"
-            className="btn primary"
-            onClick={() => {
-              setConstrutorAberto((v) => !v);
-              setIdeiaEscolhida(null);
-            }}
-          >
-            {construtorAberto ? "Cancelar" : "+ Nova automação"}
-          </button>
+          <>
+            <div className="dropdown-anchor">
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => setModeloMenuAberto((v) => !v)}
+              >
+                Modelo de automação
+              </button>
+              {modeloMenuAberto ? (
+                <>
+                  <div
+                    onClick={() => setModeloMenuAberto(false)}
+                    style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                  />
+                  <div className="dropdown-pop">
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => {
+                        setModelo("lista");
+                        setModeloMenuAberto(false);
+                      }}
+                    >
+                      <span className="n">
+                        Modelo lista {modelo === "lista" ? "✓" : ""}
+                      </span>
+                      <span className="r">Uma linha por automação</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => {
+                        setModelo("mapa-mental");
+                        setModeloMenuAberto(false);
+                      }}
+                    >
+                      <span className="n">
+                        Modelo mapa mental {modelo === "mapa-mental" ? "✓" : ""}
+                      </span>
+                      <span className="r">
+                        Todas as automações ligadas num diagrama só
+                      </span>
+                    </button>
+                  </div>
+                </>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => {
+                setConstrutorAberto((v) => !v);
+                setIdeiaEscolhida(null);
+              }}
+            >
+              {construtorAberto ? "Cancelar" : "+ Nova automação"}
+            </button>
+          </>
         }
       />
 
@@ -188,28 +242,61 @@ export default function AutomacoesPage() {
           </section>
         ) : null}
 
-        <div className="card">
-          {automacoes.map((automacao) => (
-            <div className="auto-row" key={automacao.titulo}>
-              <div className="auto-icon">
-                <IconAutomacoes />
-              </div>
-              <div className="auto-body">
-                <p className="auto-title">{automacao.titulo}</p>
-                <div className="auto-flow">
-                  {automacao.fluxo.map((passo, i) => (
-                    <span key={passo} style={{ display: "contents" }}>
-                      {i > 0 ? <span className="flow-arrow">→</span> : null}
-                      <span className="flow-chip">{passo}</span>
-                    </span>
-                  ))}
+        {modelo === "lista" ? (
+          <div className="card">
+            {automacoes.map((automacao) => (
+              <div className="auto-row" key={automacao.titulo}>
+                <div className="auto-icon">
+                  <IconAutomacoes />
                 </div>
+                <div className="auto-body">
+                  <p className="auto-title">{automacao.titulo}</p>
+                  <div className="auto-flow">
+                    {automacao.fluxo.map((passo, i) => (
+                      <span key={passo} style={{ display: "contents" }}>
+                        {i > 0 ? <span className="flow-arrow">→</span> : null}
+                        <span className="flow-chip">{passo}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <span className="auto-stat">{automacao.execucoes}</span>
+                <Toggle defaultOn={automacao.ativa} label={automacao.titulo} />
               </div>
-              <span className="auto-stat">{automacao.execucoes}</span>
-              <Toggle defaultOn={automacao.ativa} label={automacao.titulo} />
+            ))}
+          </div>
+        ) : (
+          <div className="mindmap">
+            <div className="mindmap-root">
+              <IconAutomacoes width={18} height={18} />
+              Automações
             </div>
-          ))}
-        </div>
+            <div className="mindmap-branches">
+              {automacoes.map((automacao) => (
+                <div className="mindmap-branch" key={automacao.titulo}>
+                  <div className="mindmap-node">
+                    <div className="auto-row" style={{ padding: 0, border: 0 }}>
+                      <div className="auto-body">
+                        <p className="auto-title">{automacao.titulo}</p>
+                        <div className="auto-flow">
+                          {automacao.fluxo.map((passo, i) => (
+                            <span key={passo} style={{ display: "contents" }}>
+                              {i > 0 ? (
+                                <span className="flow-arrow">→</span>
+                              ) : null}
+                              <span className="flow-chip">{passo}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <Toggle defaultOn={automacao.ativa} label={automacao.titulo} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

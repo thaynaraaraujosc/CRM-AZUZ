@@ -196,6 +196,16 @@ export function IconCamera(props: Props) {
   );
 }
 
+export function IconPhone(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M15.05 5A5 5 0 0 1 19 8.95" />
+      <path d="M15.05 1A9 9 0 0 1 23 8.94" />
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13 1 .36 1.94.68 2.87a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.21-1.21a2 2 0 0 1 2.11-.45c.93.32 1.9.55 2.87.68A2 2 0 0 1 22 16.92Z" />
+    </svg>
+  );
+}
+
 export function IconCalendar(props: Props) {
   return (
     <svg {...base} {...props}>

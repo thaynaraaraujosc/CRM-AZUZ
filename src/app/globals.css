@@ -1604,6 +1604,67 @@ table.tbl tbody tr:hover td {
   flex: 0 0 auto;
 }
 
+/* ---------------- Automações · modelo mapa mental ---------------- */
+
+.mindmap {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding: 20px 4px;
+  overflow-x: auto;
+}
+
+.mindmap-root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: var(--white);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 13px;
+  justify-content: center;
+  text-align: center;
+}
+
+.mindmap-branches {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-left: 40px;
+  border-left: 2px solid var(--line);
+  margin-left: 4px;
+  flex: 1;
+  min-width: 320px;
+}
+
+.mindmap-branch {
+  position: relative;
+}
+
+.mindmap-branch::before {
+  content: "";
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  width: 40px;
+  height: 2px;
+  background: var(--line);
+}
+
+.mindmap-node {
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
 /* ---------------- Ações / listas de transmissão ---------------- */
 
 .seg-picker {

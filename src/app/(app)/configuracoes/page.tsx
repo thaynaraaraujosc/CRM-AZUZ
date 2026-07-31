@@ -13,6 +13,7 @@ import {
   IconCalendar,
   IconCamera,
   IconInstagram,
+  IconPhone,
   IconWhatsApp,
 } from "@/components/icons";
 import { Topbar } from "@/components/ui";
@@ -21,6 +22,7 @@ const logos: Record<string, ReactNode> = {
   wa: <IconWhatsApp width={20} height={20} />,
   ig: <IconInstagram width={20} height={20} />,
   cal: <IconCalendar width={19} height={19} style={{ color: "var(--blue)" }} />,
+  call: <IconPhone width={19} height={19} style={{ color: "var(--blue)" }} />,
 };
 
 export default function ConfiguracoesPage() {
