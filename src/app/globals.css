@@ -232,6 +232,13 @@ table {
   flex: 0 0 auto;
 }
 
+.app-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -843,10 +850,16 @@ table.tbl tbody tr:hover td {
 /* ---------------- Kanban ---------------- */
 
 .kanban {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
   gap: 13px;
   align-items: start;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.kanban > div {
+  flex: 1 0 240px;
+  min-width: 240px;
 }
 
 .kcol-h {

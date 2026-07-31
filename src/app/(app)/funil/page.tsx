@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
-import { ETAPAS_PADRAO_FUNIL, funis as funisIniciais } from "@/lib/data";
-import type { Funil, NegocioCard } from "@/lib/data";
+import { equipe, type NegocioCard } from "@/lib/data";
+import { useFunis } from "@/lib/funis-context";
 import { ChipFilters, Topbar } from "@/components/ui";
 
 const FILTROS_ORIGEM = [
@@ -21,20 +21,25 @@ const ORIGENS_NEGOCIO = FILTROS_ORIGEM.slice(1) as NegocioCard["origem"][];
 /** Mesmo dia de referência usado em todo o app (ver `today` em lib/data.ts). */
 const HOJE_ISO = "2026-07-30";
 
-function cloneFunis(lista: Funil[]): Funil[] {
-  return lista.map((f) => ({
-    ...f,
-    colunas: f.colunas.map((c) => ({ ...c, cards: [...c.cards] })),
-  }));
+export default function FunilPage() {
+  return (
+    <Suspense fallback={null}>
+      <FunilPageInner />
+    </Suspense>
+  );
 }
 
-export default function FunilPage() {
-  const [funis, setFunis] = useState<Funil[]>(() => cloneFunis(funisIniciais));
-  const [funilAtivoId, setFunilAtivoId] = useState(funisIniciais[0]?.id ?? "");
+function FunilPageInner() {
+  const searchParams = useSearchParams();
+  const { funis, setFunis, funilAtivoId, setFunilAtivoId } = useFunis();
+
   const [novoFunilAberto, setNovoFunilAberto] = useState(false);
-  const [nomeNovoFunil, setNomeNovoFunil] = useState("");
-  const [criarMenuAberto, setCriarMenuAberto] = useState(false);
-  const [novoNegocioAberto, setNovoNegocioAberto] = useState(false);
+  const [atendenteNovoFunil, setAtendenteNovoFunil] = useState(
+    equipe[0]?.nome ?? "",
+  );
+  const [novoNegocioAberto, setNovoNegocioAberto] = useState(
+    () => searchParams.get("criarNegocio") === "1",
+  );
   const [nomeNegocio, setNomeNegocio] = useState("");
   const [valorNegocio, setValorNegocio] = useState("");
   const [origemNegocio, setOrigemNegocio] = useState<NegocioCard["origem"]>(
@@ -48,6 +53,10 @@ export default function FunilPage() {
     coluna: number;
     card: number;
   } | null>(null);
+  const [novaEtapaAberta, setNovaEtapaAberta] = useState(false);
+  const [nomeNovaEtapa, setNomeNovaEtapa] = useState("");
+  const [colunaRenomeando, setColunaRenomeando] = useState<number | null>(null);
+  const [nomeRenomeando, setNomeRenomeando] = useState("");
 
   const funilAtivo = funis.find((f) => f.id === funilAtivoId) ?? funis[0];
 
@@ -72,20 +81,21 @@ export default function FunilPage() {
     }, 0) ?? 0;
 
   function criarFunil() {
-    const nome = nomeNovoFunil.trim();
-    if (!nome) return;
-    const novo: Funil = {
+    const responsavel = atendenteNovoFunil.trim();
+    if (!responsavel) return;
+    const novo = {
       id: `funil-${Date.now()}`,
-      nome,
-      colunas: ETAPAS_PADRAO_FUNIL.map((titulo) => ({
-        titulo,
-        total: 0,
-        cards: [],
-      })),
+      nome: `Funil - ${responsavel}`,
+      colunas: [
+        { titulo: "Novo", total: 0, cards: [] },
+        { titulo: "Qualificado", total: 0, cards: [] },
+        { titulo: "Proposta", total: 0, cards: [] },
+        { titulo: "Fechado", total: 0, cards: [] },
+      ],
     };
     setFunis((prev) => [...prev, novo]);
     setFunilAtivoId(novo.id);
-    setNomeNovoFunil("");
+    setAtendenteNovoFunil(equipe[0]?.nome ?? "");
     setNovoFunilAberto(false);
   }
 
@@ -135,6 +145,50 @@ export default function FunilPage() {
     );
   }
 
+  function criarEtapa() {
+    const titulo = nomeNovaEtapa.trim();
+    if (!titulo || !funilAtivo) return;
+    setFunis((prev) =>
+      prev.map((f) => {
+        if (f.id !== funilAtivo.id) return f;
+        return {
+          ...f,
+          colunas: [...f.colunas, { titulo, total: 0, cards: [] }],
+        };
+      }),
+    );
+    setNomeNovaEtapa("");
+    setNovaEtapaAberta(false);
+  }
+
+  function renomearEtapa(colIndex: number) {
+    const titulo = nomeRenomeando.trim();
+    if (!titulo || !funilAtivo) {
+      setColunaRenomeando(null);
+      return;
+    }
+    setFunis((prev) =>
+      prev.map((f) => {
+        if (f.id !== funilAtivo.id) return f;
+        const colunas = f.colunas.map((c, i) =>
+          i === colIndex ? { ...c, titulo } : c,
+        );
+        return { ...f, colunas };
+      }),
+    );
+    setColunaRenomeando(null);
+  }
+
+  function excluirEtapa(colIndex: number) {
+    if (!funilAtivo) return;
+    setFunis((prev) =>
+      prev.map((f) => {
+        if (f.id !== funilAtivo.id) return f;
+        return { ...f, colunas: f.colunas.filter((_, i) => i !== colIndex) };
+      }),
+    );
+  }
+
   return (
     <>
       <Topbar
@@ -142,61 +196,13 @@ export default function FunilPage() {
         sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} ${totalVisivel === 1 ? "negócio" : "negócios"} ${filtroAtivo ? (totalVisivel === 1 ? "encontrado" : "encontrados") : "no funil"}`}
         actions={
           <>
-            <div className="dropdown-anchor">
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => setCriarMenuAberto((v) => !v)}
-              >
-                + Criar
-              </button>
-              {criarMenuAberto ? (
-                <>
-                  <div
-                    onClick={() => setCriarMenuAberto(false)}
-                    style={{ position: "fixed", inset: 0, zIndex: 50 }}
-                  />
-                  <div className="dropdown-pop">
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={() => {
-                        setCriarMenuAberto(false);
-                        setNovoNegocioAberto(true);
-                      }}
-                    >
-                      <span className="n">Criar negociação</span>
-                      <span className="r">Entra na 1ª etapa do funil ativo</span>
-                    </button>
-                    <Link
-                      href="/configuracoes#workspace"
-                      className="dropdown-item"
-                      onClick={() => setCriarMenuAberto(false)}
-                    >
-                      <span className="n">Criar empresa</span>
-                      <span className="r">Cadastra o workspace/clínica</span>
-                    </Link>
-                    <Link
-                      href="/contatos"
-                      className="dropdown-item"
-                      onClick={() => setCriarMenuAberto(false)}
-                    >
-                      <span className="n">Criar contato</span>
-                      <span className="r">Abre a tela de Contatos</span>
-                    </Link>
-                    <Link
-                      href="/tarefas?nova=1"
-                      className="dropdown-item"
-                      onClick={() => setCriarMenuAberto(false)}
-                    >
-                      <span className="n">Criar tarefa</span>
-                      <span className="r">Abre o formulário em Tarefas</span>
-                    </Link>
-                  </div>
-                </>
-              ) : null}
-            </div>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => setNovaEtapaAberta((v) => !v)}
+            >
+              {novaEtapaAberta ? "Cancelar" : "+ Criar nova etapa"}
+            </button>
             <button
               type="button"
               className="btn ghost"
@@ -216,14 +222,58 @@ export default function FunilPage() {
       />
 
       <div className="content">
+        {novaEtapaAberta ? (
+          <section className="open-conv mb14">
+            <div className="open-conv-h">
+              <div>
+                <p className="n">Nova etapa</p>
+                <p className="s">
+                  Entra como uma coluna nova no funil {funilAtivo?.nome}
+                </p>
+              </div>
+              <span
+                className="close"
+                style={{ cursor: "pointer" }}
+                onClick={() => setNovaEtapaAberta(false)}
+              >
+                Fechar ✕
+              </span>
+            </div>
+            <div className="field">
+              <label>Nome da etapa</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="text"
+                value={nomeNovaEtapa}
+                onChange={(e) => setNomeNovaEtapa(e.target.value)}
+                placeholder="Ex.: Retorno agendado"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") criarEtapa();
+                }}
+              />
+            </div>
+            <div className="section-foot">
+              <button
+                type="button"
+                className="btn primary block"
+                onClick={criarEtapa}
+              >
+                Criar etapa
+              </button>
+            </div>
+          </section>
+        ) : null}
+
         {novoFunilAberto ? (
           <section className="open-conv mb14">
             <div className="open-conv-h">
               <div>
                 <p className="n">Novo funil</p>
                 <p className="s">
-                  Já entra com o modelo pronto: Novo, Qualificado, Não
-                  respondeu, Proposta, Fechado
+                  Cada funil pertence a um atendente — as mensagens e tarefas
+                  atribuídas a ele entram nesse funil. Já sai com o modelo
+                  pronto: Novo, Qualificado, Proposta, Fechado.
                 </p>
               </div>
               <span
@@ -235,18 +285,22 @@ export default function FunilPage() {
               </span>
             </div>
             <div className="field">
-              <label>Nome do funil</label>
-              <input
+              <label>Atendente responsável</label>
+              <select
                 className="input"
-                style={{ width: "100%" }}
-                type="text"
-                value={nomeNovoFunil}
-                onChange={(e) => setNomeNovoFunil(e.target.value)}
-                placeholder="Ex.: Ortodontia · avaliação gratuita"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") criarFunil();
-                }}
-              />
+                style={{ width: "100%", cursor: "pointer" }}
+                value={atendenteNovoFunil}
+                onChange={(e) => setAtendenteNovoFunil(e.target.value)}
+              >
+                {equipe.map((m) => (
+                  <option key={m.nome} value={m.nome}>
+                    {m.nome}
+                  </option>
+                ))}
+              </select>
+              <p className="hint" style={{ marginTop: 6 }}>
+                Nome do funil: <strong>Funil - {atendenteNovoFunil}</strong>
+              </p>
             </div>
             <div className="section-foot">
               <button
@@ -400,12 +454,46 @@ export default function FunilPage() {
                 style={{ minHeight: 60 }}
               >
                 <div className="kcol-h">
-                  <span className="t">
-                    <span className="dot" />
-                    {coluna.titulo}
-                  </span>
-                  <span className="c">
-                    {filtroAtivo ? cardsVisiveis.length : coluna.total}
+                  {colunaRenomeando === colIndex ? (
+                    <input
+                      className="input"
+                      autoFocus
+                      style={{ flex: 1, marginRight: 8 }}
+                      value={nomeRenomeando}
+                      onChange={(e) => setNomeRenomeando(e.target.value)}
+                      onBlur={() => renomearEtapa(colIndex)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") renomearEtapa(colIndex);
+                        if (e.key === "Escape") setColunaRenomeando(null);
+                      }}
+                    />
+                  ) : (
+                    <span
+                      className="t"
+                      style={{ cursor: "pointer" }}
+                      title="Clique pra renomear"
+                      onClick={() => {
+                        setColunaRenomeando(colIndex);
+                        setNomeRenomeando(coluna.titulo);
+                      }}
+                    >
+                      <span className="dot" />
+                      {coluna.titulo}
+                    </span>
+                  )}
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, flex: "0 0 auto" }}>
+                    <span className="c">
+                      {filtroAtivo ? cardsVisiveis.length : coluna.total}
+                    </span>
+                    <span
+                      role="button"
+                      aria-label={`Excluir etapa ${coluna.titulo}`}
+                      title="Excluir etapa"
+                      style={{ cursor: "pointer", color: "var(--text-faint)" }}
+                      onClick={() => excluirEtapa(colIndex)}
+                    >
+                      ✕
+                    </span>
                   </span>
                 </div>
                 {cardsVisiveis.map(({ card, cardIndex }) => (

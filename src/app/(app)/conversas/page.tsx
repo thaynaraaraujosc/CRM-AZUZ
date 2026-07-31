@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
-import { conversas, funis, localizarNoFunil } from "@/lib/data";
+import { conversas, type Funil } from "@/lib/data";
+import { useFunis } from "@/lib/funis-context";
 import {
   CanalBadge,
   IconConfiguracoes,
@@ -10,17 +12,58 @@ import {
 } from "@/components/icons";
 import { RadioList, Toggle, Topbar } from "@/components/ui";
 
-// Funil canônico usado pra automação: independente de renomear ou criar
-// outros funis, é esse (o primeiro criado pela empresa) que aparece aqui
-// pra decidir a etapa do contato.
-const FUNIL_CANONICO = funis[0];
+function localizarNoFunil(
+  listaFunis: Funil[],
+  nomeContato: string,
+): { funilId: string; etapa: string } | null {
+  for (const f of listaFunis) {
+    for (const coluna of f.colunas) {
+      if (coluna.cards.some((c) => c.nome === nomeContato)) {
+        return { funilId: f.id, etapa: coluna.titulo };
+      }
+    }
+  }
+  return null;
+}
 
 export default function ConversasPage() {
-  const [selectedId, setSelectedId] = useState(conversas[0].id);
+  return (
+    <Suspense fallback={null}>
+      <ConversasPageInner />
+    </Suspense>
+  );
+}
+
+function ConversasPageInner() {
+  const searchParams = useSearchParams();
+  const { funis } = useFunis();
+  const [selectedId, setSelectedId] = useState(() => {
+    const nomeContato = searchParams.get("contato");
+    const encontrada = nomeContato
+      ? conversas.find((c) => c.nome === nomeContato)
+      : null;
+    return (encontrada ?? conversas[0]).id;
+  });
   const [infoAberto, setInfoAberto] = useState(false);
+
   const aberta = conversas.find((c) => c.id === selectedId) ?? conversas[0];
   const { tarefa } = aberta;
-  const localizacao = localizarNoFunil(aberta.nome);
+  const localizacao = localizarNoFunil(funis, aberta.nome);
+
+  // Troca o funil selecionado no seletor toda vez que a conversa aberta
+  // muda, pra sempre abrir já mostrando o funil onde esse contato está
+  // (ajuste de estado a partir de uma mudança de prop — ver docs do React).
+  const [funilSelecionadoId, setFunilSelecionadoId] = useState(
+    () => localizacao?.funilId ?? funis[0]?.id ?? "",
+  );
+  const [abertaIdAnterior, setAbertaIdAnterior] = useState(aberta.id);
+  if (aberta.id !== abertaIdAnterior) {
+    setAbertaIdAnterior(aberta.id);
+    setFunilSelecionadoId(localizacao?.funilId ?? funis[0]?.id ?? "");
+  }
+
+  const funilSelecionado =
+    funis.find((f) => f.id === funilSelecionadoId) ?? funis[0];
 
   return (
     <>
@@ -121,16 +164,33 @@ export default function ConversasPage() {
           </div>
           <div className="field">
             <label>Funil</label>
-            <div className="input">{FUNIL_CANONICO.nome}</div>
+            <select
+              className="input"
+              style={{ width: "100%", cursor: "pointer" }}
+              value={funilSelecionado?.id}
+              onChange={(e) => setFunilSelecionadoId(e.target.value)}
+            >
+              {funis.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.nome}
+                </option>
+              ))}
+            </select>
           </div>
-          <RadioList
-            key={`funil-${aberta.id}`}
-            options={FUNIL_CANONICO.colunas.map((coluna) => ({
-              nome: coluna.titulo,
-              descricao: `${coluna.total} contatos nessa etapa`,
-            }))}
-            initial={localizacao?.etapa ?? FUNIL_CANONICO.colunas[0].titulo}
-          />
+          {funilSelecionado ? (
+            <RadioList
+              key={`funil-${aberta.id}-${funilSelecionado.id}`}
+              options={funilSelecionado.colunas.map((coluna) => ({
+                nome: coluna.titulo,
+                descricao: `${coluna.total} contatos nessa etapa`,
+              }))}
+              initial={
+                localizacao && localizacao.funilId === funilSelecionado.id
+                  ? localizacao.etapa
+                  : funilSelecionado.colunas[0]?.titulo
+              }
+            />
+          ) : null}
 
           <div className="panel-h divided">
             <h4>Tarefa</h4>

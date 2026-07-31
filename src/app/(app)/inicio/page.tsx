@@ -74,7 +74,11 @@ export default function InicioPage() {
             </Link>
           </div>
           {atividadeRecente.map((item) => (
-            <Link className="activity-row activity-row-link" href="/contatos" key={item.nome}>
+            <Link
+              className="activity-row activity-row-link"
+              href={`/conversas?contato=${encodeURIComponent(item.nome)}`}
+              key={item.nome}
+            >
               <div className="avatar">{item.initials}</div>
               <div className="body">
                 <p className="name">{item.nome}</p>

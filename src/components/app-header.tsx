@@ -93,6 +93,64 @@ function GlobalSearch() {
   );
 }
 
+function CriarMenu() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="dropdown-anchor">
+      <button
+        type="button"
+        className="btn primary"
+        onClick={() => setOpen((v) => !v)}
+      >
+        + Criar
+      </button>
+      {open ? (
+        <>
+          <div
+            onClick={() => setOpen(false)}
+            style={{ position: "fixed", inset: 0, zIndex: 50 }}
+          />
+          <div className="dropdown-pop">
+            <Link
+              href="/funil?criarNegocio=1"
+              className="dropdown-item"
+              onClick={() => setOpen(false)}
+            >
+              <span className="n">Criar negociação</span>
+              <span className="r">Entra na 1ª etapa do funil ativo</span>
+            </Link>
+            <Link
+              href="/configuracoes#workspace"
+              className="dropdown-item"
+              onClick={() => setOpen(false)}
+            >
+              <span className="n">Criar empresa</span>
+              <span className="r">Cadastra o workspace/clínica</span>
+            </Link>
+            <Link
+              href="/contatos"
+              className="dropdown-item"
+              onClick={() => setOpen(false)}
+            >
+              <span className="n">Criar contato</span>
+              <span className="r">Abre a tela de Contatos</span>
+            </Link>
+            <Link
+              href="/tarefas?nova=1"
+              className="dropdown-item"
+              onClick={() => setOpen(false)}
+            >
+              <span className="n">Criar tarefa</span>
+              <span className="r">Abre o formulário em Tarefas</span>
+            </Link>
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const naoLidas = notificacoes.filter((n) => !n.lida).length;
@@ -137,7 +195,10 @@ export function AppHeader() {
   return (
     <header className="app-header">
       <GlobalSearch />
-      <NotificationsBell />
+      <div className="app-header-right">
+        <CriarMenu />
+        <NotificationsBell />
+      </div>
     </header>
   );
 }
