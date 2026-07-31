@@ -28,6 +28,9 @@ export default function RelatoriosPage() {
   const [origensSelecionadas, setOrigensSelecionadas] = useState(
     () => new Set(relatorioPorOrigem.map((o) => o.id)),
   );
+  const [faturamento, setFaturamento] = useState("");
+  const [percentualPago, setPercentualPago] = useState("");
+  const [queixas, setQueixas] = useState("");
 
   function alternarOrigem(id: string) {
     setOrigensSelecionadas((prev) => {
@@ -39,6 +42,14 @@ export default function RelatoriosPage() {
   }
 
   const origensParam = [...origensSelecionadas].join(",");
+  const pdfParams = new URLSearchParams({
+    de: dataDe,
+    ate: dataAte,
+    origens: origensParam,
+    faturamento: faturamento.trim() || relatorioManual.faturamento,
+    percentualPago: percentualPago.trim() || relatorioManual.percentualPago,
+    queixas: queixas.trim() || relatorioManual.queixasPlaceholder,
+  });
 
   return (
     <>
@@ -48,7 +59,7 @@ export default function RelatoriosPage() {
         actions={
           <Link
             className="btn primary"
-            href={`/relatorio-pdf?de=${dataDe}&ate=${dataAte}&origens=${origensParam}`}
+            href={`/relatorio-pdf?${pdfParams.toString()}`}
             target="_blank"
           >
             Gerar PDF
@@ -167,21 +178,40 @@ export default function RelatoriosPage() {
             <div className="card">
               <div className="panel-h">
                 <h4>Preenchido pela secretária</h4>
-                <span className="badge-manual">Manual</span>
+                <span className="badge-manual">Opcional</span>
               </div>
               <div className="field">
                 <label>Faturamento total da empresa</label>
-                <div className="input">{relatorioManual.faturamento}</div>
+                <input
+                  className="input"
+                  style={{ width: "100%" }}
+                  type="text"
+                  inputMode="decimal"
+                  value={faturamento}
+                  onChange={(e) => setFaturamento(e.target.value)}
+                  placeholder={relatorioManual.faturamento}
+                />
               </div>
               <div className="field">
                 <label>% vindo do tráfego pago</label>
-                <div className="input">{relatorioManual.percentualPago}</div>
+                <input
+                  className="input"
+                  style={{ width: "100%" }}
+                  type="text"
+                  value={percentualPago}
+                  onChange={(e) => setPercentualPago(e.target.value)}
+                  placeholder={relatorioManual.percentualPago}
+                />
               </div>
               <div className="field">
                 <label>Queixas mais frequentes</label>
-                <div className="input ph">
-                  {relatorioManual.queixasPlaceholder}
-                </div>
+                <textarea
+                  className="input"
+                  style={{ width: "100%", minHeight: 60, resize: "vertical" }}
+                  value={queixas}
+                  onChange={(e) => setQueixas(e.target.value)}
+                  placeholder={relatorioManual.queixasPlaceholder}
+                />
               </div>
             </div>
           </div>

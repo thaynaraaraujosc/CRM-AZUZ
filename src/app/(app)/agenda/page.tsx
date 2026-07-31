@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { currentUser, tarefas } from "@/lib/data";
-import { ChipFilters, Topbar } from "@/components/ui";
+import { Topbar } from "@/components/ui";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -66,6 +66,8 @@ export default function AgendaPage() {
   const [tituloNovo, setTituloNovo] = useState("");
   const [descricaoNovo, setDescricaoNovo] = useState("");
   const [horaNovo, setHoraNovo] = useState("09:00");
+  const [menuConexaoAberto, setMenuConexaoAberto] = useState(false);
+  const [menuConteudoAberto, setMenuConteudoAberto] = useState(false);
 
   const eventosAutomaticos =
     modo === "completa" ? eventosDeTarefasNoMes(ano, mesIndex0) : [];
@@ -130,76 +132,149 @@ export default function AgendaPage() {
         sub={
           conexao === "google"
             ? googleConectado
-              ? `Conectada ao Google Agenda · ${currentUser.email} · ${modo === "completa" ? "agenda completa" : "agenda manual"}`
+              ? `Conectada ao Google Agenda · ${currentUser.email}`
               : "Conecte com o Google Agenda pra sincronizar"
-            : `Agenda interna · ${modo === "completa" ? "traz tarefas e pacientes automaticamente" : "só o que você adicionar manualmente"}`
+            : "Agenda interna"
+        }
+        actions={
+          <>
+            <div className="dropdown-anchor">
+              <button
+                type="button"
+                className="fsel"
+                style={{ cursor: "pointer" }}
+                onClick={() => setMenuConexaoAberto((v) => !v)}
+              >
+                {conexao === "interna" ? "Agenda interna" : "Google Agenda"} ▾
+              </button>
+              {menuConexaoAberto ? (
+                <>
+                  <div
+                    onClick={() => setMenuConexaoAberto(false)}
+                    style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                  />
+                  <div className="dropdown-pop">
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => {
+                        setConexao("interna");
+                        setMenuConexaoAberto(false);
+                      }}
+                    >
+                      <span className="n">
+                        Agenda interna {conexao === "interna" ? "✓" : ""}
+                      </span>
+                      <span className="r">Não é conectada em nada</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => {
+                        setConexao("google");
+                        setMenuConexaoAberto(false);
+                      }}
+                    >
+                      <span className="n">
+                        Google Agenda {conexao === "google" ? "✓" : ""}
+                      </span>
+                      <span className="r">Sincroniza com sua conta Google</span>
+                    </button>
+                    {conexao === "google" && googleConectado ? (
+                      <button
+                        type="button"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        onClick={() => {
+                          setGoogleConectado(false);
+                          setMenuConexaoAberto(false);
+                        }}
+                      >
+                        <span className="n">Desconectar do Google</span>
+                        <span className="r">{currentUser.email}</span>
+                      </button>
+                    ) : null}
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            <div className="dropdown-anchor">
+              <button
+                type="button"
+                className="fsel"
+                style={{ cursor: "pointer" }}
+                onClick={() => setMenuConteudoAberto((v) => !v)}
+              >
+                {modo === "completa" ? "Agenda completa" : "Agenda manual"} ▾
+              </button>
+              {menuConteudoAberto ? (
+                <>
+                  <div
+                    onClick={() => setMenuConteudoAberto(false)}
+                    style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                  />
+                  <div className="dropdown-pop dropdown-pop-right">
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => {
+                        setModo("completa");
+                        setMenuConteudoAberto(false);
+                      }}
+                    >
+                      <span className="n">
+                        Agenda completa {modo === "completa" ? "✓" : ""}
+                      </span>
+                      <span className="r">Traz tarefas e pacientes sozinha</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => {
+                        setModo("manual");
+                        setMenuConteudoAberto(false);
+                      }}
+                    >
+                      <span className="n">
+                        Agenda manual {modo === "manual" ? "✓" : ""}
+                      </span>
+                      <span className="r">Só o que você adicionar aqui</span>
+                    </button>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </>
         }
       />
 
       <div className="content">
-        <div className="card mb14">
-          <div className="panel-h">
-            <h4>Como essa agenda funciona</h4>
+        {conexao === "google" && !googleConectado ? (
+          <div
+            className="card mb14"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+              padding: "12px 17px",
+            }}
+          >
+            <span className="hint">Conecte pra sincronizar com o Google Agenda</span>
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => setGoogleConectado(true)}
+            >
+              Conectar com o Google Agenda
+            </button>
           </div>
-          <div className="field">
-            <label>Conexão</label>
-            <ChipFilters
-              options={["Agenda interna", "Google Agenda"]}
-              initial={conexao === "interna" ? 0 : 1}
-              onChange={(opcao) =>
-                setConexao(opcao === "Agenda interna" ? "interna" : "google")
-              }
-            />
-          </div>
-          {conexao === "google" ? (
-            <div className="field">
-              {googleConectado ? (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 10,
-                  }}
-                >
-                  <span className="pill on">
-                    Conectado como {currentUser.email}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    onClick={() => setGoogleConectado(false)}
-                  >
-                    Desconectar
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="btn primary"
-                  onClick={() => setGoogleConectado(true)}
-                >
-                  Conectar com o Google Agenda
-                </button>
-              )}
-            </div>
-          ) : null}
-          <div className="field">
-            <label>Conteúdo</label>
-            <ChipFilters
-              options={["Agenda completa", "Agenda manual"]}
-              initial={modo === "completa" ? 0 : 1}
-              onChange={(opcao) =>
-                setModo(opcao === "Agenda completa" ? "completa" : "manual")
-              }
-            />
-            <p className="hint" style={{ marginTop: 6 }}>
-              {modo === "completa"
-                ? "Mostra sozinha as tarefas e compromissos dos pacientes, além do que você adicionar."
-                : "Só aparece o que você escrever manualmente aqui, nada é puxado de outro lugar."}
-            </p>
-          </div>
-        </div>
+        ) : null}
 
         <div className="card mb14">
           <div className="panel-h">

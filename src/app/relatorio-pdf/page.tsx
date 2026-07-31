@@ -51,6 +51,10 @@ function RelatorioPdfInner() {
   const origensParaMostrar = relatorioPorOrigem.filter((o) =>
     origensEscolhidas.has(o.id),
   );
+  const faturamento = searchParams.get("faturamento") || relatorioManual.faturamento;
+  const percentualPago =
+    searchParams.get("percentualPago") || relatorioManual.percentualPago;
+  const queixas = searchParams.get("queixas") || relatorioManual.queixasPlaceholder;
 
   return (
     <div className="pdf-screen">
@@ -119,15 +123,15 @@ function RelatorioPdfInner() {
             <tbody>
               <tr>
                 <td>Faturamento total da empresa</td>
-                <td className="v">{relatorioManual.faturamento}</td>
+                <td className="v">{faturamento}</td>
               </tr>
               <tr>
                 <td>% vindo do tráfego pago</td>
-                <td className="v">{relatorioManual.percentualPago}</td>
+                <td className="v">{percentualPago}</td>
               </tr>
               <tr>
                 <td>Queixas mais frequentes</td>
-                <td className="v">{relatorioManual.queixasPlaceholder}</td>
+                <td className="v">{queixas}</td>
               </tr>
             </tbody>
           </table>

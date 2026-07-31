@@ -389,6 +389,22 @@ table {
   flex: 0 0 auto;
 }
 
+.icon-btn.subtle {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-faint);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.icon-btn.subtle:hover {
+  background: var(--navy-raised);
+  border-color: var(--line);
+  color: var(--text-muted);
+}
+
 .icon-btn .dot {
   position: absolute;
   top: 6px;

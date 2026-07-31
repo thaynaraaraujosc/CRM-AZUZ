@@ -524,8 +524,8 @@ export const conversas: Conversa[] = [
     origem: "TikTok",
     mensagens: [
       {
-        tipo: "system",
-        texto: "Comentou no vídeo · virou lead automático",
+        tipo: "in",
+        texto: "Oi, vi o vídeo de vocês sobre acompanhamento nutricional, como funciona?",
         hora: "",
       },
     ],

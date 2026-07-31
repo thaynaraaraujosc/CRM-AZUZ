@@ -235,11 +235,11 @@ function FunilPageInner() {
               <div className="dropdown-anchor">
                 <button
                   type="button"
-                  className="icon-btn"
+                  className="icon-btn subtle"
                   aria-label={`Configurações do funil ${funilAtivo.nome}`}
                   onClick={() => setConfigAberto((v) => !v)}
                 >
-                  <IconConfiguracoes />
+                  <IconConfiguracoes width={14} height={14} />
                 </button>
                 {configAberto ? (
                   <>
