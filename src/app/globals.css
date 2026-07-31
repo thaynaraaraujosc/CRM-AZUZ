@@ -926,7 +926,7 @@ table.tbl tbody tr:hover td {
 .kanban {
   display: flex;
   gap: 13px;
-  align-items: start;
+  align-items: stretch;
   overflow-x: auto;
   padding-bottom: 4px;
 }
@@ -1303,6 +1303,25 @@ table.tbl tbody tr:hover td {
   background: var(--blue);
   align-self: flex-end;
   border-bottom-right-radius: 4px;
+}
+
+/* Tela do WhatsApp usa a identidade verde oficial do app, só aqui. */
+.wa-whatsapp .open-conv-h {
+  background: rgba(37, 211, 102, 0.12);
+}
+
+.wa-whatsapp .bubble.out {
+  background: #25d366;
+}
+
+.wa-whatsapp .wa-row.active {
+  background: rgba(37, 211, 102, 0.1);
+  border-left-color: #25d366;
+}
+
+.wa-whatsapp .wa-main-gear.active {
+  color: #25d366;
+  background: rgba(37, 211, 102, 0.14);
 }
 
 .bubble.system {

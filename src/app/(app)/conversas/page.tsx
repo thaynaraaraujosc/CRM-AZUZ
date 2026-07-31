@@ -224,7 +224,7 @@ function ConversasPageInner() {
         }
       />
 
-      <div className="content wa-content">
+      <div className="content wa-content wa-whatsapp">
         <aside className="wa-list">
           {conversas.map((c) => {
             const active = c.id === aberta.id;
