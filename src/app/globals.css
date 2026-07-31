@@ -2191,6 +2191,27 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
+.cartao-salvo-card {
+  margin: 0 17px 14px;
+  padding: 14px 16px;
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.cartao-salvo-numero {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+}
+
+.cartao-salvo-detalhe {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+
 .plano-cancelado-pill {
   display: inline-block;
   margin-left: 8px;

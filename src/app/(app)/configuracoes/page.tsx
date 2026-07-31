@@ -32,10 +32,33 @@ export default function ConfiguracoesPage() {
   const [validadeCartao, setValidadeCartao] = useState("");
   const [cvvCartao, setCvvCartao] = useState("");
   const [cartaoSalvo, setCartaoSalvo] = useState(false);
+  const [editandoCartao, setEditandoCartao] = useState(false);
   const [planoCancelado, setPlanoCancelado] = useState(false);
+
+  const ultimosDigitos = numeroCartao.replace(/\D/g, "").slice(-4);
 
   function salvarCartao() {
     setCartaoSalvo(true);
+    setEditandoCartao(false);
+  }
+
+  function trocarCartao() {
+    setEditandoCartao(true);
+  }
+
+  function excluirCartao() {
+    if (
+      window.confirm(
+        "Excluir esse cartão? Você vai precisar cadastrar outro pra continuar sendo cobrado.",
+      )
+    ) {
+      setNumeroCartao("");
+      setNomeCartao("");
+      setValidadeCartao("");
+      setCvvCartao("");
+      setCartaoSalvo(false);
+      setEditandoCartao(false);
+    }
   }
 
   function cancelarPlano() {
@@ -157,73 +180,120 @@ export default function ConfiguracoesPage() {
                   Por enquanto só aceitamos cartão de crédito.
                 </p>
 
-                <div className="field">
-                  <label>Número do cartão</label>
-                  <input
-                    className="input"
-                    style={{ width: "100%" }}
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="0000 0000 0000 0000"
-                    value={numeroCartao}
-                    onChange={(e) => setNumeroCartao(e.target.value)}
-                  />
-                </div>
-                <div className="field">
-                  <label>Nome impresso no cartão</label>
-                  <input
-                    className="input"
-                    style={{ width: "100%" }}
-                    type="text"
-                    placeholder="Ex.: ANA P FERREIRA"
-                    value={nomeCartao}
-                    onChange={(e) => setNomeCartao(e.target.value)}
-                  />
-                </div>
-                <div style={{ display: "flex", gap: 14, padding: "0 17px 14px" }}>
-                  <div className="field" style={{ padding: 0, flex: 1 }}>
-                    <label>Validade</label>
-                    <input
-                      className="input"
-                      style={{ width: "100%" }}
-                      type="text"
-                      placeholder="MM/AA"
-                      value={validadeCartao}
-                      onChange={(e) => setValidadeCartao(e.target.value)}
-                    />
-                  </div>
-                  <div className="field" style={{ padding: 0, flex: 1 }}>
-                    <label>CVV</label>
-                    <input
-                      className="input"
-                      style={{ width: "100%" }}
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="123"
-                      value={cvvCartao}
-                      onChange={(e) => setCvvCartao(e.target.value)}
-                    />
-                  </div>
-                </div>
+                {cartaoSalvo && !editandoCartao ? (
+                  <>
+                    <div className="cartao-salvo-card">
+                      <div>
+                        <p className="cartao-salvo-numero">
+                          •••• •••• •••• {ultimosDigitos || "0000"}
+                        </p>
+                        <p className="cartao-salvo-detalhe">
+                          {nomeCartao || "Nome não informado"} · validade{" "}
+                          {validadeCartao || "—"}
+                        </p>
+                      </div>
+                    </div>
+                    <p
+                      className="hint"
+                      style={{ padding: "10px 17px 0", color: "var(--blue)" }}
+                    >
+                      Cartão salvo — cobranças de {planoAtual.valor}{" "}
+                      {planoAtual.periodo}.
+                    </p>
+                    <div className="section-foot">
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        style={{ flex: 1 }}
+                        onClick={trocarCartao}
+                      >
+                        Trocar cartão
+                      </button>
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        style={{ flex: 1, color: "#d64545" }}
+                        onClick={excluirCartao}
+                      >
+                        Excluir cartão
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="field">
+                      <label>Número do cartão</label>
+                      <input
+                        className="input"
+                        style={{ width: "100%" }}
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="0000 0000 0000 0000"
+                        value={numeroCartao}
+                        onChange={(e) => setNumeroCartao(e.target.value)}
+                      />
+                    </div>
+                    <div className="field">
+                      <label>Nome impresso no cartão</label>
+                      <input
+                        className="input"
+                        style={{ width: "100%" }}
+                        type="text"
+                        placeholder="Ex.: ANA P FERREIRA"
+                        value={nomeCartao}
+                        onChange={(e) => setNomeCartao(e.target.value)}
+                      />
+                    </div>
+                    <div
+                      style={{ display: "flex", gap: 14, padding: "0 17px 14px" }}
+                    >
+                      <div className="field" style={{ padding: 0, flex: 1 }}>
+                        <label>Validade</label>
+                        <input
+                          className="input"
+                          style={{ width: "100%" }}
+                          type="text"
+                          placeholder="MM/AA"
+                          value={validadeCartao}
+                          onChange={(e) => setValidadeCartao(e.target.value)}
+                        />
+                      </div>
+                      <div className="field" style={{ padding: 0, flex: 1 }}>
+                        <label>CVV</label>
+                        <input
+                          className="input"
+                          style={{ width: "100%" }}
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="123"
+                          value={cvvCartao}
+                          onChange={(e) => setCvvCartao(e.target.value)}
+                        />
+                      </div>
+                    </div>
 
-                <div className="section-foot">
-                  <button
-                    type="button"
-                    className="btn primary block"
-                    onClick={salvarCartao}
-                  >
-                    Salvar forma de pagamento
-                  </button>
-                </div>
-                {cartaoSalvo ? (
-                  <p
-                    className="hint"
-                    style={{ padding: "0 17px 14px", color: "var(--blue)" }}
-                  >
-                    Cartão salvo — cobranças de {planoAtual.valor}{" "}
-                    {planoAtual.periodo}.
-                  </p>
-                ) : null}
+                    <div className="section-foot">
+                      {cartaoSalvo ? (
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          style={{ flex: 1 }}
+                          onClick={() => setEditandoCartao(false)}
+                        >
+                          Cancelar
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="btn primary"
+                        style={{ flex: 1 }}
+                        onClick={salvarCartao}
+                      >
+                        Salvar forma de pagamento
+                      </button>
+                    </div>
+                  </>
+                )}
               </section>
             ) : null}
 
