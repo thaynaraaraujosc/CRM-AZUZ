@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 
-import { tarefas } from "@/lib/data";
+import { equipe, tarefas } from "@/lib/data";
 import { IconConfiguracoes, IconDoc } from "@/components/icons";
-import { ChipFilters, Toggle, Topbar } from "@/components/ui";
+import { ChipFilters, RadioList, Toggle, Topbar } from "@/components/ui";
 
 const NIVEIS_URGENCIA = ["Baixa", "Média", "Alta"];
+
+const RESPONSAVEIS = equipe.map((m) => ({ nome: m.nome, descricao: m.papel }));
 
 const todasAsTarefas = tarefas.flatMap((coluna) => coluna.cards);
 
 export default function TarefasPage() {
-  const [selectedId, setSelectedId] = useState<string | null>(
-    todasAsTarefas[0]?.id ?? null,
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [novaTarefaAberta, setNovaTarefaAberta] = useState(false);
 
   const aberta = todasAsTarefas.find((t) => t.id === selectedId) ?? null;
@@ -83,6 +83,10 @@ export default function TarefasPage() {
                 type="text"
                 placeholder="dd/mm/aaaa · hora"
               />
+            </div>
+            <div className="field">
+              <label>Atribuir para</label>
+              <RadioList options={RESPONSAVEIS} initial={RESPONSAVEIS[0]?.nome} />
             </div>
             <div className="section-foot">
               <button
@@ -227,7 +231,11 @@ export default function TarefasPage() {
                 ) : null}
                 <div className="field">
                   <label>Atribuir para</label>
-                  <div className="input">{aberta.responsavel.nome}</div>
+                  <RadioList
+                    key={aberta.id}
+                    options={RESPONSAVEIS}
+                    initial={aberta.responsavel.nome}
+                  />
                 </div>
                 <div className="toggle-row">
                   <span className="tl">Avisar por WhatsApp perto do vencimento</span>

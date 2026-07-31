@@ -200,70 +200,122 @@ export const filtrosContatos = [
 ];
 
 /* -------------------------------------------------------------------------- */
-/* Pipeline                                                                   */
+/* Funil (kanban de negócios — pode ter mais de um funil)                    */
 /* -------------------------------------------------------------------------- */
 
-export type ColunaPipeline = {
-  titulo: string;
-  total: number;
-  cards: { nome: string; valor: string; origem: Origem; dias: string }[];
+export type NegocioCard = {
+  id: string;
+  nome: string;
+  valor: string;
+  origem: Origem;
+  dias: string;
 };
 
-export const pipeline: ColunaPipeline[] = [
+export type ColunaFunil = {
+  titulo: string;
+  total: number;
+  cards: NegocioCard[];
+};
+
+export type Funil = {
+  id: string;
+  nome: string;
+  colunas: ColunaFunil[];
+};
+
+/** Modelo pré-pronto usado ao criar um funil novo. */
+export const ETAPAS_PADRAO_FUNIL = [
+  "Novo",
+  "Qualificado",
+  "Não respondeu",
+  "Proposta",
+  "Fechado",
+];
+
+export const funis: Funil[] = [
   {
-    titulo: "Novo",
-    total: 32,
-    cards: [
-      { nome: "Camila Duarte", valor: "—", origem: "Instagram", dias: "Hoje" },
-      { nome: "Lorena Bastos", valor: "—", origem: "TikTok", dias: "Hoje" },
-      { nome: "Fernando Lima", valor: "—", origem: "Meta Ads", dias: "1 dia" },
-    ],
-  },
-  {
-    titulo: "Qualificado",
-    total: 18,
-    cards: [
+    id: "emagrecimento-diabetes",
+    nome: "Emagrecimento e diabetes",
+    colunas: [
       {
-        nome: "Marcos Aurélio",
-        valor: "R$ 890",
-        origem: "Meta Ads",
-        dias: "2 dias",
+        titulo: "Novo",
+        total: 32,
+        cards: [
+          {
+            id: "camila-duarte",
+            nome: "Camila Duarte",
+            valor: "—",
+            origem: "Instagram",
+            dias: "Hoje",
+          },
+          {
+            id: "lorena-bastos",
+            nome: "Lorena Bastos",
+            valor: "—",
+            origem: "TikTok",
+            dias: "Hoje",
+          },
+          {
+            id: "fernando-lima",
+            nome: "Fernando Lima",
+            valor: "—",
+            origem: "Meta Ads",
+            dias: "1 dia",
+          },
+        ],
       },
       {
-        nome: "Beatriz Nogueira",
-        valor: "R$ 1.240",
-        origem: "Google Ads",
-        dias: "1 dia",
+        titulo: "Qualificado",
+        total: 18,
+        cards: [
+          {
+            id: "marcos-aurelio",
+            nome: "Marcos Aurélio",
+            valor: "R$ 890",
+            origem: "Meta Ads",
+            dias: "2 dias",
+          },
+          {
+            id: "beatriz-nogueira",
+            nome: "Beatriz Nogueira",
+            valor: "R$ 1.240",
+            origem: "Google Ads",
+            dias: "1 dia",
+          },
+        ],
       },
-    ],
-  },
-  {
-    titulo: "Proposta",
-    total: 7,
-    cards: [
       {
-        nome: "Julia Prado",
-        valor: "R$ 2.100",
-        origem: "Indicação",
-        dias: "4 dias",
+        titulo: "Proposta",
+        total: 7,
+        cards: [
+          {
+            id: "julia-prado",
+            nome: "Julia Prado",
+            valor: "R$ 2.100",
+            origem: "Indicação",
+            dias: "4 dias",
+          },
+          {
+            id: "renata-farias",
+            nome: "Renata Farias",
+            valor: "R$ 780",
+            origem: "Meta Ads",
+            dias: "1 dia",
+          },
+        ],
       },
       {
-        nome: "Renata Farias",
-        valor: "R$ 780",
-        origem: "Meta Ads",
-        dias: "1 dia",
-      },
-    ],
-  },
-  {
-    titulo: "Fechado · 7 dias",
-    total: 5,
-    cards: [
-      {
-        nome: "Paulo Lacerda",
-        valor: "R$ 1.560",
-        origem: "Google Ads",
-        dias: "Hoje",
+        titulo: "Fechado · 7 dias",
+        total: 5,
+        cards: [
+          {
+            id: "paulo-lacerda",
+            nome: "Paulo Lacerda",
+            valor: "R$ 1.560",
+            origem: "Google Ads",
+            dias: "Hoje",
+          },
+        ],
       },
     ],
   },
@@ -718,6 +770,7 @@ export type Membro = {
   initials: string;
   nome: string;
   email: string;
+  senha: string | null;
   papel: string;
   papelTipo: "admin" | "padrao" | "custom";
   papelNota?: string;
@@ -730,7 +783,7 @@ export type Membro = {
 
 export const PERMISSOES_CRM = [
   "Ver todas as conversas (não só as próprias)",
-  "Ver todos os leads e o pipeline",
+  "Ver todos os leads e o funil",
   "Gerar e ver relatórios",
   "Ver o painel de tráfego",
   "Criar e disparar ações (listas de transmissão)",
@@ -744,6 +797,7 @@ export const equipe: Membro[] = [
     initials: "AF",
     nome: "Ana Ferreira",
     email: "ana@clinicavitta.com.br",
+    senha: "Az7!vitta26",
     papel: "Admin",
     papelTipo: "admin",
     leads: "103",
@@ -755,6 +809,7 @@ export const equipe: Membro[] = [
     initials: "BS",
     nome: "Bruno Salles",
     email: "bruno@clinicavitta.com.br",
+    senha: "Bs@vitta318",
     papel: "Vendedor",
     papelTipo: "padrao",
     leads: "62",
@@ -766,6 +821,7 @@ export const equipe: Membro[] = [
     initials: "CM",
     nome: "Carla Mendes",
     email: "carla@clinicavitta.com.br",
+    senha: "Cm#vitta742",
     papel: "Vendedor",
     papelTipo: "padrao",
     leads: "58",
@@ -777,6 +833,7 @@ export const equipe: Membro[] = [
     initials: "HM",
     nome: "Dr. Hélio Marinho",
     email: "helio@clinicavitta.com.br",
+    senha: "Hm$vitta905",
     papel: "Especialista",
     papelTipo: "custom",
     papelNota: "· personalizado",
@@ -789,6 +846,7 @@ export const equipe: Membro[] = [
     initials: "LV",
     nome: "Dr. Lucas Vitta",
     email: "lucas@clinicavitta.com.br",
+    senha: "Lv&vitta064",
     papel: "Cliente",
     papelTipo: "padrao",
     leads: "—",
@@ -800,6 +858,7 @@ export const equipe: Membro[] = [
     initials: "RA",
     nome: "Roberto Alves",
     email: "roberto@clinicavitta.com.br",
+    senha: null,
     papel: "Estoquista",
     papelTipo: "custom",
     papelNota: "· personalizado",
@@ -959,7 +1018,7 @@ export const automacaoIdeias = [
   },
   {
     titulo: "Lembrete de consulta",
-    descricao: "Avisa o paciente 1 dia antes do horário marcado no Pipeline.",
+    descricao: "Avisa o paciente 1 dia antes do horário marcado no Funil.",
     gatilho: "Tarefa vence em 1 dia",
     acao: "Enviar mensagem automática",
   },
@@ -1052,7 +1111,7 @@ export const integracoes = [
       {
         logo: "cal",
         titulo: "Google Agenda",
-        sub: "Sincroniza horários marcados no Pipeline direto pra agenda da equipe",
+        sub: "Sincroniza horários marcados no Funil direto pra agenda da equipe",
         status: "Conectado" as const,
         acao: "Gerenciar",
       },

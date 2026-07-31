@@ -66,8 +66,8 @@ export default function InicioPage() {
           <div className="card">
             <div className="panel-h">
               <h4>Funil · julho</h4>
-              <Link className="link" href="/pipeline">
-                Ver pipeline
+              <Link className="link" href="/funil">
+                Ver funil
               </Link>
             </div>
             <div className="funnel-mini">

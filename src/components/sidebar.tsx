@@ -28,7 +28,7 @@ type NavEntry = {
 export const navEntries: NavEntry[] = [
   { href: "/inicio", label: "Início", Icon: IconInicio },
   { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
-  { href: "/pipeline", label: "Pipeline", Icon: IconPipeline },
+  { href: "/funil", label: "Funil", Icon: IconPipeline },
   { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
   { href: "/acoes", label: "Ações", Icon: IconAcoes },
   { href: "/equipe", label: "Equipe", Icon: IconEquipe },

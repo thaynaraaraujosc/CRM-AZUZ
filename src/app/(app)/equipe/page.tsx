@@ -8,6 +8,7 @@ import { Toggle, Topbar } from "@/components/ui";
 
 export default function EquipePage() {
   const [selecionado, setSelecionado] = useState<string | null>(null);
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
 
   const membro = equipe.find((m) => m.nome === selecionado) ?? null;
   const tarefasDoMembro = membro
@@ -57,11 +58,12 @@ export default function EquipePage() {
                           padding: 0,
                           cursor: "pointer",
                         }}
-                        onClick={() =>
+                        onClick={() => {
                           setSelecionado((atual) =>
                             atual === m.nome ? null : m.nome,
-                          )
-                        }
+                          );
+                          setSenhaVisivel(false);
+                        }}
                       >
                         <div className="avatar">{m.initials}</div>
                         <span
@@ -131,12 +133,40 @@ export default function EquipePage() {
                   <div className="input">{membro.email}</div>
                 </div>
                 <div className="field">
-                  <label>Senha</label>
-                  <span className={`pill${membro.convitePendente ? "" : " on"}`}>
-                    {membro.convitePendente
-                      ? "Aguardando definição — convite pendente"
-                      : "Senha definida pela própria pessoa"}
-                  </span>
+                  <label>Senha atual</label>
+                  {membro.senha ? (
+                    <>
+                      <div className="key-row" style={{ padding: 0 }}>
+                        <div className="key-box">
+                          {senhaVisivel ? membro.senha : "•".repeat(membro.senha.length)}
+                        </div>
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          onClick={() => setSenhaVisivel((v) => !v)}
+                        >
+                          {senhaVisivel ? "Ocultar" : "Mostrar"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          onClick={() =>
+                            navigator.clipboard?.writeText(membro.senha ?? "")
+                          }
+                        >
+                          Copiar
+                        </button>
+                      </div>
+                      <p className="hint" style={{ padding: "8px 0 0" }}>
+                        Só quem é Admin enxerga essa senha — use pra ajudar em
+                        caso de esquecimento.
+                      </p>
+                    </>
+                  ) : (
+                    <span className="pill">
+                      Ainda não definida — convite pendente
+                    </span>
+                  )}
                 </div>
 
                 <div className="panel-h divided">
