@@ -252,6 +252,8 @@ export type NegocioCard = {
 };
 
 export type ColunaFunil = {
+  /** Identificador estável da etapa — é nele que a automação se prende, não no título (que pode ser renomeado). */
+  id: string;
   titulo: string;
   total: number;
   cards: NegocioCard[];
@@ -280,6 +282,7 @@ export const funis: Funil[] = [
     nome: "Funil principal",
     colunas: [
       {
+        id: "novo",
         titulo: "Novo",
         total: 32,
         cards: [
@@ -310,6 +313,7 @@ export const funis: Funil[] = [
         ],
       },
       {
+        id: "qualificado",
         titulo: "Qualificado",
         total: 18,
         cards: [
@@ -332,6 +336,7 @@ export const funis: Funil[] = [
         ],
       },
       {
+        id: "proposta",
         titulo: "Proposta",
         total: 7,
         cards: [
@@ -354,6 +359,7 @@ export const funis: Funil[] = [
         ],
       },
       {
+        id: "fechado",
         titulo: "Fechado · 7 dias",
         total: 5,
         cards: [
@@ -1058,89 +1064,44 @@ export const relatoriosAnteriores = [
 ];
 
 /* -------------------------------------------------------------------------- */
-/* Automações                                                                 */
+/* Automações (vivem dentro de cada etapa do funil)                          */
 /* -------------------------------------------------------------------------- */
 
-export const automacoes = [
+export type TipoGatilhoEtapa = "entrou" | "parado" | "saiu";
+
+/** O que dispara a automação — sempre relativo ao card dentro da etapa onde ela foi criada. */
+export const GATILHOS_ETAPA: {
+  tipo: TipoGatilhoEtapa;
+  label: string;
+  precisaTempo?: boolean;
+}[] = [
+  { tipo: "entrou", label: "Quando um card entra nessa etapa" },
   {
-    titulo: "Follow-up sem resposta",
-    fluxo: [
-      "Lead sem resposta 2h",
-      "Enviar WhatsApp automático",
-      "Avisar responsável",
-    ],
-    execucoes: "312 execuções",
-    ativa: true,
+    tipo: "parado",
+    label: "Quando um card fica parado nessa etapa",
+    precisaTempo: true,
   },
-  {
-    titulo: "Lead novo → qualificação",
-    fluxo: ["Novo lead via anúncio", 'Criar tarefa "ligar em 10 min"'],
-    execucoes: "247 execuções",
-    ativa: true,
-  },
-  {
-    titulo: "Proposta parada",
-    fluxo: ["Proposta há 3 dias sem mover", "Notificar gestor"],
-    execucoes: "28 execuções",
-    ativa: true,
-  },
-  {
-    titulo: "Distribuição de leads",
-    fluxo: ["Novo lead", "Atribuir por rodízio da equipe"],
-    execucoes: "247 execuções",
-    ativa: true,
-  },
-  {
-    titulo: "Pesquisa pós-venda",
-    fluxo: ["Negócio fechado", "Enviar pesquisa em 3 dias"],
-    execucoes: "36 execuções",
-    ativa: false,
-  },
+  { tipo: "saiu", label: "Quando um card sai dessa etapa" },
 ];
 
-/** Ideias prontas mostradas ao clicar em "+ Nova automação" — além de criar do zero. */
-export const automacaoIdeias = [
-  {
-    titulo: "Lead novo → mensagem de boas-vindas",
-    descricao:
-      "Todo lead que entra por qualquer canal recebe uma primeira mensagem automática na hora.",
-    gatilho: "Novo lead entra",
-    acao: "Enviar mensagem automática",
-  },
-  {
-    titulo: "Aniversário do paciente",
-    descricao: "Manda uma mensagem automática no dia do aniversário de cada contato.",
-    gatilho: "Data especial do contato",
-    acao: "Enviar mensagem automática",
-  },
-  {
-    titulo: "Lembrete de consulta",
-    descricao: "Avisa o paciente 1 dia antes do horário marcado no Funil.",
-    gatilho: "Tarefa vence em 1 dia",
-    acao: "Enviar mensagem automática",
-  },
-  {
-    titulo: "Negócio parado há muito tempo",
-    descricao: "Se um negócio fica na mesma etapa por dias demais, avisa o responsável.",
-    gatilho: "Proposta há 3 dias sem mover",
-    acao: "Notificar responsável",
-  },
-];
+export const UNIDADES_TEMPO = ["minutos", "horas", "dias"] as const;
 
-export const gatilhosAutomacao = [
-  "Novo lead entra",
-  "Lead sem resposta 2h",
-  "Proposta há 3 dias sem mover",
-  "Negócio fechado",
-  "Tarefa vence em 1 dia",
-  "Data especial do contato",
-];
+export type TipoAcaoAutomacao =
+  | "mensagem"
+  | "mensagem_interativa"
+  | "documento"
+  | "audio"
+  | "lembrete"
+  | "mover_funil";
 
-export const acoesAutomacao = [
-  "Enviar mensagem automática",
-  "Criar tarefa",
-  "Notificar responsável",
-  "Atribuir por rodízio da equipe",
+/** Cada automação pode ter várias dessas ações, em sequência. */
+export const TIPOS_ACAO_AUTOMACAO: { tipo: TipoAcaoAutomacao; label: string }[] = [
+  { tipo: "mensagem", label: "Enviar mensagem" },
+  { tipo: "mensagem_interativa", label: "Enviar mensagem com opções de resposta" },
+  { tipo: "documento", label: "Enviar documento" },
+  { tipo: "audio", label: "Enviar áudio" },
+  { tipo: "lembrete", label: "Criar lembrete" },
+  { tipo: "mover_funil", label: "Mover card pra outro funil / vendedor" },
 ];
 
 /* -------------------------------------------------------------------------- */

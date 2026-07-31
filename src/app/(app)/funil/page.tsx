@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { equipe, type NegocioCard } from "@/lib/data";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useFunis } from "@/lib/funis-context";
+import { IconAutomacoes } from "@/components/icons";
 import { IconConfiguracoes } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
 
@@ -34,8 +35,19 @@ function FunilPageInner() {
   const searchParams = useSearchParams();
   const { funis, setFunis, funilAtivoId, setFunilAtivoId, excluirFunil } =
     useFunis();
-  const { criarAbaParaFunil, excluirAbaDoFunil } = useAutomacoes();
+  const { automacoesDaEtapa, automacoesDeEntradaAtivas, excluirAutomacoesDaEtapa, excluirAutomacoesDoFunil } =
+    useAutomacoes();
   const [configAberto, setConfigAberto] = useState(false);
+  const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
+  const proximoToastId = useRef(0);
+
+  function avisarAutomacao(texto: string) {
+    const id = `toast-${proximoToastId.current++}`;
+    setToasts((prev) => [...prev, { id, texto }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  }
 
   const [novoFunilAberto, setNovoFunilAberto] = useState(false);
   const [atendenteNovoFunil, setAtendenteNovoFunil] = useState(
@@ -95,19 +107,19 @@ function FunilPageInner() {
   function criarFunil() {
     const responsavel = atendenteNovoFunil.trim();
     if (!responsavel) return;
+    const carimbo = Date.now();
     const novo = {
-      id: `funil-${Date.now()}`,
+      id: `funil-${carimbo}`,
       nome: `Funil - ${responsavel}`,
       responsavel,
       colunas: [
-        { titulo: "Novo", total: 0, cards: [] },
-        { titulo: "Qualificado", total: 0, cards: [] },
-        { titulo: "Proposta", total: 0, cards: [] },
-        { titulo: "Fechado", total: 0, cards: [] },
+        { id: `novo-${carimbo}`, titulo: "Novo", total: 0, cards: [] },
+        { id: `qualificado-${carimbo}`, titulo: "Qualificado", total: 0, cards: [] },
+        { id: `proposta-${carimbo}`, titulo: "Proposta", total: 0, cards: [] },
+        { id: `fechado-${carimbo}`, titulo: "Fechado", total: 0, cards: [] },
       ],
     };
     setFunis((prev) => [...prev, novo]);
-    criarAbaParaFunil(novo.id);
     setFunilAtivoId(novo.id);
     setAtendenteNovoFunil(equipe[0]?.nome ?? "");
     setNovoFunilAberto(false);
@@ -145,6 +157,9 @@ function FunilPageInner() {
     setArrastando(null);
     if (colunaOrigem === colunaDestino) return;
 
+    const cardMovido = funilAtivo.colunas[colunaOrigem]?.cards[indiceCard];
+    const etapaDestino = funilAtivo.colunas[colunaDestino];
+
     setFunis((prev) =>
       prev.map((f) => {
         if (f.id !== funilAtivo.id) return f;
@@ -157,6 +172,15 @@ function FunilPageInner() {
         return { ...f, colunas };
       }),
     );
+
+    if (cardMovido && etapaDestino) {
+      const disparadas = automacoesDeEntradaAtivas(funilAtivo.id, etapaDestino.id);
+      for (const automacao of disparadas) {
+        avisarAutomacao(
+          `Automação "${automacao.titulo}" disparada pra ${cardMovido.nome} (entrou em "${etapaDestino.titulo}")`,
+        );
+      }
+    }
   }
 
   function criarEtapa() {
@@ -167,7 +191,10 @@ function FunilPageInner() {
         if (f.id !== funilAtivo.id) return f;
         return {
           ...f,
-          colunas: [...f.colunas, { titulo, total: 0, cards: [] }],
+          colunas: [
+            ...f.colunas,
+            { id: `etapa-${Date.now()}`, titulo, total: 0, cards: [] },
+          ],
         };
       }),
     );
@@ -195,12 +222,14 @@ function FunilPageInner() {
 
   function excluirEtapa(colIndex: number) {
     if (!funilAtivo) return;
+    const etapa = funilAtivo.colunas[colIndex];
     setFunis((prev) =>
       prev.map((f) => {
         if (f.id !== funilAtivo.id) return f;
         return { ...f, colunas: f.colunas.filter((_, i) => i !== colIndex) };
       }),
     );
+    if (etapa) excluirAutomacoesDaEtapa(funilAtivo.id, etapa.id);
   }
 
   return (
@@ -249,12 +278,14 @@ function FunilPageInner() {
                     />
                     <div className="dropdown-pop dropdown-pop-right">
                       <Link
-                        href={`/automacoes?criarPara=${funilAtivo.id}`}
+                        href={`/automacoes?funil=${funilAtivo.id}`}
                         className="dropdown-item"
                         onClick={() => setConfigAberto(false)}
                       >
-                        <span className="n">Criar automação pra esse funil</span>
-                        <span className="r">Abre o construtor em Automações</span>
+                        <span className="n">Ver automações desse funil</span>
+                        <span className="r">
+                          Abre o quadro de automações, uma por etapa
+                        </span>
                       </Link>
                       <button
                         type="button"
@@ -265,11 +296,11 @@ function FunilPageInner() {
                           if (funis.length <= 1) return;
                           if (
                             window.confirm(
-                              `Excluir o funil "${funilAtivo.nome}"? Os negócios dele somem junto.`,
+                              `Excluir o funil "${funilAtivo.nome}"? Os negócios e as automações dele somem junto.`,
                             )
                           ) {
                             excluirFunil(funilAtivo.id);
-                            excluirAbaDoFunil(funilAtivo.id);
+                            excluirAutomacoesDoFunil(funilAtivo.id);
                           }
                           setConfigAberto(false);
                         }}
@@ -528,9 +559,13 @@ function FunilPageInner() {
               ? cardsComIndice.filter(({ card }) => passaNoFiltro(card))
               : cardsComIndice;
 
+            const automacoesEtapa = funilAtivo
+              ? automacoesDaEtapa(funilAtivo.id, coluna.id)
+              : [];
+
             return (
               <div
-                key={coluna.titulo}
+                key={coluna.id}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -581,6 +616,18 @@ function FunilPageInner() {
                     </span>
                   </span>
                 </div>
+                {funilAtivo ? (
+                  <Link
+                    href={`/automacoes?funil=${funilAtivo.id}&etapa=${coluna.id}${automacoesEtapa.length === 0 ? "&criar=1" : ""}`}
+                    className="kcol-auto-link"
+                    title="Ver/criar automações dessa etapa"
+                  >
+                    <IconAutomacoes width={12} height={12} />
+                    {automacoesEtapa.length > 0
+                      ? `${automacoesEtapa.length} ${automacoesEtapa.length > 1 ? "automações" : "automação"}`
+                      : "+ Automação"}
+                  </Link>
+                ) : null}
                 {cardsVisiveis.map(({ card, cardIndex }) => (
                   <button
                     type="button"
@@ -614,6 +661,17 @@ function FunilPageInner() {
           })}
         </div>
       </div>
+
+      {toasts.length > 0 ? (
+        <div className="toast-stack">
+          {toasts.map((toast) => (
+            <div className="toast" key={toast.id}>
+              <IconAutomacoes width={14} height={14} />
+              {toast.texto}
+            </div>
+          ))}
+        </div>
+      ) : null}
     </>
   );
 }

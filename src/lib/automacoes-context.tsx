@@ -7,139 +7,186 @@ import {
   type ReactNode,
 } from "react";
 
-import { automacoes as automacoesIniciais, funis as funisIniciais } from "@/lib/data";
+import type { TipoAcaoAutomacao, TipoGatilhoEtapa } from "@/lib/data";
 
-export type Condicao = {
-  pergunta: string;
-  seSim: string;
-  seNao: string;
+export type OpcaoResposta = {
+  id: string;
+  rotulo: string;
+};
+
+export type AcaoAutomacao = {
+  id: string;
+  tipo: TipoAcaoAutomacao;
+  /** Usado por "mensagem" e "mensagem_interativa" (texto principal enviado). */
+  mensagem?: string;
+  /** Usado só por "mensagem_interativa" — as opções de resposta que o contato pode escolher. */
+  opcoes?: OpcaoResposta[];
+  /** Usado por "documento" e "audio" — nome do arquivo escolhido/gravado. */
+  arquivoNome?: string;
+  /** Usado por "lembrete" — em quanto tempo o lembrete dispara. */
+  tempoValor?: string;
+  tempoUnidade?: string;
+  /** Usado por "mover_funil". */
+  moverFunilId?: string;
+  moverEtapaTitulo?: string;
 };
 
 export type Automacao = {
   id: string;
+  funilId: string;
+  etapaId: string;
   titulo: string;
-  gatilho: string;
-  /** "linear": gatilho -> uma ou mais ações em sequência. "condicional": gatilho -> pergunta -> se sim/se não. */
-  ramo: "linear" | "condicional";
-  acoes: string[];
-  condicao?: Condicao;
-  mensagem: string;
-  execucoes: string;
+  gatilhoTipo: TipoGatilhoEtapa;
+  /** Só usado quando gatilhoTipo === "parado". */
+  tempoValor?: string;
+  tempoUnidade?: string;
+  acoes: AcaoAutomacao[];
   ativa: boolean;
+  execucoes: string;
 };
 
 type AutomacoesContextValue = {
-  automacoesPorFunil: Record<string, Automacao[]>;
-  /** Cria a aba de automações (vazia) pra um funil novo. */
-  criarAbaParaFunil: (funilId: string) => void;
-  /** Apaga a aba (e as automações dela) quando o funil é excluído. */
-  excluirAbaDoFunil: (funilId: string) => void;
-  criarAutomacao: (
-    funilId: string,
-    dados: Omit<Automacao, "id" | "execucoes">,
-  ) => void;
+  automacoes: Automacao[];
+  automacoesDaEtapa: (funilId: string, etapaId: string) => Automacao[];
+  /** Automações com gatilho "entrou" e ativas — usado pra simular o disparo ao soltar um card na coluna. */
+  automacoesDeEntradaAtivas: (funilId: string, etapaId: string) => Automacao[];
+  criarAutomacao: (dados: Omit<Automacao, "id" | "execucoes">) => void;
   atualizarAutomacao: (
-    funilId: string,
     automacaoId: string,
     dados: Partial<Omit<Automacao, "id">>,
   ) => void;
-  excluirAutomacao: (funilId: string, automacaoId: string) => void;
-  alternarAtiva: (funilId: string, automacaoId: string) => void;
+  excluirAutomacao: (automacaoId: string) => void;
+  alternarAtiva: (automacaoId: string) => void;
+  /** Chamado quando uma etapa é apagada — some com as automações que só faziam sentido nela. */
+  excluirAutomacoesDaEtapa: (funilId: string, etapaId: string) => void;
+  /** Chamado quando um funil inteiro é apagado. */
+  excluirAutomacoesDoFunil: (funilId: string) => void;
 };
 
 const AutomacoesContext = createContext<AutomacoesContextValue | null>(null);
 
-function automacoesIniciaisConvertidas(): Automacao[] {
-  return automacoesIniciais.map((a, i) => ({
-    id: `auto-inicial-${i}`,
-    titulo: a.titulo,
-    gatilho: a.fluxo[0] ?? "",
-    ramo: "linear",
-    acoes: a.fluxo.slice(1),
-    mensagem: "",
-    execucoes: a.execucoes,
-    ativa: a.ativa,
-  }));
-}
+const AUTOMACOES_INICIAIS: Automacao[] = [
+  {
+    id: "auto-boas-vindas",
+    funilId: "emagrecimento-diabetes",
+    etapaId: "novo",
+    titulo: "Boas-vindas pro lead novo",
+    gatilhoTipo: "entrou",
+    acoes: [
+      {
+        id: "acao-boas-vindas-msg",
+        tipo: "mensagem_interativa",
+        mensagem:
+          "Oi! Recebemos sua mensagem 💙 Antes de continuar, me conta uma coisa:",
+        opcoes: [
+          { id: "op-1", rotulo: "1 · Já sou paciente da clínica" },
+          { id: "op-2", rotulo: "2 · É minha primeira vez por aqui" },
+        ],
+      },
+    ],
+    ativa: true,
+    execucoes: "312 execuções",
+  },
+  {
+    id: "auto-proposta-parada",
+    funilId: "emagrecimento-diabetes",
+    etapaId: "proposta",
+    titulo: "Lembrete de proposta parada",
+    gatilhoTipo: "parado",
+    tempoValor: "3",
+    tempoUnidade: "dias",
+    acoes: [
+      {
+        id: "acao-proposta-lembrete",
+        tipo: "lembrete",
+        mensagem: "Retomar contato — proposta enviada sem resposta",
+        tempoValor: "3",
+        tempoUnidade: "dias",
+      },
+      {
+        id: "acao-proposta-msg",
+        tipo: "mensagem",
+        mensagem: "Oi! Ainda tem interesse na proposta que te enviamos? 🙂",
+      },
+    ],
+    ativa: true,
+    execucoes: "28 execuções",
+  },
+];
 
 /**
- * Automações vivem agrupadas por funil (cada funil tem sua própria aba) —
- * mesmo motivo dos outros contextos: criar/apagar funil em /funil precisa
- * refletir aqui sem as telas ficarem dessincronizadas.
+ * Automações agora vivem dentro da etapa de um funil (não numa aba separada
+ * por funil) — cada card de automação mostra o gatilho + as ações dentro da
+ * coluna do Kanban, igual /funil. Apagar a etapa ou o funil apaga junto as
+ * automações que só faziam sentido ali.
  */
 export function AutomacoesProvider({ children }: { children: ReactNode }) {
-  const [automacoesPorFunil, setAutomacoesPorFunil] = useState<
-    Record<string, Automacao[]>
-  >(() => ({
-    [funisIniciais[0]?.id ?? ""]: automacoesIniciaisConvertidas(),
-  }));
+  const [automacoes, setAutomacoes] = useState<Automacao[]>(AUTOMACOES_INICIAIS);
 
-  function criarAbaParaFunil(funilId: string) {
-    setAutomacoesPorFunil((prev) =>
-      prev[funilId] ? prev : { ...prev, [funilId]: [] },
+  function automacoesDaEtapa(funilId: string, etapaId: string) {
+    return automacoes.filter(
+      (a) => a.funilId === funilId && a.etapaId === etapaId,
     );
   }
 
-  function excluirAbaDoFunil(funilId: string) {
-    setAutomacoesPorFunil((prev) => {
-      const next = { ...prev };
-      delete next[funilId];
-      return next;
-    });
+  function automacoesDeEntradaAtivas(funilId: string, etapaId: string) {
+    return automacoes.filter(
+      (a) =>
+        a.funilId === funilId &&
+        a.etapaId === etapaId &&
+        a.gatilhoTipo === "entrou" &&
+        a.ativa,
+    );
   }
 
-  function criarAutomacao(
-    funilId: string,
-    dados: Omit<Automacao, "id" | "execucoes">,
-  ) {
-    setAutomacoesPorFunil((prev) => ({
+  function criarAutomacao(dados: Omit<Automacao, "id" | "execucoes">) {
+    setAutomacoes((prev) => [
       ...prev,
-      [funilId]: [
-        ...(prev[funilId] ?? []),
-        { ...dados, id: `auto-${Date.now()}`, execucoes: "0 execuções" },
-      ],
-    }));
+      { ...dados, id: `auto-${Date.now()}`, execucoes: "0 execuções" },
+    ]);
   }
 
   function atualizarAutomacao(
-    funilId: string,
     automacaoId: string,
     dados: Partial<Omit<Automacao, "id">>,
   ) {
-    setAutomacoesPorFunil((prev) => ({
-      ...prev,
-      [funilId]: (prev[funilId] ?? []).map((a) =>
-        a.id === automacaoId ? { ...a, ...dados } : a,
-      ),
-    }));
+    setAutomacoes((prev) =>
+      prev.map((a) => (a.id === automacaoId ? { ...a, ...dados } : a)),
+    );
   }
 
-  function excluirAutomacao(funilId: string, automacaoId: string) {
-    setAutomacoesPorFunil((prev) => ({
-      ...prev,
-      [funilId]: (prev[funilId] ?? []).filter((a) => a.id !== automacaoId),
-    }));
+  function excluirAutomacao(automacaoId: string) {
+    setAutomacoes((prev) => prev.filter((a) => a.id !== automacaoId));
   }
 
-  function alternarAtiva(funilId: string, automacaoId: string) {
-    setAutomacoesPorFunil((prev) => ({
-      ...prev,
-      [funilId]: (prev[funilId] ?? []).map((a) =>
-        a.id === automacaoId ? { ...a, ativa: !a.ativa } : a,
-      ),
-    }));
+  function alternarAtiva(automacaoId: string) {
+    setAutomacoes((prev) =>
+      prev.map((a) => (a.id === automacaoId ? { ...a, ativa: !a.ativa } : a)),
+    );
+  }
+
+  function excluirAutomacoesDaEtapa(funilId: string, etapaId: string) {
+    setAutomacoes((prev) =>
+      prev.filter((a) => !(a.funilId === funilId && a.etapaId === etapaId)),
+    );
+  }
+
+  function excluirAutomacoesDoFunil(funilId: string) {
+    setAutomacoes((prev) => prev.filter((a) => a.funilId !== funilId));
   }
 
   return (
     <AutomacoesContext.Provider
       value={{
-        automacoesPorFunil,
-        criarAbaParaFunil,
-        excluirAbaDoFunil,
+        automacoes,
+        automacoesDaEtapa,
+        automacoesDeEntradaAtivas,
         criarAutomacao,
         atualizarAutomacao,
         excluirAutomacao,
         alternarAtiva,
+        excluirAutomacoesDaEtapa,
+        excluirAutomacoesDoFunil,
       }}
     >
       {children}

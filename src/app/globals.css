@@ -943,6 +943,52 @@ table.tbl tbody tr:hover td {
   border-radius: 9px;
 }
 
+.kcol-auto-link {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--blue);
+  background: var(--blue-soft);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 4px 8px;
+  margin-bottom: 10px;
+  width: fit-content;
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+
+.kcol-auto-link:hover {
+  border-color: var(--blue);
+}
+
+.toast-stack {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
 .lead-card,
 .conv-card,
 .task-card {
@@ -1641,265 +1687,87 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
-/* ---------------- Automações ---------------- */
+/* ---------------- Automações · quadro por etapa ---------------- */
 
-.auto-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--line-soft);
-}
-
-.auto-row:last-child {
-  border-bottom: none;
-}
-
-.auto-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--blue-soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-}
-
-.auto-icon svg {
-  width: 18px;
-  height: 18px;
-  color: var(--blue);
-}
-
-.auto-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.auto-title {
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.auto-flow {
-  font-size: 11.5px;
-  color: var(--text-muted);
-  margin-top: 3px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.flow-chip {
+.auto-acao-row {
   background: var(--navy);
   border: 1px solid var(--line);
-  padding: 3px 9px;
-  border-radius: 7px;
-  font-weight: 600;
-}
-
-.flow-arrow {
-  color: var(--text-faint);
-}
-
-.flow-chip.condicao {
-  color: var(--blue);
-  border-color: rgba(46, 107, 255, 0.35);
-}
-
-.flow-chip.sim {
-  color: var(--blue);
-}
-
-.flow-chip.nao {
-  color: var(--text-faint);
-}
-
-/* ---------------- Automações · fluxograma ---------------- */
-
-.flow-canvas {
-  position: relative;
-  padding: 20px 17px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--navy);
-  min-height: 460px;
-  user-select: none;
-}
-
-.flow-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: fit-content;
-  margin: 0 auto;
-}
-
-.flow-node-box {
-  width: 260px;
-  max-width: 100%;
-}
-
-.flow-node-btn {
-  width: 100%;
-  background: var(--navy-raised);
-  border: 1.5px solid var(--line);
   border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 12.5px;
-  font-weight: 700;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  padding: 12px;
+  margin-bottom: 10px;
 }
 
-.flow-node-btn:hover {
-  border-color: rgba(46, 107, 255, 0.5);
-  background: var(--blue-soft-2);
-}
-
-.flow-node-box.gatilho .flow-node-btn {
-  border-color: var(--blue);
-  background: var(--blue-soft);
-  color: var(--blue);
-}
-
-.flow-node-box.condicao .flow-node-btn {
-  border-style: dashed;
-  border-color: var(--blue);
-  color: var(--ink);
-}
-
-.flow-node-box.acao .flow-node-btn {
-  color: var(--ink);
-}
-
-.flow-node-remove {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--navy);
-  border: 1px solid var(--line);
-  color: var(--text-faint);
-  font-size: 10px;
-  cursor: pointer;
+.auto-acao-row-h {
   display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.flow-connector {
-  width: 2px;
-  height: 22px;
-  background: var(--line);
-}
-
-.flow-branch-row {
-  display: flex;
-  gap: 32px;
-  align-items: flex-start;
-  justify-content: center;
-}
-
-.flow-branch-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.flow-branch-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 20px;
-}
-
-.flow-branch-label.sim {
-  color: var(--blue);
-  background: var(--blue-soft);
-}
-
-.flow-branch-label.nao {
-  color: var(--text-faint);
-  background: var(--line-soft);
-}
-
-.auto-stat {
-  font-size: 10.5px;
-  color: var(--text-faint);
-  width: 88px;
-  text-align: right;
-  flex: 0 0 auto;
-}
-
-/* ---------------- Automações · modelo mapa mental ---------------- */
-
-.mindmap {
-  display: flex;
-  align-items: center;
-  gap: 40px;
-  padding: 20px 4px;
-  overflow-x: auto;
-}
-
-.mindmap-root {
-  display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 8px;
+  margin-bottom: 8px;
+}
+
+.auto-acao-icone {
+  font-size: 15px;
   flex: 0 0 auto;
-  width: 120px;
-  height: 120px;
+}
+
+.remove-chip {
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: var(--blue);
-  color: var(--white);
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 13px;
-  justify-content: center;
-  text-align: center;
-}
-
-.mindmap-branches {
-  position: relative;
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  color: var(--text-faint);
+  font-size: 11px;
+  cursor: pointer;
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding-left: 40px;
-  border-left: 2px solid var(--line);
-  margin-left: 4px;
-  flex: 1;
-  min-width: 320px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
 }
 
-.mindmap-branch {
-  position: relative;
-}
-
-.mindmap-branch::before {
-  content: "";
-  position: absolute;
-  left: -40px;
-  top: 50%;
-  width: 40px;
-  height: 2px;
-  background: var(--line);
-}
-
-.mindmap-node {
+.auto-kanban-card {
+  display: block;
+  width: 100%;
+  text-align: left;
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.auto-kanban-card-h {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.auto-kanban-card-h .titulo {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.auto-kanban-card-gatilho {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.auto-kanban-card-acoes {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.auto-kanban-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
 }
 
 /* ---------------- Ações / listas de transmissão ---------------- */

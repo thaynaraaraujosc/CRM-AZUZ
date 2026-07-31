@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { automacoes, contatos, equipe, notificacoes, tarefas } from "@/lib/data";
+import { contatos, equipe, notificacoes, tarefas } from "@/lib/data";
 import { IconBell, IconSearch } from "@/components/icons";
 import { navEntries } from "@/components/sidebar";
 
@@ -33,9 +33,6 @@ function useSearchIndex(): SearchResult[] {
           href: "/tarefas",
         }),
       ),
-    );
-    automacoes.forEach((a) =>
-      results.push({ label: a.titulo, sub: "Automação", href: "/automacoes" }),
     );
     equipe.forEach((m) =>
       results.push({ label: m.nome, sub: `Equipe · ${m.papel}`, href: "/equipe" }),
