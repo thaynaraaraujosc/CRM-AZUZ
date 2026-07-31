@@ -9,11 +9,20 @@ import {
 
 import { automacoes as automacoesIniciais, funis as funisIniciais } from "@/lib/data";
 
+export type Condicao = {
+  pergunta: string;
+  seSim: string;
+  seNao: string;
+};
+
 export type Automacao = {
   id: string;
   titulo: string;
   gatilho: string;
+  /** "linear": gatilho -> uma ou mais ações em sequência. "condicional": gatilho -> pergunta -> se sim/se não. */
+  ramo: "linear" | "condicional";
   acoes: string[];
+  condicao?: Condicao;
   mensagem: string;
   execucoes: string;
   ativa: boolean;
@@ -45,6 +54,7 @@ function automacoesIniciaisConvertidas(): Automacao[] {
     id: `auto-inicial-${i}`,
     titulo: a.titulo,
     gatilho: a.fluxo[0] ?? "",
+    ramo: "linear",
     acoes: a.fluxo.slice(1),
     mensagem: "",
     execucoes: a.execucoes,

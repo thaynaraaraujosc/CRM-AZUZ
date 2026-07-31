@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { acoesAutomacao, automacaoIdeias, gatilhosAutomacao } from "@/lib/data";
@@ -55,9 +55,16 @@ function AutomacoesPageInner() {
 
   const [tituloForm, setTituloForm] = useState("");
   const [gatilhoForm, setGatilhoForm] = useState(gatilhosAutomacao[0]);
+  const [ramoForm, setRamoForm] = useState<"linear" | "condicional">("linear");
   const [acoesForm, setAcoesForm] = useState<string[]>([acoesAutomacao[0]]);
+  const [condicaoPerguntaForm, setCondicaoPerguntaForm] = useState("");
+  const [condicaoSeSimForm, setCondicaoSeSimForm] = useState(acoesAutomacao[0]);
+  const [condicaoSeNaoForm, setCondicaoSeNaoForm] = useState(acoesAutomacao[0]);
   const [mensagemForm, setMensagemForm] = useState("");
   const [ativaForm, setAtivaForm] = useState(true);
+  const [editorModo, setEditorModo] = useState<"formulario" | "fluxograma">(
+    "formulario",
+  );
 
   function fecharConstrutor() {
     setConstrutorAberto(false);
@@ -75,9 +82,14 @@ function AutomacoesPageInner() {
     setIdeiaEscolhida(ideia);
     setTituloForm(ideia === "zero" ? "" : ideia.titulo);
     setGatilhoForm(ideia === "zero" ? gatilhosAutomacao[0] : ideia.gatilho);
+    setRamoForm("linear");
     setAcoesForm(ideia === "zero" ? [acoesAutomacao[0]] : [ideia.acao]);
+    setCondicaoPerguntaForm("");
+    setCondicaoSeSimForm(acoesAutomacao[0]);
+    setCondicaoSeNaoForm(acoesAutomacao[0]);
     setMensagemForm(ideia === "zero" ? "" : ideia.descricao);
     setAtivaForm(true);
+    setEditorModo("formulario");
   }
 
   function abrirEdicao(automacao: Automacao) {
@@ -86,30 +98,39 @@ function AutomacoesPageInner() {
     setConstrutorAberto(true);
     setTituloForm(automacao.titulo);
     setGatilhoForm(automacao.gatilho);
+    setRamoForm(automacao.ramo);
     setAcoesForm(automacao.acoes.length ? automacao.acoes : [acoesAutomacao[0]]);
+    setCondicaoPerguntaForm(automacao.condicao?.pergunta ?? "");
+    setCondicaoSeSimForm(automacao.condicao?.seSim ?? acoesAutomacao[0]);
+    setCondicaoSeNaoForm(automacao.condicao?.seNao ?? acoesAutomacao[0]);
     setMensagemForm(automacao.mensagem);
     setAtivaForm(automacao.ativa);
+    setEditorModo("formulario");
   }
 
   function salvarAutomacao() {
     if (!funilSelecionado) return;
     const titulo = tituloForm.trim() || "Automação sem nome";
+    const dados = {
+      titulo,
+      gatilho: gatilhoForm,
+      ramo: ramoForm,
+      acoes: acoesForm,
+      condicao:
+        ramoForm === "condicional"
+          ? {
+              pergunta: condicaoPerguntaForm.trim() || "Condição sem nome",
+              seSim: condicaoSeSimForm,
+              seNao: condicaoSeNaoForm,
+            }
+          : undefined,
+      mensagem: mensagemForm,
+      ativa: ativaForm,
+    };
     if (editandoId) {
-      atualizarAutomacao(funilSelecionado.id, editandoId, {
-        titulo,
-        gatilho: gatilhoForm,
-        acoes: acoesForm,
-        mensagem: mensagemForm,
-        ativa: ativaForm,
-      });
+      atualizarAutomacao(funilSelecionado.id, editandoId, dados);
     } else {
-      criarAutomacao(funilSelecionado.id, {
-        titulo,
-        gatilho: gatilhoForm,
-        acoes: acoesForm,
-        mensagem: mensagemForm,
-        ativa: ativaForm,
-      });
+      criarAutomacao(funilSelecionado.id, dados);
     }
     fecharConstrutor();
   }
@@ -125,6 +146,22 @@ function AutomacoesPageInner() {
   }
 
   function renderFluxo(automacao: Automacao) {
+    if (automacao.ramo === "condicional" && automacao.condicao) {
+      const { pergunta, seSim, seNao } = automacao.condicao;
+      return (
+        <div className="auto-flow" style={{ flexWrap: "wrap" }}>
+          <span className="flow-chip">{automacao.gatilho}</span>
+          <span className="flow-arrow">→</span>
+          <span className="flow-chip condicao">
+            {pergunta.endsWith("?") ? pergunta : `${pergunta}?`}
+          </span>
+          <span className="flow-arrow">→</span>
+          <span className="flow-chip sim">Se sim: {seSim}</span>
+          <span className="flow-arrow">→</span>
+          <span className="flow-chip nao">Se não: {seNao}</span>
+        </div>
+      );
+    }
     const passos = [automacao.gatilho, ...automacao.acoes];
     return (
       <div className="auto-flow">
@@ -308,26 +345,122 @@ function AutomacoesPageInner() {
                     placeholder="Ex.: Lead novo → mensagem de boas-vindas"
                   />
                 </div>
+
                 <div className="field">
-                  <label>Gatilho — quando disparar</label>
-                  <ChipFilters
-                    options={gatilhosAutomacao}
-                    initial={gatilhosAutomacao.indexOf(gatilhoForm)}
-                    onChange={(g) => setGatilhoForm(g)}
-                  />
+                  <label>Como montar</label>
+                  <div className="filters-row">
+                    <button
+                      type="button"
+                      className={`fchip${editorModo === "formulario" ? " active" : ""}`}
+                      aria-pressed={editorModo === "formulario"}
+                      onClick={() => setEditorModo("formulario")}
+                    >
+                      📋 Formulário
+                    </button>
+                    <button
+                      type="button"
+                      className={`fchip${editorModo === "fluxograma" ? " active" : ""}`}
+                      aria-pressed={editorModo === "fluxograma"}
+                      onClick={() => setEditorModo("fluxograma")}
+                    >
+                      ⌥ Fluxograma
+                    </button>
+                  </div>
                 </div>
-                <div className="field">
-                  <label>
-                    Ação — o que fazer (pode acrescentar ou retirar mais de uma)
-                  </label>
-                  <SegmentChips
-                    options={acoesAutomacao.map((a) => ({
-                      label: a,
-                      ativo: acoesForm.includes(a),
-                    }))}
-                    onChange={(selecionadas) => setAcoesForm(selecionadas)}
+
+                {editorModo === "formulario" ? (
+                  <>
+                    <div className="field">
+                      <label>Gatilho — quando disparar</label>
+                      <ChipFilters
+                        options={gatilhosAutomacao}
+                        initial={gatilhosAutomacao.indexOf(gatilhoForm)}
+                        onChange={(g) => setGatilhoForm(g)}
+                      />
+                    </div>
+                    <div className="field">
+                      <label>Tipo de fluxo</label>
+                      <div className="filters-row">
+                        <button
+                          type="button"
+                          className={`fchip${ramoForm === "linear" ? " active" : ""}`}
+                          aria-pressed={ramoForm === "linear"}
+                          onClick={() => setRamoForm("linear")}
+                        >
+                          Fluxo simples
+                        </button>
+                        <button
+                          type="button"
+                          className={`fchip${ramoForm === "condicional" ? " active" : ""}`}
+                          aria-pressed={ramoForm === "condicional"}
+                          onClick={() => setRamoForm("condicional")}
+                        >
+                          Com condição (se sim / se não)
+                        </button>
+                      </div>
+                    </div>
+                    {ramoForm === "linear" ? (
+                      <div className="field">
+                        <label>
+                          Ação — o que fazer (pode acrescentar ou retirar mais de uma)
+                        </label>
+                        <SegmentChips
+                          options={acoesAutomacao.map((a) => ({
+                            label: a,
+                            ativo: acoesForm.includes(a),
+                          }))}
+                          onChange={(selecionadas) => setAcoesForm(selecionadas)}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="field">
+                          <label>Pergunta da condição</label>
+                          <input
+                            className="input"
+                            style={{ width: "100%" }}
+                            type="text"
+                            value={condicaoPerguntaForm}
+                            onChange={(e) => setCondicaoPerguntaForm(e.target.value)}
+                            placeholder="Ex.: Cliente respondeu em 2h"
+                          />
+                        </div>
+                        <div className="field">
+                          <label>Se sim</label>
+                          <ChipFilters
+                            options={acoesAutomacao}
+                            initial={acoesAutomacao.indexOf(condicaoSeSimForm)}
+                            onChange={(a) => setCondicaoSeSimForm(a)}
+                          />
+                        </div>
+                        <div className="field">
+                          <label>Se não</label>
+                          <ChipFilters
+                            options={acoesAutomacao}
+                            initial={acoesAutomacao.indexOf(condicaoSeNaoForm)}
+                            onChange={(a) => setCondicaoSeNaoForm(a)}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <FlowEditor
+                    gatilho={gatilhoForm}
+                    onChangeGatilho={setGatilhoForm}
+                    ramo={ramoForm}
+                    onChangeRamo={setRamoForm}
+                    acoes={acoesForm}
+                    onChangeAcoes={setAcoesForm}
+                    condicaoPergunta={condicaoPerguntaForm}
+                    onChangeCondicaoPergunta={setCondicaoPerguntaForm}
+                    condicaoSeSim={condicaoSeSimForm}
+                    onChangeCondicaoSeSim={setCondicaoSeSimForm}
+                    condicaoSeNao={condicaoSeNaoForm}
+                    onChangeCondicaoSeNao={setCondicaoSeNaoForm}
                   />
-                </div>
+                )}
+
                 <div className="field">
                   <label>Mensagem ou observação (opcional)</label>
                   <textarea
@@ -474,5 +607,270 @@ function AutomacoesPageInner() {
         )}
       </div>
     </>
+  );
+}
+
+type FlowEditorProps = {
+  gatilho: string;
+  onChangeGatilho: (v: string) => void;
+  ramo: "linear" | "condicional";
+  onChangeRamo: (v: "linear" | "condicional") => void;
+  acoes: string[];
+  onChangeAcoes: (v: string[]) => void;
+  condicaoPergunta: string;
+  onChangeCondicaoPergunta: (v: string) => void;
+  condicaoSeSim: string;
+  onChangeCondicaoSeSim: (v: string) => void;
+  condicaoSeNao: string;
+  onChangeCondicaoSeNao: (v: string) => void;
+};
+
+/** Select embutido no nó, usado tanto pra gatilho quanto pra ação (troca só a lista de opções). */
+function FlowNodeSelect({
+  valor,
+  opcoes,
+  onEscolher,
+}: {
+  valor: string;
+  opcoes: readonly string[];
+  onEscolher: (v: string) => void;
+}) {
+  return (
+    <select
+      className="input"
+      autoFocus
+      style={{ width: "100%", cursor: "pointer" }}
+      defaultValue={valor}
+      onChange={(e) => onEscolher(e.target.value)}
+      onBlur={() => onEscolher(valor)}
+    >
+      {opcoes.map((o) => (
+        <option key={o} value={o}>
+          {o}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** Um nó do fluxograma: mostra o texto num botão; clicar abre o campo de edição (children). */
+function FlowNode({
+  tipo,
+  texto,
+  aberto,
+  onAbrir,
+  children,
+}: {
+  tipo: "gatilho" | "acao" | "condicao";
+  texto: string;
+  aberto: boolean;
+  onAbrir: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`flow-node-box ${tipo}`}>
+      {aberto ? (
+        children
+      ) : (
+        <button type="button" className="flow-node-btn" onClick={onAbrir}>
+          {texto}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Segunda visualização da mesma automação: em vez do formulário de campos,
+ * mostra gatilho → ação(ões) (ou gatilho → condição → se sim/se não) como um
+ * fluxograma. Cada nó, ao ser clicado, abre o mesmo campo de edição que
+ * existe no formulário — é o mesmo estado, só muda como ele é mostrado.
+ */
+function FlowEditor({
+  gatilho,
+  onChangeGatilho,
+  ramo,
+  onChangeRamo,
+  acoes,
+  onChangeAcoes,
+  condicaoPergunta,
+  onChangeCondicaoPergunta,
+  condicaoSeSim,
+  onChangeCondicaoSeSim,
+  condicaoSeNao,
+  onChangeCondicaoSeNao,
+}: FlowEditorProps) {
+  const [noAberto, setNoAberto] = useState<string | null>(null);
+  const [pergunta, setPergunta] = useState(condicaoPergunta);
+
+  function fechar() {
+    setNoAberto(null);
+  }
+
+  return (
+    <div className="field">
+      <label>Fluxograma — clique num nó pra editar</label>
+      <div className="filters-row" style={{ marginBottom: 10 }}>
+        <button
+          type="button"
+          className={`fchip${ramo === "linear" ? " active" : ""}`}
+          aria-pressed={ramo === "linear"}
+          onClick={() => onChangeRamo("linear")}
+        >
+          Fluxo simples
+        </button>
+        <button
+          type="button"
+          className={`fchip${ramo === "condicional" ? " active" : ""}`}
+          aria-pressed={ramo === "condicional"}
+          onClick={() => onChangeRamo("condicional")}
+        >
+          Com condição
+        </button>
+      </div>
+
+      <div className="flow-canvas">
+        <div className="flow-col">
+          <FlowNode
+            tipo="gatilho"
+            texto={gatilho}
+            aberto={noAberto === "gatilho"}
+            onAbrir={() => setNoAberto("gatilho")}
+          >
+            <FlowNodeSelect
+              valor={gatilho}
+              opcoes={gatilhosAutomacao}
+              onEscolher={(v) => {
+                onChangeGatilho(v);
+                fechar();
+              }}
+            />
+          </FlowNode>
+          <div className="flow-connector" />
+
+          {ramo === "linear" ? (
+            <>
+              {acoes.map((acao, i) => (
+                <div className="flow-col" key={`${acao}-${i}`}>
+                  <div style={{ position: "relative" }}>
+                    <FlowNode
+                      tipo="acao"
+                      texto={acao}
+                      aberto={noAberto === `acao-${i}`}
+                      onAbrir={() => setNoAberto(`acao-${i}`)}
+                    >
+                      <FlowNodeSelect
+                        valor={acao}
+                        opcoes={acoesAutomacao}
+                        onEscolher={(v) => {
+                          const proximo = [...acoes];
+                          proximo[i] = v;
+                          onChangeAcoes(proximo);
+                          fechar();
+                        }}
+                      />
+                    </FlowNode>
+                    {acoes.length > 1 ? (
+                      <button
+                        type="button"
+                        className="flow-node-remove"
+                        aria-label="Remover essa ação"
+                        onClick={() =>
+                          onChangeAcoes(acoes.filter((_, idx) => idx !== i))
+                        }
+                      >
+                        ✕
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="flow-connector" />
+                </div>
+              ))}
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => onChangeAcoes([...acoes, acoesAutomacao[0]])}
+              >
+                + Adicionar ação
+              </button>
+            </>
+          ) : (
+            <>
+              <FlowNode
+                tipo="condicao"
+                texto={(() => {
+                  const base = condicaoPergunta || "Condição";
+                  return base.endsWith("?") ? base : `${base}?`;
+                })()}
+                aberto={noAberto === "condicao"}
+                onAbrir={() => {
+                  setPergunta(condicaoPergunta);
+                  setNoAberto("condicao");
+                }}
+              >
+                <input
+                  className="input"
+                  autoFocus
+                  style={{ width: "100%" }}
+                  value={pergunta}
+                  placeholder="Ex.: Cliente respondeu em 2h"
+                  onChange={(e) => setPergunta(e.target.value)}
+                  onBlur={() => {
+                    onChangeCondicaoPergunta(pergunta);
+                    fechar();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      onChangeCondicaoPergunta(pergunta);
+                      fechar();
+                    }
+                    if (e.key === "Escape") fechar();
+                  }}
+                />
+              </FlowNode>
+              <div className="flow-connector" />
+              <div className="flow-branch-row">
+                <div className="flow-branch-col">
+                  <span className="flow-branch-label sim">Sim</span>
+                  <FlowNode
+                    tipo="acao"
+                    texto={condicaoSeSim}
+                    aberto={noAberto === "condicao-sim"}
+                    onAbrir={() => setNoAberto("condicao-sim")}
+                  >
+                    <FlowNodeSelect
+                      valor={condicaoSeSim}
+                      opcoes={acoesAutomacao}
+                      onEscolher={(v) => {
+                        onChangeCondicaoSeSim(v);
+                        fechar();
+                      }}
+                    />
+                  </FlowNode>
+                </div>
+                <div className="flow-branch-col">
+                  <span className="flow-branch-label nao">Não</span>
+                  <FlowNode
+                    tipo="acao"
+                    texto={condicaoSeNao}
+                    aberto={noAberto === "condicao-nao"}
+                    onAbrir={() => setNoAberto("condicao-nao")}
+                  >
+                    <FlowNodeSelect
+                      valor={condicaoSeNao}
+                      opcoes={acoesAutomacao}
+                      onEscolher={(v) => {
+                        onChangeCondicaoSeNao(v);
+                        fechar();
+                      }}
+                    />
+                  </FlowNode>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

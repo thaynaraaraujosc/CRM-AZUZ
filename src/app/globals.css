@@ -1704,6 +1704,127 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
+.flow-chip.condicao {
+  color: var(--blue);
+  border-color: rgba(46, 107, 255, 0.35);
+}
+
+.flow-chip.sim {
+  color: var(--blue);
+}
+
+.flow-chip.nao {
+  color: var(--text-faint);
+}
+
+/* ---------------- Automações · fluxograma ---------------- */
+
+.flow-canvas {
+  padding: 20px 17px;
+  overflow-x: auto;
+}
+
+.flow-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.flow-node-box {
+  width: 260px;
+  max-width: 100%;
+}
+
+.flow-node-btn {
+  width: 100%;
+  background: var(--navy-raised);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.flow-node-btn:hover {
+  border-color: rgba(46, 107, 255, 0.5);
+  background: var(--blue-soft-2);
+}
+
+.flow-node-box.gatilho .flow-node-btn {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.flow-node-box.condicao .flow-node-btn {
+  border-style: dashed;
+  border-color: var(--blue);
+  color: var(--ink);
+}
+
+.flow-node-box.acao .flow-node-btn {
+  color: var(--ink);
+}
+
+.flow-node-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  color: var(--text-faint);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flow-connector {
+  width: 2px;
+  height: 22px;
+  background: var(--line);
+}
+
+.flow-branch-row {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.flow-branch-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.flow-branch-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.flow-branch-label.sim {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.flow-branch-label.nao {
+  color: var(--text-faint);
+  background: var(--line-soft);
+}
+
 .auto-stat {
   font-size: 10.5px;
   color: var(--text-faint);
