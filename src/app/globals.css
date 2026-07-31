@@ -26,6 +26,25 @@
   --body: var(--font-body), Montserrat, sans-serif;
 }
 
+/* Tela escura — escolhida em Configurações > Tela, guardada em localStorage. */
+:root[data-theme="dark"] {
+  --navy: #0b1533;
+  --navy-raised: #141d3f;
+  --navy-raised-2: #1c274d;
+  --navy-deep: #060b1c;
+
+  --blue: #6a9bff;
+  --blue-soft: rgba(106, 155, 255, 0.2);
+  --blue-soft-2: rgba(106, 155, 255, 0.1);
+
+  --line: rgba(255, 255, 255, 0.12);
+  --line-soft: rgba(255, 255, 255, 0.07);
+
+  --ink: #f3f5fb;
+  --text-muted: rgba(243, 245, 251, 0.68);
+  --text-faint: rgba(243, 245, 251, 0.46);
+}
+
 *,
 *::before,
 *::after {
@@ -685,6 +704,45 @@ table {
 .split2 {
   grid-template-columns: 1.4fr 1fr;
   align-items: start;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.settings-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-menu-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.settings-menu-btn:hover {
+  background: var(--blue-soft-2);
+  color: var(--ink);
+}
+
+.settings-menu-btn.active {
+  background: var(--blue-soft);
+  color: var(--blue);
+  border-color: var(--blue);
 }
 
 .bars {
@@ -1459,6 +1517,11 @@ table.tbl tbody tr:hover td {
 
 .origem-tiktok {
   color: #000000;
+}
+
+/* Preto do TikTok fica ilegível no fundo escuro — segue a cor de texto do tema aí. */
+:root[data-theme="dark"] .origem-tiktok {
+  color: var(--ink);
 }
 
 .origem-indicacao {
@@ -2504,7 +2567,8 @@ table.tbl tbody tr:hover td {
   }
 
   .split2,
-  .rep-grid {
+  .rep-grid,
+  .settings-layout {
     grid-template-columns: 1fr;
   }
 

@@ -1,6 +1,18 @@
 import type { Metadata } from "next";
 import { Montserrat, Poppins } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
+
+const SCRIPT_TEMA_INICIAL = `
+(function () {
+  try {
+    var tema = localStorage.getItem("azuz-crm-tema");
+    if (tema === "dark" || tema === "light") {
+      document.documentElement.setAttribute("data-theme", tema);
+    }
+  } catch (e) {}
+})();
+`;
 
 const poppins = Poppins({
   variable: "--font-display",
@@ -27,7 +39,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={`${poppins.variable} ${montserrat.variable}`}>
-      <body>{children}</body>
+      <body>
+        <Script id="tema-inicial" strategy="beforeInteractive">
+          {SCRIPT_TEMA_INICIAL}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }
