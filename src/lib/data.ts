@@ -1119,7 +1119,7 @@ export const integracoes = [
     ],
   },
   {
-    grupo: "Comunicação — WhatsApp, redes e ligações",
+    grupo: "Comunicação — o que alimenta o WhatsApp",
     itens: [
       {
         logo: "wa",
@@ -1127,14 +1127,6 @@ export const integracoes = [
         sub: "Número conectado: +55 62 9XXXX-XXXX",
         status: "Conectado" as const,
         acao: "Gerenciar",
-      },
-      {
-        logo: "call",
-        cor: "var(--blue)",
-        titulo: "Ligações (iPhone)",
-        sub: "Sincroniza as chamadas do iPhone, grava e transcreve tudo direto na conversa do lead",
-        status: "Não conectado" as const,
-        acao: "Conectar",
       },
       {
         logo: "ig",
