@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-import { acaoRascunho, acoesAnteriores, segmentos } from "@/lib/data";
+import { acaoRascunho, acoesAnteriores, classeOrigem, segmentos } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { IconDoc, IconImage, IconMic, IconSearch } from "@/components/icons";
 import { MediaPicker, SegmentChips, Topbar } from "@/components/ui";
@@ -181,7 +181,9 @@ export default function AcoesPage() {
                           <div className="avatar">{c.initials}</div>
                           <div className="body">
                             <p className="name">{c.nome}</p>
-                            <p className="meta">{c.origem}</p>
+                            <p className={`meta ${classeOrigem(c.origem)}`}>
+                              {c.origem}
+                            </p>
                           </div>
                           <span className={`pill${c.whatsapp ? " on" : ""}`}>
                             {c.whatsapp ? "Número gravado" : "Sem número"}

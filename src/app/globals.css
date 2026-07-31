@@ -194,6 +194,14 @@ table {
   color: var(--blue);
 }
 
+.nav-item-whatsapp:hover {
+  background: rgba(37, 211, 102, 0.08);
+}
+
+.nav-item-whatsapp.active {
+  background: rgba(37, 211, 102, 0.14);
+}
+
 .nav-sublist {
   display: flex;
   flex-direction: column;
@@ -233,6 +241,24 @@ table {
   padding: 10px 8px 2px;
   border-top: 1px solid var(--line);
   margin-top: 10px;
+}
+
+.sb-foot-info {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.sb-foot-info:hover .who {
+  color: var(--blue);
 }
 
 .sb-foot .who {
@@ -1226,6 +1252,51 @@ table.tbl tbody tr:hover td {
   border: 1px solid var(--line);
   align-self: flex-start;
   border-bottom-left-radius: 4px;
+  position: relative;
+}
+
+.bubble-reacao {
+  position: absolute;
+  bottom: -9px;
+  right: -6px;
+  font-size: 13px;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bubble-coracao-anim {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 34px;
+  transform: translate(-50%, -50%) scale(0);
+  animation: coracao-pop 0.7s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes coracao-pop {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  25% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+  }
+  45% {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.3);
+    opacity: 0;
+  }
 }
 
 .bubble.out {
@@ -1321,8 +1392,24 @@ table.tbl tbody tr:hover td {
   gap: 8px;
 }
 
-.wa-tag-origem {
-  color: var(--blue);
+.origem-meta {
+  color: #1877f2;
+}
+
+.origem-google {
+  color: #4285f4;
+}
+
+.origem-instagram {
+  color: #e1306c;
+}
+
+.origem-tiktok {
+  color: #000000;
+}
+
+.origem-indicacao {
+  color: var(--text-faint);
 }
 
 .wa-main {

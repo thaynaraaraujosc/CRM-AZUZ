@@ -1,13 +1,15 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { conversas, type Funil, type NegocioCard } from "@/lib/data";
+import { classeOrigem, conversas, type Funil, type NegocioCard } from "@/lib/data";
+import { useAutomacoes } from "@/lib/automacoes-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import {
   CanalBadge,
+  IconAutomacoes,
   IconConfiguracoes,
   IconDoc,
 } from "@/components/icons";
@@ -42,6 +44,17 @@ function ConversasPageInner() {
   const searchParams = useSearchParams();
   const { funis, atribuirContatoAoFunil } = useFunis();
   const { contatos, salvarDadosContato, atribuirAtendente } = useContatos();
+  const { automacoesDeEntradaAtivas } = useAutomacoes();
+  const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
+  const proximoToastId = useRef(0);
+
+  function avisarAutomacao(texto: string) {
+    const id = `toast-${proximoToastId.current++}`;
+    setToasts((prev) => [...prev, { id, texto }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  }
   const [selectedId, setSelectedId] = useState(() => {
     const nomeContato = searchParams.get("contato");
     const encontrada = nomeContato
@@ -99,6 +112,10 @@ function ConversasPageInner() {
     contatoDaConversa?.endereco ?? "",
   );
   const [abertaIdAnterior, setAbertaIdAnterior] = useState(aberta.id);
+  const [mensagensCurtidas, setMensagensCurtidas] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const [coracaoAnimando, setCoracaoAnimando] = useState<number | null>(null);
   if (aberta.id !== abertaIdAnterior) {
     setAbertaIdAnterior(aberta.id);
     const funilId = localizacao?.funilId ?? funis[0]?.id ?? "";
@@ -109,6 +126,21 @@ function ConversasPageInner() {
     setWhatsappContato(contatoDaConversa?.whatsapp ?? "");
     setNascimentoContato(contatoDaConversa?.nascimento ?? "");
     setEnderecoContato(contatoDaConversa?.endereco ?? "");
+    setMensagensCurtidas(new Set());
+    setCoracaoAnimando(null);
+  }
+
+  function curtirMensagem(indice: number) {
+    setMensagensCurtidas((prev) => {
+      const next = new Set(prev);
+      if (next.has(indice)) next.delete(indice);
+      else next.add(indice);
+      return next;
+    });
+    setCoracaoAnimando(indice);
+    setTimeout(() => {
+      setCoracaoAnimando((atual) => (atual === indice ? null : atual));
+    }, 700);
   }
 
   const funilSelecionado =
@@ -153,7 +185,29 @@ function ConversasPageInner() {
         dias: cardExistente?.dias ?? "Hoje",
         data: cardExistente?.data ?? HOJE_ISO,
       };
+      const mudouDeEtapa =
+        localizacao?.funilId !== funilSelecionado.id ||
+        localizacao?.etapa !== etapaSelecionada;
       atribuirContatoAoFunil(funilSelecionado.id, etapaSelecionada, novoCard);
+
+      // Igual arrastar o card no Funil: entrar numa etapa com gatilho
+      // "entrou" ativo dispara a automação daquela etapa também por aqui.
+      if (mudouDeEtapa) {
+        const etapaDestino = funilSelecionado.colunas.find(
+          (c) => c.titulo === etapaSelecionada,
+        );
+        if (etapaDestino) {
+          const disparadas = automacoesDeEntradaAtivas(
+            funilSelecionado.id,
+            etapaDestino.id,
+          );
+          for (const automacao of disparadas) {
+            avisarAutomacao(
+              `Automação "${automacao.titulo}" disparada pra ${aberta.nome} (entrou em "${etapaDestino.titulo}")`,
+            );
+          }
+        }
+      }
     }
   }
 
@@ -197,7 +251,9 @@ function ConversasPageInner() {
                 </span>
                 <span className="cr3">
                   <span className="tag">{c.status}</span>
-                  <span className="tag wa-tag-origem">{c.origem}</span>
+                  <span className={`tag ${classeOrigem(c.origem)}`}>
+                    {c.origem}
+                  </span>
                 </span>
               </button>
             );
@@ -226,9 +282,23 @@ function ConversasPageInner() {
 
           <div className="chat-body">
             {aberta.mensagens.map((msg, i) => (
-              <div className={`bubble ${msg.tipo}`} key={i}>
+              <div
+                className={`bubble ${msg.tipo}`}
+                key={i}
+                onDoubleClick={() => {
+                  if (msg.tipo === "in") curtirMensagem(i);
+                }}
+                style={msg.tipo === "in" ? { cursor: "pointer" } : undefined}
+                title={msg.tipo === "in" ? "Dois cliques pra curtir" : undefined}
+              >
                 {msg.texto}
                 {msg.hora ? <span className="tm">{msg.hora}</span> : null}
+                {mensagensCurtidas.has(i) ? (
+                  <span className="bubble-reacao">❤️</span>
+                ) : null}
+                {coracaoAnimando === i ? (
+                  <span className="bubble-coracao-anim">❤️</span>
+                ) : null}
               </div>
             ))}
           </div>
@@ -404,6 +474,17 @@ function ConversasPageInner() {
         </aside>
         ) : null}
       </div>
+
+      {toasts.length > 0 ? (
+        <div className="toast-stack">
+          {toasts.map((toast) => (
+            <div className="toast" key={toast.id}>
+              <IconAutomacoes width={14} height={14} />
+              {toast.texto}
+            </div>
+          ))}
+        </div>
+      ) : null}
     </>
   );
 }

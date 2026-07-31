@@ -34,6 +34,22 @@ export type Origem =
   | "TikTok"
   | "Indicação";
 
+/** Classe CSS que pinta a nomenclatura da origem com a cor da própria plataforma. */
+export function classeOrigem(origem: Origem): string {
+  switch (origem) {
+    case "Meta Ads":
+      return "origem-meta";
+    case "Google Ads":
+      return "origem-google";
+    case "Instagram":
+      return "origem-instagram";
+    case "TikTok":
+      return "origem-tiktok";
+    case "Indicação":
+      return "origem-indicacao";
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* Início                                                                     */
 /* -------------------------------------------------------------------------- */

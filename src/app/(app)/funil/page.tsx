@@ -4,7 +4,7 @@ import { Suspense, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { equipe, type NegocioCard } from "@/lib/data";
+import { classeOrigem, equipe, type NegocioCard } from "@/lib/data";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useFunis } from "@/lib/funis-context";
 import { IconAutomacoes } from "@/components/icons";
@@ -683,7 +683,9 @@ function FunilPageInner() {
                       <span className="lval">{card.valor}</span>
                     </span>
                     <span className="lr2">
-                      <span className="tag">{card.origem}</span>
+                      <span className={`tag ${classeOrigem(card.origem)}`}>
+                        {card.origem}
+                      </span>
                       <span className="days">{card.dias}</span>
                     </span>
                   </button>

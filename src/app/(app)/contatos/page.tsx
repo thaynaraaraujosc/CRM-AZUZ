@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { filtrosContatos } from "@/lib/data";
+import { classeOrigem, filtrosContatos } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { IconSearch } from "@/components/icons";
@@ -219,7 +219,9 @@ function ContatosPageInner() {
                       </button>
                     </td>
                     <td>
-                      <span className="origin-tag">{c.origem}</span>
+                      <span className={`origin-tag ${classeOrigem(c.origem)}`}>
+                        {c.origem}
+                      </span>
                     </td>
                     <td>
                       <span

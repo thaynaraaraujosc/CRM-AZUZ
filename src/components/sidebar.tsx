@@ -173,7 +173,7 @@ export function Sidebar() {
             <div key={href}>
               <Link
                 href={href}
-                className={`nav-item${active ? " active" : ""}`}
+                className={`nav-item${href === "/conversas" ? " nav-item-whatsapp" : ""}${active ? " active" : ""}`}
                 aria-current={active ? "page" : undefined}
               >
                 <Icon />
@@ -202,11 +202,19 @@ export function Sidebar() {
       </nav>
 
       <div className="sb-foot">
-        <div className="avatar sm">{currentUser.initials}</div>
-        <div>
-          <p className="who">{currentUser.name}</p>
-          <p className="role">{currentUser.role}</p>
-        </div>
+        <button
+          type="button"
+          className="sb-foot-info"
+          aria-haspopup="true"
+          aria-expanded={contaAberta}
+          onClick={() => setContaAberta((v) => !v)}
+        >
+          <div className="avatar sm">{currentUser.initials}</div>
+          <div>
+            <p className="who">{currentUser.name}</p>
+            <p className="role">{currentUser.role}</p>
+          </div>
+        </button>
         <button
           type="button"
           className="sb-foot-toggle"
@@ -217,6 +225,11 @@ export function Sidebar() {
         </button>
 
         {contaAberta ? (
+          <>
+          <div
+            onClick={() => setContaAberta(false)}
+            style={{ position: "fixed", inset: 0, zIndex: 55 }}
+          />
           <div className="account-pop">
             <div className="dropdown-item" style={{ borderBottom: "1px solid var(--line)" }}>
               <span className="n">Trocar de conta</span>
@@ -243,6 +256,7 @@ export function Sidebar() {
               <span className="n">Sair</span>
             </button>
           </div>
+          </>
         ) : null}
       </div>
     </aside>
