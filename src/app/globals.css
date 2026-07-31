@@ -2054,6 +2054,46 @@ table.tbl tbody tr:hover td {
   margin: 0 0 10px 2px;
 }
 
+.plano-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 17px;
+  padding: 16px 18px;
+  background: var(--blue-soft);
+  border: 1px solid rgba(46, 107, 255, 0.25);
+  border-radius: 14px;
+}
+
+.plano-nome {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--blue);
+}
+
+.plano-desc {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  max-width: 420px;
+}
+
+.plano-valor {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 20px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.plano-valor span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+
 .int-row {
   display: flex;
   align-items: center;

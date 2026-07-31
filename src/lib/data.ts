@@ -1252,6 +1252,25 @@ export const webhooks = [
 ];
 
 /* -------------------------------------------------------------------------- */
+/* Planos e pagamentos                                                        */
+/* -------------------------------------------------------------------------- */
+
+export const planoAtual = {
+  nome: "Plano Completo",
+  descricao:
+    "Tudo incluso — funil, WhatsApp/Instagram/TikTok, automações, relatórios, IA e integrações",
+  valor: "R$ 249,00",
+  periodo: "por mês",
+};
+
+/** Quem processa a cobrança do cartão cadastrado. */
+export const PROCESSADORAS_PAGAMENTO = [
+  "Mercado Pago",
+  "Pagar.me",
+  "Outra instituição bancária",
+];
+
+/* -------------------------------------------------------------------------- */
 /* Azuz IA                                                                    */
 /* -------------------------------------------------------------------------- */
 
