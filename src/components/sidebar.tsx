@@ -8,6 +8,7 @@ import { currentUser, equipe, workspace } from "@/lib/data";
 import {
   IconAcoes,
   IconAutomacoes,
+  IconCamera,
   IconConfiguracoes,
   IconContatos,
   IconEquipe,
@@ -45,6 +46,9 @@ export const navEntries: NavEntry[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const [contaAberta, setContaAberta] = useState(false);
+  const [workspaceAberto, setWorkspaceAberto] = useState(false);
+  const [nomeEmpresa, setNomeEmpresa] = useState(workspace.name);
+  const [segmento, setSegmento] = useState(workspace.segment);
 
   const outrosMembros = equipe.filter((m) => m.nome !== currentUser.name);
 
@@ -55,10 +59,79 @@ export function Sidebar() {
         <span className="wordmark">azuz crm</span>
       </div>
 
-      <Link href="/configuracoes#workspace" className="sb-workspace">
-        <p className="l">Workspace</p>
-        <p className="v">{workspace.name}</p>
-      </Link>
+      <div className="dropdown-anchor">
+        <button
+          type="button"
+          className="sb-workspace"
+          onClick={() => setWorkspaceAberto((v) => !v)}
+        >
+          <p className="l">Workspace</p>
+          <p className="v">{nomeEmpresa}</p>
+        </button>
+
+        {workspaceAberto ? (
+          <>
+            <div
+              onClick={() => setWorkspaceAberto(false)}
+              style={{ position: "fixed", inset: 0, zIndex: 50 }}
+            />
+            <div className="dropdown-pop" style={{ width: 300, padding: "4px 0" }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "14px 14px 10px" }}>
+                <div
+                  className="avatar"
+                  style={{ width: 44, height: 44, borderRadius: 12, fontSize: 15 }}
+                >
+                  {nomeEmpresa
+                    .split(" ")
+                    .slice(0, 2)
+                    .map((p) => p[0])
+                    .join("")
+                    .toUpperCase()}
+                </div>
+                <button type="button" className="btn ghost">
+                  <IconCamera width={14} height={14} />
+                  Trocar foto
+                </button>
+              </div>
+              <div className="field">
+                <label>Nome da empresa</label>
+                <input
+                  className="input"
+                  style={{ width: "100%" }}
+                  type="text"
+                  value={nomeEmpresa}
+                  onChange={(e) => setNomeEmpresa(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>Segmento</label>
+                <input
+                  className="input"
+                  style={{ width: "100%" }}
+                  type="text"
+                  value={segmento}
+                  onChange={(e) => setSegmento(e.target.value)}
+                />
+              </div>
+              <div className="panel-h divided">
+                <h4>Quem está logado agora</h4>
+              </div>
+              <div className="field">
+                <label>Nome</label>
+                <div className="input">{currentUser.name}</div>
+              </div>
+              <div className="field">
+                <label>E-mail</label>
+                <div className="input">{currentUser.email}</div>
+              </div>
+              <div className="field">
+                <label>Papel</label>
+                <div className="input">{currentUser.role}</div>
+              </div>
+            </div>
+          </>
+        ) : null}
+      </div>
 
       <nav className="nav">
         {navEntries.map(({ href, label, Icon }) => {
