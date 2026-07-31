@@ -119,6 +119,17 @@ function ConversasPageInner() {
     setEtapaSelecionada(etapaPadraoPara(novoFunilId));
   }
 
+  // Atendente e funil andam juntos: se a pessoa escolhida é responsável por
+  // um funil, atribuir a ela já move o card pra esse funil — sem isso, dava
+  // pra escolher o atendente e a atribuição salvar no funil errado.
+  function escolherAtendente(nome: string) {
+    setAtendenteSelecionado(nome);
+    const funilDoAtendente = funis.find((f) => f.responsavel === nome);
+    if (funilDoAtendente) {
+      trocarFunilSelecionado(funilDoAtendente.id);
+    }
+  }
+
   function salvarDados() {
     salvarDadosContato(aberta.nome, {
       email: emailContato.trim() || undefined,
@@ -238,7 +249,7 @@ function ConversasPageInner() {
               descricao: a.papel,
             }))}
             initial={atendenteSelecionado}
-            onChange={setAtendenteSelecionado}
+            onChange={escolherAtendente}
           />
 
           <div className="panel-h divided">
