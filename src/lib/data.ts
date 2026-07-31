@@ -237,7 +237,7 @@ export const ETAPAS_PADRAO_FUNIL = [
 export const funis: Funil[] = [
   {
     id: "emagrecimento-diabetes",
-    nome: "Emagrecimento e diabetes",
+    nome: "Funil principal",
     colunas: [
       {
         titulo: "Novo",

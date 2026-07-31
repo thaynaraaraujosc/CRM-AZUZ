@@ -28,7 +28,7 @@ export default function FunilPage() {
   const [novoFunilAberto, setNovoFunilAberto] = useState(false);
   const [nomeNovoFunil, setNomeNovoFunil] = useState("");
   const [origemFiltro, setOrigemFiltro] = useState("Todas as origens");
-  const [periodoAberto, setPeriodoAberto] = useState(false);
+  const [filtroAberto, setFiltroAberto] = useState(false);
   const [dataDe, setDataDe] = useState("");
   const [dataAte, setDataAte] = useState("");
   const [arrastando, setArrastando] = useState<{
@@ -100,7 +100,7 @@ export default function FunilPage() {
     <>
       <Topbar
         title="Funil"
-        sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} negócios ${filtroAtivo ? "encontrados" : "no funil"}`}
+        sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} ${totalVisivel === 1 ? "negócio" : "negócios"} ${filtroAtivo ? (totalVisivel === 1 ? "encontrado" : "encontrados") : "no funil"}`}
         actions={
           <>
             <select
@@ -124,10 +124,10 @@ export default function FunilPage() {
             </button>
             <button
               type="button"
-              className={`btn ${periodoAberto || dataDe || dataAte ? "primary" : "ghost"}`}
-              onClick={() => setPeriodoAberto((v) => !v)}
+              className={`btn ${filtroAberto || filtroAtivo ? "primary" : "ghost"}`}
+              onClick={() => setFiltroAberto((v) => !v)}
             >
-              {periodoAberto ? "Fechar período" : "+ Filtrar por período"}
+              {filtroAberto ? "Fechar filtro" : "+ Filtrar"}
             </button>
           </>
         }
@@ -178,16 +178,24 @@ export default function FunilPage() {
           </section>
         ) : null}
 
-        {periodoAberto ? (
+        {filtroAberto ? (
           <section className="card mb14">
             <div className="panel-h">
-              <h4>Filtrar por período — de onde o lead veio, entre duas datas</h4>
+              <h4>Filtrar — qual origem e qual período</h4>
+            </div>
+            <div className="field">
+              <label>Origem do lead</label>
+              <ChipFilters
+                options={FILTROS_ORIGEM}
+                initial={FILTROS_ORIGEM.indexOf(origemFiltro)}
+                onChange={(opcao) => setOrigemFiltro(opcao)}
+              />
             </div>
             <div
               style={{
                 display: "flex",
                 gap: 14,
-                padding: "14px 17px",
+                padding: "0 17px 14px",
                 flexWrap: "wrap",
                 alignItems: "flex-end",
               }}
@@ -212,27 +220,22 @@ export default function FunilPage() {
                   onChange={(e) => setDataAte(e.target.value)}
                 />
               </div>
-              {dataDe || dataAte ? (
+              {filtroAtivo ? (
                 <button
                   type="button"
                   className="btn ghost"
                   onClick={() => {
+                    setOrigemFiltro("Todas as origens");
                     setDataDe("");
                     setDataAte("");
                   }}
                 >
-                  Limpar datas
+                  Limpar filtros
                 </button>
               ) : null}
             </div>
           </section>
         ) : null}
-
-        <ChipFilters
-          options={FILTROS_ORIGEM}
-          initial={0}
-          onChange={(opcao) => setOrigemFiltro(opcao)}
-        />
 
         <div className="kanban">
           {funilAtivo?.colunas.map((coluna, colIndex) => {
