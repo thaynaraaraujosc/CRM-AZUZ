@@ -3,15 +3,11 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import {
-  acoesAutomacao,
-  automacaoIdeias,
-  automacoes,
-  gatilhosAutomacao,
-} from "@/lib/data";
+import { acoesAutomacao, automacaoIdeias, gatilhosAutomacao } from "@/lib/data";
+import { useAutomacoes, type Automacao } from "@/lib/automacoes-context";
 import { useFunis } from "@/lib/funis-context";
 import { IconAutomacoes } from "@/components/icons";
-import { ChipFilters, Toggle, Topbar } from "@/components/ui";
+import { ChipFilters, SegmentChips, Toggle, Topbar } from "@/components/ui";
 
 type Ideia = (typeof automacaoIdeias)[number];
 type Modelo = "lista" | "mapa-mental";
@@ -26,30 +22,127 @@ export default function AutomacoesPage() {
 
 function AutomacoesPageInner() {
   const searchParams = useSearchParams();
-  const { funis } = useFunis();
-  const funilAlvoId = searchParams.get("criarPara");
-  const funilAlvo = funilAlvoId ? funis.find((f) => f.id === funilAlvoId) : null;
+  const { funis, funilAtivoId } = useFunis();
+  const {
+    automacoesPorFunil,
+    criarAutomacao,
+    atualizarAutomacao,
+    excluirAutomacao,
+    alternarAtiva,
+  } = useAutomacoes();
 
-  const ativas = automacoes.filter((a) => a.ativa).length;
-  const [construtorAberto, setConstrutorAberto] = useState(
-    () => Boolean(funilAlvo),
+  const funilAlvoId = searchParams.get("criarPara");
+
+  const [funilSelecionadoId, setFunilSelecionadoId] = useState(
+    () => funilAlvoId ?? funilAtivoId ?? funis[0]?.id ?? "",
   );
+  const funilSelecionado =
+    funis.find((f) => f.id === funilSelecionadoId) ?? funis[0];
+  const automacoes = funilSelecionado
+    ? automacoesPorFunil[funilSelecionado.id] ?? []
+    : [];
+  const ativas = automacoes.filter((a) => a.ativa).length;
+
+  const [construtorAberto, setConstrutorAberto] = useState(
+    () => Boolean(funilAlvoId),
+  );
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const [ideiaEscolhida, setIdeiaEscolhida] = useState<Ideia | "zero" | null>(
-    () => (funilAlvo ? "zero" : null),
+    () => (funilAlvoId ? "zero" : null),
   );
   const [modelo, setModelo] = useState<Modelo>("lista");
   const [modeloMenuAberto, setModeloMenuAberto] = useState(false);
 
+  const [tituloForm, setTituloForm] = useState("");
+  const [gatilhoForm, setGatilhoForm] = useState(gatilhosAutomacao[0]);
+  const [acoesForm, setAcoesForm] = useState<string[]>([acoesAutomacao[0]]);
+  const [mensagemForm, setMensagemForm] = useState("");
+  const [ativaForm, setAtivaForm] = useState(true);
+
   function fecharConstrutor() {
     setConstrutorAberto(false);
     setIdeiaEscolhida(null);
+    setEditandoId(null);
+  }
+
+  function abrirNovaAutomacao() {
+    setConstrutorAberto((v) => !v);
+    setIdeiaEscolhida(null);
+    setEditandoId(null);
+  }
+
+  function escolherIdeia(ideia: Ideia | "zero") {
+    setIdeiaEscolhida(ideia);
+    setTituloForm(ideia === "zero" ? "" : ideia.titulo);
+    setGatilhoForm(ideia === "zero" ? gatilhosAutomacao[0] : ideia.gatilho);
+    setAcoesForm(ideia === "zero" ? [acoesAutomacao[0]] : [ideia.acao]);
+    setMensagemForm(ideia === "zero" ? "" : ideia.descricao);
+    setAtivaForm(true);
+  }
+
+  function abrirEdicao(automacao: Automacao) {
+    setEditandoId(automacao.id);
+    setIdeiaEscolhida("zero");
+    setConstrutorAberto(true);
+    setTituloForm(automacao.titulo);
+    setGatilhoForm(automacao.gatilho);
+    setAcoesForm(automacao.acoes.length ? automacao.acoes : [acoesAutomacao[0]]);
+    setMensagemForm(automacao.mensagem);
+    setAtivaForm(automacao.ativa);
+  }
+
+  function salvarAutomacao() {
+    if (!funilSelecionado) return;
+    const titulo = tituloForm.trim() || "Automação sem nome";
+    if (editandoId) {
+      atualizarAutomacao(funilSelecionado.id, editandoId, {
+        titulo,
+        gatilho: gatilhoForm,
+        acoes: acoesForm,
+        mensagem: mensagemForm,
+        ativa: ativaForm,
+      });
+    } else {
+      criarAutomacao(funilSelecionado.id, {
+        titulo,
+        gatilho: gatilhoForm,
+        acoes: acoesForm,
+        mensagem: mensagemForm,
+        ativa: ativaForm,
+      });
+    }
+    fecharConstrutor();
+  }
+
+  function pedirExclusao(automacao: Automacao) {
+    if (!funilSelecionado) return;
+    if (
+      window.confirm(`Excluir a automação "${automacao.titulo}"?`)
+    ) {
+      excluirAutomacao(funilSelecionado.id, automacao.id);
+      if (editandoId === automacao.id) fecharConstrutor();
+    }
+  }
+
+  function renderFluxo(automacao: Automacao) {
+    const passos = [automacao.gatilho, ...automacao.acoes];
+    return (
+      <div className="auto-flow">
+        {passos.map((passo, i) => (
+          <span key={`${passo}-${i}`} style={{ display: "contents" }}>
+            {i > 0 ? <span className="flow-arrow">→</span> : null}
+            <span className="flow-chip">{passo}</span>
+          </span>
+        ))}
+      </div>
+    );
   }
 
   return (
     <>
       <Topbar
         title="Automações"
-        sub={`${automacoes.length} automações · ${ativas} ativas — follow-up e movimentação de funil`}
+        sub={`${automacoes.length} automações · ${ativas} ativas — ${funilSelecionado?.nome ?? ""}`}
         actions={
           <>
             <div className="dropdown-anchor">
@@ -104,27 +197,43 @@ function AutomacoesPageInner() {
             <button
               type="button"
               className="btn primary"
-              onClick={() => {
-                setConstrutorAberto((v) => !v);
-                setIdeiaEscolhida(null);
-              }}
+              onClick={abrirNovaAutomacao}
             >
-              {construtorAberto ? "Cancelar" : "+ Nova automação"}
+              {construtorAberto && !editandoId ? "Cancelar" : "+ Nova automação"}
             </button>
           </>
         }
       />
 
       <div className="content">
+        <div className="filters-row mb14">
+          {funis.map((f) => (
+            <button
+              type="button"
+              key={f.id}
+              className={`fchip${f.id === funilSelecionadoId ? " active" : ""}`}
+              aria-pressed={f.id === funilSelecionadoId}
+              onClick={() => {
+                setFunilSelecionadoId(f.id);
+                fecharConstrutor();
+              }}
+            >
+              {f.nome}
+            </button>
+          ))}
+        </div>
+
         {construtorAberto ? (
           <section className="open-conv mb14">
             <div className="open-conv-h">
               <div>
-                <p className="n">Nova automação</p>
+                <p className="n">
+                  {editandoId ? "Editar automação" : "Nova automação"}
+                </p>
                 <p className="s">
-                  {funilAlvo
-                    ? `Automação específica pro funil "${funilAlvo.nome}"`
-                    : "Automatize qualquer movimento do funil ou das tarefas — escolha uma ideia ou comece do zero"}
+                  {funilAlvoId && !editandoId
+                    ? `Automação específica pro funil "${funilSelecionado?.nome}"`
+                    : `Vale só pro funil "${funilSelecionado?.nome}"`}
                 </p>
               </div>
               <span
@@ -144,7 +253,7 @@ function AutomacoesPageInner() {
                     key={ideia.titulo}
                     className="media-opt"
                     style={{ flex: "1 1 220px", textAlign: "left" }}
-                    onClick={() => setIdeiaEscolhida(ideia)}
+                    onClick={() => escolherIdeia(ideia)}
                   >
                     <IconAutomacoes />
                     <span className="l" style={{ display: "block" }}>
@@ -167,7 +276,7 @@ function AutomacoesPageInner() {
                   type="button"
                   className="media-opt"
                   style={{ flex: "1 1 220px", textAlign: "left" }}
-                  onClick={() => setIdeiaEscolhida("zero")}
+                  onClick={() => escolherIdeia("zero")}
                 >
                   <IconAutomacoes />
                   <span className="l" style={{ display: "block" }}>
@@ -194,9 +303,8 @@ function AutomacoesPageInner() {
                     className="input"
                     style={{ width: "100%" }}
                     type="text"
-                    defaultValue={
-                      ideiaEscolhida === "zero" ? "" : ideiaEscolhida.titulo
-                    }
+                    value={tituloForm}
+                    onChange={(e) => setTituloForm(e.target.value)}
                     placeholder="Ex.: Lead novo → mensagem de boas-vindas"
                   />
                 </div>
@@ -204,22 +312,20 @@ function AutomacoesPageInner() {
                   <label>Gatilho — quando disparar</label>
                   <ChipFilters
                     options={gatilhosAutomacao}
-                    initial={
-                      ideiaEscolhida !== "zero"
-                        ? gatilhosAutomacao.indexOf(ideiaEscolhida.gatilho)
-                        : 0
-                    }
+                    initial={gatilhosAutomacao.indexOf(gatilhoForm)}
+                    onChange={(g) => setGatilhoForm(g)}
                   />
                 </div>
                 <div className="field">
-                  <label>Ação — o que fazer</label>
-                  <ChipFilters
-                    options={acoesAutomacao}
-                    initial={
-                      ideiaEscolhida !== "zero"
-                        ? acoesAutomacao.indexOf(ideiaEscolhida.acao)
-                        : 0
-                    }
+                  <label>
+                    Ação — o que fazer (pode acrescentar ou retirar mais de uma)
+                  </label>
+                  <SegmentChips
+                    options={acoesAutomacao.map((a) => ({
+                      label: a,
+                      ativo: acoesForm.includes(a),
+                    }))}
+                    onChange={(selecionadas) => setAcoesForm(selecionadas)}
                   />
                 </div>
                 <div className="field">
@@ -228,31 +334,52 @@ function AutomacoesPageInner() {
                     className="input"
                     style={{ width: "100%", minHeight: 70, resize: "vertical" }}
                     placeholder="Ex.: Oi! Recebemos sua mensagem, já já alguém te responde por aqui 💙"
-                    defaultValue={
-                      ideiaEscolhida !== "zero" ? ideiaEscolhida.descricao : ""
-                    }
+                    value={mensagemForm}
+                    onChange={(e) => setMensagemForm(e.target.value)}
                   />
                 </div>
                 <div className="toggle-row">
-                  <span className="tl">Ativar assim que criar</span>
-                  <Toggle defaultOn label="Ativar assim que criar" />
+                  <span className="tl">
+                    {editandoId ? "Automação ativa" : "Ativar assim que criar"}
+                  </span>
+                  <Toggle
+                    key={editandoId ?? "nova"}
+                    defaultOn={ativaForm}
+                    label="Automação ativa"
+                  />
                 </div>
                 <div className="section-foot">
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    style={{ flex: 1 }}
-                    onClick={() => setIdeiaEscolhida(null)}
-                  >
-                    ← Escolher outra ideia
-                  </button>
+                  {editandoId ? (
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        const automacao = automacoes.find(
+                          (a) => a.id === editandoId,
+                        );
+                        if (automacao) pedirExclusao(automacao);
+                      }}
+                    >
+                      Excluir automação
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      style={{ flex: 1 }}
+                      onClick={() => setIdeiaEscolhida(null)}
+                    >
+                      ← Escolher outra ideia
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn primary"
                     style={{ flex: 1 }}
-                    onClick={fecharConstrutor}
+                    onClick={salvarAutomacao}
                   >
-                    Salvar automação
+                    {editandoId ? "Salvar alterações" : "Salvar automação"}
                   </button>
                 </div>
               </>
@@ -260,26 +387,52 @@ function AutomacoesPageInner() {
           </section>
         ) : null}
 
-        {modelo === "lista" ? (
+        {automacoes.length === 0 ? (
+          <div className="card" style={{ padding: 24, textAlign: "center" }}>
+            <p className="hint">
+              Nenhuma automação ainda em {funilSelecionado?.nome ?? "esse funil"}
+              . Clique em &quot;+ Nova automação&quot; pra criar a primeira.
+            </p>
+          </div>
+        ) : modelo === "lista" ? (
           <div className="card">
             {automacoes.map((automacao) => (
-              <div className="auto-row" key={automacao.titulo}>
+              <div
+                className="auto-row"
+                key={automacao.id}
+                onClick={() => abrirEdicao(automacao)}
+                style={{ cursor: "pointer" }}
+              >
                 <div className="auto-icon">
                   <IconAutomacoes />
                 </div>
                 <div className="auto-body">
                   <p className="auto-title">{automacao.titulo}</p>
-                  <div className="auto-flow">
-                    {automacao.fluxo.map((passo, i) => (
-                      <span key={passo} style={{ display: "contents" }}>
-                        {i > 0 ? <span className="flow-arrow">→</span> : null}
-                        <span className="flow-chip">{passo}</span>
-                      </span>
-                    ))}
-                  </div>
+                  {renderFluxo(automacao)}
                 </div>
                 <span className="auto-stat">{automacao.execucoes}</span>
-                <Toggle defaultOn={automacao.ativa} label={automacao.titulo} />
+                <span
+                  role="button"
+                  aria-label={`Excluir automação ${automacao.titulo}`}
+                  title="Excluir automação"
+                  style={{ cursor: "pointer", color: "var(--text-faint)" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    pedirExclusao(automacao);
+                  }}
+                >
+                  ✕
+                </span>
+                <span onClick={(e) => e.stopPropagation()}>
+                  <Toggle
+                    defaultOn={automacao.ativa}
+                    label={automacao.titulo}
+                    onToggle={() =>
+                      funilSelecionado &&
+                      alternarAtiva(funilSelecionado.id, automacao.id)
+                    }
+                  />
+                </span>
               </div>
             ))}
           </div>
@@ -287,27 +440,31 @@ function AutomacoesPageInner() {
           <div className="mindmap">
             <div className="mindmap-root">
               <IconAutomacoes width={18} height={18} />
-              Automações
+              {funilSelecionado?.nome ?? "Automações"}
             </div>
             <div className="mindmap-branches">
               {automacoes.map((automacao) => (
-                <div className="mindmap-branch" key={automacao.titulo}>
-                  <div className="mindmap-node">
+                <div className="mindmap-branch" key={automacao.id}>
+                  <div
+                    className="mindmap-node"
+                    onClick={() => abrirEdicao(automacao)}
+                    style={{ cursor: "pointer" }}
+                  >
                     <div className="auto-row" style={{ padding: 0, border: 0 }}>
                       <div className="auto-body">
                         <p className="auto-title">{automacao.titulo}</p>
-                        <div className="auto-flow">
-                          {automacao.fluxo.map((passo, i) => (
-                            <span key={passo} style={{ display: "contents" }}>
-                              {i > 0 ? (
-                                <span className="flow-arrow">→</span>
-                              ) : null}
-                              <span className="flow-chip">{passo}</span>
-                            </span>
-                          ))}
-                        </div>
+                        {renderFluxo(automacao)}
                       </div>
-                      <Toggle defaultOn={automacao.ativa} label={automacao.titulo} />
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <Toggle
+                          defaultOn={automacao.ativa}
+                          label={automacao.titulo}
+                          onToggle={() =>
+                            funilSelecionado &&
+                            alternarAtiva(funilSelecionado.id, automacao.id)
+                          }
+                        />
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -16,6 +16,7 @@ import { useFunis } from "@/lib/funis-context";
 import {
   IconAcoes,
   IconAutomacoes,
+  IconCalendar,
   IconCamera,
   IconConfiguracoes,
   IconContatos,
@@ -41,6 +42,7 @@ export const navEntries: NavEntry[] = [
   { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
   { href: "/funil", label: "Funil", Icon: IconPipeline },
   { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
+  { href: "/agenda", label: "Agenda", Icon: IconCalendar },
   { href: "/acoes", label: "Ações", Icon: IconAcoes },
   { href: "/equipe", label: "Equipe", Icon: IconEquipe },
   { href: "/contatos", label: "Contatos", Icon: IconContatos },

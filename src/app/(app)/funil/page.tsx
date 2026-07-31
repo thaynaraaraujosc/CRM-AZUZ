@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { equipe, type NegocioCard } from "@/lib/data";
+import { useAutomacoes } from "@/lib/automacoes-context";
 import { useFunis } from "@/lib/funis-context";
 import { IconConfiguracoes } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
@@ -33,6 +34,7 @@ function FunilPageInner() {
   const searchParams = useSearchParams();
   const { funis, setFunis, funilAtivoId, setFunilAtivoId, excluirFunil } =
     useFunis();
+  const { criarAbaParaFunil, excluirAbaDoFunil } = useAutomacoes();
   const [configAberto, setConfigAberto] = useState(false);
 
   const [novoFunilAberto, setNovoFunilAberto] = useState(false);
@@ -105,6 +107,7 @@ function FunilPageInner() {
       ],
     };
     setFunis((prev) => [...prev, novo]);
+    criarAbaParaFunil(novo.id);
     setFunilAtivoId(novo.id);
     setAtendenteNovoFunil(equipe[0]?.nome ?? "");
     setNovoFunilAberto(false);
@@ -266,6 +269,7 @@ function FunilPageInner() {
                             )
                           ) {
                             excluirFunil(funilAtivo.id);
+                            excluirAbaDoFunil(funilAtivo.id);
                           }
                           setConfigAberto(false);
                         }}

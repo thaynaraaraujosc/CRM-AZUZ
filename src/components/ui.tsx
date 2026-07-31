@@ -27,9 +27,11 @@ export function Topbar({
 export function Toggle({
   defaultOn = false,
   label,
+  onToggle,
 }: {
   defaultOn?: boolean;
   label: string;
+  onToggle?: (on: boolean) => void;
 }) {
   const [on, setOn] = useState(defaultOn);
   return (
@@ -39,7 +41,10 @@ export function Toggle({
       aria-checked={on}
       aria-label={label}
       className={`toggle${on ? " on" : ""}`}
-      onClick={() => setOn((v) => !v)}
+      onClick={() => {
+        setOn((v) => !v);
+        onToggle?.(!on);
+      }}
     >
       <span className="knob" />
     </button>
