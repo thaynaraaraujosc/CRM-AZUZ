@@ -918,6 +918,20 @@ table.tbl tbody tr:hover td {
   padding: 0 2px;
 }
 
+.kcol-drag-handle {
+  cursor: grab;
+  color: var(--text-faint);
+  font-size: 13px;
+  line-height: 1;
+  flex: 0 0 auto;
+  margin-right: 2px;
+  user-select: none;
+}
+
+.kcol-drag-handle:active {
+  cursor: grabbing;
+}
+
 .kcol-h .t {
   font-size: 12px;
   font-weight: 700;

@@ -73,6 +73,7 @@ function FunilPageInner() {
   const [nomeNovaEtapa, setNomeNovaEtapa] = useState("");
   const [colunaRenomeando, setColunaRenomeando] = useState<number | null>(null);
   const [nomeRenomeando, setNomeRenomeando] = useState("");
+  const [colunaArrastando, setColunaArrastando] = useState<number | null>(null);
 
   const funilAtivo = funis.find((f) => f.id === funilAtivoId) ?? funis[0];
 
@@ -218,6 +219,21 @@ function FunilPageInner() {
       }),
     );
     setColunaRenomeando(null);
+  }
+
+  function reordenarEtapa(origem: number, destino: number) {
+    setColunaArrastando(null);
+    if (!funilAtivo || origem === destino) return;
+    setFunis((prev) =>
+      prev.map((f) => {
+        if (f.id !== funilAtivo.id) return f;
+        const colunas = [...f.colunas];
+        const [movida] = colunas.splice(origem, 1);
+        if (!movida) return f;
+        colunas.splice(destino, 0, movida);
+        return { ...f, colunas };
+      }),
+    );
   }
 
   function excluirEtapa(colIndex: number) {
@@ -569,11 +585,27 @@ function FunilPageInner() {
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
-                  moverCard(colIndex);
+                  if (colunaArrastando !== null) {
+                    reordenarEtapa(colunaArrastando, colIndex);
+                  } else {
+                    moverCard(colIndex);
+                  }
                 }}
-                style={{ minHeight: 60 }}
+                style={{
+                  minHeight: 60,
+                  opacity: colunaArrastando === colIndex ? 0.5 : 1,
+                }}
               >
                 <div className="kcol-h">
+                  <span
+                    className="kcol-drag-handle"
+                    draggable
+                    onDragStart={() => setColunaArrastando(colIndex)}
+                    onDragEnd={() => setColunaArrastando(null)}
+                    title="Arraste pra reordenar a etapa"
+                  >
+                    ⠿
+                  </span>
                   {colunaRenomeando === colIndex ? (
                     <input
                       className="input"
