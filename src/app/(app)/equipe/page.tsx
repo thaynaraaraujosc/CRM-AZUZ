@@ -6,6 +6,21 @@ import { useState } from "react";
 import { contatos, equipe, tarefas } from "@/lib/data";
 import { Toggle, Topbar } from "@/components/ui";
 
+/** Uma cor de avatar por pessoa, pra fila deixar de ser tudo igual. */
+const CORES_AVATAR = [
+  { bg: "rgba(46, 107, 255, 0.16)", cor: "#2e6bff" },
+  { bg: "rgba(155, 89, 255, 0.16)", cor: "#8a3ffc" },
+  { bg: "rgba(255, 145, 77, 0.18)", cor: "#c9660a" },
+  { bg: "rgba(37, 190, 130, 0.16)", cor: "#0f9d63" },
+  { bg: "rgba(255, 92, 138, 0.16)", cor: "#d81b60" },
+  { bg: "rgba(0, 172, 193, 0.16)", cor: "#00838f" },
+];
+
+function classePapel(papel: string) {
+  const slug = papel.toLowerCase().replace(/[^a-z]+/g, "-");
+  return `role-tag-${slug}`;
+}
+
 export default function EquipePage() {
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [senhaVisivel, setSenhaVisivel] = useState(false);
@@ -35,7 +50,7 @@ export default function EquipePage() {
       <div className="content">
         <div className="card mb14">
           <div className="table-wrap">
-            <table className="tbl">
+            <table className="tbl equipe-tbl">
               <thead>
                 <tr>
                   <th>Nome</th>
@@ -46,7 +61,9 @@ export default function EquipePage() {
                 </tr>
               </thead>
               <tbody>
-                {equipe.map((m) => (
+                {equipe.map((m, i) => {
+                  const corAvatar = CORES_AVATAR[i % CORES_AVATAR.length];
+                  return (
                   <tr key={m.nome}>
                     <td>
                       <button
@@ -65,7 +82,12 @@ export default function EquipePage() {
                           setSenhaVisivel(false);
                         }}
                       >
-                        <div className="avatar">{m.initials}</div>
+                        <div
+                          className="avatar"
+                          style={{ background: corAvatar.bg, color: corAvatar.cor }}
+                        >
+                          {m.initials}
+                        </div>
                         <span
                           className="n"
                           style={{
@@ -78,14 +100,20 @@ export default function EquipePage() {
                       </button>
                     </td>
                     <td>
-                      <span className={`role-tag ${m.papelTipo}`}>
+                      <span className={`role-tag ${classePapel(m.papel)}`}>
                         {m.papel}
                         {m.papelNota ? (
                           <span className="soft"> {m.papelNota}</span>
                         ) : null}
                       </span>
                     </td>
-                    <td>{m.leads}</td>
+                    <td>
+                      {m.leads === "—" ? (
+                        m.leads
+                      ) : (
+                        <span className="leads-pill">{m.leads}</span>
+                      )}
+                    </td>
                     <td>
                       <span className="access-note">{m.enxerga}</span>
                     </td>
@@ -97,7 +125,8 @@ export default function EquipePage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
