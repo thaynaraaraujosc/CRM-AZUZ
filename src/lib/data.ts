@@ -209,6 +209,8 @@ export type NegocioCard = {
   valor: string;
   origem: Origem;
   dias: string;
+  /** Data em que o lead entrou nesse negócio, formato ISO (aaaa-mm-dd). */
+  data: string;
 };
 
 export type ColunaFunil = {
@@ -247,6 +249,7 @@ export const funis: Funil[] = [
             valor: "—",
             origem: "Instagram",
             dias: "Hoje",
+            data: "2026-07-30",
           },
           {
             id: "lorena-bastos",
@@ -254,6 +257,7 @@ export const funis: Funil[] = [
             valor: "—",
             origem: "TikTok",
             dias: "Hoje",
+            data: "2026-07-30",
           },
           {
             id: "fernando-lima",
@@ -261,6 +265,7 @@ export const funis: Funil[] = [
             valor: "—",
             origem: "Meta Ads",
             dias: "1 dia",
+            data: "2026-07-29",
           },
         ],
       },
@@ -274,6 +279,7 @@ export const funis: Funil[] = [
             valor: "R$ 890",
             origem: "Meta Ads",
             dias: "2 dias",
+            data: "2026-07-28",
           },
           {
             id: "beatriz-nogueira",
@@ -281,6 +287,7 @@ export const funis: Funil[] = [
             valor: "R$ 1.240",
             origem: "Google Ads",
             dias: "1 dia",
+            data: "2026-07-29",
           },
         ],
       },
@@ -294,6 +301,7 @@ export const funis: Funil[] = [
             valor: "R$ 2.100",
             origem: "Indicação",
             dias: "4 dias",
+            data: "2026-07-26",
           },
           {
             id: "renata-farias",
@@ -301,6 +309,7 @@ export const funis: Funil[] = [
             valor: "R$ 780",
             origem: "Meta Ads",
             dias: "1 dia",
+            data: "2026-07-29",
           },
         ],
       },
@@ -314,6 +323,7 @@ export const funis: Funil[] = [
             valor: "R$ 1.560",
             origem: "Google Ads",
             dias: "Hoje",
+            data: "2026-07-30",
           },
         ],
       },

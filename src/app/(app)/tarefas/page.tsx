@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 
-import { equipe, tarefas } from "@/lib/data";
+import { equipe, tarefas as tarefasIniciais } from "@/lib/data";
+import type { ColunaTarefas } from "@/lib/data";
 import { IconConfiguracoes, IconDoc } from "@/components/icons";
 import { ChipFilters, RadioList, Toggle, Topbar } from "@/components/ui";
 
@@ -10,12 +11,22 @@ const NIVEIS_URGENCIA = ["Baixa", "Média", "Alta"];
 
 const RESPONSAVEIS = equipe.map((m) => ({ nome: m.nome, descricao: m.papel }));
 
-const todasAsTarefas = tarefas.flatMap((coluna) => coluna.cards);
+function cloneColunas(colunas: ColunaTarefas[]): ColunaTarefas[] {
+  return colunas.map((c) => ({ ...c, cards: c.cards.map((card) => ({ ...card })) }));
+}
 
 export default function TarefasPage() {
+  const [colunas, setColunas] = useState<ColunaTarefas[]>(() =>
+    cloneColunas(tarefasIniciais),
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [novaTarefaAberta, setNovaTarefaAberta] = useState(false);
+  const [arrastando, setArrastando] = useState<{
+    coluna: number;
+    card: number;
+  } | null>(null);
 
+  const todasAsTarefas = colunas.flatMap((coluna) => coluna.cards);
   const aberta = todasAsTarefas.find((t) => t.id === selectedId) ?? null;
 
   function abrirTarefa(id: string) {
@@ -23,11 +34,31 @@ export default function TarefasPage() {
     setSelectedId((atual) => (atual === id ? null : id));
   }
 
+  function moverTarefa(colunaDestino: number) {
+    if (!arrastando) return;
+    const { coluna: colunaOrigem, card: indiceCard } = arrastando;
+    setArrastando(null);
+    if (colunaOrigem === colunaDestino) return;
+
+    setColunas((prev) => {
+      const proximo = cloneColunas(prev);
+      const [card] = proximo[colunaOrigem].cards.splice(indiceCard, 1);
+      if (!card) return prev;
+
+      const tituloDestino = proximo[colunaDestino].titulo;
+      card.concluida = tituloDestino === "Concluídas";
+      card.atrasada = tituloDestino === "Atrasadas";
+
+      proximo[colunaDestino].cards.push(card);
+      return proximo;
+    });
+  }
+
   return (
     <>
       <Topbar
         title="Tarefas"
-        sub="Kanban por prazo — de todas as conversas, num lugar só"
+        sub="Kanban por prazo — arraste um card pra mudar o status, até chegar em Concluídas"
         actions={
           <button
             type="button"
@@ -101,8 +132,16 @@ export default function TarefasPage() {
         ) : null}
 
         <div className="kanban">
-          {tarefas.map((coluna) => (
-            <div key={coluna.titulo}>
+          {colunas.map((coluna, colIndex) => (
+            <div
+              key={coluna.titulo}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                moverTarefa(colIndex);
+              }}
+              style={{ minHeight: 60 }}
+            >
               <div className="kcol-h">
                 <span className="t">
                   <span className="dot" />
@@ -111,7 +150,7 @@ export default function TarefasPage() {
                 <span className="c">{coluna.cards.length}</span>
               </div>
 
-              {coluna.cards.map((card) => {
+              {coluna.cards.map((card, cardIndex) => {
                 const isOpen = card.id === aberta?.id;
                 const classes = [
                   "task-card",
@@ -126,7 +165,13 @@ export default function TarefasPage() {
                     type="button"
                     key={card.id}
                     className={classes}
+                    draggable
+                    onDragStart={() =>
+                      setArrastando({ coluna: colIndex, card: cardIndex })
+                    }
+                    onDragEnd={() => setArrastando(null)}
                     onClick={() => abrirTarefa(card.id)}
+                    style={{ cursor: "grab" }}
                   >
                     <span className="tc-r1">
                       <span className="tc-title">{card.titulo}</span>
@@ -249,7 +294,26 @@ export default function TarefasPage() {
                   >
                     Salvar tarefa
                   </button>
-                  <button type="button" className="btn ghost" style={{ flex: 1 }}>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ flex: 1 }}
+                    onClick={() => {
+                      const colOrigem = colunas.findIndex((c) =>
+                        c.cards.some((card) => card.id === aberta.id),
+                      );
+                      const colDestino = colunas.findIndex(
+                        (c) => c.titulo === "Concluídas",
+                      );
+                      const cardIndex = colunas[colOrigem]?.cards.findIndex(
+                        (card) => card.id === aberta.id,
+                      );
+                      if (colOrigem < 0 || colDestino < 0 || cardIndex === undefined || cardIndex < 0)
+                        return;
+                      setArrastando({ coluna: colOrigem, card: cardIndex });
+                      setTimeout(() => moverTarefa(colDestino), 0);
+                    }}
+                  >
                     Marcar concluída
                   </button>
                 </div>

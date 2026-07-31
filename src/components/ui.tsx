@@ -50,9 +50,11 @@ export function Toggle({
 export function ChipFilters({
   options,
   initial = 0,
+  onChange,
 }: {
   options: string[];
   initial?: number;
+  onChange?: (option: string, index: number) => void;
 }) {
   const [selected, setSelected] = useState(initial);
   return (
@@ -63,7 +65,10 @@ export function ChipFilters({
           key={option}
           className={`fchip${i === selected ? " active" : ""}`}
           aria-pressed={i === selected}
-          onClick={() => setSelected(i)}
+          onClick={() => {
+            setSelected(i);
+            onChange?.(option, i);
+          }}
         >
           {option}
         </button>

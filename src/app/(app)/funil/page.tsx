@@ -4,7 +4,16 @@ import { useState } from "react";
 
 import { ETAPAS_PADRAO_FUNIL, funis as funisIniciais } from "@/lib/data";
 import type { Funil } from "@/lib/data";
-import { Topbar } from "@/components/ui";
+import { ChipFilters, Topbar } from "@/components/ui";
+
+const FILTROS_ORIGEM = [
+  "Todas as origens",
+  "Instagram",
+  "TikTok",
+  "Meta Ads",
+  "Google Ads",
+  "Indicação",
+];
 
 function cloneFunis(lista: Funil[]): Funil[] {
   return lista.map((f) => ({
@@ -18,14 +27,36 @@ export default function FunilPage() {
   const [funilAtivoId, setFunilAtivoId] = useState(funisIniciais[0]?.id ?? "");
   const [novoFunilAberto, setNovoFunilAberto] = useState(false);
   const [nomeNovoFunil, setNomeNovoFunil] = useState("");
+  const [origemFiltro, setOrigemFiltro] = useState("Todas as origens");
+  const [periodoAberto, setPeriodoAberto] = useState(false);
+  const [dataDe, setDataDe] = useState("");
+  const [dataAte, setDataAte] = useState("");
   const [arrastando, setArrastando] = useState<{
     coluna: number;
     card: number;
   } | null>(null);
 
   const funilAtivo = funis.find((f) => f.id === funilAtivoId) ?? funis[0];
-  const total =
-    funilAtivo?.colunas.reduce((soma, coluna) => soma + coluna.total, 0) ?? 0;
+
+  function passaNoFiltro(card: { origem: string; data: string }) {
+    if (origemFiltro !== "Todas as origens" && card.origem !== origemFiltro) {
+      return false;
+    }
+    if (dataDe && card.data < dataDe) return false;
+    if (dataAte && card.data > dataAte) return false;
+    return true;
+  }
+
+  const filtroAtivo =
+    origemFiltro !== "Todas as origens" || dataDe !== "" || dataAte !== "";
+
+  const totalVisivel =
+    funilAtivo?.colunas.reduce((soma, coluna) => {
+      const cards = filtroAtivo
+        ? coluna.cards.filter(passaNoFiltro)
+        : coluna.cards;
+      return soma + (filtroAtivo ? cards.length : coluna.total);
+    }, 0) ?? 0;
 
   function criarFunil() {
     const nome = nomeNovoFunil.trim();
@@ -69,7 +100,7 @@ export default function FunilPage() {
     <>
       <Topbar
         title="Funil"
-        sub={`${funilAtivo?.nome ?? ""} · ${total} negócios no funil`}
+        sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} negócios ${filtroAtivo ? "encontrados" : "no funil"}`}
         actions={
           <>
             <select
@@ -91,8 +122,12 @@ export default function FunilPage() {
             >
               {novoFunilAberto ? "Cancelar" : "+ Novo funil"}
             </button>
-            <button type="button" className="btn primary">
-              + Negócio
+            <button
+              type="button"
+              className={`btn ${periodoAberto || dataDe || dataAte ? "primary" : "ghost"}`}
+              onClick={() => setPeriodoAberto((v) => !v)}
+            >
+              {periodoAberto ? "Fechar período" : "+ Filtrar por período"}
             </button>
           </>
         }
@@ -143,48 +178,116 @@ export default function FunilPage() {
           </section>
         ) : null}
 
-        <div className="kanban">
-          {funilAtivo?.colunas.map((coluna, colIndex) => (
+        {periodoAberto ? (
+          <section className="card mb14">
+            <div className="panel-h">
+              <h4>Filtrar por período — de onde o lead veio, entre duas datas</h4>
+            </div>
             <div
-              key={coluna.titulo}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                moverCard(colIndex);
+              style={{
+                display: "flex",
+                gap: 14,
+                padding: "14px 17px",
+                flexWrap: "wrap",
+                alignItems: "flex-end",
               }}
-              style={{ minHeight: 60 }}
             >
-              <div className="kcol-h">
-                <span className="t">
-                  <span className="dot" />
-                  {coluna.titulo}
-                </span>
-                <span className="c">{coluna.total}</span>
+              <div className="field" style={{ padding: 0, flex: "1 1 160px" }}>
+                <label>De</label>
+                <input
+                  className="input"
+                  style={{ width: "100%" }}
+                  type="date"
+                  value={dataDe}
+                  onChange={(e) => setDataDe(e.target.value)}
+                />
               </div>
-              {coluna.cards.map((card, cardIndex) => (
+              <div className="field" style={{ padding: 0, flex: "1 1 160px" }}>
+                <label>Até</label>
+                <input
+                  className="input"
+                  style={{ width: "100%" }}
+                  type="date"
+                  value={dataAte}
+                  onChange={(e) => setDataAte(e.target.value)}
+                />
+              </div>
+              {dataDe || dataAte ? (
                 <button
                   type="button"
-                  className="lead-card"
-                  key={card.id}
-                  draggable
-                  onDragStart={() =>
-                    setArrastando({ coluna: colIndex, card: cardIndex })
-                  }
-                  onDragEnd={() => setArrastando(null)}
-                  style={{ cursor: "grab" }}
+                  className="btn ghost"
+                  onClick={() => {
+                    setDataDe("");
+                    setDataAte("");
+                  }}
                 >
-                  <span className="lr1">
-                    <span className="lname">{card.nome}</span>
-                    <span className="lval">{card.valor}</span>
-                  </span>
-                  <span className="lr2">
-                    <span className="tag">{card.origem}</span>
-                    <span className="days">{card.dias}</span>
-                  </span>
+                  Limpar datas
                 </button>
-              ))}
+              ) : null}
             </div>
-          ))}
+          </section>
+        ) : null}
+
+        <ChipFilters
+          options={FILTROS_ORIGEM}
+          initial={0}
+          onChange={(opcao) => setOrigemFiltro(opcao)}
+        />
+
+        <div className="kanban">
+          {funilAtivo?.colunas.map((coluna, colIndex) => {
+            const cardsComIndice = coluna.cards.map((card, cardIndex) => ({
+              card,
+              cardIndex,
+            }));
+            const cardsVisiveis = filtroAtivo
+              ? cardsComIndice.filter(({ card }) => passaNoFiltro(card))
+              : cardsComIndice;
+
+            return (
+              <div
+                key={coluna.titulo}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  moverCard(colIndex);
+                }}
+                style={{ minHeight: 60 }}
+              >
+                <div className="kcol-h">
+                  <span className="t">
+                    <span className="dot" />
+                    {coluna.titulo}
+                  </span>
+                  <span className="c">
+                    {filtroAtivo ? cardsVisiveis.length : coluna.total}
+                  </span>
+                </div>
+                {cardsVisiveis.map(({ card, cardIndex }) => (
+                  <button
+                    type="button"
+                    className="lead-card"
+                    key={card.id}
+                    draggable
+                    onDragStart={() =>
+                      setArrastando({ coluna: colIndex, card: cardIndex })
+                    }
+                    onDragEnd={() => setArrastando(null)}
+                    style={{ cursor: "grab" }}
+                  >
+                    <span className="lr1">
+                      <span className="lname">{card.nome}</span>
+                      <span className="lval">{card.valor}</span>
+                    </span>
+                    <span className="lr2">
+                      <span className="tag">{card.origem}</span>
+                      <span className="days">{card.dias}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            );
+          })}
         </div>
       </div>
     </>
