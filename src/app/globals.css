@@ -1720,14 +1720,22 @@ table.tbl tbody tr:hover td {
 /* ---------------- Automações · fluxograma ---------------- */
 
 .flow-canvas {
+  position: relative;
   padding: 20px 17px;
-  overflow-x: auto;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--navy);
+  min-height: 460px;
+  user-select: none;
 }
 
 .flow-col {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: fit-content;
+  margin: 0 auto;
 }
 
 .flow-node-box {

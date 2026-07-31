@@ -1,13 +1,13 @@
 "use client";
 
-import { Suspense, useState, type ReactNode } from "react";
+import { Suspense, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { acoesAutomacao, automacaoIdeias, gatilhosAutomacao } from "@/lib/data";
 import { useAutomacoes, type Automacao } from "@/lib/automacoes-context";
 import { useFunis } from "@/lib/funis-context";
 import { IconAutomacoes } from "@/components/icons";
-import { ChipFilters, SegmentChips, Toggle, Topbar } from "@/components/ui";
+import { Toggle, Topbar } from "@/components/ui";
 
 type Ideia = (typeof automacaoIdeias)[number];
 type Modelo = "lista" | "mapa-mental";
@@ -62,9 +62,6 @@ function AutomacoesPageInner() {
   const [condicaoSeNaoForm, setCondicaoSeNaoForm] = useState(acoesAutomacao[0]);
   const [mensagemForm, setMensagemForm] = useState("");
   const [ativaForm, setAtivaForm] = useState(true);
-  const [editorModo, setEditorModo] = useState<"formulario" | "fluxograma">(
-    "formulario",
-  );
 
   function fecharConstrutor() {
     setConstrutorAberto(false);
@@ -89,7 +86,6 @@ function AutomacoesPageInner() {
     setCondicaoSeNaoForm(acoesAutomacao[0]);
     setMensagemForm(ideia === "zero" ? "" : ideia.descricao);
     setAtivaForm(true);
-    setEditorModo("formulario");
   }
 
   function abrirEdicao(automacao: Automacao) {
@@ -105,7 +101,6 @@ function AutomacoesPageInner() {
     setCondicaoSeNaoForm(automacao.condicao?.seNao ?? acoesAutomacao[0]);
     setMensagemForm(automacao.mensagem);
     setAtivaForm(automacao.ativa);
-    setEditorModo("formulario");
   }
 
   function salvarAutomacao() {
@@ -346,120 +341,20 @@ function AutomacoesPageInner() {
                   />
                 </div>
 
-                <div className="field">
-                  <label>Como montar</label>
-                  <div className="filters-row">
-                    <button
-                      type="button"
-                      className={`fchip${editorModo === "formulario" ? " active" : ""}`}
-                      aria-pressed={editorModo === "formulario"}
-                      onClick={() => setEditorModo("formulario")}
-                    >
-                      📋 Formulário
-                    </button>
-                    <button
-                      type="button"
-                      className={`fchip${editorModo === "fluxograma" ? " active" : ""}`}
-                      aria-pressed={editorModo === "fluxograma"}
-                      onClick={() => setEditorModo("fluxograma")}
-                    >
-                      ⌥ Fluxograma
-                    </button>
-                  </div>
-                </div>
-
-                {editorModo === "formulario" ? (
-                  <>
-                    <div className="field">
-                      <label>Gatilho — quando disparar</label>
-                      <ChipFilters
-                        options={gatilhosAutomacao}
-                        initial={gatilhosAutomacao.indexOf(gatilhoForm)}
-                        onChange={(g) => setGatilhoForm(g)}
-                      />
-                    </div>
-                    <div className="field">
-                      <label>Tipo de fluxo</label>
-                      <div className="filters-row">
-                        <button
-                          type="button"
-                          className={`fchip${ramoForm === "linear" ? " active" : ""}`}
-                          aria-pressed={ramoForm === "linear"}
-                          onClick={() => setRamoForm("linear")}
-                        >
-                          Fluxo simples
-                        </button>
-                        <button
-                          type="button"
-                          className={`fchip${ramoForm === "condicional" ? " active" : ""}`}
-                          aria-pressed={ramoForm === "condicional"}
-                          onClick={() => setRamoForm("condicional")}
-                        >
-                          Com condição (se sim / se não)
-                        </button>
-                      </div>
-                    </div>
-                    {ramoForm === "linear" ? (
-                      <div className="field">
-                        <label>
-                          Ação — o que fazer (pode acrescentar ou retirar mais de uma)
-                        </label>
-                        <SegmentChips
-                          options={acoesAutomacao.map((a) => ({
-                            label: a,
-                            ativo: acoesForm.includes(a),
-                          }))}
-                          onChange={(selecionadas) => setAcoesForm(selecionadas)}
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <div className="field">
-                          <label>Pergunta da condição</label>
-                          <input
-                            className="input"
-                            style={{ width: "100%" }}
-                            type="text"
-                            value={condicaoPerguntaForm}
-                            onChange={(e) => setCondicaoPerguntaForm(e.target.value)}
-                            placeholder="Ex.: Cliente respondeu em 2h"
-                          />
-                        </div>
-                        <div className="field">
-                          <label>Se sim</label>
-                          <ChipFilters
-                            options={acoesAutomacao}
-                            initial={acoesAutomacao.indexOf(condicaoSeSimForm)}
-                            onChange={(a) => setCondicaoSeSimForm(a)}
-                          />
-                        </div>
-                        <div className="field">
-                          <label>Se não</label>
-                          <ChipFilters
-                            options={acoesAutomacao}
-                            initial={acoesAutomacao.indexOf(condicaoSeNaoForm)}
-                            onChange={(a) => setCondicaoSeNaoForm(a)}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <FlowEditor
-                    gatilho={gatilhoForm}
-                    onChangeGatilho={setGatilhoForm}
-                    ramo={ramoForm}
-                    onChangeRamo={setRamoForm}
-                    acoes={acoesForm}
-                    onChangeAcoes={setAcoesForm}
-                    condicaoPergunta={condicaoPerguntaForm}
-                    onChangeCondicaoPergunta={setCondicaoPerguntaForm}
-                    condicaoSeSim={condicaoSeSimForm}
-                    onChangeCondicaoSeSim={setCondicaoSeSimForm}
-                    condicaoSeNao={condicaoSeNaoForm}
-                    onChangeCondicaoSeNao={setCondicaoSeNaoForm}
-                  />
-                )}
+                <FlowEditor
+                  gatilho={gatilhoForm}
+                  onChangeGatilho={setGatilhoForm}
+                  ramo={ramoForm}
+                  onChangeRamo={setRamoForm}
+                  acoes={acoesForm}
+                  onChangeAcoes={setAcoesForm}
+                  condicaoPergunta={condicaoPerguntaForm}
+                  onChangeCondicaoPergunta={setCondicaoPerguntaForm}
+                  condicaoSeSim={condicaoSeSimForm}
+                  onChangeCondicaoSeSim={setCondicaoSeSimForm}
+                  condicaoSeNao={condicaoSeNaoForm}
+                  onChangeCondicaoSeNao={setCondicaoSeNaoForm}
+                />
 
                 <div className="field">
                   <label>Mensagem ou observação (opcional)</label>
@@ -702,14 +597,41 @@ function FlowEditor({
 }: FlowEditorProps) {
   const [noAberto, setNoAberto] = useState<string | null>(null);
   const [pergunta, setPergunta] = useState(condicaoPergunta);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [arrastando, setArrastando] = useState(false);
+  const arrastoRef = useRef<{
+    x: number;
+    y: number;
+    panX: number;
+    panY: number;
+  } | null>(null);
 
   function fechar() {
     setNoAberto(null);
   }
 
+  function iniciarArrasto(e: React.MouseEvent<HTMLDivElement>) {
+    const alvo = e.target as HTMLElement;
+    if (alvo.closest("button, input, select, textarea")) return;
+    arrastoRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+    setArrastando(true);
+  }
+
+  function moverArrasto(e: React.MouseEvent<HTMLDivElement>) {
+    if (!arrastoRef.current) return;
+    const dx = e.clientX - arrastoRef.current.x;
+    const dy = e.clientY - arrastoRef.current.y;
+    setPan({ x: arrastoRef.current.panX + dx, y: arrastoRef.current.panY + dy });
+  }
+
+  function pararArrasto() {
+    arrastoRef.current = null;
+    setArrastando(false);
+  }
+
   return (
     <div className="field">
-      <label>Fluxograma — clique num nó pra editar</label>
+      <label>Fluxograma — clique num nó pra editar, arraste o fundo pra mover a tela</label>
       <div className="filters-row" style={{ marginBottom: 10 }}>
         <button
           type="button"
@@ -727,10 +649,32 @@ function FlowEditor({
         >
           Com condição
         </button>
+        {pan.x !== 0 || pan.y !== 0 ? (
+          <button
+            type="button"
+            className="fchip"
+            onClick={() => setPan({ x: 0, y: 0 })}
+          >
+            ⟲ Centralizar
+          </button>
+        ) : null}
       </div>
 
-      <div className="flow-canvas">
-        <div className="flow-col">
+      <div
+        className="flow-canvas"
+        style={{ cursor: arrastando ? "grabbing" : "grab" }}
+        onMouseDown={iniciarArrasto}
+        onMouseMove={moverArrasto}
+        onMouseUp={pararArrasto}
+        onMouseLeave={pararArrasto}
+      >
+        <div
+          className="flow-col"
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px)`,
+            transition: arrastando ? "none" : "transform 0.12s ease-out",
+          }}
+        >
           <FlowNode
             tipo="gatilho"
             texto={gatilho}
