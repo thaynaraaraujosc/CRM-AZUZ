@@ -754,7 +754,6 @@ export const tarefas: ColunaTarefas[] = [
         descricao:
           "Responder o valor da consulta particular no Instagram e oferecer os horários livres dessa semana.",
         anexo: null,
-        modelo: "Secretária",
       },
     ],
   },
@@ -786,7 +785,7 @@ export const tarefas: ColunaTarefas[] = [
         descricao:
           "Ligar pra reagendar o horário que ela não conseguiu comparecer e confirmar o novo dia por WhatsApp.",
         anexo: null,
-        modelo: "Vendas",
+        modelo: "Secretária",
       },
     ],
   },
@@ -804,7 +803,6 @@ export const tarefas: ColunaTarefas[] = [
         descricao:
           "Confirmar por WhatsApp o horário de amanhã e reforçar os itens que ela precisa levar na consulta.",
         anexo: null,
-        modelo: "Secretária",
       },
     ],
   },

@@ -12,7 +12,7 @@ import {
   type PerguntaFormulario,
   type TipoPerguntaFormulario,
 } from "@/lib/formularios-context";
-import { Topbar } from "@/components/ui";
+import { FloatingDropdown, Topbar } from "@/components/ui";
 
 const GRUPOS_PERGUNTA = ["Campos", "Informações de contato"];
 
@@ -159,8 +159,10 @@ export default function FormulariosPage() {
     null,
   );
   const [tipoPerguntaMenuAberto, setTipoPerguntaMenuAberto] = useState(false);
+  const [tipoPerguntaRect, setTipoPerguntaRect] = useState<DOMRect | null>(null);
   const [modoPreview, setModoPreview] = useState(false);
   const [menuLinkAberto, setMenuLinkAberto] = useState(false);
+  const [menuLinkRect, setMenuLinkRect] = useState<DOMRect | null>(null);
   const [linkPrivadoCopiado, setLinkPrivadoCopiado] = useState(false);
   const [linkPublicoCopiado, setLinkPublicoCopiado] = useState(false);
 
@@ -397,6 +399,18 @@ export default function FormulariosPage() {
                             }
                             placeholder="Escreva a pergunta"
                           />
+                          <label className="form-pergunta-obrigatoria">
+                            <input
+                              type="checkbox"
+                              checked={pergunta.obrigatoria}
+                              onChange={(e) =>
+                                atualizarPergunta(formularioAberto.id, pergunta.id, {
+                                  obrigatoria: e.target.checked,
+                                })
+                              }
+                            />
+                            Obrigatória
+                          </label>
                           <button
                             type="button"
                             className="remove-chip"
@@ -450,56 +464,49 @@ export default function FormulariosPage() {
                     ))
                   )}
 
-                  <div
-                    className="dropdown-anchor"
-                    style={{ padding: 17, position: "relative" }}
-                  >
+                  <div style={{ padding: 17 }}>
                     <button
                       type="button"
                       className="btn ghost block"
-                      onClick={() => setTipoPerguntaMenuAberto((v) => !v)}
+                      onClick={(e) => {
+                        setTipoPerguntaRect(e.currentTarget.getBoundingClientRect());
+                        setTipoPerguntaMenuAberto((v) => !v);
+                      }}
                     >
                       + Adicionar pergunta
                     </button>
-                    {tipoPerguntaMenuAberto ? (
-                      <>
-                        <div
-                          onClick={() => setTipoPerguntaMenuAberto(false)}
-                          style={{ position: "fixed", inset: 0, zIndex: 50 }}
-                        />
-                        <div
-                          className="dropdown-pop dropdown-pop-up"
-                          style={{ maxHeight: 320, overflowY: "auto" }}
-                        >
-                          {GRUPOS_PERGUNTA.map((grupo) => (
-                            <div key={grupo}>
-                              <p className="doc-sidebar-h" style={{ padding: "8px 14px 4px" }}>
-                                {grupo}
-                              </p>
-                              {TIPOS_PERGUNTA_FORMULARIO.filter(
-                                (t) => t.grupo === grupo,
-                              ).map((t) => (
-                                <button
-                                  type="button"
-                                  key={t.tipo}
-                                  className="dropdown-item"
-                                  style={{ width: "100%", textAlign: "left" }}
-                                  onClick={() => {
-                                    adicionarPergunta(
-                                      formularioAberto.id,
-                                      t.tipo as TipoPerguntaFormulario,
-                                    );
-                                    setTipoPerguntaMenuAberto(false);
-                                  }}
-                                >
-                                  <span className="n">{t.label}</span>
-                                </button>
-                              ))}
-                            </div>
+                    <FloatingDropdown
+                      anchorRect={tipoPerguntaMenuAberto ? tipoPerguntaRect : null}
+                      onClose={() => setTipoPerguntaMenuAberto(false)}
+                      maxHeight={320}
+                    >
+                      {GRUPOS_PERGUNTA.map((grupo) => (
+                        <div key={grupo}>
+                          <p className="doc-sidebar-h" style={{ padding: "8px 14px 4px" }}>
+                            {grupo}
+                          </p>
+                          {TIPOS_PERGUNTA_FORMULARIO.filter(
+                            (t) => t.grupo === grupo,
+                          ).map((t) => (
+                            <button
+                              type="button"
+                              key={t.tipo}
+                              className="dropdown-item"
+                              style={{ width: "100%", textAlign: "left" }}
+                              onClick={() => {
+                                adicionarPergunta(
+                                  formularioAberto.id,
+                                  t.tipo as TipoPerguntaFormulario,
+                                );
+                                setTipoPerguntaMenuAberto(false);
+                              }}
+                            >
+                              <span className="n">{t.label}</span>
+                            </button>
                           ))}
                         </div>
-                      </>
-                    ) : null}
+                      ))}
+                    </FloatingDropdown>
                   </div>
                 </div>
               </div>
@@ -582,80 +589,77 @@ export default function FormulariosPage() {
                     {modoPreview ? "Fechar pré-visualização" : "Pré-visualizar"}
                   </button>
 
-                  <div className="dropdown-anchor">
-                    <button
-                      type="button"
-                      className="btn primary block"
-                      onClick={() => setMenuLinkAberto((v) => !v)}
-                    >
-                      🔗 Link
-                    </button>
-                    {menuLinkAberto ? (
-                      <>
-                        <div
-                          onClick={() => setMenuLinkAberto(false)}
-                          style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                  <button
+                    type="button"
+                    className="btn primary block"
+                    onClick={(e) => {
+                      setMenuLinkRect(e.currentTarget.getBoundingClientRect());
+                      setMenuLinkAberto((v) => !v);
+                    }}
+                  >
+                    🔗 Link
+                  </button>
+                  <FloatingDropdown
+                    anchorRect={menuLinkAberto ? menuLinkRect : null}
+                    onClose={() => setMenuLinkAberto(false)}
+                    align="right"
+                    width={300}
+                    maxHeight={480}
+                    style={{ padding: 14 }}
+                  >
+                    <div className="form-link-box">
+                      <p className="form-link-h">🔒 Link privado, com senha</p>
+                      <p className="hint" style={{ marginBottom: 10 }}>
+                        Só quem tiver a senha consegue abrir.
+                      </p>
+                      <div className="field" style={{ padding: 0, marginBottom: 10 }}>
+                        <label>Senha de acesso</label>
+                        <input
+                          className="input"
+                          style={{ width: "100%" }}
+                          value={formularioAberto.senha}
+                          onChange={(e) =>
+                            atualizarFormulario(formularioAberto.id, {
+                              senha: e.target.value,
+                            })
+                          }
+                          placeholder="Ex.: vitta2026"
                         />
-                        <div
-                          className="dropdown-pop dropdown-pop-right dropdown-pop-up"
-                          style={{ padding: 14, width: 300, maxHeight: 480 }}
-                        >
-                          <div className="form-link-box">
-                            <p className="form-link-h">🔒 Link privado, com senha</p>
-                            <p className="hint" style={{ marginBottom: 10 }}>
-                              Só quem tiver a senha consegue abrir.
-                            </p>
-                            <div className="field" style={{ padding: 0, marginBottom: 10 }}>
-                              <label>Senha de acesso</label>
-                              <input
-                                className="input"
-                                style={{ width: "100%" }}
-                                value={formularioAberto.senha}
-                                onChange={(e) =>
-                                  atualizarFormulario(formularioAberto.id, {
-                                    senha: e.target.value,
-                                  })
-                                }
-                                placeholder="Ex.: vitta2026"
-                              />
-                            </div>
-                            <div className="key-row" style={{ padding: 0 }}>
-                              <div className="key-box">
-                                azuzcrm.com/f/{formularioAberto.id}?chave=
-                                {formularioAberto.senha || "•••"}
-                              </div>
-                              <button
-                                type="button"
-                                className="btn ghost"
-                                onClick={copiarLinkPrivado}
-                              >
-                                {linkPrivadoCopiado ? "Copiado!" : "Copiar"}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="form-link-box">
-                            <p className="form-link-h">🌐 Link público</p>
-                            <p className="hint" style={{ marginBottom: 10 }}>
-                              Qualquer pessoa pode abrir, sem senha.
-                            </p>
-                            <div className="key-row" style={{ padding: 0 }}>
-                              <div className="key-box">
-                                azuzcrm.com/f/{formularioAberto.id}
-                              </div>
-                              <button
-                                type="button"
-                                className="btn ghost"
-                                onClick={copiarLinkPublico}
-                              >
-                                {linkPublicoCopiado ? "Copiado!" : "Copiar"}
-                              </button>
-                            </div>
-                          </div>
+                      </div>
+                      <div className="key-row" style={{ padding: 0 }}>
+                        <div className="key-box">
+                          azuzcrm.com/f/{formularioAberto.id}?chave=
+                          {formularioAberto.senha || "•••"}
                         </div>
-                      </>
-                    ) : null}
-                  </div>
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          onClick={copiarLinkPrivado}
+                        >
+                          {linkPrivadoCopiado ? "Copiado!" : "Copiar"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="form-link-box">
+                      <p className="form-link-h">🌐 Link público</p>
+                      <p className="hint" style={{ marginBottom: 10 }}>
+                        Qualquer pessoa pode abrir, sem senha.
+                      </p>
+                      <div className="key-row" style={{ padding: 0 }}>
+                        <div className="key-box">
+                          azuzcrm.com/f/{formularioAberto.id}
+                        </div>
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          onClick={copiarLinkPublico}
+                        >
+                          {linkPublicoCopiado ? "Copiado!" : "Copiar"}
+                        </button>
+                      </div>
+                    </div>
+                  </FloatingDropdown>
                 </div>
 
                 <div className="card" style={{ padding: 17 }}>

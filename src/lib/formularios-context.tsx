@@ -72,6 +72,7 @@ export type PerguntaFormulario = {
   id: string;
   tipo: TipoPerguntaFormulario;
   rotulo: string;
+  obrigatoria: boolean;
   opcoes?: string[];
 };
 
@@ -121,17 +122,29 @@ const FORMULARIOS_INICIAIS: Formulario[] = [
     nome: "Triagem de novo paciente",
     descricao: "Leva menos de 2 minutos — nos ajuda a te atender melhor.",
     perguntas: [
-      { id: "pergunta-nome", tipo: "texto_curto", rotulo: "Nome completo" },
-      { id: "pergunta-email", tipo: "contato_email", rotulo: "E-mail" },
+      {
+        id: "pergunta-nome",
+        tipo: "texto_curto",
+        rotulo: "Nome completo",
+        obrigatoria: true,
+      },
+      {
+        id: "pergunta-email",
+        tipo: "contato_email",
+        rotulo: "E-mail",
+        obrigatoria: true,
+      },
       {
         id: "pergunta-telefone",
         tipo: "contato_telefone",
         rotulo: "Telefone / WhatsApp",
+        obrigatoria: true,
       },
       {
         id: "pergunta-motivo",
         tipo: "opcao_unica",
         rotulo: "O que você procura?",
+        obrigatoria: false,
         opcoes: ["Emagrecimento", "Controle de diabetes", "Avaliação geral"],
       },
     ],
@@ -192,6 +205,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
           id: `pergunta-${Date.now()}`,
           tipo,
           rotulo: labelTipoPergunta(tipo),
+          obrigatoria: false,
           opcoes:
             tipo === "opcao_unica" || tipo === "multipla_escolha"
               ? ["Opção 1", "Opção 2"]

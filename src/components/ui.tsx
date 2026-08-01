@@ -1,6 +1,68 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+
+/**
+ * Popover flutuante montado via portal em document.body, posicionado com
+ * `position: fixed` a partir do retângulo do botão que o abriu — assim ele
+ * nunca fica cortado pelo `overflow: auto` de `.content`, e vira de baixo
+ * pra cima sozinho quando não cabe espaço abaixo do botão.
+ */
+export function FloatingDropdown({
+  anchorRect,
+  align = "left",
+  onClose,
+  width = 280,
+  maxHeight = 360,
+  className = "",
+  style,
+  children,
+}: {
+  anchorRect: DOMRect | null;
+  align?: "left" | "right";
+  onClose: () => void;
+  width?: number;
+  maxHeight?: number;
+  className?: string;
+  style?: React.CSSProperties;
+  children: ReactNode;
+}) {
+  if (!anchorRect || typeof document === "undefined") return null;
+
+  const margem = 16;
+  const alturaMax = Math.min(maxHeight, window.innerHeight - margem * 2);
+  const espacoAbaixo = window.innerHeight - anchorRect.bottom;
+  const abrirPraCima =
+    espacoAbaixo < alturaMax + margem && anchorRect.top > alturaMax + margem;
+
+  const posicao: React.CSSProperties = {
+    position: "fixed",
+    width,
+    maxHeight: alturaMax,
+    top: abrirPraCima ? "auto" : anchorRect.bottom + 8,
+    bottom: abrirPraCima ? window.innerHeight - anchorRect.top + 8 : "auto",
+    left: align === "left" ? anchorRect.left : "auto",
+    right:
+      align === "right" ? window.innerWidth - anchorRect.right : "auto",
+  };
+
+  return createPortal(
+    <>
+      <div
+        onClick={onClose}
+        style={{ position: "fixed", inset: 0, zIndex: 190 }}
+      />
+      <div
+        className={`dropdown-pop dropdown-pop-floating ${className}`}
+        style={{ ...posicao, ...style }}
+      >
+        {children}
+      </div>
+    </>,
+    document.body,
+  );
+}
 
 /** Topbar de cada tela: título, subtítulo e ações da tela. */
 export function Topbar({

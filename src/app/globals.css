@@ -694,6 +694,22 @@ table {
   margin-top: 6px;
 }
 
+.trafego-view .kpi {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.trafego-view .kpi:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(11, 21, 51, 0.12);
+  border-color: var(--blue);
+}
+
+.trafego-view .fsel {
+  cursor: pointer;
+  font-family: var(--body);
+}
+
 .kpi .delta {
   font-size: 11px;
   color: var(--blue);
@@ -2537,6 +2553,10 @@ table.tbl tbody tr:hover td {
   z-index: 60;
 }
 
+.dropdown-pop-floating {
+  z-index: 300;
+}
+
 .dropdown-pop-right {
   left: auto;
   right: 0;
@@ -2978,6 +2998,32 @@ table.tbl tbody tr:hover td {
   outline: none;
 }
 
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .doc-print-area,
+  .doc-print-area * {
+    visibility: visible;
+  }
+
+  .doc-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  @page {
+    size: A4;
+    margin: 18mm;
+  }
+}
+
 /* ---------------- Formulário ---------------- */
 
 .form-builder-layout {
@@ -3159,6 +3205,18 @@ table.tbl tbody tr:hover td {
   padding-left: 2px;
 }
 
+.form-pergunta-obrigatoria {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
 .form-upload-preview {
   display: inline-flex;
   align-items: center;
@@ -3168,11 +3226,6 @@ table.tbl tbody tr:hover td {
   border: 1px dashed var(--line-soft);
   font-size: 12px;
   color: var(--text-faint);
-}
-
-.dropdown-pop-up {
-  top: auto;
-  bottom: calc(100% + 8px);
 }
 
 .form-scratch-card {
