@@ -9,10 +9,13 @@ import {
   TIPOS_PERGUNTA_FORMULARIO,
   labelTipoPergunta,
   useFormularios,
+  type Formulario,
   type PerguntaFormulario,
+  type RespostaFormulario,
   type TipoPerguntaFormulario,
 } from "@/lib/formularios-context";
 import { FloatingDropdown, Topbar } from "@/components/ui";
+import { CampoResposta, PerguntaVisualizacao } from "@/components/campo-resposta";
 
 const GRUPOS_PERGUNTA = ["Campos", "Informações de contato"];
 
@@ -48,121 +51,6 @@ function valorSimulado(pergunta: PerguntaFormulario): string {
   }
 }
 
-/** Mostra o campo de resposta real (desabilitado) de acordo com o tipo escolhido. */
-function CampoResposta({ pergunta }: { pergunta: PerguntaFormulario }) {
-  switch (pergunta.tipo) {
-    case "texto_longo":
-      return (
-        <textarea
-          className="input"
-          style={{ width: "100%", minHeight: 60 }}
-          placeholder="Espaço pra resposta em texto longo"
-          disabled
-        />
-      );
-    case "data":
-      return <input className="input" style={{ width: "100%" }} type="date" disabled />;
-    case "numero":
-      return (
-        <input
-          className="input"
-          style={{ width: "100%" }}
-          type="number"
-          placeholder="0"
-          disabled
-        />
-      );
-    case "upload":
-      return (
-        <div className="form-upload-preview">📎 Anexar arquivo</div>
-      );
-    case "contato_email":
-      return (
-        <input
-          className="input"
-          style={{ width: "100%" }}
-          type="email"
-          placeholder="nome@email.com"
-          disabled
-        />
-      );
-    case "contato_telefone":
-      return (
-        <input
-          className="input"
-          style={{ width: "100%" }}
-          type="tel"
-          placeholder="+55 62 9XXXX-XXXX"
-          disabled
-        />
-      );
-    case "contato_site":
-      return (
-        <input
-          className="input"
-          style={{ width: "100%" }}
-          placeholder="https://…"
-          disabled
-        />
-      );
-    case "contato_localizacao":
-      return (
-        <input
-          className="input"
-          style={{ width: "100%" }}
-          placeholder="Cidade, Estado"
-          disabled
-        />
-      );
-    case "opcao_unica":
-    case "multipla_escolha":
-      return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {(pergunta.opcoes ?? []).map((op, i) => (
-            <label key={i} style={{ display: "flex", gap: 8, fontSize: 12 }}>
-              <input
-                type={pergunta.tipo === "opcao_unica" ? "radio" : "checkbox"}
-                disabled
-              />
-              {op}
-            </label>
-          ))}
-        </div>
-      );
-    default:
-      return (
-        <input
-          className="input"
-          style={{ width: "100%" }}
-          placeholder="Espaço pra resposta em texto curto"
-          disabled
-        />
-      );
-  }
-}
-
-/** Enunciado numerado + dica + campo de resposta — usado no modo visualização e na pré-visualização. */
-function PerguntaVisualizacao({
-  pergunta,
-  indice,
-}: {
-  pergunta: PerguntaFormulario;
-  indice: number;
-}) {
-  return (
-    <div className="form-pergunta-enunciado-bloco">
-      <p className="form-pergunta-enunciado">
-        {indice}. {pergunta.rotulo}
-        {pergunta.obrigatoria ? (
-          <span className="form-pergunta-asterisco"> *</span>
-        ) : null}
-      </p>
-      {pergunta.dica ? <p className="form-pergunta-dica">{pergunta.dica}</p> : null}
-      <CampoResposta pergunta={pergunta} />
-    </div>
-  );
-}
-
 export default function FormulariosPage() {
   const { criarContato } = useContatos();
   const {
@@ -183,11 +71,16 @@ export default function FormulariosPage() {
   const [tipoPerguntaMenuAberto, setTipoPerguntaMenuAberto] = useState(false);
   const [tipoPerguntaRect, setTipoPerguntaRect] = useState<DOMRect | null>(null);
   const [perguntaEditandoId, setPerguntaEditandoId] = useState<string | null>(null);
-  const [modoPreview, setModoPreview] = useState(false);
+  const [modoRespostas, setModoRespostas] = useState(false);
+  const [respostaFormularioId, setRespostaFormularioId] = useState<string | null>(
+    null,
+  );
+  const [respostaAbertaId, setRespostaAbertaId] = useState<string | null>(null);
   const [menuLinkAberto, setMenuLinkAberto] = useState(false);
   const [menuLinkRect, setMenuLinkRect] = useState<DOMRect | null>(null);
   const [linkPrivadoCopiado, setLinkPrivadoCopiado] = useState(false);
   const [linkPublicoCopiado, setLinkPublicoCopiado] = useState(false);
+  const [formularioSalvo, setFormularioSalvo] = useState(false);
 
   const formularioAberto =
     formularios.find((f) => f.id === formularioAbertoId) ?? null;
@@ -195,13 +88,39 @@ export default function FormulariosPage() {
   function abrirNovoFormulario() {
     const id = criarFormulario();
     setFormularioAbertoId(id);
-    setModoPreview(false);
   }
 
   function voltarParaLista() {
     setFormularioAbertoId(null);
-    setModoPreview(false);
     setTipoPerguntaMenuAberto(false);
+    setPerguntaEditandoId(null);
+  }
+
+  function abrirRespostas() {
+    setModoRespostas(true);
+    setRespostaFormularioId(null);
+    setRespostaAbertaId(null);
+  }
+
+  function fecharRespostas() {
+    setModoRespostas(false);
+    setRespostaFormularioId(null);
+    setRespostaAbertaId(null);
+  }
+
+  /** Nome de quem respondeu — usa a primeira pergunta de texto curto com "nome" no rótulo. */
+  function nomeResposta(
+    formulario: Formulario,
+    resposta: RespostaFormulario,
+  ): string {
+    const perguntaNome = formulario.perguntas.find(
+      (p) => p.tipo === "texto_curto" && p.rotulo.toLowerCase().includes("nome"),
+    );
+    if (perguntaNome && resposta.valores[perguntaNome.id]) {
+      return resposta.valores[perguntaNome.id];
+    }
+    const primeiroValor = Object.values(resposta.valores)[0];
+    return primeiroValor || "Resposta sem nome";
   }
 
   function pedirExclusao(id: string, nome: string) {
@@ -209,6 +128,11 @@ export default function FormulariosPage() {
       excluirFormulario(id);
       if (formularioAbertoId === id) voltarParaLista();
     }
+  }
+
+  function salvarFormulario() {
+    setFormularioSalvo(true);
+    setTimeout(() => setFormularioSalvo(false), 2000);
   }
 
   function copiarLinkPrivado() {
@@ -284,20 +208,142 @@ export default function FormulariosPage() {
     ? respostasDoFormulario(formularioAberto.id)
     : [];
 
+  const respostaFormulario = respostaFormularioId
+    ? formularios.find((f) => f.id === respostaFormularioId) ?? null
+    : null;
+  const respostasDoFormularioAberto = respostaFormulario
+    ? respostasDoFormulario(respostaFormulario.id)
+    : [];
+  const respostaAberta = respostaAbertaId
+    ? respostasDoFormularioAberto.find((r) => r.id === respostaAbertaId) ?? null
+    : null;
+
   return (
     <>
       <Topbar
         title="Formulário"
         sub={
-          formularioAberto
-            ? formularioAberto.nome
-            : `${formularios.length} formulários criados`
+          modoRespostas
+            ? respostaAberta && respostaFormulario
+              ? `${respostaFormulario.nome} · ${nomeResposta(respostaFormulario, respostaAberta)}`
+              : respostaFormulario
+                ? respostaFormulario.nome
+                : "Respostas — escolha um formulário"
+            : formularioAberto
+              ? formularioAberto.nome
+              : `${formularios.length} formulários criados`
         }
-        actions={null}
+        actions={
+          formularioAberto ? (
+            <button
+              type="button"
+              className="btn primary"
+              onClick={salvarFormulario}
+            >
+              {formularioSalvo ? "✓ Formulário salvo" : "💾 Salvar formulário"}
+            </button>
+          ) : !modoRespostas ? (
+            <button type="button" className="btn ghost" onClick={abrirRespostas}>
+              📋 Respostas
+            </button>
+          ) : (
+            <button type="button" className="btn ghost" onClick={fecharRespostas}>
+              Fechar ✕
+            </button>
+          )
+        }
       />
 
       <div className="content form-studio">
-        {!formularioAberto ? (
+        {modoRespostas ? (
+          <>
+            {respostaAberta && respostaFormulario ? (
+              <>
+                <button
+                  type="button"
+                  className="btn ghost mb14"
+                  onClick={() => setRespostaAbertaId(null)}
+                >
+                  ← Voltar pras respostas
+                </button>
+                <div className="card">
+                  <div className="panel-h">
+                    <h4>{nomeResposta(respostaFormulario, respostaAberta)}</h4>
+                  </div>
+                  {respostaFormulario.perguntas.map((pergunta) => (
+                    <div className="field" key={pergunta.id}>
+                      <label>{pergunta.rotulo}</label>
+                      <div className="input">
+                        {respostaAberta.valores[pergunta.id] || "—"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : respostaFormulario ? (
+              <>
+                <button
+                  type="button"
+                  className="btn ghost mb14"
+                  onClick={() => setRespostaFormularioId(null)}
+                >
+                  ← Voltar pros formulários
+                </button>
+                <p className="int-group-h">{respostaFormulario.nome}</p>
+                <div className="card">
+                  {respostasDoFormularioAberto.length === 0 ? (
+                    <p className="hint" style={{ padding: 24, textAlign: "center" }}>
+                      Nenhuma resposta ainda pra esse formulário.
+                    </p>
+                  ) : (
+                    respostasDoFormularioAberto.map((r) => (
+                      <div
+                        className="int-row"
+                        key={r.id}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => setRespostaAbertaId(r.id)}
+                      >
+                        <div className="int-body">
+                          <p className="int-title">
+                            {nomeResposta(respostaFormulario, r)}
+                          </p>
+                          <p className="int-sub">Respondeu {r.criadoEm}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="int-group-h">Escolha um formulário</p>
+                <div className="card">
+                  {formularios.length === 0 ? (
+                    <p className="hint" style={{ padding: 24, textAlign: "center" }}>
+                      Nenhum formulário criado ainda.
+                    </p>
+                  ) : (
+                    formularios.map((f) => (
+                      <div
+                        className="int-row"
+                        key={f.id}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => setRespostaFormularioId(f.id)}
+                      >
+                        <div className="int-body">
+                          <p className="int-title">{f.nome}</p>
+                          <p className="int-sub">
+                            {respostasDoFormulario(f.id).length} respostas
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+          </>
+        ) : !formularioAberto ? (
           <>
             <button
               type="button"
@@ -331,10 +377,7 @@ export default function FormulariosPage() {
                   className="int-row"
                   key={f.id}
                   style={{ cursor: "pointer" }}
-                  onClick={() => {
-                    setFormularioAbertoId(f.id);
-                    setModoPreview(false);
-                  }}
+                  onClick={() => setFormularioAbertoId(f.id)}
                 >
                   <div className="int-body">
                     <p className="int-title">{f.nome}</p>
@@ -640,15 +683,35 @@ export default function FormulariosPage() {
                       ))}
                     </div>
                   </div>
+
+                  <div
+                    className="form-cor-preview"
+                    style={{ background: formularioAberto.corFundo }}
+                  >
+                    <span className="form-cor-preview-label">Prévia das cores</span>
+                    <button
+                      type="button"
+                      className="btn block"
+                      style={{ background: formularioAberto.corBotao, color: "#fff" }}
+                      disabled
+                    >
+                      {formularioAberto.rotuloBotao || "Enviar"}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="card" style={{ padding: 17, marginBottom: 14 }}>
                   <button
                     type="button"
                     className="btn ghost block mb14"
-                    onClick={() => setModoPreview((v) => !v)}
+                    onClick={() =>
+                      window.open(
+                        `/formulario-preview?id=${formularioAberto.id}`,
+                        "_blank",
+                      )
+                    }
                   >
-                    {modoPreview ? "Fechar pré-visualização" : "Pré-visualizar"}
+                    ↗ Pré-visualizar como o cliente vê
                   </button>
 
                   <button
@@ -740,39 +803,6 @@ export default function FormulariosPage() {
                 </div>
               </div>
             </div>
-
-            {modoPreview ? (
-              <div
-                className="form-preview-overlay"
-                onClick={() => setModoPreview(false)}
-              >
-                <div
-                  className="form-preview-card"
-                  style={{ background: formularioAberto.corFundo }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <h2>{formularioAberto.nome}</h2>
-                  {formularioAberto.descricao ? (
-                    <p className="hint" style={{ marginBottom: 6 }}>
-                      {formularioAberto.descricao}
-                    </p>
-                  ) : null}
-                  {formularioAberto.perguntas.map((pergunta, indice) => (
-                    <div key={pergunta.id} style={{ padding: "10px 0" }}>
-                      <PerguntaVisualizacao pergunta={pergunta} indice={indice + 1} />
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="btn block"
-                    style={{ background: formularioAberto.corBotao, color: "#fff", marginTop: 10 }}
-                    disabled
-                  >
-                    {formularioAberto.rotuloBotao}
-                  </button>
-                </div>
-              </div>
-            ) : null}
 
             <div className="int-group" style={{ marginTop: 24 }}>
               <p className="int-group-h">Respostas ({respostas.length})</p>

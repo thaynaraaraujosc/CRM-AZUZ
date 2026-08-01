@@ -3073,9 +3073,14 @@ table.tbl tbody tr:hover td {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  border: 2px solid var(--line);
+  border: 2px solid var(--line-soft);
   cursor: pointer;
   padding: 0;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.cor-chip:hover {
+  transform: scale(1.12);
 }
 
 .cor-chip.active {
@@ -3083,25 +3088,48 @@ table.tbl tbody tr:hover td {
   box-shadow: 0 0 0 2px var(--blue-soft);
 }
 
-.form-preview-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(11, 21, 51, 0.5);
-  z-index: 90;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+.form-cor-preview {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line-soft);
+  transition: background 0.15s ease;
 }
 
-.form-preview-card {
+.form-cor-preview-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+
+.form-public-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 24px;
+  background: var(--navy-raised);
+}
+
+.form-public-card {
+  width: 100%;
+  max-width: 560px;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.16);
+}
+
+.form-public-obrigado {
   width: 100%;
   max-width: 480px;
-  max-height: 90vh;
-  overflow-y: auto;
   border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
+  padding: 48px 32px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.16);
 }
 
 @media (max-width: 900px) {

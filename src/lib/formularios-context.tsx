@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -117,6 +118,13 @@ type FormulariosContextValue = {
 
 const FormulariosContext = createContext<FormulariosContextValue | null>(null);
 
+/**
+ * Chave usada tanto aqui quanto na página pública de pré-visualização
+ * (`/formulario-preview`) — essa página abre numa aba nova, sem acesso ao
+ * Context do React, então lê o rascunho mais recente direto do localStorage.
+ */
+export const FORMULARIOS_STORAGE_KEY = "azuz-crm-formularios";
+
 const FORMULARIOS_INICIAIS: Formulario[] = [
   {
     id: "form-triagem",
@@ -164,10 +172,24 @@ const FORMULARIOS_INICIAIS: Formulario[] = [
  * (a própria página) pra também chamar `criarContato` do ContatosProvider.
  */
 export function FormulariosProvider({ children }: { children: ReactNode }) {
-  const [formularios, setFormularios] = useState<Formulario[]>(
-    FORMULARIOS_INICIAIS,
-  );
+  const [formularios, setFormularios] = useState<Formulario[]>(() => {
+    if (typeof window === "undefined") return FORMULARIOS_INICIAIS;
+    try {
+      const salvos = localStorage.getItem(FORMULARIOS_STORAGE_KEY);
+      return salvos ? JSON.parse(salvos) : FORMULARIOS_INICIAIS;
+    } catch {
+      return FORMULARIOS_INICIAIS;
+    }
+  });
   const [respostas, setRespostas] = useState<RespostaFormulario[]>([]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(FORMULARIOS_STORAGE_KEY, JSON.stringify(formularios));
+    } catch {
+      // localStorage indisponível (modo privado, por exemplo) — segue só em memória.
+    }
+  }, [formularios]);
 
   function criarFormulario() {
     const id = `form-${Date.now()}`;

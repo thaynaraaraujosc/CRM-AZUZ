@@ -271,6 +271,11 @@ function TarefasContent() {
   const [pastasExtras, setPastasExtras] = useState<string[]>([]);
   const [novaPastaAberta, setNovaPastaAberta] = useState(false);
   const [novaPastaInput, setNovaPastaInput] = useState("");
+  const [colunaRenomeando, setColunaRenomeando] = useState<number | null>(null);
+  const [nomeRenomeando, setNomeRenomeando] = useState("");
+  const [colunaArrastando, setColunaArrastando] = useState<number | null>(null);
+  const [novaEtapaAberta, setNovaEtapaAberta] = useState(false);
+  const [nomeNovaEtapa, setNomeNovaEtapa] = useState("");
 
   const [tituloNovaTarefa, setTituloNovaTarefa] = useState("");
   const [descricaoNovaTarefa, setDescricaoNovaTarefa] = useState("");
@@ -350,6 +355,42 @@ function TarefasContent() {
     );
     if (indiceOrigem < 0) return;
     moverTarefaPara(colunaDaAberta, indiceOrigem, novoColIndex);
+  }
+
+  function renomearEtapa(colIndex: number) {
+    const titulo = nomeRenomeando.trim();
+    if (!titulo) {
+      setColunaRenomeando(null);
+      return;
+    }
+    setColunas((prev) =>
+      prev.map((c, i) => (i === colIndex ? { ...c, titulo } : c)),
+    );
+    setColunaRenomeando(null);
+  }
+
+  function reordenarEtapa(origem: number, destino: number) {
+    setColunaArrastando(null);
+    if (origem === destino) return;
+    setColunas((prev) => {
+      const proximo = [...prev];
+      const [movida] = proximo.splice(origem, 1);
+      if (!movida) return prev;
+      proximo.splice(destino, 0, movida);
+      return proximo;
+    });
+  }
+
+  function criarEtapa() {
+    const titulo = nomeNovaEtapa.trim();
+    if (!titulo) return;
+    setColunas((prev) => [...prev, { titulo, cards: [] }]);
+    setNomeNovaEtapa("");
+    setNovaEtapaAberta(false);
+  }
+
+  function excluirEtapa(colIndex: number) {
+    setColunas((prev) => prev.filter((_, i) => i !== colIndex));
   }
 
   function fecharNovaTarefa() {
@@ -432,22 +473,72 @@ function TarefasContent() {
         }
         actions={
           modoView === "kanban" ? (
-            <button
-              type="button"
-              className="btn primary"
-              onClick={() => {
-                setNovaTarefaAberta((v) => !v);
-                setSelectedId(null);
-                setEquipeNovaTarefa(filtroModelo);
-              }}
-            >
-              {novaTarefaAberta ? "Cancelar" : "+ Nova tarefa"}
-            </button>
+            <>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => setNovaEtapaAberta((v) => !v)}
+              >
+                {novaEtapaAberta ? "Cancelar" : "+ Nova etapa"}
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => {
+                  setNovaTarefaAberta((v) => !v);
+                  setSelectedId(null);
+                  setEquipeNovaTarefa(filtroModelo);
+                }}
+              >
+                {novaTarefaAberta ? "Cancelar" : "+ Nova tarefa"}
+              </button>
+            </>
           ) : null
         }
       />
 
       <div className="content">
+        {novaEtapaAberta ? (
+          <section className="open-conv mb14">
+            <div className="open-conv-h">
+              <div>
+                <p className="n">Nova etapa</p>
+                <p className="s">Entra como uma coluna nova no kanban</p>
+              </div>
+              <span
+                className="close"
+                style={{ cursor: "pointer" }}
+                onClick={() => setNovaEtapaAberta(false)}
+              >
+                Fechar ✕
+              </span>
+            </div>
+            <div className="field">
+              <label>Nome da etapa</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="text"
+                value={nomeNovaEtapa}
+                onChange={(e) => setNomeNovaEtapa(e.target.value)}
+                placeholder="Ex.: Aguardando retorno"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") criarEtapa();
+                }}
+              />
+            </div>
+            <div className="section-foot">
+              <button
+                type="button"
+                className="btn primary block"
+                onClick={criarEtapa}
+              >
+                Criar etapa
+              </button>
+            </div>
+          </section>
+        ) : null}
+
         <div className="view-switch-row mb14">
           <button
             type="button"
@@ -670,20 +761,70 @@ function TarefasContent() {
 
             return (
             <div
-              key={coluna.titulo}
+              key={colIndex}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
-                moverTarefa(colIndex);
+                if (colunaArrastando !== null) {
+                  reordenarEtapa(colunaArrastando, colIndex);
+                } else {
+                  moverTarefa(colIndex);
+                }
               }}
-              style={{ minHeight: 60 }}
+              style={{
+                minHeight: 60,
+                opacity: colunaArrastando === colIndex ? 0.5 : 1,
+              }}
             >
               <div className="kcol-h">
-                <span className="t">
-                  <span className="dot" />
-                  {coluna.titulo}
+                <span
+                  className="kcol-drag-handle"
+                  draggable
+                  onDragStart={() => setColunaArrastando(colIndex)}
+                  onDragEnd={() => setColunaArrastando(null)}
+                  title="Arraste pra reordenar a etapa"
+                >
+                  ⠿
                 </span>
-                <span className="c">{cardsVisiveis.length}</span>
+                {colunaRenomeando === colIndex ? (
+                  <input
+                    className="input"
+                    autoFocus
+                    style={{ flex: 1, marginRight: 8 }}
+                    value={nomeRenomeando}
+                    onChange={(e) => setNomeRenomeando(e.target.value)}
+                    onBlur={() => renomearEtapa(colIndex)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") renomearEtapa(colIndex);
+                      if (e.key === "Escape") setColunaRenomeando(null);
+                    }}
+                  />
+                ) : (
+                  <span
+                    className="t"
+                    style={{ cursor: "pointer" }}
+                    title="Clique pra renomear"
+                    onClick={() => {
+                      setColunaRenomeando(colIndex);
+                      setNomeRenomeando(coluna.titulo);
+                    }}
+                  >
+                    <span className="dot" />
+                    {coluna.titulo}
+                  </span>
+                )}
+                <span style={{ display: "flex", alignItems: "center", gap: 6, flex: "0 0 auto" }}>
+                  <span className="c">{cardsVisiveis.length}</span>
+                  <span
+                    role="button"
+                    aria-label={`Excluir etapa ${coluna.titulo}`}
+                    title="Excluir etapa"
+                    style={{ cursor: "pointer", color: "var(--text-faint)" }}
+                    onClick={() => excluirEtapa(colIndex)}
+                  >
+                    ✕
+                  </span>
+                </span>
               </div>
 
               {cardsVisiveis.map(({ card, cardIndex }) => {
