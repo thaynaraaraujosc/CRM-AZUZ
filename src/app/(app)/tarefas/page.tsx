@@ -32,30 +32,74 @@ function TarefasContent() {
 
   const todasAsTarefas = colunas.flatMap((coluna) => coluna.cards);
   const aberta = todasAsTarefas.find((t) => t.id === selectedId) ?? null;
+  const colunaDaAberta = aberta
+    ? colunas.findIndex((c) => c.cards.some((card) => card.id === aberta.id))
+    : -1;
+
+  const [tituloEditavel, setTituloEditavel] = useState(aberta?.titulo ?? "");
+  const [abertaIdAnterior, setAbertaIdAnterior] = useState(selectedId);
+  if (selectedId !== abertaIdAnterior) {
+    setAbertaIdAnterior(selectedId);
+    setTituloEditavel(aberta?.titulo ?? "");
+  }
 
   function abrirTarefa(id: string) {
     setNovaTarefaAberta(false);
     setSelectedId((atual) => (atual === id ? null : id));
   }
 
-  function moverTarefa(colunaDestino: number) {
-    if (!arrastando) return;
-    const { coluna: colunaOrigem, card: indiceCard } = arrastando;
-    setArrastando(null);
-    if (colunaOrigem === colunaDestino) return;
-
+  function moverTarefaPara(
+    colOrigem: number,
+    indiceOrigem: number,
+    colDestino: number,
+    indiceDestino?: number,
+  ) {
     setColunas((prev) => {
       const proximo = cloneColunas(prev);
-      const [card] = proximo[colunaOrigem].cards.splice(indiceCard, 1);
+      const [card] = proximo[colOrigem].cards.splice(indiceOrigem, 1);
       if (!card) return prev;
 
-      const tituloDestino = proximo[colunaDestino].titulo;
+      const tituloDestino = proximo[colDestino].titulo;
       card.concluida = tituloDestino === "Concluídas";
       card.atrasada = tituloDestino === "Atrasadas";
 
-      proximo[colunaDestino].cards.push(card);
+      const destino = proximo[colDestino].cards;
+      const posicao = indiceDestino ?? destino.length;
+      const posicaoAjustada =
+        colOrigem === colDestino && indiceOrigem < posicao ? posicao - 1 : posicao;
+      destino.splice(posicaoAjustada, 0, card);
       return proximo;
     });
+  }
+
+  function moverTarefa(colunaDestino: number, indiceDestino?: number) {
+    if (!arrastando) return;
+    const { coluna: colunaOrigem, card: indiceCard } = arrastando;
+    setArrastando(null);
+    if (colunaOrigem === colunaDestino && indiceCard === indiceDestino) return;
+    moverTarefaPara(colunaOrigem, indiceCard, colunaDestino, indiceDestino);
+  }
+
+  function mudarStatus(novoColIndex: number) {
+    if (!aberta || colunaDaAberta < 0) return;
+    const indiceOrigem = colunas[colunaDaAberta].cards.findIndex(
+      (card) => card.id === aberta.id,
+    );
+    if (indiceOrigem < 0) return;
+    moverTarefaPara(colunaDaAberta, indiceOrigem, novoColIndex);
+  }
+
+  function salvarTitulo() {
+    if (!aberta) return;
+    const titulo = tituloEditavel.trim() || aberta.titulo;
+    setColunas((prev) =>
+      prev.map((c) => ({
+        ...c,
+        cards: c.cards.map((card) =>
+          card.id === aberta.id ? { ...card, titulo } : card,
+        ),
+      })),
+    );
   }
 
   return (
@@ -174,6 +218,15 @@ function TarefasContent() {
                       setArrastando({ coluna: colIndex, card: cardIndex })
                     }
                     onDragEnd={() => setArrastando(null)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      moverTarefa(colIndex, cardIndex);
+                    }}
                     onClick={() => abrirTarefa(card.id)}
                     style={{ cursor: "grab" }}
                   >
@@ -202,9 +255,6 @@ function TarefasContent() {
                         </span>
                         {card.responsavel.nome}
                       </span>
-                      {card.valor ? (
-                        <span className="tc-val">{card.valor}</span>
-                      ) : null}
                     </span>
                   </button>
                 );
@@ -218,13 +268,42 @@ function TarefasContent() {
           <section className="open-conv">
             <div className="open-conv-h">
               <div className="avatar">{aberta.responsavel.initials}</div>
-              <div>
-                <p className="n">{aberta.titulo}</p>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <input
+                  className="input"
+                  style={{
+                    width: "100%",
+                    fontWeight: 700,
+                    fontSize: 13.5,
+                    padding: "5px 8px",
+                    marginBottom: 3,
+                  }}
+                  value={tituloEditavel}
+                  onChange={(e) => setTituloEditavel(e.target.value)}
+                  onBlur={salvarTitulo}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                  }}
+                />
                 <p className="s">
                   Vinculada a {aberta.contato} · atribuída a{" "}
                   {aberta.responsavel.nome}
                 </p>
               </div>
+              {colunaDaAberta >= 0 ? (
+                <select
+                  className="input"
+                  style={{ width: "auto", cursor: "pointer" }}
+                  value={colunaDaAberta}
+                  onChange={(e) => mudarStatus(Number(e.target.value))}
+                >
+                  {colunas.map((c, i) => (
+                    <option key={c.titulo} value={i}>
+                      {c.titulo}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
               <span className="close" style={{ cursor: "pointer" }} onClick={() => setSelectedId(null)}>
                 Fechar ✕
               </span>
@@ -272,12 +351,6 @@ function TarefasContent() {
                   <label>Data</label>
                   <div className="input">{aberta.data}</div>
                 </div>
-                {aberta.valor ? (
-                  <div className="field">
-                    <label>Valor combinado</label>
-                    <div className="input">{aberta.valor}</div>
-                  </div>
-                ) : null}
                 <div className="field">
                   <label>Atribuir para</label>
                   <RadioList
@@ -295,6 +368,7 @@ function TarefasContent() {
                     type="button"
                     className="btn primary"
                     style={{ flex: 1 }}
+                    onClick={salvarTitulo}
                   >
                     Salvar tarefa
                   </button>
@@ -303,19 +377,10 @@ function TarefasContent() {
                     className="btn ghost"
                     style={{ flex: 1 }}
                     onClick={() => {
-                      const colOrigem = colunas.findIndex((c) =>
-                        c.cards.some((card) => card.id === aberta.id),
-                      );
                       const colDestino = colunas.findIndex(
                         (c) => c.titulo === "Concluídas",
                       );
-                      const cardIndex = colunas[colOrigem]?.cards.findIndex(
-                        (card) => card.id === aberta.id,
-                      );
-                      if (colOrigem < 0 || colDestino < 0 || cardIndex === undefined || cardIndex < 0)
-                        return;
-                      setArrastando({ coluna: colOrigem, card: cardIndex });
-                      setTimeout(() => moverTarefa(colDestino), 0);
+                      if (colDestino >= 0) mudarStatus(colDestino);
                     }}
                   >
                     Marcar concluída

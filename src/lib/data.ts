@@ -706,7 +706,6 @@ export type TaskCard = {
   data: string;
   atrasada?: boolean;
   responsavel: { nome: string; initials: string };
-  valor?: string;
   concluida?: boolean;
   urgencia: Urgencia;
   descricao: string;
@@ -726,7 +725,6 @@ export const tarefas: ColunaTarefas[] = [
         data: "28 jul",
         atrasada: true,
         responsavel: { nome: "Bruno Salles", initials: "BS" },
-        valor: "R$ 2.100",
         urgencia: "Alta",
         descricao:
           "Perguntar se ela já viu a proposta enviada e se ficou alguma dúvida sobre valores ou parcelamento. Ela pediu a proposta há 4 dias e ainda não respondeu.",
@@ -762,7 +760,6 @@ export const tarefas: ColunaTarefas[] = [
         contato: "Marcos Aurélio",
         data: "01 ago",
         responsavel: { nome: "Dr. Hélio Marinho", initials: "DH" },
-        valor: "R$ 890",
         urgencia: "Alta",
         descricao:
           "Confirmar com o paciente se ele vai trazer os exames de sangue recentes antes do retorno. Reforçar o horário e perguntar se prefere lembrete por WhatsApp na véspera.",
@@ -777,7 +774,6 @@ export const tarefas: ColunaTarefas[] = [
         contato: "Renata Farias",
         data: "02 ago",
         responsavel: { nome: "Bruno Salles", initials: "BS" },
-        valor: "R$ 780",
         urgencia: "Média",
         descricao:
           "Ligar pra reagendar o horário que ela não conseguiu comparecer e confirmar o novo dia por WhatsApp.",
