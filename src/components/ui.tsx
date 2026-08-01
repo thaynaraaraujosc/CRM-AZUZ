@@ -67,17 +67,23 @@ export function FloatingDropdown({
 /** Topbar de cada tela: título, subtítulo e ações da tela. */
 export function Topbar({
   title,
+  titleActions,
   sub,
   actions,
 }: {
   title: string;
+  /** Botões/abas que ficam colados ao lado do título, não lá na ponta direita. */
+  titleActions?: ReactNode;
   sub?: string;
   actions?: ReactNode;
 }) {
   return (
     <div className="topbar">
       <div>
-        <h2>{title}</h2>
+        <div className="topbar-title-row">
+          <h2>{title}</h2>
+          {titleActions}
+        </div>
         {sub ? <p className="sub">{sub}</p> : null}
       </div>
       {actions ? <div className="top-actions">{actions}</div> : null}

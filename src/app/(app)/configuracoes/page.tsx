@@ -28,7 +28,16 @@ const MENU_CONFIG: { id: Secao; label: string }[] = [
 ];
 
 export default function ConfiguracoesPage() {
-  const { notificacoesAtivas, alternarNotificacoes } = useNotificacoes();
+  const {
+    notificacoesAtivas,
+    alternarNotificacoes,
+    notificarNovaTarefa,
+    alternarNotificarNovaTarefa,
+    notificarComentario,
+    alternarNotificarComentario,
+    simularNovaTarefa,
+    simularComentario,
+  } = useNotificacoes();
   const [secaoAtiva, setSecaoAtiva] = useState<Secao | null>(null);
   const [numeroCartao, setNumeroCartao] = useState("");
   const [nomeCartao, setNomeCartao] = useState("");
@@ -134,7 +143,7 @@ export default function ConfiguracoesPage() {
                 >
                   <h4>Notificações</h4>
                 </div>
-                <div className="toggle-row" style={{ padding: 0 }}>
+                <div className="toggle-row" style={{ padding: "0 0 14px", borderBottom: "1px solid var(--line-soft)" }}>
                   <span className="tl">
                     Avisar quando chegar mensagem nova no WhatsApp
                   </span>
@@ -144,10 +153,47 @@ export default function ConfiguracoesPage() {
                     onToggle={alternarNotificacoes}
                   />
                 </div>
+
+                <div className="toggle-row" style={{ padding: "14px 0", borderBottom: "1px solid var(--line-soft)" }}>
+                  <span className="tl">Avisar quando criar uma tarefa nova</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => simularNovaTarefa("Ligar pra confirmar consulta")}
+                    >
+                      Testar
+                    </button>
+                    <Toggle
+                      defaultOn={notificarNovaTarefa}
+                      label="Avisar quando criar uma tarefa nova"
+                      onToggle={alternarNotificarNovaTarefa}
+                    />
+                  </span>
+                </div>
+
+                <div className="toggle-row" style={{ padding: "14px 0 0" }}>
+                  <span className="tl">Avisar quando alguém comentar</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => simularComentario("Bruno Salles")}
+                    >
+                      Testar
+                    </button>
+                    <Toggle
+                      defaultOn={notificarComentario}
+                      label="Avisar quando alguém comentar"
+                      onToggle={alternarNotificarComentario}
+                    />
+                  </span>
+                </div>
+
                 <p className="hint" style={{ marginTop: 14 }}>
-                  Com isso ligado, toda vez que chegar uma mensagem nova você
-                  ouve um sinal e vê um aviso na tela, em qualquer página do
-                  CRM — não só dentro do WhatsApp.
+                  Com isso ligado, você ouve um sinal e vê um aviso na tela,
+                  em qualquer página do CRM — não só dentro da tela de
+                  origem.
                 </p>
               </div>
             ) : null}

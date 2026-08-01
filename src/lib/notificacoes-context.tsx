@@ -10,6 +10,8 @@ import {
 import { notificacoes as notificacoesIniciais } from "@/lib/data";
 
 const CHAVE_NOTIFICACOES = "azuz-crm-notificacoes-ativas";
+const CHAVE_NOTIFICACOES_TAREFA = "azuz-crm-notificacoes-nova-tarefa";
+const CHAVE_NOTIFICACOES_COMENTARIO = "azuz-crm-notificacoes-comentario";
 
 export type ItemNotificacao = { titulo: string; meta: string; lida: boolean };
 
@@ -18,9 +20,17 @@ type NotificacoesContextValue = {
   naoLidas: number;
   notificacoesAtivas: boolean;
   alternarNotificacoes: () => void;
+  notificarNovaTarefa: boolean;
+  alternarNotificarNovaTarefa: () => void;
+  notificarComentario: boolean;
+  alternarNotificarComentario: () => void;
   marcarTodasLidas: () => void;
   /** Simula uma nova mensagem chegando no WhatsApp — toca o sinal se estiver ativado. */
   simularNovaMensagem: (nomeContato: string) => void;
+  /** Dispara ao criar uma tarefa nova — toca o sinal se estiver ativado. */
+  simularNovaTarefa: (titulo: string) => void;
+  /** Simula alguém comentando (ainda não existe comentário de verdade no CRM). */
+  simularComentario: (nomeAutor: string) => void;
   toasts: { id: string; texto: string }[];
 };
 
@@ -65,6 +75,24 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       return true;
     }
   });
+  const [notificarNovaTarefa, setNotificarNovaTarefa] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      const salvo = localStorage.getItem(CHAVE_NOTIFICACOES_TAREFA);
+      return salvo === null ? true : salvo === "1";
+    } catch {
+      return true;
+    }
+  });
+  const [notificarComentario, setNotificarComentario] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      const salvo = localStorage.getItem(CHAVE_NOTIFICACOES_COMENTARIO);
+      return salvo === null ? true : salvo === "1";
+    } catch {
+      return true;
+    }
+  });
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const [proximoToastId, setProximoToastId] = useState(0);
 
@@ -82,8 +110,42 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     });
   }
 
+  function alternarNotificarNovaTarefa() {
+    setNotificarNovaTarefa((prev) => {
+      const proximo = !prev;
+      try {
+        localStorage.setItem(CHAVE_NOTIFICACOES_TAREFA, proximo ? "1" : "0");
+      } catch {
+        // localStorage indisponível — só não persiste entre sessões
+      }
+      return proximo;
+    });
+  }
+
+  function alternarNotificarComentario() {
+    setNotificarComentario((prev) => {
+      const proximo = !prev;
+      try {
+        localStorage.setItem(CHAVE_NOTIFICACOES_COMENTARIO, proximo ? "1" : "0");
+      } catch {
+        // localStorage indisponível — só não persiste entre sessões
+      }
+      return proximo;
+    });
+  }
+
   function marcarTodasLidas() {
     setItens((prev) => prev.map((n) => ({ ...n, lida: true })));
+  }
+
+  function adicionarToast(texto: string) {
+    tocarSinal();
+    const id = `toast-${proximoToastId}`;
+    setProximoToastId((v) => v + 1);
+    setToasts((prev) => [...prev, { id, texto }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
   }
 
   function simularNovaMensagem(nomeContato: string) {
@@ -96,16 +158,25 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       ...prev,
     ]);
     if (!notificacoesAtivas) return;
-    tocarSinal();
-    const id = `toast-${proximoToastId}`;
-    setProximoToastId((v) => v + 1);
-    setToasts((prev) => [
+    adicionarToast(`Nova mensagem de ${nomeContato} no WhatsApp`);
+  }
+
+  function simularNovaTarefa(titulo: string) {
+    setItens((prev) => [
+      { titulo: `Nova tarefa: ${titulo}`, meta: "agora", lida: false },
       ...prev,
-      { id, texto: `Nova mensagem de ${nomeContato} no WhatsApp` },
     ]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    if (!notificarNovaTarefa) return;
+    adicionarToast(`Nova tarefa criada: ${titulo}`);
+  }
+
+  function simularComentario(nomeAutor: string) {
+    setItens((prev) => [
+      { titulo: `${nomeAutor} comentou`, meta: "agora", lida: false },
+      ...prev,
+    ]);
+    if (!notificarComentario) return;
+    adicionarToast(`${nomeAutor} deixou um comentário`);
   }
 
   return (
@@ -115,8 +186,14 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
         naoLidas,
         notificacoesAtivas,
         alternarNotificacoes,
+        notificarNovaTarefa,
+        alternarNotificarNovaTarefa,
+        notificarComentario,
+        alternarNotificarComentario,
         marcarTodasLidas,
         simularNovaMensagem,
+        simularNovaTarefa,
+        simularComentario,
         toasts,
       }}
     >

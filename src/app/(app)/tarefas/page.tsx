@@ -10,6 +10,7 @@ import {
   tarefas as tarefasIniciais,
 } from "@/lib/data";
 import type { ColunaTarefas, Urgencia } from "@/lib/data";
+import { useNotificacoes } from "@/lib/notificacoes-context";
 import { IconConfiguracoes, IconDoc } from "@/components/icons";
 import {
   ChipFilters,
@@ -253,6 +254,7 @@ function DocumentoView() {
 
 function TarefasContent() {
   const searchParams = useSearchParams();
+  const { simularNovaTarefa } = useNotificacoes();
   const [colunas, setColunas] = useState<ColunaTarefas[]>(() =>
     cloneColunas(tarefasIniciais),
   );
@@ -446,6 +448,7 @@ function TarefasContent() {
       colunaDestino?.cards.push(novaTarefa);
       return proximo;
     });
+    simularNovaTarefa(titulo);
     fecharNovaTarefa();
   }
 

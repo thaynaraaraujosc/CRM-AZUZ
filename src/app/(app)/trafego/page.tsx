@@ -13,6 +13,27 @@ const PLATAFORMAS = [
 
 const PERIODOS = ["01 jul → 30 jul", "Últimos 7 dias", "Este mês", "Mês passado"];
 
+const MESES_ABREV = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+];
+
+/** "2026-08-05" → "05 ago" */
+function formatarDataCurta(iso: string): string {
+  const [, mes, dia] = iso.split("-");
+  return `${dia} ${MESES_ABREV[Number(mes) - 1]}`;
+}
+
 export default function TrafegoPage() {
   const [clinicaAberta, setClinicaAberta] = useState(false);
   const [clinicaRect, setClinicaRect] = useState<DOMRect | null>(null);
@@ -28,6 +49,19 @@ export default function TrafegoPage() {
   const [periodoAberto, setPeriodoAberto] = useState(false);
   const [periodoRect, setPeriodoRect] = useState<DOMRect | null>(null);
   const [periodoFiltro, setPeriodoFiltro] = useState(PERIODOS[0]);
+  const [periodoPersonalizadoAberto, setPeriodoPersonalizadoAberto] =
+    useState(false);
+  const [dataPersonalizadaDe, setDataPersonalizadaDe] = useState("");
+  const [dataPersonalizadaAte, setDataPersonalizadaAte] = useState("");
+
+  function aplicarPeriodoPersonalizado() {
+    if (!dataPersonalizadaDe || !dataPersonalizadaAte) return;
+    setPeriodoFiltro(
+      `${formatarDataCurta(dataPersonalizadaDe)} → ${formatarDataCurta(dataPersonalizadaAte)}`,
+    );
+    setPeriodoPersonalizadoAberto(false);
+    setPeriodoAberto(false);
+  }
 
   const campanhasFiltradas = campanhas.filter((c) => {
     if (plataformaFiltro !== "Todas" && c.plataforma !== plataformaFiltro) {
@@ -159,23 +193,72 @@ export default function TrafegoPage() {
           </button>
           <FloatingDropdown
             anchorRect={periodoAberto ? periodoRect : null}
-            onClose={() => setPeriodoAberto(false)}
-            width={200}
+            onClose={() => {
+              setPeriodoAberto(false);
+              setPeriodoPersonalizadoAberto(false);
+            }}
+            width={240}
           >
-            {PERIODOS.map((p) => (
-              <button
-                type="button"
-                key={p}
-                className="dropdown-item"
-                style={{ width: "100%", textAlign: "left" }}
-                onClick={() => {
-                  setPeriodoFiltro(p);
-                  setPeriodoAberto(false);
-                }}
-              >
-                <span className="n">{p}</span>
-              </button>
-            ))}
+            {periodoPersonalizadoAberto ? (
+              <div style={{ padding: 14 }}>
+                <p className="form-link-h" style={{ marginBottom: 10 }}>
+                  📅 Escolha as datas
+                </p>
+                <div className="field" style={{ padding: 0, marginBottom: 10 }}>
+                  <label>De</label>
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    type="date"
+                    value={dataPersonalizadaDe}
+                    onChange={(e) => setDataPersonalizadaDe(e.target.value)}
+                  />
+                </div>
+                <div className="field" style={{ padding: 0, marginBottom: 12 }}>
+                  <label>Até</label>
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    type="date"
+                    value={dataPersonalizadaAte}
+                    onChange={(e) => setDataPersonalizadaAte(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="btn primary block"
+                  disabled={!dataPersonalizadaDe || !dataPersonalizadaAte}
+                  onClick={aplicarPeriodoPersonalizado}
+                >
+                  Aplicar
+                </button>
+              </div>
+            ) : (
+              <>
+                {PERIODOS.map((p) => (
+                  <button
+                    type="button"
+                    key={p}
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => {
+                      setPeriodoFiltro(p);
+                      setPeriodoAberto(false);
+                    }}
+                  >
+                    <span className="n">{p}</span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  style={{ width: "100%", textAlign: "left" }}
+                  onClick={() => setPeriodoPersonalizadoAberto(true)}
+                >
+                  <span className="n">📅 Personalizado…</span>
+                </button>
+              </>
+            )}
           </FloatingDropdown>
         </div>
 

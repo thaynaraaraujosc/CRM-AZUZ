@@ -326,6 +326,38 @@ table {
   flex: 0 0 auto;
 }
 
+.topbar-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.topbar-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--navy-raised);
+}
+
+.topbar-tab {
+  border: none;
+  background: none;
+  padding: 6px 13px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.topbar-tab.active {
+  background: var(--blue);
+  color: #fff;
+}
+
 .topbar h2 {
   font-family: var(--display);
   font-weight: 700;

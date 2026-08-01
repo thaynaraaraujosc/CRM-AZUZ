@@ -18,6 +18,7 @@ import { FloatingDropdown, Topbar } from "@/components/ui";
 import { CampoResposta, PerguntaVisualizacao } from "@/components/campo-resposta";
 
 const GRUPOS_PERGUNTA = ["Campos", "Informações de contato"];
+const LIMITE_PERGUNTAS_VISIVEIS = 3;
 
 /** Um valor de exemplo plausível por tipo de pergunta, pra simular uma resposta. */
 function valorSimulado(pergunta: PerguntaFormulario): string {
@@ -71,6 +72,7 @@ export default function FormulariosPage() {
   const [tipoPerguntaMenuAberto, setTipoPerguntaMenuAberto] = useState(false);
   const [tipoPerguntaRect, setTipoPerguntaRect] = useState<DOMRect | null>(null);
   const [perguntaEditandoId, setPerguntaEditandoId] = useState<string | null>(null);
+  const [perguntasExpandidas, setPerguntasExpandidas] = useState(false);
   const [modoRespostas, setModoRespostas] = useState(false);
   const [respostaFormularioId, setRespostaFormularioId] = useState<string | null>(
     null,
@@ -94,6 +96,7 @@ export default function FormulariosPage() {
     setFormularioAbertoId(null);
     setTipoPerguntaMenuAberto(false);
     setPerguntaEditandoId(null);
+    setPerguntasExpandidas(false);
   }
 
   function abrirRespostas() {
@@ -222,6 +225,26 @@ export default function FormulariosPage() {
     <>
       <Topbar
         title="Formulário"
+        titleActions={
+          !formularioAberto ? (
+            <span className="topbar-tabs">
+              <button
+                type="button"
+                className={`topbar-tab${!modoRespostas ? " active" : ""}`}
+                onClick={fecharRespostas}
+              >
+                Formulários
+              </button>
+              <button
+                type="button"
+                className={`topbar-tab${modoRespostas ? " active" : ""}`}
+                onClick={abrirRespostas}
+              >
+                📋 Respostas
+              </button>
+            </span>
+          ) : null
+        }
         sub={
           modoRespostas
             ? respostaAberta && respostaFormulario
@@ -242,15 +265,7 @@ export default function FormulariosPage() {
             >
               {formularioSalvo ? "✓ Formulário salvo" : "💾 Salvar formulário"}
             </button>
-          ) : !modoRespostas ? (
-            <button type="button" className="btn ghost" onClick={abrirRespostas}>
-              📋 Respostas
-            </button>
-          ) : (
-            <button type="button" className="btn ghost" onClick={fecharRespostas}>
-              Fechar ✕
-            </button>
-          )
+          ) : null
         }
       />
 
@@ -448,7 +463,10 @@ export default function FormulariosPage() {
                       Nenhuma pergunta ainda — adicione a primeira abaixo.
                     </p>
                   ) : (
-                    formularioAberto.perguntas.map((pergunta, indice) =>
+                    (perguntasExpandidas
+                      ? formularioAberto.perguntas
+                      : formularioAberto.perguntas.slice(0, LIMITE_PERGUNTAS_VISIVEIS)
+                    ).map((pergunta, indice) =>
                       pergunta.id === perguntaEditandoId ? (
                         <div className="form-pergunta-row" key={pergunta.id}>
                           <div className="form-pergunta-topo">
@@ -559,7 +577,10 @@ export default function FormulariosPage() {
                           <button
                             type="button"
                             className="form-pergunta-editar-btn"
-                            onClick={() => setPerguntaEditandoId(pergunta.id)}
+                            onClick={() => {
+                              setPerguntaEditandoId(pergunta.id);
+                              setPerguntasExpandidas(true);
+                            }}
                           >
                             ✎ Editar pergunta
                           </button>
@@ -567,6 +588,31 @@ export default function FormulariosPage() {
                       ),
                     )
                   )}
+
+                  {!perguntasExpandidas &&
+                  formularioAberto.perguntas.length > LIMITE_PERGUNTAS_VISIVEIS ? (
+                    <button
+                      type="button"
+                      className="btn ghost block"
+                      style={{ margin: "0 17px 14px", width: "calc(100% - 34px)" }}
+                      onClick={() => setPerguntasExpandidas(true)}
+                    >
+                      Ver mais (
+                      {formularioAberto.perguntas.length - LIMITE_PERGUNTAS_VISIVEIS}
+                      )
+                    </button>
+                  ) : null}
+                  {perguntasExpandidas &&
+                  formularioAberto.perguntas.length > LIMITE_PERGUNTAS_VISIVEIS ? (
+                    <button
+                      type="button"
+                      className="btn ghost block"
+                      style={{ margin: "0 17px 14px", width: "calc(100% - 34px)" }}
+                      onClick={() => setPerguntasExpandidas(false)}
+                    >
+                      Ver menos
+                    </button>
+                  ) : null}
 
                   <div style={{ padding: 17 }}>
                     <button
