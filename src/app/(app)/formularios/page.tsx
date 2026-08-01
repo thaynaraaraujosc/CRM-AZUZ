@@ -184,25 +184,40 @@ export default function FormulariosPage() {
             ? formularioAberto.nome
             : `${formularios.length} formulários criados`
         }
-        actions={
-          formularioAberto ? null : (
-            <button type="button" className="btn primary" onClick={abrirNovoFormulario}>
-              + Criar formulário
-            </button>
-          )
-        }
+        actions={null}
       />
 
       <div className="content form-studio">
         {!formularioAberto ? (
-          <div className="card">
-            {formularios.length === 0 ? (
-              <p className="hint" style={{ padding: 24, textAlign: "center" }}>
-                Nenhum formulário ainda. Clique em &quot;+ Criar formulário&quot;
-                pra criar o primeiro.
-              </p>
-            ) : (
-              formularios.map((f) => (
+          <>
+            <button
+              type="button"
+              className="form-scratch-card"
+              onClick={abrirNovoFormulario}
+            >
+              <span className="form-scratch-icon">+</span>
+              <span>
+                <span className="form-scratch-title">
+                  Criar formulário do zero
+                </span>
+                <span className="form-scratch-sub">
+                  Escolha o título, a descrição e monte as perguntas do seu
+                  jeito — nenhuma pergunta vem pronta
+                </span>
+              </span>
+            </button>
+
+            <p className="int-group-h" style={{ marginTop: 22 }}>
+              Seus formulários
+            </p>
+            <div className="card">
+              {formularios.length === 0 ? (
+                <p className="hint" style={{ padding: 24, textAlign: "center" }}>
+                  Nenhum formulário ainda — clique em &quot;Criar formulário do
+                  zero&quot; acima pra criar o primeiro.
+                </p>
+              ) : (
+                formularios.map((f) => (
                 <div
                   className="int-row"
                   key={f.id}
@@ -239,8 +254,9 @@ export default function FormulariosPage() {
                   </span>
                 </div>
               ))
-            )}
-          </div>
+              )}
+            </div>
+          </>
         ) : (
           <>
             <button
@@ -253,15 +269,13 @@ export default function FormulariosPage() {
 
             <div className="form-builder-layout">
               <div className="form-builder-main">
-                <div className="card mb14">
-                  <label className="doc-cover">
+                <div className="card mb14 form-header-card">
+                  <label className="form-cover-link">
                     {formularioAberto.capaUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={formularioAberto.capaUrl} alt="" />
                     ) : (
-                      <span className="doc-cover-empty">
-                        + Adicionar capa
-                      </span>
+                      <span>+ Adicionar capa</span>
                     )}
                     <input
                       type="file"
@@ -270,18 +284,29 @@ export default function FormulariosPage() {
                       onChange={escolherCapa}
                     />
                   </label>
-                  <div style={{ padding: "0 17px 17px" }}>
-                    <input
-                      className="input"
-                      style={{ width: "100%", fontWeight: 700, fontSize: 16 }}
-                      value={formularioAberto.nome}
-                      onChange={(e) =>
-                        atualizarFormulario(formularioAberto.id, {
-                          nome: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
+
+                  <div className="form-icon">📋</div>
+
+                  <input
+                    className="form-title-input"
+                    value={formularioAberto.nome}
+                    onChange={(e) =>
+                      atualizarFormulario(formularioAberto.id, {
+                        nome: e.target.value,
+                      })
+                    }
+                    placeholder="Form"
+                  />
+                  <input
+                    className="form-desc-input"
+                    value={formularioAberto.descricao}
+                    onChange={(e) =>
+                      atualizarFormulario(formularioAberto.id, {
+                        descricao: e.target.value,
+                      })
+                    }
+                    placeholder="Descrição do formulário (opcional)"
+                  />
                 </div>
 
                 <div className="card">
@@ -606,6 +631,11 @@ export default function FormulariosPage() {
                     />
                   ) : null}
                   <h2>{formularioAberto.nome}</h2>
+                  {formularioAberto.descricao ? (
+                    <p className="hint" style={{ marginBottom: 6 }}>
+                      {formularioAberto.descricao}
+                    </p>
+                  ) : null}
                   {formularioAberto.perguntas.map((pergunta) => (
                     <div className="field" key={pergunta.id} style={{ padding: "10px 0" }}>
                       <label>{pergunta.rotulo}</label>

@@ -3146,3 +3146,123 @@ table.tbl tbody tr:hover td {
   border-radius: 10px;
   font-size: 11.5px;
 }
+
+.form-studio .field .input,
+.form-studio .input {
+  border-color: var(--line-soft);
+}
+
+.form-scratch-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 1.5px dashed var(--line);
+  background: var(--navy-raised);
+  cursor: pointer;
+}
+
+.form-scratch-card:hover {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+
+.form-scratch-icon {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.form-scratch-title {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.form-scratch-sub {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.form-header-card {
+  padding: 20px 24px 24px;
+}
+
+.form-cover-link {
+  display: inline-flex;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+  margin-bottom: 14px;
+}
+
+.form-cover-link:hover {
+  color: var(--blue);
+}
+
+.form-cover-link img {
+  max-width: 100%;
+  max-height: 140px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.form-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--navy-raised);
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.form-title-input {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--ink);
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.form-title-input:focus {
+  outline: none;
+}
+
+.form-desc-input {
+  display: block;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--line-soft);
+  background: none;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  padding: 0 0 10px;
+}
+
+.form-desc-input:focus {
+  outline: none;
+  border-bottom-color: var(--blue);
+}

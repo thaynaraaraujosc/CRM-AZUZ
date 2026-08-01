@@ -78,6 +78,7 @@ export type PerguntaFormulario = {
 export type Formulario = {
   id: string;
   nome: string;
+  descricao: string;
   capaUrl?: string;
   perguntas: PerguntaFormulario[];
   rotuloBotao: string;
@@ -121,6 +122,7 @@ const FORMULARIOS_INICIAIS: Formulario[] = [
   {
     id: "form-triagem",
     nome: "Triagem de novo paciente",
+    descricao: "Leva menos de 2 minutos — nos ajuda a te atender melhor.",
     perguntas: [
       { id: "pergunta-nome", tipo: "texto_curto", rotulo: "Nome completo" },
       { id: "pergunta-email", tipo: "contato_email", rotulo: "E-mail" },
@@ -163,6 +165,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
       {
         id,
         nome: "Formulário sem título",
+        descricao: "",
         perguntas: [],
         rotuloBotao: "Enviar",
         urlRedirecionamento: "",
