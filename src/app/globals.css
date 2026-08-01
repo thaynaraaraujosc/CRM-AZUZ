@@ -2952,3 +2952,101 @@ table.tbl tbody tr:hover td {
 .doc-body-input:focus {
   outline: none;
 }
+
+/* ---------------- Formulário ---------------- */
+
+.form-builder-layout {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.form-pergunta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 17px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.form-pergunta-tipo {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--blue);
+  background: var(--blue-soft);
+  padding: 4px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.form-pergunta-opcoes {
+  flex: 1 1 100%;
+  width: 100%;
+  padding-left: 2px;
+}
+
+.form-opcao-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.cor-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cor-chip {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  cursor: pointer;
+  padding: 0;
+}
+
+.cor-chip.active {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px var(--blue-soft);
+}
+
+.form-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 21, 51, 0.5);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.form-preview-card {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
+}
+
+.form-preview-cover {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  .form-builder-layout {
+    grid-template-columns: 1fr;
+  }
+}
