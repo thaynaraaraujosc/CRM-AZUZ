@@ -79,13 +79,11 @@ export type Formulario = {
   id: string;
   nome: string;
   descricao: string;
-  capaUrl?: string;
   perguntas: PerguntaFormulario[];
   rotuloBotao: string;
   urlRedirecionamento: string;
   corFundo: string;
   corBotao: string;
-  publicado: boolean;
   senha: string;
 };
 
@@ -108,7 +106,6 @@ type FormulariosContextValue = {
     patch: Partial<PerguntaFormulario>,
   ) => void;
   removerPergunta: (formularioId: string, perguntaId: string) => void;
-  alternarPublicacao: (id: string) => void;
   registrarResposta: (
     formularioId: string,
     valores: Record<string, string>,
@@ -142,7 +139,6 @@ const FORMULARIOS_INICIAIS: Formulario[] = [
     urlRedirecionamento: "",
     corFundo: "#ffffff",
     corBotao: "#2e6bff",
-    publicado: false,
     senha: "vitta2026",
   },
 ];
@@ -171,7 +167,6 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
         urlRedirecionamento: "",
         corFundo: "#ffffff",
         corBotao: "#2e6bff",
-        publicado: false,
         senha: "",
       },
     ]);
@@ -236,12 +231,6 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  function alternarPublicacao(id: string) {
-    setFormularios((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, publicado: !f.publicado } : f)),
-    );
-  }
-
   function registrarResposta(
     formularioId: string,
     valores: Record<string, string>,
@@ -266,7 +255,6 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
         adicionarPergunta,
         atualizarPergunta,
         removerPergunta,
-        alternarPublicacao,
         registrarResposta,
         respostasDoFormulario,
       }}

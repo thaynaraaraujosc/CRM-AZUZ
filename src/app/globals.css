@@ -3062,14 +3062,6 @@ table.tbl tbody tr:hover td {
   box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
 }
 
-.form-preview-cover {
-  width: 100%;
-  max-height: 160px;
-  object-fit: cover;
-  border-radius: 12px;
-  margin-bottom: 16px;
-}
-
 @media (max-width: 900px) {
   .form-builder-layout {
     grid-template-columns: 1fr;
@@ -3145,11 +3137,42 @@ table.tbl tbody tr:hover td {
 .form-studio .key-box {
   border-radius: 10px;
   font-size: 11.5px;
+  border-color: var(--line-soft);
 }
 
 .form-studio .field .input,
-.form-studio .input {
+.form-studio .input,
+.form-studio .btn.ghost,
+.form-studio .remove-chip,
+.form-studio .dropdown-pop {
   border-color: var(--line-soft);
+}
+
+.form-pergunta-topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-pergunta-campo {
+  margin-top: 10px;
+  padding-left: 2px;
+}
+
+.form-upload-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: 1px dashed var(--line-soft);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.dropdown-pop-up {
+  top: auto;
+  bottom: calc(100% + 8px);
 }
 
 .form-scratch-card {
@@ -3160,7 +3183,7 @@ table.tbl tbody tr:hover td {
   text-align: left;
   padding: 18px 20px;
   border-radius: 14px;
-  border: 1.5px dashed var(--line);
+  border: 1.5px dashed var(--line-soft);
   background: var(--navy-raised);
   cursor: pointer;
 }
@@ -3200,38 +3223,6 @@ table.tbl tbody tr:hover td {
 
 .form-header-card {
   padding: 20px 24px 24px;
-}
-
-.form-cover-link {
-  display: inline-flex;
-  cursor: pointer;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--text-faint);
-  margin-bottom: 14px;
-}
-
-.form-cover-link:hover {
-  color: var(--blue);
-}
-
-.form-cover-link img {
-  max-width: 100%;
-  max-height: 140px;
-  border-radius: 10px;
-  object-fit: cover;
-}
-
-.form-icon {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: var(--navy-raised);
-  font-size: 20px;
-  margin-bottom: 12px;
 }
 
 .form-title-input {
