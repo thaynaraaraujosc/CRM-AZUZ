@@ -265,7 +265,11 @@ function TarefasContent() {
     card: number;
   } | null>(null);
   const [modoView, setModoView] = useState<"kanban" | "documento">("kanban");
-  const [filtroModelo, setFiltroModelo] = useState<string>("Todos");
+  const [menuViewAberto, setMenuViewAberto] = useState(false);
+  const [filtroModelo, setFiltroModelo] = useState<string>(EQUIPE_PADRAO_TAREFA);
+  const [pastasExtras, setPastasExtras] = useState<string[]>([]);
+  const [novaPastaAberta, setNovaPastaAberta] = useState(false);
+  const [novaPastaInput, setNovaPastaInput] = useState("");
 
   const [tituloNovaTarefa, setTituloNovaTarefa] = useState("");
   const [descricaoNovaTarefa, setDescricaoNovaTarefa] = useState("");
@@ -281,7 +285,11 @@ function TarefasContent() {
 
   const todasAsTarefas = colunas.flatMap((coluna) => coluna.cards);
   const equipesExistentes = Array.from(
-    new Set([EQUIPE_PADRAO_TAREFA, ...todasAsTarefas.map((t) => t.modelo || EQUIPE_PADRAO_TAREFA)]),
+    new Set([
+      EQUIPE_PADRAO_TAREFA,
+      ...todasAsTarefas.map((t) => t.modelo || EQUIPE_PADRAO_TAREFA),
+      ...pastasExtras,
+    ]),
   );
   const aberta = todasAsTarefas.find((t) => t.id === selectedId) ?? null;
   const colunaDaAberta = aberta
@@ -361,6 +369,15 @@ function TarefasContent() {
     setNovaEquipeInput("");
   }
 
+  function criarNovaPasta() {
+    const nome = novaPastaInput.trim();
+    if (!nome) return;
+    setPastasExtras((prev) => (prev.includes(nome) ? prev : [...prev, nome]));
+    setFiltroModelo(nome);
+    setNovaPastaInput("");
+    setNovaPastaAberta(false);
+  }
+
   function criarTarefa() {
     const titulo = tituloNovaTarefa.trim();
     if (!titulo) return;
@@ -420,6 +437,7 @@ function TarefasContent() {
               onClick={() => {
                 setNovaTarefaAberta((v) => !v);
                 setSelectedId(null);
+                setEquipeNovaTarefa(filtroModelo);
               }}
             >
               {novaTarefaAberta ? "Cancelar" : "+ Nova tarefa"}
@@ -429,26 +447,98 @@ function TarefasContent() {
       />
 
       <div className="content">
-        <p className="hint" style={{ marginBottom: 6 }}>
-          Forma de visualização — escolha como quer ver suas tarefas
-        </p>
-        <div className="filters-row mb14">
-          <button
-            type="button"
-            className={`fchip${modoView === "kanban" ? " active" : ""}`}
-            aria-pressed={modoView === "kanban"}
-            onClick={() => setModoView("kanban")}
-          >
-            🗂 Kanban
-          </button>
-          <button
-            type="button"
-            className={`fchip${modoView === "documento" ? " active" : ""}`}
-            aria-pressed={modoView === "documento"}
-            onClick={() => setModoView("documento")}
-          >
-            📄 Documento
-          </button>
+        <div className="view-switch-row mb14">
+          <div className="dropdown-anchor">
+            <button
+              type="button"
+              className="btn ghost view-switch-btn"
+              onClick={() => setMenuViewAberto((v) => !v)}
+            >
+              <span className="view-switch-lbl">Forma de visualização</span>
+              {modoView === "kanban" ? "🗂 Kanban" : "📄 Documento"} ▾
+            </button>
+            {menuViewAberto ? (
+              <>
+                <div
+                  onClick={() => setMenuViewAberto(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                />
+                <div className="dropdown-pop" style={{ width: 200 }}>
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => {
+                      setModoView("kanban");
+                      setMenuViewAberto(false);
+                    }}
+                  >
+                    <span className="n">🗂 Kanban</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => {
+                      setModoView("documento");
+                      setMenuViewAberto(false);
+                    }}
+                  >
+                    <span className="n">📄 Documento</span>
+                  </button>
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          {modoView === "kanban" ? (
+            <div className="filters-row" style={{ flex: 1 }}>
+              {equipesExistentes.map((m) => (
+                <button
+                  type="button"
+                  key={m}
+                  className={`fchip${filtroModelo === m ? " active" : ""}`}
+                  aria-pressed={filtroModelo === m}
+                  onClick={() => setFiltroModelo(m)}
+                >
+                  📁 {m}
+                </button>
+              ))}
+              {novaPastaAberta ? (
+                <span style={{ display: "flex", gap: 6 }}>
+                  <input
+                    className="input"
+                    autoFocus
+                    style={{ width: 160 }}
+                    value={novaPastaInput}
+                    onChange={(e) => setNovaPastaInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        criarNovaPasta();
+                      }
+                      if (e.key === "Escape") {
+                        setNovaPastaAberta(false);
+                        setNovaPastaInput("");
+                      }
+                    }}
+                    placeholder="Nome da pasta"
+                  />
+                  <button type="button" className="btn ghost" onClick={criarNovaPasta}>
+                    Criar
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="fchip"
+                  onClick={() => setNovaPastaAberta(true)}
+                >
+                  + Nova pasta
+                </button>
+              )}
+            </div>
+          ) : null}
         </div>
 
         {modoView === "documento" ? (
@@ -570,40 +660,15 @@ function TarefasContent() {
           </section>
         ) : null}
 
-        <div className="filters-row mb14">
-          <button
-            type="button"
-            className={`fchip${filtroModelo === "Todos" ? " active" : ""}`}
-            aria-pressed={filtroModelo === "Todos"}
-            onClick={() => setFiltroModelo("Todos")}
-          >
-            Todos os modelos
-          </button>
-          {equipesExistentes.map((m) => (
-            <button
-              type="button"
-              key={m}
-              className={`fchip${filtroModelo === m ? " active" : ""}`}
-              aria-pressed={filtroModelo === m}
-              onClick={() => setFiltroModelo(m)}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
-
         <div className="kanban">
           {colunas.map((coluna, colIndex) => {
             const cardsComIndice = coluna.cards.map((card, cardIndex) => ({
               card,
               cardIndex,
             }));
-            const cardsVisiveis =
-              filtroModelo === "Todos"
-                ? cardsComIndice
-                : cardsComIndice.filter(
-                    ({ card }) => (card.modelo ?? "Geral") === filtroModelo,
-                  );
+            const cardsVisiveis = cardsComIndice.filter(
+              ({ card }) => (card.modelo || EQUIPE_PADRAO_TAREFA) === filtroModelo,
+            );
 
             return (
             <div
