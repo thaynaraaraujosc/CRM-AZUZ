@@ -11,7 +11,7 @@ import {
   type SVGProps,
 } from "react";
 
-import { currentUser, equipe, workspace } from "@/lib/data";
+import { currentUser, workspace } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
 import {
   IconAcoes,
@@ -26,7 +26,6 @@ import {
   IconPipeline,
   IconRelatorios,
   IconSparkle,
-  IconSwitch,
   IconTarefas,
   IconTrafego,
   IconWhatsApp,
@@ -70,8 +69,6 @@ export function Sidebar() {
     const rect = workspaceBtnRef.current.getBoundingClientRect();
     setWorkspacePos({ top: rect.bottom + 8, left: rect.left, width: rect.width });
   }, [workspaceAberto]);
-
-  const outrosMembros = equipe.filter((m) => m.nome !== currentUser.name);
 
   return (
     <aside className="sidebar">
@@ -213,17 +210,12 @@ export function Sidebar() {
         >
           <div className="avatar sm">{currentUser.initials}</div>
           <div>
-            <p className="who">{currentUser.name}</p>
+            <p className="who">
+              {currentUser.name}
+              <span className="sb-foot-chevron">▾</span>
+            </p>
             <p className="role">{currentUser.role}</p>
           </div>
-        </button>
-        <button
-          type="button"
-          className="sb-foot-toggle"
-          aria-label="Opções da conta"
-          onClick={() => setContaAberta((v) => !v)}
-        >
-          <IconSwitch width={15} height={15} />
         </button>
 
         {contaAberta ? (
@@ -233,30 +225,38 @@ export function Sidebar() {
             style={{ position: "fixed", inset: 0, zIndex: 55 }}
           />
           <div className="account-pop">
-            <div className="dropdown-item" style={{ borderBottom: "1px solid var(--line)" }}>
-              <span className="n">Trocar de conta</span>
-              <span className="r">Você está como {currentUser.name}</span>
-            </div>
-            {outrosMembros.map((m) => (
-              <button
-                type="button"
-                key={m.nome}
-                className="dropdown-item"
-                style={{ width: "100%", textAlign: "left" }}
-                onClick={() => setContaAberta(false)}
-              >
-                <span className="n">{m.nome}</span>
-                <span className="r">{m.papel}</span>
-              </button>
-            ))}
             <button
               type="button"
               className="dropdown-item"
-              style={{ width: "100%", textAlign: "left", color: "var(--blue)" }}
+              style={{ width: "100%", textAlign: "left" }}
               onClick={() => setContaAberta(false)}
             >
-              <span className="n">Sair</span>
+              <span className="n">👤 Meu Perfil</span>
             </button>
+            <Link
+              href="/equipe"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left" }}
+              onClick={() => setContaAberta(false)}
+            >
+              <span className="n">👥 Gerenciar Membros</span>
+            </Link>
+            <Link
+              href="/configuracoes"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left" }}
+              onClick={() => setContaAberta(false)}
+            >
+              <span className="n">⚙️ Configurações</span>
+            </Link>
+            <Link
+              href="/entrar"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left", borderTop: "1px solid var(--line)" }}
+              onClick={() => setContaAberta(false)}
+            >
+              <span className="n">↪ Sair</span>
+            </Link>
           </div>
           </>
         ) : null}
