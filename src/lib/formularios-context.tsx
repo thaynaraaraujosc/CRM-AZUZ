@@ -85,6 +85,7 @@ export type Formulario = {
   corFundo: string;
   corBotao: string;
   publicado: boolean;
+  senha: string;
 };
 
 export type RespostaFormulario = {
@@ -140,6 +141,7 @@ const FORMULARIOS_INICIAIS: Formulario[] = [
     corFundo: "#ffffff",
     corBotao: "#2e6bff",
     publicado: false,
+    senha: "vitta2026",
   },
 ];
 
@@ -167,6 +169,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
         corFundo: "#ffffff",
         corBotao: "#2e6bff",
         publicado: false,
+        senha: "",
       },
     ]);
     return id;

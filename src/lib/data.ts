@@ -699,9 +699,8 @@ export const conversas: Conversa[] = [
 
 export type Urgencia = "Baixa" | "Média" | "Alta";
 
-/** Modelo de tarefa — agrupa tarefas parecidas (ex.: tudo que é da secretária). */
-export const MODELOS_TAREFA = ["Geral", "Secretária", "Vendas", "Marketing"] as const;
-export type ModeloTarefa = (typeof MODELOS_TAREFA)[number];
+/** Toda tarefa começa em "Geral" — as outras equipes são criadas na hora, ao criar uma tarefa pra uma equipe específica. */
+export const EQUIPE_PADRAO_TAREFA = "Geral";
 
 export type TaskCard = {
   id: string;
@@ -714,7 +713,8 @@ export type TaskCard = {
   urgencia: Urgencia;
   descricao: string;
   anexo: { arquivo: string; detalhe: string } | null;
-  modelo?: ModeloTarefa;
+  /** Equipe dona da tarefa — "Geral" por padrão, ou o nome de uma equipe criada na hora. */
+  modelo?: string;
 };
 
 export type ColunaTarefas = { titulo: string; cards: TaskCard[] };

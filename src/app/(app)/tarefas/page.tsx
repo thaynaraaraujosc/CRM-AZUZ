@@ -6,14 +6,14 @@ import { useSearchParams } from "next/navigation";
 import {
   currentUser,
   equipe,
-  MODELOS_TAREFA,
+  EQUIPE_PADRAO_TAREFA,
   tarefas as tarefasIniciais,
 } from "@/lib/data";
-import type { ColunaTarefas } from "@/lib/data";
+import type { ColunaTarefas, Urgencia } from "@/lib/data";
 import { IconConfiguracoes, IconDoc } from "@/components/icons";
 import { ChipFilters, RadioList, Toggle, Topbar } from "@/components/ui";
 
-const NIVEIS_URGENCIA = ["Baixa", "Média", "Alta"];
+const NIVEIS_URGENCIA: Urgencia[] = ["Baixa", "Média", "Alta"];
 
 const RESPONSAVEIS = equipe.map((m) => ({ nome: m.nome, descricao: m.papel }));
 
@@ -267,7 +267,22 @@ function TarefasContent() {
   const [modoView, setModoView] = useState<"kanban" | "documento">("kanban");
   const [filtroModelo, setFiltroModelo] = useState<string>("Todos");
 
+  const [tituloNovaTarefa, setTituloNovaTarefa] = useState("");
+  const [descricaoNovaTarefa, setDescricaoNovaTarefa] = useState("");
+  const [urgenciaNovaTarefa, setUrgenciaNovaTarefa] = useState<
+    (typeof NIVEIS_URGENCIA)[number]
+  >(NIVEIS_URGENCIA[1]);
+  const [dataNovaTarefa, setDataNovaTarefa] = useState("");
+  const [responsavelNovaTarefa, setResponsavelNovaTarefa] = useState(
+    RESPONSAVEIS[0]?.nome ?? "",
+  );
+  const [equipeNovaTarefa, setEquipeNovaTarefa] = useState(EQUIPE_PADRAO_TAREFA);
+  const [novaEquipeInput, setNovaEquipeInput] = useState("");
+
   const todasAsTarefas = colunas.flatMap((coluna) => coluna.cards);
+  const equipesExistentes = Array.from(
+    new Set([EQUIPE_PADRAO_TAREFA, ...todasAsTarefas.map((t) => t.modelo || EQUIPE_PADRAO_TAREFA)]),
+  );
   const aberta = todasAsTarefas.find((t) => t.id === selectedId) ?? null;
   const colunaDaAberta = aberta
     ? colunas.findIndex((c) => c.cards.some((card) => card.id === aberta.id))
@@ -328,6 +343,53 @@ function TarefasContent() {
     moverTarefaPara(colunaDaAberta, indiceOrigem, novoColIndex);
   }
 
+  function fecharNovaTarefa() {
+    setNovaTarefaAberta(false);
+    setTituloNovaTarefa("");
+    setDescricaoNovaTarefa("");
+    setUrgenciaNovaTarefa(NIVEIS_URGENCIA[1]);
+    setDataNovaTarefa("");
+    setResponsavelNovaTarefa(RESPONSAVEIS[0]?.nome ?? "");
+    setEquipeNovaTarefa(EQUIPE_PADRAO_TAREFA);
+    setNovaEquipeInput("");
+  }
+
+  function adicionarNovaEquipe() {
+    const nome = novaEquipeInput.trim();
+    if (!nome) return;
+    setEquipeNovaTarefa(nome);
+    setNovaEquipeInput("");
+  }
+
+  function criarTarefa() {
+    const titulo = tituloNovaTarefa.trim();
+    if (!titulo) return;
+    const responsavelEscolhido =
+      equipe.find((m) => m.nome === responsavelNovaTarefa) ?? equipe[0];
+    const novaTarefa = {
+      id: `tarefa-${Date.now()}`,
+      titulo,
+      contato: "—",
+      data: dataNovaTarefa.trim() || "Sem data",
+      responsavel: {
+        nome: responsavelEscolhido?.nome ?? "—",
+        initials: responsavelEscolhido?.initials ?? "—",
+      },
+      urgencia: urgenciaNovaTarefa,
+      descricao: descricaoNovaTarefa.trim() || "Sem descrição.",
+      anexo: null,
+      modelo: equipeNovaTarefa,
+    };
+    setColunas((prev) => {
+      const proximo = cloneColunas(prev);
+      const colunaDestino =
+        proximo.find((c) => c.titulo === "Hoje") ?? proximo[0];
+      colunaDestino?.cards.push(novaTarefa);
+      return proximo;
+    });
+    fecharNovaTarefa();
+  }
+
   function salvarTitulo() {
     if (!aberta) return;
     const titulo = tituloEditavel.trim() || aberta.titulo;
@@ -367,6 +429,9 @@ function TarefasContent() {
       />
 
       <div className="content">
+        <p className="hint" style={{ marginBottom: 6 }}>
+          Forma de visualização — escolha como quer ver suas tarefas
+        </p>
         <div className="filters-row mb14">
           <button
             type="button"
@@ -397,7 +462,7 @@ function TarefasContent() {
                 <p className="n">Nova tarefa</p>
                 <p className="s">Preencha e salve — ela entra no kanban abaixo</p>
               </div>
-              <span className="close" style={{ cursor: "pointer" }} onClick={() => setNovaTarefaAberta(false)}>
+              <span className="close" style={{ cursor: "pointer" }} onClick={fecharNovaTarefa}>
                 Fechar ✕
               </span>
             </div>
@@ -407,6 +472,8 @@ function TarefasContent() {
                 className="input"
                 style={{ width: "100%" }}
                 type="text"
+                value={tituloNovaTarefa}
+                onChange={(e) => setTituloNovaTarefa(e.target.value)}
                 placeholder="Ex.: Ligar pra confirmar presença"
               />
             </div>
@@ -415,12 +482,18 @@ function TarefasContent() {
               <textarea
                 className="input"
                 style={{ width: "100%", minHeight: 80, resize: "vertical" }}
+                value={descricaoNovaTarefa}
+                onChange={(e) => setDescricaoNovaTarefa(e.target.value)}
                 placeholder="Descreva o que precisa ser feito nessa tarefa"
               />
             </div>
             <div className="field">
               <label>Nível de urgência</label>
-              <ChipFilters options={NIVEIS_URGENCIA} initial={1} />
+              <ChipFilters
+                options={NIVEIS_URGENCIA}
+                initial={1}
+                onChange={(v) => setUrgenciaNovaTarefa(v as Urgencia)}
+              />
             </div>
             <div className="field">
               <label>Data</label>
@@ -428,18 +501,68 @@ function TarefasContent() {
                 className="input"
                 style={{ width: "100%" }}
                 type="text"
+                value={dataNovaTarefa}
+                onChange={(e) => setDataNovaTarefa(e.target.value)}
                 placeholder="dd/mm/aaaa · hora"
               />
             </div>
             <div className="field">
               <label>Atribuir para</label>
-              <RadioList options={RESPONSAVEIS} initial={RESPONSAVEIS[0]?.nome} />
+              <RadioList
+                options={RESPONSAVEIS}
+                initial={RESPONSAVEIS[0]?.nome}
+                onChange={(v) => setResponsavelNovaTarefa(v)}
+              />
+            </div>
+            <div className="field">
+              <label>Equipe</label>
+              <div className="filters-row" style={{ marginBottom: 8 }}>
+                {equipesExistentes.map((eq) => (
+                  <button
+                    type="button"
+                    key={eq}
+                    className={`fchip${equipeNovaTarefa === eq ? " active" : ""}`}
+                    aria-pressed={equipeNovaTarefa === eq}
+                    onClick={() => setEquipeNovaTarefa(eq)}
+                  >
+                    {eq}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  className="input"
+                  style={{ flex: 1 }}
+                  type="text"
+                  value={novaEquipeInput}
+                  onChange={(e) => setNovaEquipeInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      adicionarNovaEquipe();
+                    }
+                  }}
+                  placeholder="Criar equipe nova (ex.: Marketing)"
+                />
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={adicionarNovaEquipe}
+                >
+                  + Equipe
+                </button>
+              </div>
+              {equipeNovaTarefa ? (
+                <p className="hint" style={{ marginTop: 6 }}>
+                  Essa tarefa vai pra equipe &quot;{equipeNovaTarefa}&quot;
+                </p>
+              ) : null}
             </div>
             <div className="section-foot">
               <button
                 type="button"
                 className="btn primary block"
-                onClick={() => setNovaTarefaAberta(false)}
+                onClick={criarTarefa}
               >
                 Criar tarefa
               </button>
@@ -456,7 +579,7 @@ function TarefasContent() {
           >
             Todos os modelos
           </button>
-          {MODELOS_TAREFA.map((m) => (
+          {equipesExistentes.map((m) => (
             <button
               type="button"
               key={m}

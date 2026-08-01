@@ -68,7 +68,8 @@ export default function FormulariosPage() {
   );
   const [tipoPerguntaMenuAberto, setTipoPerguntaMenuAberto] = useState(false);
   const [modoPreview, setModoPreview] = useState(false);
-  const [linkCopiado, setLinkCopiado] = useState(false);
+  const [linkPrivadoCopiado, setLinkPrivadoCopiado] = useState(false);
+  const [linkPublicoCopiado, setLinkPublicoCopiado] = useState(false);
 
   const formularioAberto =
     formularios.find((f) => f.id === formularioAbertoId) ?? null;
@@ -101,12 +102,22 @@ export default function FormulariosPage() {
     });
   }
 
-  function copiarLink() {
+  function copiarLinkPrivado() {
+    if (!formularioAberto) return;
+    const link = `azuzcrm.com/f/${formularioAberto.id}?chave=${
+      formularioAberto.senha || "sem-senha"
+    }`;
+    navigator.clipboard?.writeText(link);
+    setLinkPrivadoCopiado(true);
+    setTimeout(() => setLinkPrivadoCopiado(false), 2000);
+  }
+
+  function copiarLinkPublico() {
     if (!formularioAberto) return;
     const link = `azuzcrm.com/f/${formularioAberto.id}`;
     navigator.clipboard?.writeText(link);
-    setLinkCopiado(true);
-    setTimeout(() => setLinkCopiado(false), 2000);
+    setLinkPublicoCopiado(true);
+    setTimeout(() => setLinkPublicoCopiado(false), 2000);
   }
 
   function atualizarOpcao(
@@ -182,7 +193,7 @@ export default function FormulariosPage() {
         }
       />
 
-      <div className="content">
+      <div className="content form-studio">
         {!formularioAberto ? (
           <div className="card">
             {formularios.length === 0 ? (
@@ -243,7 +254,7 @@ export default function FormulariosPage() {
             <div className="form-builder-layout">
               <div className="form-builder-main">
                 <div className="card mb14">
-                  <label className="doc-cover" style={{ margin: 17 }}>
+                  <label className="doc-cover">
                     {formularioAberto.capaUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={formularioAberto.capaUrl} alt="" />
@@ -476,34 +487,87 @@ export default function FormulariosPage() {
                   >
                     {modoPreview ? "Fechar pré-visualização" : "Pré-visualizar"}
                   </button>
-                  {formularioAberto.publicado ? (
-                    <>
-                      <div className="key-row" style={{ padding: 0, marginBottom: 10 }}>
-                        <div className="key-box">
-                          azuzcrm.com/f/{formularioAberto.id}
-                        </div>
-                        <button type="button" className="btn ghost" onClick={copiarLink}>
-                          {linkCopiado ? "Copiado!" : "Copiar"}
-                        </button>
+
+                  <div className="form-link-box">
+                    <p className="form-link-h">🔒 Link privado, com senha</p>
+                    <p className="hint" style={{ marginBottom: 10 }}>
+                      Copie sem precisar publicar — só quem tiver a senha
+                      consegue abrir.
+                    </p>
+                    <div className="field" style={{ padding: 0, marginBottom: 10 }}>
+                      <label>Senha de acesso</label>
+                      <input
+                        className="input"
+                        style={{ width: "100%" }}
+                        value={formularioAberto.senha}
+                        onChange={(e) =>
+                          atualizarFormulario(formularioAberto.id, {
+                            senha: e.target.value,
+                          })
+                        }
+                        placeholder="Ex.: vitta2026"
+                      />
+                    </div>
+                    <div className="key-row" style={{ padding: 0 }}>
+                      <div className="key-box">
+                        azuzcrm.com/f/{formularioAberto.id}?chave=
+                        {formularioAberto.senha || "•••"}
                       </div>
                       <button
                         type="button"
-                        className="btn ghost block"
-                        style={{ color: "#d64545" }}
-                        onClick={() => alternarPublicacao(formularioAberto.id)}
+                        className="btn ghost"
+                        onClick={copiarLinkPrivado}
                       >
-                        Remover publicação
+                        {linkPrivadoCopiado ? "Copiado!" : "Copiar"}
                       </button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn primary block"
-                      onClick={() => alternarPublicacao(formularioAberto.id)}
-                    >
-                      Publicar
-                    </button>
-                  )}
+                    </div>
+                  </div>
+
+                  <div className="form-link-box">
+                    <p className="form-link-h">🌐 Link público</p>
+                    {formularioAberto.publicado ? (
+                      <>
+                        <p className="hint" style={{ marginBottom: 10 }}>
+                          Publicado — qualquer pessoa com o link pode
+                          responder.
+                        </p>
+                        <div className="key-row" style={{ padding: 0, marginBottom: 10 }}>
+                          <div className="key-box">
+                            azuzcrm.com/f/{formularioAberto.id}
+                          </div>
+                          <button
+                            type="button"
+                            className="btn ghost"
+                            onClick={copiarLinkPublico}
+                          >
+                            {linkPublicoCopiado ? "Copiado!" : "Copiar"}
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn ghost block"
+                          style={{ color: "#d64545" }}
+                          onClick={() => alternarPublicacao(formularioAberto.id)}
+                        >
+                          Remover publicação
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="hint" style={{ marginBottom: 10 }}>
+                          Ainda é rascunho — publique pra gerar um link
+                          público, aberto pra qualquer pessoa.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn primary block"
+                          onClick={() => alternarPublicacao(formularioAberto.id)}
+                        >
+                          Publicar
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className="card" style={{ padding: 17 }}>

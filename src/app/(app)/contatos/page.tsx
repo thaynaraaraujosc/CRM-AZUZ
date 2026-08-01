@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { classeOrigem, filtrosContatos } from "@/lib/data";
+import { classeOrigem, currentUser, filtrosContatos } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { IconSearch } from "@/components/icons";
@@ -30,8 +30,15 @@ function ContatosPageInner() {
   const [whatsappNovo, setWhatsappNovo] = useState("");
   const [nascimentoNovo, setNascimentoNovo] = useState("");
   const [enderecoNovo, setEnderecoNovo] = useState("");
+  const [filtroOrigem, setFiltroOrigem] = useState(filtrosContatos[0]);
 
   const contato = contatos.find((c) => c.nome === selecionado) ?? null;
+
+  const contatosFiltrados = contatos.filter((c) => {
+    if (filtroOrigem === "Todos") return true;
+    if (filtroOrigem === "Meus leads") return c.responsavel === currentUser.name;
+    return c.origem === filtroOrigem;
+  });
 
   function localizarNoFunilAtual(nomeContato: string) {
     for (const f of funis) {
@@ -68,7 +75,11 @@ function ContatosPageInner() {
     <>
       <Topbar
         title="Contatos"
-        sub={`${contatos.length} contatos · visão 360° de cada lead`}
+        sub={
+          filtroOrigem === "Todos"
+            ? `${contatos.length} contatos · visão 360° de cada lead`
+            : `${contatosFiltrados.length} de ${contatos.length} contatos · filtrado por ${filtroOrigem}`
+        }
         actions={
           <>
             <label className="search">
@@ -172,7 +183,11 @@ function ContatosPageInner() {
           </section>
         ) : null}
 
-        <ChipFilters options={filtrosContatos} />
+        <ChipFilters
+          options={filtrosContatos}
+          initial={0}
+          onChange={(v) => setFiltroOrigem(v)}
+        />
 
         <div className="card mb14">
           <div className="table-wrap">
@@ -188,7 +203,16 @@ function ContatosPageInner() {
                 </tr>
               </thead>
               <tbody>
-                {contatos.map((c) => (
+                {contatosFiltrados.length === 0 ? (
+                  <tr>
+                    <td colSpan={6}>
+                      <p className="hint" style={{ padding: 17 }}>
+                        Nenhum contato nessa origem ainda.
+                      </p>
+                    </td>
+                  </tr>
+                ) : null}
+                {contatosFiltrados.map((c) => (
                   <tr key={c.nome}>
                     <td>
                       <button
