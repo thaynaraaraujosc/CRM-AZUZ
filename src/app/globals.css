@@ -3034,10 +3034,6 @@ table.tbl tbody tr:hover td {
 }
 
 .form-pergunta-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
   padding: 12px 17px;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -3203,6 +3199,105 @@ table.tbl tbody tr:hover td {
 .form-pergunta-campo {
   margin-top: 10px;
   padding-left: 2px;
+}
+
+.form-pergunta-view {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px 14px 8px;
+  margin: 10px 14px;
+  border-radius: 12px;
+  transition: background 0.15s ease;
+}
+
+.form-pergunta-view:first-child {
+  margin-top: 14px;
+}
+
+.form-pergunta-view:hover {
+  background: var(--navy-raised);
+}
+
+.form-pergunta-handle {
+  flex: 0 0 auto;
+  padding-top: 2px;
+  color: var(--text-faint);
+  font-size: 13px;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.form-pergunta-view:hover .form-pergunta-handle {
+  opacity: 1;
+}
+
+.form-pergunta-view-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-pergunta-editar-btn {
+  position: absolute;
+  top: -14px;
+  right: 14px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  background: #1f2430;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  box-shadow: 0 6px 16px rgba(11, 21, 51, 0.25);
+  cursor: pointer;
+}
+
+.form-pergunta-view:hover .form-pergunta-editar-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.form-pergunta-enunciado-bloco {
+  width: 100%;
+}
+
+.form-pergunta-enunciado {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.form-pergunta-asterisco {
+  color: #d64545;
+}
+
+.form-pergunta-dica {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin: 0 0 8px;
+}
+
+.form-pergunta-dica-input {
+  display: block;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--line-soft);
+  background: none;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 6px 0 8px;
+  margin: 6px 0 10px;
+}
+
+.form-pergunta-dica-input:focus {
+  outline: none;
+  border-bottom-color: var(--blue);
 }
 
 .form-pergunta-obrigatoria {

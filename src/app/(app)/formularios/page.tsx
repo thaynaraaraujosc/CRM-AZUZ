@@ -141,6 +141,28 @@ function CampoResposta({ pergunta }: { pergunta: PerguntaFormulario }) {
   }
 }
 
+/** Enunciado numerado + dica + campo de resposta — usado no modo visualização e na pré-visualização. */
+function PerguntaVisualizacao({
+  pergunta,
+  indice,
+}: {
+  pergunta: PerguntaFormulario;
+  indice: number;
+}) {
+  return (
+    <div className="form-pergunta-enunciado-bloco">
+      <p className="form-pergunta-enunciado">
+        {indice}. {pergunta.rotulo}
+        {pergunta.obrigatoria ? (
+          <span className="form-pergunta-asterisco"> *</span>
+        ) : null}
+      </p>
+      {pergunta.dica ? <p className="form-pergunta-dica">{pergunta.dica}</p> : null}
+      <CampoResposta pergunta={pergunta} />
+    </div>
+  );
+}
+
 export default function FormulariosPage() {
   const { criarContato } = useContatos();
   const {
@@ -160,6 +182,7 @@ export default function FormulariosPage() {
   );
   const [tipoPerguntaMenuAberto, setTipoPerguntaMenuAberto] = useState(false);
   const [tipoPerguntaRect, setTipoPerguntaRect] = useState<DOMRect | null>(null);
+  const [perguntaEditandoId, setPerguntaEditandoId] = useState<string | null>(null);
   const [modoPreview, setModoPreview] = useState(false);
   const [menuLinkAberto, setMenuLinkAberto] = useState(false);
   const [menuLinkRect, setMenuLinkRect] = useState<DOMRect | null>(null);
@@ -382,86 +405,124 @@ export default function FormulariosPage() {
                       Nenhuma pergunta ainda — adicione a primeira abaixo.
                     </p>
                   ) : (
-                    formularioAberto.perguntas.map((pergunta) => (
-                      <div className="form-pergunta-row" key={pergunta.id}>
-                        <div className="form-pergunta-topo">
-                          <span className="form-pergunta-tipo">
-                            {labelTipoPergunta(pergunta.tipo)}
-                          </span>
-                          <input
-                            className="input"
-                            style={{ flex: 1 }}
-                            value={pergunta.rotulo}
-                            onChange={(e) =>
-                              atualizarPergunta(formularioAberto.id, pergunta.id, {
-                                rotulo: e.target.value,
-                              })
-                            }
-                            placeholder="Escreva a pergunta"
-                          />
-                          <label className="form-pergunta-obrigatoria">
+                    formularioAberto.perguntas.map((pergunta, indice) =>
+                      pergunta.id === perguntaEditandoId ? (
+                        <div className="form-pergunta-row" key={pergunta.id}>
+                          <div className="form-pergunta-topo">
+                            <span className="form-pergunta-tipo">
+                              {labelTipoPergunta(pergunta.tipo)}
+                            </span>
                             <input
-                              type="checkbox"
-                              checked={pergunta.obrigatoria}
+                              className="input"
+                              style={{ flex: 1 }}
+                              value={pergunta.rotulo}
                               onChange={(e) =>
                                 atualizarPergunta(formularioAberto.id, pergunta.id, {
-                                  obrigatoria: e.target.checked,
+                                  rotulo: e.target.value,
                                 })
                               }
+                              placeholder="Escreva a pergunta"
                             />
-                            Obrigatória
-                          </label>
+                            <label className="form-pergunta-obrigatoria">
+                              <input
+                                type="checkbox"
+                                checked={pergunta.obrigatoria}
+                                onChange={(e) =>
+                                  atualizarPergunta(formularioAberto.id, pergunta.id, {
+                                    obrigatoria: e.target.checked,
+                                  })
+                                }
+                              />
+                              Obrigatória
+                            </label>
+                            <button
+                              type="button"
+                              className="remove-chip"
+                              aria-label="Remover pergunta"
+                              onClick={() => {
+                                removerPergunta(formularioAberto.id, pergunta.id);
+                                setPerguntaEditandoId(null);
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <input
+                            className="form-pergunta-dica-input"
+                            value={pergunta.dica ?? ""}
+                            onChange={(e) =>
+                              atualizarPergunta(formularioAberto.id, pergunta.id, {
+                                dica: e.target.value,
+                              })
+                            }
+                            placeholder="Texto de ajuda (opcional)"
+                          />
+
+                          <div className="form-pergunta-campo">
+                            {pergunta.tipo === "opcao_unica" ||
+                            pergunta.tipo === "multipla_escolha" ? (
+                              <div className="form-pergunta-opcoes">
+                                {(pergunta.opcoes ?? []).map((op, i) => (
+                                  <div className="form-opcao-row" key={i}>
+                                    <input
+                                      className="input"
+                                      style={{ flex: 1 }}
+                                      value={op}
+                                      onChange={(e) =>
+                                        atualizarOpcao(pergunta, i, e.target.value)
+                                      }
+                                    />
+                                    {(pergunta.opcoes?.length ?? 0) > 1 ? (
+                                      <button
+                                        type="button"
+                                        className="btn ghost"
+                                        onClick={() => removerOpcao(pergunta, i)}
+                                      >
+                                        ✕
+                                      </button>
+                                    ) : null}
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  className="btn ghost"
+                                  onClick={() => adicionarOpcao(pergunta)}
+                                >
+                                  + Adicionar opção
+                                </button>
+                              </div>
+                            ) : (
+                              <CampoResposta pergunta={pergunta} />
+                            )}
+                          </div>
+
+                          <div className="section-foot" style={{ padding: "12px 0 0" }}>
+                            <button
+                              type="button"
+                              className="btn primary"
+                              onClick={() => setPerguntaEditandoId(null)}
+                            >
+                              Concluir edição
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="form-pergunta-view" key={pergunta.id}>
+                          <span className="form-pergunta-handle">⠿</span>
+                          <div className="form-pergunta-view-body">
+                            <PerguntaVisualizacao pergunta={pergunta} indice={indice + 1} />
+                          </div>
                           <button
                             type="button"
-                            className="remove-chip"
-                            aria-label="Remover pergunta"
-                            onClick={() =>
-                              removerPergunta(formularioAberto.id, pergunta.id)
-                            }
+                            className="form-pergunta-editar-btn"
+                            onClick={() => setPerguntaEditandoId(pergunta.id)}
                           >
-                            ✕
+                            ✎ Editar pergunta
                           </button>
                         </div>
-
-                        <div className="form-pergunta-campo">
-                          {pergunta.tipo === "opcao_unica" ||
-                          pergunta.tipo === "multipla_escolha" ? (
-                            <div className="form-pergunta-opcoes">
-                              {(pergunta.opcoes ?? []).map((op, i) => (
-                                <div className="form-opcao-row" key={i}>
-                                  <input
-                                    className="input"
-                                    style={{ flex: 1 }}
-                                    value={op}
-                                    onChange={(e) =>
-                                      atualizarOpcao(pergunta, i, e.target.value)
-                                    }
-                                  />
-                                  {(pergunta.opcoes?.length ?? 0) > 1 ? (
-                                    <button
-                                      type="button"
-                                      className="btn ghost"
-                                      onClick={() => removerOpcao(pergunta, i)}
-                                    >
-                                      ✕
-                                    </button>
-                                  ) : null}
-                                </div>
-                              ))}
-                              <button
-                                type="button"
-                                className="btn ghost"
-                                onClick={() => adicionarOpcao(pergunta)}
-                              >
-                                + Adicionar opção
-                              </button>
-                            </div>
-                          ) : (
-                            <CampoResposta pergunta={pergunta} />
-                          )}
-                        </div>
-                      </div>
-                    ))
+                      ),
+                    )
                   )}
 
                   <div style={{ padding: 17 }}>
@@ -494,10 +555,11 @@ export default function FormulariosPage() {
                               className="dropdown-item"
                               style={{ width: "100%", textAlign: "left" }}
                               onClick={() => {
-                                adicionarPergunta(
+                                const novoId = adicionarPergunta(
                                   formularioAberto.id,
                                   t.tipo as TipoPerguntaFormulario,
                                 );
+                                setPerguntaEditandoId(novoId);
                                 setTipoPerguntaMenuAberto(false);
                               }}
                             >
@@ -695,10 +757,9 @@ export default function FormulariosPage() {
                       {formularioAberto.descricao}
                     </p>
                   ) : null}
-                  {formularioAberto.perguntas.map((pergunta) => (
-                    <div className="field" key={pergunta.id} style={{ padding: "10px 0" }}>
-                      <label>{pergunta.rotulo}</label>
-                      <CampoResposta pergunta={pergunta} />
+                  {formularioAberto.perguntas.map((pergunta, indice) => (
+                    <div key={pergunta.id} style={{ padding: "10px 0" }}>
+                      <PerguntaVisualizacao pergunta={pergunta} indice={indice + 1} />
                     </div>
                   ))}
                   <button

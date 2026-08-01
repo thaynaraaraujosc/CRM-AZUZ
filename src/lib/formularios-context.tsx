@@ -73,6 +73,7 @@ export type PerguntaFormulario = {
   tipo: TipoPerguntaFormulario;
   rotulo: string;
   obrigatoria: boolean;
+  dica?: string;
   opcoes?: string[];
 };
 
@@ -100,7 +101,7 @@ type FormulariosContextValue = {
   criarFormulario: () => string;
   atualizarFormulario: (id: string, patch: Partial<Formulario>) => void;
   excluirFormulario: (id: string) => void;
-  adicionarPergunta: (formularioId: string, tipo: TipoPerguntaFormulario) => void;
+  adicionarPergunta: (formularioId: string, tipo: TipoPerguntaFormulario) => string;
   atualizarPergunta: (
     formularioId: string,
     perguntaId: string,
@@ -127,6 +128,7 @@ const FORMULARIOS_INICIAIS: Formulario[] = [
         tipo: "texto_curto",
         rotulo: "Nome completo",
         obrigatoria: true,
+        dica: "Use o nome como está no seu documento.",
       },
       {
         id: "pergunta-email",
@@ -198,11 +200,12 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
   }
 
   function adicionarPergunta(formularioId: string, tipo: TipoPerguntaFormulario) {
+    const id = `pergunta-${Date.now()}`;
     setFormularios((prev) =>
       prev.map((f) => {
         if (f.id !== formularioId) return f;
         const nova: PerguntaFormulario = {
-          id: `pergunta-${Date.now()}`,
+          id,
           tipo,
           rotulo: labelTipoPergunta(tipo),
           obrigatoria: false,
@@ -214,6 +217,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
         return { ...f, perguntas: [...f.perguntas, nova] };
       }),
     );
+    return id;
   }
 
   function atualizarPergunta(
