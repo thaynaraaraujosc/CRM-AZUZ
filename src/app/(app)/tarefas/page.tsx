@@ -3,7 +3,12 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { equipe, tarefas as tarefasIniciais } from "@/lib/data";
+import {
+  currentUser,
+  equipe,
+  MODELOS_TAREFA,
+  tarefas as tarefasIniciais,
+} from "@/lib/data";
 import type { ColunaTarefas } from "@/lib/data";
 import { IconConfiguracoes, IconDoc } from "@/components/icons";
 import { ChipFilters, RadioList, Toggle, Topbar } from "@/components/ui";
@@ -14,6 +19,236 @@ const RESPONSAVEIS = equipe.map((m) => ({ nome: m.nome, descricao: m.papel }));
 
 function cloneColunas(colunas: ColunaTarefas[]): ColunaTarefas[] {
   return colunas.map((c) => ({ ...c, cards: c.cards.map((card) => ({ ...card })) }));
+}
+
+type PaginaDocumento = {
+  id: string;
+  titulo: string;
+  capaUrl?: string;
+  conteudo: string;
+};
+
+const PAGINAS_DOC_INICIAIS: PaginaDocumento[] = [
+  {
+    id: "pagina-1",
+    titulo: "Notas gerais",
+    conteudo:
+      "Anotações e combinados da equipe sobre a rotina de tarefas — use as páginas ao lado pra separar por assunto.",
+  },
+];
+
+const FONTES_DOCUMENTO = [
+  { label: "Padrão", valor: "var(--body)" },
+  { label: "Serifada", valor: "Georgia, 'Times New Roman', serif" },
+  { label: "Monoespaçada", valor: "'Courier New', monospace" },
+];
+
+const TAMANHOS_FONTE_DOC = [
+  { label: "Pequena", valor: 12 },
+  { label: "Média", valor: 14 },
+  { label: "Grande", valor: 17 },
+];
+
+/** Visão "Documento" das Tarefas — várias páginas, capa, fonte/largura configuráveis. */
+function DocumentoView() {
+  const [paginas, setPaginas] = useState<PaginaDocumento[]>(PAGINAS_DOC_INICIAIS);
+  const [paginaAtivaId, setPaginaAtivaId] = useState(PAGINAS_DOC_INICIAIS[0].id);
+  const [configAberta, setConfigAberta] = useState(false);
+  const [fonteDoc, setFonteDoc] = useState(FONTES_DOCUMENTO[0]);
+  const [tamanhoDoc, setTamanhoDoc] = useState(TAMANHOS_FONTE_DOC[1]);
+  const [larguraDoc, setLarguraDoc] = useState<"padrao" | "total">("padrao");
+
+  const paginaAtiva = paginas.find((p) => p.id === paginaAtivaId) ?? paginas[0];
+
+  function atualizarPaginaAtiva(patch: Partial<PaginaDocumento>) {
+    setPaginas((prev) =>
+      prev.map((p) => (p.id === paginaAtivaId ? { ...p, ...patch } : p)),
+    );
+  }
+
+  function adicionarPagina() {
+    const nova: PaginaDocumento = {
+      id: `pagina-${Date.now()}`,
+      titulo: "Sem título",
+      conteudo: "",
+    };
+    setPaginas((prev) => [...prev, nova]);
+    setPaginaAtivaId(nova.id);
+  }
+
+  function excluirPagina(id: string) {
+    if (paginas.length <= 1) return;
+    if (!window.confirm("Excluir essa página?")) return;
+    setPaginas((prev) => {
+      const restante = prev.filter((p) => p.id !== id);
+      if (paginaAtivaId === id) setPaginaAtivaId(restante[0].id);
+      return restante;
+    });
+  }
+
+  function escolherCapa(e: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = e.target.files?.[0];
+    if (!arquivo) return;
+    atualizarPaginaAtiva({ capaUrl: URL.createObjectURL(arquivo) });
+  }
+
+  if (!paginaAtiva) return null;
+
+  return (
+    <div className="doc-view">
+      <aside className="doc-sidebar">
+        <p className="doc-sidebar-h">Páginas</p>
+        {paginas.map((p) => (
+          <div
+            key={p.id}
+            className={`doc-page-item${p.id === paginaAtivaId ? " active" : ""}`}
+            onClick={() => setPaginaAtivaId(p.id)}
+          >
+            <IconDoc width={13} height={13} />
+            <span>{p.titulo || "Sem título"}</span>
+            {paginas.length > 1 ? (
+              <span
+                role="button"
+                aria-label={`Excluir página ${p.titulo}`}
+                className="doc-page-remove"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  excluirPagina(p.id);
+                }}
+              >
+                ✕
+              </span>
+            ) : null}
+          </div>
+        ))}
+        <button type="button" className="doc-page-add" onClick={adicionarPagina}>
+          + Adicionar página
+        </button>
+      </aside>
+
+      <div className="doc-main">
+        <div className="doc-toolbar">
+          <button type="button" className="btn ghost" onClick={() => window.print()}>
+            Imprimir
+          </button>
+          <button type="button" className="btn ghost" onClick={() => window.print()}>
+            Exportar
+          </button>
+          <div className="dropdown-anchor">
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="Configurações do documento"
+              onClick={() => setConfigAberta((v) => !v)}
+            >
+              <IconConfiguracoes />
+            </button>
+            {configAberta ? (
+              <>
+                <div
+                  onClick={() => setConfigAberta(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                />
+                <div
+                  className="dropdown-pop dropdown-pop-right"
+                  style={{ padding: 14, width: 240 }}
+                >
+                  <div className="field" style={{ padding: 0, marginBottom: 10 }}>
+                    <label>Estilo de fonte</label>
+                    <select
+                      className="input"
+                      style={{ width: "100%", cursor: "pointer" }}
+                      value={fonteDoc.label}
+                      onChange={(e) =>
+                        setFonteDoc(
+                          FONTES_DOCUMENTO.find((f) => f.label === e.target.value) ??
+                            FONTES_DOCUMENTO[0],
+                        )
+                      }
+                    >
+                      {FONTES_DOCUMENTO.map((f) => (
+                        <option key={f.label} value={f.label}>
+                          {f.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field" style={{ padding: 0, marginBottom: 10 }}>
+                    <label>Tamanho da fonte</label>
+                    <div className="filters-row">
+                      {TAMANHOS_FONTE_DOC.map((t) => (
+                        <button
+                          type="button"
+                          key={t.label}
+                          className={`fchip${tamanhoDoc.label === t.label ? " active" : ""}`}
+                          onClick={() => setTamanhoDoc(t)}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="field" style={{ padding: 0 }}>
+                    <label>Largura da página</label>
+                    <div className="filters-row">
+                      <button
+                        type="button"
+                        className={`fchip${larguraDoc === "padrao" ? " active" : ""}`}
+                        onClick={() => setLarguraDoc("padrao")}
+                      >
+                        Padrão
+                      </button>
+                      <button
+                        type="button"
+                        className={`fchip${larguraDoc === "total" ? " active" : ""}`}
+                        onClick={() => setLarguraDoc("total")}
+                      >
+                        Largura total
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        <div
+          className={`doc-page-content${larguraDoc === "total" ? " full" : ""}`}
+          style={{ fontFamily: fonteDoc.valor, fontSize: tamanhoDoc.valor }}
+        >
+          <label className="doc-cover">
+            {paginaAtiva.capaUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={paginaAtiva.capaUrl} alt="" />
+            ) : (
+              <span className="doc-cover-empty">+ Adicionar capa</span>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={escolherCapa}
+            />
+          </label>
+
+          <input
+            className="doc-title-input"
+            value={paginaAtiva.titulo}
+            onChange={(e) => atualizarPaginaAtiva({ titulo: e.target.value })}
+            placeholder="Sem título"
+          />
+          <p className="doc-byline">{currentUser.name} · atualizado agora</p>
+          <textarea
+            className="doc-body-input"
+            value={paginaAtiva.conteudo}
+            onChange={(e) => atualizarPaginaAtiva({ conteudo: e.target.value })}
+            placeholder="Comece a escrever…"
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function TarefasContent() {
@@ -29,6 +264,8 @@ function TarefasContent() {
     coluna: number;
     card: number;
   } | null>(null);
+  const [modoView, setModoView] = useState<"kanban" | "documento">("kanban");
+  const [filtroModelo, setFiltroModelo] = useState<string>("Todos");
 
   const todasAsTarefas = colunas.flatMap((coluna) => coluna.cards);
   const aberta = todasAsTarefas.find((t) => t.id === selectedId) ?? null;
@@ -37,10 +274,12 @@ function TarefasContent() {
     : -1;
 
   const [tituloEditavel, setTituloEditavel] = useState(aberta?.titulo ?? "");
+  const [siblingsAbertos, setSiblingsAbertos] = useState(false);
   const [abertaIdAnterior, setAbertaIdAnterior] = useState(selectedId);
   if (selectedId !== abertaIdAnterior) {
     setAbertaIdAnterior(selectedId);
     setTituloEditavel(aberta?.titulo ?? "");
+    setSiblingsAbertos(false);
   }
 
   function abrirTarefa(id: string) {
@@ -106,22 +345,51 @@ function TarefasContent() {
     <>
       <Topbar
         title="Tarefas"
-        sub="Kanban por prazo — arraste um card pra mudar o status, até chegar em Concluídas"
+        sub={
+          modoView === "kanban"
+            ? "Kanban por prazo — arraste um card pra mudar o status, até chegar em Concluídas"
+            : "Documento — anote o que quiser, em quantas páginas precisar"
+        }
         actions={
-          <button
-            type="button"
-            className="btn primary"
-            onClick={() => {
-              setNovaTarefaAberta((v) => !v);
-              setSelectedId(null);
-            }}
-          >
-            {novaTarefaAberta ? "Cancelar" : "+ Nova tarefa"}
-          </button>
+          modoView === "kanban" ? (
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => {
+                setNovaTarefaAberta((v) => !v);
+                setSelectedId(null);
+              }}
+            >
+              {novaTarefaAberta ? "Cancelar" : "+ Nova tarefa"}
+            </button>
+          ) : null
         }
       />
 
       <div className="content">
+        <div className="filters-row mb14">
+          <button
+            type="button"
+            className={`fchip${modoView === "kanban" ? " active" : ""}`}
+            aria-pressed={modoView === "kanban"}
+            onClick={() => setModoView("kanban")}
+          >
+            🗂 Kanban
+          </button>
+          <button
+            type="button"
+            className={`fchip${modoView === "documento" ? " active" : ""}`}
+            aria-pressed={modoView === "documento"}
+            onClick={() => setModoView("documento")}
+          >
+            📄 Documento
+          </button>
+        </div>
+
+        {modoView === "documento" ? (
+          <DocumentoView />
+        ) : (
+          <>
         {novaTarefaAberta ? (
           <section className="open-conv mb14">
             <div className="open-conv-h">
@@ -179,8 +447,42 @@ function TarefasContent() {
           </section>
         ) : null}
 
+        <div className="filters-row mb14">
+          <button
+            type="button"
+            className={`fchip${filtroModelo === "Todos" ? " active" : ""}`}
+            aria-pressed={filtroModelo === "Todos"}
+            onClick={() => setFiltroModelo("Todos")}
+          >
+            Todos os modelos
+          </button>
+          {MODELOS_TAREFA.map((m) => (
+            <button
+              type="button"
+              key={m}
+              className={`fchip${filtroModelo === m ? " active" : ""}`}
+              aria-pressed={filtroModelo === m}
+              onClick={() => setFiltroModelo(m)}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+
         <div className="kanban">
-          {colunas.map((coluna, colIndex) => (
+          {colunas.map((coluna, colIndex) => {
+            const cardsComIndice = coluna.cards.map((card, cardIndex) => ({
+              card,
+              cardIndex,
+            }));
+            const cardsVisiveis =
+              filtroModelo === "Todos"
+                ? cardsComIndice
+                : cardsComIndice.filter(
+                    ({ card }) => (card.modelo ?? "Geral") === filtroModelo,
+                  );
+
+            return (
             <div
               key={coluna.titulo}
               onDragOver={(e) => e.preventDefault()}
@@ -195,10 +497,10 @@ function TarefasContent() {
                   <span className="dot" />
                   {coluna.titulo}
                 </span>
-                <span className="c">{coluna.cards.length}</span>
+                <span className="c">{cardsVisiveis.length}</span>
               </div>
 
-              {coluna.cards.map((card, cardIndex) => {
+              {cardsVisiveis.map(({ card, cardIndex }) => {
                 const isOpen = card.id === aberta?.id;
                 const classes = [
                   "task-card",
@@ -260,7 +562,8 @@ function TarefasContent() {
                 );
               })}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Tarefa aberta, embaixo do kanban */}
@@ -341,6 +644,47 @@ function TarefasContent() {
                     + Anexar documento
                   </button>
                 </div>
+
+                {aberta.modelo ? (
+                  <>
+                    <div
+                      className="panel-h divided"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => setSiblingsAbertos((v) => !v)}
+                    >
+                      <h4>
+                        Tarefas do modelo &quot;{aberta.modelo}&quot;{" "}
+                        {siblingsAbertos ? "▾" : "▸"}
+                      </h4>
+                    </div>
+                    {siblingsAbertos ? (
+                      <div style={{ padding: "0 17px 14px" }}>
+                        {todasAsTarefas.filter(
+                          (t) => t.modelo === aberta.modelo && t.id !== aberta.id,
+                        ).length === 0 ? (
+                          <p className="hint">Nenhuma outra tarefa nesse modelo.</p>
+                        ) : (
+                          todasAsTarefas
+                            .filter(
+                              (t) =>
+                                t.modelo === aberta.modelo && t.id !== aberta.id,
+                            )
+                            .map((t) => (
+                              <div
+                                className="stat-row"
+                                key={t.id}
+                                style={{ cursor: "pointer" }}
+                                onClick={() => abrirTarefa(t.id)}
+                              >
+                                <span className="sl">{t.titulo}</span>
+                                <span className="sv">{t.data}</span>
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
               </div>
 
               <div>
@@ -390,6 +734,8 @@ function TarefasContent() {
             </div>
           </section>
         ) : null}
+          </>
+        )}
       </div>
     </>
   );

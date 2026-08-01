@@ -699,6 +699,10 @@ export const conversas: Conversa[] = [
 
 export type Urgencia = "Baixa" | "Média" | "Alta";
 
+/** Modelo de tarefa — agrupa tarefas parecidas (ex.: tudo que é da secretária). */
+export const MODELOS_TAREFA = ["Geral", "Secretária", "Vendas", "Marketing"] as const;
+export type ModeloTarefa = (typeof MODELOS_TAREFA)[number];
+
 export type TaskCard = {
   id: string;
   titulo: string;
@@ -710,6 +714,7 @@ export type TaskCard = {
   urgencia: Urgencia;
   descricao: string;
   anexo: { arquivo: string; detalhe: string } | null;
+  modelo?: ModeloTarefa;
 };
 
 export type ColunaTarefas = { titulo: string; cards: TaskCard[] };
@@ -732,6 +737,7 @@ export const tarefas: ColunaTarefas[] = [
           arquivo: "proposta_julia_prado.pdf",
           detalhe: "enviada em 24/07",
         },
+        modelo: "Vendas",
       },
     ],
   },
@@ -748,6 +754,7 @@ export const tarefas: ColunaTarefas[] = [
         descricao:
           "Responder o valor da consulta particular no Instagram e oferecer os horários livres dessa semana.",
         anexo: null,
+        modelo: "Secretária",
       },
     ],
   },
@@ -767,6 +774,7 @@ export const tarefas: ColunaTarefas[] = [
           arquivo: "receita_marcos_aurelio.pdf",
           detalhe: "enviado pelo paciente · 09:15",
         },
+        modelo: "Vendas",
       },
       {
         id: "reagendar-renata",
@@ -778,6 +786,7 @@ export const tarefas: ColunaTarefas[] = [
         descricao:
           "Ligar pra reagendar o horário que ela não conseguiu comparecer e confirmar o novo dia por WhatsApp.",
         anexo: null,
+        modelo: "Vendas",
       },
     ],
   },
@@ -795,6 +804,7 @@ export const tarefas: ColunaTarefas[] = [
         descricao:
           "Confirmar por WhatsApp o horário de amanhã e reforçar os itens que ela precisa levar na consulta.",
         anexo: null,
+        modelo: "Secretária",
       },
     ],
   },

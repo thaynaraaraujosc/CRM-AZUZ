@@ -2784,3 +2784,171 @@ table.tbl tbody tr:hover td {
     width: 100%;
   }
 }
+
+/* ---------------- Tarefas · visão Documento ---------------- */
+
+.doc-view {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.doc-sidebar {
+  width: 210px;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.doc-sidebar-h {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 6px 8px;
+}
+
+.doc-page-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.doc-page-item span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-page-item:hover {
+  background: var(--navy-raised);
+}
+
+.doc-page-item.active {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.doc-page-remove {
+  flex: 0 0 auto;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.doc-page-add {
+  margin-top: 6px;
+  padding: 8px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--blue);
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.doc-page-add:hover {
+  background: var(--blue-soft-2);
+}
+
+.doc-main {
+  flex: 1;
+  min-width: 0;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.doc-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.doc-page-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 32px 60px;
+}
+
+.doc-page-content.full {
+  max-width: none;
+}
+
+.doc-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  border-radius: 10px;
+  background: var(--navy-raised);
+  border: 1px dashed var(--line);
+  margin-bottom: 18px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.doc-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.doc-cover-empty {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.doc-title-input {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 26px;
+  color: var(--ink);
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+.doc-title-input:focus {
+  outline: none;
+}
+
+.doc-byline {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin-bottom: 20px;
+}
+
+.doc-body-input {
+  display: block;
+  width: 100%;
+  min-height: 340px;
+  border: none;
+  background: none;
+  resize: vertical;
+  line-height: 1.7;
+  color: var(--ink);
+  padding: 0;
+}
+
+.doc-body-input:focus {
+  outline: none;
+}
