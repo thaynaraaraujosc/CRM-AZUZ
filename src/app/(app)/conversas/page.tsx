@@ -7,11 +7,13 @@ import { classeOrigem, conversas, type Funil, type NegocioCard } from "@/lib/dat
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
+import { useNotificacoes } from "@/lib/notificacoes-context";
 import {
   CanalBadge,
   IconAutomacoes,
   IconConfiguracoes,
   IconDoc,
+  IconMic,
 } from "@/components/icons";
 import { RadioList, Toggle, Topbar } from "@/components/ui";
 
@@ -45,6 +47,7 @@ function ConversasPageInner() {
   const { funis, atribuirContatoAoFunil } = useFunis();
   const { contatos, salvarDadosContato, atribuirAtendente } = useContatos();
   const { automacoesDeEntradaAtivas } = useAutomacoes();
+  const { simularNovaMensagem } = useNotificacoes();
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const proximoToastId = useRef(0);
 
@@ -218,6 +221,13 @@ function ConversasPageInner() {
         sub="WhatsApp, Instagram e TikTok — todas as conversas num só lugar"
         actions={
           <>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => simularNovaMensagem(aberta.nome)}
+            >
+              🔔 Simular mensagem nova
+            </button>
             <span className="fsel">Atendente: Todos ▾</span>
             <span className="fsel">Canal: Todos ▾</span>
           </>
@@ -304,6 +314,14 @@ function ConversasPageInner() {
           </div>
           <div className="chat-input">
             <div className="box">Escrever mensagem…</div>
+            <button
+              type="button"
+              className="chat-mic-btn"
+              aria-label="Gravar áudio"
+              title="Gravar áudio"
+            >
+              <IconMic />
+            </button>
           </div>
         </section>
 

@@ -1107,6 +1107,13 @@ table.tbl tbody tr:hover td {
   max-width: 320px;
 }
 
+/* Sinal de notificação (sino do cabeçalho) fica no canto de cima — nunca em
+   cima dos avisos de automação, que já usam o canto de baixo. */
+.toast-stack-top {
+  top: 20px;
+  bottom: auto;
+}
+
 .toast {
   display: flex;
   align-items: center;
@@ -1435,15 +1442,43 @@ table.tbl tbody tr:hover td {
 
 .chat-input {
   padding: 0 17px 17px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .chat-input .box {
+  flex: 1;
+  min-width: 0;
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: 9px;
   padding: 10px 13px;
   font-size: 12px;
   color: var(--text-faint);
+}
+
+.chat-mic-btn {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--blue-soft-2);
+  border: none;
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.chat-mic-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.chat-mic-btn:hover {
+  background: var(--blue-soft);
 }
 
 /* ---------------- WhatsApp (estilo WhatsApp Web: lista + conversa + painel) ---------------- */

@@ -3,13 +3,14 @@
 import { useState, type ReactNode } from "react";
 
 import { apiKey, integracoes, planoAtual, webhooks } from "@/lib/data";
+import { useNotificacoes } from "@/lib/notificacoes-context";
 import {
   IconCalendar,
   IconInstagram,
   IconWhatsApp,
 } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Topbar } from "@/components/ui";
+import { Toggle, Topbar } from "@/components/ui";
 
 const logos: Record<string, ReactNode> = {
   wa: <IconWhatsApp width={20} height={20} />,
@@ -17,15 +18,17 @@ const logos: Record<string, ReactNode> = {
   cal: <IconCalendar width={19} height={19} style={{ color: "var(--blue)" }} />,
 };
 
-type Secao = "tela" | "planos" | "integracoes";
+type Secao = "tela" | "notificacoes" | "planos" | "integracoes";
 
 const MENU_CONFIG: { id: Secao; label: string }[] = [
   { id: "tela", label: "Tela" },
+  { id: "notificacoes", label: "Notificações" },
   { id: "planos", label: "Planos e pagamentos" },
   { id: "integracoes", label: "Conexões, integrações e aplicativos" },
 ];
 
 export default function ConfiguracoesPage() {
+  const { notificacoesAtivas, alternarNotificacoes } = useNotificacoes();
   const [secaoAtiva, setSecaoAtiva] = useState<Secao | null>(null);
   const [numeroCartao, setNumeroCartao] = useState("");
   const [nomeCartao, setNomeCartao] = useState("");
@@ -120,6 +123,32 @@ export default function ConfiguracoesPage() {
                   navegador.
                 </p>
                 <ThemeToggle />
+              </div>
+            ) : null}
+
+            {secaoAtiva === "notificacoes" ? (
+              <div className="card" style={{ padding: 20 }}>
+                <div
+                  className="panel-h"
+                  style={{ padding: 0, marginBottom: 14, border: 0 }}
+                >
+                  <h4>Notificações</h4>
+                </div>
+                <div className="toggle-row" style={{ padding: 0 }}>
+                  <span className="tl">
+                    Avisar quando chegar mensagem nova no WhatsApp
+                  </span>
+                  <Toggle
+                    defaultOn={notificacoesAtivas}
+                    label="Avisar quando chegar mensagem nova no WhatsApp"
+                    onToggle={alternarNotificacoes}
+                  />
+                </div>
+                <p className="hint" style={{ marginTop: 14 }}>
+                  Com isso ligado, toda vez que chegar uma mensagem nova você
+                  ouve um sinal e vê um aviso na tela, em qualquer página do
+                  CRM — não só dentro do WhatsApp.
+                </p>
               </div>
             ) : null}
 

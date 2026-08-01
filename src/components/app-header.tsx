@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { contatos, equipe, notificacoes, tarefas } from "@/lib/data";
+import { contatos, equipe, tarefas } from "@/lib/data";
+import { useNotificacoes } from "@/lib/notificacoes-context";
 import { IconBell, IconSearch } from "@/components/icons";
 import { navEntries } from "@/components/sidebar";
 
@@ -150,7 +151,7 @@ function CriarMenu() {
 
 function NotificationsBell() {
   const [open, setOpen] = useState(false);
-  const naoLidas = notificacoes.filter((n) => !n.lida).length;
+  const { itens, naoLidas, marcarTodasLidas } = useNotificacoes();
 
   return (
     <div className="dropdown-anchor">
@@ -158,7 +159,10 @@ function NotificationsBell() {
         type="button"
         className="icon-btn"
         aria-label={`Notificações${naoLidas > 0 ? ` · ${naoLidas} não lidas` : ""}`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setOpen((v) => !v);
+          if (!open) marcarTodasLidas();
+        }}
       >
         {naoLidas > 0 ? <span className="dot" /> : null}
         <IconBell />
@@ -168,10 +172,10 @@ function NotificationsBell() {
           <div className="panel-h">
             <h4>Notificações</h4>
           </div>
-          {notificacoes.map((n) => (
+          {itens.map((n, i) => (
             <div
               className="activity-row"
-              key={n.titulo}
+              key={`${n.titulo}-${i}`}
               style={{ opacity: n.lida ? 0.6 : 1 }}
             >
               <div className="body">
@@ -189,6 +193,8 @@ function NotificationsBell() {
 
 /** Menu horizontal fixo no topo do CRM — busca global e notificações. */
 export function AppHeader() {
+  const { toasts } = useNotificacoes();
+
   return (
     <header className="app-header">
       <GlobalSearch />
@@ -196,6 +202,17 @@ export function AppHeader() {
         <CriarMenu />
         <NotificationsBell />
       </div>
+
+      {toasts.length > 0 ? (
+        <div className="toast-stack toast-stack-top">
+          {toasts.map((toast) => (
+            <div className="toast" key={toast.id}>
+              <IconBell width={14} height={14} />
+              {toast.texto}
+            </div>
+          ))}
+        </div>
+      ) : null}
     </header>
   );
 }

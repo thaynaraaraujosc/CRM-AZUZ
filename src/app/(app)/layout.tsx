@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/sidebar";
 import { AutomacoesProvider } from "@/lib/automacoes-context";
 import { ContatosProvider } from "@/lib/contatos-context";
 import { FunisProvider } from "@/lib/funis-context";
+import { NotificacoesProvider } from "@/lib/notificacoes-context";
 
 export default function AppLayout({
   children,
@@ -11,13 +12,15 @@ export default function AppLayout({
     <FunisProvider>
       <ContatosProvider>
         <AutomacoesProvider>
-          <div className="shell">
-            <Sidebar />
-            <main className="main">
-              <AppHeader />
-              {children}
-            </main>
-          </div>
+          <NotificacoesProvider>
+            <div className="shell">
+              <Sidebar />
+              <main className="main">
+                <AppHeader />
+                {children}
+              </main>
+            </div>
+          </NotificacoesProvider>
         </AutomacoesProvider>
       </ContatosProvider>
     </FunisProvider>
