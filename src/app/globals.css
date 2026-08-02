@@ -6701,3 +6701,528 @@ table.tbl tbody tr:hover td {
     max-width: 140px;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* FilterBar — barra de filtros compacta e padronizada (Inteligência comercial) */
+/* -------------------------------------------------------------------------- */
+
+.filterbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.filterbar-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: -2px;
+}
+
+.filterbar-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.filterbar-chip button {
+  background: none;
+  border: 0;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+}
+
+.filterbar-panel {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filterbar-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filterbar-field label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.filterbar-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.filterbar-salvar {
+  display: flex;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+@media (max-width: 640px) {
+  .filterbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterbar .fsel,
+  .filterbar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Personalização de cartões (Início / painéis com KpiCard configurável)     */
+/* -------------------------------------------------------------------------- */
+
+.kpi-personalizar-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+}
+
+.kpi-personalizar-item .n {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.kpi-personalizar-ordem {
+  display: flex;
+  gap: 2px;
+}
+
+.kpi-personalizar-ordem button {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.kpi-personalizar-ordem button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Funil vertical reutilizável (Tráfego, Motivos de perda, etc.)             */
+/* -------------------------------------------------------------------------- */
+
+.funnel-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.funnel-step-bar-wrap {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.funnel-step-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.funnel-step-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.funnel-step-qtd {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.funnel-step-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--navy-raised-2);
+  overflow: hidden;
+}
+
+.funnel-step-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--blue);
+}
+
+.funnel-step-perda {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin: 3px 0 0;
+  padding-left: 2px;
+}
+
+.dados-nao-conectados {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  color: var(--text-faint);
+  font-size: 12.5px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Assistente de relatório (wizard em etapas)                                */
+/* -------------------------------------------------------------------------- */
+
+.wizard-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 21, 51, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 20px;
+}
+
+.wizard-panel {
+  width: min(760px, 100%);
+  max-height: 90vh;
+  background: var(--navy);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.wizard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.wizard-steps {
+  display: flex;
+  gap: 6px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line-soft);
+  flex-wrap: wrap;
+}
+
+.wizard-step-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--navy-raised);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.wizard-step-pill.active {
+  background: var(--blue);
+  color: #fff;
+}
+
+.wizard-step-pill.done {
+  color: var(--blue);
+}
+
+.wizard-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.wizard-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+}
+
+.wizard-secao-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+
+.wizard-secao-item .n {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.wizard-preview-secao {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.wizard-preview-secao h5 {
+  font-family: var(--display);
+  font-size: 12.5px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--blue);
+}
+
+.report-type-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.report-type-icon {
+  font-size: 22px;
+}
+
+.report-type-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .wizard-panel {
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .wizard-steps {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+}
+
+/* Painel do contato com abas (Resumo/Contato/Negociação/Atividades/Histórico) */
+
+.wa-info-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+}
+
+.wa-info-tab {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  padding: 12px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.wa-info-tab:hover {
+  color: var(--ink);
+}
+
+.wa-info-tab.on {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
+.wa-resumo-card {
+  padding: 17px;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+
+.wa-resumo-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 18px;
+  margin: 0 auto 10px;
+}
+
+.wa-resumo-nome {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.wa-resumo-empresa {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.wa-resumo-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  margin-top: 14px;
+  text-align: left;
+}
+
+.wa-resumo-label {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.wa-resumo-valor {
+  font-size: 12px;
+  color: var(--ink);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.wa-resumo-etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.wa-acoes-rapidas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 14px 17px;
+}
+
+.wa-acao-rapida {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.wa-acao-rapida:hover {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+
+.wa-input-invalido {
+  border-color: #d64545 !important;
+}
+
+.wa-campo-erro {
+  display: block;
+  font-size: 11px;
+  color: #d64545;
+  margin-top: 4px;
+}
+
+.wa-etiquetas-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.wa-etiqueta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--blue-soft-2);
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.wa-etiqueta-chip button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+  padding: 0;
+}
+
+.wa-status-inline {
+  margin: 8px 17px 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.wa-status-sucesso {
+  color: #0f9d63;
+}
+
+.wa-status-erro {
+  color: #d64545;
+}
+
+.wa-resultado-andamento {
+  background: rgba(94, 122, 255, 0.14);
+  color: var(--blue);
+}
+
+.wa-resultado-adiada {
+  background: rgba(217, 164, 6, 0.14);
+  color: #d9a406;
+}
+
+.wa-resultado-cancelada {
+  background: rgba(120, 120, 130, 0.16);
+  color: var(--text-muted);
+}
