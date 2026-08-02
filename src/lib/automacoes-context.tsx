@@ -9,6 +9,8 @@ import {
 
 import type {
   CanalComentario,
+  DiaSemana,
+  Origem,
   TipoAcaoAutomacao,
   TipoGatilhoEtapa,
 } from "@/lib/data";
@@ -16,24 +18,42 @@ import type {
 export type OpcaoResposta = {
   id: string;
   rotulo: string;
+  /**
+   * Ações extras que rodam só quando o lead escolhe essa opção — é o que permite
+   * "se ele responder 1, faz isso; se responder 2, faz aquilo" numa mensagem
+   * interativa. Pode conter outra "mensagem_interativa" dentro, ramificando de novo.
+   */
+  acoesSeEscolhida?: AcaoAutomacao[];
 };
 
 export type AcaoAutomacao = {
   id: string;
   tipo: TipoAcaoAutomacao;
-  /** Usado por "mensagem" e "mensagem_interativa" (texto principal enviado). */
+  /** Usado por "mensagem", "mensagem_interativa" e "tarefa" (texto/descrição principal). */
   mensagem?: string;
-  /** Usado só por "mensagem_interativa" — as opções de resposta que o contato pode escolher. */
+  /** Usado só por "mensagem_interativa" — as opções de resposta que o lead pode escolher. */
   opcoes?: OpcaoResposta[];
   /** Usado por "documento" e "audio" — nome do arquivo escolhido/gravado. */
   arquivoNome?: string;
-  /** Usado por "lembrete" — em quanto tempo o lembrete dispara. */
+  /** Usado por "lembrete" (quando dispara) e "tarefa" (prazo). */
   tempoValor?: string;
   tempoUnidade?: string;
   /** Usado por "mover_funil". */
   moverFunilId?: string;
   moverEtapaTitulo?: string;
+  /** Usado por "atribuir_responsavel" — nome de alguém em `equipe` (src/lib/data.ts). */
+  atendenteNome?: string;
+  /** Usado por "adicionar_etiqueta" e "remover_etiqueta". */
+  etiquetaNome?: string;
+  /** Usado por "webhook". */
+  webhookUrl?: string;
+  /** Espera antes de executar essa ação — aplica a qualquer tipo. */
+  atrasoValor?: string;
+  atrasoUnidade?: string;
 };
+
+export type ComportamentoForaJanela = "aguardar" | "ignorar";
+export type LimiteExecucao = "sempre" | "uma_vez";
 
 export type Automacao = {
   id: string;
@@ -47,6 +67,29 @@ export type Automacao = {
   acoes: AcaoAutomacao[];
   ativa: boolean;
   execucoes: string;
+
+  /** Janela de atividade — em quais dias essa automação pode disparar. Sem valor = todos os dias. */
+  diasAtivos?: DiaSemana[];
+  /** Restringe o disparo a um intervalo de horário dentro dos dias ativos. */
+  usarHorario?: boolean;
+  horarioInicio?: string;
+  horarioFim?: string;
+  /** O que fazer quando o gatilho acontece fora da janela de dias/horário. */
+  foraDaJanela?: ComportamentoForaJanela;
+
+  /** Condições opcionais — só dispara se o lead bater com elas. Vazio/"" = sem filtro. */
+  condicaoOrigem?: Origem | "";
+  condicaoValorMinimo?: string;
+  /**
+   * Só dispara se o lead ainda não respondeu nenhuma mensagem desde que entrou nessa
+   * etapa — é o que permite montar a cascata "lembra em 24h, se não responder
+   * desqualifica em 72h": duas automações com gatilho "parado" em tempos diferentes,
+   * ambas com essa condição marcada.
+   */
+  condicaoSemResposta?: boolean;
+
+  /** Quantas vezes essa automação pode rodar pro mesmo contato. */
+  limiteExecucao?: LimiteExecucao;
 };
 
 /** Regra do tipo "comentou uma palavra-chave no post → recebe direct automático". */
@@ -102,8 +145,44 @@ const AUTOMACOES_INICIAIS: Automacao[] = [
         mensagem:
           "Oi! Recebemos sua mensagem 💙 Antes de continuar, me conta uma coisa:",
         opcoes: [
-          { id: "op-1", rotulo: "1 · Já sou paciente da clínica" },
-          { id: "op-2", rotulo: "2 · É minha primeira vez por aqui" },
+          {
+            id: "op-1",
+            rotulo: "1 · Já sou paciente da clínica",
+            /** Ramo disparado só pra quem responde essa opção. */
+            acoesSeEscolhida: [
+              {
+                id: "acao-boas-vindas-op1-msg",
+                tipo: "mensagem",
+                mensagem:
+                  "Que bom te ver de novo por aqui! Já vou te encaminhar direto pro seu atendente de confiança 💙",
+              },
+              {
+                id: "acao-boas-vindas-op1-etiqueta",
+                tipo: "adicionar_etiqueta",
+                etiquetaNome: "Paciente recorrente",
+              },
+            ],
+          },
+          {
+            id: "op-2",
+            rotulo: "2 · É minha primeira vez por aqui",
+            /** Ramo disparado só pra quem responde essa outra opção. */
+            acoesSeEscolhida: [
+              {
+                id: "acao-boas-vindas-op2-msg",
+                tipo: "mensagem",
+                mensagem:
+                  "Seja muito bem-vindo(a)! Vou te mandar as informações da clínica e já te encaixar numa triagem rapidinha.",
+              },
+              {
+                id: "acao-boas-vindas-op2-tarefa",
+                tipo: "tarefa",
+                mensagem: "Fazer a triagem inicial do lead novo",
+                tempoValor: "1",
+                tempoUnidade: "dias",
+              },
+            ],
+          },
         ],
       },
     ],
@@ -111,20 +190,21 @@ const AUTOMACOES_INICIAIS: Automacao[] = [
     execucoes: "312 execuções",
   },
   {
-    id: "auto-proposta-parada",
+    id: "auto-proposta-lembrete-24h",
     funilId: "emagrecimento-diabetes",
     etapaId: "proposta",
-    titulo: "Lembrete de proposta parada",
+    titulo: "Lembrete de proposta parada — 24h",
     gatilhoTipo: "parado",
-    tempoValor: "3",
-    tempoUnidade: "dias",
+    tempoValor: "24",
+    tempoUnidade: "horas",
+    condicaoSemResposta: true,
     acoes: [
       {
         id: "acao-proposta-lembrete",
         tipo: "lembrete",
         mensagem: "Retomar contato — proposta enviada sem resposta",
-        tempoValor: "3",
-        tempoUnidade: "dias",
+        tempoValor: "24",
+        tempoUnidade: "horas",
       },
       {
         id: "acao-proposta-msg",

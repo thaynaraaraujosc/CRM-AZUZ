@@ -5,10 +5,17 @@ import { useSearchParams } from "next/navigation";
 
 import {
   CANAIS_COMENTARIO,
+  COMPORTAMENTO_FORA_JANELA,
+  DIAS_SEMANA,
+  DIAS_SEMANA_TODOS,
   GATILHOS_ETAPA,
+  LIMITES_EXECUCAO,
+  ORIGENS,
   TIPOS_ACAO_AUTOMACAO,
   UNIDADES_TEMPO,
   type CanalComentario,
+  type DiaSemana,
+  type Origem,
   type TipoAcaoAutomacao,
   type TipoGatilhoEtapa,
 } from "@/lib/data";
@@ -16,11 +23,49 @@ import {
   useAutomacoes,
   type AcaoAutomacao,
   type Automacao,
+  type ComportamentoForaJanela,
+  type LimiteExecucao,
   type RegraComentario,
 } from "@/lib/automacoes-context";
 import { useFunis } from "@/lib/funis-context";
 import { IconAutomacoes } from "@/components/icons";
 import { Toggle, Topbar } from "@/components/ui";
+import { equipe, type Funil } from "@/lib/data";
+
+/**
+ * Endereço de uma lista de ações dentro da árvore — vazio é a lista raiz da
+ * automação; cada segmento diz "desça pras ações que rodam quando o lead
+ * escolhe a opção `opcaoId` da ação interativa no índice `acaoIndex`". É o
+ * que permite ramificar: "se respondeu 1, faz X; se respondeu 2, faz Y".
+ */
+type Endereco = { acaoIndex: number; opcaoId: string }[];
+
+function atualizarContainer(
+  acoes: AcaoAutomacao[],
+  endereco: Endereco,
+  atualizar: (lista: AcaoAutomacao[]) => AcaoAutomacao[],
+): AcaoAutomacao[] {
+  if (endereco.length === 0) return atualizar(acoes);
+  const [{ acaoIndex, opcaoId }, ...resto] = endereco;
+  return acoes.map((a, i) => {
+    if (i !== acaoIndex) return a;
+    return {
+      ...a,
+      opcoes: (a.opcoes ?? []).map((op) =>
+        op.id === opcaoId
+          ? {
+              ...op,
+              acoesSeEscolhida: atualizarContainer(
+                op.acoesSeEscolhida ?? [],
+                resto,
+                atualizar,
+              ),
+            }
+          : op,
+      ),
+    };
+  });
+}
 
 const ICONE_ACAO: Record<TipoAcaoAutomacao, string> = {
   mensagem: "💬",
@@ -28,7 +73,12 @@ const ICONE_ACAO: Record<TipoAcaoAutomacao, string> = {
   documento: "📄",
   audio: "🎙",
   lembrete: "⏰",
+  tarefa: "✅",
   mover_funil: "↪",
+  atribuir_responsavel: "👤",
+  adicionar_etiqueta: "🏷",
+  remover_etiqueta: "🚫",
+  webhook: "🔗",
 };
 
 function novaAcao(tipo: TipoAcaoAutomacao = "mensagem"): AcaoAutomacao {
@@ -36,7 +86,7 @@ function novaAcao(tipo: TipoAcaoAutomacao = "mensagem"): AcaoAutomacao {
   if (tipo === "mensagem_interativa") {
     base.opcoes = [{ id: `op-${Date.now()}`, rotulo: "1 · Sim" }];
   }
-  if (tipo === "lembrete") {
+  if (tipo === "lembrete" || tipo === "tarefa") {
     base.tempoValor = "1";
     base.tempoUnidade = "dias";
   }
@@ -53,6 +103,422 @@ function resumoGatilho(automacao: Automacao) {
     return `${base} — ${automacao.tempoValor} ${automacao.tempoUnidade ?? "horas"}`;
   }
   return base;
+}
+
+function resumoJanela(automacao: Automacao) {
+  const dias = automacao.diasAtivos ?? DIAS_SEMANA_TODOS;
+  const partes: string[] = [];
+  if (dias.length < DIAS_SEMANA_TODOS.length) {
+    partes.push(
+      dias
+        .map((d) => DIAS_SEMANA.find((ds) => ds.valor === d)?.label ?? d)
+        .join(", "),
+    );
+  }
+  if (automacao.usarHorario && automacao.horarioInicio && automacao.horarioFim) {
+    partes.push(`${automacao.horarioInicio}–${automacao.horarioFim}`);
+  }
+  return partes.length ? partes.join(" · ") : null;
+}
+
+/**
+ * Lista de ações de uma automação (ou de um ramo dela). Renderiza cada ação e,
+ * quando é "mensagem_interativa", desenha embaixo de cada opção de resposta a
+ * própria lista de ações daquele ramo — chamando a si mesma. É assim que dá
+ * pra montar "se o lead responder 1, faz X; se responder 2, faz Y".
+ */
+function AcoesEditor({
+  endereco,
+  itens,
+  funis,
+  funilAtualId,
+  onAtualizarAcao,
+  onTrocarTipo,
+  onAdicionarAcao,
+  onRemoverAcao,
+  onAdicionarOpcao,
+  onRemoverOpcao,
+}: {
+  endereco: Endereco;
+  itens: AcaoAutomacao[];
+  funis: Funil[];
+  funilAtualId: string;
+  onAtualizarAcao: (
+    endereco: Endereco,
+    index: number,
+    patch: Partial<AcaoAutomacao>,
+  ) => void;
+  onTrocarTipo: (
+    endereco: Endereco,
+    index: number,
+    tipo: TipoAcaoAutomacao,
+  ) => void;
+  onAdicionarAcao: (endereco: Endereco) => void;
+  onRemoverAcao: (endereco: Endereco, index: number) => void;
+  onAdicionarOpcao: (endereco: Endereco, index: number) => void;
+  onRemoverOpcao: (endereco: Endereco, index: number, opcaoId: string) => void;
+}) {
+  return (
+    <>
+      {itens.map((acao, i) => (
+        <div className="auto-acao-row" key={acao.id}>
+          <div className="auto-acao-row-h">
+            <span className="auto-acao-icone">{ICONE_ACAO[acao.tipo]}</span>
+            <select
+              className="input"
+              style={{ flex: 1, cursor: "pointer" }}
+              value={acao.tipo}
+              onChange={(e) =>
+                onTrocarTipo(endereco, i, e.target.value as TipoAcaoAutomacao)
+              }
+            >
+              {TIPOS_ACAO_AUTOMACAO.map((t) => (
+                <option key={t.tipo} value={t.tipo}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+            {itens.length > 1 ? (
+              <button
+                type="button"
+                className="remove-chip"
+                aria-label="Remover essa ação"
+                onClick={() => onRemoverAcao(endereco, i)}
+              >
+                ✕
+              </button>
+            ) : null}
+          </div>
+
+          {acao.tipo === "mensagem" || acao.tipo === "mensagem_interativa" ? (
+            <textarea
+              className="input"
+              style={{ width: "100%", minHeight: 60, resize: "vertical" }}
+              placeholder="Ex.: Oi! Recebemos sua mensagem 💙"
+              value={acao.mensagem ?? ""}
+              onChange={(e) =>
+                onAtualizarAcao(endereco, i, { mensagem: e.target.value })
+              }
+            />
+          ) : null}
+
+          {acao.tipo === "mensagem_interativa" ? (
+            <div style={{ marginTop: 8 }}>
+              <p className="hint" style={{ marginBottom: 6 }}>
+                Opções de resposta — o lead escolhe uma
+              </p>
+              {(acao.opcoes ?? []).map((op) => (
+                <div key={op.id} style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input
+                      className="input"
+                      style={{ flex: 1 }}
+                      value={op.rotulo}
+                      onChange={(e) =>
+                        onAtualizarAcao(endereco, i, {
+                          opcoes: (acao.opcoes ?? []).map((o) =>
+                            o.id === op.id
+                              ? { ...o, rotulo: e.target.value }
+                              : o,
+                          ),
+                        })
+                      }
+                    />
+                    {(acao.opcoes ?? []).length > 1 ? (
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        onClick={() => onRemoverOpcao(endereco, i, op.id)}
+                      >
+                        ✕
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 6,
+                      marginLeft: 14,
+                      paddingLeft: 12,
+                      borderLeft: "2px solid var(--border-color, #e2e2e2)",
+                    }}
+                  >
+                    <p className="hint" style={{ marginBottom: 6 }}>
+                      Se o lead responder essa opção
+                    </p>
+                    <AcoesEditor
+                      endereco={[...endereco, { acaoIndex: i, opcaoId: op.id }]}
+                      itens={op.acoesSeEscolhida ?? []}
+                      funis={funis}
+                      funilAtualId={funilAtualId}
+                      onAtualizarAcao={onAtualizarAcao}
+                      onTrocarTipo={onTrocarTipo}
+                      onAdicionarAcao={onAdicionarAcao}
+                      onRemoverAcao={onRemoverAcao}
+                      onAdicionarOpcao={onAdicionarOpcao}
+                      onRemoverOpcao={onRemoverOpcao}
+                    />
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => onAdicionarOpcao(endereco, i)}
+              >
+                + Adicionar opção
+              </button>
+            </div>
+          ) : null}
+
+          {acao.tipo === "documento" || acao.tipo === "audio" ? (
+            <div style={{ marginTop: 8 }}>
+              <input
+                className="input"
+                type="file"
+                accept={acao.tipo === "audio" ? "audio/*" : undefined}
+                onChange={(e) =>
+                  onAtualizarAcao(endereco, i, {
+                    arquivoNome: e.target.files?.[0]?.name,
+                  })
+                }
+              />
+              {acao.arquivoNome ? (
+                <p className="hint" style={{ marginTop: 6 }}>
+                  {acao.arquivoNome}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {acao.tipo === "lembrete" ? (
+            <div style={{ marginTop: 8 }}>
+              <textarea
+                className="input"
+                style={{ width: "100%", minHeight: 50, resize: "vertical" }}
+                placeholder="O que lembrar — ex.: confirmar presença na consulta"
+                value={acao.mensagem ?? ""}
+                onChange={(e) =>
+                  onAtualizarAcao(endereco, i, { mensagem: e.target.value })
+                }
+              />
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <span className="hint" style={{ alignSelf: "center" }}>
+                  Lembrar em
+                </span>
+                <input
+                  className="input"
+                  type="number"
+                  min="1"
+                  style={{ width: 70 }}
+                  value={acao.tempoValor ?? "1"}
+                  onChange={(e) =>
+                    onAtualizarAcao(endereco, i, { tempoValor: e.target.value })
+                  }
+                />
+                <select
+                  className="input"
+                  style={{ cursor: "pointer" }}
+                  value={acao.tempoUnidade ?? "dias"}
+                  onChange={(e) =>
+                    onAtualizarAcao(endereco, i, {
+                      tempoUnidade: e.target.value,
+                    })
+                  }
+                >
+                  {UNIDADES_TEMPO.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : null}
+
+          {acao.tipo === "mover_funil" ? (
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <select
+                className="input"
+                style={{ flex: 1, cursor: "pointer" }}
+                value={acao.moverFunilId ?? ""}
+                onChange={(e) =>
+                  onAtualizarAcao(endereco, i, {
+                    moverFunilId: e.target.value,
+                    moverEtapaTitulo:
+                      funis
+                        .find((f) => f.id === e.target.value)
+                        ?.colunas[0]?.titulo ?? "",
+                  })
+                }
+              >
+                <option value="">Escolha o funil</option>
+                {funis.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.id === funilAtualId ? `${f.nome} (esse mesmo)` : f.nome}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="input"
+                style={{ flex: 1, cursor: "pointer" }}
+                value={acao.moverEtapaTitulo ?? ""}
+                onChange={(e) =>
+                  onAtualizarAcao(endereco, i, {
+                    moverEtapaTitulo: e.target.value,
+                  })
+                }
+                disabled={!acao.moverFunilId}
+              >
+                {(
+                  funis.find((f) => f.id === acao.moverFunilId)?.colunas ?? []
+                ).map((c) => (
+                  <option key={c.id} value={c.titulo}>
+                    {c.titulo}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
+          {acao.tipo === "atribuir_responsavel" ? (
+            <select
+              className="input"
+              style={{ width: "100%", marginTop: 8, cursor: "pointer" }}
+              value={acao.atendenteNome ?? ""}
+              onChange={(e) =>
+                onAtualizarAcao(endereco, i, { atendenteNome: e.target.value })
+              }
+            >
+              <option value="">Escolha o atendente</option>
+              {equipe
+                .filter((membro) => membro.papel !== "Cliente")
+                .map((membro) => (
+                  <option key={membro.nome} value={membro.nome}>
+                    {membro.nome} · {membro.papel}
+                  </option>
+                ))}
+            </select>
+          ) : null}
+
+          {acao.tipo === "tarefa" ? (
+            <div style={{ marginTop: 8 }}>
+              <textarea
+                className="input"
+                style={{ width: "100%", minHeight: 50, resize: "vertical" }}
+                placeholder="O que precisa ser feito — ex.: ligar pra confirmar interesse"
+                value={acao.mensagem ?? ""}
+                onChange={(e) =>
+                  onAtualizarAcao(endereco, i, { mensagem: e.target.value })
+                }
+              />
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <span className="hint" style={{ alignSelf: "center" }}>
+                  Prazo em
+                </span>
+                <input
+                  className="input"
+                  type="number"
+                  min="1"
+                  style={{ width: 70 }}
+                  value={acao.tempoValor ?? "1"}
+                  onChange={(e) =>
+                    onAtualizarAcao(endereco, i, { tempoValor: e.target.value })
+                  }
+                />
+                <select
+                  className="input"
+                  style={{ cursor: "pointer" }}
+                  value={acao.tempoUnidade ?? "dias"}
+                  onChange={(e) =>
+                    onAtualizarAcao(endereco, i, {
+                      tempoUnidade: e.target.value,
+                    })
+                  }
+                >
+                  {UNIDADES_TEMPO.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : null}
+
+          {acao.tipo === "adicionar_etiqueta" ||
+          acao.tipo === "remover_etiqueta" ? (
+            <input
+              className="input"
+              style={{ width: "100%", marginTop: 8 }}
+              type="text"
+              placeholder="Nome da etiqueta — ex.: Quente"
+              value={acao.etiquetaNome ?? ""}
+              onChange={(e) =>
+                onAtualizarAcao(endereco, i, { etiquetaNome: e.target.value })
+              }
+            />
+          ) : null}
+
+          {acao.tipo === "webhook" ? (
+            <input
+              className="input"
+              style={{ width: "100%", marginTop: 8 }}
+              type="url"
+              placeholder="https://sua-ferramenta.com/webhook"
+              value={acao.webhookUrl ?? ""}
+              onChange={(e) =>
+                onAtualizarAcao(endereco, i, { webhookUrl: e.target.value })
+              }
+            />
+          ) : null}
+
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              marginTop: 8,
+            }}
+          >
+            <span className="hint">Esperar antes de executar</span>
+            <input
+              className="input"
+              type="number"
+              min="0"
+              style={{ width: 70 }}
+              placeholder="0"
+              value={acao.atrasoValor ?? ""}
+              onChange={(e) =>
+                onAtualizarAcao(endereco, i, { atrasoValor: e.target.value })
+              }
+            />
+            <select
+              className="input"
+              style={{ cursor: "pointer" }}
+              value={acao.atrasoUnidade ?? "minutos"}
+              onChange={(e) =>
+                onAtualizarAcao(endereco, i, { atrasoUnidade: e.target.value })
+              }
+            >
+              {UNIDADES_TEMPO.map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="btn ghost"
+        onClick={() => onAdicionarAcao(endereco)}
+      >
+        + Adicionar ação
+      </button>
+    </>
+  );
 }
 
 export default function AutomacoesPage() {
@@ -120,9 +586,29 @@ function AutomacoesPageInner() {
   const [acoesForm, setAcoesForm] = useState<AcaoAutomacao[]>([novaAcao()]);
   const [ativaForm, setAtivaForm] = useState(true);
 
+  const [diasAtivosForm, setDiasAtivosForm] =
+    useState<DiaSemana[]>(DIAS_SEMANA_TODOS);
+  const [usarHorarioForm, setUsarHorarioForm] = useState(false);
+  const [horarioInicioForm, setHorarioInicioForm] = useState("08:00");
+  const [horarioFimForm, setHorarioFimForm] = useState("20:00");
+  const [foraDaJanelaForm, setForaDaJanelaForm] =
+    useState<ComportamentoForaJanela>("aguardar");
+  const [condicaoOrigemForm, setCondicaoOrigemForm] = useState<Origem | "">("");
+  const [condicaoValorMinimoForm, setCondicaoValorMinimoForm] = useState("");
+  const [condicaoSemRespostaForm, setCondicaoSemRespostaForm] = useState(false);
+  const [limiteExecucaoForm, setLimiteExecucaoForm] =
+    useState<LimiteExecucao>("sempre");
+
   const gatilhoPrecisaTempo = GATILHOS_ETAPA.find(
     (g) => g.tipo === gatilhoForm,
   )?.precisaTempo;
+  const gatilhoEhAgendado = gatilhoForm === "agendado";
+
+  function alternarDiaAtivo(dia: DiaSemana) {
+    setDiasAtivosForm((prev) =>
+      prev.includes(dia) ? prev.filter((d) => d !== dia) : [...prev, dia],
+    );
+  }
 
   function fecharEditor() {
     setEditorAberto(false);
@@ -139,6 +625,15 @@ function AutomacoesPageInner() {
     setTempoUnidadeForm("horas");
     setAcoesForm([novaAcao()]);
     setAtivaForm(true);
+    setDiasAtivosForm(DIAS_SEMANA_TODOS);
+    setUsarHorarioForm(false);
+    setHorarioInicioForm("08:00");
+    setHorarioFimForm("20:00");
+    setForaDaJanelaForm("aguardar");
+    setCondicaoOrigemForm("");
+    setCondicaoValorMinimoForm("");
+    setCondicaoSemRespostaForm(false);
+    setLimiteExecucaoForm("sempre");
     setEditorAberto(true);
   }
 
@@ -151,49 +646,82 @@ function AutomacoesPageInner() {
     setTempoUnidadeForm(automacao.tempoUnidade ?? "horas");
     setAcoesForm(automacao.acoes.length ? automacao.acoes : [novaAcao()]);
     setAtivaForm(automacao.ativa);
+    setDiasAtivosForm(automacao.diasAtivos ?? DIAS_SEMANA_TODOS);
+    setUsarHorarioForm(automacao.usarHorario ?? false);
+    setHorarioInicioForm(automacao.horarioInicio ?? "08:00");
+    setHorarioFimForm(automacao.horarioFim ?? "20:00");
+    setForaDaJanelaForm(automacao.foraDaJanela ?? "aguardar");
+    setCondicaoOrigemForm(automacao.condicaoOrigem ?? "");
+    setCondicaoValorMinimoForm(automacao.condicaoValorMinimo ?? "");
+    setCondicaoSemRespostaForm(automacao.condicaoSemResposta ?? false);
+    setLimiteExecucaoForm(automacao.limiteExecucao ?? "sempre");
     setEditorAberto(true);
   }
 
-  function atualizarAcao(index: number, patch: Partial<AcaoAutomacao>) {
+  function atualizarAcao(
+    endereco: Endereco,
+    index: number,
+    patch: Partial<AcaoAutomacao>,
+  ) {
     setAcoesForm((prev) =>
-      prev.map((a, i) => (i === index ? { ...a, ...patch } : a)),
+      atualizarContainer(prev, endereco, (lista) =>
+        lista.map((a, i) => (i === index ? { ...a, ...patch } : a)),
+      ),
     );
   }
 
-  function trocarTipoAcao(index: number, tipo: TipoAcaoAutomacao) {
-    setAcoesForm((prev) => prev.map((a, i) => (i === index ? novaAcao(tipo) : a)));
-  }
-
-  function adicionarAcao() {
-    setAcoesForm((prev) => [...prev, novaAcao()]);
-  }
-
-  function removerAcao(index: number) {
-    setAcoesForm((prev) => prev.filter((_, i) => i !== index));
-  }
-
-  function adicionarOpcao(index: number) {
+  function trocarTipoAcao(
+    endereco: Endereco,
+    index: number,
+    tipo: TipoAcaoAutomacao,
+  ) {
     setAcoesForm((prev) =>
-      prev.map((a, i) => {
-        if (i !== index) return a;
-        const opcoes = a.opcoes ?? [];
-        return {
-          ...a,
-          opcoes: [
-            ...opcoes,
-            { id: `op-${Date.now()}`, rotulo: `${opcoes.length + 1} · ` },
-          ],
-        };
-      }),
+      atualizarContainer(prev, endereco, (lista) =>
+        lista.map((a, i) => (i === index ? novaAcao(tipo) : a)),
+      ),
     );
   }
 
-  function removerOpcao(index: number, opcaoId: string) {
+  function adicionarAcao(endereco: Endereco) {
     setAcoesForm((prev) =>
-      prev.map((a, i) =>
-        i === index
-          ? { ...a, opcoes: (a.opcoes ?? []).filter((o) => o.id !== opcaoId) }
-          : a,
+      atualizarContainer(prev, endereco, (lista) => [...lista, novaAcao()]),
+    );
+  }
+
+  function removerAcao(endereco: Endereco, index: number) {
+    setAcoesForm((prev) =>
+      atualizarContainer(prev, endereco, (lista) =>
+        lista.filter((_, i) => i !== index),
+      ),
+    );
+  }
+
+  function adicionarOpcao(endereco: Endereco, index: number) {
+    setAcoesForm((prev) =>
+      atualizarContainer(prev, endereco, (lista) =>
+        lista.map((a, i) => {
+          if (i !== index) return a;
+          const opcoes = a.opcoes ?? [];
+          return {
+            ...a,
+            opcoes: [
+              ...opcoes,
+              { id: `op-${Date.now()}`, rotulo: `${opcoes.length + 1} · ` },
+            ],
+          };
+        }),
+      ),
+    );
+  }
+
+  function removerOpcao(endereco: Endereco, index: number, opcaoId: string) {
+    setAcoesForm((prev) =>
+      atualizarContainer(prev, endereco, (lista) =>
+        lista.map((a, i) =>
+          i === index
+            ? { ...a, opcoes: (a.opcoes ?? []).filter((o) => o.id !== opcaoId) }
+            : a,
+        ),
       ),
     );
   }
@@ -210,6 +738,15 @@ function AutomacoesPageInner() {
       tempoUnidade: gatilhoPrecisaTempo ? tempoUnidadeForm : undefined,
       acoes: acoesForm,
       ativa: ativaForm,
+      diasAtivos: diasAtivosForm,
+      usarHorario: gatilhoEhAgendado ? true : usarHorarioForm,
+      horarioInicio: usarHorarioForm || gatilhoEhAgendado ? horarioInicioForm : undefined,
+      horarioFim: usarHorarioForm || gatilhoEhAgendado ? horarioFimForm : undefined,
+      foraDaJanela: foraDaJanelaForm,
+      condicaoOrigem: condicaoOrigemForm || undefined,
+      condicaoValorMinimo: condicaoValorMinimoForm.trim() || undefined,
+      condicaoSemResposta: condicaoSemRespostaForm,
+      limiteExecucao: limiteExecucaoForm,
     };
     if (editandoId) {
       atualizarAutomacao(editandoId, dados);
@@ -416,205 +953,166 @@ function AutomacoesPageInner() {
             </div>
 
             <div className="field">
-              <label>Ações — o que ela faz (pode ter mais de uma)</label>
-              {acoesForm.map((acao, i) => (
-                <div className="auto-acao-row" key={acao.id}>
-                  <div className="auto-acao-row-h">
-                    <span className="auto-acao-icone">{ICONE_ACAO[acao.tipo]}</span>
-                    <select
-                      className="input"
-                      style={{ flex: 1, cursor: "pointer" }}
-                      value={acao.tipo}
-                      onChange={(e) =>
-                        trocarTipoAcao(i, e.target.value as TipoAcaoAutomacao)
-                      }
-                    >
-                      {TIPOS_ACAO_AUTOMACAO.map((t) => (
-                        <option key={t.tipo} value={t.tipo}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
-                    {acoesForm.length > 1 ? (
-                      <button
-                        type="button"
-                        className="remove-chip"
-                        aria-label="Remover essa ação"
-                        onClick={() => removerAcao(i)}
-                      >
-                        ✕
-                      </button>
-                    ) : null}
-                  </div>
+              <label>
+                Janela de atividade — em quais dias e horários ela pode disparar
+              </label>
+              <div className="filters-row">
+                {DIAS_SEMANA.map((d) => (
+                  <button
+                    type="button"
+                    key={d.valor}
+                    className={`fchip${diasAtivosForm.includes(d.valor) ? " active" : ""}`}
+                    aria-pressed={diasAtivosForm.includes(d.valor)}
+                    onClick={() => alternarDiaAtivo(d.valor)}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
 
-                  {acao.tipo === "mensagem" || acao.tipo === "mensagem_interativa" ? (
-                    <textarea
-                      className="input"
-                      style={{ width: "100%", minHeight: 60, resize: "vertical" }}
-                      placeholder="Ex.: Oi! Recebemos sua mensagem 💙"
-                      value={acao.mensagem ?? ""}
-                      onChange={(e) => atualizarAcao(i, { mensagem: e.target.value })}
-                    />
-                  ) : null}
+              {gatilhoEhAgendado ? (
+                <p className="hint" style={{ marginTop: 6 }}>
+                  Esse gatilho é recorrente — ela dispara nos dias e no horário
+                  definidos aqui, pros leads que estiverem na etapa.
+                </p>
+              ) : null}
 
-                  {acao.tipo === "mensagem_interativa" ? (
-                    <div style={{ marginTop: 8 }}>
-                      <p className="hint" style={{ marginBottom: 6 }}>
-                        Opções de resposta — a pessoa escolhe uma
-                      </p>
-                      {(acao.opcoes ?? []).map((op) => (
-                        <div
-                          key={op.id}
-                          style={{ display: "flex", gap: 6, marginBottom: 6 }}
-                        >
-                          <input
-                            className="input"
-                            style={{ flex: 1 }}
-                            value={op.rotulo}
-                            onChange={(e) =>
-                              atualizarAcao(i, {
-                                opcoes: (acao.opcoes ?? []).map((o) =>
-                                  o.id === op.id
-                                    ? { ...o, rotulo: e.target.value }
-                                    : o,
-                                ),
-                              })
-                            }
-                          />
-                          {(acao.opcoes ?? []).length > 1 ? (
-                            <button
-                              type="button"
-                              className="btn ghost"
-                              onClick={() => removerOpcao(i, op.id)}
-                            >
-                              ✕
-                            </button>
-                          ) : null}
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        className="btn ghost"
-                        onClick={() => adicionarOpcao(i)}
-                      >
-                        + Adicionar opção
-                      </button>
-                    </div>
-                  ) : null}
-
-                  {acao.tipo === "documento" || acao.tipo === "audio" ? (
-                    <div style={{ marginTop: 8 }}>
-                      <input
-                        className="input"
-                        type="file"
-                        accept={acao.tipo === "audio" ? "audio/*" : undefined}
-                        onChange={(e) =>
-                          atualizarAcao(i, {
-                            arquivoNome: e.target.files?.[0]?.name,
-                          })
-                        }
-                      />
-                      {acao.arquivoNome ? (
-                        <p className="hint" style={{ marginTop: 6 }}>
-                          {acao.arquivoNome}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  {acao.tipo === "lembrete" ? (
-                    <div style={{ marginTop: 8 }}>
-                      <textarea
-                        className="input"
-                        style={{ width: "100%", minHeight: 50, resize: "vertical" }}
-                        placeholder="O que lembrar — ex.: confirmar presença na consulta"
-                        value={acao.mensagem ?? ""}
-                        onChange={(e) =>
-                          atualizarAcao(i, { mensagem: e.target.value })
-                        }
-                      />
-                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                        <span className="hint" style={{ alignSelf: "center" }}>
-                          Lembrar em
-                        </span>
-                        <input
-                          className="input"
-                          type="number"
-                          min="1"
-                          style={{ width: 70 }}
-                          value={acao.tempoValor ?? "1"}
-                          onChange={(e) =>
-                            atualizarAcao(i, { tempoValor: e.target.value })
-                          }
-                        />
-                        <select
-                          className="input"
-                          style={{ cursor: "pointer" }}
-                          value={acao.tempoUnidade ?? "dias"}
-                          onChange={(e) =>
-                            atualizarAcao(i, { tempoUnidade: e.target.value })
-                          }
-                        >
-                          {UNIDADES_TEMPO.map((u) => (
-                            <option key={u} value={u}>
-                              {u}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {acao.tipo === "mover_funil" ? (
-                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <select
-                        className="input"
-                        style={{ flex: 1, cursor: "pointer" }}
-                        value={acao.moverFunilId ?? ""}
-                        onChange={(e) =>
-                          atualizarAcao(i, {
-                            moverFunilId: e.target.value,
-                            moverEtapaTitulo:
-                              funis
-                                .find((f) => f.id === e.target.value)
-                                ?.colunas[0]?.titulo ?? "",
-                          })
-                        }
-                      >
-                        <option value="">Escolha o funil</option>
-                        {funis
-                          .filter((f) => f.id !== funilSelecionado?.id)
-                          .map((f) => (
-                            <option key={f.id} value={f.id}>
-                              {f.nome}
-                            </option>
-                          ))}
-                      </select>
-                      <select
-                        className="input"
-                        style={{ flex: 1, cursor: "pointer" }}
-                        value={acao.moverEtapaTitulo ?? ""}
-                        onChange={(e) =>
-                          atualizarAcao(i, { moverEtapaTitulo: e.target.value })
-                        }
-                        disabled={!acao.moverFunilId}
-                      >
-                        {(
-                          funis.find((f) => f.id === acao.moverFunilId)
-                            ?.colunas ?? []
-                        ).map((c) => (
-                          <option key={c.id} value={c.titulo}>
-                            {c.titulo}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
+              {!gatilhoEhAgendado ? (
+                <div className="toggle-row" style={{ marginTop: 8 }}>
+                  <span className="tl">Restringir a um horário do dia</span>
+                  <Toggle
+                    key={`${editandoId ?? "nova"}-horario`}
+                    defaultOn={usarHorarioForm}
+                    label="Restringir a um horário do dia"
+                    onToggle={setUsarHorarioForm}
+                  />
                 </div>
-              ))}
-              <button type="button" className="btn ghost" onClick={adicionarAcao}>
-                + Adicionar ação
-              </button>
+              ) : null}
+
+              {usarHorarioForm || gatilhoEhAgendado ? (
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                  <input
+                    className="input"
+                    type="time"
+                    value={horarioInicioForm}
+                    onChange={(e) => setHorarioInicioForm(e.target.value)}
+                  />
+                  <span className="hint">até</span>
+                  <input
+                    className="input"
+                    type="time"
+                    value={horarioFimForm}
+                    onChange={(e) => setHorarioFimForm(e.target.value)}
+                  />
+                </div>
+              ) : null}
+
+              {diasAtivosForm.length < DIAS_SEMANA_TODOS.length || usarHorarioForm || gatilhoEhAgendado ? (
+                <div style={{ marginTop: 8 }}>
+                  <label className="hint" style={{ display: "block", marginBottom: 6 }}>
+                    Se o gatilho acontecer fora da janela
+                  </label>
+                  <select
+                    className="input"
+                    style={{ cursor: "pointer" }}
+                    value={foraDaJanelaForm}
+                    onChange={(e) =>
+                      setForaDaJanelaForm(e.target.value as ComportamentoForaJanela)
+                    }
+                  >
+                    {COMPORTAMENTO_FORA_JANELA.map((op) => (
+                      <option key={op.valor} value={op.valor}>
+                        {op.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="field">
+              <label>Condições — só dispara se o lead bater com isso (opcional)</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <select
+                  className="input"
+                  style={{ flex: 1, cursor: "pointer" }}
+                  value={condicaoOrigemForm}
+                  onChange={(e) => setCondicaoOrigemForm(e.target.value as Origem | "")}
+                >
+                  <option value="">Qualquer origem</option>
+                  {ORIGENS.map((o) => (
+                    <option key={o} value={o}>
+                      Origem: {o}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="input"
+                  style={{ flex: 1 }}
+                  type="text"
+                  placeholder="Valor mínimo do negócio (ex.: 500)"
+                  value={condicaoValorMinimoForm}
+                  onChange={(e) => setCondicaoValorMinimoForm(e.target.value)}
+                />
+              </div>
+
+              <div className="toggle-row" style={{ marginTop: 8 }}>
+                <span className="tl">
+                  Só dispara se o lead ainda não respondeu nada nessa etapa
+                </span>
+                <Toggle
+                  key={`${editandoId ?? "nova"}-sem-resposta`}
+                  defaultOn={condicaoSemRespostaForm}
+                  label="Só dispara se o lead ainda não respondeu nada nessa etapa"
+                  onToggle={setCondicaoSemRespostaForm}
+                />
+              </div>
+
+              {gatilhoForm === "parado" ? (
+                <p className="hint" style={{ marginTop: 8 }}>
+                  Dica pra sequência tipo &quot;lembra em 24h, se não responder
+                  desqualifica em 72h&quot;: crie duas automações aqui com o
+                  gatilho &quot;fica parado&quot; — uma com 24 horas mandando a
+                  mensagem, outra com 96 horas (24 + 72) movendo o lead pra
+                  outra etapa — e marque essa condição nas duas.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="field">
+              <label>Limite de disparo</label>
+              <select
+                className="input"
+                style={{ cursor: "pointer" }}
+                value={limiteExecucaoForm}
+                onChange={(e) => setLimiteExecucaoForm(e.target.value as LimiteExecucao)}
+              >
+                {LIMITES_EXECUCAO.map((op) => (
+                  <option key={op.valor} value={op.valor}>
+                    {op.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="field">
+              <label>Ações — o que ela faz (pode ter mais de uma)</label>
+              <p className="hint" style={{ marginBottom: 8 }}>
+                Numa mensagem com opções de resposta, dá pra definir uma ação
+                diferente pra cada opção que o lead escolher.
+              </p>
+              <AcoesEditor
+                endereco={[]}
+                itens={acoesForm}
+                funis={funis}
+                funilAtualId={funilSelecionado?.id ?? ""}
+                onAtualizarAcao={atualizarAcao}
+                onTrocarTipo={trocarTipoAcao}
+                onAdicionarAcao={adicionarAcao}
+                onRemoverAcao={removerAcao}
+                onAdicionarOpcao={adicionarOpcao}
+                onRemoverOpcao={removerOpcao}
+              />
             </div>
 
             <div className="toggle-row">
@@ -709,6 +1207,7 @@ function AutomacoesPageInner() {
                       </span>
                       <span className="auto-kanban-card-gatilho">
                         {resumoGatilho(automacao)}
+                        {resumoJanela(automacao) ? ` · ${resumoJanela(automacao)}` : ""}
                       </span>
                       <span className="auto-kanban-card-acoes">
                         {automacao.acoes.map((acao) => (
