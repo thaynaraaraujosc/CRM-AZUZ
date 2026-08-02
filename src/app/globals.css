@@ -6809,3 +6809,137 @@ button.timeline-card:hover {
     justify-content: space-between;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* FilterBar — barra de filtros compacta e padronizada (Inteligência comercial) */
+/* -------------------------------------------------------------------------- */
+
+.filterbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.filterbar-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: -2px;
+}
+
+.filterbar-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.filterbar-chip button {
+  background: none;
+  border: 0;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+}
+
+.filterbar-panel {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filterbar-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filterbar-field label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.filterbar-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.filterbar-salvar {
+  display: flex;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+@media (max-width: 640px) {
+  .filterbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterbar .fsel,
+  .filterbar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Personalização de cartões (Início / painéis com KpiCard configurável)     */
+/* -------------------------------------------------------------------------- */
+
+.kpi-personalizar-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+}
+
+.kpi-personalizar-item .n {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.kpi-personalizar-ordem {
+  display: flex;
+  gap: 2px;
+}
+
+.kpi-personalizar-ordem button {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.kpi-personalizar-ordem button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}

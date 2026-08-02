@@ -16,12 +16,14 @@
 
 import {
   campanhas as campanhasPadrao,
+  conversas as conversasPadrao,
   conversaoPorResponsavel as conversaoPadrao,
   faturamentoPorResponsavel as faturamentoPadrao,
   funilJulho as funilJulhoPadrao,
   motivosPerda as motivosPerdaPadrao,
   oportunidadesPerdidas as oportunidadesPerdidasPadrao,
   tempoPrimeiroContatoPorResponsavel as tempoPrimeiroContatoPadrao,
+  type Conversa,
 } from "@/lib/data";
 
 export type Metrica<T> = {
@@ -185,6 +187,17 @@ export function calcularValorPerdido(base = oportunidadesPerdidasPadrao): Metric
 }
 
 type MotivoPerda = (typeof motivosPerdaPadrao)[number];
+
+/** Leads aguardando atendimento = conversas cujo status ainda não teve resposta da equipe. */
+export function calcularLeadsAguardando(base: Conversa[] = conversasPadrao): Metrica<Conversa> {
+  const registros = base.filter((c) => c.status === "Não respondido");
+  return {
+    valor: registros.length,
+    label: String(registros.length),
+    formula: "Contagem de conversas com status \"Não respondido\"",
+    registros,
+  };
+}
 
 /** Oportunidades contatadas = soma de oportunidades atendidas por todos os responsáveis no período. */
 export function calcularOportunidadesContatadas(
