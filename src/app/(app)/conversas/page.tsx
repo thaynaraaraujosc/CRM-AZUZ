@@ -334,9 +334,33 @@ function ConversasPageInner() {
   const [emojiAberto, setEmojiAberto] = useState(false);
   const [emojiRect, setEmojiRect] = useState<DOMRect | null>(null);
   const [respostasGerenciarAberto, setRespostasGerenciarAberto] = useState(false);
+  const [respostasPos, setRespostasPos] = useState<{ x: number; y: number } | null>(null);
+  const respostasArrasteRef = useRef<{ dx: number; dy: number } | null>(null);
+  const respostasModalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!respostasGerenciarAberto) return;
+    function aoClicarFora(e: MouseEvent) {
+      if (
+        respostasModalRef.current &&
+        !respostasModalRef.current.contains(e.target as Node)
+      ) {
+        setRespostasGerenciarAberto(false);
+      }
+    }
+    const id = setTimeout(
+      () => document.addEventListener("mousedown", aoClicarFora),
+      0,
+    );
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener("mousedown", aoClicarFora);
+    };
+  }, [respostasGerenciarAberto]);
+  const [novaRespostaTitulo, setNovaRespostaTitulo] = useState("");
   const [novaRespostaTexto, setNovaRespostaTexto] = useState("");
   const [respostasRapidasPorFunil, setRespostasRapidasPorFunil] = useState<
-    Record<string, { id: string; texto: string }[]>
+    Record<string, { id: string; titulo: string; texto: string }[]>
   >({});
   const mensagemInputRef = useRef<HTMLInputElement>(null);
   const imagemInputRef = useRef<HTMLInputElement>(null);
@@ -496,15 +520,17 @@ function ConversasPageInner() {
   const respostasDoFunil = respostasRapidasPorFunil[funilSelecionadoId] ?? [];
 
   function criarRespostaRapida() {
+    const titulo = novaRespostaTitulo.trim();
     const texto = novaRespostaTexto.trim();
-    if (!texto) return;
+    if (!titulo || !texto) return;
     setRespostasRapidasPorFunil((prev) => ({
       ...prev,
       [funilSelecionadoId]: [
         ...(prev[funilSelecionadoId] ?? []),
-        { id: `resp-${Date.now()}`, texto },
+        { id: `resp-${Date.now()}`, titulo, texto },
       ],
     }));
+    setNovaRespostaTitulo("");
     setNovaRespostaTexto("");
   }
 
@@ -513,6 +539,44 @@ function ConversasPageInner() {
       ...prev,
       [funilSelecionadoId]: (prev[funilSelecionadoId] ?? []).filter((r) => r.id !== id),
     }));
+  }
+
+  function abrirRespostasGerenciar(rect: DOMRect) {
+    const largura = 320;
+    const alturaEstimada = 420;
+    const margem = 12;
+    let left = rect.left;
+    let top = rect.top - alturaEstimada - 8;
+    if (top < margem) top = rect.bottom + 8;
+    if (left + largura > window.innerWidth - margem) {
+      left = window.innerWidth - largura - margem;
+    }
+    if (left < margem) left = margem;
+    setRespostasPos({ x: left, y: top });
+    setRespostasGerenciarAberto(true);
+  }
+
+  function iniciarArrasteRespostas(e: React.MouseEvent) {
+    const el = (e.currentTarget as HTMLElement).closest(
+      ".wa-respostas-modal",
+    ) as HTMLElement | null;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    respostasArrasteRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+    function mover(ev: MouseEvent) {
+      if (!respostasArrasteRef.current) return;
+      setRespostasPos({
+        x: ev.clientX - respostasArrasteRef.current.dx,
+        y: ev.clientY - respostasArrasteRef.current.dy,
+      });
+    }
+    function soltar() {
+      respostasArrasteRef.current = null;
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+    }
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
   }
 
   function usarRespostaRapida(texto: string) {
@@ -1077,8 +1141,9 @@ function ConversasPageInner() {
                         className="dropdown-item"
                         style={{ width: "100%", textAlign: "left" }}
                         onClick={() => usarRespostaRapida(r.texto)}
+                        title={r.texto}
                       >
-                        <span className="n">{r.texto}</span>
+                        <span className="n">{r.titulo}</span>
                       </button>
                     ))
                   )}
@@ -1106,18 +1171,6 @@ function ConversasPageInner() {
                 </div>
               ) : null}
             </div>
-            <button
-              type="button"
-              className="chat-quick-btn"
-              aria-label="Respostas rápidas"
-              title="Respostas rápidas — clique pra escolher"
-              onClick={() => {
-                setMensagemTexto("/");
-                mensagemInputRef.current?.focus();
-              }}
-            >
-              💬 Respostas rápidas
-            </button>
             <button
               type="button"
               className="chat-emoji-btn"
@@ -1250,9 +1303,9 @@ function ConversasPageInner() {
                       type="button"
                       className="dropdown-item"
                       style={{ width: "100%", textAlign: "left" }}
-                      onClick={() => {
+                      onClick={(e) => {
                         setAnexoAberto(false);
-                        setRespostasGerenciarAberto(true);
+                        abrirRespostasGerenciar(e.currentTarget.getBoundingClientRect());
                       }}
                     >
                       <span className="n">💬 Respostas Rápidas</span>
@@ -1791,58 +1844,82 @@ function ConversasPageInner() {
 
       {respostasGerenciarAberto ? (
         <div
-          className="form-preview-overlay"
-          onClick={() => setRespostasGerenciarAberto(false)}
+          ref={respostasModalRef}
+          className="wa-respostas-modal"
+          style={respostasPos ? { left: respostasPos.x, top: respostasPos.y } : undefined}
         >
-          <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-              <div>
-                <p className="n">Respostas rápidas</p>
-                <p className="s">Só valem pro funil &quot;{funilSelecionado.nome}&quot;</p>
-              </div>
-              <span
-                className="close"
-                style={{ cursor: "pointer" }}
-                onClick={() => setRespostasGerenciarAberto(false)}
-              >
-                Fechar ✕
-              </span>
+          <div className="wa-email-drag" onMouseDown={iniciarArrasteRespostas}>
+            <div>
+              <p className="n">Respostas rápidas</p>
+              <p className="s">Só valem pro funil &quot;{funilSelecionado.nome}&quot;</p>
             </div>
-            <div className="field" style={{ display: "flex", gap: 8 }}>
-              <input
-                className="input"
-                placeholder="Escreva uma resposta pra salvar…"
-                value={novaRespostaTexto}
-                onChange={(e) => setNovaRespostaTexto(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") criarRespostaRapida();
-                }}
-              />
-              <button type="button" className="btn primary" onClick={criarRespostaRapida}>
-                Adicionar
-              </button>
-            </div>
-            {respostasDoFunil.length === 0 ? (
-              <p className="hint" style={{ padding: "10px 0" }}>
-                Nenhuma resposta rápida salva pra esse funil ainda.
-              </p>
-            ) : (
-              <div style={{ padding: "10px 0", display: "flex", flexDirection: "column", gap: 8 }}>
-                {respostasDoFunil.map((r) => (
-                  <div key={r.id} className="attach-chip" style={{ justifyContent: "space-between" }}>
-                    <span className="fn">{r.texto}</span>
-                    <span
-                      className="close"
-                      style={{ cursor: "pointer" }}
-                      onClick={() => excluirRespostaRapida(r.id)}
-                    >
-                      ✕
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <span
+              className="close"
+              style={{ cursor: "pointer" }}
+              onClick={() => setRespostasGerenciarAberto(false)}
+            >
+              Fechar ✕
+            </span>
           </div>
+
+          <div className="panel-h" style={{ padding: "0 0 8px" }}>
+            <h4>Nova resposta rápida</h4>
+          </div>
+          <div className="field" style={{ padding: "0 0 8px" }}>
+            <label>Título</label>
+            <input
+              className="input"
+              style={{ width: "100%" }}
+              placeholder="Ex.: Boas-vindas"
+              value={novaRespostaTitulo}
+              onChange={(e) => setNovaRespostaTitulo(e.target.value)}
+            />
+          </div>
+          <div className="field" style={{ padding: "0 0 10px" }}>
+            <label>Texto</label>
+            <textarea
+              className="input"
+              style={{ width: "100%", minHeight: 60, resize: "vertical" }}
+              placeholder="Escreva a mensagem completa…"
+              value={novaRespostaTexto}
+              onChange={(e) => setNovaRespostaTexto(e.target.value)}
+            />
+          </div>
+          <button
+            type="button"
+            className="btn primary block"
+            onClick={criarRespostaRapida}
+            disabled={!novaRespostaTitulo.trim() || !novaRespostaTexto.trim()}
+          >
+            + Criar nova resposta rápida
+          </button>
+
+          <div className="panel-h" style={{ padding: "14px 0 8px" }}>
+            <h4>Salvas</h4>
+          </div>
+          {respostasDoFunil.length === 0 ? (
+            <p className="hint" style={{ padding: "0 0 10px" }}>
+              Nenhuma resposta rápida salva pra esse funil ainda.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 4 }}>
+              {respostasDoFunil.map((r) => (
+                <div key={r.id} className="attach-chip" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div style={{ minWidth: 0 }}>
+                    <span className="fn" style={{ display: "block" }}>{r.titulo}</span>
+                    <span className="fs" style={{ display: "block" }}>{r.texto}</span>
+                  </div>
+                  <span
+                    className="close"
+                    style={{ cursor: "pointer", flex: "0 0 auto" }}
+                    onClick={() => excluirRespostaRapida(r.id)}
+                  >
+                    ✕
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : null}
 

@@ -1690,7 +1690,7 @@ table.tbl tbody tr:hover td {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  margin: 12px 0 12px 12px;
+  margin: 12px 10px 12px 12px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--navy-raised);
@@ -1979,6 +1979,21 @@ table.tbl tbody tr:hover td {
   right: 40px;
   z-index: 1200;
   width: 420px;
+}
+
+.wa-respostas-modal {
+  position: fixed;
+  top: 90px;
+  right: 40px;
+  z-index: 1200;
+  width: 320px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
 }
 
 .wa-email-drag {
