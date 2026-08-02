@@ -22,6 +22,7 @@ export default function EditorFluxoPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     if (id !== "novo" || idCriado) return;
     const criado = criarFluxo({ nome: "Nova automação" });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- criação única de rascunho ao montar com id="novo", precisa do id novo pra renderizar o editor antes mesmo da URL trocar.
     setIdCriado(criado.id);
     router.replace(`/automacoes/editor/${criado.id}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
