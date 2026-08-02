@@ -72,6 +72,32 @@ export const navEntries: NavEntry[] = [
   { href: "/configuracoes", label: "Configurações", Icon: IconConfiguracoes },
 ];
 
+/**
+ * Posiciona um popover flutuante ao lado do elemento que o abriu, sempre
+ * dentro dos limites da tela — vira pra esquerda se não couber à direita e
+ * nunca deixa o topo/base vazar pra fora da viewport (funciona em qualquer
+ * tamanho de tela, do desktop ao tablet).
+ */
+function posicionarFlyoutLateral(
+  rect: DOMRect,
+  width: number,
+  alturaEstimada: number,
+) {
+  const margem = 12;
+  let left = rect.right + 8;
+  if (left + width > window.innerWidth - margem) {
+    left = rect.left - width - 8;
+  }
+  left = Math.min(Math.max(left, margem), Math.max(margem, window.innerWidth - width - margem));
+
+  const alturaMax = Math.min(alturaEstimada, window.innerHeight - margem * 2);
+  let top = rect.top;
+  top = Math.min(top, window.innerHeight - alturaMax - margem);
+  top = Math.max(top, margem);
+
+  return { top, left };
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { funis, funilAtivoId, setFunilAtivoId } = useFunis();
@@ -117,7 +143,8 @@ export function Sidebar() {
   function abrirTrocarConta() {
     if (!souAdmin || !membrosBtnRef.current) return;
     const rect = membrosBtnRef.current.getBoundingClientRect();
-    setTrocarContaPos({ top: rect.top, left: rect.right + 8 });
+    const alturaEstimada = 62 + outrosMembros.length * 56;
+    setTrocarContaPos(posicionarFlyoutLateral(rect, 260, alturaEstimada));
     setTrocarContaAberta(true);
   }
 
@@ -128,7 +155,8 @@ export function Sidebar() {
   function abrirGestaoAtividade() {
     if (!gestaoAtividadeBtnRef.current) return;
     const rect = gestaoAtividadeBtnRef.current.getBoundingClientRect();
-    setGestaoAtividadePos({ top: rect.top, left: rect.right + 8 });
+    const alturaEstimada = gestaoAtividadeItens.length * 46;
+    setGestaoAtividadePos(posicionarFlyoutLateral(rect, 240, alturaEstimada));
     setGestaoAtividadeAberta(true);
   }
 
