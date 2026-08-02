@@ -758,6 +758,44 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   useFecharAoClicarFora(colunasRef, colunasAberto, () => setColunasAberto(false));
   const [imagemSelecionada, setImagemSelecionada] = useState<{ paginaId: string; el: HTMLImageElement } | null>(null);
 
+  // Contorno de seleção visível na própria imagem (a imagem é um <img> real dentro do HTML, não um
+  // componente React controlado — por isso a classe é alternada direto no elemento do DOM).
+  useEffect(() => {
+    const el = imagemSelecionada?.el;
+    if (!el) return;
+    el.classList.add("doc-img-selecionada");
+    return () => el.classList.remove("doc-img-selecionada");
+  }, [imagemSelecionada]);
+
+  // Mover a imagem selecionada com as setas do teclado (só faz sentido em "posição fixa" — position:absolute).
+  // Shift+seta move em passos maiores. Não interfere na digitação normal: só age quando uma imagem está selecionada.
+  useEffect(() => {
+    const info = imagemSelecionada;
+    if (!info) return;
+    function aoTeclar(e: KeyboardEvent) {
+      if (!info) return;
+      const img = info.el;
+      if (img.style.position !== "absolute") return;
+      const setas: Record<string, [number, number]> = {
+        ArrowUp: [0, -1],
+        ArrowDown: [0, 1],
+        ArrowLeft: [-1, 0],
+        ArrowRight: [1, 0],
+      };
+      const delta = setas[e.key];
+      if (!delta) return;
+      e.preventDefault();
+      const passo = e.shiftKey ? 10 : 1;
+      const esquerdaAtual = parseFloat(img.style.left || "0") || 0;
+      const topoAtual = parseFloat(img.style.top || "0") || 0;
+      img.style.left = `${Math.max(0, esquerdaAtual + delta[0] * passo)}px`;
+      img.style.top = `${Math.max(0, topoAtual + delta[1] * passo)}px`;
+      salvarConteudoPagina(info.paginaId);
+    }
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [imagemSelecionada]);
+
   const [exportarPdfAberto, setExportarPdfAberto] = useState(false);
   const [exportarPdfPos, setExportarPdfPos] = useState<{ x: number; y: number } | null>(null);
   const exportarPdfRef = useRef<HTMLDivElement>(null);
@@ -909,9 +947,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   function salvarConteudoPagina(paginaId: string) {
     const el = paginaRefs.current[paginaId];
     if (!el) return;
-    setPaginasLocais((prev) =>
-      prev.map((p) => (p.id === paginaId ? { ...p, conteudoHtml: el.innerHTML } : p)),
-    );
+    const html = el.innerHTML;
+    // O DOM já está exatamente nesse estado (acabamos de lê-lo dele) — marca como sincronizado ANTES de
+    // salvar, senão o efeito de sincronização (useEffect logo abaixo) vê o novo conteudoHtml como uma
+    // mudança "externa" e reescreve innerHTML de novo, o que recria todos os nós filhos do zero. Isso
+    // invalidava referências de elemento ao vivo (ex.: a <img> selecionada no painel de edição de imagem,
+    // ou qualquer nó guardado em estado) mesmo quando o HTML resultante era idêntico ao que já estava lá.
+    ultimoConteudoRef.current[paginaId] = html;
+    setPaginasLocais((prev) => prev.map((p) => (p.id === paginaId ? { ...p, conteudoHtml: html } : p)));
   }
 
   function focarPagina(paginaId: string) {
@@ -1427,7 +1470,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       if (!arquivo) return;
       const leitor = new FileReader();
       leitor.onload = () => {
-        inserirNaPagina(`<img src="${leitor.result}" data-doc-img="1" style="max-width:100%;" />`);
+        const src = String(leitor.result);
+        inserirNaPagina(`<img src="${src}" data-doc-img="1" data-original-src="${src}" style="max-width:100%;" />`);
       };
       leitor.readAsDataURL(arquivo);
     };
@@ -1462,8 +1506,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       if (!arquivo) return;
       const leitor = new FileReader();
       leitor.onload = () => {
+        const src = String(leitor.result);
         atualizarImagemSelecionada((img) => {
-          img.src = String(leitor.result);
+          img.src = src;
+          img.dataset.originalSrc = src;
         });
       };
       leitor.readAsDataURL(arquivo);
@@ -2512,6 +2558,7 @@ function PainelImagem({
 }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [manterProporcao, setManterProporcao] = useState(true);
+  const [unidadeTamanho, setUnidadeTamanho] = useState<"px" | "cm" | "%">("px");
   const [cortarTopo, setCortarTopo] = useState(0);
   const [cortarDireita, setCortarDireita] = useState(0);
   const [cortarBaixo, setCortarBaixo] = useState(0);
@@ -2522,15 +2569,31 @@ function PainelImagem({
   const larguraAtual = Math.round(imagem.getBoundingClientRect().width) || imagem.naturalWidth;
   const alturaAtual = Math.round(imagem.getBoundingClientRect().height) || imagem.naturalHeight;
   const proporcao = imagem.naturalWidth && imagem.naturalHeight ? imagem.naturalWidth / imagem.naturalHeight : 1;
+  // Referência pra converter %: a largura útil do container (a folha da página, se existir).
+  const referenciaLarguraPx = imagem.closest(".doc-page-sheet")?.clientWidth || imagem.parentElement?.clientWidth || larguraAtual;
 
-  function aplicarLargura(novaLargura: number) {
+  const PX_POR_CM = 96 / 2.54;
+  function converterParaPx(valor: number, unidade: "px" | "cm" | "%") {
+    if (unidade === "cm") return valor * PX_POR_CM;
+    if (unidade === "%") return (valor / 100) * referenciaLarguraPx;
+    return valor;
+  }
+  function converterDePx(px: number, unidade: "px" | "cm" | "%") {
+    if (unidade === "cm") return Math.round((px / PX_POR_CM) * 10) / 10;
+    if (unidade === "%") return Math.round((px / referenciaLarguraPx) * 1000) / 10;
+    return Math.round(px);
+  }
+
+  function aplicarLargura(novaLarguraNaUnidade: number) {
+    const novaLargura = Math.round(converterParaPx(novaLarguraNaUnidade, unidadeTamanho));
     onMudar((img) => {
       img.style.width = `${novaLargura}px`;
       img.style.height = manterProporcao ? "auto" : img.style.height || "auto";
     });
   }
 
-  function aplicarAltura(novaAltura: number) {
+  function aplicarAltura(novaAlturaNaUnidade: number) {
+    const novaAltura = Math.round(converterParaPx(novaAlturaNaUnidade, unidadeTamanho));
     onMudar((img) => {
       if (manterProporcao) {
         img.style.width = `${Math.round(novaAltura * proporcao)}px`;
@@ -2566,6 +2629,9 @@ function PainelImagem({
 
   function restaurarOriginal() {
     onMudar((img) => {
+      // Desfaz de verdade o corte (que substitui o src por um recorte via canvas), não só o CSS —
+      // a imagem original fica guardada em data-original-src desde a inserção/substituição.
+      if (img.dataset.originalSrc) img.src = img.dataset.originalSrc;
       img.removeAttribute("style");
       img.style.maxWidth = "100%";
       delete img.dataset.rotacao;
@@ -2665,14 +2731,34 @@ function PainelImagem({
 
       <p className="hint" style={{ marginBottom: 8 }}>Dimensões atuais: {larguraAtual}×{alturaAtual}px</p>
 
+      <div className="field">
+        <label>Unidade</label>
+        <div className="filters-row" style={{ margin: 0 }}>
+          <button type="button" className={`fchip${unidadeTamanho === "px" ? " active" : ""}`} onClick={() => setUnidadeTamanho("px")}>Pixels</button>
+          <button type="button" className={`fchip${unidadeTamanho === "cm" ? " active" : ""}`} onClick={() => setUnidadeTamanho("cm")}>Centímetros</button>
+          <button type="button" className={`fchip${unidadeTamanho === "%" ? " active" : ""}`} onClick={() => setUnidadeTamanho("%")}>% da página</button>
+        </div>
+      </div>
       <div className="field" style={{ display: "flex", gap: 8 }}>
         <div style={{ flex: 1 }}>
-          <label>Largura (px)</label>
-          <input type="number" className="input" style={{ width: "100%" }} value={larguraAtual} onChange={(e) => aplicarLargura(Number(e.target.value) || 1)} />
+          <label>Largura ({unidadeTamanho})</label>
+          <input
+            type="number"
+            className="input"
+            style={{ width: "100%" }}
+            value={converterDePx(larguraAtual, unidadeTamanho)}
+            onChange={(e) => aplicarLargura(Number(e.target.value) || 1)}
+          />
         </div>
         <div style={{ flex: 1 }}>
-          <label>Altura (px)</label>
-          <input type="number" className="input" style={{ width: "100%" }} value={alturaAtual} onChange={(e) => aplicarAltura(Number(e.target.value) || 1)} />
+          <label>Altura ({unidadeTamanho})</label>
+          <input
+            type="number"
+            className="input"
+            style={{ width: "100%" }}
+            value={converterDePx(alturaAtual, unidadeTamanho)}
+            onChange={(e) => aplicarAltura(Number(e.target.value) || 1)}
+          />
         </div>
       </div>
       <label className="hint" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -2707,6 +2793,9 @@ function PainelImagem({
           <button type="button" className="fchip" onClick={() => mudarPosicao("frente")}>Na frente</button>
           <button type="button" className="fchip" onClick={() => mudarPosicao("fixa")}>Posição fixa (arrastável)</button>
         </div>
+        {imagem.style.position === "absolute" ? (
+          <p className="hint" style={{ marginTop: 6 }}>Arraste a imagem ou use as setas do teclado pra mover (Shift+seta move mais rápido).</p>
+        ) : null}
       </div>
 
       <div className="field">

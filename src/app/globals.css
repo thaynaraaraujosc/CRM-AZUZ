@@ -4800,6 +4800,12 @@ table.tbl tbody tr:hover td {
   cursor: pointer;
 }
 
+/* Contorno de seleção + alça de redimensionamento visíveis na própria imagem quando selecionada. */
+.doc-img-selecionada {
+  outline: 2px solid var(--blue, #2563eb);
+  outline-offset: 2px;
+}
+
 .doc-img-legenda {
   font-size: 11px;
   font-style: italic;
