@@ -5,10 +5,17 @@ import { useSearchParams } from "next/navigation";
 
 import {
   CANAIS_COMENTARIO,
+  COMPORTAMENTO_FORA_JANELA,
+  DIAS_SEMANA,
+  DIAS_SEMANA_TODOS,
   GATILHOS_ETAPA,
+  LIMITES_EXECUCAO,
+  ORIGENS,
   TIPOS_ACAO_AUTOMACAO,
   UNIDADES_TEMPO,
   type CanalComentario,
+  type DiaSemana,
+  type Origem,
   type TipoAcaoAutomacao,
   type TipoGatilhoEtapa,
 } from "@/lib/data";
@@ -16,6 +23,8 @@ import {
   useAutomacoes,
   type AcaoAutomacao,
   type Automacao,
+  type ComportamentoForaJanela,
+  type LimiteExecucao,
   type RegraComentario,
 } from "@/lib/automacoes-context";
 import { useFunis } from "@/lib/funis-context";
@@ -28,7 +37,11 @@ const ICONE_ACAO: Record<TipoAcaoAutomacao, string> = {
   documento: "📄",
   audio: "🎙",
   lembrete: "⏰",
+  tarefa: "✅",
   mover_funil: "↪",
+  adicionar_etiqueta: "🏷",
+  remover_etiqueta: "🚫",
+  webhook: "🔗",
 };
 
 function novaAcao(tipo: TipoAcaoAutomacao = "mensagem"): AcaoAutomacao {
@@ -36,7 +49,7 @@ function novaAcao(tipo: TipoAcaoAutomacao = "mensagem"): AcaoAutomacao {
   if (tipo === "mensagem_interativa") {
     base.opcoes = [{ id: `op-${Date.now()}`, rotulo: "1 · Sim" }];
   }
-  if (tipo === "lembrete") {
+  if (tipo === "lembrete" || tipo === "tarefa") {
     base.tempoValor = "1";
     base.tempoUnidade = "dias";
   }
@@ -53,6 +66,22 @@ function resumoGatilho(automacao: Automacao) {
     return `${base} — ${automacao.tempoValor} ${automacao.tempoUnidade ?? "horas"}`;
   }
   return base;
+}
+
+function resumoJanela(automacao: Automacao) {
+  const dias = automacao.diasAtivos ?? DIAS_SEMANA_TODOS;
+  const partes: string[] = [];
+  if (dias.length < DIAS_SEMANA_TODOS.length) {
+    partes.push(
+      dias
+        .map((d) => DIAS_SEMANA.find((ds) => ds.valor === d)?.label ?? d)
+        .join(", "),
+    );
+  }
+  if (automacao.usarHorario && automacao.horarioInicio && automacao.horarioFim) {
+    partes.push(`${automacao.horarioInicio}–${automacao.horarioFim}`);
+  }
+  return partes.length ? partes.join(" · ") : null;
 }
 
 export default function AutomacoesPage() {
@@ -120,9 +149,28 @@ function AutomacoesPageInner() {
   const [acoesForm, setAcoesForm] = useState<AcaoAutomacao[]>([novaAcao()]);
   const [ativaForm, setAtivaForm] = useState(true);
 
+  const [diasAtivosForm, setDiasAtivosForm] =
+    useState<DiaSemana[]>(DIAS_SEMANA_TODOS);
+  const [usarHorarioForm, setUsarHorarioForm] = useState(false);
+  const [horarioInicioForm, setHorarioInicioForm] = useState("08:00");
+  const [horarioFimForm, setHorarioFimForm] = useState("20:00");
+  const [foraDaJanelaForm, setForaDaJanelaForm] =
+    useState<ComportamentoForaJanela>("aguardar");
+  const [condicaoOrigemForm, setCondicaoOrigemForm] = useState<Origem | "">("");
+  const [condicaoValorMinimoForm, setCondicaoValorMinimoForm] = useState("");
+  const [limiteExecucaoForm, setLimiteExecucaoForm] =
+    useState<LimiteExecucao>("sempre");
+
   const gatilhoPrecisaTempo = GATILHOS_ETAPA.find(
     (g) => g.tipo === gatilhoForm,
   )?.precisaTempo;
+  const gatilhoEhAgendado = gatilhoForm === "agendado";
+
+  function alternarDiaAtivo(dia: DiaSemana) {
+    setDiasAtivosForm((prev) =>
+      prev.includes(dia) ? prev.filter((d) => d !== dia) : [...prev, dia],
+    );
+  }
 
   function fecharEditor() {
     setEditorAberto(false);
@@ -139,6 +187,14 @@ function AutomacoesPageInner() {
     setTempoUnidadeForm("horas");
     setAcoesForm([novaAcao()]);
     setAtivaForm(true);
+    setDiasAtivosForm(DIAS_SEMANA_TODOS);
+    setUsarHorarioForm(false);
+    setHorarioInicioForm("08:00");
+    setHorarioFimForm("20:00");
+    setForaDaJanelaForm("aguardar");
+    setCondicaoOrigemForm("");
+    setCondicaoValorMinimoForm("");
+    setLimiteExecucaoForm("sempre");
     setEditorAberto(true);
   }
 
@@ -151,6 +207,14 @@ function AutomacoesPageInner() {
     setTempoUnidadeForm(automacao.tempoUnidade ?? "horas");
     setAcoesForm(automacao.acoes.length ? automacao.acoes : [novaAcao()]);
     setAtivaForm(automacao.ativa);
+    setDiasAtivosForm(automacao.diasAtivos ?? DIAS_SEMANA_TODOS);
+    setUsarHorarioForm(automacao.usarHorario ?? false);
+    setHorarioInicioForm(automacao.horarioInicio ?? "08:00");
+    setHorarioFimForm(automacao.horarioFim ?? "20:00");
+    setForaDaJanelaForm(automacao.foraDaJanela ?? "aguardar");
+    setCondicaoOrigemForm(automacao.condicaoOrigem ?? "");
+    setCondicaoValorMinimoForm(automacao.condicaoValorMinimo ?? "");
+    setLimiteExecucaoForm(automacao.limiteExecucao ?? "sempre");
     setEditorAberto(true);
   }
 
@@ -210,6 +274,14 @@ function AutomacoesPageInner() {
       tempoUnidade: gatilhoPrecisaTempo ? tempoUnidadeForm : undefined,
       acoes: acoesForm,
       ativa: ativaForm,
+      diasAtivos: diasAtivosForm,
+      usarHorario: gatilhoEhAgendado ? true : usarHorarioForm,
+      horarioInicio: usarHorarioForm || gatilhoEhAgendado ? horarioInicioForm : undefined,
+      horarioFim: usarHorarioForm || gatilhoEhAgendado ? horarioFimForm : undefined,
+      foraDaJanela: foraDaJanelaForm,
+      condicaoOrigem: condicaoOrigemForm || undefined,
+      condicaoValorMinimo: condicaoValorMinimoForm.trim() || undefined,
+      limiteExecucao: limiteExecucaoForm,
     };
     if (editandoId) {
       atualizarAutomacao(editandoId, dados);
@@ -416,6 +488,127 @@ function AutomacoesPageInner() {
             </div>
 
             <div className="field">
+              <label>
+                Janela de atividade — em quais dias e horários ela pode disparar
+              </label>
+              <div className="filters-row">
+                {DIAS_SEMANA.map((d) => (
+                  <button
+                    type="button"
+                    key={d.valor}
+                    className={`fchip${diasAtivosForm.includes(d.valor) ? " active" : ""}`}
+                    aria-pressed={diasAtivosForm.includes(d.valor)}
+                    onClick={() => alternarDiaAtivo(d.valor)}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+
+              {gatilhoEhAgendado ? (
+                <p className="hint" style={{ marginTop: 6 }}>
+                  Esse gatilho é recorrente — ela dispara nos dias e no horário
+                  definidos aqui, pros cards que estiverem na etapa.
+                </p>
+              ) : null}
+
+              {!gatilhoEhAgendado ? (
+                <div className="toggle-row" style={{ marginTop: 8 }}>
+                  <span className="tl">Restringir a um horário do dia</span>
+                  <Toggle
+                    key={`${editandoId ?? "nova"}-horario`}
+                    defaultOn={usarHorarioForm}
+                    label="Restringir a um horário do dia"
+                    onToggle={setUsarHorarioForm}
+                  />
+                </div>
+              ) : null}
+
+              {usarHorarioForm || gatilhoEhAgendado ? (
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                  <input
+                    className="input"
+                    type="time"
+                    value={horarioInicioForm}
+                    onChange={(e) => setHorarioInicioForm(e.target.value)}
+                  />
+                  <span className="hint">até</span>
+                  <input
+                    className="input"
+                    type="time"
+                    value={horarioFimForm}
+                    onChange={(e) => setHorarioFimForm(e.target.value)}
+                  />
+                </div>
+              ) : null}
+
+              {diasAtivosForm.length < DIAS_SEMANA_TODOS.length || usarHorarioForm || gatilhoEhAgendado ? (
+                <div style={{ marginTop: 8 }}>
+                  <label className="hint" style={{ display: "block", marginBottom: 6 }}>
+                    Se o gatilho acontecer fora da janela
+                  </label>
+                  <select
+                    className="input"
+                    style={{ cursor: "pointer" }}
+                    value={foraDaJanelaForm}
+                    onChange={(e) =>
+                      setForaDaJanelaForm(e.target.value as ComportamentoForaJanela)
+                    }
+                  >
+                    {COMPORTAMENTO_FORA_JANELA.map((op) => (
+                      <option key={op.valor} value={op.valor}>
+                        {op.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="field">
+              <label>Condições — só dispara se o card bater com isso (opcional)</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <select
+                  className="input"
+                  style={{ flex: 1, cursor: "pointer" }}
+                  value={condicaoOrigemForm}
+                  onChange={(e) => setCondicaoOrigemForm(e.target.value as Origem | "")}
+                >
+                  <option value="">Qualquer origem</option>
+                  {ORIGENS.map((o) => (
+                    <option key={o} value={o}>
+                      Origem: {o}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="input"
+                  style={{ flex: 1 }}
+                  type="text"
+                  placeholder="Valor mínimo do negócio (ex.: 500)"
+                  value={condicaoValorMinimoForm}
+                  onChange={(e) => setCondicaoValorMinimoForm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="field">
+              <label>Limite de disparo</label>
+              <select
+                className="input"
+                style={{ cursor: "pointer" }}
+                value={limiteExecucaoForm}
+                onChange={(e) => setLimiteExecucaoForm(e.target.value as LimiteExecucao)}
+              >
+                {LIMITES_EXECUCAO.map((op) => (
+                  <option key={op.valor} value={op.valor}>
+                    {op.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="field">
               <label>Ações — o que ela faz (pode ter mais de uma)</label>
               {acoesForm.map((acao, i) => (
                 <div className="auto-acao-row" key={acao.id}>
@@ -610,6 +803,105 @@ function AutomacoesPageInner() {
                       </select>
                     </div>
                   ) : null}
+
+                  {acao.tipo === "tarefa" ? (
+                    <div style={{ marginTop: 8 }}>
+                      <textarea
+                        className="input"
+                        style={{ width: "100%", minHeight: 50, resize: "vertical" }}
+                        placeholder="O que precisa ser feito — ex.: ligar pra confirmar interesse"
+                        value={acao.mensagem ?? ""}
+                        onChange={(e) =>
+                          atualizarAcao(i, { mensagem: e.target.value })
+                        }
+                      />
+                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                        <span className="hint" style={{ alignSelf: "center" }}>
+                          Prazo em
+                        </span>
+                        <input
+                          className="input"
+                          type="number"
+                          min="1"
+                          style={{ width: 70 }}
+                          value={acao.tempoValor ?? "1"}
+                          onChange={(e) =>
+                            atualizarAcao(i, { tempoValor: e.target.value })
+                          }
+                        />
+                        <select
+                          className="input"
+                          style={{ cursor: "pointer" }}
+                          value={acao.tempoUnidade ?? "dias"}
+                          onChange={(e) =>
+                            atualizarAcao(i, { tempoUnidade: e.target.value })
+                          }
+                        >
+                          {UNIDADES_TEMPO.map((u) => (
+                            <option key={u} value={u}>
+                              {u}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {acao.tipo === "adicionar_etiqueta" ||
+                  acao.tipo === "remover_etiqueta" ? (
+                    <input
+                      className="input"
+                      style={{ width: "100%", marginTop: 8 }}
+                      type="text"
+                      placeholder="Nome da etiqueta — ex.: Quente"
+                      value={acao.etiquetaNome ?? ""}
+                      onChange={(e) =>
+                        atualizarAcao(i, { etiquetaNome: e.target.value })
+                      }
+                    />
+                  ) : null}
+
+                  {acao.tipo === "webhook" ? (
+                    <input
+                      className="input"
+                      style={{ width: "100%", marginTop: 8 }}
+                      type="url"
+                      placeholder="https://sua-ferramenta.com/webhook"
+                      value={acao.webhookUrl ?? ""}
+                      onChange={(e) =>
+                        atualizarAcao(i, { webhookUrl: e.target.value })
+                      }
+                    />
+                  ) : null}
+
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                    <span className="hint">Esperar antes de executar</span>
+                    <input
+                      className="input"
+                      type="number"
+                      min="0"
+                      style={{ width: 70 }}
+                      placeholder="0"
+                      value={acao.atrasoValor ?? ""}
+                      onChange={(e) =>
+                        atualizarAcao(i, { atrasoValor: e.target.value })
+                      }
+                    />
+                    <select
+                      className="input"
+                      style={{ cursor: "pointer" }}
+                      value={acao.atrasoUnidade ?? "minutos"}
+                      onChange={(e) =>
+                        atualizarAcao(i, { atrasoUnidade: e.target.value })
+                      }
+                    >
+                      {UNIDADES_TEMPO.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               ))}
               <button type="button" className="btn ghost" onClick={adicionarAcao}>
@@ -709,6 +1001,7 @@ function AutomacoesPageInner() {
                       </span>
                       <span className="auto-kanban-card-gatilho">
                         {resumoGatilho(automacao)}
+                        {resumoJanela(automacao) ? ` · ${resumoJanela(automacao)}` : ""}
                       </span>
                       <span className="auto-kanban-card-acoes">
                         {automacao.acoes.map((acao) => (

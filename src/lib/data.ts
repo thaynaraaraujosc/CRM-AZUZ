@@ -34,6 +34,14 @@ export type Origem =
   | "TikTok"
   | "Indicação";
 
+export const ORIGENS: Origem[] = [
+  "Meta Ads",
+  "Google Ads",
+  "Instagram",
+  "TikTok",
+  "Indicação",
+];
+
 /** Classe CSS que pinta a nomenclatura da origem com a cor da própria plataforma. */
 export function classeOrigem(origem: Origem): string {
   switch (origem) {
@@ -265,6 +273,8 @@ export type NegocioCard = {
   dias: string;
   /** Data em que o lead entrou nesse negócio, formato ISO (aaaa-mm-dd). */
   data: string;
+  /** Etiquetas adicionadas manualmente ou por automação (ex.: "adicionar_etiqueta"). */
+  etiquetas?: string[];
 };
 
 export type ColunaFunil = {
@@ -1375,7 +1385,7 @@ export const serieDashboardRelatorios = [
 /* Automações (vivem dentro de cada etapa do funil)                          */
 /* -------------------------------------------------------------------------- */
 
-export type TipoGatilhoEtapa = "entrou" | "parado" | "saiu";
+export type TipoGatilhoEtapa = "entrou" | "parado" | "saiu" | "respondeu" | "agendado";
 
 /** O que dispara a automação — sempre relativo ao card dentro da etapa onde ela foi criada. */
 export const GATILHOS_ETAPA: {
@@ -1390,6 +1400,11 @@ export const GATILHOS_ETAPA: {
     precisaTempo: true,
   },
   { tipo: "saiu", label: "Quando um card sai dessa etapa" },
+  { tipo: "respondeu", label: "Quando o contato responde uma mensagem" },
+  {
+    tipo: "agendado",
+    label: "Em um horário programado (recorrente) — usa a janela de atividade abaixo",
+  },
 ];
 
 export const UNIDADES_TEMPO = ["minutos", "horas", "dias"] as const;
@@ -1400,7 +1415,11 @@ export type TipoAcaoAutomacao =
   | "documento"
   | "audio"
   | "lembrete"
-  | "mover_funil";
+  | "tarefa"
+  | "mover_funil"
+  | "adicionar_etiqueta"
+  | "remover_etiqueta"
+  | "webhook";
 
 /** Cada automação pode ter várias dessas ações, em sequência. */
 export const TIPOS_ACAO_AUTOMACAO: { tipo: TipoAcaoAutomacao; label: string }[] = [
@@ -1409,12 +1428,46 @@ export const TIPOS_ACAO_AUTOMACAO: { tipo: TipoAcaoAutomacao; label: string }[] 
   { tipo: "documento", label: "Enviar documento" },
   { tipo: "audio", label: "Enviar áudio" },
   { tipo: "lembrete", label: "Criar lembrete" },
+  { tipo: "tarefa", label: "Criar tarefa com prazo" },
   { tipo: "mover_funil", label: "Mover card pra outro funil / vendedor" },
+  { tipo: "adicionar_etiqueta", label: "Adicionar etiqueta ao contato" },
+  { tipo: "remover_etiqueta", label: "Remover etiqueta do contato" },
+  { tipo: "webhook", label: "Enviar dados pra um webhook externo" },
 ];
 
 /** Canais onde dá pra ler comentário público e responder no direct/inbox. */
 export const CANAIS_COMENTARIO = ["Instagram", "TikTok"] as const;
 export type CanalComentario = (typeof CANAIS_COMENTARIO)[number];
+
+/* -------------------------------------------------------------------------- */
+/* Janela de atividade, condições e limite de disparo das automações         */
+/* -------------------------------------------------------------------------- */
+
+export const DIAS_SEMANA = [
+  { valor: "seg", label: "Seg" },
+  { valor: "ter", label: "Ter" },
+  { valor: "qua", label: "Qua" },
+  { valor: "qui", label: "Qui" },
+  { valor: "sex", label: "Sex" },
+  { valor: "sab", label: "Sáb" },
+  { valor: "dom", label: "Dom" },
+] as const;
+export type DiaSemana = (typeof DIAS_SEMANA)[number]["valor"];
+export const DIAS_SEMANA_TODOS: DiaSemana[] = DIAS_SEMANA.map((d) => d.valor);
+
+/** O que fazer quando o gatilho acontece fora da janela de dias/horário ativos. */
+export const COMPORTAMENTO_FORA_JANELA: {
+  valor: "aguardar" | "ignorar";
+  label: string;
+}[] = [
+  { valor: "aguardar", label: "Espera abrir a janela e dispara" },
+  { valor: "ignorar", label: "Não dispara" },
+];
+
+export const LIMITES_EXECUCAO: { valor: "sempre" | "uma_vez"; label: string }[] = [
+  { valor: "sempre", label: "Toda vez que o gatilho acontecer" },
+  { valor: "uma_vez", label: "Só uma vez por contato" },
+];
 
 /* -------------------------------------------------------------------------- */
 /* Configurações                                                              */

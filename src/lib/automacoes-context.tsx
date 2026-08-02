@@ -9,6 +9,8 @@ import {
 
 import type {
   CanalComentario,
+  DiaSemana,
+  Origem,
   TipoAcaoAutomacao,
   TipoGatilhoEtapa,
 } from "@/lib/data";
@@ -21,19 +23,29 @@ export type OpcaoResposta = {
 export type AcaoAutomacao = {
   id: string;
   tipo: TipoAcaoAutomacao;
-  /** Usado por "mensagem" e "mensagem_interativa" (texto principal enviado). */
+  /** Usado por "mensagem", "mensagem_interativa" e "tarefa" (texto/descrição principal). */
   mensagem?: string;
   /** Usado só por "mensagem_interativa" — as opções de resposta que o contato pode escolher. */
   opcoes?: OpcaoResposta[];
   /** Usado por "documento" e "audio" — nome do arquivo escolhido/gravado. */
   arquivoNome?: string;
-  /** Usado por "lembrete" — em quanto tempo o lembrete dispara. */
+  /** Usado por "lembrete" (quando dispara) e "tarefa" (prazo). */
   tempoValor?: string;
   tempoUnidade?: string;
   /** Usado por "mover_funil". */
   moverFunilId?: string;
   moverEtapaTitulo?: string;
+  /** Usado por "adicionar_etiqueta" e "remover_etiqueta". */
+  etiquetaNome?: string;
+  /** Usado por "webhook". */
+  webhookUrl?: string;
+  /** Espera antes de executar essa ação — aplica a qualquer tipo. */
+  atrasoValor?: string;
+  atrasoUnidade?: string;
 };
+
+export type ComportamentoForaJanela = "aguardar" | "ignorar";
+export type LimiteExecucao = "sempre" | "uma_vez";
 
 export type Automacao = {
   id: string;
@@ -47,6 +59,22 @@ export type Automacao = {
   acoes: AcaoAutomacao[];
   ativa: boolean;
   execucoes: string;
+
+  /** Janela de atividade — em quais dias essa automação pode disparar. Sem valor = todos os dias. */
+  diasAtivos?: DiaSemana[];
+  /** Restringe o disparo a um intervalo de horário dentro dos dias ativos. */
+  usarHorario?: boolean;
+  horarioInicio?: string;
+  horarioFim?: string;
+  /** O que fazer quando o gatilho acontece fora da janela de dias/horário. */
+  foraDaJanela?: ComportamentoForaJanela;
+
+  /** Condições opcionais — só dispara se o card bater com elas. Vazio/"" = sem filtro. */
+  condicaoOrigem?: Origem | "";
+  condicaoValorMinimo?: string;
+
+  /** Quantas vezes essa automação pode rodar pro mesmo contato. */
+  limiteExecucao?: LimiteExecucao;
 };
 
 /** Regra do tipo "comentou uma palavra-chave no post → recebe direct automático". */
