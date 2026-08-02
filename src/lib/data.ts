@@ -1387,20 +1387,20 @@ export const serieDashboardRelatorios = [
 
 export type TipoGatilhoEtapa = "entrou" | "parado" | "saiu" | "respondeu" | "agendado";
 
-/** O que dispara a automação — sempre relativo ao card dentro da etapa onde ela foi criada. */
+/** O que dispara a automação — sempre relativo ao lead dentro da etapa onde ela foi criada. */
 export const GATILHOS_ETAPA: {
   tipo: TipoGatilhoEtapa;
   label: string;
   precisaTempo?: boolean;
 }[] = [
-  { tipo: "entrou", label: "Quando um card entra nessa etapa" },
+  { tipo: "entrou", label: "Quando um lead entra nessa etapa" },
   {
     tipo: "parado",
-    label: "Quando um card fica parado nessa etapa",
+    label: "Quando um lead fica parado nessa etapa",
     precisaTempo: true,
   },
-  { tipo: "saiu", label: "Quando um card sai dessa etapa" },
-  { tipo: "respondeu", label: "Quando o contato responde uma mensagem" },
+  { tipo: "saiu", label: "Quando um lead sai dessa etapa" },
+  { tipo: "respondeu", label: "Quando o lead responde uma mensagem" },
   {
     tipo: "agendado",
     label: "Em um horário programado (recorrente) — usa a janela de atividade abaixo",
@@ -1429,7 +1429,7 @@ export const TIPOS_ACAO_AUTOMACAO: { tipo: TipoAcaoAutomacao; label: string }[] 
   { tipo: "audio", label: "Enviar áudio" },
   { tipo: "lembrete", label: "Criar lembrete" },
   { tipo: "tarefa", label: "Criar tarefa com prazo" },
-  { tipo: "mover_funil", label: "Mover card pra outro funil / vendedor" },
+  { tipo: "mover_funil", label: "Mover lead pra outra etapa / funil" },
   { tipo: "adicionar_etiqueta", label: "Adicionar etiqueta ao contato" },
   { tipo: "remover_etiqueta", label: "Remover etiqueta do contato" },
   { tipo: "webhook", label: "Enviar dados pra um webhook externo" },
