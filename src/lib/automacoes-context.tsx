@@ -147,7 +147,8 @@ type AutomacoesContextValue = {
 
 const AutomacoesContext = createContext<AutomacoesContextValue | null>(null);
 
-const AUTOMACOES_INICIAIS: Automacao[] = [
+/** Exportadas (não só usadas aqui dentro) pra `automation-flow/migracao.ts` conseguir migrar o seed pro formato novo. */
+export const AUTOMACOES_INICIAIS: Automacao[] = [
   {
     id: "auto-boas-vindas",
     funilId: "emagrecimento-diabetes",
@@ -233,7 +234,7 @@ const AUTOMACOES_INICIAIS: Automacao[] = [
   },
 ];
 
-const REGRAS_COMENTARIO_INICIAIS: RegraComentario[] = [
+export const REGRAS_COMENTARIO_INICIAIS: RegraComentario[] = [
   {
     id: "regra-quero-agendar",
     canal: "Instagram",
