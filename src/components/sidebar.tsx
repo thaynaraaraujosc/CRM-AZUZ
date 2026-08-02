@@ -37,16 +37,8 @@ type NavEntry = {
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
 };
 
-export const navEntries: NavEntry[] = [
-  { href: "/inicio", label: "Início", Icon: IconInicio },
-  { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
-  { href: "/funil", label: "Funil", Icon: IconPipeline },
-  { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
-  { href: "/formularios", label: "Formulário", Icon: IconDoc },
-  { href: "/agenda", label: "Agenda", Icon: IconCalendar },
-  { href: "/acoes", label: "Ações", Icon: IconAcoes },
-  { href: "/equipe", label: "Equipe", Icon: IconEquipe },
-  { href: "/contatos", label: "Contatos", Icon: IconContatos },
+/** Sub-rotas agrupadas dentro do menu "Gestão de atividade" na sidebar. */
+export const gestaoAtividadeItens: NavEntry[] = [
   { href: "/trafego", label: "Tráfego", Icon: IconTrafego },
   {
     href: "/atividades-vendas",
@@ -59,6 +51,22 @@ export const navEntries: NavEntry[] = [
     Icon: IconTrafego,
   },
   { href: "/relatorios", label: "Relatórios", Icon: IconRelatorios },
+  { href: "/crm-live", label: "CRM Live", Icon: IconTrafego },
+];
+
+const gestaoAtividadeHrefs = new Set(gestaoAtividadeItens.map((i) => i.href));
+
+export const navEntries: NavEntry[] = [
+  { href: "/inicio", label: "Início", Icon: IconInicio },
+  { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
+  { href: "/funil", label: "Funil", Icon: IconPipeline },
+  { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
+  { href: "/formularios", label: "Formulário", Icon: IconDoc },
+  { href: "/agenda", label: "Agenda", Icon: IconCalendar },
+  { href: "/acoes", label: "Ações", Icon: IconAcoes },
+  { href: "/equipe", label: "Equipe", Icon: IconEquipe },
+  { href: "/contatos", label: "Contatos", Icon: IconContatos },
+  ...gestaoAtividadeItens,
   { href: "/automacoes", label: "Automações", Icon: IconAutomacoes },
   { href: "/azuz-ia", label: "Azuz IA", Icon: IconSparkle },
   { href: "/configuracoes", label: "Configurações", Icon: IconConfiguracoes },
@@ -111,6 +119,17 @@ export function Sidebar() {
     const rect = membrosBtnRef.current.getBoundingClientRect();
     setTrocarContaPos({ top: rect.top, left: rect.right + 8 });
     setTrocarContaAberta(true);
+  }
+
+  const [gestaoAtividadeAberta, setGestaoAtividadeAberta] = useState(false);
+  const gestaoAtividadeBtnRef = useRef<HTMLDivElement>(null);
+  const [gestaoAtividadePos, setGestaoAtividadePos] = useState({ top: 0, left: 0 });
+
+  function abrirGestaoAtividade() {
+    if (!gestaoAtividadeBtnRef.current) return;
+    const rect = gestaoAtividadeBtnRef.current.getBoundingClientRect();
+    setGestaoAtividadePos({ top: rect.top, left: rect.right + 8 });
+    setGestaoAtividadeAberta(true);
   }
 
   return (
@@ -210,6 +229,32 @@ export function Sidebar() {
 
       <nav className="nav">
         {navEntries.map(({ href, label, Icon }) => {
+          if (gestaoAtividadeHrefs.has(href)) {
+            if (href !== gestaoAtividadeItens[0].href) return null;
+            const gestaoAtiva = gestaoAtividadeItens.some(
+              (i) => pathname === i.href || pathname.startsWith(`${i.href}/`),
+            );
+            return (
+              <div
+                key="gestao-atividade"
+                ref={gestaoAtividadeBtnRef}
+                onMouseEnter={abrirGestaoAtividade}
+                onMouseLeave={() => setGestaoAtividadeAberta(false)}
+              >
+                <button
+                  type="button"
+                  className={`nav-item${gestaoAtiva ? " active" : ""}`}
+                  style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
+                  aria-haspopup="true"
+                  aria-expanded={gestaoAtividadeAberta}
+                >
+                  <IconRelatorios />
+                  Gestão de atividade
+                  <span className="r" style={{ marginLeft: "auto" }}>▸</span>
+                </button>
+              </div>
+            );
+          }
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <div key={href}>
@@ -238,23 +283,62 @@ export function Sidebar() {
                   })}
                 </div>
               ) : null}
-              {href === "/relatorios" ? (
-                <a
-                  href="/crm-live"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="nav-item nav-item-crmlive"
-                  title="Abre numa aba nova — telão pra projetar no escritório"
-                >
-                  <IconTrafego />
-                  CRM Live
-                  <span className="nav-item-tag">TV</span>
-                </a>
-              ) : null}
             </div>
           );
         })}
       </nav>
+
+      {gestaoAtividadeAberta && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="dropdown-pop"
+              style={{
+                position: "fixed",
+                top: gestaoAtividadePos.top,
+                left: gestaoAtividadePos.left,
+                width: 240,
+                padding: "4px 0",
+                zIndex: 210,
+              }}
+              onMouseEnter={() => setGestaoAtividadeAberta(true)}
+              onMouseLeave={() => setGestaoAtividadeAberta(false)}
+            >
+              {gestaoAtividadeItens.map((item) => {
+                const subAtivo =
+                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+                if (item.href === "/crm-live") {
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      title="Abre numa aba nova — telão pra projetar no escritório"
+                    >
+                      <span className="n">{item.label}</span>
+                      <span className="r">TV</span>
+                    </a>
+                  );
+                }
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => setGestaoAtividadeAberta(false)}
+                  >
+                    <span className="n">{item.label}</span>
+                    {subAtivo ? <span className="r">●</span> : null}
+                  </Link>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
 
       <div className="sb-foot">
         <button
