@@ -65,6 +65,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Navegadores aplicam fonte monoespaçada em <textarea> por padrão — sem isso, ela
+   sempre destoa do resto dos campos, em qualquer canto do CRM. */
+textarea {
+  font-family: inherit;
+}
+
 h1,
 h2,
 h3,
@@ -693,6 +699,7 @@ table {
   border-radius: 9px;
   padding: 9px 12px;
   font-size: 12.5px;
+  font-family: inherit;
   line-height: 1.5;
 }
 
@@ -3552,6 +3559,57 @@ table.tbl tbody tr:hover td {
   box-shadow: 0 16px 40px rgba(11, 21, 51, 0.24);
   z-index: 200;
   padding-bottom: 4px;
+}
+
+.wa-contato-picker {
+  width: 280px;
+  padding-bottom: 6px;
+}
+
+.wa-contato-picker-busca {
+  padding: 10px;
+}
+
+.wa-contato-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wa-contato-picker-numero {
+  display: block;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.bubble-contato {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.bubble-contato .tm {
+  width: 100%;
+  text-align: right;
+  margin-top: 0;
+}
+
+.bubble-contato-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bubble-contato-nome {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.bubble-contato-numero {
+  font-size: 11px;
+  opacity: 0.85;
 }
 
 .wa-anexo-drag {

@@ -428,6 +428,8 @@ export type ConvMensagem = {
   hora: string;
   /** Presente quando a mensagem é um compartilhamento de localização — mostra um mapa em vez de só texto. */
   localizacao?: { lat: number; lng: number; endereco?: string };
+  /** Presente quando a mensagem é um cartão de contato compartilhado. */
+  contatoCompartilhado?: { nome: string; initials: string; whatsapp?: string };
 };
 
 export type Conversa = {
