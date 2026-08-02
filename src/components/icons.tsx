@@ -307,6 +307,14 @@ export function IconErro(props: Props) {
   );
 }
 
+export function IconEnviar(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 12L20 4l-6 16-3-7-7-1Z" />
+    </svg>
+  );
+}
+
 export function IconTikTok(props: Props) {
   return (
     <svg viewBox="0 0 24 24" fill="#F5F5F5" {...props}>

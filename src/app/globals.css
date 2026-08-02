@@ -1862,12 +1862,56 @@ table.tbl tbody tr:hover td {
 
 .wa-row {
   display: block;
+  position: relative;
   width: 100%;
   text-align: left;
   padding: 12px 17px;
   border-bottom: 1px solid var(--line);
   border-left: 2px solid transparent;
   background: transparent;
+  cursor: pointer;
+}
+
+.wa-row:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.wa-pin-icone {
+  font-size: 10px;
+  margin-right: 2px;
+}
+
+.wa-mute-icone {
+  font-size: 11px;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.wa-row-menu-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.wa-row:hover .wa-row-menu-btn,
+.wa-row:focus-within .wa-row-menu-btn {
+  opacity: 1;
+}
+
+.wa-row-menu-btn:hover {
+  background: var(--navy-raised-2);
+  color: var(--ink);
 }
 
 .wa-row:hover {
@@ -4219,6 +4263,7 @@ table.tbl tbody tr:hover td {
 }
 
 .doc-page-sheet {
+  position: relative;
   width: 100%;
   min-height: 1000px;
   background: #ffffff;
@@ -4646,6 +4691,73 @@ table.tbl tbody tr:hover td {
 .doc-modelo-icone {
   color: var(--blue);
   margin-bottom: 4px;
+}
+
+/* Colunas de texto (Formatar → Colunas) — CSS multi-coluna nativo, sem tabela. */
+.doc-body-rich-colunas img,
+.doc-body-rich-colunas table {
+  break-inside: avoid;
+}
+
+/* Imagens dentro do documento — indicam que são clicáveis/selecionáveis pro painel de edição. */
+.doc-body-rich img {
+  cursor: pointer;
+}
+
+.doc-img-legenda {
+  font-size: 11px;
+  font-style: italic;
+  color: #666;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.doc-img-painel {
+  max-height: 86vh;
+  overflow-y: auto;
+}
+
+.doc-img-resize-alca {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  cursor: nwse-resize;
+  margin-bottom: 12px;
+  user-select: none;
+}
+
+.doc-img-resize-alca:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.doc-estrutura-painel {
+  width: 240px;
+  flex: 0 0 auto;
+  border-right: 1px solid var(--line);
+  background: var(--navy);
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.doc-estrutura-item {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.doc-estrutura-item:hover {
+  background: var(--navy-raised);
+  color: var(--blue);
 }
 
 /* ---------------- Formulário ---------------- */
@@ -5640,7 +5752,8 @@ table.tbl tbody tr:hover td {
 
   .wa-midia-preview,
   .wa-doc-visualizador,
-  .wa-biblioteca-modal {
+  .wa-biblioteca-modal,
+  .wa-config-modal {
     max-width: calc(100vw - 24px);
   }
 
@@ -5650,55 +5763,58 @@ table.tbl tbody tr:hover td {
   }
 }
 
-/* ---------------- Automações · construtor visual (flow editor) ---------------- */
 
-.mt8 {
-  margin-top: 8px;
-}
+/* ============================================================================
+   Construtor visual de automações (/automacoes/editor/[id])
+   ============================================================================ */
 
 .flow-shell-empty {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: calc(100vh - 64px);
-  color: var(--text-muted);
+  color: var(--text-faint);
 }
 
 .flow-shell {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 64px);
   background: var(--navy);
 }
 
-/* -------- barra superior -------- */
+/* ---------------- Barra superior ---------------- */
 
 .flow-toolbar {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 16px;
+  padding: 10px 17px;
   border-bottom: 1px solid var(--line);
-  background: var(--navy-raised);
-  flex: 0 0 auto;
-  flex-wrap: wrap;
+  background: var(--navy);
 }
 
 .flow-toolbar-esq,
 .flow-toolbar-dir {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .flow-toolbar-nome {
-  font-size: 14px;
+  border: none;
+  background: none;
+  font-family: var(--display);
   font-weight: 700;
+  font-size: 14px;
   color: var(--ink);
-  padding: 6px 8px;
-  border-radius: 8px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
 }
 
 .flow-toolbar-nome:hover {
@@ -5706,146 +5822,170 @@ table.tbl tbody tr:hover td {
 }
 
 .flow-toolbar-nome-input {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14px;
   width: 220px;
 }
 
 .flow-save-indicator {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-faint);
-  white-space: nowrap;
 }
 
 .flow-toolbar-toggle {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 4px;
+  padding: 0 6px;
+  border-left: 1px solid var(--line-soft);
+  border-right: 1px solid var(--line-soft);
 }
 
-.flow-toolbar-toggle .tl {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-}
-
-/* -------- corpo (biblioteca + canvas + config) -------- */
+/* ---------------- Corpo: biblioteca + canvas + painel ---------------- */
 
 .flow-body {
   flex: 1;
   min-height: 0;
   display: flex;
+  position: relative;
 }
 
-/* -------- biblioteca de blocos -------- */
+.flow-canvas {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  background: var(--navy-raised);
+}
+
+.flow-canvas .react-flow__attribution {
+  display: none;
+}
+
+.flow-canvas .react-flow__controls {
+  box-shadow: 0 4px 16px rgba(11, 21, 51, 0.16);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.flow-canvas .react-flow__controls button {
+  background: var(--navy);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.flow-canvas .react-flow__controls button:hover {
+  background: var(--navy-raised-2);
+}
+
+/* ---------------- Biblioteca de blocos (esquerda) ---------------- */
 
 .flow-lib {
-  width: 288px;
-  flex: 0 0 auto;
+  flex: 0 0 272px;
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--line);
-  background: var(--navy-raised);
+  background: var(--navy);
   overflow: hidden;
 }
 
 .flow-lib-reabrir {
+  flex: 0 0 auto;
   align-self: flex-start;
-  margin: 10px;
+  margin: 12px;
 }
 
 .flow-lib-head {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px;
+  gap: 6px;
+  padding: 12px;
   border-bottom: 1px solid var(--line);
-  flex: 0 0 auto;
 }
 
 .flow-lib-lista {
   flex: 1;
   overflow-y: auto;
-  padding: 6px 8px 16px;
+  padding: 6px 0 16px;
 }
 
 .flow-lib-cat {
-  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .flow-lib-cat-h {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
-  padding: 8px 6px;
-  font-size: 12px;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--ink);
+  cursor: pointer;
 }
 
 .flow-lib-cat-n {
-  margin-left: auto;
-  font-size: 10px;
   color: var(--text-faint);
+  font-weight: 500;
 }
 
 .flow-lib-cat-arrow {
-  font-size: 10px;
+  margin-left: auto;
   color: var(--text-faint);
-}
-
-.flow-cat-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex: 0 0 auto;
+  font-size: 10px;
 }
 
 .flow-lib-secao-titulo {
+  padding: 6px 12px;
   font-size: 10px;
-  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   color: var(--text-faint);
-  padding: 4px 6px;
 }
 
 .flow-lib-bloco {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px;
-  border-radius: 10px;
+  padding: 8px 12px;
   cursor: grab;
-  margin-bottom: 4px;
 }
 
 .flow-lib-bloco:hover {
   background: var(--navy-raised-2);
 }
 
+.flow-lib-bloco:active {
+  cursor: grabbing;
+}
+
 .flow-lib-bloco-icone {
+  flex: 0 0 auto;
   width: 26px;
   height: 26px;
-  border-radius: 8px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  flex: 0 0 auto;
 }
 
 .flow-lib-bloco-texto {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  flex: 1;
 }
 
 .flow-lib-bloco-label {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11.5px;
+  font-weight: 600;
   color: var(--ink);
 }
 
@@ -5857,97 +5997,73 @@ table.tbl tbody tr:hover td {
   white-space: nowrap;
 }
 
-/* -------- canvas -------- */
-
-.flow-canvas {
-  flex: 1;
-  min-width: 0;
-  position: relative;
+/* Cor por categoria — reaproveitada na paleta, no nó do canvas e nos handles. */
+.flow-cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
 }
 
-.flow-canvas .react-flow__attribution {
-  display: none;
+.flow-cat-gatilho,
+.flow-cat-dot.flow-cat-gatilho {
+  background: #2e6bff;
+  color: white;
 }
 
-.flow-selection-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--navy-raised);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  box-shadow: 0 8px 20px rgba(11, 21, 51, 0.14);
+.flow-cat-condicao,
+.flow-cat-dot.flow-cat-condicao {
+  background: #8a3ffc;
+  color: white;
 }
 
-.flow-ctx-menu {
-  position: fixed;
-  z-index: 200;
-  background: var(--navy-raised);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  box-shadow: 0 12px 28px rgba(11, 21, 51, 0.2);
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  min-width: 140px;
+.flow-cat-mensagem,
+.flow-cat-dot.flow-cat-mensagem {
+  background: #0f9d63;
+  color: white;
 }
 
-.flow-ctx-menu button {
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  text-align: left;
+.flow-cat-espera,
+.flow-cat-dot.flow-cat-espera {
+  background: #c9660a;
+  color: white;
 }
 
-.flow-ctx-menu button:hover {
-  background: var(--navy-raised-2);
+.flow-cat-acao,
+.flow-cat-dot.flow-cat-acao {
+  background: #d8a400;
+  color: white;
 }
 
-/* -------- nós do canvas -------- */
-
-.flow-cat-gatilho {
-  --flow-cor: #2e6bff;
-}
-.flow-cat-condicao {
-  --flow-cor: #8b5cf6;
-}
-.flow-cat-mensagem {
-  --flow-cor: #16a34a;
-}
-.flow-cat-espera {
-  --flow-cor: #f59e0b;
-}
-.flow-cat-acao {
-  --flow-cor: #ca8a04;
-}
-.flow-cat-humano {
-  --flow-cor: #db2777;
-}
-.flow-cat-integracao {
-  --flow-cor: #64748b;
-}
-.flow-cat-fim {
-  --flow-cor: #dc2626;
+.flow-cat-humano,
+.flow-cat-dot.flow-cat-humano {
+  background: #d84594;
+  color: white;
 }
 
-span.flow-cat-dot,
-div.flow-lib-bloco-icone {
-  background: color-mix(in srgb, var(--flow-cor) 18%, transparent);
-  color: var(--flow-cor);
+.flow-cat-integracao,
+.flow-cat-dot.flow-cat-integracao {
+  background: #64748b;
+  color: white;
 }
+
+.flow-cat-fim,
+.flow-cat-dot.flow-cat-fim {
+  background: #d64545;
+  color: white;
+}
+
+/* ---------------- Nó no canvas ---------------- */
 
 .flow-node {
-  width: 260px;
+  min-width: 200px;
+  max-width: 240px;
   border-radius: 12px;
-  background: var(--navy-raised);
+  background: var(--navy);
   border: 1.5px solid var(--line);
-  box-shadow: 0 6px 16px rgba(11, 21, 51, 0.1);
+  box-shadow: 0 2px 10px rgba(11, 21, 51, 0.1);
   font-size: 12px;
+  overflow: visible;
 }
 
 .flow-node.is-selected {
@@ -5956,27 +6072,56 @@ div.flow-lib-bloco-icone {
 }
 
 .flow-node.has-warning {
-  border-color: #f59e0b;
+  border-color: #d8a400;
 }
 
 .flow-node.has-error {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.16);
+  border-color: #d64545;
 }
 
 .flow-node-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 11px;
-  border-bottom: 1px solid var(--line);
-  border-radius: 10px 10px 0 0;
-  background: color-mix(in srgb, var(--flow-cor) 14%, var(--navy-raised));
+  gap: 6px;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 12px 12px 0 0;
+}
+
+.flow-node.flow-cat-gatilho .flow-node-header {
+  background: rgba(46, 107, 255, 0.12);
+}
+
+.flow-node.flow-cat-condicao .flow-node-header {
+  background: rgba(138, 63, 252, 0.12);
+}
+
+.flow-node.flow-cat-mensagem .flow-node-header {
+  background: rgba(15, 157, 99, 0.12);
+}
+
+.flow-node.flow-cat-espera .flow-node-header {
+  background: rgba(201, 102, 10, 0.12);
+}
+
+.flow-node.flow-cat-acao .flow-node-header {
+  background: rgba(216, 164, 0, 0.14);
+}
+
+.flow-node.flow-cat-humano .flow-node-header {
+  background: rgba(216, 69, 148, 0.12);
+}
+
+.flow-node.flow-cat-integracao .flow-node-header {
+  background: rgba(100, 116, 139, 0.14);
+}
+
+.flow-node.flow-cat-fim .flow-node-header {
+  background: rgba(214, 69, 69, 0.12);
 }
 
 .flow-node-icon {
   font-size: 13px;
-  line-height: 1;
 }
 
 .flow-node-label {
@@ -5995,72 +6140,108 @@ div.flow-lib-bloco-icone {
 }
 
 .flow-node-body {
-  padding: 9px 11px;
+  padding: 8px 10px 10px;
   color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .flow-node-handles {
-  padding: 4px 0 8px;
+  padding: 0 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .flow-node-handle-row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
-  padding: 3px 11px;
+  padding: 3px 14px 3px 0;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: var(--navy-raised-2);
 }
 
 .flow-handle-label {
-  font-size: 10px;
-  color: var(--text-faint);
-  font-weight: 600;
+  padding-right: 4px;
 }
 
 .flow-handle {
   width: 9px;
   height: 9px;
-  background: var(--flow-cor, var(--blue));
-  border: 2px solid var(--navy-raised);
+  background: var(--blue);
+  border: 2px solid var(--navy);
 }
 
 .flow-handle-inline {
-  position: relative !important;
-  transform: none !important;
-  inset: auto !important;
-  right: -13px !important;
+  position: absolute !important;
+  right: -5px;
+  top: 50%;
 }
 
-/* -------- painel de configuração -------- */
+/* ---------------- Barra de seleção flutuante ---------------- */
+
+.flow-selection-bar {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(11, 21, 51, 0.18);
+  z-index: 10;
+  font-size: 11.5px;
+}
+
+/* ---------------- Menu de contexto do nó ---------------- */
+
+.flow-ctx-menu {
+  position: fixed;
+  z-index: 300;
+  min-width: 180px;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.24);
+  padding: 4px;
+}
+
+/* ---------------- Painel de configuração (direita) ---------------- */
 
 .flow-config {
-  width: 340px;
-  flex: 0 0 auto;
-  border-left: 1px solid var(--line);
-  background: var(--navy-raised);
+  flex: 0 0 320px;
   display: flex;
   flex-direction: column;
+  border-left: 1px solid var(--line);
+  background: var(--navy);
   overflow: hidden;
 }
 
 .flow-config-tabs {
+  flex: 0 0 auto;
   display: flex;
   border-bottom: 1px solid var(--line);
-  flex: 0 0 auto;
 }
 
 .flow-tab {
   flex: 1;
-  padding: 11px 10px;
+  padding: 11px 8px;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
   font-size: 11.5px;
   font-weight: 700;
   color: var(--text-faint);
-  border-bottom: 2px solid transparent;
+  cursor: pointer;
 }
 
 .flow-tab.on {
@@ -6084,76 +6265,72 @@ div.flow-lib-bloco-icone {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 7px;
+  gap: 8px;
 }
 
 .flow-problema {
   display: flex;
   align-items: flex-start;
   gap: 8px;
+  width: 100%;
   text-align: left;
   padding: 9px 10px;
-  border-radius: 9px;
-  background: var(--navy);
+  border-radius: 8px;
   border: 1px solid var(--line);
+  background: var(--navy-raised-2);
   font-size: 11.5px;
-  color: var(--ink);
+  cursor: pointer;
+  margin-bottom: 6px;
 }
 
 .flow-problema.erro {
-  border-color: rgba(220, 38, 38, 0.35);
+  border-color: rgba(214, 69, 69, 0.4);
 }
 
 .flow-problema.aviso {
-  border-color: rgba(245, 158, 11, 0.35);
+  border-color: rgba(216, 164, 0, 0.4);
 }
 
 .flow-problema-sev {
   flex: 0 0 auto;
 }
 
-/* -------- condições (E/OU/NÃO) -------- */
+/* ---------------- Condições (grupo/regra) ---------------- */
 
 .flow-cond-grupo {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px;
-  background: var(--navy);
+  margin-bottom: 8px;
+  background: var(--navy-raised-2);
 }
 
 .flow-cond-grupo-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 8px;
+}
+
+.flow-cond-subgrupo {
+  margin-left: 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
 }
 
 .flow-cond-regra {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
   align-items: center;
+  gap: 6px;
   padding: 6px 0;
-  border-top: 1px solid var(--line-soft);
-}
-
-.flow-cond-regra:first-of-type {
-  border-top: none;
-}
-
-.flow-cond-regra .input {
-  flex: 1 1 120px;
-  min-width: 90px;
-}
-
-.flow-cond-subgrupo {
-  margin: 8px 0;
 }
 
 .flow-cond-acoes {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 6px;
+  margin-top: 6px;
 }
-
-/* -------- opções de botões/lista -------- */
 
 .flow-opcao-row {
   display: flex;
@@ -6162,13 +6339,13 @@ div.flow-lib-bloco-icone {
   margin-bottom: 6px;
 }
 
-/* -------- painéis laterais (histórico / simulador) -------- */
+/* ---------------- Painéis laterais (Simulador / Histórico) ---------------- */
 
 .flow-side-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(11, 21, 51, 0.35);
-  z-index: 210;
+  z-index: 250;
+  background: rgba(6, 11, 28, 0.4);
   display: flex;
   justify-content: flex-end;
 }
@@ -6180,25 +6357,30 @@ div.flow-lib-bloco-icone {
   border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  box-shadow: -12px 0 32px rgba(11, 21, 51, 0.22);
+  box-shadow: -16px 0 40px rgba(11, 21, 51, 0.2);
 }
 
 .flow-side-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 14px 17px;
 }
 
-.flow-side-body .n {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--ink);
+.flow-sim-passos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.flow-side-body .r {
+.flow-sim-log {
+  margin-top: 14px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--navy-raised-2);
+  border: 1px solid var(--line);
   font-size: 11px;
-  color: var(--text-faint);
-  margin-top: 2px;
+  font-family: monospace;
+  white-space: pre-wrap;
 }
 
 .flow-versao-row {
@@ -6206,44 +6388,23 @@ div.flow-lib-bloco-icone {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 12px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--line-soft);
 }
 
-.flow-sim-passos {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.flow-sim-passos li {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.flow-sim-log {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 8px;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.flow-sim-log li {
-  background: var(--navy-raised);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 6px 9px;
-}
-
-@media (max-width: 1080px) {
-  .flow-config {
-    width: 300px;
-  }
+@media (max-width: 900px) {
   .flow-lib {
-    width: 240px;
+    position: absolute;
+    z-index: 20;
+    height: 100%;
+    box-shadow: 8px 0 24px rgba(11, 21, 51, 0.16);
+  }
+
+  .flow-config {
+    position: absolute;
+    right: 0;
+    z-index: 20;
+    height: 100%;
+    box-shadow: -8px 0 24px rgba(11, 21, 51, 0.16);
   }
 }

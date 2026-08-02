@@ -1,6 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 
@@ -24,6 +31,12 @@ import {
 import { useFunis } from "@/lib/funis-context";
 import { useNotificacoes } from "@/lib/notificacoes-context";
 import {
+  useConfigConversas,
+  FUNDOS_PRESET,
+  type FundoConversa,
+} from "@/lib/conversas-config-context";
+import { ThemeToggle } from "@/components/theme-toggle";
+import {
   CanalBadge,
   IconAutomacoes,
   IconCheck,
@@ -32,6 +45,7 @@ import {
   IconContatos,
   IconDoc,
   IconEmoji,
+  IconEnviar,
   IconErro,
   IconImage,
   IconLocalizacao,
@@ -64,6 +78,36 @@ function formatarTamanho(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function estiloFundoConversa(
+  fundo: FundoConversa,
+  opacidade: number,
+): CSSProperties {
+  const alfa = Math.max(0, Math.min(100, opacidade)) / 100;
+  if (fundo.tipo === "cor") {
+    return { backgroundColor: fundo.cor, opacity: undefined, ["--wa-fundo-alfa" as string]: alfa };
+  }
+  if (fundo.tipo === "imagem") {
+    return {
+      backgroundImage: `linear-gradient(rgba(0,0,0,${1 - alfa}), rgba(0,0,0,${1 - alfa})), url(${fundo.url})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    };
+  }
+  if (fundo.tipo === "preset") {
+    const preset = FUNDOS_PRESET.find((p) => p.id === fundo.id);
+    if (preset) {
+      return {
+        backgroundColor: preset.cor,
+        backgroundImage:
+          "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
+        backgroundSize: "14px 14px",
+        opacity: alfa < 1 ? 0.4 + alfa * 0.6 : 1,
+      };
+    }
+  }
+  return {};
 }
 
 function gerarIdMensagem() {
@@ -347,7 +391,18 @@ function ConversasPageInner() {
   const { contatos, salvarDadosContato, atribuirAtendente } = useContatos();
   const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
   const { fluxos, dispararEvento, registrarExecucao } = useAutomationFlows();
-  const { simularNovaMensagem } = useNotificacoes();
+  const { simularNovaMensagem, notificacoesAtivas, alternarNotificacoes } =
+    useNotificacoes();
+  const { config, atualizarConfig, restaurarPadrao, definirFundo, fundoDaConversa } =
+    useConfigConversas();
+  const [configConversasAberto, setConfigConversasAberto] = useState(false);
+  const [fundoEscopoForm, setFundoEscopoForm] = useState<"todas" | "atual">("todas");
+  const fundoUploadInputRef = useRef<HTMLInputElement>(null);
+
+  async function enviarImagemFundoDoComputador(file: File) {
+    const dataUrl = await lerComoDataUrl(file);
+    definirFundo({ tipo: "imagem", url: dataUrl }, fundoEscopoForm, aberta.id);
+  }
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const proximoToastId = useRef(0);
 
@@ -369,6 +424,71 @@ function ConversasPageInner() {
   const [buscaConversa, setBuscaConversa] = useState("");
   const [filtroConversa, setFiltroConversa] = useState<FiltroConversa>("tudo");
   const [lidas, setLidas] = useState<Set<string>>(() => new Set());
+  const [fixadas, setFixadas] = useState<Set<string>>(() => new Set());
+  const [silenciadas, setSilenciadas] = useState<Set<string>>(() => new Set());
+  const [arquivadas, setArquivadas] = useState<Set<string>>(() => new Set());
+  const [favoritasOverride, setFavoritasOverride] = useState<Record<string, boolean>>({});
+  const [encerradas, setEncerradas] = useState<Set<string>>(() => new Set());
+  const [rowMenuAberto, setRowMenuAberto] = useState<string | null>(null);
+  const [rowMenuRect, setRowMenuRect] = useState<DOMRect | null>(null);
+  const [mostrarArquivadas, setMostrarArquivadas] = useState(false);
+
+  function ehFavorita(c: { id: string; favorita?: boolean }) {
+    return favoritasOverride[c.id] ?? c.favorita ?? false;
+  }
+
+  function alternarFixada(id: string) {
+    setFixadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setRowMenuAberto(null);
+  }
+
+  function marcarComoNaoLida(id: string) {
+    setLidas((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setRowMenuAberto(null);
+  }
+
+  function alternarFavorita(id: string) {
+    const c = conversas.find((c) => c.id === id);
+    setFavoritasOverride((prev) => ({
+      ...prev,
+      [id]: !(prev[id] ?? c?.favorita ?? false),
+    }));
+    setRowMenuAberto(null);
+  }
+
+  function alternarSilenciada(id: string) {
+    setSilenciadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setRowMenuAberto(null);
+  }
+
+  function alternarArquivada(id: string) {
+    setArquivadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setRowMenuAberto(null);
+  }
+
+  function encerrarAtendimento(id: string) {
+    setEncerradas((prev) => new Set(prev).add(id));
+    setRowMenuAberto(null);
+  }
   const [midiasAberto, setMidiasAberto] = useState(false);
   const [midiasPos, setMidiasPos] = useState<{ x: number; y: number } | null>(null);
   const midiasRef = useRef<HTMLDivElement>(null);
@@ -410,20 +530,24 @@ function ConversasPageInner() {
   );
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
-  const conversasFiltradas = conversas.filter((c) => {
-    if (filtroConversa === "nao-lidas" && (!c.naoLidas || lidas.has(c.id))) return false;
-    if (filtroConversa === "favoritas" && !c.favorita) return false;
-    if (atendenteTopFiltro !== "Todos" && c.atendenteSelecionado !== atendenteTopFiltro)
-      return false;
-    if (canalTopFiltro !== "Todos" && c.origem !== canalTopFiltro) return false;
-    if (!buscaConversa.trim()) return true;
-    const termo = buscaConversa.trim().toLowerCase();
-    const ultima = c.mensagens[c.mensagens.length - 1];
-    return (
-      c.nome.toLowerCase().includes(termo) ||
-      ultima.texto.toLowerCase().includes(termo)
-    );
-  });
+  const conversasFiltradas = conversas
+    .filter((c) => {
+      if (!mostrarArquivadas && arquivadas.has(c.id)) return false;
+      if (mostrarArquivadas) return arquivadas.has(c.id);
+      if (filtroConversa === "nao-lidas" && (!c.naoLidas || lidas.has(c.id))) return false;
+      if (filtroConversa === "favoritas" && !ehFavorita(c)) return false;
+      if (atendenteTopFiltro !== "Todos" && c.atendenteSelecionado !== atendenteTopFiltro)
+        return false;
+      if (canalTopFiltro !== "Todos" && c.origem !== canalTopFiltro) return false;
+      if (!buscaConversa.trim()) return true;
+      const termo = buscaConversa.trim().toLowerCase();
+      const ultima = c.mensagens[c.mensagens.length - 1];
+      return (
+        c.nome.toLowerCase().includes(termo) ||
+        ultima.texto.toLowerCase().includes(termo)
+      );
+    })
+    .sort((a, b) => Number(fixadas.has(b.id)) - Number(fixadas.has(a.id)));
 
   const aberta = conversas.find((c) => c.id === selectedId) ?? conversas[0];
   const { tarefa } = aberta;
@@ -556,7 +680,11 @@ function ConversasPageInner() {
   const [respostasRapidasPorFunil, setRespostasRapidasPorFunil] = useState<
     Record<string, { id: string; titulo: string; texto: string }[]>
   >({});
-  const mensagemInputRef = useRef<HTMLInputElement>(null);
+  const mensagemInputRef = useRef<HTMLTextAreaElement>(null);
+  const [respondendoMensagem, setRespondendoMensagem] = useState<{
+    autor: string;
+    texto: string;
+  } | null>(null);
   const imagemInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const documentoInputRef = useRef<HTMLInputElement>(null);
@@ -593,6 +721,21 @@ function ConversasPageInner() {
     indice: number;
     zoom: number;
   } | null>(null);
+
+  // Mídias liberadas manualmente quando o download automático está desligado pra esse tipo.
+  const [midiasLiberadas, setMidiasLiberadas] = useState<Set<string>>(() => new Set());
+
+  function midiaLiberada(tipo: "imagem" | "video" | "documento", id?: string) {
+    if (config.downloadAutomatico && config.tiposDownloadAutomatico.includes(tipo)) {
+      return true;
+    }
+    return id ? midiasLiberadas.has(id) : false;
+  }
+
+  function liberarMidia(id?: string) {
+    if (!id) return;
+    setMidiasLiberadas((prev) => new Set(prev).add(id));
+  }
 
   // Vídeo: preview com corte real (in/out) e mudo, processado antes do envio.
   const [videoSelecionado, setVideoSelecionado] = useState<{
@@ -743,8 +886,14 @@ function ConversasPageInner() {
   function enviarMensagemTexto() {
     const texto = mensagemTexto.trim();
     if (!texto) return;
-    adicionarMensagem({ tipo: "out", texto, hora: horaAgora() });
+    adicionarMensagem({
+      tipo: "out",
+      texto,
+      hora: horaAgora(),
+      respondendoA: respondendoMensagem ?? undefined,
+    });
     setMensagemTexto("");
+    setRespondendoMensagem(null);
   }
 
   function alternarGravacaoAudio() {
@@ -1884,15 +2033,29 @@ function ConversasPageInner() {
         <aside className="wa-list">
           <div className="wa-list-head">
             <span>Conversas</span>
-            <button
-              type="button"
-              className={`wa-list-refresh${sincronizando ? " spinning" : ""}`}
-              aria-label="Recarregar conversas"
-              title="Recarregar conversas — use se as mensagens do celular conectado saírem de sincronia"
-              onClick={sincronizarConversas}
-            >
-              <IconRefresh width={14} height={14} />
-            </button>
+            <span className="wa-list-head-acoes">
+              <button
+                type="button"
+                className={`wa-list-refresh${sincronizando ? " spinning" : ""}`}
+                aria-label="Recarregar conversas"
+                title="Recarregar conversas — use se as mensagens do celular conectado saírem de sincronia"
+                onClick={sincronizarConversas}
+              >
+                <IconRefresh width={14} height={14} />
+              </button>
+              <button
+                type="button"
+                className="wa-list-config"
+                aria-label="Configurações das conversas"
+                title="Configurações das conversas"
+                onClick={() => {
+                  setFundoEscopoForm("todas");
+                  setConfigConversasAberto(true);
+                }}
+              >
+                <IconConfiguracoes width={15} height={15} />
+              </button>
+            </span>
           </div>
           <div className="wa-list-search">
             <label className="search wa-search">
@@ -1910,13 +2073,26 @@ function ConversasPageInner() {
               <button
                 type="button"
                 key={f.valor}
-                className={`wa-filter-chip${filtroConversa === f.valor ? " active" : ""}`}
-                aria-pressed={filtroConversa === f.valor}
-                onClick={() => setFiltroConversa(f.valor)}
+                className={`wa-filter-chip${!mostrarArquivadas && filtroConversa === f.valor ? " active" : ""}`}
+                aria-pressed={!mostrarArquivadas && filtroConversa === f.valor}
+                onClick={() => {
+                  setFiltroConversa(f.valor);
+                  setMostrarArquivadas(false);
+                }}
               >
                 {f.label}
               </button>
             ))}
+            {arquivadas.size > 0 ? (
+              <button
+                type="button"
+                className={`wa-filter-chip${mostrarArquivadas ? " active" : ""}`}
+                aria-pressed={mostrarArquivadas}
+                onClick={() => setMostrarArquivadas((v) => !v)}
+              >
+                Arquivadas ({arquivadas.size})
+              </button>
+            ) : null}
           </div>
 
           <div className="wa-list-rows">
@@ -1928,15 +2104,39 @@ function ConversasPageInner() {
             conversasFiltradas.map((c) => {
               const active = c.id === aberta.id;
               const last = c.mensagens[c.mensagens.length - 1];
+              const ultimaExtra = (mensagensExtraPorContato[c.nome] ?? []).at(-1);
+              const previaMsg = ultimaExtra ?? last;
+              const iconeTipo = ultimaExtra?.imagens
+                ? "🖼️ "
+                : ultimaExtra?.video
+                  ? "🎥 "
+                  : ultimaExtra?.documento
+                    ? "📄 "
+                    : ultimaExtra?.localizacao
+                      ? "📍 "
+                      : ultimaExtra?.contatoCompartilhado
+                        ? "👤 "
+                        : "";
+              const previaTexto =
+                previaMsg.texto ||
+                (ultimaExtra?.legenda ?? (iconeTipo ? "Anexo" : ""));
               return (
-                <button
-                  type="button"
+                <div
                   key={c.id}
+                  role="button"
+                  tabIndex={0}
                   className={`wa-row${active ? " active" : ""}`}
                   aria-pressed={active}
                   onClick={() => {
                     setSelectedId(c.id);
                     setLidas((prev) => (prev.has(c.id) ? prev : new Set(prev).add(c.id)));
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedId(c.id);
+                      setLidas((prev) => (prev.has(c.id) ? prev : new Set(prev).add(c.id)));
+                    }
                   }}
                 >
                   <span className="cr1">
@@ -1945,25 +2145,119 @@ function ConversasPageInner() {
                       <CanalBadge canal={c.canal} />
                     </span>
                     <span className="cname">
+                      {fixadas.has(c.id) ? <span className="wa-pin-icone">📌</span> : null}
                       {c.nome}
-                      {c.favorita ? <span className="wa-fav-star">★</span> : null}
+                      {ehFavorita(c) ? <span className="wa-fav-star">★</span> : null}
+                      {silenciadas.has(c.id) ? (
+                        <span className="wa-mute-icone" title="Silenciada">
+                          🔕
+                        </span>
+                      ) : null}
                     </span>
                     <span className="ctime">{c.tempo}</span>
                   </span>
                   <span className="cmsg">
-                    {last.tipo === "out" ? "Você: " : ""}
-                    {last.texto}
+                    {previaMsg.tipo === "out" ? (
+                      <>
+                        Você:{" "}
+                        <StatusMensagemIcone status={previaMsg.status} />{" "}
+                      </>
+                    ) : (
+                      ""
+                    )}
+                    {iconeTipo}
+                    {previaTexto}
                     {c.naoLidas && !lidas.has(c.id) ? (
                       <span className="wa-unread-badge">{c.naoLidas}</span>
                     ) : null}
                   </span>
                   <span className="cr3">
-                    <span className="tag">{c.status}</span>
+                    <span className="tag">
+                      {encerradas.has(c.id) ? "Finalizado" : c.status}
+                    </span>
                     <span className={`tag ${classeOrigem(c.origem)}`}>
                       {c.origem}
                     </span>
                   </span>
-                </button>
+                  <button
+                    type="button"
+                    className="wa-row-menu-btn"
+                    aria-label={`Mais ações — ${c.nome}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRowMenuRect(e.currentTarget.getBoundingClientRect());
+                      setRowMenuAberto(rowMenuAberto === c.id ? null : c.id);
+                    }}
+                  >
+                    ⋮
+                  </button>
+                  {rowMenuAberto === c.id ? (
+                    <FloatingDropdown
+                      anchorRect={rowMenuRect}
+                      align="right"
+                      width={220}
+                      onClose={() => setRowMenuAberto(null)}
+                    >
+                      <button
+                        type="button"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        onClick={() => alternarFixada(c.id)}
+                      >
+                        <span className="n">
+                          {fixadas.has(c.id) ? "Desafixar conversa" : "Fixar conversa"}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        onClick={() => marcarComoNaoLida(c.id)}
+                      >
+                        <span className="n">Marcar como não lida</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        onClick={() => alternarFavorita(c.id)}
+                      >
+                        <span className="n">
+                          {ehFavorita(c) ? "Remover dos favoritos" : "Favoritar"}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        onClick={() => alternarSilenciada(c.id)}
+                      >
+                        <span className="n">
+                          {silenciadas.has(c.id) ? "Reativar som" : "Silenciar"}
+                        </span>
+                      </button>
+                      <div className="dropdown-sep" />
+                      <button
+                        type="button"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        onClick={() => alternarArquivada(c.id)}
+                      >
+                        <span className="n">
+                          {arquivadas.has(c.id) ? "Desarquivar" : "Arquivar conversa"}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        onClick={() => encerrarAtendimento(c.id)}
+                      >
+                        <span className="n">Encerrar atendimento</span>
+                      </button>
+                    </FloatingDropdown>
+                  ) : null}
+                </div>
               );
             })
           )}
@@ -2001,7 +2295,8 @@ function ConversasPageInner() {
           </div>
 
           <div
-            className={`chat-body${arrastandoArquivo ? " wa-dragover" : ""}`}
+            className={`chat-body wa-fonte-${config.tamanhoFonte}${arrastandoArquivo ? " wa-dragover" : ""}`}
+            style={estiloFundoConversa(fundoDaConversa(aberta.id), config.fundoOpacidade)}
             onDragOver={(e) => {
               e.preventDefault();
               if (e.dataTransfer.types.includes("Files")) setArrastandoArquivo(true);
@@ -2036,6 +2331,24 @@ function ConversasPageInner() {
                 style={msg.tipo === "in" ? { cursor: "pointer" } : undefined}
                 title={msg.tipo === "in" ? "Dois cliques pra curtir" : undefined}
               >
+                {msg.tipo !== "system" ? (
+                  <button
+                    type="button"
+                    className="wa-reply-btn"
+                    aria-label="Responder essa mensagem"
+                    title="Responder"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRespondendoMensagem({
+                        autor: msg.tipo === "in" ? aberta.nome : "Você",
+                        texto: msg.texto,
+                      });
+                      mensagemInputRef.current?.focus();
+                    }}
+                  >
+                    ↩
+                  </button>
+                ) : null}
                 {msg.texto}
                 {msg.hora ? <span className="tm">{msg.hora}</span> : null}
                 {mensagensCurtidas.has(i) ? (
@@ -2121,25 +2434,36 @@ function ConversasPageInner() {
                   className={`bubble ${msg.tipo} bubble-midia`}
                   key={msg.id ?? `extra-${i}`}
                 >
-                  <div
-                    className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}
-                  >
-                    {msg.imagens.map((img, ix) => (
-                      <button
-                        type="button"
-                        key={`${msg.id}-img-${ix}`}
-                        className="bubble-imagem-btn"
-                        onClick={() =>
-                          abrirLightbox(
-                            msg.imagens!.map((im) => im.url),
-                            ix,
-                          )
-                        }
-                      >
-                        <img src={img.url} alt={img.nome} loading="lazy" />
-                      </button>
-                    ))}
-                  </div>
+                  {midiaLiberada("imagem", msg.id) ? (
+                    <div
+                      className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}
+                    >
+                      {msg.imagens.map((img, ix) => (
+                        <button
+                          type="button"
+                          key={`${msg.id}-img-${ix}`}
+                          className="bubble-imagem-btn"
+                          onClick={() =>
+                            abrirLightbox(
+                              msg.imagens!.map((im) => im.url),
+                              ix,
+                            )
+                          }
+                        >
+                          <img src={img.url} alt={img.nome} loading="lazy" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="bubble-midia-bloqueada"
+                      onClick={() => liberarMidia(msg.id)}
+                    >
+                      <IconImage width={18} height={18} />
+                      Baixar {msg.imagens.length > 1 ? "imagens" : "imagem"}
+                    </button>
+                  )}
                   {msg.legenda ? (
                     <p className="bubble-legenda">{msg.legenda}</p>
                   ) : null}
@@ -2162,13 +2486,24 @@ function ConversasPageInner() {
                   className={`bubble ${msg.tipo} bubble-midia`}
                   key={msg.id ?? `extra-${i}`}
                 >
-                  <video
-                    className="bubble-video"
-                    src={msg.video.url}
-                    controls
-                    preload="metadata"
-                    muted={!msg.video.comAudio}
-                  />
+                  {midiaLiberada("video", msg.id) ? (
+                    <video
+                      className="bubble-video"
+                      src={msg.video.url}
+                      controls
+                      preload="metadata"
+                      muted={!msg.video.comAudio}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className="bubble-midia-bloqueada"
+                      onClick={() => liberarMidia(msg.id)}
+                    >
+                      <IconVideoCam width={18} height={18} />
+                      Baixar vídeo
+                    </button>
+                  )}
                   {msg.legenda ? (
                     <p className="bubble-legenda">{msg.legenda}</p>
                   ) : null}
@@ -2227,6 +2562,12 @@ function ConversasPageInner() {
                 </div>
               ) : (
                 <div className={`bubble ${msg.tipo}`} key={msg.id ?? `extra-${i}`}>
+                  {msg.respondendoA ? (
+                    <span className="wa-citacao">
+                      <span className="wa-citacao-autor">{msg.respondendoA.autor}</span>
+                      <span className="wa-citacao-texto">{msg.respondendoA.texto}</span>
+                    </span>
+                  ) : null}
                   {msg.texto}
                   <span className="tm">
                     {msg.hora}
@@ -2281,16 +2622,48 @@ function ConversasPageInner() {
                   {String(audioSegundos % 60).padStart(2, "0")}
                 </div>
               ) : (
-                <input
-                  ref={mensagemInputRef}
-                  className="box chat-input-campo"
-                  placeholder="Digite uma mensagem... (/ para respostas rápidas, // para automações)"
-                  value={mensagemTexto}
-                  onChange={(e) => setMensagemTexto(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") enviarMensagemTexto();
-                  }}
-                />
+                <div className="chat-input-campo-coluna">
+                  {respondendoMensagem ? (
+                    <div className="chat-respondendo">
+                      <span className="chat-respondendo-barra" />
+                      <span className="chat-respondendo-texto">
+                        <span className="chat-respondendo-autor">
+                          Respondendo a {respondendoMensagem.autor}
+                        </span>
+                        <span className="chat-respondendo-preview">
+                          {respondendoMensagem.texto}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        className="chat-respondendo-fechar"
+                        aria-label="Cancelar resposta"
+                        onClick={() => setRespondendoMensagem(null)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : null}
+                  <textarea
+                    ref={mensagemInputRef}
+                    className="box chat-input-campo"
+                    rows={1}
+                    placeholder="Digite uma mensagem... (/ para respostas rápidas, // para automações)"
+                    value={mensagemTexto}
+                    onChange={(e) => setMensagemTexto(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      const quebrarLinha = config.teclaEnterEnvia
+                        ? e.shiftKey
+                        : !(e.ctrlKey || e.metaKey);
+                      if (!quebrarLinha) {
+                        e.preventDefault();
+                        enviarMensagemTexto();
+                        setRespondendoMensagem(null);
+                      }
+                    }}
+                  />
+                </div>
               )}
               {sugerirRespostas ? (
                 <div className="chat-sugestoes">
@@ -2348,16 +2721,31 @@ function ConversasPageInner() {
             >
               <IconEmoji strokeWidth={1.4} />
             </button>
-            <button
-              type="button"
-              className={`chat-mic-btn${gravandoAudio ? " active" : ""}`}
-              aria-pressed={gravandoAudio}
-              aria-label={gravandoAudio ? "Parar e enviar áudio" : "Gravar áudio"}
-              title={gravandoAudio ? "Parar e enviar áudio" : "Gravar áudio"}
-              onClick={alternarGravacaoAudio}
-            >
-              <IconMic />
-            </button>
+            {!gravandoAudio && mensagemTexto.trim() ? (
+              <button
+                type="button"
+                className="chat-mic-btn chat-send-btn"
+                aria-label="Enviar mensagem"
+                title="Enviar mensagem"
+                onClick={() => {
+                  enviarMensagemTexto();
+                  setRespondendoMensagem(null);
+                }}
+              >
+                <IconEnviar />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={`chat-mic-btn${gravandoAudio ? " active" : ""}`}
+                aria-pressed={gravandoAudio}
+                aria-label={gravandoAudio ? "Parar e enviar áudio" : "Gravar áudio"}
+                title={gravandoAudio ? "Parar e enviar áudio" : "Gravar áudio"}
+                onClick={alternarGravacaoAudio}
+              >
+                <IconMic />
+              </button>
+            )}
           </div>
 
           <input
@@ -3196,6 +3584,300 @@ function ConversasPageInner() {
                 >
                   Baixar
                 </a>
+              </div>
+            </div>
+          ) : null}
+
+          {configConversasAberto ? (
+            <div
+              className="form-preview-overlay"
+              onClick={() => setConfigConversasAberto(false)}
+            >
+              <div
+                className="wa-email-modal wa-config-modal"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+                  <p className="n">Configurações das conversas</p>
+                  <button
+                    type="button"
+                    className="modal-close-btn"
+                    aria-label="Fechar"
+                    onClick={() => setConfigConversasAberto(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="wa-config-secao">
+                  <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
+                    Aparência
+                  </p>
+
+                  <div
+                    className="wa-config-fundo-preview"
+                    style={estiloFundoConversa(
+                      fundoEscopoForm === "atual"
+                        ? fundoDaConversa(aberta.id)
+                        : config.fundo,
+                      config.fundoOpacidade,
+                    )}
+                  >
+                    <span className="bubble in" style={{ maxWidth: "70%" }}>
+                      Prévia do fundo
+                    </span>
+                  </div>
+
+                  <div className="filters-row" style={{ marginTop: 10, marginBottom: 6 }}>
+                    <button
+                      type="button"
+                      className={`fchip${fundoEscopoForm === "todas" ? " active" : ""}`}
+                      onClick={() => setFundoEscopoForm("todas")}
+                    >
+                      Aplicar em todas as conversas
+                    </button>
+                    <button
+                      type="button"
+                      className={`fchip${fundoEscopoForm === "atual" ? " active" : ""}`}
+                      onClick={() => setFundoEscopoForm("atual")}
+                    >
+                      Só nessa conversa
+                    </button>
+                  </div>
+
+                  <p className="hint" style={{ marginBottom: 6 }}>
+                    Fundos prontos
+                  </p>
+                  <div className="wa-config-fundos-grid">
+                    <button
+                      type="button"
+                      className="wa-config-fundo-opcao wa-config-fundo-padrao"
+                      onClick={() =>
+                        definirFundo({ tipo: "padrao" }, fundoEscopoForm, aberta.id)
+                      }
+                    >
+                      Padrão
+                    </button>
+                    {FUNDOS_PRESET.map((preset) => (
+                      <button
+                        type="button"
+                        key={preset.id}
+                        className="wa-config-fundo-opcao"
+                        style={{ background: preset.cor, color: "white" }}
+                        onClick={() =>
+                          definirFundo(
+                            { tipo: "preset", id: preset.id },
+                            fundoEscopoForm,
+                            aberta.id,
+                          )
+                        }
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="wa-config-fundo-acoes">
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => fundoUploadInputRef.current?.click()}
+                    >
+                      Enviar imagem do computador
+                    </button>
+                    <input
+                      ref={fundoUploadInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) enviarImagemFundoDoComputador(f);
+                        e.target.value = "";
+                      }}
+                    />
+                    <label className="wa-config-cor-label">
+                      Cor sólida
+                      <input
+                        type="color"
+                        onChange={(e) =>
+                          definirFundo(
+                            { tipo: "cor", cor: e.target.value },
+                            fundoEscopoForm,
+                            aberta.id,
+                          )
+                        }
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() =>
+                        definirFundo({ tipo: "padrao" }, fundoEscopoForm, aberta.id)
+                      }
+                    >
+                      Remover fundo
+                    </button>
+                  </div>
+
+                  <label className="hint" style={{ display: "block", marginTop: 10 }}>
+                    Intensidade do fundo
+                    <input
+                      type="range"
+                      min={20}
+                      max={100}
+                      value={config.fundoOpacidade}
+                      onChange={(e) =>
+                        atualizarConfig({ fundoOpacidade: Number(e.target.value) })
+                      }
+                      style={{ width: "100%", marginTop: 4 }}
+                    />
+                  </label>
+                </div>
+
+                <div className="wa-config-secao">
+                  <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
+                    Confirmações de leitura
+                  </p>
+                  <div className="wa-config-radio-lista">
+                    {(
+                      [
+                        { valor: "todos", label: "Ativar para todos os contatos" },
+                        { valor: "salvos", label: "Ativar apenas para números salvos" },
+                        { valor: "desativado", label: "Desativar" },
+                      ] as const
+                    ).map((op) => (
+                      <button
+                        type="button"
+                        key={op.valor}
+                        className="vendor-row bare"
+                        aria-pressed={config.confirmacaoLeitura === op.valor}
+                        onClick={() => atualizarConfig({ confirmacaoLeitura: op.valor })}
+                      >
+                        <span
+                          className={`radio${config.confirmacaoLeitura === op.valor ? " sel" : ""}`}
+                        />
+                        <span className="body">
+                          <span className="n" style={{ display: "block" }}>
+                            {op.label}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="hint" style={{ marginTop: 8 }}>
+                    As confirmações de leitura dependem das permissões e dos recursos
+                    disponibilizados pelo canal conectado.
+                  </p>
+                </div>
+
+                <div className="wa-config-secao">
+                  <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
+                    Outras configurações
+                  </p>
+
+                  <div className="toggle-row">
+                    <span className="tl">Sons e notificações de novas mensagens</span>
+                    <Toggle
+                      key={`som-${notificacoesAtivas}`}
+                      defaultOn={notificacoesAtivas}
+                      label="Sons e notificações de novas mensagens"
+                      onToggle={() => alternarNotificacoes()}
+                    />
+                  </div>
+
+                  <div className="toggle-row">
+                    <span className="tl">Mostrar prévia das mensagens</span>
+                    <Toggle
+                      key={`previa-${config.previaMensagens}`}
+                      defaultOn={config.previaMensagens}
+                      label="Mostrar prévia das mensagens"
+                      onToggle={(v) => atualizarConfig({ previaMensagens: v })}
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label>Tamanho da fonte da conversa</label>
+                    <div className="filters-row">
+                      {(
+                        [
+                          { valor: "pequena", label: "Pequena" },
+                          { valor: "media", label: "Média" },
+                          { valor: "grande", label: "Grande" },
+                        ] as const
+                      ).map((op) => (
+                        <button
+                          type="button"
+                          key={op.valor}
+                          className={`fchip${config.tamanhoFonte === op.valor ? " active" : ""}`}
+                          onClick={() => atualizarConfig({ tamanhoFonte: op.valor })}
+                        >
+                          {op.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="field">
+                    <label>Tema</label>
+                    <ThemeToggle />
+                  </div>
+
+                  <div className="toggle-row">
+                    <span className="tl">Enter envia a mensagem (desligado = Enter quebra linha)</span>
+                    <Toggle
+                      key={`enter-${config.teclaEnterEnvia}`}
+                      defaultOn={config.teclaEnterEnvia}
+                      label="Enter envia a mensagem"
+                      onToggle={(v) => atualizarConfig({ teclaEnterEnvia: v })}
+                    />
+                  </div>
+
+                  <div className="toggle-row">
+                    <span className="tl">Download automático de mídias</span>
+                    <Toggle
+                      key={`download-${config.downloadAutomatico}`}
+                      defaultOn={config.downloadAutomatico}
+                      label="Download automático de mídias"
+                      onToggle={(v) => atualizarConfig({ downloadAutomatico: v })}
+                    />
+                  </div>
+
+                  {config.downloadAutomatico ? (
+                    <div className="filters-row" style={{ marginTop: 4 }}>
+                      {["imagem", "video", "documento"].map((tipo) => (
+                        <button
+                          type="button"
+                          key={tipo}
+                          className={`fchip${config.tiposDownloadAutomatico.includes(tipo) ? " active" : ""}`}
+                          onClick={() =>
+                            atualizarConfig({
+                              tiposDownloadAutomatico:
+                                config.tiposDownloadAutomatico.includes(tipo)
+                                  ? config.tiposDownloadAutomatico.filter((t) => t !== tipo)
+                                  : [...config.tiposDownloadAutomatico, tipo],
+                            })
+                          }
+                        >
+                          {tipo === "imagem" ? "Imagens" : tipo === "video" ? "Vídeos" : "Documentos"}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="wa-contato-modal-rodape">
+                  <button type="button" className="btn ghost" onClick={restaurarPadrao}>
+                    Restaurar tudo ao padrão
+                  </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={() => setConfigConversasAberto(false)}
+                  >
+                    Concluído
+                  </button>
+                </div>
               </div>
             </div>
           ) : null}
