@@ -473,6 +473,8 @@ export type ConvMensagem = {
   documento?: AnexoDocumento;
   /** Legenda opcional que acompanha imagem/vídeo. */
   legenda?: string;
+  /** Presente quando o usuário respondeu a uma mensagem específica — mostra a citação em cima do texto. */
+  respondendoA?: { autor: string; texto: string };
   /** Só existe em mensagens "out" — o estado real reportado pelo canal. */
   status?: StatusMensagem;
   /** Motivo do erro, quando status === "erro" — mostrado com a opção de tentar de novo. */
