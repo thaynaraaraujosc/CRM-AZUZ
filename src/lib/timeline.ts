@@ -113,6 +113,31 @@ export function estimarMinutosAtras(raw: string): number {
   return SEM_DATA;
 }
 
+export type EstadoCicloDeVida =
+  | "Novo lead"
+  | "Em atendimento"
+  | "Em negociação"
+  | "Cliente"
+  | "Perdido";
+
+/**
+ * Estado do ciclo de vida do contato — derivado da etapa atual dele no funil
+ * e de eventuais negociações perdidas registradas, nunca de um campo
+ * separado que possa dessincronizar. Ver seção 5 do escopo: os estados são
+ * transições, não um campo solto editado à mão.
+ */
+export function inferirEstadoCicloDeVida(
+  contato: Pick<Contato, "nome" | "etapa">,
+  oportunidadesPerdidas: FontesTimeline["oportunidadesPerdidas"],
+): EstadoCicloDeVida {
+  if (contato.etapa === "Fechado") return "Cliente";
+  const perdeu = oportunidadesPerdidas.some((o) => o.cliente === contato.nome);
+  if (perdeu && contato.etapa === "Novo") return "Perdido";
+  if (contato.etapa === "Proposta") return "Em negociação";
+  if (contato.etapa === "Qualificado") return "Em atendimento";
+  return "Novo lead";
+}
+
 type FontesTimeline = {
   contatos: Contato[];
   conversas: Conversa[];

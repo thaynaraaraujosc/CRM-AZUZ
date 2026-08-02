@@ -328,6 +328,9 @@ function ContatosPageInner() {
 
             <div className="panel-h divided">
               <h4>Linha do tempo</h4>
+              <a href={`/jornada-cliente?contato=${contato.id}`} className="link">
+                Ver jornada completa
+              </a>
             </div>
             <Timeline
               eventos={gerarLinhaDoTempo(contato.id, {

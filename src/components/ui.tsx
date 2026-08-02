@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 
 /**
  * Popover flutuante montado via portal em document.body, posicionado com
@@ -379,6 +380,60 @@ export function MediaPicker({
           </span>
         </button>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Cartão de indicador padronizado — usado em toda a área de Inteligência
+ * comercial (Visão geral, Performance, Atividades, CRM Live) pra garantir
+ * que todo indicador olhe/funcione igual: mostra a fórmula no hover (seção
+ * 15 do escopo) e, quando tem `href`, é clicável e abre os registros reais
+ * que formaram o número (seção 14).
+ */
+export function KpiCard({
+  label,
+  value,
+  sub,
+  delta,
+  formula,
+  href,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  delta?: string;
+  /** Fórmula exibida no tooltip nativo (title) ao passar o mouse. */
+  formula?: string;
+  href?: string;
+}) {
+  const conteudo = (
+    <>
+      <p className="l">{label}</p>
+      <p className="n">{value}</p>
+      {sub ? <p className="hint">{sub}</p> : null}
+      {delta ? <p className="delta">{delta}</p> : null}
+    </>
+  );
+
+  const title = formula ? `Fórmula: ${formula}` : undefined;
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="card kpi kpi-clickable"
+        title={title}
+        style={{ display: "block", textDecoration: "none", cursor: "pointer" }}
+      >
+        {conteudo}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="card kpi" title={title}>
+      {conteudo}
     </div>
   );
 }

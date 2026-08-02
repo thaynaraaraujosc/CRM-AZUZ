@@ -186,6 +186,35 @@ export function calcularValorPerdido(base = oportunidadesPerdidasPadrao): Metric
 
 type MotivoPerda = (typeof motivosPerdaPadrao)[number];
 
+/** Oportunidades contatadas = soma de oportunidades atendidas por todos os responsáveis no período. */
+export function calcularOportunidadesContatadas(
+  base = tempoPrimeiroContatoPadrao,
+): Metrica<(typeof tempoPrimeiroContatoPadrao)[number]> {
+  const valor = base.reduce((s, r) => s + r.oportunidades, 0);
+  return {
+    valor,
+    label: String(valor),
+    formula: "Soma de oportunidades com pelo menos um atendimento registrado, por responsável, no período",
+    registros: base,
+  };
+}
+
+/** Ticket médio = valor total vendido ÷ quantidade de negociações vendidas no período. */
+export function calcularTicketMedio(
+  baseValor = faturamentoPadrao,
+  baseQtd = conversaoPadrao,
+): Metrica<(typeof faturamentoPadrao)[number]> {
+  const valorTotal = baseValor.reduce((s, r) => s + r.valor, 0);
+  const qtd = baseQtd.reduce((s, r) => s + r.vendidas, 0);
+  const valor = qtd > 0 ? valorTotal / qtd : 0;
+  return {
+    valor,
+    label: formatarMoeda(valor),
+    formula: "Valor total vendido ÷ quantidade de negociações vendidas no período",
+    registros: baseValor,
+  };
+}
+
 /** Principal motivo de perda = motivo com maior quantidade de negociações perdidas no período. */
 export function calcularMotivoPrincipalPerda(
   base = motivosPerdaPadrao,

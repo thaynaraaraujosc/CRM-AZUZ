@@ -6516,3 +6516,12 @@ button.timeline-card:hover {
   color: var(--text-faint);
   font-size: 13px;
 }
+
+.kpi-clickable {
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.kpi-clickable:hover {
+  border-color: var(--blue);
+  transform: translateY(-1px);
+}

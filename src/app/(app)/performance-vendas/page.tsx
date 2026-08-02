@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 import {
   conversaoPorResponsavel,
@@ -34,8 +35,19 @@ const AGRUPAMENTOS = ["Etapas do funil", "Responsável"] as const;
 type Agrupamento = (typeof AGRUPAMENTOS)[number];
 
 export default function PerformanceVendasPage() {
+  return (
+    <Suspense fallback={null}>
+      <PerformanceVendasPageInner />
+    </Suspense>
+  );
+}
+
+function PerformanceVendasPageInner() {
+  const searchParams = useSearchParams();
   const { funis } = useFunis();
-  const [abaAtiva, setAbaAtiva] = useState<Aba>("Conversão");
+  const [abaAtiva, setAbaAtiva] = useState<Aba>(
+    searchParams.get("aba") === "motivos-perda" ? "Motivos de perda" : "Conversão",
+  );
   const [modoGrafico, setModoGrafico] = useState<"lista" | "barras">("barras");
   const [modoValor, setModoValor] = useState<"volume" | "percentual">("volume");
 
