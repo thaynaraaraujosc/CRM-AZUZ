@@ -1156,12 +1156,26 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     });
   }
 
+  /**
+   * O conteúdo digitado só chega em `paginasLocais` depois do debounce do autosave (600ms) — ler
+   * o estado direto na impressão/exportação corre o risco de perder a digitação mais recente se o
+   * usuário imprimir/exportar rápido demais depois de digitar. Isso lê o HTML atual direto do DOM de
+   * cada página (sem esperar o debounce), garantindo que impressão e exportação sempre reflitam
+   * exatamente o que está na tela.
+   */
+  function paginasComConteudoAtual(): PaginaDoc[] {
+    return paginasLocais.map((p) => {
+      const el = paginaRefs.current[p.id];
+      return el ? { ...p, conteudoHtml: el.innerHTML } : p;
+    });
+  }
+
   /** Visualização de impressão própria — só o conteúdo do documento, sem menu/barra/régua/botões. */
   function abrirPreviaImpressao() {
     if (!doc) return;
     abrirPreviaImpressaoLimpa(
       doc.titulo,
-      paginasLocais.map((p) => p.conteudoHtml),
+      paginasComConteudoAtual().map((p) => p.conteudoHtml),
       { larguraMm, alturaMm, margemSuperiorMm, margemInferiorMm, margemEsquerdaMm, margemDireitaMm, corFundo: doc.config.corFundo },
     );
   }
@@ -1857,10 +1871,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     },
     "sep",
     { label: "Baixar como PDF", onClick: () => setExportarPdfAberto(true) },
-    { label: "Baixar como Word (.docx)", onClick: () => baixarDocx(doc.titulo, paginasLocais) },
-    { label: "Baixar como texto simples (.txt)", onClick: () => baixarTxt(doc.titulo, paginasLocais) },
-    { label: "Baixar como RTF", onClick: () => baixarRtf(doc.titulo, paginasLocais) },
-    { label: "Baixar como HTML", onClick: () => baixarHtml(doc.titulo, paginasLocais) },
+    { label: "Baixar como Word (.docx)", onClick: () => baixarDocx(doc.titulo, paginasComConteudoAtual()) },
+    { label: "Baixar como texto simples (.txt)", onClick: () => baixarTxt(doc.titulo, paginasComConteudoAtual()) },
+    { label: "Baixar como RTF", onClick: () => baixarRtf(doc.titulo, paginasComConteudoAtual()) },
+    { label: "Baixar como HTML", onClick: () => baixarHtml(doc.titulo, paginasComConteudoAtual()) },
   ];
 
   function tentarQueryCommandEnabled(comando: string) {
