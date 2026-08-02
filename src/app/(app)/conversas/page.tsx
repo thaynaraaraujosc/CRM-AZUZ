@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import {
   classeOrigem,
   conversas,
   motivosPerda,
+  type ConvMensagem,
   type Funil,
   type NegocioCard,
 } from "@/lib/data";
@@ -237,6 +238,18 @@ function ConversasPageInner() {
     Record<string, HistoricoItem[]>
   >({});
   const [notaTexto, setNotaTexto] = useState("");
+  const [mensagensExtraPorContato, setMensagensExtraPorContato] = useState<
+    Record<string, ConvMensagem[]>
+  >({});
+  const [mensagemTexto, setMensagemTexto] = useState("");
+  const [gravandoAudio, setGravandoAudio] = useState(false);
+  const [audioSegundos, setAudioSegundos] = useState(0);
+
+  useEffect(() => {
+    if (!gravandoAudio) return;
+    const intervalo = setInterval(() => setAudioSegundos((s) => s + 1), 1000);
+    return () => clearInterval(intervalo);
+  }, [gravandoAudio]);
   const [resultadoPorContato, setResultadoPorContato] = useState<
     Record<string, "venda" | "perda">
   >({});
@@ -294,6 +307,43 @@ function ConversasPageInner() {
     if (!texto) return;
     adicionarHistorico("anotacao", texto);
     setNotaTexto("");
+  }
+
+  function horaAgora() {
+    return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function adicionarMensagem(msg: ConvMensagem) {
+    setMensagensExtraPorContato((prev) => ({
+      ...prev,
+      [aberta.nome]: [...(prev[aberta.nome] ?? []), msg],
+    }));
+  }
+
+  function enviarMensagemTexto() {
+    const texto = mensagemTexto.trim();
+    if (!texto) return;
+    adicionarMensagem({ tipo: "out", texto, hora: horaAgora() });
+    setMensagemTexto("");
+  }
+
+  function alternarGravacaoAudio() {
+    if (gravandoAudio) {
+      const min = Math.floor(audioSegundos / 60);
+      const seg = audioSegundos % 60;
+      setGravandoAudio(false);
+      if (audioSegundos > 0) {
+        adicionarMensagem({
+          tipo: "out",
+          texto: `🎤 Áudio · ${min}:${String(seg).padStart(2, "0")}`,
+          hora: horaAgora(),
+        });
+      }
+      setAudioSegundos(0);
+    } else {
+      setAudioSegundos(0);
+      setGravandoAudio(true);
+    }
   }
 
   function marcarVenda() {
@@ -719,14 +769,37 @@ function ConversasPageInner() {
                 ) : null}
               </div>
             ))}
+            {(mensagensExtraPorContato[aberta.nome] ?? []).map((msg, i) => (
+              <div className={`bubble ${msg.tipo}`} key={`extra-${i}`}>
+                {msg.texto}
+                {msg.hora ? <span className="tm">{msg.hora}</span> : null}
+              </div>
+            ))}
           </div>
           <div className="chat-input">
-            <div className="box">Escrever mensagem…</div>
+            {gravandoAudio ? (
+              <div className="box chat-input-gravando">
+                🔴 Gravando áudio · {Math.floor(audioSegundos / 60)}:
+                {String(audioSegundos % 60).padStart(2, "0")}
+              </div>
+            ) : (
+              <input
+                className="box chat-input-campo"
+                placeholder="Escrever mensagem…"
+                value={mensagemTexto}
+                onChange={(e) => setMensagemTexto(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") enviarMensagemTexto();
+                }}
+              />
+            )}
             <button
               type="button"
-              className="chat-mic-btn"
-              aria-label="Gravar áudio"
-              title="Gravar áudio"
+              className={`chat-mic-btn${gravandoAudio ? " active" : ""}`}
+              aria-pressed={gravandoAudio}
+              aria-label={gravandoAudio ? "Parar e enviar áudio" : "Gravar áudio"}
+              title={gravandoAudio ? "Parar e enviar áudio" : "Gravar áudio"}
+              onClick={alternarGravacaoAudio}
             >
               <IconMic />
             </button>

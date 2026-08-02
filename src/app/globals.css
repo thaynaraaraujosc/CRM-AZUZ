@@ -1531,6 +1531,20 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
+.chat-input-campo {
+  font-family: inherit;
+  color: var(--text);
+}
+
+.chat-input-campo::placeholder {
+  color: var(--text-faint);
+}
+
+.chat-input-gravando {
+  color: #d64545;
+  font-weight: 600;
+}
+
 .chat-mic-btn {
   flex: 0 0 auto;
   width: 34px;
@@ -1552,6 +1566,11 @@ table.tbl tbody tr:hover td {
 
 .chat-mic-btn:hover {
   background: var(--blue-soft);
+}
+
+.chat-mic-btn.active {
+  background: #d64545;
+  color: #fff;
 }
 
 /* ---------------- WhatsApp (estilo WhatsApp Web: lista + conversa + painel) ---------------- */
