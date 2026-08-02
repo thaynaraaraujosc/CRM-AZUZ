@@ -623,6 +623,15 @@ table {
   border-color: transparent;
 }
 
+/* Variante discreta — não é status ligado/desligado, é um rótulo informativo
+   (ex.: "Modelo de demonstração", tags de funcionalidades da pré-visualização). */
+.pill.secondary {
+  background: var(--navy-raised-2);
+  color: var(--text-faint);
+  border-color: var(--line);
+  font-weight: 700;
+}
+
 .toggle {
   width: 36px;
   height: 20px;
@@ -5692,6 +5701,18 @@ table.tbl tbody tr:hover td {
   justify-content: center;
 }
 
+.form-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(11, 21, 51, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
 .wa-lightbox-imagem {
   max-width: 88vw;
   max-height: 78vh;
@@ -6372,6 +6393,31 @@ table.tbl tbody tr:hover td {
   gap: 8px;
 }
 
+.flow-sim-banner {
+  background: var(--blue-soft);
+  color: var(--blue);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.flow-sim-continuar {
+  margin-top: 14px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--navy-raised-2);
+  border: 1px solid var(--line);
+}
+
+.flow-sim-opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
 .flow-sim-log {
   margin-top: 14px;
   padding: 10px;
@@ -6381,6 +6427,50 @@ table.tbl tbody tr:hover td {
   font-size: 11px;
   font-family: monospace;
   white-space: pre-wrap;
+}
+
+/* ---------------- Pré-visualização somente-leitura ("Visualizar fluxo") --- */
+
+.flow-preview-panel {
+  width: min(1180px, 96vw);
+  height: min(860px, 94vh);
+  margin: auto;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(11, 21, 51, 0.28);
+  overflow: hidden;
+}
+
+.flow-preview-summary {
+  padding: 4px 17px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flow-preview-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.flow-preview-canvas {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+@media (max-width: 900px) {
+  .flow-preview-panel {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
 }
 
 .flow-versao-row {
@@ -7153,4 +7243,184 @@ button.timeline-card:hover {
     overflow-x: auto;
     flex-wrap: nowrap;
   }
+}
+
+/* Painel do contato com abas (Resumo/Contato/Negociação/Atividades/Histórico) */
+
+.wa-info-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+}
+
+.wa-info-tab {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  padding: 12px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.wa-info-tab:hover {
+  color: var(--ink);
+}
+
+.wa-info-tab.on {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
+.wa-resumo-card {
+  padding: 17px;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+
+.wa-resumo-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 18px;
+  margin: 0 auto 10px;
+}
+
+.wa-resumo-nome {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.wa-resumo-empresa {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.wa-resumo-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  margin-top: 14px;
+  text-align: left;
+}
+
+.wa-resumo-label {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.wa-resumo-valor {
+  font-size: 12px;
+  color: var(--ink);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.wa-resumo-etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.wa-acoes-rapidas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 14px 17px;
+}
+
+.wa-acao-rapida {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.wa-acao-rapida:hover {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+
+.wa-input-invalido {
+  border-color: #d64545 !important;
+}
+
+.wa-campo-erro {
+  display: block;
+  font-size: 11px;
+  color: #d64545;
+  margin-top: 4px;
+}
+
+.wa-etiquetas-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.wa-etiqueta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--blue-soft-2);
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.wa-etiqueta-chip button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+  padding: 0;
+}
+
+.wa-status-inline {
+  margin: 8px 17px 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.wa-status-sucesso {
+  color: #0f9d63;
+}
+
+.wa-status-erro {
+  color: #d64545;
+}
+
+.wa-resultado-andamento {
+  background: rgba(94, 122, 255, 0.14);
+  color: var(--blue);
+}
+
+.wa-resultado-adiada {
+  background: rgba(217, 164, 6, 0.14);
+  color: #d9a406;
+}
+
+.wa-resultado-cancelada {
+  background: rgba(120, 120, 130, 0.16);
+  color: var(--text-muted);
 }

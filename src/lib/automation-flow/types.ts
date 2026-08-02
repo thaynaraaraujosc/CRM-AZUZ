@@ -360,6 +360,10 @@ export type FluxoAutomacao = {
   configuracoes: ConfiguracoesFluxo;
   execucoes: number;
   historicoVersoes: VersaoFluxo[];
+  /** Marca um fluxo seed pronto pra uso como ponto de partida ("Usar um modelo") — nunca criado pelo usuário. Aditivo, não quebra fluxos existentes. */
+  modeloDemonstracao?: boolean;
+  /** Frase um pouco mais longa que `descricao`, só usada na pré-visualização (Task 4) — opcional, aditivo. */
+  objetivo?: string;
 };
 
 /* -------------------------------------------------------------------------- */
