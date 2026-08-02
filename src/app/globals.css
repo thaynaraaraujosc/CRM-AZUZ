@@ -1495,6 +1495,50 @@ table.tbl tbody tr:hover td {
   border-bottom-right-radius: 4px;
 }
 
+.bubble-localizacao {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.bubble-localizacao-mapa {
+  display: block;
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  background: var(--navy-raised-2);
+}
+
+.bubble-localizacao-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 12px;
+}
+
+.bubble-localizacao-titulo {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.bubble-localizacao-endereco {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.bubble-localizacao-link {
+  font-size: 10.5px;
+  font-weight: 700;
+  margin-top: 3px;
+  opacity: 0.9;
+}
+
+.bubble-localizacao .tm {
+  padding: 0 12px 8px;
+}
+
 /* Tela do WhatsApp usa a identidade verde oficial do app, só aqui. */
 .wa-whatsapp .open-conv-h {
   background: rgba(37, 211, 102, 0.12);
@@ -2007,9 +2051,8 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-email-drag .n {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
-  font-family: var(--display);
   margin: 0;
 }
 

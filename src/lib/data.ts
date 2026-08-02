@@ -426,6 +426,8 @@ export type ConvMensagem = {
   tipo: "in" | "out" | "system";
   texto: string;
   hora: string;
+  /** Presente quando a mensagem é um compartilhamento de localização — mostra um mapa em vez de só texto. */
+  localizacao?: { lat: number; lng: number; endereco?: string };
 };
 
 export type Conversa = {

@@ -492,23 +492,28 @@ function ConversasPageInner() {
     router.push("/contatos");
   }
 
+  function enviarLocalizacao(lat: number, lng: number, endereco?: string) {
+    adicionarMensagem({
+      tipo: "out",
+      texto: "📍 Localização enviada",
+      hora: horaAgora(),
+      localizacao: { lat, lng, endereco },
+    });
+  }
+
   function compartilharLocalizacao() {
     setAnexoAberto(false);
+    const FALLBACK = { lat: -16.6869, lng: -49.2648, endereco: "Clínica Vitta · Goiânia, GO" };
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      adicionarMensagem({ tipo: "out", texto: "📍 Localização enviada", hora: horaAgora() });
+      enviarLocalizacao(FALLBACK.lat, FALLBACK.lng, FALLBACK.endereco);
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (posicao) => {
-        const { latitude, longitude } = posicao.coords;
-        adicionarMensagem({
-          tipo: "out",
-          texto: `📍 Localização enviada · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
-          hora: horaAgora(),
-        });
+        enviarLocalizacao(posicao.coords.latitude, posicao.coords.longitude);
       },
       () => {
-        adicionarMensagem({ tipo: "out", texto: "📍 Localização enviada", hora: horaAgora() });
+        enviarLocalizacao(FALLBACK.lat, FALLBACK.lng, FALLBACK.endereco);
       },
     );
   }
@@ -1083,12 +1088,40 @@ function ConversasPageInner() {
                 ) : null}
               </div>
             ))}
-            {(mensagensExtraPorContato[aberta.nome] ?? []).map((msg, i) => (
-              <div className={`bubble ${msg.tipo}`} key={`extra-${i}`}>
-                {msg.texto}
-                {msg.hora ? <span className="tm">{msg.hora}</span> : null}
-              </div>
-            ))}
+            {(mensagensExtraPorContato[aberta.nome] ?? []).map((msg, i) =>
+              msg.localizacao ? (
+                <a
+                  key={`extra-${i}`}
+                  className={`bubble ${msg.tipo} bubble-localizacao`}
+                  href={`https://www.google.com/maps?q=${msg.localizacao.lat},${msg.localizacao.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img
+                    className="bubble-localizacao-mapa"
+                    src={`https://staticmap.openstreetmap.de/staticmap.php?center=${msg.localizacao.lat},${msg.localizacao.lng}&zoom=15&size=280x140&maptype=mapnik&markers=${msg.localizacao.lat},${msg.localizacao.lng},red-pushpin`}
+                    alt="Mapa com a localização compartilhada"
+                  />
+                  <div className="bubble-localizacao-info">
+                    <span className="bubble-localizacao-titulo">📍 Localização compartilhada</span>
+                    {msg.localizacao.endereco ? (
+                      <span className="bubble-localizacao-endereco">{msg.localizacao.endereco}</span>
+                    ) : (
+                      <span className="bubble-localizacao-endereco">
+                        {msg.localizacao.lat.toFixed(5)}, {msg.localizacao.lng.toFixed(5)}
+                      </span>
+                    )}
+                    <span className="bubble-localizacao-link">Abrir no mapa →</span>
+                  </div>
+                  {msg.hora ? <span className="tm">{msg.hora}</span> : null}
+                </a>
+              ) : (
+                <div className={`bubble ${msg.tipo}`} key={`extra-${i}`}>
+                  {msg.texto}
+                  {msg.hora ? <span className="tm">{msg.hora}</span> : null}
+                </div>
+              ),
+            )}
           </div>
           <div className="chat-input">
             <button
