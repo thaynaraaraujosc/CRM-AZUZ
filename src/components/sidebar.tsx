@@ -45,16 +45,11 @@ type NavEntry = {
  * lendo dos mesmos dados (ver `src/lib/metrics.ts` e `src/lib/timeline.ts`).
  */
 export const gestaoAtividadeItens: NavEntry[] = [
-  { href: "/inteligencia-comercial", label: "Visão geral", Icon: IconRelatorios },
   { href: "/trafego", label: "Tráfego", Icon: IconTrafego },
   { href: "/atividades-vendas", label: "Atividades", Icon: IconTarefas },
   { href: "/performance-vendas", label: "Performance", Icon: IconTrafego },
   { href: "/jornada-cliente", label: "Jornada do cliente", Icon: IconContatos },
-  {
-    href: "/performance-vendas?aba=motivos-perda",
-    label: "Motivos de perda",
-    Icon: IconRelatorios,
-  },
+  { href: "/motivos-perda", label: "Motivos de perda", Icon: IconRelatorios },
   { href: "/relatorios", label: "Relatórios", Icon: IconRelatorios },
   { href: "/crm-live", label: "CRM Live", Icon: IconTrafego },
 ];

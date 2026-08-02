@@ -61,7 +61,7 @@ function criarFabricaDeIds(prefixo: string) {
  * da mesma profundidade vira posição X. Suficiente pro construtor visual
  * desenhar algo legível sem precisar do `dagre` de fato.
  */
-function layoutFluxo(nodes: FlowNode[], edges: FlowEdge[]): void {
+export function layoutFluxo(nodes: FlowNode[], edges: FlowEdge[]): void {
   const entradas = new Map<string, number>();
   nodes.forEach((n) => entradas.set(n.id, 0));
   edges.forEach((e) => entradas.set(e.target, (entradas.get(e.target) ?? 0) + 1));
