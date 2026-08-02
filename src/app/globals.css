@@ -1513,7 +1513,7 @@ table.tbl tbody tr:hover td {
 .chat-input .box {
   flex: 1;
   min-width: 0;
-  background: var(--navy-raised);
+  background: var(--navy-raised-2);
   border: 1px solid var(--line);
   border-radius: 9px;
   padding: 10px 13px;
@@ -1652,10 +1652,51 @@ table.tbl tbody tr:hover td {
 .wa-list {
   width: 320px;
   flex: 0 0 auto;
-  border-right: 1px solid var(--line);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  margin: 12px 0 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--navy-raised);
+}
+
+.wa-list-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.wa-list-refresh {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.wa-list-refresh:hover {
+  background: var(--blue-soft-2);
+  color: var(--blue);
+}
+
+.wa-list-refresh.spinning svg {
+  animation: wa-list-refresh-spin 0.7s linear infinite;
+}
+
+@keyframes wa-list-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .wa-list-search {
@@ -1666,6 +1707,7 @@ table.tbl tbody tr:hover td {
 .wa-search {
   width: 100%;
   border-radius: 20px;
+  background: var(--navy-raised-2);
 }
 
 .wa-list-filters {
@@ -1679,7 +1721,7 @@ table.tbl tbody tr:hover td {
 .wa-filter-chip {
   flex: 0 0 auto;
   border: none;
-  background: var(--navy-raised);
+  background: var(--navy-raised-2);
   color: var(--text-muted);
   font-size: 11.5px;
   font-weight: 600;
@@ -1737,7 +1779,7 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-row:hover {
-  background: var(--navy-raised);
+  background: var(--navy-raised-2);
 }
 
 .wa-row.active {
@@ -1798,7 +1840,11 @@ table.tbl tbody tr:hover td {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--line);
+  margin: 12px 12px 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--navy-raised);
+  overflow: hidden;
 }
 
 .wa-main .chat-body {
@@ -1816,11 +1862,17 @@ table.tbl tbody tr:hover td {
   max-width: 70vw;
   flex: 0 0 auto;
   overflow-y: auto;
+  margin: 12px 12px 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--navy-raised);
 }
 
 .wa-resizer {
   flex: 0 0 auto;
   width: 6px;
+  margin: 12px 0;
+  border-radius: 3px;
   cursor: col-resize;
   background: transparent;
 }

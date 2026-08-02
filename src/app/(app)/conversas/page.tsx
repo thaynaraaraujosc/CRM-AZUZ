@@ -21,6 +21,7 @@ import {
   IconConfiguracoes,
   IconDoc,
   IconMic,
+  IconRefresh,
   IconSearch,
 } from "@/components/icons";
 import { FloatingDropdown, RadioList, Toggle, Topbar } from "@/components/ui";
@@ -219,6 +220,14 @@ function ConversasPageInner() {
   const [conectarAberto, setConectarAberto] = useState(false);
   const [conectarAba, setConectarAba] = useState<"qr" | "api">("qr");
   const [infoWidth, setInfoWidth] = useState(320);
+  const [sincronizando, setSincronizando] = useState(false);
+
+  /** Força um recarregamento da lista — usado se as mensagens do celular conectado saírem de sincronia com o servidor. */
+  function sincronizarConversas() {
+    if (sincronizando) return;
+    setSincronizando(true);
+    setTimeout(() => setSincronizando(false), 900);
+  }
 
   const [atendenteTopAberto, setAtendenteTopAberto] = useState(false);
   const [atendenteTopRect, setAtendenteTopRect] = useState<DOMRect | null>(null);
@@ -830,6 +839,18 @@ function ConversasPageInner() {
 
       <div className="content wa-content wa-whatsapp">
         <aside className="wa-list">
+          <div className="wa-list-head">
+            <span>Conversas</span>
+            <button
+              type="button"
+              className={`wa-list-refresh${sincronizando ? " spinning" : ""}`}
+              aria-label="Recarregar conversas"
+              title="Recarregar conversas — use se as mensagens do celular conectado saírem de sincronia"
+              onClick={sincronizarConversas}
+            >
+              <IconRefresh width={14} height={14} />
+            </button>
+          </div>
           <div className="wa-list-search">
             <label className="search wa-search">
               <IconSearch />

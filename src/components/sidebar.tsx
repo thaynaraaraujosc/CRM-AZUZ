@@ -177,6 +177,13 @@ export function Sidebar() {
     }, 2000);
   }
 
+  /** Se o mouse for direto pra outro item do menu (não pro submenu), fecha na hora. */
+  function fecharGestaoAtividadeNaHora() {
+    if (!gestaoAtividadeAberta) return;
+    cancelarFechamentoGestaoAtividade();
+    setGestaoAtividadeAberta(false);
+  }
+
   useEffect(() => cancelarFechamentoGestaoAtividade, []);
 
   return (
@@ -304,7 +311,7 @@ export function Sidebar() {
           }
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
-            <div key={href}>
+            <div key={href} onMouseEnter={fecharGestaoAtividadeNaHora}>
               <Link
                 href={href}
                 className={`nav-item${href === "/conversas" ? " nav-item-whatsapp" : ""}${active ? " active" : ""}`}
