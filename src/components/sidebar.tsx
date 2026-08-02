@@ -27,6 +27,7 @@ import {
   IconRelatorios,
   IconSparkle,
   IconTarefas,
+  IconText,
   IconTrafego,
   IconWhatsApp,
 } from "@/components/icons";
@@ -61,6 +62,7 @@ export const navEntries: NavEntry[] = [
   { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
   { href: "/funil", label: "Funil", Icon: IconPipeline },
   { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
+  { href: "/documentos", label: "Documentos", Icon: IconText },
   { href: "/formularios", label: "Formulário", Icon: IconDoc },
   { href: "/agenda", label: "Agenda", Icon: IconCalendar },
   { href: "/acoes", label: "Ações", Icon: IconAcoes },
