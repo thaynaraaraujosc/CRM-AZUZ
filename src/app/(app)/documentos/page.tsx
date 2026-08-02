@@ -550,15 +550,23 @@ function MenuTopo({
   );
 }
 
-/** Régua com marcadores de margem arrastáveis, igual ao Word — arrastar muda a margem de verdade. */
+/**
+ * Régua horizontal com marcadores de margem arrastáveis, igual ao Word — arrastar muda a margem de
+ * verdade. Esquerda e direita são independentes: mover uma nunca move a outra (cada uma tem seu
+ * próprio callback, ao contrário de antes onde as duas dividiam o mesmo valor de margem).
+ */
 function ReguaDocumento({
   larguraMm,
-  margemMm,
-  onMudarMargem,
+  margemEsquerdaMm,
+  margemDireitaMm,
+  onMudarEsquerda,
+  onMudarDireita,
 }: {
   larguraMm: number;
-  margemMm: number;
-  onMudarMargem: (mm: number) => void;
+  margemEsquerdaMm: number;
+  margemDireitaMm: number;
+  onMudarEsquerda: (mm: number) => void;
+  onMudarDireita: (mm: number) => void;
 }) {
   const reguaRef = useRef<HTMLDivElement>(null);
   const marcasQtd = Math.round(larguraMm / 10);
@@ -572,8 +580,11 @@ function ReguaDocumento({
         if (!el) return;
         const rect = el.getBoundingClientRect();
         const xMm = ((ev.clientX - rect.left) / rect.width) * larguraMm;
-        const novaMargem = lado === "esquerda" ? xMm : larguraMm - xMm;
-        onMudarMargem(Math.round(Math.min(Math.max(novaMargem, 5), larguraMm / 2 - 10)));
+        if (lado === "esquerda") {
+          onMudarEsquerda(Math.round(Math.min(Math.max(xMm, 5), larguraMm - margemDireitaMm - 10)));
+        } else {
+          onMudarDireita(Math.round(Math.min(Math.max(larguraMm - xMm, 5), larguraMm - margemEsquerdaMm - 10)));
+        }
       }
       function soltar() {
         window.removeEventListener("mousemove", mover);
@@ -593,15 +604,79 @@ function ReguaDocumento({
       ))}
       <div
         className="doc-regua-margem doc-regua-margem-esq"
-        style={{ left: `${(margemMm / larguraMm) * 100}%` }}
+        style={{ left: `${(margemEsquerdaMm / larguraMm) * 100}%` }}
         onMouseDown={iniciarArrasteMargem("esquerda")}
-        title={`Margem esquerda: ${margemMm}mm — arraste pra ajustar`}
+        title={`Margem esquerda: ${margemEsquerdaMm}mm — arraste pra ajustar`}
       />
       <div
         className="doc-regua-margem doc-regua-margem-dir"
-        style={{ left: `${((larguraMm - margemMm) / larguraMm) * 100}%` }}
+        style={{ left: `${((larguraMm - margemDireitaMm) / larguraMm) * 100}%` }}
         onMouseDown={iniciarArrasteMargem("direita")}
-        title={`Margem direita: ${margemMm}mm — arraste pra ajustar`}
+        title={`Margem direita: ${margemDireitaMm}mm — arraste pra ajustar`}
+      />
+    </div>
+  );
+}
+
+/** Régua vertical, espelhando a horizontal: margens superior/inferior independentes, arrastáveis. */
+function ReguaVerticalDocumento({
+  alturaMm,
+  margemSuperiorMm,
+  margemInferiorMm,
+  onMudarSuperior,
+  onMudarInferior,
+}: {
+  alturaMm: number;
+  margemSuperiorMm: number;
+  margemInferiorMm: number;
+  onMudarSuperior: (mm: number) => void;
+  onMudarInferior: (mm: number) => void;
+}) {
+  const reguaRef = useRef<HTMLDivElement>(null);
+  const marcasQtd = Math.round(alturaMm / 10);
+  const marcas = Array.from({ length: marcasQtd + 1 }, (_, i) => i);
+
+  function iniciarArrasteMargem(lado: "superior" | "inferior") {
+    return (eDown: React.MouseEvent) => {
+      eDown.preventDefault();
+      function mover(ev: MouseEvent) {
+        const el = reguaRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const yMm = ((ev.clientY - rect.top) / rect.height) * alturaMm;
+        if (lado === "superior") {
+          onMudarSuperior(Math.round(Math.min(Math.max(yMm, 5), alturaMm - margemInferiorMm - 10)));
+        } else {
+          onMudarInferior(Math.round(Math.min(Math.max(alturaMm - yMm, 5), alturaMm - margemSuperiorMm - 10)));
+        }
+      }
+      function soltar() {
+        window.removeEventListener("mousemove", mover);
+        window.removeEventListener("mouseup", soltar);
+      }
+      window.addEventListener("mousemove", mover);
+      window.addEventListener("mouseup", soltar);
+    };
+  }
+
+  return (
+    <div className="doc-regua-vertical" ref={reguaRef}>
+      {marcas.map((cm) => (
+        <span key={cm} className="doc-regua-vertical-marca" aria-hidden="true">
+          {cm > 0 ? cm : ""}
+        </span>
+      ))}
+      <div
+        className="doc-regua-vertical-margem doc-regua-vertical-margem-sup"
+        style={{ top: `${(margemSuperiorMm / alturaMm) * 100}%` }}
+        onMouseDown={iniciarArrasteMargem("superior")}
+        title={`Margem superior: ${margemSuperiorMm}mm — arraste pra ajustar`}
+      />
+      <div
+        className="doc-regua-vertical-margem doc-regua-vertical-margem-inf"
+        style={{ top: `${((alturaMm - margemInferiorMm) / alturaMm) * 100}%` }}
+        onMouseDown={iniciarArrasteMargem("inferior")}
+        title={`Margem inferior: ${margemInferiorMm}mm — arraste pra ajustar`}
       />
     </div>
   );
@@ -825,6 +900,11 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const larguraMm = doc.config.orientacao === "paisagem" ? dimensao.h : dimensao.w;
   const alturaMm = doc.config.orientacao === "paisagem" ? dimensao.w : dimensao.h;
   const qtdColunas = doc.config.colunas ?? 1;
+  // Margens independentes — cada lado cai de volta pra margemMm (documentos salvos antes dessa mudança).
+  const margemSuperiorMm = doc.config.margemSuperiorMm ?? doc.config.margemMm;
+  const margemInferiorMm = doc.config.margemInferiorMm ?? doc.config.margemMm;
+  const margemEsquerdaMm = doc.config.margemEsquerdaMm ?? doc.config.margemMm;
+  const margemDireitaMm = doc.config.margemDireitaMm ?? doc.config.margemMm;
 
   function salvarConteudoPagina(paginaId: string) {
     const el = paginaRefs.current[paginaId];
@@ -881,7 +961,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     abrirPreviaImpressaoLimpa(
       doc.titulo,
       paginasLocais.map((p) => p.conteudoHtml),
-      { larguraMm, alturaMm, margemMm: doc.config.margemMm, corFundo: doc.config.corFundo },
+      { larguraMm, alturaMm, margemSuperiorMm, margemInferiorMm, margemEsquerdaMm, margemDireitaMm, corFundo: doc.config.corFundo },
     );
   }
 
@@ -1849,22 +1929,34 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               {mostrarRegua ? (
                 <ReguaDocumento
                   larguraMm={larguraMm}
-                  margemMm={doc.config.margemMm}
-                  onMudarMargem={(mm) => atualizarConfigPagina(id, { margemMm: mm })}
+                  margemEsquerdaMm={margemEsquerdaMm}
+                  margemDireitaMm={margemDireitaMm}
+                  onMudarEsquerda={(mm) => atualizarConfigPagina(id, { margemEsquerdaMm: mm })}
+                  onMudarDireita={(mm) => atualizarConfigPagina(id, { margemDireitaMm: mm })}
                 />
               ) : null}
-              <div
-                ref={(el) => {
-                  folhaRefs.current[pagina.id] = el;
-                }}
-                className={`doc-page-sheet doc-print-area${semPaginas ? " doc-page-sheet-semborda" : ""}`}
-                style={{
-                  width: `${larguraMm}mm`,
-                  minHeight: semPaginas ? undefined : `${alturaMm}mm`,
-                  padding: `${doc.config.margemMm}mm`,
-                  background: doc.config.corFundo,
-                }}
-              >
+              <div className="doc-page-linha">
+                {mostrarRegua ? (
+                  <ReguaVerticalDocumento
+                    alturaMm={alturaMm}
+                    margemSuperiorMm={margemSuperiorMm}
+                    margemInferiorMm={margemInferiorMm}
+                    onMudarSuperior={(mm) => atualizarConfigPagina(id, { margemSuperiorMm: mm })}
+                    onMudarInferior={(mm) => atualizarConfigPagina(id, { margemInferiorMm: mm })}
+                  />
+                ) : null}
+                <div
+                  ref={(el) => {
+                    folhaRefs.current[pagina.id] = el;
+                  }}
+                  className={`doc-page-sheet doc-print-area${semPaginas ? " doc-page-sheet-semborda" : ""}`}
+                  style={{
+                    width: `${larguraMm}mm`,
+                    minHeight: semPaginas ? undefined : `${alturaMm}mm`,
+                    padding: `${margemSuperiorMm}mm ${margemDireitaMm}mm ${margemInferiorMm}mm ${margemEsquerdaMm}mm`,
+                    background: doc.config.corFundo,
+                  }}
+                >
                 <div
                   key={pagina.id}
                   ref={(el) => {
@@ -1876,7 +1968,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   }}
                   className={`doc-body-rich${mostrarNaoImprimiveis ? " doc-body-rich-marcas" : ""}${qtdColunas > 1 ? " doc-body-rich-colunas" : ""}`}
                   style={{
-                    maxHeight: semPaginas ? undefined : `${alturaMm - doc.config.margemMm * 2}mm`,
+                    maxHeight: semPaginas ? undefined : `${alturaMm - margemSuperiorMm - margemInferiorMm}mm`,
                     overflow: semPaginas ? "visible" : "hidden",
                     columnCount: qtdColunas > 1 ? qtdColunas : undefined,
                     columnGap: qtdColunas > 1 ? `${doc.config.colunasEspacoMm ?? 10}mm` : undefined,
@@ -1905,6 +1997,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   }}
                 />
                 <div className="doc-page-numero">Página {indice + 1} de {paginasLocais.length}</div>
+                </div>
               </div>
               <div className="doc-page-fim">
                 <button type="button" className="doc-page-fim-btn" onClick={novaPaginaAposAtiva}>+ Adicionar página</button>
@@ -2102,14 +2195,45 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             </div>
           </div>
           <div className="field">
-            <label>Margem (mm)</label>
-            <input
-              type="number"
-              className="input"
-              style={{ width: "100%" }}
-              value={doc.config.margemMm}
-              onChange={(e) => atualizarConfigPagina(id, { margemMm: Number(e.target.value) })}
-            />
+            <label>Margens (mm) — cada lado é independente</label>
+            <div className="doc-margens-grid">
+              <label className="doc-margem-campo">
+                <span>Superior</span>
+                <input
+                  type="number"
+                  className="input"
+                  value={margemSuperiorMm}
+                  onChange={(e) => atualizarConfigPagina(id, { margemSuperiorMm: Number(e.target.value) })}
+                />
+              </label>
+              <label className="doc-margem-campo">
+                <span>Inferior</span>
+                <input
+                  type="number"
+                  className="input"
+                  value={margemInferiorMm}
+                  onChange={(e) => atualizarConfigPagina(id, { margemInferiorMm: Number(e.target.value) })}
+                />
+              </label>
+              <label className="doc-margem-campo">
+                <span>Esquerda</span>
+                <input
+                  type="number"
+                  className="input"
+                  value={margemEsquerdaMm}
+                  onChange={(e) => atualizarConfigPagina(id, { margemEsquerdaMm: Number(e.target.value) })}
+                />
+              </label>
+              <label className="doc-margem-campo">
+                <span>Direita</span>
+                <input
+                  type="number"
+                  className="input"
+                  value={margemDireitaMm}
+                  onChange={(e) => atualizarConfigPagina(id, { margemDireitaMm: Number(e.target.value) })}
+                />
+              </label>
+            </div>
           </div>
           <div className="field">
             <label>Cor da página</label>

@@ -190,17 +190,26 @@ export async function baixarPdfReal(
 export function abrirPreviaImpressaoLimpa(
   titulo: string,
   paginasHtml: string[],
-  opcoes: { larguraMm: number; alturaMm: number; margemMm: number; corFundo: string },
+  opcoes: {
+    larguraMm: number;
+    alturaMm: number;
+    margemSuperiorMm: number;
+    margemInferiorMm: number;
+    margemEsquerdaMm: number;
+    margemDireitaMm: number;
+    corFundo: string;
+  },
 ) {
   const janela = window.open("", "_blank", "width=900,height=1000");
   if (!janela) {
     window.alert("O navegador bloqueou a janela de pré-visualização — permita pop-ups pra esse site e tente de novo.");
     return;
   }
+  const padding = `${opcoes.margemSuperiorMm}mm ${opcoes.margemDireitaMm}mm ${opcoes.margemInferiorMm}mm ${opcoes.margemEsquerdaMm}mm`;
   const paginasDiv = paginasHtml
     .map(
       (html) =>
-        `<div class="folha" style="width:${opcoes.larguraMm}mm;min-height:${opcoes.alturaMm}mm;padding:${opcoes.margemMm}mm;background:${opcoes.corFundo};">${html}</div>`,
+        `<div class="folha" style="width:${opcoes.larguraMm}mm;min-height:${opcoes.alturaMm}mm;padding:${padding};background:${opcoes.corFundo};">${html}</div>`,
     )
     .join("");
   janela.document.open();

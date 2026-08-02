@@ -43,7 +43,13 @@ export type OrientacaoPapel = "retrato" | "paisagem";
 export type ConfigPagina = {
   tamanho: TamanhoPapel;
   orientacao: OrientacaoPapel;
+  /** Margem padrão/legada — usada como valor inicial e como fallback pra documentos salvos antes das margens independentes. */
   margemMm: number;
+  /** Margens independentes — cada lado pode ser arrastado/definido sem afetar os outros. Ausentes = usa margemMm (documento antigo). */
+  margemSuperiorMm?: number;
+  margemInferiorMm?: number;
+  margemEsquerdaMm?: number;
+  margemDireitaMm?: number;
   corFundo: string;
   /** Colunas de texto (Formatar → Colunas) — 1 = layout normal, sem colunas. */
   colunas: number;
