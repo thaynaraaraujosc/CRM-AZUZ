@@ -17,35 +17,88 @@ export const FUNDOS_PRESET = [
 
 export type PreferenciaConfirmacaoLeitura = "todos" | "salvos" | "desativado";
 export type TamanhoFonteConversa = "pequena" | "media" | "grande";
+export type DensidadeMensagens = "compacta" | "confortavel";
+export type ComportamentoEnter = "enter_envia" | "enter_quebra";
+export type VelocidadeAudioPadrao = 1 | 1.5 | 2;
 
 export type ConfigConversas = {
   fundo: FundoConversa;
   fundoOpacidade: number;
   /** Fundo por conversa individual, usado quando o usuário escolhe "só essa conversa" em vez de "todas". */
   fundoPorConversa: Record<string, FundoConversa>;
+
+  // Privacidade
   confirmacaoLeitura: PreferenciaConfirmacaoLeitura;
-  /**
-   * Sons e notificações são controlados pelo `NotificacoesContext`
-   * (`notificacoesAtivas`/`alternarNotificacoes`), já existente e usado em
-   * Configurações — não duplicado aqui.
-   */
+  mostrarEstadoEnvio: boolean;
+  mostrarEstadoEntrega: boolean;
+  mostrarEstadoLeitura: boolean;
+  mostrarEstadoReproducao: boolean;
+  mostrarUltimaAtividade: boolean;
+  ocultarPreviaNotificacao: boolean;
+
+  // Notificações — sons/alertas ficam aqui; "notificacoesAtivas" do
+  // NotificacoesContext continua sendo o interruptor mestre.
+  somNovaMensagem: boolean;
+  notificacaoNavegador: boolean;
+  notificacaoNovaConversa: boolean;
+  notificacaoMencao: boolean;
+  notificacaoTarefa: boolean;
   previaMensagens: boolean;
+  silenciarArquivadas: boolean;
+  somSoSegundoPlano: boolean;
+  somEscolhido: string;
+
+  // Preferências
   tamanhoFonte: TamanhoFonteConversa;
+  densidadeMensagens: DensidadeMensagens;
   teclaEnterEnvia: boolean;
   downloadAutomatico: boolean;
   tiposDownloadAutomatico: string[];
+  previaLinks: boolean;
+  autoplayVideos: boolean;
+  velocidadeAudioPadrao: VelocidadeAudioPadrao;
+  manterPainelContatoAberto: boolean;
 };
+
+export const SONS_DISPONIVEIS = [
+  { id: "classico", label: "Clássico" },
+  { id: "suave", label: "Suave" },
+  { id: "alerta", label: "Alerta" },
+  { id: "nenhum", label: "Nenhum" },
+] as const;
 
 export const CONFIG_PADRAO: ConfigConversas = {
   fundo: { tipo: "padrao" },
   fundoOpacidade: 100,
   fundoPorConversa: {},
+
   confirmacaoLeitura: "todos",
+  mostrarEstadoEnvio: true,
+  mostrarEstadoEntrega: true,
+  mostrarEstadoLeitura: true,
+  mostrarEstadoReproducao: true,
+  mostrarUltimaAtividade: true,
+  ocultarPreviaNotificacao: false,
+
+  somNovaMensagem: true,
+  notificacaoNavegador: false,
+  notificacaoNovaConversa: true,
+  notificacaoMencao: true,
+  notificacaoTarefa: true,
   previaMensagens: true,
+  silenciarArquivadas: true,
+  somSoSegundoPlano: false,
+  somEscolhido: "classico",
+
   tamanhoFonte: "media",
+  densidadeMensagens: "confortavel",
   teclaEnterEnvia: true,
   downloadAutomatico: true,
   tiposDownloadAutomatico: ["imagem", "documento"],
+  previaLinks: true,
+  autoplayVideos: false,
+  velocidadeAudioPadrao: 1,
+  manterPainelContatoAberto: false,
 };
 
 const STORAGE_KEY = "azuz-crm-conversas-config";

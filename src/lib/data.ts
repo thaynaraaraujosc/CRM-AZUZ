@@ -477,7 +477,19 @@ export type ConvStatus =
  * "pendente" = ainda subindo/enviando · "enviado" = saiu do CRM · "entregue" =
  * chegou no aparelho do lead · "lido" = o lead abriu a conversa · "erro" = falhou.
  */
-export type StatusMensagem = "pendente" | "enviado" | "entregue" | "lido" | "erro";
+/**
+ * "reproduzido" só existe pra mensagens de áudio, e só pode ser aplicado por
+ * uma confirmação real do canal/webhook — nunca simulado automaticamente
+ * (ver contrato `AudioAnexoContrato` e `ExclusaoMensagemContrato` em
+ * `src/lib/conversas-contracts.ts`).
+ */
+export type StatusMensagem =
+  | "pendente"
+  | "enviado"
+  | "entregue"
+  | "lido"
+  | "reproduzido"
+  | "erro";
 
 export type AnexoImagem = { url: string; nome: string; tamanho: number };
 export type AnexoVideo = {
@@ -494,22 +506,49 @@ export type AnexoDocumento = {
   formato: string;
   origem: "crm" | "computador";
 };
+/** Ver `AudioAnexoContrato` em `src/lib/conversas-contracts.ts` pro contrato completo de back-end. */
+export type AnexoAudio = {
+  url: string;
+  duracao: number;
+  /** Picos de amplitude (0–1) usados pra desenhar a forma de onda — calculados no front-end a partir do blob gravado ou decodificado. */
+  waveform: number[];
+};
+
+/** Tipo de exclusão solicitada — ver `ExclusaoMensagemContrato`. */
+export type TipoExclusaoMensagem = "para_mim" | "para_todos";
 
 export type ConvMensagem = {
   id?: string;
   tipo: "in" | "out" | "system";
   texto: string;
   hora: string;
+  /** Timestamp real de criação — usado pra calcular prazo de "apagar pra todos" e pra "Ver detalhes". Ausente em mensagens de exemplo (seed). */
+  criadoEm?: number;
   /** Presente quando a mensagem é um compartilhamento de localização — mostra um mapa em vez de só texto. */
   localizacao?: { lat: number; lng: number; endereco?: string };
-  /** Presente quando a mensagem é um cartão de contato compartilhado. */
-  contatoCompartilhado?: { nome: string; initials: string; whatsapp?: string };
+  /**
+   * Presente quando a mensagem é um cartão de contato compartilhado — só
+   * carrega os campos que o usuário escolheu incluir na prévia (ver seção
+   * 19 do pedido e `ContatoCompartilhadoContrato` em
+   * `src/lib/conversas-contracts.ts`).
+   */
+  contatoCompartilhado?: {
+    nome: string;
+    initials: string;
+    whatsapp?: string;
+    telefoneFixo?: string;
+    email?: string;
+    empresa?: string;
+    cargo?: string;
+  };
   /** Uma ou mais imagens reais anexadas — vira um balão com a imagem de verdade, não só o nome do arquivo. */
   imagens?: AnexoImagem[];
   /** Vídeo real anexado (já cortado/processado, se o usuário editou antes de enviar). */
   video?: AnexoVideo;
   /** Documento real anexado — vindo da biblioteca do CRM ou do computador do usuário. */
   documento?: AnexoDocumento;
+  /** Áudio real gravado/enviado — bolha com player, forma de onda e velocidade. */
+  audio?: AnexoAudio;
   /** Legenda opcional que acompanha imagem/vídeo. */
   legenda?: string;
   /** Presente quando o usuário respondeu a uma mensagem específica — mostra a citação em cima do texto. */

@@ -1442,6 +1442,7 @@ table.tbl tbody tr:hover td {
   border-radius: 13px;
   font-size: 12px;
   line-height: 1.4;
+  position: relative;
 }
 
 .bubble.in {
@@ -1449,7 +1450,11 @@ table.tbl tbody tr:hover td {
   border: 1px solid var(--line);
   align-self: flex-start;
   border-bottom-left-radius: 4px;
-  position: relative;
+}
+
+.bubble.sistema-apagada {
+  font-style: italic;
+  opacity: 0.7;
 }
 
 .bubble-reacao {
@@ -1503,11 +1508,15 @@ table.tbl tbody tr:hover td {
 }
 
 .bubble-localizacao {
-  display: block;
   padding: 0;
   overflow: hidden;
+}
+
+.bubble-localizacao-link-area {
+  display: block;
   text-decoration: none;
   cursor: pointer;
+  color: inherit;
 }
 
 .bubble-localizacao-mapa {
@@ -3676,12 +3685,18 @@ table.tbl tbody tr:hover td {
 }
 
 .bubble-contato {
+  padding: 0;
+}
+
+.bubble-contato-area {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 10px 12px;
   border: none;
+  background: none;
   font: inherit;
   color: inherit;
   text-align: left;
@@ -3689,9 +3704,11 @@ table.tbl tbody tr:hover td {
 }
 
 .bubble-contato .tm {
+  display: block;
   width: 100%;
   text-align: right;
   margin-top: 0;
+  padding: 0 12px 8px;
 }
 
 .bubble-contato-info {
@@ -5662,6 +5679,11 @@ table.tbl tbody tr:hover td {
   opacity: 1;
 }
 
+.msg-status-icone.reproduzido {
+  color: var(--blue);
+  opacity: 1;
+}
+
 .msg-status-erro .msg-status-icone {
   color: #d64545;
   opacity: 1;
@@ -6999,5 +7021,803 @@ button.timeline-card:hover {
 
 .wa-resultado-cancelada {
   background: rgba(120, 120, 130, 0.16);
+  color: var(--text-muted);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Janela de configurações das conversas — modal centralizado com abas       */
+/* -------------------------------------------------------------------------- */
+
+.wa-config-modal-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  background: var(--navy);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
+  overflow: hidden;
+}
+
+.wa-modal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.wa-modal-header-icone {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--blue-soft-2);
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wa-modal-header-textos {
+  flex: 1;
+  min-width: 0;
+}
+
+.wa-modal-header-titulo {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.wa-modal-header-desc {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+
+.wa-config-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 22px 0;
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+  overflow-x: auto;
+}
+
+.wa-config-tab {
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.wa-config-tab:hover {
+  color: var(--ink);
+}
+
+.wa-config-tab.on {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
+.wa-config-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 22px;
+}
+
+.wa-config-secao {
+  display: flex;
+  flex-direction: column;
+}
+
+.wa-config-fundo-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  min-height: 120px;
+  justify-content: center;
+}
+
+.wa-config-fundos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.wa-config-fundo-opcao {
+  position: relative;
+  height: 64px;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  background: var(--navy-raised);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: flex-end;
+  padding: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.wa-config-fundo-opcao:hover {
+  border-color: var(--blue-soft-2);
+}
+
+.wa-config-fundo-opcao.sel {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px var(--blue-soft-2);
+}
+
+.wa-config-fundo-padrao {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--navy-raised),
+    var(--navy-raised) 8px,
+    var(--navy-raised-2) 8px,
+    var(--navy-raised-2) 16px
+  );
+}
+
+.wa-config-fundo-nome {
+  display: block;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.wa-config-fundo-check {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--blue);
+}
+
+.wa-config-fundo-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.wa-config-cor-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.wa-config-cor-label input[type="color"] {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  background: none;
+}
+
+.wa-config-radio-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.wa-config-notif-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.wa-config-notif-item:last-of-type {
+  border-bottom: none;
+}
+
+.wa-config-notif-textos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wa-config-notif-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.wa-config-notif-desc {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.wa-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.wa-modal-footer .btn:first-child {
+  margin-right: auto;
+}
+
+.wa-config-confirmar-fechar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--line);
+  background: var(--navy-raised);
+  flex: 0 0 auto;
+}
+
+.wa-config-confirmar-fechar p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 720px) {
+  .wa-config-modal-shell {
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+
+  .form-preview-overlay:has(.wa-config-modal-shell) {
+    padding: 0;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Áudio — barra de gravação, prévia antes de enviar e player nas bolhas     */
+/* -------------------------------------------------------------------------- */
+
+.chat-audio-gravando,
+.chat-audio-previa {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-audio-rec-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #d64545;
+  animation: chat-audio-pulso 1.1s ease-in-out infinite;
+}
+
+.chat-audio-rec-dot.pausado {
+  animation: none;
+  background: var(--text-faint);
+}
+
+@keyframes chat-audio-pulso {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.chat-audio-duracao {
+  flex: 0 0 auto;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.chat-audio-status {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.chat-audio-niveis {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+}
+
+.chat-audio-niveis span {
+  flex: 1 1 auto;
+  min-width: 2px;
+  max-width: 3px;
+  border-radius: 2px;
+  background: var(--blue);
+  opacity: 0.75;
+}
+
+.chat-audio-btn {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: var(--navy-raised-2);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.chat-audio-btn:hover {
+  background: var(--blue-soft-2);
+}
+
+.chat-audio-btn-lixeira {
+  color: #d64545;
+}
+
+.chat-audio-btn-lixeira:hover {
+  background: rgba(214, 69, 69, 0.14);
+}
+
+.chat-audio-btn-concluir,
+.chat-audio-btn-enviar {
+  width: auto;
+  padding: 0 12px;
+  border-radius: 15px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chat-audio-btn-concluir:hover,
+.chat-audio-btn-enviar:hover {
+  background: var(--blue-soft);
+}
+
+.chat-audio-btn-enviar:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.chat-audio-previa-meio {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-audio-erro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  background: rgba(214, 69, 69, 0.12);
+  color: #d64545;
+  font-size: 12px;
+}
+
+.audio-waveform {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  cursor: pointer;
+}
+
+.audio-waveform-barra {
+  flex: 1 1 auto;
+  min-width: 2px;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+.audio-waveform-barra.ativa {
+  background: var(--blue);
+}
+
+.audio-player-out .audio-waveform-barra {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.audio-player-out .audio-waveform-barra.ativa {
+  background: #fff;
+}
+
+.audio-player {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.audio-player audio {
+  display: none;
+}
+
+.audio-player-btn {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: var(--blue);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.audio-player-out .audio-player-btn {
+  background: #fff;
+  color: var(--blue);
+}
+
+.audio-player-meio {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.audio-player-duracao {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.audio-player-out .audio-player-duracao {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.audio-player-velocidade {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.audio-player-out .audio-player-velocidade {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.audio-player-demo-reproduzido {
+  flex: 0 0 100%;
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 10px;
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: left;
+}
+
+.bubble-audio {
+  display: flex;
+  flex-direction: column;
+  min-width: 240px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Menu de ações da mensagem — responder/mais ações/favorita                 */
+/* -------------------------------------------------------------------------- */
+
+.bubble .wa-reply-btn,
+.bubble .wa-msg-menu-btn {
+  position: absolute;
+  top: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(11, 21, 51, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 2;
+}
+
+.bubble:hover .wa-reply-btn,
+.bubble:hover .wa-msg-menu-btn,
+.bubble .wa-reply-btn:focus-visible,
+.bubble .wa-msg-menu-btn:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .bubble .wa-reply-btn,
+  .bubble .wa-msg-menu-btn {
+    opacity: 0.65;
+  }
+}
+
+.bubble.out .wa-reply-btn,
+.bubble.out .wa-msg-menu-btn {
+  right: auto;
+  left: 6px;
+}
+
+.bubble.out .wa-reply-btn {
+  left: 32px;
+}
+
+.bubble.in .wa-reply-btn {
+  right: 32px;
+}
+
+.bubble.in .wa-msg-menu-btn {
+  right: 6px;
+}
+
+.wa-msg-favorita {
+  display: inline-block;
+  margin-right: 4px;
+  color: #d9a406;
+  font-size: 11px;
+}
+
+.wa-msg-detalhes-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wa-msg-detalhes-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 12.5px;
+}
+
+.wa-msg-detalhes-item:last-child {
+  border-bottom: none;
+}
+
+.wa-msg-detalhes-item .rotulo {
+  color: var(--text-muted);
+}
+
+.wa-msg-detalhes-item .valor {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.wa-encaminhar-lista {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.wa-encaminhar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.wa-encaminhar-item:hover {
+  background: var(--navy-raised-2);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Enviar contato — abas CRM/Criar, busca+filtros, seleção e prévia          */
+/* -------------------------------------------------------------------------- */
+
+.wa-contato-picker-shell {
+  max-width: 620px;
+}
+
+.wa-contato-picker-tray {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--blue-soft-2);
+  border: 1px solid var(--blue-soft);
+}
+
+.wa-contato-picker-tray-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--blue);
+  margin-bottom: 8px;
+}
+
+.wa-contato-picker-tray-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wa-contato-picker-tray-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 20px;
+  background: var(--navy);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.wa-contato-picker-tray-item .avatar {
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+}
+
+.wa-contato-picker-tray-item button {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 0;
+}
+
+.wa-contato-picker-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.wa-contato-picker-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  cursor: pointer;
+}
+
+.wa-contato-picker-card:hover {
+  border-color: var(--blue-soft-2);
+}
+
+.wa-contato-picker-card.sel {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+
+.wa-contato-picker-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wa-contato-picker-card-nome {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.wa-contato-picker-card-linha {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.wa-contato-picker-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.wa-contato-picker-check {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--blue);
+}
+
+.wa-contato-picker-card.sel .wa-contato-picker-check {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.wa-contato-previa-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wa-contato-previa-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+}
+
+.wa-contato-previa-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11.5px;
   color: var(--text-muted);
 }
