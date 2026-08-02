@@ -159,6 +159,13 @@ export const notificacoes = [
 /* -------------------------------------------------------------------------- */
 
 export type Contato = {
+  /**
+   * Identificador estável do contato — mesmo slug usado como `id` em
+   * `NegocioCard`, `Conversa` e `TaskCard`, pra todo módulo poder cruzar
+   * essas entidades sem depender de comparar `nome` (string).
+   * Ver `slugId()` em `src/lib/ids.ts`.
+   */
+  id: string;
   initials: string;
   nome: string;
   origem: Origem;
@@ -174,6 +181,7 @@ export type Contato = {
 
 export const contatos: Contato[] = [
   {
+    id: "marcos-aurelio",
     initials: "MA",
     nome: "Marcos Aurélio",
     origem: "Meta Ads",
@@ -187,6 +195,7 @@ export const contatos: Contato[] = [
     endereco: "Goiânia, GO",
   },
   {
+    id: "beatriz-nogueira",
     initials: "BN",
     nome: "Beatriz Nogueira",
     origem: "Google Ads",
@@ -196,6 +205,7 @@ export const contatos: Contato[] = [
     valor: "R$ 1.240",
   },
   {
+    id: "camila-duarte",
     initials: "CD",
     nome: "Camila Duarte",
     origem: "Instagram",
@@ -205,6 +215,7 @@ export const contatos: Contato[] = [
     valor: "—",
   },
   {
+    id: "fernando-lima",
     initials: "FL",
     nome: "Fernando Lima",
     origem: "Meta Ads",
@@ -214,6 +225,7 @@ export const contatos: Contato[] = [
     valor: "—",
   },
   {
+    id: "julia-prado",
     initials: "JP",
     nome: "Julia Prado",
     origem: "Indicação",
@@ -223,6 +235,7 @@ export const contatos: Contato[] = [
     valor: "R$ 2.100",
   },
   {
+    id: "renata-farias",
     initials: "RF",
     nome: "Renata Farias",
     origem: "Meta Ads",
@@ -232,6 +245,7 @@ export const contatos: Contato[] = [
     valor: "R$ 780",
   },
   {
+    id: "paulo-lacerda",
     initials: "PL",
     nome: "Paulo Lacerda",
     origem: "Google Ads",
@@ -241,6 +255,7 @@ export const contatos: Contato[] = [
     valor: "R$ 1.560",
   },
   {
+    id: "lorena-bastos",
     initials: "LB",
     nome: "Lorena Bastos",
     origem: "TikTok",
