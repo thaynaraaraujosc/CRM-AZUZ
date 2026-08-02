@@ -5095,3 +5095,557 @@ table.tbl tbody tr:hover td {
   outline: none;
   border-bottom-color: var(--blue);
 }
+
+/* -------------------------------------------------------------------------- */
+/* WhatsApp — menu de anexos em grade                                         */
+/* -------------------------------------------------------------------------- */
+
+.wa-anexo-menu-grid {
+  width: 288px;
+  padding: 4px 10px 10px;
+}
+
+.wa-anexo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.wa-anexo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 10px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wa-anexo-item:hover,
+.wa-anexo-item:focus-visible {
+  background: var(--navy-raised-2);
+  border-color: var(--line);
+  outline: none;
+}
+
+.wa-anexo-icone {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.wa-anexo-icone-imagem {
+  background: #2e6bff;
+}
+
+.wa-anexo-icone-video {
+  background: #8a3ffc;
+}
+
+.wa-anexo-icone-documento {
+  background: #c9660a;
+}
+
+.wa-anexo-icone-contato {
+  background: #0f9d63;
+}
+
+.wa-anexo-icone-localizacao {
+  background: #d64545;
+}
+
+.wa-anexo-icone-automacao {
+  background: #d8a400;
+}
+
+.wa-anexo-icone-resposta {
+  background: #0f9d9d;
+}
+
+.wa-anexo-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.wa-anexo-erro {
+  margin: 8px 4px 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(214, 69, 69, 0.12);
+  border: 1px solid rgba(214, 69, 69, 0.3);
+  color: #d64545;
+  font-size: 11px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* WhatsApp — arrastar e soltar arquivos na conversa                          */
+/* -------------------------------------------------------------------------- */
+
+.chat-body {
+  position: relative;
+}
+
+.wa-dragover {
+  outline: 2px dashed var(--blue);
+  outline-offset: -6px;
+  background: var(--blue-soft-2);
+}
+
+.wa-dragover-aviso {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  margin: 0 auto 8px;
+  width: fit-content;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: var(--blue);
+  color: white;
+  font-size: 11.5px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* WhatsApp — pré-visualização e edição de mídia (imagem/vídeo)               */
+/* -------------------------------------------------------------------------- */
+
+.wa-midia-preview {
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--navy);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.wa-midia-preview-palco {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  max-height: 46vh;
+  background: var(--navy-deep);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.wa-midia-preview-imagem {
+  max-width: 100%;
+  max-height: 46vh;
+  object-fit: contain;
+}
+
+.wa-midia-preview-video {
+  width: 100%;
+  max-height: 46vh;
+}
+
+.wa-corte-rect {
+  position: absolute;
+  border: 2px dashed var(--blue);
+  background: rgba(46, 107, 255, 0.12);
+  pointer-events: none;
+}
+
+.wa-edicao-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.wa-edicao-toolbar .hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+}
+
+.wa-midia-miniaturas {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-top: 12px;
+  padding-bottom: 2px;
+}
+
+.wa-midia-miniatura {
+  position: relative;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+
+.wa-midia-miniatura.active {
+  border-color: var(--blue);
+}
+
+.wa-midia-miniatura button {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.wa-midia-miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wa-midia-miniatura-remover {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #d64545;
+  color: white;
+  font-size: 9px;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.wa-midia-miniatura-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line);
+  background: var(--navy-raised-2);
+  font-size: 20px;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.wa-video-trim {
+  margin-top: 12px;
+}
+
+.wa-video-trim-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* WhatsApp — documentos (origem, biblioteca do CRM, visualizador)            */
+/* -------------------------------------------------------------------------- */
+
+.wa-doc-origem-opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wa-doc-origem-opcao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--navy-raised-2);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wa-doc-origem-opcao:hover {
+  border-color: var(--blue);
+}
+
+.wa-biblioteca-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.wa-biblioteca-lista {
+  max-height: 40vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wa-biblioteca-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.wa-biblioteca-item:hover {
+  background: var(--navy-raised-2);
+}
+
+.wa-biblioteca-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wa-doc-visualizador {
+  width: 100%;
+  max-width: 720px;
+  height: 88vh;
+  background: var(--navy);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.wa-doc-visualizador-frame {
+  flex: 1;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+}
+
+/* -------------------------------------------------------------------------- */
+/* WhatsApp — balões de mídia (imagem/vídeo/documento) e status               */
+/* -------------------------------------------------------------------------- */
+
+.bubble-midia {
+  padding: 4px;
+  max-width: 60%;
+}
+
+.bubble-imagens {
+  display: flex;
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.bubble-imagens.grade {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+}
+
+.bubble-imagem-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: block;
+  line-height: 0;
+}
+
+.bubble-imagem-btn img {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  display: block;
+  border-radius: 9px;
+}
+
+.bubble-imagens.grade .bubble-imagem-btn img {
+  max-height: 130px;
+  border-radius: 0;
+}
+
+.bubble-legenda {
+  font-size: 12px;
+  padding: 6px 6px 0;
+}
+
+.bubble-video {
+  width: 100%;
+  max-height: 280px;
+  border-radius: 9px;
+  display: block;
+  background: black;
+}
+
+.bubble-documento {
+  max-width: 68%;
+}
+
+.bubble-documento-cartao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 9px;
+}
+
+.bubble-documento-cartao:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.bubble-documento-icone {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #c9660a;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bubble-documento-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bubble-documento-nome {
+  font-size: 12px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bubble-documento-meta {
+  font-size: 10.5px;
+  opacity: 0.75;
+}
+
+.msg-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.msg-status-icone {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 4px;
+  opacity: 0.75;
+}
+
+.msg-status-icone.lido {
+  color: #34b7f1;
+  opacity: 1;
+}
+
+.msg-status-erro .msg-status-icone {
+  color: #d64545;
+  opacity: 1;
+}
+
+.msg-status-retry {
+  border: none;
+  background: none;
+  color: #d64545;
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* WhatsApp — lightbox de imagens                                             */
+/* -------------------------------------------------------------------------- */
+
+.wa-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wa-lightbox-imagem {
+  max-width: 88vw;
+  max-height: 78vh;
+  object-fit: contain;
+  transition: transform 0.15s ease;
+  cursor: default;
+}
+
+.wa-lightbox-fechar {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.wa-lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.wa-lightbox-nav-prev {
+  left: 18px;
+}
+
+.wa-lightbox-nav-next {
+  right: 18px;
+}
+
+.wa-lightbox-acoes {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 720px) {
+  .wa-anexo-menu-grid {
+    width: min(320px, calc(100vw - 24px));
+  }
+
+  .wa-midia-preview,
+  .wa-doc-visualizador,
+  .wa-biblioteca-modal {
+    max-width: calc(100vw - 24px);
+  }
+
+  .bubble-midia,
+  .bubble-documento {
+    max-width: 84%;
+  }
+}

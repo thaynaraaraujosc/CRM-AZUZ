@@ -245,6 +245,68 @@ export function IconRefresh(props: Props) {
   );
 }
 
+export function IconVideoCam(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="2" y="6" width="14" height="12" rx="2.5" />
+      <path d="M16 10.5l5.2-3.1a1 1 0 0 1 1.5.86v7.5a1 1 0 0 1-1.5.86L16 13.5" />
+    </svg>
+  );
+}
+
+export function IconLocalizacao(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 22s7-7.4 7-12.5A7 7 0 0 0 5 9.5C5 14.6 12 22 12 22Z" />
+      <circle cx="12" cy="9.5" r="2.5" />
+    </svg>
+  );
+}
+
+export function IconRespostaRapida(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l1.6-3.8A8.5 8.5 0 1 1 21 11.5Z" />
+      <path d="M8 10.5h8M8 13.5h5" />
+    </svg>
+  );
+}
+
+export function IconRelogio(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.2 2" />
+    </svg>
+  );
+}
+
+export function IconCheck(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 12.5l4.2 4.2L20 5.5" />
+    </svg>
+  );
+}
+
+export function IconCheckDuplo(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M1 12.5l4.2 4.2L13 8.7" />
+      <path d="M8 12.5l4.2 4.2L23 5.5" />
+    </svg>
+  );
+}
+
+export function IconErro(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5v6M12 16.5h.01" />
+    </svg>
+  );
+}
+
 export function IconTikTok(props: Props) {
   return (
     <svg viewBox="0 0 24 24" fill="#F5F5F5" {...props}>
