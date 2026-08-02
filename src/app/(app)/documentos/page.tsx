@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { currentUser, equipe } from "@/lib/data";
 import {
-  MODELOS_DOCUMENTO,
   useDocumentos,
+  type CategoriaModelo,
+  type ModeloDocumento,
   type PaginaDoc,
   type PermissaoAcesso,
   type TamanhoPapel,
@@ -139,13 +140,6 @@ function lerPrefVer(chave: string, padrao: boolean): boolean {
   }
 }
 
-function htmlParaTextoPlano(html: string) {
-  if (typeof document === "undefined") return "";
-  const div = document.createElement("div");
-  div.innerHTML = html;
-  return div.textContent ?? "";
-}
-
 function contarPalavrasTexto(paginas: PaginaDoc[]) {
   const div = typeof document !== "undefined" ? document.createElement("div") : null;
   let texto = "";
@@ -196,6 +190,12 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
     duplicarDocumento,
     renomearDocumento,
     favoritarDocumento,
+    todosOsModelos,
+    modelosPersonalizados,
+    excluirModeloPersonalizado,
+    modelosFavoritosIds,
+    alternarFavoritoModelo,
+    modelosRecentesIds,
   } = useDocumentos();
 
   const [aba, setAba] = useState<Aba>("recentes");
@@ -206,6 +206,45 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
   const [nomeRenomear, setNomeRenomear] = useState("");
   const [acaoAbertaId, setAcaoAbertaId] = useState<string | null>(null);
   const [acaoRect, setAcaoRect] = useState<DOMRect | null>(null);
+
+  const [buscaModelo, setBuscaModelo] = useState("");
+  const [categoriaModelo, setCategoriaModelo] = useState<CategoriaModelo | "todas">("todas");
+  const [abaModelos, setAbaModelos] = useState<"todos" | "recentes" | "favoritos" | "meus" | "recomendados">("todos");
+  const [modeloPreviewId, setModeloPreviewId] = useState<string | null>(null);
+  const [carregandoGaleria, setCarregandoGaleria] = useState(false);
+
+  useEffect(() => {
+    if (!modelosAberto) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- estado de carregamento visual só do popup de modelos, não realimenta o próprio efeito
+    setCarregandoGaleria(true);
+    const t = setTimeout(() => setCarregandoGaleria(false), 250);
+    return () => clearTimeout(t);
+  }, [modelosAberto]);
+
+  const CATEGORIAS_MODELO: CategoriaModelo[] = [
+    "Negócios", "Vendas", "Marketing", "Saúde", "Recursos Humanos", "Jurídico",
+    "Financeiro", "Educação", "Planejamento", "Relatórios", "Comunicação", "Documentos pessoais",
+  ];
+
+  const modelosPorAba: ModeloDocumento[] =
+    abaModelos === "recentes"
+      ? modelosRecentesIds.map((mid) => todosOsModelos.find((m) => m.id === mid)).filter((m): m is ModeloDocumento => !!m)
+      : abaModelos === "favoritos"
+      ? todosOsModelos.filter((m) => modelosFavoritosIds.includes(m.id))
+      : abaModelos === "meus"
+      ? modelosPersonalizados
+      : abaModelos === "recomendados"
+      ? todosOsModelos.filter((m) => ["proposta", "relatorio", "curriculo", "ata"].includes(m.id))
+      : todosOsModelos;
+
+  const modelosFiltrados = modelosPorAba.filter(
+    (m) =>
+      (categoriaModelo === "todas" || m.categoria === categoriaModelo) &&
+      (m.nome.toLowerCase().includes(buscaModelo.trim().toLowerCase()) ||
+        m.descricao.toLowerCase().includes(buscaModelo.trim().toLowerCase())),
+  );
+
+  const modeloEmPreview = todosOsModelos.find((m) => m.id === modeloPreviewId) ?? null;
 
   const visiveis = documentos.filter((d) => {
     if (aba === "lixeira") return d.excluido;
@@ -264,21 +303,128 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
         {modelosAberto ? (
           <div className="card mb14">
             <div className="panel-h">
-              <h4>Escolha um modelo</h4>
+              <h4>Galeria de modelos</h4>
             </div>
-            <div className="doc-modelos-grid">
-              {MODELOS_DOCUMENTO.map((m) => (
-                <button
-                  type="button"
-                  key={m.id}
-                  className="doc-modelo-card"
-                  onClick={() => novoDocumento(m.id)}
-                >
-                  <span className="doc-modelo-icone"><IconDoc width={22} height={22} /></span>
-                  <span className="n">{m.nome}</span>
-                  <span className="hint">{m.descricao}</span>
-                </button>
+
+            <div className="filters-row mb14" style={{ padding: "0 16px" }}>
+              <button type="button" className={`fchip${abaModelos === "todos" ? " active" : ""}`} onClick={() => setAbaModelos("todos")}>Todos</button>
+              <button type="button" className={`fchip${abaModelos === "recomendados" ? " active" : ""}`} onClick={() => setAbaModelos("recomendados")}>Recomendados</button>
+              <button type="button" className={`fchip${abaModelos === "recentes" ? " active" : ""}`} onClick={() => setAbaModelos("recentes")}>Recentes</button>
+              <button type="button" className={`fchip${abaModelos === "favoritos" ? " active" : ""}`} onClick={() => setAbaModelos("favoritos")}>Favoritos</button>
+              <button type="button" className={`fchip${abaModelos === "meus" ? " active" : ""}`} onClick={() => setAbaModelos("meus")}>Meus modelos ({modelosPersonalizados.length})</button>
+              <label className="search" style={{ marginLeft: "auto", width: 220 }}>
+                <IconSearch />
+                <input placeholder="Pesquisar modelos…" value={buscaModelo} onChange={(e) => setBuscaModelo(e.target.value)} />
+              </label>
+            </div>
+
+            <div className="filters-row mb14" style={{ padding: "0 16px", flexWrap: "wrap" }}>
+              <button type="button" className={`fchip${categoriaModelo === "todas" ? " active" : ""}`} onClick={() => setCategoriaModelo("todas")}>Todas as categorias</button>
+              {CATEGORIAS_MODELO.map((c) => (
+                <button type="button" key={c} className={`fchip${categoriaModelo === c ? " active" : ""}`} onClick={() => setCategoriaModelo(c)}>{c}</button>
               ))}
+            </div>
+
+            {carregandoGaleria ? (
+              <div className="doc-modelos-grid" style={{ padding: "0 16px 16px" }}>
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className="doc-modelo-card doc-modelo-card-skeleton" aria-hidden="true" />
+                ))}
+              </div>
+            ) : modelosFiltrados.length === 0 ? (
+              <p className="hint" style={{ padding: "0 16px 16px" }}>
+                {abaModelos === "meus"
+                  ? "Você ainda não salvou nenhum modelo — abra um documento e use Arquivo → Salvar como modelo."
+                  : abaModelos === "favoritos"
+                  ? "Nenhum modelo favoritado ainda — passe o mouse num modelo e clique em ☆ pra favoritar."
+                  : "Nenhum modelo encontrado com esse filtro."}
+              </p>
+            ) : (
+              <div className="doc-modelos-grid" style={{ padding: "0 16px 16px" }}>
+                {modelosFiltrados.map((m) => (
+                  <div
+                    key={m.id}
+                    className="doc-modelo-card doc-modelo-card-rica"
+                    tabIndex={0}
+                    role="button"
+                    onClick={() => novoDocumento(m.id)}
+                    onKeyDown={(e) => { if (e.key === "Enter") novoDocumento(m.id); }}
+                  >
+                    <div className="doc-modelo-thumb">
+                      {m.conteudoHtml ? (
+                        <div className="doc-modelo-thumb-escala" dangerouslySetInnerHTML={{ __html: m.conteudoHtml }} />
+                      ) : (
+                        <span className="doc-modelo-icone"><IconDoc width={28} height={28} /></span>
+                      )}
+                      <div className="doc-modelo-thumb-acoes">
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          onClick={(e) => { e.stopPropagation(); setModeloPreviewId(m.id); }}
+                        >
+                          Visualizar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn primary"
+                          onClick={(e) => { e.stopPropagation(); novoDocumento(m.id); }}
+                        >
+                          Usar este modelo
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        className="doc-modelo-favorito"
+                        aria-label={modelosFavoritosIds.includes(m.id) ? "Remover dos favoritos" : "Favoritar"}
+                        onClick={(e) => { e.stopPropagation(); alternarFavoritoModelo(m.id); }}
+                      >
+                        {modelosFavoritosIds.includes(m.id) ? "⭐" : "☆"}
+                      </button>
+                    </div>
+                    <span className="doc-modelo-categoria">{m.categoria}</span>
+                    <span className="n">{m.nome}</span>
+                    <span className="hint">{m.descricao}</span>
+                    {abaModelos === "meus" ? (
+                      <button
+                        type="button"
+                        className="link"
+                        style={{ marginTop: 4, color: "#d64545" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Excluir o modelo "${m.nome}"?`)) excluirModeloPersonalizado(m.id);
+                        }}
+                      >
+                        Excluir modelo
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        {modeloEmPreview ? (
+          <div className="modal-overlay" onClick={() => setModeloPreviewId(null)}>
+            <div className="modal doc-modelo-preview-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="panel-h">
+                <div>
+                  <h4>{modeloEmPreview.nome}</h4>
+                  <p className="hint" style={{ margin: 0 }}>{modeloEmPreview.categoria} · {modeloEmPreview.descricao}</p>
+                </div>
+                <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setModeloPreviewId(null)}>✕</button>
+              </div>
+              <div className="doc-modelo-preview-corpo">
+                {modeloEmPreview.conteudoHtml ? (
+                  <div className="doc-modelo-preview-folha" dangerouslySetInnerHTML={{ __html: modeloEmPreview.conteudoHtml }} />
+                ) : (
+                  <p className="hint">Documento em branco — página limpa em A4.</p>
+                )}
+              </div>
+              <div className="panel-f" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button type="button" className="btn ghost" onClick={() => setModeloPreviewId(null)}>Fechar</button>
+                <button type="button" className="btn primary" onClick={() => novoDocumento(modeloEmPreview.id)}>Usar este modelo</button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -557,15 +703,23 @@ function MenuTopo({
   );
 }
 
-/** Régua com marcadores de margem arrastáveis, igual ao Word — arrastar muda a margem de verdade. */
+/**
+ * Régua horizontal com marcadores de margem arrastáveis, igual ao Word — arrastar muda a margem de
+ * verdade. Esquerda e direita são independentes: mover uma nunca move a outra (cada uma tem seu
+ * próprio callback, ao contrário de antes onde as duas dividiam o mesmo valor de margem).
+ */
 function ReguaDocumento({
   larguraMm,
-  margemMm,
-  onMudarMargem,
+  margemEsquerdaMm,
+  margemDireitaMm,
+  onMudarEsquerda,
+  onMudarDireita,
 }: {
   larguraMm: number;
-  margemMm: number;
-  onMudarMargem: (mm: number) => void;
+  margemEsquerdaMm: number;
+  margemDireitaMm: number;
+  onMudarEsquerda: (mm: number) => void;
+  onMudarDireita: (mm: number) => void;
 }) {
   const reguaRef = useRef<HTMLDivElement>(null);
   const marcasQtd = Math.round(larguraMm / 10);
@@ -579,8 +733,11 @@ function ReguaDocumento({
         if (!el) return;
         const rect = el.getBoundingClientRect();
         const xMm = ((ev.clientX - rect.left) / rect.width) * larguraMm;
-        const novaMargem = lado === "esquerda" ? xMm : larguraMm - xMm;
-        onMudarMargem(Math.round(Math.min(Math.max(novaMargem, 5), larguraMm / 2 - 10)));
+        if (lado === "esquerda") {
+          onMudarEsquerda(Math.round(Math.min(Math.max(xMm, 5), larguraMm - margemDireitaMm - 10)));
+        } else {
+          onMudarDireita(Math.round(Math.min(Math.max(larguraMm - xMm, 5), larguraMm - margemEsquerdaMm - 10)));
+        }
       }
       function soltar() {
         window.removeEventListener("mousemove", mover);
@@ -600,15 +757,79 @@ function ReguaDocumento({
       ))}
       <div
         className="doc-regua-margem doc-regua-margem-esq"
-        style={{ left: `${(margemMm / larguraMm) * 100}%` }}
+        style={{ left: `${(margemEsquerdaMm / larguraMm) * 100}%` }}
         onMouseDown={iniciarArrasteMargem("esquerda")}
-        title={`Margem esquerda: ${margemMm}mm — arraste pra ajustar`}
+        title={`Margem esquerda: ${margemEsquerdaMm}mm — arraste pra ajustar`}
       />
       <div
         className="doc-regua-margem doc-regua-margem-dir"
-        style={{ left: `${((larguraMm - margemMm) / larguraMm) * 100}%` }}
+        style={{ left: `${((larguraMm - margemDireitaMm) / larguraMm) * 100}%` }}
         onMouseDown={iniciarArrasteMargem("direita")}
-        title={`Margem direita: ${margemMm}mm — arraste pra ajustar`}
+        title={`Margem direita: ${margemDireitaMm}mm — arraste pra ajustar`}
+      />
+    </div>
+  );
+}
+
+/** Régua vertical, espelhando a horizontal: margens superior/inferior independentes, arrastáveis. */
+function ReguaVerticalDocumento({
+  alturaMm,
+  margemSuperiorMm,
+  margemInferiorMm,
+  onMudarSuperior,
+  onMudarInferior,
+}: {
+  alturaMm: number;
+  margemSuperiorMm: number;
+  margemInferiorMm: number;
+  onMudarSuperior: (mm: number) => void;
+  onMudarInferior: (mm: number) => void;
+}) {
+  const reguaRef = useRef<HTMLDivElement>(null);
+  const marcasQtd = Math.round(alturaMm / 10);
+  const marcas = Array.from({ length: marcasQtd + 1 }, (_, i) => i);
+
+  function iniciarArrasteMargem(lado: "superior" | "inferior") {
+    return (eDown: React.MouseEvent) => {
+      eDown.preventDefault();
+      function mover(ev: MouseEvent) {
+        const el = reguaRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const yMm = ((ev.clientY - rect.top) / rect.height) * alturaMm;
+        if (lado === "superior") {
+          onMudarSuperior(Math.round(Math.min(Math.max(yMm, 5), alturaMm - margemInferiorMm - 10)));
+        } else {
+          onMudarInferior(Math.round(Math.min(Math.max(alturaMm - yMm, 5), alturaMm - margemSuperiorMm - 10)));
+        }
+      }
+      function soltar() {
+        window.removeEventListener("mousemove", mover);
+        window.removeEventListener("mouseup", soltar);
+      }
+      window.addEventListener("mousemove", mover);
+      window.addEventListener("mouseup", soltar);
+    };
+  }
+
+  return (
+    <div className="doc-regua-vertical" ref={reguaRef}>
+      {marcas.map((cm) => (
+        <span key={cm} className="doc-regua-vertical-marca" aria-hidden="true">
+          {cm > 0 ? cm : ""}
+        </span>
+      ))}
+      <div
+        className="doc-regua-vertical-margem doc-regua-vertical-margem-sup"
+        style={{ top: `${(margemSuperiorMm / alturaMm) * 100}%` }}
+        onMouseDown={iniciarArrasteMargem("superior")}
+        title={`Margem superior: ${margemSuperiorMm}mm — arraste pra ajustar`}
+      />
+      <div
+        className="doc-regua-vertical-margem doc-regua-vertical-margem-inf"
+        style={{ top: `${((alturaMm - margemInferiorMm) / alturaMm) * 100}%` }}
+        onMouseDown={iniciarArrasteMargem("inferior")}
+        title={`Margem inferior: ${margemInferiorMm}mm — arraste pra ajustar`}
       />
     </div>
   );
@@ -629,6 +850,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     atualizarAcesso,
     excluirDocumento,
     duplicarDocumento,
+    salvarComoModelo,
   } = useDocumentos();
 
   const doc = documentos.find((d) => d.id === id);
@@ -675,11 +897,18 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [localizarAberto, setLocalizarAberto] = useState(false);
   const [contagemAberta, setContagemAberta] = useState(false);
   const [detalhesAberto, setDetalhesAberto] = useState(false);
+  const [ajudaAberta, setAjudaAberta] = useState(false);
+  const [salvarModeloAberto, setSalvarModeloAberto] = useState(false);
+  const [nomeNovoModelo, setNomeNovoModelo] = useState("");
+  const [descricaoNovoModelo, setDescricaoNovoModelo] = useState("");
+  const [categoriaNovoModelo, setCategoriaNovoModelo] = useState<CategoriaModelo>("Negócios");
+  const [compartilharNovoModelo, setCompartilharNovoModelo] = useState(false);
   const [gravandoVoz, setGravandoVoz] = useState(false);
 
   const [buscaTexto, setBuscaTexto] = useState("");
   const [substituirTexto, setSubstituirTexto] = useState("");
   const [diferenciarCase, setDiferenciarCase] = useState(false);
+  const [buscaIndiceAtual, setBuscaIndiceAtual] = useState(0);
   const [novoEmailAcesso, setNovoEmailAcesso] = useState("");
   const [novaPermissaoAcesso, setNovaPermissaoAcesso] = useState<PermissaoAcesso>("editar");
   const [colunasAberto, setColunasAberto] = useState(false);
@@ -687,6 +916,44 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const colunasRef = useRef<HTMLDivElement>(null);
   useFecharAoClicarFora(colunasRef, colunasAberto, () => setColunasAberto(false));
   const [imagemSelecionada, setImagemSelecionada] = useState<{ paginaId: string; el: HTMLImageElement } | null>(null);
+
+  // Contorno de seleção visível na própria imagem (a imagem é um <img> real dentro do HTML, não um
+  // componente React controlado — por isso a classe é alternada direto no elemento do DOM).
+  useEffect(() => {
+    const el = imagemSelecionada?.el;
+    if (!el) return;
+    el.classList.add("doc-img-selecionada");
+    return () => el.classList.remove("doc-img-selecionada");
+  }, [imagemSelecionada]);
+
+  // Mover a imagem selecionada com as setas do teclado (só faz sentido em "posição fixa" — position:absolute).
+  // Shift+seta move em passos maiores. Não interfere na digitação normal: só age quando uma imagem está selecionada.
+  useEffect(() => {
+    const info = imagemSelecionada;
+    if (!info) return;
+    function aoTeclar(e: KeyboardEvent) {
+      if (!info) return;
+      const img = info.el;
+      if (img.style.position !== "absolute") return;
+      const setas: Record<string, [number, number]> = {
+        ArrowUp: [0, -1],
+        ArrowDown: [0, 1],
+        ArrowLeft: [-1, 0],
+        ArrowRight: [1, 0],
+      };
+      const delta = setas[e.key];
+      if (!delta) return;
+      e.preventDefault();
+      const passo = e.shiftKey ? 10 : 1;
+      const esquerdaAtual = parseFloat(img.style.left || "0") || 0;
+      const topoAtual = parseFloat(img.style.top || "0") || 0;
+      img.style.left = `${Math.max(0, esquerdaAtual + delta[0] * passo)}px`;
+      img.style.top = `${Math.max(0, topoAtual + delta[1] * passo)}px`;
+      salvarConteudoPagina(info.paginaId);
+    }
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [imagemSelecionada]);
 
   const [exportarPdfAberto, setExportarPdfAberto] = useState(false);
   const [exportarPdfPos, setExportarPdfPos] = useState<{ x: number; y: number } | null>(null);
@@ -699,6 +966,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [localizarPos, setLocalizarPos] = useState<{ x: number; y: number } | null>(null);
   const [contagemPos, setContagemPos] = useState<{ x: number; y: number } | null>(null);
   const [detalhesPos, setDetalhesPos] = useState<{ x: number; y: number } | null>(null);
+  const [ajudaPos, setAjudaPos] = useState<{ x: number; y: number } | null>(null);
+  const ajudaRef = useRef<HTMLDivElement>(null);
+  useFecharAoClicarFora(ajudaRef, ajudaAberta, () => setAjudaAberta(false));
   const [configPaginaPos, setConfigPaginaPos] = useState<{ x: number; y: number } | null>(null);
   const [compartilharPos, setCompartilharPos] = useState<{ x: number; y: number } | null>(null);
   const [historicoPos, setHistoricoPos] = useState<{ x: number; y: number } | null>(null);
@@ -732,6 +1002,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    * usuário estava digitando, e o navegador jogava o cursor de volta pro início do elemento.
    */
   const ultimoConteudoRef = useRef<Record<string, string>>({});
+  /** Posição de cursor a restaurar depois que um bloco inteiro precisou ser movido pra próxima página (ver reflowPagina). */
+  const cursorPendenteRef = useRef<{ paginaId: string; caminho: number[]; startOffset: number } | null>(null);
 
   useEffect(() => {
     for (const pagina of paginasLocais) {
@@ -740,6 +1012,32 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       if (ultimoConteudoRef.current[pagina.id] === pagina.conteudoHtml) continue;
       if (el.innerHTML !== pagina.conteudoHtml) el.innerHTML = pagina.conteudoHtml;
       ultimoConteudoRef.current[pagina.id] = pagina.conteudoHtml;
+
+      const pendente = cursorPendenteRef.current;
+      if (pendente && pendente.paginaId === pagina.id) {
+        cursorPendenteRef.current = null;
+        const primeiroFilho = el.firstElementChild;
+        const no = primeiroFilho ? noNoCaminho(primeiroFilho, pendente.caminho) : null;
+        if (no) {
+          try {
+            const tamanho = no.nodeType === Node.TEXT_NODE ? (no.textContent?.length ?? 0) : no.childNodes.length;
+            const offset = Math.min(pendente.startOffset, tamanho);
+            const range = document.createRange();
+            range.setStart(no, offset);
+            range.collapse(true);
+            const selecao = window.getSelection();
+            selecao?.removeAllRanges();
+            selecao?.addRange(range);
+            el.focus();
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- reflow moveu o bloco onde o cursor estava pra outra página; precisamos sincronizar qual página está ativa
+            setPaginaAtivaId(pagina.id);
+          } catch {
+            // Se por algum motivo a posição exata não puder ser restaurada, ao menos foca a página certa.
+            el.focus();
+            setPaginaAtivaId(pagina.id);
+          }
+        }
+      }
     }
   });
 
@@ -775,6 +1073,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         setLocalizarAberto(false);
         setContagemAberta(false);
         setDetalhesAberto(false);
+        setAjudaAberta(false);
       }
     }
     window.addEventListener("keydown", aoTeclarEsc);
@@ -799,13 +1098,23 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const larguraMm = doc.config.orientacao === "paisagem" ? dimensao.h : dimensao.w;
   const alturaMm = doc.config.orientacao === "paisagem" ? dimensao.w : dimensao.h;
   const qtdColunas = doc.config.colunas ?? 1;
+  // Margens independentes — cada lado cai de volta pra margemMm (documentos salvos antes dessa mudança).
+  const margemSuperiorMm = doc.config.margemSuperiorMm ?? doc.config.margemMm;
+  const margemInferiorMm = doc.config.margemInferiorMm ?? doc.config.margemMm;
+  const margemEsquerdaMm = doc.config.margemEsquerdaMm ?? doc.config.margemMm;
+  const margemDireitaMm = doc.config.margemDireitaMm ?? doc.config.margemMm;
 
   function salvarConteudoPagina(paginaId: string) {
     const el = paginaRefs.current[paginaId];
     if (!el) return;
-    setPaginasLocais((prev) =>
-      prev.map((p) => (p.id === paginaId ? { ...p, conteudoHtml: el.innerHTML } : p)),
-    );
+    const html = el.innerHTML;
+    // O DOM já está exatamente nesse estado (acabamos de lê-lo dele) — marca como sincronizado ANTES de
+    // salvar, senão o efeito de sincronização (useEffect logo abaixo) vê o novo conteudoHtml como uma
+    // mudança "externa" e reescreve innerHTML de novo, o que recria todos os nós filhos do zero. Isso
+    // invalidava referências de elemento ao vivo (ex.: a <img> selecionada no painel de edição de imagem,
+    // ou qualquer nó guardado em estado) mesmo quando o HTML resultante era idêntico ao que já estava lá.
+    ultimoConteudoRef.current[paginaId] = html;
+    setPaginasLocais((prev) => prev.map((p) => (p.id === paginaId ? { ...p, conteudoHtml: html } : p)));
   }
 
   function focarPagina(paginaId: string) {
@@ -849,13 +1158,27 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     });
   }
 
+  /**
+   * O conteúdo digitado só chega em `paginasLocais` depois do debounce do autosave (600ms) — ler
+   * o estado direto na impressão/exportação corre o risco de perder a digitação mais recente se o
+   * usuário imprimir/exportar rápido demais depois de digitar. Isso lê o HTML atual direto do DOM de
+   * cada página (sem esperar o debounce), garantindo que impressão e exportação sempre reflitam
+   * exatamente o que está na tela.
+   */
+  function paginasComConteudoAtual(): PaginaDoc[] {
+    return paginasLocais.map((p) => {
+      const el = paginaRefs.current[p.id];
+      return el ? { ...p, conteudoHtml: el.innerHTML } : p;
+    });
+  }
+
   /** Visualização de impressão própria — só o conteúdo do documento, sem menu/barra/régua/botões. */
   function abrirPreviaImpressao() {
     if (!doc) return;
     abrirPreviaImpressaoLimpa(
       doc.titulo,
-      paginasLocais.map((p) => p.conteudoHtml),
-      { larguraMm, alturaMm, margemMm: doc.config.margemMm, corFundo: doc.config.corFundo },
+      paginasComConteudoAtual().map((p) => p.conteudoHtml),
+      { larguraMm, alturaMm, margemSuperiorMm, margemInferiorMm, margemEsquerdaMm, margemDireitaMm, corFundo: doc.config.corFundo },
     );
   }
 
@@ -1012,75 +1335,261 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    * Auto-paginação real: se o conteúdo estourar a altura da folha, o último bloco vira o começo da próxima página.
    * O salvamento do texto digitado é adiado (debounce) — chamar setPaginasLocais a cada tecla reaplicaria o
    * dangerouslySetInnerHTML da própria div a cada letra, resetando o cursor para o início (o texto saía invertido).
+   *
+   * A reflow roda a cada tecla (como antes), mas agora nunca remove o nó do DOM que contém o cursor: se o
+   * cursor estiver dentro do último bloco, dividimos exatamente na posição do cursor (só o que vem DEPOIS
+   * dele vai para a próxima página) em vez de arrancar o bloco inteiro — isso era a causa do cursor "saltar"
+   * de posição ao digitar perto do fim da página (o nó focado era removido do documento no meio da digitação).
    */
   function aoDigitarNaPagina(paginaId: string) {
     if (salvarDigitacaoRef.current) clearTimeout(salvarDigitacaoRef.current);
     salvarDigitacaoRef.current = setTimeout(() => salvarConteudoPagina(paginaId), 600);
+    reflowPagina(paginaId);
+  }
 
-    const el = paginaRefs.current[paginaId];
-    if (!el) return;
-    if (el.scrollHeight <= el.clientHeight + 4) return;
-    const ultimo = el.lastElementChild;
-    if (!ultimo || el.children.length <= 1) return;
-    const htmlTransbordo = ultimo.outerHTML;
-    ultimo.remove();
+  /** Caminho de índices de nó-filho da raiz até o alvo — serve pra "re-achar" o mesmo ponto depois que o HTML é reconstruído. */
+  function caminhoAteNo(raiz: Node, alvo: Node): number[] | null {
+    const caminho: number[] = [];
+    let atual: Node | null = alvo;
+    while (atual && atual !== raiz) {
+      const pai: Node | null = atual.parentNode;
+      if (!pai) return null;
+      const indice = Array.prototype.indexOf.call(pai.childNodes, atual);
+      if (indice < 0) return null;
+      caminho.unshift(indice);
+      atual = pai;
+    }
+    return atual === raiz ? caminho : null;
+  }
+
+  function noNoCaminho(raiz: Node, caminho: number[]): Node | null {
+    let atual: Node | null = raiz;
+    for (const indice of caminho) {
+      atual = atual?.childNodes[indice] ?? null;
+      if (!atual) return null;
+    }
+    return atual;
+  }
+
+  function moverTransbordoParaProximaPagina(paginaId: string, htmlAtual: string, htmlTransbordo: string): string {
+    let idProximaPagina = "";
     setPaginasLocais((prev) => {
       const indice = prev.findIndex((p) => p.id === paginaId);
-      const atual = { ...prev[indice], conteudoHtml: el.innerHTML };
+      if (indice === -1) return prev;
+      const atual = { ...prev[indice], conteudoHtml: htmlAtual };
       const proxima = prev[indice + 1];
       const copia = [...prev];
       copia[indice] = atual;
       if (proxima) {
+        idProximaPagina = proxima.id;
         copia[indice + 1] = { ...proxima, conteudoHtml: htmlTransbordo + proxima.conteudoHtml };
       } else {
-        copia.splice(indice + 1, 0, {
-          id: `pagina-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          conteudoHtml: htmlTransbordo,
-        });
+        idProximaPagina = `pagina-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        copia.splice(indice + 1, 0, { id: idProximaPagina, conteudoHtml: htmlTransbordo });
       }
+      // Cascateia: se o que acabou de entrar na próxima página também estourar ela (ex.: colar um texto
+      // grande de uma vez), reavalia essa página depois que o DOM sincronizar, empurrando o excedente adiante.
+      const idParaCascata = idProximaPagina;
+      setTimeout(() => reflowPagina(idParaCascata), 50);
       return copia;
     });
+    return idProximaPagina;
   }
 
-  function localizarProximo() {
-    if (!buscaTexto.trim()) return;
-    const w = window as unknown as {
-      find?: (texto: string, caseSensitive?: boolean, backwards?: boolean, wrapAround?: boolean) => boolean;
-    };
-    const achou = w.find?.(buscaTexto, diferenciarCase, false, true);
-    if (achou === false) window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+  /**
+   * Move para a próxima página tudo que estoura a altura da folha, em uma única passada (loop), pra dar
+   * conta de digitação rápida ou colar um bloco grande de uma vez — não só uma linha por chamada.
+   *
+   * Blocos que não contêm o cursor podem ser movidos inteiros sem risco. Quando o loop chega no bloco que
+   * contém o cursor: se houver conteúdo de verdade depois da posição do cursor dentro dele, só essa parte
+   * vai pra próxima página (o texto antes do cursor, e o próprio cursor, nunca são tocados). Se não houver
+   * nada depois do cursor mas a página ainda estourar, o bloco inteiro precisa ir mesmo assim — isso é o
+   * comportamento esperado ("digitar perto do fim da página continua corretamente na página seguinte") —
+   * mas nesse caso guardamos o caminho exato até o nó do cursor em `cursorPendenteRef` pra restaurar o foco
+   * na posição certa assim que o bloco reaparecer no topo da próxima página. É essa restauração explícita
+   * que evita o bug relatado: sem ela, a seleção nativa do navegador colapsa pra um lugar imprevisível
+   * assim que o nó com foco é removido do documento, fazendo o cursor "saltar" de posição.
+   */
+  function reflowPagina(paginaId: string) {
+    const el = paginaRefs.current[paginaId];
+    if (!el) return;
+
+    let htmlTransbordo = "";
+    let mudou = false;
+    let cursorMovidoInfo: { caminho: number[]; startOffset: number } | null = null;
+    let iteracoes = 0;
+    while (el.scrollHeight > el.clientHeight + 4 && iteracoes < 500) {
+      iteracoes += 1;
+      const ultimo = el.lastElementChild;
+      if (!ultimo || el.children.length <= 1) break;
+
+      const selecao = window.getSelection();
+      const range = selecao && selecao.rangeCount > 0 ? selecao.getRangeAt(0) : null;
+      const cursorDentroDoUltimo = !!range && ultimo.contains(range.startContainer);
+
+      if (!cursorDentroDoUltimo) {
+        // Cursor não está nesse bloco: seguro mover o bloco inteiro pra próxima página e continuar o loop.
+        htmlTransbordo = ultimo.outerHTML + htmlTransbordo;
+        ultimo.remove();
+        mudou = true;
+        continue;
+      }
+
+      // Cursor está dentro do último bloco: primeiro tenta dividir exatamente na posição dele.
+      const rangeDepois = range!.cloneRange();
+      rangeDepois.selectNodeContents(ultimo);
+      rangeDepois.setStart(range!.endContainer, range!.endOffset);
+      // Só espia o que tem depois do cursor (cloneContents não remove nada) — um <br> residual de fim de
+      // linha não conta como conteúdo real; se for só isso, não vale a pena separar por aqui.
+      const previa = document.createElement("div");
+      previa.appendChild(rangeDepois.cloneContents());
+      const temConteudoReal = (previa.textContent ?? "").trim().length > 0 || !!previa.querySelector("img, table, hr");
+      if (temConteudoReal) {
+        const fragmentoDepois = rangeDepois.extractContents();
+        const divTemp = document.createElement("div");
+        divTemp.appendChild(fragmentoDepois);
+        htmlTransbordo = divTemp.innerHTML + htmlTransbordo;
+        mudou = true;
+        break;
+      }
+
+      // Nada relevante depois do cursor: se ainda assim a página estoura, o bloco inteiro (com o cursor)
+      // precisa ir pra próxima página. Guarda o caminho até o nó do cursor pra restaurar a posição depois.
+      const caminho = caminhoAteNo(ultimo, range!.startContainer);
+      if (!caminho) break; // não deu pra localizar o nó com segurança: não arrisca mover
+      cursorMovidoInfo = { caminho, startOffset: range!.startOffset };
+      htmlTransbordo = ultimo.outerHTML + htmlTransbordo;
+      ultimo.remove();
+      mudou = true;
+      break;
+    }
+
+    if (!mudou) return;
+    const idProximaPagina = moverTransbordoParaProximaPagina(paginaId, el.innerHTML, htmlTransbordo);
+    if (cursorMovidoInfo && idProximaPagina) {
+      cursorPendenteRef.current = { paginaId: idProximaPagina, ...cursorMovidoInfo };
+    }
   }
 
   function escaparRegex(texto: string) {
     return texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  function contarOcorrencias() {
-    if (!buscaTexto.trim()) return 0;
-    const regex = new RegExp(escaparRegex(buscaTexto), diferenciarCase ? "g" : "gi");
-    let total = 0;
-    for (const p of paginasLocais) {
-      const texto = htmlParaTextoPlano(p.conteudoHtml);
-      total += (texto.match(regex) ?? []).length;
+  /**
+   * Busca de verdade sobre o DOM ao vivo de cada página (não usa o window.find() do navegador, que é uma
+   * API não padronizada/legada e nem existe em todo navegador). Cada ocorrência aponta pro nó de texto e
+   * offsets exatos onde foi encontrada — a mesma lista alimenta contagem, destaque/navegação e substituição,
+   * então os três nunca divergem entre si (o bug antigo: a contagem usava o texto puro da página, mas a
+   * substituição rodava regex sobre o HTML bruto, podendo contar e substituir universos de texto diferentes).
+   * Limitação conhecida: só encontra ocorrências inteiramente dentro de um único nó de texto — um termo que
+   * atravesse duas formatações diferentes (ex.: metade em negrito, metade não) não é encontrado.
+   */
+  function coletarOcorrencias(): { paginaId: string; node: Text; start: number; end: number }[] {
+    const termo = buscaTexto.trim();
+    if (!termo) return [];
+    const regex = new RegExp(escaparRegex(termo), diferenciarCase ? "g" : "gi");
+    const resultado: { paginaId: string; node: Text; start: number; end: number }[] = [];
+    for (const pagina of paginasLocais) {
+      const el = paginaRefs.current[pagina.id];
+      if (!el) continue;
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let no = walker.nextNode();
+      while (no) {
+        const texto = no.textContent ?? "";
+        regex.lastIndex = 0;
+        let m = regex.exec(texto);
+        while (m) {
+          resultado.push({ paginaId: pagina.id, node: no as Text, start: m.index, end: m.index + m[0].length });
+          if (m[0].length === 0) regex.lastIndex += 1;
+          m = regex.exec(texto);
+        }
+        no = walker.nextNode();
+      }
     }
-    return total;
+    return resultado;
+  }
+
+  function contarOcorrencias() {
+    return coletarOcorrencias().length;
+  }
+
+  function irParaOcorrencia(indiceDesejado: number, ocorrenciasJaColetadas?: ReturnType<typeof coletarOcorrencias>) {
+    const ocorrencias = ocorrenciasJaColetadas ?? coletarOcorrencias();
+    if (ocorrencias.length === 0) return;
+    const indice = ((indiceDesejado % ocorrencias.length) + ocorrencias.length) % ocorrencias.length;
+    const oc = ocorrencias[indice];
+    const range = document.createRange();
+    range.setStart(oc.node, oc.start);
+    range.setEnd(oc.node, oc.end);
+    const selecao = window.getSelection();
+    selecao?.removeAllRanges();
+    selecao?.addRange(range);
+    (oc.node.parentElement as HTMLElement | null)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    setPaginaAtivaId(oc.paginaId);
+    setBuscaIndiceAtual(indice);
+  }
+
+  function localizarProximo() {
+    if (!buscaTexto.trim()) return;
+    const ocorrencias = coletarOcorrencias();
+    if (ocorrencias.length === 0) {
+      window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+      return;
+    }
+    irParaOcorrencia(buscaIndiceAtual + 1, ocorrencias);
+  }
+
+  function localizarAnterior() {
+    if (!buscaTexto.trim()) return;
+    const ocorrencias = coletarOcorrencias();
+    if (ocorrencias.length === 0) {
+      window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+      return;
+    }
+    irParaOcorrencia(buscaIndiceAtual - 1, ocorrencias);
+  }
+
+  function substituirAtual() {
+    if (!buscaTexto.trim()) return;
+    const ocorrencias = coletarOcorrencias();
+    if (ocorrencias.length === 0) {
+      window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+      return;
+    }
+    const indice = ((buscaIndiceAtual % ocorrencias.length) + ocorrencias.length) % ocorrencias.length;
+    const oc = ocorrencias[indice];
+    const texto = oc.node.textContent ?? "";
+    oc.node.textContent = texto.slice(0, oc.start) + substituirTexto + texto.slice(oc.end);
+    salvarConteudoPagina(oc.paginaId);
+    irParaOcorrencia(indice);
   }
 
   function substituirTodos() {
     if (!buscaTexto.trim()) return;
-    const regex = new RegExp(escaparRegex(buscaTexto), diferenciarCase ? "g" : "gi");
-    const antes = contarOcorrencias();
-    if (antes === 0) {
+    const ocorrencias = coletarOcorrencias();
+    if (ocorrencias.length === 0) {
       window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
       return;
     }
-    setPaginasLocais((prev) =>
-      prev.map((p) => ({
-        ...p,
-        conteudoHtml: p.conteudoHtml.replace(regex, substituirTexto.replace(/\$/g, "$$$$")),
-      })),
-    );
-    window.alert(`${antes} ocorrência(s) substituída(s).`);
+    const porNo = new Map<Text, typeof ocorrencias>();
+    for (const oc of ocorrencias) {
+      const lista = porNo.get(oc.node) ?? [];
+      lista.push(oc);
+      porNo.set(oc.node, lista);
+    }
+    const paginasAfetadas = new Set<string>();
+    for (const [no, lista] of porNo) {
+      let texto = no.textContent ?? "";
+      // De trás pra frente dentro do mesmo nó, senão os offsets das ocorrências anteriores ficam inválidos.
+      for (const oc of [...lista].sort((a, b) => b.start - a.start)) {
+        texto = texto.slice(0, oc.start) + substituirTexto + texto.slice(oc.end);
+      }
+      no.textContent = texto;
+      paginasAfetadas.add(lista[0].paginaId);
+    }
+    paginasAfetadas.forEach((paginaId) => salvarConteudoPagina(paginaId));
+    setBuscaIndiceAtual(0);
+    window.alert(`${ocorrencias.length} ocorrência(s) substituída(s).`);
   }
 
   function copiarFormatacao() {
@@ -1135,7 +1644,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       if (!arquivo) return;
       const leitor = new FileReader();
       leitor.onload = () => {
-        inserirNaPagina(`<img src="${leitor.result}" data-doc-img="1" style="max-width:100%;" />`);
+        const src = String(leitor.result);
+        inserirNaPagina(`<img src="${src}" data-doc-img="1" data-original-src="${src}" style="max-width:100%;" />`);
       };
       leitor.readAsDataURL(arquivo);
     };
@@ -1170,8 +1680,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       if (!arquivo) return;
       const leitor = new FileReader();
       leitor.onload = () => {
+        const src = String(leitor.result);
         atualizarImagemSelecionada((img) => {
-          img.src = String(leitor.result);
+          img.src = src;
+          img.dataset.originalSrc = src;
         });
       };
       leitor.readAsDataURL(arquivo);
@@ -1217,6 +1729,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }
 
   /** Arrastar livre — só faz sentido (e só habilitamos) quando a imagem está em "posição fixa". */
+  /**
+   * Guias de alinhamento (snap) — ao arrastar uma imagem em posição fixa, encaixa nas margens e no
+   * centro da página (horizontal e vertical) e mostra uma linha guia enquanto o encaixe está ativo,
+   * igual ao comportamento do PowerPoint/Google Slides. As linhas são manipuladas direto no DOM (sem
+   * passar por estado do React) pra não haver atraso visual durante o arraste.
+   */
   function iniciarArrasteLivreImagem(e: { preventDefault: () => void; clientX: number; clientY: number }) {
     if (!imagemSelecionada) return;
     const img = imagemSelecionada.el;
@@ -1228,15 +1746,65 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     const imgRect = img.getBoundingClientRect();
     const dx = e.clientX - imgRect.left;
     const dy = e.clientY - imgRect.top;
+    const pxPorMm = folhaRect.width / larguraMm;
+    const larguraImgPx = imgRect.width;
+    const alturaImgPx = imgRect.height;
+
+    const margemEsqPx = margemEsquerdaMm * pxPorMm;
+    const margemDirPx = margemDireitaMm * pxPorMm;
+    const margemSupPx = margemSuperiorMm * pxPorMm;
+    const margemInfPx = margemInferiorMm * pxPorMm;
+
+    // Cada candidato tem a posição do canto (left/top) da imagem que gera o encaixe, e a posição da
+    // linha guia (guia) — que para o encaixe central é o centro real da página, não a borda da imagem.
+    const candidatosX = [
+      { alvo: 0, guia: 0 },
+      { alvo: margemEsqPx, guia: margemEsqPx },
+      { alvo: (folhaRect.width - larguraImgPx) / 2, guia: folhaRect.width / 2 },
+      { alvo: folhaRect.width - margemDirPx - larguraImgPx, guia: folhaRect.width - margemDirPx },
+      { alvo: folhaRect.width - larguraImgPx, guia: folhaRect.width },
+    ];
+    const candidatosY = [
+      { alvo: 0, guia: 0 },
+      { alvo: margemSupPx, guia: margemSupPx },
+      { alvo: (folhaRect.height - alturaImgPx) / 2, guia: folhaRect.height / 2 },
+      { alvo: folhaRect.height - margemInfPx - alturaImgPx, guia: folhaRect.height - margemInfPx },
+      { alvo: folhaRect.height - alturaImgPx, guia: folhaRect.height },
+    ];
+    const LIMIAR_SNAP = 8;
+
+    const linhaV = document.createElement("div");
+    linhaV.className = "doc-guia-alinhamento doc-guia-alinhamento-v";
+    const linhaH = document.createElement("div");
+    linhaH.className = "doc-guia-alinhamento doc-guia-alinhamento-h";
+    folha.append(linhaV, linhaH);
+
     function mover(ev: MouseEvent) {
-      const x = ev.clientX - folhaRect.left - dx;
-      const y = ev.clientY - folhaRect.top - dy;
+      let x = ev.clientX - folhaRect.left - dx;
+      let y = ev.clientY - folhaRect.top - dy;
+
+      let guiaX: number | null = null;
+      for (const c of candidatosX) {
+        if (Math.abs(x - c.alvo) < LIMIAR_SNAP) { x = c.alvo; guiaX = c.guia; break; }
+      }
+      let guiaY: number | null = null;
+      for (const c of candidatosY) {
+        if (Math.abs(y - c.alvo) < LIMIAR_SNAP) { y = c.alvo; guiaY = c.guia; break; }
+      }
+
       img.style.left = `${Math.max(0, x)}px`;
       img.style.top = `${Math.max(0, y)}px`;
+
+      linhaV.style.display = guiaX !== null ? "block" : "none";
+      linhaV.style.left = `${guiaX ?? 0}px`;
+      linhaH.style.display = guiaY !== null ? "block" : "none";
+      linhaH.style.top = `${guiaY ?? 0}px`;
     }
     function soltar() {
       window.removeEventListener("mousemove", mover);
       window.removeEventListener("mouseup", soltar);
+      linhaV.remove();
+      linhaH.remove();
       atualizarImagemSelecionada(() => undefined);
     }
     window.addEventListener("mousemove", mover);
@@ -1318,6 +1886,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const menuArquivo: ("sep" | ItemMenu)[] = [
     { label: "Novo documento", onClick: () => window.dispatchEvent(new CustomEvent("doc-novo")) },
     { label: "Fazer uma cópia", onClick: () => duplicarDocumento(id) },
+    {
+      label: "Salvar como modelo",
+      onClick: () => {
+        setNomeNovoModelo(doc.titulo);
+        setDescricaoNovoModelo("");
+        setSalvarModeloAberto(true);
+      },
+    },
     { label: "Renomear", onClick: () => document.getElementById("doc-titulo-input")?.focus() },
     { label: doc.favorito ? "Remover dos favoritos" : "Favoritar", onClick: () => favoritarDocumento(id) },
     { label: "Compartilhar", onClick: () => setCompartilharAberto(true) },
@@ -1353,10 +1929,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     },
     "sep",
     { label: "Baixar como PDF", onClick: () => setExportarPdfAberto(true) },
-    { label: "Baixar como Word (.docx)", onClick: () => baixarDocx(doc.titulo, paginasLocais) },
-    { label: "Baixar como texto simples (.txt)", onClick: () => baixarTxt(doc.titulo, paginasLocais) },
-    { label: "Baixar como RTF", onClick: () => baixarRtf(doc.titulo, paginasLocais) },
-    { label: "Baixar como HTML", onClick: () => baixarHtml(doc.titulo, paginasLocais) },
+    { label: "Baixar como Word (.docx)", onClick: () => baixarDocx(doc.titulo, paginasComConteudoAtual()) },
+    { label: "Baixar como texto simples (.txt)", onClick: () => baixarTxt(doc.titulo, paginasComConteudoAtual()) },
+    { label: "Baixar como RTF", onClick: () => baixarRtf(doc.titulo, paginasComConteudoAtual()) },
+    { label: "Baixar como HTML", onClick: () => baixarHtml(doc.titulo, paginasComConteudoAtual()) },
   ];
 
   function tentarQueryCommandEnabled(comando: string) {
@@ -1469,8 +2045,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   ];
 
   const menuAjuda: ("sep" | ItemMenu)[] = [
-    { label: "Atalhos de teclado", onClick: () => window.alert("Ctrl+B negrito · Ctrl+I itálico · Ctrl+U sublinhado · Ctrl+Z desfazer · Ctrl+F localizar") },
-    { label: "Central de ajuda do CRM AZUZ" },
+    { label: "Atalhos de teclado", onClick: () => setAjudaAberta(true) },
+    { label: "Central de ajuda do CRM AZUZ", onClick: () => setAjudaAberta(true) },
   ];
 
   return (
@@ -1637,22 +2213,34 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               {mostrarRegua ? (
                 <ReguaDocumento
                   larguraMm={larguraMm}
-                  margemMm={doc.config.margemMm}
-                  onMudarMargem={(mm) => atualizarConfigPagina(id, { margemMm: mm })}
+                  margemEsquerdaMm={margemEsquerdaMm}
+                  margemDireitaMm={margemDireitaMm}
+                  onMudarEsquerda={(mm) => atualizarConfigPagina(id, { margemEsquerdaMm: mm })}
+                  onMudarDireita={(mm) => atualizarConfigPagina(id, { margemDireitaMm: mm })}
                 />
               ) : null}
-              <div
-                ref={(el) => {
-                  folhaRefs.current[pagina.id] = el;
-                }}
-                className={`doc-page-sheet doc-print-area${semPaginas ? " doc-page-sheet-semborda" : ""}`}
-                style={{
-                  width: `${larguraMm}mm`,
-                  minHeight: semPaginas ? undefined : `${alturaMm}mm`,
-                  padding: `${doc.config.margemMm}mm`,
-                  background: doc.config.corFundo,
-                }}
-              >
+              <div className="doc-page-linha">
+                {mostrarRegua ? (
+                  <ReguaVerticalDocumento
+                    alturaMm={alturaMm}
+                    margemSuperiorMm={margemSuperiorMm}
+                    margemInferiorMm={margemInferiorMm}
+                    onMudarSuperior={(mm) => atualizarConfigPagina(id, { margemSuperiorMm: mm })}
+                    onMudarInferior={(mm) => atualizarConfigPagina(id, { margemInferiorMm: mm })}
+                  />
+                ) : null}
+                <div
+                  ref={(el) => {
+                    folhaRefs.current[pagina.id] = el;
+                  }}
+                  className={`doc-page-sheet doc-print-area${semPaginas ? " doc-page-sheet-semborda" : ""}`}
+                  style={{
+                    width: `${larguraMm}mm`,
+                    minHeight: semPaginas ? undefined : `${alturaMm}mm`,
+                    padding: `${margemSuperiorMm}mm ${margemDireitaMm}mm ${margemInferiorMm}mm ${margemEsquerdaMm}mm`,
+                    background: doc.config.corFundo,
+                  }}
+                >
                 <div
                   key={pagina.id}
                   ref={(el) => {
@@ -1664,7 +2252,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   }}
                   className={`doc-body-rich${mostrarNaoImprimiveis ? " doc-body-rich-marcas" : ""}${qtdColunas > 1 ? " doc-body-rich-colunas" : ""}`}
                   style={{
-                    maxHeight: semPaginas ? undefined : `${alturaMm - doc.config.margemMm * 2}mm`,
+                    maxHeight: semPaginas ? undefined : `${alturaMm - margemSuperiorMm - margemInferiorMm}mm`,
                     overflow: semPaginas ? "visible" : "hidden",
                     columnCount: qtdColunas > 1 ? qtdColunas : undefined,
                     columnGap: qtdColunas > 1 ? `${doc.config.colunasEspacoMm ?? 10}mm` : undefined,
@@ -1678,7 +2266,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   lang={idioma}
                   onFocus={() => focarPagina(pagina.id)}
                   onInput={() => aoDigitarNaPagina(pagina.id)}
-                  onBlur={() => salvarConteudoPagina(pagina.id)}
+                  onBlur={() => {
+                    salvarConteudoPagina(pagina.id);
+                    // Cursor saiu do bloco: se ainda sobrar transbordo que a divisão no meio da digitação
+                    // não pôde mover (nada depois do cursor naquele instante), reavalia agora sem risco.
+                    reflowPagina(pagina.id);
+                  }}
                   onKeyDown={aoTeclarNaPagina}
                   onClick={(e) => aoClicarNaPagina(e, pagina.id)}
                   onMouseDown={(e) => {
@@ -1688,6 +2281,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   }}
                 />
                 <div className="doc-page-numero">Página {indice + 1} de {paginasLocais.length}</div>
+                </div>
               </div>
               <div className="doc-page-fim">
                 <button type="button" className="doc-page-fim-btn" onClick={novaPaginaAposAtiva}>+ Adicionar página</button>
@@ -1746,20 +2340,45 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setLocalizarAberto(false)}>✕</button>
           </div>
           <div className="field" style={{ padding: "6px 0" }}>
-            <input className="input" style={{ width: "100%" }} placeholder="Localizar" value={buscaTexto} onChange={(e) => setBuscaTexto(e.target.value)} />
+            <input
+              className="input"
+              style={{ width: "100%" }}
+              placeholder="Localizar"
+              value={buscaTexto}
+              autoFocus
+              onChange={(e) => {
+                setBuscaTexto(e.target.value);
+                setBuscaIndiceAtual(0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (e.shiftKey) localizarAnterior();
+                  else localizarProximo();
+                }
+              }}
+            />
           </div>
           <div className="field" style={{ padding: "6px 0" }}>
             <input className="input" style={{ width: "100%" }} placeholder="Substituir por" value={substituirTexto} onChange={(e) => setSubstituirTexto(e.target.value)} />
           </div>
           <label className="hint" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <input type="checkbox" checked={diferenciarCase} onChange={(e) => setDiferenciarCase(e.target.checked)} />
+            <input type="checkbox" checked={diferenciarCase} onChange={(e) => { setDiferenciarCase(e.target.checked); setBuscaIndiceAtual(0); }} />
             Diferenciar maiúsculas de minúsculas
           </label>
           <p className="hint" style={{ marginBottom: 8 }}>
-            {buscaTexto.trim() ? `${contarOcorrencias()} ocorrência(s) encontrada(s)` : "Digite um termo pra buscar"}
+            {buscaTexto.trim()
+              ? contarOcorrencias() > 0
+                ? `${((buscaIndiceAtual % contarOcorrencias()) + contarOcorrencias()) % contarOcorrencias() + 1} de ${contarOcorrencias()} ocorrência(s)`
+                : "Nenhuma ocorrência encontrada"
+              : "Digite um termo pra buscar"}
           </p>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={localizarAnterior}>◂ Anterior</button>
+            <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={localizarProximo}>Próxima ▸</button>
+          </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={localizarProximo}>Localizar</button>
+            <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={substituirAtual}>Substituir</button>
             <button type="button" className="btn primary" style={{ flex: 1 }} onClick={substituirTodos}>Substituir todos</button>
           </div>
         </div>
@@ -1798,6 +2417,93 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         </div>
       ) : null}
 
+      {ajudaAberta ? (
+        <div
+          ref={ajudaRef}
+          className="wa-email-modal wa-email-floating doc-ajuda-modal"
+          style={ajudaPos ? { left: ajudaPos.x, top: ajudaPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setAjudaPos)}>
+            <p className="n">Central de ajuda — Documentos</p>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setAjudaAberta(false)}>✕</button>
+          </div>
+          <div className="doc-ajuda-conteudo">
+            <p className="hint" style={{ marginTop: 0 }}>Atalhos de teclado</p>
+            <div className="stat-row"><span className="sl">Desfazer / Refazer</span><span className="sv">Ctrl+Z / Ctrl+Y</span></div>
+            <div className="stat-row"><span className="sl">Negrito / Itálico / Sublinhado</span><span className="sv">Ctrl+B / Ctrl+I / Ctrl+U</span></div>
+            <div className="stat-row"><span className="sl">Recortar / Copiar / Colar</span><span className="sv">Ctrl+X / Ctrl+C / Ctrl+V</span></div>
+            <div className="stat-row"><span className="sl">Colar sem formatação</span><span className="sv">Ctrl+Shift+V</span></div>
+            <div className="stat-row"><span className="sl">Selecionar tudo</span><span className="sv">Ctrl+A</span></div>
+            <div className="stat-row"><span className="sl">Localizar / Substituir</span><span className="sv">Ctrl+F / Ctrl+H</span></div>
+            <div className="stat-row"><span className="sl">Link</span><span className="sv">Ctrl+K</span></div>
+            <div className="stat-row"><span className="sl">Comentário</span><span className="sv">Ctrl+Alt+M</span></div>
+            <div className="stat-row"><span className="sl">Contagem de palavras</span><span className="sv">Ctrl+Shift+C</span></div>
+            <div className="stat-row"><span className="sl">Imprimir</span><span className="sv">Ctrl+P</span></div>
+            <div className="stat-row"><span className="sl">Quebra de página</span><span className="sv">Ctrl+Enter</span></div>
+            <div className="stat-row"><span className="sl">Fechar menus/janelas</span><span className="sv">Esc</span></div>
+            <p className="hint">Guia rápido</p>
+            <ul className="doc-ajuda-lista">
+              <li><b>Arquivo</b> — novo documento, cópia, compartilhar, exportar (PDF/Word/TXT/RTF/HTML) e configuração da página.</li>
+              <li><b>Inserir</b> → Imagem: clique na imagem depois de inserida para redimensionar, recortar, girar e definir a quebra de texto.</li>
+              <li><b>Formatar</b> → Colunas: define 1, 2 ou 3 colunas para o documento ou para a seleção.</li>
+              <li><b>Ver</b> → alterna régua, caracteres não imprimíveis, modo paginado/contínuo e zoom.</li>
+              <li>A auto-paginação move o texto para a página seguinte automaticamente conforme você digita.</li>
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {salvarModeloAberto ? (
+        <div className="modal-overlay" onClick={() => setSalvarModeloAberto(false)}>
+          <div className="modal" style={{ width: "min(420px, 100%)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="panel-h">
+              <h4>Salvar como modelo</h4>
+              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setSalvarModeloAberto(false)}>✕</button>
+            </div>
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div className="field">
+                <label>Nome do modelo</label>
+                <input className="input" style={{ width: "100%" }} value={nomeNovoModelo} onChange={(e) => setNomeNovoModelo(e.target.value)} />
+              </div>
+              <div className="field">
+                <label>Descrição</label>
+                <input className="input" style={{ width: "100%" }} value={descricaoNovoModelo} onChange={(e) => setDescricaoNovoModelo(e.target.value)} placeholder="Pra que serve esse modelo" />
+              </div>
+              <div className="field">
+                <label>Categoria</label>
+                <select className="input" style={{ width: "100%" }} value={categoriaNovoModelo} onChange={(e) => setCategoriaNovoModelo(e.target.value as CategoriaModelo)}>
+                  {(["Negócios", "Vendas", "Marketing", "Saúde", "Recursos Humanos", "Jurídico", "Financeiro", "Educação", "Planejamento", "Relatórios", "Comunicação", "Documentos pessoais"] as CategoriaModelo[]).map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <label className="hint" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" checked={compartilharNovoModelo} onChange={(e) => setCompartilharNovoModelo(e.target.checked)} />
+                Compartilhar com a organização (modelo da equipe)
+              </label>
+            </div>
+            <div className="panel-f" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" className="btn ghost" onClick={() => setSalvarModeloAberto(false)}>Cancelar</button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => {
+                  salvarComoModelo(id, {
+                    nome: nomeNovoModelo,
+                    descricao: descricaoNovoModelo,
+                    categoria: categoriaNovoModelo,
+                    compartilhado: compartilharNovoModelo,
+                  });
+                  setSalvarModeloAberto(false);
+                }}
+              >
+                Salvar modelo
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {configPaginaAberto ? (
         <div
           ref={configPaginaRef}
@@ -1824,14 +2530,45 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             </div>
           </div>
           <div className="field">
-            <label>Margem (mm)</label>
-            <input
-              type="number"
-              className="input"
-              style={{ width: "100%" }}
-              value={doc.config.margemMm}
-              onChange={(e) => atualizarConfigPagina(id, { margemMm: Number(e.target.value) })}
-            />
+            <label>Margens (mm) — cada lado é independente</label>
+            <div className="doc-margens-grid">
+              <label className="doc-margem-campo">
+                <span>Superior</span>
+                <input
+                  type="number"
+                  className="input"
+                  value={margemSuperiorMm}
+                  onChange={(e) => atualizarConfigPagina(id, { margemSuperiorMm: Number(e.target.value) })}
+                />
+              </label>
+              <label className="doc-margem-campo">
+                <span>Inferior</span>
+                <input
+                  type="number"
+                  className="input"
+                  value={margemInferiorMm}
+                  onChange={(e) => atualizarConfigPagina(id, { margemInferiorMm: Number(e.target.value) })}
+                />
+              </label>
+              <label className="doc-margem-campo">
+                <span>Esquerda</span>
+                <input
+                  type="number"
+                  className="input"
+                  value={margemEsquerdaMm}
+                  onChange={(e) => atualizarConfigPagina(id, { margemEsquerdaMm: Number(e.target.value) })}
+                />
+              </label>
+              <label className="doc-margem-campo">
+                <span>Direita</span>
+                <input
+                  type="number"
+                  className="input"
+                  value={margemDireitaMm}
+                  onChange={(e) => atualizarConfigPagina(id, { margemDireitaMm: Number(e.target.value) })}
+                />
+              </label>
+            </div>
           </div>
           <div className="field">
             <label>Cor da página</label>
@@ -2110,6 +2847,7 @@ function PainelImagem({
 }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [manterProporcao, setManterProporcao] = useState(true);
+  const [unidadeTamanho, setUnidadeTamanho] = useState<"px" | "cm" | "%">("px");
   const [cortarTopo, setCortarTopo] = useState(0);
   const [cortarDireita, setCortarDireita] = useState(0);
   const [cortarBaixo, setCortarBaixo] = useState(0);
@@ -2120,15 +2858,31 @@ function PainelImagem({
   const larguraAtual = Math.round(imagem.getBoundingClientRect().width) || imagem.naturalWidth;
   const alturaAtual = Math.round(imagem.getBoundingClientRect().height) || imagem.naturalHeight;
   const proporcao = imagem.naturalWidth && imagem.naturalHeight ? imagem.naturalWidth / imagem.naturalHeight : 1;
+  // Referência pra converter %: a largura útil do container (a folha da página, se existir).
+  const referenciaLarguraPx = imagem.closest(".doc-page-sheet")?.clientWidth || imagem.parentElement?.clientWidth || larguraAtual;
 
-  function aplicarLargura(novaLargura: number) {
+  const PX_POR_CM = 96 / 2.54;
+  function converterParaPx(valor: number, unidade: "px" | "cm" | "%") {
+    if (unidade === "cm") return valor * PX_POR_CM;
+    if (unidade === "%") return (valor / 100) * referenciaLarguraPx;
+    return valor;
+  }
+  function converterDePx(px: number, unidade: "px" | "cm" | "%") {
+    if (unidade === "cm") return Math.round((px / PX_POR_CM) * 10) / 10;
+    if (unidade === "%") return Math.round((px / referenciaLarguraPx) * 1000) / 10;
+    return Math.round(px);
+  }
+
+  function aplicarLargura(novaLarguraNaUnidade: number) {
+    const novaLargura = Math.round(converterParaPx(novaLarguraNaUnidade, unidadeTamanho));
     onMudar((img) => {
       img.style.width = `${novaLargura}px`;
       img.style.height = manterProporcao ? "auto" : img.style.height || "auto";
     });
   }
 
-  function aplicarAltura(novaAltura: number) {
+  function aplicarAltura(novaAlturaNaUnidade: number) {
+    const novaAltura = Math.round(converterParaPx(novaAlturaNaUnidade, unidadeTamanho));
     onMudar((img) => {
       if (manterProporcao) {
         img.style.width = `${Math.round(novaAltura * proporcao)}px`;
@@ -2164,6 +2918,9 @@ function PainelImagem({
 
   function restaurarOriginal() {
     onMudar((img) => {
+      // Desfaz de verdade o corte (que substitui o src por um recorte via canvas), não só o CSS —
+      // a imagem original fica guardada em data-original-src desde a inserção/substituição.
+      if (img.dataset.originalSrc) img.src = img.dataset.originalSrc;
       img.removeAttribute("style");
       img.style.maxWidth = "100%";
       delete img.dataset.rotacao;
@@ -2263,14 +3020,34 @@ function PainelImagem({
 
       <p className="hint" style={{ marginBottom: 8 }}>Dimensões atuais: {larguraAtual}×{alturaAtual}px</p>
 
+      <div className="field">
+        <label>Unidade</label>
+        <div className="filters-row" style={{ margin: 0 }}>
+          <button type="button" className={`fchip${unidadeTamanho === "px" ? " active" : ""}`} onClick={() => setUnidadeTamanho("px")}>Pixels</button>
+          <button type="button" className={`fchip${unidadeTamanho === "cm" ? " active" : ""}`} onClick={() => setUnidadeTamanho("cm")}>Centímetros</button>
+          <button type="button" className={`fchip${unidadeTamanho === "%" ? " active" : ""}`} onClick={() => setUnidadeTamanho("%")}>% da página</button>
+        </div>
+      </div>
       <div className="field" style={{ display: "flex", gap: 8 }}>
         <div style={{ flex: 1 }}>
-          <label>Largura (px)</label>
-          <input type="number" className="input" style={{ width: "100%" }} value={larguraAtual} onChange={(e) => aplicarLargura(Number(e.target.value) || 1)} />
+          <label>Largura ({unidadeTamanho})</label>
+          <input
+            type="number"
+            className="input"
+            style={{ width: "100%" }}
+            value={converterDePx(larguraAtual, unidadeTamanho)}
+            onChange={(e) => aplicarLargura(Number(e.target.value) || 1)}
+          />
         </div>
         <div style={{ flex: 1 }}>
-          <label>Altura (px)</label>
-          <input type="number" className="input" style={{ width: "100%" }} value={alturaAtual} onChange={(e) => aplicarAltura(Number(e.target.value) || 1)} />
+          <label>Altura ({unidadeTamanho})</label>
+          <input
+            type="number"
+            className="input"
+            style={{ width: "100%" }}
+            value={converterDePx(alturaAtual, unidadeTamanho)}
+            onChange={(e) => aplicarAltura(Number(e.target.value) || 1)}
+          />
         </div>
       </div>
       <label className="hint" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -2305,6 +3082,9 @@ function PainelImagem({
           <button type="button" className="fchip" onClick={() => mudarPosicao("frente")}>Na frente</button>
           <button type="button" className="fchip" onClick={() => mudarPosicao("fixa")}>Posição fixa (arrastável)</button>
         </div>
+        {imagem.style.position === "absolute" ? (
+          <p className="hint" style={{ marginTop: 6 }}>Arraste a imagem ou use as setas do teclado pra mover (Shift+seta move mais rápido).</p>
+        ) : null}
       </div>
 
       <div className="field">
