@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import {
   classeOrigem,
@@ -33,10 +33,76 @@ const FILTROS_CONVERSA = [
 
 type FiltroConversa = (typeof FILTROS_CONVERSA)[number]["valor"];
 
-const EMOJIS_RAPIDOS = [
-  "😀", "😁", "😂", "🤣", "😊", "😍", "😘", "😉", "😎", "🤔",
-  "😢", "😭", "😡", "👍", "👎", "👏", "🙏", "💪", "🔥", "🎉",
-  "❤️", "💙", "💚", "💛", "✅", "❌", "⭐", "📌", "🕐", "😴",
+const EMOJI_CATEGORIAS = [
+  {
+    titulo: "Sorrisos",
+    emojis: [
+      "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "🙂", "🙃",
+      "😉", "😊", "😇", "😍", "🤩", "😘", "😗", "😚", "😙", "😋",
+      "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔", "😐",
+      "😑", "😶", "😏", "😒", "🙄", "😬", "🤥", "😌", "😔", "😪",
+      "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🥵", "🥶", "😵",
+      "🤯", "🥳", "😎", "🤓", "🧐", "😕", "😟", "🙁", "😮", "😯",
+      "😲", "😳", "🥺", "😦", "😧", "😨", "😰", "😥", "😢", "😭",
+      "😱", "😖", "😣", "😞", "😓", "😩", "😫", "🥱", "😤", "😡",
+      "😠", "🤬",
+    ],
+  },
+  {
+    titulo: "Gestos e pessoas",
+    emojis: [
+      "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤌", "🤏", "✌️", "🤞",
+      "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍",
+      "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🙏",
+      "✍️", "💅", "🤳", "💪", "🦵", "🦶", "👂", "👃", "🧠", "👀",
+      "👁️", "👅", "👄", "👶", "🧒", "👦", "👧", "🧑", "👱", "👨",
+      "👩", "🧓", "👴", "👵", "🙋", "🙆", "🙅", "💁", "🙇", "🤦",
+      "🤷",
+    ],
+  },
+  {
+    titulo: "Corações e símbolos",
+    emojis: [
+      "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔",
+      "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "☮️",
+      "✝️", "☪️", "🕉️", "☸️", "✡️", "🔯", "🕎", "☯️", "☦️", "🛐",
+      "⭐", "🌟", "✨", "⚡", "🔥", "💥", "☀️", "🌈", "✅", "❌",
+      "❗", "❓", "‼️", "⁉️", "💯", "🔞", "📌", "📍", "🕐", "🔔",
+    ],
+  },
+  {
+    titulo: "Animais e natureza",
+    emojis: [
+      "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯",
+      "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆",
+      "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋",
+      "🐌", "🐞", "🐢", "🐍", "🦎", "🐙", "🦀", "🐠", "🐬", "🐳",
+      "🌵", "🌲", "🌳", "🌴", "🌱", "🌿", "☘️", "🍀", "🍁", "🌸",
+      "🌹", "🌻", "🌼", "🌷", "🌎", "🌙", "☁️", "🌧️", "❄️", "☃️",
+    ],
+  },
+  {
+    titulo: "Comida e bebida",
+    emojis: [
+      "🍏", "🍎", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍈", "🍒",
+      "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑", "🥦", "🥕",
+      "🌽", "🌶️", "🍞", "🥐", "🥯", "🧀", "🥚", "🍳", "🥞", "🍗",
+      "🍖", "🍔", "🍟", "🍕", "🌭", "🌮", "🌯", "🥗", "🍿", "🍩",
+      "🍪", "🎂", "🍰", "🍫", "🍬", "🍭", "🍦", "☕", "🍵", "🥤",
+      "🍺", "🍷", "🥂", "🍾",
+    ],
+  },
+  {
+    titulo: "Atividades e objetos",
+    emojis: [
+      "⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏓", "🎯", "🎮", "🎲",
+      "🎸", "🎧", "🎤", "🎬", "📷", "📱", "💻", "⌚", "🖥️", "🖨️",
+      "☎️", "📞", "📧", "📨", "📦", "📅", "📎", "📌", "🔒", "🔑",
+      "🔨", "🛠️", "💰", "💳", "💡", "🔦", "🧾", "📊", "📈", "📉",
+      "🗓️", "🗑️", "🚗", "🚕", "🚌", "🚀", "✈️", "🚢", "⛽", "🏠",
+      "🏢", "🏥", "🏦", "🎉", "🎁", "🏆", "🥇",
+    ],
+  },
 ] as const;
 
 /** Mesmo dia de referência usado em todo o app (ver `today` em lib/data.ts). */
@@ -122,6 +188,7 @@ export default function ConversasPage() {
 }
 
 function ConversasPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { funis, atribuirContatoAoFunil } = useFunis();
   const { contatos, salvarDadosContato, atribuirAtendente } = useContatos();
@@ -259,6 +326,10 @@ function ConversasPageInner() {
   const [respostasRapidasPorFunil, setRespostasRapidasPorFunil] = useState<
     Record<string, { id: string; texto: string }[]>
   >({});
+  const mensagemInputRef = useRef<HTMLInputElement>(null);
+  const imagemInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const documentoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!gravandoAudio) return;
@@ -361,9 +432,49 @@ function ConversasPageInner() {
     }
   }
 
-  function anexarPlaceholder(rotulo: string) {
-    adicionarMensagem({ tipo: "out", texto: rotulo, hora: horaAgora() });
+  function anexarArquivo(rotulo: string, arquivo: File) {
+    adicionarMensagem({ tipo: "out", texto: `${rotulo} · ${arquivo.name}`, hora: horaAgora() });
+  }
+
+  function abrirUploadImagem() {
     setAnexoAberto(false);
+    imagemInputRef.current?.click();
+  }
+
+  function abrirUploadVideo() {
+    setAnexoAberto(false);
+    videoInputRef.current?.click();
+  }
+
+  function abrirUploadDocumento() {
+    setAnexoAberto(false);
+    documentoInputRef.current?.click();
+  }
+
+  function irParaContatos() {
+    setAnexoAberto(false);
+    router.push("/contatos");
+  }
+
+  function compartilharLocalizacao() {
+    setAnexoAberto(false);
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      adicionarMensagem({ tipo: "out", texto: "📍 Localização enviada", hora: horaAgora() });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (posicao) => {
+        const { latitude, longitude } = posicao.coords;
+        adicionarMensagem({
+          tipo: "out",
+          texto: `📍 Localização enviada · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
+          hora: horaAgora(),
+        });
+      },
+      () => {
+        adicionarMensagem({ tipo: "out", texto: "📍 Localização enviada", hora: horaAgora() });
+      },
+    );
   }
 
   function inserirEmoji(emoji: string) {
@@ -861,7 +972,10 @@ function ConversasPageInner() {
             >
               +
             </button>
-            <div className="chat-input-wrap">
+            <div
+              className="chat-input-wrap"
+              onClick={() => mensagemInputRef.current?.focus()}
+            >
               {gravandoAudio ? (
                 <div className="box chat-input-gravando">
                   🔴 Gravando áudio · {Math.floor(audioSegundos / 60)}:
@@ -869,6 +983,7 @@ function ConversasPageInner() {
                 </div>
               ) : (
                 <input
+                  ref={mensagemInputRef}
                   className="box chat-input-campo"
                   placeholder="Digite uma mensagem... (/ para respostas rápidas, // para automações)"
                   value={mensagemTexto}
@@ -945,6 +1060,40 @@ function ConversasPageInner() {
             </button>
           </div>
 
+          <input
+            ref={imagemInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
+              if (arquivo) anexarArquivo("🖼️ Imagem enviada", arquivo);
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
+              if (arquivo) anexarArquivo("🎥 Vídeo enviado", arquivo);
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={documentoInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
+              if (arquivo) anexarArquivo("📄 Documento enviado", arquivo);
+              e.target.value = "";
+            }}
+          />
+
           <FloatingDropdown
             anchorRect={anexoAberto ? anexoRect : null}
             onClose={() => setAnexoAberto(false)}
@@ -954,41 +1103,41 @@ function ConversasPageInner() {
               type="button"
               className="dropdown-item"
               style={{ width: "100%", textAlign: "left" }}
-              onClick={() => anexarPlaceholder("🖼️ Imagem enviada")}
+              onClick={abrirUploadImagem}
             >
-              <span className="n">🖼️ Imagem</span>
+              <span className="n">Imagem</span>
             </button>
             <button
               type="button"
               className="dropdown-item"
               style={{ width: "100%", textAlign: "left" }}
-              onClick={() => anexarPlaceholder("🎥 Vídeo enviado")}
+              onClick={abrirUploadVideo}
             >
-              <span className="n">🎥 Vídeo</span>
+              <span className="n">Vídeo</span>
             </button>
             <button
               type="button"
               className="dropdown-item"
               style={{ width: "100%", textAlign: "left" }}
-              onClick={() => anexarPlaceholder("📄 Documento enviado")}
+              onClick={abrirUploadDocumento}
             >
-              <span className="n">📄 Documento</span>
+              <span className="n">Documento</span>
             </button>
             <button
               type="button"
               className="dropdown-item"
               style={{ width: "100%", textAlign: "left" }}
-              onClick={() => anexarPlaceholder("👤 Contato enviado")}
+              onClick={irParaContatos}
             >
-              <span className="n">👤 Contato</span>
+              <span className="n">Contato</span>
             </button>
             <button
               type="button"
               className="dropdown-item"
               style={{ width: "100%", textAlign: "left" }}
-              onClick={() => anexarPlaceholder("📍 Localização enviada")}
+              onClick={compartilharLocalizacao}
             >
-              <span className="n">📍 Localização</span>
+              <span className="n">Localização</span>
             </button>
             <div className="dropdown-sep" />
             <button
@@ -1028,18 +1177,26 @@ function ConversasPageInner() {
             anchorRect={emojiAberto ? emojiRect : null}
             onClose={() => setEmojiAberto(false)}
             align="right"
-            width={260}
+            width={300}
+            maxHeight={340}
           >
-            <div className="chat-emoji-grid">
-              {EMOJIS_RAPIDOS.map((emoji) => (
-                <button
-                  type="button"
-                  key={emoji}
-                  className="chat-emoji-opcao"
-                  onClick={() => inserirEmoji(emoji)}
-                >
-                  {emoji}
-                </button>
+            <div className="chat-emoji-picker">
+              {EMOJI_CATEGORIAS.map((cat) => (
+                <div key={cat.titulo}>
+                  <p className="chat-emoji-categoria">{cat.titulo}</p>
+                  <div className="chat-emoji-grid">
+                    {cat.emojis.map((emoji, i) => (
+                      <button
+                        type="button"
+                        key={`${cat.titulo}-${i}`}
+                        className="chat-emoji-opcao"
+                        onClick={() => inserirEmoji(emoji)}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </FloatingDropdown>
