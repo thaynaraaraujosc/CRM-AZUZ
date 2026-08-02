@@ -7,7 +7,7 @@ import { useRef, useState } from "react";
 import { acaoRascunho, acoesAnteriores, classeOrigem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { IconDoc, IconImage, IconMic, IconSearch } from "@/components/icons";
-import { MediaPicker, SegmentChips, Topbar } from "@/components/ui";
+import { FloatingDropdown, MediaPicker, SegmentChips, Topbar } from "@/components/ui";
 
 const iconePorMidia = {
   imagem: <IconImage />,
@@ -30,6 +30,13 @@ const PERIODOS = [
 
 type PeriodoValor = (typeof PERIODOS)[number]["valor"] | "personalizado";
 type ModoAudiencia = "periodo" | "origem" | "manual";
+
+function formatarDataEnvio(iso: string) {
+  if (!iso) return "Escolha a data";
+  const [ano, mes, dia] = iso.split("-");
+  if (iso === "2026-08-02") return "Hoje";
+  return `${dia}/${mes}/${ano}`;
+}
 
 function clamp(valor: number, min: number, max: number) {
   return Math.min(Math.max(valor, min), Math.max(min, max));
@@ -68,6 +75,11 @@ export default function AcoesPage() {
   const [canaisEnvio, setCanaisEnvio] = useState(
     () => CANAIS_ENVIO.filter((c) => c.ativo).map((c) => c.label),
   );
+
+  const [envioAberto, setEnvioAberto] = useState(false);
+  const [envioRect, setEnvioRect] = useState<DOMRect | null>(null);
+  const [envioData, setEnvioData] = useState("2026-08-02");
+  const [envioHora, setEnvioHora] = useState("18:00");
 
   const [modoAudiencia, setModoAudiencia] = useState<ModoAudiencia>("manual");
   const [periodoAudiencia, setPeriodoAudiencia] = useState<PeriodoValor>("30");
@@ -331,10 +343,11 @@ export default function AcoesPage() {
                         className="dropdown-pop"
                         style={{
                           position: "fixed",
-                          ...posicionarAoLado(submenuRect!, 250),
-                          width: 250,
+                          ...posicionarAoLado(submenuRect!, 280),
+                          width: 280,
                           padding: "4px 0",
                           zIndex: 211,
+                          overflowX: "hidden",
                         }}
                         onMouseEnter={cancelarFechamentoAudiencia}
                         onMouseLeave={agendarFechamentoAudiencia}
@@ -357,21 +370,34 @@ export default function AcoesPage() {
                               <p className="hint" style={{ marginBottom: 8 }}>
                                 Ou escolha um período personalizado
                               </p>
-                              <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-                                <input
-                                  type="date"
-                                  className="input"
-                                  style={{ width: "100%" }}
-                                  value={periodoDe}
-                                  onChange={(e) => setPeriodoDe(e.target.value)}
-                                />
-                                <input
-                                  type="date"
-                                  className="input"
-                                  style={{ width: "100%" }}
-                                  value={periodoAte}
-                                  onChange={(e) => setPeriodoAte(e.target.value)}
-                                />
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: 8,
+                                  marginBottom: 10,
+                                }}
+                              >
+                                <div className="field" style={{ padding: 0 }}>
+                                  <label>De</label>
+                                  <input
+                                    type="date"
+                                    className="input"
+                                    style={{ width: "100%" }}
+                                    value={periodoDe}
+                                    onChange={(e) => setPeriodoDe(e.target.value)}
+                                  />
+                                </div>
+                                <div className="field" style={{ padding: 0 }}>
+                                  <label>Até</label>
+                                  <input
+                                    type="date"
+                                    className="input"
+                                    style={{ width: "100%" }}
+                                    value={periodoAte}
+                                    onChange={(e) => setPeriodoAte(e.target.value)}
+                                  />
+                                </div>
                               </div>
                               <button
                                 type="button"
@@ -648,12 +674,55 @@ export default function AcoesPage() {
               </div>
               <div className="field">
                 <label>Enviar</label>
-                <div className="input">
-                  Hoje às 18h ·{" "}
+                <button
+                  type="button"
+                  className="input"
+                  style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
+                  onClick={(e) => {
+                    setEnvioRect(e.currentTarget.getBoundingClientRect());
+                    setEnvioAberto((v) => !v);
+                  }}
+                >
+                  📅 {formatarDataEnvio(envioData)} às {envioHora} ·{" "}
                   {canaisEnvio.length > 0
                     ? canaisEnvio.join(" e ")
                     : "escolha pelo menos um canal"}
-                </div>
+                </button>
+                <FloatingDropdown
+                  anchorRect={envioAberto ? envioRect : null}
+                  onClose={() => setEnvioAberto(false)}
+                  width={260}
+                >
+                  <div style={{ padding: "10px 14px" }}>
+                    <div className="field" style={{ padding: 0, marginBottom: 10 }}>
+                      <label>Qual dia enviar</label>
+                      <input
+                        type="date"
+                        className="input"
+                        style={{ width: "100%" }}
+                        value={envioData}
+                        onChange={(e) => setEnvioData(e.target.value)}
+                      />
+                    </div>
+                    <div className="field" style={{ padding: 0, marginBottom: 10 }}>
+                      <label>Que horas</label>
+                      <input
+                        type="time"
+                        className="input"
+                        style={{ width: "100%" }}
+                        value={envioHora}
+                        onChange={(e) => setEnvioHora(e.target.value)}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="btn primary block"
+                      onClick={() => setEnvioAberto(false)}
+                    >
+                      Confirmar data e hora
+                    </button>
+                  </div>
+                </FloatingDropdown>
               </div>
               <div className="section-foot">
                 <button type="button" className="btn primary block">

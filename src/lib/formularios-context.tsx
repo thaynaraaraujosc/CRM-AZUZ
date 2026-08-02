@@ -241,7 +241,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
         const nova: PerguntaFormulario = {
           id,
           tipo,
-          rotulo: labelTipoPergunta(tipo),
+          rotulo: "",
           obrigatoria: false,
           opcoes:
             tipo === "opcao_unica" || tipo === "multipla_escolha"

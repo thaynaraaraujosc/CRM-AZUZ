@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import {
@@ -39,6 +39,19 @@ function TarefasContent() {
   const [pastasExtras, setPastasExtras] = useState<string[]>([]);
   const [novaPastaAberta, setNovaPastaAberta] = useState(false);
   const [novaPastaInput, setNovaPastaInput] = useState("");
+  const novaPastaRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!novaPastaAberta) return;
+    function aoClicarFora(e: MouseEvent) {
+      if (novaPastaRef.current && !novaPastaRef.current.contains(e.target as Node)) {
+        setNovaPastaAberta(false);
+        setNovaPastaInput("");
+      }
+    }
+    document.addEventListener("mousedown", aoClicarFora);
+    return () => document.removeEventListener("mousedown", aoClicarFora);
+  }, [novaPastaAberta]);
   const [colunaRenomeando, setColunaRenomeando] = useState<number | null>(null);
   const [nomeRenomeando, setNomeRenomeando] = useState("");
   const [colunaArrastando, setColunaArrastando] = useState<number | null>(null);
@@ -316,11 +329,10 @@ function TarefasContent() {
                 </button>
               ))}
               {novaPastaAberta ? (
-                <span style={{ display: "flex", gap: 6 }}>
+                <span ref={novaPastaRef} className="nova-pasta-inline">
                   <input
-                    className="input"
+                    className="nova-pasta-input"
                     autoFocus
-                    style={{ width: 160 }}
                     value={novaPastaInput}
                     onChange={(e) => setNovaPastaInput(e.target.value)}
                     onKeyDown={(e) => {
