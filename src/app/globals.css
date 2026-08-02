@@ -3952,6 +3952,17 @@ table.tbl tbody tr:hover td {
   box-shadow: 0 24px 60px rgba(11, 21, 51, 0.16);
 }
 
+.form-public-obrigado-preview {
+  text-align: center;
+  padding: 20px 8px;
+  color: #0b1533;
+}
+
+.form-public-obrigado-preview h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
 @media (max-width: 900px) {
   .form-builder-layout {
     grid-template-columns: 1fr;
