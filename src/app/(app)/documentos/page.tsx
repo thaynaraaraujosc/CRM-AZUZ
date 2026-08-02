@@ -11,11 +11,13 @@ import {
   type TamanhoPapel,
 } from "@/lib/documentos-context";
 import {
+  abrirPreviaImpressaoLimpa,
+  analisarSelecaoPaginas,
   baixarDocx,
   baixarHtml,
+  baixarPdfReal,
   baixarRtf,
   baixarTxt,
-  imprimirOuSalvarPdf,
 } from "@/lib/documentos-export";
 import { IconDoc, IconSearch } from "@/components/icons";
 import { FloatingDropdown, Topbar } from "@/components/ui";
@@ -122,6 +124,26 @@ function formatarQuando(iso: string) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) +
     " · " +
     d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Lê uma preferência de visualização (Ver → …) persistida — sobrevive entre sessões, por padrão do usuário. */
+function lerPrefVer(chave: string, padrao: boolean): boolean {
+  if (typeof window === "undefined") return padrao;
+  try {
+    const salvas = localStorage.getItem("azuz-crm-documentos-prefs-ver");
+    if (!salvas) return padrao;
+    const p = JSON.parse(salvas) as Record<string, unknown>;
+    return typeof p[chave] === "boolean" ? (p[chave] as boolean) : padrao;
+  } catch {
+    return padrao;
+  }
+}
+
+function htmlParaTextoPlano(html: string) {
+  if (typeof document === "undefined") return "";
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent ?? "";
 }
 
 function contarPalavrasTexto(paginas: PaginaDoc[]) {
@@ -490,6 +512,7 @@ function MenuTopo({
         type="button"
         ref={btnRef}
         className={`doc-menu-btn${aberto ? " active" : ""}`}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => {
           if (aberto) {
             onFechar();
@@ -518,6 +541,7 @@ function MenuTopo({
               className="dropdown-item doc-menu-item"
               style={{ width: "100%", textAlign: "left" }}
               disabled={item.disabled}
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 item.onClick?.();
                 onFechar();
@@ -616,11 +640,33 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [menuAberto, setMenuAberto] = useState<NomeMenu | null>(null);
   const [zoom, setZoom] = useState(100);
   const [modo, setModo] = useState<"edicao" | "sugestao" | "visualizacao">("edicao");
-  const [mostrarRegua, setMostrarRegua] = useState(true);
-  const [mostrarNaoImprimiveis, setMostrarNaoImprimiveis] = useState(false);
-  const [semPaginas, setSemPaginas] = useState(false);
-  const [corretorAtivo, setCorretorAtivo] = useState(true);
+  const [mostrarRegua, setMostrarRegua] = useState(() => lerPrefVer("mostrarRegua", true));
+  const [mostrarNaoImprimiveis, setMostrarNaoImprimiveis] = useState(() => lerPrefVer("mostrarNaoImprimiveis", false));
+  const [semPaginas, setSemPaginas] = useState(() => lerPrefVer("semPaginas", false));
+  const [corretorAtivo, setCorretorAtivo] = useState(() => lerPrefVer("corretorAtivo", true));
+  const [mostrarToolbar, setMostrarToolbar] = useState(() => lerPrefVer("mostrarToolbar", true));
+  const [telaCheia, setTelaCheia] = useState(false);
+  const [estruturaAberta, setEstruturaAberta] = useState(false);
   const [idioma, setIdioma] = useState("pt-BR");
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "azuz-crm-documentos-prefs-ver",
+        JSON.stringify({ mostrarRegua, mostrarNaoImprimiveis, semPaginas, corretorAtivo, mostrarToolbar }),
+      );
+    } catch {
+      // localStorage indisponível — segue só em memória
+    }
+  }, [mostrarRegua, mostrarNaoImprimiveis, semPaginas, corretorAtivo, mostrarToolbar]);
+
+  useEffect(() => {
+    function aoMudarFullscreen() {
+      setTelaCheia(!!document.fullscreenElement);
+    }
+    document.addEventListener("fullscreenchange", aoMudarFullscreen);
+    return () => document.removeEventListener("fullscreenchange", aoMudarFullscreen);
+  }, []);
 
   const [configPaginaAberto, setConfigPaginaAberto] = useState(false);
   const [compartilharAberto, setCompartilharAberto] = useState(false);
@@ -633,8 +679,22 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
   const [buscaTexto, setBuscaTexto] = useState("");
   const [substituirTexto, setSubstituirTexto] = useState("");
+  const [diferenciarCase, setDiferenciarCase] = useState(false);
   const [novoEmailAcesso, setNovoEmailAcesso] = useState("");
   const [novaPermissaoAcesso, setNovaPermissaoAcesso] = useState<PermissaoAcesso>("editar");
+  const [colunasAberto, setColunasAberto] = useState(false);
+  const [colunasPos, setColunasPos] = useState<{ x: number; y: number } | null>(null);
+  const colunasRef = useRef<HTMLDivElement>(null);
+  useFecharAoClicarFora(colunasRef, colunasAberto, () => setColunasAberto(false));
+  const [imagemSelecionada, setImagemSelecionada] = useState<{ paginaId: string; el: HTMLImageElement } | null>(null);
+
+  const [exportarPdfAberto, setExportarPdfAberto] = useState(false);
+  const [exportarPdfPos, setExportarPdfPos] = useState<{ x: number; y: number } | null>(null);
+  const exportarPdfRef = useRef<HTMLDivElement>(null);
+  useFecharAoClicarFora(exportarPdfRef, exportarPdfAberto, () => setExportarPdfAberto(false));
+  const [escopoExportar, setEscopoExportar] = useState<"todas" | "atual" | "especificas">("todas");
+  const [paginasEspecificasTexto, setPaginasEspecificasTexto] = useState("");
+  const [gerandoPdf, setGerandoPdf] = useState(false);
 
   const [localizarPos, setLocalizarPos] = useState<{ x: number; y: number } | null>(null);
   const [contagemPos, setContagemPos] = useState<{ x: number; y: number } | null>(null);
@@ -658,9 +718,30 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   useFecharAoClicarFora(historicoRef, historicoAberto, () => setHistoricoAberto(false));
 
   const paginaRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const folhaRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const salvarDigitacaoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formatoPintadoRef = useRef<{ bold: boolean; italic: boolean; underline: boolean } | null>(null);
   const reconhecimentoRef = useRef<ReconhecimentoDeVoz | null>(null);
+  /**
+   * Guarda, por página, o último HTML que este componente escreveu no DOM.
+   * É a peça-chave que corrige o bug do cursor saltando: nunca reaplicamos `innerHTML` numa página
+   * cujo conteúdo já está sincronizado (ou seja, cuja última mudança veio da própria digitação nela) —
+   * só escrevemos de novo quando o conteúdo mudou por uma fonte externa (trocar de documento, mover
+   * bloco por causa da paginação, desfazer/refazer, restaurar versão, colar, etc). Antes disso, toda
+   * vez que o autosave rodava, o React reaplicava o `dangerouslySetInnerHTML` da própria página que o
+   * usuário estava digitando, e o navegador jogava o cursor de volta pro início do elemento.
+   */
+  const ultimoConteudoRef = useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    for (const pagina of paginasLocais) {
+      const el = paginaRefs.current[pagina.id];
+      if (!el) continue;
+      if (ultimoConteudoRef.current[pagina.id] === pagina.conteudoHtml) continue;
+      if (el.innerHTML !== pagina.conteudoHtml) el.innerHTML = pagina.conteudoHtml;
+      ultimoConteudoRef.current[pagina.id] = pagina.conteudoHtml;
+    }
+  });
 
   useEffect(() => {
     if (!doc) return;
@@ -717,6 +798,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       : TAMANHOS_PAPEL_MM[doc.config.tamanho];
   const larguraMm = doc.config.orientacao === "paisagem" ? dimensao.h : dimensao.w;
   const alturaMm = doc.config.orientacao === "paisagem" ? dimensao.w : dimensao.h;
+  const qtdColunas = doc.config.colunas ?? 1;
 
   function salvarConteudoPagina(paginaId: string) {
     const el = paginaRefs.current[paginaId];
@@ -767,6 +849,165 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     });
   }
 
+  /** Visualização de impressão própria — só o conteúdo do documento, sem menu/barra/régua/botões. */
+  function abrirPreviaImpressao() {
+    if (!doc) return;
+    abrirPreviaImpressaoLimpa(
+      doc.titulo,
+      paginasLocais.map((p) => p.conteudoHtml),
+      { larguraMm, alturaMm, margemMm: doc.config.margemMm, corFundo: doc.config.corFundo },
+    );
+  }
+
+  async function confirmarExportarPdf() {
+    if (!doc) return;
+    const total = paginasLocais.length;
+    let indices: number[];
+    if (escopoExportar === "todas") {
+      indices = paginasLocais.map((_, i) => i);
+    } else if (escopoExportar === "atual") {
+      const i = paginasLocais.findIndex((p) => p.id === paginaAtivaId);
+      indices = [i >= 0 ? i : 0];
+    } else {
+      const analisado = analisarSelecaoPaginas(paginasEspecificasTexto, total);
+      if (!analisado) {
+        window.alert(`Seleção de páginas inválida. Use algo como "1, 3, 5" ou "2-7" (o documento tem ${total} página(s)).`);
+        return;
+      }
+      indices = analisado;
+    }
+    const elementos = indices
+      .map((i) => folhaRefs.current[paginasLocais[i].id])
+      .filter((el): el is HTMLDivElement => !!el);
+    if (elementos.length === 0) return;
+    setGerandoPdf(true);
+    try {
+      await baixarPdfReal(doc.titulo, elementos, larguraMm, alturaMm);
+      setExportarPdfAberto(false);
+    } finally {
+      setGerandoPdf(false);
+    }
+  }
+
+  /** Quebra de página de verdade: divide o conteúdo da página no ponto exato do cursor. */
+  function inserirQuebraDePaginaNoCursor() {
+    const el = paginaRefs.current[paginaAtivaId];
+    const selecao = window.getSelection();
+    if (!el || !selecao || selecao.rangeCount === 0 || !el.contains(selecao.getRangeAt(0).startContainer)) {
+      novaPaginaAposAtiva();
+      return;
+    }
+    const range = selecao.getRangeAt(0);
+    const rangeDepois = range.cloneRange();
+    rangeDepois.selectNodeContents(el);
+    rangeDepois.setStart(range.endContainer, range.endOffset);
+    const fragmentoDepois = rangeDepois.extractContents();
+    const divTemp = document.createElement("div");
+    divTemp.appendChild(fragmentoDepois);
+    const htmlDepois = divTemp.innerHTML;
+    const htmlAntes = el.innerHTML;
+    const indice = paginasLocais.findIndex((p) => p.id === paginaAtivaId);
+    let novoId = "";
+    setPaginasLocais((prev) => {
+      novoId = `pagina-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const copia = [...prev];
+      copia[indice] = { ...copia[indice], conteudoHtml: htmlAntes };
+      copia.splice(indice + 1, 0, { id: novoId, conteudoHtml: htmlDepois });
+      return copia;
+    });
+    setTimeout(() => setPaginaAtivaId(novoId), 0);
+  }
+
+  /** Cola da área de transferência de verdade — tenta manter HTML formatado, cai pra texto puro quando não dá. */
+  async function colarConteudo(semFormatacao: boolean) {
+    try {
+      if (!semFormatacao && navigator.clipboard && "read" in navigator.clipboard) {
+        const itens = await navigator.clipboard.read();
+        for (const item of itens) {
+          if (item.types.includes("text/html")) {
+            const blob = await item.getType("text/html");
+            inserirNaPagina(await blob.text());
+            return;
+          }
+        }
+      }
+      const texto = await navigator.clipboard.readText();
+      aplicarFormatacao("insertText", texto);
+    } catch {
+      window.alert(
+        "Não consegui ler a área de transferência — o navegador pode estar bloqueando o acesso. Use Ctrl+V diretamente sobre o documento, que funciona pelo comportamento nativo do navegador.",
+      );
+    }
+  }
+
+  /** Seleciona todo o conteúdo só da página ativa (nunca a interface, menus ou réguas). */
+  function selecionarTudoNaPagina() {
+    const el = paginaRefs.current[paginaAtivaId];
+    if (!el) return;
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const selecao = window.getSelection();
+    selecao?.removeAllRanges();
+    selecao?.addRange(range);
+  }
+
+  /**
+   * Atalhos que o contentEditable não trata nativamente (Ctrl+B/I/U/Z/Y/X/C/V/A já funcionam sozinhos,
+   * de graça, pelo próprio navegador — só interceptamos aqui o que realmente precisa de tratamento nosso).
+   */
+  function aoTeclarNaPagina(e: React.KeyboardEvent<HTMLDivElement>) {
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key === "Enter") {
+      e.preventDefault();
+      inserirQuebraDePaginaNoCursor();
+      return;
+    }
+    if (mod && (e.key === "p" || e.key === "P")) {
+      e.preventDefault();
+      abrirPreviaImpressao();
+      return;
+    }
+    if (mod && e.shiftKey && (e.key === "v" || e.key === "V")) {
+      e.preventDefault();
+      colarConteudo(true);
+      return;
+    }
+    if (mod && (e.key === "k" || e.key === "K")) {
+      e.preventDefault();
+      inserirLink();
+      return;
+    }
+    if (mod && (e.key === "f" || e.key === "F")) {
+      e.preventDefault();
+      setLocalizarAberto(true);
+      return;
+    }
+    if (mod && (e.key === "h" || e.key === "H")) {
+      e.preventDefault();
+      setLocalizarAberto(true);
+      return;
+    }
+    if (mod && e.altKey && (e.key === "m" || e.key === "M")) {
+      e.preventDefault();
+      abrirComentarioNaSelecao();
+      return;
+    }
+    if (mod && e.shiftKey && (e.key === "c" || e.key === "C")) {
+      e.preventDefault();
+      setContagemAberta(true);
+      return;
+    }
+    if (mod && e.key === "\\") {
+      e.preventDefault();
+      aplicarFormatacao("removeFormat");
+      return;
+    }
+    // Enter normal e Shift+Enter: deixamos o navegador tratar nativamente (cria parágrafo / quebra de
+    // linha) — isso já é seguro agora que a página não reescreve seu próprio innerHTML a cada tecla
+    // (ver ultimoConteudoRef acima). O onInput cuida de reavaliar a auto-paginação em seguida.
+  }
+
   /**
    * Auto-paginação real: se o conteúdo estourar a altura da folha, o último bloco vira o começo da próxima página.
    * O salvamento do texto digitado é adiado (debounce) — chamar setPaginasLocais a cada tecla reaplicaria o
@@ -803,18 +1044,43 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
   function localizarProximo() {
     if (!buscaTexto.trim()) return;
-    const w = window as unknown as { find?: (texto: string) => boolean };
-    w.find?.(buscaTexto);
+    const w = window as unknown as {
+      find?: (texto: string, caseSensitive?: boolean, backwards?: boolean, wrapAround?: boolean) => boolean;
+    };
+    const achou = w.find?.(buscaTexto, diferenciarCase, false, true);
+    if (achou === false) window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+  }
+
+  function escaparRegex(texto: string) {
+    return texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function contarOcorrencias() {
+    if (!buscaTexto.trim()) return 0;
+    const regex = new RegExp(escaparRegex(buscaTexto), diferenciarCase ? "g" : "gi");
+    let total = 0;
+    for (const p of paginasLocais) {
+      const texto = htmlParaTextoPlano(p.conteudoHtml);
+      total += (texto.match(regex) ?? []).length;
+    }
+    return total;
   }
 
   function substituirTodos() {
     if (!buscaTexto.trim()) return;
+    const regex = new RegExp(escaparRegex(buscaTexto), diferenciarCase ? "g" : "gi");
+    const antes = contarOcorrencias();
+    if (antes === 0) {
+      window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+      return;
+    }
     setPaginasLocais((prev) =>
       prev.map((p) => ({
         ...p,
-        conteudoHtml: p.conteudoHtml.split(buscaTexto).join(substituirTexto),
+        conteudoHtml: p.conteudoHtml.replace(regex, substituirTexto.replace(/\$/g, "$$$$")),
       })),
     );
+    window.alert(`${antes} ocorrência(s) substituída(s).`);
   }
 
   function copiarFormatacao() {
@@ -869,11 +1135,112 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       if (!arquivo) return;
       const leitor = new FileReader();
       leitor.onload = () => {
-        inserirNaPagina(`<img src="${leitor.result}" style="max-width:100%;" />`);
+        inserirNaPagina(`<img src="${leitor.result}" data-doc-img="1" style="max-width:100%;" />`);
       };
       leitor.readAsDataURL(arquivo);
     };
     input.click();
+  }
+
+  /** Clique numa imagem dentro da página seleciona ela e abre o painel de edição real. */
+  function aoClicarNaPagina(e: React.MouseEvent<HTMLDivElement>, paginaId: string) {
+    const alvo = e.target as HTMLElement;
+    if (alvo.tagName === "IMG") {
+      setImagemSelecionada({ paginaId, el: alvo as HTMLImageElement });
+    } else {
+      setImagemSelecionada(null);
+    }
+  }
+
+  function atualizarImagemSelecionada(mudar: (img: HTMLImageElement) => void) {
+    if (!imagemSelecionada) return;
+    mudar(imagemSelecionada.el);
+    salvarConteudoPagina(imagemSelecionada.paginaId);
+    // Força o painel a re-renderizar com os novos valores lidos do elemento.
+    setImagemSelecionada({ ...imagemSelecionada });
+  }
+
+  function substituirImagemSelecionada() {
+    if (!imagemSelecionada) return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      const arquivo = input.files?.[0];
+      if (!arquivo) return;
+      const leitor = new FileReader();
+      leitor.onload = () => {
+        atualizarImagemSelecionada((img) => {
+          img.src = String(leitor.result);
+        });
+      };
+      leitor.readAsDataURL(arquivo);
+    };
+    input.click();
+  }
+
+  function excluirImagemSelecionada() {
+    if (!imagemSelecionada) return;
+    const { paginaId, el } = imagemSelecionada;
+    el.remove();
+    salvarConteudoPagina(paginaId);
+    setImagemSelecionada(null);
+  }
+
+  function duplicarImagemSelecionada() {
+    if (!imagemSelecionada) return;
+    const { paginaId, el } = imagemSelecionada;
+    const copia = el.cloneNode(true) as HTMLImageElement;
+    el.after(copia);
+    salvarConteudoPagina(paginaId);
+    setImagemSelecionada({ paginaId, el: copia });
+  }
+
+  function iniciarArrasteRedimensionarImagem(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!imagemSelecionada) return;
+    const img = imagemSelecionada.el;
+    const larguraInicial = img.getBoundingClientRect().width;
+    const xInicial = e.clientX;
+    function mover(ev: MouseEvent) {
+      const novaLargura = Math.max(30, larguraInicial + (ev.clientX - xInicial));
+      img.style.width = `${novaLargura}px`;
+      img.style.height = "auto";
+    }
+    function soltar() {
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+      atualizarImagemSelecionada(() => undefined);
+    }
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
+  }
+
+  /** Arrastar livre — só faz sentido (e só habilitamos) quando a imagem está em "posição fixa". */
+  function iniciarArrasteLivreImagem(e: { preventDefault: () => void; clientX: number; clientY: number }) {
+    if (!imagemSelecionada) return;
+    const img = imagemSelecionada.el;
+    if (img.style.position !== "absolute") return;
+    e.preventDefault();
+    const folha = img.closest(".doc-page-sheet") as HTMLElement | null;
+    if (!folha) return;
+    const folhaRect = folha.getBoundingClientRect();
+    const imgRect = img.getBoundingClientRect();
+    const dx = e.clientX - imgRect.left;
+    const dy = e.clientY - imgRect.top;
+    function mover(ev: MouseEvent) {
+      const x = ev.clientX - folhaRect.left - dx;
+      const y = ev.clientY - folhaRect.top - dy;
+      img.style.left = `${Math.max(0, x)}px`;
+      img.style.top = `${Math.max(0, y)}px`;
+    }
+    function soltar() {
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+      atualizarImagemSelecionada(() => undefined);
+    }
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
   }
 
   function inserirTabela() {
@@ -920,6 +1287,19 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     inserirNaPagina(`<p><b>Sumário</b></p><ul>${titulos.map((t) => `<li>${t}</li>`).join("")}</ul>`);
   }
 
+  function extrairEstrutura() {
+    const itens: { texto: string; nivel: number; paginaId: string }[] = [];
+    const div = document.createElement("div");
+    for (const p of paginasLocais) {
+      div.innerHTML = p.conteudoHtml;
+      div.querySelectorAll("h1, h2, h3, h4").forEach((h) => {
+        const nivel = Number(h.tagName.replace("H", ""));
+        itens.push({ texto: h.textContent ?? "", nivel, paginaId: p.id });
+      });
+    }
+    return itens;
+  }
+
   function abrirComentarioNaSelecao() {
     const selecao = window.getSelection();
     const trecho = selecao?.toString().trim();
@@ -933,6 +1313,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }
 
   const contagem = contarPalavrasTexto(paginasLocais);
+  const estrutura = extrairEstrutura();
 
   const menuArquivo: ("sep" | ItemMenu)[] = [
     { label: "Novo documento", onClick: () => window.dispatchEvent(new CustomEvent("doc-novo")) },
@@ -961,7 +1342,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       },
     },
     { label: "Configuração da página", onClick: () => setConfigPaginaAberto(true) },
-    { label: "Visualizar impressão / Imprimir", atalho: "Ctrl+P", onClick: () => imprimirOuSalvarPdf() },
+    { label: "Visualizar impressão / Imprimir", atalho: "Ctrl+P", onClick: abrirPreviaImpressao },
     "sep",
     {
       label: "Mover para a lixeira",
@@ -971,23 +1352,31 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       },
     },
     "sep",
-    { label: "Baixar como PDF", onClick: () => imprimirOuSalvarPdf() },
+    { label: "Baixar como PDF", onClick: () => setExportarPdfAberto(true) },
     { label: "Baixar como Word (.docx)", onClick: () => baixarDocx(doc.titulo, paginasLocais) },
     { label: "Baixar como texto simples (.txt)", onClick: () => baixarTxt(doc.titulo, paginasLocais) },
     { label: "Baixar como RTF", onClick: () => baixarRtf(doc.titulo, paginasLocais) },
     { label: "Baixar como HTML", onClick: () => baixarHtml(doc.titulo, paginasLocais) },
   ];
 
+  function tentarQueryCommandEnabled(comando: string) {
+    try {
+      return document.queryCommandEnabled(comando);
+    } catch {
+      return true;
+    }
+  }
+
   const menuEditar: ("sep" | ItemMenu)[] = [
-    { label: "Desfazer", atalho: "Ctrl+Z", onClick: () => aplicarFormatacao("undo") },
-    { label: "Refazer", atalho: "Ctrl+Y", onClick: () => aplicarFormatacao("redo") },
+    { label: "Desfazer", atalho: "Ctrl+Z", onClick: () => aplicarFormatacao("undo"), disabled: !tentarQueryCommandEnabled("undo") },
+    { label: "Refazer", atalho: "Ctrl+Y", onClick: () => aplicarFormatacao("redo"), disabled: !tentarQueryCommandEnabled("redo") },
     "sep",
     { label: "Recortar", atalho: "Ctrl+X", onClick: () => aplicarFormatacao("cut") },
     { label: "Copiar", atalho: "Ctrl+C", onClick: () => aplicarFormatacao("copy") },
-    { label: "Colar", atalho: "Ctrl+V", onClick: () => aplicarFormatacao("paste") },
-    { label: "Colar sem formatação", atalho: "Ctrl+Shift+V", onClick: () => aplicarFormatacao("insertText") },
+    { label: "Colar", atalho: "Ctrl+V", onClick: () => colarConteudo(false) },
+    { label: "Colar sem formatação", atalho: "Ctrl+Shift+V", onClick: () => colarConteudo(true) },
     "sep",
-    { label: "Selecionar tudo", atalho: "Ctrl+A", onClick: () => aplicarFormatacao("selectAll") },
+    { label: "Selecionar tudo", atalho: "Ctrl+A", onClick: selecionarTudoNaPagina },
     { label: "Excluir", onClick: () => aplicarFormatacao("delete") },
     "sep",
     { label: "Localizar", atalho: "Ctrl+F", onClick: () => setLocalizarAberto(true) },
@@ -996,17 +1385,22 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
   const menuVer: ("sep" | ItemMenu)[] = [
     { label: mostrarRegua ? "Ocultar régua" : "Mostrar régua", onClick: () => setMostrarRegua((v) => !v) },
+    { label: estruturaAberta ? "Ocultar estrutura do documento" : "Mostrar estrutura do documento", onClick: () => setEstruturaAberta((v) => !v) },
     {
       label: mostrarNaoImprimiveis ? "Ocultar caracteres não imprimíveis" : "Mostrar caracteres não imprimíveis",
       onClick: () => setMostrarNaoImprimiveis((v) => !v),
     },
-    { label: semPaginas ? "Ativar visualização paginada" : "Visualização sem páginas", onClick: () => setSemPaginas((v) => !v) },
+    { label: semPaginas ? "Ativar visualização paginada" : "Visualização sem páginas (modo contínuo)", onClick: () => setSemPaginas((v) => !v) },
+    { label: mostrarToolbar ? "Ocultar barra de ferramentas" : "Mostrar barra de ferramentas", onClick: () => setMostrarToolbar((v) => !v) },
     "sep",
     {
-      label: "Tela cheia",
-      onClick: () => document.documentElement.requestFullscreen?.().catch(() => undefined),
+      label: telaCheia ? "Sair da tela cheia" : "Tela cheia",
+      onClick: () => {
+        if (document.fullscreenElement) document.exitFullscreen?.().catch(() => undefined);
+        else document.documentElement.requestFullscreen?.().catch(() => undefined);
+      },
     },
-    { label: "Visualização de impressão", onClick: () => imprimirOuSalvarPdf() },
+    { label: "Visualização de impressão", onClick: () => abrirPreviaImpressao() },
     "sep",
     { label: "Aumentar zoom", onClick: () => setZoom((z) => Math.min(200, z + 10)) },
     { label: "Diminuir zoom", onClick: () => setZoom((z) => Math.max(50, z - 10)) },
@@ -1025,7 +1419,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     { label: "Cabeçalho", onClick: () => inserirNaPagina("<p><i>Cabeçalho</i></p>") },
     { label: "Rodapé", onClick: () => inserirNaPagina("<p><i>Rodapé</i></p>") },
     { label: "Número de página", onClick: () => inserirNaPagina(`Página ${paginasLocais.findIndex((p) => p.id === paginaAtivaId) + 1} de ${paginasLocais.length}`) },
-    { label: "Quebra de página", onClick: novaPaginaAposAtiva },
+    { label: "Quebra de página", atalho: "Ctrl+Enter", onClick: inserirQuebraDePaginaNoCursor },
+    { label: "Quebra de coluna", disabled: qtdColunas <= 1, onClick: () => inserirNaPagina('<span style="break-after:column;display:inline-block;width:0;"></span>') },
     { label: "Sumário automático", onClick: inserirSumario },
     { label: "Comentário", atalho: "Ctrl+Alt+M", onClick: abrirComentarioNaSelecao },
     { label: "Menção a pessoa", onClick: inserirMencao },
@@ -1046,6 +1441,11 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     "sep",
     { label: "Aumentar recuo", onClick: () => aplicarFormatacao("indent") },
     { label: "Diminuir recuo", onClick: () => aplicarFormatacao("outdent") },
+    "sep",
+    { label: "Colunas: uma coluna", onClick: () => atualizarConfigPagina(id, { colunas: 1 }), disabled: qtdColunas === 1 },
+    { label: "Colunas: duas colunas", onClick: () => atualizarConfigPagina(id, { colunas: 2 }), disabled: qtdColunas === 2 },
+    { label: "Colunas: três colunas", onClick: () => atualizarConfigPagina(id, { colunas: 3 }), disabled: qtdColunas === 3 },
+    { label: "Colunas: mais opções…", onClick: () => setColunasAberto(true) },
     "sep",
     {
       label: "Orientação: alternar retrato/paisagem",
@@ -1119,10 +1519,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         <MenuTopo label="Ajuda" aberto={menuAberto === "ajuda"} onAbrir={() => setMenuAberto("ajuda")} onFechar={() => setMenuAberto(null)} itens={menuAjuda} />
       </div>
 
-      <div className="doc-toolbar doc-toolbar-rich">
+      <div className="doc-toolbar doc-toolbar-rich" style={{ display: mostrarToolbar ? undefined : "none" }}>
         <button type="button" className="doc-toolbar-btn" title="Desfazer" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("undo")}>↶</button>
         <button type="button" className="doc-toolbar-btn" title="Refazer" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("redo")}>↷</button>
-        <button type="button" className="doc-toolbar-btn" title="Imprimir" onClick={() => imprimirOuSalvarPdf()}>🖨</button>
+        <button type="button" className="doc-toolbar-btn" title="Imprimir" onClick={abrirPreviaImpressao}>🖨</button>
         <button
           type="button"
           className={`doc-toolbar-btn${corretorAtivo ? " active" : ""}`}
@@ -1208,6 +1608,29 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       ) : null}
 
       <div className="doc-canvas" style={{ zoom: `${zoom}%` } as React.CSSProperties}>
+        {estruturaAberta ? (
+          <aside className="doc-estrutura-painel">
+            <div className="panel-h">
+              <h4>Estrutura do documento</h4>
+              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setEstruturaAberta(false)}>✕</button>
+            </div>
+            {estrutura.length === 0 ? (
+              <p className="hint" style={{ padding: 17 }}>Use Título 1, Título 2 ou Título 3 no texto pra ver a estrutura aqui.</p>
+            ) : (
+              estrutura.map((item, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="doc-estrutura-item"
+                  style={{ paddingLeft: 12 + (item.nivel - 1) * 14 }}
+                  onClick={() => setPaginaAtivaId(item.paginaId)}
+                >
+                  {item.texto || "(sem título)"}
+                </button>
+              ))
+            )}
+          </aside>
+        ) : null}
         <div className="doc-paginas-coluna">
           {paginasLocais.map((pagina, indice) => (
             <div className="doc-page-wrap" key={pagina.id}>
@@ -1219,6 +1642,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                 />
               ) : null}
               <div
+                ref={(el) => {
+                  folhaRefs.current[pagina.id] = el;
+                }}
                 className={`doc-page-sheet doc-print-area${semPaginas ? " doc-page-sheet-semborda" : ""}`}
                 style={{
                   width: `${larguraMm}mm`,
@@ -1231,17 +1657,35 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   key={pagina.id}
                   ref={(el) => {
                     paginaRefs.current[pagina.id] = el;
+                    if (el && ultimoConteudoRef.current[pagina.id] === undefined) {
+                      el.innerHTML = pagina.conteudoHtml;
+                      ultimoConteudoRef.current[pagina.id] = pagina.conteudoHtml;
+                    }
                   }}
-                  className={`doc-body-rich${mostrarNaoImprimiveis ? " doc-body-rich-marcas" : ""}`}
-                  style={{ maxHeight: semPaginas ? undefined : `${alturaMm - doc.config.margemMm * 2}mm`, overflow: semPaginas ? "visible" : "hidden" }}
+                  className={`doc-body-rich${mostrarNaoImprimiveis ? " doc-body-rich-marcas" : ""}${qtdColunas > 1 ? " doc-body-rich-colunas" : ""}`}
+                  style={{
+                    maxHeight: semPaginas ? undefined : `${alturaMm - doc.config.margemMm * 2}mm`,
+                    overflow: semPaginas ? "visible" : "hidden",
+                    columnCount: qtdColunas > 1 ? qtdColunas : undefined,
+                    columnGap: qtdColunas > 1 ? `${doc.config.colunasEspacoMm ?? 10}mm` : undefined,
+                    columnRuleWidth: qtdColunas > 1 && doc.config.colunasLinha ? "1px" : undefined,
+                    columnRuleStyle: qtdColunas > 1 && doc.config.colunasLinha ? "solid" : undefined,
+                    columnRuleColor: qtdColunas > 1 && doc.config.colunasLinha ? "currentColor" : undefined,
+                  }}
                   contentEditable={modo !== "visualizacao"}
                   suppressContentEditableWarning
                   spellCheck={corretorAtivo}
                   lang={idioma}
-                  dangerouslySetInnerHTML={{ __html: pagina.conteudoHtml }}
                   onFocus={() => focarPagina(pagina.id)}
                   onInput={() => aoDigitarNaPagina(pagina.id)}
                   onBlur={() => salvarConteudoPagina(pagina.id)}
+                  onKeyDown={aoTeclarNaPagina}
+                  onClick={(e) => aoClicarNaPagina(e, pagina.id)}
+                  onMouseDown={(e) => {
+                    if (imagemSelecionada && e.target === imagemSelecionada.el && imagemSelecionada.el.style.position === "absolute") {
+                      iniciarArrasteLivreImagem(e);
+                    }
+                  }}
                 />
                 <div className="doc-page-numero">Página {indice + 1} de {paginasLocais.length}</div>
               </div>
@@ -1307,6 +1751,13 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <div className="field" style={{ padding: "6px 0" }}>
             <input className="input" style={{ width: "100%" }} placeholder="Substituir por" value={substituirTexto} onChange={(e) => setSubstituirTexto(e.target.value)} />
           </div>
+          <label className="hint" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <input type="checkbox" checked={diferenciarCase} onChange={(e) => setDiferenciarCase(e.target.checked)} />
+            Diferenciar maiúsculas de minúsculas
+          </label>
+          <p className="hint" style={{ marginBottom: 8 }}>
+            {buscaTexto.trim() ? `${contarOcorrencias()} ocorrência(s) encontrada(s)` : "Digite um termo pra buscar"}
+          </p>
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={localizarProximo}>Localizar</button>
             <button type="button" className="btn primary" style={{ flex: 1 }} onClick={substituirTodos}>Substituir todos</button>
@@ -1527,6 +1978,444 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           )}
         </div>
       ) : null}
+
+      {colunasAberto ? (
+        <div
+          ref={colunasRef}
+          className="wa-email-modal wa-email-floating"
+          style={colunasPos ? { left: colunasPos.x, top: colunasPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setColunasPos)}>
+            <p className="n">Colunas</p>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setColunasAberto(false)}>✕</button>
+          </div>
+          <div className="field">
+            <label>Quantidade de colunas</label>
+            <input
+              type="number"
+              min={1}
+              max={4}
+              className="input"
+              style={{ width: "100%" }}
+              value={qtdColunas}
+              onChange={(e) => atualizarConfigPagina(id, { colunas: Math.min(4, Math.max(1, Number(e.target.value) || 1)) })}
+            />
+          </div>
+          <div className="field">
+            <label>Espaçamento entre colunas (mm)</label>
+            <input
+              type="number"
+              min={2}
+              max={30}
+              className="input"
+              style={{ width: "100%" }}
+              value={doc.config.colunasEspacoMm ?? 10}
+              onChange={(e) => atualizarConfigPagina(id, { colunasEspacoMm: Number(e.target.value) || 10 })}
+            />
+          </div>
+          <label className="hint" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={!!doc.config.colunasLinha}
+              onChange={(e) => atualizarConfigPagina(id, { colunasLinha: e.target.checked })}
+            />
+            Linha divisória entre colunas
+          </label>
+          <p className="hint" style={{ marginTop: 10 }}>
+            Aplica ao documento inteiro (todas as páginas). Colunas de verdade via CSS — sem tabela.
+          </p>
+          <button type="button" className="btn primary block" onClick={() => setColunasAberto(false)}>
+            Aplicar
+          </button>
+        </div>
+      ) : null}
+
+      {exportarPdfAberto ? (
+        <div
+          ref={exportarPdfRef}
+          className="wa-email-modal wa-email-floating"
+          style={exportarPdfPos ? { left: exportarPdfPos.x, top: exportarPdfPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setExportarPdfPos)}>
+            <p className="n">Baixar como PDF</p>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setExportarPdfAberto(false)}>✕</button>
+          </div>
+          <p className="hint" style={{ marginBottom: 10 }}>
+            {doc.titulo} · {paginasLocais.length} página(s) · {doc.config.tamanho} {doc.config.orientacao}
+          </p>
+          <div className="field">
+            <label>O que exportar</label>
+            <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
+              <button type="button" className={`fchip${escopoExportar === "todas" ? " active" : ""}`} onClick={() => setEscopoExportar("todas")}>Todas as páginas</button>
+              <button type="button" className={`fchip${escopoExportar === "atual" ? " active" : ""}`} onClick={() => setEscopoExportar("atual")}>Só a página atual</button>
+              <button type="button" className={`fchip${escopoExportar === "especificas" ? " active" : ""}`} onClick={() => setEscopoExportar("especificas")}>Páginas específicas</button>
+            </div>
+          </div>
+          {escopoExportar === "especificas" ? (
+            <div className="field">
+              <label>Quais páginas (ex.: 1, 3, 5 ou 2-7)</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                placeholder="1-3, 6, 9-12"
+                value={paginasEspecificasTexto}
+                onChange={(e) => setPaginasEspecificasTexto(e.target.value)}
+              />
+            </div>
+          ) : null}
+          <p className="hint" style={{ marginBottom: 10 }}>
+            Usa o tamanho, a orientação e as margens já configurados no documento. O arquivo é gerado de verdade
+            e baixado direto — não abre a janela de impressão.
+          </p>
+          <button type="button" className="btn primary block" disabled={gerandoPdf} onClick={confirmarExportarPdf}>
+            {gerandoPdf ? "Gerando PDF…" : "Baixar PDF"}
+          </button>
+        </div>
+      ) : null}
+
+      {imagemSelecionada ? (
+        <PainelImagem
+          imagem={imagemSelecionada.el}
+          onFechar={() => setImagemSelecionada(null)}
+          onMudar={atualizarImagemSelecionada}
+          onSubstituir={substituirImagemSelecionada}
+          onExcluir={excluirImagemSelecionada}
+          onDuplicar={duplicarImagemSelecionada}
+          onIniciarRedimensionar={iniciarArrasteRedimensionarImagem}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+type ModoPosicaoImagem = "inline" | "quebrar" | "acima-abaixo" | "atras" | "frente" | "fixa";
+
+/** Painel real de edição de imagem — aparece flutuando ao selecionar uma imagem no documento. */
+function PainelImagem({
+  imagem,
+  onFechar,
+  onMudar,
+  onSubstituir,
+  onExcluir,
+  onDuplicar,
+  onIniciarRedimensionar,
+}: {
+  imagem: HTMLImageElement;
+  onFechar: () => void;
+  onMudar: (fn: (img: HTMLImageElement) => void) => void;
+  onSubstituir: () => void;
+  onExcluir: () => void;
+  onDuplicar: () => void;
+  onIniciarRedimensionar: (e: React.MouseEvent) => void;
+}) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [manterProporcao, setManterProporcao] = useState(true);
+  const [cortarTopo, setCortarTopo] = useState(0);
+  const [cortarDireita, setCortarDireita] = useState(0);
+  const [cortarBaixo, setCortarBaixo] = useState(0);
+  const [cortarEsquerda, setCortarEsquerda] = useState(0);
+  const painelRef = useRef<HTMLDivElement>(null);
+  useFecharAoClicarFora(painelRef, true, onFechar);
+
+  const larguraAtual = Math.round(imagem.getBoundingClientRect().width) || imagem.naturalWidth;
+  const alturaAtual = Math.round(imagem.getBoundingClientRect().height) || imagem.naturalHeight;
+  const proporcao = imagem.naturalWidth && imagem.naturalHeight ? imagem.naturalWidth / imagem.naturalHeight : 1;
+
+  function aplicarLargura(novaLargura: number) {
+    onMudar((img) => {
+      img.style.width = `${novaLargura}px`;
+      img.style.height = manterProporcao ? "auto" : img.style.height || "auto";
+    });
+  }
+
+  function aplicarAltura(novaAltura: number) {
+    onMudar((img) => {
+      if (manterProporcao) {
+        img.style.width = `${Math.round(novaAltura * proporcao)}px`;
+        img.style.height = "auto";
+      } else {
+        img.style.height = `${novaAltura}px`;
+      }
+    });
+  }
+
+  function girar(graus: number) {
+    onMudar((img) => {
+      const atual = Number((img.dataset.rotacao ?? "0")) + graus;
+      img.dataset.rotacao = String(atual);
+      img.style.transform = montarTransform(img);
+    });
+  }
+
+  function espelhar(eixo: "h" | "v") {
+    onMudar((img) => {
+      const chave = eixo === "h" ? "espelhoH" : "espelhoV";
+      img.dataset[chave] = img.dataset[chave] === "1" ? "0" : "1";
+      img.style.transform = montarTransform(img);
+    });
+  }
+
+  function montarTransform(img: HTMLImageElement) {
+    const rotacao = img.dataset.rotacao ?? "0";
+    const eh = img.dataset.espelhoH === "1" ? -1 : 1;
+    const ev = img.dataset.espelhoV === "1" ? -1 : 1;
+    return `rotate(${rotacao}deg) scale(${eh}, ${ev})`;
+  }
+
+  function restaurarOriginal() {
+    onMudar((img) => {
+      img.removeAttribute("style");
+      img.style.maxWidth = "100%";
+      delete img.dataset.rotacao;
+      delete img.dataset.espelhoH;
+      delete img.dataset.espelhoV;
+    });
+  }
+
+  function alternarBorda() {
+    onMudar((img) => {
+      const temBorda = img.style.border && img.style.border !== "none";
+      img.style.border = temBorda ? "none" : "2px solid #0b1533";
+    });
+  }
+
+  function mudarPosicao(modo: ModoPosicaoImagem) {
+    onMudar((img) => {
+      img.style.float = "none";
+      img.style.position = "static";
+      img.style.display = "inline-block";
+      img.style.zIndex = "";
+      if (modo === "quebrar") {
+        img.style.float = "left";
+        img.style.margin = "0 12px 8px 0";
+      } else if (modo === "acima-abaixo") {
+        img.style.display = "block";
+        img.style.margin = "8px auto";
+      } else if (modo === "atras") {
+        img.style.position = "absolute";
+        img.style.zIndex = "-1";
+        img.style.left = img.style.left || "0px";
+        img.style.top = img.style.top || "0px";
+      } else if (modo === "frente") {
+        img.style.position = "absolute";
+        img.style.zIndex = "5";
+        img.style.left = img.style.left || "0px";
+        img.style.top = img.style.top || "0px";
+      } else if (modo === "fixa") {
+        img.style.position = "absolute";
+        img.style.zIndex = "1";
+        img.style.left = img.style.left || "0px";
+        img.style.top = img.style.top || "0px";
+      }
+    });
+  }
+
+  function alinhar(lado: "esquerda" | "centro" | "direita") {
+    onMudar((img) => {
+      img.style.position = "static";
+      img.style.float = "none";
+      img.style.display = "block";
+      img.style.margin = lado === "centro" ? "8px auto" : lado === "direita" ? "8px 0 8px auto" : "8px auto 8px 0";
+    });
+  }
+
+  function aplicarCorte() {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const nl = imagem.naturalWidth;
+    const na = imagem.naturalHeight;
+    const sx = (cortarEsquerda / 100) * nl;
+    const sy = (cortarTopo / 100) * na;
+    const sw = nl - sx - (cortarDireita / 100) * nl;
+    const sh = na - sy - (cortarBaixo / 100) * na;
+    if (sw <= 0 || sh <= 0) {
+      window.alert("Corte inválido — a área restante ficaria vazia.");
+      return;
+    }
+    canvas.width = sw;
+    canvas.height = sh;
+    ctx.drawImage(imagem, sx, sy, sw, sh, 0, 0, sw, sh);
+    try {
+      const dataUrl = canvas.toDataURL("image/png");
+      onMudar((img) => {
+        img.src = dataUrl;
+      });
+      setCortarTopo(0);
+      setCortarDireita(0);
+      setCortarBaixo(0);
+      setCortarEsquerda(0);
+    } catch {
+      window.alert("Não foi possível cortar essa imagem (pode ser uma imagem de outra origem, bloqueada por CORS).");
+    }
+  }
+
+  return (
+    <div
+      ref={painelRef}
+      className="wa-email-modal wa-email-floating doc-img-painel"
+      style={pos ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" } : undefined}
+    >
+      <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setPos)}>
+        <p className="n">Editar imagem</p>
+        <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
+      </div>
+
+      <p className="hint" style={{ marginBottom: 8 }}>Dimensões atuais: {larguraAtual}×{alturaAtual}px</p>
+
+      <div className="field" style={{ display: "flex", gap: 8 }}>
+        <div style={{ flex: 1 }}>
+          <label>Largura (px)</label>
+          <input type="number" className="input" style={{ width: "100%" }} value={larguraAtual} onChange={(e) => aplicarLargura(Number(e.target.value) || 1)} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label>Altura (px)</label>
+          <input type="number" className="input" style={{ width: "100%" }} value={alturaAtual} onChange={(e) => aplicarAltura(Number(e.target.value) || 1)} />
+        </div>
+      </div>
+      <label className="hint" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <input type="checkbox" checked={manterProporcao} onChange={(e) => setManterProporcao(e.target.checked)} />
+        Manter proporção
+      </label>
+      <div
+        className="doc-img-resize-alca"
+        title="Arraste pra redimensionar"
+        onMouseDown={onIniciarRedimensionar}
+      >
+        ⤡ Arrastar pra redimensionar
+      </div>
+
+      <div className="field">
+        <label>Girar / espelhar</label>
+        <div className="filters-row" style={{ margin: 0 }}>
+          <button type="button" className="fchip" onClick={() => girar(-90)}>↺ Girar esquerda</button>
+          <button type="button" className="fchip" onClick={() => girar(90)}>↻ Girar direita</button>
+          <button type="button" className="fchip" onClick={() => espelhar("h")}>⇋ Espelhar H</button>
+          <button type="button" className="fchip" onClick={() => espelhar("v")}>⇵ Espelhar V</button>
+        </div>
+      </div>
+
+      <div className="field">
+        <label>Posição no texto</label>
+        <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
+          <button type="button" className="fchip" onClick={() => mudarPosicao("inline")}>Em linha</button>
+          <button type="button" className="fchip" onClick={() => mudarPosicao("quebrar")}>Quebrar texto</button>
+          <button type="button" className="fchip" onClick={() => mudarPosicao("acima-abaixo")}>Acima/abaixo</button>
+          <button type="button" className="fchip" onClick={() => mudarPosicao("atras")}>Atrás do texto</button>
+          <button type="button" className="fchip" onClick={() => mudarPosicao("frente")}>Na frente</button>
+          <button type="button" className="fchip" onClick={() => mudarPosicao("fixa")}>Posição fixa (arrastável)</button>
+        </div>
+      </div>
+
+      <div className="field">
+        <label>Alinhamento</label>
+        <div className="filters-row" style={{ margin: 0 }}>
+          <button type="button" className="fchip" onClick={() => alinhar("esquerda")}>Esquerda</button>
+          <button type="button" className="fchip" onClick={() => alinhar("centro")}>Centro</button>
+          <button type="button" className="fchip" onClick={() => alinhar("direita")}>Direita</button>
+        </div>
+      </div>
+
+      <div className="field">
+        <label>Cortar (% de cada lado)</label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <input type="number" className="input" placeholder="Topo" value={cortarTopo} onChange={(e) => setCortarTopo(Number(e.target.value) || 0)} />
+          <input type="number" className="input" placeholder="Direita" value={cortarDireita} onChange={(e) => setCortarDireita(Number(e.target.value) || 0)} />
+          <input type="number" className="input" placeholder="Baixo" value={cortarBaixo} onChange={(e) => setCortarBaixo(Number(e.target.value) || 0)} />
+          <input type="number" className="input" placeholder="Esquerda" value={cortarEsquerda} onChange={(e) => setCortarEsquerda(Number(e.target.value) || 0)} />
+        </div>
+        <button type="button" className="btn ghost block" style={{ marginTop: 8 }} onClick={aplicarCorte}>✂ Aplicar corte</button>
+      </div>
+
+      <div className="field">
+        <label>Borda, transparência e distância do texto</label>
+        <div className="filters-row" style={{ margin: 0 }}>
+          <button type="button" className="fchip" onClick={alternarBorda}>Alternar borda</button>
+        </div>
+        <input
+          type="range"
+          min={2}
+          max={12}
+          defaultValue={2}
+          onChange={(e) => onMudar((img) => { img.style.borderWidth = `${e.target.value}px`; })}
+          style={{ width: "100%", marginTop: 6 }}
+          title="Espessura da borda"
+        />
+        <input
+          type="color"
+          className="input"
+          style={{ width: "100%", height: 34, padding: 4, marginTop: 6 }}
+          defaultValue="#0b1533"
+          onChange={(e) => onMudar((img) => { img.style.borderColor = e.target.value; })}
+          title="Cor da borda"
+        />
+        <input
+          type="range"
+          min={10}
+          max={100}
+          defaultValue={100}
+          onChange={(e) => onMudar((img) => { img.style.opacity = String(Number(e.target.value) / 100); })}
+          style={{ width: "100%", marginTop: 10 }}
+          title="Transparência"
+        />
+        <input
+          type="range"
+          min={0}
+          max={40}
+          defaultValue={0}
+          onChange={(e) => onMudar((img) => { img.style.margin = `${e.target.value}px`; })}
+          style={{ width: "100%", marginTop: 10 }}
+          title="Distância entre a imagem e o texto"
+        />
+      </div>
+
+      <div className="field" style={{ display: "flex", gap: 8 }}>
+        <button
+          type="button"
+          className="btn ghost"
+          style={{ flex: 1 }}
+          onClick={() => {
+            const atual = imagem.alt;
+            const novo = window.prompt("Texto alternativo (acessibilidade):", atual);
+            if (novo !== null) onMudar((img) => { img.alt = novo; });
+          }}
+        >
+          Texto alternativo
+        </button>
+        <button
+          type="button"
+          className="btn ghost"
+          style={{ flex: 1 }}
+          onClick={() => {
+            const legendaExistente = imagem.nextElementSibling?.classList.contains("doc-img-legenda")
+              ? imagem.nextElementSibling.textContent ?? ""
+              : "";
+            const texto = window.prompt("Legenda da imagem:", legendaExistente);
+            if (texto === null) return;
+            onMudar((img) => {
+              if (img.nextElementSibling?.classList.contains("doc-img-legenda")) {
+                img.nextElementSibling.textContent = texto;
+              } else {
+                const legenda = document.createElement("div");
+                legenda.className = "doc-img-legenda";
+                legenda.textContent = texto;
+                img.after(legenda);
+              }
+            });
+          }}
+        >
+          Legenda
+        </button>
+      </div>
+
+      <div className="field" style={{ display: "flex", gap: 8 }}>
+        <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={onSubstituir}>Substituir</button>
+        <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={onDuplicar}>Duplicar</button>
+      </div>
+      <div className="field" style={{ display: "flex", gap: 8 }}>
+        <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={restaurarOriginal}>Restaurar original</button>
+        <button type="button" className="btn ghost" style={{ flex: 1, color: "#d64545" }} onClick={onExcluir}>Excluir</button>
+      </div>
     </div>
   );
 }
