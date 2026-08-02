@@ -151,14 +151,33 @@ export function Sidebar() {
   const [gestaoAtividadeAberta, setGestaoAtividadeAberta] = useState(false);
   const gestaoAtividadeBtnRef = useRef<HTMLDivElement>(null);
   const [gestaoAtividadePos, setGestaoAtividadePos] = useState({ top: 0, left: 0 });
+  const gestaoAtividadeFecharRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function cancelarFechamentoGestaoAtividade() {
+    if (gestaoAtividadeFecharRef.current) {
+      clearTimeout(gestaoAtividadeFecharRef.current);
+      gestaoAtividadeFecharRef.current = null;
+    }
+  }
 
   function abrirGestaoAtividade() {
+    cancelarFechamentoGestaoAtividade();
     if (!gestaoAtividadeBtnRef.current) return;
     const rect = gestaoAtividadeBtnRef.current.getBoundingClientRect();
     const alturaEstimada = gestaoAtividadeItens.length * 46;
     setGestaoAtividadePos(posicionarFlyoutLateral(rect, 240, alturaEstimada));
     setGestaoAtividadeAberta(true);
   }
+
+  /** Dá uma folga de 2s antes de fechar, pra dar tempo do mouse atravessar o espaço até o popup. */
+  function agendarFechamentoGestaoAtividade() {
+    cancelarFechamentoGestaoAtividade();
+    gestaoAtividadeFecharRef.current = setTimeout(() => {
+      setGestaoAtividadeAberta(false);
+    }, 2000);
+  }
+
+  useEffect(() => cancelarFechamentoGestaoAtividade, []);
 
   return (
     <aside className="sidebar">
@@ -267,7 +286,7 @@ export function Sidebar() {
                 key="gestao-atividade"
                 ref={gestaoAtividadeBtnRef}
                 onMouseEnter={abrirGestaoAtividade}
-                onMouseLeave={() => setGestaoAtividadeAberta(false)}
+                onMouseLeave={agendarFechamentoGestaoAtividade}
               >
                 <button
                   type="button"
@@ -328,8 +347,8 @@ export function Sidebar() {
                 padding: "4px 0",
                 zIndex: 210,
               }}
-              onMouseEnter={() => setGestaoAtividadeAberta(true)}
-              onMouseLeave={() => setGestaoAtividadeAberta(false)}
+              onMouseEnter={cancelarFechamentoGestaoAtividade}
+              onMouseLeave={agendarFechamentoGestaoAtividade}
             >
               {gestaoAtividadeItens.map((item) => {
                 const subAtivo =
