@@ -1727,6 +1727,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }
 
   /** Arrastar livre — só faz sentido (e só habilitamos) quando a imagem está em "posição fixa". */
+  /**
+   * Guias de alinhamento (snap) — ao arrastar uma imagem em posição fixa, encaixa nas margens e no
+   * centro da página (horizontal e vertical) e mostra uma linha guia enquanto o encaixe está ativo,
+   * igual ao comportamento do PowerPoint/Google Slides. As linhas são manipuladas direto no DOM (sem
+   * passar por estado do React) pra não haver atraso visual durante o arraste.
+   */
   function iniciarArrasteLivreImagem(e: { preventDefault: () => void; clientX: number; clientY: number }) {
     if (!imagemSelecionada) return;
     const img = imagemSelecionada.el;
@@ -1738,15 +1744,65 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     const imgRect = img.getBoundingClientRect();
     const dx = e.clientX - imgRect.left;
     const dy = e.clientY - imgRect.top;
+    const pxPorMm = folhaRect.width / larguraMm;
+    const larguraImgPx = imgRect.width;
+    const alturaImgPx = imgRect.height;
+
+    const margemEsqPx = margemEsquerdaMm * pxPorMm;
+    const margemDirPx = margemDireitaMm * pxPorMm;
+    const margemSupPx = margemSuperiorMm * pxPorMm;
+    const margemInfPx = margemInferiorMm * pxPorMm;
+
+    // Cada candidato tem a posição do canto (left/top) da imagem que gera o encaixe, e a posição da
+    // linha guia (guia) — que para o encaixe central é o centro real da página, não a borda da imagem.
+    const candidatosX = [
+      { alvo: 0, guia: 0 },
+      { alvo: margemEsqPx, guia: margemEsqPx },
+      { alvo: (folhaRect.width - larguraImgPx) / 2, guia: folhaRect.width / 2 },
+      { alvo: folhaRect.width - margemDirPx - larguraImgPx, guia: folhaRect.width - margemDirPx },
+      { alvo: folhaRect.width - larguraImgPx, guia: folhaRect.width },
+    ];
+    const candidatosY = [
+      { alvo: 0, guia: 0 },
+      { alvo: margemSupPx, guia: margemSupPx },
+      { alvo: (folhaRect.height - alturaImgPx) / 2, guia: folhaRect.height / 2 },
+      { alvo: folhaRect.height - margemInfPx - alturaImgPx, guia: folhaRect.height - margemInfPx },
+      { alvo: folhaRect.height - alturaImgPx, guia: folhaRect.height },
+    ];
+    const LIMIAR_SNAP = 8;
+
+    const linhaV = document.createElement("div");
+    linhaV.className = "doc-guia-alinhamento doc-guia-alinhamento-v";
+    const linhaH = document.createElement("div");
+    linhaH.className = "doc-guia-alinhamento doc-guia-alinhamento-h";
+    folha.append(linhaV, linhaH);
+
     function mover(ev: MouseEvent) {
-      const x = ev.clientX - folhaRect.left - dx;
-      const y = ev.clientY - folhaRect.top - dy;
+      let x = ev.clientX - folhaRect.left - dx;
+      let y = ev.clientY - folhaRect.top - dy;
+
+      let guiaX: number | null = null;
+      for (const c of candidatosX) {
+        if (Math.abs(x - c.alvo) < LIMIAR_SNAP) { x = c.alvo; guiaX = c.guia; break; }
+      }
+      let guiaY: number | null = null;
+      for (const c of candidatosY) {
+        if (Math.abs(y - c.alvo) < LIMIAR_SNAP) { y = c.alvo; guiaY = c.guia; break; }
+      }
+
       img.style.left = `${Math.max(0, x)}px`;
       img.style.top = `${Math.max(0, y)}px`;
+
+      linhaV.style.display = guiaX !== null ? "block" : "none";
+      linhaV.style.left = `${guiaX ?? 0}px`;
+      linhaH.style.display = guiaY !== null ? "block" : "none";
+      linhaH.style.top = `${guiaY ?? 0}px`;
     }
     function soltar() {
       window.removeEventListener("mousemove", mover);
       window.removeEventListener("mouseup", soltar);
+      linhaV.remove();
+      linhaH.remove();
       atualizarImagemSelecionada(() => undefined);
     }
     window.addEventListener("mousemove", mover);

@@ -4350,6 +4350,27 @@ table.tbl tbody tr:hover td {
   font-family: "Times New Roman", Georgia, serif;
 }
 
+/* Linhas guia de alinhamento (snap) ao arrastar uma imagem em posição fixa — ver iniciarArrasteLivreImagem. */
+.doc-guia-alinhamento {
+  position: absolute;
+  display: none;
+  background: #ff3b8b;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.doc-guia-alinhamento-v {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.doc-guia-alinhamento-h {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
 .doc-page-sheet .doc-title-input {
   color: #1a1a1a;
 }
