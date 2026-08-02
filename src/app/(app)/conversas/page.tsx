@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import {
@@ -246,20 +246,10 @@ function ConversasPageInner() {
   const [motivosPerdaCustom, setMotivosPerdaCustom] = useState<string[]>([]);
   const [novoMotivoTexto, setNovoMotivoTexto] = useState("");
   const [escolhendoMotivo, setEscolhendoMotivo] = useState(false);
-  const [discadorAberto, setDiscadorAberto] = useState(false);
-  const [chamadaSegundos, setChamadaSegundos] = useState(0);
-  const [chamadaMudo, setChamadaMudo] = useState(false);
-
-  useEffect(() => {
-    if (!discadorAberto) return;
-    const intervalo = setInterval(() => setChamadaSegundos((s) => s + 1), 1000);
-    return () => clearInterval(intervalo);
-  }, [discadorAberto]);
 
   if (aberta.id !== abertaIdAnterior) {
     setAbertaIdAnterior(aberta.id);
     setEscolhendoMotivo(false);
-    setDiscadorAberto(false);
     const funilId = localizacao?.funilId ?? funis[0]?.id ?? "";
     setFunilSelecionadoId(funilId);
     setEtapaSelecionada(etapaPadraoPara(funilId));
@@ -304,23 +294,6 @@ function ConversasPageInner() {
     if (!texto) return;
     adicionarHistorico("anotacao", texto);
     setNotaTexto("");
-  }
-
-  function abrirDiscador() {
-    setChamadaSegundos(0);
-    setChamadaMudo(false);
-    setDiscadorAberto(true);
-  }
-
-  function encerrarChamada() {
-    const min = Math.floor(chamadaSegundos / 60);
-    const seg = chamadaSegundos % 60;
-    const duracao = `${min}min ${String(seg).padStart(2, "0")}s`;
-    setDiscadorAberto(false);
-    if (chamadaSegundos > 0) {
-      adicionarHistorico("sistema", `📞 Ligação realizada · duração ${duracao}`);
-      avisarAutomacao(`Ligação com ${aberta.nome} encerrada (${duracao})`);
-    }
   }
 
   function marcarVenda() {
@@ -713,15 +686,6 @@ function ConversasPageInner() {
                   {aberta.canal} · {aberta.contato}
                 </p>
               </div>
-            </button>
-            <button
-              type="button"
-              className="gear-btn wa-call-btn"
-              aria-label="Ligar pelo telefone virtual"
-              title="Ligar pelo telefone virtual do CRM"
-              onClick={abrirDiscador}
-            >
-              📞
             </button>
             <button
               type="button"
@@ -1219,39 +1183,6 @@ function ConversasPageInner() {
                   ))}
               </>
             ) : null}
-        </div>
-      ) : null}
-
-      {discadorAberto ? (
-        <div className="wa-discador">
-          <p className="wa-discador-nome">{aberta.nome}</p>
-          <p className="wa-discador-numero">{aberta.contato}</p>
-          <p className="wa-discador-timer">
-            {String(Math.floor(chamadaSegundos / 60)).padStart(2, "0")}:
-            {String(chamadaSegundos % 60).padStart(2, "0")}
-          </p>
-          <p className="hint">Chamando pelo telefone virtual…</p>
-          <div className="wa-discador-acoes">
-            <button
-              type="button"
-              className={`wa-discador-icone${chamadaMudo ? " active" : ""}`}
-              onClick={() => setChamadaMudo((v) => !v)}
-              title={chamadaMudo ? "Reativar microfone" : "Mudo"}
-            >
-              🎙
-            </button>
-            <button type="button" className="wa-discador-icone" title="Teclado">
-              🔢
-            </button>
-          </div>
-          <button
-            type="button"
-            className="wa-discador-desligar"
-            onClick={encerrarChamada}
-            title="Encerrar ligação"
-          >
-            📴
-          </button>
         </div>
       ) : null}
 
