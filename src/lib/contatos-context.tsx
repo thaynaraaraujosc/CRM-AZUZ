@@ -10,14 +10,20 @@ import {
 } from "react";
 
 import { contatos as contatosIniciais, type Contato } from "@/lib/data";
+import { slugId } from "@/lib/ids";
 
 type DadosContato = Omit<Contato, "initials" | "nome" | "origem" | "etapa" | "responsavel">;
 
 type ContatosContextValue = {
   contatos: Contato[];
   setContatos: Dispatch<SetStateAction<Contato[]>>;
-  /** Cria o contato se ainda não existir (ex.: alguém que só existe no WhatsApp), ou atualiza os dados dele. */
-  salvarDadosContato: (nome: string, dados: Partial<DadosContato>) => void;
+  /**
+   * Cria o contato se ainda não existir (ex.: alguém que só existe no WhatsApp), ou atualiza os dados dele.
+   * Aceita qualquer campo extra (ex.: `etiquetas`, `camposPersonalizados`) além dos campos tipados de
+   * `DadosContato` — é o que o motor de automação usa via `Ligacoes.salvarContato` pra gravar mudanças
+   * de etiqueta/campo que não têm uma coluna dedicada em `Contato`.
+   */
+  salvarDadosContato: (nome: string, dados: Partial<DadosContato> & Record<string, unknown>) => void;
   /** Atribui o atendente responsável por esse contato (cria o contato se for a primeira vez que ele aparece). */
   atribuirAtendente: (nome: string, atendente: string) => void;
   criarContato: (dados: Partial<DadosContato> & { nome: string }) => Contato;
@@ -48,13 +54,14 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
     ...contatosIniciais,
   ]);
 
-  function salvarDadosContato(nome: string, dados: Partial<DadosContato>) {
+  function salvarDadosContato(nome: string, dados: Partial<DadosContato> & Record<string, unknown>) {
     setContatos((prev) => {
       const existe = prev.some((c) => c.nome === nome);
       if (!existe) {
         return [
           ...prev,
           {
+            id: slugId(nome),
             initials: iniciais(nome),
             nome,
             origem: "Indicação",
@@ -77,6 +84,7 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
         return [
           ...prev,
           {
+            id: slugId(nome),
             initials: iniciais(nome),
             nome,
             origem: "Indicação" as const,
@@ -95,6 +103,7 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
 
   function criarContato(dados: Partial<DadosContato> & { nome: string }) {
     const novo: Contato = {
+      id: slugId(dados.nome),
       initials: iniciais(dados.nome),
       origem: "Indicação",
       etapa: "Novo",

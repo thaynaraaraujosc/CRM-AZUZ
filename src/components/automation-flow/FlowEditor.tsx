@@ -79,6 +79,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
   const historyRef = useRef<Snapshot[]>([{ nodes: rfNodes, edges: rfEdges }]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  /** Espelha `historyRef.current.length` em estado — ref não pode ser lido durante o render (regra do React 19/compiler). */
+  const [historyLen, setHistoryLen] = useState(1);
   const salvandoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clipboardRef = useRef<DomainFlowNode[]>([]);
@@ -102,6 +104,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     const limitado = cortado.length > 60 ? cortado.slice(cortado.length - 60) : cortado;
     historyRef.current = limitado;
     setHistoryIndex(limitado.length - 1);
+    setHistoryLen(limitado.length);
   }
 
   /** Mudança estrutural (drag stop, conectar, excluir, adicionar bloco…) — persiste na hora e entra no histórico de undo/redo. */
@@ -429,7 +432,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         podeAtivar={fluxo.status === "publicado"}
         onToggleAtiva={() => alternarAtivo(fluxoId)}
         podeDesfazer={historyIndex > 0}
-        podeRefazer={historyIndex < historyRef.current.length - 1}
+        podeRefazer={historyIndex < historyLen - 1}
         onUndo={undo}
         onRedo={redo}
         onTestar={() => setSimuladorAberto(true)}

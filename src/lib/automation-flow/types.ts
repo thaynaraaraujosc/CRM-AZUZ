@@ -347,6 +347,8 @@ export type FluxoAutomacao = {
   categoria?: string;
   status: "rascunho" | "publicado";
   ativa: boolean;
+  /** Arquivamento é um estado próprio, distinto de "pausada" — ver `arquivarFluxo`/`desarquivarFluxo` em automation-flow-context.tsx. Opcional pra não quebrar fluxos já existentes/seeds. */
+  arquivada?: boolean;
   /** Estado de edição atual (draft) — só vira uma `VersaoFluxo` quando publicado. */
   nodes: FlowNode[];
   edges: FlowEdge[];

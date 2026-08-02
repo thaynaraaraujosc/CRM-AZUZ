@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 import {
   conversas,
@@ -12,11 +13,13 @@ import {
 import { useFunis } from "@/lib/funis-context";
 import {
   FloatingDropdown,
+  KpiCard,
   PERIODO_PADRAO,
   PeriodoPicker,
   Topbar,
   type PeriodoValor,
 } from "@/components/ui";
+import { calcularOportunidadesContatadas, calcularTempoMedioPrimeiroContato } from "@/lib/metrics";
 
 const ABAS = ["Tempo de primeiro contato", "Tarefas", "Interações"] as const;
 type Aba = (typeof ABAS)[number];
@@ -45,6 +48,10 @@ export default function AtividadesVendasPage() {
   );
 
   const todasAsTarefas = tarefas.flatMap((c) => c.cards);
+  const contatadas = calcularOportunidadesContatadas(dadosResponsavel);
+  const tempoMedio = calcularTempoMedioPrimeiroContato(dadosResponsavel);
+  const menorTempo = kpisPrimeiroContato.find((k) => k.label.startsWith("Menor"));
+  const maiorTempo = kpisPrimeiroContato.find((k) => k.label.startsWith("Maior"));
 
   return (
     <>
@@ -160,14 +167,18 @@ export default function AtividadesVendasPage() {
         {abaAtiva === "Tempo de primeiro contato" ? (
           <>
             <div className="grid kpi4">
-              {kpisPrimeiroContato.map((kpi) => (
-                <div className="card kpi" key={kpi.label}>
-                  <p className="l">{kpi.label}</p>
-                  <p className="n">{kpi.value}</p>
-                  {kpi.sub ? <p className="hint">{kpi.sub}</p> : null}
-                  <p className="delta">{kpi.delta}</p>
-                </div>
-              ))}
+              <KpiCard
+                label="Oportunidades contatadas"
+                value={contatadas.label}
+                formula={contatadas.formula}
+              />
+              <KpiCard
+                label="Tempo médio de primeiro contato"
+                value={tempoMedio.label}
+                formula={tempoMedio.formula}
+              />
+              {menorTempo ? <KpiCard label={menorTempo.label} value={menorTempo.value} /> : null}
+              {maiorTempo ? <KpiCard label={maiorTempo.label} value={maiorTempo.value} /> : null}
             </div>
 
             <div className="card">
@@ -222,10 +233,10 @@ export default function AtividadesVendasPage() {
               <h4>Tarefas por status</h4>
             </div>
             {tarefas.map((coluna) => (
-              <div className="stat-row" key={coluna.titulo}>
+              <Link className="stat-row stat-row-link" href="/tarefas" key={coluna.titulo}>
                 <span className="sl">{coluna.titulo}</span>
                 <span className="sv">{coluna.cards.length} tarefas</span>
-              </div>
+              </Link>
             ))}
             <div className="panel-h divided">
               <h4>Por responsável</h4>
@@ -235,10 +246,10 @@ export default function AtividadesVendasPage() {
                 (t) => t.responsavel.nome === m.nome,
               ).length;
               return total > 0 ? (
-                <div className="stat-row" key={m.nome}>
+                <Link className="stat-row stat-row-link" href="/tarefas" key={m.nome}>
                   <span className="sl">{m.nome}</span>
                   <span className="sv">{total} tarefas</span>
-                </div>
+                </Link>
               ) : null;
             })}
           </div>
@@ -250,10 +261,10 @@ export default function AtividadesVendasPage() {
               <h4>Mensagens trocadas por conversa</h4>
             </div>
             {conversas.map((c) => (
-              <div className="stat-row" key={c.id}>
+              <Link className="stat-row stat-row-link" href={`/conversas?id=${c.id}`} key={c.id}>
                 <span className="sl">{c.nome}</span>
                 <span className="sv">{c.mensagens.length} mensagens</span>
-              </div>
+              </Link>
             ))}
           </div>
         ) : null}

@@ -46,7 +46,10 @@ type AutomationFlowContextValue = {
   publicarFluxo: (id: string, usuario: string) => ProblemaValidacao[];
   restaurarVersao: (fluxoId: string, versao: number) => void;
   duplicarFluxo: (id: string) => void;
+  /** Arquiva: pausa (`ativa: false`) E marca `arquivada: true` — some da lista principal (ver automacoes/page.tsx). */
   arquivarFluxo: (id: string) => void;
+  /** Desfaz o arquivamento — volta a aparecer na lista principal. Não reativa sozinho (`ativa` continua false; usuário liga pelo Toggle se quiser). */
+  desarquivarFluxo: (id: string) => void;
   excluirFluxo: (id: string) => void;
   alternarAtivo: (id: string) => void;
 
@@ -186,7 +189,15 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
 
   function arquivarFluxo(id: string) {
     setFluxos((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, ativa: false, atualizadoEm: agoraISO() } : f)),
+      prev.map((f) =>
+        f.id === id ? { ...f, ativa: false, arquivada: true, atualizadoEm: agoraISO() } : f,
+      ),
+    );
+  }
+
+  function desarquivarFluxo(id: string) {
+    setFluxos((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, arquivada: false, atualizadoEm: agoraISO() } : f)),
     );
   }
 
@@ -249,6 +260,7 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
         restaurarVersao,
         duplicarFluxo,
         arquivarFluxo,
+        desarquivarFluxo,
         excluirFluxo,
         alternarAtivo,
         execucoes,

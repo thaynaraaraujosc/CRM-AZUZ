@@ -5775,269 +5775,6 @@ table.tbl tbody tr:hover td {
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* WhatsApp — botão de configurações ao lado de "Conversas"                   */
-/* -------------------------------------------------------------------------- */
-
-.wa-list-head-acoes {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.wa-list-config {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  border: none;
-  background: none;
-  color: var(--text-faint);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.wa-list-config:hover {
-  background: var(--navy-raised-2);
-  color: var(--ink);
-}
-
-/* -------------------------------------------------------------------------- */
-/* WhatsApp — painel de configurações das conversas                           */
-/* -------------------------------------------------------------------------- */
-
-.wa-config-modal {
-  width: 100%;
-  max-width: 480px;
-  max-height: 88vh;
-  overflow-y: auto;
-}
-
-.wa-config-secao {
-  padding: 14px 0;
-  border-top: 1px solid var(--line-soft);
-}
-
-.wa-config-secao:first-of-type {
-  border-top: none;
-  padding-top: 0;
-}
-
-.wa-config-fundo-preview {
-  height: 90px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--navy-raised-2);
-  overflow: hidden;
-}
-
-.wa-config-fundos-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-
-.wa-config-fundo-opcao {
-  height: 46px;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  font-size: 10.5px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.wa-config-fundo-padrao {
-  background: var(--navy-raised-2);
-  color: var(--text-muted);
-}
-
-.wa-config-fundo-acoes {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.wa-config-cor-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.wa-config-cor-label input[type="color"] {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-.wa-config-radio-lista {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-/* -------------------------------------------------------------------------- */
-/* WhatsApp — tamanho da fonte da conversa                                    */
-/* -------------------------------------------------------------------------- */
-
-.wa-fonte-pequena .bubble {
-  font-size: 11px;
-}
-
-.wa-fonte-media .bubble {
-  font-size: 12px;
-}
-
-.wa-fonte-grande .bubble {
-  font-size: 14px;
-}
-
-/* -------------------------------------------------------------------------- */
-/* WhatsApp — responder mensagem (citação)                                    */
-/* -------------------------------------------------------------------------- */
-
-.bubble {
-  position: relative;
-}
-
-.wa-reply-btn {
-  position: absolute;
-  top: 2px;
-  right: -26px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--navy);
-  color: var(--text-faint);
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.1s ease;
-  cursor: pointer;
-}
-
-.bubble:hover .wa-reply-btn {
-  opacity: 1;
-}
-
-.wa-citacao {
-  display: block;
-  border-left: 3px solid var(--blue);
-  background: rgba(0, 0, 0, 0.08);
-  border-radius: 6px;
-  padding: 4px 8px;
-  margin-bottom: 6px;
-}
-
-.wa-citacao-autor {
-  display: block;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--blue);
-}
-
-.wa-citacao-texto {
-  display: block;
-  font-size: 11px;
-  opacity: 0.85;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.chat-input-campo-coluna {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-input-campo-coluna .chat-input-campo {
-  resize: none;
-  max-height: 120px;
-}
-
-.chat-respondendo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  margin-bottom: 4px;
-  background: var(--navy-raised-2);
-  border-radius: 8px;
-}
-
-.chat-respondendo-barra {
-  width: 3px;
-  align-self: stretch;
-  background: var(--blue);
-  border-radius: 2px;
-}
-
-.chat-respondendo-texto {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-respondendo-autor {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--blue);
-}
-
-.chat-respondendo-preview {
-  font-size: 11px;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.chat-respondendo-fechar {
-  border: none;
-  background: none;
-  color: var(--text-faint);
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.chat-send-btn {
-  color: var(--blue);
-}
-
-/* -------------------------------------------------------------------------- */
-/* WhatsApp — mídia bloqueada (download automático desligado)                 */
-/* -------------------------------------------------------------------------- */
-
-.bubble-midia-bloqueada {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 12px;
-  border: none;
-  border-radius: 9px;
-  background: rgba(0, 0, 0, 0.08);
-  color: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  width: 100%;
-}
 
 /* ============================================================================
    Construtor visual de automações (/automacoes/editor/[id])
@@ -6684,332 +6421,403 @@ table.tbl tbody tr:hover td {
   }
 }
 
-/* ============================================================================
-   Linha do tempo unificada (src/components/timeline.tsx)
-   ============================================================================ */
+/* -------------------------------------------------------------------------- */
+/* Linha do tempo unificada (contato / negociação / jornada do cliente)      */
+/* -------------------------------------------------------------------------- */
 
 .timeline-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-bottom: 12px;
 }
 
-.timeline-lista {
+.timeline {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  padding-left: 22px;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--line);
 }
 
 .timeline-item {
-  display: flex;
-  gap: 10px;
-  padding: 10px 4px;
-  border-bottom: 1px solid var(--line-soft);
+  position: relative;
+  padding: 0 0 18px;
 }
 
 .timeline-item:last-child {
-  border-bottom: none;
+  padding-bottom: 0;
 }
 
-.timeline-icone {
-  flex: 0 0 auto;
-  width: 26px;
-  height: 26px;
+.timeline-dot {
+  position: absolute;
+  left: -22px;
+  top: 3px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  background: var(--navy-raised-2);
+  background: var(--blue);
+  border: 2px solid var(--navy);
+  box-shadow: 0 0 0 2px var(--line);
 }
 
-.timeline-icone-conversa {
-  background: var(--blue-soft-2);
+.timeline-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: default;
 }
 
-.timeline-icone-negociacao {
-  background: rgba(15, 157, 99, 0.14);
-}
-
-.timeline-icone-automacao {
-  background: rgba(216, 164, 0, 0.16);
-}
-
-.timeline-icone-funil {
-  background: rgba(138, 63, 252, 0.14);
-}
-
-.timeline-corpo {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.timeline-topo {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.timeline-titulo {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.timeline-quando {
-  flex: 0 0 auto;
-  font-size: 10px;
-  color: var(--text-faint);
-}
-
-.timeline-descricao {
-  font-size: 11.5px;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.timeline-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 10px;
-  color: var(--text-faint);
-  margin-top: 2px;
-}
-
-.timeline-detalhes-btn {
-  border: none;
-  background: none;
-  color: var(--blue);
-  font-weight: 700;
-  font-size: 10px;
+button.timeline-card {
   cursor: pointer;
-  padding: 0;
 }
 
-.timeline-estado {
-  padding: 24px 12px;
-  text-align: center;
+button.timeline-card:hover {
+  border-color: var(--blue);
 }
 
-.timeline-estado-titulo {
-  font-weight: 700;
-  font-size: 12.5px;
+.timeline-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+
+.timeline-card-titulo {
+  font-size: 13px;
+  font-weight: 600;
   color: var(--ink);
-  margin-bottom: 4px;
 }
 
-.timeline-estado-desc {
+.timeline-card-quando {
   font-size: 11.5px;
   color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* ---------------- Automações — barra compacta de filtros ---------------- */
+
+.automacoes-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
   margin-bottom: 10px;
 }
 
-.timeline-item-skeleton {
+.automacoes-bar-group {
+  display: flex;
   align-items: center;
-}
-
-.timeline-skeleton-bloco {
-  background: var(--navy-raised-2);
-  animation: timeline-pulse 1.2s ease-in-out infinite;
-}
-
-.timeline-skeleton-linha {
-  height: 9px;
-  border-radius: 4px;
-  background: var(--navy-raised-2);
-  margin-bottom: 6px;
-  animation: timeline-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes timeline-pulse {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-/* Painel do contato com abas (Resumo/Contato/Negociação/Atividades/Histórico) */
-
-.wa-info-tabs {
-  display: flex;
-  flex: 0 0 auto;
-  overflow-x: auto;
-  border-bottom: 1px solid var(--line);
-}
-
-.wa-info-tab {
-  flex: 1 1 auto;
-  white-space: nowrap;
-  padding: 12px 10px;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-}
-
-.wa-info-tab:hover {
-  color: var(--ink);
-}
-
-.wa-info-tab.on {
-  color: var(--blue);
-  border-bottom-color: var(--blue);
-}
-
-.wa-resumo-card {
-  padding: 17px;
-  text-align: center;
-  border-bottom: 1px solid var(--line);
-}
-
-.wa-resumo-avatar {
-  width: 56px;
-  height: 56px;
-  font-size: 18px;
-  margin: 0 auto 10px;
-}
-
-.wa-resumo-nome {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.wa-resumo-empresa {
-  margin: 2px 0 0;
-  font-size: 12px;
-  color: var(--text-faint);
-}
-
-.wa-resumo-grid {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 6px 10px;
-  margin-top: 14px;
-  text-align: left;
-}
-
-.wa-resumo-label {
-  font-size: 11px;
-  color: var(--text-faint);
-}
-
-.wa-resumo-valor {
-  font-size: 12px;
-  color: var(--ink);
-  font-weight: 600;
-  word-break: break-word;
-}
-
-.wa-resumo-etiquetas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 12px;
-}
-
-.wa-acoes-rapidas {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  padding: 14px 17px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
 }
 
-.wa-acao-rapida {
+.automacoes-bar-right {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--navy-raised-2);
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: left;
+  gap: 10px;
+  margin-left: auto;
+  flex: 0 0 auto;
 }
 
-.wa-acao-rapida:hover {
-  border-color: var(--blue);
-  background: var(--blue-soft-2);
-}
-
-.wa-input-invalido {
-  border-color: #d64545 !important;
-}
-
-.wa-campo-erro {
-  display: block;
-  font-size: 11px;
-  color: #d64545;
-  margin-top: 4px;
-}
-
-.wa-etiquetas-lista {
+.automacoes-search {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 4px;
+  align-items: center;
+  gap: 7px;
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--text-faint);
+  width: 100%;
+  max-width: 300px;
+  flex: 1 1 220px;
+  cursor: text;
 }
 
-.wa-etiqueta-chip {
+.automacoes-search svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.automacoes-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  font: inherit;
+  color: var(--ink);
+}
+
+.automacoes-search input::placeholder {
+  color: var(--text-faint);
+}
+
+.automacoes-search-clear {
+  background: none;
+  border: 0;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px;
+  flex: 0 0 auto;
+}
+
+.automacoes-search-clear:hover {
+  color: var(--text-muted);
+}
+
+.automacoes-chip-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: var(--blue-soft-2);
-  color: var(--blue);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 8px 13px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  background: var(--navy-raised);
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.wa-etiqueta-chip button {
-  border: none;
-  background: transparent;
-  color: inherit;
+.automacoes-chip-btn.active {
+  background: var(--blue);
+  color: var(--white);
+  border-color: var(--blue);
+}
+
+.automacoes-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 20px;
+  background: var(--white);
+  color: var(--blue);
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+.automacoes-ordenar {
+  display: inline-flex;
+  align-items: center;
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 0 4px 0 12px;
   cursor: pointer;
+}
+
+.automacoes-ordenar select {
+  background: none;
+  border: 0;
+  padding: 8px 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  outline-offset: 2px;
+}
+
+.automacoes-count {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.timeline-card-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.timeline-card-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.timeline-empty {
+  padding: 24px 0;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+.kpi-clickable {
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.kpi-clickable:hover {
+  border-color: var(--blue);
+  transform: translateY(-1px);
+}
+
+.stat-row-link {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.stat-row-link:hover {
+  background: var(--navy-raised);
+}
+
+.automacoes-limpar {
+  background: none;
+  border: 0;
+  color: var(--blue);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 2px;
+  white-space: nowrap;
+}
+
+.automacoes-chips-row {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 10px;
+  scrollbar-width: thin;
+}
+
+.automacoes-chips-row::-webkit-scrollbar {
+  height: 5px;
+}
+
+.automacoes-remchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.automacoes-remchip:hover {
+  border-color: var(--blue);
+  color: var(--ink);
+}
+
+/* -------- Popover "Filtros" (reaproveita .fchip/.filters-row por dentro) -------- */
+
+.flow-filtros-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(440px, 90vw);
+  max-height: 70vh;
+  overflow-y: auto;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.18);
+  z-index: 60;
+}
+
+.flow-filtros-secao {
+  padding: 13px 16px;
+  border: none;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.flow-filtros-secao:last-of-type {
+  border-bottom: none;
+}
+
+.flow-filtros-secao legend {
   font-size: 10px;
-  line-height: 1;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
   padding: 0;
 }
 
-.wa-status-inline {
-  margin: 8px 17px 14px;
-  font-size: 12px;
-  font-weight: 600;
+.flow-filtros-sub {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+  margin: 8px 0 5px;
 }
 
-.wa-status-sucesso {
-  color: #0f9d63;
+.flow-filtros-sub:first-child {
+  margin-top: 0;
 }
 
-.wa-status-erro {
-  color: #d64545;
+.flow-filtros-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 16px;
+  flex-wrap: wrap;
 }
 
-.wa-resultado-andamento {
-  background: rgba(94, 122, 255, 0.14);
-  color: var(--blue);
+.flow-filtros-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+  cursor: pointer;
 }
 
-.wa-resultado-adiada {
-  background: rgba(217, 164, 6, 0.14);
-  color: #d9a406;
-}
+@media (max-width: 640px) {
+  .flow-filtros-pop {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-height: 80vh;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -16px 40px rgba(11, 21, 51, 0.24);
+  }
 
-.wa-resultado-cancelada {
-  background: rgba(120, 120, 130, 0.16);
-  color: var(--text-muted);
+  .automacoes-search {
+    max-width: none;
+    flex: 1 1 100%;
+  }
+
+  .automacoes-bar-right {
+    margin-left: 0;
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
 }

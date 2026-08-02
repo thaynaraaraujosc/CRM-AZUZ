@@ -22,8 +22,10 @@ import {
   type StatusMensagem,
 } from "@/lib/data";
 import { useAutomacoes } from "@/lib/automacoes-context";
+import { useAutomationFlows } from "@/lib/automation-flow-context";
+import { executarFluxo } from "@/lib/automation-flow/motor";
 import { useContatos } from "@/lib/contatos-context";
-import type { EventoTimeline } from "@/lib/timeline";
+import { estimarMinutosAtras, gerarLinhaDoTempo, type Evento } from "@/lib/timeline";
 import { Timeline } from "@/components/timeline";
 import {
   useBibliotecaDocumentos,
@@ -397,6 +399,7 @@ function ConversasPageInner() {
     removerEtiqueta,
   } = useContatos();
   const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
+  const { fluxos, dispararEvento, registrarExecucao } = useAutomationFlows();
   const { simularNovaMensagem, notificacoesAtivas, alternarNotificacoes } =
     useNotificacoes();
   const { config, atualizarConfig, restaurarPadrao, definirFundo, fundoDaConversa } =
@@ -882,13 +885,19 @@ function ConversasPageInner() {
     ...motivosPerdaCustom,
   ];
 
-  /** Mapeia dados já existentes (histórico + e-mails) pro modelo único de linha do tempo (seção 17 do pedido). */
-  const eventosTimelineContato: EventoTimeline[] = [
+  /**
+   * Histórico e e-mails dessa conversa não têm fonte derivável em `data.ts`
+   * ainda (nascem de ações do usuário direto no painel), então entram como
+   * `extras` na linha do tempo unificada (seção 17 do pedido) em vez de
+   * duplicar o componente. Ver `gerarLinhaDoTempo` em `src/lib/timeline.ts`.
+   */
+  const contatoIdParaTimeline = contatoDaConversa?.id ?? aberta.id;
+  const eventosExtrasTimeline: Evento[] = [
     ...historico.map(
-      (item): EventoTimeline => ({
+      (item): Evento => ({
         id: item.id,
-        categoria: item.tipo === "anotacao" ? "anotacao" : item.tipo === "email" ? "sistema" : "sistema",
-        tipo: item.tipo,
+        contatoId: contatoIdParaTimeline,
+        tipo: item.tipo === "anotacao" ? "sistema" : item.tipo === "email" ? "sistema" : "sistema",
         titulo:
           item.tipo === "anotacao"
             ? "Anotação"
@@ -897,19 +906,24 @@ function ConversasPageInner() {
               : "Atualização",
         descricao: item.texto,
         quando: item.quando,
+        minutosAtras: estimarMinutosAtras(item.quando),
       }),
     ),
     ...emailsDaConversa.map(
-      (email): EventoTimeline => ({
+      (email): Evento => ({
         id: `timeline-email-${email.id}`,
-        categoria: "sistema",
-        tipo: "email",
+        contatoId: contatoIdParaTimeline,
+        tipo: "sistema",
         titulo: `E-mail · ${email.assunto}`,
         descricao: email.aberto ? `Lido às ${email.abertoEm}` : "Enviado, ainda não lido",
         quando: "—",
+        minutosAtras: 0,
       }),
     ),
-  ].slice().reverse();
+  ];
+  const eventosTimelineContato: Evento[] = contatoDaConversa
+    ? gerarLinhaDoTempo(contatoDaConversa.id, undefined, eventosExtrasTimeline)
+    : eventosExtrasTimeline.slice().sort((a, b) => a.minutosAtras - b.minutosAtras);
 
   function adicionarHistorico(tipo: HistoricoItem["tipo"], texto: string) {
     setHistoricoPorContato((prev) => ({
@@ -1660,17 +1674,71 @@ function ConversasPageInner() {
 
   const automacoesDoFunil = automacoes.filter((a) => a.funilId === funilSelecionadoId);
 
+  /**
+   * Botão "rodar automação" manual dentro da conversa. O fluxo migrado tem o
+   * mesmo `id` da `Automacao` antiga (ver `migrarAutomacaoParaFluxo`), então dá
+   * pra achar o `FluxoAutomacao` real por esse id e rodar `executarFluxo` de
+   * verdade a partir do nó logo após o gatilho — assim tags/etapa/responsável
+   * mudam de verdade (via as mesmas ligações do `dispararEvento`), em vez de só
+   * empurrar texto de `acao.mensagem` pro chat. Chamado explicitamente pelo
+   * usuário, então roda mesmo se o fluxo estiver pausado (`ativa: false`) —
+   * diferente de `dispararEvento`, que só considera fluxos publicados e ativos.
+   */
   function executarAutomacaoNaConversa(automacaoId: string) {
     const automacao = automacoesDoFunil.find((a) => a.id === automacaoId);
     if (!automacao) return;
-    for (const acao of automacao.acoes) {
-      if (
-        (acao.tipo === "mensagem" || acao.tipo === "mensagem_interativa") &&
-        acao.mensagem
-      ) {
-        adicionarMensagem({ tipo: "out", texto: acao.mensagem, hora: horaAgora() });
+
+    const fluxo = fluxos.find((f) => f.id === automacaoId);
+    const noGatilho = fluxo?.nodes.find((n) => n.category === "gatilho");
+    const primeiraAresta = noGatilho
+      ? fluxo?.edges.find((e) => e.source === noGatilho.id)
+      : undefined;
+
+    if (fluxo && primeiraAresta) {
+      const cardContato = funilSelecionado?.colunas
+        .flatMap((c) => c.cards)
+        .find((c) => c.nome === aberta.nome);
+
+      const registro = executarFluxo(
+        fluxo,
+        primeiraAresta.target,
+        {
+          contato: {
+            nome: aberta.nome,
+            etiquetas: cardContato?.etiquetas ?? [],
+            origem: aberta.origem,
+            responsavel: atendenteSelecionado,
+            funilId: funilSelecionado?.id,
+            etapaTitulo: etapaSelecionada,
+          },
+        },
+        {
+          moverEtapa: (funilId, etapaTitulo, contato) =>
+            atribuirContatoAoFunil(funilId, etapaTitulo, contato as Omit<NegocioCard, "id"> & { id?: string }),
+          salvarContato: (nome, dados) => salvarDadosContato(nome, dados),
+          atribuirAtendente: (nome, atendente) => atribuirAtendente(nome, atendente),
+          registrarMensagemSimulada: (info) => {
+            // Único caso em que "simulado" ainda aparece de verdade no log da
+            // conversa — igual o código antigo já fazia com `acao.mensagem`.
+            adicionarMensagem({ tipo: "out", texto: info.conteudo, hora: horaAgora() });
+          },
+          registrarWebhookSimulado: (info) => avisarAutomacao(`Webhook simulado → ${info.url}`),
+        },
+      );
+      registrarExecucao(registro);
+    } else {
+      // Fallback defensivo — não deveria acontecer, já que todo `Automacao`
+      // migrado vira um `FluxoAutomacao` com o mesmo id.
+      for (const acao of automacao.acoes) {
+        if (
+          (acao.tipo === "mensagem" || acao.tipo === "mensagem_interativa") &&
+          acao.mensagem
+        ) {
+          adicionarMensagem({ tipo: "out", texto: acao.mensagem, hora: horaAgora() });
+        }
       }
     }
+
     adicionarHistorico("sistema", `Automação "${automacao.titulo}" executada`);
     avisarAutomacao(`Automação "${automacao.titulo}" executada`);
     setMensagemTexto("");
@@ -2035,6 +2103,37 @@ function ConversasPageInner() {
               `Automação "${automacao.titulo}" disparada pra ${aberta.nome} (entrou em "${etapaDestino.titulo}")`,
             );
           }
+
+          // Mesma coisa que arrastar o card no Funil: dispara o motor de
+          // fluxos de verdade em cima do mesmo evento de entrada de etapa.
+          dispararEvento(
+            {
+              tipo: "lead_entrou_etapa",
+              funilId: funilSelecionado.id,
+              etapaId: etapaDestino.id,
+              contatoNome: aberta.nome,
+            },
+            {
+              contato: {
+                nome: aberta.nome,
+                etiquetas: novoCard.etiquetas ?? [],
+                origem: novoCard.origem,
+                responsavel: atendenteSelecionado,
+                funilId: funilSelecionado.id,
+                etapaTitulo: etapaDestino.titulo,
+              },
+            },
+            {
+              moverEtapa: (funilId, etapaTitulo, contato) =>
+                atribuirContatoAoFunil(funilId, etapaTitulo, contato as Omit<NegocioCard, "id"> & { id?: string }),
+              salvarContato: (nome, dados) => salvarDadosContato(nome, dados),
+              atribuirAtendente: (nome, atendente) => atribuirAtendente(nome, atendente),
+              registrarMensagemSimulada: (info) => {
+                adicionarMensagem({ tipo: "out", texto: info.conteudo, hora: horaAgora() });
+              },
+              registrarWebhookSimulado: (info) => avisarAutomacao(`Webhook simulado → ${info.url}`),
+            },
+          );
         }
       }
     }
@@ -4811,11 +4910,7 @@ function ConversasPageInner() {
                 </button>
               </div>
               <div style={{ padding: "14px 17px" }}>
-                <Timeline
-                  eventos={eventosTimelineContato}
-                  vazioTitulo="Sem histórico ainda"
-                  vazioDescricao="Conversas, anotações e mudanças desse contato vão aparecer aqui."
-                />
+                <Timeline eventos={eventosTimelineContato} />
               </div>
             </>
           ) : null}

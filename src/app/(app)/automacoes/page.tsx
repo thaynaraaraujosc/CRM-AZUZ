@@ -1,607 +1,200 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import {
-  CANAIS_COMENTARIO,
-  COMPORTAMENTO_FORA_JANELA,
-  DIAS_SEMANA,
-  DIAS_SEMANA_TODOS,
-  GATILHOS_ETAPA,
-  LIMITES_EXECUCAO,
-  ORIGENS,
-  TIPOS_ACAO_AUTOMACAO,
-  UNIDADES_TEMPO,
-  type CanalComentario,
-  type DiaSemana,
-  type Origem,
-  type TipoAcaoAutomacao,
-  type TipoGatilhoEtapa,
-} from "@/lib/data";
-import {
-  useAutomacoes,
-  type AcaoAutomacao,
-  type Automacao,
-  type ComportamentoForaJanela,
-  type LimiteExecucao,
-  type RegraComentario,
-} from "@/lib/automacoes-context";
+import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
-import { useFormularios } from "@/lib/formularios-context";
-import type { Formulario } from "@/lib/formularios-context";
-import { IconAutomacoes } from "@/components/icons";
+import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
+import { resumoNo } from "@/lib/automation-flow/resumo";
+import type {
+  CanalMensagem,
+  FlowNodeType,
+  FluxoAutomacao,
+  RegistroExecucao,
+} from "@/lib/automation-flow/types";
+import { IconAutomacoes, IconSearch } from "@/components/icons";
 import { Toggle, Topbar } from "@/components/ui";
-import { equipe, type Funil } from "@/lib/data";
+
+/* -------------------------------------------------------------------------- */
+/* Derivações a partir de `FluxoAutomacao` / `RegistroExecucao`              */
+/* -------------------------------------------------------------------------- */
+
+function noGatilhoDoFluxo(fluxo: FluxoAutomacao) {
+  return fluxo.nodes.find((n) => n.category === "gatilho");
+}
+
+function labelGatilho(tipo: FlowNodeType): string {
+  return BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo)?.label ?? tipo;
+}
+
+/** "Lead entrou na etapa — Funil: x · Etapa: y" — rótulo do bloco + o resumo de uma linha que o próprio motor usa no canvas. */
+function resumoGatilhoFluxo(fluxo: FluxoAutomacao): string {
+  const no = noGatilhoDoFluxo(fluxo);
+  if (!no) return "Sem gatilho definido";
+  const detalhe = resumoNo(no);
+  return detalhe && detalhe !== "Sem configuração adicional"
+    ? `${labelGatilho(no.type)} — ${detalhe}`
+    : labelGatilho(no.type);
+}
+
+/** Status pesquisáveis na barra de filtros — "com_erro" e "arquivada" são derivados/reais, não decorativos (ver `statusBate`). */
+type StatusFiltro = "rascunho" | "publicado" | "ativa" | "pausada" | "com_erro" | "arquivada";
+
+const STATUS_FILTROS: { valor: StatusFiltro; label: string }[] = [
+  { valor: "rascunho", label: "Rascunho" },
+  { valor: "publicado", label: "Publicado" },
+  { valor: "ativa", label: "Ativa" },
+  { valor: "pausada", label: "Pausada" },
+  { valor: "com_erro", label: "Com erro" },
+  { valor: "arquivada", label: "Arquivada" },
+];
+
+function temExecucaoComErro(fluxo: FluxoAutomacao, execucoesDoFluxo: (id: string) => RegistroExecucao[]): boolean {
+  return execucoesDoFluxo(fluxo.id).some((e) => e.situacao === "erro");
+}
+
+function statusBate(
+  fluxo: FluxoAutomacao,
+  filtro: StatusFiltro,
+  execucoesDoFluxo: (id: string) => RegistroExecucao[],
+): boolean {
+  switch (filtro) {
+    case "rascunho":
+      return fluxo.status === "rascunho";
+    case "publicado":
+      return fluxo.status === "publicado";
+    case "ativa":
+      return fluxo.status === "publicado" && fluxo.ativa && !fluxo.arquivada;
+    case "pausada":
+      return fluxo.status === "publicado" && !fluxo.ativa && !fluxo.arquivada;
+    case "com_erro":
+      return temExecucaoComErro(fluxo, execucoesDoFluxo);
+    case "arquivada":
+      return !!fluxo.arquivada;
+    default:
+      return true;
+  }
+}
+
+/** A pill de "Arquivada" tem precedência sobre ativa/pausada — arquivar é um estado à parte. */
+function statusPill(fluxo: FluxoAutomacao): { label: string; on: boolean } {
+  if (fluxo.arquivada) return { label: "Arquivada", on: false };
+  if (fluxo.status === "rascunho") return { label: "Rascunho", on: false };
+  if (fluxo.ativa) return { label: "Ativa", on: true };
+  return { label: "Pausada", on: false };
+}
 
 /**
- * Endereço de uma lista de ações dentro da árvore — vazio é a lista raiz da
- * automação; cada segmento diz "desça pras ações que rodam quando o lead
- * escolhe a opção `opcaoId` da ação interativa no índice `acaoIndex`". É o
- * que permite ramificar: "se respondeu 1, faz X; se respondeu 2, faz Y".
+ * "Mais recentes" cobre tanto a leitura de marketing quanto a técnica
+ * (`atualizadoEm` desc) — a brief citava "Atualizadas recentemente" como um
+ * rótulo possivelmente separado, mas como o comportamento seria idêntico a
+ * "Mais recentes", optei por manter só uma opção canônica pra esse critério
+ * em vez de duas entradas redundantes na lista.
  */
-type Endereco = { acaoIndex: number; opcaoId: string }[];
+type Ordenacao =
+  | "recentes"
+  | "antigas"
+  | "nome_az"
+  | "nome_za"
+  | "execucoes_desc"
+  | "execucoes_asc"
+  | "ativas_primeiro"
+  | "erro_primeiro";
 
-function atualizarContainer(
-  acoes: AcaoAutomacao[],
-  endereco: Endereco,
-  atualizar: (lista: AcaoAutomacao[]) => AcaoAutomacao[],
-): AcaoAutomacao[] {
-  if (endereco.length === 0) return atualizar(acoes);
-  const [{ acaoIndex, opcaoId }, ...resto] = endereco;
-  return acoes.map((a, i) => {
-    if (i !== acaoIndex) return a;
-    return {
-      ...a,
-      opcoes: (a.opcoes ?? []).map((op) =>
-        op.id === opcaoId
-          ? {
-              ...op,
-              acoesSeEscolhida: atualizarContainer(
-                op.acoesSeEscolhida ?? [],
-                resto,
-                atualizar,
-              ),
-            }
-          : op,
-      ),
-    };
+const ORDENACOES: { valor: Ordenacao; label: string }[] = [
+  { valor: "recentes", label: "Mais recentes" },
+  { valor: "antigas", label: "Mais antigas" },
+  { valor: "nome_az", label: "Nome de A a Z" },
+  { valor: "nome_za", label: "Nome de Z a A" },
+  { valor: "execucoes_desc", label: "Mais executadas" },
+  { valor: "execucoes_asc", label: "Menos executadas" },
+  { valor: "ativas_primeiro", label: "Ativas primeiro" },
+  { valor: "erro_primeiro", label: "Com erro primeiro" },
+];
+
+function taxaSucesso(execucoes: RegistroExecucao[]): string {
+  if (execucoes.length === 0) return "—";
+  const concluidas = execucoes.filter((e) => e.situacao === "concluida").length;
+  return `${Math.round((concluidas / execucoes.length) * 100)}%`;
+}
+
+function formatarData(iso: string): string {
+  return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+function ultimaExecucao(execucoes: RegistroExecucao[]): string {
+  if (execucoes.length === 0) return "Nunca executada";
+  const maisRecente = Math.max(...execucoes.map((e) => new Date(e.iniciadoEm).getTime()));
+  return formatarData(new Date(maisRecente).toISOString());
+}
+
+/** Tipos de gatilho "de comentário" — usados só pra dar um atalho de filtro sem precisar escolher canal por canal. */
+const TIPOS_GATILHO_COMENTARIO: FlowNodeType[] = ["comentario_instagram", "comentario_tiktok"];
+
+const CANAL_LABELS: Record<CanalMensagem, string> = {
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  email: "E-mail",
+  interno: "Interno",
+};
+
+/** Só os canais que de fato aparecem em algum nó de mensagem — ou que o gatilho de comentário já escopa (Insta/TikTok) mesmo sem nó de mensagem. */
+function canaisDoFluxo(fluxo: FluxoAutomacao): Set<CanalMensagem> {
+  const canais = new Set<CanalMensagem>();
+  fluxo.nodes.forEach((n) => {
+    if (n.category === "mensagem") {
+      const data = n.data as { canal?: unknown };
+      if (data && typeof data.canal === "string") {
+        canais.add(data.canal as CanalMensagem);
+      }
+    }
+  });
+  const gatilho = noGatilhoDoFluxo(fluxo);
+  if (gatilho?.type === "comentario_instagram") canais.add("instagram");
+  if (gatilho?.type === "comentario_tiktok") canais.add("tiktok");
+  return canais;
+}
+
+/** Busca casa nome, descrição, nome do funil, título da etapa e rótulo do gatilho — não só o nome do fluxo. */
+function fluxoBateBusca(
+  fluxo: FluxoAutomacao,
+  termo: string,
+  funis: ReturnType<typeof useFunis>["funis"],
+): boolean {
+  if (!termo) return true;
+  if (fluxo.nome.toLowerCase().includes(termo)) return true;
+  if (fluxo.descricao?.toLowerCase().includes(termo)) return true;
+
+  const funil = funis.find((f) => f.id === fluxo.funilId);
+  if (funil?.nome.toLowerCase().includes(termo)) return true;
+
+  const etapa = funil?.colunas.find((c) => c.id === fluxo.etapaId);
+  if (etapa?.titulo.toLowerCase().includes(termo)) return true;
+
+  const no = noGatilhoDoFluxo(fluxo);
+  if (no && labelGatilho(no.type).toLowerCase().includes(termo)) return true;
+
+  return false;
+}
+
+/** Alterna um valor dentro de um Set guardado em estado (imutável). */
+function alternarNoSet<T>(setEstado: Dispatch<SetStateAction<Set<T>>>, valor: T) {
+  setEstado((prev) => {
+    const next = new Set(prev);
+    if (next.has(valor)) next.delete(valor);
+    else next.add(valor);
+    return next;
   });
 }
 
-const ICONE_ACAO: Record<TipoAcaoAutomacao, string> = {
-  mensagem: "💬",
-  mensagem_interativa: "🔀",
-  documento: "📄",
-  audio: "🎙",
-  enviar_formulario: "📝",
-  lembrete: "⏰",
-  tarefa: "✅",
-  mover_funil: "↪",
-  atribuir_responsavel: "👤",
-  adicionar_etiqueta: "🏷",
-  remover_etiqueta: "🚫",
-  webhook: "🔗",
-};
+const CHAVE_LOCALSTORAGE_FILTROS_ABERTOS = "automacoes:filtros-abertos";
 
-function novaAcao(tipo: TipoAcaoAutomacao = "mensagem"): AcaoAutomacao {
-  const base: AcaoAutomacao = { id: `acao-${Date.now()}-${Math.random()}`, tipo };
-  if (tipo === "mensagem_interativa") {
-    base.opcoes = [{ id: `op-${Date.now()}`, rotulo: "1 · Sim" }];
-  }
-  if (tipo === "lembrete" || tipo === "tarefa") {
-    base.tempoValor = "1";
-    base.tempoUnidade = "dias";
-  }
-  if (tipo === "enviar_formulario") {
-    base.formularioOrigem = "interno";
-  }
-  return base;
-}
+/** Acima desse número de funis, mostra um campinho de busca dentro do popover pra não rolar uma lista gigante de chips. */
+const LIMITE_FUNIS_PARA_BUSCA = 6;
 
-function labelGatilho(tipo: TipoGatilhoEtapa) {
-  return GATILHOS_ETAPA.find((g) => g.tipo === tipo)?.label ?? tipo;
-}
-
-function resumoGatilho(automacao: Automacao) {
-  const base = labelGatilho(automacao.gatilhoTipo);
-  if (automacao.gatilhoTipo === "parado" && automacao.tempoValor) {
-    return `${base} — ${automacao.tempoValor} ${automacao.tempoUnidade ?? "horas"}`;
-  }
-  const permiteAtraso = GATILHOS_ETAPA.find(
-    (g) => g.tipo === automacao.gatilhoTipo,
-  )?.permiteAtraso;
-  if (permiteAtraso && automacao.disparoImediato === false && automacao.tempoValor) {
-    return `${base} — espera ${automacao.tempoValor} ${automacao.tempoUnidade ?? "horas"}`;
-  }
-  return base;
-}
-
-function resumoJanela(automacao: Automacao) {
-  const dias = automacao.diasAtivos ?? DIAS_SEMANA_TODOS;
-  const partes: string[] = [];
-  if (dias.length < DIAS_SEMANA_TODOS.length) {
-    partes.push(
-      dias
-        .map((d) => DIAS_SEMANA.find((ds) => ds.valor === d)?.label ?? d)
-        .join(", "),
-    );
-  }
-  if (automacao.usarHorario && automacao.horarioInicio && automacao.horarioFim) {
-    partes.push(`${automacao.horarioInicio}–${automacao.horarioFim}`);
-  }
-  return partes.length ? partes.join(" · ") : null;
-}
-
-/**
- * Lista de ações de uma automação (ou de um ramo dela). Renderiza cada ação e,
- * quando é "mensagem_interativa", desenha embaixo de cada opção de resposta a
- * própria lista de ações daquele ramo — chamando a si mesma. É assim que dá
- * pra montar "se o lead responder 1, faz X; se responder 2, faz Y".
- */
-function AcoesEditor({
-  endereco,
-  itens,
-  funis,
-  funilAtualId,
-  formularios,
-  onAtualizarAcao,
-  onTrocarTipo,
-  onAdicionarAcao,
-  onRemoverAcao,
-  onAdicionarOpcao,
-  onRemoverOpcao,
-}: {
-  endereco: Endereco;
-  itens: AcaoAutomacao[];
-  funis: Funil[];
-  funilAtualId: string;
-  formularios: Formulario[];
-  onAtualizarAcao: (
-    endereco: Endereco,
-    index: number,
-    patch: Partial<AcaoAutomacao>,
-  ) => void;
-  onTrocarTipo: (
-    endereco: Endereco,
-    index: number,
-    tipo: TipoAcaoAutomacao,
-  ) => void;
-  onAdicionarAcao: (endereco: Endereco) => void;
-  onRemoverAcao: (endereco: Endereco, index: number) => void;
-  onAdicionarOpcao: (endereco: Endereco, index: number) => void;
-  onRemoverOpcao: (endereco: Endereco, index: number, opcaoId: string) => void;
-}) {
-  return (
-    <>
-      {itens.map((acao, i) => (
-        <div className="auto-acao-row" key={acao.id}>
-          <div className="auto-acao-row-h">
-            <span className="auto-acao-icone">{ICONE_ACAO[acao.tipo]}</span>
-            <select
-              className="input"
-              style={{ flex: 1, cursor: "pointer" }}
-              value={acao.tipo}
-              onChange={(e) =>
-                onTrocarTipo(endereco, i, e.target.value as TipoAcaoAutomacao)
-              }
-            >
-              {TIPOS_ACAO_AUTOMACAO.map((t) => (
-                <option key={t.tipo} value={t.tipo}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-            {itens.length > 1 ? (
-              <button
-                type="button"
-                className="remove-chip"
-                aria-label="Remover essa ação"
-                onClick={() => onRemoverAcao(endereco, i)}
-              >
-                ✕
-              </button>
-            ) : null}
-          </div>
-
-          {acao.tipo === "mensagem" || acao.tipo === "mensagem_interativa" ? (
-            <textarea
-              className="input"
-              style={{ width: "100%", minHeight: 60, resize: "vertical" }}
-              placeholder="Ex.: Oi! Recebemos sua mensagem 💙"
-              value={acao.mensagem ?? ""}
-              onChange={(e) =>
-                onAtualizarAcao(endereco, i, { mensagem: e.target.value })
-              }
-            />
-          ) : null}
-
-          {acao.tipo === "mensagem_interativa" ? (
-            <div style={{ marginTop: 8 }}>
-              <p className="hint" style={{ marginBottom: 6 }}>
-                Opções de resposta — o lead escolhe uma
-              </p>
-              {(acao.opcoes ?? []).map((op) => (
-                <div key={op.id} style={{ marginBottom: 10 }}>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <input
-                      className="input"
-                      style={{ flex: 1 }}
-                      value={op.rotulo}
-                      onChange={(e) =>
-                        onAtualizarAcao(endereco, i, {
-                          opcoes: (acao.opcoes ?? []).map((o) =>
-                            o.id === op.id
-                              ? { ...o, rotulo: e.target.value }
-                              : o,
-                          ),
-                        })
-                      }
-                    />
-                    {(acao.opcoes ?? []).length > 1 ? (
-                      <button
-                        type="button"
-                        className="btn ghost"
-                        onClick={() => onRemoverOpcao(endereco, i, op.id)}
-                      >
-                        ✕
-                      </button>
-                    ) : null}
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop: 6,
-                      marginLeft: 14,
-                      paddingLeft: 12,
-                      borderLeft: "2px solid var(--border-color, #e2e2e2)",
-                    }}
-                  >
-                    <p className="hint" style={{ marginBottom: 6 }}>
-                      Se o lead responder essa opção
-                    </p>
-                    <AcoesEditor
-                      endereco={[...endereco, { acaoIndex: i, opcaoId: op.id }]}
-                      itens={op.acoesSeEscolhida ?? []}
-                      funis={funis}
-                      funilAtualId={funilAtualId}
-                      formularios={formularios}
-                      onAtualizarAcao={onAtualizarAcao}
-                      onTrocarTipo={onTrocarTipo}
-                      onAdicionarAcao={onAdicionarAcao}
-                      onRemoverAcao={onRemoverAcao}
-                      onAdicionarOpcao={onAdicionarOpcao}
-                      onRemoverOpcao={onRemoverOpcao}
-                    />
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => onAdicionarOpcao(endereco, i)}
-              >
-                + Adicionar opção
-              </button>
-            </div>
-          ) : null}
-
-          {acao.tipo === "documento" || acao.tipo === "audio" ? (
-            <div style={{ marginTop: 8 }}>
-              <input
-                className="input"
-                type="file"
-                accept={acao.tipo === "audio" ? "audio/*" : undefined}
-                onChange={(e) =>
-                  onAtualizarAcao(endereco, i, {
-                    arquivoNome: e.target.files?.[0]?.name,
-                  })
-                }
-              />
-              {acao.arquivoNome ? (
-                <p className="hint" style={{ marginTop: 6 }}>
-                  {acao.arquivoNome}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-
-          {acao.tipo === "enviar_formulario" ? (
-            <div style={{ marginTop: 8 }}>
-              <textarea
-                className="input"
-                style={{ width: "100%", minHeight: 50, resize: "vertical" }}
-                placeholder="Mensagem opcional que acompanha o link — ex.: Antes de continuar, preenche esse formulário rapidinho:"
-                value={acao.mensagem ?? ""}
-                onChange={(e) =>
-                  onAtualizarAcao(endereco, i, { mensagem: e.target.value })
-                }
-              />
-              <div className="filters-row" style={{ marginTop: 8 }}>
-                <button
-                  type="button"
-                  className={`fchip${(acao.formularioOrigem ?? "interno") === "interno" ? " active" : ""}`}
-                  aria-pressed={(acao.formularioOrigem ?? "interno") === "interno"}
-                  onClick={() =>
-                    onAtualizarAcao(endereco, i, { formularioOrigem: "interno" })
-                  }
-                >
-                  Formulário do CRM
-                </button>
-                <button
-                  type="button"
-                  className={`fchip${acao.formularioOrigem === "externo" ? " active" : ""}`}
-                  aria-pressed={acao.formularioOrigem === "externo"}
-                  onClick={() =>
-                    onAtualizarAcao(endereco, i, { formularioOrigem: "externo" })
-                  }
-                >
-                  Link externo
-                </button>
-              </div>
-
-              {(acao.formularioOrigem ?? "interno") === "interno" ? (
-                <select
-                  className="input"
-                  style={{ width: "100%", marginTop: 8, cursor: "pointer" }}
-                  value={acao.formularioId ?? ""}
-                  onChange={(e) =>
-                    onAtualizarAcao(endereco, i, { formularioId: e.target.value })
-                  }
-                >
-                  <option value="">Escolha o formulário</option>
-                  {formularios.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.nome}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  className="input"
-                  style={{ width: "100%", marginTop: 8 }}
-                  type="url"
-                  placeholder="https://algumlugar.com/seu-formulario"
-                  value={acao.formularioUrlExterna ?? ""}
-                  onChange={(e) =>
-                    onAtualizarAcao(endereco, i, {
-                      formularioUrlExterna: e.target.value,
-                    })
-                  }
-                />
-              )}
-            </div>
-          ) : null}
-
-          {acao.tipo === "lembrete" ? (
-            <div style={{ marginTop: 8 }}>
-              <textarea
-                className="input"
-                style={{ width: "100%", minHeight: 50, resize: "vertical" }}
-                placeholder="O que lembrar — ex.: confirmar presença na consulta"
-                value={acao.mensagem ?? ""}
-                onChange={(e) =>
-                  onAtualizarAcao(endereco, i, { mensagem: e.target.value })
-                }
-              />
-              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                <span className="hint" style={{ alignSelf: "center" }}>
-                  Lembrar em
-                </span>
-                <input
-                  className="input"
-                  type="number"
-                  min="1"
-                  style={{ width: 70 }}
-                  value={acao.tempoValor ?? "1"}
-                  onChange={(e) =>
-                    onAtualizarAcao(endereco, i, { tempoValor: e.target.value })
-                  }
-                />
-                <select
-                  className="input"
-                  style={{ cursor: "pointer" }}
-                  value={acao.tempoUnidade ?? "dias"}
-                  onChange={(e) =>
-                    onAtualizarAcao(endereco, i, {
-                      tempoUnidade: e.target.value,
-                    })
-                  }
-                >
-                  {UNIDADES_TEMPO.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          ) : null}
-
-          {acao.tipo === "mover_funil" ? (
-            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <select
-                className="input"
-                style={{ flex: 1, cursor: "pointer" }}
-                value={acao.moverFunilId ?? ""}
-                onChange={(e) =>
-                  onAtualizarAcao(endereco, i, {
-                    moverFunilId: e.target.value,
-                    moverEtapaTitulo:
-                      funis
-                        .find((f) => f.id === e.target.value)
-                        ?.colunas[0]?.titulo ?? "",
-                  })
-                }
-              >
-                <option value="">Escolha o funil</option>
-                {funis.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.id === funilAtualId ? `${f.nome} (esse mesmo)` : f.nome}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="input"
-                style={{ flex: 1, cursor: "pointer" }}
-                value={acao.moverEtapaTitulo ?? ""}
-                onChange={(e) =>
-                  onAtualizarAcao(endereco, i, {
-                    moverEtapaTitulo: e.target.value,
-                  })
-                }
-                disabled={!acao.moverFunilId}
-              >
-                {(
-                  funis.find((f) => f.id === acao.moverFunilId)?.colunas ?? []
-                ).map((c) => (
-                  <option key={c.id} value={c.titulo}>
-                    {c.titulo}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
-
-          {acao.tipo === "atribuir_responsavel" ? (
-            <select
-              className="input"
-              style={{ width: "100%", marginTop: 8, cursor: "pointer" }}
-              value={acao.atendenteNome ?? ""}
-              onChange={(e) =>
-                onAtualizarAcao(endereco, i, { atendenteNome: e.target.value })
-              }
-            >
-              <option value="">Escolha o atendente</option>
-              {equipe
-                .filter((membro) => membro.papel !== "Cliente")
-                .map((membro) => (
-                  <option key={membro.nome} value={membro.nome}>
-                    {membro.nome} · {membro.papel}
-                  </option>
-                ))}
-            </select>
-          ) : null}
-
-          {acao.tipo === "tarefa" ? (
-            <div style={{ marginTop: 8 }}>
-              <textarea
-                className="input"
-                style={{ width: "100%", minHeight: 50, resize: "vertical" }}
-                placeholder="O que precisa ser feito — ex.: ligar pra confirmar interesse"
-                value={acao.mensagem ?? ""}
-                onChange={(e) =>
-                  onAtualizarAcao(endereco, i, { mensagem: e.target.value })
-                }
-              />
-              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                <span className="hint" style={{ alignSelf: "center" }}>
-                  Prazo em
-                </span>
-                <input
-                  className="input"
-                  type="number"
-                  min="1"
-                  style={{ width: 70 }}
-                  value={acao.tempoValor ?? "1"}
-                  onChange={(e) =>
-                    onAtualizarAcao(endereco, i, { tempoValor: e.target.value })
-                  }
-                />
-                <select
-                  className="input"
-                  style={{ cursor: "pointer" }}
-                  value={acao.tempoUnidade ?? "dias"}
-                  onChange={(e) =>
-                    onAtualizarAcao(endereco, i, {
-                      tempoUnidade: e.target.value,
-                    })
-                  }
-                >
-                  {UNIDADES_TEMPO.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          ) : null}
-
-          {acao.tipo === "adicionar_etiqueta" ||
-          acao.tipo === "remover_etiqueta" ? (
-            <input
-              className="input"
-              style={{ width: "100%", marginTop: 8 }}
-              type="text"
-              placeholder="Nome da etiqueta — ex.: Quente"
-              value={acao.etiquetaNome ?? ""}
-              onChange={(e) =>
-                onAtualizarAcao(endereco, i, { etiquetaNome: e.target.value })
-              }
-            />
-          ) : null}
-
-          {acao.tipo === "webhook" ? (
-            <input
-              className="input"
-              style={{ width: "100%", marginTop: 8 }}
-              type="url"
-              placeholder="https://sua-ferramenta.com/webhook"
-              value={acao.webhookUrl ?? ""}
-              onChange={(e) =>
-                onAtualizarAcao(endereco, i, { webhookUrl: e.target.value })
-              }
-            />
-          ) : null}
-
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              marginTop: 8,
-            }}
-          >
-            <span className="hint">Esperar antes de executar</span>
-            <input
-              className="input"
-              type="number"
-              min="0"
-              style={{ width: 70 }}
-              placeholder="0"
-              value={acao.atrasoValor ?? ""}
-              onChange={(e) =>
-                onAtualizarAcao(endereco, i, { atrasoValor: e.target.value })
-              }
-            />
-            <select
-              className="input"
-              style={{ cursor: "pointer" }}
-              value={acao.atrasoUnidade ?? "minutos"}
-              onChange={(e) =>
-                onAtualizarAcao(endereco, i, { atrasoUnidade: e.target.value })
-              }
-            >
-              {UNIDADES_TEMPO.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      ))}
-      <button
-        type="button"
-        className="btn ghost"
-        onClick={() => onAdicionarAcao(endereco)}
-      >
-        + Adicionar ação
-      </button>
-    </>
-  );
-}
+/* -------------------------------------------------------------------------- */
 
 export default function AutomacoesPage() {
   return (
@@ -612,957 +205,820 @@ export default function AutomacoesPage() {
 }
 
 function AutomacoesPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { funis } = useFunis();
-  const { formularios } = useFormularios();
   const {
-    automacoesDaEtapa,
-    criarAutomacao,
-    atualizarAutomacao,
-    excluirAutomacao,
-    alternarAtiva,
-    regrasComentario,
-    criarRegraComentario,
-    atualizarRegraComentario,
-    excluirRegraComentario,
-    alternarRegraComentarioAtiva,
-  } = useAutomacoes();
+    fluxos,
+    execucoesDoFluxo,
+    duplicarFluxo,
+    atualizarFluxo,
+    arquivarFluxo,
+    desarquivarFluxo,
+    excluirFluxo,
+    alternarAtivo,
+  } = useAutomationFlows();
 
   const funilParam = searchParams.get("funil");
   const etapaParam = searchParams.get("etapa");
   const criarParam = searchParams.get("criar") === "1";
 
-  const [funilSelecionadoId, setFunilSelecionadoId] = useState(
-    () => funilParam ?? funis[0]?.id ?? "",
+  useEffect(() => {
+    if (criarParam) router.replace("/automacoes/editor/novo");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [criarParam]);
+
+  const [busca, setBusca] = useState("");
+  const [statusFiltro, setStatusFiltro] = useState<Set<StatusFiltro>>(new Set());
+  const [funilFiltroIds, setFunilFiltroIds] = useState<Set<string>>(
+    () => new Set(funilParam ? [funilParam] : []),
   );
-  const funilSelecionado =
-    funis.find((f) => f.id === funilSelecionadoId) ?? funis[0];
+  const [etapaFiltroIds, setEtapaFiltroIds] = useState<Set<string>>(
+    () => new Set(etapaParam ? [etapaParam] : []),
+  );
+  const [gatilhoFiltro, setGatilhoFiltro] = useState<Set<string>>(new Set());
+  const [canalFiltro, setCanalFiltro] = useState<Set<CanalMensagem>>(new Set());
+  const [ordenacao, setOrdenacao] = useState<Ordenacao>("recentes");
+  const [buscaFunilPopover, setBuscaFunilPopover] = useState("");
 
-  const totalAutomacoes =
-    funilSelecionado?.colunas.reduce(
-      (soma, c) => soma + automacoesDaEtapa(funilSelecionado.id, c.id).length,
-      0,
-    ) ?? 0;
-  const totalAtivas =
-    funilSelecionado?.colunas.reduce(
-      (soma, c) =>
-        soma +
-        automacoesDaEtapa(funilSelecionado.id, c.id).filter((a) => a.ativa)
-          .length,
-      0,
-    ) ?? 0;
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
+  // Preferência secundária: mantém o popover de filtros aberto entre interações, persistida
+  // por sessão/reload via localStorage. Lazy init guardado por `typeof window` porque
+  // este componente é "use client" mas ainda passa por uma renderização inicial no servidor.
+  const [manterFiltrosAbertos, setManterFiltrosAbertos] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(CHAVE_LOCALSTORAGE_FILTROS_ABERTOS) === "1";
+  });
 
-  const [editorAberto, setEditorAberto] = useState(() => criarParam);
-  const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [etapaAlvo, setEtapaAlvo] = useState<{ id: string; titulo: string } | null>(
-    () => {
-      if (!criarParam || !etapaParam || !funilSelecionado) return null;
-      const etapa = funilSelecionado.colunas.find((c) => c.id === etapaParam);
-      return etapa ? { id: etapa.id, titulo: etapa.titulo } : null;
-    },
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(CHAVE_LOCALSTORAGE_FILTROS_ABERTOS, manterFiltrosAbertos ? "1" : "0");
+  }, [manterFiltrosAbertos]);
+
+  const filtrosPopoverRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!filtrosAbertos) return;
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === "Escape") setFiltrosAbertos(false);
+    }
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+  }, [filtrosAbertos]);
+
+  const [menuAbertoId, setMenuAbertoId] = useState<string | null>(null);
+  const [renomeandoId, setRenomeandoId] = useState<string | null>(null);
+  const [renomeandoValor, setRenomeandoValor] = useState("");
+  const [exclusaoAlvo, setExclusaoAlvo] = useState<FluxoAutomacao | null>(null);
+
+  const gatilhosDisponiveis = useMemo(() => {
+    const tipos = new Set<FlowNodeType>();
+    fluxos.forEach((f) => {
+      const no = noGatilhoDoFluxo(f);
+      if (no) tipos.add(no.type);
+    });
+    return [...tipos]
+      .map((tipo) => ({ tipo, label: labelGatilho(tipo) }))
+      .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+  }, [fluxos]);
+
+  const canaisDisponiveis = useMemo(() => {
+    const canais = new Set<CanalMensagem>();
+    fluxos.forEach((f) => canaisDoFluxo(f).forEach((c) => canais.add(c)));
+    return [...canais].sort((a, b) => CANAL_LABELS[a].localeCompare(CANAL_LABELS[b], "pt-BR"));
+  }, [fluxos]);
+
+  /** Funis a considerar pras etapas do popover: os selecionados, ou todos se nenhum estiver selecionado (nunca fica "sem opções"). */
+  const funisParaEtapas = useMemo(
+    () => (funilFiltroIds.size > 0 ? funis.filter((f) => funilFiltroIds.has(f.id)) : funis),
+    [funis, funilFiltroIds],
   );
 
-  const [tituloForm, setTituloForm] = useState("");
-  const [gatilhoForm, setGatilhoForm] = useState<TipoGatilhoEtapa>("entrou");
-  const [tempoValorForm, setTempoValorForm] = useState("2");
-  const [tempoUnidadeForm, setTempoUnidadeForm] = useState<string>("horas");
-  const [disparoImediatoForm, setDisparoImediatoForm] = useState(true);
-  const [acoesForm, setAcoesForm] = useState<AcaoAutomacao[]>([novaAcao()]);
-  const [ativaForm, setAtivaForm] = useState(true);
+  const funisFiltradosPopover = useMemo(() => {
+    const termo = buscaFunilPopover.trim().toLowerCase();
+    if (!termo) return funis;
+    return funis.filter((f) => f.nome.toLowerCase().includes(termo));
+  }, [funis, buscaFunilPopover]);
 
-  const [diasAtivosForm, setDiasAtivosForm] =
-    useState<DiaSemana[]>(DIAS_SEMANA_TODOS);
-  const [usarHorarioForm, setUsarHorarioForm] = useState(false);
-  const [horarioInicioForm, setHorarioInicioForm] = useState("08:00");
-  const [horarioFimForm, setHorarioFimForm] = useState("20:00");
-  const [foraDaJanelaForm, setForaDaJanelaForm] =
-    useState<ComportamentoForaJanela>("aguardar");
-  const [condicaoOrigemForm, setCondicaoOrigemForm] = useState<Origem | "">("");
-  const [condicaoValorMinimoForm, setCondicaoValorMinimoForm] = useState("");
-  const [condicaoSemRespostaForm, setCondicaoSemRespostaForm] = useState(false);
-  const [limiteExecucaoForm, setLimiteExecucaoForm] =
-    useState<LimiteExecucao>("sempre");
+  const totalFiltrosAtivos =
+    statusFiltro.size + funilFiltroIds.size + etapaFiltroIds.size + gatilhoFiltro.size + canalFiltro.size;
+  const temAlgumFiltroOuBusca = totalFiltrosAtivos > 0 || busca.trim() !== "";
 
-  const gatilhoPrecisaTempo = GATILHOS_ETAPA.find(
-    (g) => g.tipo === gatilhoForm,
-  )?.precisaTempo;
-  const gatilhoPermiteAtraso = GATILHOS_ETAPA.find(
-    (g) => g.tipo === gatilhoForm,
-  )?.permiteAtraso;
-  const gatilhoEhAgendado = gatilhoForm === "agendado";
-
-  function alternarDiaAtivo(dia: DiaSemana) {
-    setDiasAtivosForm((prev) =>
-      prev.includes(dia) ? prev.filter((d) => d !== dia) : [...prev, dia],
-    );
+  function fecharPopoverSeNaoQuiserManter() {
+    if (!manterFiltrosAbertos) setFiltrosAbertos(false);
   }
 
-  function fecharEditor() {
-    setEditorAberto(false);
-    setEditandoId(null);
-    setEtapaAlvo(null);
+  function limparBuscaEFiltros() {
+    setBusca("");
+    setStatusFiltro(new Set());
+    setFunilFiltroIds(new Set());
+    setEtapaFiltroIds(new Set());
+    setGatilhoFiltro(new Set());
+    setCanalFiltro(new Set());
   }
 
-  function abrirNovaAutomacao(etapaId: string, etapaTitulo: string) {
-    setEditandoId(null);
-    setEtapaAlvo({ id: etapaId, titulo: etapaTitulo });
-    setTituloForm("");
-    setGatilhoForm("entrou");
-    setTempoValorForm("2");
-    setTempoUnidadeForm("horas");
-    setDisparoImediatoForm(true);
-    setAcoesForm([novaAcao()]);
-    setAtivaForm(true);
-    setDiasAtivosForm(DIAS_SEMANA_TODOS);
-    setUsarHorarioForm(false);
-    setHorarioInicioForm("08:00");
-    setHorarioFimForm("20:00");
-    setForaDaJanelaForm("aguardar");
-    setCondicaoOrigemForm("");
-    setCondicaoValorMinimoForm("");
-    setCondicaoSemRespostaForm(false);
-    setLimiteExecucaoForm("sempre");
-    setEditorAberto(true);
+  // "Limpar filtros" dentro do popover só reseta os facets do próprio popover — a busca
+  // (que já mora fora do popover, na barra compacta) fica intacta. O botão "Limpar" da
+  // barra compacta é que limpa tudo junto (busca + filtros), via `limparBuscaEFiltros`.
+  function limparFacetsDoPopover() {
+    setStatusFiltro(new Set());
+    setFunilFiltroIds(new Set());
+    setEtapaFiltroIds(new Set());
+    setGatilhoFiltro(new Set());
+    setCanalFiltro(new Set());
   }
 
-  function abrirEdicao(automacao: Automacao, etapaTitulo: string) {
-    setEditandoId(automacao.id);
-    setEtapaAlvo({ id: automacao.etapaId, titulo: etapaTitulo });
-    setTituloForm(automacao.titulo);
-    setGatilhoForm(automacao.gatilhoTipo);
-    setTempoValorForm(automacao.tempoValor ?? "2");
-    setTempoUnidadeForm(automacao.tempoUnidade ?? "horas");
-    setDisparoImediatoForm(automacao.disparoImediato ?? true);
-    setAcoesForm(automacao.acoes.length ? automacao.acoes : [novaAcao()]);
-    setAtivaForm(automacao.ativa);
-    setDiasAtivosForm(automacao.diasAtivos ?? DIAS_SEMANA_TODOS);
-    setUsarHorarioForm(automacao.usarHorario ?? false);
-    setHorarioInicioForm(automacao.horarioInicio ?? "08:00");
-    setHorarioFimForm(automacao.horarioFim ?? "20:00");
-    setForaDaJanelaForm(automacao.foraDaJanela ?? "aguardar");
-    setCondicaoOrigemForm(automacao.condicaoOrigem ?? "");
-    setCondicaoValorMinimoForm(automacao.condicaoValorMinimo ?? "");
-    setCondicaoSemRespostaForm(automacao.condicaoSemResposta ?? false);
-    setLimiteExecucaoForm(automacao.limiteExecucao ?? "sempre");
-    setEditorAberto(true);
+  const fluxosFiltrados = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    let lista = fluxos.filter((f) => {
+      // Arquivadas ficam fora da lista por padrão — só aparecem quando o chip
+      // "Arquivada" é explicitamente selecionado (mesmo espírito de "Excluir": some da visão).
+      if (f.arquivada && !statusFiltro.has("arquivada")) return false;
+
+      if (!fluxoBateBusca(f, termo, funis)) return false;
+
+      if (statusFiltro.size > 0 && ![...statusFiltro].some((s) => statusBate(f, s, execucoesDoFluxo))) {
+        return false;
+      }
+
+      if (funilFiltroIds.size > 0 && !(f.funilId && funilFiltroIds.has(f.funilId))) return false;
+      if (etapaFiltroIds.size > 0 && !(f.etapaId && etapaFiltroIds.has(f.etapaId))) return false;
+
+      if (gatilhoFiltro.size > 0) {
+        const no = noGatilhoDoFluxo(f);
+        const bateGatilho = [...gatilhoFiltro].some((g) => {
+          if (g === "__comentario__") return !!no && TIPOS_GATILHO_COMENTARIO.includes(no.type);
+          return !!no && no.type === g;
+        });
+        if (!bateGatilho) return false;
+      }
+
+      if (canalFiltro.size > 0) {
+        const canais = canaisDoFluxo(f);
+        const bateCanal = [...canalFiltro].some((c) => canais.has(c));
+        if (!bateCanal) return false;
+      }
+
+      return true;
+    });
+
+    lista = [...lista].sort((a, b) => {
+      switch (ordenacao) {
+        case "nome_az":
+          return a.nome.localeCompare(b.nome, "pt-BR");
+        case "nome_za":
+          return b.nome.localeCompare(a.nome, "pt-BR");
+        case "execucoes_desc":
+          return b.execucoes - a.execucoes;
+        case "execucoes_asc":
+          return a.execucoes - b.execucoes;
+        case "antigas":
+          return new Date(a.atualizadoEm).getTime() - new Date(b.atualizadoEm).getTime();
+        case "ativas_primeiro": {
+          const aAtiva = a.status === "publicado" && a.ativa && !a.arquivada;
+          const bAtiva = b.status === "publicado" && b.ativa && !b.arquivada;
+          if (aAtiva !== bAtiva) return aAtiva ? -1 : 1;
+          return new Date(b.atualizadoEm).getTime() - new Date(a.atualizadoEm).getTime();
+        }
+        case "erro_primeiro": {
+          const aErro = temExecucaoComErro(a, execucoesDoFluxo);
+          const bErro = temExecucaoComErro(b, execucoesDoFluxo);
+          if (aErro !== bErro) return aErro ? -1 : 1;
+          return new Date(b.atualizadoEm).getTime() - new Date(a.atualizadoEm).getTime();
+        }
+        case "recentes":
+        default:
+          return new Date(b.atualizadoEm).getTime() - new Date(a.atualizadoEm).getTime();
+      }
+    });
+
+    return lista;
+  }, [fluxos, busca, statusFiltro, funilFiltroIds, etapaFiltroIds, gatilhoFiltro, canalFiltro, ordenacao, execucoesDoFluxo, funis]);
+
+  const totalAtivas = fluxos.filter((f) => f.status === "publicado" && f.ativa && !f.arquivada).length;
+
+  function abrirMenu(id: string) {
+    setMenuAbertoId((atual) => (atual === id ? null : id));
   }
 
-  function atualizarAcao(
-    endereco: Endereco,
-    index: number,
-    patch: Partial<AcaoAutomacao>,
-  ) {
-    setAcoesForm((prev) =>
-      atualizarContainer(prev, endereco, (lista) =>
-        lista.map((a, i) => (i === index ? { ...a, ...patch } : a)),
-      ),
-    );
+  function iniciarRenomeacao(fluxo: FluxoAutomacao) {
+    setRenomeandoId(fluxo.id);
+    setRenomeandoValor(fluxo.nome);
+    setMenuAbertoId(null);
   }
 
-  function trocarTipoAcao(
-    endereco: Endereco,
-    index: number,
-    tipo: TipoAcaoAutomacao,
-  ) {
-    setAcoesForm((prev) =>
-      atualizarContainer(prev, endereco, (lista) =>
-        lista.map((a, i) => (i === index ? novaAcao(tipo) : a)),
-      ),
-    );
+  function confirmarRenomeacao() {
+    if (!renomeandoId) return;
+    const nome = renomeandoValor.trim();
+    if (nome) atualizarFluxo(renomeandoId, { nome });
+    setRenomeandoId(null);
   }
 
-  function adicionarAcao(endereco: Endereco) {
-    setAcoesForm((prev) =>
-      atualizarContainer(prev, endereco, (lista) => [...lista, novaAcao()]),
-    );
+  function pedirExclusao(fluxo: FluxoAutomacao) {
+    setExclusaoAlvo(fluxo);
+    setMenuAbertoId(null);
   }
 
-  function removerAcao(endereco: Endereco, index: number) {
-    setAcoesForm((prev) =>
-      atualizarContainer(prev, endereco, (lista) =>
-        lista.filter((_, i) => i !== index),
-      ),
-    );
+  function confirmarExclusao() {
+    if (!exclusaoAlvo) return;
+    excluirFluxo(exclusaoAlvo.id);
+    setExclusaoAlvo(null);
   }
 
-  function adicionarOpcao(endereco: Endereco, index: number) {
-    setAcoesForm((prev) =>
-      atualizarContainer(prev, endereco, (lista) =>
-        lista.map((a, i) => {
-          if (i !== index) return a;
-          const opcoes = a.opcoes ?? [];
-          return {
-            ...a,
-            opcoes: [
-              ...opcoes,
-              { id: `op-${Date.now()}`, rotulo: `${opcoes.length + 1} · ` },
-            ],
-          };
-        }),
-      ),
-    );
+  function verExecucoes(fluxo: FluxoAutomacao) {
+    // Ainda não existe uma UI dedicada de histórico de execuções (o `HistoricoVersoes.tsx`
+    // do editor cobre versões, não execuções) — enquanto isso não existe, o atalho mais
+    // honesto é abrir o construtor (que tem o Simulador) e deixar um rastro no console
+    // pra quem for construir a tela de verdade depois.
+    console.log(`Ver execuções de "${fluxo.nome}":`, execucoesDoFluxo(fluxo.id));
+    setMenuAbertoId(null);
+    router.push(`/automacoes/editor/${fluxo.id}`);
   }
 
-  function removerOpcao(endereco: Endereco, index: number, opcaoId: string) {
-    setAcoesForm((prev) =>
-      atualizarContainer(prev, endereco, (lista) =>
-        lista.map((a, i) =>
-          i === index
-            ? { ...a, opcoes: (a.opcoes ?? []).filter((o) => o.id !== opcaoId) }
-            : a,
-        ),
-      ),
-    );
-  }
+  /* ---------------------------------------------------------------------- */
+  /* Chips removíveis da linha "filtros ativos"                             */
+  /* ---------------------------------------------------------------------- */
 
-  function salvarAutomacao() {
-    if (!funilSelecionado || !etapaAlvo) return;
-    const titulo = tituloForm.trim() || "Automação sem nome";
-    const dados = {
-      funilId: funilSelecionado.id,
-      etapaId: etapaAlvo.id,
-      titulo,
-      gatilhoTipo: gatilhoForm,
-      tempoValor:
-        gatilhoPrecisaTempo || (gatilhoPermiteAtraso && !disparoImediatoForm)
-          ? tempoValorForm
-          : undefined,
-      tempoUnidade:
-        gatilhoPrecisaTempo || (gatilhoPermiteAtraso && !disparoImediatoForm)
-          ? tempoUnidadeForm
-          : undefined,
-      disparoImediato: gatilhoPermiteAtraso ? disparoImediatoForm : undefined,
-      acoes: acoesForm,
-      ativa: ativaForm,
-      diasAtivos: diasAtivosForm,
-      usarHorario: gatilhoEhAgendado ? true : usarHorarioForm,
-      horarioInicio: usarHorarioForm || gatilhoEhAgendado ? horarioInicioForm : undefined,
-      horarioFim: usarHorarioForm || gatilhoEhAgendado ? horarioFimForm : undefined,
-      foraDaJanela: foraDaJanelaForm,
-      condicaoOrigem: condicaoOrigemForm || undefined,
-      condicaoValorMinimo: condicaoValorMinimoForm.trim() || undefined,
-      condicaoSemResposta: condicaoSemRespostaForm,
-      limiteExecucao: limiteExecucaoForm,
-    };
-    if (editandoId) {
-      atualizarAutomacao(editandoId, dados);
-    } else {
-      criarAutomacao(dados);
+  type ChipAtivo = { chave: string; label: string; onRemove: () => void };
+
+  const chipsAtivos: ChipAtivo[] = useMemo(() => {
+    const chips: ChipAtivo[] = [];
+
+    STATUS_FILTROS.forEach((s) => {
+      if (statusFiltro.has(s.valor)) {
+        chips.push({
+          chave: `status-${s.valor}`,
+          label: s.label,
+          onRemove: () => alternarNoSet(setStatusFiltro, s.valor),
+        });
+      }
+    });
+
+    funis.forEach((f) => {
+      if (funilFiltroIds.has(f.id)) {
+        chips.push({
+          chave: `funil-${f.id}`,
+          label: `Funil: ${f.nome}`,
+          onRemove: () => alternarNoSet(setFunilFiltroIds, f.id),
+        });
+      }
+    });
+
+    funis.forEach((f) => {
+      f.colunas.forEach((c) => {
+        if (etapaFiltroIds.has(c.id)) {
+          chips.push({
+            chave: `etapa-${c.id}`,
+            label: `Etapa: ${c.titulo}`,
+            onRemove: () => alternarNoSet(setEtapaFiltroIds, c.id),
+          });
+        }
+      });
+    });
+
+    if (gatilhoFiltro.has("__comentario__")) {
+      chips.push({
+        chave: "gatilho-__comentario__",
+        label: "Comentário (Insta/TikTok)",
+        onRemove: () => alternarNoSet<string>(setGatilhoFiltro, "__comentario__"),
+      });
     }
-    fecharEditor();
-  }
+    gatilhosDisponiveis.forEach((g) => {
+      if (gatilhoFiltro.has(g.tipo)) {
+        chips.push({
+          chave: `gatilho-${g.tipo}`,
+          label: g.label,
+          onRemove: () => alternarNoSet<string>(setGatilhoFiltro, g.tipo),
+        });
+      }
+    });
 
-  function pedirExclusao(automacao: Automacao) {
-    if (window.confirm(`Excluir a automação "${automacao.titulo}"?`)) {
-      excluirAutomacao(automacao.id);
-      if (editandoId === automacao.id) fecharEditor();
-    }
-  }
+    canalFiltro.forEach((c) => {
+      chips.push({
+        chave: `canal-${c}`,
+        label: CANAL_LABELS[c],
+        onRemove: () => alternarNoSet(setCanalFiltro, c),
+      });
+    });
 
-  const [regraEditorAberto, setRegraEditorAberto] = useState(false);
-  const [regraEditandoId, setRegraEditandoId] = useState<string | null>(null);
-  const [canalRegraForm, setCanalRegraForm] = useState<CanalComentario>(
-    CANAIS_COMENTARIO[0],
-  );
-  const [palavraChaveForm, setPalavraChaveForm] = useState("");
-  const [mensagemDirectForm, setMensagemDirectForm] = useState("");
-  const [ativaRegraForm, setAtivaRegraForm] = useState(true);
-  const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
-  const [proximoToastId, setProximoToastId] = useState(0);
-
-  function avisar(texto: string) {
-    const id = `toast-${proximoToastId}`;
-    setProximoToastId((v) => v + 1);
-    setToasts((prev) => [...prev, { id, texto }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
-  }
-
-  function fecharRegraEditor() {
-    setRegraEditorAberto(false);
-    setRegraEditandoId(null);
-  }
-
-  function abrirNovaRegra() {
-    setRegraEditandoId(null);
-    setCanalRegraForm(CANAIS_COMENTARIO[0]);
-    setPalavraChaveForm("");
-    setMensagemDirectForm("");
-    setAtivaRegraForm(true);
-    setRegraEditorAberto(true);
-  }
-
-  function abrirEdicaoRegra(regra: RegraComentario) {
-    setRegraEditandoId(regra.id);
-    setCanalRegraForm(regra.canal);
-    setPalavraChaveForm(regra.palavraChave);
-    setMensagemDirectForm(regra.mensagemDirect);
-    setAtivaRegraForm(regra.ativa);
-    setRegraEditorAberto(true);
-  }
-
-  function salvarRegra() {
-    const palavraChave = palavraChaveForm.trim().toUpperCase();
-    if (!palavraChave) return;
-    const dados = {
-      canal: canalRegraForm,
-      palavraChave,
-      mensagemDirect: mensagemDirectForm,
-      ativa: ativaRegraForm,
-    };
-    if (regraEditandoId) {
-      atualizarRegraComentario(regraEditandoId, dados);
-    } else {
-      criarRegraComentario(dados);
-    }
-    fecharRegraEditor();
-  }
-
-  function pedirExclusaoRegra(regra: RegraComentario) {
-    if (
-      window.confirm(
-        `Excluir a regra de comentário "${regra.palavraChave}" (${regra.canal})?`,
-      )
-    ) {
-      excluirRegraComentario(regra.id);
-      if (regraEditandoId === regra.id) fecharRegraEditor();
-    }
-  }
-
-  function testarRegra(regra: RegraComentario) {
-    avisar(
-      `Alguém comentou "${regra.palavraChave}" num post do ${regra.canal} → direct enviado automaticamente`,
-    );
-  }
+    return chips;
+  }, [statusFiltro, funilFiltroIds, etapaFiltroIds, gatilhoFiltro, canalFiltro, funis, gatilhosDisponiveis]);
 
   return (
     <>
       <Topbar
         title="Automações"
-        sub={`${totalAutomacoes} automações · ${totalAtivas} ativas — ${funilSelecionado?.nome ?? ""}`}
+        sub={`${fluxos.length} automações · ${totalAtivas} ativas`}
+        actions={
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() => router.push("/automacoes/editor/novo")}
+          >
+            + Nova automação
+          </button>
+        }
       />
 
       <div className="content">
-        <div className="filters-row mb14">
-          {funis.map((f) => (
-            <button
-              type="button"
-              key={f.id}
-              className={`fchip${f.id === funilSelecionadoId ? " active" : ""}`}
-              aria-pressed={f.id === funilSelecionadoId}
-              onClick={() => {
-                setFunilSelecionadoId(f.id);
-                fecharEditor();
-              }}
-            >
-              {f.nome}
-            </button>
-          ))}
-        </div>
-
-        <p className="hint mb14">
-          Cada etapa do funil tem seu próprio quadro de automações — clique em
-          &quot;+ Nova automação&quot; dentro da coluna pra criar uma ligada
-          àquela etapa
-          {funilSelecionado?.responsavel
-            ? `, atendida por ${funilSelecionado.responsavel}`
-            : ""}
-          .
-        </p>
-
-        {editorAberto && etapaAlvo ? (
-          <section className="open-conv mb14">
-            <div className="open-conv-h">
-              <div>
-                <p className="n">
-                  {editandoId ? "Editar automação" : "Nova automação"}
-                </p>
-                <p className="s">
-                  Funil &quot;{funilSelecionado?.nome}&quot; · Etapa &quot;
-                  {etapaAlvo.titulo}&quot;
-                  {funilSelecionado?.responsavel
-                    ? ` · atendente: ${funilSelecionado.responsavel}`
-                    : ""}
-                </p>
-              </div>
-              <span
-                className="close"
-                style={{ cursor: "pointer" }}
-                onClick={fecharEditor}
-              >
-                Fechar ✕
-              </span>
-            </div>
-
-            <div className="field">
-              <label>Nome da automação</label>
+        {/* -------------------------- Barra compacta -------------------------- */}
+        <div className="automacoes-bar">
+          <div className="automacoes-bar-group">
+            <label className="automacoes-search" htmlFor="automacoes-busca">
+              <IconSearch aria-hidden="true" />
               <input
-                className="input"
-                style={{ width: "100%" }}
+                id="automacoes-busca"
                 type="text"
-                value={tituloForm}
-                onChange={(e) => setTituloForm(e.target.value)}
-                placeholder="Ex.: Boas-vindas pro lead novo"
+                placeholder="Buscar automação, funil, etapa, gatilho…"
+                aria-label="Buscar automações"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
               />
-            </div>
-
-            <div className="field">
-              <label>Gatilho — o que dispara essa automação</label>
-              <div className="filters-row">
-                {GATILHOS_ETAPA.map((g) => (
-                  <button
-                    type="button"
-                    key={g.tipo}
-                    className={`fchip${gatilhoForm === g.tipo ? " active" : ""}`}
-                    aria-pressed={gatilhoForm === g.tipo}
-                    onClick={() => setGatilhoForm(g.tipo)}
-                  >
-                    {g.label}
-                  </button>
-                ))}
-              </div>
-              {gatilhoPrecisaTempo ? (
-                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                  <input
-                    className="input"
-                    type="number"
-                    min="1"
-                    style={{ width: 80 }}
-                    value={tempoValorForm}
-                    onChange={(e) => setTempoValorForm(e.target.value)}
-                  />
-                  <select
-                    className="input"
-                    style={{ cursor: "pointer" }}
-                    value={tempoUnidadeForm}
-                    onChange={(e) => setTempoUnidadeForm(e.target.value)}
-                  >
-                    {UNIDADES_TEMPO.map((u) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
-
-              {gatilhoPermiteAtraso ? (
-                <div style={{ marginTop: 8 }}>
-                  <label className="hint" style={{ display: "block", marginBottom: 6 }}>
-                    Quando manda
-                  </label>
-                  <div className="filters-row">
-                    <button
-                      type="button"
-                      className={`fchip${disparoImediatoForm ? " active" : ""}`}
-                      aria-pressed={disparoImediatoForm}
-                      onClick={() => setDisparoImediatoForm(true)}
-                    >
-                      Imediatamente
-                    </button>
-                    <button
-                      type="button"
-                      className={`fchip${!disparoImediatoForm ? " active" : ""}`}
-                      aria-pressed={!disparoImediatoForm}
-                      onClick={() => setDisparoImediatoForm(false)}
-                    >
-                      Depois de um tempo
-                    </button>
-                  </div>
-                  {!disparoImediatoForm ? (
-                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <input
-                        className="input"
-                        type="number"
-                        min="1"
-                        style={{ width: 80 }}
-                        value={tempoValorForm}
-                        onChange={(e) => setTempoValorForm(e.target.value)}
-                      />
-                      <select
-                        className="input"
-                        style={{ cursor: "pointer" }}
-                        value={tempoUnidadeForm}
-                        onChange={(e) => setTempoUnidadeForm(e.target.value)}
-                      >
-                        {UNIDADES_TEMPO.map((u) => (
-                          <option key={u} value={u}>
-                            {u}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-
-            <div className="field">
-              <label>
-                Janela de atividade — em quais dias e horários ela pode disparar
-              </label>
-              <div className="filters-row">
-                {DIAS_SEMANA.map((d) => (
-                  <button
-                    type="button"
-                    key={d.valor}
-                    className={`fchip${diasAtivosForm.includes(d.valor) ? " active" : ""}`}
-                    aria-pressed={diasAtivosForm.includes(d.valor)}
-                    onClick={() => alternarDiaAtivo(d.valor)}
-                  >
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-
-              {gatilhoEhAgendado ? (
-                <p className="hint" style={{ marginTop: 6 }}>
-                  Esse gatilho é recorrente — ela dispara nos dias e no horário
-                  definidos aqui, pros leads que estiverem na etapa.
-                </p>
-              ) : null}
-
-              {!gatilhoEhAgendado ? (
-                <div className="toggle-row" style={{ marginTop: 8 }}>
-                  <span className="tl">Restringir a um horário do dia</span>
-                  <Toggle
-                    key={`${editandoId ?? "nova"}-horario`}
-                    defaultOn={usarHorarioForm}
-                    label="Restringir a um horário do dia"
-                    onToggle={setUsarHorarioForm}
-                  />
-                </div>
-              ) : null}
-
-              {usarHorarioForm || gatilhoEhAgendado ? (
-                <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
-                  <input
-                    className="input"
-                    type="time"
-                    value={horarioInicioForm}
-                    onChange={(e) => setHorarioInicioForm(e.target.value)}
-                  />
-                  <span className="hint">até</span>
-                  <input
-                    className="input"
-                    type="time"
-                    value={horarioFimForm}
-                    onChange={(e) => setHorarioFimForm(e.target.value)}
-                  />
-                </div>
-              ) : null}
-
-              {diasAtivosForm.length < DIAS_SEMANA_TODOS.length || usarHorarioForm || gatilhoEhAgendado ? (
-                <div style={{ marginTop: 8 }}>
-                  <label className="hint" style={{ display: "block", marginBottom: 6 }}>
-                    Se o gatilho acontecer fora da janela
-                  </label>
-                  <select
-                    className="input"
-                    style={{ cursor: "pointer" }}
-                    value={foraDaJanelaForm}
-                    onChange={(e) =>
-                      setForaDaJanelaForm(e.target.value as ComportamentoForaJanela)
-                    }
-                  >
-                    {COMPORTAMENTO_FORA_JANELA.map((op) => (
-                      <option key={op.valor} value={op.valor}>
-                        {op.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="field">
-              <label>Condições — só dispara se o lead bater com isso (opcional)</label>
-              <div style={{ display: "flex", gap: 8 }}>
-                <select
-                  className="input"
-                  style={{ flex: 1, cursor: "pointer" }}
-                  value={condicaoOrigemForm}
-                  onChange={(e) => setCondicaoOrigemForm(e.target.value as Origem | "")}
+              {busca ? (
+                <button
+                  type="button"
+                  className="automacoes-search-clear"
+                  aria-label="Limpar busca"
+                  onClick={() => setBusca("")}
                 >
-                  <option value="">Qualquer origem</option>
-                  {ORIGENS.map((o) => (
-                    <option key={o} value={o}>
-                      Origem: {o}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  className="input"
-                  style={{ flex: 1 }}
-                  type="text"
-                  placeholder="Valor mínimo do negócio (ex.: 500)"
-                  value={condicaoValorMinimoForm}
-                  onChange={(e) => setCondicaoValorMinimoForm(e.target.value)}
-                />
-              </div>
+                  ✕
+                </button>
+              ) : null}
+            </label>
 
-              <div className="toggle-row" style={{ marginTop: 8 }}>
-                <span className="tl">
-                  Só dispara se o lead ainda não respondeu nada nessa etapa
-                </span>
-                <Toggle
-                  key={`${editandoId ?? "nova"}-sem-resposta`}
-                  defaultOn={condicaoSemRespostaForm}
-                  label="Só dispara se o lead ainda não respondeu nada nessa etapa"
-                  onToggle={setCondicaoSemRespostaForm}
-                />
-              </div>
+            <div className="dropdown-anchor">
+              <button
+                type="button"
+                className={`automacoes-chip-btn${totalFiltrosAtivos > 0 ? " active" : ""}`}
+                aria-expanded={filtrosAbertos}
+                aria-controls="automacoes-filtros-popover"
+                aria-label={`Filtros — ${totalFiltrosAtivos} ativos`}
+                onClick={() => setFiltrosAbertos((v) => !v)}
+              >
+                Filtros
+                {totalFiltrosAtivos > 0 ? (
+                  <span className="automacoes-badge">{totalFiltrosAtivos}</span>
+                ) : null}
+              </button>
 
-              {gatilhoForm === "parado" ? (
-                <p className="hint" style={{ marginTop: 8 }}>
-                  Dica pra sequência tipo &quot;lembra em 24h, se não responder
-                  desqualifica em 72h&quot;: crie duas automações aqui com o
-                  gatilho &quot;fica parado&quot; — uma com 24 horas mandando a
-                  mensagem, outra com 96 horas (24 + 72) movendo o lead pra
-                  outra etapa — e marque essa condição nas duas.
-                </p>
+              {filtrosAbertos ? (
+                <>
+                  <div
+                    onClick={() => setFiltrosAbertos(false)}
+                    style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                  />
+                  <div
+                    id="automacoes-filtros-popover"
+                    className="flow-filtros-pop"
+                    role="dialog"
+                    aria-label="Filtros de automações"
+                    ref={filtrosPopoverRef}
+                  >
+                    <fieldset className="flow-filtros-secao">
+                      <legend>Status</legend>
+                      <div className="filters-row">
+                        {STATUS_FILTROS.map((s) => (
+                          <button
+                            type="button"
+                            key={s.valor}
+                            className={`fchip${statusFiltro.has(s.valor) ? " active" : ""}`}
+                            aria-pressed={statusFiltro.has(s.valor)}
+                            onClick={() => alternarNoSet(setStatusFiltro, s.valor)}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </fieldset>
+
+                    {funis.length > 1 ? (
+                      <fieldset className="flow-filtros-secao">
+                        <legend>Funil</legend>
+                        {funis.length > LIMITE_FUNIS_PARA_BUSCA ? (
+                          <input
+                            className="input"
+                            style={{ width: "100%", marginBottom: 8 }}
+                            type="text"
+                            placeholder="Buscar funil…"
+                            aria-label="Buscar funil"
+                            value={buscaFunilPopover}
+                            onChange={(e) => setBuscaFunilPopover(e.target.value)}
+                          />
+                        ) : null}
+                        <div className="filters-row">
+                          {funisFiltradosPopover.map((f) => (
+                            <button
+                              type="button"
+                              key={f.id}
+                              className={`fchip${funilFiltroIds.has(f.id) ? " active" : ""}`}
+                              aria-pressed={funilFiltroIds.has(f.id)}
+                              onClick={() => alternarNoSet(setFunilFiltroIds, f.id)}
+                            >
+                              {f.nome}
+                            </button>
+                          ))}
+                        </div>
+                      </fieldset>
+                    ) : null}
+
+                    <fieldset className="flow-filtros-secao">
+                      <legend>Etapa</legend>
+                      {funisParaEtapas.map((f) => (
+                        <div key={f.id}>
+                          {funisParaEtapas.length > 1 ? (
+                            <p className="flow-filtros-sub">{f.nome}</p>
+                          ) : null}
+                          <div className="filters-row">
+                            {f.colunas.map((c) => (
+                              <button
+                                type="button"
+                                key={c.id}
+                                className={`fchip${etapaFiltroIds.has(c.id) ? " active" : ""}`}
+                                aria-pressed={etapaFiltroIds.has(c.id)}
+                                onClick={() => alternarNoSet(setEtapaFiltroIds, c.id)}
+                              >
+                                {c.titulo}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </fieldset>
+
+                    <fieldset className="flow-filtros-secao">
+                      <legend>Gatilho</legend>
+                      <div className="filters-row">
+                        <button
+                          type="button"
+                          className={`fchip${gatilhoFiltro.has("__comentario__") ? " active" : ""}`}
+                          aria-pressed={gatilhoFiltro.has("__comentario__")}
+                          onClick={() => alternarNoSet<string>(setGatilhoFiltro, "__comentario__")}
+                        >
+                          Comentário (Insta/TikTok)
+                        </button>
+                        {gatilhosDisponiveis
+                          .filter((g) => !TIPOS_GATILHO_COMENTARIO.includes(g.tipo))
+                          .map((g) => (
+                            <button
+                              type="button"
+                              key={g.tipo}
+                              className={`fchip${gatilhoFiltro.has(g.tipo) ? " active" : ""}`}
+                              aria-pressed={gatilhoFiltro.has(g.tipo)}
+                              onClick={() => alternarNoSet<string>(setGatilhoFiltro, g.tipo)}
+                            >
+                              {g.label}
+                            </button>
+                          ))}
+                      </div>
+                    </fieldset>
+
+                    {canaisDisponiveis.length > 0 ? (
+                      <fieldset className="flow-filtros-secao">
+                        <legend>Canal</legend>
+                        <div className="filters-row">
+                          {canaisDisponiveis.map((c) => (
+                            <button
+                              type="button"
+                              key={c}
+                              className={`fchip${canalFiltro.has(c) ? " active" : ""}`}
+                              aria-pressed={canalFiltro.has(c)}
+                              onClick={() => alternarNoSet(setCanalFiltro, c)}
+                            >
+                              {CANAL_LABELS[c]}
+                            </button>
+                          ))}
+                        </div>
+                      </fieldset>
+                    ) : null}
+
+                    <div className="flow-filtros-foot">
+                      <label className="flow-filtros-toggle">
+                        <input
+                          type="checkbox"
+                          checked={manterFiltrosAbertos}
+                          onChange={(e) => setManterFiltrosAbertos(e.target.checked)}
+                        />
+                        Manter filtros abertos
+                      </label>
+                      <span className="hint">{totalFiltrosAtivos} selecionados</span>
+                    </div>
+                    <div className="flow-filtros-foot">
+                      <button type="button" className="btn ghost" onClick={limparFacetsDoPopover}>
+                        Limpar filtros
+                      </button>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          aria-label="Fechar filtros"
+                          onClick={() => setFiltrosAbertos(false)}
+                        >
+                          ✕ Fechar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn primary"
+                          onClick={fecharPopoverSeNaoQuiserManter}
+                        >
+                          Aplicar filtros
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
               ) : null}
             </div>
 
-            <div className="field">
-              <label>Limite de disparo</label>
+            <label className="automacoes-ordenar">
+              <span className="hint" style={{ marginRight: 4 }}>
+                Ordenar:
+              </span>
               <select
-                className="input"
-                style={{ cursor: "pointer" }}
-                value={limiteExecucaoForm}
-                onChange={(e) => setLimiteExecucaoForm(e.target.value as LimiteExecucao)}
+                aria-label="Ordenar automações"
+                value={ordenacao}
+                onChange={(e) => setOrdenacao(e.target.value as Ordenacao)}
               >
-                {LIMITES_EXECUCAO.map((op) => (
-                  <option key={op.valor} value={op.valor}>
-                    {op.label}
+                {ORDENACOES.map((o) => (
+                  <option key={o.valor} value={o.valor}>
+                    {o.label}
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
 
-            <div className="field">
-              <label>Ações — o que ela faz (pode ter mais de uma)</label>
-              <p className="hint" style={{ marginBottom: 8 }}>
-                Numa mensagem com opções de resposta, dá pra definir uma ação
-                diferente pra cada opção que o lead escolher.
-              </p>
-              <AcoesEditor
-                endereco={[]}
-                itens={acoesForm}
-                funis={funis}
-                funilAtualId={funilSelecionado?.id ?? ""}
-                formularios={formularios}
-                onAtualizarAcao={atualizarAcao}
-                onTrocarTipo={trocarTipoAcao}
-                onAdicionarAcao={adicionarAcao}
-                onRemoverAcao={removerAcao}
-                onAdicionarOpcao={adicionarOpcao}
-                onRemoverOpcao={removerOpcao}
-              />
-            </div>
-
-            <div className="toggle-row">
-              <span className="tl">
-                {editandoId ? "Automação ativa" : "Ativar assim que criar"}
-              </span>
-              <Toggle
-                key={editandoId ?? "nova"}
-                defaultOn={ativaForm}
-                label="Automação ativa"
-                onToggle={setAtivaForm}
-              />
-            </div>
-
-            <div className="section-foot">
-              {editandoId ? (
-                <button
-                  type="button"
-                  className="btn ghost"
-                  style={{ flex: 1 }}
-                  onClick={() => {
-                    if (!funilSelecionado || !etapaAlvo) return;
-                    const automacao = automacoesDaEtapa(
-                      funilSelecionado.id,
-                      etapaAlvo.id,
-                    ).find((a) => a.id === editandoId);
-                    if (automacao) pedirExclusao(automacao);
-                  }}
-                >
-                  Excluir automação
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="btn primary"
-                style={{ flex: 1 }}
-                onClick={salvarAutomacao}
-              >
-                {editandoId ? "Salvar alterações" : "Salvar automação"}
+            {temAlgumFiltroOuBusca ? (
+              <button type="button" className="automacoes-limpar" onClick={limparBuscaEFiltros}>
+                Limpar
               </button>
-            </div>
-          </section>
-        ) : null}
+            ) : null}
 
-        <div className="kanban">
-          {funilSelecionado?.colunas.map((coluna) => {
-            const automacoesEtapa = automacoesDaEtapa(
-              funilSelecionado.id,
-              coluna.id,
-            );
-            return (
-              <div key={coluna.id} style={{ minHeight: 60 }}>
-                <div className="kcol-h">
-                  <span className="t">
-                    <span className="dot" />
-                    {coluna.titulo}
-                  </span>
-                  <span className="c">{automacoesEtapa.length}</span>
-                </div>
-                <button
-                  type="button"
-                  className="btn ghost block mb14"
-                  onClick={() => abrirNovaAutomacao(coluna.id, coluna.titulo)}
-                >
-                  + Nova automação
-                </button>
-                {automacoesEtapa.length === 0 ? (
-                  <p className="hint">Nenhuma automação nessa etapa ainda.</p>
-                ) : (
-                  automacoesEtapa.map((automacao) => (
-                    <button
-                      type="button"
-                      className="auto-kanban-card"
-                      key={automacao.id}
-                      onClick={() => abrirEdicao(automacao, coluna.titulo)}
-                    >
-                      <span className="auto-kanban-card-h">
-                        <IconAutomacoes width={14} height={14} />
-                        <span className="titulo">{automacao.titulo}</span>
-                        <span
-                          role="button"
-                          aria-label={`Excluir automação ${automacao.titulo}`}
-                          title="Excluir automação"
-                          style={{ cursor: "pointer", color: "var(--text-faint)" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            pedirExclusao(automacao);
-                          }}
-                        >
-                          ✕
-                        </span>
-                      </span>
-                      <span className="auto-kanban-card-gatilho">
-                        {resumoGatilho(automacao)}
-                        {resumoJanela(automacao) ? ` · ${resumoJanela(automacao)}` : ""}
-                      </span>
-                      <span className="auto-kanban-card-acoes">
-                        {automacao.acoes.map((acao) => (
-                          <span key={acao.id} title={acao.tipo}>
-                            {ICONE_ACAO[acao.tipo]}
-                          </span>
-                        ))}
-                      </span>
-                      <span
-                        className="auto-kanban-card-foot"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <span className="hint">{automacao.execucoes}</span>
-                        <Toggle
-                          defaultOn={automacao.ativa}
-                          label={automacao.titulo}
-                          onToggle={() => alternarAtiva(automacao.id)}
-                        />
-                      </span>
-                    </button>
-                  ))
-                )}
-              </div>
-            );
-          })}
+            <span className="automacoes-count">
+              {fluxosFiltrados.length} {fluxosFiltrados.length === 1 ? "resultado" : "resultados"}
+            </span>
+          </div>
+
+          <div className="automacoes-bar-right">
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => router.push("/automacoes/editor/novo")}
+            >
+              + Nova automação
+            </button>
+          </div>
         </div>
 
-        <div className="int-group" style={{ marginTop: 24 }}>
-          <p className="int-group-h">
-            Comentário vira Direct — Instagram e TikTok
-          </p>
-          <p className="hint mb14">
-            Quando alguém comenta a palavra-chave num post, o CRM manda essa
-            mensagem no direct/inbox automaticamente. Isso ainda é simulado
-            aqui — a conexão de verdade com a API oficial da Meta e do TikTok
-            entra depois que a estrutura estiver fechada.
-          </p>
+        {chipsAtivos.length > 0 ? (
+          <div className="automacoes-chips-row">
+            {chipsAtivos.map((chip) => (
+              <button
+                type="button"
+                key={chip.chave}
+                className="automacoes-remchip"
+                onClick={chip.onRemove}
+                aria-label={`Remover filtro ${chip.label}`}
+              >
+                {chip.label} ×
+              </button>
+            ))}
+          </div>
+        ) : null}
 
-          {regraEditorAberto ? (
-            <section className="open-conv mb14">
-              <div className="open-conv-h">
-                <div>
-                  <p className="n">
-                    {regraEditandoId ? "Editar regra" : "Nova regra de comentário"}
-                  </p>
-                  <p className="s">Comentário com a palavra → direct automático</p>
-                </div>
-                <span
-                  className="close"
-                  style={{ cursor: "pointer" }}
-                  onClick={fecharRegraEditor}
-                >
-                  Fechar ✕
-                </span>
-              </div>
+        <div className="card">
+          {fluxosFiltrados.length === 0 ? (
+            <p className="hint" style={{ padding: 17 }}>
+              {busca.trim()
+                ? "Nenhuma automação encontrada para essa busca."
+                : totalFiltrosAtivos > 0
+                ? "Nenhuma automação encontrada com esses filtros."
+                : "Nenhuma automação encontrada."}
+            </p>
+          ) : (
+            fluxosFiltrados.map((fluxo) => {
+              const pill = statusPill(fluxo);
+              const execs = execucoesDoFluxo(fluxo.id);
+              const funilDoFluxo = funis.find((f) => f.id === fluxo.funilId);
 
-              <div className="field">
-                <label>Canal</label>
-                <div className="filters-row">
-                  {CANAIS_COMENTARIO.map((canal) => (
+              return (
+                <div className="int-row" key={fluxo.id}>
+                  <div
+                    className="int-logo"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => router.push(`/automacoes/editor/${fluxo.id}`)}
+                    role="button"
+                    aria-label={`Editar automação ${fluxo.nome}`}
+                  >
+                    <IconAutomacoes width={16} height={16} />
+                  </div>
+
+                  <div className="int-body">
+                    {renomeandoId === fluxo.id ? (
+                      <input
+                        className="input"
+                        autoFocus
+                        style={{ width: "100%", marginBottom: 4 }}
+                        value={renomeandoValor}
+                        onChange={(e) => setRenomeandoValor(e.target.value)}
+                        onBlur={confirmarRenomeacao}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") confirmarRenomeacao();
+                          if (e.key === "Escape") setRenomeandoId(null);
+                        }}
+                      />
+                    ) : (
+                      <p
+                        className="int-title"
+                        style={{ cursor: "pointer" }}
+                        onClick={() => router.push(`/automacoes/editor/${fluxo.id}`)}
+                      >
+                        {fluxo.nome}
+                      </p>
+                    )}
+                    <p className="int-sub">
+                      {resumoGatilhoFluxo(fluxo)}
+                      {funilDoFluxo ? ` · Funil: ${funilDoFluxo.nome}` : ""}
+                    </p>
+                    <p className="hint" style={{ marginTop: 4 }}>
+                      {fluxo.execucoes} {fluxo.execucoes === 1 ? "execução" : "execuções"} · Sucesso:{" "}
+                      {taxaSucesso(execs)} · {ultimaExecucao(execs)}
+                    </p>
+                  </div>
+
+                  <span className={`pill${pill.on ? " on" : ""}`}>{pill.label}</span>
+
+                  {fluxo.status === "publicado" ? (
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <Toggle
+                        key={`${fluxo.id}-${fluxo.ativa}`}
+                        defaultOn={fluxo.ativa}
+                        label={`Ativar automação ${fluxo.nome}`}
+                        onToggle={() => alternarAtivo(fluxo.id)}
+                      />
+                    </span>
+                  ) : null}
+
+                  <div className="dropdown-anchor">
                     <button
                       type="button"
-                      key={canal}
-                      className={`fchip${canalRegraForm === canal ? " active" : ""}`}
-                      aria-pressed={canalRegraForm === canal}
-                      onClick={() => setCanalRegraForm(canal)}
+                      className="icon-btn subtle"
+                      aria-label={`Mais ações — ${fluxo.nome}`}
+                      onClick={() => abrirMenu(fluxo.id)}
                     >
-                      {canal}
+                      ⋯
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="field">
-                <label>Palavra-chave no comentário</label>
-                <input
-                  className="input"
-                  style={{ width: "100%" }}
-                  type="text"
-                  placeholder="Ex.: QUERO"
-                  value={palavraChaveForm}
-                  onChange={(e) => setPalavraChaveForm(e.target.value)}
-                />
-              </div>
-
-              <div className="field">
-                <label>Mensagem enviada no direct</label>
-                <textarea
-                  className="input"
-                  style={{ width: "100%", minHeight: 70, resize: "vertical" }}
-                  placeholder="Ex.: Oi! Vi seu comentário 💙 Aqui está o link..."
-                  value={mensagemDirectForm}
-                  onChange={(e) => setMensagemDirectForm(e.target.value)}
-                />
-              </div>
-
-              <div className="toggle-row">
-                <span className="tl">
-                  {regraEditandoId ? "Regra ativa" : "Ativar assim que criar"}
-                </span>
-                <Toggle
-                  key={regraEditandoId ?? "nova-regra"}
-                  defaultOn={ativaRegraForm}
-                  label="Regra ativa"
-                  onToggle={setAtivaRegraForm}
-                />
-              </div>
-
-              <div className="section-foot">
-                {regraEditandoId ? (
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    style={{ flex: 1 }}
-                    onClick={() => {
-                      const regra = regrasComentario.find(
-                        (r) => r.id === regraEditandoId,
-                      );
-                      if (regra) pedirExclusaoRegra(regra);
-                    }}
-                  >
-                    Excluir regra
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="btn primary"
-                  style={{ flex: 1 }}
-                  onClick={salvarRegra}
-                >
-                  {regraEditandoId ? "Salvar alterações" : "Salvar regra"}
-                </button>
-              </div>
-            </section>
-          ) : null}
-
-          <button
-            type="button"
-            className="btn ghost mb14"
-            onClick={abrirNovaRegra}
-          >
-            + Nova regra de comentário
-          </button>
-
-          <div className="card">
-            {regrasComentario.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>
-                Nenhuma regra criada ainda.
-              </p>
-            ) : (
-              regrasComentario.map((regra) => (
-                <div
-                  className="int-row"
-                  key={regra.id}
-                  style={{ cursor: "pointer" }}
-                  onClick={() => abrirEdicaoRegra(regra)}
-                >
-                  <div className="int-body">
-                    <p className="int-title">
-                      {regra.canal} · comentário com &quot;{regra.palavraChave}
-                      &quot;
-                    </p>
-                    <p className="int-sub">{regra.mensagemDirect}</p>
+                    {menuAbertoId === fluxo.id ? (
+                      <>
+                        <div
+                          onClick={() => setMenuAbertoId(null)}
+                          style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                        />
+                        <div className="dropdown-pop dropdown-pop-right">
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ width: "100%", textAlign: "left" }}
+                            onClick={() => {
+                              setMenuAbertoId(null);
+                              router.push(`/automacoes/editor/${fluxo.id}`);
+                            }}
+                          >
+                            <span className="n">Editar</span>
+                            <span className="r">Abre no construtor visual</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ width: "100%", textAlign: "left" }}
+                            onClick={() => {
+                              setMenuAbertoId(null);
+                              router.push(`/automacoes/editor/${fluxo.id}`);
+                            }}
+                          >
+                            <span className="n">Testar</span>
+                            <span className="r">Abre o construtor — o simulador de verdade fica lá</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ width: "100%", textAlign: "left" }}
+                            onClick={() => verExecucoes(fluxo)}
+                          >
+                            <span className="n">Ver execuções</span>
+                            <span className="r">
+                              Sem tela dedicada ainda — abre o construtor (registra no console por ora)
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ width: "100%", textAlign: "left" }}
+                            onClick={() => {
+                              setMenuAbertoId(null);
+                              router.push(`/automacoes/editor/${fluxo.id}`);
+                            }}
+                          >
+                            <span className="n">Histórico</span>
+                            <span className="r">Abre o construtor — o histórico de versões fica lá</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ width: "100%", textAlign: "left" }}
+                            onClick={() => {
+                              duplicarFluxo(fluxo.id);
+                              setMenuAbertoId(null);
+                            }}
+                          >
+                            <span className="n">Duplicar</span>
+                            <span className="r">Cria uma cópia em rascunho</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ width: "100%", textAlign: "left" }}
+                            onClick={() => iniciarRenomeacao(fluxo)}
+                          >
+                            <span className="n">Renomear</span>
+                          </button>
+                          {fluxo.arquivada ? (
+                            <button
+                              type="button"
+                              className="dropdown-item"
+                              style={{ width: "100%", textAlign: "left" }}
+                              onClick={() => {
+                                desarquivarFluxo(fluxo.id);
+                                setMenuAbertoId(null);
+                              }}
+                            >
+                              <span className="n">Desarquivar</span>
+                              <span className="r">Volta a aparecer na lista principal</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="dropdown-item"
+                              style={{ width: "100%", textAlign: "left" }}
+                              onClick={() => {
+                                arquivarFluxo(fluxo.id);
+                                setMenuAbertoId(null);
+                              }}
+                            >
+                              <span className="n">Arquivar</span>
+                              <span className="r">Pausa e tira a automação da lista principal</span>
+                            </button>
+                          )}
+                          <div className="dropdown-sep" />
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ width: "100%", textAlign: "left" }}
+                            onClick={() => pedirExclusao(fluxo)}
+                          >
+                            <span className="n">Excluir</span>
+                            <span className="r">Apaga a automação e o histórico de execuções</span>
+                          </button>
+                        </div>
+                      </>
+                    ) : null}
                   </div>
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      testarRegra(regra);
-                    }}
-                  >
-                    Testar
-                  </button>
-                  <span onClick={(e) => e.stopPropagation()}>
-                    <Toggle
-                      defaultOn={regra.ativa}
-                      label={`Ativar regra ${regra.palavraChave}`}
-                      onToggle={() => alternarRegraComentarioAtiva(regra.id)}
-                    />
-                  </span>
-                  <span
-                    role="button"
-                    aria-label={`Excluir regra ${regra.palavraChave}`}
-                    title="Excluir regra"
-                    style={{ cursor: "pointer", color: "var(--text-faint)" }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      pedirExclusaoRegra(regra);
-                    }}
-                  >
-                    ✕
-                  </span>
                 </div>
-              ))
-            )}
-          </div>
+              );
+            })
+          )}
         </div>
       </div>
 
-      {toasts.length > 0 ? (
-        <div className="toast-stack">
-          {toasts.map((toast) => (
-            <div className="toast" key={toast.id}>
-              <IconAutomacoes width={14} height={14} />
-              {toast.texto}
+      {exclusaoAlvo ? (
+        <div className="flow-side-overlay" role="dialog" aria-label="Confirmar exclusão" onClick={() => setExclusaoAlvo(null)}>
+          <div className="flow-side-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="panel-h">
+              <h4>Excluir automação</h4>
+              <button
+                type="button"
+                className="icon-btn subtle"
+                aria-label="Cancelar"
+                onClick={() => setExclusaoAlvo(null)}
+              >
+                ✕
+              </button>
             </div>
-          ))}
+            <div className="flow-side-body">
+              <p className="n">&quot;{exclusaoAlvo.nome}&quot;</p>
+              <p className="r" style={{ marginTop: 8 }}>
+                Isso vai apagar a automação e todo o histórico de execuções ({execucoesDoFluxo(exclusaoAlvo.id).length}{" "}
+                {execucoesDoFluxo(exclusaoAlvo.id).length === 1 ? "registro" : "registros"}). Essa ação não pode ser
+                desfeita.
+              </p>
+            </div>
+            <div className="section-foot">
+              <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={() => setExclusaoAlvo(null)}>
+                Cancelar
+              </button>
+              <button type="button" className="btn primary" style={{ flex: 1 }} onClick={confirmarExclusao}>
+                Excluir mesmo assim
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </>
