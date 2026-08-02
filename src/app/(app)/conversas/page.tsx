@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 
 import {
@@ -191,7 +191,6 @@ export default function ConversasPage() {
 }
 
 function ConversasPageInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { funis, atribuirContatoAoFunil } = useFunis();
   const { contatos, salvarDadosContato, atribuirAtendente } = useContatos();
@@ -333,6 +332,24 @@ function ConversasPageInner() {
   const anexoArrasteRef = useRef<{ dx: number; dy: number } | null>(null);
   const [emojiAberto, setEmojiAberto] = useState(false);
   const [emojiRect, setEmojiRect] = useState<DOMRect | null>(null);
+  const [contatoPickerAberto, setContatoPickerAberto] = useState(false);
+  const [contatoPickerPos, setContatoPickerPos] = useState<{ x: number; y: number } | null>(null);
+  const [buscaContatoPicker, setBuscaContatoPicker] = useState("");
+  const contatoPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!contatoPickerAberto) return;
+    function aoClicarFora(e: MouseEvent) {
+      if (
+        contatoPickerRef.current &&
+        !contatoPickerRef.current.contains(e.target as Node)
+      ) {
+        setContatoPickerAberto(false);
+      }
+    }
+    document.addEventListener("mousedown", aoClicarFora);
+    return () => document.removeEventListener("mousedown", aoClicarFora);
+  }, [contatoPickerAberto]);
   const [respostasGerenciarAberto, setRespostasGerenciarAberto] = useState(false);
   const [respostasPos, setRespostasPos] = useState<{ x: number; y: number } | null>(null);
   const respostasArrasteRef = useRef<{ dx: number; dy: number } | null>(null);
@@ -487,10 +504,39 @@ function ConversasPageInner() {
     documentoInputRef.current?.click();
   }
 
-  function irParaContatos() {
+  function abrirContatoPicker(rect: DOMRect) {
     setAnexoAberto(false);
-    router.push("/contatos");
+    const largura = 280;
+    const alturaEstimada = 360;
+    const margem = 12;
+    let left = rect.left;
+    let top = rect.bottom + 8;
+    if (left + largura > window.innerWidth - margem) {
+      left = window.innerWidth - largura - margem;
+    }
+    if (left < margem) left = margem;
+    if (top + alturaEstimada > window.innerHeight - margem) {
+      top = rect.top - alturaEstimada - 8;
+      if (top < margem) top = margem;
+    }
+    setContatoPickerPos({ x: left, y: top });
+    setBuscaContatoPicker("");
+    setContatoPickerAberto(true);
   }
+
+  function enviarContatoCompartilhado(contato: { nome: string; initials: string; whatsapp?: string }) {
+    adicionarMensagem({
+      tipo: "out",
+      texto: `👤 Contato compartilhado: ${contato.nome}`,
+      hora: horaAgora(),
+      contatoCompartilhado: contato,
+    });
+    setContatoPickerAberto(false);
+  }
+
+  const contatosFiltradosPicker = contatos.filter((c) =>
+    c.nome.toLowerCase().includes(buscaContatoPicker.trim().toLowerCase()),
+  );
 
   function enviarLocalizacao(lat: number, lng: number, endereco?: string) {
     adicionarMensagem({
@@ -1115,6 +1161,17 @@ function ConversasPageInner() {
                   </div>
                   {msg.hora ? <span className="tm">{msg.hora}</span> : null}
                 </a>
+              ) : msg.contatoCompartilhado ? (
+                <div className={`bubble ${msg.tipo} bubble-contato`} key={`extra-${i}`}>
+                  <span className="avatar">{msg.contatoCompartilhado.initials}</span>
+                  <div className="bubble-contato-info">
+                    <span className="bubble-contato-nome">{msg.contatoCompartilhado.nome}</span>
+                    {msg.contatoCompartilhado.whatsapp ? (
+                      <span className="bubble-contato-numero">{msg.contatoCompartilhado.whatsapp}</span>
+                    ) : null}
+                  </div>
+                  {msg.hora ? <span className="tm">{msg.hora}</span> : null}
+                </div>
               ) : (
                 <div className={`bubble ${msg.tipo}`} key={`extra-${i}`}>
                   {msg.texto}
@@ -1308,7 +1365,7 @@ function ConversasPageInner() {
                       type="button"
                       className="dropdown-item"
                       style={{ width: "100%", textAlign: "left" }}
-                      onClick={irParaContatos}
+                      onClick={(e) => abrirContatoPicker(e.currentTarget.getBoundingClientRect())}
                     >
                       <span className="n">Contato</span>
                     </button>
@@ -1357,6 +1414,54 @@ function ConversasPageInner() {
                 document.body,
               )
             : null}
+
+          {contatoPickerAberto && contatoPickerPos ? (
+            <div
+              ref={contatoPickerRef}
+              className="wa-anexo-menu wa-contato-picker"
+              style={{ left: contatoPickerPos.x, top: contatoPickerPos.y }}
+            >
+              <div className="wa-contato-picker-busca">
+                <input
+                  autoFocus
+                  className="input"
+                  style={{ width: "100%" }}
+                  placeholder="Pesquisar contato…"
+                  value={buscaContatoPicker}
+                  onChange={(e) => setBuscaContatoPicker(e.target.value)}
+                />
+              </div>
+              {contatosFiltradosPicker.length === 0 ? (
+                <p className="hint" style={{ padding: "10px 12px" }}>
+                  Nenhum contato encontrado.
+                </p>
+              ) : (
+                contatosFiltradosPicker.map((c) => (
+                  <button
+                    type="button"
+                    key={c.nome}
+                    className="dropdown-item wa-contato-picker-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() =>
+                      enviarContatoCompartilhado({
+                        nome: c.nome,
+                        initials: c.initials,
+                        whatsapp: c.whatsapp,
+                      })
+                    }
+                  >
+                    <span className="avatar">{c.initials}</span>
+                    <span>
+                      <span className="n" style={{ display: "block" }}>{c.nome}</span>
+                      {c.whatsapp ? (
+                        <span className="wa-contato-picker-numero">{c.whatsapp}</span>
+                      ) : null}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          ) : null}
 
           <FloatingDropdown
             anchorRect={emojiAberto ? emojiRect : null}
