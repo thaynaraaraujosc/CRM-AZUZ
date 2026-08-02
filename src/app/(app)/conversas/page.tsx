@@ -1688,9 +1688,14 @@ function ConversasPageInner() {
               <p className="n">Novo e-mail</p>
               <p className="s">Pra {aberta.nome}</p>
             </div>
-            <span className="close" style={{ cursor: "pointer" }} onClick={fecharEmailModal}>
-              Fechar ✕
-            </span>
+            <button
+              type="button"
+              className="modal-close-btn"
+              aria-label="Fechar"
+              onClick={fecharEmailModal}
+            >
+              ✕
+            </button>
           </div>
             <div className="field" style={{ padding: "10px 0" }}>
               <label>Para</label>
@@ -1817,13 +1822,14 @@ function ConversasPageInner() {
                 <p className="n">Mídias e arquivos</p>
                 <p className="s">Trocados com {aberta.nome}</p>
               </div>
-              <span
-                className="close"
-                style={{ cursor: "pointer" }}
+              <button
+                type="button"
+                className="modal-close-btn"
+                aria-label="Fechar"
                 onClick={() => setMidiasAberto(false)}
               >
-                Fechar ✕
-              </span>
+                ✕
+              </button>
             </div>
             {aberta.tarefa.anexo ? (
               <div className="field" style={{ padding: "10px 0" }}>
@@ -1853,13 +1859,14 @@ function ConversasPageInner() {
               <p className="n">Respostas rápidas</p>
               <p className="s">Só valem pro funil &quot;{funilSelecionado.nome}&quot;</p>
             </div>
-            <span
-              className="close"
-              style={{ cursor: "pointer" }}
+            <button
+              type="button"
+              className="modal-close-btn"
+              aria-label="Fechar"
               onClick={() => setRespostasGerenciarAberto(false)}
             >
-              Fechar ✕
-            </span>
+              ✕
+            </button>
           </div>
 
           <div className="panel-h" style={{ padding: "0 0 8px" }}>
@@ -1931,13 +1938,14 @@ function ConversasPageInner() {
                 <p className="n">Conectar WhatsApp</p>
                 <p className="s">Escolha como conectar o número da clínica</p>
               </div>
-              <span
-                className="close"
-                style={{ cursor: "pointer" }}
+              <button
+                type="button"
+                className="modal-close-btn"
+                aria-label="Fechar"
                 onClick={() => setConectarAberto(false)}
               >
-                Fechar ✕
-              </span>
+                ✕
+              </button>
             </div>
             <div className="filters-row mb14">
               <button

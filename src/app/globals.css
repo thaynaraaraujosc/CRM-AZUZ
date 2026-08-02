@@ -1998,12 +1998,46 @@ table.tbl tbody tr:hover td {
 
 .wa-email-drag {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
   padding: 0 0 14px;
   cursor: move;
   user-select: none;
+}
+
+.wa-email-drag .n {
+  font-size: 13.5px;
+  font-weight: 700;
+  font-family: var(--display);
+  margin: 0;
+}
+
+.wa-email-drag .s {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin: 2px 0 0;
+}
+
+.modal-close-btn {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.modal-close-btn:hover {
+  background: rgba(214, 69, 69, 0.14);
+  color: #d64545;
 }
 
 .wa-qr-box {
