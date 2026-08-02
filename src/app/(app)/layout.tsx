@@ -1,6 +1,7 @@
 import { AppHeader } from "@/components/app-header";
 import { Sidebar } from "@/components/sidebar";
 import { AutomacoesProvider } from "@/lib/automacoes-context";
+import { AutomationFlowProvider } from "@/lib/automation-flow-context";
 import { BibliotecaDocumentosProvider } from "@/lib/biblioteca-documentos-context";
 import { ConfigConversasProvider } from "@/lib/conversas-config-context";
 import { ContatosProvider } from "@/lib/contatos-context";
@@ -16,23 +17,25 @@ export default function AppLayout({
     <FunisProvider>
       <ContatosProvider>
         <AutomacoesProvider>
-          <NotificacoesProvider>
-            <FormulariosProvider>
-              <DocumentosProvider>
-                <BibliotecaDocumentosProvider>
-                  <ConfigConversasProvider>
-                    <div className="shell">
-                      <Sidebar />
-                      <main className="main">
-                        <AppHeader />
-                        {children}
-                      </main>
-                    </div>
-                  </ConfigConversasProvider>
-                </BibliotecaDocumentosProvider>
-              </DocumentosProvider>
-            </FormulariosProvider>
-          </NotificacoesProvider>
+          <AutomationFlowProvider>
+            <NotificacoesProvider>
+              <FormulariosProvider>
+                <DocumentosProvider>
+                  <BibliotecaDocumentosProvider>
+                    <ConfigConversasProvider>
+                      <div className="shell">
+                        <Sidebar />
+                        <main className="main">
+                          <AppHeader />
+                          {children}
+                        </main>
+                      </div>
+                    </ConfigConversasProvider>
+                  </BibliotecaDocumentosProvider>
+                </DocumentosProvider>
+              </FormulariosProvider>
+            </NotificacoesProvider>
+          </AutomationFlowProvider>
         </AutomacoesProvider>
       </ContatosProvider>
     </FunisProvider>
