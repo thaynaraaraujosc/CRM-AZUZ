@@ -162,11 +162,19 @@ const FONTES_PADRAO: FontesTimeline = {
 export function gerarLinhaDoTempo(
   contatoId: string,
   fontes: FontesTimeline = FONTES_PADRAO,
+  /**
+   * Eventos extras que não têm uma fonte derivável em `data.ts` ainda —
+   * hoje anotações manuais e resultados de negociação registrados direto na
+   * conversa (venda/perda/adiada/cancelada). Entram no mesmo merge/ordenação
+   * dos eventos derivados; quando essas ações ganharem persistência própria,
+   * viram só mais uma fonte em `FontesTimeline` e esse parâmetro some.
+   */
+  extras: Evento[] = [],
 ): Evento[] {
   const contato = fontes.contatos.find((c) => c.id === contatoId);
   if (!contato) return [];
 
-  const eventos: Evento[] = [];
+  const eventos: Evento[] = [...extras];
 
   const conversa = fontes.conversas.find(
     (c) => c.id === contatoId || slugId(c.nome) === contatoId,

@@ -12,10 +12,7 @@ import {
 import { contatos as contatosIniciais, type Contato } from "@/lib/data";
 import { slugId } from "@/lib/ids";
 
-type DadosContato = Pick<
-  Contato,
-  "email" | "whatsapp" | "nascimento" | "endereco"
->;
+type DadosContato = Omit<Contato, "initials" | "nome" | "origem" | "etapa" | "responsavel">;
 
 type ContatosContextValue = {
   contatos: Contato[];
@@ -29,13 +26,10 @@ type ContatosContextValue = {
   salvarDadosContato: (nome: string, dados: Partial<DadosContato> & Record<string, unknown>) => void;
   /** Atribui o atendente responsável por esse contato (cria o contato se for a primeira vez que ele aparece). */
   atribuirAtendente: (nome: string, atendente: string) => void;
-  criarContato: (dados: {
-    nome: string;
-    email?: string;
-    whatsapp?: string;
-    nascimento?: string;
-    endereco?: string;
-  }) => void;
+  criarContato: (dados: Partial<DadosContato> & { nome: string }) => Contato;
+  adicionarEtiqueta: (nome: string, etiqueta: string) => void;
+  removerEtiqueta: (nome: string, etiqueta: string) => void;
+  alternarFavorito: (nome: string) => void;
 };
 
 const ContatosContext = createContext<ContatosContextValue | null>(null);
@@ -107,30 +101,45 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
     });
   }
 
-  function criarContato(dados: {
-    nome: string;
-    email?: string;
-    whatsapp?: string;
-    nascimento?: string;
-    endereco?: string;
-  }) {
-    setContatos((prev) => [
-      ...prev,
-      {
-        id: slugId(dados.nome),
-        initials: iniciais(dados.nome),
-        nome: dados.nome,
-        origem: "Indicação",
-        etapa: "Novo",
-        responsavel: "—",
-        ultima: "Agora",
-        valor: "—",
-        email: dados.email,
-        whatsapp: dados.whatsapp,
-        nascimento: dados.nascimento,
-        endereco: dados.endereco,
-      },
-    ]);
+  function criarContato(dados: Partial<DadosContato> & { nome: string }) {
+    const novo: Contato = {
+      id: slugId(dados.nome),
+      initials: iniciais(dados.nome),
+      origem: "Indicação",
+      etapa: "Novo",
+      responsavel: "—",
+      ultima: "Agora",
+      valor: "—",
+      ...dados,
+    };
+    setContatos((prev) => [...prev, novo]);
+    return novo;
+  }
+
+  function adicionarEtiqueta(nome: string, etiqueta: string) {
+    setContatos((prev) =>
+      prev.map((c) =>
+        c.nome === nome && !(c.etiquetas ?? []).includes(etiqueta)
+          ? { ...c, etiquetas: [...(c.etiquetas ?? []), etiqueta] }
+          : c,
+      ),
+    );
+  }
+
+  function removerEtiqueta(nome: string, etiqueta: string) {
+    setContatos((prev) =>
+      prev.map((c) =>
+        c.nome === nome
+          ? { ...c, etiquetas: (c.etiquetas ?? []).filter((e) => e !== etiqueta) }
+          : c,
+      ),
+    );
+  }
+
+  function alternarFavorito(nome: string) {
+    setContatos((prev) =>
+      prev.map((c) => (c.nome === nome ? { ...c, favorito: !c.favorito } : c)),
+    );
   }
 
   return (
@@ -141,6 +150,9 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
         salvarDadosContato,
         atribuirAtendente,
         criarContato,
+        adicionarEtiqueta,
+        removerEtiqueta,
+        alternarFavorito,
       }}
     >
       {children}
