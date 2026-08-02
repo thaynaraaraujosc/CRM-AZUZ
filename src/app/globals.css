@@ -6525,3 +6525,12 @@ button.timeline-card:hover {
   border-color: var(--blue);
   transform: translateY(-1px);
 }
+
+.stat-row-link {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.stat-row-link:hover {
+  background: var(--navy-raised);
+}

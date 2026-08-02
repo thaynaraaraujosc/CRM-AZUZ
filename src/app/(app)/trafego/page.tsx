@@ -3,7 +3,8 @@
 import { useState } from "react";
 
 import { campanhas, kpisTrafego, workspace } from "@/lib/data";
-import { FloatingDropdown, Topbar } from "@/components/ui";
+import { FloatingDropdown, KpiCard, Topbar } from "@/components/ui";
+import { calcularInvestimentoTrafego, calcularLeadsTrafego, calcularRoasMedio, formatarMoeda } from "@/lib/metrics";
 
 const PLATAFORMAS = [
   { valor: "Todas", label: "Todas" },
@@ -73,6 +74,18 @@ export default function TrafegoPage() {
 
   const labelPlataforma =
     PLATAFORMAS.find((p) => p.valor === plataformaFiltro)?.label ?? "Todas";
+
+  // Investido, leads e ROAS vêm de src/lib/metrics.ts a partir das campanhas
+  // já filtradas — mesma fórmula usada em Início, então nunca dessincroniza
+  // do "ROAS médio" mostrado lá. "Vendas" e "Custo/venda" continuam de
+  // `kpisTrafego` porque o modelo de dados atual não liga venda à campanha
+  // que a originou (ver limitações no relatório final).
+  const investido = calcularInvestimentoTrafego(campanhasFiltradas);
+  const leads = calcularLeadsTrafego(campanhasFiltradas);
+  const roas = calcularRoasMedio(campanhasFiltradas);
+  const custoPorLead = leads.valor > 0 ? investido.valor / leads.valor : 0;
+  const vendasKpi = kpisTrafego.find((k) => k.label === "Vendas");
+  const custoVendaKpi = kpisTrafego.find((k) => k.label === "Custo / venda");
 
   return (
     <>
@@ -263,12 +276,16 @@ export default function TrafegoPage() {
         </div>
 
         <div className="grid kpi6">
-          {kpisTrafego.map((kpi) => (
-            <div className="card kpi" key={kpi.label} role="button" tabIndex={0}>
-              <p className="l">{kpi.label}</p>
-              <p className="n">{kpi.value}</p>
-            </div>
-          ))}
+          <KpiCard label="Investido" value={investido.label} formula={investido.formula} />
+          <KpiCard label="Leads" value={leads.label} formula={leads.formula} href="/funil" />
+          <KpiCard
+            label="Custo / lead"
+            value={formatarMoeda(custoPorLead)}
+            formula="Investido em tráfego ÷ leads gerados, nas campanhas filtradas"
+          />
+          {vendasKpi ? <KpiCard label={vendasKpi.label} value={vendasKpi.value} href="/performance-vendas" /> : null}
+          {custoVendaKpi ? <KpiCard label={custoVendaKpi.label} value={custoVendaKpi.value} /> : null}
+          <KpiCard label="ROAS" value={roas.label} formula={roas.formula} />
         </div>
 
         <div className="card">

@@ -7,19 +7,24 @@ import { useSearchParams } from "next/navigation";
 import {
   conversaoPorResponsavel,
   equipe,
-  kpisConversao,
-  kpisMotivosPerda,
   motivosPerda,
   oportunidadesPerdidas,
 } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
 import {
   FloatingDropdown,
+  KpiCard,
   PERIODO_PADRAO,
   PeriodoPicker,
   Topbar,
   type PeriodoValor,
 } from "@/components/ui";
+import {
+  calcularMotivoPrincipalPerda,
+  calcularTaxaConversao,
+  calcularValorPerdido,
+  calcularValorVendido,
+} from "@/lib/metrics";
 
 const ABAS = ["Conversão", "Motivos de perda"] as const;
 type Aba = (typeof ABAS)[number];
@@ -98,6 +103,13 @@ function PerformanceVendasPageInner() {
   const oportunidadesFiltradasPerda = clienteFiltroPerda
     ? oportunidadesPerdidas.filter((o) => o.motivo === clienteFiltroPerda)
     : oportunidadesPerdidas;
+
+  const taxaConversao = calcularTaxaConversao();
+  const valorVendido = calcularValorVendido();
+  const totalOportunidades = conversaoPorResponsavel.reduce((s, r) => s + r.vendidas + r.perdidas, 0);
+  const oportunidadesVendidas = conversaoPorResponsavel.reduce((s, r) => s + r.vendidas, 0);
+  const valorPerdido = calcularValorPerdido();
+  const motivoPrincipal = calcularMotivoPrincipalPerda();
 
   return (
     <>
@@ -213,14 +225,10 @@ function PerformanceVendasPageInner() {
         {abaAtiva === "Conversão" ? (
           <>
             <div className="grid kpi4">
-              {kpisConversao.map((kpi) => (
-                <div className="card kpi" key={kpi.label}>
-                  <p className="l">{kpi.label}</p>
-                  <p className="n">{kpi.value}</p>
-                  {kpi.sub ? <p className="hint">{kpi.sub}</p> : null}
-                  <p className="delta">{kpi.delta}</p>
-                </div>
-              ))}
+              <KpiCard label="Taxa de conversão" value={taxaConversao.label} formula={taxaConversao.formula} />
+              <KpiCard label="Total de oportunidades" value={String(totalOportunidades)} />
+              <KpiCard label="Oportunidades vendidas" value={String(oportunidadesVendidas)} />
+              <KpiCard label="Valor total vendido" value={valorVendido.label} formula={valorVendido.formula} />
             </div>
 
             <div className="card">
@@ -315,14 +323,18 @@ function PerformanceVendasPageInner() {
         ) : (
           <>
             <div className="grid kpi4">
-              {kpisMotivosPerda.map((kpi) => (
-                <div className="card kpi" key={kpi.label}>
-                  <p className="l">{kpi.label}</p>
-                  <p className="n">{kpi.value}</p>
-                  {kpi.sub ? <p className="hint">{kpi.sub}</p> : null}
-                  {kpi.delta ? <p className="delta">{kpi.delta}</p> : null}
-                </div>
-              ))}
+              <KpiCard
+                label="Valor perdido no período"
+                value={valorPerdido.label}
+                sub={`${oportunidadesPerdidas.length} oportunidades perdidas`}
+                formula={valorPerdido.formula}
+              />
+              <KpiCard
+                label="Principal motivo"
+                value={motivoPrincipal.motivo}
+                sub={`${motivoPrincipal.valor}% das perdas do período`}
+                formula={motivoPrincipal.formula}
+              />
             </div>
 
             <div className="card">
