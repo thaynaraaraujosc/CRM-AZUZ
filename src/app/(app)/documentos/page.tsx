@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { currentUser, equipe } from "@/lib/data";
 import {
-  MODELOS_DOCUMENTO,
   useDocumentos,
+  type CategoriaModelo,
+  type ModeloDocumento,
   type PaginaDoc,
   type PermissaoAcesso,
   type TamanhoPapel,
@@ -189,6 +190,12 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
     duplicarDocumento,
     renomearDocumento,
     favoritarDocumento,
+    todosOsModelos,
+    modelosPersonalizados,
+    excluirModeloPersonalizado,
+    modelosFavoritosIds,
+    alternarFavoritoModelo,
+    modelosRecentesIds,
   } = useDocumentos();
 
   const [aba, setAba] = useState<Aba>("recentes");
@@ -199,6 +206,44 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
   const [nomeRenomear, setNomeRenomear] = useState("");
   const [acaoAbertaId, setAcaoAbertaId] = useState<string | null>(null);
   const [acaoRect, setAcaoRect] = useState<DOMRect | null>(null);
+
+  const [buscaModelo, setBuscaModelo] = useState("");
+  const [categoriaModelo, setCategoriaModelo] = useState<CategoriaModelo | "todas">("todas");
+  const [abaModelos, setAbaModelos] = useState<"todos" | "recentes" | "favoritos" | "meus" | "recomendados">("todos");
+  const [modeloPreviewId, setModeloPreviewId] = useState<string | null>(null);
+  const [carregandoGaleria, setCarregandoGaleria] = useState(false);
+
+  useEffect(() => {
+    if (!modelosAberto) return;
+    setCarregandoGaleria(true);
+    const t = setTimeout(() => setCarregandoGaleria(false), 250);
+    return () => clearTimeout(t);
+  }, [modelosAberto]);
+
+  const CATEGORIAS_MODELO: CategoriaModelo[] = [
+    "Negócios", "Vendas", "Marketing", "Saúde", "Recursos Humanos", "Jurídico",
+    "Financeiro", "Educação", "Planejamento", "Relatórios", "Comunicação", "Documentos pessoais",
+  ];
+
+  const modelosPorAba: ModeloDocumento[] =
+    abaModelos === "recentes"
+      ? modelosRecentesIds.map((mid) => todosOsModelos.find((m) => m.id === mid)).filter((m): m is ModeloDocumento => !!m)
+      : abaModelos === "favoritos"
+      ? todosOsModelos.filter((m) => modelosFavoritosIds.includes(m.id))
+      : abaModelos === "meus"
+      ? modelosPersonalizados
+      : abaModelos === "recomendados"
+      ? todosOsModelos.filter((m) => ["proposta", "relatorio", "curriculo", "ata"].includes(m.id))
+      : todosOsModelos;
+
+  const modelosFiltrados = modelosPorAba.filter(
+    (m) =>
+      (categoriaModelo === "todas" || m.categoria === categoriaModelo) &&
+      (m.nome.toLowerCase().includes(buscaModelo.trim().toLowerCase()) ||
+        m.descricao.toLowerCase().includes(buscaModelo.trim().toLowerCase())),
+  );
+
+  const modeloEmPreview = todosOsModelos.find((m) => m.id === modeloPreviewId) ?? null;
 
   const visiveis = documentos.filter((d) => {
     if (aba === "lixeira") return d.excluido;
@@ -257,21 +302,128 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
         {modelosAberto ? (
           <div className="card mb14">
             <div className="panel-h">
-              <h4>Escolha um modelo</h4>
+              <h4>Galeria de modelos</h4>
             </div>
-            <div className="doc-modelos-grid">
-              {MODELOS_DOCUMENTO.map((m) => (
-                <button
-                  type="button"
-                  key={m.id}
-                  className="doc-modelo-card"
-                  onClick={() => novoDocumento(m.id)}
-                >
-                  <span className="doc-modelo-icone"><IconDoc width={22} height={22} /></span>
-                  <span className="n">{m.nome}</span>
-                  <span className="hint">{m.descricao}</span>
-                </button>
+
+            <div className="filters-row mb14" style={{ padding: "0 16px" }}>
+              <button type="button" className={`fchip${abaModelos === "todos" ? " active" : ""}`} onClick={() => setAbaModelos("todos")}>Todos</button>
+              <button type="button" className={`fchip${abaModelos === "recomendados" ? " active" : ""}`} onClick={() => setAbaModelos("recomendados")}>Recomendados</button>
+              <button type="button" className={`fchip${abaModelos === "recentes" ? " active" : ""}`} onClick={() => setAbaModelos("recentes")}>Recentes</button>
+              <button type="button" className={`fchip${abaModelos === "favoritos" ? " active" : ""}`} onClick={() => setAbaModelos("favoritos")}>Favoritos</button>
+              <button type="button" className={`fchip${abaModelos === "meus" ? " active" : ""}`} onClick={() => setAbaModelos("meus")}>Meus modelos ({modelosPersonalizados.length})</button>
+              <label className="search" style={{ marginLeft: "auto", width: 220 }}>
+                <IconSearch />
+                <input placeholder="Pesquisar modelos…" value={buscaModelo} onChange={(e) => setBuscaModelo(e.target.value)} />
+              </label>
+            </div>
+
+            <div className="filters-row mb14" style={{ padding: "0 16px", flexWrap: "wrap" }}>
+              <button type="button" className={`fchip${categoriaModelo === "todas" ? " active" : ""}`} onClick={() => setCategoriaModelo("todas")}>Todas as categorias</button>
+              {CATEGORIAS_MODELO.map((c) => (
+                <button type="button" key={c} className={`fchip${categoriaModelo === c ? " active" : ""}`} onClick={() => setCategoriaModelo(c)}>{c}</button>
               ))}
+            </div>
+
+            {carregandoGaleria ? (
+              <div className="doc-modelos-grid" style={{ padding: "0 16px 16px" }}>
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className="doc-modelo-card doc-modelo-card-skeleton" aria-hidden="true" />
+                ))}
+              </div>
+            ) : modelosFiltrados.length === 0 ? (
+              <p className="hint" style={{ padding: "0 16px 16px" }}>
+                {abaModelos === "meus"
+                  ? "Você ainda não salvou nenhum modelo — abra um documento e use Arquivo → Salvar como modelo."
+                  : abaModelos === "favoritos"
+                  ? "Nenhum modelo favoritado ainda — passe o mouse num modelo e clique em ☆ pra favoritar."
+                  : "Nenhum modelo encontrado com esse filtro."}
+              </p>
+            ) : (
+              <div className="doc-modelos-grid" style={{ padding: "0 16px 16px" }}>
+                {modelosFiltrados.map((m) => (
+                  <div
+                    key={m.id}
+                    className="doc-modelo-card doc-modelo-card-rica"
+                    tabIndex={0}
+                    role="button"
+                    onClick={() => novoDocumento(m.id)}
+                    onKeyDown={(e) => { if (e.key === "Enter") novoDocumento(m.id); }}
+                  >
+                    <div className="doc-modelo-thumb">
+                      {m.conteudoHtml ? (
+                        <div className="doc-modelo-thumb-escala" dangerouslySetInnerHTML={{ __html: m.conteudoHtml }} />
+                      ) : (
+                        <span className="doc-modelo-icone"><IconDoc width={28} height={28} /></span>
+                      )}
+                      <div className="doc-modelo-thumb-acoes">
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          onClick={(e) => { e.stopPropagation(); setModeloPreviewId(m.id); }}
+                        >
+                          Visualizar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn primary"
+                          onClick={(e) => { e.stopPropagation(); novoDocumento(m.id); }}
+                        >
+                          Usar este modelo
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        className="doc-modelo-favorito"
+                        aria-label={modelosFavoritosIds.includes(m.id) ? "Remover dos favoritos" : "Favoritar"}
+                        onClick={(e) => { e.stopPropagation(); alternarFavoritoModelo(m.id); }}
+                      >
+                        {modelosFavoritosIds.includes(m.id) ? "⭐" : "☆"}
+                      </button>
+                    </div>
+                    <span className="doc-modelo-categoria">{m.categoria}</span>
+                    <span className="n">{m.nome}</span>
+                    <span className="hint">{m.descricao}</span>
+                    {abaModelos === "meus" ? (
+                      <button
+                        type="button"
+                        className="link"
+                        style={{ marginTop: 4, color: "#d64545" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Excluir o modelo "${m.nome}"?`)) excluirModeloPersonalizado(m.id);
+                        }}
+                      >
+                        Excluir modelo
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        {modeloEmPreview ? (
+          <div className="modal-overlay" onClick={() => setModeloPreviewId(null)}>
+            <div className="modal doc-modelo-preview-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="panel-h">
+                <div>
+                  <h4>{modeloEmPreview.nome}</h4>
+                  <p className="hint" style={{ margin: 0 }}>{modeloEmPreview.categoria} · {modeloEmPreview.descricao}</p>
+                </div>
+                <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setModeloPreviewId(null)}>✕</button>
+              </div>
+              <div className="doc-modelo-preview-corpo">
+                {modeloEmPreview.conteudoHtml ? (
+                  <div className="doc-modelo-preview-folha" dangerouslySetInnerHTML={{ __html: modeloEmPreview.conteudoHtml }} />
+                ) : (
+                  <p className="hint">Documento em branco — página limpa em A4.</p>
+                )}
+              </div>
+              <div className="panel-f" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button type="button" className="btn ghost" onClick={() => setModeloPreviewId(null)}>Fechar</button>
+                <button type="button" className="btn primary" onClick={() => novoDocumento(modeloEmPreview.id)}>Usar este modelo</button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -697,6 +849,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     atualizarAcesso,
     excluirDocumento,
     duplicarDocumento,
+    salvarComoModelo,
   } = useDocumentos();
 
   const doc = documentos.find((d) => d.id === id);
@@ -744,6 +897,11 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [contagemAberta, setContagemAberta] = useState(false);
   const [detalhesAberto, setDetalhesAberto] = useState(false);
   const [ajudaAberta, setAjudaAberta] = useState(false);
+  const [salvarModeloAberto, setSalvarModeloAberto] = useState(false);
+  const [nomeNovoModelo, setNomeNovoModelo] = useState("");
+  const [descricaoNovoModelo, setDescricaoNovoModelo] = useState("");
+  const [categoriaNovoModelo, setCategoriaNovoModelo] = useState<CategoriaModelo>("Negócios");
+  const [compartilharNovoModelo, setCompartilharNovoModelo] = useState(false);
   const [gravandoVoz, setGravandoVoz] = useState(false);
 
   const [buscaTexto, setBuscaTexto] = useState("");
@@ -1656,6 +1814,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const menuArquivo: ("sep" | ItemMenu)[] = [
     { label: "Novo documento", onClick: () => window.dispatchEvent(new CustomEvent("doc-novo")) },
     { label: "Fazer uma cópia", onClick: () => duplicarDocumento(id) },
+    {
+      label: "Salvar como modelo",
+      onClick: () => {
+        setNomeNovoModelo(doc.titulo);
+        setDescricaoNovoModelo("");
+        setSalvarModeloAberto(true);
+      },
+    },
     { label: "Renomear", onClick: () => document.getElementById("doc-titulo-input")?.focus() },
     { label: doc.favorito ? "Remover dos favoritos" : "Favoritar", onClick: () => favoritarDocumento(id) },
     { label: "Compartilhar", onClick: () => setCompartilharAberto(true) },
@@ -2211,6 +2377,57 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <li><b>Ver</b> → alterna régua, caracteres não imprimíveis, modo paginado/contínuo e zoom.</li>
               <li>A auto-paginação move o texto para a página seguinte automaticamente conforme você digita.</li>
             </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {salvarModeloAberto ? (
+        <div className="modal-overlay" onClick={() => setSalvarModeloAberto(false)}>
+          <div className="modal" style={{ width: "min(420px, 100%)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="panel-h">
+              <h4>Salvar como modelo</h4>
+              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setSalvarModeloAberto(false)}>✕</button>
+            </div>
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div className="field">
+                <label>Nome do modelo</label>
+                <input className="input" style={{ width: "100%" }} value={nomeNovoModelo} onChange={(e) => setNomeNovoModelo(e.target.value)} />
+              </div>
+              <div className="field">
+                <label>Descrição</label>
+                <input className="input" style={{ width: "100%" }} value={descricaoNovoModelo} onChange={(e) => setDescricaoNovoModelo(e.target.value)} placeholder="Pra que serve esse modelo" />
+              </div>
+              <div className="field">
+                <label>Categoria</label>
+                <select className="input" style={{ width: "100%" }} value={categoriaNovoModelo} onChange={(e) => setCategoriaNovoModelo(e.target.value as CategoriaModelo)}>
+                  {(["Negócios", "Vendas", "Marketing", "Saúde", "Recursos Humanos", "Jurídico", "Financeiro", "Educação", "Planejamento", "Relatórios", "Comunicação", "Documentos pessoais"] as CategoriaModelo[]).map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <label className="hint" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" checked={compartilharNovoModelo} onChange={(e) => setCompartilharNovoModelo(e.target.checked)} />
+                Compartilhar com a organização (modelo da equipe)
+              </label>
+            </div>
+            <div className="panel-f" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" className="btn ghost" onClick={() => setSalvarModeloAberto(false)}>Cancelar</button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => {
+                  salvarComoModelo(id, {
+                    nome: nomeNovoModelo,
+                    descricao: descricaoNovoModelo,
+                    categoria: categoriaNovoModelo,
+                    compartilhado: compartilharNovoModelo,
+                  });
+                  setSalvarModeloAberto(false);
+                }}
+              >
+                Salvar modelo
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

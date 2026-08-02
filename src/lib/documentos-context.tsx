@@ -84,10 +84,25 @@ export const CONFIG_PAGINA_PADRAO: ConfigPagina = {
   colunasLinha: false,
 };
 
+export type CategoriaModelo =
+  | "Negócios"
+  | "Vendas"
+  | "Marketing"
+  | "Saúde"
+  | "Recursos Humanos"
+  | "Jurídico"
+  | "Financeiro"
+  | "Educação"
+  | "Planejamento"
+  | "Relatórios"
+  | "Comunicação"
+  | "Documentos pessoais";
+
 export type ModeloDocumento = {
   id: string;
   nome: string;
   descricao: string;
+  categoria: CategoriaModelo;
   conteudoHtml: string;
 };
 
@@ -99,11 +114,12 @@ const CAPA = (cor: string, corTexto: string, titulo: string, subtitulo: string) 
 </div>`;
 
 export const MODELOS_DOCUMENTO: ModeloDocumento[] = [
-  { id: "em-branco", nome: "Documento em branco", descricao: "Comece do zero", conteudoHtml: "" },
+  { id: "em-branco", nome: "Documento em branco", descricao: "Página limpa em A4, margens equilibradas, estilo básico", categoria: "Documentos pessoais", conteudoHtml: "" },
   {
     id: "ata",
     nome: "Ata de reunião",
     descricao: "Registro formal com tabela de decisões e responsáveis",
+    categoria: "Negócios",
     conteudoHtml: `
 ${CAPA("#0b1533", "#ffffff", "Ata de reunião", "[TÍTULO DO PROJETO]")}
 <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px;">
@@ -133,6 +149,7 @@ ${CAPA("#0b1533", "#ffffff", "Ata de reunião", "[TÍTULO DO PROJETO]")}
     id: "relatorio",
     nome: "Relatório executivo",
     descricao: "Capa, indicadores em cartões coloridos e tabela de resultados",
+    categoria: "Relatórios",
     conteudoHtml: `
 ${CAPA("#0f9d63", "#ffffff", "Relatório executivo", "Período: [DATA]")}
 <h3>Resumo executivo</h3>
@@ -159,6 +176,7 @@ ${CAPA("#0f9d63", "#ffffff", "Relatório executivo", "Período: [DATA]")}
     id: "proposta",
     nome: "Proposta comercial",
     descricao: "Capa colorida, escopo, cronograma e tabela de investimento",
+    categoria: "Vendas",
     conteudoHtml: `
 ${CAPA("#2e6bff", "#ffffff", "Proposta comercial", "Preparado para [NOME DO CLIENTE] · [DATA]")}
 <h3>Apresentação</h3>
@@ -190,6 +208,7 @@ ${CAPA("#2e6bff", "#ffffff", "Proposta comercial", "Preparado para [NOME DO CLIE
     id: "contrato",
     nome: "Contrato de prestação de serviços",
     descricao: "Cláusulas numeradas, assinaturas e aviso de revisão jurídica",
+    categoria: "Jurídico",
     conteudoHtml: `
 <h1 style="text-align:center;font-size:20px;">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</h1>
 <p style="background:#fff3cd;border-left:3px solid #c9660a;padding:10px 14px;font-size:12px;">
@@ -216,6 +235,7 @@ ${CAPA("#2e6bff", "#ffffff", "Proposta comercial", "Preparado para [NOME DO CLIE
     id: "planejamento",
     nome: "Planejamento de projeto",
     descricao: "Capa, cronograma, riscos e checklist de acompanhamento",
+    categoria: "Planejamento",
     conteudoHtml: `
 ${CAPA("#8a3ffc", "#ffffff", "Planejamento de projeto", "[TÍTULO DO PROJETO]")}
 <h3>Visão geral</h3><p></p>
@@ -236,6 +256,7 @@ ${CAPA("#8a3ffc", "#ffffff", "Planejamento de projeto", "[TÍTULO DO PROJETO]")}
     id: "curriculo",
     nome: "Currículo profissional",
     descricao: "Layout com coluna lateral colorida",
+    categoria: "Documentos pessoais",
     conteudoHtml: `
 <table style="width:100%;border-collapse:collapse;">
 <tr>
@@ -264,6 +285,7 @@ ${CAPA("#8a3ffc", "#ffffff", "Planejamento de projeto", "[TÍTULO DO PROJETO]")}
     id: "orcamento",
     nome: "Orçamento",
     descricao: "Tabela de itens, totais e condições — visual de nota comercial",
+    categoria: "Financeiro",
     conteudoHtml: `
 ${CAPA("#c9660a", "#ffffff", "Orçamento", "Nº [NÚMERO] · Emitido em [DATA]")}
 <table style="width:100%;font-size:13px;margin-bottom:16px;">
@@ -283,6 +305,7 @@ ${CAPA("#c9660a", "#ffffff", "Orçamento", "Nº [NÚMERO] · Emitido em [DATA]")
     id: "plano-acao",
     nome: "Plano de ação (5W2H)",
     descricao: "Tabela 5W2H com prioridades e status coloridos",
+    categoria: "Planejamento",
     conteudoHtml: `
 ${CAPA("#d64545", "#ffffff", "Plano de ação", "[TÍTULO DO PROJETO]")}
 <h3>Objetivo principal</h3><p>[DESCREVA O OBJETIVO]</p>
@@ -303,6 +326,7 @@ ${CAPA("#d64545", "#ffffff", "Plano de ação", "[TÍTULO DO PROJETO]")}
     id: "carta",
     nome: "Carta ou comunicado",
     descricao: "Cabeçalho institucional, corpo e assinatura",
+    categoria: "Comunicação",
     conteudoHtml: `
 <p style="text-align:right;">[CIDADE], [DATA].</p>
 <p></p>
@@ -319,12 +343,14 @@ ${CAPA("#d64545", "#ffffff", "Plano de ação", "[TÍTULO DO PROJETO]")}
     id: "rascunho-email",
     nome: "Rascunho de e-mail",
     descricao: "Comece um e-mail mais longo por aqui",
+    categoria: "Comunicação",
     conteudoHtml: "<p>Assunto: </p><p></p><p>Olá,</p><p></p>",
   },
   {
     id: "pauta",
     nome: "Pauta de reunião",
     descricao: "Agenda com horários e tópicos prioritários",
+    categoria: "Negócios",
     conteudoHtml: `
 <h1>Pauta de reunião</h1>
 <p><b>Data:</b> [DATA] &nbsp; <b>Participantes:</b> [RESPONSÁVEL], [NOME]</p>
@@ -340,7 +366,190 @@ ${CAPA("#d64545", "#ffffff", "Plano de ação", "[TÍTULO DO PROJETO]")}
 <h3>Pendências</h3><p></p>
 <h3>Próxima reunião</h3><p>[DATA]</p>`,
   },
+  {
+    id: "marketing",
+    nome: "Plano de marketing",
+    descricao: "Capa moderna, personas, canais e calendário de conteúdo",
+    categoria: "Marketing",
+    conteudoHtml: `
+${CAPA("#ff5c8a", "#ffffff", "Plano de marketing", "[TÍTULO DO PROJETO] · [DATA]")}
+<h3>Estratégia</h3><p>[DESCREVA O OBJETIVO da estratégia de marketing.]</p>
+<h3>Público-alvo e personas</h3>
+<table style="width:100%;border-collapse:separate;border-spacing:8px 0;margin:16px 0;">
+  <tr>
+    <td style="background:#ffeaf1;border-radius:8px;padding:14px;width:50%;"><p style="font-size:11px;color:#ff5c8a;margin:0 0 4px;text-transform:uppercase;">Persona 1</p><p style="font-size:13px;margin:0;">[NOME], idade, cargo, dores e objetivos.</p></td>
+    <td style="background:#eaf1ff;border-radius:8px;padding:14px;width:50%;"><p style="font-size:11px;color:#2e6bff;margin:0 0 4px;text-transform:uppercase;">Persona 2</p><p style="font-size:13px;margin:0;">[NOME], idade, cargo, dores e objetivos.</p></td>
+  </tr>
+</table>
+<h3>Posicionamento</h3><p></p>
+<h3>Canais</h3>
+<p>☐ Redes sociais &nbsp; ☐ E-mail marketing &nbsp; ☐ Anúncios pagos &nbsp; ☐ SEO/conteúdo &nbsp; ☐ Parcerias</p>
+<h3>Calendário (visão geral)</h3>
+<table style="width:100%;border-collapse:collapse;font-size:13px;">
+  <tr style="background:#ffeaf1;"><td style="padding:8px;font-weight:700;">Semana</td><td style="padding:8px;font-weight:700;">Canal</td><td style="padding:8px;font-weight:700;">Ação</td><td style="padding:8px;font-weight:700;">Responsável</td></tr>
+  <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">[RESPONSÁVEL]</td></tr>
+  <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">[RESPONSÁVEL]</td></tr>
+</table>
+<h3>Orçamento</h3><p></p>
+<h3>Indicadores de sucesso</h3><p></p>`,
+  },
+  {
+    id: "calendario-editorial",
+    nome: "Calendário editorial",
+    descricao: "Grade mensal colorida por canal, com status de cada publicação",
+    categoria: "Marketing",
+    conteudoHtml: `
+${CAPA("#8a3ffc", "#ffffff", "Calendário editorial", "[MÊS/ANO]")}
+<h3>Linha editorial</h3><p>[DESCREVA O OBJETIVO do conteúdo deste período.]</p>
+<table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+  <tr style="background:#f1e9ff;">
+    <td style="padding:6px;font-weight:700;">Data</td><td style="padding:6px;font-weight:700;">Canal</td>
+    <td style="padding:6px;font-weight:700;">Tema/Título</td><td style="padding:6px;font-weight:700;">Formato</td>
+    <td style="padding:6px;font-weight:700;">Responsável</td><td style="padding:6px;font-weight:700;">Status</td>
+  </tr>
+  <tr><td style="padding:6px;border-top:1px solid #ddd;">[DATA]</td><td style="padding:6px;border-top:1px solid #ddd;">Instagram</td><td style="padding:6px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:6px;border-top:1px solid #ddd;">Post</td><td style="padding:6px;border-top:1px solid #ddd;">[RESPONSÁVEL]</td><td style="padding:6px;border-top:1px solid #ddd;color:#0f9d63;">● Publicado</td></tr>
+  <tr><td style="padding:6px;border-top:1px solid #ddd;">[DATA]</td><td style="padding:6px;border-top:1px solid #ddd;">Blog</td><td style="padding:6px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:6px;border-top:1px solid #ddd;">Artigo</td><td style="padding:6px;border-top:1px solid #ddd;">[RESPONSÁVEL]</td><td style="padding:6px;border-top:1px solid #ddd;color:#c9660a;">● Em produção</td></tr>
+  <tr><td style="padding:6px;border-top:1px solid #ddd;">[DATA]</td><td style="padding:6px;border-top:1px solid #ddd;">E-mail</td><td style="padding:6px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:6px;border-top:1px solid #ddd;">Newsletter</td><td style="padding:6px;border-top:1px solid #ddd;">[RESPONSÁVEL]</td><td style="padding:6px;border-top:1px solid #ddd;color:#2e6bff;">● Planejado</td></tr>
+</table>
+<h3>Datas comemorativas do período</h3><p></p>
+<h3>Observações</h3><p></p>`,
+  },
+  {
+    id: "fatura",
+    nome: "Fatura ou recibo",
+    descricao: "Layout formal e limpo, pronto para cobrança",
+    categoria: "Financeiro",
+    conteudoHtml: `
+<table style="width:100%;margin-bottom:24px;"><tr>
+  <td><h1 style="margin:0;font-size:22px;">[NOME DA EMPRESA]</h1><p style="font-size:12px;color:#666;margin:2px 0 0;">[CNPJ] · [E-MAIL] · [TELEFONE]</p></td>
+  <td style="text-align:right;"><p style="font-size:20px;font-weight:700;margin:0;color:#0b1533;">FATURA</p><p style="font-size:12px;color:#666;margin:2px 0 0;">Nº [NÚMERO] · [DATA]</p></td>
+</tr></table>
+<table style="width:100%;background:#f4f6fb;border-radius:8px;padding:14px;font-size:13px;margin-bottom:20px;"><tr>
+  <td style="padding:14px;"><b>Cobrar de</b><br>[NOME DO CLIENTE]<br>[ENDEREÇO]</td>
+  <td style="padding:14px;"><b>Vencimento</b><br>[DATA]</td>
+</tr></table>
+<table style="width:100%;border-collapse:collapse;font-size:13px;">
+  <tr style="background:#0b1533;color:#fff;"><td style="padding:8px;font-weight:700;">Descrição</td><td style="padding:8px;font-weight:700;">Qtd.</td><td style="padding:8px;font-weight:700;">Valor unit.</td><td style="padding:8px;font-weight:700;">Total</td></tr>
+  <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
+  <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
+  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">Subtotal</td><td style="padding:8px;border-top:1px solid #ddd;">R$ —</td></tr>
+  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;">Impostos</td><td style="padding:8px;">R$ —</td></tr>
+  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;border-top:2px solid #0b1533;font-weight:700;">Total</td><td style="padding:8px;border-top:2px solid #0b1533;font-weight:700;">R$ —</td></tr>
+</table>
+<h3>Forma de pagamento</h3><p></p>
+<h3>Observações</h3><p></p>
+<p style="font-size:11px;color:#999;margin-top:32px;">Obrigado pela preferência.</p>`,
+  },
+  {
+    id: "atendimento-crm",
+    nome: "Relatório de atendimento (CRM)",
+    descricao: "Cartões de indicadores e histórico de interações com o cliente",
+    categoria: "Relatórios",
+    conteudoHtml: `
+${CAPA("#0e7c86", "#ffffff", "Relatório de atendimento", "[NOME DO CLIENTE] · Período: [DATA]")}
+<table style="width:100%;border-collapse:separate;border-spacing:8px 0;margin:16px 0;">
+  <tr>
+    <td style="background:#e6f5f6;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#0e7c86;margin:0 0 4px;text-transform:uppercase;">Atendimentos</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
+    <td style="background:#eaf1ff;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#2e6bff;margin:0 0 4px;text-transform:uppercase;">Tempo médio</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
+    <td style="background:#e8f6ee;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#0f9d63;margin:0 0 4px;text-transform:uppercase;">Satisfação</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
+    <td style="background:#fff4e5;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#c9660a;margin:0 0 4px;text-transform:uppercase;">Pendentes</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
+  </tr>
+</table>
+<h3>Histórico de interações</h3>
+<table style="width:100%;border-collapse:collapse;font-size:13px;">
+  <tr style="background:#e6f5f6;"><td style="padding:8px;font-weight:700;">Data</td><td style="padding:8px;font-weight:700;">Canal</td><td style="padding:8px;font-weight:700;">Assunto</td><td style="padding:8px;font-weight:700;">Responsável</td><td style="padding:8px;font-weight:700;">Status</td></tr>
+  <tr><td style="padding:8px;border-top:1px solid #ddd;">[DATA]</td><td style="padding:8px;border-top:1px solid #ddd;">WhatsApp</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">[RESPONSÁVEL]</td><td style="padding:8px;border-top:1px solid #ddd;color:#0f9d63;">● Resolvido</td></tr>
+  <tr><td style="padding:8px;border-top:1px solid #ddd;">[DATA]</td><td style="padding:8px;border-top:1px solid #ddd;">Telefone</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">[RESPONSÁVEL]</td><td style="padding:8px;border-top:1px solid #ddd;color:#d64545;">● Pendente</td></tr>
+</table>
+<h3>Observações e próximos passos</h3><p></p>`,
+  },
+  {
+    id: "saude",
+    nome: "Plano de acompanhamento de saúde",
+    descricao: "Layout elegante para metas, hábitos e evolução do paciente",
+    categoria: "Saúde",
+    conteudoHtml: `
+${CAPA("#2f9e8f", "#ffffff", "Plano de acompanhamento de saúde", "[NOME DO CLIENTE] · Início em [DATA]")}
+<h3>Objetivo</h3><p>[DESCREVA O OBJETIVO do acompanhamento.]</p>
+<h3>Dados gerais</h3>
+<table style="width:100%;font-size:13px;margin-bottom:16px;">
+  <tr><td style="padding:4px 8px 4px 0;"><b>Idade</b></td><td style="padding:4px;">&nbsp;</td><td style="padding:4px 8px 4px 24px;"><b>Responsável</b></td><td style="padding:4px;">[RESPONSÁVEL]</td></tr>
+</table>
+<h3>Metas</h3>
+<p>☐ Meta 1<br>☐ Meta 2<br>☐ Meta 3</p>
+<h3>Plano semanal</h3>
+<table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+  <tr style="background:#e6f5f2;"><td style="padding:6px;font-weight:700;">Dia</td><td style="padding:6px;font-weight:700;">Atividade</td><td style="padding:6px;font-weight:700;">Observação</td></tr>
+  <tr><td style="padding:6px;border-top:1px solid #ddd;">Segunda</td><td style="padding:6px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:6px;border-top:1px solid #ddd;">&nbsp;</td></tr>
+  <tr><td style="padding:6px;border-top:1px solid #ddd;">Quarta</td><td style="padding:6px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:6px;border-top:1px solid #ddd;">&nbsp;</td></tr>
+  <tr><td style="padding:6px;border-top:1px solid #ddd;">Sexta</td><td style="padding:6px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:6px;border-top:1px solid #ddd;">&nbsp;</td></tr>
+</table>
+<h3>Evolução</h3>
+<table style="width:100%;border-collapse:collapse;font-size:13px;">
+  <tr style="background:#e6f5f2;"><td style="padding:8px;font-weight:700;">Data</td><td style="padding:8px;font-weight:700;">Indicador</td><td style="padding:8px;font-weight:700;">Valor</td><td style="padding:8px;font-weight:700;">Observação</td></tr>
+  <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
+</table>
+<p style="background:#fff3cd;border-left:3px solid #c9660a;padding:10px 14px;font-size:12px;margin-top:16px;">⚠️ Este modelo é organizacional — não substitui orientação profissional de saúde.</p>`,
+  },
+  {
+    id: "ebook",
+    nome: "E-book ou material rico",
+    descricao: "Capa criativa, sumário, capítulos e chamada para ação",
+    categoria: "Educação",
+    conteudoHtml: `
+<div style="background:linear-gradient(135deg,#8a3ffc,#2e6bff);color:#fff;padding:80px 48px;margin:-1px -1px 28px -1px;border-radius:2px;text-align:center;">
+  <p style="font-size:11px;letter-spacing:3px;text-transform:uppercase;opacity:.85;margin:0 0 20px;">[NOME DA EMPRESA]</p>
+  <h1 style="font-size:36px;margin:0 0 12px;">[TÍTULO DO PROJETO]</h1>
+  <p style="font-size:15px;opacity:.9;margin:0;">[DESCREVA O OBJETIVO deste material em uma frase.]</p>
+</div>
+<h3>Sumário</h3>
+<p>1. Introdução<br>2. Capítulo 1 — [TÍTULO]<br>3. Capítulo 2 — [TÍTULO]<br>4. Conclusão</p>
+<h3>Introdução</h3><p></p>
+<h3>Capítulo 1 — [TÍTULO]</h3><p></p>
+<blockquote style="border-left:3px solid #8a3ffc;margin:16px 0;padding:8px 16px;font-style:italic;color:#555;background:#f8f6ff;">"Destaque uma citação ou dado importante aqui."</blockquote>
+<p>[INSIRA UMA IMAGEM]</p>
+<h3>Capítulo 2 — [TÍTULO]</h3><p></p>
+<div style="background:#eaf1ff;border-radius:8px;padding:16px;margin:16px 0;"><p style="margin:0;"><b>💡 Dica:</b> destaque um insight prático pro leitor aqui.</p></div>
+<h3>Conclusão</h3><p></p>
+<div style="background:#0b1533;color:#fff;border-radius:8px;padding:24px;text-align:center;margin-top:24px;">
+  <p style="margin:0 0 8px;font-size:16px;font-weight:700;">Gostou do conteúdo?</p>
+  <p style="margin:0;font-size:13px;opacity:.85;">[DESCREVA A CHAMADA PARA AÇÃO — fale com a gente, acesse o site, etc.]</p>
+</div>`,
+  },
+  {
+    id: "manual",
+    nome: "Manual ou procedimento operacional",
+    descricao: "Institucional, com controle de versão e checklist de passos",
+    categoria: "Educação",
+    conteudoHtml: `
+${CAPA("#0b1533", "#ffffff", "[TÍTULO DO PROCEDIMENTO]", "Manual operacional · [NOME DA EMPRESA]")}
+<h3>Controle de versão</h3>
+<table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+  <tr style="background:#eaeefa;"><td style="padding:6px;font-weight:700;">Versão</td><td style="padding:6px;font-weight:700;">Data</td><td style="padding:6px;font-weight:700;">Autor</td><td style="padding:6px;font-weight:700;">Alteração</td></tr>
+  <tr><td style="padding:6px;border-top:1px solid #ddd;">1.0</td><td style="padding:6px;border-top:1px solid #ddd;">[DATA]</td><td style="padding:6px;border-top:1px solid #ddd;">[RESPONSÁVEL]</td><td style="padding:6px;border-top:1px solid #ddd;">Criação do documento</td></tr>
+</table>
+<h3>Objetivo</h3><p>[DESCREVA O OBJETIVO deste procedimento.]</p>
+<h3>Área de aplicação</h3><p></p>
+<h3>Responsáveis</h3><p>[RESPONSÁVEL]</p>
+<h3>Materiais necessários</h3><p></p>
+<h3>Passo a passo</h3>
+<ol>
+  <li>Descreva o primeiro passo.</li>
+  <li>Descreva o segundo passo.</li>
+  <li>Descreva o terceiro passo.</li>
+</ol>
+<p style="background:#fff3cd;border-left:3px solid #c9660a;padding:10px 14px;font-size:12px;">⚠️ Alerta: destaque aqui um cuidado importante do procedimento.</p>
+<h3>Boas práticas</h3><p></p>
+<h3>Checklist final</h3>
+<p>☐ Item 1<br>☐ Item 2<br>☐ Item 3</p>`,
+  },
 ];
+
+export type ModeloPersonalizado = ModeloDocumento & {
+  criadoEm: string;
+  autor: string;
+  compartilhado: boolean;
+};
 
 type DocumentosContextValue = {
   documentos: Documento[];
@@ -365,11 +574,25 @@ type DocumentosContextValue = {
     id: string,
     patch: Partial<Pick<Documento, "pessoasAcesso" | "linkAtivo" | "linkPermissao">>,
   ) => void;
+  /** Modelos da galeria — embutidos + os que o usuário salvou ("Meus modelos"). */
+  todosOsModelos: ModeloDocumento[];
+  modelosPersonalizados: ModeloPersonalizado[];
+  salvarComoModelo: (
+    docId: string,
+    dados: { nome: string; descricao: string; categoria: CategoriaModelo; compartilhado: boolean },
+  ) => void;
+  excluirModeloPersonalizado: (modeloId: string) => void;
+  modelosFavoritosIds: string[];
+  alternarFavoritoModelo: (modeloId: string) => void;
+  modelosRecentesIds: string[];
 };
 
 const DocumentosContext = createContext<DocumentosContextValue | null>(null);
 
 export const DOCUMENTOS_STORAGE_KEY = "azuz-crm-documentos";
+const MODELOS_PERSONALIZADOS_STORAGE_KEY = "azuz-crm-documentos-modelos-usuario";
+const MODELOS_FAVORITOS_STORAGE_KEY = "azuz-crm-documentos-modelos-favoritos";
+const MODELOS_RECENTES_STORAGE_KEY = "azuz-crm-documentos-modelos-recentes";
 
 function agora() {
   return new Date().toISOString();
@@ -422,9 +645,101 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
     }
   }, [documentos]);
 
+  const [modelosPersonalizados, setModelosPersonalizados] = useState<ModeloPersonalizado[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const salvos = localStorage.getItem(MODELOS_PERSONALIZADOS_STORAGE_KEY);
+      return salvos ? (JSON.parse(salvos) as ModeloPersonalizado[]) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MODELOS_PERSONALIZADOS_STORAGE_KEY, JSON.stringify(modelosPersonalizados));
+    } catch {
+      // localStorage indisponível — segue só em memória.
+    }
+  }, [modelosPersonalizados]);
+
+  const [modelosFavoritosIds, setModelosFavoritosIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const salvos = localStorage.getItem(MODELOS_FAVORITOS_STORAGE_KEY);
+      return salvos ? (JSON.parse(salvos) as string[]) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MODELOS_FAVORITOS_STORAGE_KEY, JSON.stringify(modelosFavoritosIds));
+    } catch {
+      // localStorage indisponível — segue só em memória.
+    }
+  }, [modelosFavoritosIds]);
+
+  const [modelosRecentesIds, setModelosRecentesIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const salvos = localStorage.getItem(MODELOS_RECENTES_STORAGE_KEY);
+      return salvos ? (JSON.parse(salvos) as string[]) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MODELOS_RECENTES_STORAGE_KEY, JSON.stringify(modelosRecentesIds));
+    } catch {
+      // localStorage indisponível — segue só em memória.
+    }
+  }, [modelosRecentesIds]);
+
+  const todosOsModelos: ModeloDocumento[] = [...MODELOS_DOCUMENTO, ...modelosPersonalizados];
+
+  function alternarFavoritoModelo(modeloId: string) {
+    setModelosFavoritosIds((prev) =>
+      prev.includes(modeloId) ? prev.filter((mid) => mid !== modeloId) : [...prev, modeloId],
+    );
+  }
+
+  function salvarComoModelo(
+    docId: string,
+    dados: { nome: string; descricao: string; categoria: CategoriaModelo; compartilhado: boolean },
+  ) {
+    const doc = documentos.find((d) => d.id === docId);
+    if (!doc) return;
+    const conteudoHtml = doc.paginas.map((p) => p.conteudoHtml).join('<hr style="page-break-after:always;border:none;">');
+    const novoModelo: ModeloPersonalizado = {
+      id: idUnico("modelo-usuario"),
+      nome: dados.nome.trim() || doc.titulo,
+      descricao: dados.descricao.trim(),
+      categoria: dados.categoria,
+      conteudoHtml,
+      criadoEm: agora(),
+      autor: currentUser.name,
+      compartilhado: dados.compartilhado,
+    };
+    setModelosPersonalizados((prev) => [novoModelo, ...prev]);
+  }
+
+  function excluirModeloPersonalizado(modeloId: string) {
+    setModelosPersonalizados((prev) => prev.filter((m) => m.id !== modeloId));
+    setModelosFavoritosIds((prev) => prev.filter((mid) => mid !== modeloId));
+  }
+
+  function registrarModeloRecente(modeloId: string) {
+    setModelosRecentesIds((prev) => [modeloId, ...prev.filter((mid) => mid !== modeloId)].slice(0, 8));
+  }
+
   function criarDocumento(titulo?: string, modeloId?: string) {
     const id = idUnico("doc");
-    const modelo = MODELOS_DOCUMENTO.find((m) => m.id === modeloId);
+    const modelo = todosOsModelos.find((m) => m.id === modeloId);
+    if (modeloId && modelo) registrarModeloRecente(modeloId);
     const novo: Documento = {
       id,
       titulo: titulo?.trim() || "Sem título",
@@ -609,6 +924,13 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
         salvarVersao,
         restaurarVersao,
         atualizarAcesso,
+        todosOsModelos,
+        modelosPersonalizados,
+        salvarComoModelo,
+        excluirModeloPersonalizado,
+        modelosFavoritosIds,
+        alternarFavoritoModelo,
+        modelosRecentesIds,
       }}
     >
       {children}

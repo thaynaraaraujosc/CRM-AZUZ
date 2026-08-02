@@ -4789,6 +4789,149 @@ table.tbl tbody tr:hover td {
   margin-bottom: 4px;
 }
 
+/* Galeria de modelos reformulada — miniatura real (o próprio HTML do modelo, escalado), categoria e ações no hover. */
+.doc-modelo-card-rica {
+  padding: 0;
+  overflow: hidden;
+}
+
+.doc-modelo-card-rica .n {
+  padding: 0 12px;
+}
+
+.doc-modelo-card-rica .hint {
+  padding: 0 12px 12px;
+}
+
+.doc-modelo-categoria {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--blue);
+  padding: 8px 12px 0;
+}
+
+.doc-modelo-thumb {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  overflow: hidden;
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+
+.doc-modelo-thumb-escala {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 420%;
+  transform: scale(0.238);
+  transform-origin: top left;
+  color: #1a1a1a;
+  font-family: "Times New Roman", Georgia, serif;
+  pointer-events: none;
+}
+
+.doc-modelo-thumb-acoes {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(11, 21, 51, 0.55);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.doc-modelo-card-rica:hover .doc-modelo-thumb-acoes,
+.doc-modelo-card-rica:focus-within .doc-modelo-thumb-acoes {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .doc-modelo-thumb-acoes {
+    opacity: 1;
+    background: rgba(11, 21, 51, 0.35);
+  }
+}
+
+.doc-modelo-favorito {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 2;
+}
+
+.doc-modelo-card-skeleton {
+  height: 196px;
+  background: linear-gradient(90deg, var(--navy) 25%, var(--blue-soft-2) 50%, var(--navy) 75%);
+  background-size: 200% 100%;
+  animation: doc-modelo-skeleton 1.2s ease-in-out infinite;
+}
+
+@keyframes doc-modelo-skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Modal centralizado de pré-visualização de modelo — todas as páginas antes de escolher. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(6, 11, 28, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal {
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  width: min(720px, 100%);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(6, 11, 28, 0.4);
+}
+
+.doc-modelo-preview-modal .panel-h {
+  padding: 16px 20px;
+}
+
+.doc-modelo-preview-corpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: #d8dbe6;
+}
+
+.doc-modelo-preview-folha {
+  background: #ffffff;
+  color: #1a1a1a;
+  font-family: "Times New Roman", Georgia, serif;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 48px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+}
+
+.panel-f {
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+}
+
 /* Colunas de texto (Formatar → Colunas) — CSS multi-coluna nativo, sem tabela. */
 .doc-body-rich-colunas img,
 .doc-body-rich-colunas table {
