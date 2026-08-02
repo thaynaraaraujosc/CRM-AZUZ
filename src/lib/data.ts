@@ -432,7 +432,32 @@ export type ConvStatus =
   | "Aguardando cliente"
   | "Finalizado";
 
+/**
+ * Estado real de entrega de uma mensagem enviada (tipo "out"), como reportado
+ * pelo canal — nunca é ajustado manualmente pelo usuário.
+ * "pendente" = ainda subindo/enviando · "enviado" = saiu do CRM · "entregue" =
+ * chegou no aparelho do lead · "lido" = o lead abriu a conversa · "erro" = falhou.
+ */
+export type StatusMensagem = "pendente" | "enviado" | "entregue" | "lido" | "erro";
+
+export type AnexoImagem = { url: string; nome: string; tamanho: number };
+export type AnexoVideo = {
+  url: string;
+  nome: string;
+  tamanho: number;
+  duracao?: number;
+  comAudio: boolean;
+};
+export type AnexoDocumento = {
+  url: string;
+  nome: string;
+  tamanho: number;
+  formato: string;
+  origem: "crm" | "computador";
+};
+
 export type ConvMensagem = {
+  id?: string;
   tipo: "in" | "out" | "system";
   texto: string;
   hora: string;
@@ -440,6 +465,18 @@ export type ConvMensagem = {
   localizacao?: { lat: number; lng: number; endereco?: string };
   /** Presente quando a mensagem é um cartão de contato compartilhado. */
   contatoCompartilhado?: { nome: string; initials: string; whatsapp?: string };
+  /** Uma ou mais imagens reais anexadas — vira um balão com a imagem de verdade, não só o nome do arquivo. */
+  imagens?: AnexoImagem[];
+  /** Vídeo real anexado (já cortado/processado, se o usuário editou antes de enviar). */
+  video?: AnexoVideo;
+  /** Documento real anexado — vindo da biblioteca do CRM ou do computador do usuário. */
+  documento?: AnexoDocumento;
+  /** Legenda opcional que acompanha imagem/vídeo. */
+  legenda?: string;
+  /** Só existe em mensagens "out" — o estado real reportado pelo canal. */
+  status?: StatusMensagem;
+  /** Motivo do erro, quando status === "erro" — mostrado com a opção de tentar de novo. */
+  erro?: string;
 };
 
 export type Conversa = {

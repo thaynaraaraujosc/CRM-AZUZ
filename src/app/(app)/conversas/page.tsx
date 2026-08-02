@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 
@@ -11,20 +11,34 @@ import {
   type ConvMensagem,
   type Funil,
   type NegocioCard,
+  type StatusMensagem,
 } from "@/lib/data";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useContatos } from "@/lib/contatos-context";
+import {
+  useBibliotecaDocumentos,
+  CATEGORIAS_DOCUMENTO,
+} from "@/lib/biblioteca-documentos-context";
 import { useFunis } from "@/lib/funis-context";
 import { useNotificacoes } from "@/lib/notificacoes-context";
 import {
   CanalBadge,
   IconAutomacoes,
+  IconCheck,
+  IconCheckDuplo,
   IconConfiguracoes,
+  IconContatos,
   IconDoc,
   IconEmoji,
+  IconErro,
+  IconImage,
+  IconLocalizacao,
   IconMic,
   IconRefresh,
+  IconRelogio,
+  IconRespostaRapida,
   IconSearch,
+  IconVideoCam,
 } from "@/components/icons";
 import { FloatingDropdown, RadioList, Toggle, Topbar } from "@/components/ui";
 
@@ -33,6 +47,124 @@ const FILTROS_CONVERSA = [
   { valor: "nao-lidas", label: "Não lidas" },
   { valor: "favoritas", label: "Favoritas" },
 ] as const;
+
+/** Mesma chave usada em toda troca de página — as mensagens enviadas na conversa sobrevivem ao F5. */
+const MENSAGENS_STORAGE_KEY = "azuz-crm-conversas-mensagens";
+
+const FORMATOS_IMAGEM = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const TAMANHO_MAX_IMAGEM = 16 * 1024 * 1024;
+const FORMATOS_VIDEO = ["video/mp4", "video/webm", "video/quicktime", "video/3gpp"];
+const TAMANHO_MAX_VIDEO = 64 * 1024 * 1024;
+const DURACAO_MAX_VIDEO_SEG = 180;
+const TAMANHO_MAX_DOCUMENTO = 32 * 1024 * 1024;
+
+function formatarTamanho(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function gerarIdMensagem() {
+  return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Faz o status de uma mensagem enviada avançar pendente → enviado → entregue
+ * → (às vezes) lido, com tempos realistas e aleatórios — nunca ajustável
+ * manualmente. Fica fora do componente (só recebe o "setter" já amarrado ao
+ * contato/id certos) pra não misturar código com efeito colateral agendado
+ * dentro do corpo do componente.
+ */
+function agendarSimulacaoDeEntrega(
+  atualizar: (patch: Partial<ConvMensagem>) => void,
+) {
+  const tEnviado = 450 + Math.random() * 350;
+  const tEntregue = tEnviado + 900 + Math.random() * 1100;
+  const tLido = tEntregue + 1800 + Math.random() * 4000;
+  setTimeout(() => atualizar({ status: "enviado" }), tEnviado);
+  setTimeout(() => atualizar({ status: "entregue" }), tEntregue);
+  if (Math.random() < 0.82) {
+    setTimeout(() => atualizar({ status: "lido" }), tLido);
+  }
+}
+
+function lerComoDataUrl(file: File | Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onload = () => resolve(leitor.result as string);
+    leitor.onerror = () => reject(new Error("Falha ao ler o arquivo"));
+    leitor.readAsDataURL(file);
+  });
+}
+
+/** Ícone + rótulo + descrição de acessibilidade do estado real de uma mensagem enviada. */
+function StatusMensagemIcone({
+  status,
+  onTentarNovamente,
+}: {
+  status?: StatusMensagem;
+  onTentarNovamente?: () => void;
+}) {
+  if (!status) return null;
+  if (status === "erro") {
+    return (
+      <span className="msg-status msg-status-erro">
+        <span
+          className="msg-status-icone"
+          title="Não enviada — toque para tentar de novo"
+          aria-label="Mensagem não enviada"
+        >
+          <IconErro width={13} height={13} />
+        </span>
+        {onTentarNovamente ? (
+          <button
+            type="button"
+            className="msg-status-retry"
+            onClick={onTentarNovamente}
+          >
+            Tentar novamente
+          </button>
+        ) : null}
+      </span>
+    );
+  }
+  const mapa: Record<
+    Exclude<StatusMensagem, "erro">,
+    { icone: ReactNode; titulo: string; classe: string }
+  > = {
+    pendente: {
+      icone: <IconRelogio width={12} height={12} />,
+      titulo: "Aguardando envio",
+      classe: "",
+    },
+    enviado: {
+      icone: <IconCheck width={13} height={13} />,
+      titulo: "Enviada",
+      classe: "",
+    },
+    entregue: {
+      icone: <IconCheckDuplo width={14} height={14} />,
+      titulo: "Entregue no aparelho do lead",
+      classe: "",
+    },
+    lido: {
+      icone: <IconCheckDuplo width={14} height={14} />,
+      titulo: "Lida pelo lead",
+      classe: "lido",
+    },
+  };
+  const info = mapa[status];
+  return (
+    <span
+      className={`msg-status-icone ${info.classe}`}
+      title={info.titulo}
+      aria-label={info.titulo}
+      role="img"
+    >
+      {info.icone}
+    </span>
+  );
+}
 
 type FiltroConversa = (typeof FILTROS_CONVERSA)[number]["valor"];
 
@@ -355,7 +487,27 @@ function ConversasPageInner() {
   const [notaTexto, setNotaTexto] = useState("");
   const [mensagensExtraPorContato, setMensagensExtraPorContato] = useState<
     Record<string, ConvMensagem[]>
-  >({});
+  >(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const salvo = localStorage.getItem(MENSAGENS_STORAGE_KEY);
+      return salvo ? (JSON.parse(salvo) as Record<string, ConvMensagem[]>) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        MENSAGENS_STORAGE_KEY,
+        JSON.stringify(mensagensExtraPorContato),
+      );
+    } catch {
+      // localStorage indisponível (modo privado, por exemplo) ou anexo grande
+      // demais pra caber na cota — a conversa segue funcionando só em memória.
+    }
+  }, [mensagensExtraPorContato]);
   const [mensagemTexto, setMensagemTexto] = useState("");
   const [gravandoAudio, setGravandoAudio] = useState(false);
   const [audioSegundos, setAudioSegundos] = useState(0);
@@ -405,6 +557,80 @@ function ConversasPageInner() {
   const imagemInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const documentoInputRef = useRef<HTMLInputElement>(null);
+
+  /* ---------------------------------------------------------------------- */
+  /* Anexos reais — imagem, vídeo, documento                                */
+  /* ---------------------------------------------------------------------- */
+
+  const [arrastandoArquivo, setArrastandoArquivo] = useState(false);
+  const [erroAnexo, setErroAnexo] = useState<string | null>(null);
+
+  // Imagem: seleção múltipla + pré-visualização + edição real (recorte/rotação).
+  const [imagensSelecionadas, setImagensSelecionadas] = useState<
+    { id: string; original: string; atual: string; nome: string; tamanho: number }[]
+  >([]);
+  const [imagemPreviewAberto, setImagemPreviewAberto] = useState(false);
+  const [imagemAtivaId, setImagemAtivaId] = useState<string | null>(null);
+  const [legendaImagem, setLegendaImagem] = useState("");
+  const [, setImagemHistorico] = useState<
+    Record<string, { pilha: string[]; indice: number }>
+  >({});
+  const [imagemModoCorte, setImagemModoCorte] = useState(false);
+  const [imagemCorteRect, setImagemCorteRect] = useState({
+    x: 10,
+    y: 10,
+    w: 80,
+    h: 80,
+  });
+  const [enviandoImagens, setEnviandoImagens] = useState(false);
+
+  // Lightbox — abrir imagem já enviada em tamanho maior, com navegação e zoom.
+  const [lightbox, setLightbox] = useState<{
+    urls: string[];
+    indice: number;
+    zoom: number;
+  } | null>(null);
+
+  // Vídeo: preview com corte real (in/out) e mudo, processado antes do envio.
+  const [videoSelecionado, setVideoSelecionado] = useState<{
+    original: File;
+    url: string;
+    duracao: number;
+    nome: string;
+    tamanho: number;
+  } | null>(null);
+  const [videoPreviewAberto, setVideoPreviewAberto] = useState(false);
+  const [legendaVideo, setLegendaVideo] = useState("");
+  const [videoInicio, setVideoInicio] = useState(0);
+  const [videoFim, setVideoFim] = useState(0);
+  const [videoMudo, setVideoMudo] = useState(false);
+  const [videoProcessando, setVideoProcessando] = useState(false);
+  const [videoErro, setVideoErro] = useState<string | null>(null);
+  const videoPreviewRef = useRef<HTMLVideoElement>(null);
+
+  // Documento: escolher origem (CRM ou computador), biblioteca e pré-visualização.
+  const [documentoOrigemAberto, setDocumentoOrigemAberto] = useState(false);
+  const [bibliotecaAberta, setBibliotecaAberta] = useState(false);
+  const [buscaBiblioteca, setBuscaBiblioteca] = useState("");
+  const [categoriaBiblioteca, setCategoriaBiblioteca] = useState("Todas");
+  const [documentosSelecionadosBiblioteca, setDocumentosSelecionadosBiblioteca] =
+    useState<string[]>([]);
+  const [documentoPreviewAberto, setDocumentoPreviewAberto] = useState<{
+    nome: string;
+    url: string;
+    formato: string;
+  } | null>(null);
+  const [documentoComputador, setDocumentoComputador] = useState<{
+    file: File;
+    url: string;
+    nome: string;
+    tamanho: number;
+    formato: string;
+  } | null>(null);
+  const [legendaDocumento, setLegendaDocumento] = useState("");
+  const [enviandoDocumento, setEnviandoDocumento] = useState(false);
+
+  const { documentos: bibliotecaDocumentos } = useBibliotecaDocumentos();
 
   useEffect(() => {
     if (!gravandoAudio) return;
@@ -474,11 +700,41 @@ function ConversasPageInner() {
     return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   }
 
-  function adicionarMensagem(msg: ConvMensagem) {
+  function atualizarMensagem(
+    contatoNome: string,
+    id: string,
+    patch: Partial<ConvMensagem>,
+  ) {
     setMensagensExtraPorContato((prev) => ({
       ...prev,
-      [aberta.nome]: [...(prev[aberta.nome] ?? []), msg],
+      [contatoNome]: (prev[contatoNome] ?? []).map((m) =>
+        m.id === id ? { ...m, ...patch } : m,
+      ),
     }));
+  }
+
+  /** Adiciona a mensagem já com id — mensagens "out" sem status ganham "pendente" e entram na simulação real de entrega. */
+  function adicionarMensagem(msg: ConvMensagem) {
+    const id = msg.id ?? gerarIdMensagem();
+    const contatoNome = aberta.nome;
+    const pronta: ConvMensagem =
+      msg.tipo === "out" && !msg.status
+        ? { ...msg, id, status: "pendente" }
+        : { ...msg, id };
+    setMensagensExtraPorContato((prev) => ({
+      ...prev,
+      [contatoNome]: [...(prev[contatoNome] ?? []), pronta],
+    }));
+    if (pronta.tipo === "out" && pronta.status === "pendente") {
+      agendarSimulacaoDeEntrega((patch) => atualizarMensagem(contatoNome, id, patch));
+    }
+    return id;
+  }
+
+  function tentarNovamenteMensagem(id: string) {
+    const contatoNome = aberta.nome;
+    atualizarMensagem(contatoNome, id, { status: "pendente", erro: undefined });
+    agendarSimulacaoDeEntrega((patch) => atualizarMensagem(contatoNome, id, patch));
   }
 
   function enviarMensagemTexto() {
@@ -507,23 +763,488 @@ function ConversasPageInner() {
     }
   }
 
-  function anexarArquivo(rotulo: string, arquivo: File) {
-    adicionarMensagem({ tipo: "out", texto: `${rotulo} · ${arquivo.name}`, hora: horaAgora() });
-  }
+  /* ---------------------------------------------------------------------- */
+  /* Imagem — seleção, drag&drop, colar, edição real e envio                */
+  /* ---------------------------------------------------------------------- */
 
   function abrirUploadImagem() {
     setAnexoAberto(false);
     imagemInputRef.current?.click();
   }
 
+  function validarImagem(file: File): string | null {
+    if (!FORMATOS_IMAGEM.includes(file.type)) {
+      return "Formato não aceito. Envie uma imagem em JPG, PNG ou WebP.";
+    }
+    if (file.size > TAMANHO_MAX_IMAGEM) {
+      return `Imagem acima do limite permitido (máx. ${formatarTamanho(TAMANHO_MAX_IMAGEM)}).`;
+    }
+    return null;
+  }
+
+  async function adicionarImagens(files: FileList | File[]) {
+    setErroAnexo(null);
+    const lista = Array.from(files);
+    const validas: {
+      id: string;
+      original: string;
+      atual: string;
+      nome: string;
+      tamanho: number;
+    }[] = [];
+    for (const file of lista) {
+      const erro = validarImagem(file);
+      if (erro) {
+        setErroAnexo(erro);
+        continue;
+      }
+      try {
+        const dataUrl = await lerComoDataUrl(file);
+        const id = gerarIdMensagem();
+        validas.push({
+          id,
+          original: dataUrl,
+          atual: dataUrl,
+          nome: file.name,
+          tamanho: file.size,
+        });
+        setImagemHistorico((prev) => ({
+          ...prev,
+          [id]: { pilha: [dataUrl], indice: 0 },
+        }));
+      } catch {
+        setErroAnexo("Falha ao processar a imagem. Tente novamente.");
+      }
+    }
+    if (validas.length === 0) return;
+    setImagensSelecionadas((prev) => [...prev, ...validas]);
+    setImagemAtivaId((atual) => atual ?? validas[0].id);
+    setImagemPreviewAberto(true);
+  }
+
+  function fecharPreviewImagem() {
+    setImagemPreviewAberto(false);
+    setImagensSelecionadas([]);
+    setImagemAtivaId(null);
+    setLegendaImagem("");
+    setImagemHistorico({});
+    setImagemModoCorte(false);
+    setErroAnexo(null);
+  }
+
+  function removerImagemSelecionada(id: string) {
+    setImagensSelecionadas((prev) => {
+      const restante = prev.filter((img) => img.id !== id);
+      if (restante.length === 0) {
+        fecharPreviewImagem();
+      } else if (imagemAtivaId === id) {
+        setImagemAtivaId(restante[0].id);
+      }
+      return restante;
+    });
+  }
+
+  function imagemAtiva() {
+    return imagensSelecionadas.find((img) => img.id === imagemAtivaId) ?? null;
+  }
+
+  function aplicarEdicaoImagem(id: string, novoDataUrl: string) {
+    setImagensSelecionadas((prev) =>
+      prev.map((img) => (img.id === id ? { ...img, atual: novoDataUrl } : img)),
+    );
+    setImagemHistorico((prev) => {
+      const atual = prev[id] ?? { pilha: [novoDataUrl], indice: -1 };
+      const pilhaCortada = atual.pilha.slice(0, atual.indice + 1);
+      return {
+        ...prev,
+        [id]: { pilha: [...pilhaCortada, novoDataUrl], indice: pilhaCortada.length },
+      };
+    });
+  }
+
+  function girarImagem90() {
+    const img = imagemAtiva();
+    if (!img) return;
+    const elImg = new Image();
+    elImg.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = elImg.height;
+      canvas.height = elImg.width;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(elImg, -elImg.width / 2, -elImg.height / 2);
+      aplicarEdicaoImagem(img.id, canvas.toDataURL("image/png"));
+    };
+    elImg.src = img.atual;
+  }
+
+  function aplicarCorteImagem() {
+    const img = imagemAtiva();
+    if (!img) return;
+    const elImg = new Image();
+    elImg.onload = () => {
+      const canvas = document.createElement("canvas");
+      const sx = (imagemCorteRect.x / 100) * elImg.width;
+      const sy = (imagemCorteRect.y / 100) * elImg.height;
+      const sw = (imagemCorteRect.w / 100) * elImg.width;
+      const sh = (imagemCorteRect.h / 100) * elImg.height;
+      canvas.width = sw;
+      canvas.height = sh;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(elImg, sx, sy, sw, sh, 0, 0, sw, sh);
+      aplicarEdicaoImagem(img.id, canvas.toDataURL("image/png"));
+      setImagemModoCorte(false);
+      setImagemCorteRect({ x: 10, y: 10, w: 80, h: 80 });
+    };
+    elImg.src = img.atual;
+  }
+
+  function desfazerEdicaoImagem() {
+    const img = imagemAtiva();
+    if (!img) return;
+    setImagemHistorico((prev) => {
+      const h = prev[img.id];
+      if (!h || h.indice <= 0) return prev;
+      const novoIndice = h.indice - 1;
+      setImagensSelecionadas((sels) =>
+        sels.map((s) => (s.id === img.id ? { ...s, atual: h.pilha[novoIndice] } : s)),
+      );
+      return { ...prev, [img.id]: { ...h, indice: novoIndice } };
+    });
+  }
+
+  function refazerEdicaoImagem() {
+    const img = imagemAtiva();
+    if (!img) return;
+    setImagemHistorico((prev) => {
+      const h = prev[img.id];
+      if (!h || h.indice >= h.pilha.length - 1) return prev;
+      const novoIndice = h.indice + 1;
+      setImagensSelecionadas((sels) =>
+        sels.map((s) => (s.id === img.id ? { ...s, atual: h.pilha[novoIndice] } : s)),
+      );
+      return { ...prev, [img.id]: { ...h, indice: novoIndice } };
+    });
+  }
+
+  function restaurarImagemOriginal() {
+    const img = imagemAtiva();
+    if (!img) return;
+    setImagensSelecionadas((sels) =>
+      sels.map((s) => (s.id === img.id ? { ...s, atual: img.original } : s)),
+    );
+    setImagemHistorico((prev) => ({
+      ...prev,
+      [img.id]: { pilha: [img.original], indice: 0 },
+    }));
+  }
+
+  async function enviarImagensSelecionadas() {
+    if (imagensSelecionadas.length === 0) return;
+    setEnviandoImagens(true);
+    adicionarMensagem({
+      tipo: "out",
+      texto: "",
+      hora: horaAgora(),
+      imagens: imagensSelecionadas.map((img) => ({
+        url: img.atual,
+        nome: img.nome,
+        tamanho: img.tamanho,
+      })),
+      legenda: legendaImagem.trim() || undefined,
+    });
+    setEnviandoImagens(false);
+    fecharPreviewImagem();
+  }
+
+  function abrirLightbox(urls: string[], indice: number) {
+    setLightbox({ urls, indice, zoom: 1 });
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Vídeo — seleção, corte real (in/out), mudo e envio                     */
+  /* ---------------------------------------------------------------------- */
+
   function abrirUploadVideo() {
     setAnexoAberto(false);
     videoInputRef.current?.click();
   }
 
+  function validarVideo(file: File): string | null {
+    if (!FORMATOS_VIDEO.includes(file.type) && !file.type.startsWith("video/")) {
+      return "Formato não aceito. Envie um vídeo em MP4, MOV ou WebM.";
+    }
+    if (file.size > TAMANHO_MAX_VIDEO) {
+      return `Vídeo acima do limite permitido (máx. ${formatarTamanho(TAMANHO_MAX_VIDEO)}).`;
+    }
+    return null;
+  }
+
+  function adicionarVideo(file: File) {
+    setErroAnexo(null);
+    setVideoErro(null);
+    const erro = validarVideo(file);
+    if (erro) {
+      setErroAnexo(erro);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const elVideo = document.createElement("video");
+    elVideo.preload = "metadata";
+    elVideo.onloadedmetadata = () => {
+      if (elVideo.duration > DURACAO_MAX_VIDEO_SEG) {
+        setErroAnexo(
+          `Vídeo acima da duração permitida (máx. ${DURACAO_MAX_VIDEO_SEG / 60} min).`,
+        );
+        URL.revokeObjectURL(url);
+        return;
+      }
+      setVideoSelecionado({
+        original: file,
+        url,
+        duracao: elVideo.duration,
+        nome: file.name,
+        tamanho: file.size,
+      });
+      setVideoInicio(0);
+      setVideoFim(elVideo.duration);
+      setVideoMudo(false);
+      setLegendaVideo("");
+      setVideoPreviewAberto(true);
+    };
+    elVideo.src = url;
+  }
+
+  function fecharPreviewVideo() {
+    if (videoSelecionado) URL.revokeObjectURL(videoSelecionado.url);
+    setVideoPreviewAberto(false);
+    setVideoSelecionado(null);
+    setVideoErro(null);
+    setVideoProcessando(false);
+  }
+
+  /**
+   * Corta de verdade o vídeo entre `videoInicio` e `videoFim` (e tira o áudio,
+   * se `videoMudo`) reproduzindo o trecho e regravando os frames com
+   * MediaRecorder — não é só um controle visual, o arquivo final muda.
+   */
+  async function processarEEnviarVideo(pularEdicao: boolean) {
+    if (!videoSelecionado) return;
+    setVideoProcessando(true);
+    setVideoErro(null);
+    try {
+      const precisaCortar =
+        !pularEdicao &&
+        (videoInicio > 0.05 || videoFim < videoSelecionado.duracao - 0.05);
+      const precisaMutar = !pularEdicao && videoMudo;
+
+      let urlFinal = videoSelecionado.url;
+      let tamanhoFinal = videoSelecionado.tamanho;
+      let duracaoFinal = videoSelecionado.duracao;
+
+      if (precisaCortar || precisaMutar) {
+        const blob = await cortarVideoReal(
+          videoSelecionado.url,
+          videoInicio,
+          videoFim,
+          precisaMutar,
+        );
+        urlFinal = await lerComoDataUrl(blob);
+        tamanhoFinal = blob.size;
+        duracaoFinal = videoFim - videoInicio;
+      } else {
+        urlFinal = await lerComoDataUrl(videoSelecionado.original);
+      }
+
+      adicionarMensagem({
+        tipo: "out",
+        texto: "",
+        hora: horaAgora(),
+        video: {
+          url: urlFinal,
+          nome: videoSelecionado.nome,
+          tamanho: tamanhoFinal,
+          duracao: duracaoFinal,
+          comAudio: !precisaMutar,
+        },
+        legenda: legendaVideo.trim() || undefined,
+      });
+      fecharPreviewVideo();
+    } catch {
+      setVideoErro("Não deu pra processar o vídeo. Tente enviar sem editar.");
+    } finally {
+      setVideoProcessando(false);
+    }
+  }
+
+  function cortarVideoReal(
+    url: string,
+    inicio: number,
+    fim: number,
+    mutar: boolean,
+  ): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement("video");
+      video.src = url;
+      video.muted = false;
+      video.playsInline = true;
+      video.onloadedmetadata = () => {
+        video.currentTime = inicio;
+      };
+      video.onseeked = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 360;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Sem contexto de canvas"));
+          return;
+        }
+        const streamVideo = canvas.captureStream();
+        let streamFinal: MediaStream = streamVideo;
+        if (!mutar) {
+          try {
+            const streamAudio = (
+              video as HTMLVideoElement & { captureStream?: () => MediaStream }
+            ).captureStream?.();
+            const trilhaAudio = streamAudio?.getAudioTracks()[0];
+            if (trilhaAudio) streamVideo.addTrack(trilhaAudio);
+            streamFinal = streamVideo;
+          } catch {
+            streamFinal = streamVideo;
+          }
+        }
+        const gravador = new MediaRecorder(streamFinal, {
+          mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+            ? "video/webm;codecs=vp9"
+            : "video/webm",
+        });
+        const pedacos: BlobPart[] = [];
+        gravador.ondataavailable = (e) => {
+          if (e.data.size > 0) pedacos.push(e.data);
+        };
+        gravador.onstop = () => {
+          resolve(new Blob(pedacos, { type: "video/webm" }));
+        };
+        gravador.onerror = () => reject(new Error("Falha ao gravar o corte"));
+
+        let quadro: number;
+        function desenhar() {
+          if (video.currentTime >= fim || video.ended) {
+            gravador.stop();
+            video.pause();
+            cancelAnimationFrame(quadro);
+            return;
+          }
+          ctx!.drawImage(video, 0, 0, canvas.width, canvas.height);
+          quadro = requestAnimationFrame(desenhar);
+        }
+        gravador.start();
+        video.play().then(desenhar).catch(reject);
+      };
+      video.onerror = () => reject(new Error("Falha ao carregar o vídeo"));
+    });
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Documento — biblioteca do CRM ou computador                            */
+  /* ---------------------------------------------------------------------- */
+
   function abrirUploadDocumento() {
     setAnexoAberto(false);
+    setErroAnexo(null);
+    setDocumentoOrigemAberto(true);
+  }
+
+  function abrirBibliotecaDocumentos() {
+    setDocumentoOrigemAberto(false);
+    setBuscaBiblioteca("");
+    setCategoriaBiblioteca("Todas");
+    setDocumentosSelecionadosBiblioteca([]);
+    setBibliotecaAberta(true);
+  }
+
+  function abrirUploadDocumentoComputador() {
+    setDocumentoOrigemAberto(false);
     documentoInputRef.current?.click();
+  }
+
+  function alternarDocumentoBiblioteca(id: string) {
+    setDocumentosSelecionadosBiblioteca((prev) =>
+      prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id],
+    );
+  }
+
+  function enviarDocumentosBiblioteca() {
+    const escolhidos = bibliotecaDocumentos.filter((d) =>
+      documentosSelecionadosBiblioteca.includes(d.id),
+    );
+    for (const doc of escolhidos) {
+      adicionarMensagem({
+        tipo: "out",
+        texto: "",
+        hora: horaAgora(),
+        documento: {
+          url: doc.url,
+          nome: doc.nome,
+          tamanho: doc.tamanho,
+          formato: doc.formato,
+          origem: "crm",
+        },
+      });
+    }
+    setBibliotecaAberta(false);
+    setDocumentosSelecionadosBiblioteca([]);
+  }
+
+  function validarDocumento(file: File): string | null {
+    if (file.size > TAMANHO_MAX_DOCUMENTO) {
+      return `Documento acima do limite permitido (máx. ${formatarTamanho(TAMANHO_MAX_DOCUMENTO)}).`;
+    }
+    return null;
+  }
+
+  async function adicionarDocumentoComputador(file: File) {
+    setErroAnexo(null);
+    const erro = validarDocumento(file);
+    if (erro) {
+      setErroAnexo(erro);
+      return;
+    }
+    const dataUrl = await lerComoDataUrl(file);
+    const formato = file.name.split(".").pop()?.toUpperCase() ?? "ARQ";
+    setDocumentoComputador({
+      file,
+      url: dataUrl,
+      nome: file.name,
+      tamanho: file.size,
+      formato,
+    });
+    setLegendaDocumento("");
+  }
+
+  function enviarDocumentoComputador() {
+    if (!documentoComputador) return;
+    setEnviandoDocumento(true);
+    adicionarMensagem({
+      tipo: "out",
+      texto: "",
+      hora: horaAgora(),
+      documento: {
+        url: documentoComputador.url,
+        nome: documentoComputador.nome,
+        tamanho: documentoComputador.tamanho,
+        formato: documentoComputador.formato,
+        origem: "computador",
+      },
+      legenda: legendaDocumento.trim() || undefined,
+    });
+    setEnviandoDocumento(false);
+    setDocumentoComputador(null);
+    setLegendaDocumento("");
   }
 
   function abrirContatoPicker() {
@@ -755,22 +1476,29 @@ function ConversasPageInner() {
   }
 
   function abrirMenuAnexo(rect: DOMRect) {
-    const largura = 220;
-    const alturaEstimada = 340;
+    const largura = 288;
+    const alturaEstimada = 300;
     const margem = 12;
     let left = rect.left;
-    let top = rect.bottom + 8;
+    // Abre acima do botão "+", como no WhatsApp — só desce se não couber em cima.
+    let top = rect.top - alturaEstimada - 8;
+    if (top < margem) top = rect.bottom + 8;
     if (left + largura > window.innerWidth - margem) {
       left = window.innerWidth - largura - margem;
     }
     if (left < margem) left = margem;
-    if (top + alturaEstimada > window.innerHeight - margem) {
-      top = rect.top - alturaEstimada - 8;
-      if (top < margem) top = margem;
-    }
     setAnexoPos({ x: left, y: top });
     setAnexoAberto(true);
   }
+
+  useEffect(() => {
+    if (!anexoAberto) return;
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === "Escape") setAnexoAberto(false);
+    }
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+  }, [anexoAberto]);
 
   function iniciarArrasteAnexo(e: React.MouseEvent) {
     const menuEl = (e.currentTarget as HTMLElement).closest(
@@ -1184,7 +1912,32 @@ function ConversasPageInner() {
             </button>
           </div>
 
-          <div className="chat-body">
+          <div
+            className={`chat-body${arrastandoArquivo ? " wa-dragover" : ""}`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (e.dataTransfer.types.includes("Files")) setArrastandoArquivo(true);
+            }}
+            onDragLeave={(e) => {
+              if (e.currentTarget === e.target) setArrastandoArquivo(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setArrastandoArquivo(false);
+              const arquivos = Array.from(e.dataTransfer.files);
+              const imgs = arquivos.filter((f) => f.type.startsWith("image/"));
+              const vids = arquivos.filter((f) => f.type.startsWith("video/"));
+              const docs = arquivos.filter(
+                (f) => !f.type.startsWith("image/") && !f.type.startsWith("video/"),
+              );
+              if (imgs.length) adicionarImagens(imgs);
+              if (vids.length) adicionarVideo(vids[0]);
+              if (docs.length) adicionarDocumentoComputador(docs[0]);
+            }}
+          >
+            {arrastandoArquivo ? (
+              <div className="wa-dragover-aviso">Solte o arquivo pra anexar</div>
+            ) : null}
             {aberta.mensagens.map((msg, i) => (
               <div
                 className={`bubble ${msg.tipo}`}
@@ -1208,7 +1961,7 @@ function ConversasPageInner() {
             {(mensagensExtraPorContato[aberta.nome] ?? []).map((msg, i) =>
               msg.localizacao ? (
                 <a
-                  key={`extra-${i}`}
+                  key={msg.id ?? `extra-${i}`}
                   className={`bubble ${msg.tipo} bubble-localizacao`}
                   href={`https://www.google.com/maps?q=${msg.localizacao.lat},${msg.localizacao.lng}`}
                   target="_blank"
@@ -1230,13 +1983,25 @@ function ConversasPageInner() {
                     )}
                     <span className="bubble-localizacao-link">Abrir no mapa →</span>
                   </div>
-                  {msg.hora ? <span className="tm">{msg.hora}</span> : null}
+                  <span className="tm">
+                    {msg.hora}
+                    {msg.tipo === "out" ? (
+                      <StatusMensagemIcone
+                        status={msg.status}
+                        onTentarNovamente={
+                          msg.status === "erro" && msg.id
+                            ? () => tentarNovamenteMensagem(msg.id!)
+                            : undefined
+                        }
+                      />
+                    ) : null}
+                  </span>
                 </a>
               ) : msg.contatoCompartilhado ? (
                 <button
                   type="button"
                   className={`bubble ${msg.tipo} bubble-contato`}
-                  key={`extra-${i}`}
+                  key={msg.id ?? `extra-${i}`}
                   onClick={() => {
                     setContatoDetalhePos(null);
                     setContatoDetalheAberto(msg.contatoCompartilhado!);
@@ -1249,12 +2014,145 @@ function ConversasPageInner() {
                       <span className="bubble-contato-numero">{msg.contatoCompartilhado.whatsapp}</span>
                     ) : null}
                   </div>
-                  {msg.hora ? <span className="tm">{msg.hora}</span> : null}
+                  <span className="tm">
+                    {msg.hora}
+                    {msg.tipo === "out" ? (
+                      <StatusMensagemIcone
+                        status={msg.status}
+                        onTentarNovamente={
+                          msg.status === "erro" && msg.id
+                            ? () => tentarNovamenteMensagem(msg.id!)
+                            : undefined
+                        }
+                      />
+                    ) : null}
+                  </span>
                 </button>
+              ) : msg.imagens && msg.imagens.length > 0 ? (
+                <div
+                  className={`bubble ${msg.tipo} bubble-midia`}
+                  key={msg.id ?? `extra-${i}`}
+                >
+                  <div
+                    className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}
+                  >
+                    {msg.imagens.map((img, ix) => (
+                      <button
+                        type="button"
+                        key={`${msg.id}-img-${ix}`}
+                        className="bubble-imagem-btn"
+                        onClick={() =>
+                          abrirLightbox(
+                            msg.imagens!.map((im) => im.url),
+                            ix,
+                          )
+                        }
+                      >
+                        <img src={img.url} alt={img.nome} loading="lazy" />
+                      </button>
+                    ))}
+                  </div>
+                  {msg.legenda ? (
+                    <p className="bubble-legenda">{msg.legenda}</p>
+                  ) : null}
+                  <span className="tm">
+                    {msg.hora}
+                    {msg.tipo === "out" ? (
+                      <StatusMensagemIcone
+                        status={msg.status}
+                        onTentarNovamente={
+                          msg.status === "erro" && msg.id
+                            ? () => tentarNovamenteMensagem(msg.id!)
+                            : undefined
+                        }
+                      />
+                    ) : null}
+                  </span>
+                </div>
+              ) : msg.video ? (
+                <div
+                  className={`bubble ${msg.tipo} bubble-midia`}
+                  key={msg.id ?? `extra-${i}`}
+                >
+                  <video
+                    className="bubble-video"
+                    src={msg.video.url}
+                    controls
+                    preload="metadata"
+                    muted={!msg.video.comAudio}
+                  />
+                  {msg.legenda ? (
+                    <p className="bubble-legenda">{msg.legenda}</p>
+                  ) : null}
+                  <span className="tm">
+                    {msg.hora}
+                    {msg.tipo === "out" ? (
+                      <StatusMensagemIcone
+                        status={msg.status}
+                        onTentarNovamente={
+                          msg.status === "erro" && msg.id
+                            ? () => tentarNovamenteMensagem(msg.id!)
+                            : undefined
+                        }
+                      />
+                    ) : null}
+                  </span>
+                </div>
+              ) : msg.documento ? (
+                <div
+                  className={`bubble ${msg.tipo} bubble-documento`}
+                  key={msg.id ?? `extra-${i}`}
+                >
+                  <a
+                    className="bubble-documento-cartao"
+                    href={msg.documento.url}
+                    download={msg.documento.nome}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span className="bubble-documento-icone">
+                      <IconDoc width={20} height={20} />
+                    </span>
+                    <span className="bubble-documento-info">
+                      <span className="bubble-documento-nome">{msg.documento.nome}</span>
+                      <span className="bubble-documento-meta">
+                        {msg.documento.formato} · {formatarTamanho(msg.documento.tamanho)}
+                      </span>
+                    </span>
+                  </a>
+                  {msg.legenda ? (
+                    <p className="bubble-legenda">{msg.legenda}</p>
+                  ) : null}
+                  <span className="tm">
+                    {msg.hora}
+                    {msg.tipo === "out" ? (
+                      <StatusMensagemIcone
+                        status={msg.status}
+                        onTentarNovamente={
+                          msg.status === "erro" && msg.id
+                            ? () => tentarNovamenteMensagem(msg.id!)
+                            : undefined
+                        }
+                      />
+                    ) : null}
+                  </span>
+                </div>
               ) : (
-                <div className={`bubble ${msg.tipo}`} key={`extra-${i}`}>
+                <div className={`bubble ${msg.tipo}`} key={msg.id ?? `extra-${i}`}>
                   {msg.texto}
-                  {msg.hora ? <span className="tm">{msg.hora}</span> : null}
+                  <span className="tm">
+                    {msg.hora}
+                    {msg.tipo === "out" ? (
+                      <StatusMensagemIcone
+                        status={msg.status}
+                        onTentarNovamente={
+                          msg.status === "erro" && msg.id
+                            ? () => tentarNovamenteMensagem(msg.id!)
+                            : undefined
+                        }
+                      />
+                    ) : null}
+                  </span>
                 </div>
               ),
             )}
@@ -1278,6 +2176,16 @@ function ConversasPageInner() {
             <div
               className="chat-input-wrap"
               onClick={() => mensagemInputRef.current?.focus()}
+              onPaste={(e) => {
+                const imagens = Array.from(e.clipboardData.items)
+                  .filter((item) => item.type.startsWith("image/"))
+                  .map((item) => item.getAsFile())
+                  .filter((f): f is File => f !== null);
+                if (imagens.length > 0) {
+                  e.preventDefault();
+                  adicionarImagens(imagens);
+                }
+              }}
             >
               {gravandoAudio ? (
                 <div className="box chat-input-gravando">
@@ -1367,22 +2275,22 @@ function ConversasPageInner() {
           <input
             ref={imagemInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
             style={{ display: "none" }}
             onChange={(e) => {
-              const arquivo = e.target.files?.[0];
-              if (arquivo) anexarArquivo("🖼️ Imagem enviada", arquivo);
+              if (e.target.files?.length) adicionarImagens(e.target.files);
               e.target.value = "";
             }}
           />
           <input
             ref={videoInputRef}
             type="file"
-            accept="video/*"
+            accept="video/mp4,video/webm,video/quicktime,video/3gpp"
             style={{ display: "none" }}
             onChange={(e) => {
               const arquivo = e.target.files?.[0];
-              if (arquivo) anexarArquivo("🎥 Vídeo enviado", arquivo);
+              if (arquivo) adicionarVideo(arquivo);
               e.target.value = "";
             }}
           />
@@ -1393,7 +2301,7 @@ function ConversasPageInner() {
             style={{ display: "none" }}
             onChange={(e) => {
               const arquivo = e.target.files?.[0];
-              if (arquivo) anexarArquivo("📄 Documento enviado", arquivo);
+              if (arquivo) adicionarDocumentoComputador(arquivo);
               e.target.value = "";
             }}
           />
@@ -1406,8 +2314,10 @@ function ConversasPageInner() {
                     style={{ position: "fixed", inset: 0, zIndex: 190 }}
                   />
                   <div
-                    className="wa-anexo-menu"
+                    className="wa-anexo-menu wa-anexo-menu-grid"
                     style={{ left: anexoPos.x, top: anexoPos.y }}
+                    role="menu"
+                    aria-label="Anexar"
                   >
                     <div
                       className="wa-anexo-drag"
@@ -1416,83 +2326,791 @@ function ConversasPageInner() {
                     >
                       ⠿⠿⠿
                     </div>
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={abrirUploadImagem}
-                    >
-                      <span className="n">Imagem</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={abrirUploadVideo}
-                    >
-                      <span className="n">Vídeo</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={abrirUploadDocumento}
-                    >
-                      <span className="n">Documento</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={abrirContatoPicker}
-                    >
-                      <span className="n">Contato</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={compartilharLocalizacao}
-                    >
-                      <span className="n">Localização</span>
-                    </button>
-                    <div className="dropdown-sep" />
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={() => {
-                        setAnexoAberto(false);
-                        setMensagemTexto("//");
-                      }}
-                    >
-                      <span className="n">⚡ Executar Automação</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={(e) => {
-                        setAnexoAberto(false);
-                        abrirRespostasGerenciar(e.currentTarget.getBoundingClientRect());
-                      }}
-                    >
-                      <span className="n">💬 Respostas Rápidas</span>
-                    </button>
-                    <div className="dropdown-sep" />
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left", color: "#d64545" }}
-                      onClick={() => setAnexoAberto(false)}
-                    >
-                      <span className="n">✕ Fechar</span>
-                    </button>
+                    <div className="wa-anexo-grid">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="wa-anexo-item"
+                        onClick={abrirUploadImagem}
+                      >
+                        <span className="wa-anexo-icone wa-anexo-icone-imagem">
+                          <IconImage width={19} height={19} />
+                        </span>
+                        <span className="wa-anexo-label">Fotos e imagens</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="wa-anexo-item"
+                        onClick={abrirUploadVideo}
+                      >
+                        <span className="wa-anexo-icone wa-anexo-icone-video">
+                          <IconVideoCam width={19} height={19} />
+                        </span>
+                        <span className="wa-anexo-label">Vídeos</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="wa-anexo-item"
+                        onClick={abrirUploadDocumento}
+                      >
+                        <span className="wa-anexo-icone wa-anexo-icone-documento">
+                          <IconDoc width={19} height={19} />
+                        </span>
+                        <span className="wa-anexo-label">Documentos</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="wa-anexo-item"
+                        onClick={abrirContatoPicker}
+                      >
+                        <span className="wa-anexo-icone wa-anexo-icone-contato">
+                          <IconContatos width={19} height={19} />
+                        </span>
+                        <span className="wa-anexo-label">Contatos</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="wa-anexo-item"
+                        onClick={compartilharLocalizacao}
+                      >
+                        <span className="wa-anexo-icone wa-anexo-icone-localizacao">
+                          <IconLocalizacao width={19} height={19} />
+                        </span>
+                        <span className="wa-anexo-label">Localização</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="wa-anexo-item"
+                        onClick={() => {
+                          setAnexoAberto(false);
+                          setMensagemTexto("//");
+                          mensagemInputRef.current?.focus();
+                        }}
+                      >
+                        <span className="wa-anexo-icone wa-anexo-icone-automacao">
+                          <IconAutomacoes width={19} height={19} />
+                        </span>
+                        <span className="wa-anexo-label">Executar automação</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="wa-anexo-item"
+                        onClick={(e) => {
+                          setAnexoAberto(false);
+                          abrirRespostasGerenciar(e.currentTarget.getBoundingClientRect());
+                        }}
+                      >
+                        <span className="wa-anexo-icone wa-anexo-icone-resposta">
+                          <IconRespostaRapida width={19} height={19} />
+                        </span>
+                        <span className="wa-anexo-label">Respostas rápidas</span>
+                      </button>
+                    </div>
+                    {erroAnexo ? (
+                      <p className="wa-anexo-erro" role="alert">
+                        {erroAnexo}
+                      </p>
+                    ) : null}
                   </div>
                 </>,
                 document.body,
               )
             : null}
+
+          {imagemPreviewAberto && imagemAtiva() ? (
+            <div className="form-preview-overlay" onClick={fecharPreviewImagem}>
+              <div
+                className="wa-midia-preview"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
+                  <p className="n">
+                    {imagensSelecionadas.length > 1
+                      ? `${imagensSelecionadas.length} imagens selecionadas`
+                      : "Enviar imagem"}
+                  </p>
+                  <button
+                    type="button"
+                    className="modal-close-btn"
+                    aria-label="Cancelar"
+                    onClick={fecharPreviewImagem}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="wa-midia-preview-palco">
+                  <img
+                    src={imagemAtiva()!.atual}
+                    alt={imagemAtiva()!.nome}
+                    className="wa-midia-preview-imagem"
+                    style={
+                      imagemModoCorte
+                        ? { clipPath: "none" }
+                        : undefined
+                    }
+                  />
+                  {imagemModoCorte ? (
+                    <div
+                      className="wa-corte-rect"
+                      style={{
+                        left: `${imagemCorteRect.x}%`,
+                        top: `${imagemCorteRect.y}%`,
+                        width: `${imagemCorteRect.w}%`,
+                        height: `${imagemCorteRect.h}%`,
+                      }}
+                    />
+                  ) : null}
+                </div>
+
+                {imagemModoCorte ? (
+                  <div className="wa-edicao-toolbar">
+                    <label className="hint">
+                      X
+                      <input
+                        type="range"
+                        min={0}
+                        max={90}
+                        value={imagemCorteRect.x}
+                        onChange={(e) =>
+                          setImagemCorteRect((r) => ({ ...r, x: Number(e.target.value) }))
+                        }
+                      />
+                    </label>
+                    <label className="hint">
+                      Y
+                      <input
+                        type="range"
+                        min={0}
+                        max={90}
+                        value={imagemCorteRect.y}
+                        onChange={(e) =>
+                          setImagemCorteRect((r) => ({ ...r, y: Number(e.target.value) }))
+                        }
+                      />
+                    </label>
+                    <label className="hint">
+                      Largura
+                      <input
+                        type="range"
+                        min={10}
+                        max={100}
+                        value={imagemCorteRect.w}
+                        onChange={(e) =>
+                          setImagemCorteRect((r) => ({ ...r, w: Number(e.target.value) }))
+                        }
+                      />
+                    </label>
+                    <label className="hint">
+                      Altura
+                      <input
+                        type="range"
+                        min={10}
+                        max={100}
+                        value={imagemCorteRect.h}
+                        onChange={(e) =>
+                          setImagemCorteRect((r) => ({ ...r, h: Number(e.target.value) }))
+                        }
+                      />
+                    </label>
+                    <button type="button" className="btn primary" onClick={aplicarCorteImagem}>
+                      Aplicar corte
+                    </button>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => setImagemModoCorte(false)}
+                    >
+                      Cancelar corte
+                    </button>
+                  </div>
+                ) : (
+                  <div className="wa-edicao-toolbar">
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => setImagemModoCorte(true)}
+                    >
+                      ✂️ Cortar
+                    </button>
+                    <button type="button" className="btn ghost" onClick={girarImagem90}>
+                      🔄 Girar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={desfazerEdicaoImagem}
+                    >
+                      ↩ Desfazer
+                    </button>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={refazerEdicaoImagem}
+                    >
+                      ↪ Refazer
+                    </button>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={restaurarImagemOriginal}
+                    >
+                      Restaurar original
+                    </button>
+                  </div>
+                )}
+
+                {imagensSelecionadas.length > 1 ? (
+                  <div className="wa-midia-miniaturas">
+                    {imagensSelecionadas.map((img) => (
+                      <div
+                        key={img.id}
+                        className={`wa-midia-miniatura${img.id === imagemAtivaId ? " active" : ""}`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setImagemAtivaId(img.id)}
+                        >
+                          <img src={img.atual} alt={img.nome} />
+                        </button>
+                        <button
+                          type="button"
+                          className="wa-midia-miniatura-remover"
+                          aria-label={`Remover ${img.nome}`}
+                          onClick={() => removerImagemSelecionada(img.id)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      className="wa-midia-miniatura wa-midia-miniatura-add"
+                      aria-label="Adicionar mais imagens"
+                      onClick={() => imagemInputRef.current?.click()}
+                    >
+                      +
+                    </button>
+                  </div>
+                ) : null}
+
+                {erroAnexo ? (
+                  <p className="wa-anexo-erro" role="alert">
+                    {erroAnexo}
+                  </p>
+                ) : null}
+
+                <input
+                  className="input"
+                  style={{ width: "100%", marginTop: 10 }}
+                  placeholder="Adicionar legenda…"
+                  value={legendaImagem}
+                  onChange={(e) => setLegendaImagem(e.target.value)}
+                />
+
+                <div className="wa-contato-modal-rodape">
+                  <button type="button" className="btn ghost" onClick={fecharPreviewImagem}>
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={enviandoImagens}
+                    onClick={enviarImagensSelecionadas}
+                  >
+                    {enviandoImagens
+                      ? "Enviando…"
+                      : `Enviar${imagensSelecionadas.length > 1 ? ` (${imagensSelecionadas.length})` : ""}`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {videoPreviewAberto && videoSelecionado ? (
+            <div className="form-preview-overlay" onClick={fecharPreviewVideo}>
+              <div className="wa-midia-preview" onClick={(e) => e.stopPropagation()}>
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
+                  <p className="n">Enviar vídeo</p>
+                  <button
+                    type="button"
+                    className="modal-close-btn"
+                    aria-label="Cancelar"
+                    onClick={fecharPreviewVideo}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="wa-midia-preview-palco">
+                  <video
+                    ref={videoPreviewRef}
+                    src={videoSelecionado.url}
+                    controls
+                    muted={videoMudo}
+                    className="wa-midia-preview-video"
+                  />
+                </div>
+
+                <div className="wa-video-trim">
+                  <span className="hint">
+                    Corte: {videoInicio.toFixed(1)}s até {videoFim.toFixed(1)}s de{" "}
+                    {videoSelecionado.duracao.toFixed(1)}s
+                  </span>
+                  <div className="wa-video-trim-sliders">
+                    <input
+                      type="range"
+                      min={0}
+                      max={videoSelecionado.duracao}
+                      step={0.1}
+                      value={videoInicio}
+                      onChange={(e) => {
+                        const v = Math.min(Number(e.target.value), videoFim - 0.2);
+                        setVideoInicio(Math.max(0, v));
+                      }}
+                    />
+                    <input
+                      type="range"
+                      min={0}
+                      max={videoSelecionado.duracao}
+                      step={0.1}
+                      value={videoFim}
+                      onChange={(e) => {
+                        const v = Math.max(Number(e.target.value), videoInicio + 0.2);
+                        setVideoFim(Math.min(videoSelecionado.duracao, v));
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="wa-edicao-toolbar">
+                  <button
+                    type="button"
+                    className={`btn ghost${videoMudo ? " active" : ""}`}
+                    onClick={() => setVideoMudo((v) => !v)}
+                  >
+                    {videoMudo ? "🔇 Sem áudio" : "🔊 Com áudio"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => {
+                      setVideoInicio(0);
+                      setVideoFim(videoSelecionado.duracao);
+                      setVideoMudo(false);
+                    }}
+                  >
+                    ↩ Desfazer edição
+                  </button>
+                </div>
+
+                {videoErro ? (
+                  <p className="wa-anexo-erro" role="alert">
+                    {videoErro}
+                  </p>
+                ) : null}
+
+                <input
+                  className="input"
+                  style={{ width: "100%", marginTop: 10 }}
+                  placeholder="Adicionar legenda…"
+                  value={legendaVideo}
+                  onChange={(e) => setLegendaVideo(e.target.value)}
+                />
+
+                <div className="wa-contato-modal-rodape">
+                  <button type="button" className="btn ghost" onClick={fecharPreviewVideo}>
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    disabled={videoProcessando}
+                    onClick={() => processarEEnviarVideo(true)}
+                  >
+                    Enviar sem editar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={videoProcessando}
+                    onClick={() => processarEEnviarVideo(false)}
+                  >
+                    {videoProcessando ? "Processando…" : "Enviar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {documentoOrigemAberto ? (
+            <div
+              className="form-preview-overlay"
+              onClick={() => setDocumentoOrigemAberto(false)}
+            >
+              <div
+                className="wa-email-modal wa-contato-modal"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+                  <p className="n">Enviar documento</p>
+                  <button
+                    type="button"
+                    className="modal-close-btn"
+                    aria-label="Fechar"
+                    onClick={() => setDocumentoOrigemAberto(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="wa-doc-origem-opcoes">
+                  <button
+                    type="button"
+                    className="wa-doc-origem-opcao"
+                    onClick={abrirBibliotecaDocumentos}
+                  >
+                    <span className="wa-anexo-icone wa-anexo-icone-documento">
+                      <IconDoc width={20} height={20} />
+                    </span>
+                    <span>
+                      <span className="n" style={{ display: "block" }}>
+                        Escolher documento do CRM
+                      </span>
+                      <span className="hint">Biblioteca de documentos já salvos no sistema</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="wa-doc-origem-opcao"
+                    onClick={abrirUploadDocumentoComputador}
+                  >
+                    <span className="wa-anexo-icone wa-anexo-icone-documento">
+                      <IconDoc width={20} height={20} />
+                    </span>
+                    <span>
+                      <span className="n" style={{ display: "block" }}>
+                        Escolher documento do computador
+                      </span>
+                      <span className="hint">Enviar um arquivo do seu dispositivo</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {bibliotecaAberta ? (
+            <div className="form-preview-overlay" onClick={() => setBibliotecaAberta(false)}>
+              <div
+                className="wa-email-modal wa-biblioteca-modal"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 12 }}>
+                  <p className="n">Documentos do CRM</p>
+                  <button
+                    type="button"
+                    className="modal-close-btn"
+                    aria-label="Fechar"
+                    onClick={() => setBibliotecaAberta(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <input
+                  className="input"
+                  style={{ width: "100%" }}
+                  placeholder="Pesquisar documento…"
+                  value={buscaBiblioteca}
+                  onChange={(e) => setBuscaBiblioteca(e.target.value)}
+                />
+
+                <div className="filters-row" style={{ marginTop: 10, marginBottom: 10 }}>
+                  {["Todas", ...CATEGORIAS_DOCUMENTO].map((cat) => (
+                    <button
+                      type="button"
+                      key={cat}
+                      className={`fchip${categoriaBiblioteca === cat ? " active" : ""}`}
+                      onClick={() => setCategoriaBiblioteca(cat)}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="wa-biblioteca-lista">
+                  {bibliotecaDocumentos
+                    .filter(
+                      (d) =>
+                        (categoriaBiblioteca === "Todas" || d.categoria === categoriaBiblioteca) &&
+                        d.nome.toLowerCase().includes(buscaBiblioteca.trim().toLowerCase()),
+                    )
+                    .map((doc) => (
+                      <div key={doc.id} className="wa-biblioteca-item">
+                        <input
+                          type="checkbox"
+                          checked={documentosSelecionadosBiblioteca.includes(doc.id)}
+                          onChange={() => alternarDocumentoBiblioteca(doc.id)}
+                          aria-label={`Selecionar ${doc.nome}`}
+                        />
+                        <span className="wa-anexo-icone wa-anexo-icone-documento" style={{ width: 32, height: 32 }}>
+                          <IconDoc width={16} height={16} />
+                        </span>
+                        <div className="wa-biblioteca-item-info">
+                          <span className="n" style={{ display: "block" }}>{doc.nome}</span>
+                          <span className="hint">
+                            {doc.categoria} · {doc.formato} · {formatarTamanho(doc.tamanho)} ·{" "}
+                            {doc.autor} · atualizado em{" "}
+                            {new Date(doc.atualizadoEm).toLocaleDateString("pt-BR")}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          onClick={() =>
+                            setDocumentoPreviewAberto({
+                              nome: doc.nome,
+                              url: doc.url,
+                              formato: doc.formato,
+                            })
+                          }
+                        >
+                          Visualizar
+                        </button>
+                      </div>
+                    ))}
+                  {bibliotecaDocumentos.filter(
+                    (d) =>
+                      (categoriaBiblioteca === "Todas" || d.categoria === categoriaBiblioteca) &&
+                      d.nome.toLowerCase().includes(buscaBiblioteca.trim().toLowerCase()),
+                  ).length === 0 ? (
+                    <p className="hint" style={{ padding: 16 }}>
+                      Nenhum documento encontrado.
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="wa-contato-modal-rodape">
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => setBibliotecaAberta(false)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={documentosSelecionadosBiblioteca.length === 0}
+                    onClick={enviarDocumentosBiblioteca}
+                  >
+                    Enviar
+                    {documentosSelecionadosBiblioteca.length > 0
+                      ? ` (${documentosSelecionadosBiblioteca.length})`
+                      : ""}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {documentoPreviewAberto ? (
+            <div
+              className="form-preview-overlay"
+              onClick={() => setDocumentoPreviewAberto(null)}
+            >
+              <div
+                className="wa-doc-visualizador"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
+                  <p className="n">{documentoPreviewAberto.nome}</p>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <a
+                      className="btn ghost"
+                      href={documentoPreviewAberto.url}
+                      download={documentoPreviewAberto.nome}
+                    >
+                      Baixar
+                    </a>
+                    <button
+                      type="button"
+                      className="modal-close-btn"
+                      aria-label="Fechar"
+                      onClick={() => setDocumentoPreviewAberto(null)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+                <iframe
+                  src={documentoPreviewAberto.url}
+                  title={documentoPreviewAberto.nome}
+                  className="wa-doc-visualizador-frame"
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {documentoComputador ? (
+            <div
+              className="form-preview-overlay"
+              onClick={() => setDocumentoComputador(null)}
+            >
+              <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+                  <p className="n">Enviar documento</p>
+                  <button
+                    type="button"
+                    className="modal-close-btn"
+                    aria-label="Cancelar"
+                    onClick={() => setDocumentoComputador(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="wa-biblioteca-item" style={{ border: "1px solid var(--line)", borderRadius: 10 }}>
+                  <span className="wa-anexo-icone wa-anexo-icone-documento">
+                    <IconDoc width={18} height={18} />
+                  </span>
+                  <div className="wa-biblioteca-item-info">
+                    <span className="n" style={{ display: "block" }}>{documentoComputador.nome}</span>
+                    <span className="hint">
+                      {documentoComputador.formato} · {formatarTamanho(documentoComputador.tamanho)}
+                    </span>
+                  </div>
+                </div>
+                {erroAnexo ? (
+                  <p className="wa-anexo-erro" role="alert">
+                    {erroAnexo}
+                  </p>
+                ) : null}
+                <input
+                  className="input"
+                  style={{ width: "100%", marginTop: 10 }}
+                  placeholder="Adicionar uma mensagem (opcional)…"
+                  value={legendaDocumento}
+                  onChange={(e) => setLegendaDocumento(e.target.value)}
+                />
+                <div className="wa-contato-modal-rodape">
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => setDocumentoComputador(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => documentoInputRef.current?.click()}
+                  >
+                    Substituir arquivo
+                  </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={enviandoDocumento}
+                    onClick={enviarDocumentoComputador}
+                  >
+                    {enviandoDocumento ? "Enviando…" : "Enviar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {lightbox ? (
+            <div
+              className="wa-lightbox-overlay"
+              onClick={() => setLightbox(null)}
+            >
+              <button
+                type="button"
+                className="wa-lightbox-fechar"
+                aria-label="Fechar"
+                onClick={() => setLightbox(null)}
+              >
+                ✕
+              </button>
+              {lightbox.urls.length > 1 ? (
+                <button
+                  type="button"
+                  className="wa-lightbox-nav wa-lightbox-nav-prev"
+                  aria-label="Imagem anterior"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightbox((lb) =>
+                      lb
+                        ? {
+                            ...lb,
+                            indice: (lb.indice - 1 + lb.urls.length) % lb.urls.length,
+                            zoom: 1,
+                          }
+                        : lb,
+                    );
+                  }}
+                >
+                  ‹
+                </button>
+              ) : null}
+              <img
+                src={lightbox.urls[lightbox.indice]}
+                alt="Imagem em tamanho maior"
+                className="wa-lightbox-imagem"
+                style={{ transform: `scale(${lightbox.zoom})` }}
+                onClick={(e) => e.stopPropagation()}
+              />
+              {lightbox.urls.length > 1 ? (
+                <button
+                  type="button"
+                  className="wa-lightbox-nav wa-lightbox-nav-next"
+                  aria-label="Próxima imagem"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightbox((lb) =>
+                      lb ? { ...lb, indice: (lb.indice + 1) % lb.urls.length, zoom: 1 } : lb,
+                    );
+                  }}
+                >
+                  ›
+                </button>
+              ) : null}
+              <div className="wa-lightbox-acoes" onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() =>
+                    setLightbox((lb) => (lb ? { ...lb, zoom: Math.max(1, lb.zoom - 0.25) } : lb))
+                  }
+                >
+                  − Zoom
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() =>
+                    setLightbox((lb) => (lb ? { ...lb, zoom: Math.min(3, lb.zoom + 0.25) } : lb))
+                  }
+                >
+                  + Zoom
+                </button>
+                <a
+                  className="btn ghost"
+                  href={lightbox.urls[lightbox.indice]}
+                  download={`imagem-${lightbox.indice + 1}`}
+                >
+                  Baixar
+                </a>
+              </div>
+            </div>
+          ) : null}
 
           {contatoPickerAberto ? (
             <div className="form-preview-overlay" onClick={fecharContatoPicker}>

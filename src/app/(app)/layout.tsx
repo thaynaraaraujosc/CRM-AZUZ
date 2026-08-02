@@ -1,6 +1,7 @@
 import { AppHeader } from "@/components/app-header";
 import { Sidebar } from "@/components/sidebar";
 import { AutomacoesProvider } from "@/lib/automacoes-context";
+import { BibliotecaDocumentosProvider } from "@/lib/biblioteca-documentos-context";
 import { ContatosProvider } from "@/lib/contatos-context";
 import { DocumentosProvider } from "@/lib/documentos-context";
 import { FormulariosProvider } from "@/lib/formularios-context";
@@ -17,13 +18,15 @@ export default function AppLayout({
           <NotificacoesProvider>
             <FormulariosProvider>
               <DocumentosProvider>
-                <div className="shell">
-                  <Sidebar />
-                  <main className="main">
-                    <AppHeader />
-                    {children}
-                  </main>
-                </div>
+                <BibliotecaDocumentosProvider>
+                  <div className="shell">
+                    <Sidebar />
+                    <main className="main">
+                      <AppHeader />
+                      {children}
+                    </main>
+                  </div>
+                </BibliotecaDocumentosProvider>
               </DocumentosProvider>
             </FormulariosProvider>
           </NotificacoesProvider>
