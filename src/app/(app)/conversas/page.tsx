@@ -190,6 +190,23 @@ export default function ConversasPage() {
   );
 }
 
+/** Fecha um popup flutuante ao clicar fora dele — usado pelos popups menores (mídias, conectar, detalhe do contato). */
+function useFecharAoClicarFora(
+  ref: React.RefObject<HTMLElement | null>,
+  ativo: boolean,
+  aoFechar: () => void,
+) {
+  useEffect(() => {
+    if (!ativo) return;
+    function aoClicarFora(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) aoFechar();
+    }
+    document.addEventListener("mousedown", aoClicarFora);
+    return () => document.removeEventListener("mousedown", aoClicarFora);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ativo]);
+}
+
 function ConversasPageInner() {
   const searchParams = useSearchParams();
   const { funis, atribuirContatoAoFunil } = useFunis();
@@ -218,10 +235,25 @@ function ConversasPageInner() {
   const [filtroConversa, setFiltroConversa] = useState<FiltroConversa>("tudo");
   const [lidas, setLidas] = useState<Set<string>>(() => new Set());
   const [midiasAberto, setMidiasAberto] = useState(false);
+  const [midiasPos, setMidiasPos] = useState<{ x: number; y: number } | null>(null);
+  const midiasRef = useRef<HTMLDivElement>(null);
   const [conectarAberto, setConectarAberto] = useState(false);
   const [conectarAba, setConectarAba] = useState<"qr" | "api">("qr");
+  const [conectarPos, setConectarPos] = useState<{ x: number; y: number } | null>(null);
+  const conectarRef = useRef<HTMLDivElement>(null);
+  const [contatoDetalhePos, setContatoDetalhePos] = useState<{ x: number; y: number } | null>(null);
+  const contatoDetalheRef = useRef<HTMLDivElement>(null);
+  const [contatoDetalheAberto, setContatoDetalheAberto] = useState<{
+    nome: string;
+    initials: string;
+    whatsapp?: string;
+  } | null>(null);
   const [infoWidth, setInfoWidth] = useState(320);
   const [sincronizando, setSincronizando] = useState(false);
+
+  useFecharAoClicarFora(midiasRef, midiasAberto, () => setMidiasAberto(false));
+  useFecharAoClicarFora(conectarRef, conectarAberto, () => setConectarAberto(false));
+  useFecharAoClicarFora(contatoDetalheRef, !!contatoDetalheAberto, () => setContatoDetalheAberto(null));
 
   /** Força um recarregamento da lista — usado se as mensagens do celular conectado saírem de sincronia com o servidor. */
   function sincronizarConversas() {
@@ -336,11 +368,6 @@ function ConversasPageInner() {
   const [buscaContatoPicker, setBuscaContatoPicker] = useState("");
   const [contatoSugestoesAberta, setContatoSugestoesAberta] = useState(false);
   const [contatoSelecionado, setContatoSelecionado] = useState<{
-    nome: string;
-    initials: string;
-    whatsapp?: string;
-  } | null>(null);
-  const [contatoDetalheAberto, setContatoDetalheAberto] = useState<{
     nome: string;
     initials: string;
     whatsapp?: string;
@@ -649,6 +676,29 @@ function ConversasPageInner() {
     setMensagemTexto(texto);
   }
 
+  /** Fábrica de handler de arrastar — usada pelos popups flutuantes menores (mídias, conectar, detalhe do contato). */
+  function criarIniciarArraste(
+    seletor: string,
+    setPos: (p: { x: number; y: number }) => void,
+  ) {
+    return (e: React.MouseEvent) => {
+      const el = (e.currentTarget as HTMLElement).closest(seletor) as HTMLElement | null;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const dx = e.clientX - rect.left;
+      const dy = e.clientY - rect.top;
+      function mover(ev: MouseEvent) {
+        setPos({ x: ev.clientX - dx, y: ev.clientY - dy });
+      }
+      function soltar() {
+        window.removeEventListener("mousemove", mover);
+        window.removeEventListener("mouseup", soltar);
+      }
+      window.addEventListener("mousemove", mover);
+      window.addEventListener("mouseup", soltar);
+    };
+  }
+
   const automacoesDoFunil = automacoes.filter((a) => a.funilId === funilSelecionadoId);
 
   function executarAutomacaoNaConversa(automacaoId: string) {
@@ -920,7 +970,10 @@ function ConversasPageInner() {
             <button
               type="button"
               className="btn ghost"
-              onClick={() => setConectarAberto(true)}
+              onClick={() => {
+                setConectarPos(null);
+                setConectarAberto(true);
+              }}
             >
               🔗 Conectar WhatsApp
             </button>
@@ -1106,7 +1159,10 @@ function ConversasPageInner() {
             <button
               type="button"
               className="wa-conv-titulo-btn"
-              onClick={() => setMidiasAberto(true)}
+              onClick={() => {
+                setMidiasPos(null);
+                setMidiasAberto(true);
+              }}
               title="Ver mídias e arquivos trocados nessa conversa"
             >
               <div className="avatar">{aberta.initials}</div>
@@ -1181,7 +1237,10 @@ function ConversasPageInner() {
                   type="button"
                   className={`bubble ${msg.tipo} bubble-contato`}
                   key={`extra-${i}`}
-                  onClick={() => setContatoDetalheAberto(msg.contatoCompartilhado!)}
+                  onClick={() => {
+                    setContatoDetalhePos(null);
+                    setContatoDetalheAberto(msg.contatoCompartilhado!);
+                  }}
                 >
                   <span className="avatar">{msg.contatoCompartilhado.initials}</span>
                   <div className="bubble-contato-info">
@@ -1539,39 +1598,58 @@ function ConversasPageInner() {
           ) : null}
 
           {contatoDetalheAberto ? (
-            <div className="form-preview-overlay" onClick={() => setContatoDetalheAberto(null)}>
-              <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-                  <div>
-                    <p className="n">{contatoDetalheAberto.nome}</p>
-                    <p className="s">Contato compartilhado</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="modal-close-btn"
-                    aria-label="Fechar"
-                    onClick={() => setContatoDetalheAberto(null)}
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="wa-contato-detalhe-corpo">
-                  <span className="avatar wa-contato-detalhe-avatar">{contatoDetalheAberto.initials}</span>
+            <div
+              ref={contatoDetalheRef}
+              className="wa-email-modal wa-email-floating"
+              style={
+                contatoDetalhePos
+                  ? { left: contatoDetalhePos.x, top: contatoDetalhePos.y, right: "auto", bottom: "auto" }
+                  : undefined
+              }
+            >
+              <div
+                className="wa-email-drag"
+                onMouseDown={criarIniciarArraste(".wa-email-modal", setContatoDetalhePos)}
+              >
+                <div>
                   <p className="n">{contatoDetalheAberto.nome}</p>
-                  {contatoDetalheAberto.whatsapp ? (
-                    <p className="wa-contato-picker-numero">📞 {contatoDetalheAberto.whatsapp}</p>
-                  ) : (
-                    <p className="hint">Sem número de WhatsApp cadastrado</p>
-                  )}
+                  <p className="s">Contato compartilhado</p>
                 </div>
                 <button
                   type="button"
-                  className="btn primary block"
-                  onClick={() => salvarContatoVcf(contatoDetalheAberto)}
+                  className="modal-close-btn"
+                  aria-label="Fechar"
+                  onClick={() => setContatoDetalheAberto(null)}
                 >
-                  💾 Salvar contato
+                  ✕
                 </button>
               </div>
+              <div className="wa-contato-detalhe-corpo">
+                <span className="avatar wa-contato-detalhe-avatar">{contatoDetalheAberto.initials}</span>
+                <p className="n">{contatoDetalheAberto.nome}</p>
+                {contatoDetalheAberto.whatsapp ? (
+                  <p className="wa-contato-picker-numero">📞 {contatoDetalheAberto.whatsapp}</p>
+                ) : (
+                  <p className="hint">Sem número de WhatsApp cadastrado</p>
+                )}
+              </div>
+              {contatoDetalheAberto.whatsapp ? (
+                <a
+                  className="btn primary block mb14"
+                  href={`https://wa.me/${contatoDetalheAberto.whatsapp.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  💬 Conversar no WhatsApp
+                </a>
+              ) : null}
+              <button
+                type="button"
+                className="btn ghost block"
+                onClick={() => salvarContatoVcf(contatoDetalheAberto)}
+              >
+                💾 Salvar contato
+              </button>
             </div>
           ) : null}
 
@@ -2065,36 +2143,42 @@ function ConversasPageInner() {
       ) : null}
 
       {midiasAberto ? (
-        <div className="form-preview-overlay" onClick={() => setMidiasAberto(false)}>
-          <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-              <div>
-                <p className="n">Mídias e arquivos</p>
-                <p className="s">Trocados com {aberta.nome}</p>
-              </div>
-              <button
-                type="button"
-                className="modal-close-btn"
-                aria-label="Fechar"
-                onClick={() => setMidiasAberto(false)}
-              >
-                ✕
-              </button>
+        <div
+          ref={midiasRef}
+          className="wa-email-modal wa-email-floating"
+          style={
+            midiasPos
+              ? { left: midiasPos.x, top: midiasPos.y, right: "auto", bottom: "auto" }
+              : undefined
+          }
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setMidiasPos)}>
+            <div>
+              <p className="n">Mídias e arquivos</p>
+              <p className="s">Trocados com {aberta.nome}</p>
             </div>
-            {aberta.tarefa.anexo ? (
-              <div className="field" style={{ padding: "10px 0" }}>
-                <div className="attach-chip">
-                  <IconDoc />
-                  <span className="fn">{aberta.tarefa.anexo.arquivo}</span>
-                  <span className="fs">{aberta.tarefa.anexo.detalhe}</span>
-                </div>
-              </div>
-            ) : (
-              <p className="hint" style={{ padding: "10px 0" }}>
-                Nenhuma mídia trocada nessa conversa ainda.
-              </p>
-            )}
+            <button
+              type="button"
+              className="modal-close-btn"
+              aria-label="Fechar"
+              onClick={() => setMidiasAberto(false)}
+            >
+              ✕
+            </button>
           </div>
+          {aberta.tarefa.anexo ? (
+            <div className="field" style={{ padding: "10px 0" }}>
+              <div className="attach-chip">
+                <IconDoc />
+                <span className="fn">{aberta.tarefa.anexo.arquivo}</span>
+                <span className="fs">{aberta.tarefa.anexo.detalhe}</span>
+              </div>
+            </div>
+          ) : (
+            <p className="hint" style={{ padding: "10px 0" }}>
+              Nenhuma mídia trocada nessa conversa ainda.
+            </p>
+          )}
         </div>
       ) : null}
 
@@ -2181,75 +2265,81 @@ function ConversasPageInner() {
       ) : null}
 
       {conectarAberto ? (
-        <div className="form-preview-overlay" onClick={() => setConectarAberto(false)}>
-          <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-              <div>
-                <p className="n">Conectar WhatsApp</p>
-                <p className="s">Escolha como conectar o número da clínica</p>
+        <div
+          ref={conectarRef}
+          className="wa-email-modal wa-email-floating"
+          style={
+            conectarPos
+              ? { left: conectarPos.x, top: conectarPos.y, right: "auto", bottom: "auto" }
+              : undefined
+          }
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setConectarPos)}>
+            <div>
+              <p className="n">Conectar WhatsApp</p>
+              <p className="s">Escolha como conectar o número da clínica</p>
+            </div>
+            <button
+              type="button"
+              className="modal-close-btn"
+              aria-label="Fechar"
+              onClick={() => setConectarAberto(false)}
+            >
+              ✕
+            </button>
+          </div>
+          <div className="filters-row mb14">
+            <button
+              type="button"
+              className={`fchip${conectarAba === "qr" ? " active" : ""}`}
+              onClick={() => setConectarAba("qr")}
+            >
+              QR Code (não oficial)
+            </button>
+            <button
+              type="button"
+              className={`fchip${conectarAba === "api" ? " active" : ""}`}
+              onClick={() => setConectarAba("api")}
+            >
+              API oficial (Meta)
+            </button>
+          </div>
+          {conectarAba === "qr" ? (
+            <div style={{ textAlign: "center", padding: "6px 0 14px" }}>
+              <div className="wa-qr-box">📷</div>
+              <p className="hint" style={{ marginTop: 10 }}>
+                Abra o WhatsApp no celular da clínica → Aparelhos conectados →
+                Conectar um aparelho, e escaneie esse código.
+              </p>
+              <p className="hint">Aguardando leitura do QR…</p>
+            </div>
+          ) : (
+            <>
+              <div className="field" style={{ padding: "10px 0" }}>
+                <label>ID da conta comercial (Meta)</label>
+                <input className="input" style={{ width: "100%" }} placeholder="Ex.: 123456789012345" />
               </div>
-              <button
-                type="button"
-                className="modal-close-btn"
-                aria-label="Fechar"
-                onClick={() => setConectarAberto(false)}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="filters-row mb14">
-              <button
-                type="button"
-                className={`fchip${conectarAba === "qr" ? " active" : ""}`}
-                onClick={() => setConectarAba("qr")}
-              >
-                QR Code (não oficial)
-              </button>
-              <button
-                type="button"
-                className={`fchip${conectarAba === "api" ? " active" : ""}`}
-                onClick={() => setConectarAba("api")}
-              >
-                API oficial (Meta)
-              </button>
-            </div>
-            {conectarAba === "qr" ? (
-              <div style={{ textAlign: "center", padding: "6px 0 14px" }}>
-                <div className="wa-qr-box">📷</div>
-                <p className="hint" style={{ marginTop: 10 }}>
-                  Abra o WhatsApp no celular da clínica → Aparelhos conectados →
-                  Conectar um aparelho, e escaneie esse código.
-                </p>
-                <p className="hint">Aguardando leitura do QR…</p>
+              <div className="field" style={{ padding: "10px 0" }}>
+                <label>Token de acesso</label>
+                <input className="input" style={{ width: "100%" }} type="password" placeholder="••••••••••••" />
               </div>
-            ) : (
-              <>
-                <div className="field" style={{ padding: "10px 0" }}>
-                  <label>ID da conta comercial (Meta)</label>
-                  <input className="input" style={{ width: "100%" }} placeholder="Ex.: 123456789012345" />
-                </div>
-                <div className="field" style={{ padding: "10px 0" }}>
-                  <label>Token de acesso</label>
-                  <input className="input" style={{ width: "100%" }} type="password" placeholder="••••••••••••" />
-                </div>
-                <p className="hint">
-                  Conectando pela API oficial, as conversas, fotos e nomes de contato são
-                  importados automaticamente — só a organização no funil continua manual.
-                </p>
-              </>
-            )}
-            <div className="section-foot">
-              <button
-                type="button"
-                className="btn primary block"
-                onClick={() => {
-                  setConectarAberto(false);
-                  avisarAutomacao("WhatsApp conectado — conversas sendo importadas");
-                }}
-              >
-                {conectarAba === "qr" ? "Simular leitura do QR" : "Conectar"}
-              </button>
-            </div>
+              <p className="hint">
+                Conectando pela API oficial, as conversas, fotos e nomes de contato são
+                importados automaticamente — só a organização no funil continua manual.
+              </p>
+            </>
+          )}
+          <div className="section-foot">
+            <button
+              type="button"
+              className="btn primary block"
+              onClick={() => {
+                setConectarAberto(false);
+                avisarAutomacao("WhatsApp conectado — conversas sendo importadas");
+              }}
+            >
+              {conectarAba === "qr" ? "Simular leitura do QR" : "Conectar"}
+            </button>
           </div>
         </div>
       ) : null}
