@@ -14,6 +14,8 @@ import {
   type StatusMensagem,
 } from "@/lib/data";
 import { useAutomacoes } from "@/lib/automacoes-context";
+import { useAutomationFlows } from "@/lib/automation-flow-context";
+import { executarFluxo } from "@/lib/automation-flow/motor";
 import { useContatos } from "@/lib/contatos-context";
 import {
   useBibliotecaDocumentos,
@@ -344,6 +346,7 @@ function ConversasPageInner() {
   const { funis, atribuirContatoAoFunil } = useFunis();
   const { contatos, salvarDadosContato, atribuirAtendente } = useContatos();
   const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
+  const { fluxos, dispararEvento, registrarExecucao } = useAutomationFlows();
   const { simularNovaMensagem } = useNotificacoes();
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const proximoToastId = useRef(0);
@@ -1422,17 +1425,71 @@ function ConversasPageInner() {
 
   const automacoesDoFunil = automacoes.filter((a) => a.funilId === funilSelecionadoId);
 
+  /**
+   * Botão "rodar automação" manual dentro da conversa. O fluxo migrado tem o
+   * mesmo `id` da `Automacao` antiga (ver `migrarAutomacaoParaFluxo`), então dá
+   * pra achar o `FluxoAutomacao` real por esse id e rodar `executarFluxo` de
+   * verdade a partir do nó logo após o gatilho — assim tags/etapa/responsável
+   * mudam de verdade (via as mesmas ligações do `dispararEvento`), em vez de só
+   * empurrar texto de `acao.mensagem` pro chat. Chamado explicitamente pelo
+   * usuário, então roda mesmo se o fluxo estiver pausado (`ativa: false`) —
+   * diferente de `dispararEvento`, que só considera fluxos publicados e ativos.
+   */
   function executarAutomacaoNaConversa(automacaoId: string) {
     const automacao = automacoesDoFunil.find((a) => a.id === automacaoId);
     if (!automacao) return;
-    for (const acao of automacao.acoes) {
-      if (
-        (acao.tipo === "mensagem" || acao.tipo === "mensagem_interativa") &&
-        acao.mensagem
-      ) {
-        adicionarMensagem({ tipo: "out", texto: acao.mensagem, hora: horaAgora() });
+
+    const fluxo = fluxos.find((f) => f.id === automacaoId);
+    const noGatilho = fluxo?.nodes.find((n) => n.category === "gatilho");
+    const primeiraAresta = noGatilho
+      ? fluxo?.edges.find((e) => e.source === noGatilho.id)
+      : undefined;
+
+    if (fluxo && primeiraAresta) {
+      const cardContato = funilSelecionado?.colunas
+        .flatMap((c) => c.cards)
+        .find((c) => c.nome === aberta.nome);
+
+      const registro = executarFluxo(
+        fluxo,
+        primeiraAresta.target,
+        {
+          contato: {
+            nome: aberta.nome,
+            etiquetas: cardContato?.etiquetas ?? [],
+            origem: aberta.origem,
+            responsavel: atendenteSelecionado,
+            funilId: funilSelecionado?.id,
+            etapaTitulo: etapaSelecionada,
+          },
+        },
+        {
+          moverEtapa: (funilId, etapaTitulo, contato) =>
+            atribuirContatoAoFunil(funilId, etapaTitulo, contato as Omit<NegocioCard, "id"> & { id?: string }),
+          salvarContato: (nome, dados) => salvarDadosContato(nome, dados),
+          atribuirAtendente: (nome, atendente) => atribuirAtendente(nome, atendente),
+          registrarMensagemSimulada: (info) => {
+            // Único caso em que "simulado" ainda aparece de verdade no log da
+            // conversa — igual o código antigo já fazia com `acao.mensagem`.
+            adicionarMensagem({ tipo: "out", texto: info.conteudo, hora: horaAgora() });
+          },
+          registrarWebhookSimulado: (info) => avisarAutomacao(`Webhook simulado → ${info.url}`),
+        },
+      );
+      registrarExecucao(registro);
+    } else {
+      // Fallback defensivo — não deveria acontecer, já que todo `Automacao`
+      // migrado vira um `FluxoAutomacao` com o mesmo id.
+      for (const acao of automacao.acoes) {
+        if (
+          (acao.tipo === "mensagem" || acao.tipo === "mensagem_interativa") &&
+          acao.mensagem
+        ) {
+          adicionarMensagem({ tipo: "out", texto: acao.mensagem, hora: horaAgora() });
+        }
       }
     }
+
     adicionarHistorico("sistema", `Automação "${automacao.titulo}" executada`);
     avisarAutomacao(`Automação "${automacao.titulo}" executada`);
     setMensagemTexto("");
