@@ -3561,13 +3561,23 @@ table.tbl tbody tr:hover td {
   padding-bottom: 4px;
 }
 
-.wa-contato-picker {
-  width: 280px;
-  padding-bottom: 6px;
+.wa-contato-modal {
+  width: 100%;
+  max-width: 420px;
 }
 
-.wa-contato-picker-busca {
-  padding: 10px;
+.wa-contato-sugestoes {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.2);
+  z-index: 20;
 }
 
 .wa-contato-picker-item {
@@ -3582,12 +3592,56 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
+.wa-contato-selecionado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--blue-soft-2);
+  border: 1px solid var(--blue);
+  border-radius: 10px;
+}
+
+.wa-contato-selecionado-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wa-contato-modal-rodape {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.wa-contato-detalhe-corpo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0 18px;
+  text-align: center;
+}
+
+.wa-contato-detalhe-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 18px;
+}
+
 .bubble-contato {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
+  border: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .bubble-contato .tm {

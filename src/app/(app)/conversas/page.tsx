@@ -333,23 +333,18 @@ function ConversasPageInner() {
   const [emojiAberto, setEmojiAberto] = useState(false);
   const [emojiRect, setEmojiRect] = useState<DOMRect | null>(null);
   const [contatoPickerAberto, setContatoPickerAberto] = useState(false);
-  const [contatoPickerPos, setContatoPickerPos] = useState<{ x: number; y: number } | null>(null);
   const [buscaContatoPicker, setBuscaContatoPicker] = useState("");
-  const contatoPickerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!contatoPickerAberto) return;
-    function aoClicarFora(e: MouseEvent) {
-      if (
-        contatoPickerRef.current &&
-        !contatoPickerRef.current.contains(e.target as Node)
-      ) {
-        setContatoPickerAberto(false);
-      }
-    }
-    document.addEventListener("mousedown", aoClicarFora);
-    return () => document.removeEventListener("mousedown", aoClicarFora);
-  }, [contatoPickerAberto]);
+  const [contatoSugestoesAberta, setContatoSugestoesAberta] = useState(false);
+  const [contatoSelecionado, setContatoSelecionado] = useState<{
+    nome: string;
+    initials: string;
+    whatsapp?: string;
+  } | null>(null);
+  const [contatoDetalheAberto, setContatoDetalheAberto] = useState<{
+    nome: string;
+    initials: string;
+    whatsapp?: string;
+  } | null>(null);
   const [respostasGerenciarAberto, setRespostasGerenciarAberto] = useState(false);
   const [respostasPos, setRespostasPos] = useState<{ x: number; y: number } | null>(null);
   const respostasArrasteRef = useRef<{ dx: number; dy: number } | null>(null);
@@ -504,34 +499,54 @@ function ConversasPageInner() {
     documentoInputRef.current?.click();
   }
 
-  function abrirContatoPicker(rect: DOMRect) {
+  function abrirContatoPicker() {
     setAnexoAberto(false);
-    const largura = 280;
-    const alturaEstimada = 360;
-    const margem = 12;
-    let left = rect.left;
-    let top = rect.bottom + 8;
-    if (left + largura > window.innerWidth - margem) {
-      left = window.innerWidth - largura - margem;
-    }
-    if (left < margem) left = margem;
-    if (top + alturaEstimada > window.innerHeight - margem) {
-      top = rect.top - alturaEstimada - 8;
-      if (top < margem) top = margem;
-    }
-    setContatoPickerPos({ x: left, y: top });
     setBuscaContatoPicker("");
+    setContatoSelecionado(null);
+    setContatoSugestoesAberta(false);
     setContatoPickerAberto(true);
   }
 
-  function enviarContatoCompartilhado(contato: { nome: string; initials: string; whatsapp?: string }) {
+  function fecharContatoPicker() {
+    setContatoPickerAberto(false);
+    setContatoSelecionado(null);
+    setBuscaContatoPicker("");
+  }
+
+  function escolherContatoPicker(contato: { nome: string; initials: string; whatsapp?: string }) {
+    setContatoSelecionado(contato);
+    setBuscaContatoPicker("");
+    setContatoSugestoesAberta(false);
+  }
+
+  function enviarContatoCompartilhado() {
+    if (!contatoSelecionado) return;
     adicionarMensagem({
       tipo: "out",
-      texto: `👤 Contato compartilhado: ${contato.nome}`,
+      texto: `👤 Contato compartilhado: ${contatoSelecionado.nome}`,
       hora: horaAgora(),
-      contatoCompartilhado: contato,
+      contatoCompartilhado: contatoSelecionado,
     });
-    setContatoPickerAberto(false);
+    fecharContatoPicker();
+  }
+
+  function salvarContatoVcf(contato: { nome: string; whatsapp?: string }) {
+    const vcf = [
+      "BEGIN:VCARD",
+      "VERSION:3.0",
+      `FN:${contato.nome}`,
+      contato.whatsapp ? `TEL;TYPE=CELL:${contato.whatsapp}` : "",
+      "END:VCARD",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    const blob = new Blob([vcf], { type: "text/vcard" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${contato.nome}.vcf`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   const contatosFiltradosPicker = contatos.filter((c) =>
@@ -1162,7 +1177,12 @@ function ConversasPageInner() {
                   {msg.hora ? <span className="tm">{msg.hora}</span> : null}
                 </a>
               ) : msg.contatoCompartilhado ? (
-                <div className={`bubble ${msg.tipo} bubble-contato`} key={`extra-${i}`}>
+                <button
+                  type="button"
+                  className={`bubble ${msg.tipo} bubble-contato`}
+                  key={`extra-${i}`}
+                  onClick={() => setContatoDetalheAberto(msg.contatoCompartilhado!)}
+                >
                   <span className="avatar">{msg.contatoCompartilhado.initials}</span>
                   <div className="bubble-contato-info">
                     <span className="bubble-contato-nome">{msg.contatoCompartilhado.nome}</span>
@@ -1171,7 +1191,7 @@ function ConversasPageInner() {
                     ) : null}
                   </div>
                   {msg.hora ? <span className="tm">{msg.hora}</span> : null}
-                </div>
+                </button>
               ) : (
                 <div className={`bubble ${msg.tipo}`} key={`extra-${i}`}>
                   {msg.texto}
@@ -1365,7 +1385,7 @@ function ConversasPageInner() {
                       type="button"
                       className="dropdown-item"
                       style={{ width: "100%", textAlign: "left" }}
-                      onClick={(e) => abrirContatoPicker(e.currentTarget.getBoundingClientRect())}
+                      onClick={abrirContatoPicker}
                     >
                       <span className="n">Contato</span>
                     </button>
@@ -1415,51 +1435,143 @@ function ConversasPageInner() {
               )
             : null}
 
-          {contatoPickerAberto && contatoPickerPos ? (
-            <div
-              ref={contatoPickerRef}
-              className="wa-anexo-menu wa-contato-picker"
-              style={{ left: contatoPickerPos.x, top: contatoPickerPos.y }}
-            >
-              <div className="wa-contato-picker-busca">
-                <input
-                  autoFocus
-                  className="input"
-                  style={{ width: "100%" }}
-                  placeholder="Pesquisar contato…"
-                  value={buscaContatoPicker}
-                  onChange={(e) => setBuscaContatoPicker(e.target.value)}
-                />
-              </div>
-              {contatosFiltradosPicker.length === 0 ? (
-                <p className="hint" style={{ padding: "10px 12px" }}>
-                  Nenhum contato encontrado.
-                </p>
-              ) : (
-                contatosFiltradosPicker.map((c) => (
+          {contatoPickerAberto ? (
+            <div className="form-preview-overlay" onClick={fecharContatoPicker}>
+              <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span aria-hidden="true">👤➕</span>
+                    <p className="n">Enviar Contato</p>
+                  </div>
                   <button
                     type="button"
-                    key={c.nome}
-                    className="dropdown-item wa-contato-picker-item"
-                    style={{ width: "100%", textAlign: "left" }}
-                    onClick={() =>
-                      enviarContatoCompartilhado({
-                        nome: c.nome,
-                        initials: c.initials,
-                        whatsapp: c.whatsapp,
-                      })
-                    }
+                    className="modal-close-btn"
+                    aria-label="Fechar"
+                    onClick={fecharContatoPicker}
                   >
-                    <span className="avatar">{c.initials}</span>
-                    <span>
-                      <span className="n" style={{ display: "block" }}>{c.nome}</span>
-                      {c.whatsapp ? (
-                        <span className="wa-contato-picker-numero">{c.whatsapp}</span>
+                    ✕
+                  </button>
+                </div>
+
+                {contatoSelecionado ? (
+                  <div className="wa-contato-selecionado">
+                    <span className="avatar">{contatoSelecionado.initials}</span>
+                    <span className="wa-contato-selecionado-info">
+                      <span className="n" style={{ display: "block" }}>{contatoSelecionado.nome}</span>
+                      {contatoSelecionado.whatsapp ? (
+                        <span className="wa-contato-picker-numero">{contatoSelecionado.whatsapp}</span>
                       ) : null}
                     </span>
+                    <button
+                      type="button"
+                      className="modal-close-btn"
+                      aria-label="Remover seleção"
+                      onClick={() => setContatoSelecionado(null)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ position: "relative" }}>
+                    <input
+                      autoFocus
+                      className="input"
+                      style={{ width: "100%" }}
+                      placeholder="Buscar lead por nome ou telefone…"
+                      value={buscaContatoPicker}
+                      onChange={(e) => {
+                        setBuscaContatoPicker(e.target.value);
+                        setContatoSugestoesAberta(true);
+                      }}
+                      onFocus={() => setContatoSugestoesAberta(true)}
+                    />
+                    {contatoSugestoesAberta && buscaContatoPicker.trim() ? (
+                      <div className="wa-contato-sugestoes">
+                        {contatosFiltradosPicker.length === 0 ? (
+                          <p className="hint" style={{ padding: "10px 12px" }}>
+                            Nenhum contato encontrado.
+                          </p>
+                        ) : (
+                          contatosFiltradosPicker.map((c) => (
+                            <button
+                              type="button"
+                              key={c.nome}
+                              className="dropdown-item wa-contato-picker-item"
+                              style={{ width: "100%", textAlign: "left" }}
+                              onClick={() =>
+                                escolherContatoPicker({
+                                  nome: c.nome,
+                                  initials: c.initials,
+                                  whatsapp: c.whatsapp,
+                                })
+                              }
+                            >
+                              <span className="avatar">{c.initials}</span>
+                              <span>
+                                <span className="n" style={{ display: "block" }}>{c.nome}</span>
+                                {c.whatsapp ? (
+                                  <span className="wa-contato-picker-numero">📞 {c.whatsapp}</span>
+                                ) : null}
+                              </span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
+                <div className="section-foot wa-contato-modal-rodape">
+                  <button type="button" className="btn ghost" onClick={fecharContatoPicker}>
+                    Cancelar
                   </button>
-                ))
-              )}
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={!contatoSelecionado}
+                    onClick={enviarContatoCompartilhado}
+                  >
+                    Enviar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {contatoDetalheAberto ? (
+            <div className="form-preview-overlay" onClick={() => setContatoDetalheAberto(null)}>
+              <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+                  <div>
+                    <p className="n">{contatoDetalheAberto.nome}</p>
+                    <p className="s">Contato compartilhado</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="modal-close-btn"
+                    aria-label="Fechar"
+                    onClick={() => setContatoDetalheAberto(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="wa-contato-detalhe-corpo">
+                  <span className="avatar wa-contato-detalhe-avatar">{contatoDetalheAberto.initials}</span>
+                  <p className="n">{contatoDetalheAberto.nome}</p>
+                  {contatoDetalheAberto.whatsapp ? (
+                    <p className="wa-contato-picker-numero">📞 {contatoDetalheAberto.whatsapp}</p>
+                  ) : (
+                    <p className="hint">Sem número de WhatsApp cadastrado</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="btn primary block"
+                  onClick={() => salvarContatoVcf(contatoDetalheAberto)}
+                >
+                  💾 Salvar contato
+                </button>
+              </div>
             </div>
           ) : null}
 
