@@ -675,6 +675,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [localizarAberto, setLocalizarAberto] = useState(false);
   const [contagemAberta, setContagemAberta] = useState(false);
   const [detalhesAberto, setDetalhesAberto] = useState(false);
+  const [ajudaAberta, setAjudaAberta] = useState(false);
   const [gravandoVoz, setGravandoVoz] = useState(false);
 
   const [buscaTexto, setBuscaTexto] = useState("");
@@ -699,6 +700,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [localizarPos, setLocalizarPos] = useState<{ x: number; y: number } | null>(null);
   const [contagemPos, setContagemPos] = useState<{ x: number; y: number } | null>(null);
   const [detalhesPos, setDetalhesPos] = useState<{ x: number; y: number } | null>(null);
+  const [ajudaPos, setAjudaPos] = useState<{ x: number; y: number } | null>(null);
+  const ajudaRef = useRef<HTMLDivElement>(null);
+  useFecharAoClicarFora(ajudaRef, ajudaAberta, () => setAjudaAberta(false));
   const [configPaginaPos, setConfigPaginaPos] = useState<{ x: number; y: number } | null>(null);
   const [compartilharPos, setCompartilharPos] = useState<{ x: number; y: number } | null>(null);
   const [historicoPos, setHistoricoPos] = useState<{ x: number; y: number } | null>(null);
@@ -802,6 +806,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         setLocalizarAberto(false);
         setContagemAberta(false);
         setDetalhesAberto(false);
+        setAjudaAberta(false);
       }
     }
     window.addEventListener("keydown", aoTeclarEsc);
@@ -1602,8 +1607,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   ];
 
   const menuAjuda: ("sep" | ItemMenu)[] = [
-    { label: "Atalhos de teclado", onClick: () => window.alert("Ctrl+B negrito · Ctrl+I itálico · Ctrl+U sublinhado · Ctrl+Z desfazer · Ctrl+F localizar") },
-    { label: "Central de ajuda do CRM AZUZ" },
+    { label: "Atalhos de teclado", onClick: () => setAjudaAberta(true) },
+    { label: "Central de ajuda do CRM AZUZ", onClick: () => setAjudaAberta(true) },
   ];
 
   return (
@@ -1933,6 +1938,42 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <div className="stat-row"><span className="sl">Criado em</span><span className="sv">{formatarQuando(doc.criadoEm)}</span></div>
           <div className="stat-row"><span className="sl">Última edição</span><span className="sv">{formatarQuando(doc.atualizadoEm)}</span></div>
           <div className="stat-row"><span className="sl">Palavras</span><span className="sv">{contagem.palavras}</span></div>
+        </div>
+      ) : null}
+
+      {ajudaAberta ? (
+        <div
+          ref={ajudaRef}
+          className="wa-email-modal wa-email-floating doc-ajuda-modal"
+          style={ajudaPos ? { left: ajudaPos.x, top: ajudaPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setAjudaPos)}>
+            <p className="n">Central de ajuda — Documentos</p>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setAjudaAberta(false)}>✕</button>
+          </div>
+          <div className="doc-ajuda-conteudo">
+            <p className="hint" style={{ marginTop: 0 }}>Atalhos de teclado</p>
+            <div className="stat-row"><span className="sl">Desfazer / Refazer</span><span className="sv">Ctrl+Z / Ctrl+Y</span></div>
+            <div className="stat-row"><span className="sl">Negrito / Itálico / Sublinhado</span><span className="sv">Ctrl+B / Ctrl+I / Ctrl+U</span></div>
+            <div className="stat-row"><span className="sl">Recortar / Copiar / Colar</span><span className="sv">Ctrl+X / Ctrl+C / Ctrl+V</span></div>
+            <div className="stat-row"><span className="sl">Colar sem formatação</span><span className="sv">Ctrl+Shift+V</span></div>
+            <div className="stat-row"><span className="sl">Selecionar tudo</span><span className="sv">Ctrl+A</span></div>
+            <div className="stat-row"><span className="sl">Localizar / Substituir</span><span className="sv">Ctrl+F / Ctrl+H</span></div>
+            <div className="stat-row"><span className="sl">Link</span><span className="sv">Ctrl+K</span></div>
+            <div className="stat-row"><span className="sl">Comentário</span><span className="sv">Ctrl+Alt+M</span></div>
+            <div className="stat-row"><span className="sl">Contagem de palavras</span><span className="sv">Ctrl+Shift+C</span></div>
+            <div className="stat-row"><span className="sl">Imprimir</span><span className="sv">Ctrl+P</span></div>
+            <div className="stat-row"><span className="sl">Quebra de página</span><span className="sv">Ctrl+Enter</span></div>
+            <div className="stat-row"><span className="sl">Fechar menus/janelas</span><span className="sv">Esc</span></div>
+            <p className="hint">Guia rápido</p>
+            <ul className="doc-ajuda-lista">
+              <li><b>Arquivo</b> — novo documento, cópia, compartilhar, exportar (PDF/Word/TXT/RTF/HTML) e configuração da página.</li>
+              <li><b>Inserir</b> → Imagem: clique na imagem depois de inserida para redimensionar, recortar, girar e definir a quebra de texto.</li>
+              <li><b>Formatar</b> → Colunas: define 1, 2 ou 3 colunas para o documento ou para a seleção.</li>
+              <li><b>Ver</b> → alterna régua, caracteres não imprimíveis, modo paginado/contínuo e zoom.</li>
+              <li>A auto-paginação move o texto para a página seguinte automaticamente conforme você digita.</li>
+            </ul>
+          </div>
         </div>
       ) : null}
 
