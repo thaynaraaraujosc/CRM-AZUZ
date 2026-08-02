@@ -1,279 +1,165 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
 
-import { campanhas, kpisTrafego, workspace } from "@/lib/data";
-import { FloatingDropdown, KpiCard, Topbar } from "@/components/ui";
-import { calcularInvestimentoTrafego, calcularLeadsTrafego, calcularRoasMedio, formatarMoeda } from "@/lib/metrics";
+import { ORIGENS, campanhas, contatos, funilJulho, funis as funisPadrao, kpisTrafego, type Origem } from "@/lib/data";
+import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
+import { ChartCard, FunnelSteps } from "@/components/charts";
+import {
+  calcularInvestimentoTrafego,
+  calcularLeadsTrafego,
+  calcularRoasMedio,
+  calcularValorVendido,
+  formatarMoeda,
+  parseSubCampanha,
+} from "@/lib/metrics";
 
-const PLATAFORMAS = [
-  { valor: "Todas", label: "Todas" },
-  { valor: "M", label: "Meta Ads" },
-  { valor: "G", label: "Google Ads" },
-];
+type ColunaOrdenavel = "nome" | "investido" | "leads" | "cpl" | "roas";
 
-const PERIODOS = ["01 jul → 30 jul", "Últimos 7 dias", "Este mês", "Mês passado"];
-
-const MESES_ABREV = [
-  "jan",
-  "fev",
-  "mar",
-  "abr",
-  "mai",
-  "jun",
-  "jul",
-  "ago",
-  "set",
-  "out",
-  "nov",
-  "dez",
-];
-
-/** "2026-08-05" → "05 ago" */
-function formatarDataCurta(iso: string): string {
-  const [, mes, dia] = iso.split("-");
-  return `${dia} ${MESES_ABREV[Number(mes) - 1]}`;
-}
-
+/**
+ * Visão completa da aquisição — do investimento até a receita. Campos que o
+ * modelo de dados atual não liga de verdade (ex.: venda por campanha
+ * específica) mostram "Dados não conectados" em vez de número inventado.
+ */
 export default function TrafegoPage() {
-  const [clinicaAberta, setClinicaAberta] = useState(false);
-  const [clinicaRect, setClinicaRect] = useState<DOMRect | null>(null);
-
-  const [plataformaAberta, setPlataformaAberta] = useState(false);
-  const [plataformaRect, setPlataformaRect] = useState<DOMRect | null>(null);
+  const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
   const [plataformaFiltro, setPlataformaFiltro] = useState("Todas");
+  const [busca, setBusca] = useState("");
+  const [ordenarPor, setOrdenarPor] = useState<ColunaOrdenavel>("investido");
+  const [ordemDesc, setOrdemDesc] = useState(true);
+  const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+  const [campanhaAberta, setCampanhaAberta] = useState<string | null>(null);
 
-  const [campanhaAberta, setCampanhaAberta] = useState(false);
-  const [campanhaRect, setCampanhaRect] = useState<DOMRect | null>(null);
-  const [campanhaFiltro, setCampanhaFiltro] = useState("Todas");
+  const campanhasFiltradas = useMemo(
+    () =>
+      campanhas.filter((c) => {
+        if (plataformaFiltro !== "Todas" && c.plataforma !== plataformaFiltro) return false;
+        if (busca && !c.nome.toLowerCase().includes(busca.toLowerCase())) return false;
+        return true;
+      }),
+    [plataformaFiltro, busca],
+  );
 
-  const [periodoAberto, setPeriodoAberto] = useState(false);
-  const [periodoRect, setPeriodoRect] = useState<DOMRect | null>(null);
-  const [periodoFiltro, setPeriodoFiltro] = useState(PERIODOS[0]);
-  const [periodoPersonalizadoAberto, setPeriodoPersonalizadoAberto] =
-    useState(false);
-  const [dataPersonalizadaDe, setDataPersonalizadaDe] = useState("");
-  const [dataPersonalizadaAte, setDataPersonalizadaAte] = useState("");
+  const linhasCampanha = useMemo(() => {
+    const linhas = campanhasFiltradas.map((c) => {
+      const { leads, investido } = parseSubCampanha(c.sub);
+      const roasNum = Number(c.roas.replace(",", ".").replace("x", "")) || 0;
+      const cpl = leads > 0 ? investido / leads : 0;
+      return { ...c, leads, investido, cpl, roasNum };
+    });
+    const chave = (l: (typeof linhas)[number]) =>
+      ordenarPor === "nome" ? l.nome : ordenarPor === "roas" ? l.roasNum : l[ordenarPor];
+    linhas.sort((a, b) => {
+      const av = chave(a);
+      const bv = chave(b);
+      const cmp = typeof av === "string" ? av.localeCompare(bv as string) : (av as number) - (bv as number);
+      return ordemDesc ? -cmp : cmp;
+    });
+    return linhas;
+  }, [campanhasFiltradas, ordenarPor, ordemDesc]);
 
-  function aplicarPeriodoPersonalizado() {
-    if (!dataPersonalizadaDe || !dataPersonalizadaAte) return;
-    setPeriodoFiltro(
-      `${formatarDataCurta(dataPersonalizadaDe)} → ${formatarDataCurta(dataPersonalizadaAte)}`,
-    );
-    setPeriodoPersonalizadoAberto(false);
-    setPeriodoAberto(false);
+  function alternarOrdenacao(col: ColunaOrdenavel) {
+    if (ordenarPor === col) setOrdemDesc((v) => !v);
+    else {
+      setOrdenarPor(col);
+      setOrdemDesc(true);
+    }
   }
 
-  const campanhasFiltradas = campanhas.filter((c) => {
-    if (plataformaFiltro !== "Todas" && c.plataforma !== plataformaFiltro) {
-      return false;
-    }
-    if (campanhaFiltro !== "Todas" && c.nome !== campanhaFiltro) return false;
-    return true;
-  });
+  function alternarSelecao(nome: string) {
+    setSelecionadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(nome)) next.delete(nome);
+      else next.add(nome);
+      return next;
+    });
+  }
 
-  const labelPlataforma =
-    PLATAFORMAS.find((p) => p.valor === plataformaFiltro)?.label ?? "Todas";
-
-  // Investido, leads e ROAS vêm de src/lib/metrics.ts a partir das campanhas
-  // já filtradas — mesma fórmula usada em Início, então nunca dessincroniza
-  // do "ROAS médio" mostrado lá. "Vendas" e "Custo/venda" continuam de
-  // `kpisTrafego` porque o modelo de dados atual não liga venda à campanha
-  // que a originou (ver limitações no relatório final).
   const investido = calcularInvestimentoTrafego(campanhasFiltradas);
   const leads = calcularLeadsTrafego(campanhasFiltradas);
   const roas = calcularRoasMedio(campanhasFiltradas);
   const custoPorLead = leads.valor > 0 ? investido.valor / leads.valor : 0;
   const vendasKpi = kpisTrafego.find((k) => k.label === "Vendas");
   const custoVendaKpi = kpisTrafego.find((k) => k.label === "Custo / venda");
+  const receita = calcularValorVendido();
+
+  const funilSteps = [
+    { chave: "gerados", label: "Leads gerados", quantidade: funilJulho[0]?.total ?? 0 },
+    { chave: "qualificados", label: "Leads qualificados", quantidade: funilJulho[1]?.total ?? 0 },
+    { chave: "negociacoes", label: "Negociações", quantidade: funilJulho[2]?.total ?? 0 },
+    {
+      chave: "vendas",
+      label: "Vendas",
+      quantidade: funilJulho[3]?.total ?? 0,
+      valorLabel: receita.label,
+    },
+  ];
+
+  const origensComDados = ORIGENS.map((origem: Origem) => {
+    const leadsOrigem = contatos.filter((c) => c.origem === origem).length;
+    const vendasOrigem = funisPadrao
+      .flatMap((f) => f.colunas.filter((c) => c.titulo.startsWith("Fechado")).flatMap((c) => c.cards))
+      .filter((card) => card.origem === origem).length;
+    const investimentoOrigem =
+      origem === "Meta Ads" || origem === "Google Ads"
+        ? campanhas
+            .filter((c) => (origem === "Meta Ads" ? c.plataforma === "M" : c.plataforma === "G"))
+            .reduce((s, c) => s + parseSubCampanha(c.sub).investido, 0)
+        : null;
+    return { origem, leadsOrigem, vendasOrigem, investimentoOrigem };
+  });
+
+  const campanhaDetalhe = campanhaAberta ? campanhas.find((c) => c.nome === campanhaAberta) : null;
+
+  const filtros: FiltroDef[] = [
+    {
+      chave: "plataforma",
+      label: "Plataforma",
+      valor: plataformaFiltro,
+      opcoes: [
+        { valor: "Todas", label: "Todas" },
+        { valor: "M", label: "Meta Ads" },
+        { valor: "G", label: "Google Ads" },
+      ],
+    },
+  ];
 
   return (
     <>
-      <Topbar
-        title="Tráfego"
-        sub="Julho 2026 · todas as contas de anúncio"
-        actions={
-          <button type="button" className="btn ghost">
-            Exportar
-          </button>
-        }
-      />
+      <div className="topbar">
+        <div>
+          <div className="topbar-title-row">
+            <h2>Tráfego</h2>
+          </div>
+          <p className="sub">Da aquisição de leads até a receita atribuída às campanhas</p>
+        </div>
+        <div className="top-actions">
+          <Link className="btn primary" href="/relatorios?tipo=trafego">
+            Gerar relatório de tráfego
+          </Link>
+        </div>
+      </div>
 
       <div className="content trafego-view">
-        <div className="filter-strip">
-          <button
-            type="button"
-            className="fsel"
-            onClick={(e) => {
-              setClinicaRect(e.currentTarget.getBoundingClientRect());
-              setClinicaAberta((v) => !v);
-            }}
-          >
-            Clínica: {workspace.name} ▾
-          </button>
-          <FloatingDropdown
-            anchorRect={clinicaAberta ? clinicaRect : null}
-            onClose={() => setClinicaAberta(false)}
-            width={220}
-          >
-            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }}>
-              <span className="n">{workspace.name}</span>
-            </button>
-          </FloatingDropdown>
-
-          <button
-            type="button"
-            className="fsel"
-            onClick={(e) => {
-              setPlataformaRect(e.currentTarget.getBoundingClientRect());
-              setPlataformaAberta((v) => !v);
-            }}
-          >
-            Plataforma: {labelPlataforma} ▾
-          </button>
-          <FloatingDropdown
-            anchorRect={plataformaAberta ? plataformaRect : null}
-            onClose={() => setPlataformaAberta(false)}
-            width={200}
-          >
-            {PLATAFORMAS.map((p) => (
-              <button
-                type="button"
-                key={p.valor}
-                className="dropdown-item"
-                style={{ width: "100%", textAlign: "left" }}
-                onClick={() => {
-                  setPlataformaFiltro(p.valor);
-                  setPlataformaAberta(false);
-                }}
-              >
-                <span className="n">{p.label}</span>
-              </button>
-            ))}
-          </FloatingDropdown>
-
-          <button
-            type="button"
-            className="fsel"
-            onClick={(e) => {
-              setCampanhaRect(e.currentTarget.getBoundingClientRect());
-              setCampanhaAberta((v) => !v);
-            }}
-          >
-            Campanha: {campanhaFiltro} ▾
-          </button>
-          <FloatingDropdown
-            anchorRect={campanhaAberta ? campanhaRect : null}
-            onClose={() => setCampanhaAberta(false)}
-            width={260}
-          >
-            <button
-              type="button"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left" }}
-              onClick={() => {
-                setCampanhaFiltro("Todas");
-                setCampanhaAberta(false);
-              }}
-            >
-              <span className="n">Todas</span>
-            </button>
-            {campanhas.map((c) => (
-              <button
-                type="button"
-                key={c.nome}
-                className="dropdown-item"
-                style={{ width: "100%", textAlign: "left" }}
-                onClick={() => {
-                  setCampanhaFiltro(c.nome);
-                  setCampanhaAberta(false);
-                }}
-              >
-                <span className="n">{c.nome}</span>
-              </button>
-            ))}
-          </FloatingDropdown>
-
-          <button
-            type="button"
-            className="fsel"
-            onClick={(e) => {
-              setPeriodoRect(e.currentTarget.getBoundingClientRect());
-              setPeriodoAberto((v) => !v);
-            }}
-          >
-            {periodoFiltro} ▾
-          </button>
-          <FloatingDropdown
-            anchorRect={periodoAberto ? periodoRect : null}
-            onClose={() => {
-              setPeriodoAberto(false);
-              setPeriodoPersonalizadoAberto(false);
-            }}
-            width={240}
-          >
-            {periodoPersonalizadoAberto ? (
-              <div style={{ padding: 14 }}>
-                <p className="form-link-h" style={{ marginBottom: 10 }}>
-                  📅 Escolha as datas
-                </p>
-                <div className="field" style={{ padding: 0, marginBottom: 10 }}>
-                  <label>De</label>
-                  <input
-                    className="input"
-                    style={{ width: "100%" }}
-                    type="date"
-                    value={dataPersonalizadaDe}
-                    onChange={(e) => setDataPersonalizadaDe(e.target.value)}
-                  />
-                </div>
-                <div className="field" style={{ padding: 0, marginBottom: 12 }}>
-                  <label>Até</label>
-                  <input
-                    className="input"
-                    style={{ width: "100%" }}
-                    type="date"
-                    value={dataPersonalizadaAte}
-                    onChange={(e) => setDataPersonalizadaAte(e.target.value)}
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="btn primary block"
-                  disabled={!dataPersonalizadaDe || !dataPersonalizadaAte}
-                  onClick={aplicarPeriodoPersonalizado}
-                >
-                  Aplicar
-                </button>
-              </div>
-            ) : (
-              <>
-                {PERIODOS.map((p) => (
-                  <button
-                    type="button"
-                    key={p}
-                    className="dropdown-item"
-                    style={{ width: "100%", textAlign: "left" }}
-                    onClick={() => {
-                      setPeriodoFiltro(p);
-                      setPeriodoAberto(false);
-                    }}
-                  >
-                    <span className="n">{p}</span>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="dropdown-item"
-                  style={{ width: "100%", textAlign: "left" }}
-                  onClick={() => setPeriodoPersonalizadoAberto(true)}
-                >
-                  <span className="n">📅 Personalizado…</span>
-                </button>
-              </>
-            )}
-          </FloatingDropdown>
-        </div>
+        <FilterBar
+          periodo={periodo}
+          onPeriodoChange={setPeriodo}
+          principalLabel="Plataforma"
+          principalValor={plataformaFiltro === "M" ? "Meta Ads" : plataformaFiltro === "G" ? "Google Ads" : "Todas"}
+          principalOpcoes={["Todas", "Meta Ads", "Google Ads"]}
+          onPrincipalChange={(v) => setPlataformaFiltro(v === "Meta Ads" ? "M" : v === "Google Ads" ? "G" : "Todas")}
+          filtros={filtros}
+          onFiltroChange={(chave, valor) => {
+            if (chave === "plataforma") setPlataformaFiltro(valor);
+          }}
+          onLimpar={() => {
+            setPeriodo(PERIODO_PADRAO);
+            setPlataformaFiltro("Todas");
+          }}
+          onExportar={() => window.print()}
+          viewKey="trafego"
+        />
 
         <div className="grid kpi6">
           <KpiCard label="Investido" value={investido.label} formula={investido.formula} />
@@ -288,34 +174,156 @@ export default function TrafegoPage() {
           <KpiCard label="ROAS" value={roas.label} formula={roas.formula} />
         </div>
 
-        <div className="card">
+        <ChartCard title="Funil de tráfego">
+          <FunnelSteps etapas={funilSteps} />
+        </ChartCard>
+
+        <div className="card mb14">
           <div className="panel-h">
-            <h4>Por campanha</h4>
-            <span className="link">ROAS</span>
+            <h4>Desempenho por campanha</h4>
+            <div className="filters-row" style={{ margin: 0 }}>
+              <input
+                className="input"
+                placeholder="Pesquisar campanha…"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                style={{ width: 180 }}
+              />
+              {selecionadas.size > 1 ? (
+                <span className="hint">{selecionadas.size} selecionadas pra comparar</span>
+              ) : null}
+            </div>
           </div>
-          {campanhasFiltradas.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>
-              Nenhuma campanha com esses filtros.
-            </p>
-          ) : (
-            campanhasFiltradas.map((campanha) => (
-              <div className="camp-row" key={campanha.nome}>
-                <div className="camp-icon">{campanha.plataforma}</div>
-                <div className="camp-body">
-                  <p className="camp-name">{campanha.nome}</p>
-                  <p className="camp-sub">{campanha.sub}</p>
-                  <div className="camp-track">
-                    <div
-                      className="camp-fill"
-                      style={{ width: `${campanha.barra}%` }}
-                    />
-                  </div>
-                </div>
-                <span className="camp-num">{campanha.roas}</span>
-              </div>
-            ))
-          )}
+          <div className="table-wrap">
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Plataforma</th>
+                  <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("nome")}>
+                    Campanha {ordenarPor === "nome" ? (ordemDesc ? "↓" : "↑") : ""}
+                  </th>
+                  <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("investido")}>
+                    Investimento {ordenarPor === "investido" ? (ordemDesc ? "↓" : "↑") : ""}
+                  </th>
+                  <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("leads")}>
+                    Leads {ordenarPor === "leads" ? (ordemDesc ? "↓" : "↑") : ""}
+                  </th>
+                  <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("cpl")}>
+                    CPL {ordenarPor === "cpl" ? (ordemDesc ? "↓" : "↑") : ""}
+                  </th>
+                  <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("roas")}>
+                    ROAS {ordenarPor === "roas" ? (ordemDesc ? "↓" : "↑") : ""}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {linhasCampanha.length === 0 ? (
+                  <tr>
+                    <td colSpan={7}>
+                      <p className="hint" style={{ padding: 17 }}>Nenhuma campanha com esses filtros.</p>
+                    </td>
+                  </tr>
+                ) : null}
+                {linhasCampanha.map((c) => (
+                  <tr key={c.nome}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selecionadas.has(c.nome)}
+                        onChange={() => alternarSelecao(c.nome)}
+                        aria-label={`Selecionar ${c.nome}`}
+                      />
+                    </td>
+                    <td>{c.plataforma === "M" ? "Meta Ads" : "Google Ads"}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="link"
+                        onClick={() => setCampanhaAberta((atual) => (atual === c.nome ? null : c.nome))}
+                      >
+                        {c.nome}
+                      </button>
+                    </td>
+                    <td>{formatarMoeda(c.investido)}</td>
+                    <td>{c.leads}</td>
+                    <td>{formatarMoeda(c.cpl)}</td>
+                    <td>{c.roas}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="hint" style={{ padding: "0 17px 14px" }}>
+            Leads qualificados, vendas, receita por campanha e custo por venda entram aqui quando a
+            negociação puder ser ligada à campanha de origem no back-end.
+          </p>
         </div>
+
+        {campanhaDetalhe ? (
+          <div className="card mb14">
+            <div className="panel-h">
+              <h4>{campanhaDetalhe.nome}</h4>
+              <button type="button" className="link" onClick={() => setCampanhaAberta(null)}>
+                Fechar ✕
+              </button>
+            </div>
+            <div style={{ padding: 17 }}>
+              <div className="stat-row">
+                <span className="sl">Plataforma</span>
+                <span className="sv">{campanhaDetalhe.plataforma === "M" ? "Meta Ads" : "Google Ads"}</span>
+              </div>
+              <div className="stat-row">
+                <span className="sl">Investimento</span>
+                <span className="sv">{formatarMoeda(parseSubCampanha(campanhaDetalhe.sub).investido)}</span>
+              </div>
+              <div className="stat-row">
+                <span className="sl">Leads</span>
+                <span className="sv">{parseSubCampanha(campanhaDetalhe.sub).leads}</span>
+              </div>
+              <div className="stat-row">
+                <span className="sl">ROAS</span>
+                <span className="sv">{campanhaDetalhe.roas}</span>
+              </div>
+              <Link
+                href={`/contatos`}
+                className="link"
+                style={{ display: "inline-block", marginTop: 8 }}
+              >
+                Ver leads dessa plataforma →
+              </Link>
+              <p className="hint" style={{ marginTop: 10 }}>
+                Evolução no período, anúncios individuais e motivos de perda por campanha entram aqui
+                quando o back-end ligar cada negociação à campanha que a originou.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        <ChartCard title="Origens">
+          <div className="table-wrap">
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Origem</th>
+                  <th>Leads</th>
+                  <th>Vendas</th>
+                  <th>Investimento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {origensComDados.map((o) => (
+                  <tr key={o.origem}>
+                    <td>{o.origem}</td>
+                    <td>{o.leadsOrigem}</td>
+                    <td>{o.vendasOrigem}</td>
+                    <td>{o.investimentoOrigem !== null ? formatarMoeda(o.investimentoOrigem) : "Dados não conectados"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </ChartCard>
       </div>
     </>
   );

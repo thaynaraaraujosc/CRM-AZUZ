@@ -102,7 +102,7 @@ export function calcularTempoMedioPrimeiroContato(
 
 type Campanha = (typeof campanhasPadrao)[number];
 
-function parseSubCampanha(sub: string): { leads: number; investido: number } {
+export function parseSubCampanha(sub: string): { leads: number; investido: number } {
   const leadsMatch = sub.match(/(\d+)\s*leads?/i);
   const investidoMatch = sub.match(/R\$\s*([\d.,]+)\s*investidos?/i);
   const leads = leadsMatch ? Number(leadsMatch[1]) : 0;
