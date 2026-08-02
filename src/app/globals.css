@@ -7424,3 +7424,224 @@ button.timeline-card:hover {
   background: rgba(120, 120, 130, 0.16);
   color: var(--text-muted);
 }
+
+/* -------------------------------------------------------------------------- */
+/* Jornada do cliente — busca, recentes, lista + painel                      */
+/* -------------------------------------------------------------------------- */
+
+.jornada-busca-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.jornada-search {
+  flex: 1;
+  width: auto;
+  padding: 11px 14px;
+}
+
+.jornada-search input {
+  flex: 1;
+  background: none;
+  border: 0;
+  outline: none;
+  font: inherit;
+  color: var(--ink);
+}
+
+.jornada-busca-limpar {
+  background: none;
+  border: 0;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px;
+}
+
+.jornada-recentes-vazio {
+  padding: 14px 17px;
+}
+
+.jornada-recentes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  padding: 14px 17px;
+}
+
+.jornada-recente-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.jornada-recente-abrir {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+}
+
+.jornada-recente-abrir .n {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.jornada-recente-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.jornada-recente-acoes button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+.jornada-recente-acoes button:hover {
+  color: var(--blue);
+}
+
+.jornada-fav-btn {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: #e0a83c;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.jornada-row-ativa {
+  background: var(--blue-soft-2);
+}
+
+.jornada-paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 17px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line-soft);
+}
+
+.jornada-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.jornada-painel-vazio {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.jornada-painel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 17px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.jornada-painel-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 17px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.jornada-nota {
+  padding: 12px 17px;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.jornada-resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 17px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.jornada-resumo-item .l {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 3px;
+}
+
+.jornada-resumo-item .v {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 13px;
+  margin: 0;
+}
+
+.jornada-painel {
+  position: sticky;
+  top: 14px;
+  max-height: calc(100vh - 28px);
+  overflow-y: auto;
+}
+
+@media (max-width: 1100px) {
+  .jornada-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .jornada-painel {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .jornada-busca-row {
+    flex-wrap: wrap;
+  }
+
+  .jornada-search {
+    flex: 1 1 100%;
+  }
+
+  .jornada-layout.jornada-layout-aberta .jornada-lista {
+    display: none;
+  }
+
+  .jornada-layout .jornada-painel {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+
+  .jornada-resumo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

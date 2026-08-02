@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { currentUser, relatoriosAnteriores } from "@/lib/data";
@@ -41,15 +41,24 @@ function RelatoriosPageInner() {
 
   const [wizardAberto, setWizardAberto] = useState(!!tipoQuery);
   const [tipoWizard, setTipoWizard] = useState<TipoRelatorio>(tipoQuery ?? "executivo");
-  const [historico, setHistorico] = useState<RelatorioGerado[]>(() => {
-    if (typeof window === "undefined") return HISTORICO_INICIAL;
+  // Começa com o histórico padrão (igual ao HTML pré-renderizado no build) e
+  // só lê o localStorage depois de montar — inicializar direto no useState
+  // causaria erro de hidratação sempre que o navegador já tivesse
+  // relatórios salvos (a página é pré-renderizada estática, sem acesso a
+  // localStorage).
+  const [historico, setHistorico] = useState<RelatorioGerado[]>(HISTORICO_INICIAL);
+
+  useEffect(() => {
     try {
       const salvo = localStorage.getItem(CHAVE_HISTORICO);
-      return salvo ? (JSON.parse(salvo) as RelatorioGerado[]) : HISTORICO_INICIAL;
+      if (salvo) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setHistorico(JSON.parse(salvo) as RelatorioGerado[]);
+      }
     } catch {
-      return HISTORICO_INICIAL;
+      // mantém o histórico padrão se o valor salvo estiver corrompido
     }
-  });
+  }, []);
 
   function salvarHistorico(next: RelatorioGerado[]) {
     setHistorico(next);

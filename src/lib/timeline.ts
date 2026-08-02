@@ -19,6 +19,7 @@ import {
   funis as funisPadrao,
   oportunidadesPerdidas as perdasPadrao,
   tarefas as tarefasPadrao,
+  type Canal,
   type ColunaTarefas,
   type Contato,
   type Conversa,
@@ -323,4 +324,98 @@ export function gerarLinhaDoTempo(
   });
 
   return eventos;
+}
+
+function parseValorMoeda(raw: string): number | null {
+  if (!raw || raw === "—") return null;
+  const limpo = raw.replace(/[^\d,]/g, "").replace(",", ".");
+  const n = Number(limpo);
+  return Number.isFinite(n) && limpo !== "" ? n : null;
+}
+
+function formatarMoedaResumo(valor: number): string {
+  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export type ResumoJornada = {
+  primeiraEntrada: string | null;
+  origem: Origem;
+  canalInicial: Canal | null;
+  tempoAtePrimeiraResposta: string | null;
+  quantidadeNegociacoes: number;
+  quantidadeCompras: number;
+  receitaAcumulada: string | null;
+  ticketMedio: string | null;
+  ultimaCompra: string | null;
+  ultimaInteracao: string;
+  proximaAcao: string | null;
+};
+
+/**
+ * Resumo executivo da jornada de um contato — usado tanto no painel lateral
+ * quanto no relatório individual (mesma fonte, sem duplicar cálculo). Campos
+ * que o modelo de dados atual não consegue derivar (ex.: tempo até
+ * qualificação, porque o funil só guarda a etapa atual, não o histórico de
+ * cada transição) voltam como `null` — a tela decide como mostrar isso
+ * ("Não disponível" ou "Ainda não ocorreu", nunca um zero silencioso).
+ */
+export function calcularResumoJornada(
+  contato: Contato,
+  eventos: Evento[],
+  fontes: Pick<FontesTimeline, "funis" | "tarefas" | "conversas"> = FONTES_PADRAO,
+): ResumoJornada {
+  const eventosReais = eventos.slice(0, -1); // o último é sempre o sentinela "contato_criado"
+  const primeiraEntradaEvento = eventosReais[eventosReais.length - 1] ?? null;
+
+  const mensagensRecebidas = eventosReais.filter((e) => e.tipo === "mensagem_recebida");
+  const mensagensEnviadas = eventosReais.filter((e) => e.tipo === "mensagem_enviada");
+  const primeiraRecebida = mensagensRecebidas[mensagensRecebidas.length - 1] ?? null;
+  const primeiraRespostaDepois = primeiraRecebida
+    ? mensagensEnviadas.find((e) => e.minutosAtras < primeiraRecebida.minutosAtras) ?? null
+    : null;
+  const tempoAtePrimeiraResposta =
+    primeiraRecebida && primeiraRespostaDepois
+      ? formatarMinutosDiferenca(primeiraRecebida.minutosAtras - primeiraRespostaDepois.minutosAtras)
+      : null;
+
+  const cardsDoContato = fontes.funis.flatMap((f) =>
+    f.colunas.flatMap((c) => c.cards.filter((card) => card.nome === contato.nome).map((card) => ({ card, coluna: c }))),
+  );
+  const compras = cardsDoContato.filter(({ coluna }) => coluna.titulo.startsWith("Fechado"));
+  const valoresCompras = compras.map(({ card }) => parseValorMoeda(card.valor)).filter((v): v is number => v !== null);
+  const receitaAcumulada = valoresCompras.length > 0 ? valoresCompras.reduce((s, v) => s + v, 0) : null;
+  const ultimaCompraEvento = eventosReais.find((e) => e.tipo === "negociacao_fechada") ?? null;
+
+  const conversaDoContato = fontes.conversas.find(
+    (c) => c.id === contato.id || slugId(c.nome) === contato.id,
+  );
+
+  const tarefasDoContato = fontes.tarefas
+    .flatMap((c) => c.cards)
+    .filter((t) => t.contato === contato.nome && !t.concluida);
+  const proximaTarefa = tarefasDoContato.find((t) => !t.atrasada) ?? tarefasDoContato[0] ?? null;
+
+  return {
+    primeiraEntrada: primeiraEntradaEvento?.quando ?? null,
+    origem: contato.origem,
+    canalInicial: conversaDoContato?.canal ?? null,
+    tempoAtePrimeiraResposta,
+    quantidadeNegociacoes: cardsDoContato.length,
+    quantidadeCompras: compras.length,
+    receitaAcumulada: receitaAcumulada !== null ? formatarMoedaResumo(receitaAcumulada) : null,
+    ticketMedio:
+      receitaAcumulada !== null && compras.length > 0
+        ? formatarMoedaResumo(receitaAcumulada / compras.length)
+        : null,
+    ultimaCompra: ultimaCompraEvento?.quando ?? null,
+    ultimaInteracao: contato.ultima,
+    proximaAcao: proximaTarefa ? `${proximaTarefa.titulo} · ${proximaTarefa.data}` : null,
+  };
+}
+
+function formatarMinutosDiferenca(min: number): string {
+  const m = Math.max(0, Math.round(min));
+  if (m < 60) return `${m}min`;
+  if (m < 1440) return `${Math.floor(m / 60)}h${m % 60 > 0 ? `${m % 60}min` : ""}`;
+  return `${Math.floor(m / 1440)} dias`;
 }
