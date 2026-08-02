@@ -1433,6 +1433,7 @@ export type TipoAcaoAutomacao =
   | "mensagem_interativa"
   | "documento"
   | "audio"
+  | "enviar_formulario"
   | "lembrete"
   | "tarefa"
   | "mover_funil"
@@ -1447,6 +1448,7 @@ export const TIPOS_ACAO_AUTOMACAO: { tipo: TipoAcaoAutomacao; label: string }[] 
   { tipo: "mensagem_interativa", label: "Enviar mensagem com opções de resposta" },
   { tipo: "documento", label: "Enviar documento" },
   { tipo: "audio", label: "Enviar áudio" },
+  { tipo: "enviar_formulario", label: "Enviar formulário" },
   { tipo: "lembrete", label: "Criar lembrete" },
   { tipo: "tarefa", label: "Criar tarefa com prazo" },
   { tipo: "mover_funil", label: "Mover lead pra outra etapa / funil" },

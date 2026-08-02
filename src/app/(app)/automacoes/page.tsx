@@ -28,6 +28,8 @@ import {
   type RegraComentario,
 } from "@/lib/automacoes-context";
 import { useFunis } from "@/lib/funis-context";
+import { useFormularios } from "@/lib/formularios-context";
+import type { Formulario } from "@/lib/formularios-context";
 import { IconAutomacoes } from "@/components/icons";
 import { Toggle, Topbar } from "@/components/ui";
 import { equipe, type Funil } from "@/lib/data";
@@ -72,6 +74,7 @@ const ICONE_ACAO: Record<TipoAcaoAutomacao, string> = {
   mensagem_interativa: "🔀",
   documento: "📄",
   audio: "🎙",
+  enviar_formulario: "📝",
   lembrete: "⏰",
   tarefa: "✅",
   mover_funil: "↪",
@@ -89,6 +92,9 @@ function novaAcao(tipo: TipoAcaoAutomacao = "mensagem"): AcaoAutomacao {
   if (tipo === "lembrete" || tipo === "tarefa") {
     base.tempoValor = "1";
     base.tempoUnidade = "dias";
+  }
+  if (tipo === "enviar_formulario") {
+    base.formularioOrigem = "interno";
   }
   return base;
 }
@@ -138,6 +144,7 @@ function AcoesEditor({
   itens,
   funis,
   funilAtualId,
+  formularios,
   onAtualizarAcao,
   onTrocarTipo,
   onAdicionarAcao,
@@ -149,6 +156,7 @@ function AcoesEditor({
   itens: AcaoAutomacao[];
   funis: Funil[];
   funilAtualId: string;
+  formularios: Formulario[];
   onAtualizarAcao: (
     endereco: Endereco,
     index: number,
@@ -257,6 +265,7 @@ function AcoesEditor({
                       itens={op.acoesSeEscolhida ?? []}
                       funis={funis}
                       funilAtualId={funilAtualId}
+                      formularios={formularios}
                       onAtualizarAcao={onAtualizarAcao}
                       onTrocarTipo={onTrocarTipo}
                       onAdicionarAcao={onAdicionarAcao}
@@ -294,6 +303,73 @@ function AcoesEditor({
                   {acao.arquivoNome}
                 </p>
               ) : null}
+            </div>
+          ) : null}
+
+          {acao.tipo === "enviar_formulario" ? (
+            <div style={{ marginTop: 8 }}>
+              <textarea
+                className="input"
+                style={{ width: "100%", minHeight: 50, resize: "vertical" }}
+                placeholder="Mensagem opcional que acompanha o link — ex.: Antes de continuar, preenche esse formulário rapidinho:"
+                value={acao.mensagem ?? ""}
+                onChange={(e) =>
+                  onAtualizarAcao(endereco, i, { mensagem: e.target.value })
+                }
+              />
+              <div className="filters-row" style={{ marginTop: 8 }}>
+                <button
+                  type="button"
+                  className={`fchip${(acao.formularioOrigem ?? "interno") === "interno" ? " active" : ""}`}
+                  aria-pressed={(acao.formularioOrigem ?? "interno") === "interno"}
+                  onClick={() =>
+                    onAtualizarAcao(endereco, i, { formularioOrigem: "interno" })
+                  }
+                >
+                  Formulário do CRM
+                </button>
+                <button
+                  type="button"
+                  className={`fchip${acao.formularioOrigem === "externo" ? " active" : ""}`}
+                  aria-pressed={acao.formularioOrigem === "externo"}
+                  onClick={() =>
+                    onAtualizarAcao(endereco, i, { formularioOrigem: "externo" })
+                  }
+                >
+                  Link externo
+                </button>
+              </div>
+
+              {(acao.formularioOrigem ?? "interno") === "interno" ? (
+                <select
+                  className="input"
+                  style={{ width: "100%", marginTop: 8, cursor: "pointer" }}
+                  value={acao.formularioId ?? ""}
+                  onChange={(e) =>
+                    onAtualizarAcao(endereco, i, { formularioId: e.target.value })
+                  }
+                >
+                  <option value="">Escolha o formulário</option>
+                  {formularios.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.nome}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  className="input"
+                  style={{ width: "100%", marginTop: 8 }}
+                  type="url"
+                  placeholder="https://algumlugar.com/seu-formulario"
+                  value={acao.formularioUrlExterna ?? ""}
+                  onChange={(e) =>
+                    onAtualizarAcao(endereco, i, {
+                      formularioUrlExterna: e.target.value,
+                    })
+                  }
+                />
+              )}
             </div>
           ) : null}
 
@@ -538,6 +614,7 @@ export default function AutomacoesPage() {
 function AutomacoesPageInner() {
   const searchParams = useSearchParams();
   const { funis } = useFunis();
+  const { formularios } = useFormularios();
   const {
     automacoesDaEtapa,
     criarAutomacao,
@@ -1175,6 +1252,7 @@ function AutomacoesPageInner() {
                 itens={acoesForm}
                 funis={funis}
                 funilAtualId={funilSelecionado?.id ?? ""}
+                formularios={formularios}
                 onAtualizarAcao={atualizarAcao}
                 onTrocarTipo={trocarTipoAcao}
                 onAdicionarAcao={adicionarAcao}
