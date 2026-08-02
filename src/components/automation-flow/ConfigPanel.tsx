@@ -1,0 +1,152 @@
+"use client";
+
+import { useState } from "react";
+
+import type {
+  AguardarData,
+  CondicaoGrupoData,
+  ConfiguracoesFluxo,
+  FlowNode,
+  FluxoAutomacao,
+  MensagemBotoesData,
+  ProblemaValidacao,
+} from "@/lib/automation-flow/types";
+import { AguardarForm } from "./forms/AguardarForm";
+import { CondicaoForm } from "./forms/CondicaoForm";
+import { ConfiguracoesGeraisForm } from "./forms/ConfiguracoesGeraisForm";
+import { GenericForm } from "./forms/GenericForm";
+import { MensagemForm } from "./forms/MensagemForm";
+import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
+
+const TIPOS_OPCOES = new Set(["mensagem_botoes", "mensagem_lista"]);
+
+function FormularioDoNode({
+  node,
+  onUpdateNodeData,
+  onRemoverOpcaoAresta,
+}: {
+  node: FlowNode;
+  onUpdateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
+  onRemoverOpcaoAresta: (nodeId: string, opcaoId: string) => void;
+}) {
+  if (node.type === "condicao_grupo") {
+    const data = node.data as CondicaoGrupoData;
+    return <CondicaoForm grupo={data.grupo} onChange={(grupo) => onUpdateNodeData(node.id, { grupo })} />;
+  }
+  if (node.type === "aguardar") {
+    return <AguardarForm data={node.data as AguardarData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (TIPOS_OPCOES.has(node.type)) {
+    return (
+      <MensagemOpcoesForm
+        data={node.data as MensagemBotoesData}
+        onChange={(d) => onUpdateNodeData(node.id, d)}
+        onRemoverOpcao={(opcaoId) => onRemoverOpcaoAresta(node.id, opcaoId)}
+      />
+    );
+  }
+  if (node.category === "mensagem") {
+    return <MensagemForm node={node} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  return <GenericForm node={node} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+}
+
+export function ConfigPanel({
+  fluxo,
+  selectedNodes,
+  problemas,
+  onUpdateFluxoMeta,
+  onUpdateConfiguracoes,
+  onUpdateNode,
+  onUpdateNodeData,
+  onRemoverOpcaoAresta,
+  onSelecionarNode,
+}: {
+  fluxo: FluxoAutomacao;
+  selectedNodes: FlowNode[];
+  problemas: ProblemaValidacao[];
+  onUpdateFluxoMeta: (patch: Partial<Pick<FluxoAutomacao, "nome" | "descricao" | "funilId" | "etapaId" | "categoria">>) => void;
+  onUpdateConfiguracoes: (patch: Partial<ConfiguracoesFluxo>) => void;
+  onUpdateNode: (nodeId: string, patch: Partial<Pick<FlowNode, "titulo" | "observacao">>) => void;
+  onUpdateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
+  onRemoverOpcaoAresta: (nodeId: string, opcaoId: string) => void;
+  onSelecionarNode: (nodeId: string) => void;
+}) {
+  const [aba, setAba] = useState<"configurar" | "problemas">("configurar");
+  const node = selectedNodes.length === 1 ? selectedNodes[0] : null;
+
+  return (
+    <aside className="flow-config" aria-label="Painel de configuração">
+      <div className="flow-config-tabs">
+        <button type="button" className={`flow-tab${aba === "configurar" ? " on" : ""}`} onClick={() => setAba("configurar")}>
+          Configurar
+        </button>
+        <button type="button" className={`flow-tab${aba === "problemas" ? " on" : ""}`} onClick={() => setAba("problemas")}>
+          Problemas{problemas.length > 0 ? ` (${problemas.length})` : ""}
+        </button>
+      </div>
+
+      <div className="flow-config-body">
+        {aba === "problemas" ? (
+          <div className="flow-form">
+            {problemas.length === 0 ? (
+              <p className="hint">Nenhum problema encontrado — esse fluxo está pronto pra publicar.</p>
+            ) : (
+              problemas.map((p) => (
+                <button
+                  type="button"
+                  key={p.id}
+                  className={`flow-problema${p.severidade === "erro" ? " erro" : " aviso"}`}
+                  onClick={() => p.nodeId && onSelecionarNode(p.nodeId)}
+                  disabled={!p.nodeId}
+                >
+                  <span className="flow-problema-sev">{p.severidade === "erro" ? "⛔" : "⚠️"}</span>
+                  <span>{p.mensagem}</span>
+                </button>
+              ))
+            )}
+          </div>
+        ) : node ? (
+          <>
+            <div className="panel-h">
+              <h4>{node.titulo || node.type}</h4>
+            </div>
+            <div className="flow-form">
+              <div className="field">
+                <label>Título do bloco</label>
+                <input
+                  className="input"
+                  placeholder={node.type}
+                  value={node.titulo ?? ""}
+                  onChange={(e) => onUpdateNode(node.id, { titulo: e.target.value })}
+                />
+              </div>
+              <div className="field">
+                <label>Observação (só pra sua equipe)</label>
+                <textarea
+                  className="input"
+                  style={{ width: "100%", minHeight: 50, resize: "vertical" }}
+                  value={node.observacao ?? ""}
+                  onChange={(e) => onUpdateNode(node.id, { observacao: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="panel-h divided">
+              <h4>Configuração</h4>
+            </div>
+            <FormularioDoNode node={node} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
+          </>
+        ) : selectedNodes.length > 1 ? (
+          <p className="hint">{selectedNodes.length} blocos selecionados — selecione um só pra configurar, ou nenhum pra ver as configurações gerais do fluxo.</p>
+        ) : (
+          <>
+            <div className="panel-h">
+              <h4>Configurações gerais</h4>
+            </div>
+            <ConfiguracoesGeraisForm fluxo={fluxo} onChange={onUpdateFluxoMeta} onChangeConfiguracoes={onUpdateConfiguracoes} />
+          </>
+        )}
+      </div>
+    </aside>
+  );
+}

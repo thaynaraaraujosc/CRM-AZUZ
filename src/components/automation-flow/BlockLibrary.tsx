@@ -1,0 +1,125 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
+import { BLOCOS_DISPONIVEIS, CATEGORIAS_BLOCOS, buscarBlocos, type BlocoDefinicao } from "@/lib/automation-flow/blocos";
+import type { FlowNodeType } from "@/lib/automation-flow/types";
+
+/** Tipo MIME custom carregado no drag — o que a área do canvas lê no `onDrop`. */
+export const FLOW_DND_MIME = "application/x-flow-node-type";
+
+export function BlockLibrary({
+  aberta,
+  onFechar,
+  onAdicionarBloco,
+}: {
+  aberta: boolean;
+  onFechar: () => void;
+  onAdicionarBloco: (tipo: FlowNodeType) => void;
+}) {
+  const [busca, setBusca] = useState("");
+  const [categoriasFechadas, setCategoriasFechadas] = useState<Set<string>>(new Set());
+
+  const resultados = useMemo(() => buscarBlocos(busca), [busca]);
+  const buscando = busca.trim().length > 0;
+
+  function alternarCategoria(id: string) {
+    setCategoriasFechadas((prev) => {
+      const novo = new Set(prev);
+      if (novo.has(id)) novo.delete(id);
+      else novo.add(id);
+      return novo;
+    });
+  }
+
+  if (!aberta) {
+    return (
+      <button type="button" className="flow-lib-reabrir icon-btn" aria-label="Abrir biblioteca de blocos" onClick={onFechar}>
+        ▶
+      </button>
+    );
+  }
+
+  return (
+    <aside className="flow-lib" aria-label="Biblioteca de blocos">
+      <div className="flow-lib-head">
+        <input
+          className="input"
+          style={{ flex: 1 }}
+          placeholder="Buscar bloco…"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          aria-label="Buscar bloco"
+        />
+        <button type="button" className="icon-btn subtle" aria-label="Recolher biblioteca de blocos" onClick={onFechar}>
+          ◀
+        </button>
+      </div>
+
+      <div className="flow-lib-lista">
+        {buscando ? (
+          <BlocoSecao titulo={`Resultados (${resultados.length})`} blocos={resultados} onAdicionarBloco={onAdicionarBloco} />
+        ) : (
+          CATEGORIAS_BLOCOS.map((cat) => {
+            const blocos = BLOCOS_DISPONIVEIS.filter((b) => b.categoria === cat.id);
+            const fechada = categoriasFechadas.has(cat.id);
+            return (
+              <div className="flow-lib-cat" key={cat.id}>
+                <button type="button" className="flow-lib-cat-h" onClick={() => alternarCategoria(cat.id)} aria-expanded={!fechada}>
+                  <span className={`flow-cat-dot flow-cat-${cat.id}`} aria-hidden="true" />
+                  <span>{cat.label}</span>
+                  <span className="flow-lib-cat-n">{blocos.length}</span>
+                  <span className="flow-lib-cat-arrow">{fechada ? "▸" : "▾"}</span>
+                </button>
+                {fechada ? null : <BlocoSecao blocos={blocos} onAdicionarBloco={onAdicionarBloco} />}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </aside>
+  );
+}
+
+function BlocoSecao({
+  titulo,
+  blocos,
+  onAdicionarBloco,
+}: {
+  titulo?: string;
+  blocos: BlocoDefinicao[];
+  onAdicionarBloco: (tipo: FlowNodeType) => void;
+}) {
+  return (
+    <div>
+      {titulo ? <p className="flow-lib-secao-titulo">{titulo}</p> : null}
+      {blocos.map((b) => (
+        <div
+          key={b.tipo}
+          className="flow-lib-bloco"
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData(FLOW_DND_MIME, b.tipo);
+            e.dataTransfer.effectAllowed = "copy";
+          }}
+        >
+          <div className={`flow-lib-bloco-icone flow-cat-${b.categoria}`} aria-hidden="true">
+            {b.label.slice(0, 1).toUpperCase()}
+          </div>
+          <div className="flow-lib-bloco-texto">
+            <span className="flow-lib-bloco-label">{b.label}</span>
+            <span className="flow-lib-bloco-desc">{b.descricao}</span>
+          </div>
+          <button
+            type="button"
+            className="icon-btn subtle"
+            aria-label={`Adicionar bloco ${b.label}`}
+            onClick={() => onAdicionarBloco(b.tipo)}
+          >
+            +
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
