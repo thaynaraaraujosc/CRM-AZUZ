@@ -1533,7 +1533,7 @@ table.tbl tbody tr:hover td {
 
 .chat-input-campo {
   font-family: inherit;
-  color: var(--text);
+  color: var(--ink);
 }
 
 .chat-input-campo::placeholder {
@@ -1571,6 +1571,69 @@ table.tbl tbody tr:hover td {
 .chat-mic-btn.active {
   background: #d64545;
   color: #fff;
+}
+
+.chat-attach-btn,
+.chat-emoji-btn {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--blue-soft-2);
+  border: none;
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.chat-attach-btn:hover,
+.chat-emoji-btn:hover {
+  background: var(--blue-soft);
+}
+
+.chat-input-wrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.chat-sugestoes {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.18);
+  z-index: 50;
+}
+
+.chat-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  padding: 10px;
+}
+
+.chat-emoji-opcao {
+  font-size: 19px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 5px;
+  line-height: 1;
+}
+
+.chat-emoji-opcao:hover {
+  background: var(--navy-raised);
 }
 
 /* ---------------- WhatsApp (estilo WhatsApp Web: lista + conversa + painel) ---------------- */
@@ -3295,6 +3358,12 @@ table.tbl tbody tr:hover td {
 .dropdown-item .r {
   font-size: 10.5px;
   color: var(--text-faint);
+}
+
+.dropdown-sep {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 0;
 }
 
 .sb-foot {
