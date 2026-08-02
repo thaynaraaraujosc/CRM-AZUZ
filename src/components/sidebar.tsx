@@ -27,6 +27,7 @@ import {
   IconRelatorios,
   IconSparkle,
   IconTarefas,
+  IconText,
   IconTrafego,
   IconWhatsApp,
 } from "@/components/icons";
@@ -37,16 +38,8 @@ type NavEntry = {
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
 };
 
-export const navEntries: NavEntry[] = [
-  { href: "/inicio", label: "Início", Icon: IconInicio },
-  { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
-  { href: "/funil", label: "Funil", Icon: IconPipeline },
-  { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
-  { href: "/formularios", label: "Formulário", Icon: IconDoc },
-  { href: "/agenda", label: "Agenda", Icon: IconCalendar },
-  { href: "/acoes", label: "Ações", Icon: IconAcoes },
-  { href: "/equipe", label: "Equipe", Icon: IconEquipe },
-  { href: "/contatos", label: "Contatos", Icon: IconContatos },
+/** Sub-rotas agrupadas dentro do menu "Gestão de atividade" na sidebar. */
+export const gestaoAtividadeItens: NavEntry[] = [
   { href: "/trafego", label: "Tráfego", Icon: IconTrafego },
   {
     href: "/atividades-vendas",
@@ -59,10 +52,53 @@ export const navEntries: NavEntry[] = [
     Icon: IconTrafego,
   },
   { href: "/relatorios", label: "Relatórios", Icon: IconRelatorios },
+  { href: "/crm-live", label: "CRM Live", Icon: IconTrafego },
+];
+
+const gestaoAtividadeHrefs = new Set(gestaoAtividadeItens.map((i) => i.href));
+
+export const navEntries: NavEntry[] = [
+  { href: "/inicio", label: "Início", Icon: IconInicio },
+  { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
+  { href: "/funil", label: "Funil", Icon: IconPipeline },
+  { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
+  { href: "/documentos", label: "Documentos", Icon: IconText },
+  { href: "/formularios", label: "Formulário", Icon: IconDoc },
+  { href: "/agenda", label: "Agenda", Icon: IconCalendar },
+  { href: "/acoes", label: "Ações", Icon: IconAcoes },
+  { href: "/equipe", label: "Equipe", Icon: IconEquipe },
+  { href: "/contatos", label: "Contatos", Icon: IconContatos },
+  ...gestaoAtividadeItens,
   { href: "/automacoes", label: "Automações", Icon: IconAutomacoes },
   { href: "/azuz-ia", label: "Azuz IA", Icon: IconSparkle },
   { href: "/configuracoes", label: "Configurações", Icon: IconConfiguracoes },
 ];
+
+/**
+ * Posiciona um popover flutuante ao lado do elemento que o abriu, sempre
+ * dentro dos limites da tela — vira pra esquerda se não couber à direita e
+ * nunca deixa o topo/base vazar pra fora da viewport (funciona em qualquer
+ * tamanho de tela, do desktop ao tablet).
+ */
+function posicionarFlyoutLateral(
+  rect: DOMRect,
+  width: number,
+  alturaEstimada: number,
+) {
+  const margem = 12;
+  let left = rect.right + 8;
+  if (left + width > window.innerWidth - margem) {
+    left = rect.left - width - 8;
+  }
+  left = Math.min(Math.max(left, margem), Math.max(margem, window.innerWidth - width - margem));
+
+  const alturaMax = Math.min(alturaEstimada, window.innerHeight - margem * 2);
+  let top = rect.top;
+  top = Math.min(top, window.innerHeight - alturaMax - margem);
+  top = Math.max(top, margem);
+
+  return { top, left };
+}
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -109,9 +145,48 @@ export function Sidebar() {
   function abrirTrocarConta() {
     if (!souAdmin || !membrosBtnRef.current) return;
     const rect = membrosBtnRef.current.getBoundingClientRect();
-    setTrocarContaPos({ top: rect.top, left: rect.right + 8 });
+    const alturaEstimada = 62 + outrosMembros.length * 56;
+    setTrocarContaPos(posicionarFlyoutLateral(rect, 260, alturaEstimada));
     setTrocarContaAberta(true);
   }
+
+  const [gestaoAtividadeAberta, setGestaoAtividadeAberta] = useState(false);
+  const gestaoAtividadeBtnRef = useRef<HTMLDivElement>(null);
+  const [gestaoAtividadePos, setGestaoAtividadePos] = useState({ top: 0, left: 0 });
+  const gestaoAtividadeFecharRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function cancelarFechamentoGestaoAtividade() {
+    if (gestaoAtividadeFecharRef.current) {
+      clearTimeout(gestaoAtividadeFecharRef.current);
+      gestaoAtividadeFecharRef.current = null;
+    }
+  }
+
+  function abrirGestaoAtividade() {
+    cancelarFechamentoGestaoAtividade();
+    if (!gestaoAtividadeBtnRef.current) return;
+    const rect = gestaoAtividadeBtnRef.current.getBoundingClientRect();
+    const alturaEstimada = gestaoAtividadeItens.length * 46;
+    setGestaoAtividadePos(posicionarFlyoutLateral(rect, 240, alturaEstimada));
+    setGestaoAtividadeAberta(true);
+  }
+
+  /** Dá uma folga de 2s antes de fechar, pra dar tempo do mouse atravessar o espaço até o popup. */
+  function agendarFechamentoGestaoAtividade() {
+    cancelarFechamentoGestaoAtividade();
+    gestaoAtividadeFecharRef.current = setTimeout(() => {
+      setGestaoAtividadeAberta(false);
+    }, 2000);
+  }
+
+  /** Se o mouse for direto pra outro item do menu (não pro submenu), fecha na hora. */
+  function fecharGestaoAtividadeNaHora() {
+    if (!gestaoAtividadeAberta) return;
+    cancelarFechamentoGestaoAtividade();
+    setGestaoAtividadeAberta(false);
+  }
+
+  useEffect(() => cancelarFechamentoGestaoAtividade, []);
 
   return (
     <aside className="sidebar">
@@ -210,9 +285,35 @@ export function Sidebar() {
 
       <nav className="nav">
         {navEntries.map(({ href, label, Icon }) => {
+          if (gestaoAtividadeHrefs.has(href)) {
+            if (href !== gestaoAtividadeItens[0].href) return null;
+            const gestaoAtiva = gestaoAtividadeItens.some(
+              (i) => pathname === i.href || pathname.startsWith(`${i.href}/`),
+            );
+            return (
+              <div
+                key="gestao-atividade"
+                ref={gestaoAtividadeBtnRef}
+                onMouseEnter={abrirGestaoAtividade}
+                onMouseLeave={agendarFechamentoGestaoAtividade}
+              >
+                <button
+                  type="button"
+                  className={`nav-item${gestaoAtiva ? " active" : ""}`}
+                  style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
+                  aria-haspopup="true"
+                  aria-expanded={gestaoAtividadeAberta}
+                >
+                  <IconRelatorios />
+                  Gestão de atividade
+                  <span className="r" style={{ marginLeft: "auto" }}>▸</span>
+                </button>
+              </div>
+            );
+          }
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
-            <div key={href}>
+            <div key={href} onMouseEnter={fecharGestaoAtividadeNaHora}>
               <Link
                 href={href}
                 className={`nav-item${href === "/conversas" ? " nav-item-whatsapp" : ""}${active ? " active" : ""}`}
@@ -238,23 +339,62 @@ export function Sidebar() {
                   })}
                 </div>
               ) : null}
-              {href === "/relatorios" ? (
-                <a
-                  href="/crm-live"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="nav-item nav-item-crmlive"
-                  title="Abre numa aba nova — telão pra projetar no escritório"
-                >
-                  <IconTrafego />
-                  CRM Live
-                  <span className="nav-item-tag">TV</span>
-                </a>
-              ) : null}
             </div>
           );
         })}
       </nav>
+
+      {gestaoAtividadeAberta && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="dropdown-pop"
+              style={{
+                position: "fixed",
+                top: gestaoAtividadePos.top,
+                left: gestaoAtividadePos.left,
+                width: 240,
+                padding: "4px 0",
+                zIndex: 210,
+              }}
+              onMouseEnter={cancelarFechamentoGestaoAtividade}
+              onMouseLeave={agendarFechamentoGestaoAtividade}
+            >
+              {gestaoAtividadeItens.map((item) => {
+                const subAtivo =
+                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+                if (item.href === "/crm-live") {
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      title="Abre numa aba nova — telão pra projetar no escritório"
+                    >
+                      <span className="n">{item.label}</span>
+                      <span className="r">TV</span>
+                    </a>
+                  );
+                }
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => setGestaoAtividadeAberta(false)}
+                  >
+                    <span className="n">{item.label}</span>
+                    {subAtivo ? <span className="r">●</span> : null}
+                  </Link>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
 
       <div className="sb-foot">
         <button

@@ -18,16 +18,16 @@ export function CampoResposta({
     case "texto_longo":
       return (
         <textarea
-          className="input"
-          style={{ width: "100%", minHeight: 60 }}
-          placeholder="Espaço pra resposta em texto longo"
+          className="input form-resposta-campo"
+          style={{ width: "100%", minHeight: 90 }}
+          placeholder="Digite sua resposta…"
           disabled={!interativo}
         />
       );
     case "data":
       return (
         <input
-          className="input"
+          className="input form-resposta-campo"
           style={{ width: "100%" }}
           type="date"
           disabled={!interativo}
@@ -36,7 +36,7 @@ export function CampoResposta({
     case "numero":
       return (
         <input
-          className="input"
+          className="input form-resposta-campo"
           style={{ width: "100%" }}
           type="number"
           placeholder="0"
@@ -55,7 +55,7 @@ export function CampoResposta({
     case "contato_email":
       return (
         <input
-          className="input"
+          className="input form-resposta-campo"
           style={{ width: "100%" }}
           type="email"
           placeholder="nome@email.com"
@@ -65,7 +65,7 @@ export function CampoResposta({
     case "contato_telefone":
       return (
         <input
-          className="input"
+          className="input form-resposta-campo"
           style={{ width: "100%" }}
           type="tel"
           placeholder="+55 62 9XXXX-XXXX"
@@ -75,7 +75,7 @@ export function CampoResposta({
     case "contato_site":
       return (
         <input
-          className="input"
+          className="input form-resposta-campo"
           style={{ width: "100%" }}
           placeholder="https://…"
           disabled={!interativo}
@@ -84,7 +84,7 @@ export function CampoResposta({
     case "contato_localizacao":
       return (
         <input
-          className="input"
+          className="input form-resposta-campo"
           style={{ width: "100%" }}
           placeholder="Cidade, Estado"
           disabled={!interativo}
@@ -109,9 +109,9 @@ export function CampoResposta({
     default:
       return (
         <input
-          className="input"
+          className="input form-resposta-campo"
           style={{ width: "100%" }}
-          placeholder="Espaço pra resposta em texto curto"
+          placeholder="Digite sua resposta…"
           disabled={!interativo}
         />
       );

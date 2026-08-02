@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
+import { createPortal } from "react-dom";
 import { useRef, useState } from "react";
 
-import { acaoRascunho, acoesAnteriores, classeOrigem, segmentos } from "@/lib/data";
+import { acaoRascunho, acoesAnteriores, classeOrigem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { IconDoc, IconImage, IconMic, IconSearch } from "@/components/icons";
-import { MediaPicker, SegmentChips, Topbar } from "@/components/ui";
+import { FloatingDropdown, MediaPicker, SegmentChips, Topbar } from "@/components/ui";
 
 const iconePorMidia = {
   imagem: <IconImage />,
@@ -20,8 +22,50 @@ const CANAIS_ENVIO = [
   { label: "SMS", ativo: false },
 ];
 
+const PERIODOS = [
+  { valor: "7", label: "Últimos 7 dias" },
+  { valor: "30", label: "Últimos 30 dias" },
+  { valor: "90", label: "Últimos 90 dias" },
+] as const;
+
+type PeriodoValor = (typeof PERIODOS)[number]["valor"] | "personalizado";
+type ModoAudiencia = "periodo" | "origem" | "manual";
+
+function formatarDataEnvio(iso: string) {
+  if (!iso) return "Escolha a data";
+  const [ano, mes, dia] = iso.split("-");
+  if (iso === "2026-08-02") return "Hoje";
+  return `${dia}/${mes}/${ano}`;
+}
+
+function clamp(valor: number, min: number, max: number) {
+  return Math.min(Math.max(valor, min), Math.max(min, max));
+}
+
+/** Posiciona um popover logo abaixo do botão que o abriu, sem vazar da tela. */
+function posicionarAbaixo(rect: DOMRect, width: number) {
+  const margem = 12;
+  return {
+    top: rect.bottom + 6,
+    left: clamp(rect.left, margem, window.innerWidth - width - margem),
+  };
+}
+
+/** Posiciona um popover ao lado do item que o abriu (vira pra esquerda se não couber). */
+function posicionarAoLado(rect: DOMRect, width: number) {
+  const margem = 12;
+  let left = rect.right + 6;
+  if (left + width > window.innerWidth - margem) left = rect.left - width - 6;
+  return {
+    top: clamp(rect.top, margem, window.innerHeight - 280 - margem),
+    left: clamp(left, margem, window.innerWidth - width - margem),
+  };
+}
+
 export default function AcoesPage() {
   const { contatos } = useContatos();
+  const origensDisponiveis = Array.from(new Set(contatos.map((c) => c.origem)));
+
   const [selecionados, setSelecionados] = useState(
     () => new Set(contatos.map((c) => c.nome)),
   );
@@ -31,6 +75,104 @@ export default function AcoesPage() {
   const [canaisEnvio, setCanaisEnvio] = useState(
     () => CANAIS_ENVIO.filter((c) => c.ativo).map((c) => c.label),
   );
+
+  const [envioAberto, setEnvioAberto] = useState(false);
+  const [envioRect, setEnvioRect] = useState<DOMRect | null>(null);
+  const [envioData, setEnvioData] = useState("2026-08-02");
+  const [envioHora, setEnvioHora] = useState("18:00");
+
+  const [modoAudiencia, setModoAudiencia] = useState<ModoAudiencia>("manual");
+  const [periodoAudiencia, setPeriodoAudiencia] = useState<PeriodoValor>("30");
+  const [periodoDe, setPeriodoDe] = useState("");
+  const [periodoAte, setPeriodoAte] = useState("");
+  const [origemAudiencia, setOrigemAudiencia] = useState<string | null>(null);
+
+  const [audienciaAberta, setAudienciaAberta] = useState(false);
+  const [audienciaRect, setAudienciaRect] = useState<DOMRect | null>(null);
+  const audienciaBtnRef = useRef<HTMLButtonElement>(null);
+  const audienciaFecharRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [submenuAudiencia, setSubmenuAudiencia] = useState<
+    "periodo" | "origem" | "manual" | null
+  >(null);
+  const [submenuRect, setSubmenuRect] = useState<DOMRect | null>(null);
+
+  const [acaoExpandida, setAcaoExpandida] = useState<string | null>(null);
+
+  function cancelarFechamentoAudiencia() {
+    if (audienciaFecharRef.current) {
+      clearTimeout(audienciaFecharRef.current);
+      audienciaFecharRef.current = null;
+    }
+  }
+
+  /** Dá uma folga de 2s antes de fechar, pra dar tempo de levar o mouse até o submenu. */
+  function agendarFechamentoAudiencia() {
+    cancelarFechamentoAudiencia();
+    audienciaFecharRef.current = setTimeout(() => {
+      setAudienciaAberta(false);
+      setSubmenuAudiencia(null);
+    }, 2000);
+  }
+
+  function abrirAudiencia() {
+    cancelarFechamentoAudiencia();
+    if (!audienciaBtnRef.current) return;
+    setAudienciaRect(audienciaBtnRef.current.getBoundingClientRect());
+    setAudienciaAberta(true);
+  }
+
+  function abrirSubmenuAudiencia(
+    nome: "periodo" | "origem" | "manual",
+    rect: DOMRect,
+  ) {
+    cancelarFechamentoAudiencia();
+    setSubmenuRect(rect);
+    setSubmenuAudiencia(nome);
+  }
+
+  function fecharAudiencia() {
+    setAudienciaAberta(false);
+    setSubmenuAudiencia(null);
+  }
+
+  /** Simulação — os contatos ainda não guardam a data em que entraram, então usamos uma amostra proporcional ao período. */
+  function aplicarPeriodo(valor: PeriodoValor) {
+    setModoAudiencia("periodo");
+    setPeriodoAudiencia(valor);
+    const quantidade =
+      valor === "7"
+        ? Math.max(1, Math.round(contatos.length * 0.2))
+        : valor === "30"
+        ? Math.max(1, Math.round(contatos.length * 0.6))
+        : contatos.length;
+    setSelecionados(new Set(contatos.slice(0, quantidade).map((c) => c.nome)));
+    fecharAudiencia();
+  }
+
+  function aplicarOrigem(origem: string) {
+    setModoAudiencia("origem");
+    setOrigemAudiencia(origem);
+    setSelecionados(new Set(contatos.filter((c) => c.origem === origem).map((c) => c.nome)));
+    fecharAudiencia();
+  }
+
+  function abrirManual(comTodos: boolean) {
+    setModoAudiencia("manual");
+    setSelecionados(comTodos ? new Set(contatos.map((c) => c.nome)) : new Set());
+    setListaAberta(true);
+    fecharAudiencia();
+  }
+
+  const rotuloAudiencia =
+    modoAudiencia === "periodo"
+      ? periodoAudiencia === "personalizado"
+        ? periodoDe && periodoAte
+          ? `${periodoDe} até ${periodoAte}`
+          : "Período personalizado"
+        : PERIODOS.find((p) => p.valor === periodoAudiencia)?.label ?? "Período"
+      : modoAudiencia === "origem"
+      ? `Origem: ${origemAudiencia}`
+      : "Contato manual";
 
   const contatosFiltrados = buscaContato.trim()
     ? contatos.filter((c) =>
@@ -102,28 +244,227 @@ export default function AcoesPage() {
               <div className="panel-h">
                 <h4>1. Quem vai receber</h4>
               </div>
-              <SegmentChips
-                options={segmentos}
-                onChange={(labels) => {
-                  if (labels.length === 0) return;
-                  setSelecionados(new Set(contatos.map((c) => c.nome)));
-                }}
-              />
+              <div style={{ padding: "14px 17px", borderBottom: "1px solid var(--line)" }}>
+                <button
+                  type="button"
+                  ref={audienciaBtnRef}
+                  className="btn ghost"
+                  aria-haspopup="true"
+                  aria-expanded={audienciaAberta}
+                  onClick={abrirAudiencia}
+                  onMouseEnter={abrirAudiencia}
+                  onMouseLeave={agendarFechamentoAudiencia}
+                >
+                  {rotuloAudiencia} ▾
+                </button>
+
+                {audienciaAberta && typeof document !== "undefined"
+                  ? createPortal(
+                      <div
+                        className="dropdown-pop"
+                        style={{
+                          position: "fixed",
+                          ...posicionarAbaixo(audienciaRect!, 230),
+                          width: 230,
+                          padding: "4px 0",
+                          zIndex: 210,
+                        }}
+                        onMouseEnter={cancelarFechamentoAudiencia}
+                        onMouseLeave={agendarFechamentoAudiencia}
+                      >
+                        <div
+                          className="dropdown-item"
+                          style={{
+                            width: "100%",
+                            cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                          onMouseEnter={(e) =>
+                            abrirSubmenuAudiencia(
+                              "periodo",
+                              e.currentTarget.getBoundingClientRect(),
+                            )
+                          }
+                        >
+                          <span className="n">Período</span>
+                          <span className="r">▸</span>
+                        </div>
+                        <div
+                          className="dropdown-item"
+                          style={{
+                            width: "100%",
+                            cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                          onMouseEnter={(e) =>
+                            abrirSubmenuAudiencia(
+                              "origem",
+                              e.currentTarget.getBoundingClientRect(),
+                            )
+                          }
+                        >
+                          <span className="n">Origem</span>
+                          <span className="r">▸</span>
+                        </div>
+                        <div
+                          className="dropdown-item"
+                          style={{
+                            width: "100%",
+                            cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                          onMouseEnter={(e) =>
+                            abrirSubmenuAudiencia(
+                              "manual",
+                              e.currentTarget.getBoundingClientRect(),
+                            )
+                          }
+                        >
+                          <span className="n">Contato manual</span>
+                          <span className="r">▸</span>
+                        </div>
+                      </div>,
+                      document.body,
+                    )
+                  : null}
+
+                {submenuAudiencia && typeof document !== "undefined"
+                  ? createPortal(
+                      <div
+                        className="dropdown-pop"
+                        style={{
+                          position: "fixed",
+                          ...posicionarAoLado(submenuRect!, 280),
+                          width: 280,
+                          padding: "4px 0",
+                          zIndex: 211,
+                          overflowX: "hidden",
+                        }}
+                        onMouseEnter={cancelarFechamentoAudiencia}
+                        onMouseLeave={agendarFechamentoAudiencia}
+                      >
+                        {submenuAudiencia === "periodo" ? (
+                          <>
+                            {PERIODOS.map((p) => (
+                              <button
+                                type="button"
+                                key={p.valor}
+                                className="dropdown-item"
+                                style={{ width: "100%", textAlign: "left" }}
+                                onClick={() => aplicarPeriodo(p.valor)}
+                              >
+                                <span className="n">{p.label}</span>
+                              </button>
+                            ))}
+                            <div className="dropdown-sep" />
+                            <div style={{ padding: "10px 14px" }}>
+                              <p className="hint" style={{ marginBottom: 8 }}>
+                                Ou escolha um período personalizado
+                              </p>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: 8,
+                                  marginBottom: 10,
+                                }}
+                              >
+                                <div className="field" style={{ padding: 0 }}>
+                                  <label>De</label>
+                                  <input
+                                    type="date"
+                                    className="input"
+                                    style={{ width: "100%" }}
+                                    value={periodoDe}
+                                    onChange={(e) => setPeriodoDe(e.target.value)}
+                                  />
+                                </div>
+                                <div className="field" style={{ padding: 0 }}>
+                                  <label>Até</label>
+                                  <input
+                                    type="date"
+                                    className="input"
+                                    style={{ width: "100%" }}
+                                    value={periodoAte}
+                                    onChange={(e) => setPeriodoAte(e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                className="btn primary block"
+                                onClick={() => aplicarPeriodo("personalizado")}
+                              >
+                                Aplicar período
+                              </button>
+                            </div>
+                          </>
+                        ) : null}
+                        {submenuAudiencia === "origem" ? (
+                          origensDisponiveis.map((origem) => (
+                            <button
+                              type="button"
+                              key={origem}
+                              className="dropdown-item"
+                              style={{ width: "100%", textAlign: "left" }}
+                              onClick={() => aplicarOrigem(origem)}
+                            >
+                              <span className="n">{origem}</span>
+                            </button>
+                          ))
+                        ) : null}
+                        {submenuAudiencia === "manual" ? (
+                          <>
+                            <button
+                              type="button"
+                              className="dropdown-item"
+                              style={{ width: "100%", textAlign: "left" }}
+                              onClick={() => abrirManual(true)}
+                            >
+                              <span className="n">Selecionar todos os contatos</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="dropdown-item"
+                              style={{ width: "100%", textAlign: "left" }}
+                              onClick={() => abrirManual(false)}
+                            >
+                              <span className="n">Selecionar do zero (pesquisar)</span>
+                            </button>
+                          </>
+                        ) : null}
+                      </div>,
+                      document.body,
+                    )
+                  : null}
+              </div>
+
               <div className="aud-count">
                 <div>
                   <p className="n">{selecionados.size} contatos</p>
                   <p className="l">Vão receber essa ação</p>
                 </div>
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={() => setListaAberta((v) => !v)}
-                >
-                  {listaAberta ? "Fechar lista" : "Ver lista"}
-                </button>
+                {modoAudiencia === "manual" ? (
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => setListaAberta((v) => !v)}
+                  >
+                    {listaAberta ? "Fechar lista" : "Ver lista"}
+                  </button>
+                ) : null}
               </div>
 
-              {listaAberta ? (
+              {modoAudiencia === "manual" && listaAberta ? (
                 <div style={{ borderTop: "1px solid var(--line)" }}>
                   <div
                     style={{
@@ -333,12 +674,55 @@ export default function AcoesPage() {
               </div>
               <div className="field">
                 <label>Enviar</label>
-                <div className="input">
-                  Hoje às 18h ·{" "}
+                <button
+                  type="button"
+                  className="input"
+                  style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
+                  onClick={(e) => {
+                    setEnvioRect(e.currentTarget.getBoundingClientRect());
+                    setEnvioAberto((v) => !v);
+                  }}
+                >
+                  📅 {formatarDataEnvio(envioData)} às {envioHora} ·{" "}
                   {canaisEnvio.length > 0
                     ? canaisEnvio.join(" e ")
                     : "escolha pelo menos um canal"}
-                </div>
+                </button>
+                <FloatingDropdown
+                  anchorRect={envioAberto ? envioRect : null}
+                  onClose={() => setEnvioAberto(false)}
+                  width={260}
+                >
+                  <div style={{ padding: "10px 14px" }}>
+                    <div className="field" style={{ padding: 0, marginBottom: 10 }}>
+                      <label>Qual dia enviar</label>
+                      <input
+                        type="date"
+                        className="input"
+                        style={{ width: "100%" }}
+                        value={envioData}
+                        onChange={(e) => setEnvioData(e.target.value)}
+                      />
+                    </div>
+                    <div className="field" style={{ padding: 0, marginBottom: 10 }}>
+                      <label>Que horas</label>
+                      <input
+                        type="time"
+                        className="input"
+                        style={{ width: "100%" }}
+                        value={envioHora}
+                        onChange={(e) => setEnvioHora(e.target.value)}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="btn primary block"
+                      onClick={() => setEnvioAberto(false)}
+                    >
+                      Confirmar data e hora
+                    </button>
+                  </div>
+                </FloatingDropdown>
               </div>
               <div className="section-foot">
                 <button type="button" className="btn primary block">
@@ -352,22 +736,57 @@ export default function AcoesPage() {
             <div className="panel-h">
               <h4>Ações anteriores</h4>
             </div>
-            {acoesAnteriores.map((acao) => (
-              <div className="broadcast-row" key={acao.titulo}>
-                <div className="broadcast-icon">{iconePorMidia[acao.midia]}</div>
-                <div className="broadcast-body">
-                  <p className="broadcast-title">{acao.titulo}</p>
-                  <p className="broadcast-meta">{acao.meta}</p>
+            {acoesAnteriores.map((acao) => {
+              const expandida = acaoExpandida === acao.titulo;
+              return (
+                <div key={acao.titulo}>
+                  <button
+                    type="button"
+                    className="broadcast-row"
+                    style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
+                    aria-expanded={expandida}
+                    onClick={() =>
+                      setAcaoExpandida((atual) => (atual === acao.titulo ? null : acao.titulo))
+                    }
+                  >
+                    <div className="broadcast-icon">{iconePorMidia[acao.midia]}</div>
+                    <div className="broadcast-body">
+                      <p className="broadcast-title">{acao.titulo}</p>
+                      <p className="broadcast-meta">{acao.meta}</p>
+                    </div>
+                    <span
+                      className={`broadcast-status ${
+                        acao.agendado ? "scheduled" : "sent"
+                      }`}
+                    >
+                      {acao.status}
+                    </span>
+                  </button>
+                  {expandida ? (
+                    <div style={{ padding: "0 17px 14px", borderBottom: "1px solid var(--line-soft)" }}>
+                      <p className="hint" style={{ margin: "0 0 8px" }}>
+                        Contatos que receberam — clique num contato pra ir direto na conversa
+                        do dia {acao.data}
+                      </p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {acao.contatos.map((nome) => (
+                          <Link
+                            key={nome}
+                            href={`/conversas?contato=${encodeURIComponent(nome)}`}
+                            className="activity-row activity-row-link"
+                          >
+                            <div className="body">
+                              <p className="name">{nome}</p>
+                            </div>
+                            <span className="meta">Ver conversa ▸</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-                <span
-                  className={`broadcast-status ${
-                    acao.agendado ? "scheduled" : "sent"
-                  }`}
-                >
-                  {acao.status}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

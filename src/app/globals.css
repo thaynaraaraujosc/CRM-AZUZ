@@ -959,6 +959,29 @@ table {
   border-color: var(--blue);
 }
 
+.nova-pasta-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nova-pasta-input {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 8px 13px;
+  width: 160px;
+  border-radius: 9px;
+  border: 1px solid var(--blue);
+  color: var(--ink);
+  background: var(--navy-raised);
+  outline: none;
+}
+
+.nova-pasta-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--blue-soft-2);
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -1036,29 +1059,19 @@ table.tbl tbody tr:hover td {
   white-space: nowrap;
 }
 
+/* Papéis usam a mesma família azul da marca — só a intensidade muda,
+   pra hierarquia ficar clara sem virar um arco-íris. */
 .role-tag-admin {
+  background: var(--blue);
+  color: var(--white);
+}
+
+.role-tag-vendedor,
+.role-tag-especialista,
+.role-tag-cliente,
+.role-tag-estoquista {
   background: var(--blue-soft);
   color: var(--blue);
-}
-
-.role-tag-vendedor {
-  background: rgba(37, 190, 130, 0.14);
-  color: #0f9d63;
-}
-
-.role-tag-especialista {
-  background: rgba(155, 89, 255, 0.14);
-  color: #8a3ffc;
-}
-
-.role-tag-cliente {
-  background: rgba(255, 145, 77, 0.16);
-  color: #c9660a;
-}
-
-.role-tag-estoquista {
-  background: rgba(255, 92, 138, 0.14);
-  color: #d81b60;
 }
 
 .role-tag .soft {
@@ -1104,9 +1117,14 @@ table.tbl tbody tr:hover td {
 .kcol-h {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   margin-bottom: 10px;
   padding: 0 2px;
+}
+
+.kcol-h .t {
+  flex: 1;
+  min-width: 0;
 }
 
 .kcol-drag-handle {
@@ -1514,7 +1532,7 @@ table.tbl tbody tr:hover td {
 }
 
 .chat-input {
-  padding: 0 17px 17px;
+  padding: 10px 17px 17px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1523,12 +1541,26 @@ table.tbl tbody tr:hover td {
 .chat-input .box {
   flex: 1;
   min-width: 0;
-  background: var(--navy-raised);
+  background: var(--navy-raised-2);
   border: 1px solid var(--line);
-  border-radius: 9px;
-  padding: 10px 13px;
-  font-size: 12px;
+  border-radius: 12px;
+  padding: 15px 16px;
+  font-size: 13px;
   color: var(--text-faint);
+}
+
+.chat-input-campo {
+  font-family: inherit;
+  color: var(--ink);
+}
+
+.chat-input-campo::placeholder {
+  color: var(--text-faint);
+}
+
+.chat-input-gravando {
+  color: #d64545;
+  font-weight: 600;
 }
 
 .chat-mic-btn {
@@ -1554,6 +1586,88 @@ table.tbl tbody tr:hover td {
   background: var(--blue-soft);
 }
 
+.chat-mic-btn.active {
+  background: #d64545;
+  color: #fff;
+}
+
+.chat-attach-btn,
+.chat-emoji-btn {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--blue-soft-2);
+  border: none;
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.chat-attach-btn:hover,
+.chat-emoji-btn:hover {
+  background: var(--blue-soft);
+}
+
+.chat-input-wrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  cursor: text;
+}
+
+.chat-sugestoes {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.18);
+  z-index: 50;
+}
+
+.chat-emoji-picker {
+  padding: 6px 4px;
+}
+
+.chat-emoji-categoria {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+  padding: 8px 10px 2px;
+}
+
+.chat-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  padding: 4px 6px;
+}
+
+.chat-emoji-opcao {
+  font-size: 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 5px;
+  line-height: 1;
+}
+
+.chat-emoji-opcao:hover {
+  background: var(--navy-raised);
+}
+
 /* ---------------- WhatsApp (estilo WhatsApp Web: lista + conversa + painel) ---------------- */
 
 .wa-content {
@@ -1566,10 +1680,51 @@ table.tbl tbody tr:hover td {
 .wa-list {
   width: 320px;
   flex: 0 0 auto;
-  border-right: 1px solid var(--line);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  margin: 12px 0 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--navy-raised);
+}
+
+.wa-list-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.wa-list-refresh {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.wa-list-refresh:hover {
+  background: var(--blue-soft-2);
+  color: var(--blue);
+}
+
+.wa-list-refresh.spinning svg {
+  animation: wa-list-refresh-spin 0.7s linear infinite;
+}
+
+@keyframes wa-list-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .wa-list-search {
@@ -1580,6 +1735,7 @@ table.tbl tbody tr:hover td {
 .wa-search {
   width: 100%;
   border-radius: 20px;
+  background: var(--navy-raised-2);
 }
 
 .wa-list-filters {
@@ -1593,7 +1749,7 @@ table.tbl tbody tr:hover td {
 .wa-filter-chip {
   flex: 0 0 auto;
   border: none;
-  background: var(--navy-raised);
+  background: var(--navy-raised-2);
   color: var(--text-muted);
   font-size: 11.5px;
   font-weight: 600;
@@ -1651,7 +1807,7 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-row:hover {
-  background: var(--navy-raised);
+  background: var(--navy-raised-2);
 }
 
 .wa-row.active {
@@ -1712,7 +1868,11 @@ table.tbl tbody tr:hover td {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--line);
+  margin: 12px 12px 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--navy-raised);
+  overflow: hidden;
 }
 
 .wa-main .chat-body {
@@ -1730,11 +1890,17 @@ table.tbl tbody tr:hover td {
   max-width: 70vw;
   flex: 0 0 auto;
   overflow-y: auto;
+  margin: 12px 12px 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--navy-raised);
 }
 
 .wa-resizer {
   flex: 0 0 auto;
   width: 6px;
+  margin: 12px 0;
+  border-radius: 3px;
   cursor: col-resize;
   background: transparent;
 }
@@ -1799,71 +1965,6 @@ table.tbl tbody tr:hover td {
   align-items: center;
   justify-content: center;
   font-size: 52px;
-}
-
-.wa-discador {
-  position: fixed;
-  top: 90px;
-  right: 40px;
-  z-index: 1200;
-  width: 240px;
-  background: var(--navy);
-  border-radius: 18px;
-  padding: 22px;
-  text-align: center;
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
-}
-
-.wa-discador-nome {
-  font-weight: 700;
-  font-size: 14px;
-  margin: 0;
-}
-
-.wa-discador-numero {
-  color: var(--text-faint);
-  font-size: 12px;
-  margin: 2px 0 14px;
-}
-
-.wa-discador-timer {
-  font-family: var(--display);
-  font-size: 30px;
-  font-weight: 700;
-  margin: 0 0 4px;
-}
-
-.wa-discador-acoes {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin: 18px 0;
-}
-
-.wa-discador-icone {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--navy-raised);
-  font-size: 17px;
-  cursor: pointer;
-}
-
-.wa-discador-icone.active {
-  background: var(--blue-soft-2);
-  border-color: var(--blue);
-}
-
-.wa-discador-desligar {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: none;
-  background: #d64545;
-  color: #fff;
-  font-size: 20px;
-  cursor: pointer;
 }
 
 .wa-email-toolbar {
@@ -3343,6 +3444,12 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
+.dropdown-sep {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 0;
+}
+
 .sb-foot {
   position: relative;
 }
@@ -3739,6 +3846,153 @@ table.tbl tbody tr:hover td {
   outline: none;
 }
 
+.doc-toolbar-rich {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.doc-toolbar-select {
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.doc-toolbar-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  color: var(--ink);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.doc-toolbar-btn:hover {
+  background: var(--blue-soft-2);
+  color: var(--blue);
+}
+
+.doc-toolbar-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--line);
+  margin: 0 4px;
+}
+
+/* Fundo neutro atrás da folha, pra página parecer mesmo uma folha A4 solta — igual Word/Docs. */
+.doc-canvas {
+  background: var(--navy-deep);
+  padding: 32px 24px 60px;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  max-height: calc(100vh - 220px);
+}
+
+.doc-page-wrap {
+  width: 100%;
+  max-width: 760px;
+  flex: 0 0 auto;
+}
+
+/* Régua decorativa, igual Word/Docs — só visual, nunca imprime. */
+.doc-regua {
+  display: flex;
+  height: 20px;
+  margin-bottom: 6px;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.doc-regua-marca {
+  flex: 1 0 0;
+  border-right: 1px solid var(--line);
+  font-size: 8.5px;
+  color: var(--text-faint);
+  text-align: right;
+  padding: 2px 3px 0 0;
+}
+
+.doc-regua-marca:last-child {
+  border-right: none;
+}
+
+.doc-page-sheet {
+  width: 100%;
+  min-height: 1000px;
+  background: #ffffff;
+  color: #1a1a1a;
+  border-radius: 2px;
+  padding: 72px;
+  box-shadow: 0 10px 40px rgba(11, 21, 51, 0.25);
+  font-family: "Times New Roman", Georgia, serif;
+}
+
+.doc-page-sheet .doc-title-input {
+  color: #1a1a1a;
+}
+
+.doc-body-rich {
+  min-height: 700px;
+  line-height: 1.7;
+  font-size: 14px;
+  outline: none;
+}
+
+.doc-body-rich:empty::before {
+  content: "Comece a escrever…";
+  color: #9aa1b0;
+}
+
+/* Barra que aparece embaixo da folha, ao rolar — adicionar/apagar página sem precisar ir na barra lateral. */
+.doc-page-fim {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 0 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.doc-page-wrap:hover .doc-page-fim {
+  opacity: 1;
+}
+
+.doc-page-fim-btn {
+  border: 1px dashed var(--line);
+  background: var(--navy);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.doc-page-fim-btn:hover {
+  background: var(--blue-soft-2);
+  color: var(--blue);
+  border-color: var(--blue);
+}
+
+.doc-page-fim-apagar:hover {
+  background: rgba(214, 69, 69, 0.12);
+  color: #d64545;
+  border-color: #d64545;
+}
+
+.doc-page-fim-apagar:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 @media print {
   body * {
     visibility: hidden;
@@ -3755,13 +4009,16 @@ table.tbl tbody tr:hover td {
     left: 0;
     width: 100%;
     max-width: none;
+    min-height: 0;
     margin: 0;
     padding: 0;
+    box-shadow: none;
+    border-radius: 0;
   }
 
   @page {
     size: A4;
-    margin: 18mm;
+    margin: 16mm;
   }
 }
 
@@ -3871,6 +4128,17 @@ table.tbl tbody tr:hover td {
   padding: 48px 32px;
   text-align: center;
   box-shadow: 0 24px 60px rgba(11, 21, 51, 0.16);
+}
+
+.form-public-obrigado-preview {
+  text-align: center;
+  padding: 20px 8px;
+  color: #0b1533;
+}
+
+.form-public-obrigado-preview h2 {
+  font-size: 16px;
+  margin: 0;
 }
 
 @media (max-width: 900px) {
@@ -4067,6 +4335,33 @@ table.tbl tbody tr:hover td {
 .form-pergunta-dica-input:focus {
   outline: none;
   border-bottom-color: var(--blue);
+}
+
+/* Campo de resposta em si — na prévia e na página pública do formulário. */
+.form-resposta-campo {
+  background: var(--navy-raised, #fff);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px 13px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  font-family: inherit;
+}
+
+.form-resposta-campo::placeholder {
+  color: var(--text-faint);
+}
+
+.form-resposta-campo:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-soft-2);
+}
+
+.form-resposta-campo:disabled {
+  cursor: default;
+  opacity: 0.85;
 }
 
 .form-pergunta-obrigatoria {

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 import {
   FORMULARIOS_STORAGE_KEY,
+  MENSAGEM_FINAL_PADRAO,
   type Formulario,
 } from "@/lib/formularios-context";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
@@ -13,7 +14,12 @@ function carregarFormularios(): Formulario[] {
   if (typeof window === "undefined") return [];
   try {
     const salvos = localStorage.getItem(FORMULARIOS_STORAGE_KEY);
-    return salvos ? JSON.parse(salvos) : [];
+    if (!salvos) return [];
+    const lista = JSON.parse(salvos) as (Omit<Formulario, "mensagemFinal"> & {
+      mensagemFinal?: string;
+    })[];
+    // Formulários salvos antes da página final existir ainda não têm o campo.
+    return lista.map((f) => ({ mensagemFinal: MENSAGEM_FINAL_PADRAO, ...f }));
   } catch {
     return [];
   }
@@ -48,8 +54,7 @@ function FormularioPreviewContent() {
           className="form-public-obrigado"
           style={{ background: formulario.corFundo }}
         >
-          <h2>Obrigado!</h2>
-          <p className="hint">Sua resposta foi enviada com sucesso.</p>
+          <h2>{formulario.mensagemFinal || MENSAGEM_FINAL_PADRAO}</h2>
         </div>
       </div>
     );

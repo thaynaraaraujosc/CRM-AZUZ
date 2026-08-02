@@ -1,10 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import {
-  currentUser,
   equipe,
   EQUIPE_PADRAO_TAREFA,
   tarefas as tarefasIniciais,
@@ -12,13 +11,7 @@ import {
 import type { ColunaTarefas, Urgencia } from "@/lib/data";
 import { useNotificacoes } from "@/lib/notificacoes-context";
 import { IconConfiguracoes, IconDoc } from "@/components/icons";
-import {
-  ChipFilters,
-  FloatingDropdown,
-  RadioList,
-  Toggle,
-  Topbar,
-} from "@/components/ui";
+import { ChipFilters, RadioList, Toggle, Topbar } from "@/components/ui";
 
 const NIVEIS_URGENCIA: Urgencia[] = ["Baixa", "Média", "Alta"];
 
@@ -26,230 +19,6 @@ const RESPONSAVEIS = equipe.map((m) => ({ nome: m.nome, descricao: m.papel }));
 
 function cloneColunas(colunas: ColunaTarefas[]): ColunaTarefas[] {
   return colunas.map((c) => ({ ...c, cards: c.cards.map((card) => ({ ...card })) }));
-}
-
-type PaginaDocumento = {
-  id: string;
-  titulo: string;
-  capaUrl?: string;
-  conteudo: string;
-};
-
-const PAGINAS_DOC_INICIAIS: PaginaDocumento[] = [
-  {
-    id: "pagina-1",
-    titulo: "Notas gerais",
-    conteudo:
-      "Anotações e combinados da equipe sobre a rotina de tarefas — use as páginas ao lado pra separar por assunto.",
-  },
-];
-
-const FONTES_DOCUMENTO = [
-  { label: "Padrão", valor: "var(--body)" },
-  { label: "Serifada", valor: "Georgia, 'Times New Roman', serif" },
-  { label: "Monoespaçada", valor: "'Courier New', monospace" },
-];
-
-const TAMANHOS_FONTE_DOC = [
-  { label: "Pequena", valor: 12 },
-  { label: "Média", valor: 14 },
-  { label: "Grande", valor: 17 },
-];
-
-/** Visão "Documento" das Tarefas — várias páginas, capa, fonte/largura configuráveis. */
-function DocumentoView() {
-  const [paginas, setPaginas] = useState<PaginaDocumento[]>(PAGINAS_DOC_INICIAIS);
-  const [paginaAtivaId, setPaginaAtivaId] = useState(PAGINAS_DOC_INICIAIS[0].id);
-  const [configAberta, setConfigAberta] = useState(false);
-  const [configRect, setConfigRect] = useState<DOMRect | null>(null);
-  const [fonteDoc, setFonteDoc] = useState(FONTES_DOCUMENTO[0]);
-  const [tamanhoDoc, setTamanhoDoc] = useState(TAMANHOS_FONTE_DOC[1]);
-  const [larguraDoc, setLarguraDoc] = useState<"padrao" | "total">("padrao");
-
-  const paginaAtiva = paginas.find((p) => p.id === paginaAtivaId) ?? paginas[0];
-
-  function atualizarPaginaAtiva(patch: Partial<PaginaDocumento>) {
-    setPaginas((prev) =>
-      prev.map((p) => (p.id === paginaAtivaId ? { ...p, ...patch } : p)),
-    );
-  }
-
-  function adicionarPagina() {
-    const nova: PaginaDocumento = {
-      id: `pagina-${Date.now()}`,
-      titulo: "Sem título",
-      conteudo: "",
-    };
-    setPaginas((prev) => [...prev, nova]);
-    setPaginaAtivaId(nova.id);
-  }
-
-  function excluirPagina(id: string) {
-    if (paginas.length <= 1) return;
-    if (!window.confirm("Excluir essa página?")) return;
-    setPaginas((prev) => {
-      const restante = prev.filter((p) => p.id !== id);
-      if (paginaAtivaId === id) setPaginaAtivaId(restante[0].id);
-      return restante;
-    });
-  }
-
-  function escolherCapa(e: React.ChangeEvent<HTMLInputElement>) {
-    const arquivo = e.target.files?.[0];
-    if (!arquivo) return;
-    atualizarPaginaAtiva({ capaUrl: URL.createObjectURL(arquivo) });
-  }
-
-  if (!paginaAtiva) return null;
-
-  return (
-    <div className="doc-view">
-      <aside className="doc-sidebar">
-        <p className="doc-sidebar-h">Páginas</p>
-        {paginas.map((p) => (
-          <div
-            key={p.id}
-            className={`doc-page-item${p.id === paginaAtivaId ? " active" : ""}`}
-            onClick={() => setPaginaAtivaId(p.id)}
-          >
-            <IconDoc width={13} height={13} />
-            <span>{p.titulo || "Sem título"}</span>
-            {paginas.length > 1 ? (
-              <span
-                role="button"
-                aria-label={`Excluir página ${p.titulo}`}
-                className="doc-page-remove"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  excluirPagina(p.id);
-                }}
-              >
-                ✕
-              </span>
-            ) : null}
-          </div>
-        ))}
-        <button type="button" className="doc-page-add" onClick={adicionarPagina}>
-          + Adicionar página
-        </button>
-      </aside>
-
-      <div className="doc-main">
-        <div className="doc-toolbar">
-          <button type="button" className="btn ghost" onClick={() => window.print()}>
-            Imprimir
-          </button>
-          <button
-            type="button"
-            className="icon-btn subtle"
-            aria-label="Configurações do documento"
-            onClick={(e) => {
-              setConfigRect(e.currentTarget.getBoundingClientRect());
-              setConfigAberta((v) => !v);
-            }}
-          >
-            <IconConfiguracoes />
-          </button>
-          <FloatingDropdown
-            anchorRect={configAberta ? configRect : null}
-            onClose={() => setConfigAberta(false)}
-            align="right"
-            width={240}
-            style={{ padding: 14 }}
-          >
-            <div className="field" style={{ padding: 0, marginBottom: 10 }}>
-              <label>Estilo de fonte</label>
-              <select
-                className="input"
-                style={{ width: "100%", cursor: "pointer" }}
-                value={fonteDoc.label}
-                onChange={(e) =>
-                  setFonteDoc(
-                    FONTES_DOCUMENTO.find((f) => f.label === e.target.value) ??
-                      FONTES_DOCUMENTO[0],
-                  )
-                }
-              >
-                {FONTES_DOCUMENTO.map((f) => (
-                  <option key={f.label} value={f.label}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field" style={{ padding: 0, marginBottom: 10 }}>
-              <label>Tamanho da fonte</label>
-              <div className="filters-row">
-                {TAMANHOS_FONTE_DOC.map((t) => (
-                  <button
-                    type="button"
-                    key={t.label}
-                    className={`fchip${tamanhoDoc.label === t.label ? " active" : ""}`}
-                    onClick={() => setTamanhoDoc(t)}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="field" style={{ padding: 0 }}>
-              <label>Largura da página</label>
-              <div className="filters-row">
-                <button
-                  type="button"
-                  className={`fchip${larguraDoc === "padrao" ? " active" : ""}`}
-                  onClick={() => setLarguraDoc("padrao")}
-                >
-                  Padrão
-                </button>
-                <button
-                  type="button"
-                  className={`fchip${larguraDoc === "total" ? " active" : ""}`}
-                  onClick={() => setLarguraDoc("total")}
-                >
-                  Largura total
-                </button>
-              </div>
-            </div>
-          </FloatingDropdown>
-        </div>
-
-        <div
-          className={`doc-page-content doc-print-area${larguraDoc === "total" ? " full" : ""}`}
-          style={{ fontFamily: fonteDoc.valor, fontSize: tamanhoDoc.valor }}
-        >
-          <label className="doc-cover">
-            {paginaAtiva.capaUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={paginaAtiva.capaUrl} alt="" />
-            ) : (
-              <span className="doc-cover-empty">+ Adicionar capa</span>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={escolherCapa}
-            />
-          </label>
-
-          <input
-            className="doc-title-input"
-            value={paginaAtiva.titulo}
-            onChange={(e) => atualizarPaginaAtiva({ titulo: e.target.value })}
-            placeholder="Sem título"
-          />
-          <p className="doc-byline">{currentUser.name} · atualizado agora</p>
-          <textarea
-            className="doc-body-input"
-            value={paginaAtiva.conteudo}
-            onChange={(e) => atualizarPaginaAtiva({ conteudo: e.target.value })}
-            placeholder="Comece a escrever…"
-          />
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function TarefasContent() {
@@ -266,13 +35,23 @@ function TarefasContent() {
     coluna: number;
     card: number;
   } | null>(null);
-  const [modoView, setModoView] = useState<"kanban" | "documento">("kanban");
-  const [menuViewAberto, setMenuViewAberto] = useState(false);
-  const [menuViewRect, setMenuViewRect] = useState<DOMRect | null>(null);
   const [filtroModelo, setFiltroModelo] = useState<string>(EQUIPE_PADRAO_TAREFA);
   const [pastasExtras, setPastasExtras] = useState<string[]>([]);
   const [novaPastaAberta, setNovaPastaAberta] = useState(false);
   const [novaPastaInput, setNovaPastaInput] = useState("");
+  const novaPastaRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!novaPastaAberta) return;
+    function aoClicarFora(e: MouseEvent) {
+      if (novaPastaRef.current && !novaPastaRef.current.contains(e.target as Node)) {
+        setNovaPastaAberta(false);
+        setNovaPastaInput("");
+      }
+    }
+    document.addEventListener("mousedown", aoClicarFora);
+    return () => document.removeEventListener("mousedown", aoClicarFora);
+  }, [novaPastaAberta]);
   const [colunaRenomeando, setColunaRenomeando] = useState<number | null>(null);
   const [nomeRenomeando, setNomeRenomeando] = useState("");
   const [colunaArrastando, setColunaArrastando] = useState<number | null>(null);
@@ -469,34 +248,28 @@ function TarefasContent() {
     <>
       <Topbar
         title="Tarefas"
-        sub={
-          modoView === "kanban"
-            ? "Kanban por prazo — arraste um card pra mudar o status, até chegar em Concluídas"
-            : "Documento — anote o que quiser, em quantas páginas precisar"
-        }
+        sub="Kanban por prazo — arraste um card pra mudar o status, até chegar em Concluídas"
         actions={
-          modoView === "kanban" ? (
-            <>
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => setNovaEtapaAberta((v) => !v)}
-              >
-                {novaEtapaAberta ? "Cancelar" : "+ Nova etapa"}
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => {
-                  setNovaTarefaAberta((v) => !v);
-                  setSelectedId(null);
-                  setEquipeNovaTarefa(filtroModelo);
-                }}
-              >
-                {novaTarefaAberta ? "Cancelar" : "+ Nova tarefa"}
-              </button>
-            </>
-          ) : null
+          <>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => setNovaEtapaAberta((v) => !v)}
+            >
+              {novaEtapaAberta ? "Cancelar" : "+ Nova etapa"}
+            </button>
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => {
+                setNovaTarefaAberta((v) => !v);
+                setSelectedId(null);
+                setEquipeNovaTarefa(filtroModelo);
+              }}
+            >
+              {novaTarefaAberta ? "Cancelar" : "+ Nova tarefa"}
+            </button>
+          </>
         }
       />
 
@@ -543,47 +316,6 @@ function TarefasContent() {
         ) : null}
 
         <div className="view-switch-row mb14">
-          <button
-            type="button"
-            className="btn ghost view-switch-btn"
-            onClick={(e) => {
-              setMenuViewRect(e.currentTarget.getBoundingClientRect());
-              setMenuViewAberto((v) => !v);
-            }}
-          >
-            <span className="view-switch-lbl">Forma de visualização</span>
-            {modoView === "kanban" ? "🗂 Kanban" : "📄 Documento"} ▾
-          </button>
-          <FloatingDropdown
-            anchorRect={menuViewAberto ? menuViewRect : null}
-            onClose={() => setMenuViewAberto(false)}
-            width={200}
-          >
-            <button
-              type="button"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left" }}
-              onClick={() => {
-                setModoView("kanban");
-                setMenuViewAberto(false);
-              }}
-            >
-              <span className="n">🗂 Kanban</span>
-            </button>
-            <button
-              type="button"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left" }}
-              onClick={() => {
-                setModoView("documento");
-                setMenuViewAberto(false);
-              }}
-            >
-              <span className="n">📄 Documento</span>
-            </button>
-          </FloatingDropdown>
-
-          {modoView === "kanban" ? (
             <div className="filters-row" style={{ flex: 1 }}>
               {equipesExistentes.map((m) => (
                 <button
@@ -597,11 +329,10 @@ function TarefasContent() {
                 </button>
               ))}
               {novaPastaAberta ? (
-                <span style={{ display: "flex", gap: 6 }}>
+                <span ref={novaPastaRef} className="nova-pasta-inline">
                   <input
-                    className="input"
+                    className="nova-pasta-input"
                     autoFocus
-                    style={{ width: 160 }}
                     value={novaPastaInput}
                     onChange={(e) => setNovaPastaInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -630,13 +361,8 @@ function TarefasContent() {
                 </button>
               )}
             </div>
-          ) : null}
         </div>
 
-        {modoView === "documento" ? (
-          <DocumentoView />
-        ) : (
-          <>
         {novaTarefaAberta ? (
           <section className="open-conv mb14">
             <div className="open-conv-h">
@@ -1064,8 +790,6 @@ function TarefasContent() {
             </div>
           </section>
         ) : null}
-          </>
-        )}
       </div>
     </>
   );

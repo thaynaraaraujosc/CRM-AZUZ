@@ -6,6 +6,7 @@ import { useContatos } from "@/lib/contatos-context";
 import {
   CORES_BOTAO_FORMULARIO,
   CORES_FUNDO_FORMULARIO,
+  MENSAGEM_FINAL_PADRAO,
   TIPOS_PERGUNTA_FORMULARIO,
   labelTipoPergunta,
   useFormularios,
@@ -83,13 +84,21 @@ export default function FormulariosPage() {
   const [linkPrivadoCopiado, setLinkPrivadoCopiado] = useState(false);
   const [linkPublicoCopiado, setLinkPublicoCopiado] = useState(false);
   const [formularioSalvo, setFormularioSalvo] = useState(false);
+  const [paginaFormulario, setPaginaFormulario] = useState<"inicial" | "final">(
+    "inicial",
+  );
 
   const formularioAberto =
     formularios.find((f) => f.id === formularioAbertoId) ?? null;
 
+  function abrirFormulario(id: string) {
+    setFormularioAbertoId(id);
+    setPaginaFormulario("inicial");
+  }
+
   function abrirNovoFormulario() {
     const id = criarFormulario();
-    setFormularioAbertoId(id);
+    abrirFormulario(id);
   }
 
   function voltarParaLista() {
@@ -97,6 +106,7 @@ export default function FormulariosPage() {
     setTipoPerguntaMenuAberto(false);
     setPerguntaEditandoId(null);
     setPerguntasExpandidas(false);
+    setPaginaFormulario("inicial");
   }
 
   function abrirRespostas() {
@@ -320,9 +330,9 @@ export default function FormulariosPage() {
                       >
                         <div className="int-body">
                           <p className="int-title">
-                            {nomeResposta(respostaFormulario, r)}
+                            {nomeResposta(respostaFormulario, r)} respondeu o formulário
                           </p>
-                          <p className="int-sub">Respondeu {r.criadoEm}</p>
+                          <p className="int-sub">{r.criadoEm}</p>
                         </div>
                       </div>
                     ))
@@ -392,7 +402,7 @@ export default function FormulariosPage() {
                   className="int-row"
                   key={f.id}
                   style={{ cursor: "pointer" }}
-                  onClick={() => setFormularioAbertoId(f.id)}
+                  onClick={() => abrirFormulario(f.id)}
                 >
                   <div className="int-body">
                     <p className="int-title">{f.nome}</p>
@@ -429,8 +439,61 @@ export default function FormulariosPage() {
               ← Voltar pros formulários
             </button>
 
+            <span className="topbar-tabs mb14" style={{ display: "inline-flex" }}>
+              <button
+                type="button"
+                className={`topbar-tab${paginaFormulario === "inicial" ? " active" : ""}`}
+                onClick={() => setPaginaFormulario("inicial")}
+              >
+                ▷ Página inicial
+              </button>
+              <button
+                type="button"
+                className={`topbar-tab${paginaFormulario === "final" ? " active" : ""}`}
+                onClick={() => setPaginaFormulario("final")}
+              >
+                ✓ Página final
+              </button>
+            </span>
+
             <div className="form-builder-layout">
               <div className="form-builder-main">
+                {paginaFormulario === "final" ? (
+                  <div className="card">
+                    <div className="panel-h">
+                      <h4>Página final</h4>
+                    </div>
+                    <p className="hint" style={{ padding: "0 17px 10px" }}>
+                      É o que o cliente vê depois de enviar o formulário.
+                    </p>
+                    <div className="field">
+                      <label>Mensagem de agradecimento</label>
+                      <textarea
+                        className="input"
+                        style={{ width: "100%", minHeight: 90, resize: "vertical" }}
+                        value={formularioAberto.mensagemFinal}
+                        onChange={(e) =>
+                          atualizarFormulario(formularioAberto.id, {
+                            mensagemFinal: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div
+                      className="form-cor-preview"
+                      style={{ background: formularioAberto.corFundo, margin: "0 17px 17px" }}
+                    >
+                      <span className="form-cor-preview-label">Prévia da página final</span>
+                      <div className="form-public-obrigado-preview">
+                        <h2>{formularioAberto.mensagemFinal || MENSAGEM_FINAL_PADRAO}</h2>
+                      </div>
+                      <button type="button" className="btn block" disabled>
+                        ✓ Enviado
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
                 <div className="card mb14 form-header-card">
                   <input
                     className="form-title-input"
@@ -660,6 +723,8 @@ export default function FormulariosPage() {
                     </FloatingDropdown>
                   </div>
                 </div>
+                  </>
+                )}
               </div>
 
               <div className="form-builder-side">
@@ -863,13 +928,10 @@ export default function FormulariosPage() {
                     <div className="int-row" key={r.id}>
                       <div className="int-body">
                         <p className="int-title">
-                          {Object.values(r.valores)[0] ?? "Resposta"}
+                          {nomeResposta(formularioAberto, r)} respondeu o formulário
                         </p>
-                        <p className="int-sub">
-                          {Object.values(r.valores).slice(1).join(" · ")}
-                        </p>
+                        <p className="int-sub">{r.criadoEm}</p>
                       </div>
-                      <span className="hint">{r.criadoEm}</span>
                     </div>
                   ))
                 )}

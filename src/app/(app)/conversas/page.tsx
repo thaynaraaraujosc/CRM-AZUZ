@@ -1,12 +1,13 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import {
   classeOrigem,
   conversas,
   motivosPerda,
+  type ConvMensagem,
   type Funil,
   type NegocioCard,
 } from "@/lib/data";
@@ -20,6 +21,7 @@ import {
   IconConfiguracoes,
   IconDoc,
   IconMic,
+  IconRefresh,
   IconSearch,
 } from "@/components/icons";
 import { FloatingDropdown, RadioList, Toggle, Topbar } from "@/components/ui";
@@ -31,6 +33,78 @@ const FILTROS_CONVERSA = [
 ] as const;
 
 type FiltroConversa = (typeof FILTROS_CONVERSA)[number]["valor"];
+
+const EMOJI_CATEGORIAS = [
+  {
+    titulo: "Sorrisos",
+    emojis: [
+      "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "🙂", "🙃",
+      "😉", "😊", "😇", "😍", "🤩", "😘", "😗", "😚", "😙", "😋",
+      "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔", "😐",
+      "😑", "😶", "😏", "😒", "🙄", "😬", "🤥", "😌", "😔", "😪",
+      "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🥵", "🥶", "😵",
+      "🤯", "🥳", "😎", "🤓", "🧐", "😕", "😟", "🙁", "😮", "😯",
+      "😲", "😳", "🥺", "😦", "😧", "😨", "😰", "😥", "😢", "😭",
+      "😱", "😖", "😣", "😞", "😓", "😩", "😫", "🥱", "😤", "😡",
+      "😠", "🤬",
+    ],
+  },
+  {
+    titulo: "Gestos e pessoas",
+    emojis: [
+      "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤌", "🤏", "✌️", "🤞",
+      "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍",
+      "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🙏",
+      "✍️", "💅", "🤳", "💪", "🦵", "🦶", "👂", "👃", "🧠", "👀",
+      "👁️", "👅", "👄", "👶", "🧒", "👦", "👧", "🧑", "👱", "👨",
+      "👩", "🧓", "👴", "👵", "🙋", "🙆", "🙅", "💁", "🙇", "🤦",
+      "🤷",
+    ],
+  },
+  {
+    titulo: "Corações e símbolos",
+    emojis: [
+      "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔",
+      "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "☮️",
+      "✝️", "☪️", "🕉️", "☸️", "✡️", "🔯", "🕎", "☯️", "☦️", "🛐",
+      "⭐", "🌟", "✨", "⚡", "🔥", "💥", "☀️", "🌈", "✅", "❌",
+      "❗", "❓", "‼️", "⁉️", "💯", "🔞", "📌", "📍", "🕐", "🔔",
+    ],
+  },
+  {
+    titulo: "Animais e natureza",
+    emojis: [
+      "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯",
+      "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆",
+      "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋",
+      "🐌", "🐞", "🐢", "🐍", "🦎", "🐙", "🦀", "🐠", "🐬", "🐳",
+      "🌵", "🌲", "🌳", "🌴", "🌱", "🌿", "☘️", "🍀", "🍁", "🌸",
+      "🌹", "🌻", "🌼", "🌷", "🌎", "🌙", "☁️", "🌧️", "❄️", "☃️",
+    ],
+  },
+  {
+    titulo: "Comida e bebida",
+    emojis: [
+      "🍏", "🍎", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍈", "🍒",
+      "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑", "🥦", "🥕",
+      "🌽", "🌶️", "🍞", "🥐", "🥯", "🧀", "🥚", "🍳", "🥞", "🍗",
+      "🍖", "🍔", "🍟", "🍕", "🌭", "🌮", "🌯", "🥗", "🍿", "🍩",
+      "🍪", "🎂", "🍰", "🍫", "🍬", "🍭", "🍦", "☕", "🍵", "🥤",
+      "🍺", "🍷", "🥂", "🍾",
+    ],
+  },
+  {
+    titulo: "Atividades e objetos",
+    emojis: [
+      "⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏓", "🎯", "🎮", "🎲",
+      "🎸", "🎧", "🎤", "🎬", "📷", "📱", "💻", "⌚", "🖥️", "🖨️",
+      "☎️", "📞", "📧", "📨", "📦", "📅", "📎", "📌", "🔒", "🔑",
+      "🔨", "🛠️", "💰", "💳", "💡", "🔦", "🧾", "📊", "📈", "📉",
+      "🗓️", "🗑️", "🚗", "🚕", "🚌", "🚀", "✈️", "🚢", "⛽", "🏠",
+      "🏢", "🏥", "🏦", "🎉", "🎁", "🏆", "🥇",
+    ],
+  },
+] as const;
 
 /** Mesmo dia de referência usado em todo o app (ver `today` em lib/data.ts). */
 const HOJE_ISO = "2026-07-30";
@@ -115,10 +189,11 @@ export default function ConversasPage() {
 }
 
 function ConversasPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { funis, atribuirContatoAoFunil } = useFunis();
   const { contatos, salvarDadosContato, atribuirAtendente } = useContatos();
-  const { automacoesDeEntradaAtivas } = useAutomacoes();
+  const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
   const { simularNovaMensagem } = useNotificacoes();
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const proximoToastId = useRef(0);
@@ -145,6 +220,14 @@ function ConversasPageInner() {
   const [conectarAberto, setConectarAberto] = useState(false);
   const [conectarAba, setConectarAba] = useState<"qr" | "api">("qr");
   const [infoWidth, setInfoWidth] = useState(320);
+  const [sincronizando, setSincronizando] = useState(false);
+
+  /** Força um recarregamento da lista — usado se as mensagens do celular conectado saírem de sincronia com o servidor. */
+  function sincronizarConversas() {
+    if (sincronizando) return;
+    setSincronizando(true);
+    setTimeout(() => setSincronizando(false), 900);
+  }
 
   const [atendenteTopAberto, setAtendenteTopAberto] = useState(false);
   const [atendenteTopRect, setAtendenteTopRect] = useState<DOMRect | null>(null);
@@ -237,6 +320,31 @@ function ConversasPageInner() {
     Record<string, HistoricoItem[]>
   >({});
   const [notaTexto, setNotaTexto] = useState("");
+  const [mensagensExtraPorContato, setMensagensExtraPorContato] = useState<
+    Record<string, ConvMensagem[]>
+  >({});
+  const [mensagemTexto, setMensagemTexto] = useState("");
+  const [gravandoAudio, setGravandoAudio] = useState(false);
+  const [audioSegundos, setAudioSegundos] = useState(0);
+  const [anexoAberto, setAnexoAberto] = useState(false);
+  const [anexoRect, setAnexoRect] = useState<DOMRect | null>(null);
+  const [emojiAberto, setEmojiAberto] = useState(false);
+  const [emojiRect, setEmojiRect] = useState<DOMRect | null>(null);
+  const [respostasGerenciarAberto, setRespostasGerenciarAberto] = useState(false);
+  const [novaRespostaTexto, setNovaRespostaTexto] = useState("");
+  const [respostasRapidasPorFunil, setRespostasRapidasPorFunil] = useState<
+    Record<string, { id: string; texto: string }[]>
+  >({});
+  const mensagemInputRef = useRef<HTMLInputElement>(null);
+  const imagemInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const documentoInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!gravandoAudio) return;
+    const intervalo = setInterval(() => setAudioSegundos((s) => s + 1), 1000);
+    return () => clearInterval(intervalo);
+  }, [gravandoAudio]);
   const [resultadoPorContato, setResultadoPorContato] = useState<
     Record<string, "venda" | "perda">
   >({});
@@ -246,20 +354,10 @@ function ConversasPageInner() {
   const [motivosPerdaCustom, setMotivosPerdaCustom] = useState<string[]>([]);
   const [novoMotivoTexto, setNovoMotivoTexto] = useState("");
   const [escolhendoMotivo, setEscolhendoMotivo] = useState(false);
-  const [discadorAberto, setDiscadorAberto] = useState(false);
-  const [chamadaSegundos, setChamadaSegundos] = useState(0);
-  const [chamadaMudo, setChamadaMudo] = useState(false);
-
-  useEffect(() => {
-    if (!discadorAberto) return;
-    const intervalo = setInterval(() => setChamadaSegundos((s) => s + 1), 1000);
-    return () => clearInterval(intervalo);
-  }, [discadorAberto]);
 
   if (aberta.id !== abertaIdAnterior) {
     setAbertaIdAnterior(aberta.id);
     setEscolhendoMotivo(false);
-    setDiscadorAberto(false);
     const funilId = localizacao?.funilId ?? funis[0]?.id ?? "";
     setFunilSelecionadoId(funilId);
     setEtapaSelecionada(etapaPadraoPara(funilId));
@@ -306,22 +404,139 @@ function ConversasPageInner() {
     setNotaTexto("");
   }
 
-  function abrirDiscador() {
-    setChamadaSegundos(0);
-    setChamadaMudo(false);
-    setDiscadorAberto(true);
+  function horaAgora() {
+    return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   }
 
-  function encerrarChamada() {
-    const min = Math.floor(chamadaSegundos / 60);
-    const seg = chamadaSegundos % 60;
-    const duracao = `${min}min ${String(seg).padStart(2, "0")}s`;
-    setDiscadorAberto(false);
-    if (chamadaSegundos > 0) {
-      adicionarHistorico("sistema", `📞 Ligação realizada · duração ${duracao}`);
-      avisarAutomacao(`Ligação com ${aberta.nome} encerrada (${duracao})`);
+  function adicionarMensagem(msg: ConvMensagem) {
+    setMensagensExtraPorContato((prev) => ({
+      ...prev,
+      [aberta.nome]: [...(prev[aberta.nome] ?? []), msg],
+    }));
+  }
+
+  function enviarMensagemTexto() {
+    const texto = mensagemTexto.trim();
+    if (!texto) return;
+    adicionarMensagem({ tipo: "out", texto, hora: horaAgora() });
+    setMensagemTexto("");
+  }
+
+  function alternarGravacaoAudio() {
+    if (gravandoAudio) {
+      const min = Math.floor(audioSegundos / 60);
+      const seg = audioSegundos % 60;
+      setGravandoAudio(false);
+      if (audioSegundos > 0) {
+        adicionarMensagem({
+          tipo: "out",
+          texto: `🎤 Áudio · ${min}:${String(seg).padStart(2, "0")}`,
+          hora: horaAgora(),
+        });
+      }
+      setAudioSegundos(0);
+    } else {
+      setAudioSegundos(0);
+      setGravandoAudio(true);
     }
   }
+
+  function anexarArquivo(rotulo: string, arquivo: File) {
+    adicionarMensagem({ tipo: "out", texto: `${rotulo} · ${arquivo.name}`, hora: horaAgora() });
+  }
+
+  function abrirUploadImagem() {
+    setAnexoAberto(false);
+    imagemInputRef.current?.click();
+  }
+
+  function abrirUploadVideo() {
+    setAnexoAberto(false);
+    videoInputRef.current?.click();
+  }
+
+  function abrirUploadDocumento() {
+    setAnexoAberto(false);
+    documentoInputRef.current?.click();
+  }
+
+  function irParaContatos() {
+    setAnexoAberto(false);
+    router.push("/contatos");
+  }
+
+  function compartilharLocalizacao() {
+    setAnexoAberto(false);
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      adicionarMensagem({ tipo: "out", texto: "📍 Localização enviada", hora: horaAgora() });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (posicao) => {
+        const { latitude, longitude } = posicao.coords;
+        adicionarMensagem({
+          tipo: "out",
+          texto: `📍 Localização enviada · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
+          hora: horaAgora(),
+        });
+      },
+      () => {
+        adicionarMensagem({ tipo: "out", texto: "📍 Localização enviada", hora: horaAgora() });
+      },
+    );
+  }
+
+  function inserirEmoji(emoji: string) {
+    setMensagemTexto((prev) => prev + emoji);
+  }
+
+  const respostasDoFunil = respostasRapidasPorFunil[funilSelecionadoId] ?? [];
+
+  function criarRespostaRapida() {
+    const texto = novaRespostaTexto.trim();
+    if (!texto) return;
+    setRespostasRapidasPorFunil((prev) => ({
+      ...prev,
+      [funilSelecionadoId]: [
+        ...(prev[funilSelecionadoId] ?? []),
+        { id: `resp-${Date.now()}`, texto },
+      ],
+    }));
+    setNovaRespostaTexto("");
+  }
+
+  function excluirRespostaRapida(id: string) {
+    setRespostasRapidasPorFunil((prev) => ({
+      ...prev,
+      [funilSelecionadoId]: (prev[funilSelecionadoId] ?? []).filter((r) => r.id !== id),
+    }));
+  }
+
+  function usarRespostaRapida(texto: string) {
+    setMensagemTexto(texto);
+  }
+
+  const automacoesDoFunil = automacoes.filter((a) => a.funilId === funilSelecionadoId);
+
+  function executarAutomacaoNaConversa(automacaoId: string) {
+    const automacao = automacoesDoFunil.find((a) => a.id === automacaoId);
+    if (!automacao) return;
+    for (const acao of automacao.acoes) {
+      if (
+        (acao.tipo === "mensagem" || acao.tipo === "mensagem_interativa") &&
+        acao.mensagem
+      ) {
+        adicionarMensagem({ tipo: "out", texto: acao.mensagem, hora: horaAgora() });
+      }
+    }
+    adicionarHistorico("sistema", `Automação "${automacao.titulo}" executada`);
+    avisarAutomacao(`Automação "${automacao.titulo}" executada`);
+    setMensagemTexto("");
+    setAnexoAberto(false);
+  }
+
+  const sugerirAutomacoes = mensagemTexto.startsWith("//");
+  const sugerirRespostas = !sugerirAutomacoes && mensagemTexto.startsWith("/");
 
   function marcarVenda() {
     setResultadoPorContato((prev) => ({ ...prev, [aberta.nome]: "venda" }));
@@ -624,6 +839,18 @@ function ConversasPageInner() {
 
       <div className="content wa-content wa-whatsapp">
         <aside className="wa-list">
+          <div className="wa-list-head">
+            <span>Conversas</span>
+            <button
+              type="button"
+              className={`wa-list-refresh${sincronizando ? " spinning" : ""}`}
+              aria-label="Recarregar conversas"
+              title="Recarregar conversas — use se as mensagens do celular conectado saírem de sincronia"
+              onClick={sincronizarConversas}
+            >
+              <IconRefresh width={14} height={14} />
+            </button>
+          </div>
           <div className="wa-list-search">
             <label className="search wa-search">
               <IconSearch />
@@ -716,15 +943,6 @@ function ConversasPageInner() {
             </button>
             <button
               type="button"
-              className="gear-btn wa-call-btn"
-              aria-label="Ligar pelo telefone virtual"
-              title="Ligar pelo telefone virtual do CRM"
-              onClick={abrirDiscador}
-            >
-              📞
-            </button>
-            <button
-              type="button"
               className={`gear-btn wa-main-gear${infoAberto ? " active" : ""}`}
               aria-pressed={infoAberto}
               aria-label="Ver atributos do contato"
@@ -755,18 +973,254 @@ function ConversasPageInner() {
                 ) : null}
               </div>
             ))}
+            {(mensagensExtraPorContato[aberta.nome] ?? []).map((msg, i) => (
+              <div className={`bubble ${msg.tipo}`} key={`extra-${i}`}>
+                {msg.texto}
+                {msg.hora ? <span className="tm">{msg.hora}</span> : null}
+              </div>
+            ))}
           </div>
           <div className="chat-input">
-            <div className="box">Escrever mensagem…</div>
             <button
               type="button"
-              className="chat-mic-btn"
-              aria-label="Gravar áudio"
-              title="Gravar áudio"
+              className="chat-attach-btn"
+              aria-label="Anexar"
+              title="Anexar"
+              onClick={(e) => {
+                setAnexoRect(e.currentTarget.getBoundingClientRect());
+                setAnexoAberto((v) => !v);
+              }}
+            >
+              +
+            </button>
+            <div
+              className="chat-input-wrap"
+              onClick={() => mensagemInputRef.current?.focus()}
+            >
+              {gravandoAudio ? (
+                <div className="box chat-input-gravando">
+                  🔴 Gravando áudio · {Math.floor(audioSegundos / 60)}:
+                  {String(audioSegundos % 60).padStart(2, "0")}
+                </div>
+              ) : (
+                <input
+                  ref={mensagemInputRef}
+                  className="box chat-input-campo"
+                  placeholder="Digite uma mensagem... (/ para respostas rápidas, // para automações)"
+                  value={mensagemTexto}
+                  onChange={(e) => setMensagemTexto(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") enviarMensagemTexto();
+                  }}
+                />
+              )}
+              {sugerirRespostas ? (
+                <div className="chat-sugestoes">
+                  {respostasDoFunil.length === 0 ? (
+                    <p className="hint" style={{ padding: "8px 10px" }}>
+                      Nenhuma resposta rápida salva pra esse funil ainda.
+                    </p>
+                  ) : (
+                    respostasDoFunil.map((r) => (
+                      <button
+                        type="button"
+                        key={r.id}
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        onClick={() => usarRespostaRapida(r.texto)}
+                      >
+                        <span className="n">{r.texto}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              ) : null}
+              {sugerirAutomacoes ? (
+                <div className="chat-sugestoes">
+                  {automacoesDoFunil.length === 0 ? (
+                    <p className="hint" style={{ padding: "8px 10px" }}>
+                      Nenhuma automação nesse funil ainda.
+                    </p>
+                  ) : (
+                    automacoesDoFunil.map((a) => (
+                      <button
+                        type="button"
+                        key={a.id}
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        onClick={() => executarAutomacaoNaConversa(a.id)}
+                      >
+                        <span className="n">⚡ {a.titulo}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              className="chat-emoji-btn"
+              aria-label="Emojis"
+              title="Emojis"
+              onClick={(e) => {
+                setEmojiRect(e.currentTarget.getBoundingClientRect());
+                setEmojiAberto((v) => !v);
+              }}
+            >
+              😊
+            </button>
+            <button
+              type="button"
+              className={`chat-mic-btn${gravandoAudio ? " active" : ""}`}
+              aria-pressed={gravandoAudio}
+              aria-label={gravandoAudio ? "Parar e enviar áudio" : "Gravar áudio"}
+              title={gravandoAudio ? "Parar e enviar áudio" : "Gravar áudio"}
+              onClick={alternarGravacaoAudio}
             >
               <IconMic />
             </button>
           </div>
+
+          <input
+            ref={imagemInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
+              if (arquivo) anexarArquivo("🖼️ Imagem enviada", arquivo);
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
+              if (arquivo) anexarArquivo("🎥 Vídeo enviado", arquivo);
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={documentoInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
+              if (arquivo) anexarArquivo("📄 Documento enviado", arquivo);
+              e.target.value = "";
+            }}
+          />
+
+          <FloatingDropdown
+            anchorRect={anexoAberto ? anexoRect : null}
+            onClose={() => setAnexoAberto(false)}
+            width={220}
+          >
+            <button
+              type="button"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left" }}
+              onClick={abrirUploadImagem}
+            >
+              <span className="n">Imagem</span>
+            </button>
+            <button
+              type="button"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left" }}
+              onClick={abrirUploadVideo}
+            >
+              <span className="n">Vídeo</span>
+            </button>
+            <button
+              type="button"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left" }}
+              onClick={abrirUploadDocumento}
+            >
+              <span className="n">Documento</span>
+            </button>
+            <button
+              type="button"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left" }}
+              onClick={irParaContatos}
+            >
+              <span className="n">Contato</span>
+            </button>
+            <button
+              type="button"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left" }}
+              onClick={compartilharLocalizacao}
+            >
+              <span className="n">Localização</span>
+            </button>
+            <div className="dropdown-sep" />
+            <button
+              type="button"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left", color: "var(--blue)" }}
+              onClick={() => {
+                setAnexoAberto(false);
+                setMensagemTexto("//");
+              }}
+            >
+              <span className="n">⚡ Executar Automação</span>
+            </button>
+            <button
+              type="button"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left", color: "#7c3aed" }}
+              onClick={() => {
+                setAnexoAberto(false);
+                setRespostasGerenciarAberto(true);
+              }}
+            >
+              <span className="n">💬 Respostas Rápidas</span>
+            </button>
+            <div className="dropdown-sep" />
+            <button
+              type="button"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left", color: "#d64545" }}
+              onClick={() => setAnexoAberto(false)}
+            >
+              <span className="n">✕ Fechar</span>
+            </button>
+          </FloatingDropdown>
+
+          <FloatingDropdown
+            anchorRect={emojiAberto ? emojiRect : null}
+            onClose={() => setEmojiAberto(false)}
+            align="right"
+            width={300}
+            maxHeight={340}
+          >
+            <div className="chat-emoji-picker">
+              {EMOJI_CATEGORIAS.map((cat) => (
+                <div key={cat.titulo}>
+                  <p className="chat-emoji-categoria">{cat.titulo}</p>
+                  <div className="chat-emoji-grid">
+                    {cat.emojis.map((emoji, i) => (
+                      <button
+                        type="button"
+                        key={`${cat.titulo}-${i}`}
+                        className="chat-emoji-opcao"
+                        onClick={() => inserirEmoji(emoji)}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </FloatingDropdown>
         </section>
 
         {infoAberto ? (
@@ -1222,39 +1676,6 @@ function ConversasPageInner() {
         </div>
       ) : null}
 
-      {discadorAberto ? (
-        <div className="wa-discador">
-          <p className="wa-discador-nome">{aberta.nome}</p>
-          <p className="wa-discador-numero">{aberta.contato}</p>
-          <p className="wa-discador-timer">
-            {String(Math.floor(chamadaSegundos / 60)).padStart(2, "0")}:
-            {String(chamadaSegundos % 60).padStart(2, "0")}
-          </p>
-          <p className="hint">Chamando pelo telefone virtual…</p>
-          <div className="wa-discador-acoes">
-            <button
-              type="button"
-              className={`wa-discador-icone${chamadaMudo ? " active" : ""}`}
-              onClick={() => setChamadaMudo((v) => !v)}
-              title={chamadaMudo ? "Reativar microfone" : "Mudo"}
-            >
-              🎙
-            </button>
-            <button type="button" className="wa-discador-icone" title="Teclado">
-              🔢
-            </button>
-          </div>
-          <button
-            type="button"
-            className="wa-discador-desligar"
-            onClick={encerrarChamada}
-            title="Encerrar ligação"
-          >
-            📴
-          </button>
-        </div>
-      ) : null}
-
       {midiasAberto ? (
         <div className="form-preview-overlay" onClick={() => setMidiasAberto(false)}>
           <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
@@ -1283,6 +1704,63 @@ function ConversasPageInner() {
               <p className="hint" style={{ padding: "10px 0" }}>
                 Nenhuma mídia trocada nessa conversa ainda.
               </p>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {respostasGerenciarAberto ? (
+        <div
+          className="form-preview-overlay"
+          onClick={() => setRespostasGerenciarAberto(false)}
+        >
+          <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+              <div>
+                <p className="n">Respostas rápidas</p>
+                <p className="s">Só valem pro funil &quot;{funilSelecionado.nome}&quot;</p>
+              </div>
+              <span
+                className="close"
+                style={{ cursor: "pointer" }}
+                onClick={() => setRespostasGerenciarAberto(false)}
+              >
+                Fechar ✕
+              </span>
+            </div>
+            <div className="field" style={{ display: "flex", gap: 8 }}>
+              <input
+                className="input"
+                placeholder="Escreva uma resposta pra salvar…"
+                value={novaRespostaTexto}
+                onChange={(e) => setNovaRespostaTexto(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") criarRespostaRapida();
+                }}
+              />
+              <button type="button" className="btn primary" onClick={criarRespostaRapida}>
+                Adicionar
+              </button>
+            </div>
+            {respostasDoFunil.length === 0 ? (
+              <p className="hint" style={{ padding: "10px 0" }}>
+                Nenhuma resposta rápida salva pra esse funil ainda.
+              </p>
+            ) : (
+              <div style={{ padding: "10px 0", display: "flex", flexDirection: "column", gap: 8 }}>
+                {respostasDoFunil.map((r) => (
+                  <div key={r.id} className="attach-chip" style={{ justifyContent: "space-between" }}>
+                    <span className="fn">{r.texto}</span>
+                    <span
+                      className="close"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => excluirRespostaRapida(r.id)}
+                    >
+                      ✕
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

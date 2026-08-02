@@ -6,16 +6,6 @@ import { useState } from "react";
 import { contatos, equipe, tarefas } from "@/lib/data";
 import { Toggle, Topbar } from "@/components/ui";
 
-/** Uma cor de avatar por pessoa, pra fila deixar de ser tudo igual. */
-const CORES_AVATAR = [
-  { bg: "rgba(46, 107, 255, 0.16)", cor: "#2e6bff" },
-  { bg: "rgba(155, 89, 255, 0.16)", cor: "#8a3ffc" },
-  { bg: "rgba(255, 145, 77, 0.18)", cor: "#c9660a" },
-  { bg: "rgba(37, 190, 130, 0.16)", cor: "#0f9d63" },
-  { bg: "rgba(255, 92, 138, 0.16)", cor: "#d81b60" },
-  { bg: "rgba(0, 172, 193, 0.16)", cor: "#00838f" },
-];
-
 function classePapel(papel: string) {
   const slug = papel.toLowerCase().replace(/[^a-z]+/g, "-");
   return `role-tag-${slug}`;
@@ -61,8 +51,7 @@ export default function EquipePage() {
                 </tr>
               </thead>
               <tbody>
-                {equipe.map((m, i) => {
-                  const corAvatar = CORES_AVATAR[i % CORES_AVATAR.length];
+                {equipe.map((m) => {
                   return (
                   <tr key={m.nome}>
                     <td>
@@ -82,11 +71,22 @@ export default function EquipePage() {
                           setSenhaVisivel(false);
                         }}
                       >
-                        <div
-                          className="avatar"
-                          style={{ background: corAvatar.bg, color: corAvatar.cor }}
-                        >
-                          {m.initials}
+                        <div className="avatar">
+                          {m.foto ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={m.foto}
+                              alt=""
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: "inherit",
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : (
+                            m.initials
+                          )}
                         </div>
                         <span
                           className="n"
@@ -135,7 +135,23 @@ export default function EquipePage() {
         {membro ? (
           <section className="open-conv">
             <div className="open-conv-h">
-              <div className="avatar">{membro.initials}</div>
+              <div className="avatar">
+                {membro.foto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={membro.foto}
+                    alt=""
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: "inherit",
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : (
+                  membro.initials
+                )}
+              </div>
               <div>
                 <p className="n">{membro.nome}</p>
                 <p className="s">

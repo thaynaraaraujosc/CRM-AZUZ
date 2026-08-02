@@ -78,6 +78,9 @@ export type PerguntaFormulario = {
   opcoes?: string[];
 };
 
+export const MENSAGEM_FINAL_PADRAO =
+  "Obrigado por você ter respondido o nosso formulário.";
+
 export type Formulario = {
   id: string;
   nome: string;
@@ -88,6 +91,8 @@ export type Formulario = {
   corFundo: string;
   corBotao: string;
   senha: string;
+  /** Texto da página final (depois que o cliente envia) — editável, mas vem com um padrão. */
+  mensagemFinal: string;
 };
 
 export type RespostaFormulario = {
@@ -163,6 +168,7 @@ const FORMULARIOS_INICIAIS: Formulario[] = [
     corFundo: "#ffffff",
     corBotao: "#2e6bff",
     senha: "vitta2026",
+    mensagemFinal: MENSAGEM_FINAL_PADRAO,
   },
 ];
 
@@ -176,7 +182,12 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return FORMULARIOS_INICIAIS;
     try {
       const salvos = localStorage.getItem(FORMULARIOS_STORAGE_KEY);
-      return salvos ? JSON.parse(salvos) : FORMULARIOS_INICIAIS;
+      if (!salvos) return FORMULARIOS_INICIAIS;
+      const lista = JSON.parse(salvos) as (Omit<Formulario, "mensagemFinal"> & {
+        mensagemFinal?: string;
+      })[];
+      // Formulários salvos antes da página final existir ainda não têm o campo.
+      return lista.map((f) => ({ mensagemFinal: MENSAGEM_FINAL_PADRAO, ...f }));
     } catch {
       return FORMULARIOS_INICIAIS;
     }
@@ -205,6 +216,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
         corFundo: "#ffffff",
         corBotao: "#2e6bff",
         senha: "",
+        mensagemFinal: MENSAGEM_FINAL_PADRAO,
       },
     ]);
     return id;
@@ -229,7 +241,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
         const nova: PerguntaFormulario = {
           id,
           tipo,
-          rotulo: labelTipoPergunta(tipo),
+          rotulo: "",
           obrigatoria: false,
           opcoes:
             tipo === "opcao_unica" || tipo === "multipla_escolha"

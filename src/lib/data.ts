@@ -848,6 +848,9 @@ export const acoesAnteriores = [
     midia: "imagem" as const,
     status: "Enviado",
     agendado: false,
+    data: "14 nov",
+    /** Só uma amostra — os outros contatos que receberam não têm conversa aberta no WhatsApp. */
+    contatos: ["Marcos Aurélio", "Camila Duarte", "Fernando Lima"],
   },
   {
     titulo: "Reativação · não fecharam há 6 meses",
@@ -855,6 +858,8 @@ export const acoesAnteriores = [
     midia: "audio" as const,
     status: "Enviado",
     agendado: false,
+    data: "22 dez",
+    contatos: ["Renata Farias", "Paulo Lacerda"],
   },
   {
     titulo: "Evento de agosto · convite",
@@ -862,6 +867,8 @@ export const acoesAnteriores = [
     midia: "imagem" as const,
     status: "Agendado · hoje 18h",
     agendado: true,
+    data: "hoje 18h",
+    contatos: ["Beatriz Nogueira", "Julia Prado", "Lorena Bastos"],
   },
 ];
 
@@ -882,6 +889,8 @@ export type Membro = {
   permissoes: string[];
   ativo: boolean;
   convitePendente?: boolean;
+  /** Foto de perfil (data URL) que a pessoa colocou em "Meu Perfil" — se não tiver, mostra as iniciais. */
+  foto?: string;
 };
 
 export const PERMISSOES_CRM = [
