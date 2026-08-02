@@ -26,6 +26,9 @@ import {
   type Origem,
 } from "@/lib/data";
 import { slugId } from "@/lib/ids";
+import { estimarMinutosAtras } from "@/lib/datas";
+
+export { estimarMinutosAtras };
 
 export type EventoTipo =
   | "contato_criado"
@@ -36,7 +39,9 @@ export type EventoTipo =
   | "tarefa_concluida"
   | "entrou_etapa"
   | "negociacao_perdida"
-  | "negociacao_fechada";
+  | "negociacao_fechada"
+  | "documento_enviado"
+  | "anotacao";
 
 export const EVENTO_LABELS: Record<EventoTipo, string> = {
   contato_criado: "Contato criado",
@@ -48,6 +53,49 @@ export const EVENTO_LABELS: Record<EventoTipo, string> = {
   entrou_etapa: "Mudança de etapa",
   negociacao_perdida: "Negociação perdida",
   negociacao_fechada: "Negociação fechada",
+  documento_enviado: "Documento",
+  anotacao: "Anotação",
+};
+
+/**
+ * Categoria de exibição pra filtro da linha do tempo (seção 8 do escopo:
+ * Tudo / Conversas / Atividades / Funil / Automações / Negociações /
+ * Compras / Documentos / Anotações). Cada tipo bruto de evento pertence a
+ * exatamente uma categoria.
+ */
+export type CategoriaEvento =
+  | "Conversas"
+  | "Atividades"
+  | "Funil"
+  | "Automações"
+  | "Negociações"
+  | "Compras"
+  | "Documentos"
+  | "Anotações";
+
+export const CATEGORIAS_EVENTO: CategoriaEvento[] = [
+  "Conversas",
+  "Atividades",
+  "Funil",
+  "Automações",
+  "Negociações",
+  "Compras",
+  "Documentos",
+  "Anotações",
+];
+
+export const EVENTO_CATEGORIA: Record<EventoTipo, CategoriaEvento> = {
+  contato_criado: "Funil",
+  mensagem_recebida: "Conversas",
+  mensagem_enviada: "Conversas",
+  sistema: "Automações",
+  tarefa_criada: "Atividades",
+  tarefa_concluida: "Atividades",
+  entrou_etapa: "Funil",
+  negociacao_perdida: "Negociações",
+  negociacao_fechada: "Compras",
+  documento_enviado: "Documentos",
+  anotacao: "Anotações",
 };
 
 export type Evento = {
@@ -65,53 +113,8 @@ export type Evento = {
   link?: { modulo: "conversa" | "tarefa" | "funil" | "perdas"; href: string };
 };
 
-const MESES: Record<string, number> = {
-  jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6,
-  jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12,
-};
-
-/** Dia de referência de todo o CRM — mesmo "hoje" usado em `data.ts`. */
-const HOJE = new Date(2026, 6, 30);
-
-function diffMinutos(data: Date): number {
-  return Math.round((HOJE.getTime() - data.getTime()) / 60000);
-}
-
 /** Sentinela usado quando não dá pra estimar — cai no fim da timeline. */
 const SEM_DATA = 10 ** 8;
-
-export function estimarMinutosAtras(raw: string): number {
-  const texto = raw.trim();
-  if (!texto) return SEM_DATA;
-  const low = texto.toLowerCase();
-  let m: RegExpMatchArray | null;
-
-  if (low === "hoje" || low === "agora") return 0;
-  if (low === "ontem") return 24 * 60;
-  if ((m = low.match(/^há (\d+)\s*min/))) return Number(m[1]);
-  if ((m = low.match(/^há (\d+)\s*h(?:oras?)?\s*(\d+)?/))) return Number(m[1]) * 60 + (m[2] ? Number(m[2]) : 0);
-  if ((m = low.match(/^(\d+)h(\d+)?$/))) return Number(m[1]) * 60 + (m[2] ? Number(m[2]) : 0);
-  if ((m = low.match(/^há (\d+)\s*dias?/))) return Number(m[1]) * 1440;
-
-  // ISO aaaa-mm-dd
-  if ((m = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/))) {
-    return diffMinutos(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-  }
-  // dd/mm/aaaa
-  if ((m = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/))) {
-    return diffMinutos(new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])));
-  }
-  // "28 jul" / "01 ago"
-  if ((m = low.match(/^(\d{1,2})\s+([a-zç]{3})\.?$/))) {
-    const mes = MESES[m[2]];
-    if (mes) return diffMinutos(new Date(2026, mes - 1, Number(m[1])));
-  }
-  // "HH:MM" (assume dia de hoje)
-  if ((m = low.match(/^(\d{1,2}):(\d{2})/))) {
-    return diffMinutos(new Date(2026, 6, 30, Number(m[1]), Number(m[2])));
-  }
-  return SEM_DATA;
-}
 
 export type EstadoCicloDeVida =
   | "Novo lead"
@@ -210,6 +213,20 @@ export function gerarLinhaDoTempo(
         origem: conversa.origem,
         link: { modulo: "conversa", href: `/conversas?id=${conversa.id}` },
       });
+
+      if (msg.documento) {
+        eventos.push({
+          id: `${conversa.id}-doc-${i}`,
+          contatoId,
+          tipo: "documento_enviado",
+          titulo: `Documento: ${msg.documento.nome}`,
+          descricao: `${msg.documento.formato.toUpperCase()} · ${msg.documento.origem === "crm" ? "biblioteca do CRM" : "enviado pelo computador"}`,
+          quando: msg.hora || conversa.tempo,
+          minutosAtras: minutosAtras - 0.1,
+          origem: conversa.origem,
+          link: { modulo: "conversa", href: `/conversas?id=${conversa.id}` },
+        });
+      }
     });
   }
 
@@ -248,16 +265,30 @@ export function gerarLinhaDoTempo(
     for (const coluna of funil.colunas) {
       const card = coluna.cards.find((c) => c.nome === contato.nome);
       if (!card) continue;
+      const minutosAtras = estimarMinutosAtras(card.data || card.dias);
       eventos.push({
         id: `${funil.id}-${coluna.id}-${card.id}`,
         contatoId,
         tipo: "entrou_etapa",
         titulo: `Entrou na etapa "${coluna.titulo}" — ${funil.nome}`,
         quando: card.dias,
-        minutosAtras: estimarMinutosAtras(card.data || card.dias),
+        minutosAtras,
         origem: card.origem,
         link: { modulo: "funil", href: `/funil` },
       });
+      if (coluna.titulo.startsWith("Fechado")) {
+        eventos.push({
+          id: `${funil.id}-${coluna.id}-${card.id}-venda`,
+          contatoId,
+          tipo: "negociacao_fechada",
+          titulo: `Negociação fechada — ${card.valor}`,
+          descricao: `Funil: ${funil.nome}`,
+          quando: card.dias,
+          minutosAtras: minutosAtras - 0.1,
+          origem: card.origem,
+          link: { modulo: "funil", href: `/funil` },
+        });
+      }
     }
   }
 
