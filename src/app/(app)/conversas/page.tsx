@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { createPortal } from "react-dom";
 
 import {
   classeOrigem,
@@ -20,6 +21,7 @@ import {
   IconAutomacoes,
   IconConfiguracoes,
   IconDoc,
+  IconEmoji,
   IconMic,
   IconRefresh,
   IconSearch,
@@ -327,7 +329,8 @@ function ConversasPageInner() {
   const [gravandoAudio, setGravandoAudio] = useState(false);
   const [audioSegundos, setAudioSegundos] = useState(0);
   const [anexoAberto, setAnexoAberto] = useState(false);
-  const [anexoRect, setAnexoRect] = useState<DOMRect | null>(null);
+  const [anexoPos, setAnexoPos] = useState<{ x: number; y: number } | null>(null);
+  const anexoArrasteRef = useRef<{ dx: number; dy: number } | null>(null);
   const [emojiAberto, setEmojiAberto] = useState(false);
   const [emojiRect, setEmojiRect] = useState<DOMRect | null>(null);
   const [respostasGerenciarAberto, setRespostasGerenciarAberto] = useState(false);
@@ -569,6 +572,47 @@ function ConversasPageInner() {
 
   function fecharEmailModal() {
     setEmailModalAberto(false);
+  }
+
+  function abrirMenuAnexo(rect: DOMRect) {
+    const largura = 220;
+    const alturaEstimada = 340;
+    const margem = 12;
+    let left = rect.left;
+    let top = rect.bottom + 8;
+    if (left + largura > window.innerWidth - margem) {
+      left = window.innerWidth - largura - margem;
+    }
+    if (left < margem) left = margem;
+    if (top + alturaEstimada > window.innerHeight - margem) {
+      top = rect.top - alturaEstimada - 8;
+      if (top < margem) top = margem;
+    }
+    setAnexoPos({ x: left, y: top });
+    setAnexoAberto(true);
+  }
+
+  function iniciarArrasteAnexo(e: React.MouseEvent) {
+    const menuEl = (e.currentTarget as HTMLElement).closest(
+      ".wa-anexo-menu",
+    ) as HTMLElement | null;
+    if (!menuEl) return;
+    const rect = menuEl.getBoundingClientRect();
+    anexoArrasteRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+    function mover(ev: MouseEvent) {
+      if (!anexoArrasteRef.current) return;
+      setAnexoPos({
+        x: ev.clientX - anexoArrasteRef.current.dx,
+        y: ev.clientY - anexoArrasteRef.current.dy,
+      });
+    }
+    function soltar() {
+      anexoArrasteRef.current = null;
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+    }
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
   }
 
   function iniciarArrasteEmail(e: React.MouseEvent) {
@@ -987,8 +1031,11 @@ function ConversasPageInner() {
               aria-label="Anexar"
               title="Anexar"
               onClick={(e) => {
-                setAnexoRect(e.currentTarget.getBoundingClientRect());
-                setAnexoAberto((v) => !v);
+                if (anexoAberto) {
+                  setAnexoAberto(false);
+                } else {
+                  abrirMenuAnexo(e.currentTarget.getBoundingClientRect());
+                }
               }}
             >
               +
@@ -1067,7 +1114,7 @@ function ConversasPageInner() {
                 setEmojiAberto((v) => !v);
               }}
             >
-              😊
+              <IconEmoji />
             </button>
             <button
               type="button"
@@ -1115,84 +1162,101 @@ function ConversasPageInner() {
             }}
           />
 
-          <FloatingDropdown
-            anchorRect={anexoAberto ? anexoRect : null}
-            onClose={() => setAnexoAberto(false)}
-            width={220}
-          >
-            <button
-              type="button"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left" }}
-              onClick={abrirUploadImagem}
-            >
-              <span className="n">Imagem</span>
-            </button>
-            <button
-              type="button"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left" }}
-              onClick={abrirUploadVideo}
-            >
-              <span className="n">Vídeo</span>
-            </button>
-            <button
-              type="button"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left" }}
-              onClick={abrirUploadDocumento}
-            >
-              <span className="n">Documento</span>
-            </button>
-            <button
-              type="button"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left" }}
-              onClick={irParaContatos}
-            >
-              <span className="n">Contato</span>
-            </button>
-            <button
-              type="button"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left" }}
-              onClick={compartilharLocalizacao}
-            >
-              <span className="n">Localização</span>
-            </button>
-            <div className="dropdown-sep" />
-            <button
-              type="button"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left", color: "var(--blue)" }}
-              onClick={() => {
-                setAnexoAberto(false);
-                setMensagemTexto("//");
-              }}
-            >
-              <span className="n">⚡ Executar Automação</span>
-            </button>
-            <button
-              type="button"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left", color: "#7c3aed" }}
-              onClick={() => {
-                setAnexoAberto(false);
-                setRespostasGerenciarAberto(true);
-              }}
-            >
-              <span className="n">💬 Respostas Rápidas</span>
-            </button>
-            <div className="dropdown-sep" />
-            <button
-              type="button"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left", color: "#d64545" }}
-              onClick={() => setAnexoAberto(false)}
-            >
-              <span className="n">✕ Fechar</span>
-            </button>
-          </FloatingDropdown>
+          {anexoAberto && anexoPos && typeof document !== "undefined"
+            ? createPortal(
+                <>
+                  <div
+                    onClick={() => setAnexoAberto(false)}
+                    style={{ position: "fixed", inset: 0, zIndex: 190 }}
+                  />
+                  <div
+                    className="wa-anexo-menu"
+                    style={{ left: anexoPos.x, top: anexoPos.y }}
+                  >
+                    <div
+                      className="wa-anexo-drag"
+                      onMouseDown={iniciarArrasteAnexo}
+                      title="Arraste pra mover"
+                    >
+                      ⠿⠿⠿
+                    </div>
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={abrirUploadImagem}
+                    >
+                      <span className="n">Imagem</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={abrirUploadVideo}
+                    >
+                      <span className="n">Vídeo</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={abrirUploadDocumento}
+                    >
+                      <span className="n">Documento</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={irParaContatos}
+                    >
+                      <span className="n">Contato</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={compartilharLocalizacao}
+                    >
+                      <span className="n">Localização</span>
+                    </button>
+                    <div className="dropdown-sep" />
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => {
+                        setAnexoAberto(false);
+                        setMensagemTexto("//");
+                      }}
+                    >
+                      <span className="n">⚡ Executar Automação</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => {
+                        setAnexoAberto(false);
+                        setRespostasGerenciarAberto(true);
+                      }}
+                    >
+                      <span className="n">💬 Respostas Rápidas</span>
+                    </button>
+                    <div className="dropdown-sep" />
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left", color: "#d64545" }}
+                      onClick={() => setAnexoAberto(false)}
+                    >
+                      <span className="n">✕ Fechar</span>
+                    </button>
+                  </div>
+                </>,
+                document.body,
+              )
+            : null}
 
           <FloatingDropdown
             anchorRect={emojiAberto ? emojiRect : null}
@@ -1344,11 +1408,11 @@ function ConversasPageInner() {
                 ❌ Perdida · {motivoPerdaPorContato[aberta.nome]}
               </p>
             ) : (
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 <button
                   type="button"
                   className="btn primary"
-                  style={{ flex: 1 }}
+                  style={{ flex: "1 1 130px" }}
                   onClick={marcarVenda}
                 >
                   ✅ Houve venda
@@ -1356,7 +1420,7 @@ function ConversasPageInner() {
                 <button
                   type="button"
                   className="btn ghost"
-                  style={{ flex: 1 }}
+                  style={{ flex: "1 1 130px" }}
                   onClick={() => setEscolhendoMotivo((v) => !v)}
                 >
                   ❌ Não houve venda
@@ -1508,7 +1572,7 @@ function ConversasPageInner() {
             <textarea
               className="input"
               style={{ width: "100%", minHeight: 60, resize: "vertical" }}
-              placeholder="Anotar o que foi conversado por telefone, por exemplo…"
+              placeholder="Escreva aqui…"
               value={notaTexto}
               onChange={(e) => setNotaTexto(e.target.value)}
             />

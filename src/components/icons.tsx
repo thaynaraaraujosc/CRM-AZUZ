@@ -158,6 +158,17 @@ export function IconMic(props: Props) {
   );
 }
 
+export function IconEmoji(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 10h.01" />
+      <path d="M15.5 10h.01" />
+      <path d="M8.5 14.5a4 4 0 0 0 7 0" />
+    </svg>
+  );
+}
+
 export function IconText(props: Props) {
   return (
     <svg {...base} {...props}>
