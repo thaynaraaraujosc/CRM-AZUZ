@@ -1134,6 +1134,91 @@ export const motivosPerda = [
   { motivo: "Não é o momento", quantidade: 1, valor: "R$ 1.200,00", percentual: 18 },
 ];
 
+/** Uma linha por oportunidade perdida — pra investigar caso a caso qual foi o processo com aquele cliente. */
+export const oportunidadesPerdidas = [
+  {
+    cliente: "Marcos Aurélio",
+    responsavel: "Bruno Salles",
+    motivo: "Achou caro / sem orçamento",
+    etapa: "Proposta",
+    valor: "R$ 1.800,00",
+    data: "22/07/2026",
+  },
+  {
+    cliente: "Camila Duarte",
+    responsavel: "Ana Ferreira",
+    motivo: "Achou caro / sem orçamento",
+    etapa: "Qualificado",
+    valor: "R$ 2.300,00",
+    data: "18/07/2026",
+  },
+  {
+    cliente: "Lorena Bastos",
+    responsavel: "Carla Mendes",
+    motivo: "Escolheu outra clínica",
+    etapa: "Proposta",
+    valor: "R$ 2.600,00",
+    data: "15/07/2026",
+  },
+  {
+    cliente: "Fernando Lima",
+    responsavel: "Dr. Hélio Marinho",
+    motivo: "Sumiu, parou de responder",
+    etapa: "Novo",
+    valor: "R$ 1.900,00",
+    data: "10/07/2026",
+  },
+  {
+    cliente: "Beatriz Nogueira",
+    responsavel: "Bruno Salles",
+    motivo: "Não é o momento",
+    etapa: "Qualificado",
+    valor: "R$ 1.200,00",
+    data: "05/07/2026",
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/* CRM Live — telão pra projetar no escritório                                */
+/* -------------------------------------------------------------------------- */
+
+export const crmLive = {
+  vencedores: {
+    maisOportunidades: { nome: "Ana Ferreira", valor: "7" },
+    maisVendasUnidade: { nome: "Ana Ferreira", valor: "4" },
+    maisVendasValor: { nome: "Dr. Hélio Marinho", valor: "R$ 14.200" },
+  },
+  finalizadas: {
+    oportunidadesNovas: 9,
+    oportunidadesNovasAnterior: 17,
+    vendasPeriodo: 6,
+    vendasPeriodoAnterior: 9,
+    vendasValor: 21400,
+    vendasValorAnterior: 28900,
+    conversao: "66,7%",
+    perdidas: 3,
+    perdidasAnterior: 5,
+  },
+  andamento: {
+    oportunidadesEmAndamento: 24,
+    valoresEmAndamento: "R$ 58.600,00",
+    etapas: [
+      { nome: "Sem contato / Lead", quantidade: 4, valor: "R$ 0,00" },
+      { nome: "Contato feito", quantidade: 6, valor: "R$ 8.400,00" },
+      { nome: "Visita / Avaliação", quantidade: 7, valor: "R$ 16.200,00" },
+      { nome: "Proposta enviada", quantidade: 5, valor: "R$ 21.100,00" },
+      { nome: "Fechamento", quantidade: 2, valor: "R$ 12.900,00" },
+    ],
+  },
+  feedTarefas: [
+    { titulo: "Proposta comercial enviada", pessoa: "Ana Ferreira", quando: "há 8 min" },
+    { titulo: "Tentativa 3 de contato", pessoa: "Bruno Salles", quando: "há 22 min" },
+    { titulo: "Retorno de avaliação confirmado", pessoa: "Dr. Hélio Marinho", quando: "há 41 min" },
+    { titulo: "Primeira tentativa de contato", pessoa: "Carla Mendes", quando: "há 1h" },
+    { titulo: "Follow-up da proposta", pessoa: "Bruno Salles", quando: "há 2h" },
+  ],
+};
+
 /* -------------------------------------------------------------------------- */
 /* Relatórios                                                                 */
 /* -------------------------------------------------------------------------- */
@@ -1187,6 +1272,92 @@ export const relatoriosAnteriores = [
   { nome: "Junho 2026", gerado: "Gerado em 01/07" },
   { nome: "Maio 2026", gerado: "Gerado em 01/06" },
   { nome: "Abril 2026", gerado: "Gerado em 01/05" },
+];
+
+/* -------------------------------------------------------------------------- */
+/* Relatórios — análise (tipo Dashboard, Pipeline, Equipes…)                  */
+/* -------------------------------------------------------------------------- */
+
+export const TIPOS_RELATORIO_ANALISE = [
+  "Dashboard",
+  "Pipeline",
+  "Equipes",
+  "Feedback",
+  "Conversões",
+  "Produtos e Serviços",
+  "Fontes e Campanhas",
+  "Metas",
+  "Ligações",
+  "Comparativo de ligações",
+] as const;
+
+/** Ligações feitas pelo telefone virtual do CRM — usado no relatório "Ligações". */
+export const ligacoesPorResponsavel = [
+  { nome: "Ana Ferreira", quantidade: 14, duracaoMedia: "3min 40s" },
+  { nome: "Dr. Hélio Marinho", quantidade: 9, duracaoMedia: "5min 10s" },
+  { nome: "Carla Mendes", quantidade: 11, duracaoMedia: "2min 55s" },
+  { nome: "Bruno Salles", quantidade: 7, duracaoMedia: "4min 05s" },
+];
+
+export const CAMPOS_FILTRO_PERSONALIZADO = [
+  "Campanha",
+  "Fonte",
+  "Produto ou Serviço",
+  "Segmento",
+  "Região de atuação",
+  "Estado civil",
+  "Validade do CS",
+  "Valor negociação",
+  "CPF / CNPJ",
+  "Indicador",
+  "Marca / Modelo",
+];
+
+/** Soma R$ 38.400,00 — bate com `kpisConversao` ("Valor total vendido"). */
+export const faturamentoPorResponsavel = [
+  { nome: "Ana Ferreira", valor: 15200 },
+  { nome: "Dr. Hélio Marinho", valor: 11400 },
+  { nome: "Carla Mendes", valor: 6800 },
+  { nome: "Bruno Salles", valor: 5000 },
+];
+
+/**
+ * Dia a dia do mês pra montar o gráfico de área (oportunidades/vendas/perdas)
+ * e o gráfico de valor vendido do Dashboard de relatórios — só teve venda em
+ * valor mesmo nos dias 13, 17 e 19 (esse último bem maior que os outros).
+ */
+export const serieDashboardRelatorios = [
+  { dia: "01", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "02", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "03", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "04", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "05", criadas: 1, vendas: 0, perdidas: 1, valorVendas: 0 },
+  { dia: "06", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "07", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "08", criadas: 3, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "09", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "10", criadas: 2, vendas: 0, perdidas: 1, valorVendas: 0 },
+  { dia: "11", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "12", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "13", criadas: 1, vendas: 1, perdidas: 0, valorVendas: 3800 },
+  { dia: "14", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "15", criadas: 1, vendas: 0, perdidas: 1, valorVendas: 0 },
+  { dia: "16", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "17", criadas: 1, vendas: 1, perdidas: 0, valorVendas: 6200 },
+  { dia: "18", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "19", criadas: 0, vendas: 1, perdidas: 0, valorVendas: 15400 },
+  { dia: "20", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "21", criadas: 1, vendas: 0, perdidas: 1, valorVendas: 0 },
+  { dia: "22", criadas: 3, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "23", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "24", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "25", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "26", criadas: 1, vendas: 0, perdidas: 1, valorVendas: 0 },
+  { dia: "27", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "28", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "29", criadas: 3, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "30", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "31", criadas: 4, vendas: 0, perdidas: 0, valorVendas: 0 },
 ];
 
 /* -------------------------------------------------------------------------- */

@@ -238,6 +238,19 @@ export function Sidebar() {
                   })}
                 </div>
               ) : null}
+              {href === "/relatorios" ? (
+                <a
+                  href="/crm-live"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nav-item nav-item-crmlive"
+                  title="Abre numa aba nova — telão pra projetar no escritório"
+                >
+                  <IconTrafego />
+                  CRM Live
+                  <span className="nav-item-tag">TV</span>
+                </a>
+              ) : null}
             </div>
           );
         })}

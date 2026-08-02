@@ -1,9 +1,15 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { classeOrigem, conversas, type Funil, type NegocioCard } from "@/lib/data";
+import {
+  classeOrigem,
+  conversas,
+  motivosPerda,
+  type Funil,
+  type NegocioCard,
+} from "@/lib/data";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
@@ -16,7 +22,7 @@ import {
   IconMic,
   IconSearch,
 } from "@/components/icons";
-import { RadioList, Toggle, Topbar } from "@/components/ui";
+import { FloatingDropdown, RadioList, Toggle, Topbar } from "@/components/ui";
 
 const FILTROS_CONVERSA = [
   { valor: "tudo", label: "Tudo" },
@@ -134,10 +140,31 @@ function ConversasPageInner() {
   const [infoAberto, setInfoAberto] = useState(false);
   const [buscaConversa, setBuscaConversa] = useState("");
   const [filtroConversa, setFiltroConversa] = useState<FiltroConversa>("tudo");
+  const [lidas, setLidas] = useState<Set<string>>(() => new Set());
+  const [midiasAberto, setMidiasAberto] = useState(false);
+  const [conectarAberto, setConectarAberto] = useState(false);
+  const [conectarAba, setConectarAba] = useState<"qr" | "api">("qr");
+  const [infoWidth, setInfoWidth] = useState(320);
+
+  const [atendenteTopAberto, setAtendenteTopAberto] = useState(false);
+  const [atendenteTopRect, setAtendenteTopRect] = useState<DOMRect | null>(null);
+  const [atendenteTopFiltro, setAtendenteTopFiltro] = useState("Todos");
+
+  const [canalTopAberto, setCanalTopAberto] = useState(false);
+  const [canalTopRect, setCanalTopRect] = useState<DOMRect | null>(null);
+  const [canalTopFiltro, setCanalTopFiltro] = useState("Todos");
+
+  const atendentesDisponiveis = Array.from(
+    new Set(conversas.map((c) => c.atendenteSelecionado)),
+  );
+  const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
   const conversasFiltradas = conversas.filter((c) => {
-    if (filtroConversa === "nao-lidas" && !c.naoLidas) return false;
+    if (filtroConversa === "nao-lidas" && (!c.naoLidas || lidas.has(c.id))) return false;
     if (filtroConversa === "favoritas" && !c.favorita) return false;
+    if (atendenteTopFiltro !== "Todos" && c.atendenteSelecionado !== atendenteTopFiltro)
+      return false;
+    if (canalTopFiltro !== "Todos" && c.origem !== canalTopFiltro) return false;
     if (!buscaConversa.trim()) return true;
     const termo = buscaConversa.trim().toLowerCase();
     const ultima = c.mensagens[c.mensagens.length - 1];
@@ -202,14 +229,37 @@ function ConversasPageInner() {
   const [emailModalAberto, setEmailModalAberto] = useState(false);
   const [emailPara, setEmailPara] = useState("");
   const [emailAssunto, setEmailAssunto] = useState("");
+  const [emailPos, setEmailPos] = useState<{ x: number; y: number } | null>(null);
+  const emailArrasteRef = useRef<{ dx: number; dy: number } | null>(null);
   const emailCorpoRef = useRef<HTMLDivElement>(null);
+  const proximoEmailId = useRef(0);
   const [historicoPorContato, setHistoricoPorContato] = useState<
     Record<string, HistoricoItem[]>
   >({});
   const [notaTexto, setNotaTexto] = useState("");
+  const [resultadoPorContato, setResultadoPorContato] = useState<
+    Record<string, "venda" | "perda">
+  >({});
+  const [motivoPerdaPorContato, setMotivoPerdaPorContato] = useState<
+    Record<string, string>
+  >({});
+  const [motivosPerdaCustom, setMotivosPerdaCustom] = useState<string[]>([]);
+  const [novoMotivoTexto, setNovoMotivoTexto] = useState("");
+  const [escolhendoMotivo, setEscolhendoMotivo] = useState(false);
+  const [discadorAberto, setDiscadorAberto] = useState(false);
+  const [chamadaSegundos, setChamadaSegundos] = useState(0);
+  const [chamadaMudo, setChamadaMudo] = useState(false);
+
+  useEffect(() => {
+    if (!discadorAberto) return;
+    const intervalo = setInterval(() => setChamadaSegundos((s) => s + 1), 1000);
+    return () => clearInterval(intervalo);
+  }, [discadorAberto]);
 
   if (aberta.id !== abertaIdAnterior) {
     setAbertaIdAnterior(aberta.id);
+    setEscolhendoMotivo(false);
+    setDiscadorAberto(false);
     const funilId = localizacao?.funilId ?? funis[0]?.id ?? "";
     setFunilSelecionadoId(funilId);
     setEtapaSelecionada(etapaPadraoPara(funilId));
@@ -233,6 +283,11 @@ function ConversasPageInner() {
 
   const emailsDaConversa = emailsEnviados.filter((e) => e.contato === aberta.nome);
   const historico = historicoPorContato[aberta.nome] ?? [];
+  const resultadoAtual = resultadoPorContato[aberta.nome];
+  const motivosDisponiveis = [
+    ...motivosPerda.map((m) => m.motivo),
+    ...motivosPerdaCustom,
+  ];
 
   function adicionarHistorico(tipo: HistoricoItem["tipo"], texto: string) {
     setHistoricoPorContato((prev) => ({
@@ -251,9 +306,49 @@ function ConversasPageInner() {
     setNotaTexto("");
   }
 
+  function abrirDiscador() {
+    setChamadaSegundos(0);
+    setChamadaMudo(false);
+    setDiscadorAberto(true);
+  }
+
+  function encerrarChamada() {
+    const min = Math.floor(chamadaSegundos / 60);
+    const seg = chamadaSegundos % 60;
+    const duracao = `${min}min ${String(seg).padStart(2, "0")}s`;
+    setDiscadorAberto(false);
+    if (chamadaSegundos > 0) {
+      adicionarHistorico("sistema", `📞 Ligação realizada · duração ${duracao}`);
+      avisarAutomacao(`Ligação com ${aberta.nome} encerrada (${duracao})`);
+    }
+  }
+
+  function marcarVenda() {
+    setResultadoPorContato((prev) => ({ ...prev, [aberta.nome]: "venda" }));
+    setEscolhendoMotivo(false);
+    adicionarHistorico("sistema", "Negociação marcada como venda ✅");
+    avisarAutomacao(`${aberta.nome} marcado como venda`);
+  }
+
+  function marcarPerda(motivo: string) {
+    setResultadoPorContato((prev) => ({ ...prev, [aberta.nome]: "perda" }));
+    setMotivoPerdaPorContato((prev) => ({ ...prev, [aberta.nome]: motivo }));
+    setEscolhendoMotivo(false);
+    adicionarHistorico("sistema", `Negociação perdida · motivo: ${motivo}`);
+    avisarAutomacao(`${aberta.nome} marcado como perda (${motivo})`);
+  }
+
+  function adicionarMotivoCustom() {
+    const texto = novoMotivoTexto.trim();
+    if (!texto) return;
+    setMotivosPerdaCustom((prev) => [...prev, texto]);
+    setNovoMotivoTexto("");
+  }
+
   function abrirEmailModal() {
     setEmailPara(emailContato || contatoDaConversa?.email || "");
     setEmailAssunto("");
+    setEmailPos(null);
     setEmailModalAberto(true);
   }
 
@@ -261,11 +356,51 @@ function ConversasPageInner() {
     setEmailModalAberto(false);
   }
 
+  function iniciarArrasteEmail(e: React.MouseEvent) {
+    const modalEl = (e.currentTarget as HTMLElement).closest(
+      ".wa-email-modal",
+    ) as HTMLElement | null;
+    if (!modalEl) return;
+    const rect = modalEl.getBoundingClientRect();
+    emailArrasteRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+    function mover(ev: MouseEvent) {
+      if (!emailArrasteRef.current) return;
+      setEmailPos({
+        x: ev.clientX - emailArrasteRef.current.dx,
+        y: ev.clientY - emailArrasteRef.current.dy,
+      });
+    }
+    function soltar() {
+      emailArrasteRef.current = null;
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+    }
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
+  }
+
+  function iniciarRedimensionarInfo(e: React.MouseEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = infoWidth;
+    function mover(ev: MouseEvent) {
+      const delta = startX - ev.clientX;
+      const novo = Math.min(680, Math.max(260, startWidth + delta));
+      setInfoWidth(novo);
+    }
+    function soltar() {
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+    }
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
+  }
+
   function enviarEmail() {
     const para = emailPara.trim();
     const assunto = emailAssunto.trim();
     if (!para || !assunto) return;
-    const id = `email-${Date.now()}`;
+    const id = `email-${proximoEmailId.current++}`;
     setEmailsEnviados((prev) => [
       ...prev,
       {
@@ -277,8 +412,8 @@ function ConversasPageInner() {
         aberto: false,
       },
     ]);
-    setEmailModalAberto(false);
     adicionarHistorico("email", `E-mail disparado pra ${para} · assunto "${assunto}"`);
+    avisarAutomacao(`✓ E-mail enviado pra ${para}`);
     setTimeout(() => {
       const agora = new Date();
       const hora = `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
@@ -288,6 +423,18 @@ function ConversasPageInner() {
       adicionarHistorico("email", `E-mail "${assunto}" foi lido às ${hora}`);
       avisarAutomacao(`${aberta.nome} abriu o e-mail "${assunto}"`);
     }, 6000);
+  }
+
+  function verificarRastreamento(email: {
+    aberto: boolean;
+    abertoEm?: string;
+    assunto: string;
+  }) {
+    avisarAutomacao(
+      email.aberto
+        ? `"${email.assunto}" foi lido às ${email.abertoEm}`
+        : `"${email.assunto}" ainda não foi aberto pelo destinatário`,
+    );
   }
 
   function curtirMensagem(indice: number) {
@@ -381,8 +528,96 @@ function ConversasPageInner() {
             >
               🔔 Simular mensagem nova
             </button>
-            <span className="fsel">Atendente: Todos ▾</span>
-            <span className="fsel">Canal: Todos ▾</span>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => setConectarAberto(true)}
+            >
+              🔗 Conectar WhatsApp
+            </button>
+            <button
+              type="button"
+              className="fsel"
+              onClick={(e) => {
+                setAtendenteTopRect(e.currentTarget.getBoundingClientRect());
+                setAtendenteTopAberto((v) => !v);
+              }}
+            >
+              Atendente: {atendenteTopFiltro} ▾
+            </button>
+            <FloatingDropdown
+              anchorRect={atendenteTopAberto ? atendenteTopRect : null}
+              onClose={() => setAtendenteTopAberto(false)}
+              width={220}
+            >
+              <button
+                type="button"
+                className="dropdown-item"
+                style={{ width: "100%", textAlign: "left" }}
+                onClick={() => {
+                  setAtendenteTopFiltro("Todos");
+                  setAtendenteTopAberto(false);
+                }}
+              >
+                <span className="n">Todos</span>
+              </button>
+              {atendentesDisponiveis.map((nome) => (
+                <button
+                  type="button"
+                  key={nome}
+                  className="dropdown-item"
+                  style={{ width: "100%", textAlign: "left" }}
+                  onClick={() => {
+                    setAtendenteTopFiltro(nome);
+                    setAtendenteTopAberto(false);
+                  }}
+                >
+                  <span className="n">{nome}</span>
+                </button>
+              ))}
+            </FloatingDropdown>
+
+            <button
+              type="button"
+              className="fsel"
+              onClick={(e) => {
+                setCanalTopRect(e.currentTarget.getBoundingClientRect());
+                setCanalTopAberto((v) => !v);
+              }}
+            >
+              Canal: {canalTopFiltro} ▾
+            </button>
+            <FloatingDropdown
+              anchorRect={canalTopAberto ? canalTopRect : null}
+              onClose={() => setCanalTopAberto(false)}
+              width={200}
+            >
+              <button
+                type="button"
+                className="dropdown-item"
+                style={{ width: "100%", textAlign: "left" }}
+                onClick={() => {
+                  setCanalTopFiltro("Todos");
+                  setCanalTopAberto(false);
+                }}
+              >
+                <span className="n">Todos</span>
+              </button>
+              {canaisDisponiveis.map((origem) => (
+                <button
+                  type="button"
+                  key={origem}
+                  className="dropdown-item"
+                  style={{ width: "100%", textAlign: "left" }}
+                  onClick={() => {
+                    setCanalTopFiltro(origem);
+                    setCanalTopAberto(false);
+                  }}
+                >
+                  <span className="n">{origem}</span>
+                </button>
+              ))}
+            </FloatingDropdown>
           </>
         }
       />
@@ -428,7 +663,10 @@ function ConversasPageInner() {
                   key={c.id}
                   className={`wa-row${active ? " active" : ""}`}
                   aria-pressed={active}
-                  onClick={() => setSelectedId(c.id)}
+                  onClick={() => {
+                    setSelectedId(c.id);
+                    setLidas((prev) => (prev.has(c.id) ? prev : new Set(prev).add(c.id)));
+                  }}
                 >
                   <span className="cr1">
                     <span className="avatar">
@@ -444,7 +682,7 @@ function ConversasPageInner() {
                   <span className="cmsg">
                     {last.tipo === "out" ? "Você: " : ""}
                     {last.texto}
-                    {c.naoLidas ? (
+                    {c.naoLidas && !lidas.has(c.id) ? (
                       <span className="wa-unread-badge">{c.naoLidas}</span>
                     ) : null}
                   </span>
@@ -462,13 +700,29 @@ function ConversasPageInner() {
 
         <section className="wa-main">
           <div className="open-conv-h">
-            <div className="avatar">{aberta.initials}</div>
-            <div>
-              <p className="n">{aberta.nome}</p>
-              <p className="s">
-                {aberta.canal} · {aberta.contato}
-              </p>
-            </div>
+            <button
+              type="button"
+              className="wa-conv-titulo-btn"
+              onClick={() => setMidiasAberto(true)}
+              title="Ver mídias e arquivos trocados nessa conversa"
+            >
+              <div className="avatar">{aberta.initials}</div>
+              <div>
+                <p className="n">{aberta.nome}</p>
+                <p className="s">
+                  {aberta.canal} · {aberta.contato}
+                </p>
+              </div>
+            </button>
+            <button
+              type="button"
+              className="gear-btn wa-call-btn"
+              aria-label="Ligar pelo telefone virtual"
+              title="Ligar pelo telefone virtual do CRM"
+              onClick={abrirDiscador}
+            >
+              📞
+            </button>
             <button
               type="button"
               className={`gear-btn wa-main-gear${infoAberto ? " active" : ""}`}
@@ -516,7 +770,13 @@ function ConversasPageInner() {
         </section>
 
         {infoAberto ? (
-        <aside className="wa-info">
+        <>
+        <div
+          className="wa-resizer"
+          onMouseDown={iniciarRedimensionarInfo}
+          title="Arraste pra redimensionar"
+        />
+        <aside className="wa-info" style={{ width: infoWidth }}>
           <div className="panel-h">
             <h4>Atribuir ao funil</h4>
           </div>
@@ -618,13 +878,80 @@ function ConversasPageInner() {
           </div>
 
           <div className="panel-h divided">
+            <h4>Resultado da negociação</h4>
+          </div>
+          <div style={{ padding: "0 17px 14px" }}>
+            {resultadoAtual === "venda" ? (
+              <p className="wa-resultado-badge wa-resultado-venda">
+                ✅ Marcada como venda
+              </p>
+            ) : resultadoAtual === "perda" ? (
+              <p className="wa-resultado-badge wa-resultado-perda">
+                ❌ Perdida · {motivoPerdaPorContato[aberta.nome]}
+              </p>
+            ) : (
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  className="btn primary"
+                  style={{ flex: 1 }}
+                  onClick={marcarVenda}
+                >
+                  ✅ Houve venda
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  style={{ flex: 1 }}
+                  onClick={() => setEscolhendoMotivo((v) => !v)}
+                >
+                  ❌ Não houve venda
+                </button>
+              </div>
+            )}
+
+            {escolhendoMotivo && !resultadoAtual ? (
+              <div className="wa-motivo-picker">
+                {motivosDisponiveis.map((m) => (
+                  <button
+                    type="button"
+                    key={m}
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => marcarPerda(m)}
+                  >
+                    <span className="n">{m}</span>
+                  </button>
+                ))}
+                <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                  <input
+                    className="input"
+                    style={{ flex: 1 }}
+                    placeholder="Novo motivo…"
+                    value={novoMotivoTexto}
+                    onChange={(e) => setNovoMotivoTexto(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={adicionarMotivoCustom}
+                    disabled={!novoMotivoTexto.trim()}
+                  >
+                    + Adicionar
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="panel-h divided">
             <h4>Adicionar</h4>
           </div>
-          <div style={{ display: "flex", gap: 8, padding: "14px 17px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "14px 17px" }}>
             <button
               type="button"
               className="btn ghost"
-              style={{ flex: 1 }}
+              style={{ flex: "1 1 140px" }}
               onClick={() => setTarefaAberta((v) => !v)}
             >
               {tarefaAberta ? "Fechar tarefa" : "+ Adicionar tarefa"}
@@ -632,7 +959,7 @@ function ConversasPageInner() {
             <button
               type="button"
               className="btn ghost"
-              style={{ flex: 1 }}
+              style={{ flex: "1 1 140px" }}
               onClick={abrirEmailModal}
             >
               ✉ Disparar e-mail
@@ -756,24 +1083,28 @@ function ConversasPageInner() {
             ))}
           </div>
         </aside>
+        </>
         ) : null}
       </div>
 
       {emailModalAberto ? (
-        <div className="form-preview-overlay" onClick={fecharEmailModal}>
-          <div
-            className="wa-email-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-              <div>
-                <p className="n">Novo e-mail</p>
-                <p className="s">Pra {aberta.nome}</p>
-              </div>
-              <span className="close" style={{ cursor: "pointer" }} onClick={fecharEmailModal}>
-                Fechar ✕
-              </span>
+        <div
+          className="wa-email-modal wa-email-floating"
+          style={
+            emailPos
+              ? { left: emailPos.x, top: emailPos.y, right: "auto", bottom: "auto" }
+              : undefined
+          }
+        >
+          <div className="wa-email-drag" onMouseDown={iniciarArrasteEmail}>
+            <div>
+              <p className="n">Novo e-mail</p>
+              <p className="s">Pra {aberta.nome}</p>
             </div>
+            <span className="close" style={{ cursor: "pointer" }} onClick={fecharEmailModal}>
+              Fechar ✕
+            </span>
+          </div>
             <div className="field" style={{ padding: "10px 0" }}>
               <label>Para</label>
               <input
@@ -857,6 +1188,173 @@ function ConversasPageInner() {
                 disabled={!emailPara.trim() || !emailAssunto.trim()}
               >
                 Disparar e-mail
+              </button>
+            </div>
+
+            {emailsDaConversa.length > 0 ? (
+              <>
+                <div className="panel-h divided">
+                  <h4>Rastreamento</h4>
+                </div>
+                {emailsDaConversa
+                  .slice()
+                  .reverse()
+                  .map((email) => (
+                    <div className="stat-row" key={email.id}>
+                      <span className="sl">{email.assunto}</span>
+                      <span
+                        className={`sv${email.aberto ? " wa-email-lido" : ""}`}
+                      >
+                        {email.aberto ? `Lido às ${email.abertoEm}` : "Enviado, ainda não lido"}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        style={{ padding: "4px 10px", fontSize: 11 }}
+                        onClick={() => verificarRastreamento(email)}
+                      >
+                        🔄 Verificar
+                      </button>
+                    </div>
+                  ))}
+              </>
+            ) : null}
+        </div>
+      ) : null}
+
+      {discadorAberto ? (
+        <div className="wa-discador">
+          <p className="wa-discador-nome">{aberta.nome}</p>
+          <p className="wa-discador-numero">{aberta.contato}</p>
+          <p className="wa-discador-timer">
+            {String(Math.floor(chamadaSegundos / 60)).padStart(2, "0")}:
+            {String(chamadaSegundos % 60).padStart(2, "0")}
+          </p>
+          <p className="hint">Chamando pelo telefone virtual…</p>
+          <div className="wa-discador-acoes">
+            <button
+              type="button"
+              className={`wa-discador-icone${chamadaMudo ? " active" : ""}`}
+              onClick={() => setChamadaMudo((v) => !v)}
+              title={chamadaMudo ? "Reativar microfone" : "Mudo"}
+            >
+              🎙
+            </button>
+            <button type="button" className="wa-discador-icone" title="Teclado">
+              🔢
+            </button>
+          </div>
+          <button
+            type="button"
+            className="wa-discador-desligar"
+            onClick={encerrarChamada}
+            title="Encerrar ligação"
+          >
+            📴
+          </button>
+        </div>
+      ) : null}
+
+      {midiasAberto ? (
+        <div className="form-preview-overlay" onClick={() => setMidiasAberto(false)}>
+          <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+              <div>
+                <p className="n">Mídias e arquivos</p>
+                <p className="s">Trocados com {aberta.nome}</p>
+              </div>
+              <span
+                className="close"
+                style={{ cursor: "pointer" }}
+                onClick={() => setMidiasAberto(false)}
+              >
+                Fechar ✕
+              </span>
+            </div>
+            {aberta.tarefa.anexo ? (
+              <div className="field" style={{ padding: "10px 0" }}>
+                <div className="attach-chip">
+                  <IconDoc />
+                  <span className="fn">{aberta.tarefa.anexo.arquivo}</span>
+                  <span className="fs">{aberta.tarefa.anexo.detalhe}</span>
+                </div>
+              </div>
+            ) : (
+              <p className="hint" style={{ padding: "10px 0" }}>
+                Nenhuma mídia trocada nessa conversa ainda.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {conectarAberto ? (
+        <div className="form-preview-overlay" onClick={() => setConectarAberto(false)}>
+          <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+              <div>
+                <p className="n">Conectar WhatsApp</p>
+                <p className="s">Escolha como conectar o número da clínica</p>
+              </div>
+              <span
+                className="close"
+                style={{ cursor: "pointer" }}
+                onClick={() => setConectarAberto(false)}
+              >
+                Fechar ✕
+              </span>
+            </div>
+            <div className="filters-row mb14">
+              <button
+                type="button"
+                className={`fchip${conectarAba === "qr" ? " active" : ""}`}
+                onClick={() => setConectarAba("qr")}
+              >
+                QR Code (não oficial)
+              </button>
+              <button
+                type="button"
+                className={`fchip${conectarAba === "api" ? " active" : ""}`}
+                onClick={() => setConectarAba("api")}
+              >
+                API oficial (Meta)
+              </button>
+            </div>
+            {conectarAba === "qr" ? (
+              <div style={{ textAlign: "center", padding: "6px 0 14px" }}>
+                <div className="wa-qr-box">📷</div>
+                <p className="hint" style={{ marginTop: 10 }}>
+                  Abra o WhatsApp no celular da clínica → Aparelhos conectados →
+                  Conectar um aparelho, e escaneie esse código.
+                </p>
+                <p className="hint">Aguardando leitura do QR…</p>
+              </div>
+            ) : (
+              <>
+                <div className="field" style={{ padding: "10px 0" }}>
+                  <label>ID da conta comercial (Meta)</label>
+                  <input className="input" style={{ width: "100%" }} placeholder="Ex.: 123456789012345" />
+                </div>
+                <div className="field" style={{ padding: "10px 0" }}>
+                  <label>Token de acesso</label>
+                  <input className="input" style={{ width: "100%" }} type="password" placeholder="••••••••••••" />
+                </div>
+                <p className="hint">
+                  Conectando pela API oficial, as conversas, fotos e nomes de contato são
+                  importados automaticamente — só a organização no funil continua manual.
+                </p>
+              </>
+            )}
+            <div className="section-foot">
+              <button
+                type="button"
+                className="btn primary block"
+                onClick={() => {
+                  setConectarAberto(false);
+                  avisarAutomacao("WhatsApp conectado — conversas sendo importadas");
+                }}
+              >
+                {conectarAba === "qr" ? "Simular leitura do QR" : "Conectar"}
               </button>
             </div>
           </div>

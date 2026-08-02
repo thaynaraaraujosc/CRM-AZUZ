@@ -10,17 +10,16 @@ import {
   tempoPrimeiroContatoPorResponsavel,
 } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
-import { FloatingDropdown, Topbar } from "@/components/ui";
+import {
+  FloatingDropdown,
+  PERIODO_PADRAO,
+  PeriodoPicker,
+  Topbar,
+  type PeriodoValor,
+} from "@/components/ui";
 
 const ABAS = ["Tempo de primeiro contato", "Tarefas", "Interações"] as const;
 type Aba = (typeof ABAS)[number];
-
-const PERIODOS = [
-  "Qualquer período",
-  "Últimos 7 dias",
-  "Este mês",
-  "Mês passado",
-];
 
 export default function AtividadesVendasPage() {
   const { funis } = useFunis();
@@ -35,13 +34,8 @@ export default function AtividadesVendasPage() {
   const [responsavelRect, setResponsavelRect] = useState<DOMRect | null>(null);
   const [responsavelFiltro, setResponsavelFiltro] = useState("Todos");
 
-  const [criadasAberto, setCriadasAberto] = useState(false);
-  const [criadasRect, setCriadasRect] = useState<DOMRect | null>(null);
-  const [criadasFiltro, setCriadasFiltro] = useState(PERIODOS[0]);
-
-  const [fechadasAberto, setFechadasAberto] = useState(false);
-  const [fechadasRect, setFechadasRect] = useState<DOMRect | null>(null);
-  const [fechadasFiltro, setFechadasFiltro] = useState(PERIODOS[0]);
+  const [criadasFiltro, setCriadasFiltro] = useState<PeriodoValor>(PERIODO_PADRAO);
+  const [fechadasFiltro, setFechadasFiltro] = useState<PeriodoValor>(PERIODO_PADRAO);
 
   const dadosResponsavel = tempoPrimeiroContatoPorResponsavel.filter(
     (r) => responsavelFiltro === "Todos" || r.nome === responsavelFiltro,
@@ -145,67 +139,8 @@ export default function AtividadesVendasPage() {
             ))}
           </FloatingDropdown>
 
-          <button
-            type="button"
-            className="fsel"
-            onClick={(e) => {
-              setCriadasRect(e.currentTarget.getBoundingClientRect());
-              setCriadasAberto((v) => !v);
-            }}
-          >
-            Criadas em: {criadasFiltro} ▾
-          </button>
-          <FloatingDropdown
-            anchorRect={criadasAberto ? criadasRect : null}
-            onClose={() => setCriadasAberto(false)}
-            width={200}
-          >
-            {PERIODOS.map((p) => (
-              <button
-                type="button"
-                key={p}
-                className="dropdown-item"
-                style={{ width: "100%", textAlign: "left" }}
-                onClick={() => {
-                  setCriadasFiltro(p);
-                  setCriadasAberto(false);
-                }}
-              >
-                <span className="n">{p}</span>
-              </button>
-            ))}
-          </FloatingDropdown>
-
-          <button
-            type="button"
-            className="fsel"
-            onClick={(e) => {
-              setFechadasRect(e.currentTarget.getBoundingClientRect());
-              setFechadasAberto((v) => !v);
-            }}
-          >
-            Fechadas em: {fechadasFiltro} ▾
-          </button>
-          <FloatingDropdown
-            anchorRect={fechadasAberto ? fechadasRect : null}
-            onClose={() => setFechadasAberto(false)}
-            width={200}
-          >
-            {PERIODOS.map((p) => (
-              <button
-                type="button"
-                key={p}
-                className="dropdown-item"
-                style={{ width: "100%", textAlign: "left" }}
-                onClick={() => {
-                  setFechadasFiltro(p);
-                  setFechadasAberto(false);
-                }}
-              >
-                <span className="n">{p}</span>
-              </button>
-            ))}
-          </FloatingDropdown>
+          <PeriodoPicker label="Criadas em" value={criadasFiltro} onChange={setCriadasFiltro} />
+          <PeriodoPicker label="Fechadas em" value={fechadasFiltro} onChange={setFechadasFiltro} />
         </div>
 
         <div className="filters-row mb14">

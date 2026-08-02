@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 /**
@@ -61,6 +61,114 @@ export function FloatingDropdown({
       </div>
     </>,
     document.body,
+  );
+}
+
+export type PeriodoValor =
+  | { tipo: "predefinido"; label: string }
+  | { tipo: "personalizado"; de: string; ate: string };
+
+export const PERIODO_PADRAO: PeriodoValor = {
+  tipo: "predefinido",
+  label: "Qualquer período",
+};
+
+const PERIODOS_RAPIDOS = [
+  "Qualquer período",
+  "Últimos 7 dias",
+  "Últimos 15 dias",
+  "Este mês",
+  "Mês passado",
+];
+
+export function periodoLabel(v: PeriodoValor): string {
+  if (v.tipo === "predefinido") return v.label;
+  if (!v.de || !v.ate) return "Personalizado";
+  return `${v.de} até ${v.ate}`;
+}
+
+/** Botão de período com atalhos (semana, 15 dias, mês) + calendário pra escolher um intervalo personalizado. */
+export function PeriodoPicker({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: PeriodoValor;
+  onChange: (v: PeriodoValor) => void;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const [de, setDe] = useState(value.tipo === "personalizado" ? value.de : "");
+  const [ate, setAte] = useState(value.tipo === "personalizado" ? value.ate : "");
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="fsel"
+        ref={btnRef}
+        onClick={(e) => {
+          setRect(e.currentTarget.getBoundingClientRect());
+          setAberto((v) => !v);
+        }}
+      >
+        {label}: {periodoLabel(value)} ▾
+      </button>
+      <FloatingDropdown
+        anchorRect={aberto ? rect : null}
+        onClose={() => setAberto(false)}
+        width={260}
+      >
+        {PERIODOS_RAPIDOS.map((p) => (
+          <button
+            type="button"
+            key={p}
+            className="dropdown-item"
+            style={{ width: "100%", textAlign: "left" }}
+            onClick={() => {
+              onChange({ tipo: "predefinido", label: p });
+              setAberto(false);
+            }}
+          >
+            <span className="n">{p}</span>
+          </button>
+        ))}
+        <div style={{ padding: "8px 12px 12px", borderTop: "1px solid var(--line)" }}>
+          <p className="hint" style={{ margin: "6px 0" }}>Ou personalize no calendário:</p>
+          <div style={{ display: "flex", gap: 6 }}>
+            <input
+              type="date"
+              className="input"
+              style={{ width: "100%" }}
+              value={de}
+              onChange={(e) => setDe(e.target.value)}
+              aria-label="De"
+            />
+            <input
+              type="date"
+              className="input"
+              style={{ width: "100%" }}
+              value={ate}
+              onChange={(e) => setAte(e.target.value)}
+              aria-label="Até"
+            />
+          </div>
+          <button
+            type="button"
+            className="btn primary block mt14"
+            disabled={!de || !ate}
+            onClick={() => {
+              onChange({ tipo: "personalizado", de, ate });
+              setAberto(false);
+            }}
+          >
+            Aplicar período
+          </button>
+        </div>
+      </FloatingDropdown>
+    </>
   );
 }
 
