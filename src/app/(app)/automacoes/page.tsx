@@ -30,7 +30,7 @@ import {
 import { useFunis } from "@/lib/funis-context";
 import { IconAutomacoes } from "@/components/icons";
 import { Toggle, Topbar } from "@/components/ui";
-import type { Funil } from "@/lib/data";
+import { equipe, type Funil } from "@/lib/data";
 
 /**
  * Endereço de uma lista de ações dentro da árvore — vazio é a lista raiz da
@@ -75,6 +75,7 @@ const ICONE_ACAO: Record<TipoAcaoAutomacao, string> = {
   lembrete: "⏰",
   tarefa: "✅",
   mover_funil: "↪",
+  atribuir_responsavel: "👤",
   adicionar_etiqueta: "🏷",
   remover_etiqueta: "🚫",
   webhook: "🔗",
@@ -378,6 +379,26 @@ function AcoesEditor({
                 ))}
               </select>
             </div>
+          ) : null}
+
+          {acao.tipo === "atribuir_responsavel" ? (
+            <select
+              className="input"
+              style={{ width: "100%", marginTop: 8, cursor: "pointer" }}
+              value={acao.atendenteNome ?? ""}
+              onChange={(e) =>
+                onAtualizarAcao(endereco, i, { atendenteNome: e.target.value })
+              }
+            >
+              <option value="">Escolha o atendente</option>
+              {equipe
+                .filter((membro) => membro.papel !== "Cliente")
+                .map((membro) => (
+                  <option key={membro.nome} value={membro.nome}>
+                    {membro.nome} · {membro.papel}
+                  </option>
+                ))}
+            </select>
           ) : null}
 
           {acao.tipo === "tarefa" ? (

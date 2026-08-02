@@ -1417,6 +1417,7 @@ export type TipoAcaoAutomacao =
   | "lembrete"
   | "tarefa"
   | "mover_funil"
+  | "atribuir_responsavel"
   | "adicionar_etiqueta"
   | "remover_etiqueta"
   | "webhook";
@@ -1430,6 +1431,7 @@ export const TIPOS_ACAO_AUTOMACAO: { tipo: TipoAcaoAutomacao; label: string }[] 
   { tipo: "lembrete", label: "Criar lembrete" },
   { tipo: "tarefa", label: "Criar tarefa com prazo" },
   { tipo: "mover_funil", label: "Mover lead pra outra etapa / funil" },
+  { tipo: "atribuir_responsavel", label: "Atribuir a um atendente da equipe" },
   { tipo: "adicionar_etiqueta", label: "Adicionar etiqueta ao contato" },
   { tipo: "remover_etiqueta", label: "Remover etiqueta do contato" },
   { tipo: "webhook", label: "Enviar dados pra um webhook externo" },

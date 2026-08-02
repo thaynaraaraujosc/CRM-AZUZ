@@ -41,6 +41,8 @@ export type AcaoAutomacao = {
   /** Usado por "mover_funil". */
   moverFunilId?: string;
   moverEtapaTitulo?: string;
+  /** Usado por "atribuir_responsavel" — nome de alguém em `equipe` (src/lib/data.ts). */
+  atendenteNome?: string;
   /** Usado por "adicionar_etiqueta" e "remover_etiqueta". */
   etiquetaNome?: string;
   /** Usado por "webhook". */
