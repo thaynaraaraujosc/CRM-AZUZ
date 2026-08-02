@@ -14,6 +14,7 @@ import {
 } from "@/lib/automacoes-context";
 
 import { migrarAutomacaoParaFluxo, migrarRegraComentarioParaFluxo } from "./automation-flow/migracao";
+import { FLUXOS_DEMONSTRACAO_INICIAIS } from "./automation-flow/demo-fluxos";
 import { validarFluxo } from "./automation-flow/validacao";
 import { avaliarGatilho, executarFluxo, type ContextoExecucao, type EventoAutomacao, type Ligacoes } from "./automation-flow/motor";
 import type {
@@ -45,7 +46,8 @@ type AutomationFlowContextValue = {
   /** Valida; se não houver erro (severidade "erro"), publica uma nova versão. Retorna os problemas achados de qualquer forma. */
   publicarFluxo: (id: string, usuario: string) => ProblemaValidacao[];
   restaurarVersao: (fluxoId: string, versao: number) => void;
-  duplicarFluxo: (id: string) => void;
+  /** Retorna a cópia recém-criada (rascunho independente) — útil pra navegar direto pro editor dela. Aditivo: quem já chamava sem usar o retorno continua funcionando igual. */
+  duplicarFluxo: (id: string) => FluxoAutomacao | undefined;
   /** Arquiva: pausa (`ativa: false`) E marca `arquivada: true` — some da lista principal (ver automacoes/page.tsx). */
   arquivarFluxo: (id: string) => void;
   /** Desfaz o arquivamento — volta a aparecer na lista principal. Não reativa sozinho (`ativa` continua false; usuário liga pelo Toggle se quiser). */
@@ -79,6 +81,7 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
   const [fluxos, setFluxos] = useState<FluxoAutomacao[]>(() => [
     ...AUTOMACOES_INICIAIS.map((a) => migrarAutomacaoParaFluxo(a, funisIniciais)),
     ...REGRAS_COMENTARIO_INICIAIS.map((r) => migrarRegraComentarioParaFluxo(r)),
+    ...FLUXOS_DEMONSTRACAO_INICIAIS,
   ]);
   const [execucoes, setExecucoes] = useState<RegistroExecucao[]>([]);
 
@@ -164,27 +167,28 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  function duplicarFluxo(id: string) {
-    setFluxos((prev) => {
-      const original = prev.find((f) => f.id === id);
-      if (!original) return prev;
-      const agora = agoraISO();
-      const copia: FluxoAutomacao = {
-        ...original,
-        id: `fluxo-${Date.now()}`,
-        nome: `${original.nome} (cópia)`,
-        status: "rascunho",
-        ativa: false,
-        versaoAtual: 0,
-        publicadoEm: undefined,
-        publicadoPor: undefined,
-        criadoEm: agora,
-        atualizadoEm: agora,
-        execucoes: 0,
-        historicoVersoes: [],
-      };
-      return [...prev, copia];
-    });
+  function duplicarFluxo(id: string): FluxoAutomacao | undefined {
+    const original = fluxos.find((f) => f.id === id);
+    if (!original) return undefined;
+    const agora = agoraISO();
+    const copia: FluxoAutomacao = {
+      ...original,
+      id: `fluxo-${Date.now()}`,
+      nome: `${original.nome} (cópia)`,
+      status: "rascunho",
+      ativa: false,
+      versaoAtual: 0,
+      publicadoEm: undefined,
+      publicadoPor: undefined,
+      criadoEm: agora,
+      atualizadoEm: agora,
+      execucoes: 0,
+      historicoVersoes: [],
+      // A cópia deixa de ser um "modelo de demonstração" — vira uma automação real do usuário.
+      modeloDemonstracao: false,
+    };
+    setFluxos((prev) => [...prev, copia]);
+    return copia;
   }
 
   function arquivarFluxo(id: string) {
