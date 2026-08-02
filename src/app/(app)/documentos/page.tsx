@@ -732,6 +732,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    * usuário estava digitando, e o navegador jogava o cursor de volta pro início do elemento.
    */
   const ultimoConteudoRef = useRef<Record<string, string>>({});
+  /** Posição de cursor a restaurar depois que um bloco inteiro precisou ser movido pra próxima página (ver reflowPagina). */
+  const cursorPendenteRef = useRef<{ paginaId: string; caminho: number[]; startOffset: number } | null>(null);
 
   useEffect(() => {
     for (const pagina of paginasLocais) {
@@ -740,6 +742,31 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       if (ultimoConteudoRef.current[pagina.id] === pagina.conteudoHtml) continue;
       if (el.innerHTML !== pagina.conteudoHtml) el.innerHTML = pagina.conteudoHtml;
       ultimoConteudoRef.current[pagina.id] = pagina.conteudoHtml;
+
+      const pendente = cursorPendenteRef.current;
+      if (pendente && pendente.paginaId === pagina.id) {
+        cursorPendenteRef.current = null;
+        const primeiroFilho = el.firstElementChild;
+        const no = primeiroFilho ? noNoCaminho(primeiroFilho, pendente.caminho) : null;
+        if (no) {
+          try {
+            const tamanho = no.nodeType === Node.TEXT_NODE ? (no.textContent?.length ?? 0) : no.childNodes.length;
+            const offset = Math.min(pendente.startOffset, tamanho);
+            const range = document.createRange();
+            range.setStart(no, offset);
+            range.collapse(true);
+            const selecao = window.getSelection();
+            selecao?.removeAllRanges();
+            selecao?.addRange(range);
+            el.focus();
+            setPaginaAtivaId(pagina.id);
+          } catch {
+            // Se por algum motivo a posição exata não puder ser restaurada, ao menos foca a página certa.
+            el.focus();
+            setPaginaAtivaId(pagina.id);
+          }
+        }
+      }
     }
   });
 
@@ -1012,34 +1039,140 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    * Auto-paginação real: se o conteúdo estourar a altura da folha, o último bloco vira o começo da próxima página.
    * O salvamento do texto digitado é adiado (debounce) — chamar setPaginasLocais a cada tecla reaplicaria o
    * dangerouslySetInnerHTML da própria div a cada letra, resetando o cursor para o início (o texto saía invertido).
+   *
+   * A reflow roda a cada tecla (como antes), mas agora nunca remove o nó do DOM que contém o cursor: se o
+   * cursor estiver dentro do último bloco, dividimos exatamente na posição do cursor (só o que vem DEPOIS
+   * dele vai para a próxima página) em vez de arrancar o bloco inteiro — isso era a causa do cursor "saltar"
+   * de posição ao digitar perto do fim da página (o nó focado era removido do documento no meio da digitação).
    */
   function aoDigitarNaPagina(paginaId: string) {
     if (salvarDigitacaoRef.current) clearTimeout(salvarDigitacaoRef.current);
     salvarDigitacaoRef.current = setTimeout(() => salvarConteudoPagina(paginaId), 600);
+    reflowPagina(paginaId);
+  }
 
-    const el = paginaRefs.current[paginaId];
-    if (!el) return;
-    if (el.scrollHeight <= el.clientHeight + 4) return;
-    const ultimo = el.lastElementChild;
-    if (!ultimo || el.children.length <= 1) return;
-    const htmlTransbordo = ultimo.outerHTML;
-    ultimo.remove();
+  /** Caminho de índices de nó-filho da raiz até o alvo — serve pra "re-achar" o mesmo ponto depois que o HTML é reconstruído. */
+  function caminhoAteNo(raiz: Node, alvo: Node): number[] | null {
+    const caminho: number[] = [];
+    let atual: Node | null = alvo;
+    while (atual && atual !== raiz) {
+      const pai: Node | null = atual.parentNode;
+      if (!pai) return null;
+      const indice = Array.prototype.indexOf.call(pai.childNodes, atual);
+      if (indice < 0) return null;
+      caminho.unshift(indice);
+      atual = pai;
+    }
+    return atual === raiz ? caminho : null;
+  }
+
+  function noNoCaminho(raiz: Node, caminho: number[]): Node | null {
+    let atual: Node | null = raiz;
+    for (const indice of caminho) {
+      atual = atual?.childNodes[indice] ?? null;
+      if (!atual) return null;
+    }
+    return atual;
+  }
+
+  function moverTransbordoParaProximaPagina(paginaId: string, htmlAtual: string, htmlTransbordo: string): string {
+    let idProximaPagina = "";
     setPaginasLocais((prev) => {
       const indice = prev.findIndex((p) => p.id === paginaId);
-      const atual = { ...prev[indice], conteudoHtml: el.innerHTML };
+      if (indice === -1) return prev;
+      const atual = { ...prev[indice], conteudoHtml: htmlAtual };
       const proxima = prev[indice + 1];
       const copia = [...prev];
       copia[indice] = atual;
       if (proxima) {
+        idProximaPagina = proxima.id;
         copia[indice + 1] = { ...proxima, conteudoHtml: htmlTransbordo + proxima.conteudoHtml };
       } else {
-        copia.splice(indice + 1, 0, {
-          id: `pagina-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          conteudoHtml: htmlTransbordo,
-        });
+        idProximaPagina = `pagina-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        copia.splice(indice + 1, 0, { id: idProximaPagina, conteudoHtml: htmlTransbordo });
       }
+      // Cascateia: se o que acabou de entrar na próxima página também estourar ela (ex.: colar um texto
+      // grande de uma vez), reavalia essa página depois que o DOM sincronizar, empurrando o excedente adiante.
+      const idParaCascata = idProximaPagina;
+      setTimeout(() => reflowPagina(idParaCascata), 50);
       return copia;
     });
+    return idProximaPagina;
+  }
+
+  /**
+   * Move para a próxima página tudo que estoura a altura da folha, em uma única passada (loop), pra dar
+   * conta de digitação rápida ou colar um bloco grande de uma vez — não só uma linha por chamada.
+   *
+   * Blocos que não contêm o cursor podem ser movidos inteiros sem risco. Quando o loop chega no bloco que
+   * contém o cursor: se houver conteúdo de verdade depois da posição do cursor dentro dele, só essa parte
+   * vai pra próxima página (o texto antes do cursor, e o próprio cursor, nunca são tocados). Se não houver
+   * nada depois do cursor mas a página ainda estourar, o bloco inteiro precisa ir mesmo assim — isso é o
+   * comportamento esperado ("digitar perto do fim da página continua corretamente na página seguinte") —
+   * mas nesse caso guardamos o caminho exato até o nó do cursor em `cursorPendenteRef` pra restaurar o foco
+   * na posição certa assim que o bloco reaparecer no topo da próxima página. É essa restauração explícita
+   * que evita o bug relatado: sem ela, a seleção nativa do navegador colapsa pra um lugar imprevisível
+   * assim que o nó com foco é removido do documento, fazendo o cursor "saltar" de posição.
+   */
+  function reflowPagina(paginaId: string) {
+    const el = paginaRefs.current[paginaId];
+    if (!el) return;
+
+    let htmlTransbordo = "";
+    let mudou = false;
+    let cursorMovidoInfo: { caminho: number[]; startOffset: number } | null = null;
+    let iteracoes = 0;
+    while (el.scrollHeight > el.clientHeight + 4 && iteracoes < 500) {
+      iteracoes += 1;
+      const ultimo = el.lastElementChild;
+      if (!ultimo || el.children.length <= 1) break;
+
+      const selecao = window.getSelection();
+      const range = selecao && selecao.rangeCount > 0 ? selecao.getRangeAt(0) : null;
+      const cursorDentroDoUltimo = !!range && ultimo.contains(range.startContainer);
+
+      if (!cursorDentroDoUltimo) {
+        // Cursor não está nesse bloco: seguro mover o bloco inteiro pra próxima página e continuar o loop.
+        htmlTransbordo = ultimo.outerHTML + htmlTransbordo;
+        ultimo.remove();
+        mudou = true;
+        continue;
+      }
+
+      // Cursor está dentro do último bloco: primeiro tenta dividir exatamente na posição dele.
+      const rangeDepois = range!.cloneRange();
+      rangeDepois.selectNodeContents(ultimo);
+      rangeDepois.setStart(range!.endContainer, range!.endOffset);
+      // Só espia o que tem depois do cursor (cloneContents não remove nada) — um <br> residual de fim de
+      // linha não conta como conteúdo real; se for só isso, não vale a pena separar por aqui.
+      const previa = document.createElement("div");
+      previa.appendChild(rangeDepois.cloneContents());
+      const temConteudoReal = (previa.textContent ?? "").trim().length > 0 || !!previa.querySelector("img, table, hr");
+      if (temConteudoReal) {
+        const fragmentoDepois = rangeDepois.extractContents();
+        const divTemp = document.createElement("div");
+        divTemp.appendChild(fragmentoDepois);
+        htmlTransbordo = divTemp.innerHTML + htmlTransbordo;
+        mudou = true;
+        break;
+      }
+
+      // Nada relevante depois do cursor: se ainda assim a página estoura, o bloco inteiro (com o cursor)
+      // precisa ir pra próxima página. Guarda o caminho até o nó do cursor pra restaurar a posição depois.
+      const caminho = caminhoAteNo(ultimo, range!.startContainer);
+      if (!caminho) break; // não deu pra localizar o nó com segurança: não arrisca mover
+      cursorMovidoInfo = { caminho, startOffset: range!.startOffset };
+      htmlTransbordo = ultimo.outerHTML + htmlTransbordo;
+      ultimo.remove();
+      mudou = true;
+      break;
+    }
+
+    if (!mudou) return;
+    const idProximaPagina = moverTransbordoParaProximaPagina(paginaId, el.innerHTML, htmlTransbordo);
+    if (cursorMovidoInfo && idProximaPagina) {
+      cursorPendenteRef.current = { paginaId: idProximaPagina, ...cursorMovidoInfo };
+    }
   }
 
   function localizarProximo() {
@@ -1678,7 +1811,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   lang={idioma}
                   onFocus={() => focarPagina(pagina.id)}
                   onInput={() => aoDigitarNaPagina(pagina.id)}
-                  onBlur={() => salvarConteudoPagina(pagina.id)}
+                  onBlur={() => {
+                    salvarConteudoPagina(pagina.id);
+                    // Cursor saiu do bloco: se ainda sobrar transbordo que a divisão no meio da digitação
+                    // não pôde mover (nada depois do cursor naquele instante), reavalia agora sem risco.
+                    reflowPagina(pagina.id);
+                  }}
                   onKeyDown={aoTeclarNaPagina}
                   onClick={(e) => aoClicarNaPagina(e, pagina.id)}
                   onMouseDown={(e) => {
