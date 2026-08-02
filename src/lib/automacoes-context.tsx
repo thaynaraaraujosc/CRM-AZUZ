@@ -61,9 +61,19 @@ export type Automacao = {
   etapaId: string;
   titulo: string;
   gatilhoTipo: TipoGatilhoEtapa;
-  /** Só usado quando gatilhoTipo === "parado". */
+  /**
+   * Pra gatilhos com `precisaTempo` (ex. "parado"), é obrigatório e define
+   * depois de quanto tempo dispara. Pra gatilhos com `permiteAtraso` (ex.
+   * "entrou"), só é usado quando `disparoImediato` é false.
+   */
   tempoValor?: string;
   tempoUnidade?: string;
+  /**
+   * Pra gatilhos com `permiteAtraso` — false significa "espera o tempo de
+   * `tempoValor`/`tempoUnidade` antes de disparar" em vez de disparar na
+   * hora que o gatilho acontece. Undefined/true = dispara imediatamente.
+   */
+  disparoImediato?: boolean;
   acoes: AcaoAutomacao[];
   ativa: boolean;
   execucoes: string;

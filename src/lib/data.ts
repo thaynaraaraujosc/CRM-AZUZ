@@ -1391,16 +1391,35 @@ export type TipoGatilhoEtapa = "entrou" | "parado" | "saiu" | "respondeu" | "age
 export const GATILHOS_ETAPA: {
   tipo: TipoGatilhoEtapa;
   label: string;
+  /** Tempo é obrigatório pra esse gatilho (ex.: "parado há quanto tempo"). */
   precisaTempo?: boolean;
+  /**
+   * Deixa escolher entre disparar na hora ou esperar um tempo personalizado
+   * depois do gatilho acontecer — ex.: "entrou na etapa" mas só manda a
+   * mensagem 2 horas depois, não na mesma hora.
+   */
+  permiteAtraso?: boolean;
 }[] = [
-  { tipo: "entrou", label: "Quando um lead entra nessa etapa" },
+  {
+    tipo: "entrou",
+    label: "Quando um lead entra nessa etapa",
+    permiteAtraso: true,
+  },
   {
     tipo: "parado",
     label: "Quando um lead fica parado nessa etapa",
     precisaTempo: true,
   },
-  { tipo: "saiu", label: "Quando um lead sai dessa etapa" },
-  { tipo: "respondeu", label: "Quando o lead responde uma mensagem" },
+  {
+    tipo: "saiu",
+    label: "Quando um lead sai dessa etapa",
+    permiteAtraso: true,
+  },
+  {
+    tipo: "respondeu",
+    label: "Quando o lead responde uma mensagem",
+    permiteAtraso: true,
+  },
   {
     tipo: "agendado",
     label: "Em um horário programado (recorrente) — usa a janela de atividade abaixo",
