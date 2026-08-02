@@ -31,6 +31,43 @@ interface ReconhecimentoDeVoz {
   stop: () => void;
 }
 
+/** Fecha um popup flutuante ao clicar fora dele — mesmo padrão usado em Conversas. */
+function useFecharAoClicarFora(
+  ref: React.RefObject<HTMLElement | null>,
+  ativo: boolean,
+  aoFechar: () => void,
+) {
+  useEffect(() => {
+    if (!ativo) return;
+    function aoClicarFora(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) aoFechar();
+    }
+    document.addEventListener("mousedown", aoClicarFora);
+    return () => document.removeEventListener("mousedown", aoClicarFora);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ativo]);
+}
+
+/** Fábrica de handler de arraste — permite mover qualquer popup flutuante pela tela, pegando pelo cabeçalho. */
+function criarIniciarArraste(seletor: string, setPos: (p: { x: number; y: number }) => void) {
+  return (e: React.MouseEvent) => {
+    const el = (e.currentTarget as HTMLElement).closest(seletor) as HTMLElement | null;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const dx = e.clientX - rect.left;
+    const dy = e.clientY - rect.top;
+    function mover(ev: MouseEvent) {
+      setPos({ x: ev.clientX - dx, y: ev.clientY - dy });
+    }
+    function soltar() {
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+    }
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
+  };
+}
+
 /* -------------------------------------------------------------------------- */
 /* Constantes                                                                  */
 /* -------------------------------------------------------------------------- */
@@ -119,11 +156,10 @@ export default function DocumentosPage() {
 /* Lista de documentos                                                        */
 /* -------------------------------------------------------------------------- */
 
-type Aba = "recentes" | "favoritos" | "compartilhados" | "lixeira";
+type Aba = "recentes" | "favoritos" | "lixeira";
 const ABAS: { valor: Aba; label: string }[] = [
   { valor: "recentes", label: "Recentes" },
   { valor: "favoritos", label: "Favoritos" },
-  { valor: "compartilhados", label: "Compartilhados comigo" },
   { valor: "lixeira", label: "Lixeira" },
 ];
 
@@ -153,7 +189,6 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
     if (aba === "lixeira") return d.excluido;
     if (d.excluido) return false;
     if (aba === "favoritos") return d.favorito;
-    if (aba === "compartilhados") return d.pessoasAcesso.length > 0;
     return true;
   });
 
@@ -498,16 +533,59 @@ function MenuTopo({
   );
 }
 
-function ReguaDocumento({ larguraMm }: { larguraMm: number }) {
+/** Régua com marcadores de margem arrastáveis, igual ao Word — arrastar muda a margem de verdade. */
+function ReguaDocumento({
+  larguraMm,
+  margemMm,
+  onMudarMargem,
+}: {
+  larguraMm: number;
+  margemMm: number;
+  onMudarMargem: (mm: number) => void;
+}) {
+  const reguaRef = useRef<HTMLDivElement>(null);
   const marcasQtd = Math.round(larguraMm / 10);
   const marcas = Array.from({ length: marcasQtd + 1 }, (_, i) => i);
+
+  function iniciarArrasteMargem(lado: "esquerda" | "direita") {
+    return (eDown: React.MouseEvent) => {
+      eDown.preventDefault();
+      function mover(ev: MouseEvent) {
+        const el = reguaRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const xMm = ((ev.clientX - rect.left) / rect.width) * larguraMm;
+        const novaMargem = lado === "esquerda" ? xMm : larguraMm - xMm;
+        onMudarMargem(Math.round(Math.min(Math.max(novaMargem, 5), larguraMm / 2 - 10)));
+      }
+      function soltar() {
+        window.removeEventListener("mousemove", mover);
+        window.removeEventListener("mouseup", soltar);
+      }
+      window.addEventListener("mousemove", mover);
+      window.addEventListener("mouseup", soltar);
+    };
+  }
+
   return (
-    <div className="doc-regua" aria-hidden="true">
+    <div className="doc-regua" ref={reguaRef}>
       {marcas.map((cm) => (
-        <span key={cm} className="doc-regua-marca">
+        <span key={cm} className="doc-regua-marca" aria-hidden="true">
           {cm > 0 ? cm : ""}
         </span>
       ))}
+      <div
+        className="doc-regua-margem doc-regua-margem-esq"
+        style={{ left: `${(margemMm / larguraMm) * 100}%` }}
+        onMouseDown={iniciarArrasteMargem("esquerda")}
+        title={`Margem esquerda: ${margemMm}mm — arraste pra ajustar`}
+      />
+      <div
+        className="doc-regua-margem doc-regua-margem-dir"
+        style={{ left: `${((larguraMm - margemMm) / larguraMm) * 100}%` }}
+        onMouseDown={iniciarArrasteMargem("direita")}
+        title={`Margem direita: ${margemMm}mm — arraste pra ajustar`}
+      />
     </div>
   );
 }
@@ -557,6 +635,27 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [substituirTexto, setSubstituirTexto] = useState("");
   const [novoEmailAcesso, setNovoEmailAcesso] = useState("");
   const [novaPermissaoAcesso, setNovaPermissaoAcesso] = useState<PermissaoAcesso>("editar");
+
+  const [localizarPos, setLocalizarPos] = useState<{ x: number; y: number } | null>(null);
+  const [contagemPos, setContagemPos] = useState<{ x: number; y: number } | null>(null);
+  const [detalhesPos, setDetalhesPos] = useState<{ x: number; y: number } | null>(null);
+  const [configPaginaPos, setConfigPaginaPos] = useState<{ x: number; y: number } | null>(null);
+  const [compartilharPos, setCompartilharPos] = useState<{ x: number; y: number } | null>(null);
+  const [historicoPos, setHistoricoPos] = useState<{ x: number; y: number } | null>(null);
+
+  const localizarRef = useRef<HTMLDivElement>(null);
+  const contagemRef = useRef<HTMLDivElement>(null);
+  const detalhesRef = useRef<HTMLDivElement>(null);
+  const configPaginaRef = useRef<HTMLDivElement>(null);
+  const compartilharRef = useRef<HTMLDivElement>(null);
+  const historicoRef = useRef<HTMLDivElement>(null);
+
+  useFecharAoClicarFora(localizarRef, localizarAberto, () => setLocalizarAberto(false));
+  useFecharAoClicarFora(contagemRef, contagemAberta, () => setContagemAberta(false));
+  useFecharAoClicarFora(detalhesRef, detalhesAberto, () => setDetalhesAberto(false));
+  useFecharAoClicarFora(configPaginaRef, configPaginaAberto, () => setConfigPaginaAberto(false));
+  useFecharAoClicarFora(compartilharRef, compartilharAberto, () => setCompartilharAberto(false));
+  useFecharAoClicarFora(historicoRef, historicoAberto, () => setHistoricoAberto(false));
 
   const paginaRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const salvarDigitacaoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1112,7 +1211,13 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         <div className="doc-paginas-coluna">
           {paginasLocais.map((pagina, indice) => (
             <div className="doc-page-wrap" key={pagina.id}>
-              {mostrarRegua ? <ReguaDocumento larguraMm={larguraMm} /> : null}
+              {mostrarRegua ? (
+                <ReguaDocumento
+                  larguraMm={larguraMm}
+                  margemMm={doc.config.margemMm}
+                  onMudarMargem={(mm) => atualizarConfigPagina(id, { margemMm: mm })}
+                />
+              ) : null}
               <div
                 className={`doc-page-sheet doc-print-area${semPaginas ? " doc-page-sheet-semborda" : ""}`}
                 style={{
@@ -1187,8 +1292,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       </div>
 
       {localizarAberto ? (
-        <div className="wa-email-modal wa-email-floating doc-localizar-modal">
-          <div className="open-conv-h" style={{ padding: 0, marginBottom: 12 }}>
+        <div
+          ref={localizarRef}
+          className="wa-email-modal wa-email-floating doc-localizar-modal"
+          style={localizarPos ? { left: localizarPos.x, top: localizarPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setLocalizarPos)}>
             <p className="n">Localizar e substituir</p>
             <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setLocalizarAberto(false)}>✕</button>
           </div>
@@ -1206,8 +1315,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       ) : null}
 
       {contagemAberta ? (
-        <div className="wa-email-modal wa-email-floating doc-contagem-modal">
-          <div className="open-conv-h" style={{ padding: 0, marginBottom: 12 }}>
+        <div
+          ref={contagemRef}
+          className="wa-email-modal wa-email-floating doc-contagem-modal"
+          style={contagemPos ? { left: contagemPos.x, top: contagemPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setContagemPos)}>
             <p className="n">Contagem</p>
             <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setContagemAberta(false)}>✕</button>
           </div>
@@ -1218,8 +1331,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       ) : null}
 
       {detalhesAberto ? (
-        <div className="wa-email-modal wa-email-floating doc-contagem-modal">
-          <div className="open-conv-h" style={{ padding: 0, marginBottom: 12 }}>
+        <div
+          ref={detalhesRef}
+          className="wa-email-modal wa-email-floating doc-contagem-modal"
+          style={detalhesPos ? { left: detalhesPos.x, top: detalhesPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setDetalhesPos)}>
             <p className="n">Detalhes do documento</p>
             <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setDetalhesAberto(false)}>✕</button>
           </div>
@@ -1231,177 +1348,183 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       ) : null}
 
       {configPaginaAberto ? (
-        <div className="form-preview-overlay" onClick={() => setConfigPaginaAberto(false)}>
-          <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-              <p className="n">Configuração da página</p>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setConfigPaginaAberto(false)}>✕</button>
-            </div>
-            <div className="field">
-              <label>Tamanho do papel</label>
-              <select className="input" style={{ width: "100%" }} value={doc.config.tamanho} onChange={(e) => atualizarConfigPagina(id, { tamanho: e.target.value as TamanhoPapel })}>
-                <option value="A4">A4</option>
-                <option value="Carta">Carta</option>
-                <option value="Ofício">Ofício</option>
-              </select>
-            </div>
-            <div className="field">
-              <label>Orientação</label>
-              <div className="filters-row" style={{ margin: 0 }}>
-                <button type="button" className={`fchip${doc.config.orientacao === "retrato" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "retrato" })}>Retrato</button>
-                <button type="button" className={`fchip${doc.config.orientacao === "paisagem" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "paisagem" })}>Paisagem</button>
-              </div>
-            </div>
-            <div className="field">
-              <label>Margem (mm)</label>
-              <input
-                type="number"
-                className="input"
-                style={{ width: "100%" }}
-                value={doc.config.margemMm}
-                onChange={(e) => atualizarConfigPagina(id, { margemMm: Number(e.target.value) })}
-              />
-            </div>
-            <div className="field">
-              <label>Cor da página</label>
-              <input
-                type="color"
-                className="input"
-                style={{ width: "100%", height: 38, padding: 4 }}
-                value={doc.config.corFundo}
-                onChange={(e) => atualizarConfigPagina(id, { corFundo: e.target.value })}
-              />
-            </div>
-            <button type="button" className="btn primary block" onClick={() => setConfigPaginaAberto(false)}>
-              Aplicar
-            </button>
+        <div
+          ref={configPaginaRef}
+          className="wa-email-modal wa-email-floating"
+          style={configPaginaPos ? { left: configPaginaPos.x, top: configPaginaPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setConfigPaginaPos)}>
+            <p className="n">Configuração da página</p>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setConfigPaginaAberto(false)}>✕</button>
           </div>
+          <div className="field">
+            <label>Tamanho do papel</label>
+            <select className="input" style={{ width: "100%" }} value={doc.config.tamanho} onChange={(e) => atualizarConfigPagina(id, { tamanho: e.target.value as TamanhoPapel })}>
+              <option value="A4">A4</option>
+              <option value="Carta">Carta</option>
+              <option value="Ofício">Ofício</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>Orientação</label>
+            <div className="filters-row" style={{ margin: 0 }}>
+              <button type="button" className={`fchip${doc.config.orientacao === "retrato" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "retrato" })}>Retrato</button>
+              <button type="button" className={`fchip${doc.config.orientacao === "paisagem" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "paisagem" })}>Paisagem</button>
+            </div>
+          </div>
+          <div className="field">
+            <label>Margem (mm)</label>
+            <input
+              type="number"
+              className="input"
+              style={{ width: "100%" }}
+              value={doc.config.margemMm}
+              onChange={(e) => atualizarConfigPagina(id, { margemMm: Number(e.target.value) })}
+            />
+          </div>
+          <div className="field">
+            <label>Cor da página</label>
+            <input
+              type="color"
+              className="input"
+              style={{ width: "100%", height: 38, padding: 4 }}
+              value={doc.config.corFundo}
+              onChange={(e) => atualizarConfigPagina(id, { corFundo: e.target.value })}
+            />
+          </div>
+          <button type="button" className="btn primary block" onClick={() => setConfigPaginaAberto(false)}>
+            Aplicar
+          </button>
         </div>
       ) : null}
 
       {compartilharAberto ? (
-        <div className="form-preview-overlay" onClick={() => setCompartilharAberto(false)}>
-          <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-              <p className="n">Compartilhar &quot;{doc.titulo}&quot;</p>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCompartilharAberto(false)}>✕</button>
+        <div
+          ref={compartilharRef}
+          className="wa-email-modal wa-email-floating"
+          style={compartilharPos ? { left: compartilharPos.x, top: compartilharPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setCompartilharPos)}>
+            <p className="n">Compartilhar &quot;{doc.titulo}&quot;</p>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCompartilharAberto(false)}>✕</button>
+          </div>
+          <div className="field" style={{ display: "flex", gap: 8 }}>
+            <input
+              className="input"
+              style={{ flex: 1 }}
+              placeholder="E-mail da pessoa"
+              value={novoEmailAcesso}
+              onChange={(e) => setNovoEmailAcesso(e.target.value)}
+            />
+            <select
+              className="doc-toolbar-select"
+              value={novaPermissaoAcesso}
+              onChange={(e) => setNovaPermissaoAcesso(e.target.value as PermissaoAcesso)}
+            >
+              <option value="visualizar">Pode ver</option>
+              <option value="comentar">Pode comentar</option>
+              <option value="editar">Pode editar</option>
+            </select>
+            <button
+              type="button"
+              className="btn primary"
+              disabled={!novoEmailAcesso.trim()}
+              onClick={() => {
+                atualizarAcesso(id, {
+                  pessoasAcesso: [...doc.pessoasAcesso, { email: novoEmailAcesso.trim(), permissao: novaPermissaoAcesso }],
+                });
+                setNovoEmailAcesso("");
+              }}
+            >
+              Convidar
+            </button>
+          </div>
+          <p className="hint" style={{ marginBottom: 10 }}>
+            O convite fica registrado aqui — o envio real de e-mail depende de um serviço de e-mail conectado ao CRM.
+          </p>
+          {doc.pessoasAcesso.length > 0 ? (
+            <div className="mb14">
+              <p className="doc-sidebar-h">Pessoas com acesso</p>
+              {doc.pessoasAcesso.map((p) => (
+                <div className="stat-row" key={p.email}>
+                  <span className="sl">{p.email} · {p.permissao}</span>
+                  <button
+                    type="button"
+                    className="link"
+                    style={{ color: "#d64545" }}
+                    onClick={() =>
+                      atualizarAcesso(id, { pessoasAcesso: doc.pessoasAcesso.filter((x) => x.email !== p.email) })
+                    }
+                  >
+                    Remover
+                  </button>
+                </div>
+              ))}
             </div>
+          ) : null}
+          <div className="field">
+            <label>Acesso geral</label>
+            <div className="filters-row" style={{ margin: 0 }}>
+              <button type="button" className={`fchip${!doc.linkAtivo ? " active" : ""}`} onClick={() => atualizarAcesso(id, { linkAtivo: false })}>Restrito</button>
+              <button type="button" className={`fchip${doc.linkAtivo ? " active" : ""}`} onClick={() => atualizarAcesso(id, { linkAtivo: true })}>Qualquer um com o link</button>
+            </div>
+          </div>
+          {doc.linkAtivo ? (
             <div className="field" style={{ display: "flex", gap: 8 }}>
-              <input
-                className="input"
-                style={{ flex: 1 }}
-                placeholder="E-mail da pessoa"
-                value={novoEmailAcesso}
-                onChange={(e) => setNovoEmailAcesso(e.target.value)}
-              />
-              <select
-                className="doc-toolbar-select"
-                value={novaPermissaoAcesso}
-                onChange={(e) => setNovaPermissaoAcesso(e.target.value as PermissaoAcesso)}
-              >
-                <option value="visualizar">Pode ver</option>
-                <option value="comentar">Pode comentar</option>
-                <option value="editar">Pode editar</option>
-              </select>
+              <input className="input" style={{ flex: 1 }} readOnly value={`${typeof window !== "undefined" ? window.location.origin : ""}/documentos?doc=${id}`} />
               <button
                 type="button"
-                className="btn primary"
-                disabled={!novoEmailAcesso.trim()}
-                onClick={() => {
-                  atualizarAcesso(id, {
-                    pessoasAcesso: [...doc.pessoasAcesso, { email: novoEmailAcesso.trim(), permissao: novaPermissaoAcesso }],
-                  });
-                  setNovoEmailAcesso("");
-                }}
+                className="btn ghost"
+                onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/documentos?doc=${id}`)}
               >
-                Convidar
+                Copiar link
               </button>
             </div>
-            <p className="hint" style={{ marginBottom: 10 }}>
-              O convite fica registrado aqui — o envio real de e-mail depende de um serviço de e-mail conectado ao CRM.
-            </p>
-            {doc.pessoasAcesso.length > 0 ? (
-              <div className="mb14">
-                <p className="doc-sidebar-h">Pessoas com acesso</p>
-                {doc.pessoasAcesso.map((p) => (
-                  <div className="stat-row" key={p.email}>
-                    <span className="sl">{p.email} · {p.permissao}</span>
-                    <button
-                      type="button"
-                      className="link"
-                      style={{ color: "#d64545" }}
-                      onClick={() =>
-                        atualizarAcesso(id, { pessoasAcesso: doc.pessoasAcesso.filter((x) => x.email !== p.email) })
-                      }
-                    >
-                      Remover
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-            <div className="field">
-              <label>Acesso geral</label>
-              <div className="filters-row" style={{ margin: 0 }}>
-                <button type="button" className={`fchip${!doc.linkAtivo ? " active" : ""}`} onClick={() => atualizarAcesso(id, { linkAtivo: false })}>Restrito</button>
-                <button type="button" className={`fchip${doc.linkAtivo ? " active" : ""}`} onClick={() => atualizarAcesso(id, { linkAtivo: true })}>Qualquer um com o link</button>
-              </div>
-            </div>
-            {doc.linkAtivo ? (
-              <div className="field" style={{ display: "flex", gap: 8 }}>
-                <input className="input" style={{ flex: 1 }} readOnly value={`${typeof window !== "undefined" ? window.location.origin : ""}/documentos?doc=${id}`} />
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/documentos?doc=${id}`)}
-                >
-                  Copiar link
-                </button>
-              </div>
-            ) : null}
-          </div>
+          ) : null}
         </div>
       ) : null}
 
       {historicoAberto ? (
-        <div className="form-preview-overlay" onClick={() => setHistoricoAberto(false)}>
-          <div className="wa-email-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-              <p className="n">Histórico de versões</p>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setHistoricoAberto(false)}>✕</button>
-            </div>
-            <button
-              type="button"
-              className="btn ghost block mb14"
-              onClick={() => {
-                const nome = window.prompt("Nome dessa versão (opcional):") ?? undefined;
-                salvarVersao(id, nome);
-              }}
-            >
-              + Salvar versão atual
-            </button>
-            {doc.versoes.length === 0 ? (
-              <p className="hint">Nenhuma versão salva ainda.</p>
-            ) : (
-              [...doc.versoes].reverse().map((v) => (
-                <div className="stat-row" key={v.id}>
-                  <span className="sl">{v.nome ?? "Sem nome"} · {v.autor} · {formatarQuando(v.quando)}</span>
-                  <button
-                    type="button"
-                    className="link"
-                    onClick={() => {
-                      if (window.confirm("Restaurar essa versão? O conteúdo atual será substituído.")) {
-                        restaurarVersao(id, v.id);
-                        setHistoricoAberto(false);
-                      }
-                    }}
-                  >
-                    Restaurar
-                  </button>
-                </div>
-              ))
-            )}
+        <div
+          ref={historicoRef}
+          className="wa-email-modal wa-email-floating"
+          style={historicoPos ? { left: historicoPos.x, top: historicoPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setHistoricoPos)}>
+            <p className="n">Histórico de versões</p>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setHistoricoAberto(false)}>✕</button>
           </div>
+          <button
+            type="button"
+            className="btn ghost block mb14"
+            onClick={() => {
+              const nome = window.prompt("Nome dessa versão (opcional):") ?? undefined;
+              salvarVersao(id, nome);
+            }}
+          >
+            + Salvar versão atual
+          </button>
+          {doc.versoes.length === 0 ? (
+            <p className="hint">Nenhuma versão salva ainda.</p>
+          ) : (
+            [...doc.versoes].reverse().map((v) => (
+              <div className="stat-row" key={v.id}>
+                <span className="sl">{v.nome ?? "Sem nome"} · {v.autor} · {formatarQuando(v.quando)}</span>
+                <button
+                  type="button"
+                  className="link"
+                  onClick={() => {
+                    if (window.confirm("Restaurar essa versão? O conteúdo atual será substituído.")) {
+                      restaurarVersao(id, v.id);
+                      setHistoricoAberto(false);
+                    }
+                  }}
+                >
+                  Restaurar
+                </button>
+              </div>
+            ))
+          )}
         </div>
       ) : null}
     </div>
