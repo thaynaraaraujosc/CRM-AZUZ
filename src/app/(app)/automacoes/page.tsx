@@ -756,16 +756,6 @@ function AutomacoesPageInner() {
               {fluxosFiltrados.length} {fluxosFiltrados.length === 1 ? "resultado" : "resultados"}
             </span>
           </div>
-
-          <div className="automacoes-bar-right">
-            <button
-              type="button"
-              className="btn primary"
-              onClick={() => router.push("/automacoes/editor/novo")}
-            >
-              + Nova automação
-            </button>
-          </div>
         </div>
 
         {chipsAtivos.length > 0 ? (
