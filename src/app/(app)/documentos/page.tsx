@@ -139,13 +139,6 @@ function lerPrefVer(chave: string, padrao: boolean): boolean {
   }
 }
 
-function htmlParaTextoPlano(html: string) {
-  if (typeof document === "undefined") return "";
-  const div = document.createElement("div");
-  div.innerHTML = html;
-  return div.textContent ?? "";
-}
-
 function contarPalavrasTexto(paginas: PaginaDoc[]) {
   const div = typeof document !== "undefined" ? document.createElement("div") : null;
   let texto = "";
@@ -681,6 +674,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [buscaTexto, setBuscaTexto] = useState("");
   const [substituirTexto, setSubstituirTexto] = useState("");
   const [diferenciarCase, setDiferenciarCase] = useState(false);
+  const [buscaIndiceAtual, setBuscaIndiceAtual] = useState(0);
   const [novoEmailAcesso, setNovoEmailAcesso] = useState("");
   const [novaPermissaoAcesso, setNovaPermissaoAcesso] = useState<PermissaoAcesso>("editar");
   const [colunasAberto, setColunasAberto] = useState(false);
@@ -1180,45 +1174,125 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     }
   }
 
-  function localizarProximo() {
-    if (!buscaTexto.trim()) return;
-    const w = window as unknown as {
-      find?: (texto: string, caseSensitive?: boolean, backwards?: boolean, wrapAround?: boolean) => boolean;
-    };
-    const achou = w.find?.(buscaTexto, diferenciarCase, false, true);
-    if (achou === false) window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
-  }
-
   function escaparRegex(texto: string) {
     return texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  function contarOcorrencias() {
-    if (!buscaTexto.trim()) return 0;
-    const regex = new RegExp(escaparRegex(buscaTexto), diferenciarCase ? "g" : "gi");
-    let total = 0;
-    for (const p of paginasLocais) {
-      const texto = htmlParaTextoPlano(p.conteudoHtml);
-      total += (texto.match(regex) ?? []).length;
+  /**
+   * Busca de verdade sobre o DOM ao vivo de cada página (não usa o window.find() do navegador, que é uma
+   * API não padronizada/legada e nem existe em todo navegador). Cada ocorrência aponta pro nó de texto e
+   * offsets exatos onde foi encontrada — a mesma lista alimenta contagem, destaque/navegação e substituição,
+   * então os três nunca divergem entre si (o bug antigo: a contagem usava o texto puro da página, mas a
+   * substituição rodava regex sobre o HTML bruto, podendo contar e substituir universos de texto diferentes).
+   * Limitação conhecida: só encontra ocorrências inteiramente dentro de um único nó de texto — um termo que
+   * atravesse duas formatações diferentes (ex.: metade em negrito, metade não) não é encontrado.
+   */
+  function coletarOcorrencias(): { paginaId: string; node: Text; start: number; end: number }[] {
+    const termo = buscaTexto.trim();
+    if (!termo) return [];
+    const regex = new RegExp(escaparRegex(termo), diferenciarCase ? "g" : "gi");
+    const resultado: { paginaId: string; node: Text; start: number; end: number }[] = [];
+    for (const pagina of paginasLocais) {
+      const el = paginaRefs.current[pagina.id];
+      if (!el) continue;
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let no = walker.nextNode();
+      while (no) {
+        const texto = no.textContent ?? "";
+        regex.lastIndex = 0;
+        let m = regex.exec(texto);
+        while (m) {
+          resultado.push({ paginaId: pagina.id, node: no as Text, start: m.index, end: m.index + m[0].length });
+          if (m[0].length === 0) regex.lastIndex += 1;
+          m = regex.exec(texto);
+        }
+        no = walker.nextNode();
+      }
     }
-    return total;
+    return resultado;
+  }
+
+  function contarOcorrencias() {
+    return coletarOcorrencias().length;
+  }
+
+  function irParaOcorrencia(indiceDesejado: number, ocorrenciasJaColetadas?: ReturnType<typeof coletarOcorrencias>) {
+    const ocorrencias = ocorrenciasJaColetadas ?? coletarOcorrencias();
+    if (ocorrencias.length === 0) return;
+    const indice = ((indiceDesejado % ocorrencias.length) + ocorrencias.length) % ocorrencias.length;
+    const oc = ocorrencias[indice];
+    const range = document.createRange();
+    range.setStart(oc.node, oc.start);
+    range.setEnd(oc.node, oc.end);
+    const selecao = window.getSelection();
+    selecao?.removeAllRanges();
+    selecao?.addRange(range);
+    (oc.node.parentElement as HTMLElement | null)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    setPaginaAtivaId(oc.paginaId);
+    setBuscaIndiceAtual(indice);
+  }
+
+  function localizarProximo() {
+    if (!buscaTexto.trim()) return;
+    const ocorrencias = coletarOcorrencias();
+    if (ocorrencias.length === 0) {
+      window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+      return;
+    }
+    irParaOcorrencia(buscaIndiceAtual + 1, ocorrencias);
+  }
+
+  function localizarAnterior() {
+    if (!buscaTexto.trim()) return;
+    const ocorrencias = coletarOcorrencias();
+    if (ocorrencias.length === 0) {
+      window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+      return;
+    }
+    irParaOcorrencia(buscaIndiceAtual - 1, ocorrencias);
+  }
+
+  function substituirAtual() {
+    if (!buscaTexto.trim()) return;
+    const ocorrencias = coletarOcorrencias();
+    if (ocorrencias.length === 0) {
+      window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
+      return;
+    }
+    const indice = ((buscaIndiceAtual % ocorrencias.length) + ocorrencias.length) % ocorrencias.length;
+    const oc = ocorrencias[indice];
+    const texto = oc.node.textContent ?? "";
+    oc.node.textContent = texto.slice(0, oc.start) + substituirTexto + texto.slice(oc.end);
+    salvarConteudoPagina(oc.paginaId);
+    irParaOcorrencia(indice);
   }
 
   function substituirTodos() {
     if (!buscaTexto.trim()) return;
-    const regex = new RegExp(escaparRegex(buscaTexto), diferenciarCase ? "g" : "gi");
-    const antes = contarOcorrencias();
-    if (antes === 0) {
+    const ocorrencias = coletarOcorrencias();
+    if (ocorrencias.length === 0) {
       window.alert(`Nenhuma ocorrência de "${buscaTexto}" encontrada.`);
       return;
     }
-    setPaginasLocais((prev) =>
-      prev.map((p) => ({
-        ...p,
-        conteudoHtml: p.conteudoHtml.replace(regex, substituirTexto.replace(/\$/g, "$$$$")),
-      })),
-    );
-    window.alert(`${antes} ocorrência(s) substituída(s).`);
+    const porNo = new Map<Text, typeof ocorrencias>();
+    for (const oc of ocorrencias) {
+      const lista = porNo.get(oc.node) ?? [];
+      lista.push(oc);
+      porNo.set(oc.node, lista);
+    }
+    const paginasAfetadas = new Set<string>();
+    for (const [no, lista] of porNo) {
+      let texto = no.textContent ?? "";
+      // De trás pra frente dentro do mesmo nó, senão os offsets das ocorrências anteriores ficam inválidos.
+      for (const oc of [...lista].sort((a, b) => b.start - a.start)) {
+        texto = texto.slice(0, oc.start) + substituirTexto + texto.slice(oc.end);
+      }
+      no.textContent = texto;
+      paginasAfetadas.add(lista[0].paginaId);
+    }
+    paginasAfetadas.forEach((paginaId) => salvarConteudoPagina(paginaId));
+    setBuscaIndiceAtual(0);
+    window.alert(`${ocorrencias.length} ocorrência(s) substituída(s).`);
   }
 
   function copiarFormatacao() {
@@ -1889,20 +1963,45 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setLocalizarAberto(false)}>✕</button>
           </div>
           <div className="field" style={{ padding: "6px 0" }}>
-            <input className="input" style={{ width: "100%" }} placeholder="Localizar" value={buscaTexto} onChange={(e) => setBuscaTexto(e.target.value)} />
+            <input
+              className="input"
+              style={{ width: "100%" }}
+              placeholder="Localizar"
+              value={buscaTexto}
+              autoFocus
+              onChange={(e) => {
+                setBuscaTexto(e.target.value);
+                setBuscaIndiceAtual(0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (e.shiftKey) localizarAnterior();
+                  else localizarProximo();
+                }
+              }}
+            />
           </div>
           <div className="field" style={{ padding: "6px 0" }}>
             <input className="input" style={{ width: "100%" }} placeholder="Substituir por" value={substituirTexto} onChange={(e) => setSubstituirTexto(e.target.value)} />
           </div>
           <label className="hint" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <input type="checkbox" checked={diferenciarCase} onChange={(e) => setDiferenciarCase(e.target.checked)} />
+            <input type="checkbox" checked={diferenciarCase} onChange={(e) => { setDiferenciarCase(e.target.checked); setBuscaIndiceAtual(0); }} />
             Diferenciar maiúsculas de minúsculas
           </label>
           <p className="hint" style={{ marginBottom: 8 }}>
-            {buscaTexto.trim() ? `${contarOcorrencias()} ocorrência(s) encontrada(s)` : "Digite um termo pra buscar"}
+            {buscaTexto.trim()
+              ? contarOcorrencias() > 0
+                ? `${((buscaIndiceAtual % contarOcorrencias()) + contarOcorrencias()) % contarOcorrencias() + 1} de ${contarOcorrencias()} ocorrência(s)`
+                : "Nenhuma ocorrência encontrada"
+              : "Digite um termo pra buscar"}
           </p>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={localizarAnterior}>◂ Anterior</button>
+            <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={localizarProximo}>Próxima ▸</button>
+          </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={localizarProximo}>Localizar</button>
+            <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={substituirAtual}>Substituir</button>
             <button type="button" className="btn primary" style={{ flex: 1 }} onClick={substituirTodos}>Substituir todos</button>
           </div>
         </div>
