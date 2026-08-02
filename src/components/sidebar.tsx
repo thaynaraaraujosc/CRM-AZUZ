@@ -11,7 +11,7 @@ import {
   type SVGProps,
 } from "react";
 
-import { currentUser, workspace } from "@/lib/data";
+import { currentUser, equipe, workspace } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
 import {
   IconAcoes,
@@ -69,6 +69,39 @@ export function Sidebar() {
     const rect = workspaceBtnRef.current.getBoundingClientRect();
     setWorkspacePos({ top: rect.bottom + 8, left: rect.left, width: rect.width });
   }, [workspaceAberto]);
+
+  const [perfilAberto, setPerfilAberto] = useState(false);
+  const perfilBtnRef = useRef<HTMLButtonElement>(null);
+  const [perfilPos, setPerfilPos] = useState({ top: 0, left: 0 });
+  const [perfilNome, setPerfilNome] = useState(currentUser.name);
+  const [perfilEmail, setPerfilEmail] = useState(currentUser.email);
+  const [perfilSenha, setPerfilSenha] = useState("");
+  const [perfilSalvo, setPerfilSalvo] = useState(false);
+
+  useEffect(() => {
+    if (!perfilAberto || !perfilBtnRef.current) return;
+    const rect = perfilBtnRef.current.getBoundingClientRect();
+    setPerfilPos({ top: rect.top, left: rect.right + 8 });
+  }, [perfilAberto]);
+
+  function salvarPerfil() {
+    setPerfilSalvo(true);
+    setTimeout(() => setPerfilSalvo(false), 2000);
+  }
+
+  const souAdmin =
+    equipe.find((m) => m.nome === currentUser.name)?.papelTipo === "admin";
+  const outrosMembros = equipe.filter((m) => m.nome !== currentUser.name);
+  const [trocarContaAberta, setTrocarContaAberta] = useState(false);
+  const membrosBtnRef = useRef<HTMLDivElement>(null);
+  const [trocarContaPos, setTrocarContaPos] = useState({ top: 0, left: 0 });
+
+  function abrirTrocarConta() {
+    if (!souAdmin || !membrosBtnRef.current) return;
+    const rect = membrosBtnRef.current.getBoundingClientRect();
+    setTrocarContaPos({ top: rect.top, left: rect.right + 8 });
+    setTrocarContaAberta(true);
+  }
 
   return (
     <aside className="sidebar">
@@ -227,20 +260,31 @@ export function Sidebar() {
           <div className="account-pop">
             <button
               type="button"
+              ref={perfilBtnRef}
               className="dropdown-item"
               style={{ width: "100%", textAlign: "left" }}
-              onClick={() => setContaAberta(false)}
+              onClick={() => {
+                setContaAberta(false);
+                setPerfilAberto(true);
+              }}
             >
               <span className="n">👤 Meu Perfil</span>
             </button>
-            <Link
-              href="/equipe"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left" }}
-              onClick={() => setContaAberta(false)}
+            <div
+              ref={membrosBtnRef}
+              onMouseEnter={abrirTrocarConta}
+              onMouseLeave={() => setTrocarContaAberta(false)}
             >
-              <span className="n">👥 Gerenciar Membros</span>
-            </Link>
+              <Link
+                href="/equipe"
+                className="dropdown-item"
+                style={{ width: "100%", textAlign: "left" }}
+                onClick={() => setContaAberta(false)}
+              >
+                <span className="n">👥 Gerenciar Membros</span>
+                {souAdmin ? <span className="r">▸</span> : null}
+              </Link>
+            </div>
             <Link
               href="/configuracoes"
               className="dropdown-item"
@@ -260,6 +304,121 @@ export function Sidebar() {
           </div>
           </>
         ) : null}
+
+        {trocarContaAberta && souAdmin && typeof document !== "undefined"
+          ? createPortal(
+              <div
+                className="dropdown-pop"
+                style={{
+                  position: "fixed",
+                  top: trocarContaPos.top,
+                  left: trocarContaPos.left,
+                  width: 260,
+                  padding: "4px 0",
+                  zIndex: 210,
+                }}
+                onMouseEnter={() => setTrocarContaAberta(true)}
+                onMouseLeave={() => setTrocarContaAberta(false)}
+              >
+                <div className="dropdown-item" style={{ borderBottom: "1px solid var(--line)" }}>
+                  <span className="n">Trocar de conta</span>
+                  <span className="r">Você está como {currentUser.name}</span>
+                </div>
+                {outrosMembros.map((m) => (
+                  <button
+                    type="button"
+                    key={m.nome}
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => {
+                      setTrocarContaAberta(false);
+                      setContaAberta(false);
+                    }}
+                  >
+                    <span className="n">{m.nome}</span>
+                    <span className="r">{m.papel}</span>
+                  </button>
+                ))}
+              </div>,
+              document.body,
+            )
+          : null}
+
+        {perfilAberto && typeof document !== "undefined"
+          ? createPortal(
+              <>
+                <div
+                  onClick={() => setPerfilAberto(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 200 }}
+                />
+                <div
+                  className="dropdown-pop"
+                  style={{
+                    position: "fixed",
+                    top: perfilPos.top,
+                    left: perfilPos.left,
+                    width: 300,
+                    padding: "4px 0",
+                    zIndex: 201,
+                  }}
+                >
+                  <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "14px 14px 10px" }}>
+                    <div
+                      className="avatar"
+                      style={{ width: 44, height: 44, borderRadius: 12, fontSize: 15 }}
+                    >
+                      {currentUser.initials}
+                    </div>
+                    <button type="button" className="btn ghost">
+                      <IconCamera width={14} height={14} />
+                      Trocar foto
+                    </button>
+                  </div>
+                  <div className="field">
+                    <label>Nome</label>
+                    <input
+                      className="input"
+                      style={{ width: "100%" }}
+                      type="text"
+                      value={perfilNome}
+                      onChange={(e) => setPerfilNome(e.target.value)}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>E-mail de login</label>
+                    <input
+                      className="input"
+                      style={{ width: "100%" }}
+                      type="email"
+                      value={perfilEmail}
+                      onChange={(e) => setPerfilEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Nova senha</label>
+                    <input
+                      className="input"
+                      style={{ width: "100%" }}
+                      type="password"
+                      placeholder="Deixe em branco pra manter a atual"
+                      value={perfilSenha}
+                      onChange={(e) => setPerfilSenha(e.target.value)}
+                    />
+                  </div>
+                  <div className="section-foot">
+                    <button
+                      type="button"
+                      className="btn primary block"
+                      onClick={salvarPerfil}
+                    >
+                      {perfilSalvo ? "✓ Perfil salvo" : "Salvar perfil"}
+                    </button>
+                  </div>
+                </div>
+              </>,
+              document.body,
+            )
+          : null}
       </div>
     </aside>
   );

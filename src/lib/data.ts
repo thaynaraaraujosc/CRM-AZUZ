@@ -437,6 +437,9 @@ export type Conversa = {
   tempo: string;
   status: ConvStatus;
   origem: Origem;
+  /** Mensagens não lidas nessa conversa — mostra o selo verde na lista. */
+  naoLidas?: number;
+  favorita?: boolean;
   mensagens: ConvMensagem[];
   atendentes: { nome: string; papel: string }[];
   atendenteSelecionado: string;
@@ -464,6 +467,7 @@ export const conversas: Conversa[] = [
     contato: "+55 62 9XXXX-XXXX",
     tempo: "9 min",
     status: "Não respondido",
+    naoLidas: 2,
     origem: "Meta Ads",
     mensagens: [
       {
@@ -517,6 +521,8 @@ export const conversas: Conversa[] = [
     contato: "@camila.duarte",
     tempo: "14 min",
     status: "Não respondido",
+    naoLidas: 1,
+    favorita: true,
     origem: "Instagram",
     mensagens: [
       {
@@ -543,6 +549,7 @@ export const conversas: Conversa[] = [
     contato: "@lorena.bastos",
     tempo: "31 min",
     status: "Não respondido",
+    naoLidas: 3,
     origem: "TikTok",
     mensagens: [
       {
@@ -595,6 +602,7 @@ export const conversas: Conversa[] = [
     contato: "+55 62 9XXXX-XXXX",
     tempo: "21 min",
     status: "Em conversa",
+    favorita: true,
     origem: "Google Ads",
     mensagens: [
       {

@@ -1548,10 +1548,80 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-list {
-  width: 300px;
+  width: 320px;
   flex: 0 0 auto;
   border-right: 1px solid var(--line);
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.wa-list-search {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+}
+
+.wa-search {
+  width: 100%;
+  border-radius: 20px;
+}
+
+.wa-list-filters {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 7px;
+  padding: 0 12px 10px;
+  overflow-x: auto;
+}
+
+.wa-filter-chip {
+  flex: 0 0 auto;
+  border: none;
+  background: var(--navy-raised);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.wa-whatsapp .wa-filter-chip.active {
+  background: #25d366;
+  color: #fff;
+}
+
+.wa-fav-star {
+  color: #f2b100;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.wa-row .cmsg {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wa-unread-badge {
+  flex: 0 0 auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--text-faint);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wa-whatsapp .wa-unread-badge {
+  background: #25d366;
 }
 
 .wa-row {
@@ -1642,6 +1712,93 @@ table.tbl tbody tr:hover td {
   width: 300px;
   flex: 0 0 auto;
   overflow-y: auto;
+}
+
+.wa-email-modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--navy);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
+}
+
+.wa-email-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.wa-email-toolbar .btn {
+  padding: 6px 11px;
+  min-width: 30px;
+}
+
+.wa-email-corpo {
+  width: 100%;
+  min-height: 160px;
+  padding: 10px 12px;
+  line-height: 1.6;
+  overflow-y: auto;
+}
+
+.wa-email-corpo:focus {
+  outline: none;
+}
+
+.wa-email-lido {
+  color: var(--blue);
+}
+
+.wa-whatsapp .wa-email-lido {
+  color: #25d366;
+}
+
+.wa-historico {
+  padding: 0 17px 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wa-historico-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--navy-raised);
+  border-left: 2px solid var(--line);
+}
+
+.wa-historico-tipo {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
+.wa-historico-anotacao {
+  color: var(--blue);
+}
+
+.wa-historico-email {
+  color: #0f9d63;
+}
+
+.wa-historico-texto {
+  font-size: 12px;
+  color: var(--ink);
+  margin: 0 0 4px;
+  white-space: pre-wrap;
+}
+
+.wa-historico-quando {
+  font-size: 10.5px;
+  color: var(--text-faint);
 }
 
 @media (max-width: 1180px) {
