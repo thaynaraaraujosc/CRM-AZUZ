@@ -118,6 +118,7 @@ function RelatoriosPageInner() {
           {historico.length === 0 ? (
             <p className="hint" style={{ padding: 17 }}>Nenhum relatório gerado ainda.</p>
           ) : (
+            <div className="table-wrap">
             <table className="tbl">
               <thead>
                 <tr>
@@ -156,6 +157,7 @@ function RelatoriosPageInner() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

@@ -199,6 +199,7 @@ export default function MotivosPerdaPage() {
               </button>
             ) : null}
           </div>
+          <div className="table-wrap">
           <table className="tbl">
             <thead>
               <tr>
@@ -229,6 +230,7 @@ export default function MotivosPerdaPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </>
