@@ -309,7 +309,7 @@ export function Sidebar() {
                   aria-expanded={gestaoAtividadeAberta}
                 >
                   <IconRelatorios />
-                  Gestão de atividade
+                  Inteligência comercial
                   <span className="r" style={{ marginLeft: "auto" }}>▸</span>
                 </button>
               </div>
