@@ -48,6 +48,16 @@ export const navEntries: NavEntry[] = [
   { href: "/equipe", label: "Equipe", Icon: IconEquipe },
   { href: "/contatos", label: "Contatos", Icon: IconContatos },
   { href: "/trafego", label: "Tráfego", Icon: IconTrafego },
+  {
+    href: "/atividades-vendas",
+    label: "Atividades de venda",
+    Icon: IconRelatorios,
+  },
+  {
+    href: "/performance-vendas",
+    label: "Performance de venda",
+    Icon: IconTrafego,
+  },
   { href: "/relatorios", label: "Relatórios", Icon: IconRelatorios },
   { href: "/automacoes", label: "Automações", Icon: IconAutomacoes },
   { href: "/azuz-ia", label: "Azuz IA", Icon: IconSparkle },

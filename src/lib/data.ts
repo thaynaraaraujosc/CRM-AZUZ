@@ -1037,6 +1037,104 @@ export const campanhas = [
 ];
 
 /* -------------------------------------------------------------------------- */
+/* Atividades de venda                                                        */
+/* -------------------------------------------------------------------------- */
+
+export const kpisPrimeiroContato = [
+  {
+    label: "Oportunidades contatadas",
+    value: "13",
+    sub: "81,3% de 16 filtradas no período",
+    delta: "↓ 0% do período anterior",
+  },
+  {
+    label: "Tempo médio de primeiro contato",
+    value: "2h40min",
+    sub: "",
+    delta: "↑ 18,3% do período anterior",
+  },
+  {
+    label: "Menor tempo de primeiro contato",
+    value: "5min",
+    sub: "",
+    delta: "↓ 21,4% do período anterior",
+  },
+  {
+    label: "Maior tempo de primeiro contato",
+    value: "18h20min",
+    sub: "",
+    delta: "↑ 9,7% do período anterior",
+  },
+];
+
+export const tempoPrimeiroContatoPorResponsavel = [
+  { nome: "Ana Ferreira", oportunidades: 4, tempoMedio: "22min", minutos: 22 },
+  { nome: "Dr. Hélio Marinho", oportunidades: 2, tempoMedio: "48min", minutos: 48 },
+  { nome: "Carla Mendes", oportunidades: 2, tempoMedio: "1h05min", minutos: 65 },
+  { nome: "Bruno Salles", oportunidades: 5, tempoMedio: "3h10min", minutos: 190 },
+];
+
+/* -------------------------------------------------------------------------- */
+/* Performance de venda                                                       */
+/* -------------------------------------------------------------------------- */
+
+export const kpisConversao = [
+  {
+    label: "Taxa de conversão",
+    value: "68,8%",
+    sub: "11 vendas de 16 oportunidades",
+    delta: "↓ 1,4% do período anterior",
+  },
+  {
+    label: "Total de oportunidades",
+    value: "16",
+    sub: "",
+    delta: "↓ 30,4% do período anterior",
+  },
+  {
+    label: "Oportunidades vendidas",
+    value: "11",
+    sub: "",
+    delta: "↓ 31,3% do período anterior",
+  },
+  {
+    label: "Valor total vendido",
+    value: "R$ 38.400,00",
+    sub: "",
+    delta: "↑ 12,6% do período anterior",
+  },
+];
+
+export const conversaoPorResponsavel = [
+  { nome: "Ana Ferreira", vendidas: 5, perdidas: 1 },
+  { nome: "Dr. Hélio Marinho", vendidas: 3, perdidas: 1 },
+  { nome: "Carla Mendes", vendidas: 2, perdidas: 1 },
+  { nome: "Bruno Salles", vendidas: 1, perdidas: 2 },
+];
+
+export const kpisMotivosPerda = [
+  {
+    label: "Valor perdido no período",
+    value: "R$ 9.800,00",
+    sub: "5 oportunidades perdidas",
+    delta: "↑ 14,2% do período anterior",
+  },
+  {
+    label: "Principal motivo",
+    value: "Achou caro",
+    sub: "40% das perdas do período",
+    delta: "",
+  },
+];
+
+export const motivosPerda = [
+  { motivo: "Achou caro / sem orçamento", quantidade: 2, valor: "R$ 4.100,00", percentual: 40 },
+  { motivo: "Escolheu outra clínica", quantidade: 1, valor: "R$ 2.600,00", percentual: 22 },
+  { motivo: "Sumiu, parou de responder", quantidade: 1, valor: "R$ 1.900,00", percentual: 20 },
+  { motivo: "Não é o momento", quantidade: 1, valor: "R$ 1.200,00", percentual: 18 },
+];
+
+/* -------------------------------------------------------------------------- */
 /* Relatórios                                                                 */
 /* -------------------------------------------------------------------------- */
 
