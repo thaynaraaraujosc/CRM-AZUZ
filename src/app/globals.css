@@ -1036,29 +1036,19 @@ table.tbl tbody tr:hover td {
   white-space: nowrap;
 }
 
+/* Papéis usam a mesma família azul da marca — só a intensidade muda,
+   pra hierarquia ficar clara sem virar um arco-íris. */
 .role-tag-admin {
+  background: var(--blue);
+  color: var(--white);
+}
+
+.role-tag-vendedor,
+.role-tag-especialista,
+.role-tag-cliente,
+.role-tag-estoquista {
   background: var(--blue-soft);
   color: var(--blue);
-}
-
-.role-tag-vendedor {
-  background: rgba(37, 190, 130, 0.14);
-  color: #0f9d63;
-}
-
-.role-tag-especialista {
-  background: rgba(155, 89, 255, 0.14);
-  color: #8a3ffc;
-}
-
-.role-tag-cliente {
-  background: rgba(255, 145, 77, 0.16);
-  color: #c9660a;
-}
-
-.role-tag-estoquista {
-  background: rgba(255, 92, 138, 0.14);
-  color: #d81b60;
 }
 
 .role-tag .soft {

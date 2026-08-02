@@ -889,6 +889,8 @@ export type Membro = {
   permissoes: string[];
   ativo: boolean;
   convitePendente?: boolean;
+  /** Foto de perfil (data URL) que a pessoa colocou em "Meu Perfil" — se não tiver, mostra as iniciais. */
+  foto?: string;
 };
 
 export const PERMISSOES_CRM = [
