@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAutomationFlows } from "@/lib/automation-flow-context";
@@ -8,11 +8,12 @@ import { useFunis } from "@/lib/funis-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoNo } from "@/lib/automation-flow/resumo";
 import type {
+  CanalMensagem,
   FlowNodeType,
   FluxoAutomacao,
   RegistroExecucao,
 } from "@/lib/automation-flow/types";
-import { IconAutomacoes } from "@/components/icons";
+import { IconAutomacoes, IconSearch } from "@/components/icons";
 import { Toggle, Topbar } from "@/components/ui";
 
 /* -------------------------------------------------------------------------- */
@@ -37,42 +38,79 @@ function resumoGatilhoFluxo(fluxo: FluxoAutomacao): string {
     : labelGatilho(no.type);
 }
 
-type StatusFiltro = "rascunho" | "publicado" | "ativa" | "pausada";
+/** Status pesquisáveis na barra de filtros — "com_erro" e "arquivada" são derivados/reais, não decorativos (ver `statusBate`). */
+type StatusFiltro = "rascunho" | "publicado" | "ativa" | "pausada" | "com_erro" | "arquivada";
 
 const STATUS_FILTROS: { valor: StatusFiltro; label: string }[] = [
   { valor: "rascunho", label: "Rascunho" },
   { valor: "publicado", label: "Publicado" },
   { valor: "ativa", label: "Ativa" },
   { valor: "pausada", label: "Pausada" },
+  { valor: "com_erro", label: "Com erro" },
+  { valor: "arquivada", label: "Arquivada" },
 ];
 
-function statusBate(fluxo: FluxoAutomacao, filtro: StatusFiltro): boolean {
+function temExecucaoComErro(fluxo: FluxoAutomacao, execucoesDoFluxo: (id: string) => RegistroExecucao[]): boolean {
+  return execucoesDoFluxo(fluxo.id).some((e) => e.situacao === "erro");
+}
+
+function statusBate(
+  fluxo: FluxoAutomacao,
+  filtro: StatusFiltro,
+  execucoesDoFluxo: (id: string) => RegistroExecucao[],
+): boolean {
   switch (filtro) {
     case "rascunho":
       return fluxo.status === "rascunho";
     case "publicado":
       return fluxo.status === "publicado";
     case "ativa":
-      return fluxo.status === "publicado" && fluxo.ativa;
+      return fluxo.status === "publicado" && fluxo.ativa && !fluxo.arquivada;
     case "pausada":
-      return fluxo.status === "publicado" && !fluxo.ativa;
+      return fluxo.status === "publicado" && !fluxo.ativa && !fluxo.arquivada;
+    case "com_erro":
+      return temExecucaoComErro(fluxo, execucoesDoFluxo);
+    case "arquivada":
+      return !!fluxo.arquivada;
     default:
       return true;
   }
 }
 
+/** A pill de "Arquivada" tem precedência sobre ativa/pausada — arquivar é um estado à parte. */
 function statusPill(fluxo: FluxoAutomacao): { label: string; on: boolean } {
+  if (fluxo.arquivada) return { label: "Arquivada", on: false };
   if (fluxo.status === "rascunho") return { label: "Rascunho", on: false };
   if (fluxo.ativa) return { label: "Ativa", on: true };
   return { label: "Pausada", on: false };
 }
 
-type Ordenacao = "nome" | "atualizado" | "execucoes";
+/**
+ * "Mais recentes" cobre tanto a leitura de marketing quanto a técnica
+ * (`atualizadoEm` desc) — a brief citava "Atualizadas recentemente" como um
+ * rótulo possivelmente separado, mas como o comportamento seria idêntico a
+ * "Mais recentes", optei por manter só uma opção canônica pra esse critério
+ * em vez de duas entradas redundantes na lista.
+ */
+type Ordenacao =
+  | "recentes"
+  | "antigas"
+  | "nome_az"
+  | "nome_za"
+  | "execucoes_desc"
+  | "execucoes_asc"
+  | "ativas_primeiro"
+  | "erro_primeiro";
 
 const ORDENACOES: { valor: Ordenacao; label: string }[] = [
-  { valor: "atualizado", label: "Última atualização" },
-  { valor: "nome", label: "Nome" },
-  { valor: "execucoes", label: "Execuções" },
+  { valor: "recentes", label: "Mais recentes" },
+  { valor: "antigas", label: "Mais antigas" },
+  { valor: "nome_az", label: "Nome de A a Z" },
+  { valor: "nome_za", label: "Nome de Z a A" },
+  { valor: "execucoes_desc", label: "Mais executadas" },
+  { valor: "execucoes_asc", label: "Menos executadas" },
+  { valor: "ativas_primeiro", label: "Ativas primeiro" },
+  { valor: "erro_primeiro", label: "Com erro primeiro" },
 ];
 
 function taxaSucesso(execucoes: RegistroExecucao[]): string {
@@ -94,6 +132,68 @@ function ultimaExecucao(execucoes: RegistroExecucao[]): string {
 /** Tipos de gatilho "de comentário" — usados só pra dar um atalho de filtro sem precisar escolher canal por canal. */
 const TIPOS_GATILHO_COMENTARIO: FlowNodeType[] = ["comentario_instagram", "comentario_tiktok"];
 
+const CANAL_LABELS: Record<CanalMensagem, string> = {
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  email: "E-mail",
+  interno: "Interno",
+};
+
+/** Só os canais que de fato aparecem em algum nó de mensagem — ou que o gatilho de comentário já escopa (Insta/TikTok) mesmo sem nó de mensagem. */
+function canaisDoFluxo(fluxo: FluxoAutomacao): Set<CanalMensagem> {
+  const canais = new Set<CanalMensagem>();
+  fluxo.nodes.forEach((n) => {
+    if (n.category === "mensagem") {
+      const data = n.data as { canal?: unknown };
+      if (data && typeof data.canal === "string") {
+        canais.add(data.canal as CanalMensagem);
+      }
+    }
+  });
+  const gatilho = noGatilhoDoFluxo(fluxo);
+  if (gatilho?.type === "comentario_instagram") canais.add("instagram");
+  if (gatilho?.type === "comentario_tiktok") canais.add("tiktok");
+  return canais;
+}
+
+/** Busca casa nome, descrição, nome do funil, título da etapa e rótulo do gatilho — não só o nome do fluxo. */
+function fluxoBateBusca(
+  fluxo: FluxoAutomacao,
+  termo: string,
+  funis: ReturnType<typeof useFunis>["funis"],
+): boolean {
+  if (!termo) return true;
+  if (fluxo.nome.toLowerCase().includes(termo)) return true;
+  if (fluxo.descricao?.toLowerCase().includes(termo)) return true;
+
+  const funil = funis.find((f) => f.id === fluxo.funilId);
+  if (funil?.nome.toLowerCase().includes(termo)) return true;
+
+  const etapa = funil?.colunas.find((c) => c.id === fluxo.etapaId);
+  if (etapa?.titulo.toLowerCase().includes(termo)) return true;
+
+  const no = noGatilhoDoFluxo(fluxo);
+  if (no && labelGatilho(no.type).toLowerCase().includes(termo)) return true;
+
+  return false;
+}
+
+/** Alterna um valor dentro de um Set guardado em estado (imutável). */
+function alternarNoSet<T>(setEstado: Dispatch<SetStateAction<Set<T>>>, valor: T) {
+  setEstado((prev) => {
+    const next = new Set(prev);
+    if (next.has(valor)) next.delete(valor);
+    else next.add(valor);
+    return next;
+  });
+}
+
+const CHAVE_LOCALSTORAGE_FILTROS_ABERTOS = "automacoes:filtros-abertos";
+
+/** Acima desse número de funis, mostra um campinho de busca dentro do popover pra não rolar uma lista gigante de chips. */
+const LIMITE_FUNIS_PARA_BUSCA = 6;
+
 /* -------------------------------------------------------------------------- */
 
 export default function AutomacoesPage() {
@@ -114,6 +214,7 @@ function AutomacoesPageInner() {
     duplicarFluxo,
     atualizarFluxo,
     arquivarFluxo,
+    desarquivarFluxo,
     excluirFluxo,
     alternarAtivo,
   } = useAutomationFlows();
@@ -129,17 +230,46 @@ function AutomacoesPageInner() {
 
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState<Set<StatusFiltro>>(new Set());
-  const [funilFiltroId, setFunilFiltroId] = useState(funilParam ?? "");
-  const [etapaFiltroId, setEtapaFiltroId] = useState(etapaParam ?? "");
-  const [gatilhoFiltro, setGatilhoFiltro] = useState<string>("");
-  const [ordenacao, setOrdenacao] = useState<Ordenacao>("atualizado");
+  const [funilFiltroIds, setFunilFiltroIds] = useState<Set<string>>(
+    () => new Set(funilParam ? [funilParam] : []),
+  );
+  const [etapaFiltroIds, setEtapaFiltroIds] = useState<Set<string>>(
+    () => new Set(etapaParam ? [etapaParam] : []),
+  );
+  const [gatilhoFiltro, setGatilhoFiltro] = useState<Set<string>>(new Set());
+  const [canalFiltro, setCanalFiltro] = useState<Set<CanalMensagem>>(new Set());
+  const [ordenacao, setOrdenacao] = useState<Ordenacao>("recentes");
+  const [buscaFunilPopover, setBuscaFunilPopover] = useState("");
+
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
+  // Preferência secundária: mantém o popover de filtros aberto entre interações, persistida
+  // por sessão/reload via localStorage. Lazy init guardado por `typeof window` porque
+  // este componente é "use client" mas ainda passa por uma renderização inicial no servidor.
+  const [manterFiltrosAbertos, setManterFiltrosAbertos] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(CHAVE_LOCALSTORAGE_FILTROS_ABERTOS) === "1";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(CHAVE_LOCALSTORAGE_FILTROS_ABERTOS, manterFiltrosAbertos ? "1" : "0");
+  }, [manterFiltrosAbertos]);
+
+  const filtrosPopoverRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!filtrosAbertos) return;
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === "Escape") setFiltrosAbertos(false);
+    }
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+  }, [filtrosAbertos]);
 
   const [menuAbertoId, setMenuAbertoId] = useState<string | null>(null);
   const [renomeandoId, setRenomeandoId] = useState<string | null>(null);
   const [renomeandoValor, setRenomeandoValor] = useState("");
   const [exclusaoAlvo, setExclusaoAlvo] = useState<FluxoAutomacao | null>(null);
-
-  const funilFiltroSelecionado = funis.find((f) => f.id === funilFiltroId);
 
   const gatilhosDisponiveis = useMemo(() => {
     const tipos = new Set<FlowNodeType>();
@@ -152,42 +282,120 @@ function AutomacoesPageInner() {
       .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
   }, [fluxos]);
 
-  function alternarStatusFiltro(valor: StatusFiltro) {
-    setStatusFiltro((prev) => {
-      const next = new Set(prev);
-      if (next.has(valor)) next.delete(valor);
-      else next.add(valor);
-      return next;
-    });
+  const canaisDisponiveis = useMemo(() => {
+    const canais = new Set<CanalMensagem>();
+    fluxos.forEach((f) => canaisDoFluxo(f).forEach((c) => canais.add(c)));
+    return [...canais].sort((a, b) => CANAL_LABELS[a].localeCompare(CANAL_LABELS[b], "pt-BR"));
+  }, [fluxos]);
+
+  /** Funis a considerar pras etapas do popover: os selecionados, ou todos se nenhum estiver selecionado (nunca fica "sem opções"). */
+  const funisParaEtapas = useMemo(
+    () => (funilFiltroIds.size > 0 ? funis.filter((f) => funilFiltroIds.has(f.id)) : funis),
+    [funis, funilFiltroIds],
+  );
+
+  const funisFiltradosPopover = useMemo(() => {
+    const termo = buscaFunilPopover.trim().toLowerCase();
+    if (!termo) return funis;
+    return funis.filter((f) => f.nome.toLowerCase().includes(termo));
+  }, [funis, buscaFunilPopover]);
+
+  const totalFiltrosAtivos =
+    statusFiltro.size + funilFiltroIds.size + etapaFiltroIds.size + gatilhoFiltro.size + canalFiltro.size;
+  const temAlgumFiltroOuBusca = totalFiltrosAtivos > 0 || busca.trim() !== "";
+
+  function fecharPopoverSeNaoQuiserManter() {
+    if (!manterFiltrosAbertos) setFiltrosAbertos(false);
+  }
+
+  function limparBuscaEFiltros() {
+    setBusca("");
+    setStatusFiltro(new Set());
+    setFunilFiltroIds(new Set());
+    setEtapaFiltroIds(new Set());
+    setGatilhoFiltro(new Set());
+    setCanalFiltro(new Set());
+  }
+
+  // "Limpar filtros" dentro do popover só reseta os facets do próprio popover — a busca
+  // (que já mora fora do popover, na barra compacta) fica intacta. O botão "Limpar" da
+  // barra compacta é que limpa tudo junto (busca + filtros), via `limparBuscaEFiltros`.
+  function limparFacetsDoPopover() {
+    setStatusFiltro(new Set());
+    setFunilFiltroIds(new Set());
+    setEtapaFiltroIds(new Set());
+    setGatilhoFiltro(new Set());
+    setCanalFiltro(new Set());
   }
 
   const fluxosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     let lista = fluxos.filter((f) => {
-      if (termo && !f.nome.toLowerCase().includes(termo)) return false;
-      if (statusFiltro.size > 0 && ![...statusFiltro].some((s) => statusBate(f, s))) return false;
-      if (funilFiltroId && f.funilId !== funilFiltroId) return false;
-      if (etapaFiltroId && f.etapaId !== etapaFiltroId) return false;
-      if (gatilhoFiltro === "__comentario__") {
-        const no = noGatilhoDoFluxo(f);
-        if (!no || !TIPOS_GATILHO_COMENTARIO.includes(no.type)) return false;
-      } else if (gatilhoFiltro) {
-        const no = noGatilhoDoFluxo(f);
-        if (!no || no.type !== gatilhoFiltro) return false;
+      // Arquivadas ficam fora da lista por padrão — só aparecem quando o chip
+      // "Arquivada" é explicitamente selecionado (mesmo espírito de "Excluir": some da visão).
+      if (f.arquivada && !statusFiltro.has("arquivada")) return false;
+
+      if (!fluxoBateBusca(f, termo, funis)) return false;
+
+      if (statusFiltro.size > 0 && ![...statusFiltro].some((s) => statusBate(f, s, execucoesDoFluxo))) {
+        return false;
       }
+
+      if (funilFiltroIds.size > 0 && !(f.funilId && funilFiltroIds.has(f.funilId))) return false;
+      if (etapaFiltroIds.size > 0 && !(f.etapaId && etapaFiltroIds.has(f.etapaId))) return false;
+
+      if (gatilhoFiltro.size > 0) {
+        const no = noGatilhoDoFluxo(f);
+        const bateGatilho = [...gatilhoFiltro].some((g) => {
+          if (g === "__comentario__") return !!no && TIPOS_GATILHO_COMENTARIO.includes(no.type);
+          return !!no && no.type === g;
+        });
+        if (!bateGatilho) return false;
+      }
+
+      if (canalFiltro.size > 0) {
+        const canais = canaisDoFluxo(f);
+        const bateCanal = [...canalFiltro].some((c) => canais.has(c));
+        if (!bateCanal) return false;
+      }
+
       return true;
     });
 
     lista = [...lista].sort((a, b) => {
-      if (ordenacao === "nome") return a.nome.localeCompare(b.nome, "pt-BR");
-      if (ordenacao === "execucoes") return b.execucoes - a.execucoes;
-      return new Date(b.atualizadoEm).getTime() - new Date(a.atualizadoEm).getTime();
+      switch (ordenacao) {
+        case "nome_az":
+          return a.nome.localeCompare(b.nome, "pt-BR");
+        case "nome_za":
+          return b.nome.localeCompare(a.nome, "pt-BR");
+        case "execucoes_desc":
+          return b.execucoes - a.execucoes;
+        case "execucoes_asc":
+          return a.execucoes - b.execucoes;
+        case "antigas":
+          return new Date(a.atualizadoEm).getTime() - new Date(b.atualizadoEm).getTime();
+        case "ativas_primeiro": {
+          const aAtiva = a.status === "publicado" && a.ativa && !a.arquivada;
+          const bAtiva = b.status === "publicado" && b.ativa && !b.arquivada;
+          if (aAtiva !== bAtiva) return aAtiva ? -1 : 1;
+          return new Date(b.atualizadoEm).getTime() - new Date(a.atualizadoEm).getTime();
+        }
+        case "erro_primeiro": {
+          const aErro = temExecucaoComErro(a, execucoesDoFluxo);
+          const bErro = temExecucaoComErro(b, execucoesDoFluxo);
+          if (aErro !== bErro) return aErro ? -1 : 1;
+          return new Date(b.atualizadoEm).getTime() - new Date(a.atualizadoEm).getTime();
+        }
+        case "recentes":
+        default:
+          return new Date(b.atualizadoEm).getTime() - new Date(a.atualizadoEm).getTime();
+      }
     });
 
     return lista;
-  }, [fluxos, busca, statusFiltro, funilFiltroId, etapaFiltroId, gatilhoFiltro, ordenacao]);
+  }, [fluxos, busca, statusFiltro, funilFiltroIds, etapaFiltroIds, gatilhoFiltro, canalFiltro, ordenacao, execucoesDoFluxo, funis]);
 
-  const totalAtivas = fluxos.filter((f) => f.status === "publicado" && f.ativa).length;
+  const totalAtivas = fluxos.filter((f) => f.status === "publicado" && f.ativa && !f.arquivada).length;
 
   function abrirMenu(id: string) {
     setMenuAbertoId((atual) => (atual === id ? null : id));
@@ -217,6 +425,85 @@ function AutomacoesPageInner() {
     setExclusaoAlvo(null);
   }
 
+  function verExecucoes(fluxo: FluxoAutomacao) {
+    // Ainda não existe uma UI dedicada de histórico de execuções (o `HistoricoVersoes.tsx`
+    // do editor cobre versões, não execuções) — enquanto isso não existe, o atalho mais
+    // honesto é abrir o construtor (que tem o Simulador) e deixar um rastro no console
+    // pra quem for construir a tela de verdade depois.
+    console.log(`Ver execuções de "${fluxo.nome}":`, execucoesDoFluxo(fluxo.id));
+    setMenuAbertoId(null);
+    router.push(`/automacoes/editor/${fluxo.id}`);
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Chips removíveis da linha "filtros ativos"                             */
+  /* ---------------------------------------------------------------------- */
+
+  type ChipAtivo = { chave: string; label: string; onRemove: () => void };
+
+  const chipsAtivos: ChipAtivo[] = useMemo(() => {
+    const chips: ChipAtivo[] = [];
+
+    STATUS_FILTROS.forEach((s) => {
+      if (statusFiltro.has(s.valor)) {
+        chips.push({
+          chave: `status-${s.valor}`,
+          label: s.label,
+          onRemove: () => alternarNoSet(setStatusFiltro, s.valor),
+        });
+      }
+    });
+
+    funis.forEach((f) => {
+      if (funilFiltroIds.has(f.id)) {
+        chips.push({
+          chave: `funil-${f.id}`,
+          label: `Funil: ${f.nome}`,
+          onRemove: () => alternarNoSet(setFunilFiltroIds, f.id),
+        });
+      }
+    });
+
+    funis.forEach((f) => {
+      f.colunas.forEach((c) => {
+        if (etapaFiltroIds.has(c.id)) {
+          chips.push({
+            chave: `etapa-${c.id}`,
+            label: `Etapa: ${c.titulo}`,
+            onRemove: () => alternarNoSet(setEtapaFiltroIds, c.id),
+          });
+        }
+      });
+    });
+
+    if (gatilhoFiltro.has("__comentario__")) {
+      chips.push({
+        chave: "gatilho-__comentario__",
+        label: "Comentário (Insta/TikTok)",
+        onRemove: () => alternarNoSet<string>(setGatilhoFiltro, "__comentario__"),
+      });
+    }
+    gatilhosDisponiveis.forEach((g) => {
+      if (gatilhoFiltro.has(g.tipo)) {
+        chips.push({
+          chave: `gatilho-${g.tipo}`,
+          label: g.label,
+          onRemove: () => alternarNoSet<string>(setGatilhoFiltro, g.tipo),
+        });
+      }
+    });
+
+    canalFiltro.forEach((c) => {
+      chips.push({
+        chave: `canal-${c}`,
+        label: CANAL_LABELS[c],
+        onRemove: () => alternarNoSet(setCanalFiltro, c),
+      });
+    });
+
+    return chips;
+  }, [statusFiltro, funilFiltroIds, etapaFiltroIds, gatilhoFiltro, canalFiltro, funis, gatilhosDisponiveis]);
+
   return (
     <>
       <Topbar
@@ -234,146 +521,277 @@ function AutomacoesPageInner() {
       />
 
       <div className="content">
-        <section className="card mb14">
-          <div className="field">
-            <label>Buscar por nome</label>
-            <input
-              className="input"
-              style={{ width: "100%" }}
-              type="text"
-              placeholder="Ex.: Boas-vindas pro lead novo"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-          </div>
-
-          <div className="field">
-            <label>Status</label>
-            <div className="filters-row">
-              <button
-                type="button"
-                className={`fchip${statusFiltro.size === 0 ? " active" : ""}`}
-                aria-pressed={statusFiltro.size === 0}
-                onClick={() => setStatusFiltro(new Set())}
-              >
-                Todos os status
-              </button>
-              {STATUS_FILTROS.map((s) => (
+        {/* -------------------------- Barra compacta -------------------------- */}
+        <div className="automacoes-bar">
+          <div className="automacoes-bar-group">
+            <label className="automacoes-search" htmlFor="automacoes-busca">
+              <IconSearch aria-hidden="true" />
+              <input
+                id="automacoes-busca"
+                type="text"
+                placeholder="Buscar automação, funil, etapa, gatilho…"
+                aria-label="Buscar automações"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+              />
+              {busca ? (
                 <button
                   type="button"
-                  key={s.valor}
-                  className={`fchip${statusFiltro.has(s.valor) ? " active" : ""}`}
-                  aria-pressed={statusFiltro.has(s.valor)}
-                  onClick={() => alternarStatusFiltro(s.valor)}
+                  className="automacoes-search-clear"
+                  aria-label="Limpar busca"
+                  onClick={() => setBusca("")}
                 >
-                  {s.label}
+                  ✕
                 </button>
-              ))}
-            </div>
-          </div>
+              ) : null}
+            </label>
 
-          <div className="field">
-            <label>Funil</label>
-            <div className="filters-row">
+            <div className="dropdown-anchor">
               <button
                 type="button"
-                className={`fchip${funilFiltroId === "" ? " active" : ""}`}
-                aria-pressed={funilFiltroId === ""}
-                onClick={() => {
-                  setFunilFiltroId("");
-                  setEtapaFiltroId("");
-                }}
+                className={`automacoes-chip-btn${totalFiltrosAtivos > 0 ? " active" : ""}`}
+                aria-expanded={filtrosAbertos}
+                aria-controls="automacoes-filtros-popover"
+                aria-label={`Filtros — ${totalFiltrosAtivos} ativos`}
+                onClick={() => setFiltrosAbertos((v) => !v)}
               >
-                Todos os funis
+                Filtros
+                {totalFiltrosAtivos > 0 ? (
+                  <span className="automacoes-badge">{totalFiltrosAtivos}</span>
+                ) : null}
               </button>
-              {funis.map((f) => (
-                <button
-                  type="button"
-                  key={f.id}
-                  className={`fchip${funilFiltroId === f.id ? " active" : ""}`}
-                  aria-pressed={funilFiltroId === f.id}
-                  onClick={() => {
-                    setFunilFiltroId(f.id);
-                    setEtapaFiltroId("");
-                  }}
-                >
-                  {f.nome}
-                </button>
-              ))}
+
+              {filtrosAbertos ? (
+                <>
+                  <div
+                    onClick={() => setFiltrosAbertos(false)}
+                    style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                  />
+                  <div
+                    id="automacoes-filtros-popover"
+                    className="flow-filtros-pop"
+                    role="dialog"
+                    aria-label="Filtros de automações"
+                    ref={filtrosPopoverRef}
+                  >
+                    <fieldset className="flow-filtros-secao">
+                      <legend>Status</legend>
+                      <div className="filters-row">
+                        {STATUS_FILTROS.map((s) => (
+                          <button
+                            type="button"
+                            key={s.valor}
+                            className={`fchip${statusFiltro.has(s.valor) ? " active" : ""}`}
+                            aria-pressed={statusFiltro.has(s.valor)}
+                            onClick={() => alternarNoSet(setStatusFiltro, s.valor)}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </fieldset>
+
+                    {funis.length > 1 ? (
+                      <fieldset className="flow-filtros-secao">
+                        <legend>Funil</legend>
+                        {funis.length > LIMITE_FUNIS_PARA_BUSCA ? (
+                          <input
+                            className="input"
+                            style={{ width: "100%", marginBottom: 8 }}
+                            type="text"
+                            placeholder="Buscar funil…"
+                            aria-label="Buscar funil"
+                            value={buscaFunilPopover}
+                            onChange={(e) => setBuscaFunilPopover(e.target.value)}
+                          />
+                        ) : null}
+                        <div className="filters-row">
+                          {funisFiltradosPopover.map((f) => (
+                            <button
+                              type="button"
+                              key={f.id}
+                              className={`fchip${funilFiltroIds.has(f.id) ? " active" : ""}`}
+                              aria-pressed={funilFiltroIds.has(f.id)}
+                              onClick={() => alternarNoSet(setFunilFiltroIds, f.id)}
+                            >
+                              {f.nome}
+                            </button>
+                          ))}
+                        </div>
+                      </fieldset>
+                    ) : null}
+
+                    <fieldset className="flow-filtros-secao">
+                      <legend>Etapa</legend>
+                      {funisParaEtapas.map((f) => (
+                        <div key={f.id}>
+                          {funisParaEtapas.length > 1 ? (
+                            <p className="flow-filtros-sub">{f.nome}</p>
+                          ) : null}
+                          <div className="filters-row">
+                            {f.colunas.map((c) => (
+                              <button
+                                type="button"
+                                key={c.id}
+                                className={`fchip${etapaFiltroIds.has(c.id) ? " active" : ""}`}
+                                aria-pressed={etapaFiltroIds.has(c.id)}
+                                onClick={() => alternarNoSet(setEtapaFiltroIds, c.id)}
+                              >
+                                {c.titulo}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </fieldset>
+
+                    <fieldset className="flow-filtros-secao">
+                      <legend>Gatilho</legend>
+                      <div className="filters-row">
+                        <button
+                          type="button"
+                          className={`fchip${gatilhoFiltro.has("__comentario__") ? " active" : ""}`}
+                          aria-pressed={gatilhoFiltro.has("__comentario__")}
+                          onClick={() => alternarNoSet<string>(setGatilhoFiltro, "__comentario__")}
+                        >
+                          Comentário (Insta/TikTok)
+                        </button>
+                        {gatilhosDisponiveis
+                          .filter((g) => !TIPOS_GATILHO_COMENTARIO.includes(g.tipo))
+                          .map((g) => (
+                            <button
+                              type="button"
+                              key={g.tipo}
+                              className={`fchip${gatilhoFiltro.has(g.tipo) ? " active" : ""}`}
+                              aria-pressed={gatilhoFiltro.has(g.tipo)}
+                              onClick={() => alternarNoSet<string>(setGatilhoFiltro, g.tipo)}
+                            >
+                              {g.label}
+                            </button>
+                          ))}
+                      </div>
+                    </fieldset>
+
+                    {canaisDisponiveis.length > 0 ? (
+                      <fieldset className="flow-filtros-secao">
+                        <legend>Canal</legend>
+                        <div className="filters-row">
+                          {canaisDisponiveis.map((c) => (
+                            <button
+                              type="button"
+                              key={c}
+                              className={`fchip${canalFiltro.has(c) ? " active" : ""}`}
+                              aria-pressed={canalFiltro.has(c)}
+                              onClick={() => alternarNoSet(setCanalFiltro, c)}
+                            >
+                              {CANAL_LABELS[c]}
+                            </button>
+                          ))}
+                        </div>
+                      </fieldset>
+                    ) : null}
+
+                    <div className="flow-filtros-foot">
+                      <label className="flow-filtros-toggle">
+                        <input
+                          type="checkbox"
+                          checked={manterFiltrosAbertos}
+                          onChange={(e) => setManterFiltrosAbertos(e.target.checked)}
+                        />
+                        Manter filtros abertos
+                      </label>
+                      <span className="hint">{totalFiltrosAtivos} selecionados</span>
+                    </div>
+                    <div className="flow-filtros-foot">
+                      <button type="button" className="btn ghost" onClick={limparFacetsDoPopover}>
+                        Limpar filtros
+                      </button>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          aria-label="Fechar filtros"
+                          onClick={() => setFiltrosAbertos(false)}
+                        >
+                          ✕ Fechar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn primary"
+                          onClick={fecharPopoverSeNaoQuiserManter}
+                        >
+                          Aplicar filtros
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : null}
             </div>
-            {funilFiltroSelecionado ? (
+
+            <label className="automacoes-ordenar">
+              <span className="hint" style={{ marginRight: 4 }}>
+                Ordenar:
+              </span>
               <select
-                className="input"
-                style={{ width: "100%", marginTop: 8, cursor: "pointer" }}
-                value={etapaFiltroId}
-                onChange={(e) => setEtapaFiltroId(e.target.value)}
+                aria-label="Ordenar automações"
+                value={ordenacao}
+                onChange={(e) => setOrdenacao(e.target.value as Ordenacao)}
               >
-                <option value="">Todas as etapas</option>
-                {funilFiltroSelecionado.colunas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.titulo}
+                {ORDENACOES.map((o) => (
+                  <option key={o.valor} value={o.valor}>
+                    {o.label}
                   </option>
                 ))}
               </select>
+            </label>
+
+            {temAlgumFiltroOuBusca ? (
+              <button type="button" className="automacoes-limpar" onClick={limparBuscaEFiltros}>
+                Limpar
+              </button>
             ) : null}
+
+            <span className="automacoes-count">
+              {fluxosFiltrados.length} {fluxosFiltrados.length === 1 ? "resultado" : "resultados"}
+            </span>
           </div>
 
-          <div className="field">
-            <label>Gatilho</label>
-            <div className="filters-row">
-              <button
-                type="button"
-                className={`fchip${gatilhoFiltro === "" ? " active" : ""}`}
-                aria-pressed={gatilhoFiltro === ""}
-                onClick={() => setGatilhoFiltro("")}
-              >
-                Qualquer gatilho
-              </button>
-              <button
-                type="button"
-                className={`fchip${gatilhoFiltro === "__comentario__" ? " active" : ""}`}
-                aria-pressed={gatilhoFiltro === "__comentario__"}
-                onClick={() => setGatilhoFiltro("__comentario__")}
-              >
-                Comentário (Insta/TikTok)
-              </button>
-              {gatilhosDisponiveis
-                .filter((g) => !TIPOS_GATILHO_COMENTARIO.includes(g.tipo))
-                .map((g) => (
-                  <button
-                    type="button"
-                    key={g.tipo}
-                    className={`fchip${gatilhoFiltro === g.tipo ? " active" : ""}`}
-                    aria-pressed={gatilhoFiltro === g.tipo}
-                    onClick={() => setGatilhoFiltro(g.tipo)}
-                  >
-                    {g.label}
-                  </button>
-                ))}
-            </div>
-          </div>
-
-          <div className="field">
-            <label>Ordenar por</label>
-            <select
-              className="input"
-              style={{ cursor: "pointer" }}
-              value={ordenacao}
-              onChange={(e) => setOrdenacao(e.target.value as Ordenacao)}
+          <div className="automacoes-bar-right">
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => router.push("/automacoes/editor/novo")}
             >
-              {ORDENACOES.map((o) => (
-                <option key={o.valor} value={o.valor}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+              + Nova automação
+            </button>
           </div>
-        </section>
+        </div>
+
+        {chipsAtivos.length > 0 ? (
+          <div className="automacoes-chips-row">
+            {chipsAtivos.map((chip) => (
+              <button
+                type="button"
+                key={chip.chave}
+                className="automacoes-remchip"
+                onClick={chip.onRemove}
+                aria-label={`Remover filtro ${chip.label}`}
+              >
+                {chip.label} ×
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         <div className="card">
           {fluxosFiltrados.length === 0 ? (
             <p className="hint" style={{ padding: 17 }}>
-              Nenhuma automação encontrada com esses filtros.
+              {busca.trim()
+                ? "Nenhuma automação encontrada para essa busca."
+                : totalFiltrosAtivos > 0
+                ? "Nenhuma automação encontrada com esses filtros."
+                : "Nenhuma automação encontrada."}
             </p>
           ) : (
             fluxosFiltrados.map((fluxo) => {
@@ -476,6 +894,29 @@ function AutomacoesPageInner() {
                               router.push(`/automacoes/editor/${fluxo.id}`);
                             }}
                           >
+                            <span className="n">Testar</span>
+                            <span className="r">Abre o construtor — o simulador de verdade fica lá</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ width: "100%", textAlign: "left" }}
+                            onClick={() => verExecucoes(fluxo)}
+                          >
+                            <span className="n">Ver execuções</span>
+                            <span className="r">
+                              Sem tela dedicada ainda — abre o construtor (registra no console por ora)
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ width: "100%", textAlign: "left" }}
+                            onClick={() => {
+                              setMenuAbertoId(null);
+                              router.push(`/automacoes/editor/${fluxo.id}`);
+                            }}
+                          >
                             <span className="n">Histórico</span>
                             <span className="r">Abre o construtor — o histórico de versões fica lá</span>
                           </button>
@@ -499,21 +940,33 @@ function AutomacoesPageInner() {
                           >
                             <span className="n">Renomear</span>
                           </button>
-                          <button
-                            type="button"
-                            className="dropdown-item"
-                            style={{ width: "100%", textAlign: "left" }}
-                            disabled={!fluxo.ativa}
-                            onClick={() => {
-                              arquivarFluxo(fluxo.id);
-                              setMenuAbertoId(null);
-                            }}
-                          >
-                            <span className="n">Arquivar</span>
-                            <span className="r">
-                              {fluxo.ativa ? "Pausa a automação sem apagar nada" : "Já está pausada"}
-                            </span>
-                          </button>
+                          {fluxo.arquivada ? (
+                            <button
+                              type="button"
+                              className="dropdown-item"
+                              style={{ width: "100%", textAlign: "left" }}
+                              onClick={() => {
+                                desarquivarFluxo(fluxo.id);
+                                setMenuAbertoId(null);
+                              }}
+                            >
+                              <span className="n">Desarquivar</span>
+                              <span className="r">Volta a aparecer na lista principal</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="dropdown-item"
+                              style={{ width: "100%", textAlign: "left" }}
+                              onClick={() => {
+                                arquivarFluxo(fluxo.id);
+                                setMenuAbertoId(null);
+                              }}
+                            >
+                              <span className="n">Arquivar</span>
+                              <span className="r">Pausa e tira a automação da lista principal</span>
+                            </button>
+                          )}
                           <div className="dropdown-sep" />
                           <button
                             type="button"
