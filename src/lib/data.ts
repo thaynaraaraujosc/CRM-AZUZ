@@ -170,6 +170,18 @@ export type Contato = {
   whatsapp?: string;
   nascimento?: string;
   endereco?: string;
+  /** Campos abaixo alimentam o seletor de contatos e a aba "Contato" do painel — front-end apenas, prontos pro back-end preencher de verdade. */
+  sobrenome?: string;
+  empresa?: string;
+  cargo?: string;
+  telefoneFixo?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  canalPreferido?: Canal;
+  melhorHorario?: string;
+  etiquetas?: string[];
+  favorito?: boolean;
 };
 
 export const contatos: Contato[] = [
@@ -185,6 +197,13 @@ export const contatos: Contato[] = [
     whatsapp: "(62) 9XXXX-XXXX",
     nascimento: "14/03/1985",
     endereco: "Goiânia, GO",
+    sobrenome: "Aurélio",
+    cidade: "Goiânia",
+    estado: "GO",
+    pais: "Brasil",
+    canalPreferido: "WhatsApp",
+    etiquetas: ["Quente", "Diabetes"],
+    favorito: true,
   },
   {
     initials: "BN",
@@ -194,6 +213,9 @@ export const contatos: Contato[] = [
     responsavel: "Bruno Salles",
     ultima: "Há 21 min",
     valor: "R$ 1.240",
+    empresa: "Studio Beatriz Estética",
+    cargo: "Proprietária",
+    etiquetas: ["Empresa"],
   },
   {
     initials: "CD",
@@ -203,6 +225,8 @@ export const contatos: Contato[] = [
     responsavel: "Ana Ferreira",
     ultima: "Há 14 min",
     valor: "—",
+    etiquetas: ["Novo lead"],
+    favorito: true,
   },
   {
     initials: "FL",

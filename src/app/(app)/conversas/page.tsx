@@ -15,6 +15,7 @@ import {
   classeOrigem,
   conversas,
   motivosPerda,
+  type Canal,
   type ConvMensagem,
   type Funil,
   type NegocioCard,
@@ -22,6 +23,8 @@ import {
 } from "@/lib/data";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useContatos } from "@/lib/contatos-context";
+import type { EventoTimeline } from "@/lib/timeline";
+import { Timeline } from "@/components/timeline";
 import {
   useBibliotecaDocumentos,
   CATEGORIAS_DOCUMENTO,
@@ -386,7 +389,13 @@ function useFecharAoClicarFora(
 function ConversasPageInner() {
   const searchParams = useSearchParams();
   const { funis, atribuirContatoAoFunil } = useFunis();
-  const { contatos, salvarDadosContato, atribuirAtendente } = useContatos();
+  const {
+    contatos,
+    salvarDadosContato,
+    atribuirAtendente,
+    adicionarEtiqueta,
+    removerEtiqueta,
+  } = useContatos();
   const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
   const { simularNovaMensagem, notificacoesAtivas, alternarNotificacoes } =
     useNotificacoes();
@@ -418,6 +427,22 @@ function ConversasPageInner() {
     return (encontrada ?? conversas[0]).id;
   });
   const [infoAberto, setInfoAberto] = useState(false);
+  const [abaInfo, setAbaInfo] = useState<
+    "resumo" | "contato" | "negociacao" | "atividades" | "historico"
+  >("resumo");
+  const [resultadoMenuAberto, setResultadoMenuAberto] = useState(false);
+  const [resultadoMenuRect, setResultadoMenuRect] = useState<DOMRect | null>(null);
+  const [formResultado, setFormResultado] = useState<
+    "venda" | "perda" | "adiada" | "cancelada" | null
+  >(null);
+  const [vendaProduto, setVendaProduto] = useState("");
+  const [vendaValor, setVendaValor] = useState("");
+  const [vendaFormaPagamento, setVendaFormaPagamento] = useState("Pix");
+  const [vendaObservacao, setVendaObservacao] = useState("");
+  const [adiadaData, setAdiadaData] = useState("");
+  const [adiadaObservacao, setAdiadaObservacao] = useState("");
+  const [canceladaMotivo, setCanceladaMotivo] = useState("");
+  const [registrandoResultado, setRegistrandoResultado] = useState(false);
   const [buscaConversa, setBuscaConversa] = useState("");
   const [filtroConversa, setFiltroConversa] = useState<FiltroConversa>("tudo");
   const [lidas, setLidas] = useState<Set<string>>(() => new Set());
@@ -581,6 +606,28 @@ function ConversasPageInner() {
   const [enderecoContato, setEnderecoContato] = useState(
     contatoDaConversa?.endereco ?? "",
   );
+  const [sobrenomeContato, setSobrenomeContato] = useState(
+    contatoDaConversa?.sobrenome ?? "",
+  );
+  const [empresaContato, setEmpresaContato] = useState(
+    contatoDaConversa?.empresa ?? "",
+  );
+  const [cargoContato, setCargoContato] = useState(contatoDaConversa?.cargo ?? "");
+  const [cidadeContato, setCidadeContato] = useState(contatoDaConversa?.cidade ?? "");
+  const [estadoContato, setEstadoContato] = useState(contatoDaConversa?.estado ?? "");
+  const [paisContato, setPaisContato] = useState(contatoDaConversa?.pais ?? "");
+  const [canalPreferidoContato, setCanalPreferidoContato] = useState(
+    contatoDaConversa?.canalPreferido ?? aberta.canal,
+  );
+  const [melhorHorarioContato, setMelhorHorarioContato] = useState(
+    contatoDaConversa?.melhorHorario ?? "",
+  );
+  const [editandoContato, setEditandoContato] = useState(false);
+  const [statusSalvarContato, setStatusSalvarContato] = useState<
+    "ocioso" | "salvando" | "sucesso" | "erro"
+  >("ocioso");
+  const [novaEtiquetaTexto, setNovaEtiquetaTexto] = useState("");
+  const [trocandoResponsavel, setTrocandoResponsavel] = useState(false);
   const [abertaIdAnterior, setAbertaIdAnterior] = useState(aberta.id);
   const [mensagensCurtidas, setMensagensCurtidas] = useState<Set<number>>(
     () => new Set(),
@@ -781,7 +828,7 @@ function ConversasPageInner() {
     return () => clearInterval(intervalo);
   }, [gravandoAudio]);
   const [resultadoPorContato, setResultadoPorContato] = useState<
-    Record<string, "venda" | "perda">
+    Record<string, "venda" | "perda" | "andamento" | "adiada" | "cancelada">
   >({});
   const [motivoPerdaPorContato, setMotivoPerdaPorContato] = useState<
     Record<string, string>
@@ -801,11 +848,24 @@ function ConversasPageInner() {
     setWhatsappContato(contatoDaConversa?.whatsapp ?? "");
     setNascimentoContato(contatoDaConversa?.nascimento ?? "");
     setEnderecoContato(contatoDaConversa?.endereco ?? "");
+    setSobrenomeContato(contatoDaConversa?.sobrenome ?? "");
+    setEmpresaContato(contatoDaConversa?.empresa ?? "");
+    setCargoContato(contatoDaConversa?.cargo ?? "");
+    setCidadeContato(contatoDaConversa?.cidade ?? "");
+    setEstadoContato(contatoDaConversa?.estado ?? "");
+    setPaisContato(contatoDaConversa?.pais ?? "");
+    setCanalPreferidoContato(contatoDaConversa?.canalPreferido ?? aberta.canal);
+    setMelhorHorarioContato(contatoDaConversa?.melhorHorario ?? "");
+    setEditandoContato(false);
+    setStatusSalvarContato("ocioso");
+    setTrocandoResponsavel(false);
     setMensagensCurtidas(new Set());
     setCoracaoAnimando(null);
     setTarefaAberta(false);
     setEmailModalAberto(false);
     setNotaTexto("");
+    setResultadoMenuAberto(false);
+    setFormResultado(null);
   }
   if (!historicoPorContato[aberta.nome]) {
     setHistoricoPorContato((prev) => ({
@@ -821,6 +881,35 @@ function ConversasPageInner() {
     ...motivosPerda.map((m) => m.motivo),
     ...motivosPerdaCustom,
   ];
+
+  /** Mapeia dados já existentes (histórico + e-mails) pro modelo único de linha do tempo (seção 17 do pedido). */
+  const eventosTimelineContato: EventoTimeline[] = [
+    ...historico.map(
+      (item): EventoTimeline => ({
+        id: item.id,
+        categoria: item.tipo === "anotacao" ? "anotacao" : item.tipo === "email" ? "sistema" : "sistema",
+        tipo: item.tipo,
+        titulo:
+          item.tipo === "anotacao"
+            ? "Anotação"
+            : item.tipo === "email"
+              ? "E-mail"
+              : "Atualização",
+        descricao: item.texto,
+        quando: item.quando,
+      }),
+    ),
+    ...emailsDaConversa.map(
+      (email): EventoTimeline => ({
+        id: `timeline-email-${email.id}`,
+        categoria: "sistema",
+        tipo: "email",
+        titulo: `E-mail · ${email.assunto}`,
+        descricao: email.aberto ? `Lido às ${email.abertoEm}` : "Enviado, ainda não lido",
+        quando: "—",
+      }),
+    ),
+  ].slice().reverse();
 
   function adicionarHistorico(tipo: HistoricoItem["tipo"], texto: string) {
     setHistoricoPorContato((prev) => ({
@@ -1591,11 +1680,47 @@ function ConversasPageInner() {
   const sugerirAutomacoes = mensagemTexto.startsWith("//");
   const sugerirRespostas = !sugerirAutomacoes && mensagemTexto.startsWith("/");
 
-  function marcarVenda() {
+  /** Botão único "Registrar resultado" — abre o menu com as 5 opções (seção 14 do pedido). */
+  function abrirMenuResultado(rect: DOMRect) {
+    setResultadoMenuRect(rect);
+    setResultadoMenuAberto(true);
+  }
+
+  function escolherResultado(opcao: "venda" | "perda" | "andamento" | "adiada" | "cancelada") {
+    setResultadoMenuAberto(false);
+    if (opcao === "andamento") {
+      setResultadoPorContato((prev) => {
+        const next = { ...prev };
+        delete next[aberta.nome];
+        return next;
+      });
+      adicionarHistorico("sistema", "Negociação voltou a ficar em andamento");
+      avisarAutomacao(`${aberta.nome} marcado como em andamento`);
+      return;
+    }
+    setFormResultado(opcao);
+    setVendaProduto("");
+    setVendaValor("");
+    setVendaFormaPagamento("Pix");
+    setVendaObservacao("");
+    setAdiadaData("");
+    setAdiadaObservacao("");
+    setCanceladaMotivo("");
+  }
+
+  async function confirmarVenda() {
+    setRegistrandoResultado(true);
+    // Camada de serviço provisória — hoje só grava no estado do front-end;
+    // no futuro chama a API de negociações e recebe o id real de volta.
+    await new Promise((resolve) => setTimeout(resolve, 500));
     setResultadoPorContato((prev) => ({ ...prev, [aberta.nome]: "venda" }));
-    setEscolhendoMotivo(false);
-    adicionarHistorico("sistema", "Negociação marcada como venda ✅");
+    adicionarHistorico(
+      "sistema",
+      `Venda concluída ✅ · ${vendaProduto || "produto/serviço não informado"} · ${vendaValor || "valor não informado"} · ${vendaFormaPagamento}${vendaObservacao ? ` · ${vendaObservacao}` : ""}`,
+    );
     avisarAutomacao(`${aberta.nome} marcado como venda`);
+    setRegistrandoResultado(false);
+    setFormResultado(null);
   }
 
   function marcarPerda(motivo: string) {
@@ -1604,6 +1729,7 @@ function ConversasPageInner() {
     setEscolhendoMotivo(false);
     adicionarHistorico("sistema", `Negociação perdida · motivo: ${motivo}`);
     avisarAutomacao(`${aberta.nome} marcado como perda (${motivo})`);
+    setFormResultado(null);
   }
 
   function adicionarMotivoCustom() {
@@ -1611,6 +1737,26 @@ function ConversasPageInner() {
     if (!texto) return;
     setMotivosPerdaCustom((prev) => [...prev, texto]);
     setNovoMotivoTexto("");
+  }
+
+  function confirmarAdiada() {
+    setResultadoPorContato((prev) => ({ ...prev, [aberta.nome]: "adiada" }));
+    adicionarHistorico(
+      "sistema",
+      `Negociação adiada${adiadaData ? ` pra ${adiadaData}` : ""}${adiadaObservacao ? ` · ${adiadaObservacao}` : ""}`,
+    );
+    avisarAutomacao(`${aberta.nome} marcado como adiada`);
+    setFormResultado(null);
+  }
+
+  function confirmarCancelada() {
+    setResultadoPorContato((prev) => ({ ...prev, [aberta.nome]: "cancelada" }));
+    adicionarHistorico(
+      "sistema",
+      `Negociação cancelada${canceladaMotivo ? ` · motivo: ${canceladaMotivo}` : ""}`,
+    );
+    avisarAutomacao(`${aberta.nome} marcado como cancelada`);
+    setFormResultado(null);
   }
 
   function abrirEmailModal() {
@@ -1774,13 +1920,77 @@ function ConversasPageInner() {
     setEtapaSelecionada(etapaPadraoPara(novoFunilId));
   }
 
-  function salvarDados() {
-    salvarDadosContato(aberta.nome, {
-      email: emailContato.trim() || undefined,
-      whatsapp: whatsappContato.trim() || undefined,
-      nascimento: nascimentoContato.trim() || undefined,
-      endereco: enderecoContato.trim() || undefined,
-    });
+  function emailValido(valor: string) {
+    return valor.trim() === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor.trim());
+  }
+
+  async function salvarDados() {
+    if (!emailValido(emailContato)) {
+      setStatusSalvarContato("erro");
+      return;
+    }
+    setStatusSalvarContato("salvando");
+    try {
+      // Camada de serviço provisória — troca por chamada real de API quando o back-end existir.
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      salvarDadosContato(aberta.nome, {
+        email: emailContato.trim() || undefined,
+        whatsapp: whatsappContato.trim() || undefined,
+        nascimento: nascimentoContato.trim() || undefined,
+        endereco: enderecoContato.trim() || undefined,
+        sobrenome: sobrenomeContato.trim() || undefined,
+        empresa: empresaContato.trim() || undefined,
+        cargo: cargoContato.trim() || undefined,
+        cidade: cidadeContato.trim() || undefined,
+        estado: estadoContato.trim() || undefined,
+        pais: paisContato.trim() || undefined,
+        canalPreferido: canalPreferidoContato,
+        melhorHorario: melhorHorarioContato.trim() || undefined,
+      });
+      adicionarHistorico("sistema", "Dados do contato atualizados");
+      setStatusSalvarContato("sucesso");
+      setEditandoContato(false);
+      setTimeout(() => setStatusSalvarContato("ocioso"), 2500);
+    } catch {
+      setStatusSalvarContato("erro");
+    }
+  }
+
+  function cancelarEdicaoContato() {
+    setEmailContato(contatoDaConversa?.email ?? "");
+    setWhatsappContato(contatoDaConversa?.whatsapp ?? "");
+    setNascimentoContato(contatoDaConversa?.nascimento ?? "");
+    setEnderecoContato(contatoDaConversa?.endereco ?? "");
+    setSobrenomeContato(contatoDaConversa?.sobrenome ?? "");
+    setEmpresaContato(contatoDaConversa?.empresa ?? "");
+    setCargoContato(contatoDaConversa?.cargo ?? "");
+    setCidadeContato(contatoDaConversa?.cidade ?? "");
+    setEstadoContato(contatoDaConversa?.estado ?? "");
+    setPaisContato(contatoDaConversa?.pais ?? "");
+    setCanalPreferidoContato(contatoDaConversa?.canalPreferido ?? aberta.canal);
+    setMelhorHorarioContato(contatoDaConversa?.melhorHorario ?? "");
+    setStatusSalvarContato("ocioso");
+    setEditandoContato(false);
+  }
+
+  function trocarResponsavelRapido(novoResponsavel: string) {
+    atribuirAtendente(aberta.nome, novoResponsavel);
+    adicionarHistorico("sistema", `Responsável alterado pra ${novoResponsavel}`);
+    avisarAutomacao(`${aberta.nome} agora é atendido por ${novoResponsavel}`);
+    setTrocandoResponsavel(false);
+  }
+
+  function adicionarEtiquetaRapida() {
+    const etiqueta = novaEtiquetaTexto.trim();
+    if (!etiqueta) return;
+    adicionarEtiqueta(aberta.nome, etiqueta);
+    adicionarHistorico("sistema", `Etiqueta "${etiqueta}" adicionada`);
+    setNovaEtiquetaTexto("");
+  }
+
+  function removerEtiquetaRapida(etiqueta: string) {
+    removerEtiqueta(aberta.nome, etiqueta);
+    adicionarHistorico("sistema", `Etiqueta "${etiqueta}" removida`);
   }
 
   function salvarAtribuicao() {
@@ -3990,317 +4200,919 @@ function ConversasPageInner() {
           title="Arraste pra redimensionar"
         />
         <aside className="wa-info" style={{ width: infoWidth }}>
+          <div className="wa-info-tabs" role="tablist" aria-label="Painel do contato">
+            {(
+              [
+                { id: "resumo", label: "Resumo" },
+                { id: "contato", label: "Contato" },
+                { id: "negociacao", label: "Negociação" },
+                { id: "atividades", label: "Atividades" },
+                { id: "historico", label: "Histórico" },
+              ] as const
+            ).map((t) => (
+              <button
+                type="button"
+                key={t.id}
+                role="tab"
+                aria-selected={abaInfo === t.id}
+                className={`wa-info-tab${abaInfo === t.id ? " on" : ""}`}
+                onClick={() => setAbaInfo(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
         <div className="wa-info-scroll">
-          <div className="panel-h">
-            <h4>Atribuir ao funil</h4>
-          </div>
-          <div className="field">
-            <label>Funil</label>
-            <select
-              className="input"
-              style={{ width: "100%", cursor: "pointer" }}
-              value={funilSelecionado?.id}
-              onChange={(e) => trocarFunilSelecionado(e.target.value)}
-            >
-              {funis.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-          {funilSelecionado ? (
-            <RadioList
-              key={`funil-${aberta.id}-${funilSelecionado.id}`}
-              options={funilSelecionado.colunas.map((coluna) => ({
-                nome: coluna.titulo,
-                descricao: `${coluna.total} contatos nessa etapa`,
-              }))}
-              initial={etapaSelecionada}
-              onChange={setEtapaSelecionada}
-            />
-          ) : null}
-          <div className="section-foot">
-            <button
-              type="button"
-              className="btn primary block"
-              onClick={salvarAtribuicao}
-            >
-              Salvar atribuição ao funil
-            </button>
-          </div>
+          {abaInfo === "resumo" ? (
+            <>
+              <div className="wa-resumo-card">
+                <span className="avatar wa-resumo-avatar">{aberta.initials}</span>
+                <p className="wa-resumo-nome">{aberta.nome}</p>
+                {empresaContato ? <p className="wa-resumo-empresa">{empresaContato}</p> : null}
+                <div className="wa-resumo-grid">
+                  <span className="wa-resumo-label">Telefone</span>
+                  <span className="wa-resumo-valor">{whatsappContato || aberta.contato}</span>
+                  <span className="wa-resumo-label">E-mail</span>
+                  <span className="wa-resumo-valor">{emailContato || "—"}</span>
+                  <span className="wa-resumo-label">Responsável</span>
+                  <span className="wa-resumo-valor">{aberta.atendenteSelecionado}</span>
+                  <span className="wa-resumo-label">Funil · Etapa</span>
+                  <span className="wa-resumo-valor">
+                    {funilSelecionado ? `${funilSelecionado.nome} · ${etapaSelecionada}` : "—"}
+                  </span>
+                  <span className="wa-resumo-label">Origem</span>
+                  <span className="wa-resumo-valor">{aberta.origem}</span>
+                  <span className="wa-resumo-label">Última interação</span>
+                  <span className="wa-resumo-valor">{aberta.tempo}</span>
+                  <span className="wa-resumo-label">Situação</span>
+                  <span className="wa-resumo-valor">{aberta.status}</span>
+                  <span className="wa-resumo-label">Próxima atividade</span>
+                  <span className="wa-resumo-valor">
+                    {tarefaAberta || tarefa.oQueFazer ? `${tarefa.oQueFazer} · ${tarefa.data}` : "Nenhuma agendada"}
+                  </span>
+                </div>
+                {(contatoDaConversa?.etiquetas ?? []).length > 0 ? (
+                  <div className="wa-resumo-etiquetas">
+                    {(contatoDaConversa?.etiquetas ?? []).map((et) => (
+                      <span className="tag" key={et}>
+                        {et}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
 
-          <div className="panel-h divided">
-            <h4>Dados do contato</h4>
-          </div>
-          <div className="field">
-            <label>Nome</label>
-            <div className="input">{aberta.nome}</div>
-          </div>
-          <div className="field">
-            <label>E-mail</label>
-            <input
-              className="input"
-              style={{ width: "100%" }}
-              type="email"
-              value={emailContato}
-              onChange={(e) => setEmailContato(e.target.value)}
-              placeholder="Peça e preencha aqui"
-            />
-          </div>
-          <div className="field">
-            <label>Número do WhatsApp</label>
-            <input
-              className="input"
-              style={{ width: "100%" }}
-              type="text"
-              value={whatsappContato}
-              onChange={(e) => setWhatsappContato(e.target.value)}
-              placeholder="Ex.: (62) 9XXXX-XXXX"
-            />
-          </div>
-          <div className="field">
-            <label>Data de aniversário</label>
-            <input
-              className="input"
-              style={{ width: "100%" }}
-              type="text"
-              value={nascimentoContato}
-              onChange={(e) => setNascimentoContato(e.target.value)}
-              placeholder="Ex.: 14/03/1990"
-            />
-          </div>
-          <div className="field">
-            <label>Endereço</label>
-            <input
-              className="input"
-              style={{ width: "100%" }}
-              type="text"
-              value={enderecoContato}
-              onChange={(e) => setEnderecoContato(e.target.value)}
-              placeholder="Onde ele mora"
-            />
-          </div>
-          <div className="section-foot">
-            <button
-              type="button"
-              className="btn ghost block"
-              onClick={salvarDados}
-            >
-              Salvar dados do contato
-            </button>
-          </div>
-
-          <div className="panel-h divided">
-            <h4>Resultado da negociação</h4>
-          </div>
-          <div style={{ padding: "0 17px 14px" }}>
-            {resultadoAtual === "venda" ? (
-              <p className="wa-resultado-badge wa-resultado-venda">
-                ✅ Marcada como venda
-              </p>
-            ) : resultadoAtual === "perda" ? (
-              <p className="wa-resultado-badge wa-resultado-perda">
-                ❌ Perdida · {motivoPerdaPorContato[aberta.nome]}
-              </p>
-            ) : (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <div className="panel-h divided">
+                <h4>Ações rápidas</h4>
+              </div>
+              <div className="wa-acoes-rapidas">
                 <button
                   type="button"
-                  className="btn primary"
-                  style={{ flex: "1 1 130px" }}
-                  onClick={marcarVenda}
+                  className="wa-acao-rapida"
+                  onClick={() => {
+                    setAbaInfo("atividades");
+                    setTarefaAberta(true);
+                  }}
                 >
-                  ✅ Houve venda
+                  ✅ Criar tarefa
                 </button>
                 <button
                   type="button"
-                  className="btn ghost"
-                  style={{ flex: "1 1 130px" }}
-                  onClick={() => setEscolhendoMotivo((v) => !v)}
+                  className="wa-acao-rapida"
+                  onClick={() => setAbaInfo("atividades")}
                 >
-                  ❌ Não houve venda
+                  🗓 Registrar atividade
+                </button>
+                <button
+                  type="button"
+                  className="wa-acao-rapida"
+                  onClick={() => {
+                    setMensagemTexto("//");
+                    mensagemInputRef.current?.focus();
+                  }}
+                >
+                  ⚡ Executar automação
+                </button>
+                <button
+                  type="button"
+                  className="wa-acao-rapida"
+                  onClick={() => setAbaInfo("contato")}
+                >
+                  🏷 Adicionar etiqueta
+                </button>
+                <button
+                  type="button"
+                  className="wa-acao-rapida"
+                  onClick={(e) => {
+                    setTrocandoResponsavel((v) => !v);
+                    e.currentTarget.scrollIntoView({ block: "nearest" });
+                  }}
+                >
+                  👤 Trocar responsável
+                </button>
+                <button
+                  type="button"
+                  className="wa-acao-rapida"
+                  onClick={(e) => abrirMenuResultado(e.currentTarget.getBoundingClientRect())}
+                >
+                  🎯 Registrar resultado
                 </button>
               </div>
-            )}
 
-            {escolhendoMotivo && !resultadoAtual ? (
-              <div className="wa-motivo-picker">
-                {motivosDisponiveis.map((m) => (
+              {trocandoResponsavel ? (
+                <div className="field">
+                  <label>Novo responsável</label>
+                  <select
+                    className="input"
+                    style={{ width: "100%", cursor: "pointer" }}
+                    defaultValue=""
+                    onChange={(e) => {
+                      if (e.target.value) trocarResponsavelRapido(e.target.value);
+                    }}
+                  >
+                    <option value="" disabled>
+                      Escolha um atendente
+                    </option>
+                    {atendentesDisponiveis.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+
+              {resultadoAtual ? (
+                <p
+                  className={`wa-resultado-badge wa-resultado-${resultadoAtual}`}
+                  style={{ margin: "0 17px 14px" }}
+                >
+                  {resultadoAtual === "venda"
+                    ? "✅ Venda concluída"
+                    : resultadoAtual === "perda"
+                      ? `❌ Perdida · ${motivoPerdaPorContato[aberta.nome] ?? ""}`
+                      : resultadoAtual === "adiada"
+                        ? "⏳ Adiada"
+                        : "🚫 Cancelada"}
+                </p>
+              ) : null}
+            </>
+          ) : null}
+
+          {abaInfo === "contato" ? (
+            <>
+              <div className="panel-h">
+                <h4>Dados do contato</h4>
+                {!editandoContato ? (
                   <button
                     type="button"
-                    key={m}
-                    className="dropdown-item"
-                    style={{ width: "100%", textAlign: "left" }}
-                    onClick={() => marcarPerda(m)}
+                    className="link"
+                    onClick={() => setEditandoContato(true)}
                   >
-                    <span className="n">{m}</span>
+                    Editar
                   </button>
-                ))}
+                ) : null}
+              </div>
+
+              <div className="field">
+                <label>Nome</label>
+                <div className="input">{aberta.nome}</div>
+              </div>
+              <div className="field">
+                <label>Sobrenome</label>
+                {editandoContato ? (
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    value={sobrenomeContato}
+                    onChange={(e) => setSobrenomeContato(e.target.value)}
+                    placeholder="Sobrenome do contato"
+                  />
+                ) : (
+                  <div className="input">{sobrenomeContato || "Não informado"}</div>
+                )}
+              </div>
+              <div className="field">
+                <label>E-mail</label>
+                {editandoContato ? (
+                  <input
+                    className={`input${!emailValido(emailContato) ? " wa-input-invalido" : ""}`}
+                    style={{ width: "100%" }}
+                    type="email"
+                    value={emailContato}
+                    onChange={(e) => setEmailContato(e.target.value)}
+                    placeholder="nome@empresa.com"
+                  />
+                ) : (
+                  <div className="input">{emailContato || "Não informado"}</div>
+                )}
+                {editandoContato && !emailValido(emailContato) ? (
+                  <span className="wa-campo-erro">E-mail inválido</span>
+                ) : null}
+              </div>
+              <div className="field">
+                <label>WhatsApp</label>
+                {editandoContato ? (
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    type="text"
+                    value={whatsappContato}
+                    onChange={(e) => setWhatsappContato(e.target.value)}
+                    placeholder="(00) 90000-0000"
+                  />
+                ) : (
+                  <div className="input">{whatsappContato || "Não informado"}</div>
+                )}
+              </div>
+              <div className="field">
+                <label>Empresa</label>
+                {editandoContato ? (
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    value={empresaContato}
+                    onChange={(e) => setEmpresaContato(e.target.value)}
+                    placeholder="Nome da empresa (opcional pra B2C)"
+                  />
+                ) : (
+                  <div className="input">{empresaContato || "Não informado"}</div>
+                )}
+              </div>
+              <div className="field">
+                <label>Cargo</label>
+                {editandoContato ? (
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    value={cargoContato}
+                    onChange={(e) => setCargoContato(e.target.value)}
+                    placeholder="Cargo na empresa"
+                  />
+                ) : (
+                  <div className="input">{cargoContato || "Não informado"}</div>
+                )}
+              </div>
+              <div className="field">
+                <label>Aniversário</label>
+                {editandoContato ? (
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    value={nascimentoContato}
+                    onChange={(e) => setNascimentoContato(e.target.value)}
+                    placeholder="DD/MM/AAAA"
+                  />
+                ) : (
+                  <div className="input">{nascimentoContato || "Não informado"}</div>
+                )}
+              </div>
+              <div className="field">
+                <label>Endereço</label>
+                {editandoContato ? (
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    value={enderecoContato}
+                    onChange={(e) => setEnderecoContato(e.target.value)}
+                    placeholder="Rua, número, bairro"
+                  />
+                ) : (
+                  <div className="input">{enderecoContato || "Não informado"}</div>
+                )}
+              </div>
+              <div className="field">
+                <label>Cidade / Estado / País</label>
+                {editandoContato ? (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input
+                      className="input"
+                      style={{ flex: 2 }}
+                      value={cidadeContato}
+                      onChange={(e) => setCidadeContato(e.target.value)}
+                      placeholder="Cidade"
+                    />
+                    <input
+                      className="input"
+                      style={{ flex: 1 }}
+                      value={estadoContato}
+                      onChange={(e) => setEstadoContato(e.target.value)}
+                      placeholder="UF"
+                    />
+                    <input
+                      className="input"
+                      style={{ flex: 2 }}
+                      value={paisContato}
+                      onChange={(e) => setPaisContato(e.target.value)}
+                      placeholder="País"
+                    />
+                  </div>
+                ) : (
+                  <div className="input">
+                    {[cidadeContato, estadoContato, paisContato].filter(Boolean).join(" · ") ||
+                      "Não informado"}
+                  </div>
+                )}
+              </div>
+              <div className="field">
+                <label>Canal preferido</label>
+                {editandoContato ? (
+                  <select
+                    className="input"
+                    style={{ width: "100%", cursor: "pointer" }}
+                    value={canalPreferidoContato}
+                    onChange={(e) => setCanalPreferidoContato(e.target.value as Canal)}
+                  >
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="TikTok">TikTok</option>
+                  </select>
+                ) : (
+                  <div className="input">{canalPreferidoContato}</div>
+                )}
+              </div>
+              <div className="field">
+                <label>Melhor horário pra contato</label>
+                {editandoContato ? (
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    value={melhorHorarioContato}
+                    onChange={(e) => setMelhorHorarioContato(e.target.value)}
+                    placeholder="Ex.: Tardes, depois das 14h"
+                  />
+                ) : (
+                  <div className="input">{melhorHorarioContato || "Não informado"}</div>
+                )}
+              </div>
+
+              <div className="field">
+                <label>Etiquetas</label>
+                <div className="wa-etiquetas-lista">
+                  {(contatoDaConversa?.etiquetas ?? []).length === 0 ? (
+                    <span className="hint">Nenhuma etiqueta ainda.</span>
+                  ) : (
+                    (contatoDaConversa?.etiquetas ?? []).map((et) => (
+                      <span className="wa-etiqueta-chip" key={et}>
+                        {et}
+                        <button
+                          type="button"
+                          aria-label={`Remover etiqueta ${et}`}
+                          onClick={() => removerEtiquetaRapida(et)}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))
+                  )}
+                </div>
                 <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
                   <input
                     className="input"
                     style={{ flex: 1 }}
-                    placeholder="Novo motivo…"
-                    value={novoMotivoTexto}
-                    onChange={(e) => setNovoMotivoTexto(e.target.value)}
+                    placeholder="Nova etiqueta…"
+                    value={novaEtiquetaTexto}
+                    onChange={(e) => setNovaEtiquetaTexto(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && adicionarEtiquetaRapida()}
                   />
                   <button
                     type="button"
                     className="btn ghost"
-                    onClick={adicionarMotivoCustom}
-                    disabled={!novoMotivoTexto.trim()}
+                    onClick={adicionarEtiquetaRapida}
+                    disabled={!novaEtiquetaTexto.trim()}
                   >
                     + Adicionar
                   </button>
                 </div>
               </div>
-            ) : null}
-          </div>
 
-          <div className="panel-h divided">
-            <h4>Adicionar</h4>
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "14px 17px" }}>
-            <button
-              type="button"
-              className="btn ghost"
-              style={{ flex: "1 1 140px" }}
-              onClick={() => setTarefaAberta((v) => !v)}
-            >
-              {tarefaAberta ? "Fechar tarefa" : "+ Adicionar tarefa"}
-            </button>
-            <button
-              type="button"
-              className="btn ghost"
-              style={{ flex: "1 1 140px" }}
-              onClick={abrirEmailModal}
-            >
-              ✉ Disparar e-mail
-            </button>
-          </div>
+              {editandoContato ? (
+                <div className="section-foot">
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ flex: 1 }}
+                    onClick={cancelarEdicaoContato}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    style={{ flex: 1 }}
+                    onClick={salvarDados}
+                    disabled={statusSalvarContato === "salvando" || !emailValido(emailContato)}
+                  >
+                    {statusSalvarContato === "salvando" ? "Salvando…" : "Salvar"}
+                  </button>
+                </div>
+              ) : null}
+              {statusSalvarContato === "sucesso" ? (
+                <p className="wa-status-inline wa-status-sucesso">✓ Dados salvos</p>
+              ) : statusSalvarContato === "erro" ? (
+                <p className="wa-status-inline wa-status-erro">
+                  ✕ Não deu pra salvar — confira o e-mail
+                </p>
+              ) : null}
+            </>
+          ) : null}
 
-          {tarefaAberta ? (
+          {abaInfo === "negociacao" ? (
             <>
-              <div className="panel-h divided">
-                <h4>Tarefa</h4>
+              <div className="panel-h">
+                <h4>Funil e etapa</h4>
               </div>
               <div className="field">
-                <label>Data da tarefa</label>
-                <div className="input">{tarefa.data}</div>
+                <label>Funil</label>
+                <select
+                  className="input"
+                  style={{ width: "100%", cursor: "pointer" }}
+                  value={funilSelecionado?.id}
+                  onChange={(e) => trocarFunilSelecionado(e.target.value)}
+                >
+                  {funis.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.nome}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="field">
-                <label>O que fazer</label>
-                <div className="input">{tarefa.oQueFazer}</div>
-              </div>
-              <div className="field">
-                <label>Valor combinado</label>
-                <div className="input">{tarefa.valor}</div>
-              </div>
-              {tarefa.anexo ? (
-                <div className="field">
-                  <label>Anexo</label>
-                  <div className="attach-chip">
-                    <IconDoc />
-                    <span className="fn">{tarefa.anexo.arquivo}</span>
-                    <span className="fs">{tarefa.anexo.detalhe}</span>
-                  </div>
-                  <button type="button" className="btn ghost block mt14">
-                    + Anexar outro documento
-                  </button>
-                </div>
-              ) : (
-                <div className="field">
-                  <label>Anexo</label>
-                  <button type="button" className="btn ghost block">
-                    + Anexar documento
-                  </button>
-                </div>
-              )}
-              <div className="field">
-                <label>Atribuir tarefa para</label>
-                <div className="input">{tarefa.responsavel}</div>
-              </div>
-
-              <div className="toggle-row">
-                <span className="tl">Avisar por WhatsApp perto do vencimento</span>
-                <Toggle defaultOn label="Avisar por WhatsApp perto do vencimento" />
-              </div>
-              <div className="toggle-row">
-                <span className="tl">Mostrar essa tarefa no portal do cliente</span>
-                <Toggle defaultOn label="Mostrar essa tarefa no portal do cliente" />
-              </div>
-
+              {funilSelecionado ? (
+                <RadioList
+                  key={`funil-${aberta.id}-${funilSelecionado.id}`}
+                  options={funilSelecionado.colunas.map((coluna) => ({
+                    nome: coluna.titulo,
+                    descricao: `${coluna.total} contatos nessa etapa`,
+                  }))}
+                  initial={etapaSelecionada}
+                  onChange={setEtapaSelecionada}
+                />
+              ) : null}
               <div className="section-foot">
                 <button
                   type="button"
                   className="btn primary block"
                   onClick={salvarAtribuicao}
                 >
-                  Salvar tarefa
+                  Salvar atribuição ao funil
+                </button>
+              </div>
+
+              <div className="panel-h divided">
+                <h4>Resultado</h4>
+              </div>
+              <div style={{ padding: "0 17px 14px" }}>
+                {resultadoAtual ? (
+                  <p className={`wa-resultado-badge wa-resultado-${resultadoAtual}`}>
+                    {resultadoAtual === "venda"
+                      ? "✅ Venda concluída"
+                      : resultadoAtual === "perda"
+                        ? `❌ Perdida · ${motivoPerdaPorContato[aberta.nome] ?? ""}`
+                        : resultadoAtual === "adiada"
+                          ? "⏳ Adiada"
+                          : "🚫 Cancelada"}
+                  </p>
+                ) : (
+                  <p className="hint" style={{ marginBottom: 10 }}>
+                    Nenhum resultado registrado ainda — em andamento.
+                  </p>
+                )}
+                <button
+                  type="button"
+                  className="btn primary block"
+                  onClick={(e) => abrirMenuResultado(e.currentTarget.getBoundingClientRect())}
+                >
+                  🎯 Registrar resultado
                 </button>
               </div>
             </>
           ) : null}
 
-          {emailsDaConversa.length > 0 ? (
+          {abaInfo === "atividades" ? (
             <>
-              <div className="panel-h divided">
-                <h4>E-mails enviados</h4>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "14px 17px 0" }}>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  style={{ flex: "1 1 140px" }}
+                  onClick={() => setTarefaAberta((v) => !v)}
+                >
+                  {tarefaAberta ? "Fechar tarefa" : "+ Adicionar tarefa"}
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  style={{ flex: "1 1 140px" }}
+                  onClick={abrirEmailModal}
+                >
+                  ✉ Disparar e-mail
+                </button>
               </div>
-              {emailsDaConversa.map((email) => (
-                <div className="stat-row" key={email.id}>
-                  <span className="sl">{email.assunto}</span>
-                  <span
-                    className={`sv${email.aberto ? " wa-email-lido" : ""}`}
-                  >
-                    {email.aberto ? `Lido às ${email.abertoEm}` : "Enviado, ainda não lido"}
-                  </span>
-                </div>
-              ))}
+
+              {tarefaAberta ? (
+                <>
+                  <div className="panel-h divided">
+                    <h4>Tarefa</h4>
+                  </div>
+                  <div className="field">
+                    <label>Data da tarefa</label>
+                    <div className="input">{tarefa.data}</div>
+                  </div>
+                  <div className="field">
+                    <label>O que fazer</label>
+                    <div className="input">{tarefa.oQueFazer}</div>
+                  </div>
+                  <div className="field">
+                    <label>Valor combinado</label>
+                    <div className="input">{tarefa.valor}</div>
+                  </div>
+                  {tarefa.anexo ? (
+                    <div className="field">
+                      <label>Anexo</label>
+                      <div className="attach-chip">
+                        <IconDoc />
+                        <span className="fn">{tarefa.anexo.arquivo}</span>
+                        <span className="fs">{tarefa.anexo.detalhe}</span>
+                      </div>
+                      <button type="button" className="btn ghost block mt14">
+                        + Anexar outro documento
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="field">
+                      <label>Anexo</label>
+                      <button type="button" className="btn ghost block">
+                        + Anexar documento
+                      </button>
+                    </div>
+                  )}
+                  <div className="field">
+                    <label>Atribuir tarefa para</label>
+                    <div className="input">{tarefa.responsavel}</div>
+                  </div>
+
+                  <div className="toggle-row">
+                    <span className="tl">Avisar por WhatsApp perto do vencimento</span>
+                    <Toggle defaultOn label="Avisar por WhatsApp perto do vencimento" />
+                  </div>
+                  <div className="toggle-row">
+                    <span className="tl">Mostrar essa tarefa no portal do cliente</span>
+                    <Toggle defaultOn label="Mostrar essa tarefa no portal do cliente" />
+                  </div>
+
+                  <div className="section-foot">
+                    <button
+                      type="button"
+                      className="btn primary block"
+                      onClick={salvarAtribuicao}
+                    >
+                      Salvar tarefa
+                    </button>
+                  </div>
+                </>
+              ) : null}
+
+              {emailsDaConversa.length > 0 ? (
+                <>
+                  <div className="panel-h divided">
+                    <h4>E-mails enviados</h4>
+                  </div>
+                  {emailsDaConversa.map((email) => (
+                    <div className="stat-row" key={email.id}>
+                      <span className="sl">{email.assunto}</span>
+                      <span className={`sv${email.aberto ? " wa-email-lido" : ""}`}>
+                        {email.aberto ? `Lido às ${email.abertoEm}` : "Enviado, ainda não lido"}
+                      </span>
+                    </div>
+                  ))}
+                </>
+              ) : null}
             </>
           ) : null}
 
-          <div className="panel-h divided">
-            <h4>Histórico e anotações</h4>
-          </div>
-          <div style={{ padding: "0 17px 14px" }}>
-            <textarea
-              className="input"
-              style={{ width: "100%", minHeight: 60, resize: "vertical" }}
-              placeholder="Escreva aqui…"
-              value={notaTexto}
-              onChange={(e) => setNotaTexto(e.target.value)}
-            />
-            <button
-              type="button"
-              className="btn ghost block mt14"
-              onClick={salvarAnotacao}
-              disabled={!notaTexto.trim()}
-            >
-              + Salvar anotação
-            </button>
-          </div>
-          <div className="wa-historico">
-            {[...historico].reverse().map((item) => (
-              <div className="wa-historico-item" key={item.id}>
-                <span className={`wa-historico-tipo wa-historico-${item.tipo}`}>
-                  {item.tipo === "anotacao"
-                    ? "📝 Anotação"
-                    : item.tipo === "email"
-                      ? "✉ E-mail"
-                      : "● Sistema"}
-                </span>
-                <p className="wa-historico-texto">{item.texto}</p>
-                <span className="wa-historico-quando">{item.quando}</span>
+          {abaInfo === "historico" ? (
+            <>
+              <div style={{ padding: "14px 17px 0" }}>
+                <textarea
+                  className="input"
+                  style={{ width: "100%", minHeight: 60, resize: "vertical" }}
+                  placeholder="Escreva uma anotação sobre esse contato…"
+                  value={notaTexto}
+                  onChange={(e) => setNotaTexto(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn ghost block mt14"
+                  onClick={salvarAnotacao}
+                  disabled={!notaTexto.trim()}
+                >
+                  + Salvar anotação
+                </button>
               </div>
-            ))}
-          </div>
+              <div style={{ padding: "14px 17px" }}>
+                <Timeline
+                  eventos={eventosTimelineContato}
+                  vazioTitulo="Sem histórico ainda"
+                  vazioDescricao="Conversas, anotações e mudanças desse contato vão aparecer aqui."
+                />
+              </div>
+            </>
+          ) : null}
         </div>
         </aside>
         </>
         ) : null}
       </div>
+
+      {resultadoMenuAberto ? (
+        <FloatingDropdown
+          anchorRect={resultadoMenuRect}
+          align="right"
+          width={240}
+          onClose={() => setResultadoMenuAberto(false)}
+        >
+          <button
+            type="button"
+            className="dropdown-item"
+            style={{ width: "100%", textAlign: "left" }}
+            onClick={() => escolherResultado("venda")}
+          >
+            <span className="n">✅ Venda concluída</span>
+          </button>
+          <button
+            type="button"
+            className="dropdown-item"
+            style={{ width: "100%", textAlign: "left" }}
+            onClick={() => escolherResultado("perda")}
+          >
+            <span className="n">❌ Negociação perdida</span>
+          </button>
+          <button
+            type="button"
+            className="dropdown-item"
+            style={{ width: "100%", textAlign: "left" }}
+            onClick={() => escolherResultado("andamento")}
+          >
+            <span className="n">🔄 Continua em andamento</span>
+          </button>
+          <button
+            type="button"
+            className="dropdown-item"
+            style={{ width: "100%", textAlign: "left" }}
+            onClick={() => escolherResultado("adiada")}
+          >
+            <span className="n">⏳ Adiada</span>
+          </button>
+          <button
+            type="button"
+            className="dropdown-item"
+            style={{ width: "100%", textAlign: "left" }}
+            onClick={() => escolherResultado("cancelada")}
+          >
+            <span className="n">🚫 Cancelada</span>
+          </button>
+        </FloatingDropdown>
+      ) : null}
+
+      {formResultado === "venda" ? (
+        <div className="form-preview-overlay" onClick={() => setFormResultado(null)}>
+          <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+              <p className="n">Venda concluída</p>
+              <button
+                type="button"
+                className="modal-close-btn"
+                aria-label="Fechar"
+                onClick={() => setFormResultado(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="field" style={{ padding: "0 0 10px" }}>
+              <label>Produto/serviço</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                value={vendaProduto}
+                onChange={(e) => setVendaProduto(e.target.value)}
+                placeholder="Ex.: Plano premium"
+              />
+            </div>
+            <div style={{ display: "flex", gap: 8, padding: "0 0 10px" }}>
+              <div className="field" style={{ flex: 1, padding: 0 }}>
+                <label>Valor</label>
+                <input
+                  className="input"
+                  style={{ width: "100%" }}
+                  value={vendaValor}
+                  onChange={(e) => setVendaValor(e.target.value)}
+                  placeholder="R$ 0,00"
+                />
+              </div>
+              <div className="field" style={{ flex: 1, padding: 0 }}>
+                <label>Forma de pagamento</label>
+                <select
+                  className="input"
+                  style={{ width: "100%", cursor: "pointer" }}
+                  value={vendaFormaPagamento}
+                  onChange={(e) => setVendaFormaPagamento(e.target.value)}
+                >
+                  <option value="Pix">Pix</option>
+                  <option value="Cartão de crédito">Cartão de crédito</option>
+                  <option value="Boleto">Boleto</option>
+                  <option value="Dinheiro">Dinheiro</option>
+                </select>
+              </div>
+            </div>
+            <div className="field" style={{ padding: "0 0 10px" }}>
+              <label>Observação</label>
+              <textarea
+                className="input"
+                style={{ width: "100%", minHeight: 60, resize: "vertical" }}
+                value={vendaObservacao}
+                onChange={(e) => setVendaObservacao(e.target.value)}
+                placeholder="Detalhes opcionais sobre a venda…"
+              />
+            </div>
+            <div className="section-foot">
+              <button
+                type="button"
+                className="btn ghost"
+                style={{ flex: 1 }}
+                onClick={() => setFormResultado(null)}
+                disabled={registrandoResultado}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                style={{ flex: 1 }}
+                onClick={confirmarVenda}
+                disabled={registrandoResultado}
+              >
+                {registrandoResultado ? "Registrando…" : "Confirmar venda"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {formResultado === "perda" ? (
+        <div className="form-preview-overlay" onClick={() => setFormResultado(null)}>
+          <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+              <p className="n">Negociação perdida</p>
+              <button
+                type="button"
+                className="modal-close-btn"
+                aria-label="Fechar"
+                onClick={() => setFormResultado(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <p className="hint" style={{ marginBottom: 10 }}>Escolha o motivo da perda:</p>
+            <RadioList
+              key={`motivo-${aberta.id}`}
+              options={motivosDisponiveis.map((m) => ({ nome: m }))}
+              initial=""
+              onChange={(motivo) => marcarPerda(motivo)}
+            />
+            {!escolhendoMotivo ? (
+              <button
+                type="button"
+                className="btn ghost block mt14"
+                onClick={() => setEscolhendoMotivo(true)}
+              >
+                + Outro motivo
+              </button>
+            ) : (
+              <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
+                <input
+                  className="input"
+                  style={{ flex: 1 }}
+                  placeholder="Descreva o motivo…"
+                  value={novoMotivoTexto}
+                  onChange={(e) => setNovoMotivoTexto(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && adicionarMotivoCustom()}
+                />
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={adicionarMotivoCustom}
+                  disabled={!novoMotivoTexto.trim()}
+                >
+                  + Adicionar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {formResultado === "adiada" ? (
+        <div className="form-preview-overlay" onClick={() => setFormResultado(null)}>
+          <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+              <p className="n">Negociação adiada</p>
+              <button
+                type="button"
+                className="modal-close-btn"
+                aria-label="Fechar"
+                onClick={() => setFormResultado(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="field" style={{ padding: "0 0 10px" }}>
+              <label>Nova data prevista</label>
+              <input
+                className="input"
+                style={{ width: "100%" }}
+                type="date"
+                value={adiadaData}
+                onChange={(e) => setAdiadaData(e.target.value)}
+              />
+            </div>
+            <div className="field" style={{ padding: "0 0 10px" }}>
+              <label>Observação</label>
+              <textarea
+                className="input"
+                style={{ width: "100%", minHeight: 60, resize: "vertical" }}
+                value={adiadaObservacao}
+                onChange={(e) => setAdiadaObservacao(e.target.value)}
+                placeholder="Motivo do adiamento…"
+              />
+            </div>
+            <div className="section-foot">
+              <button
+                type="button"
+                className="btn ghost"
+                style={{ flex: 1 }}
+                onClick={() => setFormResultado(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                style={{ flex: 1 }}
+                onClick={confirmarAdiada}
+              >
+                Confirmar adiamento
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {formResultado === "cancelada" ? (
+        <div className="form-preview-overlay" onClick={() => setFormResultado(null)}>
+          <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+              <p className="n">Negociação cancelada</p>
+              <button
+                type="button"
+                className="modal-close-btn"
+                aria-label="Fechar"
+                onClick={() => setFormResultado(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="field" style={{ padding: "0 0 10px" }}>
+              <label>Motivo do cancelamento</label>
+              <textarea
+                className="input"
+                style={{ width: "100%", minHeight: 60, resize: "vertical" }}
+                value={canceladaMotivo}
+                onChange={(e) => setCanceladaMotivo(e.target.value)}
+                placeholder="Por que a negociação foi cancelada…"
+              />
+            </div>
+            <div className="section-foot">
+              <button
+                type="button"
+                className="btn ghost"
+                style={{ flex: 1 }}
+                onClick={() => setFormResultado(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                style={{ flex: 1 }}
+                onClick={confirmarCancelada}
+              >
+                Confirmar cancelamento
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {emailModalAberto ? (
         <div
