@@ -15,6 +15,7 @@ import type {
 } from "@/lib/automation-flow/types";
 import { IconAutomacoes, IconSearch } from "@/components/icons";
 import { Toggle, Topbar } from "@/components/ui";
+import { VisualizarFluxo } from "@/components/automation-flow/VisualizarFluxo";
 
 /* -------------------------------------------------------------------------- */
 /* Derivações a partir de `FluxoAutomacao` / `RegistroExecucao`              */
@@ -211,6 +212,7 @@ function AutomacoesPageInner() {
   const {
     fluxos,
     execucoesDoFluxo,
+    criarFluxo,
     duplicarFluxo,
     atualizarFluxo,
     arquivarFluxo,
@@ -270,6 +272,61 @@ function AutomacoesPageInner() {
   const [renomeandoId, setRenomeandoId] = useState<string | null>(null);
   const [renomeandoValor, setRenomeandoValor] = useState("");
   const [exclusaoAlvo, setExclusaoAlvo] = useState<FluxoAutomacao | null>(null);
+  const [visualizarAlvo, setVisualizarAlvo] = useState<FluxoAutomacao | null>(null);
+  const [ativarDemoAlvo, setAtivarDemoAlvo] = useState<FluxoAutomacao | null>(null);
+  // O `Toggle` é não-controlado (flipa o próprio estado visual no clique antes
+  // de qualquer confirmação) — incrementar esse nonce força o `key` do Toggle
+  // a mudar e ele remontar de volta pro `defaultOn` real sempre que a gente
+  // intercepta o clique pra mostrar a confirmação (aceita ou cancela).
+  const [demoToggleResetNonce, setDemoToggleResetNonce] = useState(0);
+
+  /* --------------------- "+ Nova automação" — popover ------------------- */
+  const [novoAberto, setNovoAberto] = useState(false);
+  const [novoModoModelo, setNovoModoModelo] = useState(false);
+  const [novoCarregando, setNovoCarregando] = useState(false);
+  const [novoErro, setNovoErro] = useState<string | null>(null);
+
+  const modelosDisponiveis = useMemo(
+    () => fluxos.filter((f) => f.modeloDemonstracao),
+    [fluxos],
+  );
+
+  function fecharPopoverNovo() {
+    setNovoAberto(false);
+    setNovoModoModelo(false);
+    setNovoErro(null);
+  }
+
+  function comecarDoZero() {
+    if (novoCarregando) return; // trava contra duplo clique
+    setNovoErro(null);
+    setNovoCarregando(true);
+    try {
+      const novo = criarFluxo({ nome: "Nova automação" });
+      router.push(`/automacoes/editor/${novo.id}`);
+      fecharPopoverNovo();
+    } catch {
+      setNovoErro("Não foi possível abrir o construtor agora. Tente novamente.");
+    } finally {
+      setNovoCarregando(false);
+    }
+  }
+
+  function usarModelo(fluxo: FluxoAutomacao) {
+    if (novoCarregando) return;
+    setNovoErro(null);
+    setNovoCarregando(true);
+    try {
+      const copia = duplicarFluxo(fluxo.id);
+      if (!copia) throw new Error("Modelo não encontrado.");
+      router.push(`/automacoes/editor/${copia.id}`);
+      fecharPopoverNovo();
+    } catch {
+      setNovoErro("Não foi possível criar uma cópia desse modelo agora. Tente novamente.");
+    } finally {
+      setNovoCarregando(false);
+    }
+  }
 
   const gatilhosDisponiveis = useMemo(() => {
     const tipos = new Set<FlowNodeType>();
@@ -510,13 +567,107 @@ function AutomacoesPageInner() {
         title="Automações"
         sub={`${fluxos.length} automações · ${totalAtivas} ativas`}
         actions={
-          <button
-            type="button"
-            className="btn primary"
-            onClick={() => router.push("/automacoes/editor/novo")}
-          >
-            + Nova automação
-          </button>
+          <div className="dropdown-anchor">
+            <button
+              type="button"
+              className="btn primary"
+              disabled={novoCarregando}
+              aria-haspopup="menu"
+              aria-expanded={novoAberto}
+              aria-controls="automacoes-novo-popover"
+              aria-label={novoCarregando ? "Abrindo construtor de automação" : "Nova automação"}
+              onClick={() => setNovoAberto((v) => !v)}
+            >
+              {novoCarregando ? "Abrindo…" : "+ Nova automação"}
+            </button>
+
+            {novoAberto ? (
+              <>
+                <div
+                  onClick={fecharPopoverNovo}
+                  style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                />
+                <div
+                  id="automacoes-novo-popover"
+                  className="flow-filtros-pop"
+                  role="menu"
+                  aria-label="Como criar a nova automação"
+                >
+                  {novoErro ? (
+                    <div className="flow-filtros-secao">
+                      <p className="flow-problema erro">{novoErro}</p>
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        style={{ marginTop: 8 }}
+                        onClick={() => (novoModoModelo ? setNovoErro(null) : comecarDoZero())}
+                      >
+                        Tentar novamente
+                      </button>
+                    </div>
+                  ) : !novoModoModelo ? (
+                    <div className="flow-filtros-secao" style={{ borderBottom: "none" }}>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        disabled={novoCarregando}
+                        aria-label="Começar do zero — abre o construtor vazio"
+                        onClick={comecarDoZero}
+                      >
+                        <span className="n">Começar do zero</span>
+                        <span className="r">Abre o construtor visual com um rascunho em branco</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        disabled={novoCarregando || modelosDisponiveis.length === 0}
+                        aria-label="Usar um modelo pronto"
+                        onClick={() => setNovoModoModelo(true)}
+                      >
+                        <span className="n">Usar um modelo</span>
+                        <span className="r">
+                          {modelosDisponiveis.length > 0
+                            ? "Começa com um fluxo pronto de demonstração, editável"
+                            : "Nenhum modelo disponível no momento"}
+                        </span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flow-filtros-secao" style={{ borderBottom: "none" }}>
+                      <button
+                        type="button"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left" }}
+                        aria-label="Voltar"
+                        onClick={() => setNovoModoModelo(false)}
+                      >
+                        <span className="n">← Voltar</span>
+                      </button>
+                      {modelosDisponiveis.map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          role="menuitem"
+                          className="dropdown-item"
+                          style={{ width: "100%", textAlign: "left" }}
+                          disabled={novoCarregando}
+                          aria-label={`Usar modelo: ${f.nome}`}
+                          onClick={() => usarModelo(f)}
+                        >
+                          <span className="n">{f.nome}</span>
+                          <span className="r">{f.descricao ?? "Sem descrição"}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : null}
+          </div>
         }
       />
 
@@ -818,19 +969,26 @@ function AutomacoesPageInner() {
                     ) : (
                       <p
                         className="int-title"
-                        style={{ cursor: "pointer" }}
+                        style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                         onClick={() => router.push(`/automacoes/editor/${fluxo.id}`)}
                       >
                         {fluxo.nome}
+                        {fluxo.modeloDemonstracao ? (
+                          <span className="pill secondary" title="Fluxo de exemplo pronto — edite ou duplique livremente">
+                            Modelo de demonstração
+                          </span>
+                        ) : null}
                       </p>
                     )}
                     <p className="int-sub">
                       {resumoGatilhoFluxo(fluxo)}
                       {funilDoFluxo ? ` · Funil: ${funilDoFluxo.nome}` : ""}
+                      {` · ${fluxo.nodes.length} ${fluxo.nodes.length === 1 ? "bloco" : "blocos"}`}
                     </p>
                     <p className="hint" style={{ marginTop: 4 }}>
-                      {fluxo.execucoes} {fluxo.execucoes === 1 ? "execução" : "execuções"} · Sucesso:{" "}
-                      {taxaSucesso(execs)} · {ultimaExecucao(execs)}
+                      {fluxo.modeloDemonstracao && fluxo.execucoes === 0
+                        ? "0 execuções — modelo de demonstração"
+                        : `${fluxo.execucoes} ${fluxo.execucoes === 1 ? "execução" : "execuções"} · Sucesso: ${taxaSucesso(execs)} · ${ultimaExecucao(execs)}`}
                     </p>
                   </div>
 
@@ -839,10 +997,17 @@ function AutomacoesPageInner() {
                   {fluxo.status === "publicado" ? (
                     <span onClick={(e) => e.stopPropagation()}>
                       <Toggle
-                        key={`${fluxo.id}-${fluxo.ativa}`}
+                        key={`${fluxo.id}-${fluxo.ativa}-${demoToggleResetNonce}`}
                         defaultOn={fluxo.ativa}
                         label={`Ativar automação ${fluxo.nome}`}
-                        onToggle={() => alternarAtivo(fluxo.id)}
+                        onToggle={() => {
+                          if (fluxo.modeloDemonstracao && !fluxo.ativa) {
+                            setAtivarDemoAlvo(fluxo);
+                            setDemoToggleResetNonce((n) => n + 1);
+                            return;
+                          }
+                          alternarAtivo(fluxo.id);
+                        }}
                       />
                     </span>
                   ) : null}
@@ -874,6 +1039,18 @@ function AutomacoesPageInner() {
                           >
                             <span className="n">Editar</span>
                             <span className="r">Abre no construtor visual</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ width: "100%", textAlign: "left" }}
+                            onClick={() => {
+                              setMenuAbertoId(null);
+                              setVisualizarAlvo(fluxo);
+                            }}
+                          >
+                            <span className="n">Visualizar fluxo</span>
+                            <span className="r">Pré-visualização somente leitura, sem editar nada</span>
                           </button>
                           <button
                             type="button"
@@ -1010,6 +1187,56 @@ function AutomacoesPageInner() {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {ativarDemoAlvo ? (
+        <div
+          className="flow-side-overlay"
+          role="dialog"
+          aria-label="Confirmar ativação de modelo de demonstração"
+          onClick={() => setAtivarDemoAlvo(null)}
+        >
+          <div className="flow-side-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="panel-h">
+              <h4>Ativar modelo de demonstração?</h4>
+              <button
+                type="button"
+                className="icon-btn subtle"
+                aria-label="Cancelar"
+                onClick={() => setAtivarDemoAlvo(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flow-side-body">
+              <p className="n">&quot;{ativarDemoAlvo.nome}&quot;</p>
+              <p className="r" style={{ marginTop: 8 }}>
+                Esta é uma automação de demonstração. Quando o back-end estiver conectado, ativá-la fará com que ela
+                execute ações reais (mensagens, tarefas, mudanças de etapa) de verdade. Deseja ativar mesmo assim?
+              </p>
+            </div>
+            <div className="section-foot">
+              <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={() => setAtivarDemoAlvo(null)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                style={{ flex: 1 }}
+                onClick={() => {
+                  alternarAtivo(ativarDemoAlvo.id);
+                  setAtivarDemoAlvo(null);
+                }}
+              >
+                Ativar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {visualizarAlvo ? (
+        <VisualizarFluxo fluxo={visualizarAlvo} onFechar={() => setVisualizarAlvo(null)} />
       ) : null}
     </>
   );

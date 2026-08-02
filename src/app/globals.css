@@ -623,6 +623,15 @@ table {
   border-color: transparent;
 }
 
+/* Variante discreta — não é status ligado/desligado, é um rótulo informativo
+   (ex.: "Modelo de demonstração", tags de funcionalidades da pré-visualização). */
+.pill.secondary {
+  background: var(--navy-raised-2);
+  color: var(--text-faint);
+  border-color: var(--line);
+  font-weight: 700;
+}
+
 .toggle {
   width: 36px;
   height: 20px;
@@ -6372,6 +6381,31 @@ table.tbl tbody tr:hover td {
   gap: 8px;
 }
 
+.flow-sim-banner {
+  background: var(--blue-soft);
+  color: var(--blue);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.flow-sim-continuar {
+  margin-top: 14px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--navy-raised-2);
+  border: 1px solid var(--line);
+}
+
+.flow-sim-opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
 .flow-sim-log {
   margin-top: 14px;
   padding: 10px;
@@ -6381,6 +6415,50 @@ table.tbl tbody tr:hover td {
   font-size: 11px;
   font-family: monospace;
   white-space: pre-wrap;
+}
+
+/* ---------------- Pré-visualização somente-leitura ("Visualizar fluxo") --- */
+
+.flow-preview-panel {
+  width: min(1180px, 96vw);
+  height: min(860px, 94vh);
+  margin: auto;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(11, 21, 51, 0.28);
+  overflow: hidden;
+}
+
+.flow-preview-summary {
+  padding: 4px 17px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flow-preview-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.flow-preview-canvas {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+@media (max-width: 900px) {
+  .flow-preview-panel {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
 }
 
 .flow-versao-row {
