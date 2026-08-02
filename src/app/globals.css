@@ -6408,3 +6408,111 @@ table.tbl tbody tr:hover td {
     box-shadow: -8px 0 24px rgba(11, 21, 51, 0.16);
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Linha do tempo unificada (contato / negociação / jornada do cliente)      */
+/* -------------------------------------------------------------------------- */
+
+.timeline-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-left: 22px;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--line);
+}
+
+.timeline-item {
+  position: relative;
+  padding: 0 0 18px;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -22px;
+  top: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--blue);
+  border: 2px solid var(--navy);
+  box-shadow: 0 0 0 2px var(--line);
+}
+
+.timeline-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: default;
+}
+
+button.timeline-card {
+  cursor: pointer;
+}
+
+button.timeline-card:hover {
+  border-color: var(--blue);
+}
+
+.timeline-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+
+.timeline-card-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.timeline-card-quando {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.timeline-card-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.timeline-card-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.timeline-empty {
+  padding: 24px 0;
+  color: var(--text-faint);
+  font-size: 13px;
+}
