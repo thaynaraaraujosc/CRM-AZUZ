@@ -1,24 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 import {
   conversaoPorResponsavel,
   equipe,
-  kpisConversao,
-  kpisMotivosPerda,
   motivosPerda,
   oportunidadesPerdidas,
 } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
 import {
   FloatingDropdown,
+  KpiCard,
   PERIODO_PADRAO,
   PeriodoPicker,
   Topbar,
   type PeriodoValor,
 } from "@/components/ui";
+import {
+  calcularMotivoPrincipalPerda,
+  calcularTaxaConversao,
+  calcularValorPerdido,
+  calcularValorVendido,
+} from "@/lib/metrics";
 
 const ABAS = ["Conversão", "Motivos de perda"] as const;
 type Aba = (typeof ABAS)[number];
@@ -34,8 +40,19 @@ const AGRUPAMENTOS = ["Etapas do funil", "Responsável"] as const;
 type Agrupamento = (typeof AGRUPAMENTOS)[number];
 
 export default function PerformanceVendasPage() {
+  return (
+    <Suspense fallback={null}>
+      <PerformanceVendasPageInner />
+    </Suspense>
+  );
+}
+
+function PerformanceVendasPageInner() {
+  const searchParams = useSearchParams();
   const { funis } = useFunis();
-  const [abaAtiva, setAbaAtiva] = useState<Aba>("Conversão");
+  const [abaAtiva, setAbaAtiva] = useState<Aba>(
+    searchParams.get("aba") === "motivos-perda" ? "Motivos de perda" : "Conversão",
+  );
   const [modoGrafico, setModoGrafico] = useState<"lista" | "barras">("barras");
   const [modoValor, setModoValor] = useState<"volume" | "percentual">("volume");
 
@@ -86,6 +103,13 @@ export default function PerformanceVendasPage() {
   const oportunidadesFiltradasPerda = clienteFiltroPerda
     ? oportunidadesPerdidas.filter((o) => o.motivo === clienteFiltroPerda)
     : oportunidadesPerdidas;
+
+  const taxaConversao = calcularTaxaConversao();
+  const valorVendido = calcularValorVendido();
+  const totalOportunidades = conversaoPorResponsavel.reduce((s, r) => s + r.vendidas + r.perdidas, 0);
+  const oportunidadesVendidas = conversaoPorResponsavel.reduce((s, r) => s + r.vendidas, 0);
+  const valorPerdido = calcularValorPerdido();
+  const motivoPrincipal = calcularMotivoPrincipalPerda();
 
   return (
     <>
@@ -201,14 +225,10 @@ export default function PerformanceVendasPage() {
         {abaAtiva === "Conversão" ? (
           <>
             <div className="grid kpi4">
-              {kpisConversao.map((kpi) => (
-                <div className="card kpi" key={kpi.label}>
-                  <p className="l">{kpi.label}</p>
-                  <p className="n">{kpi.value}</p>
-                  {kpi.sub ? <p className="hint">{kpi.sub}</p> : null}
-                  <p className="delta">{kpi.delta}</p>
-                </div>
-              ))}
+              <KpiCard label="Taxa de conversão" value={taxaConversao.label} formula={taxaConversao.formula} />
+              <KpiCard label="Total de oportunidades" value={String(totalOportunidades)} />
+              <KpiCard label="Oportunidades vendidas" value={String(oportunidadesVendidas)} />
+              <KpiCard label="Valor total vendido" value={valorVendido.label} formula={valorVendido.formula} />
             </div>
 
             <div className="card">
@@ -303,14 +323,18 @@ export default function PerformanceVendasPage() {
         ) : (
           <>
             <div className="grid kpi4">
-              {kpisMotivosPerda.map((kpi) => (
-                <div className="card kpi" key={kpi.label}>
-                  <p className="l">{kpi.label}</p>
-                  <p className="n">{kpi.value}</p>
-                  {kpi.sub ? <p className="hint">{kpi.sub}</p> : null}
-                  {kpi.delta ? <p className="delta">{kpi.delta}</p> : null}
-                </div>
-              ))}
+              <KpiCard
+                label="Valor perdido no período"
+                value={valorPerdido.label}
+                sub={`${oportunidadesPerdidas.length} oportunidades perdidas`}
+                formula={valorPerdido.formula}
+              />
+              <KpiCard
+                label="Principal motivo"
+                value={motivoPrincipal.motivo}
+                sub={`${motivoPrincipal.valor}% das perdas do período`}
+                formula={motivoPrincipal.formula}
+              />
             </div>
 
             <div className="card">

@@ -1,31 +1,43 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
-import {
-  atividadeRecente,
-  funilJulho,
-  kpisInicio,
-  leadsPorDia,
-  today,
-} from "@/lib/data";
-import { Topbar } from "@/components/ui";
+import { atividadeRecente, funilJulho, leadsPorDia, today } from "@/lib/data";
+import { Topbar, KpiCard } from "@/components/ui";
+import { calcularFunilResumo, calcularRoasMedio, calcularTaxaConversao, calcularValorVendido } from "@/lib/metrics";
 
 export const metadata: Metadata = { title: "Início · CRM AZUZ" };
 
 export default function InicioPage() {
+  const leadsNoMes = calcularFunilResumo();
+  const taxaConversao = calcularTaxaConversao();
+  const vendasNoMes = calcularValorVendido();
+  const roas = calcularRoasMedio();
+
   return (
     <>
       <Topbar title="Início" sub={today} />
 
       <div className="content">
         <div className="grid kpi4">
-          {kpisInicio.map((kpi) => (
-            <div className="card kpi" key={kpi.label}>
-              <p className="l">{kpi.label}</p>
-              <p className="n">{kpi.value}</p>
-              <p className="delta">{kpi.delta}</p>
-            </div>
-          ))}
+          <KpiCard
+            label="Leads no mês"
+            value={leadsNoMes.label}
+            formula={leadsNoMes.formula}
+            href="/funil"
+          />
+          <KpiCard
+            label="Taxa de conversão"
+            value={taxaConversao.label}
+            formula={taxaConversao.formula}
+            href="/performance-vendas"
+          />
+          <KpiCard
+            label="Vendas no mês"
+            value={vendasNoMes.label}
+            formula={vendasNoMes.formula}
+            href="/performance-vendas"
+          />
+          <KpiCard label="ROAS médio" value={roas.label} formula={roas.formula} href="/trafego" />
         </div>
 
         <div className="grid split2">

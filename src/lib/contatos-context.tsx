@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { contatos as contatosIniciais, type Contato } from "@/lib/data";
+import { slugId } from "@/lib/ids";
 
 type DadosContato = Pick<
   Contato,
@@ -66,6 +67,7 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
         return [
           ...prev,
           {
+            id: slugId(nome),
             initials: iniciais(nome),
             nome,
             origem: "Indicação",
@@ -88,6 +90,7 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
         return [
           ...prev,
           {
+            id: slugId(nome),
             initials: iniciais(nome),
             nome,
             origem: "Indicação" as const,
@@ -114,6 +117,7 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
     setContatos((prev) => [
       ...prev,
       {
+        id: slugId(dados.nome),
         initials: iniciais(dados.nome),
         nome: dados.nome,
         origem: "Indicação",

@@ -3,11 +3,13 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { classeOrigem, currentUser, filtrosContatos } from "@/lib/data";
+import { classeOrigem, conversas, oportunidadesPerdidas, tarefas, currentUser, filtrosContatos } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { IconSearch } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
+import { Timeline } from "@/components/timeline";
+import { gerarLinhaDoTempo } from "@/lib/timeline";
 
 export default function ContatosPage() {
   return (
@@ -323,6 +325,22 @@ function ContatosPageInner() {
               <label>Endereço</label>
               <div className="input">{contato.endereco || "—"}</div>
             </div>
+
+            <div className="panel-h divided">
+              <h4>Linha do tempo</h4>
+              <a href={`/jornada-cliente?contato=${contato.id}`} className="link">
+                Ver jornada completa
+              </a>
+            </div>
+            <Timeline
+              eventos={gerarLinhaDoTempo(contato.id, {
+                contatos,
+                conversas,
+                tarefas,
+                funis,
+                oportunidadesPerdidas,
+              })}
+            />
           </section>
         ) : null}
       </div>
