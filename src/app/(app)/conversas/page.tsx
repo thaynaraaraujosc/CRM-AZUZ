@@ -920,6 +920,7 @@ function ConversasPageInner() {
             ))}
           </div>
 
+          <div className="wa-list-rows">
           {conversasFiltradas.length === 0 ? (
             <p className="hint" style={{ padding: 20 }}>
               Nenhuma conversa encontrada.
@@ -967,6 +968,7 @@ function ConversasPageInner() {
               );
             })
           )}
+          </div>
         </aside>
 
         <section className="wa-main">
@@ -1106,6 +1108,18 @@ function ConversasPageInner() {
             </div>
             <button
               type="button"
+              className="chat-quick-btn"
+              aria-label="Respostas rápidas"
+              title="Respostas rápidas — clique pra escolher"
+              onClick={() => {
+                setMensagemTexto("/");
+                mensagemInputRef.current?.focus();
+              }}
+            >
+              💬 Respostas rápidas
+            </button>
+            <button
+              type="button"
               className="chat-emoji-btn"
               aria-label="Emojis"
               title="Emojis"
@@ -1114,7 +1128,7 @@ function ConversasPageInner() {
                 setEmojiAberto((v) => !v);
               }}
             >
-              <IconEmoji />
+              <IconEmoji strokeWidth={1.4} />
             </button>
             <button
               type="button"
@@ -1295,6 +1309,7 @@ function ConversasPageInner() {
           title="Arraste pra redimensionar"
         />
         <aside className="wa-info" style={{ width: infoWidth }}>
+        <div className="wa-info-scroll">
           <div className="panel-h">
             <h4>Atribuir ao funil</h4>
           </div>
@@ -1600,6 +1615,7 @@ function ConversasPageInner() {
               </div>
             ))}
           </div>
+        </div>
         </aside>
         </>
         ) : null}

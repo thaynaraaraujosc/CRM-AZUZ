@@ -1350,10 +1350,10 @@ table.tbl tbody tr:hover td {
 
 .gear-btn {
   flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border: none;
-  border-radius: 6px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1550,6 +1550,8 @@ table.tbl tbody tr:hover td {
 }
 
 .chat-input-campo {
+  display: block;
+  width: 100%;
   font-family: inherit;
   color: var(--ink);
 }
@@ -1611,6 +1613,11 @@ table.tbl tbody tr:hover td {
 .chat-attach-btn:hover,
 .chat-emoji-btn:hover {
   background: var(--blue-soft);
+}
+
+.chat-emoji-btn svg {
+  width: 17px;
+  height: 17px;
 }
 
 .chat-input-wrap {
@@ -1680,13 +1687,19 @@ table.tbl tbody tr:hover td {
 .wa-list {
   width: 320px;
   flex: 0 0 auto;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   margin: 12px 0 12px 12px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--navy-raised);
+}
+
+.wa-list-rows {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .wa-list-head {
@@ -1868,7 +1881,7 @@ table.tbl tbody tr:hover td {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  margin: 12px 12px 12px 0;
+  margin: 12px 10px 12px 0;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--navy-raised);
@@ -1889,7 +1902,9 @@ table.tbl tbody tr:hover td {
   min-width: 260px;
   max-width: 70vw;
   flex: 0 0 auto;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   margin: 12px 12px 12px 0;
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -1897,13 +1912,34 @@ table.tbl tbody tr:hover td {
   font-family: var(--display);
 }
 
+.wa-info-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .wa-resizer {
   flex: 0 0 auto;
-  width: 6px;
+  width: 10px;
   margin: 12px 0;
   border-radius: 3px;
   cursor: col-resize;
   background: transparent;
+}
+
+.wa-resizer::after {
+  content: "";
+  display: block;
+  width: 3px;
+  height: 100%;
+  margin: 0 auto;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+.wa-resizer:hover::after,
+.wa-resizer:active::after {
+  background: var(--blue);
 }
 
 .wa-resizer:hover,
