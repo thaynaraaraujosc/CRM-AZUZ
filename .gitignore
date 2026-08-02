@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# sqlite (backend prototype db — never commit real data)
+/data/*.db
+/data/*.db-journal
+/data/*.db-wal
+/data/*.db-shm
