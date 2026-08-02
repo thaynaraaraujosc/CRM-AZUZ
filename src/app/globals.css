@@ -4164,15 +4164,16 @@ table.tbl tbody tr:hover td {
   flex: 0 0 auto;
 }
 
-/* Régua decorativa, igual Word/Docs — só visual, nunca imprime. */
+/* Régua igual Word/Docs — os marcadores de margem são arrastáveis de verdade (ver ReguaDocumento). */
 .doc-regua {
+  position: relative;
   display: flex;
   height: 20px;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .doc-regua-marca {
@@ -4182,10 +4183,39 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
   text-align: right;
   padding: 2px 3px 0 0;
+  overflow: hidden;
 }
 
 .doc-regua-marca:last-child {
   border-right: none;
+}
+
+.doc-regua-margem {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 12px;
+  margin-left: -6px;
+  cursor: ew-resize;
+  z-index: 2;
+}
+
+.doc-regua-margem::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 1px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--blue);
+}
+
+.doc-regua-margem:hover::before,
+.doc-regua-margem:active::before {
+  border-top-color: var(--ink);
 }
 
 .doc-page-sheet {
