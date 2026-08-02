@@ -4,7 +4,7 @@
  * — a migração de um pro outro vive em `migracao.ts`, não aqui.
  */
 
-import type { CanalComentario, DiaSemana, Origem } from "@/lib/data";
+import type { CanalComentario, DiaSemana } from "@/lib/data";
 
 /* -------------------------------------------------------------------------- */
 /* Categorias e tipos de nó                                                  */
