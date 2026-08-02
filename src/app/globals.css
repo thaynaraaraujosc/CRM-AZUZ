@@ -1862,12 +1862,56 @@ table.tbl tbody tr:hover td {
 
 .wa-row {
   display: block;
+  position: relative;
   width: 100%;
   text-align: left;
   padding: 12px 17px;
   border-bottom: 1px solid var(--line);
   border-left: 2px solid transparent;
   background: transparent;
+  cursor: pointer;
+}
+
+.wa-row:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.wa-pin-icone {
+  font-size: 10px;
+  margin-right: 2px;
+}
+
+.wa-mute-icone {
+  font-size: 11px;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.wa-row-menu-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.wa-row:hover .wa-row-menu-btn,
+.wa-row:focus-within .wa-row-menu-btn {
+  opacity: 1;
+}
+
+.wa-row-menu-btn:hover {
+  background: var(--navy-raised-2);
+  color: var(--ink);
 }
 
 .wa-row:hover {
@@ -5708,7 +5752,8 @@ table.tbl tbody tr:hover td {
 
   .wa-midia-preview,
   .wa-doc-visualizador,
-  .wa-biblioteca-modal {
+  .wa-biblioteca-modal,
+  .wa-config-modal {
     max-width: calc(100vw - 24px);
   }
 
@@ -5716,4 +5761,268 @@ table.tbl tbody tr:hover td {
   .bubble-documento {
     max-width: 84%;
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* WhatsApp — botão de configurações ao lado de "Conversas"                   */
+/* -------------------------------------------------------------------------- */
+
+.wa-list-head-acoes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wa-list-config {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.wa-list-config:hover {
+  background: var(--navy-raised-2);
+  color: var(--ink);
+}
+
+/* -------------------------------------------------------------------------- */
+/* WhatsApp — painel de configurações das conversas                           */
+/* -------------------------------------------------------------------------- */
+
+.wa-config-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.wa-config-secao {
+  padding: 14px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.wa-config-secao:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.wa-config-fundo-preview {
+  height: 90px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--navy-raised-2);
+  overflow: hidden;
+}
+
+.wa-config-fundos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.wa-config-fundo-opcao {
+  height: 46px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wa-config-fundo-padrao {
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+}
+
+.wa-config-fundo-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.wa-config-cor-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.wa-config-cor-label input[type="color"] {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.wa-config-radio-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* WhatsApp — tamanho da fonte da conversa                                    */
+/* -------------------------------------------------------------------------- */
+
+.wa-fonte-pequena .bubble {
+  font-size: 11px;
+}
+
+.wa-fonte-media .bubble {
+  font-size: 12px;
+}
+
+.wa-fonte-grande .bubble {
+  font-size: 14px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* WhatsApp — responder mensagem (citação)                                    */
+/* -------------------------------------------------------------------------- */
+
+.bubble {
+  position: relative;
+}
+
+.wa-reply-btn {
+  position: absolute;
+  top: 2px;
+  right: -26px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--navy);
+  color: var(--text-faint);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  cursor: pointer;
+}
+
+.bubble:hover .wa-reply-btn {
+  opacity: 1;
+}
+
+.wa-citacao {
+  display: block;
+  border-left: 3px solid var(--blue);
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-bottom: 6px;
+}
+
+.wa-citacao-autor {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.wa-citacao-texto {
+  display: block;
+  font-size: 11px;
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-input-campo-coluna {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-input-campo-coluna .chat-input-campo {
+  resize: none;
+  max-height: 120px;
+}
+
+.chat-respondendo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: var(--navy-raised-2);
+  border-radius: 8px;
+}
+
+.chat-respondendo-barra {
+  width: 3px;
+  align-self: stretch;
+  background: var(--blue);
+  border-radius: 2px;
+}
+
+.chat-respondendo-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-respondendo-autor {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.chat-respondendo-preview {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-respondendo-fechar {
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.chat-send-btn {
+  color: var(--blue);
+}
+
+/* -------------------------------------------------------------------------- */
+/* WhatsApp — mídia bloqueada (download automático desligado)                 */
+/* -------------------------------------------------------------------------- */
+
+.bubble-midia-bloqueada {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px;
+  border: none;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
 }
