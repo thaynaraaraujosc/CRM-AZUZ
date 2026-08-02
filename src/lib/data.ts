@@ -1275,6 +1275,92 @@ export const relatoriosAnteriores = [
 ];
 
 /* -------------------------------------------------------------------------- */
+/* Relatórios — análise (tipo Dashboard, Pipeline, Equipes…)                  */
+/* -------------------------------------------------------------------------- */
+
+export const TIPOS_RELATORIO_ANALISE = [
+  "Dashboard",
+  "Pipeline",
+  "Equipes",
+  "Feedback",
+  "Conversões",
+  "Produtos e Serviços",
+  "Fontes e Campanhas",
+  "Metas",
+  "Ligações",
+  "Comparativo de ligações",
+] as const;
+
+/** Ligações feitas pelo telefone virtual do CRM — usado no relatório "Ligações". */
+export const ligacoesPorResponsavel = [
+  { nome: "Ana Ferreira", quantidade: 14, duracaoMedia: "3min 40s" },
+  { nome: "Dr. Hélio Marinho", quantidade: 9, duracaoMedia: "5min 10s" },
+  { nome: "Carla Mendes", quantidade: 11, duracaoMedia: "2min 55s" },
+  { nome: "Bruno Salles", quantidade: 7, duracaoMedia: "4min 05s" },
+];
+
+export const CAMPOS_FILTRO_PERSONALIZADO = [
+  "Campanha",
+  "Fonte",
+  "Produto ou Serviço",
+  "Segmento",
+  "Região de atuação",
+  "Estado civil",
+  "Validade do CS",
+  "Valor negociação",
+  "CPF / CNPJ",
+  "Indicador",
+  "Marca / Modelo",
+];
+
+/** Soma R$ 38.400,00 — bate com `kpisConversao` ("Valor total vendido"). */
+export const faturamentoPorResponsavel = [
+  { nome: "Ana Ferreira", valor: 15200 },
+  { nome: "Dr. Hélio Marinho", valor: 11400 },
+  { nome: "Carla Mendes", valor: 6800 },
+  { nome: "Bruno Salles", valor: 5000 },
+];
+
+/**
+ * Dia a dia do mês pra montar o gráfico de área (oportunidades/vendas/perdas)
+ * e o gráfico de valor vendido do Dashboard de relatórios — só teve venda em
+ * valor mesmo nos dias 13, 17 e 19 (esse último bem maior que os outros).
+ */
+export const serieDashboardRelatorios = [
+  { dia: "01", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "02", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "03", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "04", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "05", criadas: 1, vendas: 0, perdidas: 1, valorVendas: 0 },
+  { dia: "06", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "07", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "08", criadas: 3, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "09", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "10", criadas: 2, vendas: 0, perdidas: 1, valorVendas: 0 },
+  { dia: "11", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "12", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "13", criadas: 1, vendas: 1, perdidas: 0, valorVendas: 3800 },
+  { dia: "14", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "15", criadas: 1, vendas: 0, perdidas: 1, valorVendas: 0 },
+  { dia: "16", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "17", criadas: 1, vendas: 1, perdidas: 0, valorVendas: 6200 },
+  { dia: "18", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "19", criadas: 0, vendas: 1, perdidas: 0, valorVendas: 15400 },
+  { dia: "20", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "21", criadas: 1, vendas: 0, perdidas: 1, valorVendas: 0 },
+  { dia: "22", criadas: 3, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "23", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "24", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "25", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "26", criadas: 1, vendas: 0, perdidas: 1, valorVendas: 0 },
+  { dia: "27", criadas: 1, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "28", criadas: 0, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "29", criadas: 3, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "30", criadas: 2, vendas: 0, perdidas: 0, valorVendas: 0 },
+  { dia: "31", criadas: 4, vendas: 0, perdidas: 0, valorVendas: 0 },
+];
+
+/* -------------------------------------------------------------------------- */
 /* Automações (vivem dentro de cada etapa do funil)                          */
 /* -------------------------------------------------------------------------- */
 
