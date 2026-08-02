@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import { atividadeRecente, conversas, equipe, funilJulho, leadsPorDia, tarefas, today } from "@/lib/data";
@@ -55,25 +55,17 @@ export default function InicioPage() {
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
   const [funilFiltro, setFuncilFiltro] = useState("Todos");
   const [responsavelFiltro, setResponsavelFiltro] = useState("Todos");
-  const [config, setConfig] = useState<ConfigInicio>(CONFIG_PADRAO);
-  const [personalizarAberto, setPersonalizarAberto] = useState(false);
-  const [metaInput, setMetaInput] = useState(String(CONFIG_PADRAO.meta || 45000));
-
-  useEffect(() => {
-    const salvo = typeof window !== "undefined" ? localStorage.getItem(CHAVE_CONFIG) : null;
-    if (salvo) {
-      try {
-        const parsed = JSON.parse(salvo) as ConfigInicio;
-        setConfig(parsed);
-        setMetaInput(String(parsed.meta || 45000));
-      } catch {
-        // ignora config inválida — mantém padrão
-      }
-    } else {
-      setConfig((c) => ({ ...c, meta: 45000 }));
-      setMetaInput("45000");
+  const [config, setConfig] = useState<ConfigInicio>(() => {
+    if (typeof window === "undefined") return CONFIG_PADRAO;
+    try {
+      const salvo = localStorage.getItem(CHAVE_CONFIG);
+      return salvo ? (JSON.parse(salvo) as ConfigInicio) : CONFIG_PADRAO;
+    } catch {
+      return CONFIG_PADRAO;
     }
-  }, []);
+  });
+  const [personalizarAberto, setPersonalizarAberto] = useState(false);
+  const [metaInput, setMetaInput] = useState(String(config.meta || 45000));
 
   function salvarConfig(next: ConfigInicio) {
     setConfig(next);
