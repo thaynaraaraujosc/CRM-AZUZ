@@ -453,7 +453,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             onNodeDragStop={onNodeDragStop}
             onNodesDelete={onNodesDelete}
             onEdgesDelete={onEdgesDelete}
-            onSelectionChange={({ nodes }) => setSelectedNodeIds(nodes.map((n) => n.id))}
+            onSelectionChange={({ nodes }) => {
+              const ids = nodes.map((n) => n.id);
+              setSelectedNodeIds((prev) =>
+                prev.length === ids.length && prev.every((id, i) => id === ids[i])
+                  ? prev
+                  : ids,
+              );
+            }}
             onNodeContextMenu={(e, node) => {
               e.preventDefault();
               setSelectedNodeIds([node.id]);

@@ -6026,3 +6026,648 @@ table.tbl tbody tr:hover td {
   cursor: pointer;
   width: 100%;
 }
+
+/* ============================================================================
+   Construtor visual de automações (/automacoes/editor/[id])
+   ============================================================================ */
+
+.flow-shell-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+}
+
+.flow-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--navy);
+}
+
+/* ---------------- Barra superior ---------------- */
+
+.flow-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 17px;
+  border-bottom: 1px solid var(--line);
+  background: var(--navy);
+}
+
+.flow-toolbar-esq,
+.flow-toolbar-dir {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.flow-toolbar-nome {
+  border: none;
+  background: none;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.flow-toolbar-nome:hover {
+  background: var(--navy-raised-2);
+}
+
+.flow-toolbar-nome-input {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14px;
+  width: 220px;
+}
+
+.flow-save-indicator {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.flow-toolbar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+  border-left: 1px solid var(--line-soft);
+  border-right: 1px solid var(--line-soft);
+}
+
+/* ---------------- Corpo: biblioteca + canvas + painel ---------------- */
+
+.flow-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  position: relative;
+}
+
+.flow-canvas {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  background: var(--navy-raised);
+}
+
+.flow-canvas .react-flow__attribution {
+  display: none;
+}
+
+.flow-canvas .react-flow__controls {
+  box-shadow: 0 4px 16px rgba(11, 21, 51, 0.16);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.flow-canvas .react-flow__controls button {
+  background: var(--navy);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.flow-canvas .react-flow__controls button:hover {
+  background: var(--navy-raised-2);
+}
+
+/* ---------------- Biblioteca de blocos (esquerda) ---------------- */
+
+.flow-lib {
+  flex: 0 0 272px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+  background: var(--navy);
+  overflow: hidden;
+}
+
+.flow-lib-reabrir {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  margin: 12px;
+}
+
+.flow-lib-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.flow-lib-lista {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0 16px;
+}
+
+.flow-lib-cat {
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.flow-lib-cat-h {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.flow-lib-cat-n {
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+.flow-lib-cat-arrow {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+.flow-lib-secao-titulo {
+  padding: 6px 12px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+
+.flow-lib-bloco {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: grab;
+}
+
+.flow-lib-bloco:hover {
+  background: var(--navy-raised-2);
+}
+
+.flow-lib-bloco:active {
+  cursor: grabbing;
+}
+
+.flow-lib-bloco-icone {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.flow-lib-bloco-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.flow-lib-bloco-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.flow-lib-bloco-desc {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cor por categoria — reaproveitada na paleta, no nó do canvas e nos handles. */
+.flow-cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.flow-cat-gatilho,
+.flow-cat-dot.flow-cat-gatilho {
+  background: #2e6bff;
+  color: white;
+}
+
+.flow-cat-condicao,
+.flow-cat-dot.flow-cat-condicao {
+  background: #8a3ffc;
+  color: white;
+}
+
+.flow-cat-mensagem,
+.flow-cat-dot.flow-cat-mensagem {
+  background: #0f9d63;
+  color: white;
+}
+
+.flow-cat-espera,
+.flow-cat-dot.flow-cat-espera {
+  background: #c9660a;
+  color: white;
+}
+
+.flow-cat-acao,
+.flow-cat-dot.flow-cat-acao {
+  background: #d8a400;
+  color: white;
+}
+
+.flow-cat-humano,
+.flow-cat-dot.flow-cat-humano {
+  background: #d84594;
+  color: white;
+}
+
+.flow-cat-integracao,
+.flow-cat-dot.flow-cat-integracao {
+  background: #64748b;
+  color: white;
+}
+
+.flow-cat-fim,
+.flow-cat-dot.flow-cat-fim {
+  background: #d64545;
+  color: white;
+}
+
+/* ---------------- Nó no canvas ---------------- */
+
+.flow-node {
+  min-width: 200px;
+  max-width: 240px;
+  border-radius: 12px;
+  background: var(--navy);
+  border: 1.5px solid var(--line);
+  box-shadow: 0 2px 10px rgba(11, 21, 51, 0.1);
+  font-size: 12px;
+  overflow: visible;
+}
+
+.flow-node.is-selected {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-soft);
+}
+
+.flow-node.has-warning {
+  border-color: #d8a400;
+}
+
+.flow-node.has-error {
+  border-color: #d64545;
+}
+
+.flow-node-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 12px 12px 0 0;
+}
+
+.flow-node.flow-cat-gatilho .flow-node-header {
+  background: rgba(46, 107, 255, 0.12);
+}
+
+.flow-node.flow-cat-condicao .flow-node-header {
+  background: rgba(138, 63, 252, 0.12);
+}
+
+.flow-node.flow-cat-mensagem .flow-node-header {
+  background: rgba(15, 157, 99, 0.12);
+}
+
+.flow-node.flow-cat-espera .flow-node-header {
+  background: rgba(201, 102, 10, 0.12);
+}
+
+.flow-node.flow-cat-acao .flow-node-header {
+  background: rgba(216, 164, 0, 0.14);
+}
+
+.flow-node.flow-cat-humano .flow-node-header {
+  background: rgba(216, 69, 148, 0.12);
+}
+
+.flow-node.flow-cat-integracao .flow-node-header {
+  background: rgba(100, 116, 139, 0.14);
+}
+
+.flow-node.flow-cat-fim .flow-node-header {
+  background: rgba(214, 69, 69, 0.12);
+}
+
+.flow-node-icon {
+  font-size: 13px;
+}
+
+.flow-node-label {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flow-node-warn {
+  font-size: 12px;
+  cursor: help;
+}
+
+.flow-node-body {
+  padding: 8px 10px 10px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.flow-node-handles {
+  padding: 0 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flow-node-handle-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 3px 14px 3px 0;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: var(--navy-raised-2);
+}
+
+.flow-handle-label {
+  padding-right: 4px;
+}
+
+.flow-handle {
+  width: 9px;
+  height: 9px;
+  background: var(--blue);
+  border: 2px solid var(--navy);
+}
+
+.flow-handle-inline {
+  position: absolute !important;
+  right: -5px;
+  top: 50%;
+}
+
+/* ---------------- Barra de seleção flutuante ---------------- */
+
+.flow-selection-bar {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(11, 21, 51, 0.18);
+  z-index: 10;
+  font-size: 11.5px;
+}
+
+/* ---------------- Menu de contexto do nó ---------------- */
+
+.flow-ctx-menu {
+  position: fixed;
+  z-index: 300;
+  min-width: 180px;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.24);
+  padding: 4px;
+}
+
+/* ---------------- Painel de configuração (direita) ---------------- */
+
+.flow-config {
+  flex: 0 0 320px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--line);
+  background: var(--navy);
+  overflow: hidden;
+}
+
+.flow-config-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  border-bottom: 1px solid var(--line);
+}
+
+.flow-tab {
+  flex: 1;
+  padding: 11px 8px;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.flow-tab.on {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
+.flow-config-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.flow-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flow-form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.flow-problema {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised-2);
+  font-size: 11.5px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.flow-problema.erro {
+  border-color: rgba(214, 69, 69, 0.4);
+}
+
+.flow-problema.aviso {
+  border-color: rgba(216, 164, 0, 0.4);
+}
+
+.flow-problema-sev {
+  flex: 0 0 auto;
+}
+
+/* ---------------- Condições (grupo/regra) ---------------- */
+
+.flow-cond-grupo {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: var(--navy-raised-2);
+}
+
+.flow-cond-grupo-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.flow-cond-subgrupo {
+  margin-left: 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+}
+
+.flow-cond-regra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+}
+
+.flow-cond-acoes {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.flow-opcao-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+/* ---------------- Painéis laterais (Simulador / Histórico) ---------------- */
+
+.flow-side-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: rgba(6, 11, 28, 0.4);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.flow-side-panel {
+  width: min(420px, 100vw);
+  height: 100%;
+  background: var(--navy);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -16px 0 40px rgba(11, 21, 51, 0.2);
+}
+
+.flow-side-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 17px;
+}
+
+.flow-sim-passos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flow-sim-log {
+  margin-top: 14px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--navy-raised-2);
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+.flow-versao-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+@media (max-width: 900px) {
+  .flow-lib {
+    position: absolute;
+    z-index: 20;
+    height: 100%;
+    box-shadow: 8px 0 24px rgba(11, 21, 51, 0.16);
+  }
+
+  .flow-config {
+    position: absolute;
+    right: 0;
+    z-index: 20;
+    height: 100%;
+    box-shadow: -8px 0 24px rgba(11, 21, 51, 0.16);
+  }
+}
