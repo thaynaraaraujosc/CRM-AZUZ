@@ -1733,6 +1733,37 @@ function ConversasPageInner() {
               `Automação "${automacao.titulo}" disparada pra ${aberta.nome} (entrou em "${etapaDestino.titulo}")`,
             );
           }
+
+          // Mesma coisa que arrastar o card no Funil: dispara o motor de
+          // fluxos de verdade em cima do mesmo evento de entrada de etapa.
+          dispararEvento(
+            {
+              tipo: "lead_entrou_etapa",
+              funilId: funilSelecionado.id,
+              etapaId: etapaDestino.id,
+              contatoNome: aberta.nome,
+            },
+            {
+              contato: {
+                nome: aberta.nome,
+                etiquetas: novoCard.etiquetas ?? [],
+                origem: novoCard.origem,
+                responsavel: atendenteSelecionado,
+                funilId: funilSelecionado.id,
+                etapaTitulo: etapaDestino.titulo,
+              },
+            },
+            {
+              moverEtapa: (funilId, etapaTitulo, contato) =>
+                atribuirContatoAoFunil(funilId, etapaTitulo, contato as Omit<NegocioCard, "id"> & { id?: string }),
+              salvarContato: (nome, dados) => salvarDadosContato(nome, dados),
+              atribuirAtendente: (nome, atendente) => atribuirAtendente(nome, atendente),
+              registrarMensagemSimulada: (info) => {
+                adicionarMensagem({ tipo: "out", texto: info.conteudo, hora: horaAgora() });
+              },
+              registrarWebhookSimulado: (info) => avisarAutomacao(`Webhook simulado → ${info.url}`),
+            },
+          );
         }
       }
     }
