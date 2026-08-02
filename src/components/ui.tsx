@@ -437,3 +437,250 @@ export function KpiCard({
     </div>
   );
 }
+
+export type FiltroOpcao = { valor: string; label: string };
+
+/** Um filtro secundário dentro do painel "Mais filtros". "Todos" é sempre o valor neutro/inativo. */
+export type FiltroDef = {
+  chave: string;
+  label: string;
+  opcoes: FiltroOpcao[];
+  valor: string;
+};
+
+export type VisaoSalva = { nome: string; padrao?: boolean };
+
+/**
+ * Barra de filtros única e compacta, reutilizada em todas as páginas da
+ * Inteligência comercial (Tráfego, Atividades, Performance, Motivos de
+ * perda...) — período + filtro principal na linha visível, o resto dentro
+ * de "Mais filtros", chips do que está ativo, e limpar/exportar. Sem várias
+ * linhas de seletores soltos.
+ */
+export function FilterBar({
+  periodo,
+  onPeriodoChange,
+  principalLabel,
+  principalValor,
+  principalOpcoes,
+  onPrincipalChange,
+  filtros = [],
+  onFiltroChange,
+  compararAnterior,
+  onCompararChange,
+  onLimpar,
+  onExportar,
+  viewKey,
+}: {
+  periodo: PeriodoValor;
+  onPeriodoChange: (v: PeriodoValor) => void;
+  principalLabel?: string;
+  principalValor?: string;
+  principalOpcoes?: string[];
+  onPrincipalChange?: (v: string) => void;
+  filtros?: FiltroDef[];
+  onFiltroChange?: (chave: string, valor: string) => void;
+  compararAnterior?: boolean;
+  onCompararChange?: (v: boolean) => void;
+  onLimpar?: () => void;
+  onExportar?: () => void;
+  /** Chave usada só pra rotular a visão salva (front-end, sem persistência real ainda). */
+  viewKey?: string;
+}) {
+  const [principalAberto, setPrincipalAberto] = useState(false);
+  const [principalRect, setPrincipalRect] = useState<DOMRect | null>(null);
+
+  const [maisAberto, setMaisAberto] = useState(false);
+  const [maisRect, setMaisRect] = useState<DOMRect | null>(null);
+
+  const [visoesSalvas, setVisoesSalvas] = useState<VisaoSalva[]>([]);
+  const [nomeVisao, setNomeVisao] = useState("");
+  const [visaoSalvaAgora, setVisaoSalvaAgora] = useState(false);
+
+  const filtrosAtivos = filtros.filter((f) => f.valor !== "Todos");
+  const periodoAtivo = periodo.tipo === "personalizado" || periodo.label !== "Qualquer período";
+
+  function limparTudo() {
+    onLimpar?.();
+    setMaisAberto(false);
+  }
+
+  function salvarVisaoAtual(padrao: boolean) {
+    const nome = nomeVisao.trim() || `Visão de ${viewKey ?? "filtros"}`;
+    setVisoesSalvas((prev) => [
+      ...prev.filter((v) => v.nome !== nome),
+      { nome, padrao },
+    ]);
+    setNomeVisao("");
+    setVisaoSalvaAgora(true);
+    setTimeout(() => setVisaoSalvaAgora(false), 1800);
+  }
+
+  return (
+    <div>
+      <div className="filterbar">
+        <PeriodoPicker label="Período" value={periodo} onChange={onPeriodoChange} />
+
+        {principalOpcoes && principalOpcoes.length > 0 ? (
+          <>
+            <button
+              type="button"
+              className="fsel"
+              ref={undefined}
+              onClick={(e) => {
+                setPrincipalRect(e.currentTarget.getBoundingClientRect());
+                setPrincipalAberto((v) => !v);
+              }}
+            >
+              {principalLabel ?? "Filtrar"}: {principalValor} ▾
+            </button>
+            <FloatingDropdown
+              anchorRect={principalAberto ? principalRect : null}
+              onClose={() => setPrincipalAberto(false)}
+              width={220}
+            >
+              {principalOpcoes.map((op) => (
+                <button
+                  type="button"
+                  key={op}
+                  className="dropdown-item"
+                  style={{ width: "100%", textAlign: "left" }}
+                  onClick={() => {
+                    onPrincipalChange?.(op);
+                    setPrincipalAberto(false);
+                  }}
+                >
+                  <span className="n">{op}</span>
+                </button>
+              ))}
+            </FloatingDropdown>
+          </>
+        ) : null}
+
+        {filtros.length > 0 ? (
+          <>
+            <button
+              type="button"
+              className="fsel"
+              onClick={(e) => {
+                setMaisRect(e.currentTarget.getBoundingClientRect());
+                setMaisAberto((v) => !v);
+              }}
+            >
+              Mais filtros{filtrosAtivos.length > 0 ? ` · ${filtrosAtivos.length}` : ""} ▾
+            </button>
+            <FloatingDropdown
+              anchorRect={maisAberto ? maisRect : null}
+              onClose={() => setMaisAberto(false)}
+              width={300}
+              maxHeight={480}
+            >
+              <div className="filterbar-panel">
+                {filtros.map((f) => (
+                  <div className="filterbar-field" key={f.chave}>
+                    <label>{f.label}</label>
+                    <select
+                      className="input"
+                      value={f.valor}
+                      onChange={(e) => onFiltroChange?.(f.chave, e.target.value)}
+                    >
+                      {f.opcoes.map((o) => (
+                        <option key={o.valor} value={o.valor}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+                {onCompararChange ? (
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      fontSize: 12,
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!!compararAnterior}
+                      onChange={(e) => onCompararChange(e.target.checked)}
+                    />
+                    Comparar com o período anterior
+                  </label>
+                ) : null}
+                <div className="filterbar-foot">
+                  <button type="button" className="link" onClick={limparTudo}>
+                    Limpar tudo
+                  </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={() => setMaisAberto(false)}
+                  >
+                    Aplicar
+                  </button>
+                </div>
+                <div className="filterbar-salvar">
+                  <input
+                    className="input"
+                    style={{ flex: 1 }}
+                    placeholder="Nome da visão…"
+                    value={nomeVisao}
+                    onChange={(e) => setNomeVisao(e.target.value)}
+                  />
+                  <button type="button" className="btn ghost" onClick={() => salvarVisaoAtual(false)}>
+                    Salvar
+                  </button>
+                  <button type="button" className="btn ghost" onClick={() => salvarVisaoAtual(true)}>
+                    Definir padrão
+                  </button>
+                </div>
+                {visaoSalvaAgora ? <p className="hint">✓ Visão salva</p> : null}
+                {visoesSalvas.length > 0 ? (
+                  <div>
+                    <p className="hint" style={{ marginBottom: 4 }}>Visões salvas</p>
+                    {visoesSalvas.map((v) => (
+                      <p className="hint" key={v.nome}>
+                        ⭐ {v.nome}
+                        {v.padrao ? " · padrão" : ""}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </FloatingDropdown>
+          </>
+        ) : null}
+
+        {onExportar ? (
+          <button type="button" className="btn ghost" onClick={onExportar}>
+            Exportar
+          </button>
+        ) : null}
+      </div>
+
+      {filtrosAtivos.length > 0 || periodoAtivo ? (
+        <div className="filterbar-chips">
+          {periodoAtivo ? (
+            <span className="filterbar-chip">{periodoLabel(periodo)}</span>
+          ) : null}
+          {filtrosAtivos.map((f) => (
+            <span className="filterbar-chip" key={f.chave}>
+              {f.label}: {f.opcoes.find((o) => o.valor === f.valor)?.label ?? f.valor}
+              <button type="button" onClick={() => onFiltroChange?.(f.chave, "Todos")}>
+                ✕
+              </button>
+            </span>
+          ))}
+          {(filtrosAtivos.length > 0 || periodoAtivo) && onLimpar ? (
+            <button type="button" className="link" onClick={limparTudo} style={{ fontSize: 11 }}>
+              Limpar
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
