@@ -4550,6 +4550,8 @@ table.tbl tbody tr:hover td {
   border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
   font-size: 12.5px;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 .doc-menu-btn {
@@ -4610,6 +4612,9 @@ table.tbl tbody tr:hover td {
   align-items: flex-start;
   justify-content: center;
   gap: 0;
+  /* A folha tem largura física fixa (mm) — em telas estreitas ela pode não caber; rola só aqui dentro
+     em vez de estourar a largura da página inteira (o que quebrava o layout no celular/tablet). */
+  overflow-x: auto;
 }
 
 .doc-paginas-coluna {
@@ -6672,5 +6677,27 @@ table.tbl tbody tr:hover td {
     z-index: 20;
     height: 100%;
     box-shadow: -8px 0 24px rgba(11, 21, 51, 0.16);
+  }
+}
+
+/* Documentos — celular/tablet estreito: réguas ocupam espaço e não são práticas de arrastar no toque,
+   então somem aqui (o zoom/scroll horizontal do .doc-canvas continuam dando acesso à página inteira). */
+@media (max-width: 600px) {
+  .doc-regua,
+  .doc-regua-vertical {
+    display: none !important;
+  }
+
+  .doc-page-linha {
+    gap: 0;
+  }
+
+  .doc-editor-header {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+  }
+
+  .doc-titulo-header-input {
+    max-width: 140px;
   }
 }
