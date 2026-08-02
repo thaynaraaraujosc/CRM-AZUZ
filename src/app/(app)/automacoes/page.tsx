@@ -102,6 +102,12 @@ function resumoGatilho(automacao: Automacao) {
   if (automacao.gatilhoTipo === "parado" && automacao.tempoValor) {
     return `${base} — ${automacao.tempoValor} ${automacao.tempoUnidade ?? "horas"}`;
   }
+  const permiteAtraso = GATILHOS_ETAPA.find(
+    (g) => g.tipo === automacao.gatilhoTipo,
+  )?.permiteAtraso;
+  if (permiteAtraso && automacao.disparoImediato === false && automacao.tempoValor) {
+    return `${base} — espera ${automacao.tempoValor} ${automacao.tempoUnidade ?? "horas"}`;
+  }
   return base;
 }
 
@@ -583,6 +589,7 @@ function AutomacoesPageInner() {
   const [gatilhoForm, setGatilhoForm] = useState<TipoGatilhoEtapa>("entrou");
   const [tempoValorForm, setTempoValorForm] = useState("2");
   const [tempoUnidadeForm, setTempoUnidadeForm] = useState<string>("horas");
+  const [disparoImediatoForm, setDisparoImediatoForm] = useState(true);
   const [acoesForm, setAcoesForm] = useState<AcaoAutomacao[]>([novaAcao()]);
   const [ativaForm, setAtivaForm] = useState(true);
 
@@ -602,6 +609,9 @@ function AutomacoesPageInner() {
   const gatilhoPrecisaTempo = GATILHOS_ETAPA.find(
     (g) => g.tipo === gatilhoForm,
   )?.precisaTempo;
+  const gatilhoPermiteAtraso = GATILHOS_ETAPA.find(
+    (g) => g.tipo === gatilhoForm,
+  )?.permiteAtraso;
   const gatilhoEhAgendado = gatilhoForm === "agendado";
 
   function alternarDiaAtivo(dia: DiaSemana) {
@@ -623,6 +633,7 @@ function AutomacoesPageInner() {
     setGatilhoForm("entrou");
     setTempoValorForm("2");
     setTempoUnidadeForm("horas");
+    setDisparoImediatoForm(true);
     setAcoesForm([novaAcao()]);
     setAtivaForm(true);
     setDiasAtivosForm(DIAS_SEMANA_TODOS);
@@ -644,6 +655,7 @@ function AutomacoesPageInner() {
     setGatilhoForm(automacao.gatilhoTipo);
     setTempoValorForm(automacao.tempoValor ?? "2");
     setTempoUnidadeForm(automacao.tempoUnidade ?? "horas");
+    setDisparoImediatoForm(automacao.disparoImediato ?? true);
     setAcoesForm(automacao.acoes.length ? automacao.acoes : [novaAcao()]);
     setAtivaForm(automacao.ativa);
     setDiasAtivosForm(automacao.diasAtivos ?? DIAS_SEMANA_TODOS);
@@ -734,8 +746,15 @@ function AutomacoesPageInner() {
       etapaId: etapaAlvo.id,
       titulo,
       gatilhoTipo: gatilhoForm,
-      tempoValor: gatilhoPrecisaTempo ? tempoValorForm : undefined,
-      tempoUnidade: gatilhoPrecisaTempo ? tempoUnidadeForm : undefined,
+      tempoValor:
+        gatilhoPrecisaTempo || (gatilhoPermiteAtraso && !disparoImediatoForm)
+          ? tempoValorForm
+          : undefined,
+      tempoUnidade:
+        gatilhoPrecisaTempo || (gatilhoPermiteAtraso && !disparoImediatoForm)
+          ? tempoUnidadeForm
+          : undefined,
+      disparoImediato: gatilhoPermiteAtraso ? disparoImediatoForm : undefined,
       acoes: acoesForm,
       ativa: ativaForm,
       diasAtivos: diasAtivosForm,
@@ -948,6 +967,56 @@ function AutomacoesPageInner() {
                       </option>
                     ))}
                   </select>
+                </div>
+              ) : null}
+
+              {gatilhoPermiteAtraso ? (
+                <div style={{ marginTop: 8 }}>
+                  <label className="hint" style={{ display: "block", marginBottom: 6 }}>
+                    Quando manda
+                  </label>
+                  <div className="filters-row">
+                    <button
+                      type="button"
+                      className={`fchip${disparoImediatoForm ? " active" : ""}`}
+                      aria-pressed={disparoImediatoForm}
+                      onClick={() => setDisparoImediatoForm(true)}
+                    >
+                      Imediatamente
+                    </button>
+                    <button
+                      type="button"
+                      className={`fchip${!disparoImediatoForm ? " active" : ""}`}
+                      aria-pressed={!disparoImediatoForm}
+                      onClick={() => setDisparoImediatoForm(false)}
+                    >
+                      Depois de um tempo
+                    </button>
+                  </div>
+                  {!disparoImediatoForm ? (
+                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      <input
+                        className="input"
+                        type="number"
+                        min="1"
+                        style={{ width: 80 }}
+                        value={tempoValorForm}
+                        onChange={(e) => setTempoValorForm(e.target.value)}
+                      />
+                      <select
+                        className="input"
+                        style={{ cursor: "pointer" }}
+                        value={tempoUnidadeForm}
+                        onChange={(e) => setTempoUnidadeForm(e.target.value)}
+                      >
+                        {UNIDADES_TEMPO.map((u) => (
+                          <option key={u} value={u}>
+                            {u}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
