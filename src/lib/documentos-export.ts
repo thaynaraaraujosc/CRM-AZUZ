@@ -196,31 +196,94 @@ export async function baixarDocx(titulo: string, paginas: PaginaDoc[]) {
    * itálico e inserir uma imagem sem nunca apertar Enter gera um monte de nós irmãos soltos (texto, <b>,
    * <i>, <img>) direto na página, sem nenhum <div>/<p> ao redor — juntar tudo é o comportamento certo.
    */
-  function paginaParaParagrafosXml(html: string): string {
-    const raiz = document.createElement("div");
-    raiz.innerHTML = html;
-    const formatacaoVazia: FormatacaoTexto = { negrito: false, italico: false, sublinhado: false, tachado: false, corHex: null };
-    const paragrafosXml: string[] = [];
-    let runsAtual: RunDocx[] = [];
+  const formatacaoVazia: FormatacaoTexto = { negrito: false, italico: false, sublinhado: false, tachado: false, corHex: null };
 
+  /** Gera uma tabela OOXML de verdade (<w:tbl>) — linhas e colunas preservadas, não texto corrido. */
+  function tabelaParaXml(tabela: HTMLTableElement): string {
+    const linhas = Array.from(tabela.rows);
+    if (linhas.length === 0) return "";
+    const maxColunas = Math.max(1, ...linhas.map((tr) => tr.cells.length));
+    const gridCols = "<w:gridCol/>".repeat(maxColunas);
+    const linhasXml = linhas
+      .map((tr) => {
+        const celulasXml = Array.from(tr.cells)
+          .map((td) => {
+            const negritoCabecalho = td.tagName === "TH";
+            const heranca = { ...formatacaoVazia, negrito: negritoCabecalho };
+            const runs = coletarRuns(td, heranca);
+            const paragrafo = runs.length > 0 ? `<w:p>${runs.map(runParaXml).join("")}</w:p>` : "<w:p/>";
+            return `<w:tc><w:tcPr><w:tcW w:w="0" w:type="auto"/></w:tcPr>${paragrafo}</w:tc>`;
+          })
+          .join("");
+        return `<w:tr>${celulasXml}</w:tr>`;
+      })
+      .join("");
+    return `<w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="0" w:type="auto"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:sz="4" w:color="999999"/>
+          <w:left w:val="single" w:sz="4" w:color="999999"/>
+          <w:bottom w:val="single" w:sz="4" w:color="999999"/>
+          <w:right w:val="single" w:sz="4" w:color="999999"/>
+          <w:insideH w:val="single" w:sz="4" w:color="999999"/>
+          <w:insideV w:val="single" w:sz="4" w:color="999999"/>
+        </w:tblBorders>
+      </w:tblPr>
+      <w:tblGrid>${gridCols}</w:tblGrid>
+      ${linhasXml}
+    </w:tbl>
+    <w:p/>`;
+    // OOXML exige um parágrafo depois de uma tabela (não pode ser o último elemento do corpo, nem duas
+    // tabelas podem ficar diretamente coladas) — o <w:p/> extra cobre os dois casos com segurança.
+  }
+
+  /**
+   * Percorre um container (a página, ou um <div>/<p> dentro dela) e empilha parágrafos/tabelas em
+   * `paragrafosXml`. É recursivo: um <div> que contenha uma tabela em qualquer nível de aninhamento é
+   * processado de novo em vez de achatado em texto corrido — isso é comum no editor real, porque o
+   * Chrome costuma envolver o conteúdo recém-inserido (como uma tabela) num <div> vazio criado pelo
+   * Enter anterior, então a tabela nem sempre é filha direta da página.
+   */
+  function processarContainer(container: Node, paragrafosXml: string[]) {
+    let runsAtual: RunDocx[] = [];
     function flush() {
       if (runsAtual.length > 0) {
         paragrafosXml.push(`<w:p>${runsAtual.map(runParaXml).join("")}</w:p>`);
         runsAtual = [];
       }
     }
-
-    Array.from(raiz.childNodes).forEach((no) => {
-      if (no.nodeType === Node.ELEMENT_NODE && TAGS_DE_BLOCO.has((no as HTMLElement).tagName)) {
-        flush();
-        const runsDoBloco = coletarRuns(no, formatacaoVazia);
-        paragrafosXml.push(runsDoBloco.length > 0 ? `<w:p>${runsDoBloco.map(runParaXml).join("")}</w:p>` : "<w:p/>");
+    Array.from(container.childNodes).forEach((no) => {
+      if (no.nodeType !== Node.ELEMENT_NODE) {
+        runsAtual.push(...noParaRuns(no, formatacaoVazia));
         return;
       }
-      runsAtual.push(...noParaRuns(no, formatacaoVazia));
+      const el = no as HTMLElement;
+      if (el.tagName === "TABLE") {
+        flush();
+        paragrafosXml.push(tabelaParaXml(el as HTMLTableElement));
+        return;
+      }
+      if (TAGS_DE_BLOCO.has(el.tagName)) {
+        flush();
+        if (el.querySelector("table")) {
+          processarContainer(el, paragrafosXml);
+        } else {
+          const runsDoBloco = coletarRuns(el, formatacaoVazia);
+          paragrafosXml.push(runsDoBloco.length > 0 ? `<w:p>${runsDoBloco.map(runParaXml).join("")}</w:p>` : "<w:p/>");
+        }
+        return;
+      }
+      runsAtual.push(...noParaRuns(el, formatacaoVazia));
     });
     flush();
+  }
 
+  function paginaParaParagrafosXml(html: string): string {
+    const raiz = document.createElement("div");
+    raiz.innerHTML = html;
+    const paragrafosXml: string[] = [];
+    processarContainer(raiz, paragrafosXml);
     return paragrafosXml.length > 0 ? paragrafosXml.join("") : "<w:p/>";
   }
 
@@ -365,6 +428,9 @@ export function abrirPreviaImpressaoLimpa(
     margemEsquerdaMm: number;
     margemDireitaMm: number;
     corFundo: string;
+    qtdColunas?: number;
+    colunasEspacoMm?: number;
+    colunasLinha?: boolean;
   },
 ) {
   const janela = window.open("", "_blank", "width=900,height=1000");
@@ -379,6 +445,15 @@ export function abrirPreviaImpressaoLimpa(
         `<div class="folha" style="width:${opcoes.larguraMm}mm;min-height:${opcoes.alturaMm}mm;padding:${padding};background:${opcoes.corFundo};">${html}</div>`,
     )
     .join("");
+  const qtdColunas = opcoes.qtdColunas ?? 1;
+  // O corpo (texto do documento) fica dentro de .doc-corpo-impresso — as colunas só se aplicam a ele,
+  // nunca ao cabeçalho/rodapé repetido (que continua em largura cheia, uma linha só, como no editor).
+  const cssColunas =
+    qtdColunas > 1
+      ? `.doc-corpo-impresso { column-count: ${qtdColunas}; column-gap: ${opcoes.colunasEspacoMm ?? 10}mm; ${
+          opcoes.colunasLinha ? "column-rule: 1px solid currentColor;" : ""
+        } }`
+      : "";
   janela.document.open();
   janela.document.write(`<!doctype html>
 <html lang="pt-BR">
@@ -389,6 +464,9 @@ export function abrirPreviaImpressaoLimpa(
   * { box-sizing: border-box; }
   body { margin: 0; background: #e7e9f0; font-family: Arial, sans-serif; }
   .folha { margin: 12mm auto; box-shadow: 0 4px 20px rgba(0,0,0,.15); overflow-wrap: break-word; }
+  .doc-cabecalho-repetido { font-size: 11px; color: #666; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid #e2e2e2; }
+  .doc-rodape-repetido { font-size: 11px; color: #666; padding-top: 10px; margin-top: 14px; border-top: 1px solid #e2e2e2; }
+  ${cssColunas}
   @media print {
     body { background: #fff; }
     .folha { margin: 0; box-shadow: none; page-break-after: always; }

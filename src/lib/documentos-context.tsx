@@ -51,6 +51,13 @@ export type ConfigPagina = {
   margemEsquerdaMm?: number;
   margemDireitaMm?: number;
   corFundo: string;
+  /** Cabeçalho e rodapé — o mesmo conteúdo se repete em todas as páginas (não é por página). Suporta os
+   * tokens de texto {{PAGINA}} e {{TOTAL}}, substituídos pelo número real de cada página na hora de
+   * renderizar, imprimir e exportar. Vazio = sem cabeçalho/rodapé (comportamento anterior, sem mudança). */
+  cabecalhoHtml?: string;
+  rodapeHtml?: string;
+  /** Posições de tabulação (mm a partir da margem esquerda), mostradas na régua horizontal — ver ReguaDocumento. */
+  tabulacoesMm?: number[];
   /** Colunas de texto (Formatar → Colunas) — 1 = layout normal, sem colunas. */
   colunas: number;
   colunasEspacoMm: number;
@@ -167,6 +174,19 @@ ${CAPA("#0f9d63", "#ffffff", "Relatório executivo", "Período: [DATA]")}
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
 </table>
+<h3>Gráfico de desempenho</h3>
+<svg width="100%" height="140" viewBox="0 0 400 140" style="background:#fafafa;border-radius:8px;">
+  <line x1="30" y1="10" x2="30" y2="120" stroke="#ccc"/>
+  <line x1="30" y1="120" x2="380" y2="120" stroke="#ccc"/>
+  <rect x="55" y="60" width="40" height="60" fill="#0f9d63"/>
+  <rect x="135" y="35" width="40" height="85" fill="#2e6bff"/>
+  <rect x="215" y="70" width="40" height="50" fill="#c9660a"/>
+  <rect x="295" y="20" width="40" height="100" fill="#8a3ffc"/>
+  <text x="75" y="134" font-size="11" text-anchor="middle" fill="#666">Jan</text>
+  <text x="155" y="134" font-size="11" text-anchor="middle" fill="#666">Fev</text>
+  <text x="235" y="134" font-size="11" text-anchor="middle" fill="#666">Mar</text>
+  <text x="315" y="134" font-size="11" text-anchor="middle" fill="#666">Abr</text>
+</svg>
 <h3>Análise</h3><p></p>
 <h3>Conclusões</h3><p></p>
 <h3>Recomendações</h3><p></p>
@@ -507,7 +527,17 @@ ${CAPA("#2f9e8f", "#ffffff", "Plano de acompanhamento de saúde", "[NOME DO CLIE
 <h3>Introdução</h3><p></p>
 <h3>Capítulo 1 — [TÍTULO]</h3><p></p>
 <blockquote style="border-left:3px solid #8a3ffc;margin:16px 0;padding:8px 16px;font-style:italic;color:#555;background:#f8f6ff;">"Destaque uma citação ou dado importante aqui."</blockquote>
-<p>[INSIRA UMA IMAGEM]</p>
+<svg width="100%" height="160" viewBox="0 0 400 160" style="background:#f1e9ff;border-radius:8px;">
+  <rect x="140" y="45" width="120" height="80" rx="6" fill="#fff" stroke="#8a3ffc" stroke-width="2"/>
+  <circle cx="165" cy="70" r="10" fill="#8a3ffc"/>
+  <path d="M148 115 L185 85 L210 105 L235 78 L252 115 Z" fill="#c9b8ff"/>
+  <text x="200" y="142" font-size="11" text-anchor="middle" fill="#8a3ffc">[INSIRA UMA IMAGEM]</text>
+</svg>
+<svg width="100%" height="24" viewBox="0 0 400 24" aria-hidden="true" style="margin:20px 0;">
+  <line x1="0" y1="12" x2="170" y2="12" stroke="#ddd"/>
+  <circle cx="200" cy="12" r="4" fill="#8a3ffc"/>
+  <line x1="230" y1="12" x2="400" y2="12" stroke="#ddd"/>
+</svg>
 <h3>Capítulo 2 — [TÍTULO]</h3><p></p>
 <div style="background:#eaf1ff;border-radius:8px;padding:16px;margin:16px 0;"><p style="margin:0;"><b>💡 Dica:</b> destaque um insight prático pro leitor aqui.</p></div>
 <h3>Conclusão</h3><p></p>
@@ -539,7 +569,21 @@ ${CAPA("#0b1533", "#ffffff", "[TÍTULO DO PROCEDIMENTO]", "Manual operacional ·
   <li>Descreva o terceiro passo.</li>
 </ol>
 <p style="background:#fff3cd;border-left:3px solid #c9660a;padding:10px 14px;font-size:12px;">⚠️ Alerta: destaque aqui um cuidado importante do procedimento.</p>
-<h3>Boas práticas</h3><p></p>
+<h3>Boas práticas</h3>
+<table style="width:100%;border-collapse:collapse;">
+  <tr>
+    <td style="width:28px;vertical-align:top;padding:4px 8px 4px 0;">
+      <svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#0f9d63"/><path d="M5.5 10.5l3 3 6-6.5" stroke="#fff" stroke-width="2" fill="none"/></svg>
+    </td>
+    <td style="padding:4px 0;">Primeira boa prática recomendada.</td>
+  </tr>
+  <tr>
+    <td style="width:28px;vertical-align:top;padding:4px 8px 4px 0;">
+      <svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#0f9d63"/><path d="M5.5 10.5l3 3 6-6.5" stroke="#fff" stroke-width="2" fill="none"/></svg>
+    </td>
+    <td style="padding:4px 0;">Segunda boa prática recomendada.</td>
+  </tr>
+</table>
 <h3>Checklist final</h3>
 <p>☐ Item 1<br>☐ Item 2<br>☐ Item 3</p>`,
   },

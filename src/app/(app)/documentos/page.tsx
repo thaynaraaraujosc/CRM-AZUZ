@@ -215,7 +215,6 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
 
   useEffect(() => {
     if (!modelosAberto) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- estado de carregamento visual só do popup de modelos, não realimenta o próprio efeito
     setCarregandoGaleria(true);
     const t = setTimeout(() => setCarregandoGaleria(false), 250);
     return () => clearTimeout(t);
@@ -714,16 +713,25 @@ function ReguaDocumento({
   margemDireitaMm,
   onMudarEsquerda,
   onMudarDireita,
+  tabulacoesMm,
+  onMudarTabulacoes,
+  recuo,
+  onMudarRecuo,
 }: {
   larguraMm: number;
   margemEsquerdaMm: number;
   margemDireitaMm: number;
   onMudarEsquerda: (mm: number) => void;
   onMudarDireita: (mm: number) => void;
+  tabulacoesMm: number[];
+  onMudarTabulacoes: (novas: number[]) => void;
+  recuo: { primeiraLinhaMm: number; esquerdoMm: number; direitoMm: number };
+  onMudarRecuo: (patch: Partial<{ primeiraLinhaMm: number; esquerdoMm: number; direitoMm: number }>) => void;
 }) {
   const reguaRef = useRef<HTMLDivElement>(null);
   const marcasQtd = Math.round(larguraMm / 10);
   const marcas = Array.from({ length: marcasQtd + 1 }, (_, i) => i);
+  const arrastandoRef = useRef(false);
 
   function iniciarArrasteMargem(lado: "esquerda" | "direita") {
     return (eDown: React.MouseEvent) => {
@@ -748,8 +756,82 @@ function ReguaDocumento({
     };
   }
 
+  /** Clicar num espaço vazio da régua adiciona uma tabulação nova ali. */
+  function aoClicarNaRegua(e: React.MouseEvent) {
+    if (arrastandoRef.current) return; // era o fim de um arraste, não um clique de verdade
+    const el = reguaRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const xMm = Math.round(((e.clientX - rect.left) / rect.width) * larguraMm);
+    if (xMm <= margemEsquerdaMm || xMm >= larguraMm - margemDireitaMm) return; // só dentro da área útil
+    onMudarTabulacoes([...tabulacoesMm, xMm].sort((a, b) => a - b));
+  }
+
+  function iniciarArrasteTabulacao(indice: number) {
+    return (eDown: React.MouseEvent) => {
+      eDown.preventDefault();
+      eDown.stopPropagation();
+      arrastandoRef.current = true;
+      function mover(ev: MouseEvent) {
+        const el = reguaRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const xMm = Math.round(((ev.clientX - rect.left) / rect.width) * larguraMm);
+        const novas = [...tabulacoesMm];
+        novas[indice] = Math.min(Math.max(xMm, margemEsquerdaMm), larguraMm - margemDireitaMm);
+        onMudarTabulacoes(novas);
+      }
+      function soltar() {
+        window.removeEventListener("mousemove", mover);
+        window.removeEventListener("mouseup", soltar);
+        onMudarTabulacoes([...tabulacoesMm].sort((a, b) => a - b));
+        setTimeout(() => { arrastandoRef.current = false; }, 0);
+      }
+      window.addEventListener("mousemove", mover);
+      window.addEventListener("mouseup", soltar);
+    };
+  }
+
+  function removerTabulacao(indice: number) {
+    return (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onMudarTabulacoes(tabulacoesMm.filter((_, i) => i !== indice));
+    };
+  }
+
+  /** Recuo do parágrafo atual — completamente independente da margem da página (soma-se a ela). */
+  function iniciarArrasteRecuo(tipo: "primeiraLinha" | "esquerdo" | "direito") {
+    return (eDown: React.MouseEvent) => {
+      eDown.preventDefault();
+      eDown.stopPropagation();
+      function mover(ev: MouseEvent) {
+        const el = reguaRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const xMm = ((ev.clientX - rect.left) / rect.width) * larguraMm;
+        if (tipo === "esquerdo") {
+          const novoEsquerdo = Math.max(0, xMm - margemEsquerdaMm);
+          onMudarRecuo({ esquerdoMm: novoEsquerdo });
+        } else if (tipo === "direito") {
+          const novoDireito = Math.max(0, larguraMm - margemDireitaMm - xMm);
+          onMudarRecuo({ direitoMm: novoDireito });
+        } else {
+          const novaPrimeiraLinha = xMm - margemEsquerdaMm - recuo.esquerdoMm;
+          onMudarRecuo({ primeiraLinhaMm: Math.max(-recuo.esquerdoMm, novaPrimeiraLinha) });
+        }
+      }
+      function soltar() {
+        window.removeEventListener("mousemove", mover);
+        window.removeEventListener("mouseup", soltar);
+      }
+      window.addEventListener("mousemove", mover);
+      window.addEventListener("mouseup", soltar);
+    };
+  }
+
   return (
-    <div className="doc-regua" ref={reguaRef}>
+    <div className="doc-regua" ref={reguaRef} onClick={aoClicarNaRegua} title="Clique num espaço vazio pra adicionar uma tabulação">
       {marcas.map((cm) => (
         <span key={cm} className="doc-regua-marca" aria-hidden="true">
           {cm > 0 ? cm : ""}
@@ -766,6 +848,34 @@ function ReguaDocumento({
         style={{ left: `${((larguraMm - margemDireitaMm) / larguraMm) * 100}%` }}
         onMouseDown={iniciarArrasteMargem("direita")}
         title={`Margem direita: ${margemDireitaMm}mm — arraste pra ajustar`}
+      />
+      {tabulacoesMm.map((mm, indice) => (
+        <div
+          key={indice}
+          className="doc-regua-tabulacao"
+          style={{ left: `${(mm / larguraMm) * 100}%` }}
+          onMouseDown={iniciarArrasteTabulacao(indice)}
+          onDoubleClick={removerTabulacao(indice)}
+          title={`Tabulação em ${mm}mm — arraste pra mover, duplo clique pra remover`}
+        />
+      ))}
+      <div
+        className="doc-regua-recuo doc-regua-recuo-primeira-linha"
+        style={{ left: `${((margemEsquerdaMm + recuo.esquerdoMm + recuo.primeiraLinhaMm) / larguraMm) * 100}%` }}
+        onMouseDown={iniciarArrasteRecuo("primeiraLinha")}
+        title={`Recuo da primeira linha do parágrafo: ${Math.round(recuo.primeiraLinhaMm)}mm — arraste pra ajustar (independente da margem)`}
+      />
+      <div
+        className="doc-regua-recuo doc-regua-recuo-esquerdo"
+        style={{ left: `${((margemEsquerdaMm + recuo.esquerdoMm) / larguraMm) * 100}%` }}
+        onMouseDown={iniciarArrasteRecuo("esquerdo")}
+        title={`Recuo esquerdo do parágrafo: ${Math.round(recuo.esquerdoMm)}mm — arraste pra ajustar (independente da margem)`}
+      />
+      <div
+        className="doc-regua-recuo doc-regua-recuo-direito"
+        style={{ left: `${((larguraMm - margemDireitaMm - recuo.direitoMm) / larguraMm) * 100}%` }}
+        onMouseDown={iniciarArrasteRecuo("direito")}
+        title={`Recuo direito do parágrafo: ${Math.round(recuo.direitoMm)}mm — arraste pra ajustar (independente da margem)`}
       />
     </div>
   );
@@ -862,6 +972,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [menuAberto, setMenuAberto] = useState<NomeMenu | null>(null);
   const [zoom, setZoom] = useState(100);
   const [modo, setModo] = useState<"edicao" | "sugestao" | "visualizacao">("edicao");
+  /** Snapshot do conteúdo de cada página no instante em que o modo sugestão foi ativado — null = não está rastreando. */
+  const [sugestaoSnapshot, setSugestaoSnapshot] = useState<Record<string, string> | null>(null);
   const [mostrarRegua, setMostrarRegua] = useState(() => lerPrefVer("mostrarRegua", true));
   const [mostrarNaoImprimiveis, setMostrarNaoImprimiveis] = useState(() => lerPrefVer("mostrarNaoImprimiveis", false));
   const [semPaginas, setSemPaginas] = useState(() => lerPrefVer("semPaginas", false));
@@ -903,6 +1015,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [descricaoNovoModelo, setDescricaoNovoModelo] = useState("");
   const [categoriaNovoModelo, setCategoriaNovoModelo] = useState<CategoriaModelo>("Negócios");
   const [compartilharNovoModelo, setCompartilharNovoModelo] = useState(false);
+  const [cabecalhoRodapeAberto, setCabecalhoRodapeAberto] = useState<"cabecalho" | "rodape" | null>(null);
+  const cabecalhoRodapeEditRef = useRef<HTMLDivElement>(null);
   const [gravandoVoz, setGravandoVoz] = useState(false);
 
   const [buscaTexto, setBuscaTexto] = useState("");
@@ -916,6 +1030,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const colunasRef = useRef<HTMLDivElement>(null);
   useFecharAoClicarFora(colunasRef, colunasAberto, () => setColunasAberto(false));
   const [imagemSelecionada, setImagemSelecionada] = useState<{ paginaId: string; el: HTMLImageElement } | null>(null);
+  const [celulaSelecionada, setCelulaSelecionada] = useState<{ paginaId: string; td: HTMLTableCellElement } | null>(null);
+  const [celulaPainelPos, setCelulaPainelPos] = useState<{ x: number; y: number } | null>(null);
+  const [recuoAtual, setRecuoAtual] = useState({ primeiraLinhaMm: 0, esquerdoMm: 0, direitoMm: 0 });
 
   // Contorno de seleção visível na própria imagem (a imagem é um <img> real dentro do HTML, não um
   // componente React controlado — por isso a classe é alternada direto no elemento do DOM).
@@ -1002,6 +1119,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    * usuário estava digitando, e o navegador jogava o cursor de volta pro início do elemento.
    */
   const ultimoConteudoRef = useRef<Record<string, string>>({});
+  const historicoEdicaoRef = useRef<Record<string, { pilha: string[]; indice: number }>>({});
   /** Posição de cursor a restaurar depois que um bloco inteiro precisou ser movido pra próxima página (ver reflowPagina). */
   const cursorPendenteRef = useRef<{ paginaId: string; caminho: number[]; startOffset: number } | null>(null);
 
@@ -1029,7 +1147,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             selecao?.removeAllRanges();
             selecao?.addRange(range);
             el.focus();
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- reflow moveu o bloco onde o cursor estava pra outra página; precisamos sincronizar qual página está ativa
             setPaginaAtivaId(pagina.id);
           } catch {
             // Se por algum motivo a posição exata não puder ser restaurada, ao menos foca a página certa.
@@ -1115,6 +1232,54 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     // ou qualquer nó guardado em estado) mesmo quando o HTML resultante era idêntico ao que já estava lá.
     ultimoConteudoRef.current[paginaId] = html;
     setPaginasLocais((prev) => prev.map((p) => (p.id === paginaId ? { ...p, conteudoHtml: html } : p)));
+    registrarHistorico(paginaId, html);
+  }
+
+  /**
+   * Histórico de desfazer/refazer próprio — não depende do document.execCommand("undo") nativo do
+   * navegador, que só rastreia comandos disparados por execCommand (digitação, negrito, etc). Ações que
+   * mexem no DOM diretamente via JavaScript — redimensionar/mover/cortar imagem, editar linha/coluna de
+   * tabela, mudar colunas do documento — não entram nessa pilha nativa, e desfazer depois delas removia a
+   * imagem/tabela inteira (o undo nativo desfazia a ÚLTIMA operação DA PILHA DELE, que era a inserção).
+   * Como salvarConteudoPagina já é o ponto único por onde toda edição passa, registrar um snapshot de
+   * HTML aqui cobre todo tipo de edição de forma uniforme.
+   */
+  function registrarHistorico(paginaId: string, html: string) {
+    const atual = historicoEdicaoRef.current[paginaId];
+    if (!atual) {
+      historicoEdicaoRef.current[paginaId] = { pilha: [html], indice: 0 };
+      return;
+    }
+    if (atual.pilha[atual.indice] === html) return; // nada mudou de verdade
+    const novaPilha = atual.pilha.slice(0, atual.indice + 1);
+    novaPilha.push(html);
+    if (novaPilha.length > 100) novaPilha.shift(); // limita o tamanho — não é ilimitado
+    historicoEdicaoRef.current[paginaId] = { pilha: novaPilha, indice: novaPilha.length - 1 };
+  }
+
+  function aplicarSnapshotHistorico(paginaId: string, html: string) {
+    const el = paginaRefs.current[paginaId];
+    if (el) {
+      el.innerHTML = html;
+      ultimoConteudoRef.current[paginaId] = html;
+    }
+    setPaginasLocais((prev) => prev.map((p) => (p.id === paginaId ? { ...p, conteudoHtml: html } : p)));
+    setImagemSelecionada(null);
+    setCelulaSelecionada(null);
+  }
+
+  function desfazer() {
+    const h = historicoEdicaoRef.current[paginaAtivaId];
+    if (!h || h.indice <= 0) return;
+    h.indice -= 1;
+    aplicarSnapshotHistorico(paginaAtivaId, h.pilha[h.indice]);
+  }
+
+  function refazer() {
+    const h = historicoEdicaoRef.current[paginaAtivaId];
+    if (!h || h.indice >= h.pilha.length - 1) return;
+    h.indice += 1;
+    aplicarSnapshotHistorico(paginaAtivaId, h.pilha[h.indice]);
   }
 
   function focarPagina(paginaId: string) {
@@ -1131,6 +1296,103 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   function inserirNaPagina(html: string) {
     paginaRefs.current[paginaAtivaId]?.focus();
     document.execCommand("insertHTML", false, html);
+    salvarConteudoPagina(paginaAtivaId);
+  }
+
+  /**
+   * Tab de verdade: avança até a próxima tabulação configurada na régua (Formatar → régua horizontal),
+   * medindo a posição real do cursor na página. Sem tabulação configurada à frente, cai num espaçamento
+   * padrão de 12,5mm (como Word/Docs fazem quando não há marcador definido).
+   */
+  function inserirTabulacao() {
+    if (!doc) return;
+    const selecao = window.getSelection();
+    const el = paginaRefs.current[paginaAtivaId];
+    if (!selecao || selecao.rangeCount === 0 || !el) {
+      inserirNaPagina("&emsp;&emsp;");
+      return;
+    }
+    const folha = el.closest(".doc-page-sheet") as HTMLElement | null;
+    if (!folha) {
+      inserirNaPagina("&emsp;&emsp;");
+      return;
+    }
+    const range = selecao.getRangeAt(0);
+    const retangulos = range.getClientRects();
+    const cursorRect = retangulos[0] ?? range.getBoundingClientRect();
+    const folhaRect = folha.getBoundingClientRect();
+    const pxPorMm = folhaRect.width / larguraMm;
+    const cursorXmm = (cursorRect.left - folhaRect.left) / pxPorMm;
+    const tabulacoes = [...(doc.config.tabulacoesMm ?? [])].sort((a, b) => a - b);
+    const proxima = tabulacoes.find((t) => t > cursorXmm + 0.5);
+    const alvoMm = proxima ?? (Math.floor(cursorXmm / 12.5) + 1) * 12.5;
+    const larguraPx = Math.max(6, Math.round((alvoMm - cursorXmm) * pxPorMm));
+
+    // Inserção via Range direto (não execCommand("insertHTML")) — um <span contenteditable="false">
+    // não é um lugar válido pro cursor pousar, e inserir só ele deixava a seleção num estado inválido
+    // onde a digitação seguinte era descartada silenciosamente. Insere o span E um nó de texto vazio
+    // logo depois, e move o cursor pra dentro desse nó de texto explicitamente.
+    const span = document.createElement("span");
+    span.contentEditable = "false";
+    span.dataset.docTab = "1";
+    span.style.display = "inline-block";
+    span.style.width = `${larguraPx}px`;
+    span.innerHTML = "&nbsp;";
+    const noDepois = document.createTextNode("");
+    range.deleteContents();
+    range.insertNode(span);
+    span.after(noDepois);
+    const novoRange = document.createRange();
+    novoRange.setStart(noDepois, 0);
+    novoRange.collapse(true);
+    selecao.removeAllRanges();
+    selecao.addRange(novoRange);
+    salvarConteudoPagina(paginaAtivaId);
+  }
+
+  /** Acha o elemento de bloco (parágrafo/título/item de lista/citação) que contém o cursor agora. */
+  function paragrafoDoCursor(): HTMLElement | null {
+    const selecao = window.getSelection();
+    if (!selecao || selecao.rangeCount === 0) return null;
+    let no: Node | null = selecao.getRangeAt(0).startContainer;
+    if (no.nodeType !== Node.ELEMENT_NODE) no = no.parentNode;
+    let el = no as HTMLElement | null;
+    const TAGS_BLOCO = new Set(["P", "DIV", "LI", "H1", "H2", "H3", "H4", "H5", "H6", "BLOCKQUOTE"]);
+    while (el && !el.classList.contains("doc-body-rich")) {
+      if (TAGS_BLOCO.has(el.tagName)) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function lerRecuo(el: HTMLElement | null) {
+    if (!el) return { primeiraLinhaMm: 0, esquerdoMm: 0, direitoMm: 0 };
+    return {
+      primeiraLinhaMm: parseFloat(el.style.textIndent) || 0,
+      esquerdoMm: parseFloat(el.style.marginLeft) || 0,
+      direitoMm: parseFloat(el.style.marginRight) || 0,
+    };
+  }
+
+  // Mantém os marcadores de recuo da régua sempre mostrando os valores do parágrafo onde o cursor está.
+  useEffect(() => {
+    function aoMudarSelecao() {
+      const p = paragrafoDoCursor();
+      if (p) setRecuoAtual(lerRecuo(p));
+    }
+    document.addEventListener("selectionchange", aoMudarSelecao);
+    return () => document.removeEventListener("selectionchange", aoMudarSelecao);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Recuo de verdade do parágrafo (text-indent/margin-left/margin-right) — nunca mexe na margem da página. */
+  function mudarRecuoParagrafo(patch: Partial<{ primeiraLinhaMm: number; esquerdoMm: number; direitoMm: number }>) {
+    const p = paragrafoDoCursor();
+    if (!p) return;
+    if (patch.primeiraLinhaMm !== undefined) p.style.textIndent = `${patch.primeiraLinhaMm}mm`;
+    if (patch.esquerdoMm !== undefined) p.style.marginLeft = `${patch.esquerdoMm}mm`;
+    if (patch.direitoMm !== undefined) p.style.marginRight = `${patch.direitoMm}mm`;
+    setRecuoAtual(lerRecuo(p));
     salvarConteudoPagina(paginaAtivaId);
   }
 
@@ -1165,6 +1427,11 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    * cada página (sem esperar o debounce), garantindo que impressão e exportação sempre reflitam
    * exatamente o que está na tela.
    */
+  /** Substitui os tokens de número de página no cabeçalho/rodapé pelo valor real de cada página. */
+  function substituirTokensPagina(html: string, numeroPagina: number, totalPaginas: number) {
+    return html.replaceAll("{{PAGINA}}", String(numeroPagina)).replaceAll("{{TOTAL}}", String(totalPaginas));
+  }
+
   function paginasComConteudoAtual(): PaginaDoc[] {
     return paginasLocais.map((p) => {
       const el = paginaRefs.current[p.id];
@@ -1172,14 +1439,51 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     });
   }
 
-  /** Visualização de impressão própria — só o conteúdo do documento, sem menu/barra/régua/botões. */
+  /** Igual paginasComConteudoAtual(), mas com o cabeçalho/rodapé (se existir) embutido no HTML de cada
+   * página — usado por toda exportação/impressão, pra nenhuma delas "esquecer" o cabeçalho/rodapé. */
+  function paginasParaExportar(): PaginaDoc[] {
+    if (!doc) return [];
+    const paginas = paginasComConteudoAtual();
+    const total = paginas.length;
+    return paginas.map((p, i) => {
+      const cabecalho = doc.config.cabecalhoHtml
+        ? `<div class="doc-cabecalho-repetido">${substituirTokensPagina(doc.config.cabecalhoHtml, i + 1, total)}</div>`
+        : "";
+      const rodape = doc.config.rodapeHtml
+        ? `<div class="doc-rodape-repetido">${substituirTokensPagina(doc.config.rodapeHtml, i + 1, total)}</div>`
+        : "";
+      return { ...p, conteudoHtml: cabecalho + p.conteudoHtml + rodape };
+    });
+  }
+
+  /** Visualização de impressão própria — só o conteúdo do documento (+ cabeçalho/rodapé se o usuário criou), sem menu/barra/régua/botões. */
   function abrirPreviaImpressao() {
     if (!doc) return;
-    abrirPreviaImpressaoLimpa(
-      doc.titulo,
-      paginasComConteudoAtual().map((p) => p.conteudoHtml),
-      { larguraMm, alturaMm, margemSuperiorMm, margemInferiorMm, margemEsquerdaMm, margemDireitaMm, corFundo: doc.config.corFundo },
-    );
+    const paginas = paginasComConteudoAtual();
+    const total = paginas.length;
+    const paginasHtml = paginas.map((p, i) => {
+      const cabecalho = doc.config.cabecalhoHtml
+        ? `<div class="doc-cabecalho-repetido">${substituirTokensPagina(doc.config.cabecalhoHtml, i + 1, total)}</div>`
+        : "";
+      const rodape = doc.config.rodapeHtml
+        ? `<div class="doc-rodape-repetido">${substituirTokensPagina(doc.config.rodapeHtml, i + 1, total)}</div>`
+        : "";
+      // O corpo vai numa div própria (.doc-corpo-impresso) — é só ela que recebe a CSS de colunas,
+      // cabeçalho/rodapé continuam em largura cheia igual aparecem no editor.
+      return `${cabecalho}<div class="doc-corpo-impresso">${p.conteudoHtml}</div>${rodape}`;
+    });
+    abrirPreviaImpressaoLimpa(doc.titulo, paginasHtml, {
+      larguraMm,
+      alturaMm,
+      margemSuperiorMm,
+      margemInferiorMm,
+      margemEsquerdaMm,
+      margemDireitaMm,
+      corFundo: doc.config.corFundo,
+      qtdColunas,
+      colunasEspacoMm: doc.config.colunasEspacoMm,
+      colunasLinha: doc.config.colunasLinha,
+    });
   }
 
   async function confirmarExportarPdf() {
@@ -1281,6 +1585,19 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    */
   function aoTeclarNaPagina(e: React.KeyboardEvent<HTMLDivElement>) {
     const mod = e.ctrlKey || e.metaKey;
+    // Desfazer/refazer usam o histórico próprio (ver registrarHistorico), não o nativo do navegador —
+    // ele não sabe nada sobre redimensionar/mover imagem ou editar tabela (manipulação direta do DOM,
+    // fora do execCommand), e desfazer usando só a pilha nativa acabava removendo a imagem/tabela inteira.
+    if (mod && !e.shiftKey && (e.key === "z" || e.key === "Z")) {
+      e.preventDefault();
+      desfazer();
+      return;
+    }
+    if ((mod && e.shiftKey && (e.key === "z" || e.key === "Z")) || (mod && (e.key === "y" || e.key === "Y"))) {
+      e.preventDefault();
+      refazer();
+      return;
+    }
     if (mod && e.key === "Enter") {
       e.preventDefault();
       inserirQuebraDePaginaNoCursor();
@@ -1326,6 +1643,15 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       aplicarFormatacao("removeFormat");
       return;
     }
+    if (e.key === "Tab" && !mod) {
+      const selecao = window.getSelection();
+      const dentroDeLista =
+        selecao && selecao.rangeCount > 0 && (selecao.getRangeAt(0).startContainer as Node).parentElement?.closest("li, td, th");
+      if (dentroDeLista) return; // deixa o navegador indentar o item de lista / pular de célula nativamente
+      e.preventDefault();
+      inserirTabulacao();
+      return;
+    }
     // Enter normal e Shift+Enter: deixamos o navegador tratar nativamente (cria parágrafo / quebra de
     // linha) — isso já é seguro agora que a página não reescreve seu próprio innerHTML a cada tecla
     // (ver ultimoConteudoRef acima). O onInput cuida de reavaliar a auto-paginação em seguida.
@@ -1343,7 +1669,11 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    */
   function aoDigitarNaPagina(paginaId: string) {
     if (salvarDigitacaoRef.current) clearTimeout(salvarDigitacaoRef.current);
-    salvarDigitacaoRef.current = setTimeout(() => salvarConteudoPagina(paginaId), 600);
+    // 250ms (não 600ms): salvarConteudoPagina também é quem registra o checkpoint no histórico de
+    // desfazer/refazer (ver registrarHistorico) — um debounce longo demais deixava "digitar e desfazer
+    // logo em seguida" sem checkpoint nenhum pra voltar (Ctrl+Z virava um no-op enquanto o debounce não
+    // disparava). 250ms ainda evita registrar um checkpoint por tecla durante digitação contínua.
+    salvarDigitacaoRef.current = setTimeout(() => salvarConteudoPagina(paginaId), 250);
     reflowPagina(paginaId);
   }
 
@@ -1660,6 +1990,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     } else {
       setImagemSelecionada(null);
     }
+    const celula = alvo.closest("td, th") as HTMLTableCellElement | null;
+    if (celula) {
+      setCelulaSelecionada({ paginaId, td: celula });
+    } else {
+      setCelulaSelecionada(null);
+    }
   }
 
   function atualizarImagemSelecionada(mudar: (img: HTMLImageElement) => void) {
@@ -1819,6 +2155,79 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     inserirNaPagina(`<table style="border-collapse:collapse;width:100%;">${linhaHtml.repeat(linhas)}</table>`);
   }
 
+  /** Edição real de tabela — inserir/excluir linha ou coluna a partir da célula selecionada (ver PainelTabela). */
+  function comCelulaSelecionada(fn: (td: HTMLTableCellElement, tabela: HTMLTableElement) => void) {
+    if (!celulaSelecionada) return;
+    const { paginaId, td } = celulaSelecionada;
+    const tabela = td.closest("table");
+    if (!tabela) return;
+    fn(td, tabela);
+    salvarConteudoPagina(paginaId);
+  }
+
+  function inserirLinhaTabela(onde: "acima" | "abaixo") {
+    comCelulaSelecionada((td) => {
+      const linha = td.closest("tr");
+      if (!linha) return;
+      const qtdColunas = linha.children.length;
+      const novaLinha = document.createElement("tr");
+      for (let i = 0; i < qtdColunas; i++) {
+        const novaCelula = document.createElement("td");
+        novaCelula.style.border = "1px solid #999";
+        novaCelula.style.padding = "4px 8px";
+        novaCelula.innerHTML = "&nbsp;";
+        novaLinha.appendChild(novaCelula);
+      }
+      if (onde === "acima") linha.before(novaLinha);
+      else linha.after(novaLinha);
+    });
+  }
+
+  function inserirColunaTabela(onde: "esquerda" | "direita") {
+    comCelulaSelecionada((td, tabela) => {
+      const linha = td.closest("tr");
+      if (!linha) return;
+      const indice = Array.from(linha.children).indexOf(td);
+      tabela.querySelectorAll("tr").forEach((tr) => {
+        const celulaRef = tr.children[indice] as HTMLTableCellElement | undefined;
+        const novaCelula = document.createElement(celulaRef?.tagName === "TH" ? "th" : "td");
+        novaCelula.style.border = "1px solid #999";
+        novaCelula.style.padding = "4px 8px";
+        novaCelula.innerHTML = "&nbsp;";
+        if (onde === "esquerda") celulaRef?.before(novaCelula);
+        else celulaRef?.after(novaCelula);
+      });
+    });
+  }
+
+  function excluirLinhaTabela() {
+    comCelulaSelecionada((td, tabela) => {
+      const linha = td.closest("tr");
+      if (!linha) return;
+      const totalLinhas = tabela.querySelectorAll("tr").length;
+      linha.remove();
+      if (totalLinhas <= 1) tabela.remove(); // não sobrou nenhuma linha: a tabela também vai
+    });
+    setCelulaSelecionada(null);
+  }
+
+  function excluirColunaTabela() {
+    comCelulaSelecionada((td, tabela) => {
+      const linha = td.closest("tr");
+      if (!linha) return;
+      const indice = Array.from(linha.children).indexOf(td);
+      const totalColunas = linha.children.length;
+      tabela.querySelectorAll("tr").forEach((tr) => tr.children[indice]?.remove());
+      if (totalColunas <= 1) tabela.remove(); // não sobrou nenhuma coluna: a tabela também vai
+    });
+    setCelulaSelecionada(null);
+  }
+
+  function excluirTabelaInteira() {
+    comCelulaSelecionada((_td, tabela) => tabela.remove());
+    setCelulaSelecionada(null);
+  }
+
   function inserirLink() {
     const url = window.prompt("URL do link:", "https://");
     if (!url) return;
@@ -1880,8 +2289,56 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     setComentariosAberto(true);
   }
 
+  /**
+   * Modo sugestão de verdade — não é só um aviso decorativo. Entrar no modo tira uma foto do conteúdo
+   * de cada página; "Aceitar todas" mantém o que foi editado (só sai do modo); "Rejeitar todas" restaura
+   * o conteúdo exatamente como estava antes de entrar no modo, em todas as páginas.
+   */
+  function entrarModoSugestao() {
+    const snapshot: Record<string, string> = {};
+    for (const p of paginasComConteudoAtual()) snapshot[p.id] = p.conteudoHtml;
+    setSugestaoSnapshot(snapshot);
+    setModo("sugestao");
+  }
+
+  function aceitarSugestoes() {
+    setSugestaoSnapshot(null);
+    setModo("edicao");
+  }
+
+  function rejeitarSugestoes() {
+    if (!sugestaoSnapshot) {
+      setModo("edicao");
+      return;
+    }
+    for (const [paginaId, html] of Object.entries(sugestaoSnapshot)) {
+      aplicarSnapshotHistorico(paginaId, html);
+    }
+    setSugestaoSnapshot(null);
+    setModo("edicao");
+  }
+
+  function estatisticasSugestao(): { adicionados: number; removidos: number } | null {
+    if (!sugestaoSnapshot) return null;
+    let adicionados = 0;
+    let removidos = 0;
+    for (const p of paginasLocais) {
+      const original = sugestaoSnapshot[p.id] ?? "";
+      const div = document.createElement("div");
+      div.innerHTML = original;
+      const textoOriginal = div.textContent ?? "";
+      div.innerHTML = p.conteudoHtml;
+      const textoAtual = div.textContent ?? "";
+      const diferenca = textoAtual.length - textoOriginal.length;
+      if (diferenca > 0) adicionados += diferenca;
+      else removidos += -diferenca;
+    }
+    return { adicionados, removidos };
+  }
+
   const contagem = contarPalavrasTexto(paginasLocais);
   const estrutura = extrairEstrutura();
+  const statsSugestao = estatisticasSugestao();
 
   const menuArquivo: ("sep" | ItemMenu)[] = [
     { label: "Novo documento", onClick: () => window.dispatchEvent(new CustomEvent("doc-novo")) },
@@ -1929,23 +2386,19 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     },
     "sep",
     { label: "Baixar como PDF", onClick: () => setExportarPdfAberto(true) },
-    { label: "Baixar como Word (.docx)", onClick: () => baixarDocx(doc.titulo, paginasComConteudoAtual()) },
-    { label: "Baixar como texto simples (.txt)", onClick: () => baixarTxt(doc.titulo, paginasComConteudoAtual()) },
-    { label: "Baixar como RTF", onClick: () => baixarRtf(doc.titulo, paginasComConteudoAtual()) },
-    { label: "Baixar como HTML", onClick: () => baixarHtml(doc.titulo, paginasComConteudoAtual()) },
+    { label: "Baixar como Word (.docx)", onClick: () => baixarDocx(doc.titulo, paginasParaExportar()) },
+    { label: "Baixar como texto simples (.txt)", onClick: () => baixarTxt(doc.titulo, paginasParaExportar()) },
+    { label: "Baixar como RTF", onClick: () => baixarRtf(doc.titulo, paginasParaExportar()) },
+    { label: "Baixar como HTML", onClick: () => baixarHtml(doc.titulo, paginasParaExportar()) },
   ];
 
-  function tentarQueryCommandEnabled(comando: string) {
-    try {
-      return document.queryCommandEnabled(comando);
-    } catch {
-      return true;
-    }
-  }
+  const historicoAtivo = historicoEdicaoRef.current[paginaAtivaId];
+  const podeDesfazer = !!historicoAtivo && historicoAtivo.indice > 0;
+  const podeRefazer = !!historicoAtivo && historicoAtivo.indice < historicoAtivo.pilha.length - 1;
 
   const menuEditar: ("sep" | ItemMenu)[] = [
-    { label: "Desfazer", atalho: "Ctrl+Z", onClick: () => aplicarFormatacao("undo"), disabled: !tentarQueryCommandEnabled("undo") },
-    { label: "Refazer", atalho: "Ctrl+Y", onClick: () => aplicarFormatacao("redo"), disabled: !tentarQueryCommandEnabled("redo") },
+    { label: "Desfazer", atalho: "Ctrl+Z", onClick: desfazer, disabled: !podeDesfazer },
+    { label: "Refazer", atalho: "Ctrl+Y", onClick: refazer, disabled: !podeRefazer },
     "sep",
     { label: "Recortar", atalho: "Ctrl+X", onClick: () => aplicarFormatacao("cut") },
     { label: "Copiar", atalho: "Ctrl+C", onClick: () => aplicarFormatacao("copy") },
@@ -1992,9 +2445,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     { label: "Data", onClick: () => inserirNaPagina(new Date().toLocaleDateString("pt-BR")) },
     { label: "Nota de rodapé", onClick: () => inserirNaPagina('<sup>[1]</sup>') },
     { label: "Citação", onClick: () => aplicarFormatacao("formatBlock", "BLOCKQUOTE") },
-    { label: "Cabeçalho", onClick: () => inserirNaPagina("<p><i>Cabeçalho</i></p>") },
-    { label: "Rodapé", onClick: () => inserirNaPagina("<p><i>Rodapé</i></p>") },
-    { label: "Número de página", onClick: () => inserirNaPagina(`Página ${paginasLocais.findIndex((p) => p.id === paginaAtivaId) + 1} de ${paginasLocais.length}`) },
+    { label: "Cabeçalho", onClick: () => setCabecalhoRodapeAberto("cabecalho") },
+    { label: "Rodapé", onClick: () => setCabecalhoRodapeAberto("rodape") },
+    { label: "Número de página", onClick: () => setCabecalhoRodapeAberto("rodape") },
     { label: "Quebra de página", atalho: "Ctrl+Enter", onClick: inserirQuebraDePaginaNoCursor },
     { label: "Quebra de coluna", disabled: qtdColunas <= 1, onClick: () => inserirNaPagina('<span style="break-after:column;display:inline-block;width:0;"></span>') },
     { label: "Sumário automático", onClick: inserirSumario },
@@ -2096,8 +2549,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       </div>
 
       <div className="doc-toolbar doc-toolbar-rich" style={{ display: mostrarToolbar ? undefined : "none" }}>
-        <button type="button" className="doc-toolbar-btn" title="Desfazer" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("undo")}>↶</button>
-        <button type="button" className="doc-toolbar-btn" title="Refazer" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("redo")}>↷</button>
+        <button type="button" className="doc-toolbar-btn" title="Desfazer" disabled={!podeDesfazer} onMouseDown={(e) => e.preventDefault()} onClick={desfazer}>↶</button>
+        <button type="button" className="doc-toolbar-btn" title="Refazer" disabled={!podeRefazer} onMouseDown={(e) => e.preventDefault()} onClick={refazer}>↷</button>
         <button type="button" className="doc-toolbar-btn" title="Imprimir" onClick={abrirPreviaImpressao}>🖨</button>
         <button
           type="button"
@@ -2171,7 +2624,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               key={m}
               type="button"
               className={`fchip${modo === m ? " active" : ""}`}
-              onClick={() => setModo(m)}
+              onClick={() => (m === "sugestao" ? entrarModoSugestao() : setModo(m))}
             >
               {m === "edicao" ? "Edição" : m === "sugestao" ? "Sugestão" : "Visualização"}
             </button>
@@ -2180,7 +2633,20 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       </div>
 
       {modo === "sugestao" ? (
-        <div className="doc-aviso-modo">✏️ Modo sugestão ativo — mudanças ficam registradas no histórico de comentários pra revisão.</div>
+        <div className="doc-aviso-modo">
+          <span>
+            ✏️ Modo sugestão ativo —{" "}
+            {statsSugestao && (statsSugestao.adicionados > 0 || statsSugestao.removidos > 0)
+              ? `${statsSugestao.adicionados} caractere(s) adicionado(s), ${statsSugestao.removidos} removido(s) desde que o modo foi ativado.`
+              : "edite normalmente; as mudanças feitas a partir de agora podem ser aceitas ou rejeitadas em bloco."}
+          </span>
+          <button type="button" className="btn ghost" style={{ marginLeft: 12 }} onClick={rejeitarSugestoes}>
+            Rejeitar todas
+          </button>
+          <button type="button" className="btn primary" onClick={aceitarSugestoes}>
+            Aceitar todas
+          </button>
+        </div>
       ) : null}
 
       <div className="doc-canvas" style={{ zoom: `${zoom}%` } as React.CSSProperties}>
@@ -2217,6 +2683,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   margemDireitaMm={margemDireitaMm}
                   onMudarEsquerda={(mm) => atualizarConfigPagina(id, { margemEsquerdaMm: mm })}
                   onMudarDireita={(mm) => atualizarConfigPagina(id, { margemDireitaMm: mm })}
+                  tabulacoesMm={doc.config.tabulacoesMm ?? []}
+                  onMudarTabulacoes={(novas) => atualizarConfigPagina(id, { tabulacoesMm: novas })}
+                  recuo={recuoAtual}
+                  onMudarRecuo={mudarRecuoParagrafo}
                 />
               ) : null}
               <div className="doc-page-linha">
@@ -2241,6 +2711,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                     background: doc.config.corFundo,
                   }}
                 >
+                {doc.config.cabecalhoHtml ? (
+                  <div
+                    className="doc-cabecalho-repetido"
+                    dangerouslySetInnerHTML={{
+                      __html: substituirTokensPagina(doc.config.cabecalhoHtml, indice + 1, paginasLocais.length),
+                    }}
+                  />
+                ) : null}
                 <div
                   key={pagina.id}
                   ref={(el) => {
@@ -2248,6 +2726,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                     if (el && ultimoConteudoRef.current[pagina.id] === undefined) {
                       el.innerHTML = pagina.conteudoHtml;
                       ultimoConteudoRef.current[pagina.id] = pagina.conteudoHtml;
+                      // Snapshot inicial no histórico — sem isso, desfazer a primeiríssima edição não
+                      // teria pra onde voltar (o histórico só nasceria depois de já ter uma mudança).
+                      historicoEdicaoRef.current[pagina.id] = { pilha: [pagina.conteudoHtml], indice: 0 };
                     }
                   }}
                   className={`doc-body-rich${mostrarNaoImprimiveis ? " doc-body-rich-marcas" : ""}${qtdColunas > 1 ? " doc-body-rich-colunas" : ""}`}
@@ -2280,8 +2761,19 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                     }
                   }}
                 />
-                <div className="doc-page-numero">Página {indice + 1} de {paginasLocais.length}</div>
+                {doc.config.rodapeHtml ? (
+                  <div
+                    className="doc-rodape-repetido"
+                    dangerouslySetInnerHTML={{
+                      __html: substituirTokensPagina(doc.config.rodapeHtml, indice + 1, paginasLocais.length),
+                    }}
+                  />
+                ) : null}
                 </div>
+                {/* Indicador só de UI (fora de .doc-page-sheet/.doc-print-area de propósito): a impressão e o
+                    PDF não podem mostrar nenhum número de página que o usuário não tenha inserido explicitamente
+                    (ver Inserir → Número de página, que usa o token {{PAGINA}} dentro do rodapé de verdade). */}
+                <div className="doc-page-numero-ui" aria-hidden="true">Página {indice + 1} de {paginasLocais.length}</div>
               </div>
               <div className="doc-page-fim">
                 <button type="button" className="doc-page-fim-btn" onClick={novaPaginaAposAtiva}>+ Adicionar página</button>
@@ -2449,6 +2941,78 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <li><b>Ver</b> → alterna régua, caracteres não imprimíveis, modo paginado/contínuo e zoom.</li>
               <li>A auto-paginação move o texto para a página seguinte automaticamente conforme você digita.</li>
             </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {cabecalhoRodapeAberto ? (
+        <div className="modal-overlay" onClick={() => setCabecalhoRodapeAberto(null)}>
+          <div className="modal" style={{ width: "min(480px, 100%)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="panel-h">
+              <h4>{cabecalhoRodapeAberto === "cabecalho" ? "Cabeçalho" : "Rodapé"}</h4>
+              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCabecalhoRodapeAberto(null)}>✕</button>
+            </div>
+            <div style={{ padding: 20 }}>
+              <p className="hint" style={{ marginTop: 0 }}>
+                O que você escrever aqui se repete em todas as páginas do documento — na tela, na impressão e no PDF.
+              </p>
+              <div
+                ref={cabecalhoRodapeEditRef}
+                className="input doc-cabecalho-rodape-editor"
+                contentEditable
+                suppressContentEditableWarning
+                dangerouslySetInnerHTML={{
+                  __html: (cabecalhoRodapeAberto === "cabecalho" ? doc.config.cabecalhoHtml : doc.config.rodapeHtml) ?? "",
+                }}
+              />
+              <div className="filters-row" style={{ margin: "10px 0 0" }}>
+                <button
+                  type="button"
+                  className="fchip"
+                  onClick={() => {
+                    cabecalhoRodapeEditRef.current?.focus();
+                    document.execCommand("insertText", false, "{{PAGINA}}");
+                  }}
+                >
+                  Inserir número da página
+                </button>
+                <button
+                  type="button"
+                  className="fchip"
+                  onClick={() => {
+                    cabecalhoRodapeEditRef.current?.focus();
+                    document.execCommand("insertText", false, "{{TOTAL}}");
+                  }}
+                >
+                  Inserir total de páginas
+                </button>
+              </div>
+            </div>
+            <div className="panel-f" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                className="btn ghost"
+                style={{ color: "#d64545" }}
+                onClick={() => {
+                  atualizarConfigPagina(id, cabecalhoRodapeAberto === "cabecalho" ? { cabecalhoHtml: "" } : { rodapeHtml: "" });
+                  setCabecalhoRodapeAberto(null);
+                }}
+              >
+                Remover
+              </button>
+              <button type="button" className="btn ghost" onClick={() => setCabecalhoRodapeAberto(null)}>Cancelar</button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => {
+                  const html = cabecalhoRodapeEditRef.current?.innerHTML ?? "";
+                  atualizarConfigPagina(id, cabecalhoRodapeAberto === "cabecalho" ? { cabecalhoHtml: html } : { rodapeHtml: html });
+                  setCabecalhoRodapeAberto(null);
+                }}
+              >
+                Salvar
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -2820,6 +3384,37 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           onDuplicar={duplicarImagemSelecionada}
           onIniciarRedimensionar={iniciarArrasteRedimensionarImagem}
         />
+      ) : null}
+
+      {celulaSelecionada ? (
+        <div
+          className="wa-email-modal wa-email-floating doc-tabela-painel"
+          style={celulaPainelPos ? { left: celulaPainelPos.x, top: celulaPainelPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setCelulaPainelPos)}>
+            <p className="n">Editar tabela</p>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCelulaSelecionada(null)}>✕</button>
+          </div>
+          <div className="field">
+            <label>Linha</label>
+            <div className="filters-row" style={{ margin: 0 }}>
+              <button type="button" className="fchip" onClick={() => inserirLinhaTabela("acima")}>+ Acima</button>
+              <button type="button" className="fchip" onClick={() => inserirLinhaTabela("abaixo")}>+ Abaixo</button>
+              <button type="button" className="fchip" style={{ color: "#d64545" }} onClick={excluirLinhaTabela}>Excluir linha</button>
+            </div>
+          </div>
+          <div className="field">
+            <label>Coluna</label>
+            <div className="filters-row" style={{ margin: 0 }}>
+              <button type="button" className="fchip" onClick={() => inserirColunaTabela("esquerda")}>+ Esquerda</button>
+              <button type="button" className="fchip" onClick={() => inserirColunaTabela("direita")}>+ Direita</button>
+              <button type="button" className="fchip" style={{ color: "#d64545" }} onClick={excluirColunaTabela}>Excluir coluna</button>
+            </div>
+          </div>
+          <button type="button" className="btn ghost block" style={{ color: "#d64545" }} onClick={excluirTabelaInteira}>
+            Excluir tabela inteira
+          </button>
+        </div>
       ) : null}
     </div>
   );
