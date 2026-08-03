@@ -470,6 +470,13 @@ export function abrirPreviaImpressaoLimpa(
   .folha { position: relative; isolation: isolate; margin: 12mm auto; box-shadow: 0 4px 20px rgba(0,0,0,.15); overflow-wrap: break-word; overflow: hidden; }
   .doc-cabecalho-repetido { font-size: 11px; color: #666; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid #e2e2e2; }
   .doc-rodape-repetido { font-size: 11px; color: #666; padding-top: 10px; margin-top: 14px; border-top: 1px solid #e2e2e2; }
+  /* Mesma escala de títulos do editor (globals.css, ".doc-body-rich h1/h2/h3/h4") — repetida aqui
+     porque esta janela de impressão é um documento à parte, que não carrega o CSS do app. */
+  .doc-corpo-impresso h1 { font-size: 26px; font-weight: 700; line-height: 1.3; margin: 0.7em 0 0.35em; }
+  .doc-corpo-impresso h2 { font-size: 21px; font-weight: 700; line-height: 1.35; margin: 0.65em 0 0.3em; }
+  .doc-corpo-impresso h3 { font-size: 17px; font-weight: 700; line-height: 1.4; margin: 0.6em 0 0.25em; }
+  .doc-corpo-impresso h4 { font-size: 14.5px; font-weight: 600; font-style: italic; color: #4a5268; line-height: 1.4; margin: 0.5em 0 0.2em; }
+  .doc-corpo-impresso p { margin: 0 0 0.6em; }
   ${cssColunas}
   @media print {
     body { background: #fff; }

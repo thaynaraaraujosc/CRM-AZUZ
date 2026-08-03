@@ -4495,6 +4495,52 @@ table.tbl tbody tr:hover td {
   color: #9aa1b0;
 }
 
+/*
+ * Hierarquia tipográfica dos títulos — sem isso, H1/H2/H3/H4 (aplicados pelo seletor "Estilo do
+ * parágrafo" da toolbar) caem no estilo cru padrão do navegador: tamanhos inconsistentes entre
+ * navegadores, sem relação de peso/espaçamento entre si. Mesma escala é repetida no HTML da janela de
+ * impressão (documentos-export.ts) pra não divergir do que aparece aqui no editor.
+ */
+.doc-body-rich h1 {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0.7em 0 0.35em;
+}
+
+.doc-body-rich h2 {
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0.65em 0 0.3em;
+}
+
+.doc-body-rich h3 {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0.6em 0 0.25em;
+}
+
+/* "Subtítulo" no seletor de estilo — menor que Título 3 e sem negrito total, pra marcar uma
+   hierarquia clara abaixo dos três níveis de título. */
+.doc-body-rich h4 {
+  font-size: 14.5px;
+  font-weight: 600;
+  font-style: italic;
+  color: #4a5268;
+  line-height: 1.4;
+  margin: 0.5em 0 0.2em;
+}
+
+.doc-body-rich p {
+  margin: 0 0 0.6em;
+}
+
+.doc-body-rich :first-child {
+  margin-top: 0;
+}
+
 /* Cabeçalho/rodapé reais — o mesmo conteúdo se repete em toda página, dentro da área impressa/exportada. */
 .doc-cabecalho-repetido {
   font-size: 11px;
