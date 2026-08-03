@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Background,
+  ControlButton,
   Controls,
   MarkerType,
   MiniMap,
@@ -83,7 +84,7 @@ const ACOES_COMUNS: FlowNodeType[] = [
 function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const { fluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo } = useAutomationFlows();
   const fluxo = fluxos.find((f) => f.id === fluxoId);
-  const { screenToFlowPosition, fitView, setCenter } = useReactFlow();
+  const { screenToFlowPosition, fitView, setCenter, zoomIn, zoomOut } = useReactFlow();
 
   const [rfNodes, setRfNodes] = useState<FlowRFNode[]>(() => domainNodesToRF(fluxo?.nodes ?? []));
   const [rfEdges, setRfEdges] = useState<FlowRFEdge[]>(() => domainEdgesToRF(fluxo?.edges ?? []));
@@ -349,6 +350,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       }
       if (e.key === "Escape") {
         setMenuContexto(null);
+        setEscolherGatilhoAberto(false);
+        setAcaoRapida(null);
       }
     }
     window.addEventListener("keydown", onKeyDown);
@@ -584,7 +587,17 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             proOptions={{ hideAttribution: true }}
           >
             <Background gap={18} />
-            <Controls showInteractive={false} />
+            <Controls showZoom={false} showFitView={false} showInteractive={false}>
+              <ControlButton title="Aumentar zoom" aria-label="Aumentar zoom" onClick={() => zoomIn({ duration: 200 })}>
+                +
+              </ControlButton>
+              <ControlButton title="Diminuir zoom" aria-label="Diminuir zoom" onClick={() => zoomOut({ duration: 200 })}>
+                −
+              </ControlButton>
+              <ControlButton title="Centralizar fluxo" aria-label="Centralizar fluxo" onClick={() => fitView({ duration: 300, padding: 0.2 })}>
+                ⛶
+              </ControlButton>
+            </Controls>
             {minimapaVisivel ? (
               <MiniMap pannable zoomable nodeColor={(n) => CORES_CATEGORIA[String(n.type)] ?? "#94a3b8"} />
             ) : null}
