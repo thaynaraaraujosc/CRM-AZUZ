@@ -8,6 +8,20 @@ import type { FlowNodeType } from "@/lib/automation-flow/types";
 /** Tipo MIME custom carregado no drag — o que a área do canvas lê no `onDrop`. */
 export const FLOW_DND_MIME = "application/x-flow-node-type";
 
+/**
+ * "Mais usados" — mockado por enquanto (não há execuções reais registradas por bloco pra calcular
+ * isso de verdade ainda). Reduz bastante a necessidade de procurar os itens mais comuns dentro das
+ * 8 categorias.
+ */
+const MAIS_USADOS: FlowNodeType[] = [
+  "mensagem_texto",
+  "aguardar",
+  "condicao_grupo",
+  "alterar_etapa",
+  "adicionar_etiqueta",
+  "criar_tarefa",
+];
+
 export function BlockLibrary({
   aberta,
   onFechar,
@@ -22,6 +36,10 @@ export function BlockLibrary({
 
   const resultados = useMemo(() => buscarBlocos(busca), [busca]);
   const buscando = busca.trim().length > 0;
+  const maisUsados = useMemo(
+    () => MAIS_USADOS.map((tipo) => BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo)).filter((b): b is BlocoDefinicao => !!b),
+    [],
+  );
 
   function alternarCategoria(id: string) {
     setCategoriasFechadas((prev) => {
@@ -89,21 +107,24 @@ export function BlockLibrary({
         {buscando ? (
           <BlocoSecao titulo={`Resultados (${resultados.length})`} blocos={resultados} onAdicionarBloco={onAdicionarBloco} />
         ) : (
-          CATEGORIAS_BLOCOS.map((cat) => {
-            const blocos = BLOCOS_DISPONIVEIS.filter((b) => b.categoria === cat.id);
-            const fechada = categoriasFechadas.has(cat.id);
-            return (
-              <div className="flow-lib-cat" key={cat.id} data-flow-lib-cat={cat.id}>
-                <button type="button" className="flow-lib-cat-h" onClick={() => alternarCategoria(cat.id)} aria-expanded={!fechada}>
-                  <span className={`flow-cat-dot flow-cat-${cat.id}`} aria-hidden="true" />
-                  <span>{cat.label}</span>
-                  <span className="flow-lib-cat-n">{blocos.length}</span>
-                  <span className="flow-lib-cat-arrow">{fechada ? "▸" : "▾"}</span>
-                </button>
-                {fechada ? null : <BlocoSecao blocos={blocos} onAdicionarBloco={onAdicionarBloco} />}
-              </div>
-            );
-          })
+          <>
+            <BlocoSecao titulo="Mais usados" blocos={maisUsados} onAdicionarBloco={onAdicionarBloco} />
+            {CATEGORIAS_BLOCOS.map((cat) => {
+              const blocos = BLOCOS_DISPONIVEIS.filter((b) => b.categoria === cat.id);
+              const fechada = categoriasFechadas.has(cat.id);
+              return (
+                <div className="flow-lib-cat" key={cat.id} data-flow-lib-cat={cat.id}>
+                  <button type="button" className="flow-lib-cat-h" onClick={() => alternarCategoria(cat.id)} aria-expanded={!fechada}>
+                    <span className={`flow-cat-dot flow-cat-${cat.id}`} aria-hidden="true" />
+                    <span>{cat.label}</span>
+                    <span className="flow-lib-cat-n">{blocos.length}</span>
+                    <span className="flow-lib-cat-arrow">{fechada ? "▸" : "▾"}</span>
+                  </button>
+                  {fechada ? null : <BlocoSecao blocos={blocos} onAdicionarBloco={onAdicionarBloco} />}
+                </div>
+              );
+            })}
+          </>
         )}
       </div>
     </aside>
