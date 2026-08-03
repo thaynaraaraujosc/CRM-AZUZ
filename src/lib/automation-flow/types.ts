@@ -219,10 +219,19 @@ export type MensagemContatoData = { nomeContato: string; telefone?: string };
 export type MensagemLocalizacaoData = { latitude?: number; longitude?: number; endereco?: string };
 
 export type OpcaoBotaoLista = { id: string; rotulo: string };
+/**
+ * "Formato de resposta" é só front-end/visual nesta fase — nenhum dos três formatos liga em nenhuma
+ * API de mensageria de verdade ainda. Existe pra já deixar a intenção registrada no fluxo (o CRM vai
+ * poder trabalhar com integrações que não têm botão interativo nativo, daí a opção de simular como
+ * menu numerado em texto puro).
+ */
+export type FormatoResposta = "botoes" | "menu_numerado" | "texto_livre";
+
 export type MensagemBotoesData = {
   canal: CanalMensagem;
   texto: string;
   opcoes: OpcaoBotaoLista[];
+  formatoResposta?: FormatoResposta;
 };
 export type MensagemListaData = MensagemBotoesData;
 export type MensagemModeloWhatsappData = { templateId: string; variaveis?: Record<string, string> };

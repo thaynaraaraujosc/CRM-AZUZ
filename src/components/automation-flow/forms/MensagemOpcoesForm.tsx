@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 
-import type { CanalMensagem, MensagemBotoesData, OpcaoBotaoLista } from "@/lib/automation-flow/types";
+import type { CanalMensagem, FormatoResposta, MensagemBotoesData, OpcaoBotaoLista } from "@/lib/automation-flow/types";
 import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";
 
@@ -11,6 +11,18 @@ const CANAIS: { valor: CanalMensagem; label: string }[] = [
   { valor: "instagram", label: "Instagram" },
   { valor: "tiktok", label: "TikTok" },
 ];
+
+const FORMATOS: { valor: FormatoResposta; label: string; desc: string }[] = [
+  { valor: "botoes", label: "Botões interativos", desc: "Cada opção aparece como um botão clicável (quando o canal suporta)." },
+  { valor: "menu_numerado", label: "Menu numerado", desc: "As opções viram uma lista numerada em texto — o contato responde digitando o número." },
+  { valor: "texto_livre", label: "Texto livre", desc: "Sem botões nem números — o contato responde do jeito que quiser, e o fluxo interpreta pela palavra-chave." },
+];
+
+/** Prévia de como o menu numerado fica em texto puro — útil pra canais sem suporte a botão nativo. */
+function previaMenuNumerado(texto: string, opcoes: OpcaoBotaoLista[]): string {
+  const linhas = opcoes.map((o, i) => `${i + 1} - ${o.rotulo || `Opção ${i + 1}`}`);
+  return [texto || "(sem texto)", "", ...linhas, "", "Digite o número da opção."].join("\n");
+}
 
 let contador = 0;
 function novoIdOpcao(): string {
@@ -75,6 +87,33 @@ export function MensagemOpcoesForm({
           onChange={(e) => onChange({ ...data, texto: e.target.value })}
         />
       </div>
+
+      <div className="field">
+        <label>Formato de resposta</label>
+        <div className="flow-formato-resposta-lista">
+          {FORMATOS.map((f) => (
+            <button
+              type="button"
+              key={f.valor}
+              className={`flow-formato-resposta-opcao${(data.formatoResposta ?? "botoes") === f.valor ? " sel" : ""}`}
+              onClick={() => onChange({ ...data, formatoResposta: f.valor })}
+            >
+              <span className="n">{f.label}</span>
+              <span className="r">{f.desc}</span>
+            </button>
+          ))}
+        </div>
+        <p className="hint mt8">
+          Só front-end nesta fase — nenhum formato liga em envio real de mensagem ainda.
+        </p>
+      </div>
+
+      {(data.formatoResposta ?? "botoes") === "menu_numerado" && opcoes.length > 0 ? (
+        <div className="field">
+          <label>Prévia (como o contato veria em texto puro)</label>
+          <pre className="flow-menu-numerado-previa">{previaMenuNumerado(data.texto, opcoes)}</pre>
+        </div>
+      ) : null}
 
       <div className="field">
         <label>Opções ({opcoes.length})</label>
