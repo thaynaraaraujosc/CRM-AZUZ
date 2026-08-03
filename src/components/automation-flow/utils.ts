@@ -18,6 +18,9 @@ export type FlowRFNodeData = {
   saidasConectadas?: Set<string>;
   /** Quantos caminhos diferentes chegam nesse node — >1 indica que branches diferentes se reencontram aqui (item 31). */
   caminhosConvergindo?: number;
+  /** Número de sequência (1, 2, 3...) e frase narrativa do modo "Entender fluxo" (item 24) — os dois só vêm preenchidos quando o modo está ativo. */
+  ordemNarrativa?: number;
+  explicacao?: string;
   /** Fechado sobre o id do nó lá no FlowEditor — abre o seletor rápido "O que acontece agora?" pra essa saída específica. */
   onAdicionarApos?: (handleId: string | undefined) => void;
 };

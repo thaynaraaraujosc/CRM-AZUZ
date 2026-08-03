@@ -479,6 +479,12 @@ table {
   color: var(--ink);
 }
 
+.btn.ghost.active {
+  background: var(--blue-soft-2);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
 .btn.block {
   display: flex;
   width: 100%;
@@ -6730,6 +6736,37 @@ table.tbl tbody tr:hover td {
   border: 1px solid var(--line);
   color: var(--text-muted);
   z-index: 3;
+}
+
+/* Modo "Entender fluxo" (item 24) — número de sequência (canto superior esquerdo, sobrepondo a
+   borda do node) + explicação narrativa curta logo abaixo do resumo normal. */
+.flow-node-ordem {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  box-shadow: 0 2px 6px rgba(11, 21, 51, 0.3);
+}
+
+.flow-node-explicacao {
+  margin: 0 12px 10px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: var(--blue-soft-2);
+  color: var(--blue);
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1.4;
 }
 
 .flow-node.is-selected {

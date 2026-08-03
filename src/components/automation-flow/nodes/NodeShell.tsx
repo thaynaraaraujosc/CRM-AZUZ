@@ -38,7 +38,7 @@ const NOME_CATEGORIA: Record<FlowNodeCategory, string> = {
  * então não faz sentido duplicar esse JSX 8 vezes.
  */
 export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
-  const { flowNode, problemas, saidasConectadas, caminhosConvergindo, onAdicionarApos } = data;
+  const { flowNode, problemas, saidasConectadas, caminhosConvergindo, ordemNarrativa, explicacao, onAdicionarApos } = data;
   const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === flowNode.type);
   const saidas = saidasDoNo(flowNode);
   const temErro = problemas.some((p) => p.severidade === "erro");
@@ -57,6 +57,12 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     <div className={classes} data-node-id={id}>
       {temEntrada(flowNode.category) ? (
         <Handle type="target" position={Position.Top} className="flow-handle" />
+      ) : null}
+
+      {ordemNarrativa ? (
+        <span className="flow-node-ordem" aria-hidden="true">
+          {ordemNarrativa}
+        </span>
       ) : null}
 
       {caminhosConvergindo && caminhosConvergindo > 1 ? (
@@ -95,6 +101,8 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           </div>
         );
       })()}
+
+      {explicacao ? <div className="flow-node-explicacao">💡 {explicacao}</div> : null}
 
       {saidas.length > 1 ? (
         <div className="flow-node-handles">

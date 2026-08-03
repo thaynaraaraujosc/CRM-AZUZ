@@ -20,6 +20,8 @@ export function Toolbar({
   onPublicar,
   onAbrirHistorico,
   onOrganizarAutomaticamente,
+  entenderFluxoAtivo,
+  onAlternarEntenderFluxo,
 }: {
   nome: string;
   onChangeNome: (v: string) => void;
@@ -37,6 +39,8 @@ export function Toolbar({
   onPublicar: () => void;
   onAbrirHistorico: () => void;
   onOrganizarAutomaticamente: () => void;
+  entenderFluxoAtivo: boolean;
+  onAlternarEntenderFluxo: () => void;
 }) {
   const [editandoNome, setEditandoNome] = useState(false);
 
@@ -76,6 +80,14 @@ export function Toolbar({
         </button>
         <button type="button" className="btn ghost" onClick={onOrganizarAutomaticamente}>
           Organizar automaticamente
+        </button>
+        <button
+          type="button"
+          className={`btn ghost${entenderFluxoAtivo ? " active" : ""}`}
+          title="Numera os blocos na ordem em que acontecem e mostra uma explicação curta de cada um"
+          onClick={onAlternarEntenderFluxo}
+        >
+          {entenderFluxoAtivo ? "✓ Entender fluxo" : "Entender fluxo"}
         </button>
         <button type="button" className="btn ghost" onClick={onAbrirHistorico}>
           Histórico de versões

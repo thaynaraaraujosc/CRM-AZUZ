@@ -22,7 +22,7 @@ import "@xyflow/react/dist/style.css";
 
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
-import { saidasDoNo } from "@/lib/automation-flow/resumo";
+import { resumoNo, saidasDoNo } from "@/lib/automation-flow/resumo";
 import { validarFluxo } from "@/lib/automation-flow/validacao";
 import type {
   ConfiguracoesFluxo,
@@ -82,6 +82,33 @@ const ACOES_COMUNS: FlowNodeType[] = [
   "criar_tarefa",
 ];
 
+/** Frase curta pro modo "Entender fluxo" (item 24) — mesma frase de resumoNo(), só emoldurada por
+ * categoria pra ler como narrativa ("Começa quando...", "Verifica...", "Envia...") em vez de um
+ * fragmento solto. */
+function explicacaoDoNo(flowNode: DomainFlowNode): string {
+  const resumo = resumoNo(flowNode);
+  switch (flowNode.category) {
+    case "gatilho":
+      return `Começa quando: ${resumo}`;
+    case "condicao":
+      return `Verifica: ${resumo}`;
+    case "mensagem":
+      return flowNode.type === "mensagem_botoes" || flowNode.type === "mensagem_lista"
+        ? `Pergunta e espera a resposta: ${resumo}`
+        : `Envia: ${resumo}`;
+    case "espera":
+      return `Aguarda: ${resumo}`;
+    case "humano":
+      return `Encaminha pra uma pessoa: ${resumo}`;
+    case "integracao":
+      return `Chama um sistema externo: ${resumo}`;
+    case "fim":
+      return "Termina esse caminho aqui.";
+    default:
+      return `Executa: ${resumo}`;
+  }
+}
+
 function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const { fluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo } = useAutomationFlows();
   const fluxo = fluxos.find((f) => f.id === fluxoId);
@@ -100,6 +127,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [acaoRapida, setAcaoRapida] = useState<{ nodeId: string; handleId: string | undefined } | null>(null);
   const [minimapaVisivel, setMinimapaVisivel] = useState(true);
   const [arrastandoSobreCanvas, setArrastandoSobreCanvas] = useState(false);
+  const [entenderFluxoAtivo, setEntenderFluxoAtivo] = useState(false);
 
   const historyRef = useRef<Snapshot[]>([{ nodes: rfNodes, edges: rfEdges }]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -482,6 +510,31 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     });
     return m;
   }, [rfEdges]);
+  /** Ordem narrativa (1, 2, 3...) pro modo "Entender fluxo" — BFS a partir dos gatilhos, seguindo as
+   * arestas na ordem em que aparecem; um node já visitado (branches que se reencontram) não ganha
+   * um segundo número. */
+  const ordemNarrativaPorNode = useMemo(() => {
+    if (!entenderFluxoAtivo) return null;
+    const m = new Map<string, number>();
+    const porOrigem = new Map<string, string[]>();
+    rfEdges.forEach((e) => {
+      if (!e.source || !e.target) return;
+      if (!porOrigem.has(e.source)) porOrigem.set(e.source, []);
+      porOrigem.get(e.source)!.push(e.target);
+    });
+    const fila = rfNodes.filter((n) => n.data.flowNode.category === "gatilho").map((n) => n.id);
+    let proximo = 1;
+    while (fila.length > 0) {
+      const atual = fila.shift()!;
+      if (m.has(atual)) continue;
+      m.set(atual, proximo);
+      proximo += 1;
+      (porOrigem.get(atual) ?? []).forEach((destino) => {
+        if (!m.has(destino)) fila.push(destino);
+      });
+    }
+    return m;
+  }, [entenderFluxoAtivo, rfNodes, rfEdges]);
   /** Quantos caminhos diferentes chegam em cada node — >1 quer dizer que branches diferentes se
    * reencontram ali (item 31), o que merece um aviso visual em vez de parecer só mais uma seta. */
   const entradasPorNode = useMemo(() => {
@@ -522,10 +575,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           problemas: problemasPorNode.get(n.id) ?? [],
           saidasConectadas: saidasConectadasPorNode.get(n.id),
           caminhosConvergindo: entradasPorNode.get(n.id) ?? 0,
+          ordemNarrativa: ordemNarrativaPorNode?.get(n.id),
+          explicacao: entenderFluxoAtivo ? explicacaoDoNo(n.data.flowNode) : undefined,
           onAdicionarApos: (handleId: string | undefined) => setAcaoRapida({ nodeId: n.id, handleId }),
         },
       })),
-    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, nodesRelacionados],
+    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados],
   );
   const edgesParaRenderizar = useMemo(
     () =>
@@ -572,6 +627,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         onPublicar={publicar}
         onAbrirHistorico={() => setHistoricoAberto(true)}
         onOrganizarAutomaticamente={organizarAutomaticamente}
+        entenderFluxoAtivo={entenderFluxoAtivo}
+        onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
       />
 
       <div className="flow-body">
