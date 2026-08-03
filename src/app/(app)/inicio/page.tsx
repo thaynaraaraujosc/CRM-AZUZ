@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { atividadeRecente, conversas, equipe, funilJulho, leadsPorDia, tarefas, today } from "@/lib/data";
@@ -55,17 +55,29 @@ export default function InicioPage() {
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
   const [funilFiltro, setFuncilFiltro] = useState("Todos");
   const [responsavelFiltro, setResponsavelFiltro] = useState("Todos");
-  const [config, setConfig] = useState<ConfigInicio>(() => {
-    if (typeof window === "undefined") return CONFIG_PADRAO;
+  // Começa com o padrão (igual ao HTML pré-renderizado no build) e só lê o
+  // localStorage depois de montar — inicializar direto no useState causaria
+  // erro de hidratação sempre que o navegador já tivesse config salva (a
+  // página é pré-renderizada estática, sem acesso a localStorage).
+  const [config, setConfig] = useState<ConfigInicio>(CONFIG_PADRAO);
+  const [personalizarAberto, setPersonalizarAberto] = useState(false);
+  const [metaInput, setMetaInput] = useState(String(CONFIG_PADRAO.meta || 45000));
+
+  // Hidratação: começa com o padrão (igual ao HTML estático) e só lê o
+  // localStorage depois de montar — ver comentário no useState acima.
+  useEffect(() => {
     try {
       const salvo = localStorage.getItem(CHAVE_CONFIG);
-      return salvo ? (JSON.parse(salvo) as ConfigInicio) : CONFIG_PADRAO;
+      if (salvo) {
+        const parsed = JSON.parse(salvo) as ConfigInicio;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setConfig(parsed);
+        setMetaInput(String(parsed.meta || 45000));
+      }
     } catch {
-      return CONFIG_PADRAO;
+      // ignora config inválida — mantém padrão
     }
-  });
-  const [personalizarAberto, setPersonalizarAberto] = useState(false);
-  const [metaInput, setMetaInput] = useState(String(config.meta || 45000));
+  }, []);
 
   function salvarConfig(next: ConfigInicio) {
     setConfig(next);
