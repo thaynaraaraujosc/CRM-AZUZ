@@ -16,9 +16,11 @@ import { CondicaoForm } from "./forms/CondicaoForm";
 import { ConfiguracoesGeraisForm } from "./forms/ConfiguracoesGeraisForm";
 import { GenericForm } from "./forms/GenericForm";
 import { MensagemForm } from "./forms/MensagemForm";
+import { MensagemMidiaForm } from "./forms/MensagemMidiaForm";
 import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
 
 const TIPOS_OPCOES = new Set(["mensagem_botoes", "mensagem_lista"]);
+const TIPOS_MIDIA = new Set(["mensagem_imagem", "mensagem_video", "mensagem_audio", "mensagem_documento"]);
 
 function FormularioDoNode({
   node,
@@ -44,6 +46,9 @@ function FormularioDoNode({
         onRemoverOpcao={(opcaoId) => onRemoverOpcaoAresta(node.id, opcaoId)}
       />
     );
+  }
+  if (TIPOS_MIDIA.has(node.type)) {
+    return <MensagemMidiaForm node={node} onChange={(d) => onUpdateNodeData(node.id, d)} />;
   }
   if (node.category === "mensagem") {
     return <MensagemForm node={node} onChange={(d) => onUpdateNodeData(node.id, d)} />;

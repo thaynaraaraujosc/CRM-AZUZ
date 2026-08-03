@@ -10,6 +10,7 @@ import type {
   FlowNode,
   FluxoAutomacao,
   MensagemBotoesData,
+  MensagemMidiaData,
   MensagemTextoData,
   ProblemaValidacao,
 } from "./types";
@@ -26,6 +27,7 @@ function ehTextoVazio(v: unknown): boolean {
 
 const TIPOS_MENSAGEM_TEXTO = new Set(["mensagem_texto", "mensagem_email", "notificacao_interna"]);
 const TIPOS_MENSAGEM_OPCOES = new Set(["mensagem_botoes", "mensagem_lista"]);
+const TIPOS_MENSAGEM_MIDIA = new Set(["mensagem_imagem", "mensagem_video", "mensagem_audio", "mensagem_documento"]);
 
 export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
   const problemas: ProblemaValidacao[] = [];
@@ -77,12 +79,31 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     }
   });
 
-  // 4. Botões/lista — toda opção precisa ter uma aresta de saída com esse handle.
+  // 4. Botões/lista — precisa ter pelo menos uma opção, cada opção precisa de rótulo preenchido, e
+  // toda opção precisa ter uma aresta de saída com esse handle (nenhum "caminho sem identificação").
   nodes.forEach((n) => {
     if (!TIPOS_MENSAGEM_OPCOES.has(n.type)) return;
     const data = n.data as MensagemBotoesData;
     const saidas = saidasPorNo.get(n.id) ?? [];
-    (data.opcoes ?? []).forEach((opcao) => {
+    const opcoes = data.opcoes ?? [];
+    if (opcoes.length === 0) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" é uma pergunta sem nenhuma opção de resposta.`,
+        nodeId: n.id,
+      });
+    }
+    opcoes.forEach((opcao) => {
+      if (ehTextoVazio(opcao.rotulo)) {
+        problemas.push({
+          id: proximoIdProblema(),
+          severidade: "erro",
+          mensagem: `Uma opção do bloco "${n.titulo ?? n.type}" está sem valor de resposta (rótulo vazio).`,
+          nodeId: n.id,
+        });
+        return;
+      }
       const temAresta = saidas.some((e) => e.sourceHandle === opcao.id);
       if (!temAresta) {
         problemas.push({
@@ -93,6 +114,20 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         });
       }
     });
+  });
+
+  // 4b. Documento/imagem/vídeo/áudio sem arquivo escolhido (biblioteca ou upload simulado).
+  nodes.forEach((n) => {
+    if (!TIPOS_MENSAGEM_MIDIA.has(n.type)) return;
+    const data = n.data as MensagemMidiaData;
+    if (ehTextoVazio(data.arquivoNome)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem arquivo escolhido.`,
+        nodeId: n.id,
+      });
+    }
   });
 
   // 5. Mensagem de texto/e-mail/notificação vazia.

@@ -37,7 +37,6 @@ export function MensagemForm({ node, onChange }: { node: FlowNode; onChange: (da
   const temMensagem = "mensagem" in d;
   const temAssunto = "assunto" in d;
   const temCorpo = "corpo" in d;
-  const temArquivo = "arquivoNome" in d;
   const temLegenda = "legenda" in d;
   const temNomeContato = "nomeContato" in d;
   const temTelefone = "telefone" in d;
@@ -118,18 +117,6 @@ export function MensagemForm({ node, onChange }: { node: FlowNode; onChange: (da
         <div className="field">
           <label>Endereço</label>
           <input className="input" value={String(d.endereco ?? "")} onChange={(e) => set({ endereco: e.target.value })} />
-        </div>
-      ) : null}
-
-      {temArquivo ? (
-        <div className="field">
-          <label>Arquivo</label>
-          <input
-            className="input"
-            placeholder="Nome do arquivo (upload não simulado nesse editor)"
-            value={String(d.arquivoNome ?? "")}
-            onChange={(e) => set({ arquivoNome: e.target.value })}
-          />
         </div>
       ) : null}
 

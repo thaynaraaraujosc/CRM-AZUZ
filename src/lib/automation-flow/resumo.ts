@@ -74,6 +74,8 @@ const ROTULO_OPERADOR: Record<string, string> = {
   diferente: "não é",
   contem: "contém",
   nao_contem: "não contém",
+  comeca_com: "começa com",
+  termina_com: "termina com",
   maior_que: ">",
   menor_que: "<",
   entre: "entre",
@@ -115,7 +117,7 @@ function primeiroCampoTexto(data: Record<string, unknown>): string | undefined {
  */
 export function resumoIndicaIncompleto(texto: string): boolean {
   if (texto === "Sem configuração adicional") return false;
-  return texto.startsWith("Sem ") || texto === "sem regras definidas";
+  return texto.startsWith("Sem ") || texto.startsWith("Selecione ") || texto === "sem regras definidas";
 }
 
 /** Uma linha de resumo por baixo do título do nó no canvas — o que esse bloco de fato faz, sem abrir o painel de configuração. */
@@ -147,7 +149,10 @@ export function resumoNo(node: FlowNode): string {
     case "mensagem_video":
     case "mensagem_audio":
     case "mensagem_documento": {
-      return `${d.arquivoNome ? `Arquivo: ${d.arquivoNome}` : "Sem arquivo definido"} · Canal: ${d.canal ?? "whatsapp"}`;
+      const nome = (d.arquivoNomeExibicao as string | undefined) || (d.arquivoNome as string | undefined);
+      if (!nome) return "Selecione um arquivo";
+      const legenda = typeof d.legenda === "string" && d.legenda.trim() ? ` · "${truncar(d.legenda)}"` : "";
+      return `${nome}${legenda}`;
     }
     case "mensagem_modelo_whatsapp": {
       return d.templateId ? `Modelo: ${d.templateId}` : "Sem modelo escolhido";

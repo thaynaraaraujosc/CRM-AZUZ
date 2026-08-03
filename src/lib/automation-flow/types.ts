@@ -146,6 +146,8 @@ export type OperadorCondicao =
   | "diferente"
   | "contem"
   | "nao_contem"
+  | "comeca_com"
+  | "termina_com"
   | "maior_que"
   | "menor_que"
   | "entre"
@@ -210,22 +212,46 @@ export type MensagemTextoData = {
   anexos?: string[];
   templateId?: string;
 };
+export type OrigemArquivoMidia = "biblioteca" | "upload";
+
 export type MensagemMidiaData = {
   canal: CanalMensagem;
+  /** De onde veio o arquivo escolhido — biblioteca reutilizável do CRM ou upload avulso nesse bloco. */
+  origemArquivo?: OrigemArquivoMidia;
+  /** Só quando `origemArquivo === "biblioteca"` — id em `ArquivosDaBiblioteca`. */
+  arquivoId?: string;
+  /** Nome real do arquivo (o que a biblioteca guarda, ou o nome do arquivo enviado nesse bloco). */
   arquivoNome?: string;
+  /** Nome de exibição opcional — o que aparece pro contato, pode ser mais curto/amigável que o nome real. */
+  arquivoNomeExibicao?: string;
+  /** Extensão/categoria pro ícone e validação de tipo (PDF, DOC, XLS…). */
+  arquivoTipo?: string;
+  /** Tamanho mockado (ex.: "4,2 MB") — nunca calculado de um upload de verdade. */
+  arquivoTamanho?: string;
+  /** Só quando `origemArquivo === "upload"` — `URL.createObjectURL` local, nunca enviado a servidor. */
+  arquivoUrlTemporaria?: string;
   legenda?: string;
 };
 export type MensagemContatoData = { nomeContato: string; telefone?: string };
 export type MensagemLocalizacaoData = { latitude?: number; longitude?: number; endereco?: string };
 
-export type OpcaoBotaoLista = { id: string; rotulo: string };
+export type OpcaoBotaoLista = {
+  id: string;
+  rotulo: string;
+  /**
+   * Só usadas no formato "menu numerado" — outras formas de responder que também devem contar como
+   * essa opção na simulação (ex.: pra opção "1", aceitar também "número 1", "opcao 1", "orçamento").
+   * O número da posição (1, 2, 3…) sempre é aceito automaticamente, não precisa listar aqui.
+   */
+  respostasAlternativas?: string[];
+};
 /**
- * "Formato de resposta" é só front-end/visual nesta fase — nenhum dos três formatos liga em nenhuma
- * API de mensageria de verdade ainda. Existe pra já deixar a intenção registrada no fluxo (o CRM vai
- * poder trabalhar com integrações que não têm botão interativo nativo, daí a opção de simular como
- * menu numerado em texto puro).
+ * "Formato de resposta" é só front-end/visual nesta fase — nenhum dos quatro formatos liga em envio
+ * real de mensagem ainda. Existe pra o CRM não parecer dependente de conexão com API oficial: menu
+ * numerado e texto livre funcionam em texto puro (qualquer conexão), botões/lista dependem do que o
+ * provedor conectado suporta.
  */
-export type FormatoResposta = "botoes" | "menu_numerado" | "texto_livre";
+export type FormatoResposta = "menu_numerado" | "botoes" | "lista_interativa" | "texto_livre";
 
 export type MensagemBotoesData = {
   canal: CanalMensagem;

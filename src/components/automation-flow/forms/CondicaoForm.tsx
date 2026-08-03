@@ -41,6 +41,8 @@ const OPERADORES: { valor: OperadorCondicao; label: string }[] = [
   { valor: "diferente", label: "é diferente de" },
   { valor: "contem", label: "contém" },
   { valor: "nao_contem", label: "não contém" },
+  { valor: "comeca_com", label: "começa com" },
+  { valor: "termina_com", label: "termina com" },
   { valor: "maior_que", label: "maior que" },
   { valor: "menor_que", label: "menor que" },
   { valor: "entre", label: "entre" },

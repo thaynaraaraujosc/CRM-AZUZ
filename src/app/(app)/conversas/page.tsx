@@ -4424,6 +4424,7 @@ function ConversasPageInner() {
                   {bibliotecaDocumentos
                     .filter(
                       (d) =>
+                        (d.tipoMidia ?? "documento") === "documento" &&
                         (categoriaBiblioteca === "Todas" || d.categoria === categoriaBiblioteca) &&
                         d.nome.toLowerCase().includes(buscaBiblioteca.trim().toLowerCase()),
                     )
@@ -4463,6 +4464,7 @@ function ConversasPageInner() {
                     ))}
                   {bibliotecaDocumentos.filter(
                     (d) =>
+                      (d.tipoMidia ?? "documento") === "documento" &&
                       (categoriaBiblioteca === "Todas" || d.categoria === categoriaBiblioteca) &&
                       d.nome.toLowerCase().includes(buscaBiblioteca.trim().toLowerCase()),
                   ).length === 0 ? (

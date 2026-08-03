@@ -6488,6 +6488,173 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
+/* ---------------- Bloco "enviar mídia" — biblioteca de arquivos (itens 3-9) ---------------- */
+
+.flow-midia-origem {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.flow-midia-origem-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.flow-midia-origem-btn.sel {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+  color: var(--blue);
+}
+
+.flow-midia-dropzone {
+  border: 2px dashed var(--line);
+  border-radius: 10px;
+  padding: 22px 14px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.flow-midia-dropzone.arrastando {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+
+.flow-midia-dropzone p {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+}
+
+.flow-midia-preview {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+}
+
+.flow-midia-preview-icone {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.flow-midia-preview-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.flow-midia-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.flow-midia-preview-info .n {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.flow-midia-preview-info .r {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.flow-midia-preview-legenda {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.flow-midia-preview-acoes {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.flow-biblioteca-modal {
+  width: min(520px, 100%);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  gap: 0;
+}
+
+.flow-biblioteca-lista {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.flow-biblioteca-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+}
+
+.flow-biblioteca-item:hover {
+  background: var(--navy-raised);
+  border-color: var(--line);
+}
+
+.flow-biblioteca-item-icone {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.flow-biblioteca-item-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.flow-biblioteca-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.flow-biblioteca-item-info .n {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.flow-biblioteca-item-info .r {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
 .flow-canvas .react-flow__controls {
   box-shadow: 0 4px 16px rgba(11, 21, 51, 0.16);
   border-radius: 8px;
@@ -7217,6 +7384,25 @@ table.tbl tbody tr:hover td {
   margin-bottom: 6px;
 }
 
+.flow-opcao-bloco {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed var(--line-soft);
+}
+.flow-opcao-bloco:last-child {
+  border-bottom: none;
+}
+
+.flow-opcao-alternativas {
+  margin-top: 2px;
+}
+.flow-opcao-alternativas label {
+  display: block;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
 /* Seletor de "formato de resposta" (item 10) — mesmo visual do seletor de gatilho/ação rápida. */
 .flow-formato-resposta-lista {
   display: flex;
@@ -7254,6 +7440,23 @@ table.tbl tbody tr:hover td {
 .flow-formato-resposta-opcao .r {
   font-size: 11px;
   color: var(--text-faint);
+}
+
+/* Selo de compatibilidade (item 2) — reforça visualmente que menu numerado/texto livre funcionam em
+   qualquer conexão, enquanto botões/lista dependem do provedor. */
+.flow-formato-compat {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #d8a40022;
+  color: #d8a400;
+}
+.flow-formato-compat.ampla {
+  background: #0f9d6322;
+  color: #0f9d63;
 }
 
 .flow-menu-numerado-previa {

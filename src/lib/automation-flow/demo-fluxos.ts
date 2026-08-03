@@ -33,7 +33,9 @@ import type {
   FluxoAutomacao,
   GatilhoEtapaData,
   MensagemBotoesData,
+  MensagemMidiaData,
   MensagemTextoData,
+  PalavraChaveData,
   RemoverEtiquetaData,
   VersaoFluxo,
 } from "./types";
@@ -684,9 +686,102 @@ function construirBoasVindas(): FluxoAutomacao {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Automação 5 — "Atendimento — Empresa de Toldos" (item 10 da spec de mídia) */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Modelo pensado especificamente pra mostrar os dois pontos novos desta rodada
+ * funcionando juntos num caso real: um bloco "Enviar documento" apontando pra
+ * um arquivo da biblioteca reutilizável (`arq-catalogo-toldos`, ver
+ * `biblioteca-documentos-context.tsx`) e uma pergunta em formato "menu
+ * numerado" com 4 opções virando 4 caminhos separados (sem convergência).
+ */
+function construirAtendimentoToldos(): FluxoAutomacao {
+  const nodes: FlowNode[] = [];
+  const edges: FlowEdge[] = [];
+
+  const gatilhoData: PalavraChaveData = { palavra: "toldo", canal: "whatsapp" };
+  nodes.push(no("at-gatilho", "palavra_chave", "gatilho", gatilhoData, "Mensagem recebida contendo \"toldo\""));
+
+  const msgInicial: MensagemTextoData = {
+    canal: "whatsapp",
+    texto: "Olá, {primeiro_nome}! Trabalhamos com vários modelos de toldos.",
+  };
+  nodes.push(no("at-msg1", "mensagem_texto", "mensagem", msgInicial));
+  edges.push(aresta("at-gatilho", "at-msg1"));
+
+  // Aponta pro arquivo já cadastrado na biblioteca reutilizável (ver
+  // DOCUMENTOS_INICIAIS em biblioteca-documentos-context.tsx) — o mesmo
+  // arquivo que outras automações também podem escolher sem reenviar nada.
+  const doc: MensagemMidiaData = {
+    canal: "whatsapp",
+    origemArquivo: "biblioteca",
+    arquivoId: "arq-catalogo-toldos",
+    arquivoNome: "Catálogo de Toldos 2026.pdf",
+    arquivoTipo: "PDF",
+    arquivoTamanho: "4,2 MB",
+    legenda: "Vou te enviar nosso catálogo para você conhecer os modelos.",
+  };
+  nodes.push(no("at-doc", "mensagem_documento", "mensagem", doc));
+  edges.push(aresta("at-msg1", "at-doc"));
+
+  const pergunta: MensagemBotoesData = {
+    canal: "whatsapp",
+    texto: "Qual modelo mais chamou sua atenção?",
+    formatoResposta: "menu_numerado",
+    opcoes: [
+      { id: "at-op-retratil", rotulo: "Toldo retrátil" },
+      { id: "at-op-fixo", rotulo: "Toldo fixo" },
+      { id: "at-op-articulado", rotulo: "Toldo articulado" },
+      { id: "at-op-orientacao", rotulo: "Preciso de orientação" },
+    ],
+  };
+  nodes.push(no("at-pergunta", "mensagem_botoes", "mensagem", pergunta, "Qual modelo mais chamou sua atenção?"));
+  edges.push(aresta("at-doc", "at-pergunta"));
+
+  // 4 caminhos separados, um por opção — de propósito sem convergir de volta
+  // num nó comum, pra deixar claro que cada resposta segue seu próprio rumo.
+  const caminhos: { handle: string; etiqueta: string; tarefa: string }[] = [
+    { handle: "at-op-retratil", etiqueta: "Interesse: toldo retrátil", tarefa: "Enviar orçamento de toldo retrátil" },
+    { handle: "at-op-fixo", etiqueta: "Interesse: toldo fixo", tarefa: "Enviar orçamento de toldo fixo" },
+    { handle: "at-op-articulado", etiqueta: "Interesse: toldo articulado", tarefa: "Enviar orçamento de toldo articulado" },
+    { handle: "at-op-orientacao", etiqueta: "Precisa de orientação", tarefa: "Ligar pra entender a necessidade e orientar" },
+  ];
+  caminhos.forEach(({ handle, etiqueta, tarefa }, i) => {
+    const etqData: AdicionarEtiquetaData = { etiquetaNome: etiqueta };
+    nodes.push(no(`at-etq-${i}`, "adicionar_etiqueta", "acao", etqData));
+    edges.push(aresta("at-pergunta", `at-etq-${i}`, handle));
+
+    const tarefaData: CriarTarefaData = { titulo: tarefa, prazoValor: 2, prazoUnidade: "horas" };
+    nodes.push(no(`at-tarefa-${i}`, "criar_tarefa", "acao", tarefaData));
+    edges.push(aresta(`at-etq-${i}`, `at-tarefa-${i}`));
+
+    const fimData: EncerrarFluxoData = { motivo: `Caminho "${etiqueta}" concluído.` };
+    nodes.push(no(`at-fim-${i}`, "encerrar_fluxo", "fim", fimData));
+    edges.push(aresta(`at-tarefa-${i}`, `at-fim-${i}`));
+  });
+
+  const configuracoes: ConfiguracoesFluxo = {
+    naoIniciarSeJaNoFluxo: true,
+  };
+
+  return fluxoDemo({
+    id: "demo-atendimento-toldos",
+    nome: "Atendimento — Empresa de Toldos",
+    descricao: "Responde quem menciona \"toldo\", manda o catálogo da biblioteca e pergunta o modelo de interesse.",
+    objetivo:
+      "Mostrar o bloco de documento ligado à biblioteca de arquivos reutilizável e uma pergunta em menu numerado virando 4 caminhos separados — o exemplo de referência dos itens de compatibilidade de pergunta e biblioteca de arquivos.",
+    nodes,
+    edges,
+    configuracoes,
+  });
+}
+
+/* -------------------------------------------------------------------------- */
 
 export const FLUXOS_DEMONSTRACAO_INICIAIS: FluxoAutomacao[] = [
   construirBoasVindas(),
+  construirAtendimentoToldos(),
   construirRecuperarLead(),
   construirDistribuirLead(),
   construirPosVenda(),
