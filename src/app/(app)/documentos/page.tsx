@@ -972,6 +972,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [menuAberto, setMenuAberto] = useState<NomeMenu | null>(null);
   const [zoom, setZoom] = useState(100);
   const [modo, setModo] = useState<"edicao" | "sugestao" | "visualizacao">("edicao");
+  /** Snapshot do conteúdo de cada página no instante em que o modo sugestão foi ativado — null = não está rastreando. */
+  const [sugestaoSnapshot, setSugestaoSnapshot] = useState<Record<string, string> | null>(null);
   const [mostrarRegua, setMostrarRegua] = useState(() => lerPrefVer("mostrarRegua", true));
   const [mostrarNaoImprimiveis, setMostrarNaoImprimiveis] = useState(() => lerPrefVer("mostrarNaoImprimiveis", false));
   const [semPaginas, setSemPaginas] = useState(() => lerPrefVer("semPaginas", false));
@@ -2287,8 +2289,56 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     setComentariosAberto(true);
   }
 
+  /**
+   * Modo sugestão de verdade — não é só um aviso decorativo. Entrar no modo tira uma foto do conteúdo
+   * de cada página; "Aceitar todas" mantém o que foi editado (só sai do modo); "Rejeitar todas" restaura
+   * o conteúdo exatamente como estava antes de entrar no modo, em todas as páginas.
+   */
+  function entrarModoSugestao() {
+    const snapshot: Record<string, string> = {};
+    for (const p of paginasComConteudoAtual()) snapshot[p.id] = p.conteudoHtml;
+    setSugestaoSnapshot(snapshot);
+    setModo("sugestao");
+  }
+
+  function aceitarSugestoes() {
+    setSugestaoSnapshot(null);
+    setModo("edicao");
+  }
+
+  function rejeitarSugestoes() {
+    if (!sugestaoSnapshot) {
+      setModo("edicao");
+      return;
+    }
+    for (const [paginaId, html] of Object.entries(sugestaoSnapshot)) {
+      aplicarSnapshotHistorico(paginaId, html);
+    }
+    setSugestaoSnapshot(null);
+    setModo("edicao");
+  }
+
+  function estatisticasSugestao(): { adicionados: number; removidos: number } | null {
+    if (!sugestaoSnapshot) return null;
+    let adicionados = 0;
+    let removidos = 0;
+    for (const p of paginasLocais) {
+      const original = sugestaoSnapshot[p.id] ?? "";
+      const div = document.createElement("div");
+      div.innerHTML = original;
+      const textoOriginal = div.textContent ?? "";
+      div.innerHTML = p.conteudoHtml;
+      const textoAtual = div.textContent ?? "";
+      const diferenca = textoAtual.length - textoOriginal.length;
+      if (diferenca > 0) adicionados += diferenca;
+      else removidos += -diferenca;
+    }
+    return { adicionados, removidos };
+  }
+
   const contagem = contarPalavrasTexto(paginasLocais);
   const estrutura = extrairEstrutura();
+  const statsSugestao = estatisticasSugestao();
 
   const menuArquivo: ("sep" | ItemMenu)[] = [
     { label: "Novo documento", onClick: () => window.dispatchEvent(new CustomEvent("doc-novo")) },
@@ -2574,7 +2624,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               key={m}
               type="button"
               className={`fchip${modo === m ? " active" : ""}`}
-              onClick={() => setModo(m)}
+              onClick={() => (m === "sugestao" ? entrarModoSugestao() : setModo(m))}
             >
               {m === "edicao" ? "Edição" : m === "sugestao" ? "Sugestão" : "Visualização"}
             </button>
@@ -2583,7 +2633,20 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       </div>
 
       {modo === "sugestao" ? (
-        <div className="doc-aviso-modo">✏️ Modo sugestão ativo — mudanças ficam registradas no histórico de comentários pra revisão.</div>
+        <div className="doc-aviso-modo">
+          <span>
+            ✏️ Modo sugestão ativo —{" "}
+            {statsSugestao && (statsSugestao.adicionados > 0 || statsSugestao.removidos > 0)
+              ? `${statsSugestao.adicionados} caractere(s) adicionado(s), ${statsSugestao.removidos} removido(s) desde que o modo foi ativado.`
+              : "edite normalmente; as mudanças feitas a partir de agora podem ser aceitas ou rejeitadas em bloco."}
+          </span>
+          <button type="button" className="btn ghost" style={{ marginLeft: 12 }} onClick={rejeitarSugestoes}>
+            Rejeitar todas
+          </button>
+          <button type="button" className="btn primary" onClick={aceitarSugestoes}>
+            Aceitar todas
+          </button>
+        </div>
       ) : null}
 
       <div className="doc-canvas" style={{ zoom: `${zoom}%` } as React.CSSProperties}>

@@ -4704,6 +4704,15 @@ table.tbl tbody tr:hover td {
   background: #fff3cd;
   border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.doc-aviso-modo span {
+  flex: 1;
+  min-width: 200px;
 }
 
 .doc-canvas {
