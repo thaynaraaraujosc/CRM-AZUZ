@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 import { currentUser, relatoriosAnteriores } from "@/lib/data";
 import { Topbar } from "@/components/ui";
-import { ReportWizard, type RelatorioGerado } from "@/components/report-wizard";
+import { ReportWizard, type ConfiguracaoRelatorio, type RelatorioGerado } from "@/components/report-wizard";
 import { TIPOS_RELATORIO, type TipoRelatorio } from "@/lib/relatorio-conteudo";
 
 const CHAVE_HISTORICO = "azuz-relatorios-historico-v1";
@@ -18,7 +18,19 @@ const HISTORICO_INICIAL: RelatorioGerado[] = relatoriosAnteriores.map((r, i) => 
   filtros: "Sem filtros adicionais",
   autor: currentUser.name,
   data: r.gerado.replace("Gerado em ", ""),
+  paginas: 1,
   formato: "PDF" as const,
+  configuracao: {
+    tipo: "executivo" as TipoRelatorio,
+    periodo: r.nome,
+    filtros: "Sem filtros adicionais",
+    secoes: [],
+    ordemSecoes: [],
+    capa: "compacta" as const,
+    orientacao: "p" as const,
+    nivelDetalhe: "resumido" as const,
+    formato: "PDF" as const,
+  },
 }));
 
 /**
@@ -41,6 +53,7 @@ function RelatoriosPageInner() {
 
   const [wizardAberto, setWizardAberto] = useState(!!tipoQuery);
   const [tipoWizard, setTipoWizard] = useState<TipoRelatorio>(tipoQuery ?? "executivo");
+  const [configWizard, setConfigWizard] = useState<ConfiguracaoRelatorio | undefined>(undefined);
   // Começa com o histórico padrão (igual ao HTML pré-renderizado no build) e
   // só lê o localStorage depois de montar — inicializar direto no useState
   // causaria erro de hidratação sempre que o navegador já tivesse
@@ -67,6 +80,7 @@ function RelatoriosPageInner() {
 
   function abrirWizard(tipo: TipoRelatorio) {
     setTipoWizard(tipo);
+    setConfigWizard(undefined);
     setWizardAberto(true);
   }
 
@@ -78,8 +92,13 @@ function RelatoriosPageInner() {
     salvarHistorico(historico.filter((r) => r.id !== id));
   }
 
-  function duplicar(registro: RelatorioGerado) {
-    abrirWizard(registro.tipo);
+  // Reabre o assistente já preenchido com a mesma configuração usada
+  // anteriormente — o usuário só revisa e aprova de novo (nunca reaproveita
+  // o PDF antigo, sempre gera uma prévia nova a partir dos dados atuais).
+  function duplicarConfiguracao(registro: RelatorioGerado) {
+    setTipoWizard(registro.tipo);
+    setConfigWizard(registro.configuracao);
+    setWizardAberto(true);
   }
 
   return (
@@ -133,10 +152,11 @@ function RelatoriosPageInner() {
                 <tr>
                   <th>Nome</th>
                   <th>Tipo</th>
+                  <th>Contato</th>
                   <th>Período</th>
-                  <th>Filtros</th>
                   <th>Autor</th>
                   <th>Data</th>
+                  <th>Páginas</th>
                   <th>Formato</th>
                   <th></th>
                 </tr>
@@ -146,17 +166,18 @@ function RelatoriosPageInner() {
                   <tr key={r.id}>
                     <td>{r.nome}</td>
                     <td>{TIPOS_RELATORIO.find((t) => t.tipo === r.tipo)?.nome ?? r.tipo}</td>
+                    <td>{r.contato ?? "—"}</td>
                     <td>{r.periodo}</td>
-                    <td>{r.filtros}</td>
                     <td>{r.autor}</td>
                     <td>{r.data}</td>
+                    <td>{r.paginas}</td>
                     <td>{r.formato}</td>
-                    <td style={{ display: "flex", gap: 8 }}>
-                      <button type="button" className="link" onClick={() => abrirWizard(r.tipo)}>
-                        Gerar novamente
+                    <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <button type="button" className="link" onClick={() => duplicarConfiguracao(r)}>
+                        Gerar com dados atualizados
                       </button>
-                      <button type="button" className="link" onClick={() => duplicar(r)}>
-                        Duplicar
+                      <button type="button" className="link" onClick={() => duplicarConfiguracao(r)}>
+                        Duplicar configuração
                       </button>
                       <button type="button" className="link" onClick={() => excluir(r.id)} style={{ color: "#d64545" }}>
                         Excluir
@@ -172,7 +193,12 @@ function RelatoriosPageInner() {
       </div>
 
       {wizardAberto ? (
-        <ReportWizard tipoInicial={tipoWizard} onFechar={() => setWizardAberto(false)} onGerado={aoGerar} />
+        <ReportWizard
+          tipoInicial={tipoWizard}
+          configuracaoInicial={configWizard}
+          onFechar={() => setWizardAberto(false)}
+          onGerado={aoGerar}
+        />
       ) : null}
     </>
   );
