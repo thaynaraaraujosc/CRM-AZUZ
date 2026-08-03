@@ -725,10 +725,15 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               <Panel position="top-center">
                 <div className="flow-selection-bar">
                   <span>{selectedNodeIds.length} selecionado(s)</span>
-                  <button type="button" className="btn ghost" onClick={duplicarSelecionados}>
+                  <button type="button" className="btn ghost" title="Duplicar (Ctrl+D)" onClick={duplicarSelecionados}>
                     Duplicar
                   </button>
-                  <button type="button" className="btn ghost" onClick={() => removerNodes(selectedNodeIds)}>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    title="Excluir (Delete)"
+                    onClick={() => removerNodes(selectedNodeIds)}
+                  >
                     Excluir
                   </button>
                 </div>
@@ -869,6 +874,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                     ) : null}
                     <button
                       type="button"
+                      title="Ctrl+D"
                       onClick={() => {
                         duplicarSelecionados();
                         setMenuContexto(null);
@@ -887,6 +893,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                     </button>
                     <button
                       type="button"
+                      title="Delete"
                       onClick={() => {
                         removerNodes([menuContexto.nodeId]);
                         setMenuContexto(null);
