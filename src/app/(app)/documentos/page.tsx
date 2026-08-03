@@ -3587,8 +3587,17 @@ function PainelImagem({
 
   function alternarBorda() {
     onMudar((img) => {
-      const temBorda = img.style.border && img.style.border !== "none";
-      img.style.border = temBorda ? "none" : "2px solid #0b1533";
+      // Usa border-style como a fonte da verdade de "tem borda ou não" — os controles de espessura e
+      // cor abaixo mexem só em border-width/border-color (longhand), nunca no atalho "border" inteiro,
+      // então os dois nunca se pisam.
+      const temBorda = img.style.borderStyle === "solid";
+      if (temBorda) {
+        img.style.borderStyle = "none";
+      } else {
+        img.style.borderStyle = "solid";
+        if (!img.style.borderWidth) img.style.borderWidth = "2px";
+        if (!img.style.borderColor) img.style.borderColor = "#0b1533";
+      }
     });
   }
 
@@ -3773,7 +3782,7 @@ function PainelImagem({
           min={2}
           max={12}
           defaultValue={2}
-          onChange={(e) => onMudar((img) => { img.style.borderWidth = `${e.target.value}px`; })}
+          onChange={(e) => onMudar((img) => { img.style.borderStyle = "solid"; img.style.borderWidth = `${e.target.value}px`; })}
           style={{ width: "100%", marginTop: 6 }}
           title="Espessura da borda"
         />
@@ -3782,7 +3791,7 @@ function PainelImagem({
           className="input"
           style={{ width: "100%", height: 34, padding: 4, marginTop: 6 }}
           defaultValue="#0b1533"
-          onChange={(e) => onMudar((img) => { img.style.borderColor = e.target.value; })}
+          onChange={(e) => onMudar((img) => { img.style.borderStyle = "solid"; img.style.borderColor = e.target.value; })}
           title="Cor da borda"
         />
         <input
