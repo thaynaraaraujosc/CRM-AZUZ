@@ -3,7 +3,7 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
-import { resumoNo, saidasDoNo, temEntrada } from "@/lib/automation-flow/resumo";
+import { resumoIndicaIncompleto, resumoNo, saidasDoNo, temEntrada } from "@/lib/automation-flow/resumo";
 import type { FlowNodeCategory } from "@/lib/automation-flow/types";
 import type { FlowRFNode } from "../utils";
 
@@ -77,7 +77,16 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         ) : null}
       </div>
 
-      <div className="flow-node-body">{resumoNo(flowNode)}</div>
+      {(() => {
+        const resumo = resumoNo(flowNode);
+        const incompleto = resumoIndicaIncompleto(resumo);
+        return (
+          <div className={`flow-node-body${incompleto ? " flow-node-body-incompleto" : ""}`}>
+            {incompleto ? <span aria-hidden="true">⚠ </span> : null}
+            {resumo}
+          </div>
+        );
+      })()}
 
       {saidas.length > 1 ? (
         <div className="flow-node-handles">

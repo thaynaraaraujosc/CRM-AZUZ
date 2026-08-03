@@ -6802,6 +6802,13 @@ table.tbl tbody tr:hover td {
   line-height: 1.45;
 }
 
+/* Estado incompleto (item 33) — o problema fica evidente direto no corpo do node, não só num
+   ícone de aviso escondido no cabeçalho. */
+.flow-node-body-incompleto {
+  color: #d8a400;
+  font-weight: 600;
+}
+
 .flow-node-handles {
   padding: 0 10px 8px;
   display: flex;

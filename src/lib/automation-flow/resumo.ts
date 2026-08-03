@@ -106,6 +106,18 @@ function primeiroCampoTexto(data: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
+/**
+ * `resumoNo` sinaliza bloco incompleto embutindo a frase no próprio texto ("Sem etiqueta
+ * escolhida", "sem regras definidas"...) — essa função reconhece esse padrão pra quem renderiza
+ * poder destacar visualmente (ícone + cor de aviso) sem duplicar a lista de frases em outro lugar.
+ * "Sem configuração adicional" fica de fora de propósito: é o estado normal (não um aviso) de
+ * blocos sem nenhum campo pra preencher, como a maioria dos gatilhos.
+ */
+export function resumoIndicaIncompleto(texto: string): boolean {
+  if (texto === "Sem configuração adicional") return false;
+  return texto.startsWith("Sem ") || texto === "sem regras definidas";
+}
+
 /** Uma linha de resumo por baixo do título do nó no canvas — o que esse bloco de fato faz, sem abrir o painel de configuração. */
 export function resumoNo(node: FlowNode): string {
   const d = node.data as Record<string, unknown>;
