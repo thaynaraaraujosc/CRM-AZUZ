@@ -179,7 +179,7 @@ function RelatoriosPageInner() {
                       <button type="button" className="link" onClick={() => duplicarConfiguracao(r)}>
                         Duplicar configuração
                       </button>
-                      <button type="button" className="link" onClick={() => excluir(r.id)} style={{ color: "#d64545" }}>
+                      <button type="button" className="link" onClick={() => excluir(r.id)} style={{ color: "var(--danger)" }}>
                         Excluir
                       </button>
                     </td>

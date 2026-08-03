@@ -614,6 +614,23 @@ table {
   text-decoration: underline;
 }
 
+/* `className="link"` sozinho (sem `.btn`) é usado em ~30 lugares (ui.tsx, trafego, contatos,
+   conversas, relatórios, etc.) mas nunca teve nenhuma regra própria — caía no estilo padrão do
+   navegador pra `<button>`/`<a>`. */
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.link:hover {
+  text-decoration: underline;
+}
+
 .btn.block {
   display: flex;
   width: 100%;
