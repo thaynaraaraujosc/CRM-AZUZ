@@ -917,6 +917,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const colunasRef = useRef<HTMLDivElement>(null);
   useFecharAoClicarFora(colunasRef, colunasAberto, () => setColunasAberto(false));
   const [imagemSelecionada, setImagemSelecionada] = useState<{ paginaId: string; el: HTMLImageElement } | null>(null);
+  const [celulaSelecionada, setCelulaSelecionada] = useState<{ paginaId: string; td: HTMLTableCellElement } | null>(null);
+  const [celulaPainelPos, setCelulaPainelPos] = useState<{ x: number; y: number } | null>(null);
 
   // Contorno de seleção visível na própria imagem (a imagem é um <img> real dentro do HTML, não um
   // componente React controlado — por isso a classe é alternada direto no elemento do DOM).
@@ -1682,6 +1684,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     } else {
       setImagemSelecionada(null);
     }
+    const celula = alvo.closest("td, th") as HTMLTableCellElement | null;
+    if (celula) {
+      setCelulaSelecionada({ paginaId, td: celula });
+    } else {
+      setCelulaSelecionada(null);
+    }
   }
 
   function atualizarImagemSelecionada(mudar: (img: HTMLImageElement) => void) {
@@ -1839,6 +1847,79 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     if (!linhas || !colunas) return;
     const linhaHtml = `<tr>${"<td style=\"border:1px solid #999;padding:4px 8px;\">&nbsp;</td>".repeat(colunas)}</tr>`;
     inserirNaPagina(`<table style="border-collapse:collapse;width:100%;">${linhaHtml.repeat(linhas)}</table>`);
+  }
+
+  /** Edição real de tabela — inserir/excluir linha ou coluna a partir da célula selecionada (ver PainelTabela). */
+  function comCelulaSelecionada(fn: (td: HTMLTableCellElement, tabela: HTMLTableElement) => void) {
+    if (!celulaSelecionada) return;
+    const { paginaId, td } = celulaSelecionada;
+    const tabela = td.closest("table");
+    if (!tabela) return;
+    fn(td, tabela);
+    salvarConteudoPagina(paginaId);
+  }
+
+  function inserirLinhaTabela(onde: "acima" | "abaixo") {
+    comCelulaSelecionada((td) => {
+      const linha = td.closest("tr");
+      if (!linha) return;
+      const qtdColunas = linha.children.length;
+      const novaLinha = document.createElement("tr");
+      for (let i = 0; i < qtdColunas; i++) {
+        const novaCelula = document.createElement("td");
+        novaCelula.style.border = "1px solid #999";
+        novaCelula.style.padding = "4px 8px";
+        novaCelula.innerHTML = "&nbsp;";
+        novaLinha.appendChild(novaCelula);
+      }
+      if (onde === "acima") linha.before(novaLinha);
+      else linha.after(novaLinha);
+    });
+  }
+
+  function inserirColunaTabela(onde: "esquerda" | "direita") {
+    comCelulaSelecionada((td, tabela) => {
+      const linha = td.closest("tr");
+      if (!linha) return;
+      const indice = Array.from(linha.children).indexOf(td);
+      tabela.querySelectorAll("tr").forEach((tr) => {
+        const celulaRef = tr.children[indice] as HTMLTableCellElement | undefined;
+        const novaCelula = document.createElement(celulaRef?.tagName === "TH" ? "th" : "td");
+        novaCelula.style.border = "1px solid #999";
+        novaCelula.style.padding = "4px 8px";
+        novaCelula.innerHTML = "&nbsp;";
+        if (onde === "esquerda") celulaRef?.before(novaCelula);
+        else celulaRef?.after(novaCelula);
+      });
+    });
+  }
+
+  function excluirLinhaTabela() {
+    comCelulaSelecionada((td, tabela) => {
+      const linha = td.closest("tr");
+      if (!linha) return;
+      const totalLinhas = tabela.querySelectorAll("tr").length;
+      linha.remove();
+      if (totalLinhas <= 1) tabela.remove(); // não sobrou nenhuma linha: a tabela também vai
+    });
+    setCelulaSelecionada(null);
+  }
+
+  function excluirColunaTabela() {
+    comCelulaSelecionada((td, tabela) => {
+      const linha = td.closest("tr");
+      if (!linha) return;
+      const indice = Array.from(linha.children).indexOf(td);
+      const totalColunas = linha.children.length;
+      tabela.querySelectorAll("tr").forEach((tr) => tr.children[indice]?.remove());
+      if (totalColunas <= 1) tabela.remove(); // não sobrou nenhuma coluna: a tabela também vai
+    });
+    setCelulaSelecionada(null);
+  }
+
+  function excluirTabelaInteira() {
+    comCelulaSelecionada((_td, tabela) => tabela.remove());
+    setCelulaSelecionada(null);
   }
 
   function inserirLink() {
@@ -2933,6 +3014,37 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           onDuplicar={duplicarImagemSelecionada}
           onIniciarRedimensionar={iniciarArrasteRedimensionarImagem}
         />
+      ) : null}
+
+      {celulaSelecionada ? (
+        <div
+          className="wa-email-modal wa-email-floating doc-tabela-painel"
+          style={celulaPainelPos ? { left: celulaPainelPos.x, top: celulaPainelPos.y, right: "auto", bottom: "auto" } : undefined}
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setCelulaPainelPos)}>
+            <p className="n">Editar tabela</p>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCelulaSelecionada(null)}>✕</button>
+          </div>
+          <div className="field">
+            <label>Linha</label>
+            <div className="filters-row" style={{ margin: 0 }}>
+              <button type="button" className="fchip" onClick={() => inserirLinhaTabela("acima")}>+ Acima</button>
+              <button type="button" className="fchip" onClick={() => inserirLinhaTabela("abaixo")}>+ Abaixo</button>
+              <button type="button" className="fchip" style={{ color: "#d64545" }} onClick={excluirLinhaTabela}>Excluir linha</button>
+            </div>
+          </div>
+          <div className="field">
+            <label>Coluna</label>
+            <div className="filters-row" style={{ margin: 0 }}>
+              <button type="button" className="fchip" onClick={() => inserirColunaTabela("esquerda")}>+ Esquerda</button>
+              <button type="button" className="fchip" onClick={() => inserirColunaTabela("direita")}>+ Direita</button>
+              <button type="button" className="fchip" style={{ color: "#d64545" }} onClick={excluirColunaTabela}>Excluir coluna</button>
+            </div>
+          </div>
+          <button type="button" className="btn ghost block" style={{ color: "#d64545" }} onClick={excluirTabelaInteira}>
+            Excluir tabela inteira
+          </button>
+        </div>
       ) : null}
     </div>
   );

@@ -5020,6 +5020,10 @@ table.tbl tbody tr:hover td {
   overflow-y: auto;
 }
 
+.doc-tabela-painel {
+  width: 260px;
+}
+
 .doc-img-resize-alca {
   border: 1px dashed var(--line);
   border-radius: 8px;
