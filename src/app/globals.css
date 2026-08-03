@@ -9870,3 +9870,560 @@ table.tbl tbody tr:hover td {
     justify-content: flex-start;
   }
 }
+
+/* ============================================================= */
+/* Configurações — painel administrativo (Etapa 1, Parte B)      */
+/* ============================================================= */
+
+.config-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.config-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+}
+
+.config-nav-busca {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.config-nav-grupo {
+  margin-bottom: 10px;
+}
+
+.config-nav-grupo-h {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+  padding: 6px 10px 4px;
+}
+
+.config-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: none;
+  border: 1px solid transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.config-nav-item:hover {
+  background: var(--navy-raised);
+}
+.config-nav-item.active {
+  background: var(--blue-soft-2);
+  color: var(--blue);
+  border-color: var(--blue);
+}
+.config-nav-item svg {
+  flex-shrink: 0;
+}
+
+.config-detalhe {
+  min-width: 0;
+}
+
+.config-secao {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 40px;
+}
+
+.config-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.config-cabecalho h3 {
+  margin: 0 0 3px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.config-cabecalho-acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.config-bloco {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+}
+
+.config-bloco-titulo {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 10px;
+}
+
+.config-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.config-abas {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.config-abas button {
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+.config-abas button.on {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
+.config-lista-linhas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-linha-clicavel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--navy);
+  cursor: pointer;
+}
+.config-linha-clicavel:hover {
+  border-color: var(--blue);
+}
+.config-linha-clicavel.active {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+.config-linha-clicavel .n {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+.config-linha-clicavel .r {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin: 0;
+}
+.config-linha-clicavel > div:first-of-type {
+  flex: 1;
+  min-width: 0;
+}
+
+.config-tabela-scroll {
+  overflow-x: auto;
+}
+.config-tabela-notif {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.config-tabela-notif th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.config-tabela-notif td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.config-tabela-notif td:first-child,
+.config-tabela-notif th:first-child {
+  white-space: normal;
+}
+.config-linha-clicavel-tr:hover {
+  background: var(--navy-raised-2);
+}
+
+/* Modelos por segmento */
+.config-modelos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.config-modelo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--navy);
+  cursor: pointer;
+}
+.config-modelo-card:hover {
+  border-color: var(--blue);
+}
+.config-modelo-card .n {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.config-modelo-card .r {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.config-modelo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+.config-modelo-meta span {
+  background: var(--navy-raised-2);
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+
+/* Identidade do workspace */
+.config-identidade-preview {
+  margin-top: 12px;
+  padding: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.config-identidade-chip {
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+}
+.config-identidade-destaque {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Aparência — prévia */
+.config-aparencia-preview {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.config-aparencia-preview-linha {
+  background: var(--navy);
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--text-muted);
+}
+.config-aparencia-preview-linha:last-child {
+  border-bottom: none;
+}
+
+/* Matriz de permissões */
+.config-permissoes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.config-permissoes-acoes {
+  display: flex;
+  gap: 8px;
+}
+.config-permissoes-modulo {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.config-permissoes-modulo-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink);
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+.config-permissoes-itens {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px 10px;
+  padding-left: 22px;
+}
+.config-permissoes-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+/* Funis e etapas */
+.config-etapas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.config-etapa-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--navy);
+}
+.config-etapa-row.is-arrastando {
+  opacity: 0.4;
+}
+.config-etapa-arrastar {
+  cursor: grab;
+  color: var(--text-faint);
+}
+
+/* Etiquetas */
+.config-etiquetas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.config-etiqueta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.config-etiqueta-row:hover {
+  background: var(--navy-raised-2);
+}
+.config-etiqueta-cor {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.config-etiqueta-row .n {
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.config-etiqueta-row .r {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-left: auto;
+}
+
+/* Canais / integrações */
+.config-canais-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.config-canal-card {
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--navy);
+}
+.config-canal-card-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.config-canal-card-h .n {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  flex: 1;
+}
+.config-canal-card .r {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin: 2px 0;
+}
+.config-canal-card-acoes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* Compatibilidade (WhatsApp) — mesmo vocabulário visual do construtor de automações */
+.config-compat-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.config-compat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+}
+.config-formato-compat {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #d8a40022;
+  color: #d8a400;
+}
+.config-formato-compat.ampla {
+  background: #0f9d6322;
+  color: #0f9d63;
+}
+
+.config-email-preview {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 9px;
+  background: var(--navy-raised-2);
+  border: 1px solid var(--line);
+}
+.config-email-preview pre {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+  font-family: var(--body);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.config-exemplo-visual {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--blue-soft-2);
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* Importação — passos */
+.config-passos {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.config-passo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.config-passo.is-atual {
+  border-color: var(--blue);
+  color: var(--blue);
+  font-weight: 700;
+}
+.config-passo.is-feito {
+  color: #0f9d63;
+}
+.config-passo-num {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--navy-raised-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+}
+
+/* Barra de "alterações não salvas" */
+.config-salvar-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  box-shadow: 0 -4px 16px rgba(11, 21, 51, 0.12);
+}
+.config-salvar-bar-acoes {
+  display: flex;
+  gap: 8px;
+}
+.config-salvar-bar-ok {
+  color: #0f9d63;
+  font-weight: 700;
+  font-size: 12.5px;
+}
+
+@media (max-width: 900px) {
+  .config-layout {
+    grid-template-columns: 1fr;
+  }
+  .config-nav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    overflow-x: auto;
+  }
+  .config-nav-grupo {
+    display: contents;
+  }
+  .config-nav-grupo-h {
+    display: none;
+  }
+  .config-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .config-salvar-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

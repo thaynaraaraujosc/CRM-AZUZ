@@ -65,6 +65,60 @@ export function Drawer({
 }
 
 /**
+ * Modal centralizado genérico — mesmo padrão CSS (`.modal-overlay`/`.modal`) repetido à mão em várias
+ * telas (automações, Configurações). Fecha com Esc, clique no fundo ou no botão ✕; o clique dentro do
+ * modal não propaga pro fundo.
+ */
+export function Modal({
+  aberto,
+  onFechar,
+  titulo,
+  largura = 480,
+  rodape,
+  children,
+}: {
+  aberto: boolean;
+  onFechar: () => void;
+  titulo: ReactNode;
+  largura?: number;
+  rodape?: ReactNode;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    if (!aberto) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onFechar();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [aberto, onFechar]);
+
+  if (!aberto || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="modal-overlay" onClick={onFechar} role="presentation">
+      <div
+        className="modal"
+        style={{ width: `min(${largura}px, 100%)`, maxHeight: "85vh", display: "flex", flexDirection: "column" }}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="panel-h">
+          <h4>{titulo}</h4>
+          <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}>
+            ✕
+          </button>
+        </div>
+        <div style={{ padding: "0 17px 17px", overflowY: "auto", flex: 1 }}>{children}</div>
+        {rodape ? <div className="section-foot">{rodape}</div> : null}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/**
  * Popover flutuante montado via portal em document.body, posicionado com
  * `position: fixed` a partir do retângulo do botão que o abriu — assim ele
  * nunca fica cortado pelo `overflow: auto` de `.content`, e vira de baixo

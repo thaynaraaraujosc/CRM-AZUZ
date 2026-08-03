@@ -315,6 +315,50 @@ export function IconEnviar(props: Props) {
   );
 }
 
+/** Segurança (autenticação, sessões) — sem ícone de cadeado/escudo existente ainda, adicionado no
+ * mesmo estilo (stroke, viewBox) dos demais, não é uma biblioteca nova. */
+export function IconEscudo(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  );
+}
+
+/** Auditoria e atividades. */
+export function IconHistorico(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v4h4" />
+      <path d="M12 7v5l4 2" />
+    </svg>
+  );
+}
+
+/** Importação e exportação. */
+export function IconImportar(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3v12" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M4 19h16" />
+    </svg>
+  );
+}
+
+/** Plano e cobrança. */
+export function IconCartao(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+      <path d="M2.5 10h19" />
+      <path d="M6 15h4" />
+    </svg>
+  );
+}
+
 export function IconTikTok(props: Props) {
   return (
     <svg viewBox="0 0 24 24" fill="#F5F5F5" {...props}>
