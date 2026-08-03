@@ -3742,6 +3742,11 @@ table.tbl tbody tr:hover td {
   background: var(--navy-raised);
 }
 
+.dropdown-item.active {
+  background: var(--blue-soft-2);
+  color: var(--blue);
+}
+
 .dropdown-item .n {
   font-size: 12.5px;
   font-weight: 700;

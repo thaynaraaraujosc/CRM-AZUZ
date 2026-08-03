@@ -95,11 +95,27 @@ const TAMANHOS_PAPEL_MM: Record<Exclude<TamanhoPapel, "Personalizado">, { w: num
   "Ofício": { w: 216, h: 356 },
 };
 
+/**
+ * Fontes do documento — sempre com uma pilha de fallback (a fonte muda pra próxima da lista se a
+ * primeira não existir no computador de quem está lendo/editando). Não dá pra ler a lista real de
+ * fontes instaladas no sistema: a Local Font Access API (window.queryLocalFonts) só existe no
+ * Chrome/Edge, atrás de uma permissão que o usuário precisa aceitar, e nem faz parte de nenhum padrão
+ * suportado no Firefox/Safari — depender dela quebraria o editor nesses navegadores. Por isso a lista
+ * é uma seleção de fontes "web-safe" (que praticamente todo sistema operacional já tem instalada).
+ */
 const FONTES_DOCUMENTO = [
-  { label: "Arial", valor: "Arial, sans-serif" },
+  { label: "Arial", valor: "Arial, Helvetica, sans-serif" },
+  { label: "Helvetica", valor: "Helvetica, Arial, sans-serif" },
   { label: "Times New Roman", valor: "'Times New Roman', Georgia, serif" },
   { label: "Georgia", valor: "Georgia, 'Times New Roman', serif" },
-  { label: "Courier New", valor: "'Courier New', monospace" },
+  { label: "Garamond", valor: "Garamond, Georgia, serif" },
+  { label: "Palatino", valor: "'Palatino Linotype', Palatino, Georgia, serif" },
+  { label: "Verdana", valor: "Verdana, Geneva, sans-serif" },
+  { label: "Tahoma", valor: "Tahoma, Geneva, sans-serif" },
+  { label: "Trebuchet MS", valor: "'Trebuchet MS', Tahoma, sans-serif" },
+  { label: "Courier New", valor: "'Courier New', Courier, monospace" },
+  { label: "Comic Sans MS", valor: "'Comic Sans MS', 'Comic Sans', cursive" },
+  { label: "Impact", valor: "Impact, Haettenschweiler, sans-serif" },
 ];
 
 const TAMANHOS_FONTE_DOC = [
@@ -1023,6 +1039,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [mostrarNaoImprimiveis, setMostrarNaoImprimiveis] = useState(() => lerPrefVer("mostrarNaoImprimiveis", false));
   const [semPaginas, setSemPaginas] = useState(() => lerPrefVer("semPaginas", false));
   const [corretorAtivo, setCorretorAtivo] = useState(() => lerPrefVer("corretorAtivo", true));
+  const [fonteAtual, setFonteAtual] = useState(FONTES_DOCUMENTO[0].valor);
   const [mostrarToolbar, setMostrarToolbar] = useState(() => lerPrefVer("mostrarToolbar", true));
   const [telaCheia, setTelaCheia] = useState(false);
   const [estruturaAberta, setEstruturaAberta] = useState(false);
@@ -2653,11 +2670,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <option key={e.valor} value={e.valor}>{e.label}</option>
           ))}
         </select>
-        <select className="doc-toolbar-select" defaultValue={FONTES_DOCUMENTO[0].valor} aria-label="Fonte" onChange={(e) => aplicarFormatacao("fontName", e.target.value)}>
-          {FONTES_DOCUMENTO.map((f) => (
-            <option key={f.label} value={f.valor}>{f.label}</option>
-          ))}
-        </select>
+        <SeletorFonte
+          fontes={FONTES_DOCUMENTO}
+          valorAtual={fonteAtual}
+          onEscolher={(valor) => {
+            setFonteAtual(valor);
+            aplicarFormatacao("fontName", valor);
+          }}
+        />
         <select className="doc-toolbar-select" defaultValue={TAMANHOS_FONTE_DOC[1].valor} aria-label="Tamanho da fonte" onChange={(e) => aplicarFormatacao("fontSize", e.target.value)}>
           {TAMANHOS_FONTE_DOC.map((t) => (
             <option key={t.label} value={t.valor}>{t.label}</option>
@@ -3935,6 +3955,85 @@ function PainelImagem({
         <button type="button" className="btn ghost" style={{ flex: 1, color: "#d64545" }} onClick={onExcluir}>Excluir</button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Seletor de fonte com busca e prévia visual — cada opção é renderizada na própria fonte que
+ * representa, e um campo de busca filtra a lista por nome. Substitui o <select> nativo, que não dá
+ * pra estilizar cada <option> de forma confiável entre navegadores nem colocar um campo de busca
+ * dentro dele.
+ */
+function SeletorFonte({
+  fontes,
+  valorAtual,
+  onEscolher,
+}: {
+  fontes: { label: string; valor: string }[];
+  valorAtual: string;
+  onEscolher: (valor: string) => void;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const [busca, setBusca] = useState("");
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const atual = fontes.find((f) => f.valor === valorAtual) ?? fontes[0];
+  const termo = busca.trim().toLowerCase();
+  const filtradas = termo ? fontes.filter((f) => f.label.toLowerCase().includes(termo)) : fontes;
+
+  function fechar() {
+    setAberto(false);
+    setBusca("");
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        ref={btnRef}
+        className="doc-toolbar-select doc-toolbar-fonte-btn"
+        style={{ fontFamily: atual.valor }}
+        title="Fonte"
+        onClick={() => {
+          if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
+          setAberto((v) => !v);
+        }}
+      >
+        {atual.label} ▾
+      </button>
+      <FloatingDropdown anchorRect={aberto ? rect : null} onClose={fechar} width={220} maxHeight={320}>
+        <div style={{ padding: "8px 8px 4px" }}>
+          <input
+            className="input"
+            style={{ width: "100%" }}
+            placeholder="Buscar fonte…"
+            value={busca}
+            autoFocus
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </div>
+        <div style={{ maxHeight: 250, overflowY: "auto" }}>
+          {filtradas.length === 0 ? (
+            <p className="hint" style={{ padding: "8px 14px" }}>Nenhuma fonte encontrada.</p>
+          ) : (
+            filtradas.map((f) => (
+              <button
+                key={f.valor}
+                type="button"
+                className={`dropdown-item${f.valor === valorAtual ? " active" : ""}`}
+                style={{ width: "100%", textAlign: "left", fontFamily: f.valor, fontSize: 15 }}
+                onClick={() => {
+                  onEscolher(f.valor);
+                  fechar();
+                }}
+              >
+                {f.label}
+              </button>
+            ))
+          )}
+        </div>
+      </FloatingDropdown>
+    </>
   );
 }
 
