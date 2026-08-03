@@ -56,6 +56,8 @@ export type ConfigPagina = {
    * renderizar, imprimir e exportar. Vazio = sem cabeçalho/rodapé (comportamento anterior, sem mudança). */
   cabecalhoHtml?: string;
   rodapeHtml?: string;
+  /** Posições de tabulação (mm a partir da margem esquerda), mostradas na régua horizontal — ver ReguaDocumento. */
+  tabulacoesMm?: number[];
   /** Colunas de texto (Formatar → Colunas) — 1 = layout normal, sem colunas. */
   colunas: number;
   colunasEspacoMm: number;

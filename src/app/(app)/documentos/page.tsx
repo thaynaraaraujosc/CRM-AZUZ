@@ -713,16 +713,21 @@ function ReguaDocumento({
   margemDireitaMm,
   onMudarEsquerda,
   onMudarDireita,
+  tabulacoesMm,
+  onMudarTabulacoes,
 }: {
   larguraMm: number;
   margemEsquerdaMm: number;
   margemDireitaMm: number;
   onMudarEsquerda: (mm: number) => void;
   onMudarDireita: (mm: number) => void;
+  tabulacoesMm: number[];
+  onMudarTabulacoes: (novas: number[]) => void;
 }) {
   const reguaRef = useRef<HTMLDivElement>(null);
   const marcasQtd = Math.round(larguraMm / 10);
   const marcas = Array.from({ length: marcasQtd + 1 }, (_, i) => i);
+  const arrastandoRef = useRef(false);
 
   function iniciarArrasteMargem(lado: "esquerda" | "direita") {
     return (eDown: React.MouseEvent) => {
@@ -747,8 +752,52 @@ function ReguaDocumento({
     };
   }
 
+  /** Clicar num espaço vazio da régua adiciona uma tabulação nova ali. */
+  function aoClicarNaRegua(e: React.MouseEvent) {
+    if (arrastandoRef.current) return; // era o fim de um arraste, não um clique de verdade
+    const el = reguaRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const xMm = Math.round(((e.clientX - rect.left) / rect.width) * larguraMm);
+    if (xMm <= margemEsquerdaMm || xMm >= larguraMm - margemDireitaMm) return; // só dentro da área útil
+    onMudarTabulacoes([...tabulacoesMm, xMm].sort((a, b) => a - b));
+  }
+
+  function iniciarArrasteTabulacao(indice: number) {
+    return (eDown: React.MouseEvent) => {
+      eDown.preventDefault();
+      eDown.stopPropagation();
+      arrastandoRef.current = true;
+      function mover(ev: MouseEvent) {
+        const el = reguaRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const xMm = Math.round(((ev.clientX - rect.left) / rect.width) * larguraMm);
+        const novas = [...tabulacoesMm];
+        novas[indice] = Math.min(Math.max(xMm, margemEsquerdaMm), larguraMm - margemDireitaMm);
+        onMudarTabulacoes(novas);
+      }
+      function soltar() {
+        window.removeEventListener("mousemove", mover);
+        window.removeEventListener("mouseup", soltar);
+        onMudarTabulacoes([...tabulacoesMm].sort((a, b) => a - b));
+        setTimeout(() => { arrastandoRef.current = false; }, 0);
+      }
+      window.addEventListener("mousemove", mover);
+      window.addEventListener("mouseup", soltar);
+    };
+  }
+
+  function removerTabulacao(indice: number) {
+    return (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onMudarTabulacoes(tabulacoesMm.filter((_, i) => i !== indice));
+    };
+  }
+
   return (
-    <div className="doc-regua" ref={reguaRef}>
+    <div className="doc-regua" ref={reguaRef} onClick={aoClicarNaRegua} title="Clique num espaço vazio pra adicionar uma tabulação">
       {marcas.map((cm) => (
         <span key={cm} className="doc-regua-marca" aria-hidden="true">
           {cm > 0 ? cm : ""}
@@ -766,6 +815,16 @@ function ReguaDocumento({
         onMouseDown={iniciarArrasteMargem("direita")}
         title={`Margem direita: ${margemDireitaMm}mm — arraste pra ajustar`}
       />
+      {tabulacoesMm.map((mm, indice) => (
+        <div
+          key={indice}
+          className="doc-regua-tabulacao"
+          style={{ left: `${(mm / larguraMm) * 100}%` }}
+          onMouseDown={iniciarArrasteTabulacao(indice)}
+          onDoubleClick={removerTabulacao(indice)}
+          title={`Tabulação em ${mm}mm — arraste pra mover, duplo clique pra remover`}
+        />
+      ))}
     </div>
   );
 }
@@ -1136,6 +1195,57 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     salvarConteudoPagina(paginaAtivaId);
   }
 
+  /**
+   * Tab de verdade: avança até a próxima tabulação configurada na régua (Formatar → régua horizontal),
+   * medindo a posição real do cursor na página. Sem tabulação configurada à frente, cai num espaçamento
+   * padrão de 12,5mm (como Word/Docs fazem quando não há marcador definido).
+   */
+  function inserirTabulacao() {
+    if (!doc) return;
+    const selecao = window.getSelection();
+    const el = paginaRefs.current[paginaAtivaId];
+    if (!selecao || selecao.rangeCount === 0 || !el) {
+      inserirNaPagina("&emsp;&emsp;");
+      return;
+    }
+    const folha = el.closest(".doc-page-sheet") as HTMLElement | null;
+    if (!folha) {
+      inserirNaPagina("&emsp;&emsp;");
+      return;
+    }
+    const range = selecao.getRangeAt(0);
+    const retangulos = range.getClientRects();
+    const cursorRect = retangulos[0] ?? range.getBoundingClientRect();
+    const folhaRect = folha.getBoundingClientRect();
+    const pxPorMm = folhaRect.width / larguraMm;
+    const cursorXmm = (cursorRect.left - folhaRect.left) / pxPorMm;
+    const tabulacoes = [...(doc.config.tabulacoesMm ?? [])].sort((a, b) => a - b);
+    const proxima = tabulacoes.find((t) => t > cursorXmm + 0.5);
+    const alvoMm = proxima ?? (Math.floor(cursorXmm / 12.5) + 1) * 12.5;
+    const larguraPx = Math.max(6, Math.round((alvoMm - cursorXmm) * pxPorMm));
+
+    // Inserção via Range direto (não execCommand("insertHTML")) — um <span contenteditable="false">
+    // não é um lugar válido pro cursor pousar, e inserir só ele deixava a seleção num estado inválido
+    // onde a digitação seguinte era descartada silenciosamente. Insere o span E um nó de texto vazio
+    // logo depois, e move o cursor pra dentro desse nó de texto explicitamente.
+    const span = document.createElement("span");
+    span.contentEditable = "false";
+    span.dataset.docTab = "1";
+    span.style.display = "inline-block";
+    span.style.width = `${larguraPx}px`;
+    span.innerHTML = "&nbsp;";
+    const noDepois = document.createTextNode("");
+    range.deleteContents();
+    range.insertNode(span);
+    span.after(noDepois);
+    const novoRange = document.createRange();
+    novoRange.setStart(noDepois, 0);
+    novoRange.collapse(true);
+    selecao.removeAllRanges();
+    selecao.addRange(novoRange);
+    salvarConteudoPagina(paginaAtivaId);
+  }
+
   function novaPaginaAposAtiva() {
     const indice = paginasLocais.findIndex((p) => p.id === paginaAtivaId);
     let novoId = "";
@@ -1368,6 +1478,15 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     if (mod && e.key === "\\") {
       e.preventDefault();
       aplicarFormatacao("removeFormat");
+      return;
+    }
+    if (e.key === "Tab" && !mod) {
+      const selecao = window.getSelection();
+      const dentroDeLista =
+        selecao && selecao.rangeCount > 0 && (selecao.getRangeAt(0).startContainer as Node).parentElement?.closest("li, td, th");
+      if (dentroDeLista) return; // deixa o navegador indentar o item de lista / pular de célula nativamente
+      e.preventDefault();
+      inserirTabulacao();
       return;
     }
     // Enter normal e Shift+Enter: deixamos o navegador tratar nativamente (cria parágrafo / quebra de
@@ -2340,6 +2459,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   margemDireitaMm={margemDireitaMm}
                   onMudarEsquerda={(mm) => atualizarConfigPagina(id, { margemEsquerdaMm: mm })}
                   onMudarDireita={(mm) => atualizarConfigPagina(id, { margemDireitaMm: mm })}
+                  tabulacoesMm={doc.config.tabulacoesMm ?? []}
+                  onMudarTabulacoes={(novas) => atualizarConfigPagina(id, { tabulacoesMm: novas })}
                 />
               ) : null}
               <div className="doc-page-linha">

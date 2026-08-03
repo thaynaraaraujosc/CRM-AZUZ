@@ -4262,6 +4262,34 @@ table.tbl tbody tr:hover td {
   border-top-color: var(--ink);
 }
 
+/* Marcador de tabulação — pequeno triângulo apontando pra baixo, na base da régua. */
+.doc-regua-tabulacao {
+  position: absolute;
+  bottom: 1px;
+  width: 10px;
+  height: 8px;
+  margin-left: -5px;
+  cursor: ew-resize;
+  z-index: 3;
+}
+
+.doc-regua-tabulacao::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid var(--text-faint);
+}
+
+.doc-regua-tabulacao:hover::before {
+  border-bottom-color: var(--blue);
+}
+
 /* Linha com a régua vertical ao lado da folha — mesma lógica da régua horizontal, só que no eixo Y. */
 .doc-page-linha {
   display: flex;
