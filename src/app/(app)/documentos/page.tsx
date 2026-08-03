@@ -1199,11 +1199,31 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   /** Visualização de impressão própria — só o conteúdo do documento (+ cabeçalho/rodapé se o usuário criou), sem menu/barra/régua/botões. */
   function abrirPreviaImpressao() {
     if (!doc) return;
-    abrirPreviaImpressaoLimpa(
-      doc.titulo,
-      paginasParaExportar().map((p) => p.conteudoHtml),
-      { larguraMm, alturaMm, margemSuperiorMm, margemInferiorMm, margemEsquerdaMm, margemDireitaMm, corFundo: doc.config.corFundo },
-    );
+    const paginas = paginasComConteudoAtual();
+    const total = paginas.length;
+    const paginasHtml = paginas.map((p, i) => {
+      const cabecalho = doc.config.cabecalhoHtml
+        ? `<div class="doc-cabecalho-repetido">${substituirTokensPagina(doc.config.cabecalhoHtml, i + 1, total)}</div>`
+        : "";
+      const rodape = doc.config.rodapeHtml
+        ? `<div class="doc-rodape-repetido">${substituirTokensPagina(doc.config.rodapeHtml, i + 1, total)}</div>`
+        : "";
+      // O corpo vai numa div própria (.doc-corpo-impresso) — é só ela que recebe a CSS de colunas,
+      // cabeçalho/rodapé continuam em largura cheia igual aparecem no editor.
+      return `${cabecalho}<div class="doc-corpo-impresso">${p.conteudoHtml}</div>${rodape}`;
+    });
+    abrirPreviaImpressaoLimpa(doc.titulo, paginasHtml, {
+      larguraMm,
+      alturaMm,
+      margemSuperiorMm,
+      margemInferiorMm,
+      margemEsquerdaMm,
+      margemDireitaMm,
+      corFundo: doc.config.corFundo,
+      qtdColunas,
+      colunasEspacoMm: doc.config.colunasEspacoMm,
+      colunasLinha: doc.config.colunasLinha,
+    });
   }
 
   async function confirmarExportarPdf() {

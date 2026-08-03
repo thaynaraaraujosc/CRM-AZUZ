@@ -365,6 +365,9 @@ export function abrirPreviaImpressaoLimpa(
     margemEsquerdaMm: number;
     margemDireitaMm: number;
     corFundo: string;
+    qtdColunas?: number;
+    colunasEspacoMm?: number;
+    colunasLinha?: boolean;
   },
 ) {
   const janela = window.open("", "_blank", "width=900,height=1000");
@@ -379,6 +382,15 @@ export function abrirPreviaImpressaoLimpa(
         `<div class="folha" style="width:${opcoes.larguraMm}mm;min-height:${opcoes.alturaMm}mm;padding:${padding};background:${opcoes.corFundo};">${html}</div>`,
     )
     .join("");
+  const qtdColunas = opcoes.qtdColunas ?? 1;
+  // O corpo (texto do documento) fica dentro de .doc-corpo-impresso — as colunas só se aplicam a ele,
+  // nunca ao cabeçalho/rodapé repetido (que continua em largura cheia, uma linha só, como no editor).
+  const cssColunas =
+    qtdColunas > 1
+      ? `.doc-corpo-impresso { column-count: ${qtdColunas}; column-gap: ${opcoes.colunasEspacoMm ?? 10}mm; ${
+          opcoes.colunasLinha ? "column-rule: 1px solid currentColor;" : ""
+        } }`
+      : "";
   janela.document.open();
   janela.document.write(`<!doctype html>
 <html lang="pt-BR">
@@ -391,6 +403,7 @@ export function abrirPreviaImpressaoLimpa(
   .folha { margin: 12mm auto; box-shadow: 0 4px 20px rgba(0,0,0,.15); overflow-wrap: break-word; }
   .doc-cabecalho-repetido { font-size: 11px; color: #666; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid #e2e2e2; }
   .doc-rodape-repetido { font-size: 11px; color: #666; padding-top: 10px; margin-top: 14px; border-top: 1px solid #e2e2e2; }
+  ${cssColunas}
   @media print {
     body { background: #fff; }
     .folha { margin: 0; box-shadow: none; page-break-after: always; }
