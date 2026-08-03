@@ -7939,6 +7939,27 @@ table.tbl tbody tr:hover td {
   color: var(--text-muted);
 }
 
+/*
+ * Backdrop compartilhado por todos os popups de Conversas (preview de imagem/vídeo, biblioteca de
+ * mídia, configurações da conversa, seletor de contato, confirmações...) — usado em ~16 lugares no
+ * arquivo, mas nunca tinha sido definido: sem isso, cada popup só fluía dentro do layout normal da
+ * página (sem position: fixed, sem centralizar, sem escurecer o fundo), então podia ficar cortado por
+ * qualquer contêiner pai com altura limitada. Os próprios modais (.wa-email-modal, .wa-config-modal-
+ * shell, .wa-midia-preview, .wa-biblioteca-modal) já tinham max-height/overflow-y corretos — só
+ * faltava o overlay que os centraliza dentro da viewport inteira. Mesmo padrão de .modal-overlay,
+ * já usado e testado em Documentos.
+ */
+.form-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(6, 11, 28, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
 @media (max-width: 720px) {
   .wa-config-modal-shell {
     max-width: 100%;
