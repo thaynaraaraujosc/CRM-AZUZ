@@ -3271,6 +3271,19 @@ button.camp-row:hover {
   white-space: nowrap;
 }
 
+/* `.stat-row-link` (linhas de stat que são `<Link>`, ex: Atividades de vendas) não tinha regra —
+   herdava o azul sublinhado padrão de link em vez de seguir o visual de `.stat-row`. */
+.stat-row-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.stat-row-link:hover {
+  background: var(--navy-raised);
+}
+
 .prev-list {
   display: flex;
   flex-direction: column;
@@ -7809,6 +7822,70 @@ button.camp-row:hover {
   gap: 8px;
 }
 
+/* Painel de pré-visualização do fluxo (VisualizarFluxo.tsx) usava `.flow-preview-panel` em vez de
+   `.flow-side-panel` — sem nenhuma regra, o painel abria sem largura/fundo/layout nenhum. Aqui uma
+   variante mais larga, já que hospeda o canvas do fluxo. */
+.flow-preview-panel {
+  width: min(760px, 100vw);
+  height: 100%;
+  background: var(--navy);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -16px 0 40px rgba(11, 21, 51, 0.2);
+}
+
+.flow-preview-summary {
+  padding: 14px 17px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flow-preview-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.flow-preview-canvas {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.pill.secondary {
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+}
+
+.flow-sim-banner {
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.flow-sim-continuar {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--navy-raised-2);
+  border: 1px solid var(--line);
+}
+
+.flow-sim-opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .flow-sim-log {
   margin-top: 14px;
   padding: 10px;
@@ -9043,6 +9120,177 @@ button.camp-row:hover {
   background: rgba(214, 69, 69, 0.12);
   color: #d64545;
   font-size: 12px;
+}
+
+/* Cluster de classes do chat (Conversas/WhatsApp) sem CSS nenhum, achado na auditoria de
+   classes órfãs: área clicável de contato/localização compartilhados, mídia bloqueada,
+   citação de resposta e a coluna do campo de digitação com o preview de "respondendo a". */
+.wa-list-head-acoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wa-list-config {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.wa-list-config:hover {
+  background: var(--blue-soft-2);
+  color: var(--blue);
+}
+
+.bubble-contato-area,
+.bubble-localizacao-link-area {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+.bubble-midia-bloqueada {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bubble-midia-bloqueada:hover {
+  background: var(--blue-soft-2);
+  color: var(--blue);
+  border-color: var(--blue);
+}
+
+.sistema-apagada {
+  background: none;
+  border: 1px dashed var(--line);
+  color: var(--text-faint);
+  font-style: italic;
+  font-size: 11.5px;
+}
+
+.wa-citacao {
+  display: block;
+  margin-bottom: 4px;
+  padding: 5px 8px;
+  border-left: 3px solid var(--blue);
+  border-radius: 4px;
+  background: rgba(46, 107, 255, 0.08);
+}
+
+.wa-citacao-autor {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.wa-citacao-texto {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.chat-input-campo-coluna {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-respondendo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  background: var(--navy-raised);
+}
+
+.chat-respondendo-barra {
+  flex: none;
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  background: var(--blue);
+}
+
+.chat-respondendo-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.chat-respondendo-autor {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.chat-respondendo-preview {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-respondendo-fechar {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.chat-respondendo-fechar:hover {
+  background: var(--navy-raised-2);
+  color: var(--ink);
+}
+
+.chat-send-btn {
+  background: var(--blue);
+  color: #fff;
+}
+
+.chat-send-btn:hover {
+  background: var(--blue);
+  opacity: 0.9;
 }
 
 .audio-waveform {
