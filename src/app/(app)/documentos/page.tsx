@@ -1206,6 +1206,44 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paginasLocais]);
 
+  // Ctrl+P precisa funcionar mesmo com o foco fora do texto (num botão da barra, num painel flutuante
+  // etc.) — por isso fica num listener global de window, e não só no onKeyDown do contentEditable.
+  useEffect(() => {
+    function aoTeclarPrint(e: KeyboardEvent) {
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && (e.key === "p" || e.key === "P")) {
+        e.preventDefault();
+        abrirPreviaImpressao();
+      }
+    }
+    window.addEventListener("keydown", aoTeclarPrint);
+    return () => window.removeEventListener("keydown", aoTeclarPrint);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // O caminho normal de impressão (botão 🖨/Ctrl+P) abre uma janela própria já com o tamanho de papel
+  // certo (abrirPreviaImpressaoLimpa). Mas se a impressão nativa do navegador for disparada por fora
+  // disso (menu Arquivo > Imprimir, botão de imprimir da barra do navegador — o app não consegue
+  // interceptar isso via JavaScript), o fallback em CSS (".doc-print-area" em globals.css) precisa saber
+  // o tamanho real da página em tempo real, porque puro CSS não lê o estado do documento.
+  useEffect(() => {
+    if (!doc) return;
+    const dimensaoAtual =
+      doc.config.tamanho === "Personalizado" ? { w: 210, h: 297 } : TAMANHOS_PAPEL_MM[doc.config.tamanho];
+    const larguraAtual = doc.config.orientacao === "paisagem" ? dimensaoAtual.h : dimensaoAtual.w;
+    const alturaAtual = doc.config.orientacao === "paisagem" ? dimensaoAtual.w : dimensaoAtual.h;
+    let estilo = document.getElementById("doc-print-page-size") as HTMLStyleElement | null;
+    if (!estilo) {
+      estilo = document.createElement("style");
+      estilo.id = "doc-print-page-size";
+      document.head.appendChild(estilo);
+    }
+    estilo.textContent = `@media print { @page { size: ${larguraAtual}mm ${alturaAtual}mm; margin: 0; } }`;
+    return () => {
+      estilo?.remove();
+    };
+  }, [doc, doc?.config.tamanho, doc?.config.orientacao]);
+
   useEffect(() => {
     function aoTeclarEsc(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -1638,11 +1676,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       inserirQuebraDePaginaNoCursor();
       return;
     }
-    if (mod && (e.key === "p" || e.key === "P")) {
-      e.preventDefault();
-      abrirPreviaImpressao();
-      return;
-    }
+    // Ctrl+P é tratado por um listener global (ver useEffect logo abaixo da definição de
+    // abrirPreviaImpressao) — assim funciona mesmo com o foco fora do texto, não só aqui dentro.
     if (mod && e.shiftKey && (e.key === "v" || e.key === "V")) {
       e.preventDefault();
       colarConteudo(true);

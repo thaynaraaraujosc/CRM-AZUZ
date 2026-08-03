@@ -4416,6 +4416,11 @@ table.tbl tbody tr:hover td {
 
 .doc-page-sheet {
   position: relative;
+  /* Isola o empilhamento (z-index) dos elementos de dentro da página. Sem isso, uma imagem "atrás do
+     texto" (z-index: -1, aplicado pelo painel de imagem) escapa pra trás do CONTÊINER RAIZ do app
+     inteiro — atrás da barra lateral, do topo etc. — em vez de ficar só atrás do fundo branco desta
+     página, então acaba completamente invisível. */
+  isolation: isolate;
   width: 100%;
   min-height: 1000px;
   background: #ffffff;
@@ -4531,7 +4536,26 @@ table.tbl tbody tr:hover td {
   cursor: not-allowed;
 }
 
+/*
+ * Fallback só pra quando a impressão é disparada por fora do app (menu "Arquivo > Imprimir" do
+ * navegador, botão de impressão da barra do navegador) — o app já intercepta Ctrl+P e o próprio
+ * botão de imprimir pra abrir uma janela dedicada (abrirPreviaImpressaoLimpa, em documentos-export.ts)
+ * com o tamanho de papel/margens corretos; esse caminho aqui não tem acesso a isso via CSS puro, então
+ * o tamanho de página real é injetado dinamicamente num <style id="doc-print-page-size"> (ver
+ * EditorDocumento em documentos/page.tsx) — o @page abaixo é só o valor padrão antes disso carregar.
+ *
+ * O posicionamento vai no CONTÊINER (.doc-paginas-coluna), não em cada página — cada
+ * `.doc-print-area` continua no fluxo normal do documento (uma por página, com quebra de página
+ * entre elas). Posicionar cada página individualmente em position:absolute;top:0;left:0 (como era
+ * antes) empilhava todas as páginas de um documento de várias páginas exatamente uma sobre a outra.
+ */
 @media print {
+  html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+
   body * {
     visibility: hidden;
   }
@@ -4541,22 +4565,30 @@ table.tbl tbody tr:hover td {
     visibility: visible;
   }
 
-  .doc-print-area {
+  .doc-paginas-coluna {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
+    gap: 0;
+  }
+
+  .doc-print-area {
     max-width: none;
     min-height: 0;
-    margin: 0;
-    padding: 0;
+    margin: 0 auto;
     box-shadow: none;
     border-radius: 0;
+    page-break-after: always;
+  }
+
+  .doc-print-area:last-child {
+    page-break-after: auto;
   }
 
   @page {
     size: A4;
-    margin: 16mm;
+    margin: 0;
   }
 }
 

@@ -462,8 +462,12 @@ export function abrirPreviaImpressaoLimpa(
 <title>${titulo}</title>
 <style>
   * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
   body { margin: 0; background: #e7e9f0; font-family: Arial, sans-serif; }
-  .folha { margin: 12mm auto; box-shadow: 0 4px 20px rgba(0,0,0,.15); overflow-wrap: break-word; }
+  /* position: relative — o mesmo contêiner que a página usa no editor (.doc-page-sheet). Sem isso,
+     qualquer imagem em "atrás"/"na frente"/"posição livre" (position: absolute, herdada do editor)
+     perde a página como referência e se posiciona relativa à janela inteira de impressão. */
+  .folha { position: relative; isolation: isolate; margin: 12mm auto; box-shadow: 0 4px 20px rgba(0,0,0,.15); overflow-wrap: break-word; overflow: hidden; }
   .doc-cabecalho-repetido { font-size: 11px; color: #666; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid #e2e2e2; }
   .doc-rodape-repetido { font-size: 11px; color: #666; padding-top: 10px; margin-top: 14px; border-top: 1px solid #e2e2e2; }
   ${cssColunas}
@@ -479,7 +483,16 @@ export function abrirPreviaImpressaoLimpa(
 </html>`);
   janela.document.close();
   janela.focus();
-  setTimeout(() => {
-    janela.print();
-  }, 350);
+  // Espera a janela terminar de carregar (imagens em base64 incluídas) antes de imprimir, em vez de um
+  // tempo fixo — evita imprimir uma página ainda incompleta em documentos maiores/mais lentos. Um
+  // fallback curto cobre o caso raro do evento de carga já ter dado (ou nunca disparar).
+  const janelaAberta = janela;
+  let jaImprimiu = false;
+  function imprimirUmaVez() {
+    if (jaImprimiu) return;
+    jaImprimiu = true;
+    janelaAberta.print();
+  }
+  janela.addEventListener("load", imprimirUmaVez);
+  setTimeout(imprimirUmaVez, 600);
 }
