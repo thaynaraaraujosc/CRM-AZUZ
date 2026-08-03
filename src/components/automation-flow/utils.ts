@@ -16,6 +16,8 @@ export type FlowRFNodeData = {
   problemas: ProblemaValidacao[];
   /** Chaves (handleId, ou "__default__" pra saída única sem nome) que já têm uma aresta saindo — usado pra saber onde mostrar o botão "+" de adicionar o próximo passo. */
   saidasConectadas?: Set<string>;
+  /** Quantos caminhos diferentes chegam nesse node — >1 indica que branches diferentes se reencontram aqui (item 31). */
+  caminhosConvergindo?: number;
   /** Fechado sobre o id do nó lá no FlowEditor — abre o seletor rápido "O que acontece agora?" pra essa saída específica. */
   onAdicionarApos?: (handleId: string | undefined) => void;
 };

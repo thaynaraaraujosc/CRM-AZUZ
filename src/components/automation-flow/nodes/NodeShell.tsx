@@ -38,7 +38,7 @@ const NOME_CATEGORIA: Record<FlowNodeCategory, string> = {
  * então não faz sentido duplicar esse JSX 8 vezes.
  */
 export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
-  const { flowNode, problemas, saidasConectadas, onAdicionarApos } = data;
+  const { flowNode, problemas, saidasConectadas, caminhosConvergindo, onAdicionarApos } = data;
   const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === flowNode.type);
   const saidas = saidasDoNo(flowNode);
   const temErro = problemas.some((p) => p.severidade === "erro");
@@ -57,6 +57,12 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     <div className={classes} data-node-id={id}>
       {temEntrada(flowNode.category) ? (
         <Handle type="target" position={Position.Top} className="flow-handle" />
+      ) : null}
+
+      {caminhosConvergindo && caminhosConvergindo > 1 ? (
+        <div className="flow-node-convergencia" title={`${caminhosConvergindo} caminhos diferentes se encontram aqui`}>
+          ⤵ {caminhosConvergindo} caminhos se encontram aqui
+        </div>
       ) : null}
 
       <div className="flow-node-header">

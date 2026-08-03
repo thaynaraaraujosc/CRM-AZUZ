@@ -482,6 +482,16 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     });
     return m;
   }, [rfEdges]);
+  /** Quantos caminhos diferentes chegam em cada node — >1 quer dizer que branches diferentes se
+   * reencontram ali (item 31), o que merece um aviso visual em vez de parecer só mais uma seta. */
+  const entradasPorNode = useMemo(() => {
+    const m = new Map<string, number>();
+    rfEdges.forEach((e) => {
+      if (!e.target) return;
+      m.set(e.target, (m.get(e.target) ?? 0) + 1);
+    });
+    return m;
+  }, [rfEdges]);
   /**
    * Com exatamente 1 node selecionado, destaca ele + vizinhos diretos (quem alimenta e quem recebe
    * dele) e apaga levemente o resto — ajuda a acompanhar o fluxo em automações com muitos nós/
@@ -511,10 +521,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           ...n.data,
           problemas: problemasPorNode.get(n.id) ?? [],
           saidasConectadas: saidasConectadasPorNode.get(n.id),
+          caminhosConvergindo: entradasPorNode.get(n.id) ?? 0,
           onAdicionarApos: (handleId: string | undefined) => setAcaoRapida({ nodeId: n.id, handleId }),
         },
       })),
-    [rfNodes, problemasPorNode, saidasConectadasPorNode, nodesRelacionados],
+    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, nodesRelacionados],
   );
   const edgesParaRenderizar = useMemo(
     () =>
