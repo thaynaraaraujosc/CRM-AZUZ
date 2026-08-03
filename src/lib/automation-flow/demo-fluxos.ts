@@ -603,8 +603,90 @@ function construirPosVenda(): FluxoAutomacao {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Automação 4 — "Boas-vindas e triagem do lead novo"                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * O modelo mais simples dos quatro, de propósito: é o primeiro exemplo que
+ * alguém abre pra entender o construtor (gatilho → uma pergunta de botões →
+ * dois ramos curtos → fim), sem condições encadeadas nem convergência — isso
+ * já existe nos outros três modelos.
+ */
+function construirBoasVindas(): FluxoAutomacao {
+  const nodes: FlowNode[] = [];
+  const edges: FlowEdge[] = [];
+
+  nodes.push(no("bv-gatilho", "lead_criado", "gatilho", {}, "Novo contato chegou"));
+
+  const triagem: MensagemBotoesData = {
+    canal: "whatsapp",
+    texto: "Oi! Recebemos seu contato 💙 Antes de continuar, me conta uma coisa:",
+    opcoes: [
+      { id: "bv-op-paciente", rotulo: "Já sou paciente da clínica" },
+      { id: "bv-op-novo", rotulo: "É minha primeira vez por aqui" },
+    ],
+    formatoResposta: "botoes",
+  };
+  nodes.push(no("bv-triagem", "mensagem_botoes", "mensagem", triagem, "Pergunta e espera a resposta"));
+  edges.push(aresta("bv-gatilho", "bv-triagem"));
+
+  // Ramo "já é paciente" — reconhece quem já tem histórico e encaminha pra um
+  // atendimento de retorno, sem repetir a triagem de lead novo.
+  const etqRecorrente: AdicionarEtiquetaData = { etiquetaNome: "Paciente recorrente" };
+  nodes.push(no("bv-etq-recorrente", "adicionar_etiqueta", "acao", etqRecorrente));
+  edges.push(aresta("bv-triagem", "bv-etq-recorrente", "bv-op-paciente"));
+
+  const tarefaRecorrente: CriarTarefaData = { titulo: "Confirmar retorno e agendar horário", prazoValor: 2, prazoUnidade: "horas" };
+  nodes.push(no("bv-tarefa-recorrente", "criar_tarefa", "acao", tarefaRecorrente));
+  edges.push(aresta("bv-etq-recorrente", "bv-tarefa-recorrente"));
+
+  const fimRecorrente: EncerrarFluxoData = { motivo: "Paciente recorrente encaminhado pro atendimento de retorno." };
+  nodes.push(no("bv-fim-recorrente", "encerrar_fluxo", "fim", fimRecorrente));
+  edges.push(aresta("bv-tarefa-recorrente", "bv-fim-recorrente"));
+
+  // Ramo "primeira vez" — manda uma mensagem de boas-vindas própria e cria a
+  // tarefa de triagem inicial pra equipe.
+  const msgBoasVindas: MensagemTextoData = {
+    canal: "whatsapp",
+    texto: "Seja muito bem-vindo(a)! Vou te mandar as informações da clínica e já aviso a equipe do seu contato.",
+  };
+  nodes.push(no("bv-msg-novo", "mensagem_texto", "mensagem", msgBoasVindas));
+  edges.push(aresta("bv-triagem", "bv-msg-novo", "bv-op-novo"));
+
+  const etqNovo: AdicionarEtiquetaData = { etiquetaNome: "Lead novo" };
+  nodes.push(no("bv-etq-novo", "adicionar_etiqueta", "acao", etqNovo));
+  edges.push(aresta("bv-msg-novo", "bv-etq-novo"));
+
+  const tarefaNovo: CriarTarefaData = { titulo: "Fazer a triagem inicial do lead novo", prazoValor: 1, prazoUnidade: "horas" };
+  nodes.push(no("bv-tarefa-novo", "criar_tarefa", "acao", tarefaNovo));
+  edges.push(aresta("bv-etq-novo", "bv-tarefa-novo"));
+
+  const fimNovo: EncerrarFluxoData = { motivo: "Lead novo triado — tarefa criada pra equipe." };
+  nodes.push(no("bv-fim-novo", "encerrar_fluxo", "fim", fimNovo));
+  edges.push(aresta("bv-tarefa-novo", "bv-fim-novo"));
+
+  const configuracoes: ConfiguracoesFluxo = {
+    naoIniciarSeJaNoFluxo: true,
+  };
+
+  return fluxoDemo({
+    id: "demo-boas-vindas-triagem",
+    nome: "Boas-vindas e triagem do lead novo",
+    descricao: "Recebe o contato, faz uma pergunta rápida por botões e direciona pro atendimento certo.",
+    objetivo:
+      "Servir de primeiro exemplo pra quem nunca usou o construtor: um gatilho, uma pergunta de múltipla escolha e dois caminhos curtos — sem condição encadeada nem convergência, pra não competir com os outros modelos mais avançados.",
+    funilId: FUNIL_ID_SEED,
+    etapaId: "novo",
+    nodes,
+    edges,
+    configuracoes,
+  });
+}
+
+/* -------------------------------------------------------------------------- */
 
 export const FLUXOS_DEMONSTRACAO_INICIAIS: FluxoAutomacao[] = [
+  construirBoasVindas(),
   construirRecuperarLead(),
   construirDistribuirLead(),
   construirPosVenda(),
