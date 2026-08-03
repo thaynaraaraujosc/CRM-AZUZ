@@ -4192,6 +4192,28 @@ table.tbl tbody tr:hover td {
   margin: 0 4px;
 }
 
+/* Botão de grupo da toolbar ("Inserir ▾", "Parágrafo ▾"...) — mesma base do ícone quadrado, só que
+   com texto e largura livre, pra caber o rótulo do grupo. */
+.doc-toolbar-btn-grupo {
+  width: auto;
+  padding: 0 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.doc-toolbar-btn-grupo.active {
+  background: var(--blue-soft-2);
+  color: var(--blue);
+  border-color: var(--blue);
+}
+
+.doc-toolbar-grupo-conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
 /* Fundo neutro atrás da folha, pra página parecer mesmo uma folha A4 solta — igual Word/Docs. */
 .doc-canvas {
   background: var(--navy-deep);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { currentUser, equipe } from "@/lib/data";
 import {
@@ -712,6 +712,36 @@ function MenuTopo({
             </button>
           ),
         )}
+      </FloatingDropdown>
+    </>
+  );
+}
+
+/**
+ * Grupo de botões da barra de ferramentas do editor, escondidos atrás de um botão só ("Inserir ▾",
+ * "Parágrafo ▾"...) — reduz a quantidade de ícones sempre visíveis sem esconder a função embaixo de
+ * vários cliques. Fica aberto até o usuário clicar fora (mesmo comportamento do "Mais filtros" em
+ * FilterBar), então dá pra usar vários controles do grupo em sequência sem reabrir o menu.
+ */
+function GrupoToolbar({ rotulo, icone, largura = 220, children }: { rotulo: string; icone?: string; largura?: number; children: ReactNode }) {
+  const [aberto, setAberto] = useState(false);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  return (
+    <>
+      <button
+        type="button"
+        ref={btnRef}
+        className={`doc-toolbar-btn doc-toolbar-btn-grupo${aberto ? " active" : ""}`}
+        onClick={() => {
+          if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
+          setAberto((v) => !v);
+        }}
+      >
+        {icone ? `${icone} ` : ""}{rotulo} ▾
+      </button>
+      <FloatingDropdown anchorRect={aberto ? rect : null} onClose={() => setAberto(false)} width={largura}>
+        <div className="doc-toolbar-grupo-conteudo">{children}</div>
       </FloatingDropdown>
     </>
   );
@@ -2613,15 +2643,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         <button type="button" className="doc-toolbar-btn" title="Desfazer" disabled={!podeDesfazer} onMouseDown={(e) => e.preventDefault()} onClick={desfazer}>↶</button>
         <button type="button" className="doc-toolbar-btn" title="Refazer" disabled={!podeRefazer} onMouseDown={(e) => e.preventDefault()} onClick={refazer}>↷</button>
         <button type="button" className="doc-toolbar-btn" title="Imprimir" onClick={abrirPreviaImpressao}>🖨</button>
-        <button
-          type="button"
-          className={`doc-toolbar-btn${corretorAtivo ? " active" : ""}`}
-          title="Corretor ortográfico"
-          onClick={() => setCorretorAtivo((v) => !v)}
-        >
-          ABC
-        </button>
-        <button type="button" className="doc-toolbar-btn" title="Copiar formatação" onClick={copiarFormatacao} onDoubleClick={colarFormatacao}>🖌</button>
         <span className="doc-toolbar-sep" />
         <button type="button" className="doc-toolbar-btn" title="Diminuir zoom" onClick={() => setZoom((z) => Math.max(50, z - 10))}>−</button>
         <span className="hint" style={{ minWidth: 38, textAlign: "center" }}>{zoom}%</span>
@@ -2646,38 +2667,90 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         <button type="button" className="doc-toolbar-btn" style={{ fontWeight: 700 }} title="Negrito" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("bold")}>N</button>
         <button type="button" className="doc-toolbar-btn" style={{ fontStyle: "italic" }} title="Itálico" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("italic")}>I</button>
         <button type="button" className="doc-toolbar-btn" style={{ textDecoration: "underline" }} title="Sublinhado" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("underline")}>S</button>
-        <button type="button" className="doc-toolbar-btn" style={{ textDecoration: "line-through" }} title="Tachado" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("strikeThrough")}>T</button>
-        <span className="doc-toolbar-sep" />
         <SeletorCor titulo="Cor do texto" cores={CORES_TEXTO} onEscolher={(c) => aplicarFormatacao("foreColor", c)} rotulo="A" />
-        <SeletorCor titulo="Cor de destaque" cores={CORES_DESTAQUE} onEscolher={(c) => aplicarFormatacao("hiliteColor", c)} rotulo="🖊" />
-        <span className="doc-toolbar-sep" />
-        <button type="button" className="doc-toolbar-btn" title="Inserir link" onClick={inserirLink}>🔗</button>
-        <button type="button" className="doc-toolbar-btn" title="Inserir comentário" onClick={abrirComentarioNaSelecao}>💬</button>
-        <button type="button" className="doc-toolbar-btn" title="Inserir imagem" onClick={inserirImagem}>🖼</button>
         <span className="doc-toolbar-sep" />
         <button type="button" className="doc-toolbar-btn" title="Alinhar à esquerda" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyLeft")}>≡◧</button>
-        <button type="button" className="doc-toolbar-btn" title="Centralizar" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyCenter")}>≡</button>
-        <button type="button" className="doc-toolbar-btn" title="Alinhar à direita" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyRight")}>◨≡</button>
-        <button type="button" className="doc-toolbar-btn" title="Justificar" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyFull")}>☰</button>
+        <button type="button" className="doc-toolbar-btn" title="Inserir imagem" onClick={inserirImagem}>🖼</button>
         <span className="doc-toolbar-sep" />
-        <select className="doc-toolbar-select" aria-label="Espaçamento entre linhas" defaultValue="1.5" onChange={(e) => {
-          const el = paginaRefs.current[paginaAtivaId];
-          if (el) el.style.lineHeight = e.target.value;
-          salvarConteudoPagina(paginaAtivaId);
-        }}>
-          <option value="1">Simples</option>
-          <option value="1.15">1,15</option>
-          <option value="1.5">1,5</option>
-          <option value="2">Duplo</option>
-        </select>
-        <span className="doc-toolbar-sep" />
-        <button type="button" className="doc-toolbar-btn" title="Lista com marcadores" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertUnorderedList")}>• ≡</button>
-        <button type="button" className="doc-toolbar-btn" title="Lista numerada" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertOrderedList")}>1.≡</button>
-        <button type="button" className="doc-toolbar-btn" title="Checklist" onClick={() => inserirNaPagina('<div>☐ </div>')}>☑</button>
-        <span className="doc-toolbar-sep" />
-        <button type="button" className="doc-toolbar-btn" title="Diminuir recuo" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("outdent")}>⇤</button>
-        <button type="button" className="doc-toolbar-btn" title="Aumentar recuo" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("indent")}>⇥</button>
-        <button type="button" className="doc-toolbar-btn" title="Limpar formatação" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("removeFormat")}>✕A</button>
+
+        <GrupoToolbar rotulo="Inserir" largura={190}>
+          <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirLink}>
+            <span className="n">🔗 Link</span>
+          </button>
+          <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={abrirComentarioNaSelecao}>
+            <span className="n">💬 Comentário</span>
+          </button>
+          <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirImagem}>
+            <span className="n">🖼 Imagem</span>
+          </button>
+        </GrupoToolbar>
+
+        <GrupoToolbar rotulo="Parágrafo" largura={250}>
+          <div className="field">
+            <label>Alinhamento</label>
+            <div className="filters-row" style={{ margin: 0 }}>
+              <button type="button" className="doc-toolbar-btn" title="Centralizar" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyCenter")}>≡</button>
+              <button type="button" className="doc-toolbar-btn" title="Alinhar à direita" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyRight")}>◨≡</button>
+              <button type="button" className="doc-toolbar-btn" title="Justificar" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyFull")}>☰</button>
+            </div>
+          </div>
+          <div className="field">
+            <label>Espaçamento entre linhas</label>
+            <select className="input" style={{ width: "100%" }} defaultValue="1.5" onChange={(e) => {
+              const el = paginaRefs.current[paginaAtivaId];
+              if (el) el.style.lineHeight = e.target.value;
+              salvarConteudoPagina(paginaAtivaId);
+            }}>
+              <option value="1">Simples</option>
+              <option value="1.15">1,15</option>
+              <option value="1.5">1,5</option>
+              <option value="2">Duplo</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>Listas</label>
+            <div className="filters-row" style={{ margin: 0 }}>
+              <button type="button" className="doc-toolbar-btn" title="Lista com marcadores" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertUnorderedList")}>• ≡</button>
+              <button type="button" className="doc-toolbar-btn" title="Lista numerada" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertOrderedList")}>1.≡</button>
+              <button type="button" className="doc-toolbar-btn" title="Checklist" onClick={() => inserirNaPagina('<div>☐ </div>')}>☑</button>
+            </div>
+          </div>
+          <div className="field">
+            <label>Recuo e formatação</label>
+            <div className="filters-row" style={{ margin: 0 }}>
+              <button type="button" className="doc-toolbar-btn" title="Diminuir recuo" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("outdent")}>⇤</button>
+              <button type="button" className="doc-toolbar-btn" title="Aumentar recuo" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("indent")}>⇥</button>
+              <button type="button" className="doc-toolbar-btn" title="Tachado" style={{ textDecoration: "line-through" }} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("strikeThrough")}>T</button>
+              <button type="button" className="doc-toolbar-btn" title="Limpar formatação" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("removeFormat")}>✕A</button>
+            </div>
+          </div>
+          <div className="field">
+            <label>Cor de destaque</label>
+            <SeletorCor titulo="Cor de destaque" cores={CORES_DESTAQUE} onEscolher={(c) => aplicarFormatacao("hiliteColor", c)} rotulo="🖊 Destacar" />
+          </div>
+        </GrupoToolbar>
+
+        <GrupoToolbar rotulo="Mais opções" largura={200}>
+          <button
+            type="button"
+            className={`dropdown-item${corretorAtivo ? " active" : ""}`}
+            style={{ width: "100%", textAlign: "left" }}
+            onClick={() => setCorretorAtivo((v) => !v)}
+          >
+            <span className="n">ABC Corretor ortográfico{corretorAtivo ? " ✓" : ""}</span>
+          </button>
+          <button
+            type="button"
+            className="dropdown-item"
+            style={{ width: "100%", textAlign: "left" }}
+            onClick={copiarFormatacao}
+            onDoubleClick={colarFormatacao}
+            title="Clique pra copiar a formatação, clique duas vezes num trecho selecionado pra colar"
+          >
+            <span className="n">🖌 Copiar formatação</span>
+          </button>
+        </GrupoToolbar>
+
         <span className="doc-toolbar-sep" />
         <div className="doc-modo-switch">
           {(["edicao", "sugestao", "visualizacao"] as const).map((m) => (
