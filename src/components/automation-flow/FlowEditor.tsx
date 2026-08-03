@@ -52,6 +52,23 @@ import {
 
 type Snapshot = { nodes: FlowRFNode[]; edges: FlowRFEdge[] };
 
+/**
+ * Gatilhos mais comuns, na ordem sugerida pro fluxo guiado de primeira automação — evita jogar as 31
+ * opções de gatilho de uma vez só pra quem está começando. "Ver todos os gatilhos" continua abrindo a
+ * biblioteca completa (nada fica escondido, só não é a primeira coisa que aparece).
+ */
+const GATILHOS_COMUNS: FlowNodeType[] = [
+  "mensagem_recebida",
+  "lead_criado",
+  "lead_entrou_etapa",
+  "lead_saiu_etapa",
+  "lead_respondeu",
+  "lead_nao_respondeu",
+  "etiqueta_adicionada",
+  "campo_alterado",
+  "horario_programado",
+];
+
 function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const { fluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo } = useAutomationFlows();
   const fluxo = fluxos.find((f) => f.id === fluxoId);
@@ -66,6 +83,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [menuContexto, setMenuContexto] = useState<{ x: number; y: number; nodeId: string } | null>(null);
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
+  const [escolherGatilhoAberto, setEscolherGatilhoAberto] = useState(false);
 
   const historyRef = useRef<Snapshot[]>([{ nodes: rfNodes, edges: rfEdges }]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -494,6 +512,64 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               </Panel>
             ) : null}
           </ReactFlow>
+
+          {rfNodes.length === 0 ? (
+            <div className="flow-inicio-vazio">
+              <p className="flow-inicio-vazio-titulo">Como esta automação deve começar?</p>
+              <p className="flow-inicio-vazio-sub">Toda automação começa a partir de um gatilho.</p>
+              <button type="button" className="btn primary" onClick={() => setEscolherGatilhoAberto(true)}>
+                + Escolher gatilho
+              </button>
+            </div>
+          ) : null}
+
+          {escolherGatilhoAberto ? (
+            <div className="modal-overlay" onClick={() => setEscolherGatilhoAberto(false)}>
+              <div className="modal flow-escolher-gatilho" onClick={(e) => e.stopPropagation()}>
+                <div className="panel-h">
+                  <h4>Quando isso deve acontecer?</h4>
+                  <button
+                    type="button"
+                    className="modal-close-btn"
+                    aria-label="Fechar"
+                    onClick={() => setEscolherGatilhoAberto(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="flow-escolher-gatilho-lista">
+                  {GATILHOS_COMUNS.map((tipo) => {
+                    const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
+                    if (!bloco) return null;
+                    return (
+                      <button
+                        type="button"
+                        key={tipo}
+                        className="flow-escolher-gatilho-item"
+                        onClick={() => {
+                          adicionarBloco(tipo, { x: 80, y: 80 });
+                          setEscolherGatilhoAberto(false);
+                        }}
+                      >
+                        <span className="n">{bloco.label}</span>
+                        <span className="r">{bloco.descricao}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  className="btn ghost block"
+                  onClick={() => {
+                    setEscolherGatilhoAberto(false);
+                    setLibAberta(true);
+                  }}
+                >
+                  Ver todos os gatilhos
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {menuContexto ? (
             <div className="flow-ctx-menu" style={{ top: menuContexto.y, left: menuContexto.x }}>

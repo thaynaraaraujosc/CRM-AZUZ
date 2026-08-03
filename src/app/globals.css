@@ -6365,6 +6365,84 @@ table.tbl tbody tr:hover td {
   display: none;
 }
 
+/* Prompt central quando a automação ainda não tem nenhum nó — pointer-events desligado no wrapper (o
+   canvas embaixo continua pan/zoomável) e ligado de volta só na própria caixa. */
+.flow-inicio-vazio {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: none;
+  text-align: center;
+  padding: 24px;
+}
+
+.flow-inicio-vazio > * {
+  pointer-events: auto;
+}
+
+.flow-inicio-vazio-titulo {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.flow-inicio-vazio-sub {
+  font-size: 12.5px;
+  color: var(--text-faint);
+  margin: 0 0 6px;
+}
+
+.flow-escolher-gatilho {
+  width: min(440px, 100%);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.flow-escolher-gatilho-lista {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flow-escolher-gatilho-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+}
+
+.flow-escolher-gatilho-item:hover {
+  background: var(--navy-raised);
+  border-color: var(--line);
+}
+
+.flow-escolher-gatilho-item .n {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.flow-escolher-gatilho-item .r {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
 .flow-canvas .react-flow__controls {
   box-shadow: 0 4px 16px rgba(11, 21, 51, 0.16);
   border-radius: 8px;
