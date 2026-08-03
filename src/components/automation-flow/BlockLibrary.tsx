@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 import { BLOCOS_DISPONIVEIS, CATEGORIAS_BLOCOS, buscarBlocos, type BlocoDefinicao } from "@/lib/automation-flow/blocos";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
@@ -105,7 +105,12 @@ export function BlockLibrary({
 
       <div className="flow-lib-lista">
         {buscando ? (
-          <BlocoSecao titulo={`Resultados (${resultados.length})`} blocos={resultados} onAdicionarBloco={onAdicionarBloco} />
+          <BlocoSecao
+            titulo={`Resultados (${resultados.length})`}
+            blocos={resultados}
+            onAdicionarBloco={onAdicionarBloco}
+            termoDestacado={busca}
+          />
         ) : (
           <>
             <BlocoSecao titulo="Mais usados" blocos={maisUsados} onAdicionarBloco={onAdicionarBloco} />
@@ -131,14 +136,31 @@ export function BlockLibrary({
   );
 }
 
+/** Envolve a parte do texto que bate com o termo buscado num <mark> — só na visão de resultados de busca. */
+function destacarTermo(texto: string, termo: string): ReactNode {
+  const t = termo.trim();
+  if (!t) return texto;
+  const indice = texto.toLowerCase().indexOf(t.toLowerCase());
+  if (indice === -1) return texto;
+  return (
+    <>
+      {texto.slice(0, indice)}
+      <mark className="flow-lib-destaque">{texto.slice(indice, indice + t.length)}</mark>
+      {texto.slice(indice + t.length)}
+    </>
+  );
+}
+
 function BlocoSecao({
   titulo,
   blocos,
   onAdicionarBloco,
+  termoDestacado,
 }: {
   titulo?: string;
   blocos: BlocoDefinicao[];
   onAdicionarBloco: (tipo: FlowNodeType) => void;
+  termoDestacado?: string;
 }) {
   return (
     <div>
@@ -157,8 +179,12 @@ function BlocoSecao({
             {b.label.slice(0, 1).toUpperCase()}
           </div>
           <div className="flow-lib-bloco-texto">
-            <span className="flow-lib-bloco-label">{b.label}</span>
-            <span className="flow-lib-bloco-desc">{b.descricao}</span>
+            <span className="flow-lib-bloco-label">
+              {termoDestacado ? destacarTermo(b.label, termoDestacado) : b.label}
+            </span>
+            <span className="flow-lib-bloco-desc">
+              {termoDestacado ? destacarTermo(b.descricao, termoDestacado) : b.descricao}
+            </span>
           </div>
           <button
             type="button"

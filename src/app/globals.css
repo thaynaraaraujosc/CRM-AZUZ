@@ -6611,6 +6611,13 @@ table.tbl tbody tr:hover td {
   color: var(--ink);
 }
 
+.flow-lib-destaque {
+  background: var(--blue-soft-2);
+  color: var(--blue);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
 .flow-lib-bloco-desc {
   font-size: 10.5px;
   color: var(--text-faint);
