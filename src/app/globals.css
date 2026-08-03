@@ -152,6 +152,17 @@ table {
   background: var(--blue-soft);
 }
 
+/* Foco visível universal (item 60) — cobre todo elemento focável por teclado que não tenha uma regra
+   `:focus-visible` mais específica (a maioria dos chips/links/linhas de tabela/itens de nav não
+   tinham nenhuma). Uma regra de baixa especificidade só pra garantir que nada fique "mudo" no
+   teclado; onde já existe um `:focus-visible` mais específico (`.btn`, `.input`), esse continua
+   valendo por cima. */
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* ---------------- App shell ---------------- */
 
 .shell {
@@ -534,6 +545,30 @@ table {
   opacity: 0.5;
   filter: none;
   transform: none;
+}
+
+/* Padrão de "carregando" pro botão (item 59) — opt-in (`className="btn primary loading"`), texto some
+   e um spinner ocupa o lugar; usa o mesmo `@keyframes spin` já usado no botão "Atualizar" da Central
+   do Dia, pra não ter uma segunda animação de loading com timing diferente. */
+.btn.loading {
+  color: transparent;
+  pointer-events: none;
+  position: relative;
+}
+.btn.loading::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  color: var(--white);
+  animation: spin 0.8s linear infinite;
+}
+.btn.ghost.loading::after,
+.btn.danger.loading::after {
+  color: var(--ink);
 }
 
 .btn.primary {
