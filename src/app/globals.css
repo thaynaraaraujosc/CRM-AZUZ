@@ -5032,9 +5032,11 @@ table.tbl tbody tr:hover td {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  padding: 8px;
   background: rgba(11, 21, 51, 0.55);
   opacity: 0;
   transition: opacity 0.15s ease;

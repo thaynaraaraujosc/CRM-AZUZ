@@ -626,6 +626,7 @@ type DocumentosContextValue = {
     dados: { nome: string; descricao: string; categoria: CategoriaModelo; compartilhado: boolean },
   ) => void;
   excluirModeloPersonalizado: (modeloId: string) => void;
+  duplicarModelo: (modeloId: string) => void;
   modelosFavoritosIds: string[];
   alternarFavoritoModelo: (modeloId: string) => void;
   modelosRecentesIds: string[];
@@ -774,6 +775,22 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
   function excluirModeloPersonalizado(modeloId: string) {
     setModelosPersonalizados((prev) => prev.filter((m) => m.id !== modeloId));
     setModelosFavoritosIds((prev) => prev.filter((mid) => mid !== modeloId));
+  }
+
+  /** Duplica qualquer modelo (embutido ou já salvo por algum usuário) numa cópia própria e editável em
+   * "Meus modelos" — não altera o original, então dá pra partir de um modelo pronto e ajustar à vontade. */
+  function duplicarModelo(modeloId: string) {
+    const original = todosOsModelos.find((m) => m.id === modeloId);
+    if (!original) return;
+    const copia: ModeloPersonalizado = {
+      ...original,
+      id: idUnico("modelo-usuario"),
+      nome: `${original.nome} (cópia)`,
+      criadoEm: agora(),
+      autor: currentUser.name,
+      compartilhado: false,
+    };
+    setModelosPersonalizados((prev) => [copia, ...prev]);
   }
 
   function registrarModeloRecente(modeloId: string) {
@@ -972,6 +989,7 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
         modelosPersonalizados,
         salvarComoModelo,
         excluirModeloPersonalizado,
+        duplicarModelo,
         modelosFavoritosIds,
         alternarFavoritoModelo,
         modelosRecentesIds,

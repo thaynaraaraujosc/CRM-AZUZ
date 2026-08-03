@@ -223,6 +223,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
     todosOsModelos,
     modelosPersonalizados,
     excluirModeloPersonalizado,
+    duplicarModelo,
     modelosFavoritosIds,
     alternarFavoritoModelo,
     modelosRecentesIds,
@@ -400,6 +401,14 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                           onClick={(e) => { e.stopPropagation(); novoDocumento(m.id); }}
                         >
                           Usar este modelo
+                        </button>
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          title="Cria uma cópia editável deste modelo em 'Meus modelos', sem alterar o original"
+                          onClick={(e) => { e.stopPropagation(); duplicarModelo(m.id); }}
+                        >
+                          Duplicar
                         </button>
                       </div>
                       <button
