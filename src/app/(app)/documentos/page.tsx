@@ -1311,6 +1311,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         setContagemAberta(false);
         setDetalhesAberto(false);
         setAjudaAberta(false);
+        setColunasAberto(false);
+        setExportarPdfAberto(false);
+        setImagemSelecionada(null);
+        setCelulaSelecionada(null);
       }
     }
     window.addEventListener("keydown", aoTeclarEsc);
