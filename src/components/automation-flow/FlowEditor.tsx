@@ -128,6 +128,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [minimapaVisivel, setMinimapaVisivel] = useState(true);
   const [arrastandoSobreCanvas, setArrastandoSobreCanvas] = useState(false);
   const [entenderFluxoAtivo, setEntenderFluxoAtivo] = useState(false);
+  /** Modo Visualizar (item 25): mesmo canvas, mas sem nada editável — sem arrastar bloco da
+   * biblioteca, sem menu de contexto, sem botão "+", sem arrastar node. Útil pra revisar o fluxo
+   * com alguém sem risco de mexer em nada sem querer. */
+  const [modoConstrucao, setModoConstrucao] = useState(true);
 
   const historyRef = useRef<Snapshot[]>([{ nodes: rfNodes, edges: rfEdges }]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -308,6 +312,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
     setArrastandoSobreCanvas(false);
+    if (!modoConstrucao) return;
     const tipo = e.dataTransfer.getData(FLOW_DND_MIME) as FlowNodeType;
     if (!tipo) return;
     const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
@@ -315,6 +320,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }
   function onDragOver(e: React.DragEvent) {
     e.preventDefault();
+    if (!modoConstrucao) return;
     e.dataTransfer.dropEffect = "copy";
     if (!arrastandoSobreCanvas) setArrastandoSobreCanvas(true);
   }
@@ -380,6 +386,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         return;
       }
       if (emCampoDeTexto) return;
+      if (!modoConstrucao) return;
       if (mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
         duplicarSelecionados();
@@ -402,7 +409,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rfNodes, rfEdges, selectedNodeIds, historyIndex]);
+  }, [rfNodes, rfEdges, selectedNodeIds, historyIndex, modoConstrucao]);
 
   /* -------------------------------------------------------- painel config --- */
 
@@ -577,10 +584,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           caminhosConvergindo: entradasPorNode.get(n.id) ?? 0,
           ordemNarrativa: ordemNarrativaPorNode?.get(n.id),
           explicacao: entenderFluxoAtivo ? explicacaoDoNo(n.data.flowNode) : undefined,
-          onAdicionarApos: (handleId: string | undefined) => setAcaoRapida({ nodeId: n.id, handleId }),
+          onAdicionarApos: modoConstrucao ? (handleId: string | undefined) => setAcaoRapida({ nodeId: n.id, handleId }) : undefined,
         },
       })),
-    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados],
+    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao],
   );
   const edgesParaRenderizar = useMemo(
     () =>
@@ -629,10 +636,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         onOrganizarAutomaticamente={organizarAutomaticamente}
         entenderFluxoAtivo={entenderFluxoAtivo}
         onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
+        modoConstrucao={modoConstrucao}
+        onAlternarModo={() => setModoConstrucao((v) => !v)}
       />
 
       <div className="flow-body">
-        <BlockLibrary aberta={libAberta} onFechar={() => setLibAberta((v) => !v)} onAdicionarBloco={(tipo) => adicionarBloco(tipo)} />
+        {modoConstrucao ? (
+          <BlockLibrary aberta={libAberta} onFechar={() => setLibAberta((v) => !v)} onAdicionarBloco={(tipo) => adicionarBloco(tipo)} />
+        ) : null}
 
         <div
           className={`flow-canvas${arrastandoSobreCanvas ? " flow-canvas-recebendo" : ""}`}
@@ -644,9 +655,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             nodes={nodesParaRenderizar}
             edges={edgesParaRenderizar}
             nodeTypes={nodeTypes}
+            nodesDraggable={modoConstrucao}
+            nodesConnectable={modoConstrucao}
+            edgesFocusable={modoConstrucao}
+            deleteKeyCode={modoConstrucao ? ["Delete", "Backspace"] : []}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
+            onConnect={modoConstrucao ? onConnect : undefined}
             onNodeDragStop={onNodeDragStop}
             onNodesDelete={onNodesDelete}
             onEdgesDelete={onEdgesDelete}
@@ -660,6 +675,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             }}
             onNodeContextMenu={(e, node) => {
               e.preventDefault();
+              if (!modoConstrucao) return;
               setSelectedNodeIds([node.id]);
               // Grampeia (clamp) a posição aos limites da viewport — tamanho estimado do menu
               // (min-width 180px + ~2 itens), pra nunca abrir cortado perto da borda da tela.
@@ -671,7 +687,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               setMenuContexto({ x: Math.max(margem, x), y: Math.max(margem, y), nodeId: node.id });
             }}
             onPaneClick={() => setMenuContexto(null)}
-            deleteKeyCode={["Delete", "Backspace"]}
             multiSelectionKeyCode={["Shift", "Meta", "Control"]}
             fitView
             proOptions={{ hideAttribution: true }}
@@ -706,7 +721,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 </button>
               </div>
             </Panel>
-            {selectedNodeIds.length > 0 ? (
+            {modoConstrucao && selectedNodeIds.length > 0 ? (
               <Panel position="top-center">
                 <div className="flow-selection-bar">
                   <span>{selectedNodeIds.length} selecionado(s)</span>
@@ -721,7 +736,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             ) : null}
           </ReactFlow>
 
-          {rfNodes.length === 0 ? (
+          {!modoConstrucao && rfNodes.length === 0 ? (
+            <div className="flow-inicio-vazio">
+              <p className="flow-inicio-vazio-titulo">Esse fluxo ainda não tem nenhum bloco.</p>
+              <p className="flow-inicio-vazio-sub">Troque pro modo Construir pra montar a automação.</p>
+            </div>
+          ) : null}
+
+          {modoConstrucao && rfNodes.length === 0 ? (
             <div className="flow-inicio-vazio">
               <p className="flow-inicio-vazio-titulo">Como esta automação deve começar?</p>
               <p className="flow-inicio-vazio-sub">Toda automação começa a partir de um gatilho.</p>

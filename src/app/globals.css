@@ -6342,6 +6342,32 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
+.flow-toolbar-modo {
+  display: flex;
+  align-items: center;
+  background: var(--navy-raised-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 2px;
+  margin-right: 4px;
+}
+
+.flow-toolbar-modo-btn {
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.flow-toolbar-modo-btn.active {
+  background: var(--blue);
+  color: #fff;
+}
+
 .flow-toolbar-toggle {
   display: flex;
   align-items: center;

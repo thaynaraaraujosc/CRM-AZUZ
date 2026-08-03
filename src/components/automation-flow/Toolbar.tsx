@@ -22,6 +22,8 @@ export function Toolbar({
   onOrganizarAutomaticamente,
   entenderFluxoAtivo,
   onAlternarEntenderFluxo,
+  modoConstrucao,
+  onAlternarModo,
 }: {
   nome: string;
   onChangeNome: (v: string) => void;
@@ -41,6 +43,8 @@ export function Toolbar({
   onOrganizarAutomaticamente: () => void;
   entenderFluxoAtivo: boolean;
   onAlternarEntenderFluxo: () => void;
+  modoConstrucao: boolean;
+  onAlternarModo: () => void;
 }) {
   const [editandoNome, setEditandoNome] = useState(false);
 
@@ -72,13 +76,34 @@ export function Toolbar({
       </div>
 
       <div className="flow-toolbar-dir">
-        <button type="button" className="icon-btn subtle" aria-label="Desfazer" title="Desfazer (Ctrl+Z)" disabled={!podeDesfazer} onClick={onUndo}>
+        <div className="flow-toolbar-modo" role="tablist" aria-label="Modo do editor">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={modoConstrucao}
+            className={`flow-toolbar-modo-btn${modoConstrucao ? " active" : ""}`}
+            onClick={() => !modoConstrucao && onAlternarModo()}
+          >
+            Construir
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!modoConstrucao}
+            className={`flow-toolbar-modo-btn${!modoConstrucao ? " active" : ""}`}
+            title="Revisar o fluxo sem risco de mexer em nada sem querer"
+            onClick={() => modoConstrucao && onAlternarModo()}
+          >
+            Visualizar
+          </button>
+        </div>
+        <button type="button" className="icon-btn subtle" aria-label="Desfazer" title="Desfazer (Ctrl+Z)" disabled={!podeDesfazer || !modoConstrucao} onClick={onUndo}>
           ↶
         </button>
-        <button type="button" className="icon-btn subtle" aria-label="Refazer" title="Refazer (Ctrl+Shift+Z)" disabled={!podeRefazer} onClick={onRedo}>
+        <button type="button" className="icon-btn subtle" aria-label="Refazer" title="Refazer (Ctrl+Shift+Z)" disabled={!podeRefazer || !modoConstrucao} onClick={onRedo}>
           ↷
         </button>
-        <button type="button" className="btn ghost" onClick={onOrganizarAutomaticamente}>
+        <button type="button" className="btn ghost" disabled={!modoConstrucao} onClick={onOrganizarAutomaticamente}>
           Organizar automaticamente
         </button>
         <button
