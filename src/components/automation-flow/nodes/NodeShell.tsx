@@ -109,8 +109,21 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           {saidas.map((s) => {
             const chave = s.handleId ?? "__default__";
             const conectada = saidasConectadas?.has(chave) ?? false;
+            /* Condição binária (item 8): "Sim"/"Não" tem que ler como uma bifurcação clara, não só
+               mais uma linha de opção igual às outras — verde/vermelho reforça qual caminho é qual
+               sem precisar ler o texto. */
+            const corBifurcacao = flowNode.category === "condicao" ? (chave === "sim" ? "sim" : chave === "nao" ? "nao" : undefined) : undefined;
+            /* Pergunta com várias opções (item 8): visual de "menu" (pill azulado) — diferente da
+               bifurcação binária de condição, pra não parecer o mesmo tipo de componente. */
+            const ehOpcaoDePergunta =
+              (flowNode.type === "mensagem_botoes" || flowNode.type === "mensagem_lista") &&
+              chave !== "outra_resposta" &&
+              chave !== "nao_respondeu";
             return (
-              <div className="flow-node-handle-row" key={chave}>
+              <div
+                className={`flow-node-handle-row${corBifurcacao ? ` is-bifurcacao-${corBifurcacao}` : ""}${ehOpcaoDePergunta ? " is-opcao-pergunta" : ""}`}
+                key={chave}
+              >
                 <span className="flow-handle-label">{s.label}</span>
                 {!conectada && onAdicionarApos ? (
                   <button

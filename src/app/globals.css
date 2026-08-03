@@ -6968,6 +6968,28 @@ table.tbl tbody tr:hover td {
   padding-right: 4px;
 }
 
+/* Item 8: bifurcação Sim/Não de uma condição binária precisa ler como um garfo de dois caminhos,
+   não como mais uma linha genérica — cor reforça o sentido sem precisar ler o texto. */
+.flow-node-handle-row.is-bifurcacao-sim {
+  border-color: #0f9d6355;
+  background: #0f9d6314;
+  color: #0f9d63;
+  font-weight: 600;
+}
+.flow-node-handle-row.is-bifurcacao-nao {
+  border-color: #d6454555;
+  background: #d6454514;
+  color: #d64545;
+  font-weight: 600;
+}
+
+.flow-node-handle-row.is-opcao-pergunta {
+  border-color: #2e6bff55;
+  background: #2e6bff14;
+  color: #2e6bff;
+  font-weight: 600;
+}
+
 .flow-handle {
   width: 9px;
   height: 9px;
