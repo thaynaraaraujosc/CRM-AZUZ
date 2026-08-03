@@ -1117,6 +1117,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    * usuário estava digitando, e o navegador jogava o cursor de volta pro início do elemento.
    */
   const ultimoConteudoRef = useRef<Record<string, string>>({});
+  const historicoEdicaoRef = useRef<Record<string, { pilha: string[]; indice: number }>>({});
   /** Posição de cursor a restaurar depois que um bloco inteiro precisou ser movido pra próxima página (ver reflowPagina). */
   const cursorPendenteRef = useRef<{ paginaId: string; caminho: number[]; startOffset: number } | null>(null);
 
@@ -1229,6 +1230,54 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     // ou qualquer nó guardado em estado) mesmo quando o HTML resultante era idêntico ao que já estava lá.
     ultimoConteudoRef.current[paginaId] = html;
     setPaginasLocais((prev) => prev.map((p) => (p.id === paginaId ? { ...p, conteudoHtml: html } : p)));
+    registrarHistorico(paginaId, html);
+  }
+
+  /**
+   * Histórico de desfazer/refazer próprio — não depende do document.execCommand("undo") nativo do
+   * navegador, que só rastreia comandos disparados por execCommand (digitação, negrito, etc). Ações que
+   * mexem no DOM diretamente via JavaScript — redimensionar/mover/cortar imagem, editar linha/coluna de
+   * tabela, mudar colunas do documento — não entram nessa pilha nativa, e desfazer depois delas removia a
+   * imagem/tabela inteira (o undo nativo desfazia a ÚLTIMA operação DA PILHA DELE, que era a inserção).
+   * Como salvarConteudoPagina já é o ponto único por onde toda edição passa, registrar um snapshot de
+   * HTML aqui cobre todo tipo de edição de forma uniforme.
+   */
+  function registrarHistorico(paginaId: string, html: string) {
+    const atual = historicoEdicaoRef.current[paginaId];
+    if (!atual) {
+      historicoEdicaoRef.current[paginaId] = { pilha: [html], indice: 0 };
+      return;
+    }
+    if (atual.pilha[atual.indice] === html) return; // nada mudou de verdade
+    const novaPilha = atual.pilha.slice(0, atual.indice + 1);
+    novaPilha.push(html);
+    if (novaPilha.length > 100) novaPilha.shift(); // limita o tamanho — não é ilimitado
+    historicoEdicaoRef.current[paginaId] = { pilha: novaPilha, indice: novaPilha.length - 1 };
+  }
+
+  function aplicarSnapshotHistorico(paginaId: string, html: string) {
+    const el = paginaRefs.current[paginaId];
+    if (el) {
+      el.innerHTML = html;
+      ultimoConteudoRef.current[paginaId] = html;
+    }
+    setPaginasLocais((prev) => prev.map((p) => (p.id === paginaId ? { ...p, conteudoHtml: html } : p)));
+    setImagemSelecionada(null);
+    setCelulaSelecionada(null);
+  }
+
+  function desfazer() {
+    const h = historicoEdicaoRef.current[paginaAtivaId];
+    if (!h || h.indice <= 0) return;
+    h.indice -= 1;
+    aplicarSnapshotHistorico(paginaAtivaId, h.pilha[h.indice]);
+  }
+
+  function refazer() {
+    const h = historicoEdicaoRef.current[paginaAtivaId];
+    if (!h || h.indice >= h.pilha.length - 1) return;
+    h.indice += 1;
+    aplicarSnapshotHistorico(paginaAtivaId, h.pilha[h.indice]);
   }
 
   function focarPagina(paginaId: string) {
@@ -1534,6 +1583,19 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    */
   function aoTeclarNaPagina(e: React.KeyboardEvent<HTMLDivElement>) {
     const mod = e.ctrlKey || e.metaKey;
+    // Desfazer/refazer usam o histórico próprio (ver registrarHistorico), não o nativo do navegador —
+    // ele não sabe nada sobre redimensionar/mover imagem ou editar tabela (manipulação direta do DOM,
+    // fora do execCommand), e desfazer usando só a pilha nativa acabava removendo a imagem/tabela inteira.
+    if (mod && !e.shiftKey && (e.key === "z" || e.key === "Z")) {
+      e.preventDefault();
+      desfazer();
+      return;
+    }
+    if ((mod && e.shiftKey && (e.key === "z" || e.key === "Z")) || (mod && (e.key === "y" || e.key === "Y"))) {
+      e.preventDefault();
+      refazer();
+      return;
+    }
     if (mod && e.key === "Enter") {
       e.preventDefault();
       inserirQuebraDePaginaNoCursor();
@@ -1605,7 +1667,11 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    */
   function aoDigitarNaPagina(paginaId: string) {
     if (salvarDigitacaoRef.current) clearTimeout(salvarDigitacaoRef.current);
-    salvarDigitacaoRef.current = setTimeout(() => salvarConteudoPagina(paginaId), 600);
+    // 250ms (não 600ms): salvarConteudoPagina também é quem registra o checkpoint no histórico de
+    // desfazer/refazer (ver registrarHistorico) — um debounce longo demais deixava "digitar e desfazer
+    // logo em seguida" sem checkpoint nenhum pra voltar (Ctrl+Z virava um no-op enquanto o debounce não
+    // disparava). 250ms ainda evita registrar um checkpoint por tecla durante digitação contínua.
+    salvarDigitacaoRef.current = setTimeout(() => salvarConteudoPagina(paginaId), 250);
     reflowPagina(paginaId);
   }
 
@@ -2276,17 +2342,13 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     { label: "Baixar como HTML", onClick: () => baixarHtml(doc.titulo, paginasParaExportar()) },
   ];
 
-  function tentarQueryCommandEnabled(comando: string) {
-    try {
-      return document.queryCommandEnabled(comando);
-    } catch {
-      return true;
-    }
-  }
+  const historicoAtivo = historicoEdicaoRef.current[paginaAtivaId];
+  const podeDesfazer = !!historicoAtivo && historicoAtivo.indice > 0;
+  const podeRefazer = !!historicoAtivo && historicoAtivo.indice < historicoAtivo.pilha.length - 1;
 
   const menuEditar: ("sep" | ItemMenu)[] = [
-    { label: "Desfazer", atalho: "Ctrl+Z", onClick: () => aplicarFormatacao("undo"), disabled: !tentarQueryCommandEnabled("undo") },
-    { label: "Refazer", atalho: "Ctrl+Y", onClick: () => aplicarFormatacao("redo"), disabled: !tentarQueryCommandEnabled("redo") },
+    { label: "Desfazer", atalho: "Ctrl+Z", onClick: desfazer, disabled: !podeDesfazer },
+    { label: "Refazer", atalho: "Ctrl+Y", onClick: refazer, disabled: !podeRefazer },
     "sep",
     { label: "Recortar", atalho: "Ctrl+X", onClick: () => aplicarFormatacao("cut") },
     { label: "Copiar", atalho: "Ctrl+C", onClick: () => aplicarFormatacao("copy") },
@@ -2437,8 +2499,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       </div>
 
       <div className="doc-toolbar doc-toolbar-rich" style={{ display: mostrarToolbar ? undefined : "none" }}>
-        <button type="button" className="doc-toolbar-btn" title="Desfazer" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("undo")}>↶</button>
-        <button type="button" className="doc-toolbar-btn" title="Refazer" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("redo")}>↷</button>
+        <button type="button" className="doc-toolbar-btn" title="Desfazer" disabled={!podeDesfazer} onMouseDown={(e) => e.preventDefault()} onClick={desfazer}>↶</button>
+        <button type="button" className="doc-toolbar-btn" title="Refazer" disabled={!podeRefazer} onMouseDown={(e) => e.preventDefault()} onClick={refazer}>↷</button>
         <button type="button" className="doc-toolbar-btn" title="Imprimir" onClick={abrirPreviaImpressao}>🖨</button>
         <button
           type="button"
@@ -2601,6 +2663,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                     if (el && ultimoConteudoRef.current[pagina.id] === undefined) {
                       el.innerHTML = pagina.conteudoHtml;
                       ultimoConteudoRef.current[pagina.id] = pagina.conteudoHtml;
+                      // Snapshot inicial no histórico — sem isso, desfazer a primeiríssima edição não
+                      // teria pra onde voltar (o histórico só nasceria depois de já ter uma mudança).
+                      historicoEdicaoRef.current[pagina.id] = { pilha: [pagina.conteudoHtml], indice: 0 };
                     }
                   }}
                   className={`doc-body-rich${mostrarNaoImprimiveis ? " doc-body-rich-marcas" : ""}${qtdColunas > 1 ? " doc-body-rich-colunas" : ""}`}
