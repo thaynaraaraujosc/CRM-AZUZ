@@ -4290,6 +4290,48 @@ table.tbl tbody tr:hover td {
   border-bottom-color: var(--blue);
 }
 
+/* Marcadores de recuo do parágrafo — triângulos no topo da régua, cor diferente da margem/tabulação
+   pra ficar claro que são um controle distinto (recuo do texto, não da página). */
+.doc-regua-recuo {
+  position: absolute;
+  top: -1px;
+  width: 12px;
+  height: 8px;
+  margin-left: -6px;
+  cursor: ew-resize;
+  z-index: 4;
+}
+
+.doc-regua-recuo::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+}
+
+.doc-regua-recuo-primeira-linha::before {
+  border-top: 7px solid #ff9d3b;
+}
+
+.doc-regua-recuo-esquerdo,
+.doc-regua-recuo-direito {
+  top: 9px;
+}
+
+.doc-regua-recuo-esquerdo::before,
+.doc-regua-recuo-direito::before {
+  border-top: 7px solid #d68a3b;
+}
+
+.doc-regua-recuo:hover::before {
+  filter: brightness(1.3);
+}
+
 /* Linha com a régua vertical ao lado da folha — mesma lógica da régua horizontal, só que no eixo Y. */
 .doc-page-linha {
   display: flex;

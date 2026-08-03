@@ -715,6 +715,8 @@ function ReguaDocumento({
   onMudarDireita,
   tabulacoesMm,
   onMudarTabulacoes,
+  recuo,
+  onMudarRecuo,
 }: {
   larguraMm: number;
   margemEsquerdaMm: number;
@@ -723,6 +725,8 @@ function ReguaDocumento({
   onMudarDireita: (mm: number) => void;
   tabulacoesMm: number[];
   onMudarTabulacoes: (novas: number[]) => void;
+  recuo: { primeiraLinhaMm: number; esquerdoMm: number; direitoMm: number };
+  onMudarRecuo: (patch: Partial<{ primeiraLinhaMm: number; esquerdoMm: number; direitoMm: number }>) => void;
 }) {
   const reguaRef = useRef<HTMLDivElement>(null);
   const marcasQtd = Math.round(larguraMm / 10);
@@ -796,6 +800,36 @@ function ReguaDocumento({
     };
   }
 
+  /** Recuo do parágrafo atual — completamente independente da margem da página (soma-se a ela). */
+  function iniciarArrasteRecuo(tipo: "primeiraLinha" | "esquerdo" | "direito") {
+    return (eDown: React.MouseEvent) => {
+      eDown.preventDefault();
+      eDown.stopPropagation();
+      function mover(ev: MouseEvent) {
+        const el = reguaRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const xMm = ((ev.clientX - rect.left) / rect.width) * larguraMm;
+        if (tipo === "esquerdo") {
+          const novoEsquerdo = Math.max(0, xMm - margemEsquerdaMm);
+          onMudarRecuo({ esquerdoMm: novoEsquerdo });
+        } else if (tipo === "direito") {
+          const novoDireito = Math.max(0, larguraMm - margemDireitaMm - xMm);
+          onMudarRecuo({ direitoMm: novoDireito });
+        } else {
+          const novaPrimeiraLinha = xMm - margemEsquerdaMm - recuo.esquerdoMm;
+          onMudarRecuo({ primeiraLinhaMm: Math.max(-recuo.esquerdoMm, novaPrimeiraLinha) });
+        }
+      }
+      function soltar() {
+        window.removeEventListener("mousemove", mover);
+        window.removeEventListener("mouseup", soltar);
+      }
+      window.addEventListener("mousemove", mover);
+      window.addEventListener("mouseup", soltar);
+    };
+  }
+
   return (
     <div className="doc-regua" ref={reguaRef} onClick={aoClicarNaRegua} title="Clique num espaço vazio pra adicionar uma tabulação">
       {marcas.map((cm) => (
@@ -825,6 +859,24 @@ function ReguaDocumento({
           title={`Tabulação em ${mm}mm — arraste pra mover, duplo clique pra remover`}
         />
       ))}
+      <div
+        className="doc-regua-recuo doc-regua-recuo-primeira-linha"
+        style={{ left: `${((margemEsquerdaMm + recuo.esquerdoMm + recuo.primeiraLinhaMm) / larguraMm) * 100}%` }}
+        onMouseDown={iniciarArrasteRecuo("primeiraLinha")}
+        title={`Recuo da primeira linha do parágrafo: ${Math.round(recuo.primeiraLinhaMm)}mm — arraste pra ajustar (independente da margem)`}
+      />
+      <div
+        className="doc-regua-recuo doc-regua-recuo-esquerdo"
+        style={{ left: `${((margemEsquerdaMm + recuo.esquerdoMm) / larguraMm) * 100}%` }}
+        onMouseDown={iniciarArrasteRecuo("esquerdo")}
+        title={`Recuo esquerdo do parágrafo: ${Math.round(recuo.esquerdoMm)}mm — arraste pra ajustar (independente da margem)`}
+      />
+      <div
+        className="doc-regua-recuo doc-regua-recuo-direito"
+        style={{ left: `${((larguraMm - margemDireitaMm - recuo.direitoMm) / larguraMm) * 100}%` }}
+        onMouseDown={iniciarArrasteRecuo("direito")}
+        title={`Recuo direito do parágrafo: ${Math.round(recuo.direitoMm)}mm — arraste pra ajustar (independente da margem)`}
+      />
     </div>
   );
 }
@@ -978,6 +1030,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [imagemSelecionada, setImagemSelecionada] = useState<{ paginaId: string; el: HTMLImageElement } | null>(null);
   const [celulaSelecionada, setCelulaSelecionada] = useState<{ paginaId: string; td: HTMLTableCellElement } | null>(null);
   const [celulaPainelPos, setCelulaPainelPos] = useState<{ x: number; y: number } | null>(null);
+  const [recuoAtual, setRecuoAtual] = useState({ primeiraLinhaMm: 0, esquerdoMm: 0, direitoMm: 0 });
 
   // Contorno de seleção visível na própria imagem (a imagem é um <img> real dentro do HTML, não um
   // componente React controlado — por isso a classe é alternada direto no elemento do DOM).
@@ -1243,6 +1296,52 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     novoRange.collapse(true);
     selecao.removeAllRanges();
     selecao.addRange(novoRange);
+    salvarConteudoPagina(paginaAtivaId);
+  }
+
+  /** Acha o elemento de bloco (parágrafo/título/item de lista/citação) que contém o cursor agora. */
+  function paragrafoDoCursor(): HTMLElement | null {
+    const selecao = window.getSelection();
+    if (!selecao || selecao.rangeCount === 0) return null;
+    let no: Node | null = selecao.getRangeAt(0).startContainer;
+    if (no.nodeType !== Node.ELEMENT_NODE) no = no.parentNode;
+    let el = no as HTMLElement | null;
+    const TAGS_BLOCO = new Set(["P", "DIV", "LI", "H1", "H2", "H3", "H4", "H5", "H6", "BLOCKQUOTE"]);
+    while (el && !el.classList.contains("doc-body-rich")) {
+      if (TAGS_BLOCO.has(el.tagName)) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function lerRecuo(el: HTMLElement | null) {
+    if (!el) return { primeiraLinhaMm: 0, esquerdoMm: 0, direitoMm: 0 };
+    return {
+      primeiraLinhaMm: parseFloat(el.style.textIndent) || 0,
+      esquerdoMm: parseFloat(el.style.marginLeft) || 0,
+      direitoMm: parseFloat(el.style.marginRight) || 0,
+    };
+  }
+
+  // Mantém os marcadores de recuo da régua sempre mostrando os valores do parágrafo onde o cursor está.
+  useEffect(() => {
+    function aoMudarSelecao() {
+      const p = paragrafoDoCursor();
+      if (p) setRecuoAtual(lerRecuo(p));
+    }
+    document.addEventListener("selectionchange", aoMudarSelecao);
+    return () => document.removeEventListener("selectionchange", aoMudarSelecao);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Recuo de verdade do parágrafo (text-indent/margin-left/margin-right) — nunca mexe na margem da página. */
+  function mudarRecuoParagrafo(patch: Partial<{ primeiraLinhaMm: number; esquerdoMm: number; direitoMm: number }>) {
+    const p = paragrafoDoCursor();
+    if (!p) return;
+    if (patch.primeiraLinhaMm !== undefined) p.style.textIndent = `${patch.primeiraLinhaMm}mm`;
+    if (patch.esquerdoMm !== undefined) p.style.marginLeft = `${patch.esquerdoMm}mm`;
+    if (patch.direitoMm !== undefined) p.style.marginRight = `${patch.direitoMm}mm`;
+    setRecuoAtual(lerRecuo(p));
     salvarConteudoPagina(paginaAtivaId);
   }
 
@@ -2461,6 +2560,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   onMudarDireita={(mm) => atualizarConfigPagina(id, { margemDireitaMm: mm })}
                   tabulacoesMm={doc.config.tabulacoesMm ?? []}
                   onMudarTabulacoes={(novas) => atualizarConfigPagina(id, { tabulacoesMm: novas })}
+                  recuo={recuoAtual}
+                  onMudarRecuo={mudarRecuoParagrafo}
                 />
               ) : null}
               <div className="doc-page-linha">
