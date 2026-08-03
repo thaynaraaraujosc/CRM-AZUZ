@@ -3578,7 +3578,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <button type="button" className="fchip" style={{ color: "#d64545" }} onClick={excluirColunaTabela}>Excluir coluna</button>
             </div>
           </div>
-          <button type="button" className="btn ghost block" style={{ color: "#d64545" }} onClick={excluirTabelaInteira}>
+          <button type="button" className="btn danger block" onClick={excluirTabelaInteira}>
             Excluir tabela inteira
           </button>
         </div>

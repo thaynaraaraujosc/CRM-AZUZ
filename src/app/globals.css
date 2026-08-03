@@ -61,6 +61,20 @@
   --opportunity: #0f9d63;
   --ia: #8a3ffc;
   --ia-soft: rgba(138, 63, 252, 0.12);
+
+  /* Escala tipográfica (item 45) — nomeia os tamanhos que já estavam em uso espalhados (`.topbar h2`
+     19px, `.panel-h h4` 13px, `.hint` 11px…) e preenche as lacunas (card, indicador). Contraste entre
+     informação principal e auxiliar já existia via `--ink`/`--text-muted`/`--text-faint`; aqui só
+     organiza tamanho+peso. */
+  --fs-page-title: 19px;
+  --fs-section-title: 14px;
+  --fs-card-title: 13px;
+  --fs-body: 12.5px;
+  --fs-secondary: 11.5px;
+  --fs-caption: 10.5px;
+  --fs-indicator: 20px;
+  --fs-button: 12px;
+  --fs-table: 12px;
 }
 
 /* Tela escura — escolhida em Configurações > Tela, guardada em localStorage. */
@@ -429,7 +443,7 @@ table {
 .topbar h2 {
   font-family: var(--display);
   font-weight: 700;
-  font-size: 19px;
+  font-size: var(--fs-page-title);
 }
 
 .topbar .sub {
@@ -494,7 +508,7 @@ table {
   gap: 6px;
   font-family: var(--body);
   font-weight: 700;
-  font-size: 12px;
+  font-size: var(--fs-button);
   padding: 9px 15px;
   border-radius: var(--radius-md);
   white-space: nowrap;
@@ -691,7 +705,7 @@ table {
 }
 
 .panel-h h4 {
-  font-size: 13px;
+  font-size: var(--fs-card-title);
   font-weight: 700;
   font-family: var(--body);
 }
@@ -3526,7 +3540,7 @@ table.tbl tbody tr:hover td {
 
 .hint {
   padding: 12px 17px 0;
-  font-size: 11px;
+  font-size: var(--fs-secondary);
   color: var(--text-faint);
   line-height: 1.55;
 }
@@ -9557,7 +9571,7 @@ table.tbl tbody tr:hover td {
 }
 
 .central-dia-resumo-item .n {
-  font-size: 20px;
+  font-size: var(--fs-indicator);
   font-weight: 700;
   color: var(--ink);
   font-family: var(--display);
@@ -10175,7 +10189,7 @@ table.tbl tbody tr:hover td {
 .config-tabela-notif {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--fs-table);
 }
 .config-tabela-notif th {
   text-align: left;

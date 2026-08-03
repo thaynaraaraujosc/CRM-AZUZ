@@ -112,7 +112,7 @@ export function FunisSecao() {
                 <button type="button" className="btn ghost" onClick={() => duplicarFunil(funilAberto.id)}>
                   Duplicar
                 </button>
-                <button type="button" className="btn ghost" style={{ color: "#d64545" }} onClick={() => excluirFunil(funilAberto.id)}>
+                <button type="button" className="btn danger" onClick={() => excluirFunil(funilAberto.id)}>
                   Arquivar
                 </button>
               </div>

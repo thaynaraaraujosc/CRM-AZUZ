@@ -62,7 +62,7 @@ export function SegurancaSecao() {
                 </p>
               </div>
               {!s.atual ? (
-                <button type="button" className="btn ghost" style={{ color: "#d64545" }} onClick={() => setSessoes((prev) => prev.filter((x) => x.id !== s.id))}>
+                <button type="button" className="btn danger" onClick={() => setSessoes((prev) => prev.filter((x) => x.id !== s.id))}>
                   Encerrar sessão
                 </button>
               ) : null}

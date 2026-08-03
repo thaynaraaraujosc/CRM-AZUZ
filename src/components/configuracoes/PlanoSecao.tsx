@@ -132,7 +132,7 @@ export function PlanoSecao() {
             <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={() => setEditandoCartao(true)}>
               Trocar cartão
             </button>
-            <button type="button" className="btn ghost" style={{ flex: 1, color: "#d64545" }} onClick={excluirCartao}>
+            <button type="button" className="btn danger" style={{ flex: 1 }} onClick={excluirCartao}>
               Excluir cartão
             </button>
           </div>
@@ -206,7 +206,7 @@ export function PlanoSecao() {
             Reativar assinatura
           </button>
         ) : (
-          <button type="button" className="btn ghost block" style={{ color: "#d64545" }} onClick={cancelarPlano}>
+          <button type="button" className="btn danger block" onClick={cancelarPlano}>
             Cancelar assinatura
           </button>
         )}

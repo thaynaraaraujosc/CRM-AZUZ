@@ -69,7 +69,7 @@ export function EquipesSecao() {
             titulo={equipeAberta.nome}
             descricao={equipeAberta.descricao}
             acoes={
-              <button type="button" className="btn ghost" style={{ color: "#d64545" }} onClick={() => { removerEquipe(equipeAberta.id); setAberta(null); }}>
+              <button type="button" className="btn danger" onClick={() => { removerEquipe(equipeAberta.id); setAberta(null); }}>
                 Excluir equipe
               </button>
             }
