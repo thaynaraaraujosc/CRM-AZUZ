@@ -69,6 +69,17 @@ const GATILHOS_COMUNS: FlowNodeType[] = [
   "horario_programado",
 ];
 
+/** Ações mais comuns no botão "+" ("O que acontece agora?") — o resto continua na biblioteca completa. */
+const ACOES_COMUNS: FlowNodeType[] = [
+  "mensagem_texto",
+  "mensagem_botoes",
+  "aguardar",
+  "condicao_grupo",
+  "alterar_etapa",
+  "adicionar_etiqueta",
+  "criar_tarefa",
+];
+
 function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const { fluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo } = useAutomationFlows();
   const fluxo = fluxos.find((f) => f.id === fluxoId);
@@ -84,6 +95,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [menuContexto, setMenuContexto] = useState<{ x: number; y: number; nodeId: string } | null>(null);
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
   const [escolherGatilhoAberto, setEscolherGatilhoAberto] = useState(false);
+  const [acaoRapida, setAcaoRapida] = useState<{ nodeId: string; handleId: string | undefined } | null>(null);
 
   const historyRef = useRef<Snapshot[]>([{ nodes: rfNodes, edges: rfEdges }]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -222,6 +234,36 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     setRfNodes(novoNodes);
     setSelectedNodeIds([novoDomain.id]);
     persist(novoNodes, rfEdges);
+  }
+
+  /** "O que acontece agora?" (botão + depois de um node) — cria o bloco já conectado à saída clicada. */
+  function adicionarBlocoConectado(tipo: FlowNodeType, nodeOrigemId: string, handleId: string | undefined) {
+    const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
+    const origem = rfNodes.find((n) => n.id === nodeOrigemId);
+    if (!bloco || !origem) return;
+    const pos = { x: origem.position.x, y: origem.position.y + 170 };
+    const novoDomain: DomainFlowNode = {
+      id: novoIdNo(),
+      type: tipo,
+      category: bloco.categoria,
+      position: pos,
+      data: bloco.dataPadrao() as Record<string, unknown>,
+    };
+    const novoRF: FlowRFNode = { id: novoDomain.id, type: novoDomain.category, position: pos, data: { flowNode: novoDomain, problemas: [] } };
+    const novaEdge: FlowRFEdge = {
+      id: novoIdAresta(),
+      source: nodeOrigemId,
+      target: novoDomain.id,
+      sourceHandle: handleId,
+      type: "smoothstep",
+      markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+    };
+    const novoNodes = [...rfNodes, novoRF];
+    const novoEdges = [...rfEdges, novaEdge];
+    setRfNodes(novoNodes);
+    setRfEdges(novoEdges);
+    setSelectedNodeIds([novoDomain.id]);
+    persist(novoNodes, novoEdges);
   }
 
   function onDrop(e: React.DragEvent) {
@@ -408,9 +450,29 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     });
     return m;
   }, [problemas]);
+  /** Quais saídas (por nó) já têm uma aresta indo pra algum lugar — o botão "+" só aparece nas que não têm. */
+  const saidasConectadasPorNode = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    rfEdges.forEach((e) => {
+      if (!e.source) return;
+      const chave = e.sourceHandle ?? "__default__";
+      if (!m.has(e.source)) m.set(e.source, new Set());
+      m.get(e.source)!.add(chave);
+    });
+    return m;
+  }, [rfEdges]);
   const nodesParaRenderizar = useMemo(
-    () => rfNodes.map((n) => ({ ...n, data: { ...n.data, problemas: problemasPorNode.get(n.id) ?? [] } })),
-    [rfNodes, problemasPorNode],
+    () =>
+      rfNodes.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          problemas: problemasPorNode.get(n.id) ?? [],
+          saidasConectadas: saidasConectadasPorNode.get(n.id),
+          onAdicionarApos: (handleId: string | undefined) => setAcaoRapida({ nodeId: n.id, handleId }),
+        },
+      })),
+    [rfNodes, problemasPorNode, saidasConectadasPorNode],
   );
   const selectedNodes = useMemo(
     () => rfNodes.filter((n) => selectedNodeIds.includes(n.id)).map((n) => ({ ...n.data.flowNode, position: n.position })),
@@ -566,6 +628,54 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                   }}
                 >
                   Ver todos os gatilhos
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {acaoRapida ? (
+            <div className="modal-overlay" onClick={() => setAcaoRapida(null)}>
+              <div className="modal flow-escolher-gatilho" onClick={(e) => e.stopPropagation()}>
+                <div className="panel-h">
+                  <h4>O que acontece agora?</h4>
+                  <button
+                    type="button"
+                    className="modal-close-btn"
+                    aria-label="Fechar"
+                    onClick={() => setAcaoRapida(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="flow-escolher-gatilho-lista">
+                  {ACOES_COMUNS.map((tipo) => {
+                    const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
+                    if (!bloco) return null;
+                    return (
+                      <button
+                        type="button"
+                        key={tipo}
+                        className="flow-escolher-gatilho-item"
+                        onClick={() => {
+                          adicionarBlocoConectado(tipo, acaoRapida.nodeId, acaoRapida.handleId);
+                          setAcaoRapida(null);
+                        }}
+                      >
+                        <span className="n">{bloco.label}</span>
+                        <span className="r">{bloco.descricao}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  className="btn ghost block"
+                  onClick={() => {
+                    setAcaoRapida(null);
+                    setLibAberta(true);
+                  }}
+                >
+                  Ver todas as ações
                 </button>
               </div>
             </div>

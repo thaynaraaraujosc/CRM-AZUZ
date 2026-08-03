@@ -38,7 +38,7 @@ const NOME_CATEGORIA: Record<FlowNodeCategory, string> = {
  * então não faz sentido duplicar esse JSX 8 vezes.
  */
 export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
-  const { flowNode, problemas } = data;
+  const { flowNode, problemas, saidasConectadas, onAdicionarApos } = data;
   const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === flowNode.type);
   const saidas = saidasDoNo(flowNode);
   const temErro = problemas.some((p) => p.severidade === "erro");
@@ -81,20 +81,52 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
 
       {saidas.length > 1 ? (
         <div className="flow-node-handles">
-          {saidas.map((s, i) => (
-            <div className="flow-node-handle-row" key={s.handleId ?? i}>
-              <span className="flow-handle-label">{s.label}</span>
-              <Handle
-                type="source"
-                position={Position.Right}
-                id={s.handleId}
-                className="flow-handle flow-handle-inline"
-              />
-            </div>
-          ))}
+          {saidas.map((s) => {
+            const chave = s.handleId ?? "__default__";
+            const conectada = saidasConectadas?.has(chave) ?? false;
+            return (
+              <div className="flow-node-handle-row" key={chave}>
+                <span className="flow-handle-label">{s.label}</span>
+                {!conectada && onAdicionarApos ? (
+                  <button
+                    type="button"
+                    className="flow-node-add-inline"
+                    title="O que acontece agora?"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAdicionarApos(s.handleId);
+                    }}
+                  >
+                    +
+                  </button>
+                ) : null}
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id={s.handleId}
+                  className="flow-handle flow-handle-inline"
+                />
+              </div>
+            );
+          })}
         </div>
       ) : saidas.length === 1 ? (
-        <Handle type="source" position={Position.Bottom} className="flow-handle" />
+        <div className="flow-node-saida-unica">
+          <Handle type="source" position={Position.Bottom} className="flow-handle" />
+          {!(saidasConectadas?.has("__default__") ?? false) && onAdicionarApos ? (
+            <button
+              type="button"
+              className="flow-node-add-btn"
+              title="O que acontece agora?"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAdicionarApos(undefined);
+              }}
+            >
+              +
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

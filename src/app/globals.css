@@ -6786,6 +6786,64 @@ table.tbl tbody tr:hover td {
   top: 50%;
 }
 
+/* Botão "+" logo abaixo de um node com saída única ainda sem próximo passo — "o que acontece
+   agora?". Fica na mesma linha do ponto de conexão, meio flutuando embaixo do node (o node tem
+   overflow:visible pra isso não cortar). */
+.flow-node-saida-unica {
+  position: relative;
+  height: 20px;
+}
+
+.flow-node-add-btn {
+  position: absolute;
+  left: 50%;
+  bottom: -20px;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--navy);
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+}
+
+.flow-node-add-btn:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-soft-2);
+}
+
+/* Mesmo botão, só que ao lado da saída nomeada dentro de uma ramificação. */
+.flow-node-add-inline {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--navy);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+  margin-left: 4px;
+}
+
+.flow-node-add-inline:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-soft-2);
+}
+
 /* ---------------- Barra de seleção flutuante ---------------- */
 
 .flow-selection-bar {

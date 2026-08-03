@@ -14,6 +14,10 @@ import type {
 export type FlowRFNodeData = {
   flowNode: FlowNode;
   problemas: ProblemaValidacao[];
+  /** Chaves (handleId, ou "__default__" pra saída única sem nome) que já têm uma aresta saindo — usado pra saber onde mostrar o botão "+" de adicionar o próximo passo. */
+  saidasConectadas?: Set<string>;
+  /** Fechado sobre o id do nó lá no FlowEditor — abre o seletor rápido "O que acontece agora?" pra essa saída específica. */
+  onAdicionarApos?: (handleId: string | undefined) => void;
 };
 
 export type FlowRFNode = Node<FlowRFNodeData, FlowNodeCategory>;
