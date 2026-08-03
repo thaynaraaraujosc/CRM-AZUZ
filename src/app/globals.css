@@ -6715,6 +6715,35 @@ table.tbl tbody tr:hover td {
   border-color: #d64545;
 }
 
+/* Bloco pausado (item 19, "Desativar") — continua no fluxo (posição/conexões intactas), só marcado
+   visualmente como "não roda por enquanto". Puramente de estado/visual nesta fase. */
+.flow-node.is-desativado {
+  opacity: 0.55;
+}
+
+.flow-node.is-desativado .flow-node-header {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--navy-raised),
+    var(--navy-raised) 6px,
+    var(--navy-raised-2) 6px,
+    var(--navy-raised-2) 12px
+  );
+}
+
+.flow-node-pausado-badge {
+  flex: 0 0 auto;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  border-radius: 20px;
+  background: var(--navy-raised-2);
+  color: var(--text-faint);
+  align-self: center;
+}
+
 /* Cor de identificação por categoria — só a barra lateral esquerda + o realce leve do cabeçalho,
    nunca o node inteiro pintado (pra manter a leitura limpa mesmo com muitos nodes na tela). */
 .flow-node.flow-cat-gatilho {

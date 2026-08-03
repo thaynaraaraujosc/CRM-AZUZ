@@ -287,6 +287,10 @@ export type FlowNode<T = Record<string, unknown>> = {
   position: { x: number; y: number };
   titulo?: string;
   observacao?: string;
+  /** Bloco pausado — continua no fluxo (não perde a posição/conexões) mas fica marcado como "não
+   * roda por enquanto"; útil pra desligar temporariamente uma etapa sem ter que desconectar e
+   * excluir. Puramente visual/de estado nesta fase (front-end apenas). */
+  desativado?: boolean;
   data: T;
 };
 

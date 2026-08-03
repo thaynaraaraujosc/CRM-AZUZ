@@ -22,6 +22,7 @@ import "@xyflow/react/dist/style.css";
 
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
+import { saidasDoNo } from "@/lib/automation-flow/resumo";
 import { validarFluxo } from "@/lib/automation-flow/validacao";
 import type {
   ConfiguracoesFluxo,
@@ -204,6 +205,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }
   function onNodesDelete(deleted: FlowRFNode[]) {
     removerNodes(deleted.map((n) => n.id));
+  }
+  function alternarDesativado(nodeId: string) {
+    const novoNodes = rfNodes.map((n) =>
+      n.id === nodeId ? { ...n, data: { ...n.data, flowNode: { ...n.data.flowNode, desativado: !n.data.flowNode.desativado } } } : n,
+    );
+    setRfNodes(novoNodes);
+    persist(novoNodes, rfEdges);
   }
   function onEdgesDelete(deleted: FlowRFEdge[]) {
     const idsSet = new Set(deleted.map((e) => e.id));
@@ -737,28 +745,55 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             </div>
           ) : null}
 
-          {menuContexto ? (
-            <div className="flow-ctx-menu" style={{ top: menuContexto.y, left: menuContexto.x }}>
-              <button
-                type="button"
-                onClick={() => {
-                  duplicarSelecionados();
-                  setMenuContexto(null);
-                }}
-              >
-                Duplicar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  removerNodes([menuContexto.nodeId]);
-                  setMenuContexto(null);
-                }}
-              >
-                Excluir
-              </button>
-            </div>
-          ) : null}
+          {menuContexto
+            ? (() => {
+                const noAlvo = rfNodes.find((n) => n.id === menuContexto.nodeId);
+                const podeAdicionarDepois =
+                  noAlvo && saidasDoNo(noAlvo.data.flowNode).length === 1 && !saidasConectadasPorNode.get(noAlvo.id)?.has("__default__");
+                return (
+                  <div className="flow-ctx-menu" style={{ top: menuContexto.y, left: menuContexto.x }}>
+                    {podeAdicionarDepois ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAcaoRapida({ nodeId: menuContexto.nodeId, handleId: undefined });
+                          setMenuContexto(null);
+                        }}
+                      >
+                        Adicionar depois
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        duplicarSelecionados();
+                        setMenuContexto(null);
+                      }}
+                    >
+                      Duplicar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        alternarDesativado(menuContexto.nodeId);
+                        setMenuContexto(null);
+                      }}
+                    >
+                      {noAlvo?.data.flowNode.desativado ? "Ativar" : "Desativar"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        removerNodes([menuContexto.nodeId]);
+                        setMenuContexto(null);
+                      }}
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                );
+              })()
+            : null}
         </div>
 
         <ConfigPanel

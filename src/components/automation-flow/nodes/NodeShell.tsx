@@ -48,6 +48,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
     `flow-cat-${flowNode.category}`,
     selected ? "is-selected" : "",
     temErro ? "has-error" : temAviso ? "has-warning" : "",
+    flowNode.desativado ? "is-desativado" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -66,6 +67,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           <span className="flow-node-categoria">{NOME_CATEGORIA[flowNode.category]}</span>
           <span className="flow-node-label">{flowNode.titulo || bloco?.label || flowNode.type}</span>
         </span>
+        {flowNode.desativado ? <span className="flow-node-pausado-badge">Pausado</span> : null}
         {temErro || temAviso ? (
           <span
             className="flow-node-warn"
