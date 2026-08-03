@@ -946,6 +946,19 @@ table {
   border-color: var(--blue);
 }
 
+/* `.kpi-clickable` (marcado pelo componente `KpiCard` sempre que recebe `href`) nunca tinha regra
+   nenhuma — os KPIs clicáveis de Tráfego/Performance/Atividades/Jornada do cliente/Motivos de perda/
+   Relatórios ficavam sem nenhum feedback de hover, mesmo sendo um link de verdade. Mesmo idioma
+   visual do `.card-link:hover` já usado em outros cards clicáveis do app. */
+.kpi-clickable {
+  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+}
+.kpi-clickable:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--blue);
+}
+
 .trafego-view .fsel {
   cursor: pointer;
   font-family: var(--body);
@@ -2944,10 +2957,18 @@ table.tbl tbody tr:hover td {
   gap: 12px;
   padding: 11px 17px;
   border-bottom: 1px solid var(--line-soft);
+  transition: background var(--transition-fast);
 }
 
 .camp-row:last-child {
   border-bottom: none;
+}
+
+/* Linhas clicáveis (legenda de gráfico com `onClick`, ver `charts.tsx`) não tinham feedback nenhum de
+   hover — `button.camp-row` só pega essa regra quando o wrapper vira `<button>` (item `onClick`
+   presente), então uma `<div>` de legenda estática continua sem hover, como deveria. */
+button.camp-row:hover {
+  background: var(--navy-raised-2);
 }
 
 .camp-icon {
