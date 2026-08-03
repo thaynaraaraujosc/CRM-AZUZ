@@ -215,6 +215,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
 
   useEffect(() => {
     if (!modelosAberto) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- estado de carregamento visual só do popup de modelos, não realimenta o próprio efeito
     setCarregandoGaleria(true);
     const t = setTimeout(() => setCarregandoGaleria(false), 250);
     return () => clearTimeout(t);
@@ -1023,6 +1024,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [substituirTexto, setSubstituirTexto] = useState("");
   const [diferenciarCase, setDiferenciarCase] = useState(false);
   const [buscaIndiceAtual, setBuscaIndiceAtual] = useState(0);
+  const [totalOcorrencias, setTotalOcorrencias] = useState(0);
   const [novoEmailAcesso, setNovoEmailAcesso] = useState("");
   const [novaPermissaoAcesso, setNovaPermissaoAcesso] = useState<PermissaoAcesso>("editar");
   const [colunasAberto, setColunasAberto] = useState(false);
@@ -1123,6 +1125,15 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   /** Posição de cursor a restaurar depois que um bloco inteiro precisou ser movido pra próxima página (ver reflowPagina). */
   const cursorPendenteRef = useRef<{ paginaId: string; caminho: number[]; startOffset: number } | null>(null);
 
+  function noNoCaminho(raiz: Node, caminho: number[]): Node | null {
+    let atual: Node | null = raiz;
+    for (const indice of caminho) {
+      atual = atual?.childNodes[indice] ?? null;
+      if (!atual) return null;
+    }
+    return atual;
+  }
+
   useEffect(() => {
     for (const pagina of paginasLocais) {
       const el = paginaRefs.current[pagina.id];
@@ -1147,6 +1158,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             selecao?.removeAllRanges();
             selecao?.addRange(range);
             el.focus();
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- reflow moveu o bloco onde o cursor estava pra outra página; precisamos sincronizar qual página está ativa
             setPaginaAtivaId(pagina.id);
           } catch {
             // Se por algum motivo a posição exata não puder ser restaurada, ao menos foca a página certa.
@@ -1196,6 +1208,26 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     window.addEventListener("keydown", aoTeclarEsc);
     return () => window.removeEventListener("keydown", aoTeclarEsc);
   }, []);
+
+  // Mantém os marcadores de recuo da régua sempre mostrando os valores do parágrafo onde o cursor está.
+  useEffect(() => {
+    function aoMudarSelecao() {
+      const p = paragrafoDoCursor();
+      if (p) setRecuoAtual(lerRecuo(p));
+    }
+    document.addEventListener("selectionchange", aoMudarSelecao);
+    return () => document.removeEventListener("selectionchange", aoMudarSelecao);
+  }, []);
+
+  // Contagem de ocorrências (popup Localizar e substituir) precisa ler o DOM de cada página via
+  // ref — não é seguro fazer isso durante o render, então recalculamos aqui, num efeito, e guardamos
+  // o resultado em estado normal.
+  useEffect(() => {
+    if (!localizarAberto) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o DOM via ref (coletarOcorrencias) pra contar resultados; não dá pra fazer isso durante o render
+    setTotalOcorrencias(contarOcorrencias());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localizarAberto, buscaTexto, diferenciarCase, paginasLocais]);
 
   if (!doc) {
     return (
@@ -1373,17 +1405,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       direitoMm: parseFloat(el.style.marginRight) || 0,
     };
   }
-
-  // Mantém os marcadores de recuo da régua sempre mostrando os valores do parágrafo onde o cursor está.
-  useEffect(() => {
-    function aoMudarSelecao() {
-      const p = paragrafoDoCursor();
-      if (p) setRecuoAtual(lerRecuo(p));
-    }
-    document.addEventListener("selectionchange", aoMudarSelecao);
-    return () => document.removeEventListener("selectionchange", aoMudarSelecao);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   /** Recuo de verdade do parágrafo (text-indent/margin-left/margin-right) — nunca mexe na margem da página. */
   function mudarRecuoParagrafo(patch: Partial<{ primeiraLinhaMm: number; esquerdoMm: number; direitoMm: number }>) {
@@ -1690,15 +1711,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       atual = pai;
     }
     return atual === raiz ? caminho : null;
-  }
-
-  function noNoCaminho(raiz: Node, caminho: number[]): Node | null {
-    let atual: Node | null = raiz;
-    for (const indice of caminho) {
-      atual = atual?.childNodes[indice] ?? null;
-      if (!atual) return null;
-    }
-    return atual;
   }
 
   function moverTransbordoParaProximaPagina(paginaId: string, htmlAtual: string, htmlTransbordo: string): string {
@@ -2860,8 +2872,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           </label>
           <p className="hint" style={{ marginBottom: 8 }}>
             {buscaTexto.trim()
-              ? contarOcorrencias() > 0
-                ? `${((buscaIndiceAtual % contarOcorrencias()) + contarOcorrencias()) % contarOcorrencias() + 1} de ${contarOcorrencias()} ocorrência(s)`
+              ? totalOcorrencias > 0
+                ? `${((buscaIndiceAtual % totalOcorrencias) + totalOcorrencias) % totalOcorrencias + 1} de ${totalOcorrencias} ocorrência(s)`
                 : "Nenhuma ocorrência encontrada"
               : "Digite um termo pra buscar"}
           </p>
