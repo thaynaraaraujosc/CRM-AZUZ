@@ -38,6 +38,7 @@ import { Simulador } from "./Simulador";
 import { Toolbar } from "./Toolbar";
 import { nodeTypes } from "./nodes";
 import {
+  CORES_CATEGORIA,
   autoLayout,
   domainEdgesToRF,
   domainNodesToRF,
@@ -48,17 +49,6 @@ import {
   type FlowRFEdge,
   type FlowRFNode,
 } from "./utils";
-
-const CORES_CATEGORIA: Record<string, string> = {
-  gatilho: "#2e6bff",
-  condicao: "#8b5cf6",
-  mensagem: "#16a34a",
-  espera: "#f59e0b",
-  acao: "#ca8a04",
-  humano: "#db2777",
-  integracao: "#64748b",
-  fim: "#dc2626",
-};
 
 type Snapshot = { nodes: FlowRFNode[]; edges: FlowRFEdge[] };
 
@@ -467,7 +457,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             onNodeContextMenu={(e, node) => {
               e.preventDefault();
               setSelectedNodeIds([node.id]);
-              setMenuContexto({ x: e.clientX, y: e.clientY, nodeId: node.id });
+              // Grampeia (clamp) a posição aos limites da viewport — tamanho estimado do menu
+              // (min-width 180px + ~2 itens), pra nunca abrir cortado perto da borda da tela.
+              const margem = 8;
+              const larguraEstimada = 180;
+              const alturaEstimada = 90;
+              const x = Math.min(e.clientX, window.innerWidth - larguraEstimada - margem);
+              const y = Math.min(e.clientY, window.innerHeight - alturaEstimada - margem);
+              setMenuContexto({ x: Math.max(margem, x), y: Math.max(margem, y), nodeId: node.id });
             }}
             onPaneClick={() => setMenuContexto(null)}
             deleteKeyCode={["Delete", "Backspace"]}

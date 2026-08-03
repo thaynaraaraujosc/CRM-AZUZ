@@ -17,18 +17,7 @@ import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 
 import { Simulador } from "./Simulador";
 import { nodeTypes } from "./nodes";
-import { autoLayout, domainEdgesToRF, domainNodesToRF } from "./utils";
-
-const CORES_CATEGORIA: Record<string, string> = {
-  gatilho: "#2e6bff",
-  condicao: "#8b5cf6",
-  mensagem: "#16a34a",
-  espera: "#f59e0b",
-  acao: "#ca8a04",
-  humano: "#db2777",
-  integracao: "#64748b",
-  fim: "#dc2626",
-};
+import { CORES_CATEGORIA, autoLayout, domainEdgesToRF, domainNodesToRF } from "./utils";
 
 /**
  * Lista "funcionalidades utilizadas" — derivada AO VIVO dos nós reais do

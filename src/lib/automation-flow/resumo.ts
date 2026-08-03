@@ -30,14 +30,19 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
 
   if (node.type === "condicao_grupo") {
     return [
-      { handleId: "sim", label: "Sim" },
-      { handleId: "nao", label: "Não" },
+      { handleId: "sim", label: "✓ Sim" },
+      { handleId: "nao", label: "✕ Não" },
     ];
   }
 
   if (node.type === "mensagem_botoes" || node.type === "mensagem_lista") {
     const data = node.data as MensagemBotoesData;
-    const opcoes = (data.opcoes ?? []).map((o) => ({ handleId: o.id, label: o.rotulo || "Opção sem nome" }));
+    // Numeradas (1, 2, 3...) — é assim que o contato de fato as vê no formato de menu numerado,
+    // e ajuda a diferenciar visualmente esse nó de múltiplas saídas de uma condição binária comum.
+    const opcoes = (data.opcoes ?? []).map((o, i) => ({
+      handleId: o.id,
+      label: `${i + 1} · ${o.rotulo || "Opção sem nome"}`,
+    }));
     return [
       ...opcoes,
       { handleId: "outra_resposta", label: "Outra resposta" },
@@ -49,8 +54,8 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
     const data = node.data as AguardarData;
     if (data.tempoMaximo) {
       return [
-        { handleId: "ok", label: "OK" },
-        { handleId: "timeout", label: "Tempo esgotado" },
+        { handleId: "ok", label: "✓ OK" },
+        { handleId: "timeout", label: "⏱ Tempo esgotado" },
       ];
     }
   }

@@ -65,8 +65,24 @@ export function novoIdAresta(): string {
   return `aresta-${Date.now()}-${contadorId}`;
 }
 
-const LARGURA_NO = 260;
-const ALTURA_NO = 96;
+/** Cor de identificação por categoria — usada no minimapa (FlowEditor/VisualizarFluxo) e espelhada em
+ * CSS (".flow-cat-*", globals.css) pra colorir a barra lateral de cada nó. Um lugar só, pra não
+ * divergir entre os dois usos. */
+export const CORES_CATEGORIA: Record<string, string> = {
+  gatilho: "#2e6bff",
+  condicao: "#8a3ffc",
+  mensagem: "#0f9d63",
+  espera: "#c9660a",
+  acao: "#d8a400",
+  humano: "#d84594",
+  integracao: "#64748b",
+  fim: "#d64545",
+};
+
+// Precisa bater aproximadamente com o tamanho real do node em .flow-node (globals.css) — usado só
+// pra estimar espaço no auto-layout (dagre), não define o tamanho de verdade renderizado.
+const LARGURA_NO = 280;
+const ALTURA_NO = 120;
 
 /** Recalcula a posição de todo mundo em camadas (dagre, topo→baixo) — usado pelo botão "organizar automaticamente". */
 export function autoLayout(nodes: FlowRFNode[], edges: FlowRFEdge[]): FlowRFNode[] {

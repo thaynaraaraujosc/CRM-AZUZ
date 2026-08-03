@@ -19,6 +19,18 @@ const GLYPH_CATEGORIA: Record<FlowNodeCategory, string> = {
   fim: "🏁",
 };
 
+/** Nome da categoria mostrado em cima do título — a leitura do tipo de bloco precisa funcionar sem abrir o nó. */
+const NOME_CATEGORIA: Record<FlowNodeCategory, string> = {
+  gatilho: "Gatilho",
+  condicao: "Condição",
+  mensagem: "Mensagem",
+  espera: "Espera",
+  acao: "Ação",
+  humano: "Humano",
+  integracao: "Integração",
+  fim: "Fim",
+};
+
 /**
  * Renderizador único de nó, reaproveitado pelos 8 componentes registrados em
  * `nodeTypes` (um por `FlowNodeCategory`) — a diferença visual/comportamental
@@ -50,7 +62,10 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         <span className="flow-node-icon" aria-hidden="true">
           {GLYPH_CATEGORIA[flowNode.category]}
         </span>
-        <span className="flow-node-label">{flowNode.titulo || bloco?.label || flowNode.type}</span>
+        <span className="flow-node-textos">
+          <span className="flow-node-categoria">{NOME_CATEGORIA[flowNode.category]}</span>
+          <span className="flow-node-label">{flowNode.titulo || bloco?.label || flowNode.type}</span>
+        </span>
         {temErro || temAviso ? (
           <span
             className="flow-node-warn"
