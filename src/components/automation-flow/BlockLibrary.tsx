@@ -34,9 +34,38 @@ export function BlockLibrary({
 
   if (!aberta) {
     return (
-      <button type="button" className="flow-lib-reabrir icon-btn" aria-label="Abrir biblioteca de blocos" onClick={onFechar}>
-        ▶
-      </button>
+      <aside className="flow-lib-recolhida" aria-label="Biblioteca de blocos (recolhida)">
+        <button type="button" className="flow-lib-reabrir icon-btn" aria-label="Abrir biblioteca de blocos" onClick={onFechar}>
+          ▶
+        </button>
+        <div className="flow-lib-recolhida-cats">
+          {CATEGORIAS_BLOCOS.map((cat) => (
+            <button
+              type="button"
+              key={cat.id}
+              className="flow-lib-recolhida-cat"
+              title={cat.label}
+              aria-label={`Abrir biblioteca na categoria ${cat.label}`}
+              onClick={() => {
+                setCategoriasFechadas((prev) => {
+                  const novo = new Set(prev);
+                  novo.delete(cat.id);
+                  return novo;
+                });
+                onFechar();
+                // A biblioteca abre com todas as categorias já visíveis — só remover do
+                // "fechadas" não rola até ela, então precisa esperar o próximo frame (depois
+                // do painel reabrir) pra achar e rolar até a seção certa.
+                requestAnimationFrame(() => {
+                  document.querySelector(`[data-flow-lib-cat="${cat.id}"]`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+                });
+              }}
+            >
+              <span className={`flow-cat-dot flow-cat-${cat.id}`} aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      </aside>
     );
   }
 
@@ -64,7 +93,7 @@ export function BlockLibrary({
             const blocos = BLOCOS_DISPONIVEIS.filter((b) => b.categoria === cat.id);
             const fechada = categoriasFechadas.has(cat.id);
             return (
-              <div className="flow-lib-cat" key={cat.id}>
+              <div className="flow-lib-cat" key={cat.id} data-flow-lib-cat={cat.id}>
                 <button type="button" className="flow-lib-cat-h" onClick={() => alternarCategoria(cat.id)} aria-expanded={!fechada}>
                   <span className={`flow-cat-dot flow-cat-${cat.id}`} aria-hidden="true" />
                   <span>{cat.label}</span>

@@ -6476,6 +6476,47 @@ table.tbl tbody tr:hover td {
   margin: 12px;
 }
 
+/* Estado recolhido — só a seta de reabrir + uma pastilha por categoria, pra liberar espaço pro
+   canvas sem perder o acesso rápido a "que tipo de bloco eu quero adicionar". */
+.flow-lib-recolhida {
+  flex: 0 0 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-right: 1px solid var(--line);
+  background: var(--navy);
+  padding-bottom: 10px;
+  gap: 4px;
+}
+
+.flow-lib-recolhida-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.flow-lib-recolhida-cat {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.flow-lib-recolhida-cat:hover {
+  border-color: var(--flow-cor-categoria, var(--blue));
+}
+
+.flow-lib-recolhida-cat .flow-cat-dot {
+  width: 9px;
+  height: 9px;
+}
+
 .flow-lib-head {
   flex: 0 0 auto;
   display: flex;
