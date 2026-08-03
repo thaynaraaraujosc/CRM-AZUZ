@@ -16,6 +16,7 @@ import {
   conversas,
   motivosPerda,
   type Canal,
+  type Contato,
   type ConvMensagem,
   type Funil,
   type NegocioCard,
@@ -27,6 +28,7 @@ import { executarFluxo } from "@/lib/automation-flow/motor";
 import { useContatos } from "@/lib/contatos-context";
 import { estimarMinutosAtras, gerarLinhaDoTempo, type Evento } from "@/lib/timeline";
 import { Timeline } from "@/components/timeline";
+import { AudioBubblePlayer, AudioWaveformBars } from "@/components/audio-player";
 import {
   useBibliotecaDocumentos,
   CATEGORIAS_DOCUMENTO,
@@ -36,6 +38,9 @@ import { useNotificacoes } from "@/lib/notificacoes-context";
 import {
   useConfigConversas,
   FUNDOS_PRESET,
+  SONS_DISPONIVEIS,
+  CONFIG_PADRAO,
+  type ConfigConversas,
   type FundoConversa,
 } from "@/lib/conversas-config-context";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -137,6 +142,22 @@ function agendarSimulacaoDeEntrega(
   }
 }
 
+/** Aplica um fundo no rascunho de configurações — "todas" grava no padrão, "atual" só nessa conversa. */
+function aplicarFundoRascunho(
+  config: ConfigConversas,
+  fundo: FundoConversa,
+  escopo: "todas" | "atual",
+  conversaId: string,
+): ConfigConversas {
+  if (escopo === "atual") {
+    return {
+      ...config,
+      fundoPorConversa: { ...config.fundoPorConversa, [conversaId]: fundo },
+    };
+  }
+  return { ...config, fundo };
+}
+
 function lerComoDataUrl(file: File | Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const leitor = new FileReader();
@@ -200,6 +221,11 @@ function StatusMensagemIcone({
       icone: <IconCheckDuplo width={14} height={14} />,
       titulo: "Lida pelo lead",
       classe: "lido",
+    },
+    reproduzido: {
+      icone: <IconMic width={12} height={12} />,
+      titulo: "Áudio reproduzido pelo lead",
+      classe: "reproduzido",
     },
   };
   const info = mapa[status];
@@ -397,21 +423,120 @@ function ConversasPageInner() {
     atribuirAtendente,
     adicionarEtiqueta,
     removerEtiqueta,
+    criarContato,
   } = useContatos();
   const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
   const { fluxos, dispararEvento, registrarExecucao } = useAutomationFlows();
-  const { simularNovaMensagem, notificacoesAtivas, alternarNotificacoes } =
-    useNotificacoes();
-  const { config, atualizarConfig, restaurarPadrao, definirFundo, fundoDaConversa } =
-    useConfigConversas();
+  const { simularNovaMensagem } = useNotificacoes();
+  const { config, atualizarConfig, fundoDaConversa } = useConfigConversas();
   const [configConversasAberto, setConfigConversasAberto] = useState(false);
+  const [configAba, setConfigAba] = useState<
+    "aparencia" | "privacidade" | "notificacoes" | "preferencias"
+  >("aparencia");
+  const [configRascunho, setConfigRascunho] = useState<ConfigConversas>(config);
+  const [configStatusSalvar, setConfigStatusSalvar] = useState<
+    "ocioso" | "salvando" | "sucesso" | "erro"
+  >("ocioso");
+  const [configConfirmarFechar, setConfigConfirmarFechar] = useState(false);
+  const [configPermissaoNotificacao, setConfigPermissaoNotificacao] = useState<
+    NotificationPermission | "indisponivel"
+  >(() =>
+    typeof window !== "undefined" && "Notification" in window
+      ? Notification.permission
+      : "indisponivel",
+  );
+  const configAlterado = JSON.stringify(configRascunho) !== JSON.stringify(config);
   const [fundoEscopoForm, setFundoEscopoForm] = useState<"todas" | "atual">("todas");
+  const [erroFundoImagem, setErroFundoImagem] = useState<string | null>(null);
   const fundoUploadInputRef = useRef<HTMLInputElement>(null);
 
-  async function enviarImagemFundoDoComputador(file: File) {
-    const dataUrl = await lerComoDataUrl(file);
-    definirFundo({ tipo: "imagem", url: dataUrl }, fundoEscopoForm, aberta.id);
+  function abrirConfigConversas() {
+    setConfigRascunho(config);
+    setFundoEscopoForm("todas");
+    setConfigAba("aparencia");
+    setConfigStatusSalvar("ocioso");
+    setConfigConfirmarFechar(false);
+    setConfigConversasAberto(true);
   }
+
+  function pedirFecharConfig() {
+    if (configAlterado) {
+      setConfigConfirmarFechar(true);
+      return;
+    }
+    setConfigConversasAberto(false);
+  }
+
+  function descartarEFecharConfig() {
+    setConfigRascunho(config);
+    setConfigConfirmarFechar(false);
+    setConfigConversasAberto(false);
+  }
+
+  function restaurarPadraoRascunho() {
+    setConfigRascunho(CONFIG_PADRAO);
+  }
+
+  async function salvarConfigConversas() {
+    setConfigStatusSalvar("salvando");
+    try {
+      // Camada de serviço provisória — hoje só grava localStorage via o
+      // contexto; quando existir back-end, essa função troca pra uma
+      // chamada de API que persiste as preferências do usuário/equipe.
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      atualizarConfig(configRascunho);
+      setConfigStatusSalvar("sucesso");
+      setTimeout(() => {
+        setConfigConversasAberto(false);
+        setConfigStatusSalvar("ocioso");
+      }, 700);
+    } catch {
+      setConfigStatusSalvar("erro");
+    }
+  }
+
+  function pedirPermissaoNotificacaoNavegador() {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setConfigPermissaoNotificacao("indisponivel");
+      return;
+    }
+    Notification.requestPermission().then((permissao) => {
+      setConfigPermissaoNotificacao(permissao);
+      if (permissao === "granted") {
+        setConfigRascunho((prev) => ({ ...prev, notificacaoNavegador: true }));
+      }
+    });
+  }
+
+  function testarSomNotificacao() {
+    try {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value =
+        configRascunho.somEscolhido === "suave"
+          ? 660
+          : configRascunho.somEscolhido === "alerta"
+            ? 880
+            : 740;
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+      osc.onended = () => ctx.close();
+    } catch {
+      // Web Audio indisponível nesse navegador — sem prévia sonora.
+    }
+  }
+
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const proximoToastId = useRef(0);
 
@@ -527,6 +652,10 @@ function ConversasPageInner() {
     nome: string;
     initials: string;
     whatsapp?: string;
+    telefoneFixo?: string;
+    email?: string;
+    empresa?: string;
+    cargo?: string;
   } | null>(null);
   const [infoWidth, setInfoWidth] = useState(320);
   const [sincronizando, setSincronizando] = useState(false);
@@ -683,21 +812,75 @@ function ConversasPageInner() {
     }
   }, [mensagensExtraPorContato]);
   const [mensagemTexto, setMensagemTexto] = useState("");
+
+  /* ---------------------------------------------------------------------- */
+  /* Áudio — gravação real (getUserMedia + MediaRecorder), prévia e player   */
+  /* ---------------------------------------------------------------------- */
   const [gravandoAudio, setGravandoAudio] = useState(false);
+  const [audioPausado, setAudioPausado] = useState(false);
   const [audioSegundos, setAudioSegundos] = useState(0);
+  const [audioNiveis, setAudioNiveis] = useState<number[]>([]);
+  const [audioPermissaoErro, setAudioPermissaoErro] = useState<string | null>(null);
+  const [audioSolicitandoPermissao, setAudioSolicitandoPermissao] = useState(false);
+  const [audioPreview, setAudioPreview] = useState<{
+    blob: Blob;
+    url: string;
+    duracao: number;
+    waveform: number[];
+  } | null>(null);
+  const [audioPreviewTocando, setAudioPreviewTocando] = useState(false);
+  const [audioPreviewProgresso, setAudioPreviewProgresso] = useState(0);
+  const [audioEnviando, setAudioEnviando] = useState(false);
+  const [audioConfirmarDescarte, setAudioConfirmarDescarte] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioAnalyserRef = useRef<AnalyserNode | null>(null);
+  const audioAnimFrameRef = useRef<number | null>(null);
+  const audioPreviewElRef = useRef<HTMLAudioElement>(null);
+
   const [anexoAberto, setAnexoAberto] = useState(false);
   const [anexoPos, setAnexoPos] = useState<{ x: number; y: number } | null>(null);
   const anexoArrasteRef = useRef<{ dx: number; dy: number } | null>(null);
   const [emojiAberto, setEmojiAberto] = useState(false);
   const [emojiRect, setEmojiRect] = useState<DOMRect | null>(null);
+  /* ---------------------------------------------------------------------- */
+  /* Enviar contato — abas CRM/Criar, busca+filtros, seleção múltipla,       */
+  /* prévia antes de enviar                                                  */
+  /* ---------------------------------------------------------------------- */
   const [contatoPickerAberto, setContatoPickerAberto] = useState(false);
+  const [contatoPickerAba, setContatoPickerAba] = useState<"crm" | "criar">("crm");
+  const [contatoPickerEtapa, setContatoPickerEtapa] = useState<"lista" | "previa">("lista");
   const [buscaContatoPicker, setBuscaContatoPicker] = useState("");
-  const [contatoSugestoesAberta, setContatoSugestoesAberta] = useState(false);
-  const [contatoSelecionado, setContatoSelecionado] = useState<{
-    nome: string;
-    initials: string;
-    whatsapp?: string;
-  } | null>(null);
+  const [filtroEmpresaPicker, setFiltroEmpresaPicker] = useState("");
+  const [filtroEtiquetaPicker, setFiltroEtiquetaPicker] = useState("");
+  const [filtroResponsavelPicker, setFiltroResponsavelPicker] = useState("");
+  const [somenteFavoritosPicker, setSomenteFavoritosPicker] = useState(false);
+  const [contatosSelecionadosPicker, setContatosSelecionadosPicker] = useState<Contato[]>([]);
+  const [previaCampos, setPreviaCampos] = useState({
+    telefonePrincipal: true,
+    telefoneAlternativo: false,
+    email: true,
+    empresa: true,
+    cargo: true,
+  });
+  const [contatoPickerEnviando, setContatoPickerEnviando] = useState(false);
+  const [contatoPickerErro, setContatoPickerErro] = useState<string | null>(null);
+
+  // Aba "Criar contato"
+  const [novoContatoNome, setNovoContatoNome] = useState("");
+  const [novoContatoSobrenome, setNovoContatoSobrenome] = useState("");
+  const [novoContatoEmpresa, setNovoContatoEmpresa] = useState("");
+  const [novoContatoCargo, setNovoContatoCargo] = useState("");
+  const [novoContatoTelefone, setNovoContatoTelefone] = useState("");
+  const [novoContatoEmail, setNovoContatoEmail] = useState("");
+  const [novoContatoObservacao, setNovoContatoObservacao] = useState("");
+  const [novoContatoErros, setNovoContatoErros] = useState<{ telefone?: string; email?: string }>(
+    {},
+  );
+  const [novoContatoSalvando, setNovoContatoSalvando] = useState(false);
+  const [novoContatoSucesso, setNovoContatoSucesso] = useState(false);
   const [respostasGerenciarAberto, setRespostasGerenciarAberto] = useState(false);
   const [respostasPos, setRespostasPos] = useState<{ x: number; y: number } | null>(null);
   const respostasArrasteRef = useRef<{ dx: number; dy: number } | null>(null);
@@ -732,6 +915,199 @@ function ConversasPageInner() {
     autor: string;
     texto: string;
   } | null>(null);
+
+  /* ---------------------------------------------------------------------- */
+  /* Menu de ações da mensagem — copiar/encaminhar/favoritar/detalhes/apagar */
+  /* ---------------------------------------------------------------------- */
+  const [msgMenuAberto, setMsgMenuAberto] = useState<{ chave: string; rect: DOMRect } | null>(
+    null,
+  );
+  const [encaminharAberto, setEncaminharAberto] = useState<{
+    chave: string;
+    rect: DOMRect;
+    msg: ConvMensagem;
+  } | null>(null);
+  const [mensagensApagadasPorContato, setMensagensApagadasPorContato] = useState<
+    Record<string, Set<string>>
+  >({});
+  const [mensagensApagadasTodosPorContato, setMensagensApagadasTodosPorContato] = useState<
+    Record<string, Set<string>>
+  >({});
+  const [mensagensFavoritasPorContato, setMensagensFavoritasPorContato] = useState<
+    Record<string, Set<string>>
+  >({});
+  const [confirmarApagar, setConfirmarApagar] = useState<{
+    chave: string;
+    tipoExclusao: "para_mim" | "para_todos";
+    elegivel: boolean;
+    motivoIndisponivel?: string;
+  } | null>(null);
+  const [apagandoChave, setApagandoChave] = useState<string | null>(null);
+  const [erroApagarChave, setErroApagarChave] = useState<string | null>(null);
+  const [detalhesMensagem, setDetalhesMensagem] = useState<{ msg: ConvMensagem; chave: string } | null>(
+    null,
+  );
+
+  const mensagensApagadas = mensagensApagadasPorContato[aberta.nome] ?? new Set<string>();
+  const mensagensApagadasTodos = mensagensApagadasTodosPorContato[aberta.nome] ?? new Set<string>();
+  const mensagensFavoritas = mensagensFavoritasPorContato[aberta.nome] ?? new Set<string>();
+
+  function abrirMenuMensagem(chave: string, rect: DOMRect) {
+    setMsgMenuAberto((prev) => (prev?.chave === chave ? null : { chave, rect }));
+  }
+
+  function estrelaFavorita(chave: string) {
+    if (!mensagensFavoritas.has(chave)) return null;
+    return (
+      <span className="wa-msg-favorita" title="Favoritada">
+        ★
+      </span>
+    );
+  }
+
+  /** Botão "⋮" reaproveitado em todos os tipos de bolha (não é componente à parte de propósito — evita remontar). */
+  function botaoMenuMensagem(chave: string) {
+    return (
+      <button
+        type="button"
+        className="wa-msg-menu-btn"
+        aria-label="Mais ações dessa mensagem"
+        title="Mais ações"
+        onClick={(e) => {
+          e.stopPropagation();
+          abrirMenuMensagem(chave, e.currentTarget.getBoundingClientRect());
+        }}
+      >
+        ⋮
+      </button>
+    );
+  }
+
+  /** Acha a mensagem original (semente ou extra) a partir da mesma "chave" usada nos mapas de apagadas/favoritas. */
+  function encontrarMensagemPorChave(chave: string): ConvMensagem | null {
+    if (chave.startsWith("seed-")) {
+      const indice = Number(chave.slice("seed-".length));
+      return aberta.mensagens[indice] ?? null;
+    }
+    const extras = mensagensExtraPorContato[aberta.nome] ?? [];
+    return extras.find((m, i) => (m.id ?? `extra-${i}`) === chave) ?? null;
+  }
+
+  function copiarMensagem(texto: string) {
+    setMsgMenuAberto(null);
+    if (!texto) return;
+    navigator.clipboard?.writeText(texto).then(
+      () => avisarAutomacao("Mensagem copiada"),
+      () => avisarAutomacao("Não deu pra copiar — copie manualmente"),
+    );
+  }
+
+  function alternarFavoritoMensagem(chave: string) {
+    setMsgMenuAberto(null);
+    setMensagensFavoritasPorContato((prev) => {
+      const atual = new Set(prev[aberta.nome] ?? []);
+      if (atual.has(chave)) atual.delete(chave);
+      else atual.add(chave);
+      return { ...prev, [aberta.nome]: atual };
+    });
+  }
+
+  function abrirDetalhesMensagem(msg: ConvMensagem, chave: string) {
+    setMsgMenuAberto(null);
+    setDetalhesMensagem({ msg, chave });
+  }
+
+  function baixarAnexoMensagem(msg: ConvMensagem) {
+    setMsgMenuAberto(null);
+    const anexo = msg.imagens?.[0] ?? msg.video ?? msg.documento ?? msg.audio;
+    if (!anexo || !("url" in anexo)) return;
+    const a = document.createElement("a");
+    a.href = anexo.url;
+    a.download = "nome" in anexo ? anexo.nome : "anexo";
+    a.click();
+  }
+
+  function pedirApagar(chave: string, msg: ConvMensagem, tipoExclusao: "para_mim" | "para_todos") {
+    setMsgMenuAberto(null);
+    if (tipoExclusao === "para_mim") {
+      setConfirmarApagar({ chave, tipoExclusao, elegivel: true });
+      return;
+    }
+    if (msg.tipo !== "out") {
+      setConfirmarApagar({
+        chave,
+        tipoExclusao,
+        elegivel: false,
+        motivoIndisponivel: "Essa mensagem foi enviada por outra pessoa.",
+      });
+      return;
+    }
+    const idadeMinutos = msg.criadoEm ? (Date.now() - msg.criadoEm) / 60000 : Infinity;
+    if (idadeMinutos > 15) {
+      setConfirmarApagar({
+        chave,
+        tipoExclusao,
+        elegivel: false,
+        motivoIndisponivel: "O prazo pra apagar essa mensagem pra todos já expirou.",
+      });
+      return;
+    }
+    setConfirmarApagar({ chave, tipoExclusao, elegivel: true });
+  }
+
+  function confirmarApagarParaMim() {
+    if (!confirmarApagar) return;
+    const { chave } = confirmarApagar;
+    setMensagensApagadasPorContato((prev) => {
+      const atual = new Set(prev[aberta.nome] ?? []);
+      atual.add(chave);
+      return { ...prev, [aberta.nome]: atual };
+    });
+    setConfirmarApagar(null);
+  }
+
+  async function confirmarApagarParaTodos() {
+    if (!confirmarApagar) return;
+    const { chave } = confirmarApagar;
+    setApagandoChave(chave);
+    setErroApagarChave(null);
+    // Camada de serviço provisória — no back-end real essa chamada solicita
+    // a exclusão pro canal e só confirma quando ele retornar sucesso.
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    if (Math.random() < 0.12) {
+      setApagandoChave(null);
+      setErroApagarChave(chave);
+      return;
+    }
+    setMensagensApagadasTodosPorContato((prev) => {
+      const atual = new Set(prev[aberta.nome] ?? []);
+      atual.add(chave);
+      return { ...prev, [aberta.nome]: atual };
+    });
+    setApagandoChave(null);
+    setConfirmarApagar(null);
+  }
+
+  function encaminharPara(destinoNome: string, msg: ConvMensagem) {
+    setEncaminharAberto(null);
+    setMensagensExtraPorContato((prev) => ({
+      ...prev,
+      [destinoNome]: [
+        ...(prev[destinoNome] ?? []),
+        {
+          ...msg,
+          id: gerarIdMensagem(),
+          tipo: "out",
+          hora: horaAgora(),
+          criadoEm: Date.now(),
+          status: "pendente",
+          respondendoA: undefined,
+        },
+      ],
+    }));
+    avisarAutomacao(`Encaminhado pra ${destinoNome}`);
+  }
+
   const imagemInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const documentoInputRef = useRef<HTMLInputElement>(null);
@@ -826,10 +1202,210 @@ function ConversasPageInner() {
   const { documentos: bibliotecaDocumentos } = useBibliotecaDocumentos();
 
   useEffect(() => {
-    if (!gravandoAudio) return;
+    if (!gravandoAudio || audioPausado) return;
     const intervalo = setInterval(() => setAudioSegundos((s) => s + 1), 1000);
     return () => clearInterval(intervalo);
-  }, [gravandoAudio]);
+  }, [gravandoAudio, audioPausado]);
+
+  useEffect(() => {
+    return () => {
+      // Limpa microfone/contexto de áudio se o componente desmontar no meio de uma gravação.
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+      audioContextRef.current?.close().catch(() => {});
+      if (audioAnimFrameRef.current) cancelAnimationFrame(audioAnimFrameRef.current);
+    };
+  }, []);
+
+  function medirNivelMicrofone() {
+    const analyser = audioAnalyserRef.current;
+    if (!analyser) return;
+    const dados = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteTimeDomainData(dados);
+    let soma = 0;
+    for (let i = 0; i < dados.length; i++) {
+      const v = (dados[i] - 128) / 128;
+      soma += v * v;
+    }
+    const rms = Math.sqrt(soma / dados.length);
+    setAudioNiveis((prev) => [...prev.slice(-59), Math.min(1, rms * 4)]);
+    audioAnimFrameRef.current = requestAnimationFrame(medirNivelMicrofone);
+  }
+
+  /** Decodifica o blob gravado pra tirar duração real e uma forma de onda estática (pra prévia e pro player final). */
+  async function calcularWaveform(blob: Blob): Promise<{ duracao: number; waveform: number[] }> {
+    try {
+      const buffer = await blob.arrayBuffer();
+      const AudioCtx =
+        window.AudioContext ||
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioCtx();
+      const audioBuffer = await ctx.decodeAudioData(buffer);
+      const dados = audioBuffer.getChannelData(0);
+      const totalBarras = 46;
+      const tamanhoBloco = Math.max(1, Math.floor(dados.length / totalBarras));
+      const waveform: number[] = [];
+      for (let i = 0; i < totalBarras; i++) {
+        let pico = 0;
+        const inicio = i * tamanhoBloco;
+        for (let j = inicio; j < inicio + tamanhoBloco && j < dados.length; j++) {
+          pico = Math.max(pico, Math.abs(dados[j]));
+        }
+        waveform.push(Math.min(1, pico * 1.4));
+      }
+      const duracao = audioBuffer.duration;
+      ctx.close();
+      return { duracao, waveform };
+    } catch {
+      // Formato não decodificável nesse navegador (raro) — usa a duração cronometrada e uma forma de onda plana.
+      return { duracao: audioSegundos, waveform: new Array(46).fill(0.3) };
+    }
+  }
+
+  async function iniciarGravacaoAudio() {
+    setAudioPermissaoErro(null);
+    setAudioSolicitandoPermissao(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setAudioSolicitandoPermissao(false);
+      mediaStreamRef.current = stream;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioCtx();
+      const fonte = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      fonte.connect(analyser);
+      audioContextRef.current = ctx;
+      audioAnalyserRef.current = analyser;
+
+      const gravador = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : "audio/webm",
+      });
+      audioChunksRef.current = [];
+      gravador.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      gravador.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach((t) => t.stop());
+        ctx.close().catch(() => {});
+        if (audioAnimFrameRef.current) cancelAnimationFrame(audioAnimFrameRef.current);
+        const { duracao, waveform } = await calcularWaveform(blob);
+        const url = URL.createObjectURL(blob);
+        setAudioPreview({ blob, url, duracao, waveform });
+      };
+      mediaRecorderRef.current = gravador;
+      gravador.start();
+      setAudioSegundos(0);
+      setAudioNiveis([]);
+      setAudioPausado(false);
+      setGravandoAudio(true);
+      medirNivelMicrofone();
+    } catch {
+      setAudioSolicitandoPermissao(false);
+      setAudioPermissaoErro(
+        "Não deu pra acessar o microfone. Verifique a permissão do navegador pra esse site e tente de novo.",
+      );
+    }
+  }
+
+  function pausarOuContinuarGravacao() {
+    const gravador = mediaRecorderRef.current;
+    if (!gravador) return;
+    if (audioPausado) {
+      gravador.resume();
+      setAudioPausado(false);
+      medirNivelMicrofone();
+    } else {
+      gravador.pause();
+      setAudioPausado(true);
+      if (audioAnimFrameRef.current) cancelAnimationFrame(audioAnimFrameRef.current);
+    }
+  }
+
+  function concluirGravacao() {
+    const gravador = mediaRecorderRef.current;
+    if (!gravador) return;
+    gravador.stop();
+    setGravandoAudio(false);
+    setAudioPausado(false);
+  }
+
+  function pedirDescartarGravacao() {
+    if (audioSegundos >= 20) {
+      setAudioConfirmarDescarte(true);
+      return;
+    }
+    descartarGravacao();
+  }
+
+  /** Interrompe a gravação (se ainda estiver rolando), descarta o arquivo temporário e volta o campo de mensagem — nada é enviado. */
+  function descartarGravacao() {
+    const gravador = mediaRecorderRef.current;
+    if (gravador && gravador.state !== "inactive") {
+      gravador.onstop = null;
+      gravador.stop();
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+      audioContextRef.current?.close().catch(() => {});
+    }
+    if (audioAnimFrameRef.current) cancelAnimationFrame(audioAnimFrameRef.current);
+    if (audioPreview) URL.revokeObjectURL(audioPreview.url);
+    setGravandoAudio(false);
+    setAudioPausado(false);
+    setAudioSegundos(0);
+    setAudioNiveis([]);
+    setAudioPreview(null);
+    setAudioPreviewTocando(false);
+    setAudioPreviewProgresso(0);
+    setAudioConfirmarDescarte(false);
+  }
+
+  function regravarAudio() {
+    if (audioPreview) URL.revokeObjectURL(audioPreview.url);
+    setAudioPreview(null);
+    setAudioPreviewTocando(false);
+    setAudioPreviewProgresso(0);
+    iniciarGravacaoAudio();
+  }
+
+  function alternarPreviaAudio() {
+    const el = audioPreviewElRef.current;
+    if (!el) return;
+    if (audioPreviewTocando) el.pause();
+    else el.play();
+  }
+
+  async function enviarAudioGravado() {
+    if (!audioPreview) return;
+    setAudioEnviando(true);
+    try {
+      // Camada de serviço provisória — hoje só transforma o blob local em
+      // Object URL pra tocar na hora; quando existir back-end, aqui sobe o
+      // arquivo de verdade e troca a URL pela do storage antes de enviar.
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      adicionarMensagem({
+        tipo: "out",
+        texto: "",
+        hora: horaAgora(),
+        audio: {
+          url: audioPreview.url,
+          duracao: audioPreview.duracao,
+          waveform: audioPreview.waveform,
+        },
+      });
+      setAudioPreview(null);
+      setAudioSegundos(0);
+      setAudioNiveis([]);
+      setAudioPreviewTocando(false);
+      setAudioPreviewProgresso(0);
+    } finally {
+      setAudioEnviando(false);
+    }
+  }
+
   const [resultadoPorContato, setResultadoPorContato] = useState<
     Record<string, "venda" | "perda" | "andamento" | "adiada" | "cancelada">
   >({});
@@ -963,10 +1539,9 @@ function ConversasPageInner() {
   function adicionarMensagem(msg: ConvMensagem) {
     const id = msg.id ?? gerarIdMensagem();
     const contatoNome = aberta.nome;
+    const base: ConvMensagem = { ...msg, id, criadoEm: msg.criadoEm ?? Date.now() };
     const pronta: ConvMensagem =
-      msg.tipo === "out" && !msg.status
-        ? { ...msg, id, status: "pendente" }
-        : { ...msg, id };
+      base.tipo === "out" && !base.status ? { ...base, status: "pendente" } : base;
     setMensagensExtraPorContato((prev) => ({
       ...prev,
       [contatoNome]: [...(prev[contatoNome] ?? []), pronta],
@@ -983,6 +1558,16 @@ function ConversasPageInner() {
     agendarSimulacaoDeEntrega((patch) => atualizarMensagem(contatoNome, id, patch));
   }
 
+  /**
+   * Ambiente de demonstração: sem back-end/webhook do canal conectado ainda
+   * não existe forma real de saber se o destinatário ouviu um áudio enviado
+   * — esse botão só existe pra pré-visualizar o estado visual "reproduzido",
+   * nunca dispara sozinho.
+   */
+  function marcarAudioComoReproduzidoDemo(id: string) {
+    atualizarMensagem(aberta.nome, id, { status: "reproduzido" });
+  }
+
   function enviarMensagemTexto() {
     const texto = mensagemTexto.trim();
     if (!texto) return;
@@ -994,25 +1579,6 @@ function ConversasPageInner() {
     });
     setMensagemTexto("");
     setRespondendoMensagem(null);
-  }
-
-  function alternarGravacaoAudio() {
-    if (gravandoAudio) {
-      const min = Math.floor(audioSegundos / 60);
-      const seg = audioSegundos % 60;
-      setGravandoAudio(false);
-      if (audioSegundos > 0) {
-        adicionarMensagem({
-          tipo: "out",
-          texto: `🎤 Áudio · ${min}:${String(seg).padStart(2, "0")}`,
-          hora: horaAgora(),
-        });
-      }
-      setAudioSegundos(0);
-    } else {
-      setAudioSegundos(0);
-      setGravandoAudio(true);
-    }
   }
 
   /* ---------------------------------------------------------------------- */
@@ -1501,33 +2067,106 @@ function ConversasPageInner() {
 
   function abrirContatoPicker() {
     setAnexoAberto(false);
+    setContatoPickerAba("crm");
+    setContatoPickerEtapa("lista");
     setBuscaContatoPicker("");
-    setContatoSelecionado(null);
-    setContatoSugestoesAberta(false);
+    setFiltroEmpresaPicker("");
+    setFiltroEtiquetaPicker("");
+    setFiltroResponsavelPicker("");
+    setSomenteFavoritosPicker(false);
+    setContatosSelecionadosPicker([]);
+    setContatoPickerErro(null);
+    setNovoContatoNome("");
+    setNovoContatoSobrenome("");
+    setNovoContatoEmpresa("");
+    setNovoContatoCargo("");
+    setNovoContatoTelefone("");
+    setNovoContatoEmail("");
+    setNovoContatoObservacao("");
+    setNovoContatoErros({});
+    setNovoContatoSucesso(false);
     setContatoPickerAberto(true);
   }
 
   function fecharContatoPicker() {
     setContatoPickerAberto(false);
-    setContatoSelecionado(null);
-    setBuscaContatoPicker("");
   }
 
-  function escolherContatoPicker(contato: { nome: string; initials: string; whatsapp?: string }) {
-    setContatoSelecionado(contato);
-    setBuscaContatoPicker("");
-    setContatoSugestoesAberta(false);
+  function alternarSelecaoContatoPicker(c: Contato) {
+    setContatosSelecionadosPicker((prev) =>
+      prev.some((s) => s.id === c.id) ? prev.filter((s) => s.id !== c.id) : [...prev, c],
+    );
   }
 
-  function enviarContatoCompartilhado() {
-    if (!contatoSelecionado) return;
-    adicionarMensagem({
-      tipo: "out",
-      texto: `👤 Contato compartilhado: ${contatoSelecionado.nome}`,
-      hora: horaAgora(),
-      contatoCompartilhado: contatoSelecionado,
+  function removerSelecaoContatoPicker(id: string) {
+    setContatosSelecionadosPicker((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  async function confirmarEnvioContatos() {
+    if (contatosSelecionadosPicker.length === 0) return;
+    setContatoPickerEnviando(true);
+    setContatoPickerErro(null);
+    try {
+      // Camada de serviço provisória — hoje só cria a bolha localmente; no
+      // futuro monta o cartão no formato que o canal aceitar (vCard, cartão
+      // nativo da API) e confirma a entrega real antes de fechar.
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      for (const c of contatosSelecionadosPicker) {
+        adicionarMensagem({
+          tipo: "out",
+          texto: `👤 Contato compartilhado: ${c.nome}`,
+          hora: horaAgora(),
+          contatoCompartilhado: {
+            nome: c.nome,
+            initials: c.initials,
+            whatsapp: previaCampos.telefonePrincipal ? c.whatsapp : undefined,
+            telefoneFixo: previaCampos.telefoneAlternativo ? c.telefoneFixo : undefined,
+            email: previaCampos.email ? c.email : undefined,
+            empresa: previaCampos.empresa ? c.empresa : undefined,
+            cargo: previaCampos.cargo ? c.cargo : undefined,
+          },
+        });
+      }
+      fecharContatoPicker();
+    } catch {
+      setContatoPickerErro("Não deu pra enviar agora. Tente de novo.");
+    } finally {
+      setContatoPickerEnviando(false);
+    }
+  }
+
+  function validarNovoContato() {
+    const erros: { telefone?: string; email?: string } = {};
+    if (novoContatoTelefone.trim() && !/^[\d()+\-.\s]{8,}$/.test(novoContatoTelefone.trim())) {
+      erros.telefone = "Telefone inválido";
+    }
+    if (novoContatoEmail.trim() && !emailValido(novoContatoEmail)) {
+      erros.email = "E-mail inválido";
+    }
+    setNovoContatoErros(erros);
+    return Object.keys(erros).length === 0;
+  }
+
+  async function salvarNovoContato(enviarDepois: boolean) {
+    if (!novoContatoNome.trim() || !validarNovoContato()) return;
+    setNovoContatoSalvando(true);
+    // Camada de serviço provisória — hoje só grava no estado do front-end.
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    const criado = criarContato({
+      nome: novoContatoNome.trim(),
+      sobrenome: novoContatoSobrenome.trim() || undefined,
+      empresa: novoContatoEmpresa.trim() || undefined,
+      cargo: novoContatoCargo.trim() || undefined,
+      whatsapp: novoContatoTelefone.trim() || undefined,
+      email: novoContatoEmail.trim() || undefined,
     });
-    fecharContatoPicker();
+    setNovoContatoSalvando(false);
+    setNovoContatoSucesso(true);
+    if (enviarDepois) {
+      setContatosSelecionadosPicker([criado]);
+      setContatoPickerEtapa("previa");
+      setContatoPickerAba("crm");
+    }
   }
 
   function salvarContatoVcf(contato: { nome: string; whatsapp?: string }) {
@@ -1549,9 +2188,26 @@ function ConversasPageInner() {
     URL.revokeObjectURL(url);
   }
 
-  const contatosFiltradosPicker = contatos.filter((c) =>
-    c.nome.toLowerCase().includes(buscaContatoPicker.trim().toLowerCase()),
+  const empresasPicker = Array.from(
+    new Set(contatos.map((c) => c.empresa).filter((v): v is string => Boolean(v))),
   );
+  const etiquetasPicker = Array.from(new Set(contatos.flatMap((c) => c.etiquetas ?? [])));
+  const responsaveisPicker = Array.from(new Set(contatos.map((c) => c.responsavel)));
+
+  const contatosFiltradosPicker = contatos.filter((c) => {
+    const termo = buscaContatoPicker.trim().toLowerCase();
+    const bateBusca =
+      !termo ||
+      c.nome.toLowerCase().includes(termo) ||
+      (c.whatsapp ?? "").toLowerCase().includes(termo) ||
+      (c.email ?? "").toLowerCase().includes(termo) ||
+      (c.empresa ?? "").toLowerCase().includes(termo);
+    const bateEmpresa = !filtroEmpresaPicker || c.empresa === filtroEmpresaPicker;
+    const bateEtiqueta = !filtroEtiquetaPicker || (c.etiquetas ?? []).includes(filtroEtiquetaPicker);
+    const bateResponsavel = !filtroResponsavelPicker || c.responsavel === filtroResponsavelPicker;
+    const bateFavorito = !somenteFavoritosPicker || c.favorito;
+    return bateBusca && bateEmpresa && bateEtiqueta && bateResponsavel && bateFavorito;
+  });
 
   function enviarLocalizacao(lat: number, lng: number, endereco?: string) {
     adicionarMensagem({
@@ -1862,6 +2518,26 @@ function ConversasPageInner() {
     document.addEventListener("keydown", aoTeclar);
     return () => document.removeEventListener("keydown", aoTeclar);
   }, [anexoAberto]);
+
+  useEffect(() => {
+    if (!configConversasAberto) return;
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === "Escape") pedirFecharConfig();
+    }
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configConversasAberto, configAlterado]);
+
+  useEffect(() => {
+    if (!gravandoAudio && !audioPreview) return;
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === "Escape") pedirDescartarGravacao();
+    }
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gravandoAudio, audioPreview]);
 
   function iniciarArrasteAnexo(e: React.MouseEvent) {
     const menuEl = (e.currentTarget as HTMLElement).closest(
@@ -2269,10 +2945,7 @@ function ConversasPageInner() {
                 className="wa-list-config"
                 aria-label="Configurações das conversas"
                 title="Configurações das conversas"
-                onClick={() => {
-                  setFundoEscopoForm("todas");
-                  setConfigConversasAberto(true);
-                }}
+                onClick={abrirConfigConversas}
               >
                 <IconConfiguracoes width={15} height={15} />
               </button>
@@ -2542,69 +3215,146 @@ function ConversasPageInner() {
             {arrastandoArquivo ? (
               <div className="wa-dragover-aviso">Solte o arquivo pra anexar</div>
             ) : null}
-            {aberta.mensagens.map((msg, i) => (
-              <div
-                className={`bubble ${msg.tipo}`}
-                key={i}
-                onDoubleClick={() => {
-                  if (msg.tipo === "in") curtirMensagem(i);
-                }}
-                style={msg.tipo === "in" ? { cursor: "pointer" } : undefined}
-                title={msg.tipo === "in" ? "Dois cliques pra curtir" : undefined}
-              >
-                {msg.tipo !== "system" ? (
+            {aberta.mensagens.map((msg, i) => {
+              const chave = `seed-${i}`;
+              if (mensagensApagadas.has(chave)) return null;
+              if (mensagensApagadasTodos.has(chave)) {
+                return (
+                  <div className="bubble sistema-apagada" key={i}>
+                    Esta mensagem foi apagada.
+                  </div>
+                );
+              }
+              return (
+                <div
+                  className={`bubble ${msg.tipo}`}
+                  key={i}
+                  onDoubleClick={() => {
+                    if (msg.tipo === "in") curtirMensagem(i);
+                  }}
+                  style={msg.tipo === "in" ? { cursor: "pointer" } : undefined}
+                  title={msg.tipo === "in" ? "Dois cliques pra curtir" : undefined}
+                >
+                  {msg.tipo !== "system" ? (
+                    <>
+                      <button
+                        type="button"
+                        className="wa-reply-btn"
+                        aria-label="Responder essa mensagem"
+                        title="Responder"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRespondendoMensagem({
+                            autor: msg.tipo === "in" ? aberta.nome : "Você",
+                            texto: msg.texto,
+                          });
+                          mensagemInputRef.current?.focus();
+                        }}
+                      >
+                        ↩
+                      </button>
+                      <button
+                        type="button"
+                        className="wa-msg-menu-btn"
+                        aria-label="Mais ações dessa mensagem"
+                        title="Mais ações"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          abrirMenuMensagem(chave, e.currentTarget.getBoundingClientRect());
+                        }}
+                      >
+                        ⋮
+                      </button>
+                    </>
+                  ) : null}
+                  {mensagensFavoritas.has(chave) ? (
+                    <span className="wa-msg-favorita" title="Favoritada">★</span>
+                  ) : null}
+                  {msg.texto}
+                  {msg.hora ? <span className="tm">{msg.hora}</span> : null}
+                  {mensagensCurtidas.has(i) ? (
+                    <span className="bubble-reacao">❤️</span>
+                  ) : null}
+                  {coracaoAnimando === i ? (
+                    <span className="bubble-coracao-anim">❤️</span>
+                  ) : null}
+                </div>
+              );
+            })}
+            {(mensagensExtraPorContato[aberta.nome] ?? []).map((msg, i) => {
+              const chave = msg.id ?? `extra-${i}`;
+              if (mensagensApagadas.has(chave)) return null;
+              if (mensagensApagadasTodos.has(chave)) {
+                return (
+                  <div className="bubble sistema-apagada" key={chave}>
+                    Esta mensagem foi apagada.
+                  </div>
+                );
+              }
+              return msg.localizacao ? (
+                <div
+                  key={chave}
+                  className={`bubble ${msg.tipo} bubble-localizacao`}
+                >
+                  {botaoMenuMensagem(chave)}
+                  {estrelaFavorita(chave)}
+                  <a
+                    className="bubble-localizacao-link-area"
+                    href={`https://www.google.com/maps?q=${msg.localizacao.lat},${msg.localizacao.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      className="bubble-localizacao-mapa"
+                      src={`https://staticmap.openstreetmap.de/staticmap.php?center=${msg.localizacao.lat},${msg.localizacao.lng}&zoom=15&size=280x140&maptype=mapnik&markers=${msg.localizacao.lat},${msg.localizacao.lng},red-pushpin`}
+                      alt="Mapa com a localização compartilhada"
+                    />
+                    <div className="bubble-localizacao-info">
+                      <span className="bubble-localizacao-titulo">📍 Localização compartilhada</span>
+                      {msg.localizacao.endereco ? (
+                        <span className="bubble-localizacao-endereco">{msg.localizacao.endereco}</span>
+                      ) : (
+                        <span className="bubble-localizacao-endereco">
+                          {msg.localizacao.lat.toFixed(5)}, {msg.localizacao.lng.toFixed(5)}
+                        </span>
+                      )}
+                      <span className="bubble-localizacao-link">Abrir no mapa →</span>
+                    </div>
+                  </a>
+                  <span className="tm">
+                    {msg.hora}
+                    {msg.tipo === "out" ? (
+                      <StatusMensagemIcone
+                        status={msg.status}
+                        onTentarNovamente={
+                          msg.status === "erro" && msg.id
+                            ? () => tentarNovamenteMensagem(msg.id!)
+                            : undefined
+                        }
+                      />
+                    ) : null}
+                  </span>
+                </div>
+              ) : msg.contatoCompartilhado ? (
+                <div className={`bubble ${msg.tipo} bubble-contato`} key={chave}>
+                  {botaoMenuMensagem(chave)}
+                  {estrelaFavorita(chave)}
                   <button
                     type="button"
-                    className="wa-reply-btn"
-                    aria-label="Responder essa mensagem"
-                    title="Responder"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setRespondendoMensagem({
-                        autor: msg.tipo === "in" ? aberta.nome : "Você",
-                        texto: msg.texto,
-                      });
-                      mensagemInputRef.current?.focus();
+                    className="bubble-contato-area"
+                    onClick={() => {
+                      setContatoDetalhePos(null);
+                      setContatoDetalheAberto(msg.contatoCompartilhado!);
                     }}
                   >
-                    ↩
+                    <span className="avatar">{msg.contatoCompartilhado.initials}</span>
+                    <div className="bubble-contato-info">
+                      <span className="bubble-contato-nome">{msg.contatoCompartilhado.nome}</span>
+                      {msg.contatoCompartilhado.whatsapp ? (
+                        <span className="bubble-contato-numero">{msg.contatoCompartilhado.whatsapp}</span>
+                      ) : null}
+                    </div>
                   </button>
-                ) : null}
-                {msg.texto}
-                {msg.hora ? <span className="tm">{msg.hora}</span> : null}
-                {mensagensCurtidas.has(i) ? (
-                  <span className="bubble-reacao">❤️</span>
-                ) : null}
-                {coracaoAnimando === i ? (
-                  <span className="bubble-coracao-anim">❤️</span>
-                ) : null}
-              </div>
-            ))}
-            {(mensagensExtraPorContato[aberta.nome] ?? []).map((msg, i) =>
-              msg.localizacao ? (
-                <a
-                  key={msg.id ?? `extra-${i}`}
-                  className={`bubble ${msg.tipo} bubble-localizacao`}
-                  href={`https://www.google.com/maps?q=${msg.localizacao.lat},${msg.localizacao.lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <img
-                    className="bubble-localizacao-mapa"
-                    src={`https://staticmap.openstreetmap.de/staticmap.php?center=${msg.localizacao.lat},${msg.localizacao.lng}&zoom=15&size=280x140&maptype=mapnik&markers=${msg.localizacao.lat},${msg.localizacao.lng},red-pushpin`}
-                    alt="Mapa com a localização compartilhada"
-                  />
-                  <div className="bubble-localizacao-info">
-                    <span className="bubble-localizacao-titulo">📍 Localização compartilhada</span>
-                    {msg.localizacao.endereco ? (
-                      <span className="bubble-localizacao-endereco">{msg.localizacao.endereco}</span>
-                    ) : (
-                      <span className="bubble-localizacao-endereco">
-                        {msg.localizacao.lat.toFixed(5)}, {msg.localizacao.lng.toFixed(5)}
-                      </span>
-                    )}
-                    <span className="bubble-localizacao-link">Abrir no mapa →</span>
-                  </div>
                   <span className="tm">
                     {msg.hora}
                     {msg.tipo === "out" ? (
@@ -2618,43 +3368,14 @@ function ConversasPageInner() {
                       />
                     ) : null}
                   </span>
-                </a>
-              ) : msg.contatoCompartilhado ? (
-                <button
-                  type="button"
-                  className={`bubble ${msg.tipo} bubble-contato`}
-                  key={msg.id ?? `extra-${i}`}
-                  onClick={() => {
-                    setContatoDetalhePos(null);
-                    setContatoDetalheAberto(msg.contatoCompartilhado!);
-                  }}
-                >
-                  <span className="avatar">{msg.contatoCompartilhado.initials}</span>
-                  <div className="bubble-contato-info">
-                    <span className="bubble-contato-nome">{msg.contatoCompartilhado.nome}</span>
-                    {msg.contatoCompartilhado.whatsapp ? (
-                      <span className="bubble-contato-numero">{msg.contatoCompartilhado.whatsapp}</span>
-                    ) : null}
-                  </div>
-                  <span className="tm">
-                    {msg.hora}
-                    {msg.tipo === "out" ? (
-                      <StatusMensagemIcone
-                        status={msg.status}
-                        onTentarNovamente={
-                          msg.status === "erro" && msg.id
-                            ? () => tentarNovamenteMensagem(msg.id!)
-                            : undefined
-                        }
-                      />
-                    ) : null}
-                  </span>
-                </button>
+                </div>
               ) : msg.imagens && msg.imagens.length > 0 ? (
                 <div
                   className={`bubble ${msg.tipo} bubble-midia`}
-                  key={msg.id ?? `extra-${i}`}
+                  key={chave}
                 >
+                  {botaoMenuMensagem(chave)}
+                  {estrelaFavorita(chave)}
                   {midiaLiberada("imagem", msg.id) ? (
                     <div
                       className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}
@@ -2705,8 +3426,10 @@ function ConversasPageInner() {
               ) : msg.video ? (
                 <div
                   className={`bubble ${msg.tipo} bubble-midia`}
-                  key={msg.id ?? `extra-${i}`}
+                  key={chave}
                 >
+                  {botaoMenuMensagem(chave)}
+                  {estrelaFavorita(chave)}
                   {midiaLiberada("video", msg.id) ? (
                     <video
                       className="bubble-video"
@@ -2745,8 +3468,10 @@ function ConversasPageInner() {
               ) : msg.documento ? (
                 <div
                   className={`bubble ${msg.tipo} bubble-documento`}
-                  key={msg.id ?? `extra-${i}`}
+                  key={chave}
                 >
+                  {botaoMenuMensagem(chave)}
+                  {estrelaFavorita(chave)}
                   <a
                     className="bubble-documento-cartao"
                     href={msg.documento.url}
@@ -2781,8 +3506,40 @@ function ConversasPageInner() {
                     ) : null}
                   </span>
                 </div>
+              ) : msg.audio ? (
+                <div
+                  className={`bubble ${msg.tipo} bubble-audio`}
+                  key={chave}
+                >
+                  {botaoMenuMensagem(chave)}
+                  {estrelaFavorita(chave)}
+                  <AudioBubblePlayer
+                    audio={msg.audio}
+                    tipo={msg.tipo === "in" ? "in" : "out"}
+                    status={msg.status}
+                    velocidadeInicial={config.velocidadeAudioPadrao}
+                    onMarcarReproduzido={
+                      msg.id ? () => marcarAudioComoReproduzidoDemo(msg.id!) : undefined
+                    }
+                  />
+                  <span className="tm">
+                    {msg.hora}
+                    {msg.tipo === "out" ? (
+                      <StatusMensagemIcone
+                        status={msg.status}
+                        onTentarNovamente={
+                          msg.status === "erro" && msg.id
+                            ? () => tentarNovamenteMensagem(msg.id!)
+                            : undefined
+                        }
+                      />
+                    ) : null}
+                  </span>
+                </div>
               ) : (
-                <div className={`bubble ${msg.tipo}`} key={msg.id ?? `extra-${i}`}>
+                <div className={`bubble ${msg.tipo}`} key={chave}>
+                  {botaoMenuMensagem(chave)}
+                  {estrelaFavorita(chave)}
                   {msg.respondendoA ? (
                     <span className="wa-citacao">
                       <span className="wa-citacao-autor">{msg.respondendoA.autor}</span>
@@ -2804,8 +3561,8 @@ function ConversasPageInner() {
                     ) : null}
                   </span>
                 </div>
-              ),
-            )}
+              );
+            })}
           </div>
           <div className="chat-input">
             <button
@@ -2838,12 +3595,129 @@ function ConversasPageInner() {
               }}
             >
               {gravandoAudio ? (
-                <div className="box chat-input-gravando">
-                  🔴 Gravando áudio · {Math.floor(audioSegundos / 60)}:
-                  {String(audioSegundos % 60).padStart(2, "0")}
+                <div className="box chat-audio-gravando">
+                  <span className={`chat-audio-rec-dot${audioPausado ? " pausado" : ""}`} aria-hidden="true" />
+                  <span className="chat-audio-duracao">
+                    {Math.floor(audioSegundos / 60)}:{String(audioSegundos % 60).padStart(2, "0")}
+                  </span>
+                  <div className="chat-audio-niveis" aria-hidden="true">
+                    {(audioNiveis.length > 0 ? audioNiveis : [0.1]).slice(-40).map((n, i) => (
+                      <span key={i} style={{ height: `${Math.max(10, n * 100)}%` }} />
+                    ))}
+                  </div>
+                  <span className="chat-audio-status">
+                    {audioPausado ? "Pausado" : "Gravando"}
+                  </span>
+                  <button
+                    type="button"
+                    className="chat-audio-btn chat-audio-btn-lixeira"
+                    aria-label="Excluir gravação"
+                    title="Excluir gravação"
+                    onClick={pedirDescartarGravacao}
+                  >
+                    🗑
+                  </button>
+                  <button
+                    type="button"
+                    className="chat-audio-btn"
+                    aria-label={audioPausado ? "Continuar gravação" : "Pausar gravação"}
+                    title={audioPausado ? "Continuar" : "Pausar"}
+                    onClick={pausarOuContinuarGravacao}
+                  >
+                    {audioPausado ? "▶" : "⏸"}
+                  </button>
+                  <button
+                    type="button"
+                    className="chat-audio-btn chat-audio-btn-concluir"
+                    aria-label="Concluir gravação"
+                    title="Concluir gravação"
+                    onClick={concluirGravacao}
+                  >
+                    ✓ Concluir
+                  </button>
+                </div>
+              ) : audioPreview ? (
+                <div className="box chat-audio-previa">
+                  <audio
+                    ref={audioPreviewElRef}
+                    src={audioPreview.url}
+                    onPlay={() => setAudioPreviewTocando(true)}
+                    onPause={() => setAudioPreviewTocando(false)}
+                    onTimeUpdate={(e) => {
+                      const el = e.currentTarget;
+                      if (audioPreview.duracao) {
+                        setAudioPreviewProgresso(el.currentTime / audioPreview.duracao);
+                      }
+                    }}
+                    onEnded={() => {
+                      setAudioPreviewTocando(false);
+                      setAudioPreviewProgresso(0);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="chat-audio-btn"
+                    aria-label={audioPreviewTocando ? "Pausar prévia" : "Ouvir prévia"}
+                    title={audioPreviewTocando ? "Pausar" : "Ouvir"}
+                    onClick={alternarPreviaAudio}
+                  >
+                    {audioPreviewTocando ? "⏸" : "▶"}
+                  </button>
+                  <div className="chat-audio-previa-meio">
+                    <AudioWaveformBars
+                      waveform={audioPreview.waveform}
+                      progresso={audioPreviewProgresso}
+                      onSeek={(fracao) => {
+                        const el = audioPreviewElRef.current;
+                        if (!el) return;
+                        el.currentTime = fracao * audioPreview.duracao;
+                        setAudioPreviewProgresso(fracao);
+                      }}
+                    />
+                    <span className="chat-audio-duracao">
+                      {Math.floor(audioPreview.duracao / 60)}:
+                      {String(Math.round(audioPreview.duracao) % 60).padStart(2, "0")}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="chat-audio-btn"
+                    aria-label="Gravar de novo"
+                    title="Gravar de novo"
+                    onClick={regravarAudio}
+                  >
+                    ↺
+                  </button>
+                  <button
+                    type="button"
+                    className="chat-audio-btn chat-audio-btn-lixeira"
+                    aria-label="Excluir áudio"
+                    title="Excluir áudio"
+                    onClick={pedirDescartarGravacao}
+                  >
+                    🗑
+                  </button>
+                  <button
+                    type="button"
+                    className="chat-audio-btn chat-audio-btn-enviar"
+                    aria-label="Enviar áudio"
+                    title="Enviar áudio"
+                    disabled={audioEnviando}
+                    onClick={enviarAudioGravado}
+                  >
+                    {audioEnviando ? "Enviando…" : "Enviar ➤"}
+                  </button>
                 </div>
               ) : (
                 <div className="chat-input-campo-coluna">
+                  {audioPermissaoErro ? (
+                    <div className="chat-audio-erro">
+                      <span>{audioPermissaoErro}</span>
+                      <button type="button" className="link" onClick={() => setAudioPermissaoErro(null)}>
+                        Dispensar
+                      </button>
+                    </div>
+                  ) : null}
                   {respondendoMensagem ? (
                     <div className="chat-respondendo">
                       <span className="chat-respondendo-barra" />
@@ -2930,19 +3804,21 @@ function ConversasPageInner() {
                 </div>
               ) : null}
             </div>
-            <button
-              type="button"
-              className="chat-emoji-btn"
-              aria-label="Emojis"
-              title="Emojis"
-              onClick={(e) => {
-                setEmojiRect(e.currentTarget.getBoundingClientRect());
-                setEmojiAberto((v) => !v);
-              }}
-            >
-              <IconEmoji strokeWidth={1.4} />
-            </button>
-            {!gravandoAudio && mensagemTexto.trim() ? (
+            {gravandoAudio || audioPreview ? null : (
+              <button
+                type="button"
+                className="chat-emoji-btn"
+                aria-label="Emojis"
+                title="Emojis"
+                onClick={(e) => {
+                  setEmojiRect(e.currentTarget.getBoundingClientRect());
+                  setEmojiAberto((v) => !v);
+                }}
+              >
+                <IconEmoji strokeWidth={1.4} />
+              </button>
+            )}
+            {gravandoAudio || audioPreview ? null : mensagemTexto.trim() ? (
               <button
                 type="button"
                 className="chat-mic-btn chat-send-btn"
@@ -2958,11 +3834,11 @@ function ConversasPageInner() {
             ) : (
               <button
                 type="button"
-                className={`chat-mic-btn${gravandoAudio ? " active" : ""}`}
-                aria-pressed={gravandoAudio}
-                aria-label={gravandoAudio ? "Parar e enviar áudio" : "Gravar áudio"}
-                title={gravandoAudio ? "Parar e enviar áudio" : "Gravar áudio"}
-                onClick={alternarGravacaoAudio}
+                className="chat-mic-btn"
+                aria-label="Gravar áudio"
+                title="Gravar áudio"
+                disabled={audioSolicitandoPermissao}
+                onClick={iniciarGravacaoAudio}
               >
                 <IconMic />
               </button>
@@ -3455,7 +4331,7 @@ function ConversasPageInner() {
                 className="wa-email-modal wa-contato-modal"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 4 }}>
                   <p className="n">Enviar documento</p>
                   <button
                     type="button"
@@ -3466,6 +4342,9 @@ function ConversasPageInner() {
                     ✕
                   </button>
                 </div>
+                <p className="hint" style={{ marginBottom: 14 }}>
+                  Escolha um documento já salvo no CRM ou envie um arquivo do computador.
+                </p>
                 <div className="wa-doc-origem-opcoes">
                   <button
                     type="button"
@@ -3810,307 +4689,683 @@ function ConversasPageInner() {
           ) : null}
 
           {configConversasAberto ? (
-            <div
-              className="form-preview-overlay"
-              onClick={() => setConfigConversasAberto(false)}
-            >
+            <div className="form-preview-overlay" onClick={pedirFecharConfig}>
               <div
-                className="wa-email-modal wa-config-modal"
+                className="wa-config-modal-shell"
                 onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Configurações das conversas"
               >
-                <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-                  <p className="n">Configurações das conversas</p>
+                <div className="wa-modal-header">
+                  <span className="wa-modal-header-icone" aria-hidden="true">
+                    <IconConfiguracoes width={18} height={18} />
+                  </span>
+                  <span className="wa-modal-header-textos">
+                    <p className="wa-modal-header-titulo">Configurações das conversas</p>
+                    <p className="wa-modal-header-desc">
+                      Personalize a aparência, a privacidade, os áudios e as notificações.
+                    </p>
+                  </span>
                   <button
                     type="button"
                     className="modal-close-btn"
                     aria-label="Fechar"
-                    onClick={() => setConfigConversasAberto(false)}
+                    onClick={pedirFecharConfig}
                   >
                     ✕
                   </button>
                 </div>
 
-                <div className="wa-config-secao">
-                  <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
-                    Aparência
-                  </p>
-
-                  <div
-                    className="wa-config-fundo-preview"
-                    style={estiloFundoConversa(
-                      fundoEscopoForm === "atual"
-                        ? fundoDaConversa(aberta.id)
-                        : config.fundo,
-                      config.fundoOpacidade,
-                    )}
-                  >
-                    <span className="bubble in" style={{ maxWidth: "70%" }}>
-                      Prévia do fundo
-                    </span>
-                  </div>
-
-                  <div className="filters-row" style={{ marginTop: 10, marginBottom: 6 }}>
+                <div className="wa-config-tabs" role="tablist" aria-label="Categorias de configuração">
+                  {(
+                    [
+                      { id: "aparencia", label: "Aparência" },
+                      { id: "privacidade", label: "Privacidade" },
+                      { id: "notificacoes", label: "Notificações" },
+                      { id: "preferencias", label: "Preferências" },
+                    ] as const
+                  ).map((t) => (
                     <button
                       type="button"
-                      className={`fchip${fundoEscopoForm === "todas" ? " active" : ""}`}
-                      onClick={() => setFundoEscopoForm("todas")}
+                      key={t.id}
+                      role="tab"
+                      aria-selected={configAba === t.id}
+                      className={`wa-config-tab${configAba === t.id ? " on" : ""}`}
+                      onClick={() => setConfigAba(t.id)}
                     >
-                      Aplicar em todas as conversas
+                      {t.label}
                     </button>
-                    <button
-                      type="button"
-                      className={`fchip${fundoEscopoForm === "atual" ? " active" : ""}`}
-                      onClick={() => setFundoEscopoForm("atual")}
-                    >
-                      Só nessa conversa
-                    </button>
-                  </div>
-
-                  <p className="hint" style={{ marginBottom: 6 }}>
-                    Fundos prontos
-                  </p>
-                  <div className="wa-config-fundos-grid">
-                    <button
-                      type="button"
-                      className="wa-config-fundo-opcao wa-config-fundo-padrao"
-                      onClick={() =>
-                        definirFundo({ tipo: "padrao" }, fundoEscopoForm, aberta.id)
-                      }
-                    >
-                      Padrão
-                    </button>
-                    {FUNDOS_PRESET.map((preset) => (
-                      <button
-                        type="button"
-                        key={preset.id}
-                        className="wa-config-fundo-opcao"
-                        style={{ background: preset.cor, color: "white" }}
-                        onClick={() =>
-                          definirFundo(
-                            { tipo: "preset", id: preset.id },
-                            fundoEscopoForm,
-                            aberta.id,
-                          )
-                        }
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="wa-config-fundo-acoes">
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      onClick={() => fundoUploadInputRef.current?.click()}
-                    >
-                      Enviar imagem do computador
-                    </button>
-                    <input
-                      ref={fundoUploadInputRef}
-                      type="file"
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) enviarImagemFundoDoComputador(f);
-                        e.target.value = "";
-                      }}
-                    />
-                    <label className="wa-config-cor-label">
-                      Cor sólida
-                      <input
-                        type="color"
-                        onChange={(e) =>
-                          definirFundo(
-                            { tipo: "cor", cor: e.target.value },
-                            fundoEscopoForm,
-                            aberta.id,
-                          )
-                        }
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      onClick={() =>
-                        definirFundo({ tipo: "padrao" }, fundoEscopoForm, aberta.id)
-                      }
-                    >
-                      Remover fundo
-                    </button>
-                  </div>
-
-                  <label className="hint" style={{ display: "block", marginTop: 10 }}>
-                    Intensidade do fundo
-                    <input
-                      type="range"
-                      min={20}
-                      max={100}
-                      value={config.fundoOpacidade}
-                      onChange={(e) =>
-                        atualizarConfig({ fundoOpacidade: Number(e.target.value) })
-                      }
-                      style={{ width: "100%", marginTop: 4 }}
-                    />
-                  </label>
+                  ))}
                 </div>
 
-                <div className="wa-config-secao">
-                  <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
-                    Confirmações de leitura
-                  </p>
-                  <div className="wa-config-radio-lista">
-                    {(
-                      [
-                        { valor: "todos", label: "Ativar para todos os contatos" },
-                        { valor: "salvos", label: "Ativar apenas para números salvos" },
-                        { valor: "desativado", label: "Desativar" },
-                      ] as const
-                    ).map((op) => (
-                      <button
-                        type="button"
-                        key={op.valor}
-                        className="vendor-row bare"
-                        aria-pressed={config.confirmacaoLeitura === op.valor}
-                        onClick={() => atualizarConfig({ confirmacaoLeitura: op.valor })}
+                <div className="wa-config-scroll">
+                  {configAba === "aparencia" ? (
+                    <div className="wa-config-secao">
+                      <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
+                        Fundo da conversa
+                      </p>
+
+                      <div
+                        className="wa-config-fundo-preview"
+                        style={estiloFundoConversa(
+                          fundoEscopoForm === "atual"
+                            ? (configRascunho.fundoPorConversa[aberta.id] ?? configRascunho.fundo)
+                            : configRascunho.fundo,
+                          configRascunho.fundoOpacidade,
+                        )}
                       >
-                        <span
-                          className={`radio${config.confirmacaoLeitura === op.valor ? " sel" : ""}`}
-                        />
-                        <span className="body">
-                          <span className="n" style={{ display: "block" }}>
-                            {op.label}
+                        <span className="bubble in">
+                          Oi! Vi o anúncio, ainda dá pra agendar essa semana?
+                          <span className="tm">09:14</span>
+                        </span>
+                        <span className="bubble out">
+                          Consigo sim, te encaixo quinta às 14h
+                          <span className="tm">
+                            09:16 <StatusMensagemIcone status="lido" />
                           </span>
                         </span>
-                      </button>
-                    ))}
-                  </div>
-                  <p className="hint" style={{ marginTop: 8 }}>
-                    As confirmações de leitura dependem das permissões e dos recursos
-                    disponibilizados pelo canal conectado.
-                  </p>
-                </div>
+                      </div>
 
-                <div className="wa-config-secao">
-                  <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
-                    Outras configurações
-                  </p>
-
-                  <div className="toggle-row">
-                    <span className="tl">Sons e notificações de novas mensagens</span>
-                    <Toggle
-                      key={`som-${notificacoesAtivas}`}
-                      defaultOn={notificacoesAtivas}
-                      label="Sons e notificações de novas mensagens"
-                      onToggle={() => alternarNotificacoes()}
-                    />
-                  </div>
-
-                  <div className="toggle-row">
-                    <span className="tl">Mostrar prévia das mensagens</span>
-                    <Toggle
-                      key={`previa-${config.previaMensagens}`}
-                      defaultOn={config.previaMensagens}
-                      label="Mostrar prévia das mensagens"
-                      onToggle={(v) => atualizarConfig({ previaMensagens: v })}
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label>Tamanho da fonte da conversa</label>
-                    <div className="filters-row">
-                      {(
-                        [
-                          { valor: "pequena", label: "Pequena" },
-                          { valor: "media", label: "Média" },
-                          { valor: "grande", label: "Grande" },
-                        ] as const
-                      ).map((op) => (
+                      <div className="filters-row" style={{ marginTop: 10, marginBottom: 6 }}>
                         <button
                           type="button"
-                          key={op.valor}
-                          className={`fchip${config.tamanhoFonte === op.valor ? " active" : ""}`}
-                          onClick={() => atualizarConfig({ tamanhoFonte: op.valor })}
+                          className={`fchip${fundoEscopoForm === "todas" ? " active" : ""}`}
+                          onClick={() => setFundoEscopoForm("todas")}
                         >
-                          {op.label}
+                          Aplicar em todas as conversas
                         </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="field">
-                    <label>Tema</label>
-                    <ThemeToggle />
-                  </div>
-
-                  <div className="toggle-row">
-                    <span className="tl">Enter envia a mensagem (desligado = Enter quebra linha)</span>
-                    <Toggle
-                      key={`enter-${config.teclaEnterEnvia}`}
-                      defaultOn={config.teclaEnterEnvia}
-                      label="Enter envia a mensagem"
-                      onToggle={(v) => atualizarConfig({ teclaEnterEnvia: v })}
-                    />
-                  </div>
-
-                  <div className="toggle-row">
-                    <span className="tl">Download automático de mídias</span>
-                    <Toggle
-                      key={`download-${config.downloadAutomatico}`}
-                      defaultOn={config.downloadAutomatico}
-                      label="Download automático de mídias"
-                      onToggle={(v) => atualizarConfig({ downloadAutomatico: v })}
-                    />
-                  </div>
-
-                  {config.downloadAutomatico ? (
-                    <div className="filters-row" style={{ marginTop: 4 }}>
-                      {["imagem", "video", "documento"].map((tipo) => (
                         <button
                           type="button"
-                          key={tipo}
-                          className={`fchip${config.tiposDownloadAutomatico.includes(tipo) ? " active" : ""}`}
+                          className={`fchip${fundoEscopoForm === "atual" ? " active" : ""}`}
+                          onClick={() => setFundoEscopoForm("atual")}
+                        >
+                          Só nessa conversa
+                        </button>
+                      </div>
+
+                      <p className="hint" style={{ marginBottom: 6 }}>
+                        Fundos prontos
+                      </p>
+                      <div className="wa-config-fundos-grid">
+                        {(
+                          [
+                            { id: "padrao", label: "Padrão", classe: "wa-config-fundo-padrao" },
+                            ...FUNDOS_PRESET.map((p) => ({
+                              id: p.id,
+                              label: p.label,
+                              classe: "",
+                              cor: p.cor,
+                            })),
+                          ] as { id: string; label: string; classe: string; cor?: string }[]
+                        ).map((op) => {
+                          const fundoAtual =
+                            fundoEscopoForm === "atual"
+                              ? (configRascunho.fundoPorConversa[aberta.id] ?? configRascunho.fundo)
+                              : configRascunho.fundo;
+                          const selecionado =
+                            op.id === "padrao"
+                              ? fundoAtual.tipo === "padrao"
+                              : fundoAtual.tipo === "preset" && fundoAtual.id === op.id;
+                          return (
+                            <button
+                              type="button"
+                              key={op.id}
+                              className={`wa-config-fundo-opcao ${op.classe}${selecionado ? " sel" : ""}`}
+                              style={op.cor ? { background: op.cor, color: "white" } : undefined}
+                              aria-pressed={selecionado}
+                              onClick={() =>
+                                setConfigRascunho((prev) =>
+                                  aplicarFundoRascunho(
+                                    prev,
+                                    op.id === "padrao" ? { tipo: "padrao" } : { tipo: "preset", id: op.id },
+                                    fundoEscopoForm,
+                                    aberta.id,
+                                  ),
+                                )
+                              }
+                            >
+                              <span className="wa-config-fundo-nome">{op.label}</span>
+                              {selecionado ? <span className="wa-config-fundo-check">✓</span> : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="wa-config-fundo-acoes">
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          onClick={() => fundoUploadInputRef.current?.click()}
+                        >
+                          Enviar imagem do computador
+                        </button>
+                        <input
+                          ref={fundoUploadInputRef}
+                          type="file"
+                          accept="image/*"
+                          style={{ display: "none" }}
+                          onChange={async (e) => {
+                            const f = e.target.files?.[0];
+                            e.target.value = "";
+                            if (!f) return;
+                            if (!f.type.startsWith("image/")) {
+                              setErroFundoImagem("Formato não aceito. Envie uma imagem JPG, PNG ou WebP.");
+                              return;
+                            }
+                            if (f.size > TAMANHO_MAX_IMAGEM) {
+                              setErroFundoImagem(
+                                `Imagem acima do limite permitido (máx. ${formatarTamanho(TAMANHO_MAX_IMAGEM)}).`,
+                              );
+                              return;
+                            }
+                            setErroFundoImagem(null);
+                            const url = await lerComoDataUrl(f);
+                            setConfigRascunho((prev) =>
+                              aplicarFundoRascunho(prev, { tipo: "imagem", url }, fundoEscopoForm, aberta.id),
+                            );
+                          }}
+                        />
+                        <label className="wa-config-cor-label">
+                          Cor sólida
+                          <input
+                            type="color"
+                            onChange={(e) =>
+                              setConfigRascunho((prev) =>
+                                aplicarFundoRascunho(
+                                  prev,
+                                  { tipo: "cor", cor: e.target.value },
+                                  fundoEscopoForm,
+                                  aberta.id,
+                                ),
+                              )
+                            }
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          className="btn ghost"
                           onClick={() =>
-                            atualizarConfig({
-                              tiposDownloadAutomatico:
-                                config.tiposDownloadAutomatico.includes(tipo)
-                                  ? config.tiposDownloadAutomatico.filter((t) => t !== tipo)
-                                  : [...config.tiposDownloadAutomatico, tipo],
-                            })
+                            setConfigRascunho((prev) =>
+                              aplicarFundoRascunho(prev, { tipo: "padrao" }, fundoEscopoForm, aberta.id),
+                            )
                           }
                         >
-                          {tipo === "imagem" ? "Imagens" : tipo === "video" ? "Vídeos" : "Documentos"}
+                          Remover fundo
                         </button>
+                      </div>
+                      {erroFundoImagem ? <p className="wa-campo-erro">{erroFundoImagem}</p> : null}
+
+                      <label className="hint" style={{ display: "block", marginTop: 10 }}>
+                        Intensidade do fundo · {configRascunho.fundoOpacidade}%
+                        <input
+                          type="range"
+                          min={20}
+                          max={100}
+                          value={configRascunho.fundoOpacidade}
+                          onChange={(e) =>
+                            setConfigRascunho((prev) => ({
+                              ...prev,
+                              fundoOpacidade: Number(e.target.value),
+                            }))
+                          }
+                          style={{ width: "100%", marginTop: 4 }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="link"
+                        onClick={() =>
+                          setConfigRascunho((prev) => ({ ...prev, fundoOpacidade: 100 }))
+                        }
+                      >
+                        Restaurar intensidade padrão
+                      </button>
+
+                      <div className="field" style={{ marginTop: 14 }}>
+                        <label>Tamanho da fonte da conversa</label>
+                        <div className="filters-row">
+                          {(
+                            [
+                              { valor: "pequena", label: "Pequena" },
+                              { valor: "media", label: "Média" },
+                              { valor: "grande", label: "Grande" },
+                            ] as const
+                          ).map((op) => (
+                            <button
+                              type="button"
+                              key={op.valor}
+                              className={`fchip${configRascunho.tamanhoFonte === op.valor ? " active" : ""}`}
+                              onClick={() =>
+                                setConfigRascunho((prev) => ({ ...prev, tamanhoFonte: op.valor }))
+                              }
+                            >
+                              {op.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="field">
+                        <label>Densidade das mensagens</label>
+                        <div className="filters-row">
+                          {(
+                            [
+                              { valor: "confortavel", label: "Confortável" },
+                              { valor: "compacta", label: "Compacta" },
+                            ] as const
+                          ).map((op) => (
+                            <button
+                              type="button"
+                              key={op.valor}
+                              className={`fchip${configRascunho.densidadeMensagens === op.valor ? " active" : ""}`}
+                              onClick={() =>
+                                setConfigRascunho((prev) => ({ ...prev, densidadeMensagens: op.valor }))
+                              }
+                            >
+                              {op.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="field">
+                        <label>Tema</label>
+                        <ThemeToggle />
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {configAba === "privacidade" ? (
+                    <div className="wa-config-secao">
+                      <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
+                        Confirmações de leitura
+                      </p>
+                      <div className="wa-config-radio-lista">
+                        {(
+                          [
+                            { valor: "todos", label: "Ativar para todos os contatos" },
+                            { valor: "salvos", label: "Ativar apenas para números salvos" },
+                            { valor: "desativado", label: "Desativar" },
+                          ] as const
+                        ).map((op) => (
+                          <button
+                            type="button"
+                            key={op.valor}
+                            className="vendor-row bare"
+                            aria-pressed={configRascunho.confirmacaoLeitura === op.valor}
+                            onClick={() =>
+                              setConfigRascunho((prev) => ({ ...prev, confirmacaoLeitura: op.valor }))
+                            }
+                          >
+                            <span
+                              className={`radio${configRascunho.confirmacaoLeitura === op.valor ? " sel" : ""}`}
+                            />
+                            <span className="body">
+                              <span className="n" style={{ display: "block" }}>
+                                {op.label}
+                              </span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                      <p className="hint" style={{ marginTop: 8, marginBottom: 14 }}>
+                        As confirmações de entrega, leitura e reprodução dependem dos dados
+                        fornecidos pelo canal conectado. O CRM não pode criar ou alterar
+                        confirmações que não tenham sido recebidas pela integração.
+                      </p>
+
+                      <p className="int-group-h" style={{ padding: 0, marginBottom: 4 }}>
+                        O que mostrar nas mensagens
+                      </p>
+                      {(
+                        [
+                          { chave: "mostrarEstadoEnvio", label: "Mostrar estado de envio" },
+                          { chave: "mostrarEstadoEntrega", label: "Mostrar estado de entrega" },
+                          { chave: "mostrarEstadoLeitura", label: "Mostrar estado de leitura" },
+                          {
+                            chave: "mostrarEstadoReproducao",
+                            label: "Mostrar estado de reprodução de áudio",
+                          },
+                          {
+                            chave: "mostrarUltimaAtividade",
+                            label: "Mostrar horário da última atividade",
+                          },
+                          {
+                            chave: "ocultarPreviaNotificacao",
+                            label: "Ocultar prévia da mensagem em notificações",
+                          },
+                        ] as const
+                      ).map((item) => (
+                        <div className="toggle-row" key={item.chave}>
+                          <span className="tl">{item.label}</span>
+                          <Toggle
+                            key={`${item.chave}-${configRascunho[item.chave]}`}
+                            defaultOn={configRascunho[item.chave]}
+                            label={item.label}
+                            onToggle={(v) =>
+                              setConfigRascunho((prev) => ({ ...prev, [item.chave]: v }))
+                            }
+                          />
+                        </div>
                       ))}
+                    </div>
+                  ) : null}
+
+                  {configAba === "notificacoes" ? (
+                    <div className="wa-config-secao">
+                      {(
+                        [
+                          {
+                            chave: "somNovaMensagem",
+                            label: "Som de nova mensagem",
+                            desc: "Toca um som curto sempre que uma mensagem chegar.",
+                          },
+                          {
+                            chave: "notificacaoNovaConversa",
+                            label: "Notificação de nova conversa",
+                            desc: "Avisa quando um contato inédito escreve pela primeira vez.",
+                          },
+                          {
+                            chave: "notificacaoMencao",
+                            label: "Notificação de menção",
+                            desc: "Avisa quando alguém da equipe te menciona numa anotação.",
+                          },
+                          {
+                            chave: "notificacaoTarefa",
+                            label: "Notificação de tarefa",
+                            desc: "Avisa quando uma tarefa vinculada à conversa vence.",
+                          },
+                          {
+                            chave: "previaMensagens",
+                            label: "Prévia da mensagem",
+                            desc: "Mostra o começo do texto na notificação.",
+                          },
+                          {
+                            chave: "silenciarArquivadas",
+                            label: "Silenciar conversas arquivadas",
+                            desc: "Não notifica novas mensagens em conversas arquivadas.",
+                          },
+                          {
+                            chave: "somSoSegundoPlano",
+                            label: "Som somente quando a aba estiver em segundo plano",
+                            desc: "Evita som repetido enquanto você está olhando a conversa.",
+                          },
+                        ] as const
+                      ).map((item) => (
+                        <div className="wa-config-notif-item" key={item.chave}>
+                          <span className="wa-config-notif-textos">
+                            <span className="wa-config-notif-titulo">{item.label}</span>
+                            <span className="wa-config-notif-desc">{item.desc}</span>
+                          </span>
+                          <Toggle
+                            key={`${item.chave}-${configRascunho[item.chave]}`}
+                            defaultOn={configRascunho[item.chave]}
+                            label={item.label}
+                            onToggle={(v) =>
+                              setConfigRascunho((prev) => ({ ...prev, [item.chave]: v }))
+                            }
+                          />
+                        </div>
+                      ))}
+
+                      <div className="wa-config-notif-item">
+                        <span className="wa-config-notif-textos">
+                          <span className="wa-config-notif-titulo">Notificação do navegador</span>
+                          <span className="wa-config-notif-desc">
+                            {configPermissaoNotificacao === "granted"
+                              ? "Permissão concedida — o navegador pode notificar."
+                              : configPermissaoNotificacao === "denied"
+                                ? "Bloqueada nas configurações do navegador. Libere o site pra ativar."
+                                : configPermissaoNotificacao === "indisponivel"
+                                  ? "Esse navegador não suporta notificações."
+                                  : "Precisa de permissão do navegador."}
+                          </span>
+                        </span>
+                        {configPermissaoNotificacao === "granted" ? (
+                          <Toggle
+                            key={`nav-${configRascunho.notificacaoNavegador}`}
+                            defaultOn={configRascunho.notificacaoNavegador}
+                            label="Notificação do navegador"
+                            onToggle={(v) =>
+                              setConfigRascunho((prev) => ({ ...prev, notificacaoNavegador: v }))
+                            }
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn ghost"
+                            disabled={configPermissaoNotificacao === "indisponivel"}
+                            onClick={pedirPermissaoNotificacaoNavegador}
+                          >
+                            {configPermissaoNotificacao === "denied" ? "Bloqueada" : "Permitir"}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="field" style={{ marginTop: 10 }}>
+                        <label>Som das notificações</label>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <select
+                            className="input"
+                            style={{ flex: 1, cursor: "pointer" }}
+                            value={configRascunho.somEscolhido}
+                            onChange={(e) =>
+                              setConfigRascunho((prev) => ({ ...prev, somEscolhido: e.target.value }))
+                            }
+                          >
+                            {SONS_DISPONIVEIS.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.label}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="btn ghost"
+                            disabled={configRascunho.somEscolhido === "nenhum"}
+                            onClick={testarSomNotificacao}
+                          >
+                            🔊 Testar som
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {configAba === "preferencias" ? (
+                    <div className="wa-config-secao">
+                      <div className="field">
+                        <label>Tecla Enter</label>
+                        <div className="wa-config-radio-lista">
+                          <button
+                            type="button"
+                            className="vendor-row bare"
+                            aria-pressed={configRascunho.teclaEnterEnvia}
+                            onClick={() =>
+                              setConfigRascunho((prev) => ({ ...prev, teclaEnterEnvia: true }))
+                            }
+                          >
+                            <span className={`radio${configRascunho.teclaEnterEnvia ? " sel" : ""}`} />
+                            <span className="body">
+                              <span className="n" style={{ display: "block" }}>
+                                Enter envia · Shift + Enter quebra a linha
+                              </span>
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className="vendor-row bare"
+                            aria-pressed={!configRascunho.teclaEnterEnvia}
+                            onClick={() =>
+                              setConfigRascunho((prev) => ({ ...prev, teclaEnterEnvia: false }))
+                            }
+                          >
+                            <span className={`radio${!configRascunho.teclaEnterEnvia ? " sel" : ""}`} />
+                            <span className="body">
+                              <span className="n" style={{ display: "block" }}>
+                                Enter quebra a linha · Ctrl/Cmd + Enter envia
+                              </span>
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="toggle-row">
+                        <span className="tl">Download automático de mídias</span>
+                        <Toggle
+                          key={`download-${configRascunho.downloadAutomatico}`}
+                          defaultOn={configRascunho.downloadAutomatico}
+                          label="Download automático de mídias"
+                          onToggle={(v) =>
+                            setConfigRascunho((prev) => ({ ...prev, downloadAutomatico: v }))
+                          }
+                        />
+                      </div>
+                      {configRascunho.downloadAutomatico ? (
+                        <div className="filters-row" style={{ marginTop: 4, marginBottom: 10 }}>
+                          {["imagem", "video", "audio", "documento"].map((tipo) => (
+                            <button
+                              type="button"
+                              key={tipo}
+                              className={`fchip${configRascunho.tiposDownloadAutomatico.includes(tipo) ? " active" : ""}`}
+                              onClick={() =>
+                                setConfigRascunho((prev) => ({
+                                  ...prev,
+                                  tiposDownloadAutomatico: prev.tiposDownloadAutomatico.includes(tipo)
+                                    ? prev.tiposDownloadAutomatico.filter((t) => t !== tipo)
+                                    : [...prev.tiposDownloadAutomatico, tipo],
+                                }))
+                              }
+                            >
+                              {tipo === "imagem"
+                                ? "Imagens"
+                                : tipo === "video"
+                                  ? "Vídeos"
+                                  : tipo === "audio"
+                                    ? "Áudios"
+                                    : "Documentos"}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <div className="toggle-row">
+                        <span className="tl">Prévia de links</span>
+                        <Toggle
+                          key={`links-${configRascunho.previaLinks}`}
+                          defaultOn={configRascunho.previaLinks}
+                          label="Prévia de links"
+                          onToggle={(v) => setConfigRascunho((prev) => ({ ...prev, previaLinks: v }))}
+                        />
+                      </div>
+                      <div className="toggle-row">
+                        <span className="tl">Reprodução automática de vídeos</span>
+                        <Toggle
+                          key={`autoplay-${configRascunho.autoplayVideos}`}
+                          defaultOn={configRascunho.autoplayVideos}
+                          label="Reprodução automática de vídeos"
+                          onToggle={(v) => setConfigRascunho((prev) => ({ ...prev, autoplayVideos: v }))}
+                        />
+                      </div>
+                      <div className="toggle-row">
+                        <span className="tl">Manter painel do contato aberto ao trocar de conversa</span>
+                        <Toggle
+                          key={`painel-${configRascunho.manterPainelContatoAberto}`}
+                          defaultOn={configRascunho.manterPainelContatoAberto}
+                          label="Manter painel do contato aberto"
+                          onToggle={(v) =>
+                            setConfigRascunho((prev) => ({ ...prev, manterPainelContatoAberto: v }))
+                          }
+                        />
+                      </div>
+
+                      <div className="field">
+                        <label>Velocidade padrão dos áudios</label>
+                        <div className="filters-row">
+                          {([1, 1.5, 2] as const).map((v) => (
+                            <button
+                              type="button"
+                              key={v}
+                              className={`fchip${configRascunho.velocidadeAudioPadrao === v ? " active" : ""}`}
+                              onClick={() =>
+                                setConfigRascunho((prev) => ({ ...prev, velocidadeAudioPadrao: v }))
+                              }
+                            >
+                              {v}x
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   ) : null}
                 </div>
 
-                <div className="wa-contato-modal-rodape">
-                  <button type="button" className="btn ghost" onClick={restaurarPadrao}>
-                    Restaurar tudo ao padrão
-                  </button>
-                  <button
-                    type="button"
-                    className="btn primary"
-                    onClick={() => setConfigConversasAberto(false)}
-                  >
-                    Concluído
-                  </button>
-                </div>
+                {configConfirmarFechar ? (
+                  <div className="wa-config-confirmar-fechar">
+                    <p>Existem alterações não salvas. O que deseja fazer?</p>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        onClick={() => setConfigConfirmarFechar(false)}
+                      >
+                        Continuar editando
+                      </button>
+                      <button type="button" className="btn ghost" onClick={descartarEFecharConfig}>
+                        Descartar alterações
+                      </button>
+                      <button type="button" className="btn primary" onClick={salvarConfigConversas}>
+                        Salvar e fechar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="wa-modal-footer">
+                    <button type="button" className="btn ghost" onClick={pedirFecharConfig}>
+                      Cancelar
+                    </button>
+                    <button type="button" className="btn ghost" onClick={restaurarPadraoRascunho}>
+                      Restaurar padrões
+                    </button>
+                    <button
+                      type="button"
+                      className="btn primary"
+                      disabled={!configAlterado || configStatusSalvar === "salvando"}
+                      onClick={salvarConfigConversas}
+                    >
+                      {configStatusSalvar === "salvando"
+                        ? "Salvando…"
+                        : configStatusSalvar === "sucesso"
+                          ? "✓ Salvo"
+                          : configStatusSalvar === "erro"
+                            ? "Tentar novamente"
+                            : "Salvar alterações"}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ) : null}
 
           {contatoPickerAberto ? (
             <div className="form-preview-overlay" onClick={fecharContatoPicker}>
-              <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span aria-hidden="true">👤➕</span>
-                    <p className="n">Enviar Contato</p>
-                  </div>
+              <div
+                className="wa-config-modal-shell wa-contato-picker-shell"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Enviar contato"
+              >
+                <div className="wa-modal-header">
+                  <span className="wa-modal-header-icone" aria-hidden="true">
+                    <IconContatos width={18} height={18} />
+                  </span>
+                  <span className="wa-modal-header-textos">
+                    <p className="wa-modal-header-titulo">Enviar contato</p>
+                    <p className="wa-modal-header-desc">
+                      Escolha um contato do CRM ou crie um novo para compartilhar nesta
+                      conversa.
+                    </p>
+                  </span>
                   <button
                     type="button"
                     className="modal-close-btn"
@@ -4121,85 +5376,699 @@ function ConversasPageInner() {
                   </button>
                 </div>
 
-                {contatoSelecionado ? (
-                  <div className="wa-contato-selecionado">
-                    <span className="avatar">{contatoSelecionado.initials}</span>
-                    <span className="wa-contato-selecionado-info">
-                      <span className="n" style={{ display: "block" }}>{contatoSelecionado.nome}</span>
-                      {contatoSelecionado.whatsapp ? (
-                        <span className="wa-contato-picker-numero">{contatoSelecionado.whatsapp}</span>
-                      ) : null}
-                    </span>
-                    <button
-                      type="button"
-                      className="modal-close-btn"
-                      aria-label="Remover seleção"
-                      onClick={() => setContatoSelecionado(null)}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ position: "relative" }}>
-                    <input
-                      autoFocus
-                      className="input"
-                      style={{ width: "100%" }}
-                      placeholder="Buscar lead por nome ou telefone…"
-                      value={buscaContatoPicker}
-                      onChange={(e) => {
-                        setBuscaContatoPicker(e.target.value);
-                        setContatoSugestoesAberta(true);
-                      }}
-                      onFocus={() => setContatoSugestoesAberta(true)}
-                    />
-                    {contatoSugestoesAberta && buscaContatoPicker.trim() ? (
-                      <div className="wa-contato-sugestoes">
-                        {contatosFiltradosPicker.length === 0 ? (
-                          <p className="hint" style={{ padding: "10px 12px" }}>
-                            Nenhum contato encontrado.
-                          </p>
-                        ) : (
-                          contatosFiltradosPicker.map((c) => (
+                {contatoPickerEtapa === "lista" ? (
+                  <>
+                    <div className="wa-config-tabs" role="tablist" aria-label="Origem do contato">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={contatoPickerAba === "crm"}
+                        className={`wa-config-tab${contatoPickerAba === "crm" ? " on" : ""}`}
+                        onClick={() => setContatoPickerAba("crm")}
+                      >
+                        Contatos do CRM
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={contatoPickerAba === "criar"}
+                        className={`wa-config-tab${contatoPickerAba === "criar" ? " on" : ""}`}
+                        onClick={() => setContatoPickerAba("criar")}
+                      >
+                        Criar contato
+                      </button>
+                    </div>
+
+                    <div className="wa-config-scroll">
+                      {contatoPickerAba === "crm" ? (
+                        <>
+                          <input
+                            autoFocus
+                            className="input"
+                            style={{ width: "100%" }}
+                            placeholder="Buscar por nome, telefone, e-mail ou empresa…"
+                            value={buscaContatoPicker}
+                            onChange={(e) => setBuscaContatoPicker(e.target.value)}
+                          />
+                          <div className="filters-row" style={{ marginTop: 10, marginBottom: 4 }}>
+                            <select
+                              className="input"
+                              style={{ width: "auto", cursor: "pointer" }}
+                              value={filtroEmpresaPicker}
+                              onChange={(e) => setFiltroEmpresaPicker(e.target.value)}
+                            >
+                              <option value="">Empresa: todas</option>
+                              {empresasPicker.map((emp) => (
+                                <option key={emp} value={emp}>
+                                  {emp}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              className="input"
+                              style={{ width: "auto", cursor: "pointer" }}
+                              value={filtroEtiquetaPicker}
+                              onChange={(e) => setFiltroEtiquetaPicker(e.target.value)}
+                            >
+                              <option value="">Etiqueta: todas</option>
+                              {etiquetasPicker.map((et) => (
+                                <option key={et} value={et}>
+                                  {et}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              className="input"
+                              style={{ width: "auto", cursor: "pointer" }}
+                              value={filtroResponsavelPicker}
+                              onChange={(e) => setFiltroResponsavelPicker(e.target.value)}
+                            >
+                              <option value="">Responsável: todos</option>
+                              {responsaveisPicker.map((r) => (
+                                <option key={r} value={r}>
+                                  {r}
+                                </option>
+                              ))}
+                            </select>
                             <button
                               type="button"
-                              key={c.nome}
-                              className="dropdown-item wa-contato-picker-item"
-                              style={{ width: "100%", textAlign: "left" }}
-                              onClick={() =>
-                                escolherContatoPicker({
-                                  nome: c.nome,
-                                  initials: c.initials,
-                                  whatsapp: c.whatsapp,
-                                })
-                              }
+                              className={`fchip${somenteFavoritosPicker ? " active" : ""}`}
+                              onClick={() => setSomenteFavoritosPicker((v) => !v)}
                             >
-                              <span className="avatar">{c.initials}</span>
-                              <span>
-                                <span className="n" style={{ display: "block" }}>{c.nome}</span>
-                                {c.whatsapp ? (
-                                  <span className="wa-contato-picker-numero">📞 {c.whatsapp}</span>
-                                ) : null}
-                              </span>
+                              ★ Favoritos
                             </button>
-                          ))
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                )}
+                          </div>
 
-                <div className="section-foot wa-contato-modal-rodape">
-                  <button type="button" className="btn ghost" onClick={fecharContatoPicker}>
+                          {contatosSelecionadosPicker.length > 0 ? (
+                            <div className="wa-contato-picker-tray">
+                              <div className="wa-contato-picker-tray-topo">
+                                <span>{contatosSelecionadosPicker.length} selecionado(s)</span>
+                                <button
+                                  type="button"
+                                  className="link"
+                                  onClick={() => setContatosSelecionadosPicker([])}
+                                >
+                                  Limpar seleção
+                                </button>
+                              </div>
+                              <div className="wa-contato-picker-tray-lista">
+                                {contatosSelecionadosPicker.map((c) => (
+                                  <span className="wa-contato-picker-tray-item" key={c.id}>
+                                    <span className="avatar">{c.initials}</span>
+                                    {c.nome}
+                                    <button
+                                      type="button"
+                                      aria-label={`Remover ${c.nome} da seleção`}
+                                      onClick={() => removerSelecaoContatoPicker(c.id)}
+                                    >
+                                      ✕
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
+
+                          <div className="wa-contato-picker-lista" role="listbox" aria-multiselectable="true">
+                            {contatosFiltradosPicker.length === 0 ? (
+                              <p className="hint" style={{ padding: "16px 4px" }}>
+                                Nenhum contato encontrado com esses filtros.
+                              </p>
+                            ) : (
+                              contatosFiltradosPicker.map((c) => {
+                                const selecionado = contatosSelecionadosPicker.some((s) => s.id === c.id);
+                                return (
+                                  <div
+                                    key={c.id}
+                                    role="option"
+                                    aria-selected={selecionado}
+                                    tabIndex={0}
+                                    className={`wa-contato-picker-card${selecionado ? " sel" : ""}`}
+                                    onClick={() => alternarSelecaoContatoPicker(c)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        alternarSelecaoContatoPicker(c);
+                                      }
+                                    }}
+                                  >
+                                    <span className="avatar">{c.initials}</span>
+                                    <span className="wa-contato-picker-card-info">
+                                      <span className="wa-contato-picker-card-nome">
+                                        {c.nome}
+                                        {c.favorito ? " ★" : ""}
+                                      </span>
+                                      {c.empresa || c.cargo ? (
+                                        <span className="wa-contato-picker-card-linha">
+                                          {[c.empresa, c.cargo].filter(Boolean).join(" · ")}
+                                        </span>
+                                      ) : null}
+                                      {c.whatsapp ? (
+                                        <span className="wa-contato-picker-card-linha">📞 {c.whatsapp}</span>
+                                      ) : null}
+                                      {c.email ? (
+                                        <span className="wa-contato-picker-card-linha">✉ {c.email}</span>
+                                      ) : null}
+                                      {(c.etiquetas ?? []).length > 0 ? (
+                                        <span className="wa-contato-picker-card-tags">
+                                          {(c.etiquetas ?? []).map((et) => (
+                                            <span className="tag" key={et}>
+                                              {et}
+                                            </span>
+                                          ))}
+                                        </span>
+                                      ) : null}
+                                    </span>
+                                    <span className="wa-contato-picker-check" aria-hidden="true">
+                                      {selecionado ? "✓" : ""}
+                                    </span>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="field">
+                            <label>Nome *</label>
+                            <input
+                              className="input"
+                              style={{ width: "100%" }}
+                              value={novoContatoNome}
+                              onChange={(e) => setNovoContatoNome(e.target.value)}
+                              placeholder="Nome"
+                            />
+                          </div>
+                          <div className="field">
+                            <label>Sobrenome</label>
+                            <input
+                              className="input"
+                              style={{ width: "100%" }}
+                              value={novoContatoSobrenome}
+                              onChange={(e) => setNovoContatoSobrenome(e.target.value)}
+                            />
+                          </div>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <div className="field" style={{ flex: 1 }}>
+                              <label>Empresa</label>
+                              <input
+                                className="input"
+                                style={{ width: "100%" }}
+                                value={novoContatoEmpresa}
+                                onChange={(e) => setNovoContatoEmpresa(e.target.value)}
+                              />
+                            </div>
+                            <div className="field" style={{ flex: 1 }}>
+                              <label>Cargo</label>
+                              <input
+                                className="input"
+                                style={{ width: "100%" }}
+                                value={novoContatoCargo}
+                                onChange={(e) => setNovoContatoCargo(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="field">
+                            <label>Telefone</label>
+                            <input
+                              className={`input${novoContatoErros.telefone ? " wa-input-invalido" : ""}`}
+                              style={{ width: "100%" }}
+                              value={novoContatoTelefone}
+                              onChange={(e) => setNovoContatoTelefone(e.target.value)}
+                              placeholder="(00) 90000-0000"
+                            />
+                            {novoContatoErros.telefone ? (
+                              <span className="wa-campo-erro">{novoContatoErros.telefone}</span>
+                            ) : null}
+                          </div>
+                          <div className="field">
+                            <label>E-mail</label>
+                            <input
+                              className={`input${novoContatoErros.email ? " wa-input-invalido" : ""}`}
+                              style={{ width: "100%" }}
+                              type="email"
+                              value={novoContatoEmail}
+                              onChange={(e) => setNovoContatoEmail(e.target.value)}
+                              placeholder="nome@empresa.com"
+                            />
+                            {novoContatoErros.email ? (
+                              <span className="wa-campo-erro">{novoContatoErros.email}</span>
+                            ) : null}
+                          </div>
+                          <div className="field">
+                            <label>Observação</label>
+                            <textarea
+                              className="input"
+                              style={{ width: "100%", minHeight: 60, resize: "vertical" }}
+                              value={novoContatoObservacao}
+                              onChange={(e) => setNovoContatoObservacao(e.target.value)}
+                            />
+                          </div>
+                          {novoContatoSucesso ? (
+                            <p className="wa-status-inline wa-status-sucesso">
+                              ✓ Contato salvo no CRM
+                            </p>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+
+                    <div className="wa-modal-footer">
+                      <button type="button" className="btn ghost" onClick={fecharContatoPicker}>
+                        Cancelar
+                      </button>
+                      {contatoPickerAba === "crm" ? (
+                        <button
+                          type="button"
+                          className="btn primary"
+                          disabled={contatosSelecionadosPicker.length === 0}
+                          onClick={() => setContatoPickerEtapa("previa")}
+                        >
+                          Ver prévia e enviar{" "}
+                          {contatosSelecionadosPicker.length > 0
+                            ? `(${contatosSelecionadosPicker.length})`
+                            : ""}
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className="btn ghost"
+                            disabled={!novoContatoNome.trim() || novoContatoSalvando}
+                            onClick={() => salvarNovoContato(false)}
+                          >
+                            {novoContatoSalvando ? "Salvando…" : "Salvar no CRM"}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn primary"
+                            disabled={!novoContatoNome.trim() || novoContatoSalvando}
+                            onClick={() => salvarNovoContato(true)}
+                          >
+                            {novoContatoSalvando ? "Salvando…" : "Salvar e enviar"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="wa-config-scroll">
+                      <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
+                        Prévia — o que vai ser compartilhado
+                      </p>
+                      <div className="wa-contato-previa-lista">
+                        {contatosSelecionadosPicker.map((c) => (
+                          <div className="wa-contato-previa-card" key={c.id}>
+                            <span className="avatar">{c.initials}</span>
+                            <span className="wa-contato-previa-info">
+                              <span className="n" style={{ display: "block" }}>
+                                {c.nome}
+                              </span>
+                              {previaCampos.empresa && c.empresa ? <span>{c.empresa}</span> : null}
+                              {previaCampos.cargo && c.cargo ? <span>{c.cargo}</span> : null}
+                              {previaCampos.telefonePrincipal && c.whatsapp ? (
+                                <span>📞 {c.whatsapp}</span>
+                              ) : null}
+                              {previaCampos.telefoneAlternativo && c.telefoneFixo ? (
+                                <span>☎ {c.telefoneFixo}</span>
+                              ) : null}
+                              {previaCampos.email && c.email ? <span>✉ {c.email}</span> : null}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <p className="int-group-h" style={{ padding: 0, margin: "14px 0 8px" }}>
+                        O que compartilhar
+                      </p>
+                      {(
+                        [
+                          { chave: "telefonePrincipal", label: "Telefone principal" },
+                          { chave: "telefoneAlternativo", label: "Telefone alternativo" },
+                          { chave: "email", label: "E-mail" },
+                          { chave: "empresa", label: "Empresa" },
+                          { chave: "cargo", label: "Cargo" },
+                        ] as const
+                      ).map((campo) => (
+                        <div className="toggle-row" key={campo.chave}>
+                          <span className="tl">{campo.label}</span>
+                          <Toggle
+                            key={`${campo.chave}-${previaCampos[campo.chave]}`}
+                            defaultOn={previaCampos[campo.chave]}
+                            label={campo.label}
+                            onToggle={(v) =>
+                              setPreviaCampos((prev) => ({ ...prev, [campo.chave]: v }))
+                            }
+                          />
+                        </div>
+                      ))}
+                      {contatoPickerErro ? (
+                        <p className="wa-campo-erro" style={{ marginTop: 10 }}>
+                          {contatoPickerErro}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="wa-modal-footer">
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        onClick={() => setContatoPickerEtapa("lista")}
+                        disabled={contatoPickerEnviando}
+                      >
+                        Voltar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn primary"
+                        disabled={contatoPickerEnviando}
+                        onClick={confirmarEnvioContatos}
+                      >
+                        {contatoPickerEnviando ? "Enviando…" : "Enviar contato"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {msgMenuAberto ? (
+            (() => {
+              const msg = encontrarMensagemPorChave(msgMenuAberto.chave);
+              if (!msg) return null;
+              const chave = msgMenuAberto.chave;
+              const temAnexo = Boolean(msg.imagens?.length || msg.video || msg.documento || msg.audio);
+              return (
+                <FloatingDropdown
+                  anchorRect={msgMenuAberto.rect}
+                  align="right"
+                  width={220}
+                  onClose={() => setMsgMenuAberto(null)}
+                >
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => {
+                      setMsgMenuAberto(null);
+                      setRespondendoMensagem({
+                        autor: msg.tipo === "in" ? aberta.nome : "Você",
+                        texto: msg.texto || "Anexo",
+                      });
+                      mensagemInputRef.current?.focus();
+                    }}
+                  >
+                    <span className="n">↩ Responder</span>
+                  </button>
+                  {msg.texto ? (
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => copiarMensagem(msg.texto)}
+                    >
+                      <span className="n">📋 Copiar</span>
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={(e) => {
+                      setMsgMenuAberto(null);
+                      setEncaminharAberto({ chave, rect: e.currentTarget.getBoundingClientRect(), msg });
+                    }}
+                  >
+                    <span className="n">➤ Encaminhar</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => alternarFavoritoMensagem(chave)}
+                  >
+                    <span className="n">
+                      {mensagensFavoritas.has(chave) ? "★ Remover dos favoritos" : "☆ Favoritar"}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => abrirDetalhesMensagem(msg, chave)}
+                  >
+                    <span className="n">ⓘ Ver detalhes</span>
+                  </button>
+                  {temAnexo ? (
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => baixarAnexoMensagem(msg)}
+                    >
+                      <span className="n">⬇ Baixar</span>
+                    </button>
+                  ) : null}
+                  <div className="dropdown-sep" />
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => pedirApagar(chave, msg, "para_mim")}
+                  >
+                    <span className="n">🗑 Apagar pra mim</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => pedirApagar(chave, msg, "para_todos")}
+                  >
+                    <span className="n">🗑 Apagar pra todos</span>
+                  </button>
+                </FloatingDropdown>
+              );
+            })()
+          ) : null}
+
+          {encaminharAberto ? (
+            <FloatingDropdown
+              anchorRect={encaminharAberto.rect}
+              align="right"
+              width={260}
+              onClose={() => setEncaminharAberto(null)}
+            >
+              <div className="wa-encaminhar-lista">
+                <p className="hint" style={{ padding: "6px 10px" }}>
+                  Encaminhar pra…
+                </p>
+                {conversas
+                  .filter((c) => c.nome !== aberta.nome)
+                  .map((c) => (
+                    <button
+                      type="button"
+                      key={c.id}
+                      className="wa-encaminhar-item"
+                      onClick={() => encaminharPara(c.nome, encaminharAberto.msg)}
+                    >
+                      <span className="avatar">{c.initials}</span>
+                      <span>{c.nome}</span>
+                    </button>
+                  ))}
+              </div>
+            </FloatingDropdown>
+          ) : null}
+
+          {confirmarApagar ? (
+            <div className="form-preview-overlay" onClick={() => setConfirmarApagar(null)}>
+              <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
+                {confirmarApagar.tipoExclusao === "para_mim" ? (
+                  <>
+                    <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
+                      <p className="n">Apagar mensagem</p>
+                    </div>
+                    <p className="hint" style={{ marginBottom: 16 }}>
+                      Apagar esta mensagem somente para você? As outras pessoas ainda poderão
+                      visualizá-la.
+                    </p>
+                    <div className="section-foot">
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        style={{ flex: 1 }}
+                        onClick={() => setConfirmarApagar(null)}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn primary"
+                        style={{ flex: 1 }}
+                        onClick={confirmarApagarParaMim}
+                      >
+                        Apagar pra mim
+                      </button>
+                    </div>
+                  </>
+                ) : !confirmarApagar.elegivel ? (
+                  <>
+                    <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
+                      <p className="n">Não é possível apagar pra todos</p>
+                    </div>
+                    <p className="hint" style={{ marginBottom: 16 }}>
+                      {confirmarApagar.motivoIndisponivel}
+                    </p>
+                    <div className="section-foot">
+                      <button
+                        type="button"
+                        className="btn primary block"
+                        onClick={() => setConfirmarApagar(null)}
+                      >
+                        Entendi
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
+                      <p className="n">Apagar pra todos</p>
+                    </div>
+                    <p className="hint" style={{ marginBottom: 16 }}>
+                      Deseja solicitar a exclusão desta mensagem para todos? Essa ação depende
+                      das regras e do prazo permitido pelo canal conectado.
+                    </p>
+                    {erroApagarChave === confirmarApagar.chave ? (
+                      <p className="wa-campo-erro" style={{ marginBottom: 10 }}>
+                        Não deu pra apagar agora — o canal não confirmou a exclusão. Tente de novo.
+                      </p>
+                    ) : null}
+                    <div className="section-foot">
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        style={{ flex: 1 }}
+                        onClick={() => setConfirmarApagar(null)}
+                        disabled={apagandoChave === confirmarApagar.chave}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn primary"
+                        style={{ flex: 1 }}
+                        onClick={confirmarApagarParaTodos}
+                        disabled={apagandoChave === confirmarApagar.chave}
+                      >
+                        {apagandoChave === confirmarApagar.chave ? "Apagando…" : "Apagar pra todos"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {detalhesMensagem ? (
+            <div className="form-preview-overlay" onClick={() => setDetalhesMensagem(null)}>
+              <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 14 }}>
+                  <p className="n">Detalhes da mensagem</p>
+                  <button
+                    type="button"
+                    className="modal-close-btn"
+                    aria-label="Fechar"
+                    onClick={() => setDetalhesMensagem(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="wa-msg-detalhes-lista">
+                  <div className="wa-msg-detalhes-item">
+                    <span className="rotulo">Identificador</span>
+                    <span className="valor">{detalhesMensagem.msg.id ?? detalhesMensagem.chave}</span>
+                  </div>
+                  <div className="wa-msg-detalhes-item">
+                    <span className="rotulo">Canal</span>
+                    <span className="valor">{aberta.canal}</span>
+                  </div>
+                  {detalhesMensagem.msg.criadoEm ? (
+                    <div className="wa-msg-detalhes-item">
+                      <span className="rotulo">Criada</span>
+                      <span className="valor">
+                        {new Date(detalhesMensagem.msg.criadoEm).toLocaleString("pt-BR")}
+                      </span>
+                    </div>
+                  ) : null}
+                  {detalhesMensagem.msg.tipo === "out" && detalhesMensagem.msg.status ? (
+                    <div className="wa-msg-detalhes-item">
+                      <span className="rotulo">Status</span>
+                      <span className="valor">
+                        {detalhesMensagem.msg.status === "pendente"
+                          ? "Aguardando envio"
+                          : detalhesMensagem.msg.status === "enviado"
+                            ? "Enviada"
+                            : detalhesMensagem.msg.status === "entregue"
+                              ? "Entregue"
+                              : detalhesMensagem.msg.status === "lido"
+                                ? "Lida"
+                                : detalhesMensagem.msg.status === "reproduzido"
+                                  ? "Reproduzida"
+                                  : "Erro no envio"}
+                      </span>
+                    </div>
+                  ) : null}
+                  {detalhesMensagem.msg.status === "erro" && detalhesMensagem.msg.erro ? (
+                    <div className="wa-msg-detalhes-item">
+                      <span className="rotulo">Motivo do erro</span>
+                      <span className="valor">{detalhesMensagem.msg.erro}</span>
+                    </div>
+                  ) : null}
+                  {mensagensApagadasTodos.has(detalhesMensagem.chave) ? (
+                    <div className="wa-msg-detalhes-item">
+                      <span className="rotulo">Apagada</span>
+                      <span className="valor">Pra todos</span>
+                    </div>
+                  ) : null}
+                  <div className="wa-msg-detalhes-item">
+                    <span className="rotulo">Hora exibida</span>
+                    <span className="valor">{detalhesMensagem.msg.hora || "—"}</span>
+                  </div>
+                </div>
+                <p className="hint" style={{ marginTop: 12 }}>
+                  Etapas que o canal conectado não fornecer não aparecem aqui.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          {audioConfirmarDescarte ? (
+            <div className="form-preview-overlay" onClick={() => setAudioConfirmarDescarte(false)}>
+              <div className="wa-email-modal wa-contato-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
+                  <p className="n">Excluir essa gravação?</p>
+                </div>
+                <p className="hint" style={{ marginBottom: 16 }}>
+                  Essa gravação tem mais de 20 segundos. Ao excluir, o áudio não vai ser enviado
+                  e não dá pra desfazer.
+                </p>
+                <div className="section-foot">
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ flex: 1 }}
+                    onClick={() => setAudioConfirmarDescarte(false)}
+                  >
                     Cancelar
                   </button>
                   <button
                     type="button"
                     className="btn primary"
-                    disabled={!contatoSelecionado}
-                    onClick={enviarContatoCompartilhado}
+                    style={{ flex: 1 }}
+                    onClick={descartarGravacao}
                   >
-                    Enviar
+                    Excluir gravação
                   </button>
                 </div>
               </div>
@@ -4236,11 +6105,24 @@ function ConversasPageInner() {
               <div className="wa-contato-detalhe-corpo">
                 <span className="avatar wa-contato-detalhe-avatar">{contatoDetalheAberto.initials}</span>
                 <p className="n">{contatoDetalheAberto.nome}</p>
+                {contatoDetalheAberto.empresa || contatoDetalheAberto.cargo ? (
+                  <p className="hint">
+                    {[contatoDetalheAberto.empresa, contatoDetalheAberto.cargo]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                ) : null}
                 {contatoDetalheAberto.whatsapp ? (
                   <p className="wa-contato-picker-numero">📞 {contatoDetalheAberto.whatsapp}</p>
                 ) : (
                   <p className="hint">Sem número de WhatsApp cadastrado</p>
                 )}
+                {contatoDetalheAberto.telefoneFixo ? (
+                  <p className="wa-contato-picker-numero">☎ {contatoDetalheAberto.telefoneFixo}</p>
+                ) : null}
+                {contatoDetalheAberto.email ? (
+                  <p className="wa-contato-picker-numero">✉ {contatoDetalheAberto.email}</p>
+                ) : null}
               </div>
               {contatoDetalheAberto.whatsapp ? (
                 <a
