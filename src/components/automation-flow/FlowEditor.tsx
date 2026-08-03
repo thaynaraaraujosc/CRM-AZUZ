@@ -461,10 +461,31 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     });
     return m;
   }, [rfEdges]);
+  /**
+   * Com exatamente 1 node selecionado, destaca ele + vizinhos diretos (quem alimenta e quem recebe
+   * dele) e apaga levemente o resto — ajuda a acompanhar o fluxo em automações com muitos nós/
+   * conexões cruzando a tela. Com 0 ou 2+ selecionados (seleção múltipla), não apaga nada.
+   */
+  const nodesRelacionados = useMemo(() => {
+    if (selectedNodeIds.length !== 1) return null;
+    const [alvo] = selectedNodeIds;
+    const relacionados = new Set<string>([alvo]);
+    rfEdges.forEach((e) => {
+      if (e.source === alvo && e.target) relacionados.add(e.target);
+      if (e.target === alvo && e.source) relacionados.add(e.source);
+    });
+    return relacionados;
+  }, [selectedNodeIds, rfEdges]);
+  const arestasRelacionadas = useMemo(() => {
+    if (selectedNodeIds.length !== 1) return null;
+    const [alvo] = selectedNodeIds;
+    return new Set(rfEdges.filter((e) => e.source === alvo || e.target === alvo).map((e) => e.id));
+  }, [selectedNodeIds, rfEdges]);
   const nodesParaRenderizar = useMemo(
     () =>
       rfNodes.map((n) => ({
         ...n,
+        className: nodesRelacionados && !nodesRelacionados.has(n.id) ? "flow-node-apagado" : undefined,
         data: {
           ...n.data,
           problemas: problemasPorNode.get(n.id) ?? [],
@@ -472,7 +493,16 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onAdicionarApos: (handleId: string | undefined) => setAcaoRapida({ nodeId: n.id, handleId }),
         },
       })),
-    [rfNodes, problemasPorNode, saidasConectadasPorNode],
+    [rfNodes, problemasPorNode, saidasConectadasPorNode, nodesRelacionados],
+  );
+  const edgesParaRenderizar = useMemo(
+    () =>
+      rfEdges.map((e) => ({
+        ...e,
+        className: arestasRelacionadas && !arestasRelacionadas.has(e.id) ? "flow-edge-apagada" : undefined,
+        zIndex: arestasRelacionadas?.has(e.id) ? 1 : 0,
+      })),
+    [rfEdges, arestasRelacionadas],
   );
   const selectedNodes = useMemo(
     () => rfNodes.filter((n) => selectedNodeIds.includes(n.id)).map((n) => ({ ...n.data.flowNode, position: n.position })),
@@ -518,7 +548,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         <div className="flow-canvas" onDrop={onDrop} onDragOver={onDragOver}>
           <ReactFlow
             nodes={nodesParaRenderizar}
-            edges={rfEdges}
+            edges={edgesParaRenderizar}
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
@@ -714,7 +744,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onUpdateNode={updateNodeMeta}
           onUpdateNodeData={updateNodeData}
           onRemoverOpcaoAresta={removerOpcaoAresta}
-          onSelecionarNode={(nodeId) => setSelectedNodeIds([nodeId])}
+          onSelecionarNode={(nodeId) => {
+            setSelectedNodeIds([nodeId]);
+            // Clicar num problema não pode só selecionar o node fora da vista — centraliza a
+            // viewport nele, senão quem tem um fluxo grande não acha o que precisa corrigir.
+            requestAnimationFrame(() => fitView({ nodes: [{ id: nodeId }], duration: 300, padding: 1.5, maxZoom: 1 }));
+          }}
         />
       </div>
 

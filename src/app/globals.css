@@ -6654,6 +6654,18 @@ table.tbl tbody tr:hover td {
   box-shadow: 0 0 0 3px var(--blue-soft);
 }
 
+/* Ao selecionar um node, o resto do fluxo (fora dele + vizinhos diretos) apaga levemente — ajuda a
+   acompanhar o caminho em fluxos com muitos nós/conexões cruzando a tela. */
+.react-flow__node.flow-node-apagado {
+  opacity: 0.35;
+  filter: grayscale(0.3);
+  transition: opacity 0.15s ease;
+}
+
+.react-flow__edge.flow-edge-apagada .react-flow__edge-path {
+  opacity: 0.25;
+}
+
 .flow-node.has-warning {
   border-color: #d8a400;
 }
