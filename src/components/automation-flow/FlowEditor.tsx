@@ -96,6 +96,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
   const [escolherGatilhoAberto, setEscolherGatilhoAberto] = useState(false);
   const [acaoRapida, setAcaoRapida] = useState<{ nodeId: string; handleId: string | undefined } | null>(null);
+  const [minimapaVisivel, setMinimapaVisivel] = useState(true);
 
   const historyRef = useRef<Snapshot[]>([{ nodes: rfNodes, edges: rfEdges }]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -584,11 +585,23 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           >
             <Background gap={18} />
             <Controls showInteractive={false} />
-            <MiniMap pannable zoomable nodeColor={(n) => CORES_CATEGORIA[String(n.type)] ?? "#94a3b8"} />
+            {minimapaVisivel ? (
+              <MiniMap pannable zoomable nodeColor={(n) => CORES_CATEGORIA[String(n.type)] ?? "#94a3b8"} />
+            ) : null}
             <Panel position="top-right">
-              <button type="button" className="btn ghost" onClick={() => setCenter(0, 0, { zoom: 1, duration: 300 })}>
-                Centralizar
-              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  title={minimapaVisivel ? "Ocultar minimapa" : "Mostrar minimapa"}
+                  onClick={() => setMinimapaVisivel((v) => !v)}
+                >
+                  {minimapaVisivel ? "Ocultar minimapa" : "Mostrar minimapa"}
+                </button>
+                <button type="button" className="btn ghost" onClick={() => setCenter(0, 0, { zoom: 1, duration: 300 })}>
+                  Centralizar
+                </button>
+              </div>
             </Panel>
             {selectedNodeIds.length > 0 ? (
               <Panel position="top-center">
