@@ -389,6 +389,8 @@ export function abrirPreviaImpressaoLimpa(
   * { box-sizing: border-box; }
   body { margin: 0; background: #e7e9f0; font-family: Arial, sans-serif; }
   .folha { margin: 12mm auto; box-shadow: 0 4px 20px rgba(0,0,0,.15); overflow-wrap: break-word; }
+  .doc-cabecalho-repetido { font-size: 11px; color: #666; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid #e2e2e2; }
+  .doc-rodape-repetido { font-size: 11px; color: #666; padding-top: 10px; margin-top: 14px; border-top: 1px solid #e2e2e2; }
   @media print {
     body { background: #fff; }
     .folha { margin: 0; box-shadow: none; page-break-after: always; }

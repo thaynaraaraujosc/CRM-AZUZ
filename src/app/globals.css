@@ -4330,6 +4330,12 @@ table.tbl tbody tr:hover td {
   gap: 8px;
 }
 
+.doc-cabecalho-rodape-editor {
+  width: 100%;
+  min-height: 70px;
+  outline: none;
+}
+
 .doc-margem-campo {
   display: flex;
   flex-direction: column;
@@ -4385,6 +4391,32 @@ table.tbl tbody tr:hover td {
 .doc-body-rich:empty::before {
   content: "Comece a escrever…";
   color: #9aa1b0;
+}
+
+/* Cabeçalho/rodapé reais — o mesmo conteúdo se repete em toda página, dentro da área impressa/exportada. */
+.doc-cabecalho-repetido {
+  font-size: 11px;
+  color: #666;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #e2e2e2;
+}
+
+.doc-rodape-repetido {
+  font-size: 11px;
+  color: #666;
+  padding-top: 10px;
+  margin-top: 14px;
+  border-top: 1px solid #e2e2e2;
+}
+
+/* Só indicador de UI no editor — de propósito FORA de .doc-page-sheet/.doc-print-area, pra nunca ir
+   parar na impressão ou no PDF (só cabeçalho/rodapé/números inseridos pelo usuário podem aparecer lá). */
+.doc-page-numero-ui {
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  padding-top: 6px;
 }
 
 /* Barra que aparece embaixo da folha, ao rolar — adicionar/apagar página sem precisar ir na barra lateral. */

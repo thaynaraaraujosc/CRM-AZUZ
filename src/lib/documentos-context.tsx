@@ -51,6 +51,11 @@ export type ConfigPagina = {
   margemEsquerdaMm?: number;
   margemDireitaMm?: number;
   corFundo: string;
+  /** Cabeçalho e rodapé — o mesmo conteúdo se repete em todas as páginas (não é por página). Suporta os
+   * tokens de texto {{PAGINA}} e {{TOTAL}}, substituídos pelo número real de cada página na hora de
+   * renderizar, imprimir e exportar. Vazio = sem cabeçalho/rodapé (comportamento anterior, sem mudança). */
+  cabecalhoHtml?: string;
+  rodapeHtml?: string;
   /** Colunas de texto (Formatar → Colunas) — 1 = layout normal, sem colunas. */
   colunas: number;
   colunasEspacoMm: number;

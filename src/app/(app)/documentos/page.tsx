@@ -902,6 +902,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [descricaoNovoModelo, setDescricaoNovoModelo] = useState("");
   const [categoriaNovoModelo, setCategoriaNovoModelo] = useState<CategoriaModelo>("Negócios");
   const [compartilharNovoModelo, setCompartilharNovoModelo] = useState(false);
+  const [cabecalhoRodapeAberto, setCabecalhoRodapeAberto] = useState<"cabecalho" | "rodape" | null>(null);
+  const cabecalhoRodapeEditRef = useRef<HTMLDivElement>(null);
   const [gravandoVoz, setGravandoVoz] = useState(false);
 
   const [buscaTexto, setBuscaTexto] = useState("");
@@ -1163,6 +1165,11 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
    * cada página (sem esperar o debounce), garantindo que impressão e exportação sempre reflitam
    * exatamente o que está na tela.
    */
+  /** Substitui os tokens de número de página no cabeçalho/rodapé pelo valor real de cada página. */
+  function substituirTokensPagina(html: string, numeroPagina: number, totalPaginas: number) {
+    return html.replaceAll("{{PAGINA}}", String(numeroPagina)).replaceAll("{{TOTAL}}", String(totalPaginas));
+  }
+
   function paginasComConteudoAtual(): PaginaDoc[] {
     return paginasLocais.map((p) => {
       const el = paginaRefs.current[p.id];
@@ -1170,12 +1177,29 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     });
   }
 
-  /** Visualização de impressão própria — só o conteúdo do documento, sem menu/barra/régua/botões. */
+  /** Igual paginasComConteudoAtual(), mas com o cabeçalho/rodapé (se existir) embutido no HTML de cada
+   * página — usado por toda exportação/impressão, pra nenhuma delas "esquecer" o cabeçalho/rodapé. */
+  function paginasParaExportar(): PaginaDoc[] {
+    if (!doc) return [];
+    const paginas = paginasComConteudoAtual();
+    const total = paginas.length;
+    return paginas.map((p, i) => {
+      const cabecalho = doc.config.cabecalhoHtml
+        ? `<div class="doc-cabecalho-repetido">${substituirTokensPagina(doc.config.cabecalhoHtml, i + 1, total)}</div>`
+        : "";
+      const rodape = doc.config.rodapeHtml
+        ? `<div class="doc-rodape-repetido">${substituirTokensPagina(doc.config.rodapeHtml, i + 1, total)}</div>`
+        : "";
+      return { ...p, conteudoHtml: cabecalho + p.conteudoHtml + rodape };
+    });
+  }
+
+  /** Visualização de impressão própria — só o conteúdo do documento (+ cabeçalho/rodapé se o usuário criou), sem menu/barra/régua/botões. */
   function abrirPreviaImpressao() {
     if (!doc) return;
     abrirPreviaImpressaoLimpa(
       doc.titulo,
-      paginasComConteudoAtual().map((p) => p.conteudoHtml),
+      paginasParaExportar().map((p) => p.conteudoHtml),
       { larguraMm, alturaMm, margemSuperiorMm, margemInferiorMm, margemEsquerdaMm, margemDireitaMm, corFundo: doc.config.corFundo },
     );
   }
@@ -1927,10 +1951,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     },
     "sep",
     { label: "Baixar como PDF", onClick: () => setExportarPdfAberto(true) },
-    { label: "Baixar como Word (.docx)", onClick: () => baixarDocx(doc.titulo, paginasComConteudoAtual()) },
-    { label: "Baixar como texto simples (.txt)", onClick: () => baixarTxt(doc.titulo, paginasComConteudoAtual()) },
-    { label: "Baixar como RTF", onClick: () => baixarRtf(doc.titulo, paginasComConteudoAtual()) },
-    { label: "Baixar como HTML", onClick: () => baixarHtml(doc.titulo, paginasComConteudoAtual()) },
+    { label: "Baixar como Word (.docx)", onClick: () => baixarDocx(doc.titulo, paginasParaExportar()) },
+    { label: "Baixar como texto simples (.txt)", onClick: () => baixarTxt(doc.titulo, paginasParaExportar()) },
+    { label: "Baixar como RTF", onClick: () => baixarRtf(doc.titulo, paginasParaExportar()) },
+    { label: "Baixar como HTML", onClick: () => baixarHtml(doc.titulo, paginasParaExportar()) },
   ];
 
   function tentarQueryCommandEnabled(comando: string) {
@@ -1990,9 +2014,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     { label: "Data", onClick: () => inserirNaPagina(new Date().toLocaleDateString("pt-BR")) },
     { label: "Nota de rodapé", onClick: () => inserirNaPagina('<sup>[1]</sup>') },
     { label: "Citação", onClick: () => aplicarFormatacao("formatBlock", "BLOCKQUOTE") },
-    { label: "Cabeçalho", onClick: () => inserirNaPagina("<p><i>Cabeçalho</i></p>") },
-    { label: "Rodapé", onClick: () => inserirNaPagina("<p><i>Rodapé</i></p>") },
-    { label: "Número de página", onClick: () => inserirNaPagina(`Página ${paginasLocais.findIndex((p) => p.id === paginaAtivaId) + 1} de ${paginasLocais.length}`) },
+    { label: "Cabeçalho", onClick: () => setCabecalhoRodapeAberto("cabecalho") },
+    { label: "Rodapé", onClick: () => setCabecalhoRodapeAberto("rodape") },
+    { label: "Número de página", onClick: () => setCabecalhoRodapeAberto("rodape") },
     { label: "Quebra de página", atalho: "Ctrl+Enter", onClick: inserirQuebraDePaginaNoCursor },
     { label: "Quebra de coluna", disabled: qtdColunas <= 1, onClick: () => inserirNaPagina('<span style="break-after:column;display:inline-block;width:0;"></span>') },
     { label: "Sumário automático", onClick: inserirSumario },
@@ -2239,6 +2263,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                     background: doc.config.corFundo,
                   }}
                 >
+                {doc.config.cabecalhoHtml ? (
+                  <div
+                    className="doc-cabecalho-repetido"
+                    dangerouslySetInnerHTML={{
+                      __html: substituirTokensPagina(doc.config.cabecalhoHtml, indice + 1, paginasLocais.length),
+                    }}
+                  />
+                ) : null}
                 <div
                   key={pagina.id}
                   ref={(el) => {
@@ -2278,8 +2310,19 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                     }
                   }}
                 />
-                <div className="doc-page-numero">Página {indice + 1} de {paginasLocais.length}</div>
+                {doc.config.rodapeHtml ? (
+                  <div
+                    className="doc-rodape-repetido"
+                    dangerouslySetInnerHTML={{
+                      __html: substituirTokensPagina(doc.config.rodapeHtml, indice + 1, paginasLocais.length),
+                    }}
+                  />
+                ) : null}
                 </div>
+                {/* Indicador só de UI (fora de .doc-page-sheet/.doc-print-area de propósito): a impressão e o
+                    PDF não podem mostrar nenhum número de página que o usuário não tenha inserido explicitamente
+                    (ver Inserir → Número de página, que usa o token {{PAGINA}} dentro do rodapé de verdade). */}
+                <div className="doc-page-numero-ui" aria-hidden="true">Página {indice + 1} de {paginasLocais.length}</div>
               </div>
               <div className="doc-page-fim">
                 <button type="button" className="doc-page-fim-btn" onClick={novaPaginaAposAtiva}>+ Adicionar página</button>
@@ -2447,6 +2490,78 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <li><b>Ver</b> → alterna régua, caracteres não imprimíveis, modo paginado/contínuo e zoom.</li>
               <li>A auto-paginação move o texto para a página seguinte automaticamente conforme você digita.</li>
             </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {cabecalhoRodapeAberto ? (
+        <div className="modal-overlay" onClick={() => setCabecalhoRodapeAberto(null)}>
+          <div className="modal" style={{ width: "min(480px, 100%)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="panel-h">
+              <h4>{cabecalhoRodapeAberto === "cabecalho" ? "Cabeçalho" : "Rodapé"}</h4>
+              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCabecalhoRodapeAberto(null)}>✕</button>
+            </div>
+            <div style={{ padding: 20 }}>
+              <p className="hint" style={{ marginTop: 0 }}>
+                O que você escrever aqui se repete em todas as páginas do documento — na tela, na impressão e no PDF.
+              </p>
+              <div
+                ref={cabecalhoRodapeEditRef}
+                className="input doc-cabecalho-rodape-editor"
+                contentEditable
+                suppressContentEditableWarning
+                dangerouslySetInnerHTML={{
+                  __html: (cabecalhoRodapeAberto === "cabecalho" ? doc.config.cabecalhoHtml : doc.config.rodapeHtml) ?? "",
+                }}
+              />
+              <div className="filters-row" style={{ margin: "10px 0 0" }}>
+                <button
+                  type="button"
+                  className="fchip"
+                  onClick={() => {
+                    cabecalhoRodapeEditRef.current?.focus();
+                    document.execCommand("insertText", false, "{{PAGINA}}");
+                  }}
+                >
+                  Inserir número da página
+                </button>
+                <button
+                  type="button"
+                  className="fchip"
+                  onClick={() => {
+                    cabecalhoRodapeEditRef.current?.focus();
+                    document.execCommand("insertText", false, "{{TOTAL}}");
+                  }}
+                >
+                  Inserir total de páginas
+                </button>
+              </div>
+            </div>
+            <div className="panel-f" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                className="btn ghost"
+                style={{ color: "#d64545" }}
+                onClick={() => {
+                  atualizarConfigPagina(id, cabecalhoRodapeAberto === "cabecalho" ? { cabecalhoHtml: "" } : { rodapeHtml: "" });
+                  setCabecalhoRodapeAberto(null);
+                }}
+              >
+                Remover
+              </button>
+              <button type="button" className="btn ghost" onClick={() => setCabecalhoRodapeAberto(null)}>Cancelar</button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => {
+                  const html = cabecalhoRodapeEditRef.current?.innerHTML ?? "";
+                  atualizarConfigPagina(id, cabecalhoRodapeAberto === "cabecalho" ? { cabecalhoHtml: html } : { rodapeHtml: html });
+                  setCabecalhoRodapeAberto(null);
+                }}
+              >
+                Salvar
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
