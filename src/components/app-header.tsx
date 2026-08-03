@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { contatos, equipe, tarefas } from "@/lib/data";
+import { useCentralDia } from "@/lib/central-dia-context";
 import { useNotificacoes } from "@/lib/notificacoes-context";
 import { IconBell, IconSearch } from "@/components/icons";
 import { navEntries } from "@/components/sidebar";
@@ -194,6 +195,7 @@ function NotificationsBell() {
 /** Menu horizontal fixo no topo do CRM — busca global e notificações. */
 export function AppHeader() {
   const { toasts } = useNotificacoes();
+  const { toasts: toastsCentralDia } = useCentralDia();
 
   return (
     <header className="app-header">
@@ -203,11 +205,16 @@ export function AppHeader() {
         <NotificationsBell />
       </div>
 
-      {toasts.length > 0 ? (
+      {toasts.length > 0 || toastsCentralDia.length > 0 ? (
         <div className="toast-stack toast-stack-top">
           {toasts.map((toast) => (
             <div className="toast" key={toast.id}>
               <IconBell width={14} height={14} />
+              {toast.texto}
+            </div>
+          ))}
+          {toastsCentralDia.map((toast) => (
+            <div className="toast" key={`cd-${toast.id}`}>
               {toast.texto}
             </div>
           ))}

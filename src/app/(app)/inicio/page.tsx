@@ -1,450 +1,246 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 
-import { atividadeRecente, conversas, equipe, funilJulho, leadsPorDia, tarefas, today } from "@/lib/data";
+import { IconRefresh } from "@/components/icons";
+import { CompromissoCard } from "@/components/central-dia/CompromissoCard";
+import { ConcluidosHoje } from "@/components/central-dia/ConcluidosHoje";
+import { FiltrosBar } from "@/components/central-dia/FiltrosBar";
+import { ItemCard } from "@/components/central-dia/ItemCard";
+import { OrganizarMeuDia } from "@/components/central-dia/OrganizarMeuDia";
+import { Recomendacoes } from "@/components/central-dia/Recomendacoes";
+import { SecaoLista } from "@/components/central-dia/SecaoLista";
+import { useCentralDia } from "@/lib/central-dia-context";
+import { useAutomationFlows } from "@/lib/automation-flow-context";
+import { conversas, currentUser, tarefas } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
-import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import {
-  calcularFunilResumo,
-  calcularLeadsAguardando,
-  calcularTempoMedioPrimeiroContato,
-  calcularTicketMedio,
-  calcularValorPerdido,
-  calcularValorVendido,
-  formatarMoeda,
-} from "@/lib/metrics";
-import { conversaoPorResponsavel, faturamentoPorResponsavel, tempoPrimeiroContatoPorResponsavel } from "@/lib/data";
+  COMPROMISSOS_HOJE_MOCK,
+  gerarRecomendacoes,
+  itensDeAutomacoes,
+  itensDeConversas,
+  itensDeLeads,
+  itensDeTarefas,
+} from "@/lib/central-dia/mock";
+import type { ItemDia, ModuloOrigem } from "@/lib/central-dia/tipos";
 
-const CHAVE_CONFIG = "azuz-inicio-config-v1";
-
-type ConfigInicio = {
-  ocultos: string[];
-  ordem: string[];
-  meta: number;
+const MODULO_DO_FILTRO_RAPIDO: Record<string, ModuloOrigem | undefined> = {
+  Conversas: "conversa",
+  Tarefas: "tarefa",
+  Leads: "lead",
+  Automações: "automacao",
 };
 
-const CONFIG_PADRAO: ConfigInicio = {
-  ocultos: ["vendasQtd", "ticketMedio", "valorPerdido"],
-  meta: 45000,
-  ordem: [
-    "novosLeads",
-    "leadsAguardando",
-    "tempoResposta",
-    "negociacoesAbertas",
-    "receita",
-    "metaPeriodo",
-    "tarefasPendentes",
-    "tarefasAtrasadas",
-    "vendasQtd",
-    "ticketMedio",
-    "valorPerdido",
-  ],
-};
+function saudacao(): string {
+  const hora = new Date().getHours();
+  if (hora < 12) return "Bom dia";
+  if (hora < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+function tempoDesde(timestamp: number): string {
+  const segundos = Math.floor((Date.now() - timestamp) / 1000);
+  if (segundos < 60) return "poucos segundos";
+  const minutos = Math.floor(segundos / 60);
+  if (minutos < 60) return `${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  return `${horas}h`;
+}
 
 /**
- * A Visão geral que antes vivia em /inteligencia-comercial agora mora aqui —
- * não faz sentido ter duas "visões gerais" em áreas diferentes do CRM. Todo
- * cartão é opcional (o usuário decide o que ver) e a ordem/visibilidade fica
- * salva no navegador; quando o back-end existir, isso vira preferência de
- * usuário de verdade, sem mudar o contrato dos componentes.
+ * Central do Dia — substitui a antiga "Visão geral" (que duplicava gráficos já existentes em
+ * Inteligência Comercial). A pergunta que essa página responde agora é só uma: "o que precisa ser
+ * feito hoje?". Todo item é derivado de dados reais de outros módulos (`@/lib/central-dia/mock`) —
+ * a única exceção documentada é a agenda mockada (o CRM ainda não tem um módulo de compromissos com
+ * hora/local) e as recomendações (regras locais, não IA de verdade).
  */
 export default function InicioPage() {
   const { funis } = useFunis();
-  const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
-  const [funilFiltro, setFuncilFiltro] = useState("Todos");
-  const [responsavelFiltro, setResponsavelFiltro] = useState("Todos");
-  // Começa com o padrão (igual ao HTML pré-renderizado no build) e só lê o
-  // localStorage depois de montar — inicializar direto no useState causaria
-  // erro de hidratação sempre que o navegador já tivesse config salva (a
-  // página é pré-renderizada estática, sem acesso a localStorage).
-  const [config, setConfig] = useState<ConfigInicio>(CONFIG_PADRAO);
-  const [personalizarAberto, setPersonalizarAberto] = useState(false);
-  const [metaInput, setMetaInput] = useState(String(CONFIG_PADRAO.meta || 45000));
+  const { fluxos } = useAutomationFlows();
+  const { filtros, concluidos, adiados, ultimaAtualizacao, atualizando, atualizarAgora } = useCentralDia();
+  const [organizarAberto, setOrganizarAberto] = useState(false);
 
-  // Hidratação: começa com o padrão (igual ao HTML estático) e só lê o
-  // localStorage depois de montar — ver comentário no useState acima.
-  useEffect(() => {
-    try {
-      const salvo = localStorage.getItem(CHAVE_CONFIG);
-      if (salvo) {
-        const parsed = JSON.parse(salvo) as ConfigInicio;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setConfig(parsed);
-        setMetaInput(String(parsed.meta || 45000));
-      }
-    } catch {
-      // ignora config inválida — mantém padrão
-    }
-  }, []);
-
-  function salvarConfig(next: ConfigInicio) {
-    setConfig(next);
-    if (typeof window !== "undefined") localStorage.setItem(CHAVE_CONFIG, JSON.stringify(next));
-  }
-
-  function alternarCard(chave: string) {
-    const ocultos = config.ocultos.includes(chave)
-      ? config.ocultos.filter((c) => c !== chave)
-      : [...config.ocultos, chave];
-    salvarConfig({ ...config, ocultos });
-  }
-
-  function moverCard(chave: string, direcao: -1 | 1) {
-    const visiveis = config.ordem.filter((c) => !config.ocultos.includes(c));
-    const i = visiveis.indexOf(chave);
-    const j = i + direcao;
-    if (i < 0 || j < 0 || j >= visiveis.length) return;
-    [visiveis[i], visiveis[j]] = [visiveis[j], visiveis[i]];
-    const ordem = [...visiveis, ...config.ordem.filter((c) => config.ocultos.includes(c))];
-    salvarConfig({ ...config, ordem });
-  }
-
-  // Filtros funcionais: aplicam sobre os dados granulares por responsável
-  // antes de calcular qualquer métrica — mesma fonte usada em Performance e
-  // Atividades, então os números batem entre as telas.
-  const conversaoFiltrada =
-    responsavelFiltro === "Todos"
-      ? conversaoPorResponsavel
-      : conversaoPorResponsavel.filter((r) => r.nome === responsavelFiltro);
-  const tempoContatoFiltrado =
-    responsavelFiltro === "Todos"
-      ? tempoPrimeiroContatoPorResponsavel
-      : tempoPrimeiroContatoPorResponsavel.filter((r) => r.nome === responsavelFiltro);
-  const faturamentoFiltrado =
-    responsavelFiltro === "Todos"
-      ? faturamentoPorResponsavel
-      : faturamentoPorResponsavel.filter((r) => r.nome === responsavelFiltro);
-
-  const funisFiltrados = funilFiltro === "Todos" ? funis : funis.filter((f) => f.nome === funilFiltro);
-  const tarefasFiltradas = tarefas.map((coluna) => ({
-    ...coluna,
-    cards:
-      responsavelFiltro === "Todos"
-        ? coluna.cards
-        : coluna.cards.filter((c) => c.responsavel.nome === responsavelFiltro),
-  }));
-
-  const leadsAguardando = calcularLeadsAguardando(conversas);
-  const tempoResposta = calcularTempoMedioPrimeiroContato(tempoContatoFiltrado);
-  const receita = calcularValorVendido(faturamentoFiltrado);
-  const ticketMedio = calcularTicketMedio(faturamentoFiltrado, conversaoFiltrada);
-  const valorPerdido = calcularValorPerdido();
-  const vendasQtd = conversaoFiltrada.reduce((s, r) => s + r.vendidas, 0);
-  const funilResumo = calcularFunilResumo();
-
-  const colunaAtrasadas = tarefasFiltradas.find((c) => c.titulo === "Atrasadas");
-  const tarefasAtrasadas = colunaAtrasadas?.cards ?? [];
-  const tarefasPendentes = tarefasFiltradas
-    .filter((c) => c.titulo !== "Concluídas")
-    .flatMap((c) => c.cards);
-
-  const negociacoesAbertas = funisFiltrados.flatMap((f) =>
-    f.colunas.filter((c) => !c.titulo.startsWith("Fechado")).flatMap((c) => c.cards),
-  );
-  const negociacoesParadas = negociacoesAbertas.filter((card) => {
-    const m = card.dias.match(/(\d+)\s*dias?/i);
-    return m ? Number(m[1]) >= 3 : false;
-  });
-
-  const meta = config.meta || 45000;
-  const percentualMeta = meta > 0 ? Math.min(999, Math.round((receita.valor / meta) * 100)) : 0;
-
-  const CARDS: Record<
-    string,
-    { label: string; value: string; sub?: string; formula?: string; href: string }
-  > = {
-    novosLeads: {
-      label: "Novos leads",
-      value: funilResumo.label,
-      sub: 'Etapa "Novo" do funil',
-      formula: funilResumo.formula,
-      href: "/funil",
-    },
-    leadsAguardando: {
-      label: "Leads aguardando atendimento",
-      value: leadsAguardando.label,
-      formula: leadsAguardando.formula,
-      href: "/conversas",
-    },
-    tempoResposta: {
-      label: "Tempo médio da primeira resposta",
-      value: tempoResposta.label,
-      formula: tempoResposta.formula,
-      href: "/atividades-vendas",
-    },
-    negociacoesAbertas: {
-      label: "Negociações abertas",
-      value: String(negociacoesAbertas.length),
-      formula: "Contagem de negociações em qualquer etapa que não seja a de fechamento",
-      href: "/funil",
-    },
-    receita: {
-      label: "Receita no período",
-      value: receita.label,
-      formula: receita.formula,
-      href: "/performance-vendas",
-    },
-    metaPeriodo: {
-      label: "Meta do período",
-      value: `${percentualMeta}%`,
-      sub: `${receita.label} de ${formatarMoeda(meta)}`,
-      formula: "Receita do período ÷ meta definida pelo usuário",
-      href: "/performance-vendas",
-    },
-    tarefasPendentes: {
-      label: "Tarefas pendentes",
-      value: String(tarefasPendentes.length),
-      formula: 'Contagem de tarefas em qualquer coluna que não seja "Concluídas"',
-      href: "/tarefas",
-    },
-    tarefasAtrasadas: {
-      label: "Tarefas atrasadas",
-      value: String(tarefasAtrasadas.length),
-      formula: 'Contagem de tarefas na coluna "Atrasadas"',
-      href: "/tarefas",
-    },
-    vendasQtd: {
-      label: "Vendas no período",
-      value: String(vendasQtd),
-      formula: "Contagem de negociações vendidas no período",
-      href: "/performance-vendas",
-    },
-    ticketMedio: {
-      label: "Ticket médio",
-      value: ticketMedio.label,
-      formula: ticketMedio.formula,
-      href: "/relatorios",
-    },
-    valorPerdido: {
-      label: "Valor perdido",
-      value: valorPerdido.label,
-      formula: valorPerdido.formula,
-      href: "/motivos-perda",
-    },
-  };
-
-  const ordemVisivel = useMemo(
-    () => config.ordem.filter((c) => !config.ocultos.includes(c) && CARDS[c]),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [config, receita.valor, tempoResposta.valor, negociacoesAbertas.length],
+  const itensBase = useMemo(
+    () => [...itensDeConversas(conversas), ...itensDeTarefas(tarefas), ...itensDeLeads(funis), ...itensDeAutomacoes(fluxos)],
+    [funis, fluxos],
   );
 
-  const filtrosMais: FiltroDef[] = [
-    {
-      chave: "equipe",
-      label: "Equipe / responsável",
-      valor: responsavelFiltro,
-      opcoes: [
-        { valor: "Todos", label: "Toda a equipe" },
-        ...equipe.map((m) => ({ valor: m.nome, label: m.nome })),
-      ],
-    },
+  const concluidosIds = useMemo(() => new Set(concluidos.map((c) => c.itemId)), [concluidos]);
+  const adiadosIds = useMemo(() => new Set(adiados.map((a) => a.itemId)), [adiados]);
+
+  const itensAtivos = useMemo(
+    () => itensBase.filter((i) => !concluidosIds.has(i.id) && !adiadosIds.has(i.id)),
+    [itensBase, concluidosIds, adiadosIds],
+  );
+
+  const itensFiltrados = useMemo(() => {
+    return itensAtivos.filter((item) => {
+      if (filtros.rapido === "Meus itens" && item.responsavel !== currentUser.name) return false;
+      if (filtros.rapido === "Urgentes" && item.prioridade !== "urgente") return false;
+      const moduloAlvo = MODULO_DO_FILTRO_RAPIDO[filtros.rapido];
+      if (moduloAlvo && item.modulo !== moduloAlvo) return false;
+      if (filtros.responsavel !== "Todos" && item.responsavel !== filtros.responsavel) return false;
+      if (filtros.prioridade !== "Todas" && item.prioridade !== filtros.prioridade) return false;
+      if (filtros.funil !== "Todos" && item.modulo === "lead" && item.extra?.funil !== filtros.funil) return false;
+      return true;
+    });
+  }, [itensAtivos, filtros]);
+
+  const mostrarAgenda = filtros.rapido === "Todos" || filtros.rapido === "Agenda" || filtros.rapido === "Meus itens" || filtros.rapido === "Minha equipe" || filtros.rapido === "Urgentes";
+  const mostrarModulo = (modulo: ModuloOrigem) =>
+    !MODULO_DO_FILTRO_RAPIDO[filtros.rapido] || MODULO_DO_FILTRO_RAPIDO[filtros.rapido] === modulo;
+
+  const grupos: { chave: ItemDia["prioridade"]; titulo: string; vazio: string }[] = [
+    { chave: "urgente", titulo: "Urgente", vazio: "Nenhum item urgente no momento." },
+    { chave: "atencao", titulo: "Precisa de atenção", vazio: "Nada precisando de atenção agora." },
+    { chave: "oportunidade", titulo: "Oportunidades", vazio: "Nenhuma oportunidade identificada agora." },
   ];
+
+  const conversasSecao = itensFiltrados.filter((i) => i.modulo === "conversa");
+  const tarefasSecao = itensFiltrados.filter((i) => i.modulo === "tarefa");
+  const leadsSecao = itensFiltrados.filter((i) => i.modulo === "lead");
+  const automacoesSecao = itensFiltrados.filter((i) => i.modulo === "automacao");
+  const recomendacoes = useMemo(() => gerarRecomendacoes(itensAtivos), [itensAtivos]);
+
+  const atrasadosCount =
+    tarefasSecao.filter((t) => t.tipo === "Tarefa atrasada").length +
+    COMPROMISSOS_HOJE_MOCK.filter((c) => c.status === "Atrasado").length;
+  const urgentesCount = itensFiltrados.filter((i) => i.prioridade === "urgente").length;
+
+  const tudoConcluido = itensFiltrados.length === 0 && concluidos.length > 0;
 
   return (
     <>
       <div className="topbar">
         <div>
           <div className="topbar-title-row">
-            <h2>Início</h2>
+            <h2>
+              {saudacao()}, {currentUser.name.split(" ")[0]}.
+            </h2>
           </div>
-          <p className="sub">{today}</p>
+          <p className="sub">
+            Você possui {itensFiltrados.length} {itensFiltrados.length === 1 ? "item" : "itens"} que precisa
+            {itensFiltrados.length === 1 ? "" : "m"} da sua atenção hoje.
+          </p>
         </div>
         <div className="top-actions">
-          <div style={{ position: "relative" }}>
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={() => setPersonalizarAberto((v) => !v)}
-            >
-              Personalizar
-            </button>
-            {personalizarAberto ? (
-              <div
-                className="dropdown-pop"
-                style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", width: 300, zIndex: 60 }}
-              >
-                <div style={{ padding: "10px 12px 4px" }}>
-                  <p className="hint">Escolha e reordene os cartões visíveis</p>
-                </div>
-                {config.ordem
-                  .filter((c) => CARDS[c])
-                  .sort((a, b) => {
-                    const av = !config.ocultos.includes(a);
-                    const bv = !config.ocultos.includes(b);
-                    if (av === bv) return 0;
-                    return av ? -1 : 1;
-                  })
-                  .map((chave) => {
-                    const visivel = !config.ocultos.includes(chave);
-                    const i = ordemVisivel.indexOf(chave);
-                    return (
-                      <div className="kpi-personalizar-item" key={chave}>
-                        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <input
-                            type="checkbox"
-                            checked={visivel}
-                            onChange={() => alternarCard(chave)}
-                          />
-                          <span className="n">{CARDS[chave].label}</span>
-                        </label>
-                        {visivel ? (
-                          <div className="kpi-personalizar-ordem">
-                            <button
-                              type="button"
-                              disabled={i <= 0}
-                              onClick={() => moverCard(chave, -1)}
-                              aria-label="Mover pra cima"
-                            >
-                              ↑
-                            </button>
-                            <button
-                              type="button"
-                              disabled={i < 0 || i >= ordemVisivel.length - 1}
-                              onClick={() => moverCard(chave, 1)}
-                              aria-label="Mover pra baixo"
-                            >
-                              ↓
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                <div className="field">
-                  <label>Meta do período (R$)</label>
-                  <input
-                    className="input"
-                    style={{ width: "100%" }}
-                    type="number"
-                    value={metaInput}
-                    onChange={(e) => setMetaInput(e.target.value)}
-                    onBlur={() => salvarConfig({ ...config, meta: Number(metaInput) || 0 })}
-                  />
-                </div>
-              </div>
-            ) : null}
-          </div>
+          <button type="button" className="btn primary" onClick={() => setOrganizarAberto(true)}>
+            Organizar meu dia
+          </button>
         </div>
       </div>
 
       <div className="content">
-        <FilterBar
-          periodo={periodo}
-          onPeriodoChange={setPeriodo}
-          principalLabel="Funil"
-          principalValor={funilFiltro}
-          principalOpcoes={["Todos", ...funis.map((f) => f.nome)]}
-          onPrincipalChange={setFuncilFiltro}
-          filtros={filtrosMais}
-          onFiltroChange={(chave, valor) => {
-            if (chave === "equipe") setResponsavelFiltro(valor);
-          }}
-          onLimpar={() => {
-            setPeriodo(PERIODO_PADRAO);
-            setFuncilFiltro("Todos");
-            setResponsavelFiltro("Todos");
-          }}
-          viewKey="inicio"
-        />
-
-        <div className="grid kpi4">
-          {ordemVisivel.map((chave) => (
-            <KpiCard key={chave} {...CARDS[chave]} />
-          ))}
+        <div className="central-dia-resumo">
+          <div className="central-dia-resumo-item">
+            <span className="n">{itensFiltrados.length}</span>
+            <span className="r">Pendentes</span>
+          </div>
+          <div className="central-dia-resumo-item is-urgente">
+            <span className="n">{urgentesCount}</span>
+            <span className="r">Urgentes</span>
+          </div>
+          <div className="central-dia-resumo-item is-concluido">
+            <span className="n">{concluidos.length}</span>
+            <span className="r">Concluídos</span>
+          </div>
+          <div className="central-dia-resumo-item is-atrasado">
+            <span className="n">{atrasadosCount}</span>
+            <span className="r">Atrasados</span>
+          </div>
+          <div className="central-dia-resumo-atualizacao">
+            <span className="hint">Atualizado há {tempoDesde(ultimaAtualizacao)}</span>
+            <button type="button" className="icon-btn subtle" aria-label="Atualizar" onClick={atualizarAgora} disabled={atualizando}>
+              <IconRefresh width={15} height={15} className={atualizando ? "spin" : ""} />
+            </button>
+          </div>
         </div>
 
-        {tarefasAtrasadas.length > 0 || negociacoesParadas.length > 0 ? (
-          <div className="card mt14">
-            <div className="panel-h">
-              <h4>Alertas</h4>
-              <p className="hint">Gerados a partir de tarefas e negociações reais — clique pra agir</p>
-            </div>
-            <div style={{ padding: 17 }}>
-              {tarefasAtrasadas.map((t) => (
-                <Link key={t.id} href="/tarefas" className="camp-row" style={{ textDecoration: "none" }}>
-                  <div className="camp-body">
-                    <p className="camp-name">⏰ Tarefa atrasada: {t.titulo}</p>
-                    <p className="hint" style={{ margin: 0 }}>
-                      {t.contato} · responsável: {t.responsavel.nome}
-                    </p>
-                  </div>
-                  <span className="camp-num">Ver tarefa</span>
-                </Link>
-              ))}
-              {negociacoesParadas.map((card) => (
-                <Link key={card.id} href="/funil" className="camp-row" style={{ textDecoration: "none" }}>
-                  <div className="camp-body">
-                    <p className="camp-name">⚠ Negociação parada há {card.dias}: {card.nome}</p>
-                    <p className="hint" style={{ margin: 0 }}>Origem: {card.origem}</p>
-                  </div>
-                  <span className="camp-num">Ver no funil</span>
-                </Link>
-              ))}
-            </div>
+        <FiltrosBar />
+
+        {tudoConcluido ? (
+          <div className="central-dia-vazio-geral">
+            <p className="n">Você concluiu todas as prioridades de hoje.</p>
+            <p className="r">Bom trabalho! Novos itens aparecem aqui conforme chegam.</p>
+            <button type="button" className="btn ghost">
+              Ver esta semana
+            </button>
           </div>
+        ) : (
+          grupos.map((g) => {
+            const itensGrupo = itensFiltrados.filter((i) => i.prioridade === g.chave);
+            return (
+              <SecaoLista key={g.chave} titulo={g.titulo} contagem={itensGrupo.length} vazio={<p className="hint">{g.vazio}</p>}>
+                {itensGrupo.map((item) => (
+                  <ItemCard key={item.id} item={item} />
+                ))}
+              </SecaoLista>
+            );
+          })
+        )}
+
+        {mostrarModulo("conversa") ? (
+          <SecaoLista
+            titulo="Conversas aguardando resposta"
+            contagem={conversasSecao.length}
+            vazio={<p className="hint">Nenhuma conversa esperando resposta agora.</p>}
+          >
+            {conversasSecao.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </SecaoLista>
         ) : null}
 
-        <div className="grid split2 mt14">
-          <Link className="card card-link" href="/trafego">
-            <div className="panel-h">
-              <h4>Leads por dia · últimos 14 dias</h4>
-              <span className="link">Ver tráfego</span>
-            </div>
-            <div className="bars">
-              {leadsPorDia.map(({ dia, altura, hoje }) => (
-                <div className="bar-col" key={dia}>
-                  <div className={`bar${hoje ? " hi" : ""}`} style={{ height: `${altura}%` }} />
-                  <span className="lbl">{dia}</span>
-                </div>
-              ))}
-            </div>
-          </Link>
+        {mostrarAgenda ? (
+          <SecaoLista titulo="Agenda de hoje" contagem={COMPROMISSOS_HOJE_MOCK.length} vazio={<p className="hint">Nenhum compromisso hoje.</p>}>
+            {COMPROMISSOS_HOJE_MOCK.map((c) => (
+              <CompromissoCard key={c.id} compromisso={c} />
+            ))}
+          </SecaoLista>
+        ) : null}
 
-          <Link className="card card-link" href="/funil">
-            <div className="panel-h">
-              <h4>Funil · período</h4>
-              <span className="link">Ver funil</span>
-            </div>
-            <div className="funnel-mini">
-              {funilJulho.map(({ etapa, total, largura }) => (
-                <div className="funnel-row" key={etapa}>
-                  <span className="fl">{etapa}</span>
-                  <div className="funnel-track">
-                    <div className="funnel-fill" style={{ width: `${largura}%` }} />
-                  </div>
-                  <span className="fn">{total}</span>
-                </div>
-              ))}
-            </div>
-          </Link>
-        </div>
+        {mostrarModulo("tarefa") ? (
+          <SecaoLista titulo="Tarefas" contagem={tarefasSecao.length} vazio={<p className="hint">Nenhuma tarefa pendente.</p>}>
+            {tarefasSecao.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </SecaoLista>
+        ) : null}
 
-        <div className="card mt14">
-          <div className="panel-h">
-            <h4>Atividade recente</h4>
-            <Link className="link" href="/contatos">
-              Ver tudo
-            </Link>
-          </div>
-          {atividadeRecente.map((item) => (
-            <Link
-              className="activity-row activity-row-link"
-              href={`/conversas?contato=${encodeURIComponent(item.nome)}`}
-              key={item.nome}
-            >
-              <div className="avatar">{item.initials}</div>
-              <div className="body">
-                <p className="name">{item.nome}</p>
-                <p className="meta">{item.meta}</p>
-              </div>
-              <span className={`pill${item.destaque ? " on" : ""}`}>{item.pill}</span>
-            </Link>
-          ))}
-        </div>
+        {mostrarModulo("lead") ? (
+          <SecaoLista
+            titulo="Leads que precisam de ação"
+            contagem={leadsSecao.length}
+            vazio={<p className="hint">Nenhum lead precisando de ação agora.</p>}
+          >
+            {leadsSecao.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </SecaoLista>
+        ) : null}
+
+        {mostrarModulo("automacao") ? (
+          <SecaoLista
+            titulo="Automações que precisam de atenção"
+            contagem={automacoesSecao.length}
+            vazio={<p className="hint">Nenhuma automação com pendência agora.</p>}
+          >
+            {automacoesSecao.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </SecaoLista>
+        ) : null}
+
+        <Recomendacoes recomendacoes={recomendacoes} onVerItens={() => {}} />
+
+        <ConcluidosHoje />
       </div>
+
+      <OrganizarMeuDia
+        aberto={organizarAberto}
+        onFechar={() => setOrganizarAberto(false)}
+        itensSugeridos={[...itensFiltrados].sort((a, b) => (a.prioridade === b.prioridade ? 0 : a.prioridade === "urgente" ? -1 : 1))}
+      />
     </>
   );
 }

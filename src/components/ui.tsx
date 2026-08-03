@@ -1,8 +1,68 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+
+/**
+ * Drawer lateral genérico — mesmo padrão CSS (`.flow-side-overlay`/`.flow-side-panel`) já usado
+ * pelo Simulador/Histórico de versões das automações, extraído aqui pra não duplicar o boilerplate
+ * de overlay+Escape em cada novo drawer (Central do Dia, Configurações). Cabeçalho e rodapé ficam
+ * fixos; só o conteúdo rola.
+ */
+export function Drawer({
+  aberto,
+  onFechar,
+  titulo,
+  subtitulo,
+  largura = 420,
+  rodape,
+  children,
+}: {
+  aberto: boolean;
+  onFechar: () => void;
+  titulo: ReactNode;
+  subtitulo?: ReactNode;
+  largura?: number;
+  rodape?: ReactNode;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    if (!aberto) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onFechar();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [aberto, onFechar]);
+
+  if (!aberto || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="flow-side-overlay" onClick={onFechar} role="presentation">
+      <div
+        className="flow-side-panel"
+        style={{ width: `min(${largura}px, 100vw)` }}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="panel-h">
+          <div>
+            <h4>{titulo}</h4>
+            {subtitulo ? <p className="hint" style={{ marginTop: 2 }}>{subtitulo}</p> : null}
+          </div>
+          <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}>
+            ✕
+          </button>
+        </div>
+        <div className="flow-side-body">{children}</div>
+        {rodape ? <div className="section-foot">{rodape}</div> : null}
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
 /**
  * Popover flutuante montado via portal em document.body, posicionado com

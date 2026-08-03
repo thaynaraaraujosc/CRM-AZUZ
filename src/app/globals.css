@@ -9395,3 +9395,478 @@ table.tbl tbody tr:hover td {
     flex: 1 1 100%;
   }
 }
+
+/* ============================================================= */
+/* Central do Dia (página Início)                                */
+/* ============================================================= */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+.central-dia-resumo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  margin-bottom: 14px;
+}
+
+.central-dia-resumo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 16px;
+  border-right: 1px solid var(--line-soft);
+  min-width: 84px;
+}
+.central-dia-resumo-item:last-of-type {
+  border-right: none;
+}
+
+.central-dia-resumo-item .n {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--display);
+}
+.central-dia-resumo-item .r {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.central-dia-resumo-item.is-urgente .n {
+  color: #d64545;
+}
+.central-dia-resumo-item.is-concluido .n {
+  color: #0f9d63;
+}
+.central-dia-resumo-item.is-atrasado .n {
+  color: #d8a400;
+}
+
+.central-dia-resumo-atualizacao {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.central-dia-filtros {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.central-dia-filtros-dir {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.central-dia-secao {
+  margin-bottom: 18px;
+}
+
+.central-dia-secao-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.central-dia-secao-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.central-dia-secao-toggle h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.central-dia-chevron {
+  display: inline-flex;
+  color: var(--text-faint);
+  transition: transform 0.15s ease;
+  transform: rotate(0deg);
+}
+.central-dia-chevron.is-aberta {
+  transform: rotate(90deg);
+}
+
+.central-dia-secao-contagem {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-faint);
+  background: var(--navy-raised-2);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.central-dia-secao-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.central-dia-vazio {
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px dashed var(--line);
+  color: var(--text-faint);
+}
+
+.central-dia-vazio-geral {
+  padding: 32px 20px;
+  text-align: center;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  margin-bottom: 18px;
+}
+.central-dia-vazio-geral .n {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+.central-dia-vazio-geral .r {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin: 0 0 12px;
+}
+
+/* ------------------------------- Card padrão de item do dia ------------------------------- */
+
+.central-dia-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  border-left: 3px solid var(--line);
+}
+.central-dia-card.is-urgente {
+  border-left-color: #d64545;
+}
+.central-dia-card.is-atencao {
+  border-left-color: #d8a400;
+}
+.central-dia-card.is-oportunidade {
+  border-left-color: #0f9d63;
+}
+
+.central-dia-card-icone {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.central-dia-card-corpo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.central-dia-card-topo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.central-dia-card-tipo {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-faint);
+}
+
+.central-dia-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.central-dia-badge.is-urgente {
+  background: #d6454522;
+  color: #d64545;
+}
+.central-dia-badge.is-atencao {
+  background: #d8a40022;
+  color: #d8a400;
+}
+.central-dia-badge.is-oportunidade {
+  background: #0f9d6322;
+  color: #0f9d63;
+}
+
+.central-dia-card-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.central-dia-card-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.central-dia-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.central-dia-destaque {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #d8a400;
+  margin: 2px 0 0;
+}
+
+.central-dia-card-acoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+/* ------------------------------------ Compromisso (agenda) ------------------------------------ */
+
+.central-dia-compromisso {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+}
+
+.central-dia-compromisso-hora {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  min-width: 52px;
+}
+
+.central-dia-status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--navy-raised-2);
+  color: var(--text-faint);
+}
+.central-dia-status-pill.is-confirmado {
+  background: #0f9d6322;
+  color: #0f9d63;
+}
+.central-dia-status-pill.is-aguardando {
+  background: #d8a40022;
+  color: #d8a400;
+}
+.central-dia-status-pill.is-atrasado,
+.central-dia-status-pill.is-cancelado {
+  background: #d6454522;
+  color: #d64545;
+}
+.central-dia-status-pill.is-concluido {
+  background: #2e6bff22;
+  color: var(--blue);
+}
+
+/* ----------------------------------------- Recomendações ----------------------------------------- */
+
+.central-dia-recomendacoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.central-dia-recomendacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+}
+.central-dia-recomendacao .n {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 2px;
+}
+.central-dia-recomendacao .r {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin: 0;
+}
+.central-dia-recomendacao .r .is-alto {
+  color: #d64545;
+  font-weight: 700;
+}
+.central-dia-recomendacao .r .is-medio {
+  color: #d8a400;
+  font-weight: 700;
+}
+.central-dia-recomendacao .r .is-baixo {
+  color: var(--text-faint);
+  font-weight: 700;
+}
+
+.central-dia-recomendacao-acoes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* --------------------------------------- Concluídos hoje --------------------------------------- */
+
+.central-dia-concluido-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-soft);
+}
+.central-dia-concluido-row .n {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+.central-dia-concluido-row .r {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+/* --------------------------------------- Organizar meu dia --------------------------------------- */
+
+.central-dia-organizar-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.central-dia-organizar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+}
+.central-dia-organizar-item.is-atual {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+
+.central-dia-organizar-ordem {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.central-dia-organizar-info {
+  flex: 1;
+  min-width: 0;
+}
+.central-dia-organizar-info .n {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+.central-dia-organizar-info .r {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.central-dia-organizar-acoes {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .central-dia-resumo {
+    flex-wrap: wrap;
+  }
+  .central-dia-resumo-atualizacao {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .central-dia-filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .central-dia-filtros-dir {
+    justify-content: space-between;
+  }
+  .central-dia-card,
+  .central-dia-compromisso {
+    flex-wrap: wrap;
+  }
+  .central-dia-card-acoes {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
