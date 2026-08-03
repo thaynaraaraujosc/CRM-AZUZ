@@ -51,7 +51,12 @@ function useFecharAoClicarFora(
   }, [ativo]);
 }
 
-/** Fábrica de handler de arraste — permite mover qualquer popup flutuante pela tela, pegando pelo cabeçalho. */
+/**
+ * Fábrica de handler de arraste — permite mover qualquer popup flutuante pela tela,
+ * pegando pelo cabeçalho. A posição é sempre grampeada (clamp) aos limites da
+ * viewport usando o tamanho real do painel, então nenhum painel pode ser
+ * arrastado para fora da tela e "sumir".
+ */
 function criarIniciarArraste(seletor: string, setPos: (p: { x: number; y: number }) => void) {
   return (e: React.MouseEvent) => {
     const el = (e.currentTarget as HTMLElement).closest(seletor) as HTMLElement | null;
@@ -59,8 +64,17 @@ function criarIniciarArraste(seletor: string, setPos: (p: { x: number; y: number
     const rect = el.getBoundingClientRect();
     const dx = e.clientX - rect.left;
     const dy = e.clientY - rect.top;
+    const margem = 8;
+    function clampPos(x: number, y: number) {
+      const maxX = Math.max(margem, window.innerWidth - rect.width - margem);
+      const maxY = Math.max(margem, window.innerHeight - rect.height - margem);
+      return {
+        x: Math.min(Math.max(x, margem), maxX),
+        y: Math.min(Math.max(y, margem), maxY),
+      };
+    }
     function mover(ev: MouseEvent) {
-      setPos({ x: ev.clientX - dx, y: ev.clientY - dy });
+      setPos(clampPos(ev.clientX - dx, ev.clientY - dy));
     }
     function soltar() {
       window.removeEventListener("mousemove", mover);

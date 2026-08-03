@@ -37,15 +37,22 @@ export function FloatingDropdown({
   const abrirPraCima =
     espacoAbaixo < alturaMax + margem && anchorRect.top > alturaMax + margem;
 
+  // Largura real nunca maior que a viewport, e a posição horizontal é sempre
+  // grampeada (clamp) dentro da tela — o alinhamento (left/right) só decide
+  // de que lado o dropdown nasce, não permite que ele saia da viewport.
+  const larguraReal = Math.min(width, window.innerWidth - margem * 2);
+  const maxLeft = Math.max(margem, window.innerWidth - larguraReal - margem);
+  const leftDesejado =
+    align === "left" ? anchorRect.left : anchorRect.right - larguraReal;
+  const left = Math.min(Math.max(leftDesejado, margem), maxLeft);
+
   const posicao: React.CSSProperties = {
     position: "fixed",
-    width,
+    width: larguraReal,
     maxHeight: alturaMax,
     top: abrirPraCima ? "auto" : anchorRect.bottom + 8,
     bottom: abrirPraCima ? window.innerHeight - anchorRect.top + 8 : "auto",
-    left: align === "left" ? anchorRect.left : "auto",
-    right:
-      align === "right" ? window.innerWidth - anchorRect.right : "auto",
+    left,
   };
 
   return createPortal(
