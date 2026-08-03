@@ -6361,6 +6361,19 @@ table.tbl tbody tr:hover td {
   background: var(--navy-raised);
 }
 
+/* Item 14 — feedback visual claro de que soltar aqui vai criar um bloco novo (arrastando da
+   biblioteca), em vez de simplesmente aceitar o drop sem indicar nada. */
+.flow-canvas-recebendo::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 2px dashed var(--blue);
+  border-radius: 10px;
+  background: rgba(46, 107, 255, 0.04);
+  pointer-events: none;
+  z-index: 4;
+}
+
 .flow-canvas .react-flow__attribution {
   display: none;
 }
@@ -6584,6 +6597,10 @@ table.tbl tbody tr:hover td {
 
 .flow-lib-bloco:active {
   cursor: grabbing;
+}
+
+.flow-lib-bloco.is-arrastando {
+  opacity: 0.4;
 }
 
 .flow-lib-bloco-icone {

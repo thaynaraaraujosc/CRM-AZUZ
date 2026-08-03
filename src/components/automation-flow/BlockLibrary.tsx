@@ -173,7 +173,9 @@ function BlocoSecao({
           onDragStart={(e) => {
             e.dataTransfer.setData(FLOW_DND_MIME, b.tipo);
             e.dataTransfer.effectAllowed = "copy";
+            e.currentTarget.classList.add("is-arrastando");
           }}
+          onDragEnd={(e) => e.currentTarget.classList.remove("is-arrastando")}
         >
           <div className={`flow-lib-bloco-icone flow-cat-${b.categoria}`} aria-hidden="true">
             {b.label.slice(0, 1).toUpperCase()}

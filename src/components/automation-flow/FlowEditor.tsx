@@ -99,6 +99,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [escolherGatilhoAberto, setEscolherGatilhoAberto] = useState(false);
   const [acaoRapida, setAcaoRapida] = useState<{ nodeId: string; handleId: string | undefined } | null>(null);
   const [minimapaVisivel, setMinimapaVisivel] = useState(true);
+  const [arrastandoSobreCanvas, setArrastandoSobreCanvas] = useState(false);
 
   const historyRef = useRef<Snapshot[]>([{ nodes: rfNodes, edges: rfEdges }]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -278,6 +279,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
+    setArrastandoSobreCanvas(false);
     const tipo = e.dataTransfer.getData(FLOW_DND_MIME) as FlowNodeType;
     if (!tipo) return;
     const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
@@ -286,6 +288,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   function onDragOver(e: React.DragEvent) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
+    if (!arrastandoSobreCanvas) setArrastandoSobreCanvas(true);
+  }
+  function onDragLeave(e: React.DragEvent) {
+    // Só desliga o destaque quando sai de fato da área do canvas — dragleave também dispara ao passar
+    // por cima de um node/filho dentro dela, e não queremos piscar o destaque nesses casos.
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setArrastandoSobreCanvas(false);
   }
 
   function duplicarSelecionados() {
@@ -557,7 +566,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       <div className="flow-body">
         <BlockLibrary aberta={libAberta} onFechar={() => setLibAberta((v) => !v)} onAdicionarBloco={(tipo) => adicionarBloco(tipo)} />
 
-        <div className="flow-canvas" onDrop={onDrop} onDragOver={onDragOver}>
+        <div
+          className={`flow-canvas${arrastandoSobreCanvas ? " flow-canvas-recebendo" : ""}`}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+        >
           <ReactFlow
             nodes={nodesParaRenderizar}
             edges={edgesParaRenderizar}
