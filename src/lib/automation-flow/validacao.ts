@@ -6,13 +6,17 @@
 
 import type {
   AguardarData,
+  CriarTarefaData,
+  EtiquetaEventoData,
   FlowEdge,
   FlowNode,
   FluxoAutomacao,
+  GatilhoEtapaData,
   MensagemBotoesData,
   MensagemMidiaData,
   MensagemTextoData,
   ProblemaValidacao,
+  TarefaEventoData,
 } from "./types";
 
 let contador = 0;
@@ -170,6 +174,71 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         id: proximoIdProblema(),
         severidade: "aviso",
         mensagem: `Bloco de condição "${n.titulo ?? n.type}" está vazio — nunca vai filtrar nada.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7b. Gatilho de etapa (entrou/saiu/parado) sem funil escolhido.
+  const TIPOS_GATILHO_ETAPA = new Set(["lead_entrou_etapa", "lead_saiu_etapa", "lead_parado_etapa"]);
+  nodes.forEach((n) => {
+    if (!TIPOS_GATILHO_ETAPA.has(n.type)) return;
+    const data = n.data as GatilhoEtapaData;
+    if (ehTextoVazio(data.funilId)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem funil e etapa escolhidos.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7c. Adicionar/remover etiqueta sem etiqueta escolhida.
+  const TIPOS_ETIQUETA_ACAO = new Set(["adicionar_etiqueta", "remover_etiqueta"]);
+  nodes.forEach((n) => {
+    if (!TIPOS_ETIQUETA_ACAO.has(n.type)) return;
+    const data = n.data as EtiquetaEventoData;
+    if (ehTextoVazio(data.etiquetaNome)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem etiqueta escolhida.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7d. Criar tarefa sem título.
+  nodes.forEach((n) => {
+    if (n.type !== "criar_tarefa") return;
+    const data = n.data as CriarTarefaData;
+    if (ehTextoVazio(data.titulo)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem título de tarefa definido.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7e. Gatilho de tarefa (criada/concluída) com filtro escolhido mas sem o valor correspondente.
+  const TIPOS_GATILHO_TAREFA = new Set(["tarefa_criada", "tarefa_concluida"]);
+  nodes.forEach((n) => {
+    if (!TIPOS_GATILHO_TAREFA.has(n.type)) return;
+    const data = n.data as TarefaEventoData;
+    const faltando =
+      (data.filtroModo === "categoria" && ehTextoVazio(data.categoria)) ||
+      (data.filtroModo === "titulo" && ehTextoVazio(data.tituloContem)) ||
+      (data.filtroModo === "responsavel" && ehTextoVazio(data.responsavel)) ||
+      (data.filtroModo === "equipe" && ehTextoVazio(data.equipe)) ||
+      (data.filtroModo === "funil" && ehTextoVazio(data.funilId));
+    if (faltando) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está com o filtro de tarefa incompleto.`,
         nodeId: n.id,
       });
     }

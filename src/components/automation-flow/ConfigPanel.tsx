@@ -6,21 +6,28 @@ import type {
   AguardarData,
   CondicaoGrupoData,
   ConfiguracoesFluxo,
+  CriarTarefaData,
   FlowNode,
   FluxoAutomacao,
   MensagemBotoesData,
   ProblemaValidacao,
+  TarefaEventoData,
 } from "@/lib/automation-flow/types";
+import { resumoNaturalNo } from "@/lib/automation-flow/resumo";
+import { useFunis } from "@/lib/funis-context";
 import { AguardarForm } from "./forms/AguardarForm";
 import { CondicaoForm } from "./forms/CondicaoForm";
 import { ConfiguracoesGeraisForm } from "./forms/ConfiguracoesGeraisForm";
+import { CriarTarefaForm } from "./forms/CriarTarefaForm";
 import { GenericForm } from "./forms/GenericForm";
 import { MensagemForm } from "./forms/MensagemForm";
 import { MensagemMidiaForm } from "./forms/MensagemMidiaForm";
 import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
+import { TarefaEventoForm } from "./forms/TarefaEventoForm";
 
 const TIPOS_OPCOES = new Set(["mensagem_botoes", "mensagem_lista"]);
 const TIPOS_MIDIA = new Set(["mensagem_imagem", "mensagem_video", "mensagem_audio", "mensagem_documento"]);
+const TIPOS_TAREFA_EVENTO = new Set(["tarefa_criada", "tarefa_concluida"]);
 
 function FormularioDoNode({
   node,
@@ -37,6 +44,12 @@ function FormularioDoNode({
   }
   if (node.type === "aguardar") {
     return <AguardarForm data={node.data as AguardarData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (TIPOS_TAREFA_EVENTO.has(node.type)) {
+    return <TarefaEventoForm data={node.data as TarefaEventoData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "criar_tarefa") {
+    return <CriarTarefaForm data={node.data as CriarTarefaData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
   }
   if (TIPOS_OPCOES.has(node.type)) {
     return (
@@ -79,6 +92,7 @@ export function ConfigPanel({
 }) {
   const [aba, setAba] = useState<"configurar" | "problemas">("configurar");
   const node = selectedNodes.length === 1 ? selectedNodes[0] : null;
+  const { funis } = useFunis();
 
   return (
     <aside className="flow-config" aria-label="Painel de configuração">
@@ -140,6 +154,12 @@ export function ConfigPanel({
               <h4>Configuração</h4>
             </div>
             <FormularioDoNode node={node} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
+            <div className="panel-h divided">
+              <h4>O que este bloco fará</h4>
+            </div>
+            <div className="flow-form">
+              <p className="hint flow-resumo-natural">{resumoNaturalNo(node, funis)}</p>
+            </div>
           </>
         ) : selectedNodes.length > 1 ? (
           <p className="hint">{selectedNodes.length} blocos selecionados — selecione um só pra configurar, ou nenhum pra ver as configurações gerais do fluxo.</p>

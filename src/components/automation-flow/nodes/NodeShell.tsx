@@ -5,6 +5,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoIndicaIncompleto, resumoNo, saidasDoNo, temEntrada } from "@/lib/automation-flow/resumo";
 import type { FlowNodeCategory } from "@/lib/automation-flow/types";
+import { useFunis } from "@/lib/funis-context";
 import type { FlowRFNode } from "../utils";
 
 /** lucide-react não está instalado nesse projeto — glyph curto por categoria no lugar de ícone de verdade. */
@@ -39,6 +40,7 @@ const NOME_CATEGORIA: Record<FlowNodeCategory, string> = {
  */
 export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
   const { flowNode, problemas, saidasConectadas, caminhosConvergindo, ordemNarrativa, explicacao, onAdicionarApos } = data;
+  const { funis } = useFunis();
   const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === flowNode.type);
   const saidas = saidasDoNo(flowNode);
   const temErro = problemas.some((p) => p.severidade === "erro");
@@ -92,7 +94,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
       </div>
 
       {(() => {
-        const resumo = resumoNo(flowNode);
+        const resumo = resumoNo(flowNode, funis);
         const incompleto = resumoIndicaIncompleto(resumo);
         return (
           <div className={`flow-node-body${incompleto ? " flow-node-body-incompleto" : ""}`}>

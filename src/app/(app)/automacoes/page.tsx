@@ -13,6 +13,7 @@ import type {
   FluxoAutomacao,
   RegistroExecucao,
 } from "@/lib/automation-flow/types";
+import type { Funil } from "@/lib/data";
 import { IconAutomacoes, IconSearch } from "@/components/icons";
 import { FloatingDropdown, Toggle, Topbar } from "@/components/ui";
 import { VisualizarFluxo } from "@/components/automation-flow/VisualizarFluxo";
@@ -30,10 +31,10 @@ function labelGatilho(tipo: FlowNodeType): string {
 }
 
 /** "Lead entrou na etapa — Funil: x · Etapa: y" — rótulo do bloco + o resumo de uma linha que o próprio motor usa no canvas. */
-function resumoGatilhoFluxo(fluxo: FluxoAutomacao): string {
+function resumoGatilhoFluxo(fluxo: FluxoAutomacao, funis: Funil[]): string {
   const no = noGatilhoDoFluxo(fluxo);
   if (!no) return "Sem gatilho definido";
-  const detalhe = resumoNo(no);
+  const detalhe = resumoNo(no, funis);
   return detalhe && detalhe !== "Sem configuração adicional"
     ? `${labelGatilho(no.type)} — ${detalhe}`
     : labelGatilho(no.type);
@@ -990,7 +991,7 @@ function AutomacoesPageInner() {
                       </p>
                     )}
                     <p className="int-sub">
-                      {resumoGatilhoFluxo(fluxo)}
+                      {resumoGatilhoFluxo(fluxo, funis)}
                       {funilDoFluxo ? ` · Funil: ${funilDoFluxo.nome}` : ""}
                       {` · ${fluxo.nodes.length} ${fluxo.nodes.length === 1 ? "bloco" : "blocos"}`}
                     </p>

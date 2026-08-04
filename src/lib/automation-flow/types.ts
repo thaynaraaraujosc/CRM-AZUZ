@@ -203,6 +203,18 @@ export type IntegracaoExternaData = { integracaoId?: string; evento?: string };
 export type ConsultaEventoData = { motivo?: string };
 export type FormularioPreenchidoData = { formularioId?: string };
 
+/** "Qual tarefa" dispara o gatilho — ver item 10/11 do pedido: nunca "criar uma tarefa", sempre um
+ * filtro sobre tarefas que já existem/serão criadas por outro caminho. */
+export type FiltroTarefaModo = "qualquer" | "categoria" | "titulo" | "responsavel" | "equipe" | "funil";
+export type TarefaEventoData = {
+  filtroModo: FiltroTarefaModo;
+  categoria?: string;
+  tituloContem?: string;
+  responsavel?: string;
+  equipe?: string;
+  funilId?: string;
+};
+
 export type CondicaoGrupoData = { grupo: GrupoCondicoes };
 
 export type MensagemTextoData = {
@@ -295,7 +307,26 @@ export type AlterarFunilData = { funilId: string; etapaTitulo?: string };
 export type AlterarResponsavelData = { atendenteNome: string };
 export type EncaminharEquipeData = { equipeNome?: string };
 export type DistribuirDisponibilidadeData = { candidatos?: string[] };
-export type CriarTarefaData = { titulo: string; prazoValor?: number; prazoUnidade?: string; responsavel?: string };
+export type ModoResponsavelTarefa = "atual" | "pessoa" | "equipe";
+export type ModoPrazoTarefa = "imediatamente" | "depois_de" | "data_especifica";
+export type PrioridadeTarefa = "baixa" | "normal" | "alta" | "urgente";
+export type RelacionarTarefaA = "contato" | "negocio" | "ambos";
+
+export type CriarTarefaData = {
+  categoria?: string;
+  titulo: string;
+  descricao?: string;
+  modoResponsavel?: ModoResponsavelTarefa;
+  responsavel?: string;
+  equipe?: string;
+  modoPrazo?: ModoPrazoTarefa;
+  prazoValor?: number;
+  prazoUnidade?: string;
+  data?: string;
+  horario?: string;
+  prioridade?: PrioridadeTarefa;
+  relacionarA?: RelacionarTarefaA;
+};
 export type CriarLembreteData = { titulo: string; tempoValor?: number; tempoUnidade?: string };
 export type AtualizarCampoData = { campoNome: string; valor: string };
 export type CriarNegocioData = { funilId: string; etapaTitulo: string; valor?: string };

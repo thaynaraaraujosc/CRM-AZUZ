@@ -3,6 +3,7 @@
 import { equipe } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
 import type { FlowNode } from "@/lib/automation-flow/types";
+import { EtiquetaSelect } from "./EtiquetaSelect";
 
 /** Rótulo amigável a partir do nome da chave (`etapaTitulo` -> "Etapa titulo"). */
 function rotuloDaChave(chave: string): string {
@@ -10,6 +11,7 @@ function rotuloDaChave(chave: string): string {
   return comEspacos.charAt(0).toUpperCase() + comEspacos.slice(1);
 }
 
+const CHAVES_ETIQUETA = new Set(["etiquetaNome"]);
 const CHAVES_FUNIL = new Set(["funilId"]);
 const CHAVES_ETAPA_TITULO = new Set(["etapaTitulo"]);
 const CHAVES_ETAPA_ID = new Set(["etapaId"]);
@@ -45,6 +47,17 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
       {chaves.map((chave) => {
         if (CHAVES_OCULTAS.has(chave)) return null;
         const valor = d[chave];
+
+        if (CHAVES_ETIQUETA.has(chave)) {
+          return (
+            <EtiquetaSelect
+              key={chave}
+              label="Etiqueta"
+              value={typeof valor === "string" ? valor : ""}
+              onChange={(nome) => set(chave, nome)}
+            />
+          );
+        }
 
         if (CHAVES_FUNIL.has(chave)) {
           return (

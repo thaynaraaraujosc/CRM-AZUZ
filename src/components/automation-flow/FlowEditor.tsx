@@ -24,6 +24,8 @@ import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoNo, saidasDoNo } from "@/lib/automation-flow/resumo";
 import { validarFluxo } from "@/lib/automation-flow/validacao";
+import type { Funil } from "@/lib/data";
+import { useFunis } from "@/lib/funis-context";
 import type {
   ConfiguracoesFluxo,
   FlowNode as DomainFlowNode,
@@ -85,8 +87,8 @@ const ACOES_COMUNS: FlowNodeType[] = [
 /** Frase curta pro modo "Entender fluxo" (item 24) — mesma frase de resumoNo(), só emoldurada por
  * categoria pra ler como narrativa ("Começa quando...", "Verifica...", "Envia...") em vez de um
  * fragmento solto. */
-function explicacaoDoNo(flowNode: DomainFlowNode): string {
-  const resumo = resumoNo(flowNode);
+function explicacaoDoNo(flowNode: DomainFlowNode, funis: Funil[]): string {
+  const resumo = resumoNo(flowNode, funis);
   switch (flowNode.category) {
     case "gatilho":
       return `Começa quando: ${resumo}`;
@@ -113,6 +115,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const { fluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo } = useAutomationFlows();
   const fluxo = fluxos.find((f) => f.id === fluxoId);
   const { screenToFlowPosition, fitView, setCenter, zoomIn, zoomOut } = useReactFlow();
+  const { funis } = useFunis();
 
   const [rfNodes, setRfNodes] = useState<FlowRFNode[]>(() => domainNodesToRF(fluxo?.nodes ?? []));
   const [rfEdges, setRfEdges] = useState<FlowRFEdge[]>(() => domainEdgesToRF(fluxo?.edges ?? []));
@@ -583,11 +586,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           saidasConectadas: saidasConectadasPorNode.get(n.id),
           caminhosConvergindo: entradasPorNode.get(n.id) ?? 0,
           ordemNarrativa: ordemNarrativaPorNode?.get(n.id),
-          explicacao: entenderFluxoAtivo ? explicacaoDoNo(n.data.flowNode) : undefined,
+          explicacao: entenderFluxoAtivo ? explicacaoDoNo(n.data.flowNode, funis) : undefined,
           onAdicionarApos: modoConstrucao ? (handleId: string | undefined) => setAcaoRapida({ nodeId: n.id, handleId }) : undefined,
         },
       })),
-    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao],
+    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis],
   );
   const edgesParaRenderizar = useMemo(
     () =>

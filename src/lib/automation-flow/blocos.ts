@@ -56,7 +56,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Dispara quando o lead entra numa etapa do funil.",
     icone: "LogIn",
     corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({ disparoImediato: true }),
+    dataPadrao: () => ({ funilId: "", etapaId: "", disparoImediato: true }),
   },
   {
     tipo: "lead_saiu_etapa",
@@ -65,7 +65,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Dispara quando o lead sai de uma etapa do funil.",
     icone: "LogOut",
     corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({ disparoImediato: true }),
+    dataPadrao: () => ({ funilId: "", etapaId: "", disparoImediato: true }),
   },
   {
     tipo: "lead_parado_etapa",
@@ -74,7 +74,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Dispara quando o lead fica parado numa etapa por um tempo.",
     icone: "Clock",
     corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({ tempoValor: 24, tempoUnidade: "horas" }),
+    dataPadrao: () => ({ funilId: "", etapaId: "", tempoValor: 2, tempoUnidade: "dias" }),
   },
   {
     tipo: "lead_respondeu",
@@ -155,7 +155,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Dispara quando uma tarefa é criada pro contato.",
     icone: "ListPlus",
     corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({}),
+    dataPadrao: () => ({ filtroModo: "qualquer" }),
   },
   {
     tipo: "tarefa_concluida",
@@ -164,7 +164,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Dispara quando uma tarefa do contato é concluída.",
     icone: "ListChecks",
     corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({}),
+    dataPadrao: () => ({ filtroModo: "qualquer" }),
   },
   {
     tipo: "tarefa_vencida",
@@ -532,7 +532,16 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Cria uma tarefa com prazo pro time.",
     icone: "ListPlus",
     corClasse: corDaCategoria("acao"),
-    dataPadrao: () => ({ titulo: "" }),
+    dataPadrao: () => ({
+      categoria: "Follow-up",
+      titulo: "",
+      modoResponsavel: "atual",
+      modoPrazo: "depois_de",
+      prazoValor: 2,
+      prazoUnidade: "horas",
+      prioridade: "normal",
+      relacionarA: "contato",
+    }),
   },
   {
     tipo: "criar_lembrete",
