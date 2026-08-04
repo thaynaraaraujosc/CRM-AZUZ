@@ -1509,11 +1509,18 @@ a.timeline-card:hover {
   font-size: 11.5px;
   font-weight: 700;
   padding: 8px 13px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   color: var(--text-muted);
   background: var(--navy-raised);
   cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.fchip:hover:not(.active) {
+  background: var(--surface-hover);
+  border-color: var(--gray-400);
+  color: var(--ink);
 }
 
 .fchip.active {
@@ -1576,8 +1583,14 @@ table.tbl tbody tr:last-child td {
   border-bottom: none;
 }
 
+table.tbl tbody tr td {
+  transition: background var(--transition-fast);
+}
+
+/* Hover neutro (não azul) — azul fica reservado pra ação/seleção real, não pra "estou passando o
+   mouse aqui" (regra de cor da reestruturação de design, fase 1). */
 table.tbl tbody tr:hover td {
-  background: var(--blue-soft-2);
+  background: var(--surface-hover);
 }
 
 .name-cell {
@@ -1587,37 +1600,38 @@ table.tbl tbody tr:hover td {
 }
 
 .name-cell .n {
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
   white-space: nowrap;
+  transition: color var(--transition-fast);
 }
 
 .stage-tag {
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
   padding: 4px 10px;
-  border-radius: 20px;
-  background: var(--line-soft);
+  border-radius: var(--radius-xl);
+  background: var(--gray-100);
   color: var(--text-muted);
   white-space: nowrap;
 }
 
 .stage-tag.won {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .origin-tag {
-  font-size: 11px;
+  font-size: var(--fs-secondary);
   color: var(--text-faint);
-  font-weight: 600;
+  font-weight: var(--fw-medium);
 }
 
 .role-tag {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
   padding: 4px 10px;
-  border-radius: 20px;
-  background: var(--line-soft);
+  border-radius: var(--radius-xl);
+  background: var(--gray-100);
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -1940,10 +1954,13 @@ table.tbl tbody tr:hover td {
 
 /* ---------------- Painel que abre embaixo do kanban ---------------- */
 
+/* Painel de detalhe (contato/negócio selecionado) — contorno neutro + elevação, não azul: o painel
+   estar aberto não é uma "ação" (regra de cor da reestruturação de design, fase 1). */
 .open-conv {
   margin-top: 18px;
-  border: 1px solid var(--blue);
-  border-radius: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
@@ -1952,7 +1969,7 @@ table.tbl tbody tr:hover td {
   align-items: center;
   gap: 11px;
   padding: 14px 17px;
-  background: var(--blue-soft-2);
+  background: var(--gray-50);
   border-bottom: 1px solid var(--line);
 }
 
@@ -1972,6 +1989,11 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
   font-weight: 600;
   white-space: nowrap;
+  transition: color var(--transition-fast);
+}
+
+.open-conv-h .close:hover {
+  color: var(--danger);
 }
 
 .open-conv-body {
