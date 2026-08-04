@@ -787,249 +787,6 @@ function GrupoToolbar({ rotulo, icone, largura = 220, children }: { rotulo: stri
   );
 }
 
-/**
- * Régua horizontal com marcadores de margem arrastáveis, igual ao Word — arrastar muda a margem de
- * verdade. Esquerda e direita são independentes: mover uma nunca move a outra (cada uma tem seu
- * próprio callback, ao contrário de antes onde as duas dividiam o mesmo valor de margem).
- */
-function ReguaDocumento({
-  larguraMm,
-  margemEsquerdaMm,
-  margemDireitaMm,
-  onMudarEsquerda,
-  onMudarDireita,
-  tabulacoesMm,
-  onMudarTabulacoes,
-  recuo,
-  onMudarRecuo,
-}: {
-  larguraMm: number;
-  margemEsquerdaMm: number;
-  margemDireitaMm: number;
-  onMudarEsquerda: (mm: number) => void;
-  onMudarDireita: (mm: number) => void;
-  tabulacoesMm: number[];
-  onMudarTabulacoes: (novas: number[]) => void;
-  recuo: { primeiraLinhaMm: number; esquerdoMm: number; direitoMm: number };
-  onMudarRecuo: (patch: Partial<{ primeiraLinhaMm: number; esquerdoMm: number; direitoMm: number }>) => void;
-}) {
-  const reguaRef = useRef<HTMLDivElement>(null);
-  const marcasQtd = Math.round(larguraMm / 10);
-  const marcas = Array.from({ length: marcasQtd + 1 }, (_, i) => i);
-  const arrastandoRef = useRef(false);
-
-  function iniciarArrasteMargem(lado: "esquerda" | "direita") {
-    return (eDown: React.MouseEvent) => {
-      eDown.preventDefault();
-      function mover(ev: MouseEvent) {
-        const el = reguaRef.current;
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const xMm = ((ev.clientX - rect.left) / rect.width) * larguraMm;
-        if (lado === "esquerda") {
-          onMudarEsquerda(Math.round(Math.min(Math.max(xMm, 5), larguraMm - margemDireitaMm - 10)));
-        } else {
-          onMudarDireita(Math.round(Math.min(Math.max(larguraMm - xMm, 5), larguraMm - margemEsquerdaMm - 10)));
-        }
-      }
-      function soltar() {
-        window.removeEventListener("mousemove", mover);
-        window.removeEventListener("mouseup", soltar);
-      }
-      window.addEventListener("mousemove", mover);
-      window.addEventListener("mouseup", soltar);
-    };
-  }
-
-  /** Clicar num espaço vazio da régua adiciona uma tabulação nova ali. */
-  function aoClicarNaRegua(e: React.MouseEvent) {
-    if (arrastandoRef.current) return; // era o fim de um arraste, não um clique de verdade
-    const el = reguaRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const xMm = Math.round(((e.clientX - rect.left) / rect.width) * larguraMm);
-    if (xMm <= margemEsquerdaMm || xMm >= larguraMm - margemDireitaMm) return; // só dentro da área útil
-    onMudarTabulacoes([...tabulacoesMm, xMm].sort((a, b) => a - b));
-  }
-
-  function iniciarArrasteTabulacao(indice: number) {
-    return (eDown: React.MouseEvent) => {
-      eDown.preventDefault();
-      eDown.stopPropagation();
-      arrastandoRef.current = true;
-      function mover(ev: MouseEvent) {
-        const el = reguaRef.current;
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const xMm = Math.round(((ev.clientX - rect.left) / rect.width) * larguraMm);
-        const novas = [...tabulacoesMm];
-        novas[indice] = Math.min(Math.max(xMm, margemEsquerdaMm), larguraMm - margemDireitaMm);
-        onMudarTabulacoes(novas);
-      }
-      function soltar() {
-        window.removeEventListener("mousemove", mover);
-        window.removeEventListener("mouseup", soltar);
-        onMudarTabulacoes([...tabulacoesMm].sort((a, b) => a - b));
-        setTimeout(() => { arrastandoRef.current = false; }, 0);
-      }
-      window.addEventListener("mousemove", mover);
-      window.addEventListener("mouseup", soltar);
-    };
-  }
-
-  function removerTabulacao(indice: number) {
-    return (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      onMudarTabulacoes(tabulacoesMm.filter((_, i) => i !== indice));
-    };
-  }
-
-  /** Recuo do parágrafo atual — completamente independente da margem da página (soma-se a ela). */
-  function iniciarArrasteRecuo(tipo: "primeiraLinha" | "esquerdo" | "direito") {
-    return (eDown: React.MouseEvent) => {
-      eDown.preventDefault();
-      eDown.stopPropagation();
-      function mover(ev: MouseEvent) {
-        const el = reguaRef.current;
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const xMm = ((ev.clientX - rect.left) / rect.width) * larguraMm;
-        if (tipo === "esquerdo") {
-          const novoEsquerdo = Math.max(0, xMm - margemEsquerdaMm);
-          onMudarRecuo({ esquerdoMm: novoEsquerdo });
-        } else if (tipo === "direito") {
-          const novoDireito = Math.max(0, larguraMm - margemDireitaMm - xMm);
-          onMudarRecuo({ direitoMm: novoDireito });
-        } else {
-          const novaPrimeiraLinha = xMm - margemEsquerdaMm - recuo.esquerdoMm;
-          onMudarRecuo({ primeiraLinhaMm: Math.max(-recuo.esquerdoMm, novaPrimeiraLinha) });
-        }
-      }
-      function soltar() {
-        window.removeEventListener("mousemove", mover);
-        window.removeEventListener("mouseup", soltar);
-      }
-      window.addEventListener("mousemove", mover);
-      window.addEventListener("mouseup", soltar);
-    };
-  }
-
-  return (
-    <div className="doc-regua" ref={reguaRef} onClick={aoClicarNaRegua} title="Clique num espaço vazio pra adicionar uma tabulação">
-      {marcas.map((cm) => (
-        <span key={cm} className="doc-regua-marca" aria-hidden="true">
-          {cm > 0 ? cm : ""}
-        </span>
-      ))}
-      <div
-        className="doc-regua-margem doc-regua-margem-esq"
-        style={{ left: `${(margemEsquerdaMm / larguraMm) * 100}%` }}
-        onMouseDown={iniciarArrasteMargem("esquerda")}
-        title={`Margem esquerda: ${margemEsquerdaMm}mm — arraste pra ajustar`}
-      />
-      <div
-        className="doc-regua-margem doc-regua-margem-dir"
-        style={{ left: `${((larguraMm - margemDireitaMm) / larguraMm) * 100}%` }}
-        onMouseDown={iniciarArrasteMargem("direita")}
-        title={`Margem direita: ${margemDireitaMm}mm — arraste pra ajustar`}
-      />
-      {tabulacoesMm.map((mm, indice) => (
-        <div
-          key={indice}
-          className="doc-regua-tabulacao"
-          style={{ left: `${(mm / larguraMm) * 100}%` }}
-          onMouseDown={iniciarArrasteTabulacao(indice)}
-          onDoubleClick={removerTabulacao(indice)}
-          title={`Tabulação em ${mm}mm — arraste pra mover, duplo clique pra remover`}
-        />
-      ))}
-      <div
-        className="doc-regua-recuo doc-regua-recuo-primeira-linha"
-        style={{ left: `${((margemEsquerdaMm + recuo.esquerdoMm + recuo.primeiraLinhaMm) / larguraMm) * 100}%` }}
-        onMouseDown={iniciarArrasteRecuo("primeiraLinha")}
-        title={`Recuo da primeira linha do parágrafo: ${Math.round(recuo.primeiraLinhaMm)}mm — arraste pra ajustar (independente da margem)`}
-      />
-      <div
-        className="doc-regua-recuo doc-regua-recuo-esquerdo"
-        style={{ left: `${((margemEsquerdaMm + recuo.esquerdoMm) / larguraMm) * 100}%` }}
-        onMouseDown={iniciarArrasteRecuo("esquerdo")}
-        title={`Recuo esquerdo do parágrafo: ${Math.round(recuo.esquerdoMm)}mm — arraste pra ajustar (independente da margem)`}
-      />
-      <div
-        className="doc-regua-recuo doc-regua-recuo-direito"
-        style={{ left: `${((larguraMm - margemDireitaMm - recuo.direitoMm) / larguraMm) * 100}%` }}
-        onMouseDown={iniciarArrasteRecuo("direito")}
-        title={`Recuo direito do parágrafo: ${Math.round(recuo.direitoMm)}mm — arraste pra ajustar (independente da margem)`}
-      />
-    </div>
-  );
-}
-
-/** Régua vertical, espelhando a horizontal: margens superior/inferior independentes, arrastáveis. */
-function ReguaVerticalDocumento({
-  alturaMm,
-  margemSuperiorMm,
-  margemInferiorMm,
-  onMudarSuperior,
-  onMudarInferior,
-}: {
-  alturaMm: number;
-  margemSuperiorMm: number;
-  margemInferiorMm: number;
-  onMudarSuperior: (mm: number) => void;
-  onMudarInferior: (mm: number) => void;
-}) {
-  const reguaRef = useRef<HTMLDivElement>(null);
-  const marcasQtd = Math.round(alturaMm / 10);
-  const marcas = Array.from({ length: marcasQtd + 1 }, (_, i) => i);
-
-  function iniciarArrasteMargem(lado: "superior" | "inferior") {
-    return (eDown: React.MouseEvent) => {
-      eDown.preventDefault();
-      function mover(ev: MouseEvent) {
-        const el = reguaRef.current;
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const yMm = ((ev.clientY - rect.top) / rect.height) * alturaMm;
-        if (lado === "superior") {
-          onMudarSuperior(Math.round(Math.min(Math.max(yMm, 5), alturaMm - margemInferiorMm - 10)));
-        } else {
-          onMudarInferior(Math.round(Math.min(Math.max(alturaMm - yMm, 5), alturaMm - margemSuperiorMm - 10)));
-        }
-      }
-      function soltar() {
-        window.removeEventListener("mousemove", mover);
-        window.removeEventListener("mouseup", soltar);
-      }
-      window.addEventListener("mousemove", mover);
-      window.addEventListener("mouseup", soltar);
-    };
-  }
-
-  return (
-    <div className="doc-regua-vertical" ref={reguaRef}>
-      {marcas.map((cm) => (
-        <span key={cm} className="doc-regua-vertical-marca" aria-hidden="true">
-          {cm > 0 ? cm : ""}
-        </span>
-      ))}
-      <div
-        className="doc-regua-vertical-margem doc-regua-vertical-margem-sup"
-        style={{ top: `${(margemSuperiorMm / alturaMm) * 100}%` }}
-        onMouseDown={iniciarArrasteMargem("superior")}
-        title={`Margem superior: ${margemSuperiorMm}mm — arraste pra ajustar`}
-      />
-      <div
-        className="doc-regua-vertical-margem doc-regua-vertical-margem-inf"
-        style={{ top: `${((alturaMm - margemInferiorMm) / alturaMm) * 100}%` }}
-        onMouseDown={iniciarArrasteMargem("inferior")}
-        title={`Margem inferior: ${margemInferiorMm}mm — arraste pra ajustar`}
-      />
-    </div>
-  );
-}
-
 function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void }) {
   const {
     documentos,
@@ -1060,7 +817,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [modo, setModo] = useState<"edicao" | "sugestao" | "visualizacao">("edicao");
   /** Snapshot do conteúdo de cada página no instante em que o modo sugestão foi ativado — null = não está rastreando. */
   const [sugestaoSnapshot, setSugestaoSnapshot] = useState<Record<string, string> | null>(null);
-  const [mostrarRegua, setMostrarRegua] = useState(() => lerPrefVer("mostrarRegua", false));
   const [mostrarNaoImprimiveis, setMostrarNaoImprimiveis] = useState(() => lerPrefVer("mostrarNaoImprimiveis", false));
   const [semPaginas, setSemPaginas] = useState(() => lerPrefVer("semPaginas", false));
   const [corretorAtivo, setCorretorAtivo] = useState(() => lerPrefVer("corretorAtivo", true));
@@ -1078,12 +834,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     try {
       localStorage.setItem(
         "azuz-crm-documentos-prefs-ver",
-        JSON.stringify({ mostrarRegua, mostrarNaoImprimiveis, semPaginas, corretorAtivo, mostrarToolbar }),
+        JSON.stringify({ mostrarNaoImprimiveis, semPaginas, corretorAtivo, mostrarToolbar }),
       );
     } catch {
       // localStorage indisponível — segue só em memória
     }
-  }, [mostrarRegua, mostrarNaoImprimiveis, semPaginas, corretorAtivo, mostrarToolbar]);
+  }, [mostrarNaoImprimiveis, semPaginas, corretorAtivo, mostrarToolbar]);
 
   useEffect(() => {
     function aoMudarFullscreen() {
@@ -1128,7 +884,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [menuTextoPos, setMenuTextoPos] = useState<{ x: number; y: number } | null>(null);
   const [toolbarSelecaoPos, setToolbarSelecaoPos] = useState<{ x: number; y: number } | null>(null);
   const [celulaSelecionada, setCelulaSelecionada] = useState<{ paginaId: string; td: HTMLTableCellElement } | null>(null);
-  const [recuoAtual, setRecuoAtual] = useState({ primeiraLinhaMm: 0, esquerdoMm: 0, direitoMm: 0 });
 
   // Contorno de seleção visível na própria imagem (a imagem é um <img> real dentro do HTML, não um
   // componente React controlado — por isso a classe é alternada direto no elemento do DOM).
@@ -1411,16 +1166,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     return () => window.removeEventListener("keydown", aoTeclarEsc);
   }, []);
 
-  // Mantém os marcadores de recuo da régua sempre mostrando os valores do parágrafo onde o cursor está.
-  useEffect(() => {
-    function aoMudarSelecao() {
-      const p = paragrafoDoCursor();
-      if (p) setRecuoAtual(lerRecuo(p));
-    }
-    document.addEventListener("selectionchange", aoMudarSelecao);
-    return () => document.removeEventListener("selectionchange", aoMudarSelecao);
-  }, []);
-
   // Contagem de ocorrências (popup Localizar e substituir) precisa ler o DOM de cada página via
   // ref — não é seguro fazer isso durante o render, então recalculamos aqui, num efeito, e guardamos
   // o resultado em estado normal.
@@ -1581,41 +1326,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     novoRange.collapse(true);
     selecao.removeAllRanges();
     selecao.addRange(novoRange);
-    salvarConteudoPagina(paginaAtivaId);
-  }
-
-  /** Acha o elemento de bloco (parágrafo/título/item de lista/citação) que contém o cursor agora. */
-  function paragrafoDoCursor(): HTMLElement | null {
-    const selecao = window.getSelection();
-    if (!selecao || selecao.rangeCount === 0) return null;
-    let no: Node | null = selecao.getRangeAt(0).startContainer;
-    if (no.nodeType !== Node.ELEMENT_NODE) no = no.parentNode;
-    let el = no as HTMLElement | null;
-    const TAGS_BLOCO = new Set(["P", "DIV", "LI", "H1", "H2", "H3", "H4", "H5", "H6", "BLOCKQUOTE"]);
-    while (el && !el.classList.contains("doc-body-rich")) {
-      if (TAGS_BLOCO.has(el.tagName)) return el;
-      el = el.parentElement;
-    }
-    return null;
-  }
-
-  function lerRecuo(el: HTMLElement | null) {
-    if (!el) return { primeiraLinhaMm: 0, esquerdoMm: 0, direitoMm: 0 };
-    return {
-      primeiraLinhaMm: parseFloat(el.style.textIndent) || 0,
-      esquerdoMm: parseFloat(el.style.marginLeft) || 0,
-      direitoMm: parseFloat(el.style.marginRight) || 0,
-    };
-  }
-
-  /** Recuo de verdade do parágrafo (text-indent/margin-left/margin-right) — nunca mexe na margem da página. */
-  function mudarRecuoParagrafo(patch: Partial<{ primeiraLinhaMm: number; esquerdoMm: number; direitoMm: number }>) {
-    const p = paragrafoDoCursor();
-    if (!p) return;
-    if (patch.primeiraLinhaMm !== undefined) p.style.textIndent = `${patch.primeiraLinhaMm}mm`;
-    if (patch.esquerdoMm !== undefined) p.style.marginLeft = `${patch.esquerdoMm}mm`;
-    if (patch.direitoMm !== undefined) p.style.marginRight = `${patch.direitoMm}mm`;
-    setRecuoAtual(lerRecuo(p));
     salvarConteudoPagina(paginaAtivaId);
   }
 
@@ -2779,7 +2489,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   ];
 
   const menuVer: ("sep" | ItemMenu)[] = [
-    { label: mostrarRegua ? "Ocultar régua" : "Mostrar régua", onClick: () => setMostrarRegua((v) => !v) },
     { label: estruturaAberta ? "Ocultar estrutura do documento" : "Mostrar estrutura do documento", onClick: () => setEstruturaAberta((v) => !v) },
     {
       label: mostrarNaoImprimiveis ? "Ocultar caracteres não imprimíveis" : "Mostrar caracteres não imprimíveis",
@@ -3118,7 +2827,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         </div>
       ) : null}
 
-      <div className="doc-canvas" style={{ zoom: `${zoom}%` } as React.CSSProperties}>
+      <div className="doc-canvas">
         {estruturaAberta ? (
           <aside className="doc-estrutura-painel">
             <div className="panel-h">
@@ -3142,32 +2851,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             )}
           </aside>
         ) : null}
-        <div className="doc-paginas-coluna">
+        <div className="doc-paginas-coluna" style={{ zoom: `${zoom}%` } as React.CSSProperties}>
           {paginasLocais.map((pagina, indice) => (
             <div className="doc-page-wrap" key={pagina.id}>
-              {mostrarRegua ? (
-                <ReguaDocumento
-                  larguraMm={larguraMm}
-                  margemEsquerdaMm={margemEsquerdaMm}
-                  margemDireitaMm={margemDireitaMm}
-                  onMudarEsquerda={(mm) => atualizarConfigPagina(id, { margemEsquerdaMm: mm })}
-                  onMudarDireita={(mm) => atualizarConfigPagina(id, { margemDireitaMm: mm })}
-                  tabulacoesMm={doc.config.tabulacoesMm ?? []}
-                  onMudarTabulacoes={(novas) => atualizarConfigPagina(id, { tabulacoesMm: novas })}
-                  recuo={recuoAtual}
-                  onMudarRecuo={mudarRecuoParagrafo}
-                />
-              ) : null}
               <div className="doc-page-linha">
-                {mostrarRegua ? (
-                  <ReguaVerticalDocumento
-                    alturaMm={alturaMm}
-                    margemSuperiorMm={margemSuperiorMm}
-                    margemInferiorMm={margemInferiorMm}
-                    onMudarSuperior={(mm) => atualizarConfigPagina(id, { margemSuperiorMm: mm })}
-                    onMudarInferior={(mm) => atualizarConfigPagina(id, { margemInferiorMm: mm })}
-                  />
-                ) : null}
                 <div
                   ref={(el) => {
                     folhaRefs.current[pagina.id] = el;
