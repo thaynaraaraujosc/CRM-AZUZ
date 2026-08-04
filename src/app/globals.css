@@ -4502,7 +4502,7 @@ button.camp-row:hover {
 .agenda-cell {
   min-height: 76px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--navy);
   padding: 6px;
   display: flex;
@@ -4512,11 +4512,12 @@ button.camp-row:hover {
   text-align: left;
   cursor: pointer;
   overflow: hidden;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color var(--transition-base), background var(--transition-base);
 }
 
 .agenda-cell:hover {
-  border-color: rgba(46, 107, 255, 0.4);
+  background: var(--surface-hover);
+  border-color: var(--gray-400);
 }
 
 .agenda-cell.vazia {
@@ -4546,7 +4547,7 @@ button.camp-row:hover {
   font-weight: 600;
   color: var(--blue);
   background: var(--blue-soft);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   padding: 1px 5px;
   max-width: 100%;
   overflow: hidden;
