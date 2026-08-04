@@ -270,6 +270,17 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
       const partes = [d.data, d.horario, d.profissional].filter(Boolean);
       return partes.join(" · ") || "Sem data/horário definidos";
     }
+    case "criar_negocio": {
+      if (!d.nome) return "Sem nome definido";
+      const funil = nomeFunil(funis, d.funilId);
+      const partes = [`"${d.nome}"`, funil ? `${funil}${d.etapaTitulo ? ` → ${d.etapaTitulo}` : ""}` : null, d.valor ? `R$ ${d.valor}` : null].filter(Boolean);
+      return partes.join(" · ");
+    }
+    case "distribuir_disponibilidade": {
+      if (!d.equipeNome) return "Sem equipe escolhida";
+      const modo = d.modo === "menos_ocupado" ? "menos ocupado" : "round-robin";
+      return `Equipe ${d.equipeNome} · ${modo}`;
+    }
     case "chamar_webhook": {
       return d.url ? String(d.url) : "Sem URL definida";
     }
@@ -408,6 +419,18 @@ export function resumoNaturalNo(node: FlowNode, funis?: Funil[]): string {
       if (!d.texto) return "Escreva a mensagem que será enviada.";
       const canal = ROTULO_CANAL[String(d.canal)] ?? String(d.canal ?? "WhatsApp");
       return `Envia uma mensagem pelo ${canal}.`;
+    }
+    case "criar_negocio": {
+      if (!d.nome) return "Defina o nome desse novo negócio.";
+      const funil = nomeFunil(funis, d.funilId);
+      const destino = funil ? ` no funil ${funil}${d.etapaTitulo ? `, etapa "${d.etapaTitulo}"` : ""}` : "";
+      const valor = d.valor ? ` com valor de R$ ${d.valor}` : "";
+      return `Cria o negócio "${d.nome}"${destino}${valor}.`;
+    }
+    case "distribuir_disponibilidade": {
+      if (!d.equipeNome) return "Selecione a equipe entre a qual distribuir o lead.";
+      const modo = d.modo === "menos_ocupado" ? "para o atendente com menos leads no momento" : "em revezamento (round-robin)";
+      return `Distribui o lead entre a equipe ${d.equipeNome}, ${modo}.`;
     }
     case "encaminhar_equipe":
       return d.equipeNome ? `Encaminha o atendimento para a equipe ${d.equipeNome}.` : "Selecione a equipe que vai receber o atendimento.";

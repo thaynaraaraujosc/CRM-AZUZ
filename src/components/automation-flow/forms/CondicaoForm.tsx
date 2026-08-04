@@ -1,39 +1,61 @@
 "use client";
 
+import { useMemo } from "react";
+
+import { contatos, equipe } from "@/lib/data";
+import { useConfiguracoes } from "@/lib/configuracoes-context";
+import { useFunis } from "@/lib/funis-context";
 import type {
   CampoCondicao,
   GrupoCondicoes,
   OperadorCondicao,
   RegraCondicao,
 } from "@/lib/automation-flow/types";
+import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 
-const CAMPOS: { valor: CampoCondicao; label: string }[] = [
-  { valor: "origem", label: "Origem" },
-  { valor: "canal", label: "Canal" },
-  { valor: "etapa", label: "Etapa" },
-  { valor: "funil", label: "Funil" },
-  { valor: "etiqueta", label: "Etiqueta" },
-  { valor: "responsavel", label: "Responsável" },
-  { valor: "equipe", label: "Equipe" },
-  { valor: "numero_salvo", label: "Número salvo" },
-  { valor: "campo_personalizado", label: "Campo personalizado" },
-  { valor: "cidade", label: "Cidade" },
-  { valor: "estado", label: "Estado" },
-  { valor: "data_ultima_conversa", label: "Data da última conversa" },
-  { valor: "horario_ultima_mensagem", label: "Horário da última mensagem" },
-  { valor: "respondeu", label: "Respondeu" },
-  { valor: "tentativas", label: "Tentativas" },
-  { valor: "recebeu_automacao", label: "Recebeu automação" },
-  { valor: "em_outra_automacao", label: "Está em outra automação" },
-  { valor: "possui_agendamento", label: "Possui agendamento" },
-  { valor: "situacao_agendamento", label: "Situação do agendamento" },
-  { valor: "valor_negocio", label: "Valor do negócio" },
-  { valor: "campanha", label: "Campanha" },
-  { valor: "anuncio", label: "Anúncio" },
-  { valor: "palavra_chave", label: "Palavra-chave" },
-  { valor: "consentimento", label: "Consentimento" },
-  { valor: "dia_semana", label: "Dia da semana" },
-  { valor: "horario", label: "Horário" },
+type CategoriaCampo = "Conversa" | "Funil / Negócio" | "Contato" | "Atividade";
+
+const CAMPOS: { valor: CampoCondicao; label: string; categoria: CategoriaCampo }[] = [
+  { valor: "canal", label: "Canal", categoria: "Conversa" },
+  { valor: "numero_salvo", label: "Número salvo", categoria: "Conversa" },
+  { valor: "data_ultima_conversa", label: "Data da última conversa", categoria: "Conversa" },
+  { valor: "horario_ultima_mensagem", label: "Horário da última mensagem", categoria: "Conversa" },
+  { valor: "respondeu", label: "Respondeu", categoria: "Conversa" },
+  { valor: "tentativas", label: "Tentativas", categoria: "Conversa" },
+  { valor: "recebeu_automacao", label: "Recebeu automação", categoria: "Conversa" },
+  { valor: "em_outra_automacao", label: "Está em outra automação", categoria: "Conversa" },
+  { valor: "palavra_chave", label: "Palavra-chave", categoria: "Conversa" },
+
+  { valor: "etapa", label: "Etapa", categoria: "Funil / Negócio" },
+  { valor: "funil", label: "Funil", categoria: "Funil / Negócio" },
+  { valor: "valor_negocio", label: "Valor do negócio", categoria: "Funil / Negócio" },
+
+  { valor: "origem", label: "Origem", categoria: "Contato" },
+  { valor: "etiqueta", label: "Etiqueta", categoria: "Contato" },
+  { valor: "responsavel", label: "Responsável", categoria: "Contato" },
+  { valor: "equipe", label: "Equipe", categoria: "Contato" },
+  { valor: "cidade", label: "Cidade", categoria: "Contato" },
+  { valor: "estado", label: "Estado", categoria: "Contato" },
+  { valor: "campanha", label: "Campanha", categoria: "Contato" },
+  { valor: "anuncio", label: "Anúncio", categoria: "Contato" },
+  { valor: "consentimento", label: "Consentimento", categoria: "Contato" },
+  { valor: "campo_personalizado", label: "Campo personalizado", categoria: "Contato" },
+
+  { valor: "possui_agendamento", label: "Possui agendamento", categoria: "Atividade" },
+  { valor: "situacao_agendamento", label: "Situação do agendamento", categoria: "Atividade" },
+  { valor: "dia_semana", label: "Dia da semana", categoria: "Atividade" },
+  { valor: "horario", label: "Horário", categoria: "Atividade" },
+];
+
+const CATEGORIAS_ORDEM: CategoriaCampo[] = ["Conversa", "Funil / Negócio", "Contato", "Atividade"];
+
+const CAMPOS_SIM_NAO = new Set<CampoCondicao>(["respondeu", "recebeu_automacao", "em_outra_automacao", "possui_agendamento", "consentimento"]);
+const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const CANAIS = [
+  { valor: "whatsapp", label: "WhatsApp" },
+  { valor: "instagram", label: "Instagram" },
+  { valor: "tiktok", label: "TikTok" },
+  { valor: "email", label: "E-mail" },
 ];
 
 const OPERADORES: { valor: OperadorCondicao; label: string }[] = [
@@ -87,6 +109,123 @@ export function CondicaoForm({
     onChange({ ...grupo, subgrupos: grupo.subgrupos.filter((g) => g.id !== id) });
   }
 
+  const { funis } = useFunis();
+  const equipes = useEquipesDisponiveis();
+  const etapas = Array.from(new Set(funis.flatMap((f) => f.colunas.map((c) => c.titulo))));
+  const { estado } = useConfiguracoes();
+  const etiquetas = useMemo(() => {
+    const nomes = new Set<string>();
+    contatos.forEach((c) => c.etiquetas?.forEach((e) => nomes.add(e)));
+    funis.forEach((f) => f.colunas.forEach((col) => col.cards.forEach((card) => card.etiquetas?.forEach((e) => nomes.add(e)))));
+    estado.etiquetasPersonalizadas.forEach((e) => nomes.add(e.nome));
+    return Array.from(nomes).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [funis, estado.etiquetasPersonalizadas]);
+
+  function renderValorInput(regra: RegraCondicao) {
+    const onChangeValor = (valor: string) => atualizarRegra(regra.id, { valor });
+
+    if (CAMPOS_SIM_NAO.has(regra.campo)) {
+      return (
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+          <option value="">Selecione…</option>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+      );
+    }
+    if (regra.campo === "canal") {
+      return (
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+          <option value="">Selecione…</option>
+          {CANAIS.map((c) => (
+            <option key={c.valor} value={c.valor}>
+              {c.label}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (regra.campo === "etiqueta") {
+      return (
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+          <option value="">Selecione…</option>
+          {etiquetas.map((nome) => (
+            <option key={nome} value={nome}>
+              {nome}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (regra.campo === "funil") {
+      return (
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+          <option value="">Selecione…</option>
+          {funis.map((f) => (
+            <option key={f.id} value={f.nome}>
+              {f.nome}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (regra.campo === "etapa") {
+      return (
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+          <option value="">Selecione…</option>
+          {etapas.map((titulo) => (
+            <option key={titulo} value={titulo}>
+              {titulo}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (regra.campo === "responsavel") {
+      return (
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+          <option value="">Selecione…</option>
+          {equipe.map((m) => (
+            <option key={m.nome} value={m.nome}>
+              {m.nome}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (regra.campo === "equipe") {
+      return (
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+          <option value="">Selecione…</option>
+          {equipes.map((nome) => (
+            <option key={nome} value={nome}>
+              {nome}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (regra.campo === "dia_semana") {
+      return (
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+          <option value="">Selecione…</option>
+          {DIAS_SEMANA.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (regra.campo === "horario" || regra.campo === "horario_ultima_mensagem") {
+      return <input className="input" type="time" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor" />;
+    }
+    if (regra.campo === "data_ultima_conversa") {
+      return <input className="input" type="date" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor" />;
+    }
+    return <input className="input" placeholder="Valor" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor" />;
+  }
+
   return (
     <div className="flow-cond-grupo" style={{ marginLeft: nivel > 0 ? 12 : 0 }}>
       <div className="flow-cond-grupo-h">
@@ -113,10 +252,14 @@ export function CondicaoForm({
             onChange={(e) => atualizarRegra(regra.id, { campo: e.target.value as CampoCondicao })}
             aria-label="Campo da condição"
           >
-            {CAMPOS.map((c) => (
-              <option key={c.valor} value={c.valor}>
-                {c.label}
-              </option>
+            {CATEGORIAS_ORDEM.map((cat) => (
+              <optgroup key={cat} label={cat}>
+                {CAMPOS.filter((c) => c.categoria === cat).map((c) => (
+                  <option key={c.valor} value={c.valor}>
+                    {c.label}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           {regra.campo === "campo_personalizado" ? (
@@ -140,15 +283,7 @@ export function CondicaoForm({
               </option>
             ))}
           </select>
-          {regra.operador !== "existe" && regra.operador !== "nao_existe" ? (
-            <input
-              className="input"
-              placeholder="Valor"
-              value={regra.valor ?? ""}
-              onChange={(e) => atualizarRegra(regra.id, { valor: e.target.value })}
-              aria-label="Valor"
-            />
-          ) : null}
+          {regra.operador !== "existe" && regra.operador !== "nao_existe" ? renderValorInput(regra) : null}
           {regra.operador === "entre" ? (
             <input
               className="input"

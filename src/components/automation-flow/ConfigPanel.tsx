@@ -10,6 +10,7 @@ import type {
   CondicaoGrupoData,
   ConfiguracoesFluxo,
   CriarTarefaData,
+  DistribuirDisponibilidadeData,
   EncaminharEquipeData,
   FlowNode,
   FluxoAutomacao,
@@ -27,6 +28,7 @@ import { AtualizarValorForm } from "./forms/AtualizarValorForm";
 import { CondicaoForm } from "./forms/CondicaoForm";
 import { ConfiguracoesGeraisForm } from "./forms/ConfiguracoesGeraisForm";
 import { CriarTarefaForm } from "./forms/CriarTarefaForm";
+import { DistribuirDisponibilidadeForm } from "./forms/DistribuirDisponibilidadeForm";
 import { EncaminharEquipeForm } from "./forms/EncaminharEquipeForm";
 import { GenericForm } from "./forms/GenericForm";
 import { MensagemForm } from "./forms/MensagemForm";
@@ -63,6 +65,9 @@ function FormularioDoNode({
   }
   if (node.type === "encaminhar_equipe") {
     return <EncaminharEquipeForm data={node.data as EncaminharEquipeData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "distribuir_disponibilidade") {
+    return <DistribuirDisponibilidadeForm data={node.data as DistribuirDisponibilidadeData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
   }
   if (node.type === "atualizar_status") {
     return <AtualizarStatusForm data={node.data as AtualizarStatusData} onChange={(d) => onUpdateNodeData(node.id, d)} />;

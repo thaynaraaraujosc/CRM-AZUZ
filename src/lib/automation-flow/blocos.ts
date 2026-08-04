@@ -523,7 +523,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Distribui o lead entre atendentes disponíveis.",
     icone: "Split",
     corClasse: corDaCategoria("acao"),
-    dataPadrao: () => ({}),
+    dataPadrao: () => ({ modo: "round_robin", equipeNome: "" }),
   },
   {
     tipo: "criar_tarefa",
@@ -568,7 +568,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Cria um novo card de negócio pro contato.",
     icone: "BriefcaseBusiness",
     corClasse: corDaCategoria("acao"),
-    dataPadrao: () => ({ funilId: "", etapaTitulo: "" }),
+    dataPadrao: () => ({ nome: "", funilId: "", etapaTitulo: "", valor: "" }),
   },
   {
     tipo: "atualizar_valor",

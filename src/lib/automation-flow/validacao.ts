@@ -9,7 +9,9 @@ import type {
   AguardarData,
   AtualizarStatusData,
   AtualizarValorData,
+  CriarNegocioData,
   CriarTarefaData,
+  DistribuirDisponibilidadeData,
   EncaminharEquipeData,
   EtiquetaEventoData,
   FlowEdge,
@@ -321,6 +323,34 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         id: proximoIdProblema(),
         severidade: "erro",
         mensagem: `Bloco "${n.titulo ?? n.type}" está sem modelo escolhido.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7k. Criar negócio sem nome definido.
+  nodes.forEach((n) => {
+    if (n.type !== "criar_negocio") return;
+    const data = n.data as CriarNegocioData;
+    if (ehTextoVazio(data.nome)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem nome de negócio definido.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7l. Distribuir por disponibilidade sem equipe escolhida.
+  nodes.forEach((n) => {
+    if (n.type !== "distribuir_disponibilidade") return;
+    const data = n.data as DistribuirDisponibilidadeData;
+    if (ehTextoVazio(data.equipeNome)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem equipe escolhida.`,
         nodeId: n.id,
       });
     }

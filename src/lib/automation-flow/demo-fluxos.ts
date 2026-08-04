@@ -327,7 +327,7 @@ function construirDistribuirLead(): FluxoAutomacao {
   nodes.push(no("dl-b-resp", "alterar_responsavel", "acao", respWpp, "Mantém responsável da conversa, se existir"));
   edges.push(aresta("dl-b-etq", "dl-b-resp"));
 
-  const negocioB: CriarNegocioData = { funilId: FUNIL_ID_SEED, etapaTitulo: ETAPA_NOVO_SEED };
+  const negocioB: CriarNegocioData = { nome: "Novo negócio via WhatsApp", funilId: FUNIL_ID_SEED, etapaTitulo: ETAPA_NOVO_SEED };
   nodes.push(no("dl-b-negocio", "criar_negocio", "acao", negocioB));
   edges.push(aresta("dl-b-resp", "dl-b-negocio"));
   edges.push(aresta("dl-b-negocio", "dl-check"));
@@ -512,7 +512,7 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-sat-espera", "aguardar", "espera", espera30d));
   edges.push(aresta("pv-sat-notif", "pv-sat-espera"));
 
-  const negocioRecompra: CriarNegocioData = { funilId: FUNIL_ID_SEED, etapaTitulo: ETAPA_NOVO_SEED };
+  const negocioRecompra: CriarNegocioData = { nome: "Oportunidade de recompra", funilId: FUNIL_ID_SEED, etapaTitulo: ETAPA_NOVO_SEED };
   nodes.push(no("pv-sat-negocio", "criar_negocio", "acao", negocioRecompra, "Oportunidade de recompra"));
   edges.push(aresta("pv-sat-espera", "pv-sat-negocio"));
 
