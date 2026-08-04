@@ -23,6 +23,7 @@ import {
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { Modal, Topbar } from "@/components/ui";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
+import { LogicaCanvas } from "@/components/formularios/LogicaCanvas";
 
 type AbaBuilder = "editar" | "design" | "respostas";
 type Dispositivo = "desktop" | "tablet" | "celular";
@@ -924,15 +925,6 @@ function PainelCampo({
   const comMinMax = pergunta.tipo === "numero" || pergunta.tipo === "texto_curto" || pergunta.tipo === "texto_longo";
   const logica: LogicaCampo = pergunta.logica ?? { modo: "mostrar_se", regras: [] };
 
-  function atualizarLogica(patch: Partial<LogicaCampo>) {
-    onAtualizar({ logica: { ...logica, ...patch } });
-  }
-
-  function atualizarRegra(indice: number, patch: Partial<LogicaCampo["regras"][number]>) {
-    const regras = logica.regras.map((r, i) => (i === indice ? { ...r, ...patch } : r));
-    atualizarLogica({ regras });
-  }
-
   return (
     <>
       <p className="hint" style={{ padding: "14px 14px 0" }}>
@@ -1096,48 +1088,9 @@ function PainelCampo({
               <p className="hint">Só é possível condicionar à resposta de um campo anterior nesta página.</p>
             ) : (
               <>
-                <div className="field">
-                  <label>Aplicar quando</label>
-                  <select className="input" style={{ width: "100%" }} value={logica.modo} onChange={(e) => atualizarLogica({ modo: e.target.value as LogicaCampo["modo"] })}>
-                    <option value="mostrar_se">Mostrar este campo se</option>
-                    <option value="ocultar_se">Ocultar este campo se</option>
-                    <option value="obrigatorio_se">Tornar obrigatório se</option>
-                  </select>
-                </div>
-                {logica.regras.map((regra, i) => (
-                  <div className="form-regra-logica" key={i}>
-                    <select className="input" value={regra.campoId} onChange={(e) => atualizarRegra(i, { campoId: e.target.value })}>
-                      <option value="">Campo…</option>
-                      {camposAnteriores.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.rotulo || labelTipoCampo(c.tipo)}
-                        </option>
-                      ))}
-                    </select>
-                    <select className="input" value={regra.operador} onChange={(e) => atualizarRegra(i, { operador: e.target.value as typeof regra.operador })}>
-                      {OPERADORES_LOGICA.map((o) => (
-                        <option key={o.operador} value={o.operador}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                    {regra.operador !== "preenchido" && regra.operador !== "vazio" ? (
-                      <input className="input" value={regra.valor ?? ""} onChange={(e) => atualizarRegra(i, { valor: e.target.value })} placeholder="Valor" />
-                    ) : null}
-                    <button type="button" className="btn ghost" onClick={() => atualizarLogica({ regras: logica.regras.filter((_, idx) => idx !== i) })}>
-                      ✕
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="btn ghost block"
-                  onClick={() => atualizarLogica({ regras: [...logica.regras, { campoId: camposAnteriores[0]?.id ?? "", operador: "igual", valor: "" }] })}
-                >
-                  + Adicionar regra
-                </button>
+                <LogicaCanvas key={pergunta.id} pergunta={pergunta} camposAnteriores={camposAnteriores} onAtualizar={onAtualizar} />
                 {logica.regras.length > 0 ? (
-                  <button type="button" className="link" style={{ marginTop: 6 }} onClick={() => onAtualizar({ logica: undefined })}>
+                  <button type="button" className="link" style={{ marginTop: 8 }} onClick={() => onAtualizar({ logica: undefined })}>
                     Remover lógica
                   </button>
                 ) : null}
