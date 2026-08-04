@@ -2869,16 +2869,103 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         <button type="button" className="doc-toolbar-btn" title="Inserir imagem" onClick={inserirImagem}>🖼</button>
         <span className="doc-toolbar-sep" />
 
-        <GrupoToolbar rotulo="Inserir" largura={190}>
-          <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirLink}>
-            <span className="n">🔗 Link</span>
-          </button>
-          <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={abrirComentarioNaSelecao}>
-            <span className="n">💬 Comentário</span>
-          </button>
-          <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirImagem}>
-            <span className="n">🖼 Imagem</span>
-          </button>
+        <GrupoToolbar rotulo="+ Inserir" largura={260}>
+          <div style={{ maxHeight: 420, overflowY: "auto" }}>
+            <p className="doc-menu-categoria">Conteúdo</p>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina("<div>Novo texto</div>")}>
+              <span className="n">📝 Texto</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina('<div style="border:1px solid #999;padding:8px;display:inline-block;">Caixa de texto</div>')}>
+              <span className="n">▭ Caixa de texto</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => aplicarFormatacao("formatBlock", "H1")}>
+              <span className="n">H Título</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => aplicarFormatacao("insertUnorderedList")}>
+              <span className="n">• Lista</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina("<div>☐ </div>")}>
+              <span className="n">☑ Checklist</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => aplicarFormatacao("formatBlock", "BLOCKQUOTE")}>
+              <span className="n">❝ Citação</span>
+            </button>
+
+            <p className="doc-menu-categoria">Mídia</p>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirImagem}>
+              <span className="n">🖼 Imagem</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina('<span style="border:1px solid #999;border-radius:6px;padding:4px 8px;display:inline-block;">📎 arquivo.pdf</span>')}>
+              <span className="n">📎 Arquivo</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirSimbolo}>
+              <span className="n">☺ Ícone</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => aplicarFormatacao("insertHorizontalRule")}>
+              <span className="n">— Linha</span>
+            </button>
+
+            <p className="doc-menu-categoria">Estrutura</p>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirTabela}>
+              <span className="n">▦ Tabela</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => setColunasAberto(true)}>
+              <span className="n">▥ Colunas</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => aplicarFormatacao("insertHorizontalRule")}>
+              <span className="n">┄ Divisor</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirQuebraDePaginaNoCursor}>
+              <span className="n">⤓ Quebra de página</span>
+            </button>
+
+            <p className="doc-menu-categoria">Documentos</p>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => setCabecalhoRodapeAberto("cabecalho")}>
+              <span className="n">⬒ Cabeçalho</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => setCabecalhoRodapeAberto("rodape")}>
+              <span className="n">⬓ Rodapé</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina('<div style="margin-top:40px;border-top:1px solid #333;width:240px;padding-top:4px;">Assinatura</div>')}>
+              <span className="n">✍ Assinatura</span>
+            </button>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina('<span style="border:1px dashed #999;padding:2px 10px;display:inline-block;color:#888;">[assinar aqui]</span>')}>
+              <span className="n">▢ Campo de assinatura</span>
+            </button>
+
+            <p className="doc-menu-categoria">CRM <span className="hint">(placeholder visual, sem dado real)</span></p>
+            {[
+              ["Nome do cliente", "nome_cliente"],
+              ["Empresa", "empresa"],
+              ["CPF/CNPJ", "cpf_cnpj"],
+              ["Telefone", "telefone"],
+              ["E-mail", "email"],
+              ["Responsável", "responsavel"],
+              ["Valor", "valor"],
+              ["Data", "data"],
+            ].map(([label, token]) => (
+              <button
+                key={token}
+                type="button"
+                className="dropdown-item"
+                style={{ width: "100%", textAlign: "left" }}
+                onClick={() => inserirNaPagina(`{{${token}}}`)}
+              >
+                <span className="n">{"{ }"} {label}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              className="dropdown-item"
+              style={{ width: "100%", textAlign: "left" }}
+              onClick={() => {
+                const nome = window.prompt("Nome do campo personalizado:");
+                if (nome) inserirNaPagina(`{{${nome.trim().toLowerCase().replace(/\s+/g, "_")}}}`);
+              }}
+            >
+              <span className="n">{"{ }"} Campo personalizado</span>
+            </button>
+          </div>
         </GrupoToolbar>
 
         <GrupoToolbar rotulo="Parágrafo" largura={250}>

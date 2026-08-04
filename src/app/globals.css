@@ -4592,6 +4592,29 @@ button.camp-row:hover {
   padding: 10px 12px;
 }
 
+.doc-menu-categoria {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 14px 0 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.doc-menu-categoria:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.doc-menu-categoria .hint {
+  text-transform: none;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
 /* Fundo neutro atrás da folha, pra página parecer mesmo uma folha A4 solta — igual Word/Docs. */
 .doc-canvas {
   background: var(--navy-deep);
