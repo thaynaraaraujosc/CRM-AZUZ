@@ -72,9 +72,14 @@ export default function AcoesPage() {
   const [listaAberta, setListaAberta] = useState(false);
   const [buscaContato, setBuscaContato] = useState("");
   const [midia, setMidia] = useState("Imagem");
+  const [legenda, setLegenda] = useState(acaoRascunho.legenda);
   const [canaisEnvio, setCanaisEnvio] = useState(
     () => CANAIS_ENVIO.filter((c) => c.ativo).map((c) => c.label),
   );
+  const [historicoAcoes, setHistoricoAcoes] = useState<
+    (Omit<(typeof acoesAnteriores)[number], "midia"> & { midia: "imagem" | "audio" | "texto" })[]
+  >(acoesAnteriores);
+  const [toastAcao, setToastAcao] = useState<string | null>(null);
 
   const [envioAberto, setEnvioAberto] = useState(false);
   const [envioRect, setEnvioRect] = useState<DOMRect | null>(null);
@@ -223,6 +228,28 @@ export default function AcoesPage() {
   function pararGravacao() {
     mediaRecorderRef.current?.stop();
     setGravando(false);
+  }
+
+  function agendarEnvio() {
+    if (selecionados.size === 0 || canaisEnvio.length === 0) return;
+    const midiaChave = midia === "Imagem" ? "imagem" : midia === "Áudio" ? "audio" : "texto";
+    const tituloBase = legenda.trim() || `Ação · ${midia.toLowerCase()}`;
+    const agendadoParaHoje = envioData === "2026-08-02";
+    const dataLabel = agendadoParaHoje ? `hoje ${envioHora}` : `${formatarDataEnvio(envioData)} ${envioHora}`;
+    setHistoricoAcoes((prev) => [
+      {
+        titulo: tituloBase.length > 60 ? `${tituloBase.slice(0, 57)}…` : tituloBase,
+        meta: `${selecionados.size} contatos · ${midia.toLowerCase()}`,
+        midia: midiaChave,
+        status: `Agendado · ${dataLabel}`,
+        agendado: true,
+        data: dataLabel,
+        contatos: Array.from(selecionados).slice(0, 3),
+      },
+      ...prev,
+    ]);
+    setToastAcao(`Envio agendado para ${selecionados.size} contatos.`);
+    setTimeout(() => setToastAcao(null), 4000);
   }
 
   return (
@@ -661,9 +688,12 @@ export default function AcoesPage() {
 
               <div className="field">
                 <label>Legenda / mensagem</label>
-                <div className="input" style={{ minHeight: 54 }}>
-                  {acaoRascunho.legenda}
-                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 54, width: "100%" }}
+                  value={legenda}
+                  onChange={(e) => setLegenda(e.target.value)}
+                />
               </div>
               <div className="field">
                 <label>Canal de envio — pode escolher mais de um</label>
@@ -725,7 +755,12 @@ export default function AcoesPage() {
                 </FloatingDropdown>
               </div>
               <div className="section-foot">
-                <button type="button" className="btn primary block">
+                <button
+                  type="button"
+                  className="btn primary block"
+                  disabled={selecionados.size === 0 || canaisEnvio.length === 0}
+                  onClick={agendarEnvio}
+                >
                   Agendar envio pra {selecionados.size} contatos
                 </button>
               </div>
@@ -736,7 +771,7 @@ export default function AcoesPage() {
             <div className="panel-h">
               <h4>Ações anteriores</h4>
             </div>
-            {acoesAnteriores.map((acao) => {
+            {historicoAcoes.map((acao) => {
               const expandida = acaoExpandida === acao.titulo;
               return (
                 <div key={acao.titulo}>
@@ -790,6 +825,12 @@ export default function AcoesPage() {
           </div>
         </div>
       </div>
+
+      {toastAcao ? (
+        <div className="toast-stack">
+          <div className="toast">{toastAcao}</div>
+        </div>
+      ) : null}
     </>
   );
 }
