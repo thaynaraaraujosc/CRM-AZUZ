@@ -2220,19 +2220,10 @@ function ConversasPageInner() {
 
   function compartilharLocalizacao() {
     setAnexoAberto(false);
-    const FALLBACK = { lat: -16.6869, lng: -49.2648, endereco: "Clínica Vitta · Goiânia, GO" };
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      enviarLocalizacao(FALLBACK.lat, FALLBACK.lng, FALLBACK.endereco);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (posicao) => {
-        enviarLocalizacao(posicao.coords.latitude, posicao.coords.longitude);
-      },
-      () => {
-        enviarLocalizacao(FALLBACK.lat, FALLBACK.lng, FALLBACK.endereco);
-      },
-    );
+    // Mock fixo, sem pedir geolocalização real do navegador — coerente com o resto do simulador
+    // (nunca usa dados/permissões reais) e evita ficar pendurado esperando o usuário responder ao
+    // prompt nativo de permissão (getCurrentPosition não tem timeout por padrão).
+    enviarLocalizacao(-16.6869, -49.2648, "Clínica Vitta · Goiânia, GO");
   }
 
   function inserirEmoji(emoji: string) {
@@ -3004,13 +2995,15 @@ function ConversasPageInner() {
                 ? "🖼️ "
                 : ultimaExtra?.video
                   ? "🎥 "
-                  : ultimaExtra?.documento
-                    ? "📄 "
-                    : ultimaExtra?.localizacao
-                      ? "📍 "
-                      : ultimaExtra?.contatoCompartilhado
-                        ? "👤 "
-                        : "";
+                  : ultimaExtra?.audio
+                    ? "🎤 "
+                    : ultimaExtra?.documento
+                      ? "📄 "
+                      : ultimaExtra?.localizacao
+                        ? "📍 "
+                        : ultimaExtra?.contatoCompartilhado
+                          ? "👤 "
+                          : "";
               const previaTexto =
                 previaMsg.texto ||
                 (ultimaExtra?.legenda ?? (iconeTipo ? "Anexo" : ""));
