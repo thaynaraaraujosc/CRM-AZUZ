@@ -18,9 +18,11 @@ export function Recomendacoes({
   recomendacoes: RecomendacaoDia[];
   onVerItens: (filtro: string) => void;
 }) {
-  const { avisar } = useCentralDia();
+  const { avisar, recomendacoesIgnoradas, ignorarRecomendacao } = useCentralDia();
 
-  if (recomendacoes.length === 0) return null;
+  const visiveis = recomendacoes.filter((r) => !recomendacoesIgnoradas.includes(r.id));
+
+  if (visiveis.length === 0) return null;
 
   return (
     <section className="central-dia-secao">
@@ -28,7 +30,7 @@ export function Recomendacoes({
         <h3>Recomendações para hoje</h3>
       </div>
       <div className="central-dia-recomendacoes">
-        {recomendacoes.map((r) => (
+        {visiveis.map((r) => (
           <div className="central-dia-recomendacao" key={r.id}>
             <div>
               <p className="n">{r.motivo}</p>
@@ -46,7 +48,7 @@ export function Recomendacoes({
               <button type="button" className="btn ghost" onClick={() => avisar("Tarefa criada a partir da recomendação.")}>
                 Criar tarefa
               </button>
-              <button type="button" className="btn ghost" onClick={() => avisar("Recomendação ignorada por hoje.")}>
+              <button type="button" className="btn ghost" onClick={() => ignorarRecomendacao(r.id)}>
                 Ignorar por hoje
               </button>
             </div>

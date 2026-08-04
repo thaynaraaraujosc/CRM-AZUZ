@@ -63,6 +63,7 @@ export type OrganizacaoDia = {
 type CentralDiaContextValue = {
   concluidos: ItemConcluido[];
   adiados: ItemAdiado[];
+  recomendacoesIgnoradas: string[];
   filtros: FiltrosCentralDia;
   organizacao: OrganizacaoDia;
   toasts: { id: number; texto: string }[];
@@ -74,6 +75,7 @@ type CentralDiaContextValue = {
   limparConcluidos: () => void;
   adiarItem: (itemId: string, periodo: PeriodoAdiamento, dataEscolhida?: string, horaEscolhida?: string) => void;
   retomarItem: (itemId: string) => void;
+  ignorarRecomendacao: (id: string) => void;
   setFiltros: (patch: Partial<FiltrosCentralDia>) => void;
   limparFiltros: () => void;
   iniciarOrganizacao: (itens: string[]) => void;
@@ -90,12 +92,14 @@ const CHAVE_STORAGE = "azuz-crm-central-dia";
 type EstadoPersistido = {
   concluidos: ItemConcluido[];
   adiados: ItemAdiado[];
+  recomendacoesIgnoradas: string[];
   filtros: FiltrosCentralDia;
 };
 
 const ESTADO_PADRAO: EstadoPersistido = {
   concluidos: [],
   adiados: [],
+  recomendacoesIgnoradas: [],
   filtros: FILTROS_PADRAO,
 };
 
@@ -108,6 +112,7 @@ function carregarEstado(): EstadoPersistido {
     return {
       concluidos: parsed.concluidos ?? [],
       adiados: parsed.adiados ?? [],
+      recomendacoesIgnoradas: parsed.recomendacoesIgnoradas ?? [],
       filtros: { ...FILTROS_PADRAO, ...parsed.filtros },
     };
   } catch {
@@ -120,6 +125,9 @@ export function CentralDiaProvider({ children }: { children: ReactNode }) {
   // montar, senão dá erro de hidratação — mesmo cuidado tomado em `inicio/page.tsx` hoje.
   const [concluidos, setConcluidos] = useState<ItemConcluido[]>(ESTADO_PADRAO.concluidos);
   const [adiados, setAdiados] = useState<ItemAdiado[]>(ESTADO_PADRAO.adiados);
+  const [recomendacoesIgnoradas, setRecomendacoesIgnoradas] = useState<string[]>(
+    ESTADO_PADRAO.recomendacoesIgnoradas,
+  );
   const [filtros, setFiltrosState] = useState<FiltrosCentralDia>(FILTROS_PADRAO);
   const [organizacao, setOrganizacao] = useState<OrganizacaoDia>(null);
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
@@ -133,6 +141,7 @@ export function CentralDiaProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setConcluidos(carregado.concluidos);
     setAdiados(carregado.adiados);
+    setRecomendacoesIgnoradas(carregado.recomendacoesIgnoradas);
     setFiltrosState(carregado.filtros);
     hidratadoRef.current = true;
   }, []);
@@ -140,12 +149,12 @@ export function CentralDiaProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hidratadoRef.current) return;
     try {
-      const estado: EstadoPersistido = { concluidos, adiados, filtros };
+      const estado: EstadoPersistido = { concluidos, adiados, recomendacoesIgnoradas, filtros };
       localStorage.setItem(CHAVE_STORAGE, JSON.stringify(estado));
     } catch {
       // localStorage indisponível (modo privado, por exemplo) — segue só em memória.
     }
-  }, [concluidos, adiados, filtros]);
+  }, [concluidos, adiados, recomendacoesIgnoradas, filtros]);
 
   const avisar = useCallback((texto: string) => {
     const id = toastIdRef.current++;
@@ -192,6 +201,14 @@ export function CentralDiaProvider({ children }: { children: ReactNode }) {
     setAdiados((prev) => prev.filter((a) => a.itemId !== itemId));
   }, []);
 
+  const ignorarRecomendacao = useCallback(
+    (id: string) => {
+      setRecomendacoesIgnoradas((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      avisar("Recomendação ignorada por hoje.");
+    },
+    [avisar],
+  );
+
   const setFiltros = useCallback((patch: Partial<FiltrosCentralDia>) => {
     setFiltrosState((prev) => ({ ...prev, ...patch }));
   }, []);
@@ -229,6 +246,7 @@ export function CentralDiaProvider({ children }: { children: ReactNode }) {
       value={{
         concluidos,
         adiados,
+        recomendacoesIgnoradas,
         filtros,
         organizacao,
         toasts,
@@ -240,6 +258,7 @@ export function CentralDiaProvider({ children }: { children: ReactNode }) {
         limparConcluidos,
         adiarItem,
         retomarItem,
+        ignorarRecomendacao,
         setFiltros,
         limparFiltros,
         iniciarOrganizacao,
