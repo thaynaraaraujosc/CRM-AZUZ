@@ -1659,12 +1659,12 @@ table.tbl tbody tr:hover td {
 .leads-pill {
   display: inline-block;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
   color: var(--ink);
   background: var(--navy);
   border: 1px solid var(--line);
   padding: 3px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .equipe-tbl tbody tr:nth-child(even) td {
@@ -1737,10 +1737,10 @@ table.tbl tbody tr:hover td {
 .kcol-h .c {
   font-size: 10.5px;
   color: var(--text-faint);
-  font-weight: 700;
-  background: var(--line-soft);
+  font-weight: var(--fw-semibold);
+  background: var(--gray-100);
   padding: 2px 7px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
 }
 
 .kcol-auto-link {
@@ -1804,16 +1804,19 @@ table.tbl tbody tr:hover td {
   text-align: left;
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 12px 13px;
   margin-bottom: 9px;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
 }
 
+/* Elevação sutil no hover — dá profundidade real ao card em vez de só trocar a cor da borda. */
 .lead-card:hover,
 .conv-card:hover,
 .task-card:hover {
-  border-color: rgba(46, 107, 255, 0.5);
+  border-color: var(--blue-soft);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
 }
 
 .lead-card .lr1 {
@@ -1826,7 +1829,7 @@ table.tbl tbody tr:hover td {
 
 .lead-card .lname {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
 }
 
 .lead-card .lval {
