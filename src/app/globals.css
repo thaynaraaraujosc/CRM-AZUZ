@@ -2651,6 +2651,9 @@ table.tbl tbody tr:hover td {
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
+  /* Reestruturação de design (fase 1) — mesma entrada suave do `.modal` genérico, pra esse modal
+     bespoke não destoar dos demais. */
+  animation: modal-scale-in var(--transition-base);
 }
 
 .wa-email-floating {
@@ -9541,6 +9544,7 @@ button.camp-row:hover {
   border-radius: 16px;
   box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
   overflow: hidden;
+  animation: modal-scale-in var(--transition-base);
 }
 
 .wa-modal-header {
@@ -9805,6 +9809,7 @@ button.camp-row:hover {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  animation: modal-fade-in var(--transition-base);
 }
 
 @media (max-width: 720px) {
