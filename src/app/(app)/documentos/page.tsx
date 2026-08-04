@@ -1280,6 +1280,38 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     return atual;
   }
 
+  /**
+   * Restaura o cursor num nó específico da página, achado pelo `caminho` gravado antes do bloco ser
+   * movido (ver `reflowPagina`). Usada tanto pelo caminho síncrono (`moverTransbordoParaProximaPagina`,
+   * quando a página de destino já existe no DOM) quanto pelo efeito abaixo (fallback para quando a
+   * página de destino ainda nem foi montada nesse render, ex.: acabou de ser criada).
+   */
+  function restaurarCursorNaPagina(
+    el: HTMLDivElement,
+    paginaId: string,
+    pendente: { caminho: number[]; startOffset: number }
+  ) {
+    const primeiroFilho = el.firstElementChild;
+    const no = primeiroFilho ? noNoCaminho(primeiroFilho, pendente.caminho) : null;
+    if (!no) return;
+    try {
+      const tamanho = no.nodeType === Node.TEXT_NODE ? (no.textContent?.length ?? 0) : no.childNodes.length;
+      const offset = Math.min(pendente.startOffset, tamanho);
+      const range = document.createRange();
+      range.setStart(no, offset);
+      range.collapse(true);
+      const selecao = window.getSelection();
+      selecao?.removeAllRanges();
+      selecao?.addRange(range);
+      el.focus();
+      setPaginaAtivaId(paginaId);
+    } catch {
+      // Se por algum motivo a posição exata não puder ser restaurada, ao menos foca a página certa.
+      el.focus();
+      setPaginaAtivaId(paginaId);
+    }
+  }
+
   useEffect(() => {
     for (const pagina of paginasLocais) {
       const el = paginaRefs.current[pagina.id];
@@ -1291,27 +1323,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       const pendente = cursorPendenteRef.current;
       if (pendente && pendente.paginaId === pagina.id) {
         cursorPendenteRef.current = null;
-        const primeiroFilho = el.firstElementChild;
-        const no = primeiroFilho ? noNoCaminho(primeiroFilho, pendente.caminho) : null;
-        if (no) {
-          try {
-            const tamanho = no.nodeType === Node.TEXT_NODE ? (no.textContent?.length ?? 0) : no.childNodes.length;
-            const offset = Math.min(pendente.startOffset, tamanho);
-            const range = document.createRange();
-            range.setStart(no, offset);
-            range.collapse(true);
-            const selecao = window.getSelection();
-            selecao?.removeAllRanges();
-            selecao?.addRange(range);
-            el.focus();
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- reflow moveu o bloco onde o cursor estava pra outra página; precisamos sincronizar qual página está ativa
-            setPaginaAtivaId(pagina.id);
-          } catch {
-            // Se por algum motivo a posição exata não puder ser restaurada, ao menos foca a página certa.
-            el.focus();
-            setPaginaAtivaId(pagina.id);
-          }
-        }
+        restaurarCursorNaPagina(el, pagina.id, pendente);
       }
     }
   });
@@ -1898,7 +1910,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     return atual === raiz ? caminho : null;
   }
 
-  function moverTransbordoParaProximaPagina(paginaId: string, htmlAtual: string, htmlTransbordo: string): string {
+  function moverTransbordoParaProximaPagina(
+    paginaId: string,
+    htmlAtual: string,
+    htmlTransbordo: string,
+    cursorInfo?: { caminho: number[]; startOffset: number }
+  ): string {
     let idProximaPagina = "";
     setPaginasLocais((prev) => {
       const indice = prev.findIndex((p) => p.id === paginaId);
@@ -1907,13 +1924,41 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       const proxima = prev[indice + 1];
       const copia = [...prev];
       copia[indice] = atual;
+      let htmlProximaFinal: string;
+      let paginaProximaJaExistia = false;
       if (proxima) {
         idProximaPagina = proxima.id;
-        copia[indice + 1] = { ...proxima, conteudoHtml: htmlTransbordo + proxima.conteudoHtml };
+        paginaProximaJaExistia = true;
+        htmlProximaFinal = htmlTransbordo + proxima.conteudoHtml;
+        copia[indice + 1] = { ...proxima, conteudoHtml: htmlProximaFinal };
       } else {
         idProximaPagina = `pagina-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-        copia.splice(indice + 1, 0, { id: idProximaPagina, conteudoHtml: htmlTransbordo });
+        htmlProximaFinal = htmlTransbordo;
+        copia.splice(indice + 1, 0, { id: idProximaPagina, conteudoHtml: htmlProximaFinal });
       }
+
+      // Marca a página de origem como já sincronizada (o DOM dela já reflete `htmlAtual`, foi o próprio
+      // reflowPagina que a mutou) — evita que o efeito de sincronização a reescreva à toa.
+      ultimoConteudoRef.current[paginaId] = htmlAtual;
+
+      // Se a página de destino já existe e já está montada no DOM, escreve o transbordo nela e restaura
+      // o cursor AGORA, de forma síncrona, em vez de esperar o próximo ciclo de render do React. Esse é o
+      // ponto-chave que fecha a corrida de digitação rápida: antes, entre o momento em que o bloco com o
+      // cursor era removido da página de origem e o momento em que o efeito assíncrono escrevia o HTML na
+      // página de destino e restaurava a seleção ali, o cursor nativo do navegador ficava "no limbo" (o nó
+      // que ele apontava já tinha sido removido do documento) — teclas digitadas nesse intervalo caíam em
+      // posição imprevisível, embaralhando o conteúdo entre páginas. Escrevendo e restaurando tudo aqui,
+      // antes de devolver o controle ao event loop, não sobra intervalo nenhum pra outra tecla se intrometer.
+      const elProxima = paginaRefs.current[idProximaPagina];
+      if (paginaProximaJaExistia && elProxima) {
+        elProxima.innerHTML = htmlProximaFinal;
+        ultimoConteudoRef.current[idProximaPagina] = htmlProximaFinal;
+        if (cursorInfo) restaurarCursorNaPagina(elProxima, idProximaPagina, cursorInfo);
+      } else if (cursorInfo) {
+        // Página nova, ainda não montada nesse render: cai no caminho assíncrono existente (efeito acima).
+        cursorPendenteRef.current = { paginaId: idProximaPagina, ...cursorInfo };
+      }
+
       // Cascateia: se o que acabou de entrar na próxima página também estourar ela (ex.: colar um texto
       // grande de uma vez), reavalia essa página depois que o DOM sincronizar, empurrando o excedente adiante.
       const idParaCascata = idProximaPagina;
@@ -1992,10 +2037,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     }
 
     if (!mudou) return;
-    const idProximaPagina = moverTransbordoParaProximaPagina(paginaId, el.innerHTML, htmlTransbordo);
-    if (cursorMovidoInfo && idProximaPagina) {
-      cursorPendenteRef.current = { paginaId: idProximaPagina, ...cursorMovidoInfo };
-    }
+    moverTransbordoParaProximaPagina(paginaId, el.innerHTML, htmlTransbordo, cursorMovidoInfo ?? undefined);
   }
 
   function escaparRegex(texto: string) {
