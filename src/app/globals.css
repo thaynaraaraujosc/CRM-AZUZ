@@ -6348,10 +6348,10 @@ button.camp-row:hover {
   gap: 8px;
   padding: 12px 12px 12px 6px;
   margin-bottom: 6px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1.5px solid transparent;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  transition: background var(--transition-base), border-color var(--transition-base), opacity var(--transition-base);
 }
 
 .form-campo-card:hover {
