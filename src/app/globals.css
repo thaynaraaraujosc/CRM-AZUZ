@@ -5691,6 +5691,47 @@ button.camp-row:hover {
   text-align: center;
 }
 
+/* Toolbar mini flutuante acima da seleção de texto (Prioridade 4) — só as ações mais rápidas;
+   o painel lateral (aba Texto) continua com o conjunto completo de opções. */
+.doc-toolbar-flutuante {
+  position: fixed;
+  z-index: 65;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  padding: 5px 6px;
+  pointer-events: auto;
+}
+
+.doc-toolbar-flutuante button {
+  border: none;
+  background: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.doc-toolbar-flutuante button:hover {
+  background: var(--surface-2, rgba(255, 255, 255, 0.08));
+}
+
+.doc-toolbar-flutuante-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--line-soft);
+}
+
 .doc-img-resize-alca {
   border: 1px dashed var(--line);
   border-radius: 8px;

@@ -1120,6 +1120,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [imagemSelecionada, setImagemSelecionada] = useState<{ paginaId: string; el: HTMLImageElement } | null>(null);
   const [menuImagemPos, setMenuImagemPos] = useState<{ x: number; y: number } | null>(null);
   const [menuTextoPos, setMenuTextoPos] = useState<{ x: number; y: number } | null>(null);
+  const [toolbarSelecaoPos, setToolbarSelecaoPos] = useState<{ x: number; y: number } | null>(null);
   const [celulaSelecionada, setCelulaSelecionada] = useState<{ paginaId: string; td: HTMLTableCellElement } | null>(null);
   const [recuoAtual, setRecuoAtual] = useState({ primeiraLinhaMm: 0, esquerdoMm: 0, direitoMm: 0 });
 
@@ -1131,6 +1132,35 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     el.classList.add("doc-img-selecionada");
     return () => el.classList.remove("doc-img-selecionada");
   }, [imagemSelecionada]);
+
+  /**
+   * Toolbar flutuante mini (item 6/Prioridade 4) — aparece logo acima de uma seleção de texto não
+   * vazia dentro do documento, com só as ações mais rápidas (B/I/U/Cor/Link). O painel lateral
+   * continua com as opções completas; isso aqui é só o atalho "mão no mouse, sem sair da seleção".
+   */
+  useEffect(() => {
+    function aoMudarSelecao() {
+      const selecao = window.getSelection();
+      if (!selecao || selecao.isCollapsed || selecao.rangeCount === 0) {
+        setToolbarSelecaoPos(null);
+        return;
+      }
+      const range = selecao.getRangeAt(0);
+      const dentroDaPagina = Object.values(paginaRefs.current).some((el) => el && el.contains(range.commonAncestorContainer));
+      if (!dentroDaPagina) {
+        setToolbarSelecaoPos(null);
+        return;
+      }
+      const rect = range.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) {
+        setToolbarSelecaoPos(null);
+        return;
+      }
+      setToolbarSelecaoPos({ x: rect.left + rect.width / 2, y: rect.top });
+    }
+    document.addEventListener("selectionchange", aoMudarSelecao);
+    return () => document.removeEventListener("selectionchange", aoMudarSelecao);
+  }, []);
 
   /**
    * Atalhos de teclado pra imagem selecionada — setas movem (só em posição fixa), Delete/Backspace
@@ -3922,6 +3952,17 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         />
       ) : null}
 
+      {toolbarSelecaoPos && !menuTextoPos && !menuImagemPos ? (
+        <ToolbarFlutuanteTexto
+          pos={toolbarSelecaoPos}
+          onNegrito={() => aplicarFormatacao("bold")}
+          onItalico={() => aplicarFormatacao("italic")}
+          onSublinhado={() => aplicarFormatacao("underline")}
+          onCor={(c) => aplicarFormatacao("foreColor", c)}
+          onLink={inserirLink}
+        />
+      ) : null}
+
     </div>
   );
 }
@@ -4633,6 +4674,61 @@ function MenuContextoTexto({
       <div className="doc-context-menu-sep" />
       <button type="button" onClick={onDuplicarBloco}>⧉ Duplicar bloco</button>
       <button type="button" className="perigo" onClick={onExcluirBloco}>🗑 Excluir bloco</button>
+    </div>
+  );
+}
+
+/** Toolbar mini flutuante (Prioridade 4) — some sozinha quando a seleção de texto acaba (governada
+ * pelo `selectionchange` no componente pai, não tem estado próprio de aberto/fechado). */
+function ToolbarFlutuanteTexto({
+  pos,
+  onNegrito,
+  onItalico,
+  onSublinhado,
+  onCor,
+  onLink,
+}: {
+  pos: { x: number; y: number };
+  onNegrito: () => void;
+  onItalico: () => void;
+  onSublinhado: () => void;
+  onCor: (cor: string) => void;
+  onLink: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [ajuste, setAjuste] = useState({ x: 0, y: 0 });
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const margem = 8;
+    const dx = rect.left < margem ? margem - rect.left : rect.right > window.innerWidth - margem ? window.innerWidth - margem - rect.right : 0;
+    const dy = rect.top < margem ? rect.height + 16 : 0;
+    setAjuste({ x: dx, y: dy });
+  }, [pos]);
+
+  return (
+    <div
+      ref={ref}
+      className="doc-toolbar-flutuante"
+      style={{ left: pos.x + ajuste.x, top: pos.y + ajuste.y - 44 }}
+    >
+      <button type="button" style={{ fontWeight: 700 }} onMouseDown={(e) => { e.preventDefault(); onNegrito(); }}>N</button>
+      <button type="button" style={{ fontStyle: "italic" }} onMouseDown={(e) => { e.preventDefault(); onItalico(); }}>I</button>
+      <button type="button" style={{ textDecoration: "underline" }} onMouseDown={(e) => { e.preventDefault(); onSublinhado(); }}>S</button>
+      <span className="doc-toolbar-flutuante-sep" />
+      {CORES_MENU_TEXTO.slice(0, 3).map((c) => (
+        <button
+          key={c}
+          type="button"
+          aria-label={`Cor ${c}`}
+          onMouseDown={(e) => { e.preventDefault(); onCor(c); }}
+          style={{ background: c, width: 16, height: 16, borderRadius: "50%", padding: 0 }}
+        />
+      ))}
+      <span className="doc-toolbar-flutuante-sep" />
+      <button type="button" onMouseDown={(e) => { e.preventDefault(); onLink(); }}>🔗</button>
     </div>
   );
 }
