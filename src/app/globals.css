@@ -11334,16 +11334,18 @@ button.camp-row:hover {
   width: 100%;
   text-align: left;
   padding: 8px 10px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: none;
   border: 1px solid transparent;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 .config-nav-item:hover {
-  background: var(--navy-raised);
+  background: var(--surface-hover);
+  color: var(--ink);
 }
 .config-nav-item.active {
   background: var(--blue-soft-2);
