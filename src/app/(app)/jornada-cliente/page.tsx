@@ -7,14 +7,14 @@ import { useSearchParams } from "next/navigation";
 import {
   classeOrigem,
   conversas,
-  equipe,
   oportunidadesPerdidas,
-  tarefas,
   type Canal,
   type Contato,
 } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
+import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
+import { useTarefas } from "@/lib/tarefas-context";
 import { slugId } from "@/lib/ids";
 import { IconSearch } from "@/components/icons";
 import { FloatingDropdown } from "@/components/ui";
@@ -83,6 +83,8 @@ function JornadaClientePageInner() {
   const searchParams = useSearchParams();
   const { contatos, alternarFavorito } = useContatos();
   const { funis } = useFunis();
+  const { colunas: tarefas } = useTarefas();
+  const { membros: equipe } = useEquipe();
 
   const [busca, setBusca] = useState(searchParams.get("busca") ?? "");
   const [buscaDebounced, setBuscaDebounced] = useState(busca);
@@ -153,7 +155,7 @@ function JornadaClientePageInner() {
     () => Array.from(new Set(contatos.flatMap((c) => c.etiquetas ?? []))).sort(),
     [contatos],
   );
-  const papeisDisponiveis = useMemo(() => Array.from(new Set(equipe.map((m) => m.papel))).sort(), []);
+  const papeisDisponiveis = useMemo(() => Array.from(new Set(equipe.map((m) => m.papel))).sort(), [equipe]);
 
   function temNegociacao(c: Contato): boolean {
     return funis.some((f) => f.colunas.some((col) => col.cards.some((card) => card.nome === c.nome)));

@@ -3,9 +3,10 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { classeOrigem, conversas, oportunidadesPerdidas, tarefas, currentUser, filtrosContatos } from "@/lib/data";
+import { classeOrigem, conversas, oportunidadesPerdidas, currentUser, filtrosContatos } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
+import { useTarefas } from "@/lib/tarefas-context";
 import { IconSearch } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
 import { Timeline } from "@/components/timeline";
@@ -23,6 +24,7 @@ function ContatosPageInner() {
   const searchParams = useSearchParams();
   const { contatos, criarContato } = useContatos();
   const { funis } = useFunis();
+  const { colunas: tarefas } = useTarefas();
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [novoContatoAberto, setNovoContatoAberto] = useState(
     () => searchParams.get("novoContato") === "1",

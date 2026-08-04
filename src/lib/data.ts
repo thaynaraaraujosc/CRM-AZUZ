@@ -845,6 +845,9 @@ export type TaskCard = {
   id: string;
   titulo: string;
   contato: string;
+  /** Id do contato relacionado (`Contato.id`), quando o contato já existe no CRM — permite ligar
+   * a tarefa ao contato por id em vez de comparar `contato` (nome) espalhado pelo código. */
+  contatoId?: string;
   data: string;
   atrasada?: boolean;
   responsavel: { nome: string; initials: string };
@@ -1008,6 +1011,8 @@ export const acoesAnteriores = [
 /* -------------------------------------------------------------------------- */
 
 export type Membro = {
+  /** Slug estável derivado do nome (mesmo padrão de `Contato.id`/`NegocioCard.id`, ver `slugId`). */
+  id: string;
   initials: string;
   nome: string;
   email: string;
@@ -1037,6 +1042,7 @@ export const PERMISSOES_CRM = [
 
 export const equipe: Membro[] = [
   {
+    id: "ana-ferreira",
     initials: "AF",
     nome: "Ana Ferreira",
     email: "ana@clinicavitta.com.br",
@@ -1049,6 +1055,7 @@ export const equipe: Membro[] = [
     ativo: true,
   },
   {
+    id: "bruno-salles",
     initials: "BS",
     nome: "Bruno Salles",
     email: "bruno@clinicavitta.com.br",
@@ -1061,6 +1068,7 @@ export const equipe: Membro[] = [
     ativo: true,
   },
   {
+    id: "carla-mendes",
     initials: "CM",
     nome: "Carla Mendes",
     email: "carla@clinicavitta.com.br",
@@ -1073,6 +1081,7 @@ export const equipe: Membro[] = [
     ativo: true,
   },
   {
+    id: "dr-helio-marinho",
     initials: "HM",
     nome: "Dr. Hélio Marinho",
     email: "helio@clinicavitta.com.br",
@@ -1086,6 +1095,7 @@ export const equipe: Membro[] = [
     ativo: true,
   },
   {
+    id: "dr-lucas-vitta",
     initials: "LV",
     nome: "Dr. Lucas Vitta",
     email: "lucas@clinicavitta.com.br",
@@ -1098,6 +1108,7 @@ export const equipe: Membro[] = [
     ativo: true,
   },
   {
+    id: "roberto-alves",
     initials: "RA",
     nome: "Roberto Alves",
     email: "roberto@clinicavitta.com.br",

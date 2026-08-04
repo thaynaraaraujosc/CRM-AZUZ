@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { contatos, equipe, tarefas } from "@/lib/data";
+import { useContatos } from "@/lib/contatos-context";
+import { useEquipe } from "@/lib/equipe-context";
+import { useTarefas } from "@/lib/tarefas-context";
 import { Toggle, Topbar } from "@/components/ui";
 
 function classePapel(papel: string) {
@@ -12,12 +14,15 @@ function classePapel(papel: string) {
 }
 
 export default function EquipePage() {
+  const { membros: equipe, alternarAtivo } = useEquipe();
+  const { colunas } = useTarefas();
+  const { contatos } = useContatos();
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [senhaVisivel, setSenhaVisivel] = useState(false);
 
   const membro = equipe.find((m) => m.nome === selecionado) ?? null;
   const tarefasDoMembro = membro
-    ? tarefas
+    ? colunas
         .flatMap((coluna) => coluna.cards)
         .filter((t) => t.responsavel.nome === membro.nome)
     : [];
@@ -53,7 +58,7 @@ export default function EquipePage() {
               <tbody>
                 {equipe.map((m) => {
                   return (
-                  <tr key={m.nome}>
+                  <tr key={m.id}>
                     <td>
                       <button
                         type="button"
@@ -121,7 +126,12 @@ export default function EquipePage() {
                       {m.convitePendente ? (
                         <span className="pill">Convite pendente</span>
                       ) : (
-                        <Toggle defaultOn={m.ativo} label={`Ativar ${m.nome}`} />
+                        <Toggle
+                          key={`${m.id}-${m.ativo}`}
+                          defaultOn={m.ativo}
+                          label={`Ativar ${m.nome}`}
+                          onToggle={() => alternarAtivo(m.id)}
+                        />
                       )}
                     </td>
                   </tr>

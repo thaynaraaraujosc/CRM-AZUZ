@@ -2,28 +2,16 @@
 
 import { useState } from "react";
 
-import { currentUser, tarefas } from "@/lib/data";
+import { currentUser } from "@/lib/data";
+import { compromissosDeTarefas, HOJE_ISO, useAgenda } from "@/lib/agenda-context";
+import { useTarefas } from "@/lib/tarefas-context";
 import { Topbar } from "@/components/ui";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
   "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
 ];
-const MESES_ABREV = [
-  "jan", "fev", "mar", "abr", "mai", "jun",
-  "jul", "ago", "set", "out", "nov", "dez",
-];
 const DIAS_SEMANA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
-
-const HOJE_ISO = "2026-07-30";
-
-type EventoManual = {
-  id: string;
-  dataIso: string;
-  titulo: string;
-  descricao: string;
-  hora: string;
-};
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -33,34 +21,14 @@ function isoDe(ano: number, mesIndex0: number, dia: number) {
   return `${ano}-${pad2(mesIndex0 + 1)}-${pad2(dia)}`;
 }
 
-/** Tarefas usam datas tipo "28 jul" (sem ano) — assume sempre 2026, o ano de referência do app. */
-function eventosDeTarefasNoMes(anoAlvo: number, mesIndexAlvo0: number) {
-  const eventos: { dataIso: string; titulo: string; descricao: string }[] = [];
-  if (anoAlvo !== 2026) return eventos;
-  for (const coluna of tarefas) {
-    for (const card of coluna.cards) {
-      const partes = card.data.trim().split(" ");
-      if (partes.length !== 2) continue;
-      const dia = Number(partes[0]);
-      const mesIndex = MESES_ABREV.indexOf(partes[1].toLowerCase());
-      if (Number.isNaN(dia) || mesIndex !== mesIndexAlvo0) continue;
-      eventos.push({
-        dataIso: isoDe(anoAlvo, mesIndex, dia),
-        titulo: card.titulo,
-        descricao: `Tarefa de ${card.contato} · ${coluna.titulo}`,
-      });
-    }
-  }
-  return eventos;
-}
-
 export default function AgendaPage() {
+  const { colunas } = useTarefas();
+  const { compromissos, criarAgendamento: criarAgendamentoCtx, cancelar } = useAgenda();
   const [ano, setAno] = useState(2026);
   const [mesIndex0, setMesIndex0] = useState(6); // julho
   const [conexao, setConexao] = useState<"interna" | "google">("interna");
   const [googleConectado, setGoogleConectado] = useState(false);
   const [modo, setModo] = useState<"completa" | "manual">("completa");
-  const [eventosManuais, setEventosManuais] = useState<EventoManual[]>([]);
   const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null);
   const [novoAberto, setNovoAberto] = useState(false);
   const [tituloNovo, setTituloNovo] = useState("");
@@ -69,17 +37,17 @@ export default function AgendaPage() {
   const [menuConexaoAberto, setMenuConexaoAberto] = useState(false);
   const [menuConteudoAberto, setMenuConteudoAberto] = useState(false);
 
-  const eventosAutomaticos =
-    modo === "completa" ? eventosDeTarefasNoMes(ano, mesIndex0) : [];
+  const compromissosManuais = compromissos.filter((c) => c.origem === "manual" && c.status !== "cancelado");
+  const compromissosAutomaticos = modo === "completa" ? compromissosDeTarefas(colunas, ano) : [];
 
   function eventosDoDia(dataIso: string) {
     return [
-      ...eventosManuais
-        .filter((e) => e.dataIso === dataIso)
-        .map((e) => ({ titulo: e.titulo, descricao: e.descricao, manual: true })),
-      ...eventosAutomaticos
-        .filter((e) => e.dataIso === dataIso)
-        .map((e) => ({ titulo: e.titulo, descricao: e.descricao, manual: false })),
+      ...compromissosManuais
+        .filter((c) => c.dataIso === dataIso)
+        .map((c) => ({ id: c.id, titulo: c.tipo, descricao: c.descricao ?? "", manual: true })),
+      ...compromissosAutomaticos
+        .filter((c) => c.dataIso === dataIso)
+        .map((c) => ({ id: c.id, titulo: c.descricao ?? c.tipo, descricao: `Tarefa de ${c.contato} · ${c.tipo.replace("Tarefa · ", "")}`, manual: false })),
     ];
   }
 
@@ -102,16 +70,14 @@ export default function AgendaPage() {
   function criarAgendamento() {
     const titulo = tituloNovo.trim();
     if (!titulo || !diaSelecionado) return;
-    setEventosManuais((prev) => [
-      ...prev,
-      {
-        id: `evento-${Date.now()}`,
-        dataIso: diaSelecionado,
-        titulo,
-        descricao: descricaoNovo.trim(),
-        hora: horaNovo,
-      },
-    ]);
+    criarAgendamentoCtx({
+      contato: "—",
+      responsavel: currentUser.name,
+      dataIso: diaSelecionado,
+      hora: horaNovo,
+      tipo: titulo,
+      descricao: descricaoNovo.trim(),
+    });
     setTituloNovo("");
     setDescricaoNovo("");
     setNovoAberto(false);
@@ -403,6 +369,15 @@ export default function AgendaPage() {
                   <span className={`pill${e.manual ? "" : " on"}`}>
                     {e.manual ? "Manual" : "Automático"}
                   </span>
+                  {e.manual ? (
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => cancelar(e.id)}
+                    >
+                      Cancelar
+                    </button>
+                  ) : null}
                 </div>
               ))
             )}

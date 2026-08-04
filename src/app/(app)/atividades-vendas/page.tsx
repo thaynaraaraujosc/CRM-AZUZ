@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { conversas, equipe, ligacoesPorResponsavel, tarefas, tempoPrimeiroContatoPorResponsavel } from "@/lib/data";
+import { conversas, ligacoesPorResponsavel, tempoPrimeiroContatoPorResponsavel } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
+import { useTarefas } from "@/lib/tarefas-context";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { BarList, ChartCard } from "@/components/charts";
 import {
@@ -26,6 +28,8 @@ const META_MINUTOS = 60;
  */
 export default function AtividadesVendasPage() {
   const { funis } = useFunis();
+  const { membros: equipe } = useEquipe();
+  const { colunas: tarefas } = useTarefas();
   const [grupo, setGrupo] = useState<Grupo>("Atendimento");
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
   const [funilFiltro, setFuncilFiltro] = useState("Todos");

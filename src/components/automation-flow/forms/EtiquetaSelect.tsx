@@ -3,15 +3,21 @@
 import { useMemo, useState } from "react";
 
 import { useConfiguracoes } from "@/lib/configuracoes-context";
-import { contatos, funis } from "@/lib/data";
+import { useContatos } from "@/lib/contatos-context";
+import { useFunis } from "@/lib/funis-context";
 
 /**
  * Lista de etiquetas pra escolher num bloco de automação — junta as etiquetas já em uso em
- * contatos/negócios com as criadas em Configurações > Etiquetas (mesma fonte que `EtiquetasSecao`),
- * sem duplicar. "+ Criar nova etiqueta" grava em `configuracoes-context` (front-end apenas, sem
- * backend) — assim a etiqueta criada aqui também aparece em Configurações e em outros blocos.
+ * contatos/negócios (via `useContatos`/`useFunis`, reativos — não a cópia estática de `@/lib/data`,
+ * que ficaria dessincronizada de edições feitas em /contatos ou /funil) com as criadas em
+ * Configurações > Etiquetas (mesma fonte que `EtiquetasSecao`), sem duplicar. "+ Criar nova etiqueta"
+ * grava em `configuracoes-context` (front-end apenas, sem backend) — assim a etiqueta criada aqui
+ * também aparece em Configurações e em outros blocos. Exportado porque `CondicaoForm.tsx` usa a
+ * mesma lógica — evita ter duas implementações paralelas lendo fontes diferentes.
  */
-function useEtiquetasDisponiveis(): string[] {
+export function useEtiquetasDisponiveis(): string[] {
+  const { contatos } = useContatos();
+  const { funis } = useFunis();
   const { estado } = useConfiguracoes();
   return useMemo(() => {
     const nomes = new Set<string>();
@@ -19,7 +25,7 @@ function useEtiquetasDisponiveis(): string[] {
     funis.forEach((f) => f.colunas.forEach((col) => col.cards.forEach((card) => card.etiquetas?.forEach((e) => nomes.add(e)))));
     estado.etiquetasPersonalizadas.forEach((e) => nomes.add(e.nome));
     return Array.from(nomes).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [estado.etiquetasPersonalizadas]);
+  }, [contatos, funis, estado.etiquetasPersonalizadas]);
 }
 
 export function EtiquetaSelect({

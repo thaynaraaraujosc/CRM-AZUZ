@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { IconCamera } from "@/components/icons";
 import { useConfiguracoes, WORKSPACE_CONFIG_PADRAO, type WorkspaceConfig } from "@/lib/configuracoes-context";
 import { FUSOS_HORARIOS, IDIOMAS, MOEDAS, PAISES, SEGMENTOS_NEGOCIO } from "@/lib/configuracoes/mock";
+import { resetarDadosMockados } from "@/lib/reset-mock-data";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { ModelosSegmento } from "./ModelosSegmento";
 import { SalvarBar } from "./SalvarBar";
@@ -200,6 +201,26 @@ export function WorkspaceSecao() {
       </div>
 
       <ModelosSegmento />
+
+      <div className="config-bloco">
+        <p className="config-bloco-titulo">Dados de teste</p>
+        <p className="hint mb14">
+          O CRM ainda não tem backend — tudo que você cria (tarefas, agendamentos, membros da equipe,
+          documentos, formulários...) fica salvo só neste navegador. Use o botão abaixo pra apagar tudo
+          e voltar aos dados de demonstração originais, útil pra testar do zero.
+        </p>
+        <button
+          type="button"
+          className="btn ghost"
+          onClick={() => {
+            if (window.confirm("Isso apaga todos os dados de teste salvos neste navegador (tarefas, agenda, equipe, documentos, formulários...) e recarrega a página. Continuar?")) {
+              resetarDadosMockados();
+            }
+          }}
+        >
+          Restaurar dados de demonstração
+        </button>
+      </div>
 
       <SalvarBar dirty={dirty} onSalvar={salvar} onDescartar={descartar} mensagemSalvo="Configurações do workspace atualizadas." />
     </div>

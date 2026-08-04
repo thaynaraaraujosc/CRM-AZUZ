@@ -1,9 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-
-import { contatos, equipe } from "@/lib/data";
-import { useConfiguracoes } from "@/lib/configuracoes-context";
+import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import type {
   CampoCondicao,
@@ -12,6 +9,7 @@ import type {
   RegraCondicao,
 } from "@/lib/automation-flow/types";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
+import { useEtiquetasDisponiveis } from "./EtiquetaSelect";
 
 type CategoriaCampo = "Conversa" | "Funil / Negócio" | "Contato" | "Atividade";
 
@@ -110,16 +108,10 @@ export function CondicaoForm({
   }
 
   const { funis } = useFunis();
+  const { membros } = useEquipe();
   const equipes = useEquipesDisponiveis();
   const etapas = Array.from(new Set(funis.flatMap((f) => f.colunas.map((c) => c.titulo))));
-  const { estado } = useConfiguracoes();
-  const etiquetas = useMemo(() => {
-    const nomes = new Set<string>();
-    contatos.forEach((c) => c.etiquetas?.forEach((e) => nomes.add(e)));
-    funis.forEach((f) => f.colunas.forEach((col) => col.cards.forEach((card) => card.etiquetas?.forEach((e) => nomes.add(e)))));
-    estado.etiquetasPersonalizadas.forEach((e) => nomes.add(e.nome));
-    return Array.from(nomes).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [funis, estado.etiquetasPersonalizadas]);
+  const etiquetas = useEtiquetasDisponiveis();
 
   function renderValorInput(regra: RegraCondicao) {
     const onChangeValor = (valor: string) => atualizarRegra(regra.id, { valor });
@@ -185,8 +177,8 @@ export function CondicaoForm({
       return (
         <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
           <option value="">Selecione…</option>
-          {equipe.map((m) => (
-            <option key={m.nome} value={m.nome}>
+          {membros.map((m) => (
+            <option key={m.id} value={m.nome}>
               {m.nome}
             </option>
           ))}

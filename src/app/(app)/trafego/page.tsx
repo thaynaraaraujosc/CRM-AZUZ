@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
-import { ORIGENS, campanhas, contatos, funilJulho, funis as funisPadrao, kpisTrafego, type Origem } from "@/lib/data";
+import { ORIGENS, campanhas, contatos, funilJulho, kpisTrafego, type Origem } from "@/lib/data";
+import { useFunis } from "@/lib/funis-context";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { ChartCard, FunnelSteps } from "@/components/charts";
 import {
@@ -23,6 +24,7 @@ type ColunaOrdenavel = "nome" | "investido" | "leads" | "cpl" | "roas";
  * específica) mostram "Dados não conectados" em vez de número inventado.
  */
 export default function TrafegoPage() {
+  const { funis: funisPadrao } = useFunis();
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
   const [plataformaFiltro, setPlataformaFiltro] = useState("Todas");
   const [busca, setBusca] = useState("");

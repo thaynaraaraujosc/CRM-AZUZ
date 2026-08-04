@@ -2,11 +2,13 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { createPortal } from "react-dom";
 
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoNo } from "@/lib/automation-flow/resumo";
+import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import type {
   CanalMensagem,
   FlowNodeType,
@@ -284,6 +286,8 @@ function AutomacoesPageInner() {
 
   /* --------------------- "+ Nova automação" — popover ------------------- */
   const [novoAberto, setNovoAberto] = useState(false);
+  const [novoAnchorRect, setNovoAnchorRect] = useState<AnchorRect | null>(null);
+  const { ref: novoPopoverRef, posicao: novoPosicao } = useFloatingPosition(novoAnchorRect, novoAberto);
   const [novoModoModelo, setNovoModoModelo] = useState(false);
   const [novoCarregando, setNovoCarregando] = useState(false);
   const [novoErro, setNovoErro] = useState<string | null>(null);
@@ -579,23 +583,33 @@ function AutomacoesPageInner() {
               aria-expanded={novoAberto}
               aria-controls="automacoes-novo-popover"
               aria-label={novoCarregando ? "Abrindo construtor de automação" : "Nova automação"}
-              onClick={() => setNovoAberto((v) => !v)}
+              onClick={(e) => {
+                if (novoAberto) {
+                  setNovoAberto(false);
+                } else {
+                  setNovoAnchorRect(e.currentTarget.getBoundingClientRect());
+                  setNovoAberto(true);
+                }
+              }}
             >
               {novoCarregando ? "Abrindo…" : "+ Nova automação"}
             </button>
 
-            {novoAberto ? (
-              <>
-                <div
-                  onClick={fecharPopoverNovo}
-                  style={{ position: "fixed", inset: 0, zIndex: 50 }}
-                />
-                <div
-                  id="automacoes-novo-popover"
-                  className="flow-filtros-pop"
-                  role="menu"
-                  aria-label="Como criar a nova automação"
-                >
+            {novoAberto && novoPosicao && typeof document !== "undefined"
+              ? createPortal(
+                  <>
+                    <div
+                      onClick={fecharPopoverNovo}
+                      style={{ position: "fixed", inset: 0, zIndex: 190 }}
+                    />
+                    <div
+                      ref={novoPopoverRef}
+                      id="automacoes-novo-popover"
+                      className="flow-filtros-pop"
+                      role="menu"
+                      aria-label="Como criar a nova automação"
+                      style={{ position: "fixed", top: novoPosicao.top, left: novoPosicao.left, zIndex: 200 }}
+                    >
                   {novoErro ? (
                     <div className="flow-filtros-secao">
                       <p className="flow-problema erro">{novoErro}</p>
@@ -668,8 +682,10 @@ function AutomacoesPageInner() {
                     </div>
                   )}
                 </div>
-              </>
-            ) : null}
+                  </>,
+                  document.body,
+                )
+              : null}
           </div>
         }
       />

@@ -7,9 +7,10 @@
  */
 
 import type { Conversa, ColunaTarefas, Funil, TaskCard } from "@/lib/data";
+import type { Compromisso } from "@/lib/agenda-context";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { validarFluxo } from "@/lib/automation-flow/validacao";
-import type { AcaoItemDia, CompromissoDia, ItemDia, RecomendacaoDia } from "./tipos";
+import type { AcaoItemDia, CompromissoDia, ItemDia, RecomendacaoDia, StatusCompromisso } from "./tipos";
 
 /** Converte "9 min" / "1h" / "4 dias" em minutos — só pra comparar/ordenar, nunca mostrado direto. */
 export function tempoParaMinutos(tempo: string): number {
@@ -168,57 +169,38 @@ export function itensDeAutomacoes(fluxos: FluxoAutomacao[]): ItemDia[] {
   return itens;
 }
 
+const STATUS_POR_ORIGEM: Record<Compromisso["status"], StatusCompromisso> = {
+  agendado: "Aguardando confirmação",
+  concluido: "Concluído",
+  cancelado: "Cancelado",
+};
+
 /**
- * Compromissos de hoje — mockados: o CRM ainda não tem um módulo de agenda com hora/local/modalidade
- * de verdade (a página Agenda só posiciona tarefas no calendário). Front-end apenas, nunca persistido
- * como dado real.
+ * Compromissos de um dia específico, no formato que a seção "Agenda de hoje" espera — deriva do
+ * `AgendaContext` (agendamentos manuais + os que vêm de tarefas com data, via `compromissosDeTarefas`)
+ * em vez do mock hardcoded que existia antes (`COMPROMISSOS_HOJE_MOCK`). Front-end apenas: os status
+ * mapeados são só uma aproximação (o CRM ainda não tem confirmação de presença de verdade).
  */
-export const COMPROMISSOS_HOJE_MOCK: CompromissoDia[] = [
-  {
-    id: "compromisso-1",
-    horario: "09:00",
-    contato: "Marcos Aurélio",
-    tipo: "Retorno de avaliação",
-    responsavel: "Dr. Hélio Marinho",
-    local: "Presencial · Sala 2",
-    status: "Confirmado",
-  },
-  {
-    id: "compromisso-2",
-    horario: "11:30",
-    contato: "Renata Farias",
-    tipo: "Reagendamento",
-    responsavel: "Bruno Salles",
-    local: "Ligação",
-    status: "Aguardando confirmação",
-    minutosParaComecar: 30,
-  },
-  {
-    id: "compromisso-3",
-    horario: "14:00",
-    contato: "Camila Duarte",
-    tipo: "Consulta particular",
-    responsavel: "Ana Ferreira",
-    local: "Presencial · Recepção",
-    status: "Aguardando confirmação",
-  },
-  {
-    id: "compromisso-4",
-    horario: "08:00",
-    contato: "Paulo Lacerda",
-    tipo: "Demonstração",
-    responsavel: "Bruno Salles",
-    local: "Vídeo · Google Meet",
-    status: "Atrasado",
-  },
-];
+export function compromissosDoDia(compromissos: Compromisso[], dataIso: string): CompromissoDia[] {
+  return compromissos
+    .filter((c) => c.dataIso === dataIso && c.status !== "cancelado")
+    .map((c) => ({
+      id: c.id,
+      horario: c.hora || "—",
+      contato: c.contato,
+      tipo: c.tipo,
+      responsavel: c.responsavel,
+      local: c.local ?? (c.origem === "tarefa" ? "Vinculado a uma tarefa" : "Não informado"),
+      status: STATUS_POR_ORIGEM[c.status],
+    }));
+}
 
 /** Recomendações — regras locais mockadas (nunca IA real), derivadas de contagens simples sobre os
  * mesmos itens já calculados acima. */
-export function gerarRecomendacoes(itens: ItemDia[]): RecomendacaoDia[] {
+export function gerarRecomendacoes(itens: ItemDia[], compromissosHoje: CompromissoDia[] = []): RecomendacaoDia[] {
   const leadsParados = itens.filter((i) => i.modulo === "lead" && i.prioridade !== "oportunidade").length;
   const semResponsavel = itens.filter((i) => i.modulo === "lead" && !i.responsavel).length;
-  const agendamentosTarde = COMPROMISSOS_HOJE_MOCK.filter((c) => Number(c.horario.slice(0, 2)) >= 12 && c.status === "Aguardando confirmação").length;
+  const agendamentosTarde = compromissosHoje.filter((c) => Number(c.horario.slice(0, 2)) >= 12 && c.status === "Aguardando confirmação").length;
   const automacoesPausadas = itens.filter((i) => i.modulo === "automacao" && i.extra?.status === "publicado" && i.extra?.ativa === "não").length;
 
   const recomendacoes: RecomendacaoDia[] = [];

@@ -12,10 +12,12 @@ import { Recomendacoes } from "@/components/central-dia/Recomendacoes";
 import { SecaoLista } from "@/components/central-dia/SecaoLista";
 import { useCentralDia } from "@/lib/central-dia-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
-import { conversas, currentUser, tarefas } from "@/lib/data";
+import { compromissosDeTarefas, HOJE_ISO, useAgenda } from "@/lib/agenda-context";
+import { conversas, currentUser } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
+import { useTarefas } from "@/lib/tarefas-context";
 import {
-  COMPROMISSOS_HOJE_MOCK,
+  compromissosDoDia,
   gerarRecomendacoes,
   itensDeAutomacoes,
   itensDeConversas,
@@ -57,12 +59,19 @@ function tempoDesde(timestamp: number): string {
 export default function InicioPage() {
   const { funis } = useFunis();
   const { fluxos } = useAutomationFlows();
+  const { colunas } = useTarefas();
+  const { compromissos } = useAgenda();
   const { filtros, concluidos, adiados, ultimaAtualizacao, atualizando, atualizarAgora } = useCentralDia();
   const [organizarAberto, setOrganizarAberto] = useState(false);
 
   const itensBase = useMemo(
-    () => [...itensDeConversas(conversas), ...itensDeTarefas(tarefas), ...itensDeLeads(funis), ...itensDeAutomacoes(fluxos)],
-    [funis, fluxos],
+    () => [...itensDeConversas(conversas), ...itensDeTarefas(colunas), ...itensDeLeads(funis), ...itensDeAutomacoes(fluxos)],
+    [colunas, funis, fluxos],
+  );
+
+  const compromissosHoje = useMemo(
+    () => compromissosDoDia([...compromissos, ...compromissosDeTarefas(colunas)], HOJE_ISO),
+    [compromissos, colunas],
   );
 
   const concluidosIds = useMemo(() => new Set(concluidos.map((c) => c.itemId)), [concluidos]);
@@ -100,11 +109,14 @@ export default function InicioPage() {
   const tarefasSecao = itensFiltrados.filter((i) => i.modulo === "tarefa");
   const leadsSecao = itensFiltrados.filter((i) => i.modulo === "lead");
   const automacoesSecao = itensFiltrados.filter((i) => i.modulo === "automacao");
-  const recomendacoes = useMemo(() => gerarRecomendacoes(itensAtivos), [itensAtivos]);
+  const recomendacoes = useMemo(
+    () => gerarRecomendacoes(itensAtivos, compromissosHoje),
+    [itensAtivos, compromissosHoje],
+  );
 
   const atrasadosCount =
     tarefasSecao.filter((t) => t.tipo === "Tarefa atrasada").length +
-    COMPROMISSOS_HOJE_MOCK.filter((c) => c.status === "Atrasado").length;
+    compromissosHoje.filter((c) => c.status === "Atrasado").length;
   const urgentesCount = itensFiltrados.filter((i) => i.prioridade === "urgente").length;
 
   const tudoConcluido = itensFiltrados.length === 0 && concluidos.length > 0;
@@ -192,8 +204,8 @@ export default function InicioPage() {
         ) : null}
 
         {mostrarAgenda ? (
-          <SecaoLista titulo="Agenda de hoje" contagem={COMPROMISSOS_HOJE_MOCK.length} vazio={<p className="hint">Nenhum compromisso hoje.</p>}>
-            {COMPROMISSOS_HOJE_MOCK.map((c) => (
+          <SecaoLista titulo="Agenda de hoje" contagem={compromissosHoje.length} vazio={<p className="hint">Nenhum compromisso hoje.</p>}>
+            {compromissosHoje.map((c) => (
               <CompromissoCard key={c.id} compromisso={c} />
             ))}
           </SecaoLista>

@@ -1,6 +1,6 @@
 "use client";
 
-import { equipe } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import type { EncaminharHumanoData, MetodoDistribuicaoAtendimento, ModoDestinoAtendimento } from "@/lib/automation-flow/types";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
@@ -23,6 +23,7 @@ const METODOS: { valor: MetodoDistribuicaoAtendimento; label: string }[] = [
  * opcionalmente move ele de etapa/funil junto. */
 export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHumanoData; onChange: (novo: EncaminharHumanoData) => void }) {
   const { funis } = useFunis();
+  const { membros } = useEquipe();
   const equipes = useEquipesDisponiveis();
   const funilEscolhido = funis.find((f) => f.id === data.funilId);
 
@@ -42,8 +43,8 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
           <label>Atendente</label>
           <select className="input" value={data.atendenteNome ?? ""} onChange={(e) => onChange({ ...data, atendenteNome: e.target.value })}>
             <option value="">Selecionar atendente…</option>
-            {equipe.map((m) => (
-              <option key={m.nome} value={m.nome}>{m.nome}</option>
+            {membros.map((m) => (
+              <option key={m.id} value={m.nome}>{m.nome}</option>
             ))}
           </select>
         </div>

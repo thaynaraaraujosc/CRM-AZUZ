@@ -3,30 +3,31 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import {
-  equipe,
-  EQUIPE_PADRAO_TAREFA,
-  tarefas as tarefasIniciais,
-} from "@/lib/data";
-import type { ColunaTarefas, Urgencia } from "@/lib/data";
+import { EQUIPE_PADRAO_TAREFA } from "@/lib/data";
+import type { Urgencia } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import { useNotificacoes } from "@/lib/notificacoes-context";
+import { useTarefas } from "@/lib/tarefas-context";
 import { IconConfiguracoes, IconDoc } from "@/components/icons";
 import { ChipFilters, RadioList, Toggle, Topbar } from "@/components/ui";
 
 const NIVEIS_URGENCIA: Urgencia[] = ["Baixa", "Média", "Alta"];
 
-const RESPONSAVEIS = equipe.map((m) => ({ nome: m.nome, descricao: m.papel }));
-
-function cloneColunas(colunas: ColunaTarefas[]): ColunaTarefas[] {
-  return colunas.map((c) => ({ ...c, cards: c.cards.map((card) => ({ ...card })) }));
-}
-
 function TarefasContent() {
   const searchParams = useSearchParams();
   const { simularNovaTarefa } = useNotificacoes();
-  const [colunas, setColunas] = useState<ColunaTarefas[]>(() =>
-    cloneColunas(tarefasIniciais),
-  );
+  const { membros } = useEquipe();
+  const RESPONSAVEIS = membros.map((m) => ({ nome: m.nome, descricao: m.papel }));
+  const {
+    colunas,
+    criarTarefa: criarTarefaCtx,
+    editarTarefa,
+    moverTarefaPara,
+    renomearEtapa: renomearEtapaCtx,
+    reordenarEtapa,
+    criarEtapa: criarEtapaCtx,
+    excluirEtapa,
+  } = useTarefas();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [novaTarefaAberta, setNovaTarefaAberta] = useState(
     () => searchParams.get("nova") === "1",
@@ -97,30 +98,6 @@ function TarefasContent() {
     setSelectedId((atual) => (atual === id ? null : id));
   }
 
-  function moverTarefaPara(
-    colOrigem: number,
-    indiceOrigem: number,
-    colDestino: number,
-    indiceDestino?: number,
-  ) {
-    setColunas((prev) => {
-      const proximo = cloneColunas(prev);
-      const [card] = proximo[colOrigem].cards.splice(indiceOrigem, 1);
-      if (!card) return prev;
-
-      const tituloDestino = proximo[colDestino].titulo;
-      card.concluida = tituloDestino === "Concluídas";
-      card.atrasada = tituloDestino === "Atrasadas";
-
-      const destino = proximo[colDestino].cards;
-      const posicao = indiceDestino ?? destino.length;
-      const posicaoAjustada =
-        colOrigem === colDestino && indiceOrigem < posicao ? posicao - 1 : posicao;
-      destino.splice(posicaoAjustada, 0, card);
-      return proximo;
-    });
-  }
-
   function moverTarefa(colunaDestino: number, indiceDestino?: number) {
     if (!arrastando) return;
     const { coluna: colunaOrigem, card: indiceCard } = arrastando;
@@ -144,34 +121,16 @@ function TarefasContent() {
       setColunaRenomeando(null);
       return;
     }
-    setColunas((prev) =>
-      prev.map((c, i) => (i === colIndex ? { ...c, titulo } : c)),
-    );
+    renomearEtapaCtx(colIndex, titulo);
     setColunaRenomeando(null);
-  }
-
-  function reordenarEtapa(origem: number, destino: number) {
-    setColunaArrastando(null);
-    if (origem === destino) return;
-    setColunas((prev) => {
-      const proximo = [...prev];
-      const [movida] = proximo.splice(origem, 1);
-      if (!movida) return prev;
-      proximo.splice(destino, 0, movida);
-      return proximo;
-    });
   }
 
   function criarEtapa() {
     const titulo = nomeNovaEtapa.trim();
     if (!titulo) return;
-    setColunas((prev) => [...prev, { titulo, cards: [] }]);
+    criarEtapaCtx(titulo);
     setNomeNovaEtapa("");
     setNovaEtapaAberta(false);
-  }
-
-  function excluirEtapa(colIndex: number) {
-    setColunas((prev) => prev.filter((_, i) => i !== colIndex));
   }
 
   function fecharNovaTarefa() {
@@ -205,9 +164,8 @@ function TarefasContent() {
     const titulo = tituloNovaTarefa.trim();
     if (!titulo) return;
     const responsavelEscolhido =
-      equipe.find((m) => m.nome === responsavelNovaTarefa) ?? equipe[0];
-    const novaTarefa = {
-      id: `tarefa-${Date.now()}`,
+      membros.find((m) => m.nome === responsavelNovaTarefa) ?? membros[0];
+    criarTarefaCtx({
       titulo,
       contato: "—",
       data: dataNovaTarefa.trim() || "Sem data",
@@ -219,13 +177,6 @@ function TarefasContent() {
       descricao: descricaoNovaTarefa.trim() || "Sem descrição.",
       anexo: null,
       modelo: equipeNovaTarefa,
-    };
-    setColunas((prev) => {
-      const proximo = cloneColunas(prev);
-      const colunaDestino =
-        proximo.find((c) => c.titulo === "Hoje") ?? proximo[0];
-      colunaDestino?.cards.push(novaTarefa);
-      return proximo;
     });
     simularNovaTarefa(titulo);
     fecharNovaTarefa();
@@ -234,14 +185,7 @@ function TarefasContent() {
   function salvarTitulo() {
     if (!aberta) return;
     const titulo = tituloEditavel.trim() || aberta.titulo;
-    setColunas((prev) =>
-      prev.map((c) => ({
-        ...c,
-        cards: c.cards.map((card) =>
-          card.id === aberta.id ? { ...card, titulo } : card,
-        ),
-      })),
-    );
+    editarTarefa(aberta.id, { titulo });
   }
 
   return (

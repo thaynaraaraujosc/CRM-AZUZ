@@ -15,6 +15,7 @@ import {
   classeOrigem,
   conversas,
   motivosPerda,
+  oportunidadesPerdidas,
   type Canal,
   type Contato,
   type ConvMensagem,
@@ -26,7 +27,9 @@ import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { executarFluxo } from "@/lib/automation-flow/motor";
 import { useContatos } from "@/lib/contatos-context";
+import { useTarefas } from "@/lib/tarefas-context";
 import { estimarMinutosAtras, gerarLinhaDoTempo, type Evento } from "@/lib/timeline";
+import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { Timeline } from "@/components/timeline";
 import { AudioBubblePlayer, AudioWaveformBars } from "@/components/audio-player";
 import {
@@ -425,6 +428,7 @@ function ConversasPageInner() {
     removerEtiqueta,
     criarContato,
   } = useContatos();
+  const { colunas: tarefas } = useTarefas();
   const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
   const { fluxos, dispararEvento, registrarExecucao } = useAutomationFlows();
   const { simularNovaMensagem } = useNotificacoes();
@@ -841,7 +845,10 @@ function ConversasPageInner() {
   const audioPreviewElRef = useRef<HTMLAudioElement>(null);
 
   const [anexoAberto, setAnexoAberto] = useState(false);
-  const [anexoPos, setAnexoPos] = useState<{ x: number; y: number } | null>(null);
+  const [anexoAnchorRect, setAnexoAnchorRect] = useState<AnchorRect | null>(null);
+  const [anexoPosManual, setAnexoPosManual] = useState<{ x: number; y: number } | null>(null);
+  const { ref: anexoMenuRef, posicao: anexoPosicaoAuto } = useFloatingPosition(anexoAnchorRect, anexoAberto);
+  const anexoPos = anexoPosManual ?? (anexoPosicaoAuto ? { x: anexoPosicaoAuto.left, y: anexoPosicaoAuto.top } : null);
   const anexoArrasteRef = useRef<{ dx: number; dy: number } | null>(null);
   const [emojiAberto, setEmojiAberto] = useState(false);
   const [emojiRect, setEmojiRect] = useState<DOMRect | null>(null);
@@ -1498,7 +1505,11 @@ function ConversasPageInner() {
     ),
   ];
   const eventosTimelineContato: Evento[] = contatoDaConversa
-    ? gerarLinhaDoTempo(contatoDaConversa.id, undefined, eventosExtrasTimeline)
+    ? gerarLinhaDoTempo(
+        contatoDaConversa.id,
+        { contatos, conversas, tarefas, funis, oportunidadesPerdidas },
+        eventosExtrasTimeline,
+      )
     : eventosExtrasTimeline.slice().sort((a, b) => a.minutosAtras - b.minutosAtras);
 
   function adicionarHistorico(tipo: HistoricoItem["tipo"], texto: string) {
@@ -2486,18 +2497,8 @@ function ConversasPageInner() {
   }
 
   function abrirMenuAnexo(rect: DOMRect) {
-    const largura = 288;
-    const alturaEstimada = 300;
-    const margem = 12;
-    let left = rect.left;
-    // Abre acima do botão "+", como no WhatsApp — só desce se não couber em cima.
-    let top = rect.top - alturaEstimada - 8;
-    if (top < margem) top = rect.bottom + 8;
-    if (left + largura > window.innerWidth - margem) {
-      left = window.innerWidth - largura - margem;
-    }
-    if (left < margem) left = margem;
-    setAnexoPos({ x: left, y: top });
+    setAnexoPosManual(null);
+    setAnexoAnchorRect(rect);
     setAnexoAberto(true);
   }
 
@@ -2536,13 +2537,19 @@ function ConversasPageInner() {
     ) as HTMLElement | null;
     if (!menuEl) return;
     const rect = menuEl.getBoundingClientRect();
+    const margem = 8;
     anexoArrasteRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
     function mover(ev: MouseEvent) {
       if (!anexoArrasteRef.current) return;
-      setAnexoPos({
-        x: ev.clientX - anexoArrasteRef.current.dx,
-        y: ev.clientY - anexoArrasteRef.current.dy,
-      });
+      const x = Math.min(
+        Math.max(margem, ev.clientX - anexoArrasteRef.current.dx),
+        window.innerWidth - rect.width - margem,
+      );
+      const y = Math.min(
+        Math.max(margem, ev.clientY - anexoArrasteRef.current.dy),
+        window.innerHeight - rect.height - margem,
+      );
+      setAnexoPosManual({ x, y });
     }
     function soltar() {
       anexoArrasteRef.current = null;
@@ -3880,6 +3887,7 @@ function ConversasPageInner() {
                     style={{ position: "fixed", inset: 0, zIndex: 190 }}
                   />
                   <div
+                    ref={anexoMenuRef}
                     className="wa-anexo-menu wa-anexo-menu-grid"
                     style={{ left: anexoPos.x, top: anexoPos.y }}
                     role="menu"
