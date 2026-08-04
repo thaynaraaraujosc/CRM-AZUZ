@@ -5574,13 +5574,97 @@ button.camp-row:hover {
   margin-top: 4px;
 }
 
-.doc-img-painel {
-  max-height: 86vh;
+/* Painel de imagem docked (aside fixo à direita do canvas, não mais flutuante/arrastável) — mesmo
+   padrão visual de .doc-comentarios-painel/.doc-estrutura-painel. */
+.doc-lateral-painel {
+  width: 300px;
+  flex: 0 0 auto;
+  border-left: 1px solid var(--line);
+  background: var(--navy);
   overflow-y: auto;
+  padding: 4px 16px 16px;
 }
 
 .doc-tabela-painel {
   width: 260px;
+}
+
+/* Alças de redimensionar sobrepostas na imagem selecionada — position:fixed porque a imagem é DOM
+   cru fora do React; as coordenadas vêm de getBoundingClientRect() (já em espaço de viewport). */
+.doc-img-handles {
+  position: fixed;
+  pointer-events: none;
+  z-index: 60;
+}
+
+.doc-img-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--blue, #2563eb);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  pointer-events: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.doc-img-handle-nw { left: -5px; top: -5px; }
+.doc-img-handle-n { left: 50%; top: -5px; transform: translateX(-50%); }
+.doc-img-handle-ne { right: -5px; top: -5px; }
+.doc-img-handle-w { left: -5px; top: 50%; transform: translateY(-50%); }
+.doc-img-handle-e { right: -5px; top: 50%; transform: translateY(-50%); }
+.doc-img-handle-sw { left: -5px; bottom: -5px; }
+.doc-img-handle-s { left: 50%; bottom: -5px; transform: translateX(-50%); }
+.doc-img-handle-se { right: -5px; bottom: -5px; }
+
+/* Menu de botão direito na imagem — reposicionado em JS (useLayoutEffect) se abriria fora da viewport. */
+.doc-context-menu {
+  position: fixed;
+  z-index: 70;
+  min-width: 200px;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.doc-context-menu button {
+  border: none;
+  background: none;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.doc-context-menu button:hover {
+  background: var(--surface-2, rgba(255, 255, 255, 0.06));
+}
+
+.doc-context-menu button.perigo {
+  color: var(--danger);
+}
+
+.doc-context-menu-sep {
+  height: 1px;
+  background: var(--line-soft);
+  margin: 4px 0;
+}
+
+.doc-context-menu-linha {
+  display: flex;
+  gap: 4px;
+}
+
+.doc-context-menu-linha button {
+  flex: 1;
+  text-align: center;
 }
 
 .doc-img-resize-alca {

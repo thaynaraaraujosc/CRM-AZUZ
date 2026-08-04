@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 import { currentUser, equipe } from "@/lib/data";
 import {
@@ -49,6 +49,20 @@ function useFecharAoClicarFora(
     return () => document.removeEventListener("mousedown", aoClicarFora);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ativo]);
+}
+
+let contadorIdImagem = 0;
+/** Id estável pra cada imagem inserida — usado só como `key` do painel/handles no React, pra resetar o
+ * estado local (unidade de medida, corte pendente, efeitos) sempre que a imagem selecionada troca. */
+function proximoIdImagem(): string {
+  contadorIdImagem += 1;
+  return `img-${Date.now()}-${contadorIdImagem}`;
+}
+
+/** Garante que uma imagem tenha `data-doc-img-id` mesmo se veio de um documento antigo/seed sem o atributo. */
+function garantirIdImagem(img: HTMLImageElement): string {
+  if (!img.dataset.docImgId) img.dataset.docImgId = proximoIdImagem();
+  return img.dataset.docImgId;
 }
 
 /**
@@ -1102,6 +1116,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const colunasRef = useRef<HTMLDivElement>(null);
   useFecharAoClicarFora(colunasRef, colunasAberto, () => setColunasAberto(false));
   const [imagemSelecionada, setImagemSelecionada] = useState<{ paginaId: string; el: HTMLImageElement } | null>(null);
+  const [menuImagemPos, setMenuImagemPos] = useState<{ x: number; y: number } | null>(null);
   const [celulaSelecionada, setCelulaSelecionada] = useState<{ paginaId: string; td: HTMLTableCellElement } | null>(null);
   const [celulaPainelPos, setCelulaPainelPos] = useState<{ x: number; y: number } | null>(null);
   const [recuoAtual, setRecuoAtual] = useState({ primeiraLinhaMm: 0, esquerdoMm: 0, direitoMm: 0 });
@@ -1115,15 +1130,40 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     return () => el.classList.remove("doc-img-selecionada");
   }, [imagemSelecionada]);
 
-  // Mover a imagem selecionada com as setas do teclado (só faz sentido em "posição fixa" — position:absolute).
-  // Shift+seta move em passos maiores. Não interfere na digitação normal: só age quando uma imagem está selecionada.
+  /**
+   * Atalhos de teclado pra imagem selecionada — setas movem (só em posição fixa), Delete/Backspace
+   * exclui, Esc desmarca, Ctrl/Cmd+D duplica. Fica num listener global de window (não no onKeyDown do
+   * contentEditable) porque selecionar uma imagem não necessariamente move o foco do navegador pra
+   * dentro dela. Não interfere na digitação normal: só existe enquanto uma imagem está selecionada.
+   */
   useEffect(() => {
     const info = imagemSelecionada;
     if (!info) return;
     function aoTeclar(e: KeyboardEvent) {
       if (!info) return;
       const img = info.el;
-      if (img.style.position !== "absolute") return;
+      const alvo = e.target as HTMLElement | null;
+      // Se o foco estiver num campo de texto/painel (ex.: digitando um valor no painel lateral),
+      // Delete/Backspace deve apagar o texto do campo, não a imagem.
+      const digitandoEmCampo = alvo?.tagName === "INPUT" || alvo?.tagName === "TEXTAREA" || alvo?.isContentEditable;
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setImagemSelecionada(null);
+        setMenuImagemPos(null);
+        return;
+      }
+      if ((e.key === "Delete" || e.key === "Backspace") && !digitandoEmCampo) {
+        e.preventDefault();
+        excluirImagemSelecionada();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "d" || e.key === "D") && !digitandoEmCampo) {
+        e.preventDefault();
+        duplicarImagemSelecionada();
+        return;
+      }
+      if (estaBloqueada(img) || img.style.position !== "absolute") return;
       const setas: Record<string, [number, number]> = {
         ArrowUp: [0, -1],
         ArrowDown: [0, 1],
@@ -2096,7 +2136,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       const leitor = new FileReader();
       leitor.onload = () => {
         const src = String(leitor.result);
-        inserirNaPagina(`<img src="${src}" data-doc-img="1" data-original-src="${src}" style="max-width:100%;" />`);
+        inserirNaPagina(`<img src="${src}" data-doc-img="1" data-doc-img-id="${proximoIdImagem()}" data-original-src="${src}" style="max-width:100%;" />`);
       };
       leitor.readAsDataURL(arquivo);
     };
@@ -2107,7 +2147,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   function aoClicarNaPagina(e: React.MouseEvent<HTMLDivElement>, paginaId: string) {
     const alvo = e.target as HTMLElement;
     if (alvo.tagName === "IMG") {
+      garantirIdImagem(alvo as HTMLImageElement);
       setImagemSelecionada({ paginaId, el: alvo as HTMLImageElement });
+      setMenuImagemPos(null);
     } else {
       setImagemSelecionada(null);
     }
@@ -2117,6 +2159,19 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     } else {
       setCelulaSelecionada(null);
     }
+  }
+
+  /** Botão direito numa imagem: seleciona (se ainda não estava) e abre o menu de contexto no ponto do clique. */
+  function aoClicarComBotaoDireitoNaPagina(e: React.MouseEvent<HTMLDivElement>, paginaId: string) {
+    const alvo = e.target as HTMLElement;
+    if (alvo.tagName !== "IMG") {
+      setMenuImagemPos(null);
+      return;
+    }
+    e.preventDefault();
+    garantirIdImagem(alvo as HTMLImageElement);
+    setImagemSelecionada({ paginaId, el: alvo as HTMLImageElement });
+    setMenuImagemPos({ x: e.clientX, y: e.clientY });
   }
 
   function atualizarImagemSelecionada(mudar: (img: HTMLImageElement) => void) {
@@ -2160,14 +2215,44 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     if (!imagemSelecionada) return;
     const { paginaId, el } = imagemSelecionada;
     const copia = el.cloneNode(true) as HTMLImageElement;
+    copia.dataset.docImgId = proximoIdImagem();
+    // Desloca um pouco a cópia pra ficar visível quando a original está em posição fixa (senão fica
+    // exatamente por cima, parecendo que nada aconteceu).
+    if (copia.style.position === "absolute") {
+      copia.style.left = `${(parseFloat(copia.style.left || "0") || 0) + 16}px`;
+      copia.style.top = `${(parseFloat(copia.style.top || "0") || 0) + 16}px`;
+    }
     el.after(copia);
     salvarConteudoPagina(paginaId);
     setImagemSelecionada({ paginaId, el: copia });
+    setMenuImagemPos(null);
+  }
+
+  function estaBloqueada(img: HTMLImageElement): boolean {
+    return img.dataset.bloqueada === "1";
+  }
+
+  function alternarBloqueioImagemSelecionada() {
+    atualizarImagemSelecionada((img) => {
+      img.dataset.bloqueada = estaBloqueada(img) ? "0" : "1";
+    });
+  }
+
+  function trazerImagemSelecionadaParaFrente() {
+    atualizarImagemSelecionada((img) => {
+      img.style.zIndex = "50";
+    });
+  }
+
+  function enviarImagemSelecionadaParaTras() {
+    atualizarImagemSelecionada((img) => {
+      img.style.zIndex = "-1";
+    });
   }
 
   function iniciarArrasteRedimensionarImagem(e: React.MouseEvent) {
     e.preventDefault();
-    if (!imagemSelecionada) return;
+    if (!imagemSelecionada || estaBloqueada(imagemSelecionada.el)) return;
     const img = imagemSelecionada.el;
     const larguraInicial = img.getBoundingClientRect().width;
     const xInicial = e.clientX;
@@ -2195,7 +2280,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   function iniciarArrasteLivreImagem(e: { preventDefault: () => void; clientX: number; clientY: number }) {
     if (!imagemSelecionada) return;
     const img = imagemSelecionada.el;
-    if (img.style.position !== "absolute") return;
+    if (img.style.position !== "absolute" || estaBloqueada(img)) return;
     e.preventDefault();
     const folha = img.closest(".doc-page-sheet") as HTMLElement | null;
     if (!folha) return;
@@ -2922,8 +3007,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   }}
                   onKeyDown={aoTeclarNaPagina}
                   onClick={(e) => aoClicarNaPagina(e, pagina.id)}
+                  onContextMenu={(e) => aoClicarComBotaoDireitoNaPagina(e, pagina.id)}
                   onMouseDown={(e) => {
-                    if (imagemSelecionada && e.target === imagemSelecionada.el && imagemSelecionada.el.style.position === "absolute") {
+                    if (imagemSelecionada && e.target === imagemSelecionada.el && imagemSelecionada.el.style.position === "absolute" && !estaBloqueada(imagemSelecionada.el)) {
                       iniciarArrasteLivreImagem(e);
                     }
                   }}
@@ -2950,7 +3036,18 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           ))}
         </div>
 
-        {comentariosAberto ? (
+        {imagemSelecionada ? (
+          <PainelImagem
+            key={imagemSelecionada.el.dataset.docImgId}
+            imagem={imagemSelecionada.el}
+            onFechar={() => setImagemSelecionada(null)}
+            onMudar={atualizarImagemSelecionada}
+            onSubstituir={substituirImagemSelecionada}
+            onExcluir={excluirImagemSelecionada}
+            onDuplicar={duplicarImagemSelecionada}
+            onIniciarRedimensionar={iniciarArrasteRedimensionarImagem}
+          />
+        ) : comentariosAberto ? (
           <aside className="doc-comentarios-painel">
             <div className="panel-h">
               <h4>Comentários</h4>
@@ -3542,14 +3639,34 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       ) : null}
 
       {imagemSelecionada ? (
-        <PainelImagem
+        <AlcasRedimensionarImagem
+          key={`${imagemSelecionada.el.dataset.docImgId}-alcas`}
           imagem={imagemSelecionada.el}
-          onFechar={() => setImagemSelecionada(null)}
+          bloqueada={estaBloqueada(imagemSelecionada.el)}
           onMudar={atualizarImagemSelecionada}
-          onSubstituir={substituirImagemSelecionada}
-          onExcluir={excluirImagemSelecionada}
-          onDuplicar={duplicarImagemSelecionada}
-          onIniciarRedimensionar={iniciarArrasteRedimensionarImagem}
+        />
+      ) : null}
+
+      {menuImagemPos && imagemSelecionada ? (
+        <MenuContextoImagem
+          pos={menuImagemPos}
+          bloqueada={estaBloqueada(imagemSelecionada.el)}
+          onFechar={() => setMenuImagemPos(null)}
+          onSubstituir={() => { setMenuImagemPos(null); substituirImagemSelecionada(); }}
+          onDuplicar={() => { setMenuImagemPos(null); duplicarImagemSelecionada(); }}
+          onAlinhar={(lado) => {
+            setMenuImagemPos(null);
+            atualizarImagemSelecionada((img) => {
+              img.style.position = "static";
+              img.style.float = "none";
+              img.style.display = "block";
+              img.style.margin = lado === "centro" ? "8px auto" : lado === "direita" ? "8px 0 8px auto" : "8px auto 8px 0";
+            });
+          }}
+          onTrazerFrente={() => { setMenuImagemPos(null); trazerImagemSelecionadaParaFrente(); }}
+          onEnviarTras={() => { setMenuImagemPos(null); enviarImagemSelecionadaParaTras(); }}
+          onBloquear={() => { setMenuImagemPos(null); alternarBloqueioImagemSelecionada(); }}
+          onExcluir={() => { setMenuImagemPos(null); excluirImagemSelecionada(); }}
         />
       ) : null}
 
@@ -3607,15 +3724,14 @@ function PainelImagem({
   onDuplicar: () => void;
   onIniciarRedimensionar: (e: React.MouseEvent) => void;
 }) {
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [manterProporcao, setManterProporcao] = useState(true);
   const [unidadeTamanho, setUnidadeTamanho] = useState<"px" | "cm" | "%">("px");
   const [cortarTopo, setCortarTopo] = useState(0);
   const [cortarDireita, setCortarDireita] = useState(0);
   const [cortarBaixo, setCortarBaixo] = useState(0);
   const [cortarEsquerda, setCortarEsquerda] = useState(0);
-  const painelRef = useRef<HTMLDivElement>(null);
-  useFecharAoClicarFora(painelRef, true, onFechar);
+  const [efeitos, setEfeitos] = useState({ desfoque: 0, brilho: 100, contraste: 100, saturacao: 100 });
+  const bloqueada = imagem.dataset.bloqueada === "1";
 
   const larguraAtual = Math.round(imagem.getBoundingClientRect().width) || imagem.naturalWidth;
   const alturaAtual = Math.round(imagem.getBoundingClientRect().height) || imagem.naturalHeight;
@@ -3707,6 +3823,30 @@ function PainelImagem({
     });
   }
 
+  function aplicarEfeitos(patch: Partial<typeof efeitos>) {
+    const novo = { ...efeitos, ...patch };
+    setEfeitos(novo);
+    onMudar((img) => {
+      img.style.filter = `blur(${novo.desfoque}px) brightness(${novo.brilho}%) contrast(${novo.contraste}%) saturate(${novo.saturacao}%)`;
+    });
+  }
+
+  function aplicarPresetEfeito(preset: "pb" | "sepia" | "nenhum") {
+    const novo = preset === "nenhum" ? { desfoque: 0, brilho: 100, contraste: 100, saturacao: 100 } : efeitos;
+    setEfeitos(novo);
+    onMudar((img) => {
+      if (preset === "pb") img.style.filter = "grayscale(1)";
+      else if (preset === "sepia") img.style.filter = "sepia(0.7)";
+      else img.style.filter = `blur(${novo.desfoque}px) brightness(${novo.brilho}%) contrast(${novo.contraste}%) saturate(${novo.saturacao}%)`;
+    });
+  }
+
+  function alternarBloqueio() {
+    onMudar((img) => {
+      img.dataset.bloqueada = bloqueada ? "0" : "1";
+    });
+  }
+
   function mudarPosicao(modo: ModoPosicaoImagem) {
     onMudar((img) => {
       img.style.float = "none";
@@ -3779,14 +3919,17 @@ function PainelImagem({
   }
 
   return (
-    <div
-      ref={painelRef}
-      className="wa-email-modal wa-email-floating doc-img-painel"
-      style={pos ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" } : undefined}
-    >
-      <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setPos)}>
-        <p className="n">Editar imagem</p>
+    <aside className="doc-lateral-painel doc-img-painel">
+      <div className="panel-h">
+        <h4>Imagem{bloqueada ? " 🔒" : ""}</h4>
         <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
+      </div>
+
+      <div className="field">
+        <button type="button" className={`fchip${bloqueada ? " active" : ""}`} onClick={alternarBloqueio} style={{ width: "100%" }}>
+          {bloqueada ? "🔓 Desbloquear posição" : "🔒 Bloquear posição"}
+        </button>
+        {bloqueada ? <p className="hint" style={{ marginTop: 6 }}>Arrastar e redimensionar ficam desativados até desbloquear.</p> : null}
       </div>
 
       <p className="hint" style={{ marginBottom: 8 }}>Dimensões atuais: {larguraAtual}×{alturaAtual}px</p>
@@ -3825,13 +3968,15 @@ function PainelImagem({
         <input type="checkbox" checked={manterProporcao} onChange={(e) => setManterProporcao(e.target.checked)} />
         Manter proporção
       </label>
-      <div
-        className="doc-img-resize-alca"
-        title="Arraste pra redimensionar"
-        onMouseDown={onIniciarRedimensionar}
-      >
-        ⤡ Arrastar pra redimensionar
-      </div>
+      {!bloqueada ? (
+        <div
+          className="doc-img-resize-alca"
+          title="Arraste pra redimensionar (ou use as alças nos cantos da imagem)"
+          onMouseDown={onIniciarRedimensionar}
+        >
+          ⤡ Arrastar pra redimensionar
+        </div>
+      ) : null}
 
       <div className="field">
         <label>Girar / espelhar</label>
@@ -3865,6 +4010,17 @@ function PainelImagem({
           <button type="button" className="fchip" onClick={() => alinhar("centro")}>Centro</button>
           <button type="button" className="fchip" onClick={() => alinhar("direita")}>Direita</button>
         </div>
+      </div>
+
+      <div className="field">
+        <label>Camadas</label>
+        <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
+          <button type="button" className="fchip" onClick={() => onMudar((img) => { img.style.zIndex = "50"; })}>⬆ Trazer pra frente</button>
+          <button type="button" className="fchip" onClick={() => onMudar((img) => { const a = parseInt(img.style.zIndex || "0", 10) || 0; img.style.zIndex = String(a + 1); })}>Avançar</button>
+          <button type="button" className="fchip" onClick={() => onMudar((img) => { const a = parseInt(img.style.zIndex || "0", 10) || 0; img.style.zIndex = String(a - 1); })}>Recuar</button>
+          <button type="button" className="fchip" onClick={() => onMudar((img) => { img.style.zIndex = "-1"; })}>⬇ Enviar pra trás</button>
+        </div>
+        <p className="hint" style={{ marginTop: 6 }}>Só tem efeito visível quando a posição não é &quot;Em linha&quot;.</p>
       </div>
 
       <div className="field">
@@ -3920,6 +4076,47 @@ function PainelImagem({
         />
       </div>
 
+      <div className="field">
+        <label>Raio da borda e sombra</label>
+        <input
+          type="range"
+          min={0}
+          max={60}
+          defaultValue={0}
+          onChange={(e) => onMudar((img) => { img.style.borderRadius = `${e.target.value}px`; })}
+          style={{ width: "100%" }}
+          title="Raio da borda (cantos arredondados)"
+        />
+        <div className="filters-row" style={{ margin: "8px 0 0" }}>
+          <button
+            type="button"
+            className="fchip"
+            onClick={() => onMudar((img) => {
+              img.style.boxShadow = img.style.boxShadow ? "" : "0 8px 20px rgba(0,0,0,0.25)";
+            })}
+          >
+            Alternar sombra
+          </button>
+        </div>
+      </div>
+
+      <div className="field">
+        <label>Efeitos</label>
+        <div className="filters-row" style={{ margin: 0 }}>
+          <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("pb")}>Preto e branco</button>
+          <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("sepia")}>Sépia</button>
+          <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("nenhum")}>Nenhum</button>
+        </div>
+        <label className="hint" style={{ display: "block", marginTop: 8 }}>Desfoque</label>
+        <input type="range" min={0} max={10} value={efeitos.desfoque} onChange={(e) => aplicarEfeitos({ desfoque: Number(e.target.value) })} style={{ width: "100%" }} />
+        <label className="hint" style={{ display: "block", marginTop: 8 }}>Brilho</label>
+        <input type="range" min={50} max={150} value={efeitos.brilho} onChange={(e) => aplicarEfeitos({ brilho: Number(e.target.value) })} style={{ width: "100%" }} />
+        <label className="hint" style={{ display: "block", marginTop: 8 }}>Contraste</label>
+        <input type="range" min={50} max={150} value={efeitos.contraste} onChange={(e) => aplicarEfeitos({ contraste: Number(e.target.value) })} style={{ width: "100%" }} />
+        <label className="hint" style={{ display: "block", marginTop: 8 }}>Saturação</label>
+        <input type="range" min={0} max={200} value={efeitos.saturacao} onChange={(e) => aplicarEfeitos({ saturacao: Number(e.target.value) })} style={{ width: "100%" }} />
+      </div>
+
       <div className="field" style={{ display: "flex", gap: 8 }}>
         <button
           type="button"
@@ -3967,6 +4164,171 @@ function PainelImagem({
         <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={restaurarOriginal}>Restaurar original</button>
         <button type="button" className="btn ghost" style={{ flex: 1, color: "var(--danger)" }} onClick={onExcluir}>Excluir</button>
       </div>
+    </aside>
+  );
+}
+
+type PosicaoAlca = "nw" | "n" | "ne" | "w" | "e" | "sw" | "s" | "se";
+const ALCAS: { pos: PosicaoAlca; cursor: string }[] = [
+  { pos: "nw", cursor: "nwse-resize" },
+  { pos: "n", cursor: "ns-resize" },
+  { pos: "ne", cursor: "nesw-resize" },
+  { pos: "w", cursor: "ew-resize" },
+  { pos: "e", cursor: "ew-resize" },
+  { pos: "sw", cursor: "nesw-resize" },
+  { pos: "s", cursor: "ns-resize" },
+  { pos: "se", cursor: "nwse-resize" },
+];
+
+/**
+ * Alças visuais de redimensionar sobrepostas na própria imagem selecionada — cantos redimensionam
+ * mantendo proporção, laterais redimensionam livre (só largura ou só altura), igual Canva/Figma/Word.
+ * A posição é recalculada via `getBoundingClientRect()` (a imagem é DOM cru, fora do React) sempre que
+ * a janela rola/redimensiona ou a própria imagem muda de tamanho.
+ */
+function AlcasRedimensionarImagem({
+  imagem,
+  bloqueada,
+  onMudar,
+}: {
+  imagem: HTMLImageElement;
+  bloqueada: boolean;
+  onMudar: (fn: (img: HTMLImageElement) => void) => void;
+}) {
+  const [, recalcular] = useState(0);
+
+  useEffect(() => {
+    function aoRolarOuRedimensionar() {
+      recalcular((n) => n + 1);
+    }
+    window.addEventListener("scroll", aoRolarOuRedimensionar, true);
+    window.addEventListener("resize", aoRolarOuRedimensionar);
+    const observer = new ResizeObserver(aoRolarOuRedimensionar);
+    observer.observe(imagem);
+    return () => {
+      window.removeEventListener("scroll", aoRolarOuRedimensionar, true);
+      window.removeEventListener("resize", aoRolarOuRedimensionar);
+      observer.disconnect();
+    };
+  }, [imagem]);
+
+  if (bloqueada) return null;
+  const rect = imagem.getBoundingClientRect();
+
+  function iniciarAlca(e: React.MouseEvent, pos: PosicaoAlca) {
+    e.preventDefault();
+    e.stopPropagation();
+    const inicial = imagem.getBoundingClientRect();
+    const xInicial = e.clientX;
+    const yInicial = e.clientY;
+    const aspecto = inicial.width / inicial.height || 1;
+    const ehCanto = pos.length === 2;
+    const ehAbsoluta = imagem.style.position === "absolute";
+    const esquerdaInicial = parseFloat(imagem.style.left || "0") || 0;
+    const topoInicial = parseFloat(imagem.style.top || "0") || 0;
+
+    function mover(ev: MouseEvent) {
+      const dx = ev.clientX - xInicial;
+      const dy = ev.clientY - yInicial;
+      let novaLargura = inicial.width;
+      let novaAltura = inicial.height;
+      if (pos.includes("e")) novaLargura = inicial.width + dx;
+      if (pos.includes("w")) novaLargura = inicial.width - dx;
+      if (pos.includes("s")) novaAltura = inicial.height + dy;
+      if (pos.includes("n")) novaAltura = inicial.height - dy;
+      novaLargura = Math.max(24, novaLargura);
+      novaAltura = Math.max(24, novaAltura);
+      if (ehCanto) novaAltura = novaLargura / aspecto;
+
+      imagem.style.width = `${Math.round(novaLargura)}px`;
+      imagem.style.height = ehCanto ? "auto" : `${Math.round(novaAltura)}px`;
+      if (ehAbsoluta) {
+        if (pos.includes("w")) imagem.style.left = `${Math.round(esquerdaInicial + (inicial.width - novaLargura))}px`;
+        if (pos.includes("n")) imagem.style.top = `${Math.round(topoInicial + (inicial.height - novaAltura))}px`;
+      }
+      recalcular((n) => n + 1);
+    }
+    function soltar() {
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+      onMudar(() => undefined);
+    }
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
+  }
+
+  return (
+    <div className="doc-img-handles" style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}>
+      {ALCAS.map((a) => (
+        <div
+          key={a.pos}
+          className={`doc-img-handle doc-img-handle-${a.pos}`}
+          style={{ cursor: a.cursor }}
+          onMouseDown={(e) => iniciarAlca(e, a.pos)}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Menu de botão direito na imagem — reposiciona sozinho se abriria fora da viewport. */
+function MenuContextoImagem({
+  pos,
+  bloqueada,
+  onFechar,
+  onSubstituir,
+  onDuplicar,
+  onAlinhar,
+  onTrazerFrente,
+  onEnviarTras,
+  onBloquear,
+  onExcluir,
+}: {
+  pos: { x: number; y: number };
+  bloqueada: boolean;
+  onFechar: () => void;
+  onSubstituir: () => void;
+  onDuplicar: () => void;
+  onAlinhar: (lado: "esquerda" | "centro" | "direita") => void;
+  onTrazerFrente: () => void;
+  onEnviarTras: () => void;
+  onBloquear: () => void;
+  onExcluir: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [ajuste, setAjuste] = useState({ x: 0, y: 0 });
+  useFecharAoClicarFora(ref, true, onFechar);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const margem = 8;
+    const dx = rect.right > window.innerWidth - margem ? window.innerWidth - margem - rect.right : 0;
+    const dy = rect.bottom > window.innerHeight - margem ? window.innerHeight - margem - rect.bottom : 0;
+    if (dx || dy) setAjuste({ x: dx, y: dy });
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="doc-context-menu"
+      style={{ left: pos.x + ajuste.x, top: pos.y + ajuste.y }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <button type="button" onClick={onSubstituir}>🔁 Substituir imagem</button>
+      <button type="button" onClick={onDuplicar}>⧉ Duplicar</button>
+      <div className="doc-context-menu-sep" />
+      <div className="doc-context-menu-linha">
+        <button type="button" onClick={() => onAlinhar("esquerda")}>◧</button>
+        <button type="button" onClick={() => onAlinhar("centro")}>▣</button>
+        <button type="button" onClick={() => onAlinhar("direita")}>◨</button>
+      </div>
+      <button type="button" onClick={onTrazerFrente}>⬆ Trazer pra frente</button>
+      <button type="button" onClick={onEnviarTras}>⬇ Enviar pra trás</button>
+      <button type="button" onClick={onBloquear}>{bloqueada ? "🔓 Desbloquear" : "🔒 Bloquear"}</button>
+      <div className="doc-context-menu-sep" />
+      <button type="button" className="perigo" onClick={onExcluir}>🗑 Excluir</button>
     </div>
   );
 }
