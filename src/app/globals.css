@@ -8067,6 +8067,12 @@ button.camp-row:hover {
   box-shadow: 0 2px 10px rgba(11, 21, 51, 0.1);
   font-size: 13px;
   overflow: visible;
+  transition: box-shadow var(--transition-base);
+}
+
+/* Afordância de hover que faltava — nenhum feedback visual existia antes de clicar num node. */
+.flow-node:hover:not(.is-selected) {
+  box-shadow: var(--shadow-hover);
 }
 
 /* Item 31 — quando branches diferentes voltam pro mesmo node, deixa isso óbvio em vez de parecer só
