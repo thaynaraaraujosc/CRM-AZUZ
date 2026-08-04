@@ -13,14 +13,6 @@ import {
 import { contatos as contatosIniciais, type Contato } from "@/lib/data";
 import { slugId } from "@/lib/ids";
 
-/**
- * Persistido (diferente de antes) pra que a página pública de formulário (`/formulario-preview`,
- * que abre numa aba separada sem acesso ao Context do React) consiga criar/atualizar um contato de
- * verdade ao registrar uma resposta, e a aba principal do CRM veja isso — mesmo padrão de
- * `FORMULARIOS_STORAGE_KEY`/`RESPOSTAS_STORAGE_KEY` em `formularios-context.tsx`.
- */
-export const CONTATOS_STORAGE_KEY = "azuz-crm-contatos";
-
 type DadosContato = Omit<Contato, "initials" | "nome" | "origem" | "etapa" | "responsavel">;
 
 type ContatosContextValue = {
@@ -54,44 +46,38 @@ function iniciais(nome: string) {
 }
 
 /**
- * Contatos vivem num contexto no topo do app pelo mesmo motivo dos funis:
- * dados preenchidos em /contatos ou direto nos atributos de uma conversa do
- * WhatsApp precisam aparecer nos dois lugares, sem cópias dessincronizadas.
+ * Piloto de migração pro banco real (MySQL/Railway via Prisma, ver `src/app/api/contatos/`) — o
+ * contrato público do Provider continua o mesmo de antes (mesmas funções, mesmas assinaturas), só o
+ * motor por dentro mudou: em vez de `localStorage`, busca da API no mount e cada mutação atualiza o
+ * estado local otimisticamente E dispara a chamada real pra API, sem bloquear a UI. Falha de rede só
+ * loga no console nesta fase — sem toast de erro ainda (fica pra quando o padrão se expandir pros
+ * outros módulos).
  */
 export function ContatosProvider({ children }: { children: ReactNode }) {
-  const [contatos, setContatos] = useState<Contato[]>(() => {
-    if (typeof window === "undefined") return [...contatosIniciais];
-    try {
-      const salvos = window.localStorage.getItem(CONTATOS_STORAGE_KEY);
-      if (!salvos) return [...contatosIniciais];
-      return JSON.parse(salvos) as Contato[];
-    } catch {
-      return [...contatosIniciais];
-    }
-  });
+  const [contatos, setContatos] = useState<Contato[]>([...contatosIniciais]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(CONTATOS_STORAGE_KEY, JSON.stringify(contatos));
-    } catch {
-      // localStorage indisponível — segue só em memória.
-    }
-  }, [contatos]);
-
-  // A resposta pública de um formulário (aba separada, sem esse Provider) grava direto no
-  // localStorage — sem isso, a aba do CRM só veria o contato novo depois de recarregar a página.
-  useEffect(() => {
-    function aoMudarStorage(e: StorageEvent) {
-      if (e.key !== CONTATOS_STORAGE_KEY || !e.newValue) return;
-      try {
-        setContatos(JSON.parse(e.newValue) as Contato[]);
-      } catch {
-        // payload inválido — ignora.
-      }
-    }
-    window.addEventListener("storage", aoMudarStorage);
-    return () => window.removeEventListener("storage", aoMudarStorage);
+    fetch("/api/contatos")
+      .then((r) => r.json())
+      .then((dados: Contato[]) => setContatos(dados))
+      .catch((erro) => console.error("Falha ao carregar contatos da API:", erro));
   }, []);
+
+  function upsertRemoto(nome: string, dados: Partial<Contato> & Record<string, unknown>) {
+    fetch("/api/contatos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, dados }),
+    }).catch((erro) => console.error("Falha ao salvar contato na API:", erro));
+  }
+
+  function atualizarRemoto(id: string, dados: Partial<Contato> & Record<string, unknown>) {
+    fetch(`/api/contatos/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dados),
+    }).catch((erro) => console.error("Falha ao atualizar contato na API:", erro));
+  }
 
   function salvarDadosContato(nome: string, dados: Partial<DadosContato> & Record<string, unknown>) {
     setContatos((prev) => {
@@ -114,6 +100,7 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
       }
       return prev.map((c) => (c.nome === nome ? { ...c, ...dados } : c));
     });
+    upsertRemoto(nome, dados);
   }
 
   function atribuirAtendente(nome: string, atendente: string) {
@@ -138,6 +125,7 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
         c.nome === nome ? { ...c, responsavel: atendente } : c,
       );
     });
+    upsertRemoto(nome, { responsavel: atendente });
   }
 
   function criarContato(dados: Partial<DadosContato> & { nome: string }) {
@@ -152,33 +140,50 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
       ...dados,
     };
     setContatos((prev) => [...prev, novo]);
+    upsertRemoto(dados.nome, dados);
     return novo;
   }
 
   function adicionarEtiqueta(nome: string, etiqueta: string) {
+    let idAlvo: string | undefined;
+    let etiquetasFinais: string[] = [];
     setContatos((prev) =>
-      prev.map((c) =>
-        c.nome === nome && !(c.etiquetas ?? []).includes(etiqueta)
-          ? { ...c, etiquetas: [...(c.etiquetas ?? []), etiqueta] }
-          : c,
-      ),
+      prev.map((c) => {
+        if (c.nome !== nome || (c.etiquetas ?? []).includes(etiqueta)) return c;
+        idAlvo = c.id;
+        etiquetasFinais = [...(c.etiquetas ?? []), etiqueta];
+        return { ...c, etiquetas: etiquetasFinais };
+      }),
     );
+    if (idAlvo) atualizarRemoto(idAlvo, { etiquetas: etiquetasFinais });
   }
 
   function removerEtiqueta(nome: string, etiqueta: string) {
+    let idAlvo: string | undefined;
+    let etiquetasFinais: string[] = [];
     setContatos((prev) =>
-      prev.map((c) =>
-        c.nome === nome
-          ? { ...c, etiquetas: (c.etiquetas ?? []).filter((e) => e !== etiqueta) }
-          : c,
-      ),
+      prev.map((c) => {
+        if (c.nome !== nome) return c;
+        idAlvo = c.id;
+        etiquetasFinais = (c.etiquetas ?? []).filter((e) => e !== etiqueta);
+        return { ...c, etiquetas: etiquetasFinais };
+      }),
     );
+    if (idAlvo) atualizarRemoto(idAlvo, { etiquetas: etiquetasFinais });
   }
 
   function alternarFavorito(nome: string) {
+    let idAlvo: string | undefined;
+    let favoritoFinal = false;
     setContatos((prev) =>
-      prev.map((c) => (c.nome === nome ? { ...c, favorito: !c.favorito } : c)),
+      prev.map((c) => {
+        if (c.nome !== nome) return c;
+        idAlvo = c.id;
+        favoritoFinal = !c.favorito;
+        return { ...c, favorito: favoritoFinal };
+      }),
     );
+    if (idAlvo) atualizarRemoto(idAlvo, { favorito: favoritoFinal });
   }
 
   return (

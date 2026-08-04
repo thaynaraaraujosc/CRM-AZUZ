@@ -6,16 +6,22 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@prisma/adapter-mariadb": "^7.9.1",
+    "@prisma/client": "^7.9.1",
     "@types/dagre": "^0.7.54",
     "@xyflow/react": "^12.11.2",
     "dagre": "^0.8.5",
+    "dotenv": "^17.4.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
+    "mariadb": "^3.5.3",
     "next": "16.2.12",
+    "prisma": "^7.9.1",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -27,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
+    "tsx": "^4.23.5",
     "typescript": "^5"
   }
 }

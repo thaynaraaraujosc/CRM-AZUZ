@@ -15,14 +15,12 @@ import {
   type PerguntaFormulario,
   type RespostaFormulario,
 } from "@/lib/formularios-context";
-import { CONTATOS_STORAGE_KEY } from "@/lib/contatos-context";
 import { EQUIPE_STORAGE_KEY } from "@/lib/equipe-context";
 import { FUNIS_STORAGE_KEY } from "@/lib/funis-context";
 import { AUTOMACOES_STORAGE_KEY } from "@/lib/automation-flow-context";
 import { avaliarGatilho, executarFluxo, type ContextoExecucao, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { contatos as contatosMock, equipe as equipeMock, funis as funisMock, type Contato, type Funil, type Membro, type NegocioCard } from "@/lib/data";
-import { slugId } from "@/lib/ids";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
 
 /** Sem Provider nessa rota (aba separada, sem acesso ao Context) — lê/grava direto no localStorage,
@@ -39,11 +37,12 @@ function carregarFormularios(): Formulario[] {
   }
 }
 
-function carregarContatos(): Contato[] {
-  if (typeof window === "undefined") return contatosMock;
+/** Contatos já vêm do banco real via API (ver src/app/api/contatos/) — não é mais localStorage. */
+async function carregarContatos(): Promise<Contato[]> {
   try {
-    const salvos = localStorage.getItem(CONTATOS_STORAGE_KEY);
-    return salvos ? (JSON.parse(salvos) as Contato[]) : contatosMock;
+    const resposta = await fetch("/api/contatos");
+    if (!resposta.ok) return contatosMock;
+    return (await resposta.json()) as Contato[];
   } catch {
     return contatosMock;
   }
@@ -139,43 +138,21 @@ function registrarRespostaPublica(formularioId: string, valores: Record<string, 
   }
 }
 
-function iniciais(nome: string) {
-  return nome.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
-}
-
 /** Equivalente em runtime puro de `useContatos().salvarDadosContato` — cria o contato (se ainda não
- * existir) ou faz merge dos dados informados, direto no localStorage. Usado tanto pelo submit do
- * formulário quanto pelas `Ligacoes` (`salvarContato`/`atribuirAtendente`) do motor de automações. */
+ * existir, com origem "Formulário") ou funde os dados informados num já existente, via API real
+ * (ver src/app/api/contatos/). Usado tanto pelo submit do formulário quanto pelas `Ligacoes`
+ * (`salvarContato`/`atribuirAtendente`) do motor de automações. */
 function salvarDadosContatoPublico(nome: string, dados: Record<string, unknown>) {
   if (!nome) return;
-  const contatos = carregarContatos();
-  const id = slugId(nome);
-  const existente = contatos.find((c) => c.id === id);
-  const proximos = existente
-    ? contatos.map((c) => (c.id === id ? { ...c, ...dados } : c))
-    : [
-        ...contatos,
-        {
-          id,
-          initials: iniciais(nome),
-          nome,
-          origem: "Formulário" as Contato["origem"],
-          etapa: "Novo" as Contato["etapa"],
-          responsavel: "—",
-          ultima: "Agora",
-          valor: "—",
-          ...dados,
-        } as Contato,
-      ];
-  try {
-    localStorage.setItem(CONTATOS_STORAGE_KEY, JSON.stringify(proximos));
-  } catch {
-    // localStorage indisponível — segue sem persistir.
-  }
+  fetch("/api/contatos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nome, dados, origemPadrao: "Formulário" }),
+  }).catch((erro) => console.error("Falha ao salvar contato público:", erro));
 }
 
 /** Cria ou atualiza o contato de verdade a partir das perguntas mapeadas pro CRM — mesmo efeito de
- * `useContatos().criarContato`, mas em runtime puro (sem Provider) direto no localStorage. */
+ * `useContatos().criarContato`, mas em runtime puro (sem Provider), via API real. */
 function salvarContatoPublico(dadosMapeados: Record<string, string>) {
   const nome = dadosMapeados.nome;
   if (!nome) return;
@@ -264,9 +241,13 @@ function FormularioPreviewContent() {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setFormularios(carregarFormularios());
-    setContatos(carregarContatos());
     setEquipeDisponivel(carregarEquipe());
     setCarregado(true);
+    // Contatos vêm de uma API real agora (não mais localStorage síncrono) — carrega à parte, sem
+    // atrasar a exibição do formulário (só é usado pelos campos de busca de pessoas).
+    carregarContatos()
+      .then(setContatos)
+      .catch((erro) => console.error("Falha ao carregar contatos:", erro));
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 

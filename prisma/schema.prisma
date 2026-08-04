@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// Piloto de migração pra banco real — espelha o tipo `Contato` de src/lib/data.ts.
+// `id` continua String (mesmo slug já gerado por slugId() no front) pra não exigir reescrever
+// todo o app pra IDs numéricos. `nome` vira @unique — as buscas já eram por nome no Context,
+// isso só formaliza como constraint real.
+model Contato {
+  id String @id
+
+  initials    String
+  nome        String @unique
+  origem      String
+  etapa       String
+  responsavel String
+  ultima      String
+  valor       String
+
+  email         String?
+  whatsapp      String?
+  nascimento    String?
+  endereco      String?
+  sobrenome     String?
+  empresa       String?
+  cargo         String?
+  telefoneFixo  String?
+  cidade        String?
+  estado        String?
+  pais          String?
+  canalPreferido String?
+  melhorHorario String?
+
+  // MySQL não tem array nativo — etiquetas vira JSON (lista de strings) pra não inflar o
+  // escopo do piloto com uma tabela relacionada agora.
+  etiquetas Json?
+  favorito  Boolean @default(false)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
