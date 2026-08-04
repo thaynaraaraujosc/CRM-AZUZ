@@ -1,13 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 
 import { currentUser } from "@/lib/data";
-import { compromissosDeTarefas, HOJE_ISO, useAgenda } from "@/lib/agenda-context";
+import {
+  CATEGORIAS_COMPROMISSO,
+  compromissosConflitantes,
+  compromissosDeTarefas,
+  HOJE_ISO,
+  useAgenda,
+  type CategoriaCompromisso,
+  type Compromisso,
+} from "@/lib/agenda-context";
 import { useTarefas } from "@/lib/tarefas-context";
+import { useContatos } from "@/lib/contatos-context";
+import { useEquipe } from "@/lib/equipe-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
-import { Topbar } from "@/components/ui";
+import { Topbar, Drawer } from "@/components/ui";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -23,38 +34,141 @@ function isoDe(ano: number, mesIndex0: number, dia: number) {
   return `${ano}-${pad2(mesIndex0 + 1)}-${pad2(dia)}`;
 }
 
-export default function AgendaPage() {
-  const { colunas } = useTarefas();
-  const { compromissos, criarAgendamento: criarAgendamentoCtx, cancelar } = useAgenda();
-  const [ano, setAno] = useState(2026);
-  const [mesIndex0, setMesIndex0] = useState(6); // julho
-  const [conexao, setConexao] = useState<"interna" | "google">("interna");
-  const [googleConectado, setGoogleConectado] = useState(false);
-  const [modo, setModo] = useState<"completa" | "manual">("completa");
-  const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null);
-  const [novoAberto, setNovoAberto] = useState(false);
-  const [tituloNovo, setTituloNovo] = useState("");
-  const [descricaoNovo, setDescricaoNovo] = useState("");
-  const [horaNovo, setHoraNovo] = useState("09:00");
-  const [menuConexaoAberto, setMenuConexaoAberto] = useState(false);
-  const [menuConexaoAnchorRect, setMenuConexaoAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: menuConexaoRef, posicao: menuConexaoPos } = useFloatingPosition(menuConexaoAnchorRect, menuConexaoAberto);
-  const [menuConteudoAberto, setMenuConteudoAberto] = useState(false);
-  const [menuConteudoAnchorRect, setMenuConteudoAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: menuConteudoRef, posicao: menuConteudoPos } = useFloatingPosition(menuConteudoAnchorRect, menuConteudoAberto);
+function categoriaRotulo(categoria?: CategoriaCompromisso) {
+  return CATEGORIAS_COMPROMISSO.find((c) => c.valor === categoria)?.rotulo ?? "Outro";
+}
 
-  const compromissosManuais = compromissos.filter((c) => c.origem === "manual" && c.status !== "cancelado");
-  const compromissosAutomaticos = modo === "completa" ? compromissosDeTarefas(colunas, ano) : [];
+const MESES_ABREV = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+function formatarDataCurta(dataIso: string) {
+  const [, m, d] = dataIso.split("-").map(Number);
+  return `${d} de ${MESES[m - 1]}`;
+}
+
+/** Formato "d mmm" (ex.: "28 jul") — mesma heurística de `TaskCard.data` usada por
+ * `compromissosDeTarefas`, pra uma tarefa criada aqui continuar aparecendo na Agenda depois. */
+function formatarDataTarefa(dataIso: string) {
+  const [, m, d] = dataIso.split("-").map(Number);
+  return `${d} ${MESES_ABREV[m - 1]}`;
+}
+
+type FormCompromisso = {
+  categoria: CategoriaCompromisso;
+  titulo: string;
+  contatoBusca: string;
+  contatoId: string | undefined;
+  contatoNome: string;
+  responsavel: string;
+  dataIso: string;
+  hora: string;
+  horaFim: string;
+  local: string;
+  descricao: string;
+};
+
+function formVazio(dataIso: string, responsavelPadrao: string): FormCompromisso {
+  return {
+    categoria: "outro",
+    titulo: "",
+    contatoBusca: "",
+    contatoId: undefined,
+    contatoNome: "",
+    responsavel: responsavelPadrao,
+    dataIso,
+    hora: "09:00",
+    horaFim: "",
+    local: "",
+    descricao: "",
+  };
+}
+
+export default function AgendaPage() {
+  const router = useRouter();
+  const { colunas, criarTarefa } = useTarefas();
+  const { contatos } = useContatos();
+  const { membros } = useEquipe();
+  const {
+    compromissos,
+    criarAgendamento,
+    editarAgendamento,
+    reagendar,
+    cancelar,
+    concluir,
+  } = useAgenda();
+
+  const responsavelPadrao = membros[0]?.nome ?? currentUser.name;
+
+  const [ano, setAno] = useState(2026);
+  const [mesIndex0, setMesIndex0] = useState(6); // julho — mês de HOJE_ISO
+  const [view, setView] = useState<"mes" | "lista">("mes");
+  const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null);
+
+  const [filtroResponsavel, setFiltroResponsavel] = useState<string>("todos");
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
+
+  const [maisAberto, setMaisAberto] = useState<{ dataIso: string; anchor: AnchorRect } | null>(null);
+  const { ref: maisRef, posicao: maisPos } = useFloatingPosition(maisAberto?.anchor ?? null, !!maisAberto);
+
+  const [formAberto, setFormAberto] = useState(false);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [form, setForm] = useState<FormCompromisso>(() => formVazio(HOJE_ISO, responsavelPadrao));
+  const [conflitos, setConflitos] = useState<Compromisso[]>([]);
+  const [forcarSalvar, setForcarSalvar] = useState(false);
+
+  const [detalheId, setDetalheId] = useState<string | null>(null);
+  const [reagendarAberto, setReagendarAberto] = useState(false);
+  const [reagendarData, setReagendarData] = useState({ dataIso: "", hora: "", horaFim: "" });
+  const [cancelarAberto, setCancelarAberto] = useState(false);
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
+  const [enviarMensagemCancelamento, setEnviarMensagemCancelamento] = useState(false);
+
+  const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
+  const proximoToastId = useRef(0);
+
+  function avisar(texto: string) {
+    const id = `toast-${proximoToastId.current++}`;
+    setToasts((prev) => [...prev, { id, texto }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+  }
+
+  const compromissosManuais = compromissos.filter((c) => c.status !== "cancelado");
+  const compromissosAutomaticos = compromissosDeTarefas(colunas, ano);
+
+  const todosCompromissos = useMemo(
+    () => [...compromissosManuais, ...compromissosAutomaticos],
+    [compromissosManuais, compromissosAutomaticos],
+  );
+
+  const compromissosFiltrados = useMemo(
+    () =>
+      todosCompromissos.filter((c) => {
+        if (filtroResponsavel !== "todos" && c.responsavel !== filtroResponsavel) return false;
+        if (filtroCategoria !== "todas") {
+          if (filtroCategoria === "tarefa") {
+            if (c.origem !== "tarefa") return false;
+          } else if ((c.categoria ?? "outro") !== filtroCategoria || c.origem === "tarefa") {
+            return false;
+          }
+        }
+        return true;
+      }),
+    [todosCompromissos, filtroResponsavel, filtroCategoria],
+  );
 
   function eventosDoDia(dataIso: string) {
-    return [
-      ...compromissosManuais
-        .filter((c) => c.dataIso === dataIso)
-        .map((c) => ({ id: c.id, titulo: c.tipo, descricao: c.descricao ?? "", manual: true })),
-      ...compromissosAutomaticos
-        .filter((c) => c.dataIso === dataIso)
-        .map((c) => ({ id: c.id, titulo: c.descricao ?? c.tipo, descricao: `Tarefa de ${c.contato} · ${c.tipo.replace("Tarefa · ", "")}`, manual: false })),
-    ];
+    return compromissosFiltrados
+      .filter((c) => c.dataIso === dataIso)
+      .sort((a, b) => (a.hora || "99:99").localeCompare(b.hora || "99:99"));
+  }
+
+  const compromissoDetalhe = detalheId ? compromissos.find((c) => c.id === detalheId) ?? null : null;
+
+  function irParaHoje() {
+    const [anoHoje, mesHoje] = HOJE_ISO.split("-").map(Number);
+    setAno(anoHoje);
+    setMesIndex0(mesHoje - 1);
+    setDiaSelecionado(HOJE_ISO);
+    setView((v) => (v === "lista" ? "lista" : "mes"));
   }
 
   function mudarMes(delta: number) {
@@ -70,23 +184,130 @@ export default function AgendaPage() {
     setMesIndex0(novoMes);
     setAno(novoAno);
     setDiaSelecionado(null);
-    setNovoAberto(false);
   }
 
-  function criarAgendamento() {
-    const titulo = tituloNovo.trim();
-    if (!titulo || !diaSelecionado) return;
-    criarAgendamentoCtx({
-      contato: "—",
-      responsavel: currentUser.name,
-      dataIso: diaSelecionado,
-      hora: horaNovo,
-      tipo: titulo,
-      descricao: descricaoNovo.trim(),
+  function abrirNovo(dataIso?: string) {
+    setEditandoId(null);
+    setForm(formVazio(dataIso ?? diaSelecionado ?? HOJE_ISO, responsavelPadrao));
+    setConflitos([]);
+    setForcarSalvar(false);
+    setFormAberto(true);
+  }
+
+  function abrirEdicao(c: Compromisso) {
+    setEditandoId(c.id);
+    setForm({
+      categoria: c.categoria ?? "outro",
+      titulo: c.tipo,
+      contatoBusca: c.contato && c.contato !== "—" ? c.contato : "",
+      contatoId: c.contatoId,
+      contatoNome: c.contato && c.contato !== "—" ? c.contato : "",
+      responsavel: c.responsavel,
+      dataIso: c.dataIso,
+      hora: c.hora,
+      horaFim: c.horaFim ?? "",
+      local: c.local ?? "",
+      descricao: c.descricao ?? "",
     });
-    setTituloNovo("");
-    setDescricaoNovo("");
-    setNovoAberto(false);
+    setConflitos([]);
+    setForcarSalvar(false);
+    setDetalheId(null);
+    setFormAberto(true);
+  }
+
+  function salvarForm(forcar = forcarSalvar) {
+    const titulo = form.titulo.trim();
+    if (!titulo || !form.dataIso || !form.hora) return;
+
+    if (!forcar) {
+      const encontrados = compromissosConflitantes(compromissos, {
+        dataIso: form.dataIso,
+        hora: form.hora,
+        horaFim: form.horaFim || undefined,
+        responsavel: form.responsavel,
+        ignorarId: editandoId ?? undefined,
+      });
+      if (encontrados.length > 0) {
+        setConflitos(encontrados);
+        return;
+      }
+    }
+
+    const dados = {
+      contato: form.contatoNome || "—",
+      contatoId: form.contatoId,
+      responsavel: form.responsavel,
+      dataIso: form.dataIso,
+      hora: form.hora,
+      horaFim: form.horaFim || undefined,
+      tipo: titulo,
+      categoria: form.categoria,
+      descricao: form.descricao.trim() || undefined,
+      local: form.local.trim() || undefined,
+    };
+
+    if (editandoId) {
+      editarAgendamento(editandoId, dados);
+      avisar("Compromisso atualizado.");
+    } else {
+      criarAgendamento(dados);
+      avisar("Compromisso criado.");
+    }
+    setFormAberto(false);
+    setConflitos([]);
+    setForcarSalvar(false);
+  }
+
+  const contatosFiltrados = useMemo(() => {
+    const termo = form.contatoBusca.trim().toLowerCase();
+    if (!termo || form.contatoNome === form.contatoBusca) return [];
+    return contatos.filter((c) => c.nome.toLowerCase().includes(termo)).slice(0, 6);
+  }, [contatos, form.contatoBusca, form.contatoNome]);
+
+  function abrirDetalhe(c: Compromisso) {
+    if (c.origem === "tarefa") return;
+    setDetalheId(c.id);
+    setReagendarAberto(false);
+    setCancelarAberto(false);
+    setMotivoCancelamento("");
+    setEnviarMensagemCancelamento(false);
+  }
+
+  function confirmarReagendamento() {
+    if (!compromissoDetalhe || !reagendarData.dataIso || !reagendarData.hora) return;
+    reagendar(compromissoDetalhe.id, reagendarData.dataIso, reagendarData.hora, reagendarData.horaFim || undefined);
+    avisar("Compromisso reagendado.");
+    setReagendarAberto(false);
+    setDetalheId(null);
+  }
+
+  function confirmarCancelamento() {
+    if (!compromissoDetalhe) return;
+    cancelar(compromissoDetalhe.id, motivoCancelamento.trim() || undefined);
+    avisar(
+      enviarMensagemCancelamento
+        ? `Compromisso cancelado — mensagem simulada enviada a ${compromissoDetalhe.contato}.`
+        : "Compromisso cancelado.",
+    );
+    setDetalheId(null);
+  }
+
+  function criarTarefaRelacionada() {
+    if (!compromissoDetalhe) return;
+    criarTarefa({
+      titulo: compromissoDetalhe.tipo,
+      contato: compromissoDetalhe.contato !== "—" ? compromissoDetalhe.contato : undefined,
+      contatoId: compromissoDetalhe.contatoId,
+      data: formatarDataTarefa(compromissoDetalhe.dataIso),
+      responsavel: {
+        nome: compromissoDetalhe.responsavel,
+        initials: compromissoDetalhe.responsavel.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase(),
+      },
+      urgencia: "Média",
+      descricao: `Tarefa criada a partir do compromisso "${compromissoDetalhe.tipo}".`,
+    });
+    avisar("Tarefa relacionada criada.");
+    setDetalheId(null);
   }
 
   const primeiroDiaSemana = new Date(ano, mesIndex0, 1).getDay();
@@ -97,327 +318,617 @@ export default function AgendaPage() {
   ];
   while (celulas.length % 7 !== 0) celulas.push(null);
 
+  const listaCompromissos = useMemo(() => {
+    const porDia = new Map<string, Compromisso[]>();
+    for (const c of compromissosFiltrados) {
+      if (!porDia.has(c.dataIso)) porDia.set(c.dataIso, []);
+      porDia.get(c.dataIso)!.push(c);
+    }
+    return [...porDia.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([dataIso, itens]) => ({
+        dataIso,
+        itens: itens.sort((a, b) => (a.hora || "99:99").localeCompare(b.hora || "99:99")),
+      }));
+  }, [compromissosFiltrados]);
+
   return (
     <>
       <Topbar
         title="Agenda"
-        sub={
-          conexao === "google"
-            ? googleConectado
-              ? `Conectada ao Google Agenda · ${currentUser.email}`
-              : "Conecte com o Google Agenda pra sincronizar"
-            : "Agenda interna"
-        }
+        sub="Agenda operacional — compromissos manuais e tarefas com data em um só lugar"
         actions={
           <>
-            <div className="dropdown-anchor">
-              <button
-                type="button"
-                className="fsel"
-                style={{ cursor: "pointer" }}
-                onClick={(e) => {
-                  if (menuConexaoAberto) {
-                    setMenuConexaoAberto(false);
-                  } else {
-                    setMenuConexaoAnchorRect(e.currentTarget.getBoundingClientRect());
-                    setMenuConexaoAberto(true);
-                  }
-                }}
-              >
-                {conexao === "interna" ? "Agenda interna" : "Google Agenda"} ▾
-              </button>
-              {menuConexaoAberto && menuConexaoPos && typeof document !== "undefined"
-                ? createPortal(
-                    <>
-                      <div
-                        onClick={() => setMenuConexaoAberto(false)}
-                        style={{ position: "fixed", inset: 0, zIndex: 190 }}
-                      />
-                      <div
-                        ref={menuConexaoRef}
-                        className="dropdown-pop"
-                        style={{ position: "fixed", top: menuConexaoPos.top, left: menuConexaoPos.left, zIndex: 200 }}
-                      >
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={() => {
-                        setConexao("interna");
-                        setMenuConexaoAberto(false);
-                      }}
-                    >
-                      <span className="n">
-                        Agenda interna {conexao === "interna" ? "✓" : ""}
-                      </span>
-                      <span className="r">Não é conectada em nada</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={() => {
-                        setConexao("google");
-                        setMenuConexaoAberto(false);
-                      }}
-                    >
-                      <span className="n">
-                        Google Agenda {conexao === "google" ? "✓" : ""}
-                      </span>
-                      <span className="r">Sincroniza com sua conta Google</span>
-                    </button>
-                    {conexao === "google" && googleConectado ? (
-                      <button
-                        type="button"
-                        className="dropdown-item"
-                        style={{ width: "100%", textAlign: "left" }}
-                        onClick={() => {
-                          setGoogleConectado(false);
-                          setMenuConexaoAberto(false);
-                        }}
-                      >
-                        <span className="n">Desconectar do Google</span>
-                        <span className="r">{currentUser.email}</span>
-                      </button>
-                    ) : null}
-                      </div>
-                    </>,
-                    document.body,
-                  )
-                : null}
+            <button type="button" className="btn ghost" onClick={irParaHoje}>
+              Hoje
+            </button>
+            <div style={{ display: "flex", gap: 4 }}>
+              {(["mes", "lista"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  className={`fchip${view === v ? " active" : ""}`}
+                  onClick={() => setView(v)}
+                >
+                  {v === "mes" ? "Mês" : "Lista"}
+                </button>
+              ))}
             </div>
-
-            <div className="dropdown-anchor">
-              <button
-                type="button"
-                className="fsel"
-                style={{ cursor: "pointer" }}
-                onClick={(e) => {
-                  if (menuConteudoAberto) {
-                    setMenuConteudoAberto(false);
-                  } else {
-                    setMenuConteudoAnchorRect(e.currentTarget.getBoundingClientRect());
-                    setMenuConteudoAberto(true);
-                  }
-                }}
-              >
-                {modo === "completa" ? "Agenda completa" : "Agenda manual"} ▾
-              </button>
-              {menuConteudoAberto && menuConteudoPos && typeof document !== "undefined"
-                ? createPortal(
-                    <>
-                  <div
-                    onClick={() => setMenuConteudoAberto(false)}
-                    style={{ position: "fixed", inset: 0, zIndex: 190 }}
-                  />
-                  <div
-                    ref={menuConteudoRef}
-                    className="dropdown-pop"
-                    style={{ position: "fixed", top: menuConteudoPos.top, left: menuConteudoPos.left, zIndex: 200 }}
-                  >
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={() => {
-                        setModo("completa");
-                        setMenuConteudoAberto(false);
-                      }}
-                    >
-                      <span className="n">
-                        Agenda completa {modo === "completa" ? "✓" : ""}
-                      </span>
-                      <span className="r">Traz tarefas e pacientes sozinha</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="dropdown-item"
-                      style={{ width: "100%", textAlign: "left" }}
-                      onClick={() => {
-                        setModo("manual");
-                        setMenuConteudoAberto(false);
-                      }}
-                    >
-                      <span className="n">
-                        Agenda manual {modo === "manual" ? "✓" : ""}
-                      </span>
-                      <span className="r">Só o que você adicionar aqui</span>
-                    </button>
-                  </div>
-                </>,
-                document.body,
-              )
-                : null}
-            </div>
+            <button type="button" className="btn primary" onClick={() => abrirNovo()}>
+              + Novo compromisso
+            </button>
           </>
         }
       />
 
       <div className="content">
-        {conexao === "google" && !googleConectado ? (
-          <div
-            className="card mb14"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 10,
-              padding: "12px 17px",
-            }}
-          >
-            <span className="hint">Conecte pra sincronizar com o Google Agenda</span>
-            <button
-              type="button"
-              className="btn primary"
-              onClick={() => setGoogleConectado(true)}
+        <div className="card mb14" style={{ padding: "10px 17px" }}>
+          <div className="filters-row">
+            <select
+              className="input"
+              value={filtroResponsavel}
+              onChange={(e) => setFiltroResponsavel(e.target.value)}
             >
-              Conectar com o Google Agenda
-            </button>
-          </div>
-        ) : null}
-
-        <div className="card mb14">
-          <div className="panel-h">
-            <button type="button" className="btn ghost" onClick={() => mudarMes(-1)}>
-              ← Mês anterior
-            </button>
-            <h4>
-              {MESES[mesIndex0]} de {ano}
-            </h4>
-            <button type="button" className="btn ghost" onClick={() => mudarMes(1)}>
-              Próximo mês →
-            </button>
-          </div>
-          <div className="agenda-grid">
-            {DIAS_SEMANA.map((d) => (
-              <div className="agenda-dow" key={d}>
-                {d}
-              </div>
-            ))}
-            {celulas.map((dia, i) => {
-              if (dia === null) return <div className="agenda-cell vazia" key={`v-${i}`} />;
-              const dataIso = isoDe(ano, mesIndex0, dia);
-              const eventos = eventosDoDia(dataIso);
-              const ehHoje = dataIso === HOJE_ISO;
-              const selecionado = dataIso === diaSelecionado;
-              return (
-                <button
-                  type="button"
-                  key={dataIso}
-                  className={`agenda-cell${ehHoje ? " hoje" : ""}${selecionado ? " selecionada" : ""}`}
-                  onClick={() => {
-                    setDiaSelecionado(dataIso);
-                    setNovoAberto(false);
-                  }}
-                >
-                  <span className="agenda-daynum">{dia}</span>
-                  {eventos.slice(0, 3).map((e, idx) => (
-                    <span
-                      key={idx}
-                      className={`agenda-evento${e.manual ? "" : " automatico"}`}
-                    >
-                      {e.titulo}
-                    </span>
-                  ))}
-                  {eventos.length > 3 ? (
-                    <span className="agenda-evento-mais">
-                      +{eventos.length - 3}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
+              <option value="todos">Todos os responsáveis</option>
+              {membros.map((m) => (
+                <option key={m.id} value={m.nome}>
+                  {m.nome}
+                </option>
+              ))}
+            </select>
+            <select
+              className="input"
+              value={filtroCategoria}
+              onChange={(e) => setFiltroCategoria(e.target.value)}
+            >
+              <option value="todas">Todos os tipos</option>
+              {CATEGORIAS_COMPROMISSO.map((c) => (
+                <option key={c.valor} value={c.valor}>
+                  {c.rotulo}
+                </option>
+              ))}
+              <option value="tarefa">Tarefas com data</option>
+            </select>
           </div>
         </div>
 
-        {diaSelecionado ? (
-          <div className="card">
+        {view === "mes" ? (
+          <div className="card mb14">
             <div className="panel-h">
+              <button type="button" className="btn ghost" onClick={() => mudarMes(-1)}>
+                ← Mês anterior
+              </button>
               <h4>
-                {Number(diaSelecionado.split("-")[2])} de {MESES[mesIndex0]}
+                {MESES[mesIndex0]} de {ano}
               </h4>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => setNovoAberto((v) => !v)}
-              >
-                {novoAberto ? "Cancelar" : "+ Novo agendamento"}
+              <button type="button" className="btn ghost" onClick={() => mudarMes(1)}>
+                Próximo mês →
               </button>
             </div>
-
-            {novoAberto ? (
-              <>
-                <div className="field">
-                  <label>O que é</label>
-                  <input
-                    className="input"
-                    style={{ width: "100%" }}
-                    type="text"
-                    value={tituloNovo}
-                    onChange={(e) => setTituloNovo(e.target.value)}
-                    placeholder="Ex.: Retorno da Marina Costa"
-                  />
+            <div className="agenda-grid">
+              {DIAS_SEMANA.map((d) => (
+                <div className="agenda-dow" key={d}>
+                  {d}
                 </div>
-                <div className="field">
-                  <label>Hora</label>
-                  <input
-                    className="input"
-                    type="time"
-                    value={horaNovo}
-                    onChange={(e) => setHoraNovo(e.target.value)}
-                  />
-                </div>
-                <div className="field">
-                  <label>Descrição (opcional)</label>
-                  <textarea
-                    className="input"
-                    style={{ width: "100%", minHeight: 60, resize: "vertical" }}
-                    value={descricaoNovo}
-                    onChange={(e) => setDescricaoNovo(e.target.value)}
-                    placeholder="Anotações sobre esse agendamento"
-                  />
-                </div>
-                <div className="section-foot">
+              ))}
+              {celulas.map((dia, i) => {
+                if (dia === null) return <div className="agenda-cell vazia" key={`v-${i}`} />;
+                const dataIso = isoDe(ano, mesIndex0, dia);
+                const eventos = eventosDoDia(dataIso);
+                const ehHoje = dataIso === HOJE_ISO;
+                const selecionado = dataIso === diaSelecionado;
+                return (
                   <button
                     type="button"
-                    className="btn primary block"
-                    onClick={criarAgendamento}
+                    key={dataIso}
+                    className={`agenda-cell${ehHoje ? " hoje" : ""}${selecionado ? " selecionada" : ""}`}
+                    onClick={() => setDiaSelecionado(dataIso)}
                   >
-                    Salvar agendamento
+                    <span className="agenda-daynum">{dia}</span>
+                    {eventos.slice(0, 2).map((e) => (
+                      <span
+                        key={e.id}
+                        className={`agenda-evento${e.origem === "tarefa" ? " automatico" : ""}`}
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          abrirDetalhe(e);
+                        }}
+                      >
+                        {e.hora ? `${e.hora} · ` : ""}
+                        {e.origem === "tarefa" ? e.descricao ?? e.tipo : e.tipo}
+                      </span>
+                    ))}
+                    {eventos.length > 2 ? (
+                      <span
+                        className="agenda-evento-mais"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          setMaisAberto({ dataIso, anchor: (ev.currentTarget as HTMLElement).getBoundingClientRect() });
+                        }}
+                      >
+                        +{eventos.length - 2} mais
+                      </span>
+                    ) : null}
                   </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="card mb14">
+            <div className="panel-h">
+              <h4>Todos os compromissos</h4>
+            </div>
+            {listaCompromissos.length === 0 ? (
+              <p className="hint" style={{ padding: "0 17px 17px" }}>
+                Nada agendado com esses filtros.
+              </p>
+            ) : (
+              listaCompromissos.map(({ dataIso, itens }) => (
+                <div key={dataIso}>
+                  <p
+                    className="hint"
+                    style={{ padding: "10px 17px 4px", fontWeight: 700, textTransform: "uppercase", fontSize: 10.5 }}
+                  >
+                    {formatarDataCurta(dataIso)}
+                    {dataIso === HOJE_ISO ? " · hoje" : ""}
+                  </p>
+                  {itens.map((e) => (
+                    <div
+                      className="activity-row"
+                      key={e.id}
+                      style={{ cursor: e.origem === "tarefa" ? "default" : "pointer" }}
+                      onClick={() => abrirDetalhe(e)}
+                    >
+                      <div className="avatar">{e.hora || "—"}</div>
+                      <div className="body">
+                        <p className="name">{e.origem === "tarefa" ? e.descricao ?? e.tipo : e.tipo}</p>
+                        <p className="meta">
+                          {e.contato !== "—" ? `${e.contato} · ` : ""}
+                          {e.responsavel}
+                          {e.local ? ` · ${e.local}` : ""}
+                        </p>
+                      </div>
+                      <span className={`pill${e.origem === "tarefa" ? " on" : ""}`}>
+                        {e.origem === "tarefa" ? "Tarefa" : categoriaRotulo(e.categoria)}
+                      </span>
+                      {e.status === "concluido" ? <span className="pill on">Concluído</span> : null}
+                    </div>
+                  ))}
                 </div>
-              </>
-            ) : null}
+              ))
+            )}
+          </div>
+        )}
 
-            {eventosDoDia(diaSelecionado).length === 0 && !novoAberto ? (
+        {view === "mes" && diaSelecionado ? (
+          <div className="card">
+            <div className="panel-h">
+              <h4>{formatarDataCurta(diaSelecionado)}</h4>
+              <button type="button" className="btn primary" onClick={() => abrirNovo(diaSelecionado)}>
+                + Novo compromisso
+              </button>
+            </div>
+            {eventosDoDia(diaSelecionado).length === 0 ? (
               <p className="hint" style={{ padding: "0 17px 17px" }}>
                 Nada agendado nesse dia ainda.
               </p>
             ) : (
-              eventosDoDia(diaSelecionado).map((e, i) => (
-                <div className="activity-row" key={i}>
+              eventosDoDia(diaSelecionado).map((e) => (
+                <div
+                  className="activity-row"
+                  key={e.id}
+                  style={{ cursor: e.origem === "tarefa" ? "default" : "pointer" }}
+                  onClick={() => abrirDetalhe(e)}
+                >
+                  <div className="avatar">{e.hora || "—"}</div>
                   <div className="body">
-                    <p className="name">{e.titulo}</p>
-                    <p className="meta">{e.descricao || "Sem descrição"}</p>
+                    <p className="name">{e.origem === "tarefa" ? e.descricao ?? e.tipo : e.tipo}</p>
+                    <p className="meta">
+                      {e.contato !== "—" ? `${e.contato} · ` : ""}
+                      {e.responsavel}
+                      {e.local ? ` · ${e.local}` : ""}
+                    </p>
                   </div>
-                  <span className={`pill${e.manual ? "" : " on"}`}>
-                    {e.manual ? "Manual" : "Automático"}
+                  <span className={`pill${e.origem === "tarefa" ? " on" : ""}`}>
+                    {e.origem === "tarefa" ? "Tarefa" : categoriaRotulo(e.categoria)}
                   </span>
-                  {e.manual ? (
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      onClick={() => cancelar(e.id)}
-                    >
-                      Cancelar
-                    </button>
-                  ) : null}
                 </div>
               ))
             )}
           </div>
         ) : null}
       </div>
+
+      {maisAberto && maisPos && typeof document !== "undefined"
+        ? createPortal(
+            <>
+              <div onClick={() => setMaisAberto(null)} style={{ position: "fixed", inset: 0, zIndex: 190 }} />
+              <div
+                ref={maisRef}
+                className="dropdown-pop"
+                style={{ position: "fixed", top: maisPos.top, left: maisPos.left, zIndex: 200, width: 280 }}
+              >
+                <p className="hint" style={{ padding: "6px 12px 2px", fontWeight: 700 }}>
+                  {formatarDataCurta(maisAberto.dataIso)}
+                </p>
+                {eventosDoDia(maisAberto.dataIso).map((e) => (
+                  <button
+                    type="button"
+                    key={e.id}
+                    className="dropdown-item"
+                    style={{ width: "100%", textAlign: "left" }}
+                    onClick={() => {
+                      setMaisAberto(null);
+                      abrirDetalhe(e);
+                    }}
+                  >
+                    <span className="n">
+                      {e.hora ? `${e.hora} — ` : ""}
+                      {e.origem === "tarefa" ? e.descricao ?? e.tipo : e.tipo}
+                    </span>
+                    <span className="r">{e.responsavel}</span>
+                  </button>
+                ))}
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
+
+      <Drawer
+        aberto={formAberto}
+        onFechar={() => setFormAberto(false)}
+        titulo={editandoId ? "Editar compromisso" : "Novo compromisso"}
+        rodape={
+          <>
+            <button type="button" className="btn ghost" onClick={() => setFormAberto(false)}>
+              Cancelar
+            </button>
+            <button type="button" className="btn primary" onClick={() => salvarForm()}>
+              Salvar
+            </button>
+          </>
+        }
+      >
+        <div className="field">
+          <label>Tipo</label>
+          <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
+            {CATEGORIAS_COMPROMISSO.map((c) => (
+              <button
+                type="button"
+                key={c.valor}
+                className={`fchip${form.categoria === c.valor ? " active" : ""}`}
+                onClick={() => setForm((f) => ({ ...f, categoria: c.valor }))}
+              >
+                {c.rotulo}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="field">
+          <label>Título</label>
+          <input
+            className="input"
+            style={{ width: "100%" }}
+            type="text"
+            value={form.titulo}
+            onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
+            placeholder="Ex.: Retorno da Marina Costa"
+          />
+        </div>
+        <div className="field" style={{ position: "relative" }}>
+          <label>Contato</label>
+          <input
+            className="input"
+            style={{ width: "100%" }}
+            type="text"
+            value={form.contatoBusca}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, contatoBusca: e.target.value, contatoId: undefined, contatoNome: "" }))
+            }
+            placeholder="Buscar contato…"
+          />
+          {contatosFiltrados.length > 0 ? (
+            <div className="dropdown-pop" style={{ position: "static", marginTop: 4, width: "100%" }}>
+              {contatosFiltrados.map((c) => (
+                <button
+                  type="button"
+                  key={c.id}
+                  className="dropdown-item"
+                  style={{ width: "100%", textAlign: "left" }}
+                  onClick={() =>
+                    setForm((f) => ({ ...f, contatoId: c.id, contatoNome: c.nome, contatoBusca: c.nome }))
+                  }
+                >
+                  <span className="n">{c.nome}</span>
+                  <span className="r">{c.empresa || c.whatsapp || ""}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <div className="field">
+          <label>Responsável</label>
+          <select
+            className="input"
+            style={{ width: "100%" }}
+            value={form.responsavel}
+            onChange={(e) => setForm((f) => ({ ...f, responsavel: e.target.value }))}
+          >
+            {membros.map((m) => (
+              <option key={m.id} value={m.nome}>
+                {m.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label>Data</label>
+          <input
+            className="input"
+            type="date"
+            value={form.dataIso}
+            onChange={(e) => setForm((f) => ({ ...f, dataIso: e.target.value }))}
+          />
+        </div>
+        <div className="filters-row">
+          <div className="field" style={{ flex: 1 }}>
+            <label>Hora início</label>
+            <input
+              className="input"
+              style={{ width: "100%" }}
+              type="time"
+              value={form.hora}
+              onChange={(e) => setForm((f) => ({ ...f, hora: e.target.value }))}
+            />
+          </div>
+          <div className="field" style={{ flex: 1 }}>
+            <label>Hora fim</label>
+            <input
+              className="input"
+              style={{ width: "100%" }}
+              type="time"
+              value={form.horaFim}
+              onChange={(e) => setForm((f) => ({ ...f, horaFim: e.target.value }))}
+            />
+          </div>
+        </div>
+        <div className="field">
+          <label>Local</label>
+          <input
+            className="input"
+            style={{ width: "100%" }}
+            type="text"
+            value={form.local}
+            onChange={(e) => setForm((f) => ({ ...f, local: e.target.value }))}
+            placeholder="Ex.: Sala 2, videochamada…"
+          />
+        </div>
+        <div className="field">
+          <label>Descrição (opcional)</label>
+          <textarea
+            className="input"
+            style={{ width: "100%", minHeight: 60, resize: "vertical" }}
+            value={form.descricao}
+            onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))}
+            placeholder="Anotações sobre esse agendamento"
+          />
+        </div>
+
+        {conflitos.length > 0 ? (
+          <div className="card" style={{ padding: 12, borderColor: "var(--red, #dc2626)" }}>
+            <p className="hint" style={{ marginBottom: 6 }}>
+              ⚠ Conflito de horário com {conflitos.length} compromisso(s) de {form.responsavel}:
+            </p>
+            {conflitos.map((c) => (
+              <p key={c.id} className="hint" style={{ fontWeight: 600 }}>
+                {c.hora}
+                {c.horaFim ? `–${c.horaFim}` : ""} — {c.tipo}
+              </p>
+            ))}
+            <div className="section-foot" style={{ paddingLeft: 0, paddingRight: 0 }}>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => setConflitos([])}
+              >
+                Ajustar horário
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => {
+                  setConflitos([]);
+                  salvarForm(true);
+                }}
+              >
+                Salvar mesmo assim
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </Drawer>
+
+      <Drawer
+        aberto={!!compromissoDetalhe}
+        onFechar={() => setDetalheId(null)}
+        titulo={compromissoDetalhe?.tipo ?? ""}
+        subtitulo={compromissoDetalhe ? formatarDataCurta(compromissoDetalhe.dataIso) : undefined}
+      >
+        {compromissoDetalhe ? (
+          <>
+            <div className="field">
+              <label>Quando</label>
+              <p className="hint">
+                {formatarDataCurta(compromissoDetalhe.dataIso)} às {compromissoDetalhe.hora || "—"}
+                {compromissoDetalhe.horaFim ? ` até ${compromissoDetalhe.horaFim}` : ""}
+              </p>
+            </div>
+            <div className="field">
+              <label>Contato</label>
+              <p className="hint">{compromissoDetalhe.contato !== "—" ? compromissoDetalhe.contato : "Nenhum vinculado"}</p>
+            </div>
+            <div className="field">
+              <label>Responsável</label>
+              <p className="hint">{compromissoDetalhe.responsavel}</p>
+            </div>
+            {compromissoDetalhe.local ? (
+              <div className="field">
+                <label>Local</label>
+                <p className="hint">{compromissoDetalhe.local}</p>
+              </div>
+            ) : null}
+            {compromissoDetalhe.descricao ? (
+              <div className="field">
+                <label>Descrição</label>
+                <p className="hint">{compromissoDetalhe.descricao}</p>
+              </div>
+            ) : null}
+            <div className="field">
+              <label>Status</label>
+              <p className="hint">
+                {compromissoDetalhe.status === "concluido"
+                  ? "Concluído"
+                  : compromissoDetalhe.status === "cancelado"
+                  ? `Cancelado${compromissoDetalhe.motivoCancelamento ? ` — ${compromissoDetalhe.motivoCancelamento}` : ""}`
+                  : "Agendado"}
+              </p>
+            </div>
+
+            {compromissoDetalhe.status === "agendado" ? (
+              <>
+                <div className="filters-row" style={{ flexWrap: "wrap" }}>
+                  <button type="button" className="btn ghost" onClick={() => abrirEdicao(compromissoDetalhe)}>
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => {
+                      concluir(compromissoDetalhe.id);
+                      avisar("Compromisso concluído.");
+                      setDetalheId(null);
+                    }}
+                  >
+                    Concluir
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => {
+                      setReagendarAberto((v) => !v);
+                      setReagendarData({
+                        dataIso: compromissoDetalhe.dataIso,
+                        hora: compromissoDetalhe.hora,
+                        horaFim: compromissoDetalhe.horaFim ?? "",
+                      });
+                    }}
+                  >
+                    Reagendar
+                  </button>
+                  {compromissoDetalhe.contatoId ? (
+                    <button type="button" className="btn ghost" onClick={() => router.push("/contatos")}>
+                      Abrir contato
+                    </button>
+                  ) : null}
+                  <button type="button" className="btn ghost" onClick={criarTarefaRelacionada}>
+                    Criar tarefa
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ color: "var(--red, #dc2626)" }}
+                    onClick={() => setCancelarAberto((v) => !v)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+
+                {reagendarAberto ? (
+                  <div className="card" style={{ padding: 12, marginTop: 8 }}>
+                    <div className="field">
+                      <label>Nova data</label>
+                      <input
+                        className="input"
+                        type="date"
+                        value={reagendarData.dataIso}
+                        onChange={(e) => setReagendarData((r) => ({ ...r, dataIso: e.target.value }))}
+                      />
+                    </div>
+                    <div className="filters-row">
+                      <div className="field" style={{ flex: 1 }}>
+                        <label>Hora início</label>
+                        <input
+                          className="input"
+                          style={{ width: "100%" }}
+                          type="time"
+                          value={reagendarData.hora}
+                          onChange={(e) => setReagendarData((r) => ({ ...r, hora: e.target.value }))}
+                        />
+                      </div>
+                      <div className="field" style={{ flex: 1 }}>
+                        <label>Hora fim</label>
+                        <input
+                          className="input"
+                          style={{ width: "100%" }}
+                          type="time"
+                          value={reagendarData.horaFim}
+                          onChange={(e) => setReagendarData((r) => ({ ...r, horaFim: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <button type="button" className="btn primary block" onClick={confirmarReagendamento}>
+                      Confirmar reagendamento
+                    </button>
+                  </div>
+                ) : null}
+
+                {cancelarAberto ? (
+                  <div className="card" style={{ padding: 12, marginTop: 8 }}>
+                    <div className="field">
+                      <label>Motivo do cancelamento</label>
+                      <textarea
+                        className="input"
+                        style={{ width: "100%", minHeight: 50, resize: "vertical" }}
+                        value={motivoCancelamento}
+                        onChange={(e) => setMotivoCancelamento(e.target.value)}
+                        placeholder="Ex.: Paciente remarcou por conta própria"
+                      />
+                    </div>
+                    <label className="hint" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <input
+                        type="checkbox"
+                        checked={enviarMensagemCancelamento}
+                        onChange={(e) => setEnviarMensagemCancelamento(e.target.checked)}
+                      />
+                      Enviar mensagem simulada ao contato avisando do cancelamento
+                    </label>
+                    <button
+                      type="button"
+                      className="btn primary block"
+                      style={{ marginTop: 8, background: "var(--red, #dc2626)" }}
+                      onClick={confirmarCancelamento}
+                    >
+                      Confirmar cancelamento
+                    </button>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+          </>
+        ) : null}
+      </Drawer>
+
+      {toasts.length > 0 ? (
+        <div className="toast-stack">
+          {toasts.map((t) => (
+            <div className="toast" key={t.id}>
+              {t.texto}
+            </div>
+          ))}
+        </div>
+      ) : null}
     </>
   );
 }

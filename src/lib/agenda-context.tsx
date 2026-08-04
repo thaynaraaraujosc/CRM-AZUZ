@@ -18,6 +18,18 @@ export const HOJE_ISO = "2026-07-30";
 
 export type StatusCompromisso = "agendado" | "concluido" | "cancelado";
 
+/** Categoria do compromisso — só pra dar uma distinção visual sutil (cor do chip) na Agenda; não
+ * confundir com `tipo`, que é o rótulo livre exibido (ex.: "Retorno da Marina Costa"). */
+export type CategoriaCompromisso = "consulta" | "retorno" | "reuniao" | "ligacao" | "outro";
+
+export const CATEGORIAS_COMPROMISSO: { valor: CategoriaCompromisso; rotulo: string }[] = [
+  { valor: "consulta", rotulo: "Consulta" },
+  { valor: "retorno", rotulo: "Retorno" },
+  { valor: "reuniao", rotulo: "Reunião" },
+  { valor: "ligacao", rotulo: "Ligação" },
+  { valor: "outro", rotulo: "Outro" },
+];
+
 export type Compromisso = {
   id: string;
   contatoId?: string;
@@ -26,13 +38,48 @@ export type Compromisso = {
   /** Data no formato ISO (aaaa-mm-dd) — ao contrário de `TaskCard.data`, que é texto livre. */
   dataIso: string;
   hora: string;
+  /** Horário de término — opcional (compromissos derivados de tarefa e agendamentos antigos não têm). */
+  horaFim?: string;
   tipo: string;
+  categoria?: CategoriaCompromisso;
   descricao?: string;
   local?: string;
   status: StatusCompromisso;
+  /** Preenchido só quando `status === "cancelado"` — motivo informado no cancelamento. */
+  motivoCancelamento?: string;
   /** "manual" = criado direto na Agenda; "tarefa" = derivado ao vivo de uma tarefa com data (ver `compromissosDeTarefas`). */
   origem: "manual" | "tarefa";
 };
+
+/** Compromissos "manuais" (não cancelados) cujo intervalo [hora, horaFim) se sobrepõe ao informado,
+ * no mesmo dia e responsável — usado pra alertar de conflito de horário antes de salvar (ver
+ * `AgendaPage`). Sem `horaFim`, assume um intervalo mínimo de 30 minutos pra comparação. */
+export function compromissosConflitantes(
+  compromissos: Compromisso[],
+  dados: { dataIso: string; hora: string; horaFim?: string; responsavel: string; ignorarId?: string },
+): Compromisso[] {
+  if (!dados.hora) return [];
+  const inicioNovo = dados.hora;
+  const fimNovo = dados.horaFim && dados.horaFim > dados.hora ? dados.horaFim : somarMinutos(dados.hora, 30);
+  return compromissos.filter((c) => {
+    if (c.id === dados.ignorarId) return false;
+    if (c.status === "cancelado") return false;
+    if (c.dataIso !== dados.dataIso) return false;
+    if (c.responsavel !== dados.responsavel) return false;
+    if (!c.hora) return false;
+    const inicioExistente = c.hora;
+    const fimExistente = c.horaFim && c.horaFim > c.hora ? c.horaFim : somarMinutos(c.hora, 30);
+    return inicioNovo < fimExistente && inicioExistente < fimNovo;
+  });
+}
+
+function somarMinutos(hora: string, minutos: number): string {
+  const [h, m] = hora.split(":").map(Number);
+  const total = h * 60 + m + minutos;
+  const hh = Math.floor((total % (24 * 60)) / 60);
+  const mm = total % 60;
+  return `${pad2(hh)}:${pad2(mm)}`;
+}
 
 const MESES_ABREV = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
@@ -80,7 +127,9 @@ type NovoCompromisso = {
   responsavel: string;
   dataIso: string;
   hora: string;
+  horaFim?: string;
   tipo: string;
+  categoria?: CategoriaCompromisso;
   descricao?: string;
   local?: string;
 };
@@ -88,8 +137,9 @@ type NovoCompromisso = {
 type AgendaContextValue = {
   compromissos: Compromisso[];
   criarAgendamento: (dados: NovoCompromisso) => Compromisso;
-  reagendar: (id: string, dataIso: string, hora: string) => void;
-  cancelar: (id: string) => void;
+  editarAgendamento: (id: string, dados: Partial<NovoCompromisso>) => void;
+  reagendar: (id: string, dataIso: string, hora: string, horaFim?: string) => void;
+  cancelar: (id: string, motivo?: string) => void;
   concluir: (id: string) => void;
 };
 
@@ -129,7 +179,9 @@ export function AgendaProvider({ children }: { children: ReactNode }) {
       responsavel: dados.responsavel,
       dataIso: dados.dataIso,
       hora: dados.hora,
+      horaFim: dados.horaFim,
       tipo: dados.tipo,
+      categoria: dados.categoria,
       descricao: dados.descricao,
       local: dados.local,
       status: "agendado",
@@ -139,12 +191,16 @@ export function AgendaProvider({ children }: { children: ReactNode }) {
     return novo;
   }
 
-  function reagendar(id: string, dataIso: string, hora: string) {
-    setCompromissos((prev) => prev.map((c) => (c.id === id ? { ...c, dataIso, hora } : c)));
+  function editarAgendamento(id: string, dados: Partial<NovoCompromisso>) {
+    setCompromissos((prev) => prev.map((c) => (c.id === id ? { ...c, ...dados } : c)));
   }
 
-  function cancelar(id: string) {
-    setCompromissos((prev) => prev.map((c) => (c.id === id ? { ...c, status: "cancelado" } : c)));
+  function reagendar(id: string, dataIso: string, hora: string, horaFim?: string) {
+    setCompromissos((prev) => prev.map((c) => (c.id === id ? { ...c, dataIso, hora, horaFim } : c)));
+  }
+
+  function cancelar(id: string, motivo?: string) {
+    setCompromissos((prev) => prev.map((c) => (c.id === id ? { ...c, status: "cancelado", motivoCancelamento: motivo } : c)));
   }
 
   function concluir(id: string) {
@@ -152,7 +208,7 @@ export function AgendaProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AgendaContext.Provider value={{ compromissos, criarAgendamento, reagendar, cancelar, concluir }}>
+    <AgendaContext.Provider value={{ compromissos, criarAgendamento, editarAgendamento, reagendar, cancelar, concluir }}>
       {children}
     </AgendaContext.Provider>
   );
