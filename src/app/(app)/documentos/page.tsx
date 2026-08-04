@@ -1060,7 +1060,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [modo, setModo] = useState<"edicao" | "sugestao" | "visualizacao">("edicao");
   /** Snapshot do conteúdo de cada página no instante em que o modo sugestão foi ativado — null = não está rastreando. */
   const [sugestaoSnapshot, setSugestaoSnapshot] = useState<Record<string, string> | null>(null);
-  const [mostrarRegua, setMostrarRegua] = useState(() => lerPrefVer("mostrarRegua", true));
+  const [mostrarRegua, setMostrarRegua] = useState(() => lerPrefVer("mostrarRegua", false));
   const [mostrarNaoImprimiveis, setMostrarNaoImprimiveis] = useState(() => lerPrefVer("mostrarNaoImprimiveis", false));
   const [semPaginas, setSemPaginas] = useState(() => lerPrefVer("semPaginas", false));
   const [corretorAtivo, setCorretorAtivo] = useState(() => lerPrefVer("corretorAtivo", true));
@@ -2388,58 +2388,99 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     window.addEventListener("mouseup", soltar);
   }
 
-  /** Arrastar livre — só faz sentido (e só habilitamos) quando a imagem está em "posição fixa". */
   /**
-   * Guias de alinhamento (snap) — ao arrastar uma imagem em posição fixa, encaixa nas margens e no
-   * centro da página (horizontal e vertical) e mostra uma linha guia enquanto o encaixe está ativo,
-   * igual ao comportamento do PowerPoint/Google Slides. As linhas são manipuladas direto no DOM (sem
-   * passar por estado do React) pra não haver atraso visual durante o arraste.
+   * Movimentação livre de imagem — funciona em QUALQUER modo de posição (inline, quebra de texto,
+   * acima/abaixo, fixa), não só quando a imagem já estava em "fixa". Se a imagem ainda for inline no
+   * início do gesto, o próprio arraste a converte pra `position: absolute` assim que o movimento
+   * ultrapassa um pequeno limiar (`LIMIAR_INICIO_ARRASTE`) — abaixo disso, tratamos como clique de
+   * seleção comum e não mexemos na imagem, pra não converter o modo dela sem o usuário ter arrastado
+   * de verdade. A posição inicial é calculada a partir do retângulo real da imagem (`getBoundingClientRect`),
+   * então ela não "pula" de lugar no instante em que vira absoluta.
+   *
+   * Guias de alinhamento (snap) — ao arrastar, encaixa nas margens e no centro da página (horizontal e
+   * vertical) e mostra uma linha guia enquanto o encaixe está ativo, igual ao comportamento do
+   * PowerPoint/Google Slides. As linhas são manipuladas direto no DOM (sem passar por estado do React)
+   * pra não haver atraso visual durante o arraste.
    */
   function iniciarArrasteLivreImagem(e: { preventDefault: () => void; clientX: number; clientY: number }) {
     if (!imagemSelecionada) return;
     const img = imagemSelecionada.el;
-    if (img.style.position !== "absolute" || estaBloqueada(img)) return;
+    if (estaBloqueada(img)) return;
     e.preventDefault();
     const folha = img.closest(".doc-page-sheet") as HTMLElement | null;
     if (!folha) return;
-    const folhaRect = folha.getBoundingClientRect();
     const imgRect = img.getBoundingClientRect();
     const dx = e.clientX - imgRect.left;
     const dy = e.clientY - imgRect.top;
-    const pxPorMm = folhaRect.width / larguraMm;
     const larguraImgPx = imgRect.width;
     const alturaImgPx = imgRect.height;
-
-    const margemEsqPx = margemEsquerdaMm * pxPorMm;
-    const margemDirPx = margemDireitaMm * pxPorMm;
-    const margemSupPx = margemSuperiorMm * pxPorMm;
-    const margemInfPx = margemInferiorMm * pxPorMm;
-
-    // Cada candidato tem a posição do canto (left/top) da imagem que gera o encaixe, e a posição da
-    // linha guia (guia) — que para o encaixe central é o centro real da página, não a borda da imagem.
-    const candidatosX = [
-      { alvo: 0, guia: 0 },
-      { alvo: margemEsqPx, guia: margemEsqPx },
-      { alvo: (folhaRect.width - larguraImgPx) / 2, guia: folhaRect.width / 2 },
-      { alvo: folhaRect.width - margemDirPx - larguraImgPx, guia: folhaRect.width - margemDirPx },
-      { alvo: folhaRect.width - larguraImgPx, guia: folhaRect.width },
-    ];
-    const candidatosY = [
-      { alvo: 0, guia: 0 },
-      { alvo: margemSupPx, guia: margemSupPx },
-      { alvo: (folhaRect.height - alturaImgPx) / 2, guia: folhaRect.height / 2 },
-      { alvo: folhaRect.height - margemInfPx - alturaImgPx, guia: folhaRect.height - margemInfPx },
-      { alvo: folhaRect.height - alturaImgPx, guia: folhaRect.height },
-    ];
+    // `.doc-canvas` (ancestral da folha) usa `zoom: X%` — getBoundingClientRect() já retorna valores
+    // em pixels de tela pós-zoom, mas `img.style.left/top` é interpretado em pixels "lógicos" (o
+    // próprio zoom reescala isso de novo na hora de pintar). Sem dividir pelo fator de zoom aqui,
+    // arrastar com zoom ≠ 100% move a imagem mais rápido/devagar que o mouse, e a janela de impressão
+    // (que não tem esse wrapper de zoom) reaplica os px "de tela" como se fossem lógicos — a imagem
+    // aparece deslocada, sobrepondo texto de um jeito que pode parecer duplicação.
+    const fatorZoom = zoom / 100;
+    const jaEhAbsoluta = img.style.position === "absolute";
+    let convertida = jaEhAbsoluta;
+    const cursorOriginal = img.style.cursor;
+    img.style.cursor = "grabbing";
+    const inicioX = e.clientX;
+    const inicioY = e.clientY;
+    const LIMIAR_INICIO_ARRASTE = 4;
     const LIMIAR_SNAP = 8;
+
+    // Geometria da folha (posição na tela + candidatos de encaixe) recalculada sob demanda, não só
+    // uma vez no início: quando a imagem ainda inline vira `position: absolute` no meio do gesto, ela
+    // sai do fluxo do texto e a página pode reflowar — a posição da folha na tela muda entre o
+    // mousedown e o primeiro mousemove seguinte. Usar um `folhaRect` capturado só no início (e
+    // ficou obsoleto) fazia a imagem "pular" ~a altura da linha de texto que ela deixou de ocupar.
+    let folhaRect = folha.getBoundingClientRect();
+    let candidatosX: { alvo: number; guia: number }[] = [];
+    let candidatosY: { alvo: number; guia: number }[] = [];
+    function recalcularGeometria() {
+      folhaRect = folha!.getBoundingClientRect();
+      const pxPorMm = folhaRect.width / larguraMm;
+      const margemEsqPx = margemEsquerdaMm * pxPorMm;
+      const margemDirPx = margemDireitaMm * pxPorMm;
+      const margemSupPx = margemSuperiorMm * pxPorMm;
+      const margemInfPx = margemInferiorMm * pxPorMm;
+      candidatosX = [
+        { alvo: 0, guia: 0 },
+        { alvo: margemEsqPx, guia: margemEsqPx },
+        { alvo: (folhaRect.width - larguraImgPx) / 2, guia: folhaRect.width / 2 },
+        { alvo: folhaRect.width - margemDirPx - larguraImgPx, guia: folhaRect.width - margemDirPx },
+        { alvo: folhaRect.width - larguraImgPx, guia: folhaRect.width },
+      ];
+      candidatosY = [
+        { alvo: 0, guia: 0 },
+        { alvo: margemSupPx, guia: margemSupPx },
+        { alvo: (folhaRect.height - alturaImgPx) / 2, guia: folhaRect.height / 2 },
+        { alvo: folhaRect.height - margemInfPx - alturaImgPx, guia: folhaRect.height - margemInfPx },
+        { alvo: folhaRect.height - alturaImgPx, guia: folhaRect.height },
+      ];
+    }
+    recalcularGeometria();
 
     const linhaV = document.createElement("div");
     linhaV.className = "doc-guia-alinhamento doc-guia-alinhamento-v";
     const linhaH = document.createElement("div");
     linhaH.className = "doc-guia-alinhamento doc-guia-alinhamento-h";
-    folha.append(linhaV, linhaH);
 
     function mover(ev: MouseEvent) {
+      if (!convertida) {
+        const moveuOSuficiente =
+          Math.abs(ev.clientX - inicioX) >= LIMIAR_INICIO_ARRASTE || Math.abs(ev.clientY - inicioY) >= LIMIAR_INICIO_ARRASTE;
+        if (!moveuOSuficiente) return;
+        convertida = true;
+        img.style.position = "absolute";
+        img.style.zIndex = img.style.zIndex || "1";
+        img.style.float = "none";
+        img.style.display = "inline-block";
+        recalcularGeometria();
+        folha!.append(linhaV, linhaH);
+      }
+
       let x = ev.clientX - folhaRect.left - dx;
       let y = ev.clientY - folhaRect.top - dy;
 
@@ -2452,20 +2493,21 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         if (Math.abs(y - c.alvo) < LIMIAR_SNAP) { y = c.alvo; guiaY = c.guia; break; }
       }
 
-      img.style.left = `${Math.max(0, x)}px`;
-      img.style.top = `${Math.max(0, y)}px`;
+      img.style.left = `${Math.max(0, x) / fatorZoom}px`;
+      img.style.top = `${Math.max(0, y) / fatorZoom}px`;
 
       linhaV.style.display = guiaX !== null ? "block" : "none";
-      linhaV.style.left = `${guiaX ?? 0}px`;
+      linhaV.style.left = `${(guiaX ?? 0) / fatorZoom}px`;
       linhaH.style.display = guiaY !== null ? "block" : "none";
-      linhaH.style.top = `${guiaY ?? 0}px`;
+      linhaH.style.top = `${(guiaY ?? 0) / fatorZoom}px`;
     }
     function soltar() {
       window.removeEventListener("mousemove", mover);
       window.removeEventListener("mouseup", soltar);
+      img.style.cursor = cursorOriginal;
       linhaV.remove();
       linhaH.remove();
-      atualizarImagemSelecionada(() => undefined);
+      if (convertida) atualizarImagemSelecionada(() => undefined);
     }
     window.addEventListener("mousemove", mover);
     window.addEventListener("mouseup", soltar);
@@ -2885,7 +2927,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         </div>
       </div>
 
-      <div className="doc-menu-bar">
+      <div className={`doc-menu-bar${mostrarToolbar ? "" : " doc-menu-bar-fim"}`}>
         <MenuTopo label="Arquivo" aberto={menuAberto === "arquivo"} onAbrir={() => setMenuAberto("arquivo")} onFechar={() => setMenuAberto(null)} itens={menuArquivo} />
         <MenuTopo label="Editar" aberto={menuAberto === "editar"} onAbrir={() => setMenuAberto("editar")} onFechar={() => setMenuAberto(null)} itens={menuEditar} />
         <MenuTopo label="Ver" aberto={menuAberto === "ver"} onAbrir={() => setMenuAberto("ver")} onFechar={() => setMenuAberto(null)} itens={menuVer} />
@@ -3020,51 +3062,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             >
               <span className="n">{"{ }"} Campo personalizado</span>
             </button>
-          </div>
-        </GrupoToolbar>
-
-        <GrupoToolbar rotulo="Parágrafo" largura={250}>
-          <div className="field">
-            <label>Alinhamento</label>
-            <div className="filters-row" style={{ margin: 0 }}>
-              <button type="button" className="doc-toolbar-btn" title="Centralizar" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyCenter")}>≡</button>
-              <button type="button" className="doc-toolbar-btn" title="Alinhar à direita" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyRight")}>◨≡</button>
-              <button type="button" className="doc-toolbar-btn" title="Justificar" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyFull")}>☰</button>
-            </div>
-          </div>
-          <div className="field">
-            <label>Espaçamento entre linhas</label>
-            <select className="input" style={{ width: "100%" }} defaultValue="1.5" onChange={(e) => {
-              const el = paginaRefs.current[paginaAtivaId];
-              if (el) el.style.lineHeight = e.target.value;
-              salvarConteudoPagina(paginaAtivaId);
-            }}>
-              <option value="1">Simples</option>
-              <option value="1.15">1,15</option>
-              <option value="1.5">1,5</option>
-              <option value="2">Duplo</option>
-            </select>
-          </div>
-          <div className="field">
-            <label>Listas</label>
-            <div className="filters-row" style={{ margin: 0 }}>
-              <button type="button" className="doc-toolbar-btn" title="Lista com marcadores" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertUnorderedList")}>• ≡</button>
-              <button type="button" className="doc-toolbar-btn" title="Lista numerada" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertOrderedList")}>1.≡</button>
-              <button type="button" className="doc-toolbar-btn" title="Checklist" onClick={() => inserirNaPagina('<div>☐ </div>')}>☑</button>
-            </div>
-          </div>
-          <div className="field">
-            <label>Recuo e formatação</label>
-            <div className="filters-row" style={{ margin: 0 }}>
-              <button type="button" className="doc-toolbar-btn" title="Diminuir recuo" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("outdent")}>⇤</button>
-              <button type="button" className="doc-toolbar-btn" title="Aumentar recuo" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("indent")}>⇥</button>
-              <button type="button" className="doc-toolbar-btn" title="Tachado" style={{ textDecoration: "line-through" }} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("strikeThrough")}>T</button>
-              <button type="button" className="doc-toolbar-btn" title="Limpar formatação" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("removeFormat")}>✕A</button>
-            </div>
-          </div>
-          <div className="field">
-            <label>Cor de destaque</label>
-            <SeletorCor titulo="Cor de destaque" cores={CORES_DESTAQUE} onEscolher={(c) => aplicarFormatacao("hiliteColor", c)} rotulo="🖊 Destacar" />
           </div>
         </GrupoToolbar>
 
@@ -3229,7 +3226,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   onClick={(e) => aoClicarNaPagina(e, pagina.id)}
                   onContextMenu={(e) => aoClicarComBotaoDireitoNaPagina(e, pagina.id)}
                   onMouseDown={(e) => {
-                    if (imagemSelecionada && e.target === imagemSelecionada.el && imagemSelecionada.el.style.position === "absolute" && !estaBloqueada(imagemSelecionada.el)) {
+                    if (imagemSelecionada && e.target === imagemSelecionada.el && !estaBloqueada(imagemSelecionada.el)) {
                       iniciarArrasteLivreImagem(e);
                     }
                   }}

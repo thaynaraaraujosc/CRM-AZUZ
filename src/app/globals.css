@@ -5074,7 +5074,6 @@ button.camp-row:hover {
   align-items: center;
   gap: 10px;
   padding: 10px 20px;
-  border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
 }
 
@@ -5160,11 +5159,17 @@ button.camp-row:hover {
   align-items: center;
   gap: 2px;
   padding: 4px 16px;
-  border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
   font-size: 12.5px;
   overflow-x: auto;
   white-space: nowrap;
+}
+
+/* Só desenha a linha aqui quando a toolbar de formatação está escondida (vira a última barra do
+   grupo) — evita 3 bordas empilhadas (cabeçalho + menu + toolbar) quando as três estão visíveis;
+   ver .doc-toolbar-rich, que já fecha o grupo com a própria borda quando está visível. */
+.doc-menu-bar-fim {
+  border-bottom: 1px solid var(--line);
 }
 
 .doc-menu-btn {
@@ -5597,6 +5602,7 @@ button.camp-row:hover {
 .doc-img-selecionada {
   outline: 2px solid var(--blue, #2563eb);
   outline-offset: 2px;
+  cursor: grab;
 }
 
 .doc-img-legenda {
