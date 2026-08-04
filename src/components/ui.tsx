@@ -69,21 +69,28 @@ export function Drawer({
  * telas (automações, Configurações). Fecha com Esc, clique no fundo ou no botão ✕; o clique dentro do
  * modal não propaga pro fundo.
  */
+/** Larguras padrão — usar `tamanho` cobre a maioria dos casos sem precisar escolher um número de
+ * pixel arbitrário; `largura` continua disponível pra um valor específico quando nenhum preset serve. */
+const TAMANHOS_MODAL = { sm: 380, md: 480, lg: 640, xl: 820 } as const;
+
 export function Modal({
   aberto,
   onFechar,
   titulo,
-  largura = 480,
+  tamanho = "md",
+  largura,
   rodape,
   children,
 }: {
   aberto: boolean;
   onFechar: () => void;
   titulo: ReactNode;
+  tamanho?: keyof typeof TAMANHOS_MODAL;
   largura?: number;
   rodape?: ReactNode;
   children: ReactNode;
 }) {
+  const larguraFinal = largura ?? TAMANHOS_MODAL[tamanho];
   useEffect(() => {
     if (!aberto) return;
     function onKeyDown(e: KeyboardEvent) {
@@ -99,7 +106,7 @@ export function Modal({
     <div className="modal-overlay" onClick={onFechar} role="presentation">
       <div
         className="modal"
-        style={{ width: `min(${largura}px, 100%)`, maxHeight: "85vh", display: "flex", flexDirection: "column" }}
+        style={{ width: `min(${larguraFinal}px, 100%)`, maxHeight: "85vh", display: "flex", flexDirection: "column" }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

@@ -33,9 +33,13 @@
   --radius-lg: 14px;
   --radius-xl: 20px;
 
+  --shadow-xs: 0 1px 1px rgba(11, 21, 51, 0.04);
   --shadow-sm: 0 1px 2px rgba(11, 21, 51, 0.06);
   --shadow-md: 0 4px 16px rgba(11, 21, 51, 0.08);
   --shadow-lg: 0 16px 40px rgba(11, 21, 51, 0.14);
+  /* Elevação sutil ao passar o mouse (cards clicáveis) — sempre combinada com um leve
+     `transform: translateY(-1px)`, nunca sozinha, senão o "voo" fica só na sombra. */
+  --shadow-hover: 0 8px 24px rgba(11, 21, 51, 0.1);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -46,6 +50,33 @@
 
   --transition-fast: 0.12s ease;
   --transition-base: 0.18s ease;
+
+  /* Reestruturação de design (fase 0) — escala de cinzas nomeada, derivada de `--ink` com opacidade
+     crescente (mesmo princípio já usado em `--text-muted`/`--text-faint`, só preenchendo os
+     degraus que faltavam) — pra qualquer superfície/borda/texto secundário parar de inventar
+     opacidade solta. `--surface-hover`/`--surface-active` são o fundo padrão de qualquer linha/
+     item interativo (linha de tabela, opção de dropdown, item de menu) nos estados hover/pressed. */
+  --gray-50: rgba(11, 21, 51, 0.03);
+  --gray-100: rgba(11, 21, 51, 0.05);
+  --gray-200: rgba(11, 21, 51, 0.08);
+  --gray-300: rgba(11, 21, 51, 0.12);
+  --gray-400: rgba(11, 21, 51, 0.18);
+  --gray-500: rgba(11, 21, 51, 0.28);
+  --gray-600: rgba(11, 21, 51, 0.44);
+  --gray-700: rgba(11, 21, 51, 0.64);
+  --gray-800: rgba(11, 21, 51, 0.82);
+  --gray-900: #0b1533;
+
+  --surface-hover: rgba(11, 21, 51, 0.04);
+  --surface-active: rgba(11, 21, 51, 0.07);
+
+  /* Peso + altura de linha — hierarquia deve vir de tamanho+peso+espaçamento juntos, não só do
+     tamanho (`--fs-*` abaixo). `--lh-tight` pra títulos/números grandes, `--lh-base` pro resto. */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --lh-tight: 1.2;
+  --lh-base: 1.5;
 
   /* Cores semânticas (item 55) — mesmo vocabulário já usado informalmente em Automações/Central do
      Dia/Configurações (verde=sucesso/oportunidade, âmbar=atenção, vermelho=erro, azul=informação,
@@ -94,6 +125,20 @@
   --ink: #f3f5fb;
   --text-muted: rgba(243, 245, 251, 0.68);
   --text-faint: rgba(243, 245, 251, 0.46);
+
+  --gray-50: rgba(243, 245, 251, 0.03);
+  --gray-100: rgba(243, 245, 251, 0.05);
+  --gray-200: rgba(243, 245, 251, 0.08);
+  --gray-300: rgba(243, 245, 251, 0.12);
+  --gray-400: rgba(243, 245, 251, 0.18);
+  --gray-500: rgba(243, 245, 251, 0.3);
+  --gray-600: rgba(243, 245, 251, 0.46);
+  --gray-700: rgba(243, 245, 251, 0.68);
+  --gray-800: rgba(243, 245, 251, 0.84);
+  --gray-900: #f3f5fb;
+
+  --surface-hover: rgba(243, 245, 251, 0.06);
+  --surface-active: rgba(243, 245, 251, 0.1);
 }
 
 *,
@@ -254,7 +299,7 @@ table {
   align-items: center;
   gap: 11px;
   padding: 9px 10px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   color: var(--text-muted);
   font-size: 12.5px;
   font-weight: 600;
@@ -301,7 +346,7 @@ table {
   color: #3557f6;
   background: var(--blue-soft-2);
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .nav-sublist {
@@ -440,10 +485,16 @@ table {
   padding: 6px 13px;
   border-radius: 999px;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
   color: var(--text-muted);
   cursor: pointer;
   white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.topbar-tab:hover:not(.active) {
+  background: var(--surface-hover);
+  color: var(--ink);
 }
 
 .topbar-tab.active {
@@ -453,12 +504,13 @@ table {
 
 .topbar h2 {
   font-family: var(--display);
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
   font-size: var(--fs-page-title);
+  line-height: var(--lh-tight);
 }
 
 .topbar .sub {
-  font-size: 12px;
+  font-size: var(--fs-body);
   color: var(--text-faint);
   margin-top: 2px;
 }
@@ -477,7 +529,7 @@ table {
   gap: 7px;
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   padding: 8px 12px;
   font-size: 12px;
   color: var(--text-faint);
@@ -639,7 +691,7 @@ table {
 .icon-btn {
   width: 34px;
   height: 34px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised);
   border: 1px solid var(--line);
   display: flex;
@@ -691,7 +743,7 @@ table {
 .avatar {
   width: 32px;
   height: 32px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: var(--blue-soft-2);
   display: flex;
   align-items: center;
@@ -742,6 +794,168 @@ table {
   text-decoration: underline;
 }
 
+/* Reestruturação de design (fase 0) — níveis de card, cada um com peso visual e comportamento
+   próprios em vez de tudo cair na mesma `.card`. Combinam com `.card-link` (já existente acima)
+   quando o card inteiro precisa ser clicável — não duplica esse comportamento de hover. */
+
+/* Contorno mais discreto que `.card` — sem sombra própria — pra agrupar conteúdo sem competir
+   visualmente com o card principal da tela (ex.: um bloco dentro de outro card). */
+.card-secondary {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+/* Fundo levemente destacado, sem borda nem sombra — pra estatística/contexto (número + legenda),
+   nunca pra conteúdo interativo. */
+.card-info {
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+}
+
+/* Card elevando sutilmente ao passar o mouse — usar quando o card inteiro é clicável mas não é um
+   link de página inteira (ex.: abrir um modal, selecionar um item). `--shadow-hover` só aparece
+   com o transform junto, senão o "voo" fica só na sombra. */
+.card-action {
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.card-action:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--blue-soft);
+}
+
+/* Menos padding, pra listas densas (linha de resumo dentro de um painel, item de histórico). */
+.card-compact {
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+}
+
+/* Reestruturação de design (fase 0) — badge/tag com API única: `.badge` + uma variante semântica
+   (`.badge-success/.badge-warning/.badge-danger/.badge-info/.badge-ia/.badge-neutral`). Não
+   substitui badges já existentes com nome próprio (`.badge-auto`/`.badge-manual`, `.origem-*`,
+   etiquetas coloridas por usuário) — esses continuam existindo; essa é a classe a usar em telas
+   novas ou ao migrar uma tela por vez. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
+  border-radius: var(--radius-xl);
+  white-space: nowrap;
+  line-height: var(--lh-tight);
+}
+
+.badge-neutral {
+  background: var(--gray-100);
+  color: var(--text-muted);
+}
+
+.badge-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.badge-warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.badge-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.badge-info {
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+.badge-ia {
+  background: var(--ia-soft);
+  color: var(--ia);
+}
+
+/* Abas — mesmo comportamento em qualquer módulo que hoje estiliza suas próprias (Formulários,
+   Configurações, Documentos…). `.tabs` é o container (flex + linha inferior contínua),
+   `.tab`/`.tab.active` é cada aba — troca de aba já é responsabilidade do React de cada tela, aqui
+   só o visual + a transição da aba ativa. */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--line);
+}
+
+.tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--body);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab.active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+  font-weight: var(--fw-semibold);
+}
+
+/* Tooltip mínimo, CSS-only — `<button data-tooltip="Texto">` já ganha o comportamento, sem lib
+   nova e sem depender do `title` nativo do browser (que é lento pra abrir e não segue o tema). Só
+   aparece depois de `--transition-base`, pra não piscar em passagens rápidas do mouse. */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(2px);
+  background: var(--gray-900);
+  color: var(--navy);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-base), transform var(--transition-base);
+  z-index: 80;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
 .grid {
   display: grid;
   gap: 14px;
@@ -777,7 +991,7 @@ table {
   font-weight: 700;
   letter-spacing: 0.02em;
   padding: 4px 9px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--line);
   color: var(--text-muted);
   white-space: nowrap;
@@ -792,7 +1006,7 @@ table {
 .toggle {
   width: 36px;
   height: 20px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: var(--line-soft);
   position: relative;
   flex: 0 0 auto;
@@ -3953,10 +4167,19 @@ button.camp-row:hover {
   border-radius: 12px;
   box-shadow: 0 16px 40px rgba(11, 21, 51, 0.18);
   z-index: 60;
+  /* Reestruturação de design (fase 0): desliza/aparece suavemente em vez de surgir de forma
+     brusca — mesma faixa de tempo do modal. */
+  animation: dropdown-slide-in var(--transition-base);
+  transform-origin: top;
 }
 
 .dropdown-pop-floating {
   z-index: 300;
+}
+
+@keyframes dropdown-slide-in {
+  from { opacity: 0; transform: translateY(-4px) scaleY(0.98); }
+  to { opacity: 1; transform: translateY(0) scaleY(1); }
 }
 
 .wa-anexo-menu {
@@ -5541,7 +5764,9 @@ button.camp-row:hover {
   100% { background-position: -200% 0; }
 }
 
-/* Modal centralizado de pré-visualização de modelo — todas as páginas antes de escolher. */
+/* Modal centralizado — usado pelo componente `Modal` de `src/components/ui.tsx` e por telas que
+   ainda montam o overlay à mão com essas mesmas classes. Reestruturação de design (fase 0):
+   entrada suave (fade + leve escala), nada deve surgir de forma brusca. */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -5551,6 +5776,7 @@ button.camp-row:hover {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  animation: modal-fade-in var(--transition-base);
 }
 
 .modal {
@@ -5562,6 +5788,17 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(6, 11, 28, 0.4);
+  animation: modal-scale-in var(--transition-base);
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-scale-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .doc-modelo-preview-modal .panel-h {
@@ -10537,23 +10774,25 @@ button.camp-row:hover {
 
 .central-dia-resumo {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: stretch;
+  gap: var(--space-1);
   flex-wrap: wrap;
-  padding: 14px 16px;
-  border-radius: 12px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--navy-raised);
-  margin-bottom: 14px;
+  box-shadow: var(--shadow-xs);
+  margin-bottom: var(--space-4);
 }
 
 .central-dia-resumo-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 6px 16px;
+  justify-content: center;
+  gap: 3px;
+  padding: var(--space-2) var(--space-4);
   border-right: 1px solid var(--line-soft);
-  min-width: 84px;
+  min-width: 88px;
 }
 .central-dia-resumo-item:last-of-type {
   border-right: none;
@@ -10561,30 +10800,35 @@ button.camp-row:hover {
 
 .central-dia-resumo-item .n {
   font-size: var(--fs-indicator);
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
   color: var(--ink);
   font-family: var(--display);
 }
 .central-dia-resumo-item .r {
-  font-size: 11px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: var(--text-faint);
 }
 
 .central-dia-resumo-item.is-urgente .n {
-  color: #d64545;
+  color: var(--danger);
 }
 .central-dia-resumo-item.is-concluido .n {
-  color: #0f9d63;
+  color: var(--success);
 }
 .central-dia-resumo-item.is-atrasado .n {
-  color: #d8a400;
+  color: var(--warning);
 }
 
 .central-dia-resumo-atualizacao {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
+  padding-left: var(--space-3);
 }
 
 .central-dia-filtros {
@@ -10604,21 +10848,21 @@ button.camp-row:hover {
 }
 
 .central-dia-secao {
-  margin-bottom: 18px;
+  margin-bottom: var(--space-5);
 }
 
 .central-dia-secao-h {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .central-dia-secao-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   background: none;
   border: none;
   cursor: pointer;
@@ -10626,15 +10870,16 @@ button.camp-row:hover {
 }
 .central-dia-secao-toggle h3 {
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--fs-section-title);
+  font-weight: var(--fw-semibold);
+  font-family: var(--display);
   color: var(--ink);
 }
 
 .central-dia-chevron {
   display: inline-flex;
   color: var(--text-faint);
-  transition: transform 0.15s ease;
+  transition: transform var(--transition-fast);
   transform: rotate(0deg);
 }
 .central-dia-chevron.is-aberta {
@@ -10642,10 +10887,10 @@ button.camp-row:hover {
 }
 
 .central-dia-secao-contagem {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
   color: var(--text-faint);
-  background: var(--navy-raised-2);
+  background: var(--gray-100);
   border-radius: 999px;
   padding: 1px 8px;
 }
@@ -10653,62 +10898,68 @@ button.camp-row:hover {
 .central-dia-secao-lista {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .central-dia-vazio {
-  padding: 16px;
-  border-radius: 10px;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
   border: 1px dashed var(--line);
   color: var(--text-faint);
 }
 
 .central-dia-vazio-geral {
-  padding: 32px 20px;
+  padding: 36px 20px;
   text-align: center;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--line);
-  background: var(--navy-raised);
-  margin-bottom: 18px;
+  background: var(--success-soft);
+  margin-bottom: var(--space-5);
 }
 .central-dia-vazio-geral .n {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--fs-card-title);
+  font-weight: var(--fw-semibold);
+  font-family: var(--display);
   color: var(--ink);
   margin: 0 0 4px;
 }
 .central-dia-vazio-geral .r {
-  font-size: 12px;
-  color: var(--text-faint);
-  margin: 0 0 12px;
+  font-size: var(--fs-body);
+  color: var(--text-muted);
+  margin: 0 0 14px;
 }
 
 /* ------------------------------- Card padrão de item do dia ------------------------------- */
 
 .central-dia-card {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: flex-start;
-  padding: 14px;
-  border-radius: 10px;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   border-left: 3px solid var(--line);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+.central-dia-card:hover {
+  box-shadow: var(--shadow-xs);
+  border-color: var(--gray-300);
 }
 .central-dia-card.is-urgente {
-  border-left-color: #d64545;
+  border-left-color: var(--danger);
 }
 .central-dia-card.is-atencao {
-  border-left-color: #d8a400;
+  border-left-color: var(--warning);
 }
 .central-dia-card.is-oportunidade {
-  border-left-color: #0f9d63;
+  border-left-color: var(--success);
 }
 
 .central-dia-card-icone {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10728,12 +10979,12 @@ button.camp-row:hover {
 .central-dia-card-topo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .central-dia-card-tipo {
-  font-size: 10.5px;
-  font-weight: 700;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--text-faint);
@@ -10741,32 +10992,33 @@ button.camp-row:hover {
 
 .central-dia-badge {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
   padding: 2px 8px;
   border-radius: 999px;
 }
 .central-dia-badge.is-urgente {
-  background: #d6454522;
-  color: #d64545;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 .central-dia-badge.is-atencao {
-  background: #d8a40022;
-  color: #d8a400;
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 .central-dia-badge.is-oportunidade {
-  background: #0f9d6322;
-  color: #0f9d63;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .central-dia-card-titulo {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--fs-card-title);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
   color: var(--ink);
   margin: 0;
 }
 
 .central-dia-card-desc {
-  font-size: 12px;
+  font-size: var(--fs-body);
   color: var(--text-muted);
   margin: 0;
 }
@@ -10774,16 +11026,16 @@ button.camp-row:hover {
 .central-dia-card-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  font-size: 11px;
+  gap: var(--space-3);
+  font-size: var(--fs-secondary);
   color: var(--text-faint);
   margin-top: 2px;
 }
 
 .central-dia-destaque {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #d8a400;
+  font-size: var(--fs-secondary);
+  font-weight: var(--fw-semibold);
+  color: var(--warning);
   margin: 2px 0 0;
 }
 
@@ -10799,12 +11051,17 @@ button.camp-row:hover {
 
 .central-dia-compromisso {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: flex-start;
-  padding: 14px;
-  border-radius: 10px;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+.central-dia-compromisso:hover {
+  box-shadow: var(--shadow-xs);
+  border-color: var(--gray-300);
 }
 
 .central-dia-compromisso-hora {
