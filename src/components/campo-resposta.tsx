@@ -555,16 +555,31 @@ export function PerguntaVisualizacao({
 }) {
   const ehLayout = pergunta.tipo === "titulo" || pergunta.tipo === "texto_bloco" || pergunta.tipo === "divisor" || pergunta.tipo === "espacamento" || pergunta.tipo === "imagem_bloco";
 
+  const estilo = pergunta.estilo;
+  const estiloBloco: React.CSSProperties = estilo
+    ? {
+        background: estilo.corFundo || undefined,
+        borderColor: estilo.corBorda || undefined,
+        borderWidth: estilo.corBorda ? 1 : undefined,
+        borderStyle: estilo.corBorda ? "solid" : undefined,
+        borderRadius: estilo.raioBorda,
+        color: estilo.corTexto || undefined,
+        marginTop: estilo.margemSuperior,
+        marginBottom: estilo.margemInferior,
+        padding: estilo.corFundo || estilo.corBorda ? 12 : undefined,
+      }
+    : {};
+
   if (ehLayout) {
     return (
-      <div className="form-pergunta-enunciado-bloco">
+      <div className="form-pergunta-enunciado-bloco" style={estiloBloco}>
         <CampoResposta pergunta={pergunta} interativo={interativo} valor={valor} onMudarValor={onMudarValor} />
       </div>
     );
   }
 
   return (
-    <div className="form-pergunta-enunciado-bloco">
+    <div className="form-pergunta-enunciado-bloco" style={estiloBloco}>
       <p className="form-pergunta-enunciado">
         {indice}. {pergunta.rotulo || "Pergunta sem título"}
         {pergunta.obrigatoria ? <span className="form-pergunta-asterisco"> *</span> : null}

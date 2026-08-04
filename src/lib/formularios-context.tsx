@@ -182,6 +182,15 @@ export type PerguntaFormulario = {
   /** Campo do Contato que essa resposta preenche de verdade — undefined = campo novo, não mapeado. */
   mapeamentoCrm?: string;
   logica?: LogicaCampo;
+  /** Aparência individual — sem valor definido, cada propriedade cai no visual padrão do tema do formulário. */
+  estilo?: {
+    corFundo?: string;
+    corBorda?: string;
+    corTexto?: string;
+    raioBorda?: number;
+    margemSuperior?: number;
+    margemInferior?: number;
+  };
 };
 
 export type CondicaoPagina = {
@@ -214,6 +223,18 @@ export type TemaFormulario = {
 
 export type StatusFormulario = "rascunho" | "publicado";
 
+/** Fotografia do conteúdo do formulário no momento em que foi publicado — permite voltar pra uma
+ * versão anterior sem precisar reconstruir tudo manualmente. Não existe backend/cron aqui: a
+ * fotografia é tirada só quando `alternarPublicacao` liga o status pra "publicado". */
+export type VersaoFormulario = {
+  id: string;
+  numero: number;
+  criadoEm: string;
+  paginas: PaginaFormulario[];
+  tema: TemaFormulario;
+  paginaFinal: { mensagem: string; urlRedirecionamento?: string; redirecionarAutomaticamente: boolean };
+};
+
 export type Formulario = {
   id: string;
   nome: string;
@@ -234,6 +255,8 @@ export type Formulario = {
     etapaTitulo?: string;
     responsavelPadrao?: string;
   };
+  /** Histórico de fotografias tiradas a cada publicação — mais recente por último. */
+  versoes: VersaoFormulario[];
   criadoEm: string;
   atualizadoEm: string;
 };
@@ -289,6 +312,7 @@ function formularioNovo(): Formulario {
     tema: temaVazio(),
     senha: "",
     integracoes: {},
+    versoes: [],
     criadoEm: agora,
     atualizadoEm: agora,
   };
@@ -399,6 +423,7 @@ export function migrarFormulario(bruto: unknown): Formulario {
       tema: { ...base.tema, ...(f.tema as Partial<TemaFormulario> | undefined) },
       paginaFinal: { ...base.paginaFinal, ...(f.paginaFinal as Partial<Formulario["paginaFinal"]> | undefined) },
       integracoes: { ...base.integracoes, ...(f.integracoes as Formulario["integracoes"] | undefined) },
+      versoes: Array.isArray(f.versoes) ? (f.versoes as VersaoFormulario[]) : [],
     };
   }
   // Formato legado: perguntas num array plano, cores soltas, sem status/tema/paginas.
@@ -433,6 +458,7 @@ export function migrarFormulario(bruto: unknown): Formulario {
     },
     senha: (f.senha as string) ?? "",
     integracoes: {},
+    versoes: [],
     criadoEm: agora,
     atualizadoEm: agora,
   };
@@ -445,6 +471,7 @@ type FormulariosContextValue = {
   atualizarFormulario: (id: string, patch: Partial<Formulario>) => void;
   excluirFormulario: (id: string) => void;
   alternarPublicacao: (id: string) => void;
+  restaurarVersaoFormulario: (formularioId: string, versaoId: string) => void;
 
   adicionarPagina: (formularioId: string) => string;
   duplicarPagina: (formularioId: string, paginaId: string) => string;
@@ -582,7 +609,34 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
   }
 
   function alternarPublicacao(id: string) {
-    tocar(id, (f) => ({ ...f, status: f.status === "publicado" ? "rascunho" : "publicado" }));
+    tocar(id, (f) => {
+      if (f.status === "publicado") return { ...f, status: "rascunho" };
+      const versao: VersaoFormulario = {
+        id: idUnico("versao"),
+        numero: (f.versoes.at(-1)?.numero ?? 0) + 1,
+        criadoEm: new Date().toISOString(),
+        paginas: f.paginas,
+        tema: f.tema,
+        paginaFinal: f.paginaFinal,
+      };
+      return { ...f, status: "publicado", versoes: [...f.versoes, versao] };
+    });
+  }
+
+  /** Restaura o conteúdo (páginas/tema/mensagem final) de uma versão publicada anterior — o
+   * formulário volta pra rascunho pra dar chance de revisar antes de publicar de novo. */
+  function restaurarVersaoFormulario(formularioId: string, versaoId: string) {
+    tocar(formularioId, (f) => {
+      const versao = f.versoes.find((v) => v.id === versaoId);
+      if (!versao) return f;
+      return {
+        ...f,
+        status: "rascunho",
+        paginas: versao.paginas,
+        tema: versao.tema,
+        paginaFinal: versao.paginaFinal,
+      };
+    });
   }
 
   function adicionarPagina(formularioId: string) {
@@ -721,6 +775,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
         atualizarFormulario,
         excluirFormulario,
         alternarPublicacao,
+        restaurarVersaoFormulario,
         adicionarPagina,
         duplicarPagina,
         atualizarPagina,

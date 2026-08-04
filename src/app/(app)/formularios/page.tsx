@@ -127,6 +127,7 @@ export default function FormulariosPage() {
     atualizarFormulario,
     excluirFormulario,
     alternarPublicacao,
+    restaurarVersaoFormulario,
     adicionarPagina,
     duplicarPagina,
     atualizarPagina,
@@ -502,7 +503,11 @@ export default function FormulariosPage() {
                 </div>
               )
             ) : abaBuilder === "design" ? (
-              <PainelDesign formulario={formularioAberto} onAtualizar={(patch) => atualizarFormulario(formularioAberto.id, patch)} />
+              <PainelDesign
+                formulario={formularioAberto}
+                onAtualizar={(patch) => atualizarFormulario(formularioAberto.id, patch)}
+                onRestaurarVersao={(versaoId) => restaurarVersaoFormulario(formularioAberto.id, versaoId)}
+              />
             ) : (
               <div className="form-builder-4areas">
                 <div className="form-builder-paginas">
@@ -1101,6 +1106,85 @@ function PainelCampo({
                 </button>
               </div>
             </div>
+            {(() => {
+              const estilo = pergunta.estilo ?? {};
+              function atualizarEstilo(patch: Partial<NonNullable<PerguntaFormulario["estilo"]>>) {
+                onAtualizar({ estilo: { ...estilo, ...patch } });
+              }
+              return (
+                <>
+                  <div className="filters-row">
+                    <div className="field" style={{ flex: 1 }}>
+                      <label>Cor de fundo</label>
+                      <input
+                        type="color"
+                        value={estilo.corFundo ?? "#ffffff"}
+                        onChange={(e) => atualizarEstilo({ corFundo: e.target.value })}
+                        style={{ width: "100%" }}
+                      />
+                    </div>
+                    <div className="field" style={{ flex: 1 }}>
+                      <label>Cor da borda</label>
+                      <input
+                        type="color"
+                        value={estilo.corBorda ?? "#e2e2e2"}
+                        onChange={(e) => atualizarEstilo({ corBorda: e.target.value })}
+                        style={{ width: "100%" }}
+                      />
+                    </div>
+                    <div className="field" style={{ flex: 1 }}>
+                      <label>Cor do texto</label>
+                      <input
+                        type="color"
+                        value={estilo.corTexto ?? "#1a1a1a"}
+                        onChange={(e) => atualizarEstilo({ corTexto: e.target.value })}
+                        style={{ width: "100%" }}
+                      />
+                    </div>
+                  </div>
+                  {estilo.corFundo || estilo.corBorda || estilo.corTexto ? (
+                    <button type="button" className="link" onClick={() => onAtualizar({ estilo: undefined })}>
+                      Restaurar cores padrão
+                    </button>
+                  ) : null}
+                  <div className="filters-row">
+                    <div className="field" style={{ flex: 1 }}>
+                      <label>Raio da borda (px)</label>
+                      <input
+                        className="input"
+                        style={{ width: "100%" }}
+                        type="number"
+                        min={0}
+                        value={estilo.raioBorda ?? ""}
+                        onChange={(e) => atualizarEstilo({ raioBorda: e.target.value ? Number(e.target.value) : undefined })}
+                      />
+                    </div>
+                    <div className="field" style={{ flex: 1 }}>
+                      <label>Margem acima (px)</label>
+                      <input
+                        className="input"
+                        style={{ width: "100%" }}
+                        type="number"
+                        min={0}
+                        value={estilo.margemSuperior ?? ""}
+                        onChange={(e) => atualizarEstilo({ margemSuperior: e.target.value ? Number(e.target.value) : undefined })}
+                      />
+                    </div>
+                    <div className="field" style={{ flex: 1 }}>
+                      <label>Margem abaixo (px)</label>
+                      <input
+                        className="input"
+                        style={{ width: "100%" }}
+                        type="number"
+                        min={0}
+                        value={estilo.margemInferior ?? ""}
+                        onChange={(e) => atualizarEstilo({ margemInferior: e.target.value ? Number(e.target.value) : undefined })}
+                      />
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </SecaoPainel>
 
           <SecaoPainel titulo="Características">
@@ -1153,7 +1237,15 @@ function PainelCampo({
   );
 }
 
-function PainelDesign({ formulario, onAtualizar }: { formulario: Formulario; onAtualizar: (patch: Partial<Formulario>) => void }) {
+function PainelDesign({
+  formulario,
+  onAtualizar,
+  onRestaurarVersao,
+}: {
+  formulario: Formulario;
+  onAtualizar: (patch: Partial<Formulario>) => void;
+  onRestaurarVersao: (versaoId: string) => void;
+}) {
   const { funis } = useFunis();
   const { membros } = useEquipe();
 
@@ -1376,6 +1468,33 @@ function PainelDesign({ formulario, onAtualizar }: { formulario: Formulario; onA
             ))}
           </select>
         </div>
+      </div>
+
+      <div className="card" style={{ padding: 17 }}>
+        <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
+          <h4>Histórico de versões</h4>
+        </div>
+        {formulario.versoes.length === 0 ? (
+          <p className="hint" style={{ marginTop: 0 }}>
+            Toda vez que você publicar o formulário, uma versão fica salva aqui — dá pra voltar pra ela depois.
+          </p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[...formulario.versoes].reverse().map((v) => (
+              <div key={v.id} className="filters-row" style={{ margin: 0, justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 600 }}>Versão {v.numero}</p>
+                  <p className="hint" style={{ margin: 0 }}>
+                    {new Date(v.criadoEm).toLocaleString("pt-BR")} · {v.paginas.reduce((acc, p) => acc + p.perguntas.length, 0)} campos
+                  </p>
+                </div>
+                <button type="button" className="btn ghost" onClick={() => onRestaurarVersao(v.id)}>
+                  Restaurar
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
