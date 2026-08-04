@@ -687,7 +687,7 @@ export function ReportWizard({
                         <p
                           key={i}
                           className="hint"
-                          style={{ margin: "3px 0", color: a.nivel === "erro" ? "#d64545" : undefined }}
+                          style={{ margin: "3px 0", color: a.nivel === "erro" ? "var(--danger)" : undefined }}
                         >
                           {a.nivel === "erro" ? "✕ " : "⚠ "}
                           {a.mensagem}
@@ -781,7 +781,7 @@ export function ReportWizard({
                   {status === "gerando" ? <p className="hint">⏳ Preparando arquivo…</p> : null}
                   {status === "sucesso" ? <p className="hint">✓ Concluído.</p> : null}
                   {status === "erro" ? (
-                    <p className="hint" style={{ color: "#d64545" }}>
+                    <p className="hint" style={{ color: "var(--danger)" }}>
                       ✕ {mensagemErro || "Algo deu errado."}{" "}
                       <button type="button" className="link" onClick={baixarPdf}>Tentar novamente</button>
                     </p>

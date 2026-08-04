@@ -427,7 +427,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                       <button
                         type="button"
                         className="link"
-                        style={{ marginTop: 4, color: "#d64545" }}
+                        style={{ marginTop: 4, color: "var(--danger)" }}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (window.confirm(`Excluir o modelo "${m.nome}"?`)) excluirModeloPersonalizado(m.id);
@@ -484,7 +484,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
             <button
               type="button"
               className="btn ghost"
-              style={{ marginLeft: "auto", color: "#d64545" }}
+              style={{ marginLeft: "auto", color: "var(--danger)" }}
               onClick={() => {
                 if (window.confirm("Esvaziar a lixeira? Isso apaga os documentos definitivamente."))
                   esvaziarLixeira();
@@ -579,7 +579,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                       <button
                         type="button"
                         className="dropdown-item"
-                        style={{ width: "100%", textAlign: "left", color: "#d64545" }}
+                        style={{ width: "100%", textAlign: "left", color: "var(--danger)" }}
                         onClick={() => {
                           if (window.confirm(`Excluir "${d.titulo}" definitivamente?`)) {
                             excluirPermanente(d.id);
@@ -650,7 +650,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                       <button
                         type="button"
                         className="dropdown-item"
-                        style={{ width: "100%", textAlign: "left", color: "#d64545" }}
+                        style={{ width: "100%", textAlign: "left", color: "var(--danger)" }}
                         onClick={() => {
                           excluirDocumento(d.id);
                           setAcaoAbertaId(null);
@@ -3159,7 +3159,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <button
                 type="button"
                 className="btn ghost"
-                style={{ color: "#d64545" }}
+                style={{ color: "var(--danger)" }}
                 onClick={() => {
                   atualizarConfigPagina(id, cabecalhoRodapeAberto === "cabecalho" ? { cabecalhoHtml: "" } : { rodapeHtml: "" });
                   setCabecalhoRodapeAberto(null);
@@ -3370,7 +3370,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   <button
                     type="button"
                     className="link"
-                    style={{ color: "#d64545" }}
+                    style={{ color: "var(--danger)" }}
                     onClick={() =>
                       atualizarAcesso(id, { pessoasAcesso: doc.pessoasAcesso.filter((x) => x.email !== p.email) })
                     }
@@ -3567,7 +3567,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <div className="filters-row" style={{ margin: 0 }}>
               <button type="button" className="fchip" onClick={() => inserirLinhaTabela("acima")}>+ Acima</button>
               <button type="button" className="fchip" onClick={() => inserirLinhaTabela("abaixo")}>+ Abaixo</button>
-              <button type="button" className="fchip" style={{ color: "#d64545" }} onClick={excluirLinhaTabela}>Excluir linha</button>
+              <button type="button" className="fchip" style={{ color: "var(--danger)" }} onClick={excluirLinhaTabela}>Excluir linha</button>
             </div>
           </div>
           <div className="field">
@@ -3575,7 +3575,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <div className="filters-row" style={{ margin: 0 }}>
               <button type="button" className="fchip" onClick={() => inserirColunaTabela("esquerda")}>+ Esquerda</button>
               <button type="button" className="fchip" onClick={() => inserirColunaTabela("direita")}>+ Direita</button>
-              <button type="button" className="fchip" style={{ color: "#d64545" }} onClick={excluirColunaTabela}>Excluir coluna</button>
+              <button type="button" className="fchip" style={{ color: "var(--danger)" }} onClick={excluirColunaTabela}>Excluir coluna</button>
             </div>
           </div>
           <button type="button" className="btn danger block" onClick={excluirTabelaInteira}>
@@ -3965,7 +3965,7 @@ function PainelImagem({
       </div>
       <div className="field" style={{ display: "flex", gap: 8 }}>
         <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={restaurarOriginal}>Restaurar original</button>
-        <button type="button" className="btn ghost" style={{ flex: 1, color: "#d64545" }} onClick={onExcluir}>Excluir</button>
+        <button type="button" className="btn ghost" style={{ flex: 1, color: "var(--danger)" }} onClick={onExcluir}>Excluir</button>
       </div>
     </div>
   );
