@@ -14,7 +14,7 @@ import type {
   RegistroExecucao,
 } from "@/lib/automation-flow/types";
 import { IconAutomacoes, IconSearch } from "@/components/icons";
-import { Toggle, Topbar } from "@/components/ui";
+import { FloatingDropdown, Toggle, Topbar } from "@/components/ui";
 import { VisualizarFluxo } from "@/components/automation-flow/VisualizarFluxo";
 
 /* -------------------------------------------------------------------------- */
@@ -269,6 +269,7 @@ function AutomacoesPageInner() {
   }, [filtrosAbertos]);
 
   const [menuAbertoId, setMenuAbertoId] = useState<string | null>(null);
+  const [menuRect, setMenuRect] = useState<DOMRect | null>(null);
   const [renomeandoId, setRenomeandoId] = useState<string | null>(null);
   const [renomeandoValor, setRenomeandoValor] = useState("");
   const [exclusaoAlvo, setExclusaoAlvo] = useState<FluxoAutomacao | null>(null);
@@ -454,8 +455,9 @@ function AutomacoesPageInner() {
 
   const totalAtivas = fluxos.filter((f) => f.status === "publicado" && f.ativa && !f.arquivada).length;
 
-  function abrirMenu(id: string) {
+  function abrirMenu(id: string, rect: DOMRect) {
     setMenuAbertoId((atual) => (atual === id ? null : id));
+    setMenuRect(rect);
   }
 
   function iniciarRenomeacao(fluxo: FluxoAutomacao) {
@@ -1017,17 +1019,17 @@ function AutomacoesPageInner() {
                       type="button"
                       className="icon-btn subtle"
                       aria-label={`Mais ações — ${fluxo.nome}`}
-                      onClick={() => abrirMenu(fluxo.id)}
+                      onClick={(e) => abrirMenu(fluxo.id, e.currentTarget.getBoundingClientRect())}
                     >
                       ⋯
                     </button>
                     {menuAbertoId === fluxo.id ? (
-                      <>
-                        <div
-                          onClick={() => setMenuAbertoId(null)}
-                          style={{ position: "fixed", inset: 0, zIndex: 50 }}
-                        />
-                        <div className="dropdown-pop dropdown-pop-right">
+                      <FloatingDropdown
+                        anchorRect={menuRect}
+                        onClose={() => setMenuAbertoId(null)}
+                        align="right"
+                        width={320}
+                      >
                           <button
                             type="button"
                             className="dropdown-item"
@@ -1144,8 +1146,7 @@ function AutomacoesPageInner() {
                             <span className="n">Excluir</span>
                             <span className="r">Apaga a automação e o histórico de execuções</span>
                           </button>
-                        </div>
-                      </>
+                      </FloatingDropdown>
                     ) : null}
                   </div>
                 </div>
