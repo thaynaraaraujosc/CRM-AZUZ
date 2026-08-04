@@ -1,7 +1,6 @@
 "use client";
 
 import { equipe } from "@/lib/data";
-import { useConfiguracoes } from "@/lib/configuracoes-context";
 import type {
   CriarTarefaData,
   ModoPrazoTarefa,
@@ -10,8 +9,7 @@ import type {
   RelacionarTarefaA,
 } from "@/lib/automation-flow/types";
 import { CATEGORIAS_TAREFA } from "./TarefaEventoForm";
-
-const EQUIPES_PADRAO = ["Comercial", "Atendimento", "Financeiro", "Marketing", "Gestão"];
+import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 
 const PRIORIDADES: { valor: PrioridadeTarefa; label: string }[] = [
   { valor: "baixa", label: "Baixa" },
@@ -23,8 +21,7 @@ const PRIORIDADES: { valor: PrioridadeTarefa; label: string }[] = [
 /** Ação "Criar tarefa" (item 16) — tipo, título, descrição, responsável, prazo, prioridade e a que
  * relacionar, tudo configurável direto no bloco. */
 export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onChange: (novo: CriarTarefaData) => void }) {
-  const { estado } = useConfiguracoes();
-  const equipes = Array.from(new Set([...EQUIPES_PADRAO, ...estado.equipesPersonalizadas.map((e) => e.nome)]));
+  const equipes = useEquipesDisponiveis();
 
   return (
     <div className="flow-form">

@@ -5,8 +5,12 @@
  */
 
 import type {
+  AgendarConsultaData,
   AguardarData,
+  AtualizarStatusData,
+  AtualizarValorData,
   CriarTarefaData,
+  EncaminharEquipeData,
   EtiquetaEventoData,
   FlowEdge,
   FlowNode,
@@ -14,6 +18,7 @@ import type {
   GatilhoEtapaData,
   MensagemBotoesData,
   MensagemMidiaData,
+  MensagemModeloWhatsappData,
   MensagemTextoData,
   ProblemaValidacao,
   TarefaEventoData,
@@ -239,6 +244,83 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         id: proximoIdProblema(),
         severidade: "erro",
         mensagem: `Bloco "${n.titulo ?? n.type}" está com o filtro de tarefa incompleto.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7f. Encaminhar pra equipe sem equipe escolhida.
+  nodes.forEach((n) => {
+    if (n.type !== "encaminhar_equipe") return;
+    const data = n.data as EncaminharEquipeData;
+    if (ehTextoVazio(data.equipeNome)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem equipe escolhida.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7g. Atualizar status sem status escolhido, ou "Perdido" sem motivo.
+  nodes.forEach((n) => {
+    if (n.type !== "atualizar_status") return;
+    const data = n.data as AtualizarStatusData;
+    if (ehTextoVazio(data.status)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem status escolhido.`,
+        nodeId: n.id,
+      });
+    } else if (data.status === "perdido" && ehTextoVazio(data.motivoPerda)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" marca como perdido mas está sem motivo da perda.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7h. Atualizar valor do negócio sem valor definido.
+  nodes.forEach((n) => {
+    if (n.type !== "atualizar_valor") return;
+    const data = n.data as AtualizarValorData;
+    if (ehTextoVazio(data.valor)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem valor definido.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7i. Agendar consulta sem data ou horário definidos.
+  nodes.forEach((n) => {
+    if (n.type !== "agendar_consulta") return;
+    const data = n.data as AgendarConsultaData;
+    if (ehTextoVazio(data.data) || ehTextoVazio(data.horario)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem data e horário definidos.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7j. Modelo do WhatsApp sem template escolhido.
+  nodes.forEach((n) => {
+    if (n.type !== "mensagem_modelo_whatsapp") return;
+    const data = n.data as MensagemModeloWhatsappData;
+    if (ehTextoVazio(data.templateId)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem modelo escolhido.`,
         nodeId: n.id,
       });
     }

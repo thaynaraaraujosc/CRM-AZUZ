@@ -4,24 +4,34 @@ import { useState } from "react";
 
 import type {
   AguardarData,
+  AgendarConsultaData,
+  AtualizarStatusData,
+  AtualizarValorData,
   CondicaoGrupoData,
   ConfiguracoesFluxo,
   CriarTarefaData,
+  EncaminharEquipeData,
   FlowNode,
   FluxoAutomacao,
   MensagemBotoesData,
+  MensagemModeloWhatsappData,
   ProblemaValidacao,
   TarefaEventoData,
 } from "@/lib/automation-flow/types";
 import { resumoNaturalNo } from "@/lib/automation-flow/resumo";
 import { useFunis } from "@/lib/funis-context";
+import { AgendarConsultaForm } from "./forms/AgendarConsultaForm";
 import { AguardarForm } from "./forms/AguardarForm";
+import { AtualizarStatusForm } from "./forms/AtualizarStatusForm";
+import { AtualizarValorForm } from "./forms/AtualizarValorForm";
 import { CondicaoForm } from "./forms/CondicaoForm";
 import { ConfiguracoesGeraisForm } from "./forms/ConfiguracoesGeraisForm";
 import { CriarTarefaForm } from "./forms/CriarTarefaForm";
+import { EncaminharEquipeForm } from "./forms/EncaminharEquipeForm";
 import { GenericForm } from "./forms/GenericForm";
 import { MensagemForm } from "./forms/MensagemForm";
 import { MensagemMidiaForm } from "./forms/MensagemMidiaForm";
+import { MensagemModeloForm } from "./forms/MensagemModeloForm";
 import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
 import { TarefaEventoForm } from "./forms/TarefaEventoForm";
 
@@ -50,6 +60,21 @@ function FormularioDoNode({
   }
   if (node.type === "criar_tarefa") {
     return <CriarTarefaForm data={node.data as CriarTarefaData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "encaminhar_equipe") {
+    return <EncaminharEquipeForm data={node.data as EncaminharEquipeData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "atualizar_status") {
+    return <AtualizarStatusForm data={node.data as AtualizarStatusData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "atualizar_valor") {
+    return <AtualizarValorForm data={node.data as AtualizarValorData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "agendar_consulta") {
+    return <AgendarConsultaForm data={node.data as AgendarConsultaData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "mensagem_modelo_whatsapp") {
+    return <MensagemModeloForm data={node.data as MensagemModeloWhatsappData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
   }
   if (TIPOS_OPCOES.has(node.type)) {
     return (

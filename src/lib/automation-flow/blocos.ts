@@ -514,7 +514,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Encaminha o atendimento pra uma equipe/fila.",
     icone: "Users",
     corClasse: corDaCategoria("acao"),
-    dataPadrao: () => ({}),
+    dataPadrao: () => ({ equipeNome: "" }),
   },
   {
     tipo: "distribuir_disponibilidade",
@@ -577,7 +577,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Atualiza o valor do negócio do contato.",
     icone: "DollarSign",
     corClasse: corDaCategoria("acao"),
-    dataPadrao: () => ({ valor: "" }),
+    dataPadrao: () => ({ modo: "definir", valor: "" }),
   },
   {
     tipo: "atualizar_status",
@@ -595,7 +595,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Agenda uma consulta pro contato.",
     icone: "CalendarPlus",
     corClasse: corDaCategoria("acao"),
-    dataPadrao: () => ({}),
+    dataPadrao: () => ({ data: "", horario: "", profissional: "", tipoServico: "" }),
   },
   {
     tipo: "cancelar_agendamento",

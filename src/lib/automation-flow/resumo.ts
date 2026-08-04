@@ -15,6 +15,7 @@ import type {
   GrupoCondicoes,
   MensagemBotoesData,
 } from "./types";
+import { TEMPLATES_WHATSAPP } from "./templates-whatsapp";
 
 function nomeFunil(funis: Funil[] | undefined, funilId: unknown): string | undefined {
   if (typeof funilId !== "string" || !funilId) return undefined;
@@ -113,6 +114,12 @@ function resumoGrupoCondicoes(grupo: GrupoCondicoes | undefined): string {
   return grupo.tipo === "NAO" ? `NÃO (${texto})` : texto;
 }
 
+const ROTULO_STATUS_NEGOCIO: Record<string, string> = {
+  em_andamento: "Em andamento",
+  ganho: "Ganho",
+  perdido: "Perdido",
+};
+
 function primeiroCampoTexto(data: Record<string, unknown>): string | undefined {
   for (const chave of ["mensagem", "titulo", "motivo", "status", "valor", "url", "atendenteNome", "equipeNome", "etiquetaNome", "campoNome", "palavra", "formularioId", "templateId"]) {
     const v = data[chave];
@@ -170,7 +177,8 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
       return `${nome}${legenda}`;
     }
     case "mensagem_modelo_whatsapp": {
-      return d.templateId ? `Modelo: ${d.templateId}` : "Sem modelo escolhido";
+      const nomeTemplate = TEMPLATES_WHATSAPP.find((t) => t.id === d.templateId)?.nome;
+      return nomeTemplate ? `Modelo: ${nomeTemplate}` : "Sem modelo escolhido";
     }
     case "enviar_formulario": {
       return d.formularioOrigem === "externo" ? `Link externo${d.formularioUrlExterna ? `: ${d.formularioUrlExterna}` : ""}` : "Formulário interno";
@@ -243,6 +251,24 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     }
     case "atualizar_campo": {
       return d.campoNome ? `${d.campoNome} = "${d.valor ?? ""}"` : "Sem campo escolhido";
+    }
+    case "encaminhar_equipe": {
+      return d.equipeNome ? `Equipe: ${d.equipeNome}` : "Sem equipe escolhida";
+    }
+    case "atualizar_status": {
+      const rotulo = ROTULO_STATUS_NEGOCIO[String(d.status)];
+      if (!rotulo) return "Sem status escolhido";
+      return d.status === "perdido" && d.motivoPerda ? `${rotulo} · "${truncar(String(d.motivoPerda), 40)}"` : rotulo;
+    }
+    case "atualizar_valor": {
+      if (!d.valor) return "Sem valor definido";
+      const prefixo = d.modo === "somar" ? "+" : d.modo === "subtrair" ? "-" : "";
+      return `${prefixo}R$ ${d.valor}`;
+    }
+    case "agendar_consulta": {
+      if (!d.data && !d.horario) return "Sem data/horário definidos";
+      const partes = [d.data, d.horario, d.profissional].filter(Boolean);
+      return partes.join(" · ") || "Sem data/horário definidos";
     }
     case "chamar_webhook": {
       return d.url ? String(d.url) : "Sem URL definida";
@@ -382,6 +408,29 @@ export function resumoNaturalNo(node: FlowNode, funis?: Funil[]): string {
       if (!d.texto) return "Escreva a mensagem que será enviada.";
       const canal = ROTULO_CANAL[String(d.canal)] ?? String(d.canal ?? "WhatsApp");
       return `Envia uma mensagem pelo ${canal}.`;
+    }
+    case "encaminhar_equipe":
+      return d.equipeNome ? `Encaminha o atendimento para a equipe ${d.equipeNome}.` : "Selecione a equipe que vai receber o atendimento.";
+    case "atualizar_status": {
+      const rotulo = ROTULO_STATUS_NEGOCIO[String(d.status)];
+      if (!rotulo) return "Selecione o novo status do negócio.";
+      if (d.status === "perdido") {
+        return d.motivoPerda ? `Marca o negócio como Perdido, com o motivo "${d.motivoPerda}".` : "Defina o motivo da perda.";
+      }
+      return `Atualiza o status do negócio para ${rotulo}.`;
+    }
+    case "atualizar_valor": {
+      if (!d.valor) return "Defina o valor a ser aplicado.";
+      if (d.modo === "somar") return `Soma R$ ${d.valor} ao valor atual do negócio.`;
+      if (d.modo === "subtrair") return `Subtrai R$ ${d.valor} do valor atual do negócio.`;
+      return `Define o valor do negócio como R$ ${d.valor}.`;
+    }
+    case "agendar_consulta": {
+      if (!d.data && !d.horario) return "Defina a data e o horário da consulta.";
+      const quando = [d.data, d.horario].filter(Boolean).join(" às ");
+      const comQuem = d.profissional ? ` com ${d.profissional}` : "";
+      const tipo = d.tipoServico ? ` (${d.tipoServico})` : "";
+      return `Agenda uma consulta${comQuem} para ${quando}${tipo}.`;
     }
     default: {
       const linha = resumoNo(node, funis);

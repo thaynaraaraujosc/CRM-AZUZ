@@ -1,12 +1,11 @@
 "use client";
 
 import { equipe } from "@/lib/data";
-import { useConfiguracoes } from "@/lib/configuracoes-context";
 import { useFunis } from "@/lib/funis-context";
 import type { FiltroTarefaModo, TarefaEventoData } from "@/lib/automation-flow/types";
+import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 
 export const CATEGORIAS_TAREFA = ["Follow-up", "Ligação", "Reunião", "Consulta", "Retorno", "Visita", "Outro"];
-const EQUIPES_PADRAO = ["Comercial", "Atendimento", "Financeiro", "Marketing", "Gestão"];
 
 const MODOS: { valor: FiltroTarefaModo; label: string }[] = [
   { valor: "qualquer", label: "Qualquer tarefa" },
@@ -21,9 +20,8 @@ const MODOS: { valor: FiltroTarefaModo; label: string }[] = [
  * tarefa; pergunta qual tipo de tarefa (já existente em outro lugar do fluxo) deve iniciar essa
  * automação. */
 export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; onChange: (novo: TarefaEventoData) => void }) {
-  const { estado } = useConfiguracoes();
   const { funis } = useFunis();
-  const equipes = Array.from(new Set([...EQUIPES_PADRAO, ...estado.equipesPersonalizadas.map((e) => e.nome)]));
+  const equipes = useEquipesDisponiveis();
 
   return (
     <div className="flow-form">
