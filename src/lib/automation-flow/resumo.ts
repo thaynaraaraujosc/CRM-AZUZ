@@ -43,9 +43,11 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
   if (CATEGORIAS_SEM_SAIDA.includes(node.category)) return [];
 
   if (node.type === "condicao_grupo") {
+    const data = node.data as CondicaoGrupoData;
+    const { simLabel, naoLabel } = rotulosSaidaCondicao(data.grupo);
     return [
-      { handleId: "sim", label: "✓ Sim" },
-      { handleId: "nao", label: "✕ Não" },
+      { handleId: "sim", label: `✓ ${simLabel}` },
+      { handleId: "nao", label: `✕ ${naoLabel}` },
     ];
   }
 
@@ -97,12 +99,43 @@ const ROTULO_OPERADOR: Record<string, string> = {
   nao_existe: "não existe",
 };
 
+/** Nome amigável de cada campo de condição — usado no resumo do node e na frase em linguagem natural,
+ * pra nunca mostrar o identificador técnico ("valor_negocio") pro usuário final. */
+const ROTULO_CAMPO_CONDICAO: Record<string, string> = {
+  origem: "Origem",
+  canal: "Canal",
+  etapa: "Etapa atual",
+  funil: "Funil atual",
+  etiqueta: "Etiqueta",
+  responsavel: "Responsável",
+  equipe: "Equipe",
+  numero_salvo: "Número salvo",
+  campo_personalizado: "Campo personalizado",
+  cidade: "Cidade",
+  estado: "Estado",
+  data_ultima_conversa: "Data da última conversa",
+  horario_ultima_mensagem: "Horário da última mensagem",
+  respondeu: "Contato respondeu",
+  tentativas: "Tentativas",
+  recebeu_automacao: "Recebeu automação",
+  em_outra_automacao: "Está em outra automação",
+  possui_agendamento: "Possui agendamento",
+  situacao_agendamento: "Situação do agendamento",
+  valor_negocio: "Valor do negócio",
+  campanha: "Campanha",
+  anuncio: "Anúncio",
+  palavra_chave: "Palavra-chave",
+  consentimento: "Consentimento",
+  dia_semana: "Dia da semana",
+  horario: "Horário",
+};
+
 function resumoGrupoCondicoes(grupo: GrupoCondicoes | undefined): string {
   if (!grupo || (grupo.regras.length === 0 && grupo.subgrupos.length === 0)) return "sem regras definidas";
 
   const partes: string[] = [];
   grupo.regras.forEach((r) => {
-    const campo = r.campo === "campo_personalizado" ? (r.campoPersonalizadoNome || "campo") : r.campo;
+    const campo = r.campo === "campo_personalizado" ? (r.campoPersonalizadoNome || "campo") : (ROTULO_CAMPO_CONDICAO[r.campo] ?? r.campo);
     const op = ROTULO_OPERADOR[r.operador] ?? r.operador;
     const valor = r.operador === "entre" ? `${r.valor ?? "?"} e ${r.valorFim ?? "?"}` : r.valor;
     partes.push(valor ? `${campo} ${op} "${valor}"` : `${campo} ${op}`);
@@ -114,10 +147,77 @@ function resumoGrupoCondicoes(grupo: GrupoCondicoes | undefined): string {
   return grupo.tipo === "NAO" ? `NÃO (${texto})` : texto;
 }
 
+/**
+ * Saídas "Sim"/"Não" de uma condição, só que explicando o que cada caminho significa (item 11) — só dá
+ * pra ser específico quando a condição é uma regra única e simples; com E/OU/subgrupos, cai num rótulo
+ * genérico mas ainda compreensível ("Condição atendida"/"Condição não atendida") em vez de só "Sim"/"Não".
+ */
+export function rotulosSaidaCondicao(grupo: GrupoCondicoes | undefined): { simLabel: string; naoLabel: string } {
+  const generico = { simLabel: "Condição atendida", naoLabel: "Condição não atendida" };
+  if (!grupo || grupo.regras.length !== 1 || grupo.subgrupos.length !== 0 || grupo.tipo === "NAO") return generico;
+
+  const r = grupo.regras[0];
+  if (r.campo === "respondeu") return { simLabel: "Já respondeu", naoLabel: "Ainda não respondeu" };
+  if (r.campo === "possui_agendamento") return { simLabel: "Possui agendamento", naoLabel: "Não possui agendamento" };
+  if (r.campo === "em_outra_automacao") return { simLabel: "Está em outra automação", naoLabel: "Não está em outra automação" };
+  if (r.campo === "recebeu_automacao") return { simLabel: "Recebeu a automação", naoLabel: "Não recebeu a automação" };
+
+  const campo = ROTULO_CAMPO_CONDICAO[r.campo] ?? r.campo;
+  if (r.campo === "etiqueta" && r.valor) {
+    return r.operador === "diferente" || r.operador === "nao_existe"
+      ? { simLabel: `Não possui etiqueta "${r.valor}"`, naoLabel: `Possui etiqueta "${r.valor}"` }
+      : { simLabel: `Possui etiqueta "${r.valor}"`, naoLabel: `Não possui etiqueta "${r.valor}"` };
+  }
+  if ((r.campo === "etapa" || r.campo === "funil") && r.valor) {
+    return { simLabel: `Está em ${r.valor}`, naoLabel: `Não está em ${r.valor}` };
+  }
+  if (r.valor) {
+    return { simLabel: `${campo} ${ROTULO_OPERADOR[r.operador] ?? r.operador} "${r.valor}"`, naoLabel: `Não: ${campo.toLowerCase()}` };
+  }
+  return generico;
+}
+
 const ROTULO_STATUS_NEGOCIO: Record<string, string> = {
   em_andamento: "Em andamento",
   ganho: "Ganho",
   perdido: "Perdido",
+};
+
+const ROTULO_DESTINATARIO_EMAIL: Record<string, string> = {
+  contato_email: "E-mail do contato",
+  outro_campo: "Outro campo de e-mail",
+  especifico: "E-mail específico",
+  responsavel: "Responsável do lead",
+  campo_personalizado: "Campo personalizado",
+};
+
+const ROTULO_DESTINO_CONTATO: Record<string, string> = {
+  conversa_atual: "contato atual da conversa",
+  atendente: "atendente",
+  equipe: "equipe",
+  numero: "número específico",
+};
+
+const LOCALIZACOES_SALVAS_ROTULOS: Record<string, string> = {
+  clinica_vitta: "Clínica Vitta · Goiânia/GO",
+  unidade_centro: "Unidade Centro · Goiânia/GO",
+  consultorio_principal: "Consultório principal · Goiânia/GO",
+  escritorio: "Escritório · Goiânia/GO",
+};
+
+const ROTULO_METODO_DISTRIBUICAO: Record<string, string> = {
+  disponibilidade: "por disponibilidade",
+  rodizio: "rodízio",
+  menos_atendimentos: "menor quantidade de atendimentos",
+  prioridade: "prioridade definida",
+};
+
+const ROTULO_CRITERIO_AGENDAMENTO: Record<string, string> = {
+  proximo: "Próximo agendamento",
+  ultimo_criado: "Último agendamento criado",
+  tipo: "Agendamento por tipo",
+  responsavel: "Agendamento por responsável",
+  especifico: "Agendamento específico",
 };
 
 function primeiroCampoTexto(data: Record<string, unknown>): string | undefined {
@@ -155,7 +255,47 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
       return `"${truncar(String(d.texto ?? ""))}" · Canal: ${d.canal ?? "whatsapp"}`;
     }
     case "mensagem_email": {
-      return `Assunto: "${truncar(String(d.assunto ?? ""))}"`;
+      if (!d.assunto) return "Sem assunto/destinatário definidos";
+      const para = ROTULO_DESTINATARIO_EMAIL[String(d.destinatarioModo)] ?? "Destinatário não definido";
+      return `Para: ${para} · "${truncar(String(d.assunto))}"`;
+    }
+    case "mensagem_contato": {
+      const origem = d.origemContato === "outro" ? (d.contatoSelecionadoNome ? String(d.contatoSelecionadoNome) : null) : "Lead atual";
+      if (!origem) return "Selecione o contato e destino";
+      const destinoNome = d.destinoModo === "atendente" ? d.destinoAtendente : d.destinoModo === "equipe" ? d.destinoEquipe : d.destinoModo === "numero" ? d.destinoNumero : undefined;
+      const destino = destinoNome ? String(destinoNome) : ROTULO_DESTINO_CONTATO[String(d.destinoModo)] ?? "destino não definido";
+      return `${origem} → ${destino}`;
+    }
+    case "mensagem_localizacao": {
+      if (d.origem === "salva" && d.localSalvoId) {
+        const local = LOCALIZACOES_SALVAS_ROTULOS[String(d.localSalvoId)];
+        return local ?? "Selecione uma localização";
+      }
+      if (d.origem === "workspace") return "Localização do workspace";
+      if (d.origem === "endereco" && d.nomeLocal) {
+        const cidadeEstado = [d.cidade, d.estado].filter(Boolean).join("/");
+        return cidadeEstado ? `${d.nomeLocal} · ${cidadeEstado}` : String(d.nomeLocal);
+      }
+      if (d.origem === "coordenadas" && d.latitude && d.longitude) return `${d.latitude}, ${d.longitude}`;
+      return "Selecione uma localização";
+    }
+    case "encaminhar_humano": {
+      if (d.destino === "atendente") {
+        if (!d.atendenteNome) return "Selecione atendente/equipe e destino";
+        return d.moverFunil && d.etapaTitulo ? `${d.atendenteNome} → ${d.etapaTitulo}` : String(d.atendenteNome);
+      }
+      if (d.destino === "equipe") {
+        if (!d.equipeNome) return "Selecione atendente/equipe e destino";
+        return d.moverFunil && d.etapaTitulo ? `Equipe ${d.equipeNome} → ${d.etapaTitulo}` : `Equipe ${d.equipeNome}`;
+      }
+      if (d.destino === "distribuicao") return `Distribuição automática (${ROTULO_METODO_DISTRIBUICAO[String(d.metodoDistribuicao)] ?? "por disponibilidade"})`;
+      if (d.destino === "manter") return "Mantém o responsável atual";
+      return "Selecione atendente/equipe e destino";
+    }
+    case "cancelar_agendamento": {
+      if (!d.criterio) return "Configure qual agendamento será cancelado";
+      const criterio = ROTULO_CRITERIO_AGENDAMENTO[String(d.criterio)] ?? String(d.criterio);
+      return d.enviarMensagem ? `${criterio} · Mensagem configurada` : `${criterio} · Sem mensagem automática`;
     }
     case "notificacao_interna":
     case "enviar_notificacao": {
@@ -419,6 +559,49 @@ export function resumoNaturalNo(node: FlowNode, funis?: Funil[]): string {
       if (!d.texto) return "Escreva a mensagem que será enviada.";
       const canal = ROTULO_CANAL[String(d.canal)] ?? String(d.canal ?? "WhatsApp");
       return `Envia uma mensagem pelo ${canal}.`;
+    }
+    case "mensagem_email": {
+      if (!d.assunto || !d.destinatarioModo) return "Defina o destinatário e o conteúdo desse e-mail.";
+      const para = ROTULO_DESTINATARIO_EMAIL[String(d.destinatarioModo)] ?? "destinatário configurado";
+      return `Envia o e-mail "${d.assunto}" para ${para.toLowerCase()}.`;
+    }
+    case "mensagem_contato": {
+      const origem = d.origemContato === "outro" ? d.contatoSelecionadoNome : "o lead atual";
+      if (!origem) return "Selecione o contato e pra quem enviar.";
+      const destinoNome = d.destinoModo === "atendente" ? d.destinoAtendente : d.destinoModo === "equipe" ? d.destinoEquipe : d.destinoModo === "numero" ? d.destinoNumero : undefined;
+      const destino = destinoNome ? String(destinoNome) : ROTULO_DESTINO_CONTATO[String(d.destinoModo)] ?? "o destino configurado";
+      return `Envia os dados de contato de ${origem} para ${destino}.`;
+    }
+    case "mensagem_localizacao": {
+      if (d.origem === "salva" && d.localSalvoId) {
+        const local = LOCALIZACOES_SALVAS_ROTULOS[String(d.localSalvoId)];
+        return local ? `Envia a localização ${local}.` : "Selecione qual localização enviar.";
+      }
+      if (d.origem === "workspace") return "Envia a localização cadastrada no workspace.";
+      if (d.origem === "endereco" && d.nomeLocal) return `Envia a localização "${d.nomeLocal}".`;
+      if (d.origem === "coordenadas" && d.latitude && d.longitude) return "Envia as coordenadas configuradas.";
+      return "Selecione qual localização enviar.";
+    }
+    case "encaminhar_humano": {
+      if (d.destino === "atendente") {
+        if (!d.atendenteNome) return "Selecione pra quem esse lead vai ser encaminhado.";
+        const mover = d.moverFunil && d.etapaTitulo ? ` e o move pra etapa "${d.etapaTitulo}"` : "";
+        return `Encaminha o lead para ${d.atendenteNome}${mover}.`;
+      }
+      if (d.destino === "equipe") {
+        if (!d.equipeNome) return "Selecione pra qual equipe esse lead vai ser encaminhado.";
+        const mover = d.moverFunil && d.etapaTitulo ? ` e o move pra etapa "${d.etapaTitulo}"` : "";
+        return `Encaminha o lead para a equipe ${d.equipeNome}${mover}.`;
+      }
+      if (d.destino === "distribuicao") return `Distribui o lead automaticamente entre os atendentes (${ROTULO_METODO_DISTRIBUICAO[String(d.metodoDistribuicao)] ?? "por disponibilidade"}).`;
+      if (d.destino === "manter") return "Mantém o responsável atual e tira o lead do fluxo automático.";
+      return "Escolha pra onde esse lead deve ser encaminhado.";
+    }
+    case "cancelar_agendamento": {
+      if (!d.criterio) return "Defina qual agendamento deve ser cancelado.";
+      const criterio = (ROTULO_CRITERIO_AGENDAMENTO[String(d.criterio)] ?? String(d.criterio)).toLowerCase();
+      const mensagem = d.enviarMensagem ? " e envia uma mensagem de cancelamento ao contato" : "";
+      return `Cancela o ${criterio}${mensagem}.`;
     }
     case "criar_negocio": {
       if (!d.nome) return "Defina o nome desse novo negócio.";

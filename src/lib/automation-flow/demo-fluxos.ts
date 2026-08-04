@@ -530,7 +530,7 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-ajuda-tarefa", "criar_tarefa", "acao", tarefaAjuda));
   edges.push(aresta("pv-ajuda-etq", "pv-ajuda-tarefa"));
 
-  const encamAjuda: EncaminharHumanoData = { equipeNome: "Suporte" };
+  const encamAjuda: EncaminharHumanoData = { destino: "equipe", equipeNome: "Suporte" };
   nodes.push(no("pv-ajuda-encam", "encaminhar_humano", "humano", encamAjuda));
   edges.push(aresta("pv-ajuda-tarefa", "pv-ajuda-encam"));
 
@@ -554,7 +554,7 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-insat-tarefa", "criar_tarefa", "acao", tarefaInsat));
   edges.push(aresta("pv-insat-notif", "pv-insat-tarefa"));
 
-  const encamInsat: EncaminharHumanoData = { equipeNome: "Suporte" };
+  const encamInsat: EncaminharHumanoData = { destino: "equipe", equipeNome: "Suporte" };
   nodes.push(no("pv-insat-encam", "encaminhar_humano", "humano", encamInsat));
   edges.push(aresta("pv-insat-tarefa", "pv-insat-encam"));
 

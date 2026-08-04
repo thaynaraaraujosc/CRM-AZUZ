@@ -324,8 +324,8 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "condicao_grupo",
     categoria: "condicao",
-    label: "Se/então (condição)",
-    descricao: "Ramifica o fluxo com base em regras E/OU/NÃO.",
+    label: "Condição",
+    descricao: "Verifica alguma informação do lead e segue por um caminho diferente conforme o resultado.",
     icone: "GitBranch",
     corClasse: corDaCategoria("condicao"),
     dataPadrao: () => ({ grupo: { id: `grupo-${Date.now()}`, tipo: "E", regras: [], subgrupos: [] } }),
@@ -384,7 +384,11 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Envia um cartão de contato.",
     icone: "Contact",
     corClasse: corDaCategoria("mensagem"),
-    dataPadrao: () => ({ nomeContato: "" }),
+    dataPadrao: () => ({
+      origemContato: "atual",
+      camposCompartilhados: ["nome", "telefone", "email"],
+      destinoModo: "conversa_atual",
+    }),
   },
   {
     tipo: "mensagem_localizacao",
@@ -393,7 +397,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Envia uma localização (endereço da clínica, etc).",
     icone: "MapPin",
     corClasse: corDaCategoria("mensagem"),
-    dataPadrao: () => ({}),
+    dataPadrao: () => ({ origem: "salva" }),
   },
   {
     tipo: "mensagem_botoes",
@@ -429,7 +433,14 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Envia um e-mail pro contato.",
     icone: "Mail",
     corClasse: corDaCategoria("mensagem"),
-    dataPadrao: () => ({ assunto: "", corpo: "" }),
+    dataPadrao: () => ({
+      destinatarioModo: "contato_email",
+      remetente: "contato@clinicavitta.com",
+      assunto: "",
+      corpo: "",
+      quandoModo: "imediato",
+      seSemEmail: "continuar",
+    }),
   },
   {
     tipo: "notificacao_interna",
@@ -604,7 +615,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Cancela um agendamento existente do contato.",
     icone: "CalendarX",
     corClasse: corDaCategoria("acao"),
-    dataPadrao: () => ({}),
+    dataPadrao: () => ({ criterio: "proximo", enviarMensagem: false, quandoModo: "imediato" }),
   },
   {
     tipo: "enviar_notificacao",
@@ -660,7 +671,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     descricao: "Tira o contato do fluxo automático e passa pra um atendente.",
     icone: "Headset",
     corClasse: corDaCategoria("humano"),
-    dataPadrao: () => ({}),
+    dataPadrao: () => ({ destino: "atendente", moverFunil: false, quandoModo: "imediato" }),
   },
 
   // ------------------------------------------------------------------ fim --

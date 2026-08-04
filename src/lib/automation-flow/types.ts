@@ -244,8 +244,36 @@ export type MensagemMidiaData = {
   arquivoUrlTemporaria?: string;
   legenda?: string;
 };
-export type MensagemContatoData = { nomeContato: string; telefone?: string };
-export type MensagemLocalizacaoData = { latitude?: number; longitude?: number; endereco?: string };
+export type OrigemContatoEnvio = "atual" | "outro" | "campo_dinamico";
+export type DestinoEnvioContato = "conversa_atual" | "atendente" | "equipe" | "numero";
+export type MensagemContatoData = {
+  origemContato: OrigemContatoEnvio;
+  contatoBuscaTexto?: string;
+  contatoSelecionadoNome?: string;
+  camposCompartilhados: string[];
+  destinoModo: DestinoEnvioContato;
+  destinoAtendente?: string;
+  destinoEquipe?: string;
+  destinoNumero?: string;
+};
+
+export type OrigemLocalizacao = "salva" | "workspace" | "endereco" | "coordenadas";
+export type MensagemLocalizacaoData = {
+  origem: OrigemLocalizacao;
+  localSalvoId?: string;
+  nomeLocal?: string;
+  endereco?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  latitude?: string;
+  longitude?: string;
+  temMensagem?: boolean;
+  mensagem?: string;
+};
 
 export type OpcaoBotaoLista = {
   id: string;
@@ -273,7 +301,23 @@ export type MensagemBotoesData = {
 };
 export type MensagemListaData = MensagemBotoesData;
 export type MensagemModeloWhatsappData = { templateId: string; variaveis?: Record<string, string> };
-export type MensagemEmailData = { assunto: string; corpo: string };
+
+export type DestinatarioEmailModo = "contato_email" | "outro_campo" | "especifico" | "responsavel" | "campo_personalizado";
+export type SeSemEmailModo = "continuar" | "encerrar" | "criar_tarefa" | "caminho_alternativo";
+export type MensagemEmailData = {
+  destinatarioModo: DestinatarioEmailModo;
+  destinatarioEspecifico?: string;
+  cc?: string;
+  cco?: string;
+  remetente?: string;
+  assunto: string;
+  corpo: string;
+  modeloId?: string;
+  quandoModo?: "imediato" | "apos_tempo";
+  tempoValor?: number;
+  tempoUnidade?: string;
+  seSemEmail?: SeSemEmailModo;
+};
 export type NotificacaoInternaData = { paraEquipe?: string; mensagem: string };
 export type EnviarFormularioData = {
   formularioOrigem?: "interno" | "externo";
@@ -336,13 +380,40 @@ export type AtualizarValorData = { modo?: ModoAtualizarValor; valor: string };
 export type StatusNegocio = "em_andamento" | "ganho" | "perdido";
 export type AtualizarStatusData = { status: string; motivoPerda?: string };
 export type AgendarConsultaData = { data?: string; horario?: string; profissional?: string; tipoServico?: string; observacao?: string };
-export type CancelarAgendamentoData = { motivo?: string };
+export type CriterioAgendamento = "proximo" | "ultimo_criado" | "tipo" | "responsavel" | "especifico";
+export type OrigemMensagemCancelamento = "modelo" | "criar_agora";
+export type CancelarAgendamentoData = {
+  criterio: CriterioAgendamento;
+  tipoAgendamento?: string;
+  responsavel?: string;
+  enviarMensagem?: boolean;
+  canalMensagem?: string;
+  origemMensagem?: OrigemMensagemCancelamento;
+  modeloId?: string;
+  mensagem?: string;
+  quandoModo?: "imediato" | "apos_tempo";
+  tempoValor?: number;
+  tempoUnidade?: string;
+};
 export type EnviarNotificacaoData = { paraEquipe?: string; mensagem: string };
 export type PausarAutomacoesData = Record<string, never>;
 export type CancelarAutomacoesData = Record<string, never>;
 export type ChamarWebhookData = { url: string; payload?: string };
 export type ExecutarIntegracaoData = { integracaoId?: string; acao?: string };
-export type EncaminharHumanoData = { atendenteNome?: string; equipeNome?: string };
+export type ModoDestinoAtendimento = "atendente" | "equipe" | "distribuicao" | "manter";
+export type MetodoDistribuicaoAtendimento = "disponibilidade" | "rodizio" | "menos_atendimentos" | "prioridade";
+export type EncaminharHumanoData = {
+  destino: ModoDestinoAtendimento;
+  atendenteNome?: string;
+  equipeNome?: string;
+  metodoDistribuicao?: MetodoDistribuicaoAtendimento;
+  moverFunil?: boolean;
+  funilId?: string;
+  etapaTitulo?: string;
+  quandoModo?: "imediato" | "apos_tempo";
+  tempoValor?: number;
+  tempoUnidade?: string;
+};
 export type EncerrarFluxoData = { motivo?: string };
 
 /* -------------------------------------------------------------------------- */

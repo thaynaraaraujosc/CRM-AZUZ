@@ -9,16 +9,21 @@ import type {
   AguardarData,
   AtualizarStatusData,
   AtualizarValorData,
+  CancelarAgendamentoData,
   CriarNegocioData,
   CriarTarefaData,
   DistribuirDisponibilidadeData,
   EncaminharEquipeData,
+  EncaminharHumanoData,
   EtiquetaEventoData,
   FlowEdge,
   FlowNode,
   FluxoAutomacao,
   GatilhoEtapaData,
   MensagemBotoesData,
+  MensagemContatoData,
+  MensagemEmailData,
+  MensagemLocalizacaoData,
   MensagemMidiaData,
   MensagemModeloWhatsappData,
   MensagemTextoData,
@@ -179,8 +184,8 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     if (!grupo || ((grupo.regras?.length ?? 0) === 0 && (grupo.subgrupos?.length ?? 0) === 0)) {
       problemas.push({
         id: proximoIdProblema(),
-        severidade: "aviso",
-        mensagem: `Bloco de condição "${n.titulo ?? n.type}" está vazio — nunca vai filtrar nada.`,
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem definir o que verificar.`,
         nodeId: n.id,
       });
     }
@@ -351,6 +356,129 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         id: proximoIdProblema(),
         severidade: "erro",
         mensagem: `Bloco "${n.titulo ?? n.type}" está sem equipe escolhida.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7m. Encaminhar pra atendimento humano sem destino escolhido (item 20: obrigatório destino, e
+  // se mover no funil, também funil+etapa).
+  nodes.forEach((n) => {
+    if (n.type !== "encaminhar_humano") return;
+    const data = n.data as EncaminharHumanoData;
+    const semDestino =
+      (data.destino === "atendente" && ehTextoVazio(data.atendenteNome)) ||
+      (data.destino === "equipe" && ehTextoVazio(data.equipeNome));
+    if (semDestino) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem atendente ou equipe escolhidos.`,
+        nodeId: n.id,
+      });
+    } else if (data.moverFunil && ehTextoVazio(data.funilId)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" vai mover o lead no funil, mas está sem funil e etapa escolhidos.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7n. Cancelar agendamento — precisa do critério, e se enviar mensagem, precisa do
+  // canal/mensagem-ou-modelo.
+  nodes.forEach((n) => {
+    if (n.type !== "cancelar_agendamento") return;
+    const data = n.data as CancelarAgendamentoData;
+    if (ehTextoVazio(data.criterio)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem definir qual agendamento será cancelado.`,
+        nodeId: n.id,
+      });
+    } else if (data.enviarMensagem && data.origemMensagem === "modelo" && ehTextoVazio(data.modeloId)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" vai enviar mensagem, mas está sem modelo escolhido.`,
+        nodeId: n.id,
+      });
+    } else if (data.enviarMensagem && data.origemMensagem !== "modelo" && ehTextoVazio(data.mensagem)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" vai enviar mensagem, mas está sem o texto da mensagem.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7o. Enviar contato — precisa do contato (quando "outro") e do destino.
+  nodes.forEach((n) => {
+    if (n.type !== "mensagem_contato") return;
+    const data = n.data as MensagemContatoData;
+    if (data.origemContato === "outro" && ehTextoVazio(data.contatoSelecionadoNome)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem o contato escolhido.`,
+        nodeId: n.id,
+      });
+    } else {
+      const destinoFaltando =
+        (data.destinoModo === "atendente" && ehTextoVazio(data.destinoAtendente)) ||
+        (data.destinoModo === "equipe" && ehTextoVazio(data.destinoEquipe)) ||
+        (data.destinoModo === "numero" && ehTextoVazio(data.destinoNumero));
+      if (destinoFaltando) {
+        problemas.push({
+          id: proximoIdProblema(),
+          severidade: "erro",
+          mensagem: `Bloco "${n.titulo ?? n.type}" está sem o destino de envio escolhido.`,
+          nodeId: n.id,
+        });
+      }
+    }
+  });
+
+  // 7p. Enviar localização — precisa de uma localização definida conforme a origem escolhida.
+  nodes.forEach((n) => {
+    if (n.type !== "mensagem_localizacao") return;
+    const data = n.data as MensagemLocalizacaoData;
+    const semLocalizacao =
+      (data.origem === "salva" && ehTextoVazio(data.localSalvoId)) ||
+      (data.origem === "endereco" && ehTextoVazio(data.nomeLocal)) ||
+      (data.origem === "coordenadas" && (ehTextoVazio(data.latitude) || ehTextoVazio(data.longitude)));
+    if (semLocalizacao) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem uma localização definida.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 7q. Enviar e-mail — precisa de destinatário (quando específico/campo) e de assunto/corpo.
+  nodes.forEach((n) => {
+    if (n.type !== "mensagem_email") return;
+    const data = n.data as MensagemEmailData;
+    const destinatarioFaltando =
+      (data.destinatarioModo === "especifico" || data.destinatarioModo === "outro_campo" || data.destinatarioModo === "campo_personalizado") &&
+      ehTextoVazio(data.destinatarioEspecifico);
+    if (destinatarioFaltando) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem o destinatário definido.`,
+        nodeId: n.id,
+      });
+    } else if (ehTextoVazio(data.assunto) || ehTextoVazio(data.corpo)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}" está sem destinatário e conteúdo definidos.`,
         nodeId: n.id,
       });
     }

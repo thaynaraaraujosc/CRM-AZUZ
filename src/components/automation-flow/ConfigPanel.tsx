@@ -7,14 +7,19 @@ import type {
   AgendarConsultaData,
   AtualizarStatusData,
   AtualizarValorData,
+  CancelarAgendamentoData,
   CondicaoGrupoData,
   ConfiguracoesFluxo,
   CriarTarefaData,
   DistribuirDisponibilidadeData,
   EncaminharEquipeData,
+  EncaminharHumanoData,
   FlowNode,
   FluxoAutomacao,
   MensagemBotoesData,
+  MensagemContatoData,
+  MensagemEmailData,
+  MensagemLocalizacaoData,
   MensagemModeloWhatsappData,
   ProblemaValidacao,
   TarefaEventoData,
@@ -25,13 +30,18 @@ import { AgendarConsultaForm } from "./forms/AgendarConsultaForm";
 import { AguardarForm } from "./forms/AguardarForm";
 import { AtualizarStatusForm } from "./forms/AtualizarStatusForm";
 import { AtualizarValorForm } from "./forms/AtualizarValorForm";
+import { CancelarAgendamentoForm } from "./forms/CancelarAgendamentoForm";
 import { CondicaoForm } from "./forms/CondicaoForm";
 import { ConfiguracoesGeraisForm } from "./forms/ConfiguracoesGeraisForm";
 import { CriarTarefaForm } from "./forms/CriarTarefaForm";
 import { DistribuirDisponibilidadeForm } from "./forms/DistribuirDisponibilidadeForm";
 import { EncaminharEquipeForm } from "./forms/EncaminharEquipeForm";
+import { EncaminharHumanoForm } from "./forms/EncaminharHumanoForm";
 import { GenericForm } from "./forms/GenericForm";
+import { MensagemContatoForm } from "./forms/MensagemContatoForm";
+import { MensagemEmailForm } from "./forms/MensagemEmailForm";
 import { MensagemForm } from "./forms/MensagemForm";
+import { MensagemLocalizacaoForm } from "./forms/MensagemLocalizacaoForm";
 import { MensagemMidiaForm } from "./forms/MensagemMidiaForm";
 import { MensagemModeloForm } from "./forms/MensagemModeloForm";
 import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
@@ -80,6 +90,21 @@ function FormularioDoNode({
   }
   if (node.type === "mensagem_modelo_whatsapp") {
     return <MensagemModeloForm data={node.data as MensagemModeloWhatsappData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "encaminhar_humano") {
+    return <EncaminharHumanoForm data={node.data as EncaminharHumanoData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "cancelar_agendamento") {
+    return <CancelarAgendamentoForm data={node.data as CancelarAgendamentoData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "mensagem_contato") {
+    return <MensagemContatoForm data={node.data as MensagemContatoData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "mensagem_localizacao") {
+    return <MensagemLocalizacaoForm data={node.data as MensagemLocalizacaoData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "mensagem_email") {
+    return <MensagemEmailForm data={node.data as MensagemEmailData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
   }
   if (TIPOS_OPCOES.has(node.type)) {
     return (
