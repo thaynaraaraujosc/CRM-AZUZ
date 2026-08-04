@@ -2313,6 +2313,10 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
+.origem-formulario {
+  color: #2e6bff;
+}
+
 .wa-main {
   flex: 1;
   min-width: 0;
@@ -5814,44 +5818,7 @@ button.camp-row:hover {
   color: var(--blue);
 }
 
-/* ---------------- Formulário ---------------- */
-
-.form-builder-layout {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 14px;
-  align-items: start;
-}
-
-.form-pergunta-row {
-  padding: 12px 17px;
-  border-bottom: 1px solid var(--line-soft);
-}
-
-.form-pergunta-tipo {
-  flex: 0 0 auto;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--blue);
-  background: var(--blue-soft);
-  padding: 4px 9px;
-  border-radius: 20px;
-  white-space: nowrap;
-}
-
-.form-pergunta-opcoes {
-  flex: 1 1 100%;
-  width: 100%;
-  padding-left: 2px;
-}
-
-.form-opcao-row {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 6px;
-}
+/* ---------------- Formulários — construtor profissional ---------------- */
 
 .cor-chips {
   display: flex;
@@ -5876,307 +5843,6 @@ button.camp-row:hover {
 .cor-chip.active {
   border-color: var(--blue);
   box-shadow: 0 0 0 2px var(--blue-soft);
-}
-
-.form-cor-preview {
-  margin-top: 14px;
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid var(--line-soft);
-  transition: background 0.15s ease;
-}
-
-.form-cor-preview-label {
-  display: block;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-  margin-bottom: 10px;
-}
-
-.form-public-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 48px 24px;
-  background: var(--navy-raised);
-}
-
-.form-public-card {
-  width: 100%;
-  max-width: 560px;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.16);
-}
-
-.form-public-obrigado {
-  width: 100%;
-  max-width: 480px;
-  border-radius: 16px;
-  padding: 48px 32px;
-  text-align: center;
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.16);
-}
-
-.form-public-obrigado-preview {
-  text-align: center;
-  padding: 20px 8px;
-  color: #0b1533;
-}
-
-.form-public-obrigado-preview h2 {
-  font-size: 16px;
-  margin: 0;
-}
-
-@media (max-width: 900px) {
-  .form-builder-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Formulário — visual mais suave e amigável, no estilo doc/ClickUp */
-
-.form-studio .card {
-  border: none;
-  box-shadow: 0 1px 3px rgba(11, 21, 51, 0.06);
-  border-radius: 16px;
-}
-
-.form-studio .panel-h {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--line-soft);
-}
-
-.form-studio .field {
-  padding: 14px 20px;
-  border-bottom: none;
-}
-
-.form-studio .int-row {
-  border-bottom: 1px solid var(--line-soft);
-  border-radius: 12px;
-  margin: 0 8px;
-}
-
-.form-studio .int-row:hover {
-  background: var(--navy-raised);
-}
-
-.form-studio .form-pergunta-row {
-  border: 1px solid var(--line-soft);
-  border-bottom: 1px solid var(--line-soft);
-  border-radius: 12px;
-  margin: 10px 14px;
-  padding: 14px 16px;
-  background: var(--navy);
-}
-
-.form-studio .form-pergunta-row:first-child {
-  margin-top: 14px;
-}
-
-.form-studio .form-link-box {
-  padding: 14px;
-  border-radius: 12px;
-  background: var(--navy-raised);
-  margin-bottom: 12px;
-}
-
-.form-studio .form-link-box:last-child {
-  margin-bottom: 0;
-}
-
-.form-studio .form-link-h {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0 0 6px;
-}
-
-.form-studio .doc-cover {
-  border-radius: 14px 14px 0 0;
-  border: none;
-  margin: 0 0 16px;
-  height: 150px;
-}
-
-.form-studio .key-box {
-  border-radius: 10px;
-  font-size: 11.5px;
-  border-color: var(--line-soft);
-}
-
-.form-studio .field .input,
-.form-studio .input,
-.form-studio .btn.ghost,
-.form-studio .remove-chip,
-.form-studio .dropdown-pop {
-  border-color: var(--line-soft);
-}
-
-.form-pergunta-topo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.form-pergunta-campo {
-  margin-top: 10px;
-  padding-left: 2px;
-}
-
-.form-pergunta-view {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 14px 16px 14px 8px;
-  margin: 10px 14px;
-  border-radius: 12px;
-  transition: background 0.15s ease;
-}
-
-.form-pergunta-view:first-child {
-  margin-top: 14px;
-}
-
-.form-pergunta-view:hover {
-  background: var(--navy-raised);
-}
-
-.form-pergunta-handle {
-  flex: 0 0 auto;
-  padding-top: 2px;
-  color: var(--text-faint);
-  font-size: 13px;
-  cursor: grab;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.form-pergunta-view:hover .form-pergunta-handle {
-  opacity: 1;
-}
-
-.form-pergunta-view-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.form-pergunta-editar-btn {
-  position: absolute;
-  top: -14px;
-  right: 14px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: none;
-  background: #1f2430;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-  box-shadow: 0 6px 16px rgba(11, 21, 51, 0.25);
-  cursor: pointer;
-}
-
-.form-pergunta-view:hover .form-pergunta-editar-btn {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.form-pergunta-enunciado-bloco {
-  width: 100%;
-}
-
-.form-pergunta-enunciado {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0 0 4px;
-}
-
-.form-pergunta-asterisco {
-  color: #d64545;
-}
-
-.form-pergunta-dica {
-  font-size: 11.5px;
-  color: var(--text-faint);
-  margin: 0 0 8px;
-}
-
-.form-pergunta-dica-input {
-  display: block;
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid var(--line-soft);
-  background: none;
-  font-size: 12px;
-  color: var(--text-muted);
-  padding: 6px 0 8px;
-  margin: 6px 0 10px;
-}
-
-.form-pergunta-dica-input:focus {
-  outline: none;
-  border-bottom-color: var(--blue);
-}
-
-/* Campo de resposta em si — na prévia e na página pública do formulário. */
-.form-resposta-campo {
-  background: var(--navy-raised, #fff);
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  padding: 10px 13px;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--ink);
-  font-family: inherit;
-}
-
-.form-resposta-campo::placeholder {
-  color: var(--text-faint);
-}
-
-.form-resposta-campo:focus {
-  outline: none;
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px var(--blue-soft-2);
-}
-
-.form-resposta-campo:disabled {
-  cursor: default;
-  opacity: 0.85;
-}
-
-.form-pergunta-obrigatoria {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-faint);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.form-upload-preview {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 9px;
-  border: 1px dashed var(--line-soft);
-  font-size: 12px;
-  color: var(--text-faint);
 }
 
 .form-scratch-card {
@@ -6225,41 +5891,600 @@ button.camp-row:hover {
   margin-top: 2px;
 }
 
-.form-header-card {
-  padding: 20px 24px 24px;
+.form-link-box {
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--navy-raised);
+  margin-bottom: 12px;
 }
 
-.form-title-input {
-  display: block;
-  width: 100%;
-  border: none;
+.form-link-box:last-child {
+  margin-bottom: 0;
+}
+
+.form-link-h {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+/* Barra superior do construtor: voltar, nome editável, status, abas Editar/Design/Respostas, ações. */
+.form-builder-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.form-builder-nome-input {
+  border: 1px solid transparent;
   background: none;
   font-family: var(--display);
   font-weight: 700;
-  font-size: 24px;
+  font-size: 15px;
   color: var(--ink);
-  padding: 0;
-  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  min-width: 120px;
+  max-width: 320px;
 }
 
-.form-title-input:focus {
+.form-builder-nome-input:hover {
+  background: var(--navy-raised);
+}
+
+.form-builder-nome-input:focus {
   outline: none;
+  border-color: var(--blue);
+  background: var(--navy);
 }
 
-.form-desc-input {
-  display: block;
-  width: 100%;
+.form-builder-topbar-acoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+/* Layout de 4 áreas: páginas | canvas central | painel contextual */
+.form-builder-4areas {
+  display: grid;
+  grid-template-columns: 220px 1fr 320px;
+  gap: 0;
+  min-height: 60vh;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--navy);
+}
+
+.form-builder-paginas {
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+
+.form-pagina-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin: 2px 6px;
+  transition: opacity 0.15s ease;
+}
+
+.form-pagina-item.arrastando {
+  opacity: 0.45;
+}
+
+.form-pagina-handle {
+  flex: 0 0 auto;
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: grab;
+  padding: 4px 2px;
+}
+
+.form-pagina-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   border: none;
-  border-bottom: 1px solid var(--line-soft);
   background: none;
+  text-align: left;
+  padding: 9px 8px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.form-pagina-item.active .form-pagina-btn {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.form-pagina-btn:hover {
+  background: var(--navy-raised);
+}
+
+.form-pagina-count {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.form-pagina-acoes {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.form-pagina-item:hover .form-pagina-acoes {
+  opacity: 1;
+}
+
+.form-pagina-acao-btn {
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.form-pagina-acao-btn:hover {
+  background: var(--navy-raised);
+  color: var(--ink);
+}
+
+.form-pagina-acao-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.form-builder-canvas {
+  overflow-y: auto;
+  padding: 24px;
+  background: var(--navy-deep);
+}
+
+.form-canvas-folha {
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(11, 21, 51, 0.08);
+}
+
+.form-campo-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 12px 12px 6px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.form-campo-card:hover {
+  background: var(--navy-raised);
+}
+
+.form-campo-card.selecionado {
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+}
+
+.form-campo-card.oculto {
+  opacity: 0.5;
+}
+
+.form-campo-card.arrastando {
+  opacity: 0.35;
+}
+
+.form-campo-handle {
+  flex: 0 0 auto;
+  padding-top: 2px;
+  color: var(--text-faint);
+  font-size: 13px;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.form-campo-card:hover .form-campo-handle {
+  opacity: 1;
+}
+
+.form-campo-corpo {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Os campos de resposta aqui dentro só existem pra pré-visualizar (disabled) — sem isso, clicar em
+   cima do input/select/radio pra selecionar o card não funciona: elemento de formulário desabilitado
+   não deixa o evento de clique borbulhar até o card, então o clique nunca chega no onClick do card. */
+.form-campo-corpo input:disabled,
+.form-campo-corpo textarea:disabled,
+.form-campo-corpo select:disabled,
+.form-campo-corpo button:disabled {
+  pointer-events: none;
+}
+
+.form-campo-acoes {
+  position: absolute;
+  top: -12px;
+  right: 10px;
+  display: flex;
+  gap: 2px;
+  background: #1f2430;
+  border-radius: 8px;
+  padding: 3px;
+  box-shadow: 0 6px 16px rgba(11, 21, 51, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.form-campo-card:hover .form-campo-acoes,
+.form-campo-card.selecionado .form-campo-acoes {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.form-campo-acoes button {
+  border: none;
+  background: none;
+  color: #fff;
+  font-size: 11px;
+  padding: 5px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.form-campo-acoes button:hover,
+.form-campo-acoes button.on {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.form-builder-painel-direito {
+  border-left: 1px solid var(--line);
+  overflow-y: auto;
+}
+
+.form-painel-secao {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.form-painel-secao-h {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 8px;
+}
+
+.form-regra-logica {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.form-regra-logica select,
+.form-regra-logica input {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-builder-design {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 640px;
+}
+
+.form-preview-viewport {
+  margin: 0 auto;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(11, 21, 51, 0.1);
+}
+
+/* Campo de resposta em si — no construtor, na prévia e na página pública. */
+.form-resposta-campo {
+  background: var(--navy-raised, #fff);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px 13px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  font-family: inherit;
+}
+
+.form-resposta-campo::placeholder {
+  color: var(--text-faint);
+}
+
+.form-resposta-campo:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-soft-2);
+}
+
+.form-resposta-campo:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.form-campo-prefixado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-campo-prefixado > span {
+  flex: 0 0 auto;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.form-estrela-btn {
+  border: none;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.form-nota-linha {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.form-nota-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.form-nota-btn.active {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.form-bloco-titulo {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 6px 0 0;
+}
+
+.form-bloco-texto {
   font-size: 12.5px;
   color: var(--text-muted);
-  padding: 0 0 10px;
+  margin: 0;
 }
 
-.form-desc-input:focus {
-  outline: none;
-  border-bottom-color: var(--blue);
+.form-bloco-divisor {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 4px 0;
+}
+
+.form-bloco-espacamento {
+  height: 24px;
+}
+
+.form-bloco-imagem {
+  max-width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.form-bloco-imagem-vazia {
+  padding: 20px;
+  text-align: center;
+  border: 1px dashed var(--line-soft);
+  border-radius: 8px;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.form-upload-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: 1px dashed var(--line-soft);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.form-pergunta-enunciado-bloco {
+  width: 100%;
+}
+
+.form-pergunta-enunciado {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.form-pergunta-asterisco {
+  color: #d64545;
+}
+
+.form-pergunta-dica {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin: 0 0 8px;
+}
+
+.form-pergunta-ajuda {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin: 4px 0 0;
+}
+
+.form-pergunta-erro {
+  font-size: 11px;
+  font-weight: 600;
+  color: #d64545;
+  margin: 4px 0 0;
+}
+
+@media (max-width: 1100px) {
+  .form-builder-4areas {
+    grid-template-columns: 1fr;
+  }
+
+  .form-builder-paginas,
+  .form-builder-painel-direito {
+    border-right: none;
+    border-left: none;
+    border-bottom: 1px solid var(--line);
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  .form-builder-topbar {
+    padding: 12px 14px;
+  }
+
+  .form-builder-topbar-acoes {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* ---------------- Formulário — página pública ---------------- */
+
+.form-public-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 24px;
+  background: var(--navy-raised);
+}
+
+.form-public-card {
+  width: 100%;
+  max-width: 560px;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.16);
+  color: #0b1533;
+}
+
+.form-public-card.tema-escuro {
+  background: #14182a !important;
+  color: #eef1fb;
+}
+
+.form-public-card.tela-cheia {
+  max-width: 100%;
+}
+
+.form-public-logo {
+  max-height: 48px;
+  margin-bottom: 14px;
+  display: block;
+}
+
+.form-public-banner {
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  display: block;
+}
+
+.form-public-campos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.form-campo-total {
+  flex: 1 1 100%;
+  padding: 10px 0;
+}
+
+.form-campo-metade {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 200px;
+  padding: 10px 0;
+}
+
+.form-public-obrigado {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 16px;
+  padding: 48px 32px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.16);
+  color: #0b1533;
+}
+
+.form-public-obrigado.tema-escuro {
+  background: #14182a !important;
+  color: #eef1fb;
+}
+
+@media (max-width: 640px) {
+  .form-public-page {
+    padding: 20px 12px;
+  }
+
+  .form-public-card,
+  .form-public-obrigado {
+    padding: 20px;
+  }
+
+  .form-campo-metade {
+    flex: 1 1 100%;
+  }
 }
 
 /* -------------------------------------------------------------------------- */

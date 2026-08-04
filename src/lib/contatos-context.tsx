@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type Dispatch,
   type ReactNode,
@@ -11,6 +12,14 @@ import {
 
 import { contatos as contatosIniciais, type Contato } from "@/lib/data";
 import { slugId } from "@/lib/ids";
+
+/**
+ * Persistido (diferente de antes) pra que a página pública de formulário (`/formulario-preview`,
+ * que abre numa aba separada sem acesso ao Context do React) consiga criar/atualizar um contato de
+ * verdade ao registrar uma resposta, e a aba principal do CRM veja isso — mesmo padrão de
+ * `FORMULARIOS_STORAGE_KEY`/`RESPOSTAS_STORAGE_KEY` em `formularios-context.tsx`.
+ */
+export const CONTATOS_STORAGE_KEY = "azuz-crm-contatos";
 
 type DadosContato = Omit<Contato, "initials" | "nome" | "origem" | "etapa" | "responsavel">;
 
@@ -50,9 +59,39 @@ function iniciais(nome: string) {
  * WhatsApp precisam aparecer nos dois lugares, sem cópias dessincronizadas.
  */
 export function ContatosProvider({ children }: { children: ReactNode }) {
-  const [contatos, setContatos] = useState<Contato[]>(() => [
-    ...contatosIniciais,
-  ]);
+  const [contatos, setContatos] = useState<Contato[]>(() => {
+    if (typeof window === "undefined") return [...contatosIniciais];
+    try {
+      const salvos = window.localStorage.getItem(CONTATOS_STORAGE_KEY);
+      if (!salvos) return [...contatosIniciais];
+      return JSON.parse(salvos) as Contato[];
+    } catch {
+      return [...contatosIniciais];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CONTATOS_STORAGE_KEY, JSON.stringify(contatos));
+    } catch {
+      // localStorage indisponível — segue só em memória.
+    }
+  }, [contatos]);
+
+  // A resposta pública de um formulário (aba separada, sem esse Provider) grava direto no
+  // localStorage — sem isso, a aba do CRM só veria o contato novo depois de recarregar a página.
+  useEffect(() => {
+    function aoMudarStorage(e: StorageEvent) {
+      if (e.key !== CONTATOS_STORAGE_KEY || !e.newValue) return;
+      try {
+        setContatos(JSON.parse(e.newValue) as Contato[]);
+      } catch {
+        // payload inválido — ignora.
+      }
+    }
+    window.addEventListener("storage", aoMudarStorage);
+    return () => window.removeEventListener("storage", aoMudarStorage);
+  }, []);
 
   function salvarDadosContato(nome: string, dados: Partial<DadosContato> & Record<string, unknown>) {
     setContatos((prev) => {

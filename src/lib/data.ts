@@ -32,7 +32,8 @@ export type Origem =
   | "Google Ads"
   | "Instagram"
   | "TikTok"
-  | "Indicação";
+  | "Indicação"
+  | "Formulário";
 
 export const ORIGENS: Origem[] = [
   "Meta Ads",
@@ -40,6 +41,7 @@ export const ORIGENS: Origem[] = [
   "Instagram",
   "TikTok",
   "Indicação",
+  "Formulário",
 ];
 
 /** Classe CSS que pinta a nomenclatura da origem com a cor da própria plataforma. */
@@ -55,6 +57,8 @@ export function classeOrigem(origem: Origem): string {
       return "origem-tiktok";
     case "Indicação":
       return "origem-indicacao";
+    case "Formulário":
+      return "origem-formulario";
   }
 }
 
