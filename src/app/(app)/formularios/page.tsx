@@ -921,8 +921,11 @@ function PainelCampo({
   onAtualizar: (patch: Partial<PerguntaFormulario>) => void;
 }) {
   const ehLayout = TIPOS_LAYOUT.includes(pergunta.tipo);
-  const comOpcoes = pergunta.tipo === "lista_suspensa" || pergunta.tipo === "opcao_unica" || pergunta.tipo === "checkbox" || pergunta.tipo === "multipla_escolha";
+  const comOpcoes = pergunta.tipo === "lista_suspensa" || pergunta.tipo === "opcao_unica" || pergunta.tipo === "multipla_escolha";
   const comMinMax = pergunta.tipo === "numero" || pergunta.tipo === "texto_curto" || pergunta.tipo === "texto_longo";
+  const categoriaCampo = TIPOS_CAMPO_FORMULARIO.find((t) => t.tipo === pergunta.tipo)?.categoria;
+  const comMascara = categoriaCampo === "texto" && !["texto_longo", "email", "url", "senha"].includes(pergunta.tipo);
+  const comRegex = categoriaCampo === "texto";
   const logica: LogicaCampo = pergunta.logica ?? { modo: "mostrar_se", regras: [] };
 
   return (
@@ -1031,30 +1034,56 @@ function PainelCampo({
 
       {!ehLayout ? (
         <>
-          {comMinMax ? (
+          {comMinMax || comMascara || comRegex ? (
             <SecaoPainel titulo="Validação">
-              <div className="filters-row">
-                <div className="field" style={{ flex: 1 }}>
-                  <label>Mínimo</label>
+              {comMinMax ? (
+                <div className="filters-row">
+                  <div className="field" style={{ flex: 1 }}>
+                    <label>Mínimo</label>
+                    <input
+                      className="input"
+                      style={{ width: "100%" }}
+                      type="number"
+                      value={pergunta.min ?? ""}
+                      onChange={(e) => onAtualizar({ min: e.target.value ? Number(e.target.value) : undefined })}
+                    />
+                  </div>
+                  <div className="field" style={{ flex: 1 }}>
+                    <label>Máximo</label>
+                    <input
+                      className="input"
+                      style={{ width: "100%" }}
+                      type="number"
+                      value={pergunta.max ?? ""}
+                      onChange={(e) => onAtualizar({ max: e.target.value ? Number(e.target.value) : undefined })}
+                    />
+                  </div>
+                </div>
+              ) : null}
+              {comMascara ? (
+                <div className="field">
+                  <label>Máscara</label>
                   <input
                     className="input"
                     style={{ width: "100%" }}
-                    type="number"
-                    value={pergunta.min ?? ""}
-                    onChange={(e) => onAtualizar({ min: e.target.value ? Number(e.target.value) : undefined })}
+                    value={pergunta.mascara ?? ""}
+                    onChange={(e) => onAtualizar({ mascara: e.target.value || undefined })}
+                    placeholder="Ex.: 999.999.999-99 (9 = dígito)"
                   />
                 </div>
-                <div className="field" style={{ flex: 1 }}>
-                  <label>Máximo</label>
+              ) : null}
+              {comRegex ? (
+                <div className="field">
+                  <label>Padrão (regex)</label>
                   <input
                     className="input"
                     style={{ width: "100%" }}
-                    type="number"
-                    value={pergunta.max ?? ""}
-                    onChange={(e) => onAtualizar({ max: e.target.value ? Number(e.target.value) : undefined })}
+                    value={pergunta.regex ?? ""}
+                    onChange={(e) => onAtualizar({ regex: e.target.value || undefined })}
+                    placeholder="Ex.: ^[A-Za-z]+$"
                   />
                 </div>
-              </div>
+              ) : null}
             </SecaoPainel>
           ) : null}
 

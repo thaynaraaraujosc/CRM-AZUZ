@@ -17,26 +17,34 @@ export type TipoCampoFormulario =
   | "texto_longo"
   | "numero"
   | "moeda"
+  | "porcentagem"
   | "telefone"
   | "email"
   | "cpf"
   | "cnpj"
   | "url"
+  | "senha"
   // data
   | "data"
   | "hora"
   | "data_hora"
+  | "periodo"
   // escolha
   | "lista_suspensa"
   | "opcao_unica"
   | "checkbox"
   | "multipla_escolha"
+  | "tags"
   | "sim_nao"
   | "avaliacao"
   | "nota"
   // upload (visual apenas — sem storage real, front-end apenas)
   | "arquivo"
+  | "documento"
   | "imagem"
+  | "video"
+  | "audio"
+  | "assinatura"
   // pessoas (via busca real no CRM)
   | "contato"
   | "responsavel"
@@ -56,23 +64,31 @@ export const TIPOS_CAMPO_FORMULARIO: {
   { tipo: "texto_longo", label: "Texto longo", categoria: "texto" },
   { tipo: "numero", label: "Número", categoria: "texto" },
   { tipo: "moeda", label: "Moeda", categoria: "texto" },
+  { tipo: "porcentagem", label: "Porcentagem", categoria: "texto" },
   { tipo: "telefone", label: "Telefone", categoria: "texto" },
   { tipo: "email", label: "E-mail", categoria: "texto" },
   { tipo: "cpf", label: "CPF", categoria: "texto" },
   { tipo: "cnpj", label: "CNPJ", categoria: "texto" },
   { tipo: "url", label: "URL", categoria: "texto" },
+  { tipo: "senha", label: "Senha", categoria: "texto" },
   { tipo: "data", label: "Data", categoria: "data" },
   { tipo: "hora", label: "Hora", categoria: "data" },
   { tipo: "data_hora", label: "Data e hora", categoria: "data" },
+  { tipo: "periodo", label: "Período", categoria: "data" },
   { tipo: "lista_suspensa", label: "Lista suspensa", categoria: "escolha" },
   { tipo: "opcao_unica", label: "Múltipla escolha (uma opção)", categoria: "escolha" },
   { tipo: "checkbox", label: "Caixas de seleção", categoria: "escolha" },
   { tipo: "multipla_escolha", label: "Múltipla escolha (várias opções)", categoria: "escolha" },
+  { tipo: "tags", label: "Tags", categoria: "escolha" },
   { tipo: "sim_nao", label: "Sim / Não", categoria: "escolha" },
   { tipo: "avaliacao", label: "Avaliação (estrelas)", categoria: "escolha" },
   { tipo: "nota", label: "Nota (0 a 10)", categoria: "escolha" },
   { tipo: "arquivo", label: "Arquivo", categoria: "upload" },
+  { tipo: "documento", label: "Documento", categoria: "upload" },
   { tipo: "imagem", label: "Imagem", categoria: "upload" },
+  { tipo: "video", label: "Vídeo", categoria: "upload" },
+  { tipo: "audio", label: "Áudio", categoria: "upload" },
+  { tipo: "assinatura", label: "Assinatura", categoria: "upload" },
   { tipo: "contato", label: "Contato", categoria: "pessoas" },
   { tipo: "responsavel", label: "Responsável", categoria: "pessoas" },
   { tipo: "titulo", label: "Título", categoria: "layout" },
@@ -157,6 +173,11 @@ export type PerguntaFormulario = {
   opcoes?: string[];
   min?: number;
   max?: number;
+  /** Padrão de máscara (ex.: "999.999.999-99") — "9" vira dígito digitado, o resto é literal e é
+   * inserido automaticamente enquanto a pessoa digita. Só faz sentido pra campos de texto/número. */
+  mascara?: string;
+  /** Regex adicional que o valor precisa bater pra ser aceito no envio (além de obrigatório/min/max). */
+  regex?: string;
   largura: "total" | "metade";
   /** Campo do Contato que essa resposta preenche de verdade — undefined = campo novo, não mapeado. */
   mapeamentoCrm?: string;
@@ -741,4 +762,25 @@ export function condicaoBate(
     default:
       return true;
   }
+}
+
+/**
+ * Aplica uma máscara simples de dígito ("9" no padrão = próximo dígito digitado, qualquer outro
+ * caractere do padrão é literal e entra sozinho) — mesma convenção usada por libs de máscara mais
+ * conhecidas, suficiente pra CPF/CNPJ/telefone sem precisar de dependência nova. Ignora tudo que não
+ * for dígito no valor digitado, então funciona bem tanto digitando quanto colando.
+ */
+export function aplicarMascara(valor: string, mascara: string): string {
+  const digitos = valor.replace(/\D/g, "");
+  let resultado = "";
+  let indiceDigito = 0;
+  for (let i = 0; i < mascara.length && indiceDigito < digitos.length; i++) {
+    if (mascara[i] === "9") {
+      resultado += digitos[indiceDigito];
+      indiceDigito++;
+    } else {
+      resultado += mascara[i];
+    }
+  }
+  return resultado;
 }

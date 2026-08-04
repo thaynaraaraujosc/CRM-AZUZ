@@ -179,8 +179,19 @@ function FormularioPreviewContent() {
     const proximosErros: Record<string, string> = {};
     for (const pergunta of camposDaPagina) {
       if (TIPOS_LAYOUT.includes(pergunta.tipo)) continue;
-      if (perguntaEhObrigatoria(pergunta, valores) && !valores[pergunta.id]?.trim()) {
+      const valor = valores[pergunta.id]?.trim() ?? "";
+      if (perguntaEhObrigatoria(pergunta, valores) && !valor) {
         proximosErros[pergunta.id] = "Campo obrigatório.";
+        continue;
+      }
+      if (valor && pergunta.regex) {
+        try {
+          if (!new RegExp(pergunta.regex).test(valor)) {
+            proximosErros[pergunta.id] = "Formato inválido.";
+          }
+        } catch {
+          // regex configurada errada no builder — não trava o envio do cliente por causa disso.
+        }
       }
     }
     setErros(proximosErros);

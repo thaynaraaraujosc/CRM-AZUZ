@@ -1,8 +1,157 @@
 "use client";
 
-import type { PerguntaFormulario } from "@/lib/formularios-context";
+import { useRef, useState } from "react";
+
+import { aplicarMascara, type PerguntaFormulario } from "@/lib/formularios-context";
 
 export type PessoaOpcao = { id: string; nome: string };
+
+/** Campo de tags — digita e aperta Enter/vírgula pra virar chip; Backspace num campo vazio remove o
+ * último chip. `valor` guarda as tags já confirmadas, separadas por vírgula. */
+function CampoTags({
+  interativo,
+  valor = "",
+  onMudarValor,
+  placeholder,
+}: {
+  interativo?: boolean;
+  valor?: string;
+  onMudarValor?: (valor: string) => void;
+  placeholder?: string;
+}) {
+  const [digitando, setDigitando] = useState("");
+  const tags = valor ? valor.split(",").filter(Boolean) : [];
+
+  function confirmarTag() {
+    const nova = digitando.trim();
+    if (!nova || tags.includes(nova)) {
+      setDigitando("");
+      return;
+    }
+    onMudarValor?.([...tags, nova].join(","));
+    setDigitando("");
+  }
+
+  function removerTag(tag: string) {
+    onMudarValor?.(tags.filter((t) => t !== tag).join(","));
+  }
+
+  if (!interativo) {
+    return (
+      <div className="form-tags-lista">
+        {tags.length > 0 ? tags.map((t) => <span className="form-tag-chip" key={t}>{t}</span>) : <span className="hint">{placeholder || "Digite e aperte Enter…"}</span>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="form-tags-lista">
+      {tags.map((t) => (
+        <span className="form-tag-chip" key={t}>
+          {t}
+          <button type="button" onClick={() => removerTag(t)} aria-label={`Remover tag ${t}`}>
+            ✕
+          </button>
+        </span>
+      ))}
+      <input
+        className="form-tags-input"
+        value={digitando}
+        placeholder={tags.length === 0 ? placeholder || "Digite e aperte Enter…" : ""}
+        onChange={(e) => setDigitando(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            confirmarTag();
+          } else if (e.key === "Backspace" && !digitando && tags.length > 0) {
+            removerTag(tags[tags.length - 1]);
+          }
+        }}
+        onBlur={confirmarTag}
+      />
+    </div>
+  );
+}
+
+/** Assinatura por desenho (mouse/toque) — sem backend pra guardar arquivo, o "valor" salvo é a
+ * própria imagem em data URL, gerada a partir do canvas. */
+function CampoAssinatura({
+  interativo,
+  valor = "",
+  onMudarValor,
+}: {
+  interativo?: boolean;
+  valor?: string;
+  onMudarValor?: (valor: string) => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const desenhandoRef = useRef(false);
+
+  function posicao(e: React.MouseEvent<HTMLCanvasElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  function iniciar(e: React.MouseEvent<HTMLCanvasElement>) {
+    if (!interativo) return;
+    desenhandoRef.current = true;
+    const ctx = canvasRef.current?.getContext("2d");
+    const { x, y } = posicao(e);
+    ctx?.beginPath();
+    ctx?.moveTo(x, y);
+  }
+
+  function desenhar(e: React.MouseEvent<HTMLCanvasElement>) {
+    if (!interativo || !desenhandoRef.current) return;
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const { x, y } = posicao(e);
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#0b1533";
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }
+
+  function finalizar() {
+    if (!interativo || !desenhandoRef.current) return;
+    desenhandoRef.current = false;
+    const dataUrl = canvasRef.current?.toDataURL("image/png");
+    if (dataUrl) onMudarValor?.(dataUrl);
+  }
+
+  function limpar() {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    onMudarValor?.("");
+  }
+
+  return (
+    <div>
+      {valor && !interativo ? (
+        // eslint-disable-next-line @next/next/no-img-element -- data URL local, sem otimização de imagem cabível
+        <img src={valor} alt="Assinatura" className="form-assinatura-preview" />
+      ) : (
+        <canvas
+          ref={canvasRef}
+          className={`form-assinatura-canvas${interativo ? "" : " desabilitado"}`}
+          width={280}
+          height={110}
+          onMouseDown={iniciar}
+          onMouseMove={desenhar}
+          onMouseUp={finalizar}
+          onMouseLeave={finalizar}
+        />
+      )}
+      {interativo ? (
+        <button type="button" className="link" style={{ marginTop: 4 }} onClick={limpar}>
+          Limpar assinatura
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 /**
  * Mostra o campo de resposta de acordo com o tipo escolhido.
@@ -26,8 +175,11 @@ export function CampoResposta({
   responsaveisDisponiveis?: PessoaOpcao[];
 }) {
   const disabled = !interativo || pergunta.somenteLeitura;
+  function aoMudar(v: string) {
+    onMudarValor?.(pergunta.mascara ? aplicarMascara(v, pergunta.mascara) : v);
+  }
   const props = interativo
-    ? { value: valor, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => onMudarValor?.(e.target.value) }
+    ? { value: valor, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => aoMudar(e.target.value) }
     : { placeholder: pergunta.placeholder || "Digite sua resposta…" };
 
   switch (pergunta.tipo) {
@@ -69,6 +221,32 @@ export function CampoResposta({
           />
         </div>
       );
+    case "porcentagem":
+      return (
+        <div className="form-campo-prefixado form-campo-sufixado">
+          <input
+            className="input form-resposta-campo"
+            style={{ width: "100%" }}
+            type="text"
+            inputMode="decimal"
+            placeholder={pergunta.placeholder || "0"}
+            disabled={disabled}
+            {...props}
+          />
+          <span>%</span>
+        </div>
+      );
+    case "senha":
+      return (
+        <input
+          className="input form-resposta-campo"
+          style={{ width: "100%" }}
+          type="password"
+          placeholder={pergunta.placeholder || "••••••••"}
+          disabled={disabled}
+          {...props}
+        />
+      );
     case "data":
       return (
         <input className="input form-resposta-campo" style={{ width: "100%" }} type="date" disabled={disabled} {...props} />
@@ -87,21 +265,50 @@ export function CampoResposta({
           {...props}
         />
       );
+    case "periodo": {
+      const [de, ate] = valor ? valor.split("|") : ["", ""];
+      return (
+        <div className="filters-row" style={{ margin: 0 }}>
+          <input
+            className="input form-resposta-campo"
+            style={{ flex: 1 }}
+            type="date"
+            aria-label="De"
+            disabled={disabled}
+            value={interativo ? de : undefined}
+            onChange={(e) => onMudarValor?.(`${e.target.value}|${ate}`)}
+          />
+          <input
+            className="input form-resposta-campo"
+            style={{ flex: 1 }}
+            type="date"
+            aria-label="Até"
+            disabled={disabled}
+            value={interativo ? ate : undefined}
+            onChange={(e) => onMudarValor?.(`${de}|${e.target.value}`)}
+          />
+        </div>
+      );
+    }
     case "arquivo":
+    case "documento":
     case "imagem":
+    case "video":
+    case "audio": {
+      const accept = pergunta.tipo === "imagem" ? "image/*" : pergunta.tipo === "video" ? "video/*" : pergunta.tipo === "audio" ? "audio/*" : pergunta.tipo === "documento" ? ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" : undefined;
+      const rotuloVazio =
+        pergunta.tipo === "imagem" ? "🖼 Escolher imagem" : pergunta.tipo === "video" ? "🎬 Escolher vídeo" : pergunta.tipo === "audio" ? "🎙 Escolher áudio" : pergunta.tipo === "documento" ? "📄 Escolher documento" : "📎 Anexar arquivo";
       return interativo ? (
         <label className="form-upload-preview" style={{ cursor: "pointer" }}>
-          {valor ? `📎 ${valor}` : pergunta.tipo === "imagem" ? "🖼 Escolher imagem" : "📎 Anexar arquivo"}
-          <input
-            type="file"
-            accept={pergunta.tipo === "imagem" ? "image/*" : undefined}
-            style={{ display: "none" }}
-            onChange={(e) => onMudarValor?.(e.target.files?.[0]?.name ?? "")}
-          />
+          {valor ? `📎 ${valor}` : rotuloVazio}
+          <input type="file" accept={accept} style={{ display: "none" }} onChange={(e) => onMudarValor?.(e.target.files?.[0]?.name ?? "")} />
         </label>
       ) : (
-        <div className="form-upload-preview">{pergunta.tipo === "imagem" ? "🖼 Escolher imagem" : "📎 Anexar arquivo"}</div>
+        <div className="form-upload-preview">{rotuloVazio}</div>
       );
+    }
+    case "assinatura":
+      return <CampoAssinatura interativo={interativo} valor={valor} onMudarValor={onMudarValor} />;
     case "email":
       return (
         <input
@@ -220,6 +427,8 @@ export function CampoResposta({
         </div>
       );
     }
+    case "tags":
+      return <CampoTags interativo={interativo} valor={valor} onMudarValor={onMudarValor} placeholder={pergunta.placeholder} />;
     case "sim_nao":
       return (
         <div className="filters-row" style={{ margin: 0 }}>
