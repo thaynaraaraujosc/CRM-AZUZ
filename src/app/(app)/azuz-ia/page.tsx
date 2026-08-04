@@ -3,11 +3,25 @@
 import { useState } from "react";
 
 import { azuzIaMensagens } from "@/lib/data";
-import { IconSparkle } from "@/components/icons";
+import { IconEnviar, IconSparkle } from "@/components/icons";
 import { Topbar } from "@/components/ui";
 
+const RESPOSTA_PADRAO =
+  "Essa é uma prévia da interface — ainda não estou conectada aos dados reais do seu workspace. Em breve vou conseguir responder perguntas como essa de verdade.";
+
 export default function AzuzIaPage() {
-  const [mensagens] = useState(azuzIaMensagens);
+  const [mensagens, setMensagens] = useState(azuzIaMensagens);
+  const [pergunta, setPergunta] = useState("");
+
+  function enviarPergunta() {
+    const texto = pergunta.trim();
+    if (!texto) return;
+    setPergunta("");
+    setMensagens((prev) => [...prev, { tipo: "out", texto }]);
+    setTimeout(() => {
+      setMensagens((prev) => [...prev, { tipo: "in", texto: RESPOSTA_PADRAO }]);
+    }, 500);
+  }
 
   return (
     <>
@@ -35,9 +49,28 @@ export default function AzuzIaPage() {
               </div>
             ))}
           </div>
-          <div className="chat-input">
-            <div className="box">Escrever pra Azuz IA…</div>
-          </div>
+          <form
+            className="chat-input"
+            onSubmit={(e) => {
+              e.preventDefault();
+              enviarPergunta();
+            }}
+          >
+            <input
+              className="box chat-input-campo"
+              placeholder="Escrever pra Azuz IA…"
+              value={pergunta}
+              onChange={(e) => setPergunta(e.target.value)}
+            />
+            <button
+              type="submit"
+              className="chat-mic-btn chat-send-btn"
+              aria-label="Enviar pergunta"
+              disabled={!pergunta.trim()}
+            >
+              <IconEnviar />
+            </button>
+          </form>
         </section>
       </div>
     </>
