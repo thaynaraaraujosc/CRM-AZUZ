@@ -318,6 +318,8 @@ export type NegocioCard = {
   data: string;
   /** Etiquetas adicionadas manualmente ou por automação (ex.: "adicionar_etiqueta"). */
   etiquetas?: string[];
+  /** Responsável por esse negócio específico — distinto de `Funil.responsavel` (que é o funil inteiro). */
+  responsavel?: string;
 };
 
 export type ColunaFunil = {

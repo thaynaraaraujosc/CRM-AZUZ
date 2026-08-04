@@ -17,7 +17,11 @@ import {
 } from "@/lib/formularios-context";
 import { CONTATOS_STORAGE_KEY } from "@/lib/contatos-context";
 import { EQUIPE_STORAGE_KEY } from "@/lib/equipe-context";
-import { contatos as contatosMock, equipe as equipeMock, type Contato, type Membro } from "@/lib/data";
+import { FUNIS_STORAGE_KEY } from "@/lib/funis-context";
+import { AUTOMACOES_STORAGE_KEY } from "@/lib/automation-flow-context";
+import { avaliarGatilho, executarFluxo, type ContextoExecucao, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
+import type { FluxoAutomacao } from "@/lib/automation-flow/types";
+import { contatos as contatosMock, equipe as equipeMock, funis as funisMock, type Contato, type Funil, type Membro, type NegocioCard } from "@/lib/data";
 import { slugId } from "@/lib/ids";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
 
@@ -55,6 +59,70 @@ function carregarEquipe(): Membro[] {
   }
 }
 
+function carregarFunis(): Funil[] {
+  if (typeof window === "undefined") return funisMock;
+  try {
+    const salvos = localStorage.getItem(FUNIS_STORAGE_KEY);
+    return salvos ? (JSON.parse(salvos) as Funil[]) : funisMock;
+  } catch {
+    return funisMock;
+  }
+}
+
+function carregarFluxosAutomacao(): FluxoAutomacao[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const salvos = localStorage.getItem(AUTOMACOES_STORAGE_KEY);
+    return salvos ? (JSON.parse(salvos) as FluxoAutomacao[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Equivalente em runtime puro de `useFunis().atribuirContatoAoFunil` — move (ou cria) o card desse
+ * contato pra etapa escolhida, tirando de onde estivesse antes em qualquer funil. */
+function atribuirContatoAoFunilPublico(
+  funilId: string,
+  etapaTitulo: string,
+  contato: Omit<NegocioCard, "id"> & { id?: string },
+) {
+  const funis = carregarFunis();
+  const semDuplicata = funis.map((f) => ({
+    ...f,
+    colunas: f.colunas.map((c) => {
+      const cards = c.cards.filter((card) => card.nome !== contato.nome);
+      return cards.length === c.cards.length ? c : { ...c, cards, total: Math.max(0, c.total - 1) };
+    }),
+  }));
+
+  const novoCard: NegocioCard = {
+    id: contato.id ?? `negocio-${Date.now()}`,
+    nome: contato.nome,
+    valor: contato.valor,
+    origem: contato.origem,
+    dias: contato.dias,
+    data: contato.data,
+    responsavel: contato.responsavel,
+  };
+
+  const proximos = semDuplicata.map((f) => {
+    if (f.id !== funilId) return f;
+    let etapaEncontrada = false;
+    const colunas = f.colunas.map((c) => {
+      if (c.titulo !== etapaTitulo) return c;
+      etapaEncontrada = true;
+      return { ...c, cards: [...c.cards, novoCard], total: c.total + 1 };
+    });
+    return etapaEncontrada ? { ...f, colunas } : f;
+  });
+
+  try {
+    localStorage.setItem(FUNIS_STORAGE_KEY, JSON.stringify(proximos));
+  } catch {
+    // localStorage indisponível — segue sem persistir.
+  }
+}
+
 function registrarRespostaPublica(formularioId: string, valores: Record<string, string>) {
   const resposta: RespostaFormulario = {
     id: `resposta-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -75,16 +143,16 @@ function iniciais(nome: string) {
   return nome.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
 }
 
-/** Cria ou atualiza o contato de verdade a partir das perguntas mapeadas pro CRM — mesmo efeito de
- * `useContatos().criarContato`, mas em runtime puro (sem Provider) direto no localStorage. */
-function salvarContatoPublico(dadosMapeados: Record<string, string>) {
-  const nome = dadosMapeados.nome;
+/** Equivalente em runtime puro de `useContatos().salvarDadosContato` — cria o contato (se ainda não
+ * existir) ou faz merge dos dados informados, direto no localStorage. Usado tanto pelo submit do
+ * formulário quanto pelas `Ligacoes` (`salvarContato`/`atribuirAtendente`) do motor de automações. */
+function salvarDadosContatoPublico(nome: string, dados: Record<string, unknown>) {
   if (!nome) return;
   const contatos = carregarContatos();
   const id = slugId(nome);
   const existente = contatos.find((c) => c.id === id);
   const proximos = existente
-    ? contatos.map((c) => (c.id === id ? { ...c, ...dadosMapeados } : c))
+    ? contatos.map((c) => (c.id === id ? { ...c, ...dados } : c))
     : [
         ...contatos,
         {
@@ -96,13 +164,55 @@ function salvarContatoPublico(dadosMapeados: Record<string, string>) {
           responsavel: "—",
           ultima: "Agora",
           valor: "—",
-          ...dadosMapeados,
+          ...dados,
         } as Contato,
       ];
   try {
     localStorage.setItem(CONTATOS_STORAGE_KEY, JSON.stringify(proximos));
   } catch {
     // localStorage indisponível — segue sem persistir.
+  }
+}
+
+/** Cria ou atualiza o contato de verdade a partir das perguntas mapeadas pro CRM — mesmo efeito de
+ * `useContatos().criarContato`, mas em runtime puro (sem Provider) direto no localStorage. */
+function salvarContatoPublico(dadosMapeados: Record<string, string>) {
+  const nome = dadosMapeados.nome;
+  if (!nome) return;
+  salvarDadosContatoPublico(nome, dadosMapeados);
+}
+
+/** Dispara "formulario_preenchido" pra todo fluxo publicado e ativo, exatamente como
+ * `useAutomationFlows().dispararEvento` — mas em runtime puro (sem Provider), lendo os fluxos
+ * salvos direto do localStorage e usando `Ligacoes` que gravam no localStorage também. */
+function dispararEventoFormularioPublico(contexto: ContextoExecucao) {
+  const fluxos = carregarFluxosAutomacao();
+  const evento: EventoAutomacao = { tipo: "formulario_preenchido", contatoNome: contexto.contato.nome };
+
+  const ligacoes: Ligacoes = {
+    moverEtapa: (funilId, etapaTitulo, contato) =>
+      atribuirContatoAoFunilPublico(funilId, etapaTitulo, {
+        nome: contato.nome,
+        valor: (contato.valor as string) ?? "—",
+        origem: "Formulário",
+        dias: "0",
+        data: new Date().toISOString().slice(0, 10),
+        responsavel: contato.responsavel as string | undefined,
+      }),
+    salvarContato: (nome, dados) => salvarDadosContatoPublico(nome, dados),
+    atribuirAtendente: (nome, atendente) => salvarDadosContatoPublico(nome, { responsavel: atendente }),
+  };
+
+  for (const fluxo of fluxos) {
+    if (fluxo.status !== "publicado" || !fluxo.ativa) continue;
+    if (!avaliarGatilho(fluxo, evento)) continue;
+
+    const noGatilho = fluxo.nodes.find((n) => n.category === "gatilho");
+    if (!noGatilho) continue;
+    const primeiraAresta = fluxo.edges.find((e) => e.source === noGatilho.id);
+    if (!primeiraAresta) continue;
+
+    executarFluxo(fluxo, primeiraAresta.target, contexto, ligacoes);
   }
 }
 
@@ -224,6 +334,32 @@ function FormularioPreviewContent() {
       }
     }
     salvarContatoPublico(dadosMapeados);
+
+    const nomeContato = dadosMapeados.nome || `Resposta ${new Date().toLocaleString("pt-BR")}`;
+    const integracoes = formulario.integracoes;
+    if (integracoes?.funilId && integracoes.etapaTitulo) {
+      atribuirContatoAoFunilPublico(integracoes.funilId, integracoes.etapaTitulo, {
+        nome: nomeContato,
+        valor: "—",
+        origem: "Formulário",
+        dias: "0",
+        data: new Date().toISOString().slice(0, 10),
+        responsavel: integracoes.responsavelPadrao,
+      });
+    }
+
+    dispararEventoFormularioPublico({
+      contato: {
+        nome: nomeContato,
+        etiquetas: [],
+        origem: "Formulário",
+        responsavel: integracoes?.responsavelPadrao,
+        camposPersonalizados: valores,
+        funilId: integracoes?.funilId,
+        etapaTitulo: integracoes?.etapaTitulo,
+        ultimaRespostaEm: new Date().toISOString(),
+      },
+    });
 
     if (formulario.paginaFinal.urlRedirecionamento && formulario.paginaFinal.redirecionarAutomaticamente) {
       window.location.href = formulario.paginaFinal.urlRedirecionamento;

@@ -227,6 +227,13 @@ export type Formulario = {
   };
   tema: TemaFormulario;
   senha?: string;
+  /** Quando preenchido, cada resposta pública vira automaticamente um negócio no funil/etapa
+   * escolhidos e dispara o evento "formulario_preenchido" pras automações — ver `/formulario-preview`. */
+  integracoes?: {
+    funilId?: string;
+    etapaTitulo?: string;
+    responsavelPadrao?: string;
+  };
   criadoEm: string;
   atualizadoEm: string;
 };
@@ -281,6 +288,7 @@ function formularioNovo(): Formulario {
     paginaFinal: { mensagem: MENSAGEM_FINAL_PADRAO, redirecionarAutomaticamente: false },
     tema: temaVazio(),
     senha: "",
+    integracoes: {},
     criadoEm: agora,
     atualizadoEm: agora,
   };
@@ -390,6 +398,7 @@ export function migrarFormulario(bruto: unknown): Formulario {
       ...(f as unknown as Formulario),
       tema: { ...base.tema, ...(f.tema as Partial<TemaFormulario> | undefined) },
       paginaFinal: { ...base.paginaFinal, ...(f.paginaFinal as Partial<Formulario["paginaFinal"]> | undefined) },
+      integracoes: { ...base.integracoes, ...(f.integracoes as Formulario["integracoes"] | undefined) },
     };
   }
   // Formato legado: perguntas num array plano, cores soltas, sem status/tema/paginas.
@@ -423,6 +432,7 @@ export function migrarFormulario(bruto: unknown): Formulario {
       corBotao: (f.corBotao as string) ?? "#2e6bff",
     },
     senha: (f.senha as string) ?? "",
+    integracoes: {},
     criadoEm: agora,
     atualizadoEm: agora,
   };

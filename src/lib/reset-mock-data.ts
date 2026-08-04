@@ -16,6 +16,8 @@ export const CHAVES_LOCALSTORAGE_CRM: string[] = [
   "azuz-crm-formularios",
   "azuz-crm-formularios-respostas",
   "azuz-crm-contatos",
+  "azuz-crm-funis",
+  "azuz-crm-automacoes-fluxos",
   "azuz-crm-notificacoes-ativas",
   "azuz-crm-notificacoes-nova-tarefa",
   "azuz-crm-notificacoes-comentario",

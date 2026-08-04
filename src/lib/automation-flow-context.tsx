@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -73,17 +74,57 @@ type AutomationFlowContextValue = {
 
 const AutomationFlowContext = createContext<AutomationFlowContextValue | null>(null);
 
+/** Persistido pra que a resposta pública de um formulário (`/formulario-preview`, aba separada sem
+ * Provider) consiga disparar de verdade um fluxo com gatilho "Formulário preenchido" — sem isso,
+ * essa aba não teria como ler quais fluxos existem/estão publicados. `execucoes` (só um log de
+ * auditoria pro Simulador/Histórico) continua em memória — não precisa sobreviver entre abas. */
+export const AUTOMACOES_STORAGE_KEY = "azuz-crm-automacoes-fluxos";
+
+function fluxosIniciaisPadrao(): FluxoAutomacao[] {
+  return [
+    ...AUTOMACOES_INICIAIS.map((a) => migrarAutomacaoParaFluxo(a, funisIniciais)),
+    ...REGRAS_COMENTARIO_INICIAIS.map((r) => migrarRegraComentarioParaFluxo(r)),
+    ...FLUXOS_DEMONSTRACAO_INICIAIS,
+  ];
+}
+
 function agoraISO(): string {
   return new Date().toISOString();
 }
 
 export function AutomationFlowProvider({ children }: { children: ReactNode }) {
-  const [fluxos, setFluxos] = useState<FluxoAutomacao[]>(() => [
-    ...AUTOMACOES_INICIAIS.map((a) => migrarAutomacaoParaFluxo(a, funisIniciais)),
-    ...REGRAS_COMENTARIO_INICIAIS.map((r) => migrarRegraComentarioParaFluxo(r)),
-    ...FLUXOS_DEMONSTRACAO_INICIAIS,
-  ]);
+  const [fluxos, setFluxos] = useState<FluxoAutomacao[]>(() => {
+    if (typeof window === "undefined") return fluxosIniciaisPadrao();
+    try {
+      const salvos = window.localStorage.getItem(AUTOMACOES_STORAGE_KEY);
+      if (!salvos) return fluxosIniciaisPadrao();
+      return JSON.parse(salvos) as FluxoAutomacao[];
+    } catch {
+      return fluxosIniciaisPadrao();
+    }
+  });
   const [execucoes, setExecucoes] = useState<RegistroExecucao[]>([]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(AUTOMACOES_STORAGE_KEY, JSON.stringify(fluxos));
+    } catch {
+      // localStorage indisponível — segue só em memória.
+    }
+  }, [fluxos]);
+
+  useEffect(() => {
+    function aoMudarStorage(e: StorageEvent) {
+      if (e.key !== AUTOMACOES_STORAGE_KEY || !e.newValue) return;
+      try {
+        setFluxos(JSON.parse(e.newValue) as FluxoAutomacao[]);
+      } catch {
+        // payload inválido — ignora.
+      }
+    }
+    window.addEventListener("storage", aoMudarStorage);
+    return () => window.removeEventListener("storage", aoMudarStorage);
+  }, []);
 
   function criarFluxo(dados: Partial<Omit<FluxoAutomacao, "id">> & { nome: string }): FluxoAutomacao {
     const agora = agoraISO();

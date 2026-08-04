@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useContatos } from "@/lib/contatos-context";
+import { useFunis } from "@/lib/funis-context";
+import { useEquipe } from "@/lib/equipe-context";
 import {
   CAMPOS_CRM_MAPEAVEIS,
   CATEGORIAS_CAMPO,
@@ -1152,9 +1154,18 @@ function PainelCampo({
 }
 
 function PainelDesign({ formulario, onAtualizar }: { formulario: Formulario; onAtualizar: (patch: Partial<Formulario>) => void }) {
+  const { funis } = useFunis();
+  const { membros } = useEquipe();
+
   function atualizarTema(patch: Partial<Formulario["tema"]>) {
     onAtualizar({ tema: { ...formulario.tema, ...patch } });
   }
+
+  function atualizarIntegracoes(patch: Partial<NonNullable<Formulario["integracoes"]>>) {
+    onAtualizar({ integracoes: { ...formulario.integracoes, ...patch } });
+  }
+
+  const funilSelecionado = funis.find((f) => f.id === formulario.integracoes?.funilId);
 
   return (
     <div className="form-builder-design">
@@ -1299,6 +1310,71 @@ function PainelDesign({ formulario, onAtualizar }: { formulario: Formulario; onA
               Tela cheia
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: 17 }}>
+        <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
+          <h4>Integrações</h4>
+        </div>
+        <p className="hint" style={{ marginTop: 0 }}>
+          Toda resposta enviada vira automaticamente um negócio no funil/etapa escolhidos e dispara automações com gatilho &quot;Formulário preenchido&quot;.
+        </p>
+        <div className="field">
+          <label>Funil de destino</label>
+          <select
+            className="input"
+            style={{ width: "100%" }}
+            value={formulario.integracoes?.funilId ?? ""}
+            onChange={(e) => {
+              const funilId = e.target.value || undefined;
+              const novoFunil = funis.find((f) => f.id === funilId);
+              atualizarIntegracoes({
+                funilId,
+                etapaTitulo: novoFunil?.colunas[0]?.titulo,
+              });
+            }}
+          >
+            <option value="">Nenhum (não cria negócio)</option>
+            {funis.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+        {funilSelecionado ? (
+          <div className="field">
+            <label>Etapa inicial</label>
+            <select
+              className="input"
+              style={{ width: "100%" }}
+              value={formulario.integracoes?.etapaTitulo ?? ""}
+              onChange={(e) => atualizarIntegracoes({ etapaTitulo: e.target.value || undefined })}
+            >
+              {funilSelecionado.colunas.map((c) => (
+                <option key={c.id} value={c.titulo}>
+                  {c.titulo}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+        <div className="field">
+          <label>Responsável padrão</label>
+          <select
+            className="input"
+            style={{ width: "100%" }}
+            value={formulario.integracoes?.responsavelPadrao ?? ""}
+            onChange={(e) => atualizarIntegracoes({ responsavelPadrao: e.target.value || undefined })}
+          >
+            <option value="">Sem responsável definido</option>
+            {membros.map((m) => (
+              <option key={m.id} value={m.nome}>
+                {m.nome}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
     </div>

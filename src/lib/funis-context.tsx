@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type Dispatch,
   type ReactNode,
@@ -10,6 +11,11 @@ import {
 } from "react";
 
 import { funis as funisIniciais, type Funil, type NegocioCard } from "@/lib/data";
+
+/** Persistido pra que a resposta pública de um formulário (`/formulario-preview`, aba separada sem
+ * Provider) consiga criar/mover um negócio de verdade quando o formulário está configurado pra
+ * jogar a resposta num funil — mesmo padrão de `CONTATOS_STORAGE_KEY`. */
+export const FUNIS_STORAGE_KEY = "azuz-crm-funis";
 
 function cloneFunis(lista: Funil[]): Funil[] {
   return lista.map((f) => ({
@@ -46,8 +52,41 @@ const FunisContext = createContext<FunisContextValue | null>(null);
  * telas ficarem com cópias dessincronizadas dos dados.
  */
 export function FunisProvider({ children }: { children: ReactNode }) {
-  const [funis, setFunis] = useState<Funil[]>(() => cloneFunis(funisIniciais));
+  const [funis, setFunis] = useState<Funil[]>(() => {
+    if (typeof window === "undefined") return cloneFunis(funisIniciais);
+    try {
+      const salvos = window.localStorage.getItem(FUNIS_STORAGE_KEY);
+      if (!salvos) return cloneFunis(funisIniciais);
+      return JSON.parse(salvos) as Funil[];
+    } catch {
+      return cloneFunis(funisIniciais);
+    }
+  });
   const [funilAtivoId, setFunilAtivoId] = useState(funisIniciais[0]?.id ?? "");
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(FUNIS_STORAGE_KEY, JSON.stringify(funis));
+    } catch {
+      // localStorage indisponível — segue só em memória.
+    }
+  }, [funis]);
+
+  // A resposta pública de um formulário (aba separada, sem esse Provider) grava direto no
+  // localStorage quando move um contato pro funil — sem isso, a aba do CRM só veria o negócio novo
+  // depois de recarregar a página.
+  useEffect(() => {
+    function aoMudarStorage(e: StorageEvent) {
+      if (e.key !== FUNIS_STORAGE_KEY || !e.newValue) return;
+      try {
+        setFunis(JSON.parse(e.newValue) as Funil[]);
+      } catch {
+        // payload inválido — ignora.
+      }
+    }
+    window.addEventListener("storage", aoMudarStorage);
+    return () => window.removeEventListener("storage", aoMudarStorage);
+  }, []);
 
   function atribuirContatoAoFunil(
     funilId: string,
@@ -73,6 +112,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         origem: contato.origem,
         dias: contato.dias,
         data: contato.data,
+        responsavel: contato.responsavel,
       };
 
       return semDuplicata.map((f) => {
