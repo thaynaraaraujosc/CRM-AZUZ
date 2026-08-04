@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { IconCamera } from "@/components/icons";
 import { useConfiguracoes, WORKSPACE_CONFIG_PADRAO, type WorkspaceConfig } from "@/lib/configuracoes-context";
@@ -12,11 +12,16 @@ import { SalvarBar } from "./SalvarBar";
 /** Workspace (item 19-20) — dados gerais + identidade visual + modelo por segmento. O logotipo é só
  * um arquivo temporário no navegador (`URL.createObjectURL`), nunca enviado a servidor. */
 export function WorkspaceSecao() {
-  const { estado, atualizarWorkspace } = useConfiguracoes();
+  const { estado, atualizarWorkspace, setCategoriaSuja } = useConfiguracoes();
   const [rascunho, setRascunho] = useState<WorkspaceConfig>(estado.workspace);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const dirty = JSON.stringify(rascunho) !== JSON.stringify(estado.workspace);
+
+  useEffect(() => {
+    setCategoriaSuja(dirty);
+    return () => setCategoriaSuja(false);
+  }, [dirty, setCategoriaSuja]);
 
   function set(patch: Partial<WorkspaceConfig>) {
     setRascunho((prev) => ({ ...prev, ...patch }));

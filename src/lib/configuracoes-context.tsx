@@ -207,6 +207,10 @@ const ESTADO_PADRAO: ConfiguracoesEstado = {
 
 type ConfiguracoesContextValue = {
   estado: ConfiguracoesEstado;
+  /** Rascunho não salvo em alguma seção (Workspace/Automações/Azuz IA) — usado pelo painel de
+   * Configurações pra confirmar antes de trocar de categoria e descartar a edição em andamento. */
+  categoriaSuja: boolean;
+  setCategoriaSuja: (valor: boolean) => void;
   atualizarWorkspace: (patch: Partial<WorkspaceConfig>) => void;
   atualizarAparencia: (patch: Partial<AparenciaConfig>) => void;
   atualizarNotificacao: (eventoId: string, patch: Partial<PreferenciaEvento>) => void;
@@ -256,6 +260,7 @@ function novoId(prefixo: string): string {
 
 export function ConfiguracoesProvider({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<ConfiguracoesEstado>(ESTADO_PADRAO);
+  const [categoriaSuja, setCategoriaSuja] = useState(false);
   const hidratadoRef = useRef(false);
 
   useEffect(() => {
@@ -323,6 +328,8 @@ export function ConfiguracoesProvider({ children }: { children: ReactNode }) {
     <ConfiguracoesContext.Provider
       value={{
         estado,
+        categoriaSuja,
+        setCategoriaSuja,
         atualizarWorkspace,
         atualizarAparencia,
         atualizarNotificacao,

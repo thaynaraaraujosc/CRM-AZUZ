@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Toggle } from "@/components/ui";
 import { useConfiguracoes, type AutomacoesPrefsConfig } from "@/lib/configuracoes-context";
@@ -11,9 +11,14 @@ import { SalvarBar } from "./SalvarBar";
 /** Preferências gerais de Automações (item 32) — front-end apenas; essas opções não mudam o
  * comportamento real do construtor nesta fase, só ficam salvas pra quando ligar de verdade. */
 export function AutomacoesPrefsSecao() {
-  const { estado, atualizarAutomacoesPrefs } = useConfiguracoes();
+  const { estado, atualizarAutomacoesPrefs, setCategoriaSuja } = useConfiguracoes();
   const [rascunho, setRascunho] = useState<AutomacoesPrefsConfig>(estado.automacoesPrefs);
   const dirty = JSON.stringify(rascunho) !== JSON.stringify(estado.automacoesPrefs);
+
+  useEffect(() => {
+    setCategoriaSuja(dirty);
+    return () => setCategoriaSuja(false);
+  }, [dirty, setCategoriaSuja]);
 
   function set(patch: Partial<AutomacoesPrefsConfig>) {
     setRascunho((prev) => ({ ...prev, ...patch }));

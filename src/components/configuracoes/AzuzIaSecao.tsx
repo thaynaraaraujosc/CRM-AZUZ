@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Toggle } from "@/components/ui";
 import { useConfiguracoes, type AzuzIaConfig } from "@/lib/configuracoes-context";
@@ -34,10 +34,15 @@ const SUGESTOES_OPCOES = ["follow-ups", "tarefas", "automações", "mensagens", 
 /** Azuz IA (item 33) — nenhuma chamada de IA real acontece aqui, é só a tela de preferências que vai
  * alimentar a IA quando ela for conectada de verdade. */
 export function AzuzIaSecao() {
-  const { estado, atualizarAzuzIa } = useConfiguracoes();
+  const { estado, atualizarAzuzIa, setCategoriaSuja } = useConfiguracoes();
   const [aba, setAba] = useState<Aba>("comportamento");
   const [rascunho, setRascunho] = useState<AzuzIaConfig>(estado.azuzIa);
   const dirty = JSON.stringify(rascunho) !== JSON.stringify(estado.azuzIa);
+
+  useEffect(() => {
+    setCategoriaSuja(dirty);
+    return () => setCategoriaSuja(false);
+  }, [dirty, setCategoriaSuja]);
 
   function set(patch: Partial<AzuzIaConfig>) {
     setRascunho((prev) => ({ ...prev, ...patch }));

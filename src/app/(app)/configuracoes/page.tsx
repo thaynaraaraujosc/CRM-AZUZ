@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Topbar } from "@/components/ui";
+import { useConfiguracoes } from "@/lib/configuracoes-context";
 import { categoriaPorId, type CategoriaId } from "@/lib/configuracoes/estrutura";
 import { CategoriasNav } from "@/components/configuracoes/CategoriasNav";
 import { WorkspaceSecao } from "@/components/configuracoes/WorkspaceSecao";
@@ -36,7 +37,16 @@ import { PlanoSecao } from "@/components/configuracoes/PlanoSecao";
  */
 export default function ConfiguracoesPage() {
   const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaId>("workspace");
+  const { categoriaSuja } = useConfiguracoes();
   const categoria = categoriaPorId(categoriaAtiva);
+
+  function selecionarCategoria(id: CategoriaId) {
+    if (id === categoriaAtiva) return;
+    if (categoriaSuja && !window.confirm("Você tem alterações não salvas nesta categoria. Deseja descartar e continuar?")) {
+      return;
+    }
+    setCategoriaAtiva(id);
+  }
 
   return (
     <>
@@ -44,7 +54,7 @@ export default function ConfiguracoesPage() {
 
       <div className="content">
         <div className="config-layout">
-          <CategoriasNav ativa={categoriaAtiva} onSelecionar={setCategoriaAtiva} />
+          <CategoriasNav ativa={categoriaAtiva} onSelecionar={selecionarCategoria} />
 
           <div className="config-detalhe">
             {categoriaAtiva === "workspace" ? <WorkspaceSecao /> : null}
