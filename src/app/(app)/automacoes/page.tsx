@@ -949,7 +949,14 @@ function AutomacoesPageInner() {
                     style={{ cursor: "pointer" }}
                     onClick={() => router.push(`/automacoes/editor/${fluxo.id}`)}
                     role="button"
+                    tabIndex={0}
                     aria-label={`Editar automação ${fluxo.nome}`}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        router.push(`/automacoes/editor/${fluxo.id}`);
+                      }
+                    }}
                   >
                     <IconAutomacoes width={16} height={16} />
                   </div>

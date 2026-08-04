@@ -546,10 +546,17 @@ function TarefasContent() {
                   <span className="c">{cardsVisiveis.length}</span>
                   <span
                     role="button"
+                    tabIndex={0}
                     aria-label={`Excluir etapa ${coluna.titulo}`}
                     title="Excluir etapa"
                     style={{ cursor: "pointer", color: "var(--text-faint)" }}
                     onClick={() => excluirEtapa(colIndex)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        excluirEtapa(colIndex);
+                      }
+                    }}
                   >
                     ✕
                   </span>

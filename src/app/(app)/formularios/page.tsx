@@ -414,12 +414,20 @@ export default function FormulariosPage() {
                   </div>
                   <span
                     role="button"
+                    tabIndex={0}
                     aria-label={`Excluir formulário ${f.nome}`}
                     title="Excluir formulário"
                     style={{ cursor: "pointer", color: "var(--text-faint)" }}
                     onClick={(e) => {
                       e.stopPropagation();
                       pedirExclusao(f.id, f.nome);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        pedirExclusao(f.id, f.nome);
+                      }
                     }}
                   >
                     ✕
