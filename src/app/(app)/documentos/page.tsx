@@ -1090,6 +1090,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [configPaginaAberto, setConfigPaginaAberto] = useState(false);
   const [compartilharAberto, setCompartilharAberto] = useState(false);
   const [comentariosAberto, setComentariosAberto] = useState(false);
+  const [painelLateralAberto, setPainelLateralAberto] = useState(true);
+  const [abaPainelPadrao, setAbaPainelPadrao] = useState<"texto" | "pagina">("texto");
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [localizarAberto, setLocalizarAberto] = useState(false);
   const [contagemAberta, setContagemAberta] = useState(false);
@@ -1118,7 +1120,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [imagemSelecionada, setImagemSelecionada] = useState<{ paginaId: string; el: HTMLImageElement } | null>(null);
   const [menuImagemPos, setMenuImagemPos] = useState<{ x: number; y: number } | null>(null);
   const [celulaSelecionada, setCelulaSelecionada] = useState<{ paginaId: string; td: HTMLTableCellElement } | null>(null);
-  const [celulaPainelPos, setCelulaPainelPos] = useState<{ x: number; y: number } | null>(null);
   const [recuoAtual, setRecuoAtual] = useState({ primeiraLinhaMm: 0, esquerdoMm: 0, direitoMm: 0 });
 
   // Contorno de seleção visível na própria imagem (a imagem é um <img> real dentro do HTML, não um
@@ -2734,6 +2735,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           {estadoSalvamento === "salvando" ? "Salvando…" : "Salvo"}
         </span>
         <div className="doc-header-acoes">
+          <button
+            type="button"
+            className={`btn ghost${painelLateralAberto ? " active" : ""}`}
+            title={painelLateralAberto ? "Recolher painel lateral" : "Abrir painel lateral"}
+            onClick={() => setPainelLateralAberto((v) => !v)}
+          >
+            🎛 Painel
+          </button>
           <button type="button" className="btn ghost" onClick={() => setComentariosAberto((v) => !v)}>
             💬 Comentários{doc.comentarios.filter((c) => !c.resolvido).length > 0 ? ` (${doc.comentarios.filter((c) => !c.resolvido).length})` : ""}
           </button>
@@ -3047,6 +3056,32 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             onDuplicar={duplicarImagemSelecionada}
             onIniciarRedimensionar={iniciarArrasteRedimensionarImagem}
           />
+        ) : celulaSelecionada ? (
+          <aside className="doc-lateral-painel">
+            <div className="panel-h">
+              <h4>Tabela</h4>
+              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCelulaSelecionada(null)}>✕</button>
+            </div>
+            <div className="field">
+              <label>Linha</label>
+              <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
+                <button type="button" className="fchip" onClick={() => inserirLinhaTabela("acima")}>+ Acima</button>
+                <button type="button" className="fchip" onClick={() => inserirLinhaTabela("abaixo")}>+ Abaixo</button>
+                <button type="button" className="fchip" style={{ color: "var(--danger)" }} onClick={excluirLinhaTabela}>Excluir linha</button>
+              </div>
+            </div>
+            <div className="field">
+              <label>Coluna</label>
+              <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
+                <button type="button" className="fchip" onClick={() => inserirColunaTabela("esquerda")}>+ Esquerda</button>
+                <button type="button" className="fchip" onClick={() => inserirColunaTabela("direita")}>+ Direita</button>
+                <button type="button" className="fchip" style={{ color: "var(--danger)" }} onClick={excluirColunaTabela}>Excluir coluna</button>
+              </div>
+            </div>
+            <button type="button" className="btn danger block" onClick={excluirTabelaInteira}>
+              Excluir tabela inteira
+            </button>
+          </aside>
         ) : comentariosAberto ? (
           <aside className="doc-comentarios-painel">
             <div className="panel-h">
@@ -3080,6 +3115,167 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   </div>
                 </div>
               ))
+            )}
+          </aside>
+        ) : painelLateralAberto ? (
+          <aside className="doc-lateral-painel">
+            <div className="panel-h">
+              <h4>Painel</h4>
+              <button type="button" className="modal-close-btn" aria-label="Recolher painel" onClick={() => setPainelLateralAberto(false)}>✕</button>
+            </div>
+            <div className="doc-painel-tabs">
+              <button type="button" className={`doc-painel-tab${abaPainelPadrao === "texto" ? " on" : ""}`} onClick={() => setAbaPainelPadrao("texto")}>Texto</button>
+              <button type="button" className={`doc-painel-tab${abaPainelPadrao === "pagina" ? " on" : ""}`} onClick={() => setAbaPainelPadrao("pagina")}>Página</button>
+            </div>
+
+            {abaPainelPadrao === "texto" ? (
+              <>
+                <div className="field">
+                  <label>Estilo do parágrafo</label>
+                  <select className="input" defaultValue={ESTILOS_PARAGRAFO[0].valor} onChange={(e) => aplicarFormatacao("formatBlock", e.target.value)}>
+                    {ESTILOS_PARAGRAFO.map((e) => (
+                      <option key={e.valor} value={e.valor}>{e.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label>Fonte</label>
+                  <SeletorFonte fontes={FONTES_DOCUMENTO} valorAtual={fonteAtual} onEscolher={(valor) => { setFonteAtual(valor); aplicarFormatacao("fontName", valor); }} />
+                </div>
+                <div className="field">
+                  <label>Tamanho</label>
+                  <select className="input" defaultValue={TAMANHOS_FONTE_DOC[1].valor} onChange={(e) => aplicarFormatacao("fontSize", e.target.value)}>
+                    {TAMANHOS_FONTE_DOC.map((t) => (
+                      <option key={t.label} value={t.valor}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label>Estilo</label>
+                  <div className="filters-row" style={{ margin: 0 }}>
+                    <button type="button" className="fchip" style={{ fontWeight: 700 }} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("bold")}>N</button>
+                    <button type="button" className="fchip" style={{ fontStyle: "italic" }} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("italic")}>I</button>
+                    <button type="button" className="fchip" style={{ textDecoration: "underline" }} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("underline")}>S</button>
+                    <button type="button" className="fchip" style={{ textDecoration: "line-through" }} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("strikeThrough")}>T</button>
+                  </div>
+                </div>
+                <div className="field">
+                  <label>Cor</label>
+                  <div className="filters-row" style={{ margin: 0 }}>
+                    <SeletorCor titulo="Cor do texto" cores={CORES_TEXTO} onEscolher={(c) => aplicarFormatacao("foreColor", c)} rotulo="A Texto" />
+                    <SeletorCor titulo="Cor de destaque" cores={CORES_DESTAQUE} onEscolher={(c) => aplicarFormatacao("hiliteColor", c)} rotulo="🖊 Destaque" />
+                  </div>
+                </div>
+                <div className="field">
+                  <label>Maiúsculas / minúsculas</label>
+                  <div className="filters-row" style={{ margin: 0 }}>
+                    <button type="button" className="fchip" onClick={() => document.execCommand("insertText", false, (window.getSelection()?.toString() ?? "").toUpperCase())}>MAIÚSCULAS</button>
+                    <button type="button" className="fchip" onClick={() => document.execCommand("insertText", false, (window.getSelection()?.toString() ?? "").toLowerCase())}>minúsculas</button>
+                  </div>
+                </div>
+                <div className="field">
+                  <label>Espaçamento entre linhas</label>
+                  <select className="input" defaultValue="1.5" onChange={(e) => {
+                    const el = paginaRefs.current[paginaAtivaId];
+                    if (el) el.style.lineHeight = e.target.value;
+                    salvarConteudoPagina(paginaAtivaId);
+                  }}>
+                    <option value="1">Simples</option>
+                    <option value="1.15">1,15</option>
+                    <option value="1.5">1,5</option>
+                    <option value="2">Duplo</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <label>Alinhamento</label>
+                  <div className="filters-row" style={{ margin: 0 }}>
+                    <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyLeft")}>≡◧</button>
+                    <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyCenter")}>≡</button>
+                    <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyRight")}>◨≡</button>
+                    <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyFull")}>☰</button>
+                  </div>
+                </div>
+                <div className="field">
+                  <label>Recuo</label>
+                  <div className="filters-row" style={{ margin: 0 }}>
+                    <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("outdent")}>⇤ Diminuir</button>
+                    <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("indent")}>⇥ Aumentar</button>
+                  </div>
+                </div>
+                <div className="field">
+                  <label>Listas</label>
+                  <div className="filters-row" style={{ margin: 0 }}>
+                    <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertUnorderedList")}>• Marcadores</button>
+                    <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertOrderedList")}>1. Numerada</button>
+                    <button type="button" className="fchip" onClick={() => inserirNaPagina('<div>☐ </div>')}>☑ Checklist</button>
+                  </div>
+                </div>
+                <div className="field">
+                  <button type="button" className="btn ghost block" onClick={inserirLink}>🔗 Inserir link</button>
+                </div>
+                <div className="field">
+                  <button type="button" className="btn ghost block" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("removeFormat")}>✕A Limpar formatação</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="field">
+                  <label>Tamanho do papel</label>
+                  <select className="input" value={doc.config.tamanho} onChange={(e) => atualizarConfigPagina(id, { tamanho: e.target.value as TamanhoPapel })}>
+                    <option value="A4">A4</option>
+                    <option value="Carta">Carta</option>
+                    <option value="Ofício">Ofício</option>
+                    <option value="Personalizado">Personalizado</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <label>Orientação</label>
+                  <div className="filters-row" style={{ margin: 0 }}>
+                    <button type="button" className={`fchip${doc.config.orientacao === "retrato" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "retrato" })}>Retrato</button>
+                    <button type="button" className={`fchip${doc.config.orientacao === "paisagem" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "paisagem" })}>Paisagem</button>
+                  </div>
+                </div>
+                <div className="field">
+                  <label>Margem superior (mm)</label>
+                  <input type="number" className="input" style={{ width: "100%" }} value={doc.config.margemSuperiorMm} onChange={(e) => atualizarConfigPagina(id, { margemSuperiorMm: Number(e.target.value) })} />
+                </div>
+                <div className="field">
+                  <label>Margem inferior (mm)</label>
+                  <input type="number" className="input" style={{ width: "100%" }} value={doc.config.margemInferiorMm} onChange={(e) => atualizarConfigPagina(id, { margemInferiorMm: Number(e.target.value) })} />
+                </div>
+                <div className="field">
+                  <label>Margem esquerda (mm)</label>
+                  <input type="number" className="input" style={{ width: "100%" }} value={doc.config.margemEsquerdaMm} onChange={(e) => atualizarConfigPagina(id, { margemEsquerdaMm: Number(e.target.value) })} />
+                </div>
+                <div className="field">
+                  <label>Margem direita (mm)</label>
+                  <input type="number" className="input" style={{ width: "100%" }} value={doc.config.margemDireitaMm} onChange={(e) => atualizarConfigPagina(id, { margemDireitaMm: Number(e.target.value) })} />
+                </div>
+                <div className="field">
+                  <label>Cor de fundo</label>
+                  <input type="color" className="input" style={{ width: "100%", height: 34, padding: 4 }} value={doc.config.corFundo ?? "#ffffff"} onChange={(e) => atualizarConfigPagina(id, { corFundo: e.target.value })} />
+                </div>
+                <div className="field">
+                  <label>Colunas</label>
+                  <input
+                    type="number"
+                    className="input"
+                    min={1}
+                    max={4}
+                    value={doc.config.colunas ?? 1}
+                    onChange={(e) => atualizarConfigPagina(id, { colunas: Math.min(4, Math.max(1, Number(e.target.value) || 1)) })}
+                  />
+                </div>
+                <div className="field">
+                  <button type="button" className="btn ghost block" onClick={() => setCabecalhoRodapeAberto("cabecalho")}>Editar cabeçalho</button>
+                </div>
+                <div className="field">
+                  <button type="button" className="btn ghost block" onClick={() => setCabecalhoRodapeAberto("rodape")}>Editar rodapé</button>
+                </div>
+                <div className="field">
+                  <button type="button" className="btn ghost block" onClick={() => setConfigPaginaAberto(true)}>Mais opções de página…</button>
+                </div>
+              </>
             )}
           </aside>
         ) : null}
@@ -3670,36 +3866,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         />
       ) : null}
 
-      {celulaSelecionada ? (
-        <div
-          className="wa-email-modal wa-email-floating doc-tabela-painel"
-          style={celulaPainelPos ? { left: celulaPainelPos.x, top: celulaPainelPos.y, right: "auto", bottom: "auto" } : undefined}
-        >
-          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setCelulaPainelPos)}>
-            <p className="n">Editar tabela</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCelulaSelecionada(null)}>✕</button>
-          </div>
-          <div className="field">
-            <label>Linha</label>
-            <div className="filters-row" style={{ margin: 0 }}>
-              <button type="button" className="fchip" onClick={() => inserirLinhaTabela("acima")}>+ Acima</button>
-              <button type="button" className="fchip" onClick={() => inserirLinhaTabela("abaixo")}>+ Abaixo</button>
-              <button type="button" className="fchip" style={{ color: "var(--danger)" }} onClick={excluirLinhaTabela}>Excluir linha</button>
-            </div>
-          </div>
-          <div className="field">
-            <label>Coluna</label>
-            <div className="filters-row" style={{ margin: 0 }}>
-              <button type="button" className="fchip" onClick={() => inserirColunaTabela("esquerda")}>+ Esquerda</button>
-              <button type="button" className="fchip" onClick={() => inserirColunaTabela("direita")}>+ Direita</button>
-              <button type="button" className="fchip" style={{ color: "var(--danger)" }} onClick={excluirColunaTabela}>Excluir coluna</button>
-            </div>
-          </div>
-          <button type="button" className="btn danger block" onClick={excluirTabelaInteira}>
-            Excluir tabela inteira
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }
