@@ -1063,7 +1063,11 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [semPaginas, setSemPaginas] = useState(() => lerPrefVer("semPaginas", false));
   const [corretorAtivo, setCorretorAtivo] = useState(() => lerPrefVer("corretorAtivo", true));
   const [fonteAtual, setFonteAtual] = useState(FONTES_DOCUMENTO[0].valor);
-  const [mostrarToolbar, setMostrarToolbar] = useState(() => lerPrefVer("mostrarToolbar", true));
+  // Prioridade 5 da reformulação: o topo passa a mostrar só ações globais (desfazer/refazer/zoom/
+  // imprimir, agora em doc-header-acoes) por padrão — a barra de formatação completa (fonte, negrito,
+  // Inserir/Parágrafo/Mais opções) fica escondida até o usuário pedir ("🎨 Formatação" no cabeçalho, ou
+  // Ver → Mostrar barra de ferramentas), já que o painel lateral (aba Texto) cobre o mesmo terreno.
+  const [mostrarToolbar, setMostrarToolbar] = useState(() => lerPrefVer("mostrarToolbar", false));
   const [telaCheia, setTelaCheia] = useState(false);
   const [estruturaAberta, setEstruturaAberta] = useState(false);
   const [idioma, setIdioma] = useState("pt-BR");
@@ -2804,6 +2808,21 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           {estadoSalvamento === "salvando" ? "Salvando…" : "Salvo"}
         </span>
         <div className="doc-header-acoes">
+          <button type="button" className="doc-toolbar-btn" title="Desfazer" disabled={!podeDesfazer} onMouseDown={(e) => e.preventDefault()} onClick={desfazer}>↶</button>
+          <button type="button" className="doc-toolbar-btn" title="Refazer" disabled={!podeRefazer} onMouseDown={(e) => e.preventDefault()} onClick={refazer}>↷</button>
+          <button type="button" className="doc-toolbar-btn" title="Zoom: diminuir" onClick={() => setZoom((z) => Math.max(50, z - 10))}>−</button>
+          <span className="hint" style={{ minWidth: 34, textAlign: "center" }}>{zoom}%</span>
+          <button type="button" className="doc-toolbar-btn" title="Zoom: aumentar" onClick={() => setZoom((z) => Math.min(200, z + 10))}>+</button>
+          <button type="button" className="doc-toolbar-btn" title="Imprimir" onClick={abrirPreviaImpressao}>🖨</button>
+          <span className="doc-header-sep" />
+          <button
+            type="button"
+            className={`btn ghost${mostrarToolbar ? " active" : ""}`}
+            title={mostrarToolbar ? "Ocultar ferramentas de formatação" : "Mostrar ferramentas de formatação"}
+            onClick={() => setMostrarToolbar((v) => !v)}
+          >
+            🎨 Formatação
+          </button>
           <button
             type="button"
             className={`btn ghost${painelLateralAberto ? " active" : ""}`}
@@ -2833,14 +2852,6 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       </div>
 
       <div className="doc-toolbar doc-toolbar-rich" style={{ display: mostrarToolbar ? undefined : "none" }}>
-        <button type="button" className="doc-toolbar-btn" title="Desfazer" disabled={!podeDesfazer} onMouseDown={(e) => e.preventDefault()} onClick={desfazer}>↶</button>
-        <button type="button" className="doc-toolbar-btn" title="Refazer" disabled={!podeRefazer} onMouseDown={(e) => e.preventDefault()} onClick={refazer}>↷</button>
-        <button type="button" className="doc-toolbar-btn" title="Imprimir" onClick={abrirPreviaImpressao}>🖨</button>
-        <span className="doc-toolbar-sep" />
-        <button type="button" className="doc-toolbar-btn" title="Diminuir zoom" onClick={() => setZoom((z) => Math.max(50, z - 10))}>−</button>
-        <span className="hint" style={{ minWidth: 38, textAlign: "center" }}>{zoom}%</span>
-        <button type="button" className="doc-toolbar-btn" title="Aumentar zoom" onClick={() => setZoom((z) => Math.min(200, z + 10))}>+</button>
-        <span className="doc-toolbar-sep" />
         <select className="doc-toolbar-select" defaultValue={ESTILOS_PARAGRAFO[0].valor} aria-label="Estilo do parágrafo" onChange={(e) => aplicarFormatacao("formatBlock", e.target.value)}>
           {ESTILOS_PARAGRAFO.map((e) => (
             <option key={e.valor} value={e.valor}>{e.label}</option>

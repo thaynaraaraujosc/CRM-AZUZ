@@ -5136,8 +5136,18 @@ button.camp-row:hover {
 .doc-header-acoes {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin-left: auto;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.doc-header-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--line-soft);
+  margin: 0 2px;
   flex: 0 0 auto;
 }
 
