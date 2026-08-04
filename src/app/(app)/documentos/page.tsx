@@ -1119,6 +1119,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   useFecharAoClicarFora(colunasRef, colunasAberto, () => setColunasAberto(false));
   const [imagemSelecionada, setImagemSelecionada] = useState<{ paginaId: string; el: HTMLImageElement } | null>(null);
   const [menuImagemPos, setMenuImagemPos] = useState<{ x: number; y: number } | null>(null);
+  const [menuTextoPos, setMenuTextoPos] = useState<{ x: number; y: number } | null>(null);
   const [celulaSelecionada, setCelulaSelecionada] = useState<{ paginaId: string; td: HTMLTableCellElement } | null>(null);
   const [recuoAtual, setRecuoAtual] = useState({ primeiraLinhaMm: 0, esquerdoMm: 0, direitoMm: 0 });
 
@@ -2165,14 +2166,52 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   /** Botão direito numa imagem: seleciona (se ainda não estava) e abre o menu de contexto no ponto do clique. */
   function aoClicarComBotaoDireitoNaPagina(e: React.MouseEvent<HTMLDivElement>, paginaId: string) {
     const alvo = e.target as HTMLElement;
-    if (alvo.tagName !== "IMG") {
+    if (alvo.tagName === "IMG") {
+      e.preventDefault();
+      garantirIdImagem(alvo as HTMLImageElement);
+      setImagemSelecionada({ paginaId, el: alvo as HTMLImageElement });
+      setMenuTextoPos(null);
+      setMenuImagemPos({ x: e.clientX, y: e.clientY });
+      return;
+    }
+    if (alvo.closest("td, th")) {
+      // Célula de tabela já tem painel dedicado (docked) — não sobrepõe com o menu de texto genérico.
       setMenuImagemPos(null);
+      setMenuTextoPos(null);
       return;
     }
     e.preventDefault();
-    garantirIdImagem(alvo as HTMLImageElement);
-    setImagemSelecionada({ paginaId, el: alvo as HTMLImageElement });
-    setMenuImagemPos({ x: e.clientX, y: e.clientY });
+    setImagemSelecionada(null);
+    setMenuImagemPos(null);
+    setMenuTextoPos({ x: e.clientX, y: e.clientY });
+  }
+
+  /** Elemento de bloco (parágrafo/título/item de lista/etc) mais próximo do cursor atual — usado por
+   * "Duplicar bloco"/"Excluir bloco" no menu de botão direito do texto. */
+  function blocoDeTextoAtual(): HTMLElement | null {
+    const el = paginaRefs.current[paginaAtivaId];
+    const selecao = window.getSelection();
+    if (!el || !selecao || selecao.rangeCount === 0) return null;
+    let no: Node | null = selecao.getRangeAt(0).startContainer;
+    while (no && no.parentElement !== el) {
+      no = no.parentNode;
+    }
+    return no instanceof HTMLElement ? no : null;
+  }
+
+  function duplicarBlocoDeTexto() {
+    const bloco = blocoDeTextoAtual();
+    if (!bloco) return;
+    const copia = bloco.cloneNode(true) as HTMLElement;
+    bloco.after(copia);
+    salvarConteudoPagina(paginaAtivaId);
+  }
+
+  function excluirBlocoDeTexto() {
+    const bloco = blocoDeTextoAtual();
+    if (!bloco) return;
+    bloco.remove();
+    salvarConteudoPagina(paginaAtivaId);
   }
 
   function atualizarImagemSelecionada(mudar: (img: HTMLImageElement) => void) {
@@ -3866,6 +3905,23 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         />
       ) : null}
 
+      {menuTextoPos ? (
+        <MenuContextoTexto
+          pos={menuTextoPos}
+          onFechar={() => setMenuTextoPos(null)}
+          onCopiar={() => { setMenuTextoPos(null); document.execCommand("copy"); }}
+          onRecortar={() => { setMenuTextoPos(null); document.execCommand("cut"); salvarConteudoPagina(paginaAtivaId); }}
+          onColar={() => { setMenuTextoPos(null); colarConteudo(false); }}
+          onNegrito={() => { setMenuTextoPos(null); aplicarFormatacao("bold"); }}
+          onItalico={() => { setMenuTextoPos(null); aplicarFormatacao("italic"); }}
+          onLink={() => { setMenuTextoPos(null); inserirLink(); }}
+          onCor={(c) => { setMenuTextoPos(null); aplicarFormatacao("foreColor", c); }}
+          onAlinhar={(modo) => { setMenuTextoPos(null); aplicarFormatacao(modo); }}
+          onDuplicarBloco={() => { setMenuTextoPos(null); duplicarBlocoDeTexto(); }}
+          onExcluirBloco={() => { setMenuTextoPos(null); excluirBlocoDeTexto(); }}
+        />
+      ) : null}
+
     </div>
   );
 }
@@ -4495,6 +4551,88 @@ function MenuContextoImagem({
       <button type="button" onClick={onBloquear}>{bloqueada ? "🔓 Desbloquear" : "🔒 Bloquear"}</button>
       <div className="doc-context-menu-sep" />
       <button type="button" className="perigo" onClick={onExcluir}>🗑 Excluir</button>
+    </div>
+  );
+}
+
+const CORES_MENU_TEXTO = ["#0b1533", "#2e6bff", "#0f9d63", "#d64545", "#c9660a"];
+
+/** Menu de botão direito em texto (item 5) — reposiciona sozinho se abriria fora da viewport, igual o de imagem. */
+function MenuContextoTexto({
+  pos,
+  onFechar,
+  onCopiar,
+  onRecortar,
+  onColar,
+  onNegrito,
+  onItalico,
+  onLink,
+  onCor,
+  onAlinhar,
+  onDuplicarBloco,
+  onExcluirBloco,
+}: {
+  pos: { x: number; y: number };
+  onFechar: () => void;
+  onCopiar: () => void;
+  onRecortar: () => void;
+  onColar: () => void;
+  onNegrito: () => void;
+  onItalico: () => void;
+  onLink: () => void;
+  onCor: (cor: string) => void;
+  onAlinhar: (comando: string) => void;
+  onDuplicarBloco: () => void;
+  onExcluirBloco: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [ajuste, setAjuste] = useState({ x: 0, y: 0 });
+  useFecharAoClicarFora(ref, true, onFechar);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const margem = 8;
+    const dx = rect.right > window.innerWidth - margem ? window.innerWidth - margem - rect.right : 0;
+    const dy = rect.bottom > window.innerHeight - margem ? window.innerHeight - margem - rect.bottom : 0;
+    if (dx || dy) setAjuste({ x: dx, y: dy });
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="doc-context-menu"
+      style={{ left: pos.x + ajuste.x, top: pos.y + ajuste.y }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <button type="button" onClick={onCopiar}>📋 Copiar</button>
+      <button type="button" onClick={onRecortar}>✂ Recortar</button>
+      <button type="button" onClick={onColar}>📥 Colar</button>
+      <div className="doc-context-menu-sep" />
+      <button type="button" style={{ fontWeight: 700 }} onMouseDown={(e) => e.preventDefault()} onClick={onNegrito}>N Negrito</button>
+      <button type="button" style={{ fontStyle: "italic" }} onMouseDown={(e) => e.preventDefault()} onClick={onItalico}>I Itálico</button>
+      <button type="button" onClick={onLink}>🔗 Link</button>
+      <div className="doc-context-menu-linha">
+        {CORES_MENU_TEXTO.map((c) => (
+          <button
+            key={c}
+            type="button"
+            aria-label={`Cor ${c}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onCor(c)}
+            style={{ background: c, width: 22, height: 22, borderRadius: "50%", padding: 0, border: "1px solid var(--line)" }}
+          />
+        ))}
+      </div>
+      <div className="doc-context-menu-linha">
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => onAlinhar("justifyLeft")}>≡◧</button>
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => onAlinhar("justifyCenter")}>≡</button>
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => onAlinhar("justifyRight")}>◨≡</button>
+      </div>
+      <div className="doc-context-menu-sep" />
+      <button type="button" onClick={onDuplicarBloco}>⧉ Duplicar bloco</button>
+      <button type="button" className="perigo" onClick={onExcluirBloco}>🗑 Excluir bloco</button>
     </div>
   );
 }
