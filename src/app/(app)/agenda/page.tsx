@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 import { currentUser } from "@/lib/data";
 import { compromissosDeTarefas, HOJE_ISO, useAgenda } from "@/lib/agenda-context";
 import { useTarefas } from "@/lib/tarefas-context";
+import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { Topbar } from "@/components/ui";
 
 const MESES = [
@@ -35,7 +37,11 @@ export default function AgendaPage() {
   const [descricaoNovo, setDescricaoNovo] = useState("");
   const [horaNovo, setHoraNovo] = useState("09:00");
   const [menuConexaoAberto, setMenuConexaoAberto] = useState(false);
+  const [menuConexaoAnchorRect, setMenuConexaoAnchorRect] = useState<AnchorRect | null>(null);
+  const { ref: menuConexaoRef, posicao: menuConexaoPos } = useFloatingPosition(menuConexaoAnchorRect, menuConexaoAberto);
   const [menuConteudoAberto, setMenuConteudoAberto] = useState(false);
+  const [menuConteudoAnchorRect, setMenuConteudoAnchorRect] = useState<AnchorRect | null>(null);
+  const { ref: menuConteudoRef, posicao: menuConteudoPos } = useFloatingPosition(menuConteudoAnchorRect, menuConteudoAberto);
 
   const compromissosManuais = compromissos.filter((c) => c.origem === "manual" && c.status !== "cancelado");
   const compromissosAutomaticos = modo === "completa" ? compromissosDeTarefas(colunas, ano) : [];
@@ -109,17 +115,29 @@ export default function AgendaPage() {
                 type="button"
                 className="fsel"
                 style={{ cursor: "pointer" }}
-                onClick={() => setMenuConexaoAberto((v) => !v)}
+                onClick={(e) => {
+                  if (menuConexaoAberto) {
+                    setMenuConexaoAberto(false);
+                  } else {
+                    setMenuConexaoAnchorRect(e.currentTarget.getBoundingClientRect());
+                    setMenuConexaoAberto(true);
+                  }
+                }}
               >
                 {conexao === "interna" ? "Agenda interna" : "Google Agenda"} ▾
               </button>
-              {menuConexaoAberto ? (
-                <>
-                  <div
-                    onClick={() => setMenuConexaoAberto(false)}
-                    style={{ position: "fixed", inset: 0, zIndex: 50 }}
-                  />
-                  <div className="dropdown-pop">
+              {menuConexaoAberto && menuConexaoPos && typeof document !== "undefined"
+                ? createPortal(
+                    <>
+                      <div
+                        onClick={() => setMenuConexaoAberto(false)}
+                        style={{ position: "fixed", inset: 0, zIndex: 190 }}
+                      />
+                      <div
+                        ref={menuConexaoRef}
+                        className="dropdown-pop"
+                        style={{ position: "fixed", top: menuConexaoPos.top, left: menuConexaoPos.left, zIndex: 200 }}
+                      >
                     <button
                       type="button"
                       className="dropdown-item"
@@ -162,9 +180,11 @@ export default function AgendaPage() {
                         <span className="r">{currentUser.email}</span>
                       </button>
                     ) : null}
-                  </div>
-                </>
-              ) : null}
+                      </div>
+                    </>,
+                    document.body,
+                  )
+                : null}
             </div>
 
             <div className="dropdown-anchor">
@@ -172,17 +192,29 @@ export default function AgendaPage() {
                 type="button"
                 className="fsel"
                 style={{ cursor: "pointer" }}
-                onClick={() => setMenuConteudoAberto((v) => !v)}
+                onClick={(e) => {
+                  if (menuConteudoAberto) {
+                    setMenuConteudoAberto(false);
+                  } else {
+                    setMenuConteudoAnchorRect(e.currentTarget.getBoundingClientRect());
+                    setMenuConteudoAberto(true);
+                  }
+                }}
               >
                 {modo === "completa" ? "Agenda completa" : "Agenda manual"} ▾
               </button>
-              {menuConteudoAberto ? (
-                <>
+              {menuConteudoAberto && menuConteudoPos && typeof document !== "undefined"
+                ? createPortal(
+                    <>
                   <div
                     onClick={() => setMenuConteudoAberto(false)}
-                    style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                    style={{ position: "fixed", inset: 0, zIndex: 190 }}
                   />
-                  <div className="dropdown-pop dropdown-pop-right">
+                  <div
+                    ref={menuConteudoRef}
+                    className="dropdown-pop"
+                    style={{ position: "fixed", top: menuConteudoPos.top, left: menuConteudoPos.left, zIndex: 200 }}
+                  >
                     <button
                       type="button"
                       className="dropdown-item"
@@ -212,8 +244,10 @@ export default function AgendaPage() {
                       <span className="r">Só o que você adicionar aqui</span>
                     </button>
                   </div>
-                </>
-              ) : null}
+                </>,
+                document.body,
+              )
+                : null}
             </div>
           </>
         }

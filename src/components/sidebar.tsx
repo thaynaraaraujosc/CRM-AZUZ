@@ -14,6 +14,7 @@ import {
 import { currentUser, workspace } from "@/lib/data";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
+import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import {
   IconAcoes,
   IconAutomacoes,
@@ -105,17 +106,13 @@ export function Sidebar() {
   const { funis, funilAtivoId, setFunilAtivoId } = useFunis();
   const { membros: equipe } = useEquipe();
   const [contaAberta, setContaAberta] = useState(false);
+  const [contaAnchorRect, setContaAnchorRect] = useState<AnchorRect | null>(null);
+  const { ref: contaPopRef, posicao: contaPos } = useFloatingPosition(contaAnchorRect, contaAberta);
   const [workspaceAberto, setWorkspaceAberto] = useState(false);
   const [nomeEmpresa, setNomeEmpresa] = useState(workspace.name);
   const [segmento, setSegmento] = useState(workspace.segment);
-  const workspaceBtnRef = useRef<HTMLButtonElement>(null);
-  const [workspacePos, setWorkspacePos] = useState({ top: 0, left: 0, width: 0 });
-
-  useEffect(() => {
-    if (!workspaceAberto || !workspaceBtnRef.current) return;
-    const rect = workspaceBtnRef.current.getBoundingClientRect();
-    setWorkspacePos({ top: rect.bottom + 8, left: rect.left, width: rect.width });
-  }, [workspaceAberto]);
+  const [workspaceAnchorRect, setWorkspaceAnchorRect] = useState<AnchorRect | null>(null);
+  const { ref: workspacePopRef, posicao: workspacePos } = useFloatingPosition(workspaceAnchorRect, workspaceAberto);
 
   const souAdmin =
     equipe.find((m) => m.nome === currentUser.name)?.papelTipo === "admin";
@@ -169,15 +166,21 @@ export function Sidebar() {
       <div className="dropdown-anchor">
         <button
           type="button"
-          ref={workspaceBtnRef}
           className="sb-workspace"
-          onClick={() => setWorkspaceAberto((v) => !v)}
+          onClick={(e) => {
+            if (workspaceAberto) {
+              setWorkspaceAberto(false);
+            } else {
+              setWorkspaceAnchorRect(e.currentTarget.getBoundingClientRect());
+              setWorkspaceAberto(true);
+            }
+          }}
         >
           <p className="l">Workspace</p>
           <p className="v">{nomeEmpresa}</p>
         </button>
 
-        {workspaceAberto && typeof document !== "undefined"
+        {workspaceAberto && workspacePos && typeof document !== "undefined"
           ? createPortal(
               <>
                 <div
@@ -185,6 +188,7 @@ export function Sidebar() {
                   style={{ position: "fixed", inset: 0, zIndex: 200 }}
                 />
                 <div
+                  ref={workspacePopRef}
                   className="dropdown-pop"
                   style={{
                     position: "fixed",
@@ -373,7 +377,14 @@ export function Sidebar() {
           className="sb-foot-info"
           aria-haspopup="true"
           aria-expanded={contaAberta}
-          onClick={() => setContaAberta((v) => !v)}
+          onClick={(e) => {
+            if (contaAberta) {
+              setContaAberta(false);
+            } else {
+              setContaAnchorRect(e.currentTarget.getBoundingClientRect());
+              setContaAberta(true);
+            }
+          }}
         >
           <div className="avatar sm">{currentUser.initials}</div>
           <div>
@@ -385,44 +396,59 @@ export function Sidebar() {
           </div>
         </button>
 
-        {contaAberta ? (
-          <>
-          <div
-            onClick={() => setContaAberta(false)}
-            style={{ position: "fixed", inset: 0, zIndex: 55 }}
-          />
-          <div className="account-pop">
-            {souAdmin ? (
+        {contaAberta && contaPos && typeof document !== "undefined"
+          ? createPortal(
               <>
-                <div className="dropdown-item" style={{ cursor: "default" }}>
-                  <span className="n">Trocar de conta</span>
-                  <span className="r">Você está como {currentUser.name}</span>
-                </div>
-                {outrosMembros.map((m) => (
-                  <button
-                    type="button"
-                    key={m.nome}
+                <div
+                  onClick={() => setContaAberta(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 200 }}
+                />
+                <div
+                  ref={contaPopRef}
+                  className="account-pop"
+                  style={{
+                    position: "fixed",
+                    top: contaPos.top,
+                    left: contaPos.left,
+                    right: "auto",
+                    bottom: "auto",
+                    width: 280,
+                    zIndex: 201,
+                  }}
+                >
+                  {souAdmin ? (
+                    <>
+                      <div className="dropdown-item" style={{ cursor: "default" }}>
+                        <span className="n">Trocar de conta</span>
+                        <span className="r">Você está como {currentUser.name}</span>
+                      </div>
+                      {outrosMembros.map((m) => (
+                        <button
+                          type="button"
+                          key={m.id}
+                          className="dropdown-item"
+                          style={{ width: "100%", textAlign: "left" }}
+                          onClick={() => setContaAberta(false)}
+                        >
+                          <span className="n">{m.nome}</span>
+                          <span className="r">{m.papel}</span>
+                        </button>
+                      ))}
+                    </>
+                  ) : null}
+                  <Link
+                    href="/entrar"
                     className="dropdown-item"
-                    style={{ width: "100%", textAlign: "left" }}
+                    style={{ width: "100%", textAlign: "left", borderTop: "1px solid var(--line)" }}
                     onClick={() => setContaAberta(false)}
                   >
-                    <span className="n">{m.nome}</span>
-                    <span className="r">{m.papel}</span>
-                  </button>
-                ))}
-              </>
-            ) : null}
-            <Link
-              href="/entrar"
-              className="dropdown-item"
-              style={{ width: "100%", textAlign: "left", borderTop: "1px solid var(--line)" }}
-              onClick={() => setContaAberta(false)}
-            >
-              <span className="n">↪ Sair</span>
-            </Link>
-          </div>
-          </>
-        ) : null}
+                    <span className="n">↪ Sair</span>
+                  </Link>
+                </div>
+              </>,
+              document.body,
+            )
+          : null}
       </div>
     </aside>
   );

@@ -4,12 +4,15 @@ import { Suspense, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { createPortal } from "react-dom";
+
 import { classeOrigem, type NegocioCard } from "@/lib/data";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useEquipe } from "@/lib/equipe-context";
+import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { IconAutomacoes } from "@/components/icons";
 import { IconConfiguracoes } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
@@ -44,6 +47,8 @@ function FunilPageInner() {
   const { salvarDadosContato, atribuirAtendente } = useContatos();
   const { membros: equipe } = useEquipe();
   const [configAberto, setConfigAberto] = useState(false);
+  const [configAnchorRect, setConfigAnchorRect] = useState<AnchorRect | null>(null);
+  const { ref: configPopRef, posicao: configPos } = useFloatingPosition(configAnchorRect, configAberto);
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const proximoToastId = useRef(0);
 
@@ -319,17 +324,29 @@ function FunilPageInner() {
                   type="button"
                   className="icon-btn subtle"
                   aria-label={`Configurações do funil ${funilAtivo.nome}`}
-                  onClick={() => setConfigAberto((v) => !v)}
+                  onClick={(e) => {
+                    if (configAberto) {
+                      setConfigAberto(false);
+                    } else {
+                      setConfigAnchorRect(e.currentTarget.getBoundingClientRect());
+                      setConfigAberto(true);
+                    }
+                  }}
                 >
                   <IconConfiguracoes width={14} height={14} />
                 </button>
-                {configAberto ? (
-                  <>
-                    <div
-                      onClick={() => setConfigAberto(false)}
-                      style={{ position: "fixed", inset: 0, zIndex: 50 }}
-                    />
-                    <div className="dropdown-pop dropdown-pop-right">
+                {configAberto && configPos && typeof document !== "undefined"
+                  ? createPortal(
+                      <>
+                        <div
+                          onClick={() => setConfigAberto(false)}
+                          style={{ position: "fixed", inset: 0, zIndex: 190 }}
+                        />
+                        <div
+                          ref={configPopRef}
+                          className="dropdown-pop"
+                          style={{ position: "fixed", top: configPos.top, left: configPos.left, zIndex: 200 }}
+                        >
                       <Link
                         href={`/automacoes?funil=${funilAtivo.id}`}
                         className="dropdown-item"
@@ -365,9 +382,11 @@ function FunilPageInner() {
                             : "Remove esse funil e os negócios dele"}
                         </span>
                       </button>
-                    </div>
-                  </>
-                ) : null}
+                        </div>
+                      </>,
+                      document.body,
+                    )
+                  : null}
               </div>
             ) : null}
           </>

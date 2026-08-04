@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { createPortal } from "react-dom";
+
 import { useCentralDia } from "@/lib/central-dia-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useNotificacoes } from "@/lib/notificacoes-context";
 import { useTarefas } from "@/lib/tarefas-context";
+import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { IconBell, IconSearch } from "@/components/icons";
 import { navEntries } from "@/components/sidebar";
 
@@ -52,6 +55,8 @@ function GlobalSearch() {
   const index = useSearchIndex();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null);
+  const { ref: popRef, posicao } = useFloatingPosition(anchorRect, open && !!query.trim());
 
   const resultados =
     query.trim().length === 0
@@ -69,53 +74,77 @@ function GlobalSearch() {
           aria-label="Pesquisar no CRM"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setOpen(true)}
+          onFocus={(e) => {
+            setAnchorRect(e.currentTarget.getBoundingClientRect());
+            setOpen(true);
+          }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
         />
       </label>
-      {open && query.trim() ? (
-        <div className="dropdown-pop">
-          {resultados.length === 0 ? (
-            <p className="hint" style={{ padding: "12px 14px" }}>
-              Nada encontrado pra &quot;{query}&quot;
-            </p>
-          ) : (
-            resultados.map((r) => (
-              <Link
-                key={`${r.href}-${r.label}`}
-                href={r.href}
-                className="dropdown-item"
-              >
-                <span className="n">{r.label}</span>
-                <span className="r">{r.sub}</span>
-              </Link>
-            ))
-          )}
-        </div>
-      ) : null}
+      {open && query.trim() && posicao && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={popRef}
+              className="dropdown-pop"
+              style={{ position: "fixed", top: posicao.top, left: posicao.left, zIndex: 200 }}
+            >
+              {resultados.length === 0 ? (
+                <p className="hint" style={{ padding: "12px 14px" }}>
+                  Nada encontrado pra &quot;{query}&quot;
+                </p>
+              ) : (
+                resultados.map((r) => (
+                  <Link
+                    key={`${r.href}-${r.label}`}
+                    href={r.href}
+                    className="dropdown-item"
+                  >
+                    <span className="n">{r.label}</span>
+                    <span className="r">{r.sub}</span>
+                  </Link>
+                ))
+              )}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
 
 function CriarMenu() {
   const [open, setOpen] = useState(false);
+  const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null);
+  const { ref: popRef, posicao } = useFloatingPosition(anchorRect, open);
 
   return (
     <div className="dropdown-anchor">
       <button
         type="button"
         className="btn primary"
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => {
+          if (open) {
+            setOpen(false);
+          } else {
+            setAnchorRect(e.currentTarget.getBoundingClientRect());
+            setOpen(true);
+          }
+        }}
       >
         + Criar
       </button>
-      {open ? (
-        <>
-          <div
-            onClick={() => setOpen(false)}
-            style={{ position: "fixed", inset: 0, zIndex: 50 }}
-          />
-          <div className="dropdown-pop">
+      {open && posicao && typeof document !== "undefined"
+        ? createPortal(
+            <>
+              <div
+                onClick={() => setOpen(false)}
+                style={{ position: "fixed", inset: 0, zIndex: 190 }}
+              />
+              <div
+                ref={popRef}
+                className="dropdown-pop"
+                style={{ position: "fixed", top: posicao.top, left: posicao.left, zIndex: 200 }}
+              >
             <Link
               href="/funil?criarNegocio=1"
               className="dropdown-item"
@@ -148,15 +177,19 @@ function CriarMenu() {
               <span className="n">Criar tarefa</span>
               <span className="r">Abre o formulário em Tarefas</span>
             </Link>
-          </div>
-        </>
-      ) : null}
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
 
 function NotificationsBell() {
   const [open, setOpen] = useState(false);
+  const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null);
+  const { ref: popRef, posicao } = useFloatingPosition(anchorRect, open);
   const { itens, naoLidas, marcarTodasLidas } = useNotificacoes();
 
   return (
@@ -165,19 +198,26 @@ function NotificationsBell() {
         type="button"
         className="icon-btn"
         aria-label={`Notificações${naoLidas > 0 ? ` · ${naoLidas} não lidas` : ""}`}
-        onClick={() => {
-          setOpen((v) => !v);
-          if (!open) marcarTodasLidas();
+        onClick={(e) => {
+          const abrindo = !open;
+          if (abrindo) setAnchorRect(e.currentTarget.getBoundingClientRect());
+          setOpen(abrindo);
+          if (abrindo) marcarTodasLidas();
         }}
       >
         {naoLidas > 0 ? <span className="dot" /> : null}
         <IconBell />
       </button>
-      {open ? (
-        <div className="dropdown-pop dropdown-pop-right">
-          <div className="panel-h">
-            <h4>Notificações</h4>
-          </div>
+      {open && posicao && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={popRef}
+              className="dropdown-pop"
+              style={{ position: "fixed", top: posicao.top, left: posicao.left, zIndex: 200 }}
+            >
+              <div className="panel-h">
+                <h4>Notificações</h4>
+              </div>
           {itens.map((n, i) => (
             <div
               className="activity-row"
@@ -191,8 +231,10 @@ function NotificationsBell() {
               {!n.lida ? <span className="dot" /> : null}
             </div>
           ))}
-        </div>
-      ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
