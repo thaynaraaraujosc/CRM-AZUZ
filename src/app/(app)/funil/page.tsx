@@ -4,11 +4,12 @@ import { Suspense, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { classeOrigem, equipe, type NegocioCard } from "@/lib/data";
+import { classeOrigem, type NegocioCard } from "@/lib/data";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
 import { useContatos } from "@/lib/contatos-context";
+import { useEquipe } from "@/lib/equipe-context";
 import { IconAutomacoes } from "@/components/icons";
 import { IconConfiguracoes } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
@@ -41,6 +42,7 @@ function FunilPageInner() {
     useAutomacoes();
   const { dispararEvento } = useAutomationFlows();
   const { salvarDadosContato, atribuirAtendente } = useContatos();
+  const { membros: equipe } = useEquipe();
   const [configAberto, setConfigAberto] = useState(false);
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const proximoToastId = useRef(0);
@@ -444,7 +446,7 @@ function FunilPageInner() {
                 onChange={(e) => setAtendenteNovoFunil(e.target.value)}
               >
                 {equipe.map((m) => (
-                  <option key={m.nome} value={m.nome}>
+                  <option key={m.id} value={m.nome}>
                     {m.nome}
                   </option>
                 ))}

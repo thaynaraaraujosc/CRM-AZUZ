@@ -1,6 +1,6 @@
 "use client";
 
-import { equipe } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import type { CancelarAgendamentoData, CriterioAgendamento, OrigemMensagemCancelamento } from "@/lib/automation-flow/types";
 
 const TIPOS_AGENDAMENTO = ["Consulta", "Reunião", "Retorno", "Visita", "Demonstração", "Avaliação", "Outro"];
@@ -23,6 +23,7 @@ const CRITERIOS: { valor: CriterioAgendamento; label: string }[] = [
 /** Ação "Cancelar agendamento" (item 2) — qual agendamento cancelar, e opcionalmente qual mensagem
  * de cancelamento enviar ao contato. */
 export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgendamentoData; onChange: (novo: CancelarAgendamentoData) => void }) {
+  const { membros: equipe } = useEquipe();
   return (
     <div className="flow-form">
       <div className="field">
@@ -52,7 +53,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
           <select className="input" value={data.responsavel ?? ""} onChange={(e) => onChange({ ...data, responsavel: e.target.value })}>
             <option value="">Selecione…</option>
             {equipe.map((m) => (
-              <option key={m.nome} value={m.nome}>{m.nome}</option>
+              <option key={m.id} value={m.nome}>{m.nome}</option>
             ))}
           </select>
         </div>

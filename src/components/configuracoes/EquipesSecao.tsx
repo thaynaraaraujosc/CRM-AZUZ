@@ -4,7 +4,8 @@ import { useState } from "react";
 
 import { Modal } from "@/components/ui";
 import { useConfiguracoes } from "@/lib/configuracoes-context";
-import { equipe, funis } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
+import { useFunis } from "@/lib/funis-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 
 const CANAIS_EQUIPE = ["WhatsApp", "Instagram", "E-mail"];
@@ -20,6 +21,8 @@ const METODOS_DISTRIBUICAO = [
  * de `equipe` (data.ts) pra popular os seletores. */
 export function EquipesSecao() {
   const { estado, adicionarEquipe, removerEquipe } = useConfiguracoes();
+  const { membros: equipe } = useEquipe();
+  const { funis } = useFunis();
   const [aberta, setAberta] = useState<string | null>(null);
   const [novaAberta, setNovaAberta] = useState(false);
   const [nome, setNome] = useState("");
@@ -134,7 +137,7 @@ export function EquipesSecao() {
             <label>Gestor</label>
             <select className="input" value={gestor} onChange={(e) => setGestor(e.target.value)}>
               {equipe.map((m) => (
-                <option key={m.nome} value={m.nome}>
+                <option key={m.id} value={m.nome}>
                   {m.nome}
                 </option>
               ))}

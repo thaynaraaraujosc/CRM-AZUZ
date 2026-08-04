@@ -1,6 +1,6 @@
 "use client";
 
-import { equipe } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import type {
   CriarTarefaData,
   ModoPrazoTarefa,
@@ -22,6 +22,7 @@ const PRIORIDADES: { valor: PrioridadeTarefa; label: string }[] = [
  * relacionar, tudo configurável direto no bloco. */
 export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onChange: (novo: CriarTarefaData) => void }) {
   const equipes = useEquipesDisponiveis();
+  const { membros: equipe } = useEquipe();
 
   return (
     <div className="flow-form">
@@ -75,7 +76,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
           <select className="input" value={data.responsavel ?? ""} onChange={(e) => onChange({ ...data, responsavel: e.target.value })}>
             <option value="">Selecione…</option>
             {equipe.map((m) => (
-              <option key={m.nome} value={m.nome}>
+              <option key={m.id} value={m.nome}>
                 {m.nome}
               </option>
             ))}

@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Drawer, Modal } from "@/components/ui";
 import { useConfiguracoes } from "@/lib/configuracoes-context";
-import { equipe } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import { FUNCOES_PADRAO, TODAS_PERMISSOES_IDS } from "@/lib/configuracoes/permissoes";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { MatrizPermissoes } from "./MatrizPermissoes";
@@ -15,6 +15,7 @@ const FUNCOES_OPCOES = [...FUNCOES_PADRAO.map((f) => f.nome), "Função personal
  * usuário e criar função ficam em estado local (front-end apenas, sem convite/e-mail de verdade). */
 export function UsuariosSecao() {
   const { estado, adicionarFuncao, removerFuncao } = useConfiguracoes();
+  const { membros: equipe, convidarMembro } = useEquipe();
   const [aba, setAba] = useState<"usuarios" | "funcoes">("usuarios");
   const [busca, setBusca] = useState("");
   const [drawerAberto, setDrawerAberto] = useState(false);
@@ -77,7 +78,7 @@ export function UsuariosSecao() {
               </thead>
               <tbody>
                 {usuariosFiltrados.map((m) => (
-                  <tr key={m.nome}>
+                  <tr key={m.id}>
                     <td>{m.nome}</td>
                     <td>{m.email}</td>
                     <td>{m.papel}</td>
@@ -131,10 +132,19 @@ export function UsuariosSecao() {
               className="btn primary"
               disabled={!nome.trim() || !emailNovo.trim()}
               onClick={() => {
+                convidarMembro({
+                  nome: `${nome.trim()} ${sobrenome.trim()}`.trim(),
+                  email: emailNovo.trim(),
+                  papel: funcaoEscolhida,
+                  papelTipo: FUNCOES_PADRAO.some((f) => f.nome === funcaoEscolhida) ? "padrao" : "custom",
+                  enxerga: "Definido pela função escolhida",
+                  permissoes: permissoesNovoUsuario,
+                });
                 setDrawerAberto(false);
                 setNome("");
                 setSobrenome("");
                 setEmailNovo("");
+                setTelefone("");
               }}
             >
               Enviar convite

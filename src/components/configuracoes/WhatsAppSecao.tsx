@@ -3,7 +3,8 @@
 import { useState } from "react";
 
 import { Toggle } from "@/components/ui";
-import { equipe, funis } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
+import { useFunis } from "@/lib/funis-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 
 type Aba = "conexao" | "atendimento" | "mensagens" | "compatibilidade" | "horarios";
@@ -21,6 +22,8 @@ const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
  * automações (menu numerado/texto livre = compatibilidade ampla; botões/lista = conforme integração),
  * pra não divergir a mensagem entre as duas telas. */
 export function WhatsAppSecao() {
+  const { membros: equipe } = useEquipe();
+  const { funis } = useFunis();
   const [aba, setAba] = useState<Aba>("conexao");
   const [tipoConexao, setTipoConexao] = useState("Conexão por provedor");
   const [distribuir, setDistribuir] = useState(true);
@@ -71,7 +74,7 @@ export function WhatsAppSecao() {
               <label>Equipe responsável</label>
               <select className="input" defaultValue={equipe[0]?.nome}>
                 {equipe.map((m) => (
-                  <option key={m.nome}>{m.nome}</option>
+                  <option key={m.id}>{m.nome}</option>
                 ))}
               </select>
             </div>
@@ -79,7 +82,7 @@ export function WhatsAppSecao() {
               <label>Responsável padrão</label>
               <select className="input" defaultValue={equipe[0]?.nome}>
                 {equipe.map((m) => (
-                  <option key={m.nome}>{m.nome}</option>
+                  <option key={m.id}>{m.nome}</option>
                 ))}
               </select>
             </div>

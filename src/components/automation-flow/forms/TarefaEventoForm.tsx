@@ -1,6 +1,6 @@
 "use client";
 
-import { equipe } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import type { FiltroTarefaModo, TarefaEventoData } from "@/lib/automation-flow/types";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
@@ -21,6 +21,7 @@ const MODOS: { valor: FiltroTarefaModo; label: string }[] = [
  * automação. */
 export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; onChange: (novo: TarefaEventoData) => void }) {
   const { funis } = useFunis();
+  const { membros: equipe } = useEquipe();
   const equipes = useEquipesDisponiveis();
 
   return (
@@ -72,7 +73,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
           <select className="input" value={data.responsavel ?? ""} onChange={(e) => onChange({ ...data, responsavel: e.target.value })}>
             <option value="">Selecione…</option>
             {equipe.map((m) => (
-              <option key={m.nome} value={m.nome}>
+              <option key={m.id} value={m.nome}>
                 {m.nome}
               </option>
             ))}

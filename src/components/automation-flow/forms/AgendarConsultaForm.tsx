@@ -1,10 +1,11 @@
 "use client";
 
-import { equipe } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import type { AgendarConsultaData } from "@/lib/automation-flow/types";
 
 /** Ação "Agendar consulta" — data, horário, profissional e tipo de serviço da consulta. */
 export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaData; onChange: (novo: AgendarConsultaData) => void }) {
+  const { membros: equipe } = useEquipe();
   return (
     <div className="flow-form">
       <div className="field">
@@ -32,7 +33,7 @@ export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaD
         <select className="input" value={data.profissional ?? ""} onChange={(e) => onChange({ ...data, profissional: e.target.value })}>
           <option value="">Selecione…</option>
           {equipe.map((m) => (
-            <option key={m.nome} value={m.nome}>
+            <option key={m.id} value={m.nome}>
               {m.nome}
             </option>
           ))}

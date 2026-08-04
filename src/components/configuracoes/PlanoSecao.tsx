@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 
-import { equipe, planoAtual } from "@/lib/data";
+import { planoAtual } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 
 const PLANOS_COMPARACAO = [
@@ -20,6 +21,7 @@ const HISTORICO_MOCK = [
 /** Plano e cobrança (item 40) — migra a lógica de cartão/cancelamento que já existia na tela antiga
  * de Configurações (preservada), acrescenta comparação de planos e histórico de cobrança mockados. */
 export function PlanoSecao() {
+  const { membros: equipe } = useEquipe();
   const [numeroCartao, setNumeroCartao] = useState("");
   const [nomeCartao, setNomeCartao] = useState("");
   const [validadeCartao, setValidadeCartao] = useState("");

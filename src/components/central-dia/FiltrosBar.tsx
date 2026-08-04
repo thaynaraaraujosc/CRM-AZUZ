@@ -4,7 +4,8 @@ import { useRef, useState } from "react";
 
 import { FloatingDropdown } from "@/components/ui";
 import { FILTROS_PADRAO, useCentralDia } from "@/lib/central-dia-context";
-import { equipe, funis } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
+import { useFunis } from "@/lib/funis-context";
 
 const FILTROS_RAPIDOS = ["Todos", "Meus itens", "Minha equipe", "Urgentes", "Conversas", "Tarefas", "Agenda", "Leads", "Automações"];
 const PERIODOS: { valor: "hoje" | "amanha" | "semana"; label: string }[] = [
@@ -27,6 +28,8 @@ function contarFiltrosAtivos(filtros: typeof FILTROS_PADRAO): number {
  * pra dar pra "Limpar filtros" de fora) + painel "Mais filtros" com os campos adicionais. */
 export function FiltrosBar() {
   const { filtros, setFiltros, limparFiltros } = useCentralDia();
+  const { membros: equipe } = useEquipe();
+  const { funis } = useFunis();
   const [aberto, setAberto] = useState(false);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -88,7 +91,7 @@ export function FiltrosBar() {
               <select className="input" value={filtros.responsavel} onChange={(e) => setFiltros({ responsavel: e.target.value })}>
                 <option value="Todos">Todos</option>
                 {equipe.map((m) => (
-                  <option key={m.nome} value={m.nome}>
+                  <option key={m.id} value={m.nome}>
                     {m.nome}
                   </option>
                 ))}

@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 
-import { contatos, equipe } from "@/lib/data";
+import { useContatos } from "@/lib/contatos-context";
+import { useEquipe } from "@/lib/equipe-context";
 import type { DestinoEnvioContato, MensagemContatoData, OrigemContatoEnvio } from "@/lib/automation-flow/types";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 
@@ -20,12 +21,14 @@ const CAMPOS_COMPARTILHAVEIS: { valor: string; label: string }[] = [
 /** Ação "Enviar contato" (item 3) — qual contato compartilhar, quais dados dele, e pra quem enviar. */
 export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoData; onChange: (novo: MensagemContatoData) => void }) {
   const equipes = useEquipesDisponiveis();
+  const { contatos } = useContatos();
+  const { membros: equipe } = useEquipe();
   const [busca, setBusca] = useState(data.contatoBuscaTexto ?? "");
   const resultados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     if (!termo) return [];
     return contatos.filter((c) => c.nome.toLowerCase().includes(termo) || c.whatsapp?.includes(termo) || c.email?.toLowerCase().includes(termo)).slice(0, 6);
-  }, [busca]);
+  }, [busca, contatos]);
 
   function alternarCampo(valor: string) {
     const atual = data.camposCompartilhados ?? [];
@@ -108,7 +111,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
           <select className="input" value={data.destinoAtendente ?? ""} onChange={(e) => onChange({ ...data, destinoAtendente: e.target.value })}>
             <option value="">Selecione…</option>
             {equipe.map((m) => (
-              <option key={m.nome} value={m.nome}>{m.nome}</option>
+              <option key={m.id} value={m.nome}>{m.nome}</option>
             ))}
           </select>
         </div>

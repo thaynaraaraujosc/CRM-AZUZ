@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { contatos, equipe, tarefas } from "@/lib/data";
 import { useCentralDia } from "@/lib/central-dia-context";
+import { useContatos } from "@/lib/contatos-context";
+import { useEquipe } from "@/lib/equipe-context";
 import { useNotificacoes } from "@/lib/notificacoes-context";
+import { useTarefas } from "@/lib/tarefas-context";
 import { IconBell, IconSearch } from "@/components/icons";
 import { navEntries } from "@/components/sidebar";
 
@@ -19,6 +21,9 @@ function normaliza(texto: string) {
 }
 
 function useSearchIndex(): SearchResult[] {
+  const { contatos } = useContatos();
+  const { colunas: tarefas } = useTarefas();
+  const { membros: equipe } = useEquipe();
   return useMemo(() => {
     const results: SearchResult[] = [];
     navEntries.forEach((n) =>
@@ -40,7 +45,7 @@ function useSearchIndex(): SearchResult[] {
       results.push({ label: m.nome, sub: `Equipe · ${m.papel}`, href: "/equipe" }),
     );
     return results;
-  }, []);
+  }, [contatos, tarefas, equipe]);
 }
 
 function GlobalSearch() {

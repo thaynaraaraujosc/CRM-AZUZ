@@ -1,6 +1,6 @@
 "use client";
 
-import { equipe } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import type { FlowNode } from "@/lib/automation-flow/types";
 import { EtiquetaSelect } from "./EtiquetaSelect";
@@ -28,6 +28,7 @@ const CHAVES_OCULTAS = new Set(["variaveis", "candidatos", "anexos", "variaveisU
  */
 export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (data: Record<string, unknown>) => void }) {
   const { funis } = useFunis();
+  const { membros: equipe } = useEquipe();
   const d = node.data as Record<string, unknown>;
   const chaves = Object.keys(d);
 
@@ -114,7 +115,7 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
               <select className="input" value={typeof valor === "string" ? valor : ""} onChange={(e) => set(chave, e.target.value)}>
                 <option value="">Selecione…</option>
                 {equipe.map((m) => (
-                  <option key={m.nome} value={m.nome}>
+                  <option key={m.id} value={m.nome}>
                     {m.nome}
                   </option>
                 ))}

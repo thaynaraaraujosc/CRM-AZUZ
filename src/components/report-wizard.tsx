@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type jsPDF from "jspdf";
 
-import { contatos, equipe, workspace } from "@/lib/data";
+import { workspace } from "@/lib/data";
+import { useContatos } from "@/lib/contatos-context";
+import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { PERIODO_PADRAO, PeriodoPicker, periodoLabel, type PeriodoValor } from "@/components/ui";
 import {
@@ -90,6 +92,8 @@ export function ReportWizard({
   onGerado: (registro: RelatorioGerado) => void;
 }) {
   const { funis } = useFunis();
+  const { contatos } = useContatos();
+  const { membros: equipe } = useEquipe();
   const [etapa, setEtapa] = useState(0);
   const [tipo, setTipo] = useState<TipoRelatorio>(configuracaoInicial?.tipo ?? tipoInicial);
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
@@ -454,7 +458,7 @@ export function ReportWizard({
                     >
                       <option value="Todos">Todos</option>
                       {equipe.map((m) => (
-                        <option key={m.nome} value={m.nome}>
+                        <option key={m.id} value={m.nome}>
                           {m.nome}
                         </option>
                       ))}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { Modal } from "@/components/ui";
-import { equipe } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 
 type Registro = { id: string; data: string; usuario: string; acao: string; modulo: string; item: string; dispositivo: string; detalhes: string };
@@ -19,6 +19,7 @@ const MODULOS = ["Todos", "Automações", "Funil", "Usuários", "Tarefas"];
 
 /** Auditoria e atividades (item 38) — histórico mockado, com filtros e detalhe por linha. */
 export function AuditoriaSecao() {
+  const { membros: equipe } = useEquipe();
   const [usuarioFiltro, setUsuarioFiltro] = useState("Todos");
   const [moduloFiltro, setModuloFiltro] = useState("Todos");
   const [detalheAberto, setDetalheAberto] = useState<Registro | null>(null);
@@ -38,7 +39,7 @@ export function AuditoriaSecao() {
             <select className="input" value={usuarioFiltro} onChange={(e) => setUsuarioFiltro(e.target.value)}>
               <option>Todos</option>
               {equipe.map((m) => (
-                <option key={m.nome}>{m.nome}</option>
+                <option key={m.id}>{m.nome}</option>
               ))}
             </select>
           </div>

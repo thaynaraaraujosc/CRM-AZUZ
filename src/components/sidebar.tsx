@@ -11,7 +11,8 @@ import {
   type SVGProps,
 } from "react";
 
-import { currentUser, equipe, workspace } from "@/lib/data";
+import { currentUser, workspace } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import {
   IconAcoes,
@@ -102,6 +103,7 @@ function posicionarFlyoutLateral(
 export function Sidebar() {
   const pathname = usePathname();
   const { funis, funilAtivoId, setFunilAtivoId } = useFunis();
+  const { membros: equipe } = useEquipe();
   const [contaAberta, setContaAberta] = useState(false);
   const [workspaceAberto, setWorkspaceAberto] = useState(false);
   const [nomeEmpresa, setNomeEmpresa] = useState(workspace.name);

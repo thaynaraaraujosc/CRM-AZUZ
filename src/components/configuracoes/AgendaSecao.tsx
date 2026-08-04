@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { Toggle } from "@/components/ui";
-import { equipe } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -20,6 +20,7 @@ const TIPOS_INICIAIS: TipoCompromisso[] = [
 
 /** Agenda e horários (item 31). */
 export function AgendaSecao() {
+  const { membros: equipe } = useEquipe();
   const [duracaoPadrao, setDuracaoPadrao] = useState(30);
   const [intervalo, setIntervalo] = useState(10);
   const [diasAtivos, setDiasAtivos] = useState<string[]>(["Seg", "Ter", "Qua", "Qui", "Sex"]);

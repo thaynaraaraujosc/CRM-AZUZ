@@ -2,7 +2,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
-import { currentUser, equipe } from "@/lib/data";
+import { currentUser } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import {
   useDocumentos,
   type CategoriaModelo,
@@ -1046,6 +1047,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     duplicarDocumento,
     salvarComoModelo,
   } = useDocumentos();
+  const { membros: equipe } = useEquipe();
 
   const doc = documentos.find((d) => d.id === id);
 

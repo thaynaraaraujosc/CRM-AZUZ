@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 
-import { equipe, funis } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
+import { useFunis } from "@/lib/funis-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 
 const GATILHOS = ["receber mensagem", "receber comentário com palavra-chave", "preencher formulário", "responder story"];
@@ -10,6 +11,8 @@ const GATILHOS = ["receber mensagem", "receber comentário com palavra-chave", "
 /** Instagram e Facebook (item 29) — construtor visual simples de "quando X, fazer Y", só front-end
  * (nenhuma conta é conectada de verdade). */
 export function InstagramSecao() {
+  const { membros: equipe } = useEquipe();
+  const { funis } = useFunis();
   const [gatilho, setGatilho] = useState(GATILHOS[1]);
   const [palavraChave, setPalavraChave] = useState("QUERO");
   const [funil, setFunil] = useState(funis[0]?.nome ?? "");
@@ -63,7 +66,7 @@ export function InstagramSecao() {
             <label>Equipe</label>
             <select className="input" value={equipeResp} onChange={(e) => setEquipeResp(e.target.value)}>
               {equipe.map((m) => (
-                <option key={m.nome}>{m.nome}</option>
+                <option key={m.id}>{m.nome}</option>
               ))}
             </select>
           </div>

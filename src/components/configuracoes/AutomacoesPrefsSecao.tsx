@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 
 import { Toggle } from "@/components/ui";
 import { useConfiguracoes, type AutomacoesPrefsConfig } from "@/lib/configuracoes-context";
-import { equipe, funis } from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
+import { useFunis } from "@/lib/funis-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { SalvarBar } from "./SalvarBar";
 
@@ -12,6 +13,8 @@ import { SalvarBar } from "./SalvarBar";
  * comportamento real do construtor nesta fase, só ficam salvas pra quando ligar de verdade. */
 export function AutomacoesPrefsSecao() {
   const { estado, atualizarAutomacoesPrefs, setCategoriaSuja } = useConfiguracoes();
+  const { membros: equipe } = useEquipe();
+  const { funis } = useFunis();
   const [rascunho, setRascunho] = useState<AutomacoesPrefsConfig>(estado.automacoesPrefs);
   const dirty = JSON.stringify(rascunho) !== JSON.stringify(estado.automacoesPrefs);
 
@@ -62,7 +65,7 @@ export function AutomacoesPrefsSecao() {
             <label>Responsável padrão</label>
             <select className="input" value={rascunho.responsavelPadrao} onChange={(e) => set({ responsavelPadrao: e.target.value })}>
               {equipe.map((m) => (
-                <option key={m.nome}>{m.nome}</option>
+                <option key={m.id}>{m.nome}</option>
               ))}
             </select>
           </div>
