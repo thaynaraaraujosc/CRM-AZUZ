@@ -318,7 +318,8 @@ function formularioNovo(): Formulario {
   };
 }
 
-const FORMULARIOS_INICIAIS: Formulario[] = [
+/** Exportado só pra `prisma/seed.ts` semear a tabela — o Provider agora busca da API. */
+export const FORMULARIOS_INICIAIS: Formulario[] = [
   (() => {
     const base = formularioNovo();
     return {
@@ -497,32 +498,16 @@ type FormulariosContextValue = {
 const FormulariosContext = createContext<FormulariosContextValue | null>(null);
 
 /**
- * Chave usada tanto aqui quanto na página pública (`/formulario-preview`) — essa página abre numa
- * aba nova, sem acesso ao Context do React, então lê/grava direto no localStorage.
+ * Banco real (ver src/app/api/formularios/) — páginas/perguntas/tema/versões ficam como Json na
+ * própria linha do formulário porque os mutadores sempre recalculam o array inteiro e substituem via
+ * `tocar()`, o helper central que agora também sincroniza com a API a cada chamada.
  */
-export const FORMULARIOS_STORAGE_KEY = "azuz-crm-formularios";
-export const RESPOSTAS_STORAGE_KEY = "azuz-crm-formularios-respostas";
-
-function lerFormulariosStorage(): Formulario[] {
-  if (typeof window === "undefined") return FORMULARIOS_INICIAIS;
-  try {
-    const salvos = window.localStorage.getItem(FORMULARIOS_STORAGE_KEY);
-    if (!salvos) return FORMULARIOS_INICIAIS;
-    const lista = JSON.parse(salvos) as unknown[];
-    return lista.map(migrarFormulario);
-  } catch {
-    return FORMULARIOS_INICIAIS;
-  }
-}
-
-function lerRespostasStorage(): RespostaFormulario[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const salvas = window.localStorage.getItem(RESPOSTAS_STORAGE_KEY);
-    return salvas ? (JSON.parse(salvas) as RespostaFormulario[]) : [];
-  } catch {
-    return [];
-  }
+function criarRemoto(formulario: Formulario) {
+  fetch("/api/formularios", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(formulario),
+  }).catch((erro) => console.error("Falha ao criar formulário na API:", erro));
 }
 
 /**
@@ -531,50 +516,42 @@ function lerRespostasStorage(): RespostaFormulario[] {
  * atualizar o contato certo via `mapeamentoCrm` de cada pergunta.
  */
 export function FormulariosProvider({ children }: { children: ReactNode }) {
-  const [formularios, setFormularios] = useState<Formulario[]>(lerFormulariosStorage);
-  const [respostas, setRespostas] = useState<RespostaFormulario[]>(lerRespostasStorage);
+  const [formularios, setFormularios] = useState<Formulario[]>([]);
+  const [respostas, setRespostas] = useState<RespostaFormulario[]>([]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(FORMULARIOS_STORAGE_KEY, JSON.stringify(formularios));
-    } catch {
-      // localStorage indisponível — segue só em memória.
-    }
-  }, [formularios]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(RESPOSTAS_STORAGE_KEY, JSON.stringify(respostas));
-    } catch {
-      // localStorage indisponível — segue só em memória.
-    }
-  }, [respostas]);
-
-  // A resposta pública (aba separada, sem esse Provider) grava resposta/contato direto no
-  // localStorage — sem isso, a aba do CRM só veria a resposta nova depois de recarregar a página.
-  useEffect(() => {
-    function aoMudarStorage(e: StorageEvent) {
-      if (e.key === RESPOSTAS_STORAGE_KEY && e.newValue) {
-        try {
-          setRespostas(JSON.parse(e.newValue) as RespostaFormulario[]);
-        } catch {
-          // payload inválido — ignora.
-        }
-      }
-    }
-    window.addEventListener("storage", aoMudarStorage);
-    return () => window.removeEventListener("storage", aoMudarStorage);
+    fetch("/api/formularios")
+      .then((r) => r.json())
+      .then((dados: unknown[]) => setFormularios(dados.map(migrarFormulario)))
+      .catch((erro) => console.error("Falha ao carregar formulários da API:", erro));
+    fetch("/api/formularios/respostas")
+      .then((r) => r.json())
+      .then((dados: RespostaFormulario[]) => setRespostas(dados))
+      .catch((erro) => console.error("Falha ao carregar respostas de formulário da API:", erro));
   }, []);
 
   function tocar(id: string, atualizar: (f: Formulario) => Formulario) {
+    let atualizado: Formulario | undefined;
     setFormularios((prev) =>
-      prev.map((f) => (f.id === id ? { ...atualizar(f), atualizadoEm: new Date().toISOString() } : f)),
+      prev.map((f) => {
+        if (f.id !== id) return f;
+        atualizado = { ...atualizar(f), atualizadoEm: new Date().toISOString() };
+        return atualizado;
+      }),
     );
+    if (atualizado) {
+      fetch(`/api/formularios/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(atualizado),
+      }).catch((erro) => console.error("Falha ao atualizar formulário na API:", erro));
+    }
   }
 
   function criarFormulario() {
     const novo = formularioNovo();
     setFormularios((prev) => [...prev, novo]);
+    criarRemoto(novo);
     return novo.id;
   }
 
@@ -596,6 +573,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
       atualizadoEm: agora,
     };
     setFormularios((prev) => [...prev, copia]);
+    criarRemoto(copia);
     return copia.id;
   }
 
@@ -606,6 +584,9 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
   function excluirFormulario(id: string) {
     setFormularios((prev) => prev.filter((f) => f.id !== id));
     setRespostas((prev) => prev.filter((r) => r.formularioId !== id));
+    fetch(`/api/formularios/${id}`, { method: "DELETE" }).catch((erro) =>
+      console.error("Falha ao excluir formulário na API:", erro),
+    );
   }
 
   function alternarPublicacao(id: string) {
@@ -756,10 +737,23 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
   }
 
   function registrarResposta(formularioId: string, valores: Record<string, string>) {
-    setRespostas((prev) => [
-      ...prev,
-      { id: idUnico("resposta"), formularioId, criadoEm: new Date().toISOString(), valores },
-    ]);
+    const provisoria: RespostaFormulario = {
+      id: idUnico("resposta"),
+      formularioId,
+      criadoEm: new Date().toISOString(),
+      valores,
+    };
+    setRespostas((prev) => [...prev, provisoria]);
+    fetch(`/api/formularios/${formularioId}/respostas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ valores }),
+    })
+      .then((r) => r.json())
+      .then((salva: RespostaFormulario) => {
+        setRespostas((prev) => prev.map((r) => (r.id === provisoria.id ? salva : r)));
+      })
+      .catch((erro) => console.error("Falha ao registrar resposta na API:", erro));
   }
 
   function respostasDoFormulario(formularioId: string) {

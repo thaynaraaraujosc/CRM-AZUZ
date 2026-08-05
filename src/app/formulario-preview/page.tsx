@@ -4,16 +4,13 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import {
-  FORMULARIOS_STORAGE_KEY,
   MENSAGEM_FINAL_PADRAO,
-  RESPOSTAS_STORAGE_KEY,
   TIPOS_LAYOUT,
   condicaoBate,
   migrarFormulario,
   type Formulario,
   type PaginaFormulario,
   type PerguntaFormulario,
-  type RespostaFormulario,
 } from "@/lib/formularios-context";
 import { AUTOMACOES_STORAGE_KEY } from "@/lib/automation-flow-context";
 import { avaliarGatilho, executarFluxo, type ContextoExecucao, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
@@ -21,14 +18,12 @@ import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { contatos as contatosMock, equipe as equipeMock, funis as funisMock, type Contato, type Funil, type Membro, type NegocioCard } from "@/lib/data";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
 
-/** Sem Provider nessa rota (aba separada, sem acesso ao Context) — lê/grava direto no localStorage,
- * mesmo padrão já usado antes só pra leitura de formulários. */
-function carregarFormularios(): Formulario[] {
-  if (typeof window === "undefined") return [];
+/** Formulários já vêm do banco real via API (ver src/app/api/formularios/) — não é mais localStorage. */
+async function carregarFormularios(): Promise<Formulario[]> {
   try {
-    const salvos = localStorage.getItem(FORMULARIOS_STORAGE_KEY);
-    if (!salvos) return [];
-    const lista = JSON.parse(salvos) as unknown[];
+    const resposta = await fetch("/api/formularios");
+    if (!resposta.ok) return [];
+    const lista = (await resposta.json()) as unknown[];
     return lista.map(migrarFormulario);
   } catch {
     return [];
@@ -128,20 +123,14 @@ function atribuirContatoAoFunilPublico(
     .catch((erro) => console.error("Falha ao atribuir contato ao funil (público):", erro));
 }
 
+/** Grava a resposta via API real (ver src/app/api/formularios/[id]/respostas/) — fire-and-forget,
+ * não trava o envio do formulário se a rede falhar. */
 function registrarRespostaPublica(formularioId: string, valores: Record<string, string>) {
-  const resposta: RespostaFormulario = {
-    id: `resposta-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    formularioId,
-    criadoEm: new Date().toISOString(),
-    valores,
-  };
-  try {
-    const salvas = localStorage.getItem(RESPOSTAS_STORAGE_KEY);
-    const lista = salvas ? (JSON.parse(salvas) as RespostaFormulario[]) : [];
-    localStorage.setItem(RESPOSTAS_STORAGE_KEY, JSON.stringify([...lista, resposta]));
-  } catch {
-    // localStorage indisponível — a resposta não persiste, mas não trava o envio.
-  }
+  fetch(`/api/formularios/${formularioId}/respostas`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ valores }),
+  }).catch((erro) => console.error("Falha ao registrar resposta pública:", erro));
 }
 
 /** Equivalente em runtime puro de `useContatos().salvarDadosContato` — cria o contato (se ainda não
@@ -242,14 +231,15 @@ function FormularioPreviewContent() {
   const [erros, setErros] = useState<Record<string, string>>({});
   const [enviado, setEnviado] = useState(false);
 
-  // Carrega do localStorage só depois de montar — não dá pra fazer isso no initializer do useState
-  // sem quebrar o hydration (ver comentário acima da declaração dos estados).
-  /* eslint-disable react-hooks/set-state-in-effect */
+  // Formulários/Contatos/Equipe vêm de uma API real agora — carrega tudo depois de montar, sem
+  // atrasar a exibição do formulário em si (contatos/equipe só são usados pelos campos de busca).
   useEffect(() => {
-    setFormularios(carregarFormularios());
-    setCarregado(true);
-    // Contatos e Equipe vêm de uma API real agora (não mais localStorage síncrono) — carrega à
-    // parte, sem atrasar a exibição do formulário (só são usados pelos campos de busca de pessoas).
+    carregarFormularios()
+      .then((dados) => {
+        setFormularios(dados);
+        setCarregado(true);
+      })
+      .catch((erro) => console.error("Falha ao carregar formulários:", erro));
     carregarContatos()
       .then(setContatos)
       .catch((erro) => console.error("Falha ao carregar contatos:", erro));
@@ -257,7 +247,6 @@ function FormularioPreviewContent() {
       .then(setEquipeDisponivel)
       .catch((erro) => console.error("Falha ao carregar equipe:", erro));
   }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const formulario = formularios.find((f) => f.id === id) ?? null;
 
