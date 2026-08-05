@@ -1,7 +1,12 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-import { contatos as contatosIniciais, equipe as equipeInicial, tarefas as tarefasIniciais } from "../src/lib/data";
+import {
+  contatos as contatosIniciais,
+  equipe as equipeInicial,
+  tarefas as tarefasIniciais,
+  funis as funisIniciais,
+} from "../src/lib/data";
 
 const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
@@ -71,10 +76,49 @@ async function semearTarefas() {
   console.log(`Semeadas ${tarefasIniciais.length} etapas e ${totalCards} tarefas.`);
 }
 
+async function semearFunis() {
+  const total = await prisma.funil.count();
+  if (total > 0) {
+    console.log(`Tabela Funil já tem ${total} registro(s) — nada a semear.`);
+    return;
+  }
+
+  let totalEtapas = 0;
+  let totalCards = 0;
+  for (const funil of funisIniciais) {
+    await prisma.funil.create({ data: { id: funil.id, nome: funil.nome, responsavel: funil.responsavel } });
+    for (const [ordemEtapa, coluna] of funil.colunas.entries()) {
+      await prisma.funilEtapa.create({
+        data: { id: coluna.id, funilId: funil.id, titulo: coluna.titulo, ordem: ordemEtapa },
+      });
+      totalEtapas += 1;
+      for (const [ordemCard, card] of coluna.cards.entries()) {
+        await prisma.negocioCard.create({
+          data: {
+            id: card.id,
+            etapaId: coluna.id,
+            ordem: ordemCard,
+            nome: card.nome,
+            valor: card.valor,
+            origem: card.origem,
+            dias: card.dias,
+            data: card.data,
+            etiquetas: card.etiquetas ?? undefined,
+            responsavel: card.responsavel,
+          },
+        });
+        totalCards += 1;
+      }
+    }
+  }
+  console.log(`Semeados ${funisIniciais.length} funis, ${totalEtapas} etapas e ${totalCards} negócios.`);
+}
+
 async function main() {
   await semearContatos();
   await semearEquipe();
   await semearTarefas();
+  await semearFunis();
 }
 
 main()

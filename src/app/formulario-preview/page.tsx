@@ -15,7 +15,6 @@ import {
   type PerguntaFormulario,
   type RespostaFormulario,
 } from "@/lib/formularios-context";
-import { FUNIS_STORAGE_KEY } from "@/lib/funis-context";
 import { AUTOMACOES_STORAGE_KEY } from "@/lib/automation-flow-context";
 import { avaliarGatilho, executarFluxo, type ContextoExecucao, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
@@ -58,11 +57,12 @@ async function carregarEquipe(): Promise<Membro[]> {
   }
 }
 
-function carregarFunis(): Funil[] {
-  if (typeof window === "undefined") return funisMock;
+/** Funis já vêm do banco real via API (ver src/app/api/funis/) — não é mais localStorage. */
+async function carregarFunis(): Promise<Funil[]> {
   try {
-    const salvos = localStorage.getItem(FUNIS_STORAGE_KEY);
-    return salvos ? (JSON.parse(salvos) as Funil[]) : funisMock;
+    const resposta = await fetch("/api/funis");
+    if (!resposta.ok) return funisMock;
+    return (await resposta.json()) as Funil[];
   } catch {
     return funisMock;
   }
@@ -79,47 +79,53 @@ function carregarFluxosAutomacao(): FluxoAutomacao[] {
 }
 
 /** Equivalente em runtime puro de `useFunis().atribuirContatoAoFunil` — move (ou cria) o card desse
- * contato pra etapa escolhida, tirando de onde estivesse antes em qualquer funil. */
+ * contato pra etapa escolhida, tirando de onde estivesse antes em qualquer funil. Busca o estado
+ * atual na API, calcula o resultado e manda de volta via PUT (mesmo endpoint que o Provider usa pra
+ * sincronizar — ver src/app/api/funis/). Fire-and-forget: `Ligacoes.moverEtapa` é `void`, não espera
+ * essa chamada terminar. */
 function atribuirContatoAoFunilPublico(
   funilId: string,
   etapaTitulo: string,
   contato: Omit<NegocioCard, "id"> & { id?: string },
 ) {
-  const funis = carregarFunis();
-  const semDuplicata = funis.map((f) => ({
-    ...f,
-    colunas: f.colunas.map((c) => {
-      const cards = c.cards.filter((card) => card.nome !== contato.nome);
-      return cards.length === c.cards.length ? c : { ...c, cards, total: Math.max(0, c.total - 1) };
-    }),
-  }));
+  carregarFunis()
+    .then((funis) => {
+      const semDuplicata = funis.map((f) => ({
+        ...f,
+        colunas: f.colunas.map((c) => {
+          const cards = c.cards.filter((card) => card.nome !== contato.nome);
+          return cards.length === c.cards.length ? c : { ...c, cards, total: Math.max(0, c.total - 1) };
+        }),
+      }));
 
-  const novoCard: NegocioCard = {
-    id: contato.id ?? `negocio-${Date.now()}`,
-    nome: contato.nome,
-    valor: contato.valor,
-    origem: contato.origem,
-    dias: contato.dias,
-    data: contato.data,
-    responsavel: contato.responsavel,
-  };
+      const novoCard: NegocioCard = {
+        id: contato.id ?? `negocio-${Date.now()}`,
+        nome: contato.nome,
+        valor: contato.valor,
+        origem: contato.origem,
+        dias: contato.dias,
+        data: contato.data,
+        responsavel: contato.responsavel,
+      };
 
-  const proximos = semDuplicata.map((f) => {
-    if (f.id !== funilId) return f;
-    let etapaEncontrada = false;
-    const colunas = f.colunas.map((c) => {
-      if (c.titulo !== etapaTitulo) return c;
-      etapaEncontrada = true;
-      return { ...c, cards: [...c.cards, novoCard], total: c.total + 1 };
-    });
-    return etapaEncontrada ? { ...f, colunas } : f;
-  });
+      const proximos = semDuplicata.map((f) => {
+        if (f.id !== funilId) return f;
+        let etapaEncontrada = false;
+        const colunas = f.colunas.map((c) => {
+          if (c.titulo !== etapaTitulo) return c;
+          etapaEncontrada = true;
+          return { ...c, cards: [...c.cards, novoCard], total: c.total + 1 };
+        });
+        return etapaEncontrada ? { ...f, colunas } : f;
+      });
 
-  try {
-    localStorage.setItem(FUNIS_STORAGE_KEY, JSON.stringify(proximos));
-  } catch {
-    // localStorage indisponível — segue sem persistir.
-  }
+      return fetch("/api/funis", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(proximos),
+      });
+    })
+    .catch((erro) => console.error("Falha ao atribuir contato ao funil (público):", erro));
 }
 
 function registrarRespostaPublica(formularioId: string, valores: Record<string, string>) {

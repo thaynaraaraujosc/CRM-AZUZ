@@ -4,25 +4,14 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
 } from "react";
 
-import { funis as funisIniciais, type Funil, type NegocioCard } from "@/lib/data";
-
-/** Persistido pra que a resposta pública de um formulário (`/formulario-preview`, aba separada sem
- * Provider) consiga criar/mover um negócio de verdade quando o formulário está configurado pra
- * jogar a resposta num funil — mesmo padrão de `CONTATOS_STORAGE_KEY`. */
-export const FUNIS_STORAGE_KEY = "azuz-crm-funis";
-
-function cloneFunis(lista: Funil[]): Funil[] {
-  return lista.map((f) => ({
-    ...f,
-    colunas: f.colunas.map((c) => ({ ...c, cards: [...c.cards] })),
-  }));
-}
+import type { Funil, NegocioCard } from "@/lib/data";
 
 type FunisContextValue = {
   funis: Funil[];
@@ -52,41 +41,36 @@ const FunisContext = createContext<FunisContextValue | null>(null);
  * telas ficarem com cópias dessincronizadas dos dados.
  */
 export function FunisProvider({ children }: { children: ReactNode }) {
-  const [funis, setFunis] = useState<Funil[]>(() => {
-    if (typeof window === "undefined") return cloneFunis(funisIniciais);
-    try {
-      const salvos = window.localStorage.getItem(FUNIS_STORAGE_KEY);
-      if (!salvos) return cloneFunis(funisIniciais);
-      return JSON.parse(salvos) as Funil[];
-    } catch {
-      return cloneFunis(funisIniciais);
-    }
-  });
-  const [funilAtivoId, setFunilAtivoId] = useState(funisIniciais[0]?.id ?? "");
+  const [funis, setFunis] = useState<Funil[]>([]);
+  const [funilAtivoId, setFunilAtivoId] = useState("");
+  const carregadoRef = useRef(false);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(FUNIS_STORAGE_KEY, JSON.stringify(funis));
-    } catch {
-      // localStorage indisponível — segue só em memória.
-    }
-  }, [funis]);
-
-  // A resposta pública de um formulário (aba separada, sem esse Provider) grava direto no
-  // localStorage quando move um contato pro funil — sem isso, a aba do CRM só veria o negócio novo
-  // depois de recarregar a página.
-  useEffect(() => {
-    function aoMudarStorage(e: StorageEvent) {
-      if (e.key !== FUNIS_STORAGE_KEY || !e.newValue) return;
-      try {
-        setFunis(JSON.parse(e.newValue) as Funil[]);
-      } catch {
-        // payload inválido — ignora.
-      }
-    }
-    window.addEventListener("storage", aoMudarStorage);
-    return () => window.removeEventListener("storage", aoMudarStorage);
+    fetch("/api/funis")
+      .then((r) => r.json())
+      .then((dados: Funil[]) => {
+        setFunis(dados);
+        setFunilAtivoId((atual) => atual || dados[0]?.id || "");
+        carregadoRef.current = true;
+      })
+      .catch((erro) => console.error("Falha ao carregar funis da API:", erro));
   }, []);
+
+  // Não existem mutadores dedicados pra Funil (~13 pontos em funil/page.tsx/FunisSecao.tsx mexem
+  // direto em setFunis) — por isso sincroniza o estado inteiro com o banco a cada mudança, em vez de
+  // granular por operação (mesmo espírito do antigo useEffect que gravava tudo no localStorage).
+  // Debounça 500ms pra não disparar um PUT a cada pixel de um drag de card/coluna.
+  useEffect(() => {
+    if (!carregadoRef.current) return;
+    const temporizador = setTimeout(() => {
+      fetch("/api/funis", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(funis),
+      }).catch((erro) => console.error("Falha ao sincronizar funis na API:", erro));
+    }, 500);
+    return () => clearTimeout(temporizador);
+  }, [funis]);
 
   function atribuirContatoAoFunil(
     funilId: string,
