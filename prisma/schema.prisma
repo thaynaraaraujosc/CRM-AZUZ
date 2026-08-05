@@ -204,18 +204,20 @@ model MensagemExtra {
 
 // Biblioteca de mídia reutilizável pelos blocos de automação (enviar documento/imagem/vídeo/áudio).
 model DocumentoBiblioteca {
-  id           String   @id
+  id           String  @id
   nome         String
   categoria    String
   formato      String
-  tamanho      String
+  tamanho      Int
   autor        String
   // Data URL — pode ser mídia grande, o TEXT padrão do MySQL (64KB) não é suficiente.
-  url          String   @db.LongText
+  url          String  @db.LongText
   tipoMidia    String?
   descricao    String?
   tags         Json?
-  atualizadoEm DateTime @default(now()) @updatedAt
+  // ISO curto (aaaa-mm-dd) definido pelo front a cada mutação — não é um timestamp gerenciado pelo
+  // Prisma, por isso não é @updatedAt.
+  atualizadoEm String
 }
 
 // Form builder — páginas/perguntas/tema/versões ficam como Json na própria linha do formulário

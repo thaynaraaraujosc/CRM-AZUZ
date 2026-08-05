@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 /** Tipo de mídia do arquivo — usado pra filtrar o que aparece no seletor de cada bloco (enviar
  * documento só oferece "documento", enviar imagem só "imagem", etc). */
@@ -61,7 +61,8 @@ function svgPlaceholder(texto: string, cor: string) {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-const DOCUMENTOS_INICIAIS: DocumentoBiblioteca[] = [
+/** Exportado só pra `prisma/seed.ts` semear a tabela — o Provider agora busca da API. */
+export const DOCUMENTOS_INICIAIS: DocumentoBiblioteca[] = [
   {
     id: "doc-apresentacao",
     nome: "Apresentação da Clínica Vitta.pdf",
@@ -201,9 +202,14 @@ const DOCUMENTOS_INICIAIS: DocumentoBiblioteca[] = [
 ];
 
 export function BibliotecaDocumentosProvider({ children }: { children: ReactNode }) {
-  const [documentos, setDocumentos] = useState<DocumentoBiblioteca[]>(
-    DOCUMENTOS_INICIAIS,
-  );
+  const [documentos, setDocumentos] = useState<DocumentoBiblioteca[]>([]);
+
+  useEffect(() => {
+    fetch("/api/biblioteca-documentos")
+      .then((r) => r.json())
+      .then((dados: DocumentoBiblioteca[]) => setDocumentos(dados))
+      .catch((erro) => console.error("Falha ao carregar biblioteca de documentos da API:", erro));
+  }, []);
 
   function adicionarDocumento(doc: Omit<DocumentoBiblioteca, "id" | "atualizadoEm">) {
     const novo: DocumentoBiblioteca = {
@@ -212,6 +218,16 @@ export function BibliotecaDocumentosProvider({ children }: { children: ReactNode
       atualizadoEm: new Date().toISOString().slice(0, 10),
     };
     setDocumentos((prev) => [novo, ...prev]);
+    fetch("/api/biblioteca-documentos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(doc),
+    })
+      .then((r) => r.json())
+      .then((salvo: DocumentoBiblioteca) => {
+        setDocumentos((prev) => prev.map((d) => (d.id === novo.id ? salvo : d)));
+      })
+      .catch((erro) => console.error("Falha ao adicionar documento na API:", erro));
     return novo;
   }
 
@@ -219,10 +235,18 @@ export function BibliotecaDocumentosProvider({ children }: { children: ReactNode
     setDocumentos((prev) =>
       prev.map((d) => (d.id === id ? { ...d, ...patch, atualizadoEm: new Date().toISOString().slice(0, 10) } : d)),
     );
+    fetch(`/api/biblioteca-documentos/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    }).catch((erro) => console.error("Falha ao atualizar documento na API:", erro));
   }
 
   function removerDocumento(id: string) {
     setDocumentos((prev) => prev.filter((d) => d.id !== id));
+    fetch(`/api/biblioteca-documentos/${id}`, { method: "DELETE" }).catch((erro) =>
+      console.error("Falha ao remover documento na API:", erro),
+    );
   }
 
   return (
