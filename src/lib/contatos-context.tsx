@@ -31,6 +31,10 @@ type ContatosContextValue = {
   adicionarEtiqueta: (nome: string, etiqueta: string) => void;
   removerEtiqueta: (nome: string, etiqueta: string) => void;
   alternarFavorito: (nome: string) => void;
+  /** Edita os dados de um contato existente, por id (não mexe em `nome`/`id` — evita quebrar
+   * referências por nome usadas em Funis/Automações/etc). */
+  atualizarContato: (id: string, dados: Partial<DadosContato>) => void;
+  excluirContato: (id: string) => void;
 };
 
 const ContatosContext = createContext<ContatosContextValue | null>(null);
@@ -172,6 +176,18 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
     if (idAlvo) atualizarRemoto(idAlvo, { etiquetas: etiquetasFinais });
   }
 
+  function atualizarContato(id: string, dados: Partial<DadosContato>) {
+    setContatos((prev) => prev.map((c) => (c.id === id ? { ...c, ...dados } : c)));
+    atualizarRemoto(id, dados);
+  }
+
+  function excluirContato(id: string) {
+    setContatos((prev) => prev.filter((c) => c.id !== id));
+    fetch(`/api/contatos/${id}`, { method: "DELETE" }).catch((erro) =>
+      console.error("Falha ao excluir contato na API:", erro),
+    );
+  }
+
   function alternarFavorito(nome: string) {
     let idAlvo: string | undefined;
     let favoritoFinal = false;
@@ -197,6 +213,8 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
         adicionarEtiqueta,
         removerEtiqueta,
         alternarFavorito,
+        atualizarContato,
+        excluirContato,
       }}
     >
       {children}

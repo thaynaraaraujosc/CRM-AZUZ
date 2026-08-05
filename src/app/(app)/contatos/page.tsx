@@ -22,7 +22,7 @@ export default function ContatosPage() {
 
 function ContatosPageInner() {
   const searchParams = useSearchParams();
-  const { contatos, criarContato } = useContatos();
+  const { contatos, criarContato, atualizarContato, excluirContato } = useContatos();
   const { funis } = useFunis();
   const { colunas: tarefas } = useTarefas();
   const [selecionado, setSelecionado] = useState<string | null>(null);
@@ -35,6 +35,40 @@ function ContatosPageInner() {
   const [nascimentoNovo, setNascimentoNovo] = useState("");
   const [enderecoNovo, setEnderecoNovo] = useState("");
   const [filtroOrigem, setFiltroOrigem] = useState(filtrosContatos[0]);
+
+  const [editandoContato, setEditandoContato] = useState(false);
+  const [emailEdit, setEmailEdit] = useState("");
+  const [whatsappEdit, setWhatsappEdit] = useState("");
+  const [nascimentoEdit, setNascimentoEdit] = useState("");
+  const [enderecoEdit, setEnderecoEdit] = useState("");
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+
+  function abrirEdicao() {
+    if (!contato) return;
+    setEmailEdit(contato.email ?? "");
+    setWhatsappEdit(contato.whatsapp ?? "");
+    setNascimentoEdit(contato.nascimento ?? "");
+    setEnderecoEdit(contato.endereco ?? "");
+    setEditandoContato(true);
+  }
+
+  function salvarEdicao() {
+    if (!contato) return;
+    atualizarContato(contato.id, {
+      email: emailEdit.trim() || undefined,
+      whatsapp: whatsappEdit.trim() || undefined,
+      nascimento: nascimentoEdit.trim() || undefined,
+      endereco: enderecoEdit.trim() || undefined,
+    });
+    setEditandoContato(false);
+  }
+
+  function confirmarExclusao() {
+    if (!contato) return;
+    excluirContato(contato.id);
+    setSelecionado(null);
+    setConfirmandoExclusao(false);
+  }
 
   const contato = contatos.find((c) => c.nome === selecionado) ?? null;
 
@@ -228,11 +262,11 @@ function ContatosPageInner() {
                           padding: 0,
                           cursor: "pointer",
                         }}
-                        onClick={() =>
-                          setSelecionado((atual) =>
-                            atual === c.nome ? null : c.nome,
-                          )
-                        }
+                        onClick={() => {
+                          setSelecionado((atual) => (atual === c.nome ? null : c.nome));
+                          setEditandoContato(false);
+                          setConfirmandoExclusao(false);
+                        }}
                       >
                         <div className="avatar">{c.initials}</div>
                         <span
@@ -280,14 +314,49 @@ function ContatosPageInner() {
                   {contato.origem} · última interação {contato.ultima.toLowerCase()}
                 </p>
               </div>
+              <div className="filters-row" style={{ margin: "0 0 0 auto" }}>
+                {!editandoContato ? (
+                  <button type="button" className="btn ghost" onClick={abrirEdicao}>
+                    Editar
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn ghost"
+                  style={{ color: "var(--danger)" }}
+                  onClick={() => setConfirmandoExclusao(true)}
+                >
+                  Excluir
+                </button>
+              </div>
               <span
                 className="close"
                 style={{ cursor: "pointer" }}
-                onClick={() => setSelecionado(null)}
+                onClick={() => {
+                  setSelecionado(null);
+                  setEditandoContato(false);
+                  setConfirmandoExclusao(false);
+                }}
               >
                 Fechar ✕
               </span>
             </div>
+
+            {confirmandoExclusao ? (
+              <div className="field" style={{ background: "var(--danger-soft)", borderRadius: "var(--radius-md)", padding: 12, margin: "0 17px 14px" }}>
+                <p style={{ margin: "0 0 10px", fontWeight: 600, color: "var(--danger)" }}>
+                  Excluir {contato.nome}? Essa ação não pode ser desfeita.
+                </p>
+                <div className="filters-row" style={{ margin: 0 }}>
+                  <button type="button" className="btn danger" onClick={confirmarExclusao}>
+                    Excluir contato
+                  </button>
+                  <button type="button" className="btn ghost" onClick={() => setConfirmandoExclusao(false)}>
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             <div className="field">
               <label>Funil</label>
@@ -311,22 +380,77 @@ function ContatosPageInner() {
               <label>Valor</label>
               <div className="input">{contato.valor}</div>
             </div>
-            <div className="field">
-              <label>E-mail</label>
-              <div className="input">{contato.email || "—"}</div>
-            </div>
-            <div className="field">
-              <label>Número do WhatsApp</label>
-              <div className="input">{contato.whatsapp || "—"}</div>
-            </div>
-            <div className="field">
-              <label>Data de aniversário</label>
-              <div className="input">{contato.nascimento || "—"}</div>
-            </div>
-            <div className="field">
-              <label>Endereço</label>
-              <div className="input">{contato.endereco || "—"}</div>
-            </div>
+            {editandoContato ? (
+              <>
+                <div className="field">
+                  <label>E-mail</label>
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    type="email"
+                    value={emailEdit}
+                    onChange={(e) => setEmailEdit(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label>Número do WhatsApp</label>
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    type="text"
+                    value={whatsappEdit}
+                    onChange={(e) => setWhatsappEdit(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label>Data de aniversário</label>
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    type="text"
+                    value={nascimentoEdit}
+                    onChange={(e) => setNascimentoEdit(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label>Endereço</label>
+                  <input
+                    className="input"
+                    style={{ width: "100%" }}
+                    type="text"
+                    value={enderecoEdit}
+                    onChange={(e) => setEnderecoEdit(e.target.value)}
+                  />
+                </div>
+                <div className="filters-row" style={{ padding: "0 17px 14px" }}>
+                  <button type="button" className="btn primary" onClick={salvarEdicao}>
+                    Salvar alterações
+                  </button>
+                  <button type="button" className="btn ghost" onClick={() => setEditandoContato(false)}>
+                    Cancelar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="field">
+                  <label>E-mail</label>
+                  <div className="input">{contato.email || "—"}</div>
+                </div>
+                <div className="field">
+                  <label>Número do WhatsApp</label>
+                  <div className="input">{contato.whatsapp || "—"}</div>
+                </div>
+                <div className="field">
+                  <label>Data de aniversário</label>
+                  <div className="input">{contato.nascimento || "—"}</div>
+                </div>
+                <div className="field">
+                  <label>Endereço</label>
+                  <div className="input">{contato.endereco || "—"}</div>
+                </div>
+              </>
+            )}
 
             <div className="panel-h divided">
               <h4>Linha do tempo</h4>

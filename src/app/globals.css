@@ -13,6 +13,9 @@
   --blue: #2e6bff;
   --blue-soft: rgba(46, 107, 255, 0.14);
   --blue-soft-2: rgba(46, 107, 255, 0.08);
+  /* Azul mais escuro que --blue — usado onde o azul vibrante padrão fica claro demais pra servir
+     de "ligado"/confirmação (ex.: toggle ativo). */
+  --blue-strong: #1d4fd1;
 
   --line: rgba(11, 21, 51, 0.1);
   --line-soft: rgba(11, 21, 51, 0.06);
@@ -1015,7 +1018,7 @@ table {
 }
 
 .toggle.on {
-  background: var(--blue);
+  background: var(--blue-strong);
 }
 
 .toggle .knob {
@@ -3924,7 +3927,7 @@ button.camp-row:hover {
 .int-row {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
   padding: 14px 17px;
   border-bottom: 1px solid var(--line-soft);
   flex-wrap: wrap;
