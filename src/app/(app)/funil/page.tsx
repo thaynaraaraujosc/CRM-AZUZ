@@ -17,6 +17,7 @@ import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { IconAutomacoes } from "@/components/icons";
 import { IconConfiguracoes } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
+import { IconEnviar } from "@/components/icons";
 
 const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Instagram",
@@ -86,6 +87,16 @@ function FunilPageInner() {
   const conversaDoContatoRapido = respostaRapidaContato
     ? conversas.find((c) => c.nome === respostaRapidaContato)
     : undefined;
+  const iniciaisContatoRapido =
+    conversaDoContatoRapido?.initials ??
+    (respostaRapidaContato
+      ? respostaRapidaContato
+          .split(" ")
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((p) => p[0]?.toUpperCase())
+          .join("")
+      : "");
   const mensagensRespostaRapida = [
     ...(conversaDoContatoRapido?.mensagens ?? []),
     ...(respostaRapidaContato ? mensagensExtraPorContato[respostaRapidaContato] ?? [] : []),
@@ -824,11 +835,14 @@ function FunilPageInner() {
       ) : null}
 
       {respostaRapidaContato ? (
-        <div className="wa-respostas-modal rodape">
+        <div className="wa-respostas-modal rodape rodape-chat">
           <div className="wa-email-drag" style={{ cursor: "default" }}>
-            <div>
-              <p className="n">{respostaRapidaContato}</p>
-              <p className="s">Resposta rápida — mesma conversa do WhatsApp</p>
+            <div className="name-cell">
+              <div className="avatar sm">{iniciaisContatoRapido}</div>
+              <div>
+                <p className="n">{respostaRapidaContato}</p>
+                <p className="s">Mesma conversa do WhatsApp</p>
+              </div>
             </div>
             <button
               type="button"
@@ -851,19 +865,25 @@ function FunilPageInner() {
               ))
             )}
           </div>
-          <div className="filters-row" style={{ margin: "10px 0 0" }}>
-            <input
-              className="input"
-              style={{ flex: 1 }}
-              placeholder="Digite uma mensagem…"
-              value={mensagemRapida}
-              onChange={(e) => setMensagemRapida(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") enviarRespostaRapida();
-              }}
-            />
-            <button type="button" className="btn primary" onClick={enviarRespostaRapida}>
-              Enviar
+          <div className="chat-input" style={{ padding: "10px 0 0" }}>
+            <div className="chat-input-wrap box">
+              <input
+                className="chat-input-campo"
+                placeholder="Digite uma mensagem…"
+                value={mensagemRapida}
+                onChange={(e) => setMensagemRapida(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") enviarRespostaRapida();
+                }}
+              />
+            </div>
+            <button
+              type="button"
+              className="chat-mic-btn chat-send-btn"
+              aria-label="Enviar"
+              onClick={enviarRespostaRapida}
+            >
+              <IconEnviar />
             </button>
           </div>
         </div>

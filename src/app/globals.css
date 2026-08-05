@@ -1602,6 +1602,44 @@ table.tbl tbody tr:hover td {
   gap: 10px;
 }
 
+/* Contatos — cada linha vira um "cartão" com respiro entre uma e outra, em vez de linhas coladas
+   de tabela (pedido explícito: "como se fossem botões separados"). */
+.contatos-tbl {
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.contatos-tbl thead th {
+  border-bottom: none;
+  padding-bottom: 4px;
+}
+
+.contatos-tbl tbody tr td {
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-left: none;
+  border-right: none;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.contatos-tbl tbody tr td:first-child {
+  border-left: 1px solid var(--line);
+  border-top-left-radius: var(--radius-md);
+  border-bottom-left-radius: var(--radius-md);
+}
+
+.contatos-tbl tbody tr td:last-child {
+  border-right: 1px solid var(--line);
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+}
+
+.contatos-tbl tbody tr:hover td {
+  background: var(--surface-hover);
+}
+
 .name-cell .n {
   font-weight: var(--fw-semibold);
   white-space: nowrap;
@@ -2717,6 +2755,31 @@ table.tbl tbody tr:hover td {
   flex: 1;
   min-height: 120px;
   max-height: 260px;
+}
+
+/* Popup de resposta rápida do Funil — mesma "cara" da janela de conversa real do WhatsApp
+   (avatar + nome no topo, bolhas de mensagem, barra de digitar em pílula com botão de enviar
+   redondo), só que compacta e ancorada no rodapé. */
+.wa-respostas-modal.rodape-chat {
+  width: 400px;
+  max-height: 72vh;
+  padding: 16px 16px 14px;
+}
+
+.wa-respostas-modal.rodape-chat .wa-email-drag {
+  padding-bottom: 12px;
+}
+
+.wa-respostas-modal.rodape-chat .chat-body {
+  min-height: 220px;
+  max-height: 360px;
+  padding: 4px 0;
+}
+
+.wa-respostas-modal.rodape-chat .chat-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .wa-email-drag {

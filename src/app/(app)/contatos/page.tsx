@@ -229,7 +229,7 @@ function ContatosPageInner() {
 
         <div className="card mb14">
           <div className="table-wrap">
-            <table className="tbl">
+            <table className="tbl contatos-tbl">
               <thead>
                 <tr>
                   <th>Nome</th>
