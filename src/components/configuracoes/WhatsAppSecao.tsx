@@ -1,11 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Toggle } from "@/components/ui";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
+
+type StatusIntegracaoMeta = {
+  status: "desconectado" | "conectado" | "erro";
+  metadados: { numeroExibicao?: string; businessNome?: string } | null;
+  erroMensagem: string | null;
+};
 
 type Aba = "conexao" | "atendimento" | "mensagens" | "compatibilidade" | "horarios";
 const ABAS: { id: Aba; label: string }[] = [
@@ -25,6 +31,36 @@ export function WhatsAppSecao() {
   const { membros: equipe } = useEquipe();
   const { funis } = useFunis();
   const [aba, setAba] = useState<Aba>("conexao");
+  const [integracao, setIntegracao] = useState<StatusIntegracaoMeta | null>(null);
+  const [desconectando, setDesconectando] = useState(false);
+  // Lido direto de `window.location` (não `useSearchParams`) — essa página não tem um limite
+  // <Suspense> em volta, e é só pra mostrar um erro pontual depois do redirect do OAuth. Inicializador
+  // preguiçoso (não um efeito): já roda com o valor certo na primeira renderização no navegador.
+  const [erroDoRedirect] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("integracaoErro"),
+  );
+
+  function carregarIntegracao() {
+    fetch("/api/integracoes/meta")
+      .then((r) => r.json())
+      .then(setIntegracao)
+      .catch((erro) => console.error("Falha ao carregar status do WhatsApp:", erro));
+  }
+
+  useEffect(() => {
+    carregarIntegracao();
+  }, []);
+
+  async function desconectar() {
+    setDesconectando(true);
+    try {
+      await fetch("/api/integracoes/meta/desconectar", { method: "POST" });
+      carregarIntegracao();
+    } finally {
+      setDesconectando(false);
+    }
+  }
+
   const [tipoConexao, setTipoConexao] = useState("Conexão por provedor");
   const [distribuir, setDistribuir] = useState(true);
   const [manterResponsavel, setManterResponsavel] = useState(true);
@@ -48,6 +84,38 @@ export function WhatsAppSecao() {
 
       {aba === "conexao" ? (
         <div className="config-bloco">
+          {erroDoRedirect ? (
+            <p className="hint" style={{ color: "var(--danger)", marginBottom: 10 }}>
+              ⚠ Não foi possível conectar: {erroDoRedirect}
+            </p>
+          ) : null}
+
+          <div className="card" style={{ padding: 14, marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <p className="int-title" style={{ margin: 0 }}>WhatsApp Business (API oficial da Meta)</p>
+              {integracao?.status === "conectado" ? (
+                <p className="int-sub" style={{ margin: "4px 0 0" }}>
+                  Conectado — {integracao.metadados?.numeroExibicao ?? "número não identificado"}
+                </p>
+              ) : integracao?.status === "erro" ? (
+                <p className="int-sub" style={{ margin: "4px 0 0", color: "var(--danger)" }}>
+                  Erro na última tentativa: {integracao.erroMensagem}
+                </p>
+              ) : (
+                <p className="int-sub" style={{ margin: "4px 0 0" }}>Ainda não conectado.</p>
+              )}
+            </div>
+            {integracao?.status === "conectado" ? (
+              <button type="button" className="btn danger" onClick={desconectar} disabled={desconectando}>
+                {desconectando ? "Desconectando…" : "Desconectar"}
+              </button>
+            ) : (
+              <a className="btn primary" href="/api/integracoes/meta/conectar">
+                Conectar com a Meta
+              </a>
+            )}
+          </div>
+
           <div className="field">
             <label>Tipo de conexão</label>
             <select className="input" value={tipoConexao} onChange={(e) => setTipoConexao(e.target.value)}>

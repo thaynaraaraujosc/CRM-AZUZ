@@ -157,6 +157,7 @@ model Workspace {
   fluxosAutomacao        FluxoAutomacao[]
   documentos             Documento[]
   modelosPersonalizados  ModeloPersonalizado[]
+  integracoes            Integracao[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -411,4 +412,32 @@ model ModeloPersonalizado {
   compartilhado Boolean  @default(false)
   autor         String
   criadoEm      DateTime @default(now())
+}
+
+// Integrações oficiais (Fase A) — uma linha por (workspace, provedor). Começa só com
+// "meta_whatsapp"; Instagram/Meta Ads/Google Ads entram como novos valores de `provedor` nas
+// próximas fases, reaproveitando o mesmo modelo. Tokens nunca ficam em texto puro — ver
+// src/lib/integracoes/crypto.ts (AES-256-GCM, diferente do bcrypt do login: aqui o token precisa
+// ser usado de novo depois, não só verificado).
+model Integracao {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  provedor String // "meta_whatsapp"
+  status   String // "desconectado" | "conectado" | "erro"
+
+  accessTokenCriptografado  String? @db.Text
+  refreshTokenCriptografado String? @db.Text
+  expiraEm                  DateTime?
+
+  // Dados específicos do provedor (ex.: phoneNumberId/wabaId da Meta) — cada provedor usa um
+  // subconjunto de chaves diferentes, por isso Json em vez de colunas fixas.
+  metadados    Json?
+  erroMensagem String? @db.Text
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([workspaceId, provedor])
 }

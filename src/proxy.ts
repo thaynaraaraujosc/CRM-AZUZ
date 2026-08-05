@@ -12,7 +12,11 @@ export default async function proxy(request: NextRequest) {
     ROTAS_PUBLICAS.some((rota) => pathname === rota || pathname.startsWith(`${rota}/`)) ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/formularios") ||
-    pathname === "/api/cadastro"
+    pathname === "/api/cadastro" ||
+    // Chamado direto pela Meta (verificação de webhook + mensagens recebidas), sem sessão de
+    // navegador nenhuma — a validação de assinatura HMAC dentro da rota é que garante que é a
+    // Meta chamando, não o proxy.
+    pathname === "/api/webhooks/whatsapp"
   ) {
     return NextResponse.next();
   }

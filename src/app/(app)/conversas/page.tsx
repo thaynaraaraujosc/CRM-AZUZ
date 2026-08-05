@@ -7385,31 +7385,31 @@ function ConversasPageInner() {
             </div>
           ) : (
             <>
-              <div className="field" style={{ padding: "10px 0" }}>
-                <label>ID da conta comercial (Meta)</label>
-                <input className="input" style={{ width: "100%" }} placeholder="Ex.: 123456789012345" />
-              </div>
-              <div className="field" style={{ padding: "10px 0" }}>
-                <label>Token de acesso</label>
-                <input className="input" style={{ width: "100%" }} type="password" placeholder="••••••••••••" />
-              </div>
-              <p className="hint">
-                Conectando pela API oficial, as conversas, fotos e nomes de contato são
-                importados automaticamente — só a organização no funil continua manual.
+              <p className="hint" style={{ padding: "10px 0" }}>
+                Você vai autorizar o CRM a acessar sua conta do WhatsApp Business direto pela
+                Meta — sem precisar copiar token nenhum. Conversas, fotos e nomes de contato são
+                importados automaticamente depois de conectar; a organização no funil continua
+                manual.
               </p>
             </>
           )}
           <div className="section-foot">
-            <button
-              type="button"
-              className="btn primary block"
-              onClick={() => {
-                setConectarAberto(false);
-                avisarAutomacao("WhatsApp conectado — conversas sendo importadas");
-              }}
-            >
-              {conectarAba === "qr" ? "Simular leitura do QR" : "Conectar"}
-            </button>
+            {conectarAba === "api" ? (
+              <a href="/api/integracoes/meta/conectar" className="btn primary block">
+                Conectar com a Meta
+              </a>
+            ) : (
+              <button
+                type="button"
+                className="btn primary block"
+                onClick={() => {
+                  setConectarAberto(false);
+                  avisarAutomacao("WhatsApp conectado — conversas sendo importadas");
+                }}
+              >
+                Simular leitura do QR
+              </button>
+            )}
           </div>
         </div>
       ) : null}

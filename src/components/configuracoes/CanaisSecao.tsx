@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { IconCalendar, IconConversas, IconDoc, IconInstagram, IconWhatsApp } from "@/components/icons";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
@@ -27,12 +27,27 @@ const CLASSE_ESTADO: Record<EstadoCanal, string> = {
  * específica quando existe (WhatsApp/Instagram) ou só mostra estado, sem conexão real. */
 export function CanaisSecao() {
   const [testando, setTestando] = useState<string | null>(null);
+  const [whatsappReal, setWhatsappReal] = useState<{ estado: EstadoCanal; conexao: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/integracoes/meta")
+      .then((r) => r.json())
+      .then((dados: { status: string; metadados: { numeroExibicao?: string } | null }) => {
+        setWhatsappReal({
+          estado: dados.status === "conectado" ? "Conectado" : dados.status === "erro" ? "Requer atenção" : "Desconectado",
+          conexao: dados.status === "conectado" ? `API oficial — ${dados.metadados?.numeroExibicao ?? ""}` : "Não configurado",
+        });
+      })
+      .catch((erro) => console.error("Falha ao carregar status do WhatsApp:", erro));
+  }, []);
+
+  const canais = CANAIS_MOCK.map((c) => (c.id === "whatsapp" && whatsappReal ? { ...c, ...whatsappReal } : c));
 
   return (
     <div className="config-secao">
       <CabecalhoCategoria titulo="Canais de atendimento" descricao="Visão geral de todos os canais conectados ao workspace." />
       <div className="config-canais-grid">
-        {CANAIS_MOCK.map((c) => (
+        {canais.map((c) => (
           <div className="config-canal-card" key={c.id}>
             <div className="config-canal-card-h">
               <c.Icon width={20} height={20} />
@@ -62,7 +77,8 @@ export function CanaisSecao() {
       </div>
       <p className="hint mt14">
         <IconConversas width={12} height={12} style={{ verticalAlign: "middle", marginRight: 4 }} />
-        Nenhuma conexão real é feita nesta fase — os estados acima são mockados pra ilustrar como a tela vai se comportar.
+        WhatsApp já reflete a conexão real com a Meta (ver Configurações → WhatsApp). Os demais canais
+        continuam mockados pra ilustrar como a tela vai se comportar quando forem conectados de verdade.
       </p>
     </div>
   );
