@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
@@ -15,12 +16,13 @@ import type { ConvMensagem } from "@/lib/data";
 /**
  * Mensagens extras (enviadas/recebidas depois do "seed" de cada conversa) — compartilhado entre
  * WhatsApp (`/conversas`) e o popup de resposta rápida do Funil, porque as duas telas conversam
- * com o MESMO contato: uma mensagem mandada de um lugar precisa aparecer no outro. Mesma chave de
- * localStorage que a tela de conversas já usava sozinha antes — nenhum histórico existente se
- * perde ao migrar pra esse Provider compartilhado.
+ * com o MESMO contato: uma mensagem mandada de um lugar precisa aparecer no outro.
+ *
+ * Banco real (ver src/app/api/mensagens-extra/) — não tem mutador dedicado aqui (só 4 chamadas
+ * cruas de `setMensagensExtraPorContato` em `funil/page.tsx`/`conversas/page.tsx`), então sincroniza
+ * o Record inteiro com a API a cada mudança, mesmo molde de `funis-context.tsx`. Resolve de graça o
+ * bug que já existia aqui: anexo grande estourava a cota do localStorage.
  */
-export const MENSAGENS_EXTRA_STORAGE_KEY = "azuz-crm-conversas-mensagens";
-
 type MensagensExtraContextValue = {
   mensagensExtraPorContato: Record<string, ConvMensagem[]>;
   setMensagensExtraPorContato: Dispatch<SetStateAction<Record<string, ConvMensagem[]>>>;
@@ -31,39 +33,30 @@ const MensagensExtraContext = createContext<MensagensExtraContextValue | null>(n
 export function MensagensExtraProvider({ children }: { children: ReactNode }) {
   const [mensagensExtraPorContato, setMensagensExtraPorContato] = useState<
     Record<string, ConvMensagem[]>
-  >(() => {
-    if (typeof window === "undefined") return {};
-    try {
-      const salvo = localStorage.getItem(MENSAGENS_EXTRA_STORAGE_KEY);
-      return salvo ? (JSON.parse(salvo) as Record<string, ConvMensagem[]>) : {};
-    } catch {
-      return {};
-    }
-  });
+  >({});
+  const carregadoRef = useRef(false);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(MENSAGENS_EXTRA_STORAGE_KEY, JSON.stringify(mensagensExtraPorContato));
-    } catch {
-      // localStorage indisponível (modo privado, por exemplo) ou anexo grande demais pra caber na
-      // cota — a conversa segue funcionando só em memória.
-    }
-  }, [mensagensExtraPorContato]);
-
-  // Duas abas abertas (ex.: Funil numa, WhatsApp na outra) precisam ver a mensagem uma da outra
-  // sem precisar recarregar — mesmo padrão já usado em contatos-context/funis-context.
-  useEffect(() => {
-    function aoMudarStorage(e: StorageEvent) {
-      if (e.key !== MENSAGENS_EXTRA_STORAGE_KEY || !e.newValue) return;
-      try {
-        setMensagensExtraPorContato(JSON.parse(e.newValue) as Record<string, ConvMensagem[]>);
-      } catch {
-        // payload inválido — ignora.
-      }
-    }
-    window.addEventListener("storage", aoMudarStorage);
-    return () => window.removeEventListener("storage", aoMudarStorage);
+    fetch("/api/mensagens-extra")
+      .then((r) => r.json())
+      .then((dados: Record<string, ConvMensagem[]>) => {
+        setMensagensExtraPorContato(dados);
+        carregadoRef.current = true;
+      })
+      .catch((erro) => console.error("Falha ao carregar mensagens extras da API:", erro));
   }, []);
+
+  useEffect(() => {
+    if (!carregadoRef.current) return;
+    const temporizador = setTimeout(() => {
+      fetch("/api/mensagens-extra", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mensagensExtraPorContato),
+      }).catch((erro) => console.error("Falha ao sincronizar mensagens extras na API:", erro));
+    }, 400);
+    return () => clearTimeout(temporizador);
+  }, [mensagensExtraPorContato]);
 
   return (
     <MensagensExtraContext.Provider value={{ mensagensExtraPorContato, setMensagensExtraPorContato }}>
