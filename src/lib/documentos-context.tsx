@@ -634,8 +634,9 @@ type DocumentosContextValue = {
 
 const DocumentosContext = createContext<DocumentosContextValue | null>(null);
 
-export const DOCUMENTOS_STORAGE_KEY = "azuz-crm-documentos";
-const MODELOS_PERSONALIZADOS_STORAGE_KEY = "azuz-crm-documentos-modelos-usuario";
+/** "Favoritos"/"recentes" de modelo (listas de id de navegação, não conteúdo dono) continuam só no
+ * localStorage — mesmo precedente já aberto com "azuz-crm-documentos-prefs-ver" (preferência de
+ * visualização, também nunca migrada). */
 const MODELOS_FAVORITOS_STORAGE_KEY = "azuz-crm-documentos-modelos-favoritos";
 const MODELOS_RECENTES_STORAGE_KEY = "azuz-crm-documentos-modelos-recentes";
 
@@ -652,7 +653,8 @@ function idUnico(prefixo: string) {
  * servidor quanto no cliente, em instantes diferentes; usar `new Date()` aqui causaria
  * hydration mismatch (o texto da data renderizada no servidor não bateria com o do cliente).
  */
-const DOCUMENTOS_INICIAIS: Documento[] = [
+/** Exportado só pra `prisma/seed.ts` semear a tabela — o Provider agora busca da API. */
+export const DOCUMENTOS_INICIAIS: Documento[] = [
   {
     id: "doc-1",
     titulo: "Sem título",
@@ -672,41 +674,19 @@ const DOCUMENTOS_INICIAIS: Documento[] = [
 ];
 
 export function DocumentosProvider({ children }: { children: ReactNode }) {
-  const [documentos, setDocumentos] = useState<Documento[]>(() => {
-    if (typeof window === "undefined") return DOCUMENTOS_INICIAIS;
-    try {
-      const salvos = localStorage.getItem(DOCUMENTOS_STORAGE_KEY);
-      return salvos ? (JSON.parse(salvos) as Documento[]) : DOCUMENTOS_INICIAIS;
-    } catch {
-      return DOCUMENTOS_INICIAIS;
-    }
-  });
+  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const [modelosPersonalizados, setModelosPersonalizados] = useState<ModeloPersonalizado[]>([]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(DOCUMENTOS_STORAGE_KEY, JSON.stringify(documentos));
-    } catch {
-      // localStorage indisponível — segue só em memória.
-    }
-  }, [documentos]);
-
-  const [modelosPersonalizados, setModelosPersonalizados] = useState<ModeloPersonalizado[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const salvos = localStorage.getItem(MODELOS_PERSONALIZADOS_STORAGE_KEY);
-      return salvos ? (JSON.parse(salvos) as ModeloPersonalizado[]) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(MODELOS_PERSONALIZADOS_STORAGE_KEY, JSON.stringify(modelosPersonalizados));
-    } catch {
-      // localStorage indisponível — segue só em memória.
-    }
-  }, [modelosPersonalizados]);
+    fetch("/api/documentos")
+      .then((r) => r.json())
+      .then((dados: Documento[]) => setDocumentos(dados))
+      .catch((erro) => console.error("Falha ao carregar documentos da API:", erro));
+    fetch("/api/documentos-modelos")
+      .then((r) => r.json())
+      .then((dados: ModeloPersonalizado[]) => setModelosPersonalizados(dados))
+      .catch((erro) => console.error("Falha ao carregar modelos de documento da API:", erro));
+  }, []);
 
   const [modelosFavoritosIds, setModelosFavoritosIds] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
@@ -752,6 +732,14 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  function criarModeloRemoto(modelo: ModeloPersonalizado) {
+    fetch("/api/documentos-modelos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(modelo),
+    }).catch((erro) => console.error("Falha ao salvar modelo de documento na API:", erro));
+  }
+
   function salvarComoModelo(
     docId: string,
     dados: { nome: string; descricao: string; categoria: CategoriaModelo; compartilhado: boolean },
@@ -770,11 +758,15 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
       compartilhado: dados.compartilhado,
     };
     setModelosPersonalizados((prev) => [novoModelo, ...prev]);
+    criarModeloRemoto(novoModelo);
   }
 
   function excluirModeloPersonalizado(modeloId: string) {
     setModelosPersonalizados((prev) => prev.filter((m) => m.id !== modeloId));
     setModelosFavoritosIds((prev) => prev.filter((mid) => mid !== modeloId));
+    fetch(`/api/documentos-modelos/${modeloId}`, { method: "DELETE" }).catch((erro) =>
+      console.error("Falha ao excluir modelo de documento na API:", erro),
+    );
   }
 
   /** Duplica qualquer modelo (embutido ou já salvo por algum usuário) numa cópia própria e editável em
@@ -791,6 +783,7 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
       compartilhado: false,
     };
     setModelosPersonalizados((prev) => [copia, ...prev]);
+    criarModeloRemoto(copia);
   }
 
   function registrarModeloRecente(modeloId: string) {
@@ -818,6 +811,11 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
       excluido: false,
     };
     setDocumentos((prev) => [novo, ...prev]);
+    fetch("/api/documentos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(novo),
+    }).catch((erro) => console.error("Falha ao criar documento na API:", erro));
     return id;
   }
 
@@ -825,6 +823,11 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
     setDocumentos((prev) =>
       prev.map((d) => (d.id === id ? { ...d, ...patch, atualizadoEm: agora() } : d)),
     );
+    fetch(`/api/documentos/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...patch, atualizadoEm: agora() }),
+    }).catch((erro) => console.error("Falha ao atualizar documento na API:", erro));
   }
 
   function excluirDocumento(id: string) {
@@ -837,10 +840,19 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
 
   function excluirPermanente(id: string) {
     setDocumentos((prev) => prev.filter((d) => d.id !== id));
+    fetch(`/api/documentos/${id}`, { method: "DELETE" }).catch((erro) =>
+      console.error("Falha ao excluir documento na API:", erro),
+    );
   }
 
   function esvaziarLixeira() {
+    const idsNaLixeira = documentos.filter((d) => d.excluido).map((d) => d.id);
     setDocumentos((prev) => prev.filter((d) => !d.excluido));
+    for (const id of idsNaLixeira) {
+      fetch(`/api/documentos/${id}`, { method: "DELETE" }).catch((erro) =>
+        console.error("Falha ao excluir documento na API:", erro),
+      );
+    }
   }
 
   function duplicarDocumento(id: string) {
@@ -858,6 +870,11 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
       excluido: false,
     };
     setDocumentos((prev) => [copia, ...prev]);
+    fetch("/api/documentos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(copia),
+    }).catch((erro) => console.error("Falha ao duplicar documento na API:", erro));
     return novoId;
   }
 

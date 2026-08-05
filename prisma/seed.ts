@@ -10,6 +10,7 @@ import {
 import { DOCUMENTOS_INICIAIS as BIBLIOTECA_INICIAL } from "../src/lib/biblioteca-documentos-context";
 import { FORMULARIOS_INICIAIS } from "../src/lib/formularios-context";
 import { fluxosIniciaisPadrao } from "../src/lib/automation-flow-context";
+import { DOCUMENTOS_INICIAIS } from "../src/lib/documentos-context";
 
 const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
@@ -162,6 +163,21 @@ async function semearFluxosAutomacao() {
   console.log(`Semeados ${fluxos.length} fluxos de automação.`);
 }
 
+async function semearDocumentos() {
+  const total = await prisma.documento.count();
+  if (total > 0) {
+    console.log(`Tabela Documento já tem ${total} registro(s) — nada a semear.`);
+    return;
+  }
+
+  await prisma.documento.createMany({
+    // paginas/config/pessoasAcesso/comentarios/versoes têm tipos TS ricos que o Prisma não casa
+    // estruturalmente com InputJsonValue — em runtime já é JSON puro, o cast é só pro TS.
+    data: DOCUMENTOS_INICIAIS as unknown as NonNullable<Parameters<typeof prisma.documento.createMany>[0]>["data"],
+  });
+  console.log(`Semeados ${DOCUMENTOS_INICIAIS.length} documentos.`);
+}
+
 async function main() {
   await semearContatos();
   await semearEquipe();
@@ -170,6 +186,7 @@ async function main() {
   await semearBibliotecaDocumentos();
   await semearFormularios();
   await semearFluxosAutomacao();
+  await semearDocumentos();
 }
 
 main()

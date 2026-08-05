@@ -297,12 +297,12 @@ model Documento {
 }
 
 model ModeloPersonalizado {
-  id            String   @id
+  id            String @id
   nome          String
-  categoria     String?
-  paginas       Json
-  config        Json?
-  favorito      Boolean  @default(false)
+  descricao     String @db.Text
+  categoria     String
+  // HTML do conteúdo do documento — pode ser grande, TEXT padrão (64KB) não é suficiente.
+  conteudoHtml  String @db.LongText
   compartilhado Boolean  @default(false)
   autor         String
   criadoEm      DateTime @default(now())
