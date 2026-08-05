@@ -1849,6 +1849,24 @@ table.tbl tbody tr:hover td {
   gap: 8px;
 }
 
+/* Bolinha verde de "mensagem nova" — usada no card do kanban (Funil), mesmo espírito do selo de não
+   lidas do WhatsApp, só que como indicador simples (sem contagem) pra caber num card estreito. */
+.lname-com-msg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.msg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 2px var(--success-soft);
+}
+
 .tag {
   font-size: 9px;
   font-weight: 700;

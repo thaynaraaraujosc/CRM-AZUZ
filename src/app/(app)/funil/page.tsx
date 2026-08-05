@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { createPortal } from "react-dom";
 
-import { classeOrigem, type NegocioCard } from "@/lib/data";
+import { classeOrigem, conversas, type ConvMensagem, type NegocioCard } from "@/lib/data";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
@@ -15,7 +15,7 @@ import { useEquipe } from "@/lib/equipe-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { IconAutomacoes } from "@/components/icons";
 import { IconConfiguracoes } from "@/components/icons";
-import { ChipFilters, Topbar } from "@/components/ui";
+import { ChipFilters, Modal, Topbar } from "@/components/ui";
 
 const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Instagram",
@@ -51,6 +51,60 @@ function FunilPageInner() {
   const { ref: configPopRef, posicao: configPos } = useFloatingPosition(configAnchorRect, configAberto);
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const proximoToastId = useRef(0);
+
+  /** Respostas rápidas mandadas direto do card do funil — chave própria, sem misturar com o que já
+   * foi digitado na tela do WhatsApp (essa ainda guarda o histórico dela sozinha, em memória local
+   * da página de conversas). Aqui é só um jeito rápido de responder sem sair do Kanban. */
+  const RESPOSTAS_RAPIDAS_STORAGE_KEY = "azuz-crm-funil-respostas-rapidas";
+  const [respostaRapidaContato, setRespostaRapidaContato] = useState<string | null>(null);
+  const [mensagemRapida, setMensagemRapida] = useState("");
+  const [respostasRapidas, setRespostasRapidas] = useState<Record<string, ConvMensagem[]>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const salvo = localStorage.getItem(RESPOSTAS_RAPIDAS_STORAGE_KEY);
+      return salvo ? (JSON.parse(salvo) as Record<string, ConvMensagem[]>) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(RESPOSTAS_RAPIDAS_STORAGE_KEY, JSON.stringify(respostasRapidas));
+    } catch {
+      // localStorage indisponível — segue sem persistir.
+    }
+  }, [respostasRapidas]);
+
+  function abrirRespostaRapida(nomeContato: string) {
+    setRespostaRapidaContato(nomeContato);
+    setMensagemRapida("");
+  }
+
+  function enviarRespostaRapida() {
+    const texto = mensagemRapida.trim();
+    if (!texto || !respostaRapidaContato) return;
+    const nova: ConvMensagem = {
+      id: `resp-rapida-${Date.now()}`,
+      tipo: "out",
+      texto,
+      hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+      criadoEm: Date.now(),
+    };
+    setRespostasRapidas((prev) => ({
+      ...prev,
+      [respostaRapidaContato]: [...(prev[respostaRapidaContato] ?? []), nova],
+    }));
+    setMensagemRapida("");
+  }
+
+  const conversaDoContatoRapido = respostaRapidaContato
+    ? conversas.find((c) => c.nome === respostaRapidaContato)
+    : undefined;
+  const mensagensRespostaRapida = [
+    ...(conversaDoContatoRapido?.mensagens ?? []),
+    ...(respostaRapidaContato ? respostasRapidas[respostaRapidaContato] ?? [] : []),
+  ];
 
   function avisarAutomacao(texto: string) {
     const id = `toast-${proximoToastId.current++}`;
@@ -723,36 +777,50 @@ function FunilPageInner() {
                       : "+ Automação"}
                   </Link>
                 ) : null}
-                {cardsVisiveis.map(({ card, cardIndex }) => (
-                  <button
-                    type="button"
-                    className="lead-card"
-                    key={card.id}
-                    draggable
-                    onDragStart={() =>
-                      setArrastando({ coluna: colIndex, card: cardIndex })
-                    }
-                    onDragEnd={() => setArrastando(null)}
-                    onDoubleClick={() =>
-                      router.push(
-                        `/conversas?contato=${encodeURIComponent(card.nome)}`,
-                      )
-                    }
-                    title="Clique duas vezes pra abrir a conversa no WhatsApp"
-                    style={{ cursor: "grab" }}
-                  >
-                    <span className="lr1">
-                      <span className="lname">{card.nome}</span>
-                      <span className="lval">{card.valor}</span>
-                    </span>
-                    <span className="lr2">
-                      <span className={`tag ${classeOrigem(card.origem)}`}>
-                        {card.origem}
+                {cardsVisiveis.map(({ card, cardIndex }) => {
+                  const conversaDoCard = conversas.find((c) => c.nome === card.nome);
+                  const temMensagemNova = (conversaDoCard?.naoLidas ?? 0) > 0;
+                  return (
+                    <button
+                      type="button"
+                      className="lead-card"
+                      key={card.id}
+                      draggable
+                      onDragStart={() =>
+                        setArrastando({ coluna: colIndex, card: cardIndex })
+                      }
+                      onDragEnd={() => setArrastando(null)}
+                      onDoubleClick={() =>
+                        router.push(
+                          `/conversas?contato=${encodeURIComponent(card.nome)}`,
+                        )
+                      }
+                      title="Clique duas vezes pra abrir a conversa no WhatsApp"
+                      style={{ cursor: "grab" }}
+                    >
+                      <span className="lr1">
+                        <span
+                          className="lname lname-com-msg"
+                          title="Clique pra responder rapidinho"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            abrirRespostaRapida(card.nome);
+                          }}
+                        >
+                          {temMensagemNova ? <span className="msg-dot" aria-label="Mensagem nova" /> : null}
+                          {card.nome}
+                        </span>
+                        <span className="lval">{card.valor}</span>
                       </span>
-                      <span className="days">{card.dias}</span>
-                    </span>
-                  </button>
-                ))}
+                      <span className="lr2">
+                        <span className={`tag ${classeOrigem(card.origem)}`}>
+                          {card.origem}
+                        </span>
+                        <span className="days">{card.dias}</span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             );
           })}
@@ -769,6 +837,43 @@ function FunilPageInner() {
           ))}
         </div>
       ) : null}
+
+      <Modal
+        aberto={respostaRapidaContato !== null}
+        onFechar={() => setRespostaRapidaContato(null)}
+        titulo={respostaRapidaContato ? `Responder — ${respostaRapidaContato}` : "Responder"}
+        tamanho="md"
+      >
+        <div className="chat-body" style={{ padding: 0, marginBottom: 12 }}>
+          {mensagensRespostaRapida.length === 0 ? (
+            <p className="hint">Nenhuma mensagem ainda.</p>
+          ) : (
+            mensagensRespostaRapida.map((msg, i) => (
+              <div className={`bubble ${msg.tipo}`} key={msg.id ?? i}>
+                {msg.texto}
+              </div>
+            ))
+          )}
+        </div>
+        <div className="filters-row" style={{ margin: 0 }}>
+          <input
+            className="input"
+            style={{ flex: 1 }}
+            placeholder="Digite uma mensagem…"
+            value={mensagemRapida}
+            onChange={(e) => setMensagemRapida(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") enviarRespostaRapida();
+            }}
+          />
+          <button type="button" className="btn primary" onClick={enviarRespostaRapida}>
+            Enviar
+          </button>
+        </div>
+        <p className="hint" style={{ marginTop: 8 }}>
+          Resposta rápida simulada — pra ver o histórico completo da conversa, abra pelo WhatsApp.
+        </p>
+      </Modal>
     </>
   );
 }
