@@ -1602,24 +1602,25 @@ table.tbl tbody tr:hover td {
   gap: 10px;
 }
 
-/* Contatos — cada linha vira um "cartão" com respiro entre uma e outra, em vez de linhas coladas
-   de tabela (pedido explícito: "como se fossem botões separados"). */
+/* Contatos — cada linha vira um "cartão" com espaço em branco de verdade entre uma e outra (o
+   fundo da página, `--navy`, aparece no vão), em vez de linhas coladas de tabela (pedido
+   explícito: "como se fossem botões separados"). */
 .contatos-tbl {
   border-collapse: separate;
-  border-spacing: 0 8px;
+  border-spacing: 0 10px;
+  background: transparent;
 }
 
 .contatos-tbl thead th {
   border-bottom: none;
-  padding-bottom: 4px;
+  padding: 0 14px 8px;
 }
 
 .contatos-tbl tbody tr td {
   background: var(--navy-raised);
-  border: 1px solid var(--line);
+  border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  border-left: none;
-  border-right: none;
+  box-shadow: var(--shadow-xs);
   padding-top: 14px;
   padding-bottom: 14px;
 }

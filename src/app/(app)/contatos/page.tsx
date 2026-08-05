@@ -227,7 +227,7 @@ function ContatosPageInner() {
           onChange={(v) => setFiltroOrigem(v)}
         />
 
-        <div className="card mb14">
+        <div className="mb14">
           <div className="table-wrap">
             <table className="tbl contatos-tbl">
               <thead>
