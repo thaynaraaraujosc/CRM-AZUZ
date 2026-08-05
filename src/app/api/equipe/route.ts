@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { Membro } from "@/lib/data";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
 
@@ -12,18 +13,28 @@ function paraMembro(linha: { permissoes: unknown; [k: string]: unknown }): Membr
   } as Membro;
 }
 
-/** GET lista todos os membros da equipe. */
+/** GET lista os membros da equipe do workspace de quem está logado. */
 export async function GET() {
-  const linhas = await prisma.membro.findMany({ orderBy: { criadoEm: "asc" } });
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
+  const linhas = await prisma.membro.findMany({
+    where: { workspaceId: sessao.user.workspaceId },
+    orderBy: { criadoEm: "asc" },
+  });
   return NextResponse.json(linhas.map(paraMembro));
 }
 
 /**
  * POST cria um convite de membro novo — mesma semântica que `convidarMembro` já tinha no Context
- * (ver equipe-context.tsx): entra sem senha, inativo, com `convitePendente`. Se o id (slug do nome)
- * já existir, retorna o membro existente em vez de duplicar.
+ * (ver equipe-context.tsx): entra sem senha, inativo, com `convitePendente`, associado ao workspace
+ * de quem está convidando. Se o id (slug do nome) já existir, retorna o membro existente em vez de
+ * duplicar.
  */
 export async function POST(request: Request) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
   const dados = (await request.json()) as Pick<
     Membro,
     "nome" | "email" | "papel" | "papelTipo" | "papelNota" | "enxerga" | "permissoes"
@@ -49,6 +60,7 @@ export async function POST(request: Request) {
   const linha = await prisma.membro.create({
     data: {
       id,
+      workspaceId: sessao.user.workspaceId,
       initials,
       nome: dados.nome,
       email: dados.email,

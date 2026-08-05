@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 import {
   classeOrigem,
@@ -81,6 +82,8 @@ export default function JornadaClientePage() {
 
 function JornadaClientePageInner() {
   const searchParams = useSearchParams();
+  const { data: sessao } = useSession();
+  const nomeUsuario = sessao?.user?.name ?? "";
   const { contatos, alternarFavorito } = useContatos();
   const { funis } = useFunis();
   const { colunas: tarefas } = useTarefas();
@@ -303,16 +306,19 @@ function JornadaClientePageInner() {
     setSelecionadoId(id);
     setPainelMobileAberto(true);
     setNotaAberta(false);
-    setContatosRecentes(registrarContatoRecente(id));
+    setContatosRecentes(registrarContatoRecente(id, nomeUsuario));
     const c = contatos.find((x) => x.id === id);
     if (c) {
       setHistoricosRecentes(
-        registrarHistoricoRecente({
-          contatoId: id,
-          ultimaInteracaoRegistrada: c.ultima,
-          etapa: c.etapa,
-          responsavel: c.responsavel,
-        }),
+        registrarHistoricoRecente(
+          {
+            contatoId: id,
+            ultimaInteracaoRegistrada: c.ultima,
+            etapa: c.etapa,
+            responsavel: c.responsavel,
+          },
+          nomeUsuario,
+        ),
       );
     }
   }

@@ -110,10 +110,27 @@ model TarefaCard {
   atualizadoEm DateTime @updatedAt
 }
 
+// Multi-tenancy Fase 1 — uma empresa que se cadastra no CRM. Cada Membro pertence a exatamente um
+// Workspace; login é sempre "e-mail + senha dentro de um Workspace" (o e-mail do Membro é único
+// globalmente, então não precisa desambiguar workspace no login).
+model Workspace {
+  id       String   @id
+  nome     String
+  slug     String   @unique
+  criadoEm DateTime @default(now())
+
+  membros Membro[]
+}
+
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
 // Contato: id continua o slug do front, email vira @unique (já era a chave de busca de convite).
+// Multi-tenancy Fase 1: ganhou `workspaceId` — é a tabela real de autenticação agora, `senha` passa
+// a guardar hash bcrypt (mesma coluna, conteúdo diferente, sem renomear pra não inflar o escopo).
 model Membro {
   id String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
   initials  String
   nome      String

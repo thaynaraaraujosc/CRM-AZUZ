@@ -2,36 +2,39 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
-import { currentUser, relatoriosAnteriores } from "@/lib/data";
+import { relatoriosAnteriores } from "@/lib/data";
 import { Topbar } from "@/components/ui";
 import { ReportWizard, type ConfiguracaoRelatorio, type RelatorioGerado } from "@/components/report-wizard";
 import { TIPOS_RELATORIO, type TipoRelatorio } from "@/lib/relatorio-conteudo";
 
 const CHAVE_HISTORICO = "azuz-relatorios-historico-v1";
 
-const HISTORICO_INICIAL: RelatorioGerado[] = relatoriosAnteriores.map((r, i) => ({
-  id: `legado-${i}`,
-  nome: r.nome,
-  tipo: "executivo" as TipoRelatorio,
-  periodo: r.nome,
-  filtros: "Sem filtros adicionais",
-  autor: currentUser.name,
-  data: r.gerado.replace("Gerado em ", ""),
-  paginas: 1,
-  formato: "PDF" as const,
-  configuracao: {
+function historicoInicial(autor: string): RelatorioGerado[] {
+  return relatoriosAnteriores.map((r, i) => ({
+    id: `legado-${i}`,
+    nome: r.nome,
     tipo: "executivo" as TipoRelatorio,
     periodo: r.nome,
     filtros: "Sem filtros adicionais",
-    secoes: [],
-    ordemSecoes: [],
-    capa: "compacta" as const,
-    orientacao: "p" as const,
-    nivelDetalhe: "resumido" as const,
+    autor,
+    data: r.gerado.replace("Gerado em ", ""),
+    paginas: 1,
     formato: "PDF" as const,
-  },
-}));
+    configuracao: {
+      tipo: "executivo" as TipoRelatorio,
+      periodo: r.nome,
+      filtros: "Sem filtros adicionais",
+      secoes: [],
+      ordemSecoes: [],
+      capa: "compacta" as const,
+      orientacao: "p" as const,
+      nivelDetalhe: "resumido" as const,
+      formato: "PDF" as const,
+    },
+  }));
+}
 
 /**
  * Central de relatórios — entra numa seleção clara de tipos (nunca direto
@@ -50,6 +53,8 @@ export default function RelatoriosPage() {
 function RelatoriosPageInner() {
   const searchParams = useSearchParams();
   const tipoQuery = searchParams.get("tipo") as TipoRelatorio | null;
+  const { data: sessao } = useSession();
+  const nomeUsuario = sessao?.user?.name ?? "";
 
   const [wizardAberto, setWizardAberto] = useState(!!tipoQuery);
   const [tipoWizard, setTipoWizard] = useState<TipoRelatorio>(tipoQuery ?? "executivo");
@@ -59,7 +64,7 @@ function RelatoriosPageInner() {
   // causaria erro de hidratação sempre que o navegador já tivesse
   // relatórios salvos (a página é pré-renderizada estática, sem acesso a
   // localStorage).
-  const [historico, setHistorico] = useState<RelatorioGerado[]>(HISTORICO_INICIAL);
+  const [historico, setHistorico] = useState<RelatorioGerado[]>(() => historicoInicial(nomeUsuario));
 
   useEffect(() => {
     try {

@@ -3,8 +3,8 @@
 import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
-import { currentUser } from "@/lib/data";
 import {
   CATEGORIAS_COMPROMISSO,
   compromissosConflitantes,
@@ -96,7 +96,8 @@ export default function AgendaPage() {
     concluir,
   } = useAgenda();
 
-  const responsavelPadrao = membros[0]?.nome ?? currentUser.name;
+  const { data: sessao } = useSession();
+  const responsavelPadrao = membros[0]?.nome ?? sessao?.user?.name ?? "";
 
   const [ano, setAno] = useState(2026);
   const [mesIndex0, setMesIndex0] = useState(6); // julho — mês de HOJE_ISO

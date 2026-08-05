@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 import { createPortal } from "react-dom";
 import {
   useEffect,
@@ -11,7 +12,7 @@ import {
   type SVGProps,
 } from "react";
 
-import { currentUser, workspace } from "@/lib/data";
+import { workspace } from "@/lib/data";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
@@ -101,6 +102,13 @@ function posicionarFlyoutLateral(
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: sessao } = useSession();
+  const currentUser = {
+    name: sessao?.user?.name ?? "",
+    initials: sessao?.user?.initials ?? "",
+    role: sessao?.user?.role ?? "",
+    email: sessao?.user?.email ?? "",
+  };
   const { funis, funilAtivoId, setFunilAtivoId } = useFunis();
   const { membros: equipe } = useEquipe();
   const [contaAberta, setContaAberta] = useState(false);
@@ -434,14 +442,17 @@ export function Sidebar() {
                       ))}
                     </>
                   ) : null}
-                  <Link
-                    href="/entrar"
+                  <button
+                    type="button"
                     className="dropdown-item"
                     style={{ width: "100%", textAlign: "left", borderTop: "1px solid var(--line)" }}
-                    onClick={() => setContaAberta(false)}
+                    onClick={() => {
+                      setContaAberta(false);
+                      signOut({ callbackUrl: "/login" });
+                    }}
                   >
                     <span className="n">↪ Sair</span>
-                  </Link>
+                  </button>
                 </div>
               </>,
               document.body,

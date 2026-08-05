@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useSession } from "next-auth/react";
 
-import { currentUser } from "@/lib/data";
 import { useEquipe } from "@/lib/equipe-context";
 import {
   useDocumentos,
@@ -788,6 +788,8 @@ function GrupoToolbar({ rotulo, icone, largura = 220, children }: { rotulo: stri
 }
 
 function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void }) {
+  const { data: sessao } = useSession();
+  const currentUser = { initials: sessao?.user?.initials ?? "" };
   const {
     documentos,
     renomearDocumento,

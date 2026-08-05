@@ -1,5 +1,6 @@
 import { AppHeader } from "@/components/app-header";
 import { Sidebar } from "@/components/sidebar";
+import { SessionProvider } from "@/components/session-provider";
 import { AgendaProvider } from "@/lib/agenda-context";
 import { AutomacoesProvider } from "@/lib/automacoes-context";
 import { AutomationFlowProvider } from "@/lib/automation-flow-context";
@@ -20,6 +21,7 @@ export default function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
+    <SessionProvider>
     <FunisProvider>
       <ContatosProvider>
         <EquipeProvider>
@@ -57,5 +59,6 @@ export default function AppLayout({
         </EquipeProvider>
       </ContatosProvider>
     </FunisProvider>
+    </SessionProvider>
   );
 }

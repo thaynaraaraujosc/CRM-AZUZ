@@ -1,5 +1,3 @@
-import { currentUser } from "@/lib/data";
-
 /**
  * Contratos e helpers de "recentes" da Jornada do cliente — hoje persistidos
  * em `localStorage` (por navegador, não por usuário de verdade), mas já no
@@ -50,10 +48,10 @@ export function lerContatosRecentes(): ContatoRecente[] {
   return ler<ContatoRecente>(CHAVE_CONTATOS_RECENTES);
 }
 
-export function registrarContatoRecente(contatoId: string): ContatoRecente[] {
+export function registrarContatoRecente(contatoId: string, usuario: string): ContatoRecente[] {
   const atual = lerContatosRecentes().filter((r) => r.contatoId !== contatoId);
   const proximo: ContatoRecente[] = [
-    { usuario: currentUser.name, contatoId, data: new Date().toISOString(), contexto: "aberto" as const },
+    { usuario, contatoId, data: new Date().toISOString(), contexto: "aberto" as const },
     ...atual,
   ].slice(0, LIMITE);
   escrever(CHAVE_CONTATOS_RECENTES, proximo);
@@ -72,10 +70,11 @@ export function lerHistoricosRecentes(): HistoricoRecente[] {
 
 export function registrarHistoricoRecente(
   item: Omit<HistoricoRecente, "usuario" | "data">,
+  usuario: string,
 ): HistoricoRecente[] {
   const atual = lerHistoricosRecentes().filter((r) => r.contatoId !== item.contatoId);
   const proximo: HistoricoRecente[] = [
-    { usuario: currentUser.name, data: new Date().toISOString(), ...item },
+    { usuario, data: new Date().toISOString(), ...item },
     ...atual,
   ].slice(0, LIMITE);
   escrever(CHAVE_HISTORICOS_RECENTES, proximo);

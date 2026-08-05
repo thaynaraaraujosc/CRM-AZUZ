@@ -7,8 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-
-import { currentUser } from "./data";
+import { useSession } from "next-auth/react";
 
 export type PaginaDoc = {
   id: string;
@@ -661,7 +660,9 @@ export const DOCUMENTOS_INICIAIS: Documento[] = [
     favorito: false,
     criadoEm: "2026-01-05T09:00:00.000Z",
     atualizadoEm: "2026-01-05T09:00:00.000Z",
-    autor: currentUser.name,
+    // Dado de seed fixo (usado por prisma/seed.ts) — não depende de sessão, é o mesmo autor
+    // mockado que o resto dos dados de demonstração da Clínica Vitta já usa.
+    autor: "Ana Ferreira",
     paginas: [{ id: "pagina-1", conteudoHtml: "" }],
     config: CONFIG_PAGINA_PADRAO,
     pessoasAcesso: [],
@@ -674,6 +675,8 @@ export const DOCUMENTOS_INICIAIS: Documento[] = [
 ];
 
 export function DocumentosProvider({ children }: { children: ReactNode }) {
+  const { data: sessao } = useSession();
+  const currentUser = { name: sessao?.user?.name ?? "" };
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [modelosPersonalizados, setModelosPersonalizados] = useState<ModeloPersonalizado[]>([]);
 

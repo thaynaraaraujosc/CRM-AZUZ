@@ -2,8 +2,9 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
-import { classeOrigem, conversas, oportunidadesPerdidas, currentUser, filtrosContatos } from "@/lib/data";
+import { classeOrigem, conversas, oportunidadesPerdidas, filtrosContatos } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { useTarefas } from "@/lib/tarefas-context";
@@ -22,6 +23,8 @@ export default function ContatosPage() {
 
 function ContatosPageInner() {
   const searchParams = useSearchParams();
+  const { data: sessao } = useSession();
+  const nomeUsuario = sessao?.user?.name ?? "";
   const { contatos, criarContato, atualizarContato, excluirContato } = useContatos();
   const { funis } = useFunis();
   const { colunas: tarefas } = useTarefas();
@@ -74,7 +77,7 @@ function ContatosPageInner() {
 
   const contatosFiltrados = contatos.filter((c) => {
     if (filtroOrigem === "Todos") return true;
-    if (filtroOrigem === "Meus leads") return c.responsavel === currentUser.name;
+    if (filtroOrigem === "Meus leads") return c.responsavel === nomeUsuario;
     return c.origem === filtroOrigem;
   });
 

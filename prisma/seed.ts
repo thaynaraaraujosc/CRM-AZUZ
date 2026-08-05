@@ -1,5 +1,6 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import bcrypt from "bcryptjs";
 
 import {
   contatos as contatosIniciais,
@@ -14,6 +15,23 @@ import { DOCUMENTOS_INICIAIS } from "../src/lib/documentos-context";
 
 const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
+
+const WORKSPACE_SEED_ID = "clinicavitta";
+
+/** Multi-tenancy Fase 1 — Workspace "Clínica Vitta" (mesmo nome do mock atual), dono dos 6 membros
+ * já semeados em `semearEquipe`. */
+async function semearWorkspace() {
+  const existente = await prisma.workspace.findUnique({ where: { id: WORKSPACE_SEED_ID } });
+  if (existente) {
+    console.log("Workspace Clínica Vitta já existe — nada a semear.");
+    return;
+  }
+
+  await prisma.workspace.create({
+    data: { id: WORKSPACE_SEED_ID, nome: "Clínica Vitta", slug: WORKSPACE_SEED_ID },
+  });
+  console.log("Semeado o Workspace Clínica Vitta.");
+}
 
 async function semearContatos() {
   const total = await prisma.contato.count();
@@ -35,9 +53,16 @@ async function semearEquipe() {
     return;
   }
 
-  await prisma.membro.createMany({
-    data: equipeInicial.map((m) => ({ ...m, permissoes: m.permissoes })),
-  });
+  const membros = await Promise.all(
+    equipeInicial.map(async (m) => ({
+      ...m,
+      workspaceId: WORKSPACE_SEED_ID,
+      permissoes: m.permissoes,
+      // Senha do mock era texto puro (resquício do piloto) — vira hash bcrypt real no seed.
+      senha: m.senha ? await bcrypt.hash(m.senha, 10) : null,
+    })),
+  );
+  await prisma.membro.createMany({ data: membros });
   console.log(`Semeados ${equipeInicial.length} membros da equipe.`);
 }
 
@@ -179,6 +204,7 @@ async function semearDocumentos() {
 }
 
 async function main() {
+  await semearWorkspace();
   await semearContatos();
   await semearEquipe();
   await semearTarefas();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 
 import { IconRefresh } from "@/components/icons";
 import { CompromissoCard } from "@/components/central-dia/CompromissoCard";
@@ -13,7 +14,7 @@ import { SecaoLista } from "@/components/central-dia/SecaoLista";
 import { useCentralDia } from "@/lib/central-dia-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { compromissosDeTarefas, HOJE_ISO, useAgenda } from "@/lib/agenda-context";
-import { conversas, currentUser } from "@/lib/data";
+import { conversas } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
 import { useTarefas } from "@/lib/tarefas-context";
 import {
@@ -57,6 +58,8 @@ function tempoDesde(timestamp: number): string {
  * hora/local) e as recomendações (regras locais, não IA de verdade).
  */
 export default function InicioPage() {
+  const { data: sessao } = useSession();
+  const nomeUsuario = sessao?.user?.name ?? "";
   const { funis } = useFunis();
   const { fluxos } = useAutomationFlows();
   const { colunas } = useTarefas();
@@ -84,7 +87,7 @@ export default function InicioPage() {
 
   const itensFiltrados = useMemo(() => {
     return itensAtivos.filter((item) => {
-      if (filtros.rapido === "Meus itens" && item.responsavel !== currentUser.name) return false;
+      if (filtros.rapido === "Meus itens" && item.responsavel !== nomeUsuario) return false;
       if (filtros.rapido === "Urgentes" && item.prioridade !== "urgente") return false;
       const moduloAlvo = MODULO_DO_FILTRO_RAPIDO[filtros.rapido];
       if (moduloAlvo && item.modulo !== moduloAlvo) return false;
@@ -93,7 +96,7 @@ export default function InicioPage() {
       if (filtros.funil !== "Todos" && item.modulo === "lead" && item.extra?.funil !== filtros.funil) return false;
       return true;
     });
-  }, [itensAtivos, filtros]);
+  }, [itensAtivos, filtros, nomeUsuario]);
 
   const mostrarAgenda = filtros.rapido === "Todos" || filtros.rapido === "Agenda" || filtros.rapido === "Meus itens" || filtros.rapido === "Minha equipe" || filtros.rapido === "Urgentes";
   const mostrarModulo = (modulo: ModuloOrigem) =>
@@ -127,7 +130,7 @@ export default function InicioPage() {
         <div>
           <div className="topbar-title-row">
             <h2>
-              {saudacao()}, {currentUser.name.split(" ")[0]}.
+              {saudacao()}, {nomeUsuario.split(" ")[0]}.
             </h2>
           </div>
           <p className="sub">
