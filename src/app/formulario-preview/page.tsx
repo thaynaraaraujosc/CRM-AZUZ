@@ -12,7 +12,6 @@ import {
   type PaginaFormulario,
   type PerguntaFormulario,
 } from "@/lib/formularios-context";
-import { AUTOMACOES_STORAGE_KEY } from "@/lib/automation-flow-context";
 import { avaliarGatilho, executarFluxo, type ContextoExecucao, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { contatos as contatosMock, equipe as equipeMock, funis as funisMock, type Contato, type Funil, type Membro, type NegocioCard } from "@/lib/data";
@@ -63,11 +62,12 @@ async function carregarFunis(): Promise<Funil[]> {
   }
 }
 
-function carregarFluxosAutomacao(): FluxoAutomacao[] {
-  if (typeof window === "undefined") return [];
+/** Fluxos já vêm do banco real via API (ver src/app/api/automacoes-fluxos/) — não é mais localStorage. */
+async function carregarFluxosAutomacao(): Promise<FluxoAutomacao[]> {
   try {
-    const salvos = localStorage.getItem(AUTOMACOES_STORAGE_KEY);
-    return salvos ? (JSON.parse(salvos) as FluxoAutomacao[]) : [];
+    const resposta = await fetch("/api/automacoes-fluxos");
+    if (!resposta.ok) return [];
+    return (await resposta.json()) as FluxoAutomacao[];
   } catch {
     return [];
   }
@@ -155,10 +155,10 @@ function salvarContatoPublico(dadosMapeados: Record<string, string>) {
 }
 
 /** Dispara "formulario_preenchido" pra todo fluxo publicado e ativo, exatamente como
- * `useAutomationFlows().dispararEvento` — mas em runtime puro (sem Provider), lendo os fluxos
- * salvos direto do localStorage e usando `Ligacoes` que gravam no localStorage também. */
-function dispararEventoFormularioPublico(contexto: ContextoExecucao) {
-  const fluxos = carregarFluxosAutomacao();
+ * `useAutomationFlows().dispararEvento` — mas em runtime puro (sem Provider), buscando os fluxos na
+ * API real e usando `Ligacoes` que também chamam a API. */
+async function dispararEventoFormularioPublico(contexto: ContextoExecucao) {
+  const fluxos = await carregarFluxosAutomacao();
   const evento: EventoAutomacao = { tipo: "formulario_preenchido", contatoNome: contexto.contato.nome };
 
   const ligacoes: Ligacoes = {
@@ -337,7 +337,7 @@ function FormularioPreviewContent() {
         etapaTitulo: integracoes?.etapaTitulo,
         ultimaRespostaEm: new Date().toISOString(),
       },
-    });
+    }).catch((erro) => console.error("Falha ao disparar automação pública:", erro));
 
     if (formulario.paginaFinal.urlRedirecionamento && formulario.paginaFinal.redirecionarAutomaticamente) {
       window.location.href = formulario.paginaFinal.urlRedirecionamento;

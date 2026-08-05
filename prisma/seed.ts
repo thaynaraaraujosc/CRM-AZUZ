@@ -7,6 +7,9 @@ import {
   tarefas as tarefasIniciais,
   funis as funisIniciais,
 } from "../src/lib/data";
+import { DOCUMENTOS_INICIAIS as BIBLIOTECA_INICIAL } from "../src/lib/biblioteca-documentos-context";
+import { FORMULARIOS_INICIAIS } from "../src/lib/formularios-context";
+import { fluxosIniciaisPadrao } from "../src/lib/automation-flow-context";
 
 const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
@@ -114,11 +117,59 @@ async function semearFunis() {
   console.log(`Semeados ${funisIniciais.length} funis, ${totalEtapas} etapas e ${totalCards} negócios.`);
 }
 
+async function semearBibliotecaDocumentos() {
+  const total = await prisma.documentoBiblioteca.count();
+  if (total > 0) {
+    console.log(`Tabela DocumentoBiblioteca já tem ${total} registro(s) — nada a semear.`);
+    return;
+  }
+
+  await prisma.documentoBiblioteca.createMany({
+    data: BIBLIOTECA_INICIAL.map((d) => ({ ...d, tags: d.tags ?? undefined })),
+  });
+  console.log(`Semeados ${BIBLIOTECA_INICIAL.length} documentos da biblioteca.`);
+}
+
+async function semearFormularios() {
+  const total = await prisma.formulario.count();
+  if (total > 0) {
+    console.log(`Tabela Formulario já tem ${total} registro(s) — nada a semear.`);
+    return;
+  }
+
+  await prisma.formulario.createMany({
+    data: FORMULARIOS_INICIAIS.map((f) => ({ ...f, integracoes: f.integracoes ?? undefined })),
+  });
+  console.log(`Semeados ${FORMULARIOS_INICIAIS.length} formulários.`);
+}
+
+async function semearFluxosAutomacao() {
+  const total = await prisma.fluxoAutomacao.count();
+  if (total > 0) {
+    console.log(`Tabela FluxoAutomacao já tem ${total} registro(s) — nada a semear.`);
+    return;
+  }
+
+  const fluxos = fluxosIniciaisPadrao();
+  await prisma.fluxoAutomacao.createMany({
+    // nodes/edges/configuracoes/historicoVersoes têm tipos TS ricos que o Prisma não casa
+    // estruturalmente com InputJsonValue — em runtime já é JSON puro, o cast é só pro TS.
+    data: fluxos.map((f) => ({
+      ...f,
+      publicadoEm: f.publicadoEm ? new Date(f.publicadoEm) : undefined,
+    })) as unknown as NonNullable<Parameters<typeof prisma.fluxoAutomacao.createMany>[0]>["data"],
+  });
+  console.log(`Semeados ${fluxos.length} fluxos de automação.`);
+}
+
 async function main() {
   await semearContatos();
   await semearEquipe();
   await semearTarefas();
   await semearFunis();
+  await semearBibliotecaDocumentos();
+  await semearFormularios();
+  await semearFluxosAutomacao();
 }
 
 main()

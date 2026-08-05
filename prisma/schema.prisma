@@ -269,6 +269,7 @@ model FluxoAutomacao {
   publicadoPor       String?
   arquivada          Boolean   @default(false)
   modeloDemonstracao Boolean   @default(false)
+  objetivo           String?
   criadoEm           DateTime  @default(now())
   atualizadoEm       DateTime  @updatedAt
 }

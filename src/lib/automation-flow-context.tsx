@@ -74,13 +74,12 @@ type AutomationFlowContextValue = {
 
 const AutomationFlowContext = createContext<AutomationFlowContextValue | null>(null);
 
-/** Persistido pra que a resposta pública de um formulário (`/formulario-preview`, aba separada sem
- * Provider) consiga disparar de verdade um fluxo com gatilho "Formulário preenchido" — sem isso,
- * essa aba não teria como ler quais fluxos existem/estão publicados. `execucoes` (só um log de
- * auditoria pro Simulador/Histórico) continua em memória — não precisa sobreviver entre abas. */
-export const AUTOMACOES_STORAGE_KEY = "azuz-crm-automacoes-fluxos";
+function agoraISO(): string {
+  return new Date().toISOString();
+}
 
-function fluxosIniciaisPadrao(): FluxoAutomacao[] {
+/** Exportado só pra `prisma/seed.ts` semear a tabela — o Provider agora busca da API. */
+export function fluxosIniciaisPadrao(): FluxoAutomacao[] {
   return [
     ...AUTOMACOES_INICIAIS.map((a) => migrarAutomacaoParaFluxo(a, funisIniciais)),
     ...REGRAS_COMENTARIO_INICIAIS.map((r) => migrarRegraComentarioParaFluxo(r)),
@@ -88,43 +87,48 @@ function fluxosIniciaisPadrao(): FluxoAutomacao[] {
   ];
 }
 
-function agoraISO(): string {
-  return new Date().toISOString();
+/**
+ * Banco real (ver src/app/api/automacoes-fluxos/) — nodes/edges/configuracoes/historicoVersoes
+ * ficam como Json na própria linha do fluxo, já que os mutadores sempre recalculam o objeto inteiro
+ * e substituem. `execucoes` (log de auditoria do Simulador/Histórico) continua só em memória — nunca
+ * persistiu, sem mudança de comportamento.
+ */
+function criarRemoto(fluxo: FluxoAutomacao) {
+  fetch("/api/automacoes-fluxos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(fluxo),
+  }).catch((erro) => console.error("Falha ao criar fluxo de automação na API:", erro));
 }
 
 export function AutomationFlowProvider({ children }: { children: ReactNode }) {
-  const [fluxos, setFluxos] = useState<FluxoAutomacao[]>(() => {
-    if (typeof window === "undefined") return fluxosIniciaisPadrao();
-    try {
-      const salvos = window.localStorage.getItem(AUTOMACOES_STORAGE_KEY);
-      if (!salvos) return fluxosIniciaisPadrao();
-      return JSON.parse(salvos) as FluxoAutomacao[];
-    } catch {
-      return fluxosIniciaisPadrao();
-    }
-  });
+  const [fluxos, setFluxos] = useState<FluxoAutomacao[]>([]);
   const [execucoes, setExecucoes] = useState<RegistroExecucao[]>([]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(AUTOMACOES_STORAGE_KEY, JSON.stringify(fluxos));
-    } catch {
-      // localStorage indisponível — segue só em memória.
-    }
-  }, [fluxos]);
-
-  useEffect(() => {
-    function aoMudarStorage(e: StorageEvent) {
-      if (e.key !== AUTOMACOES_STORAGE_KEY || !e.newValue) return;
-      try {
-        setFluxos(JSON.parse(e.newValue) as FluxoAutomacao[]);
-      } catch {
-        // payload inválido — ignora.
-      }
-    }
-    window.addEventListener("storage", aoMudarStorage);
-    return () => window.removeEventListener("storage", aoMudarStorage);
+    fetch("/api/automacoes-fluxos")
+      .then((r) => r.json())
+      .then((dados: FluxoAutomacao[]) => setFluxos(dados))
+      .catch((erro) => console.error("Falha ao carregar fluxos de automação da API:", erro));
   }, []);
+
+  function tocarFluxo(id: string, atualizar: (f: FluxoAutomacao) => FluxoAutomacao) {
+    let atualizado: FluxoAutomacao | undefined;
+    setFluxos((prev) =>
+      prev.map((f) => {
+        if (f.id !== id) return f;
+        atualizado = atualizar(f);
+        return atualizado;
+      }),
+    );
+    if (atualizado) {
+      fetch(`/api/automacoes-fluxos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(atualizado),
+      }).catch((erro) => console.error("Falha ao atualizar fluxo de automação na API:", erro));
+    }
+  }
 
   function criarFluxo(dados: Partial<Omit<FluxoAutomacao, "id">> & { nome: string }): FluxoAutomacao {
     const agora = agoraISO();
@@ -147,13 +151,12 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
       historicoVersoes: [],
     };
     setFluxos((prev) => [...prev, novo]);
+    criarRemoto(novo);
     return novo;
   }
 
   function atualizarFluxo(id: string, patch: PatchFluxo) {
-    setFluxos((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, ...patch, atualizadoEm: agoraISO() } : f)),
-    );
+    tocarFluxo(id, (f) => ({ ...f, ...patch, atualizadoEm: agoraISO() }));
   }
 
   function publicarFluxo(id: string, usuario: string): ProblemaValidacao[] {
@@ -164,48 +167,42 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
     const temErro = problemas.some((p) => p.severidade === "erro");
     if (temErro) return problemas;
 
-    setFluxos((prev) =>
-      prev.map((f) => {
-        if (f.id !== id) return f;
-        const agora = agoraISO();
-        const novaVersao = f.versaoAtual + 1;
-        const versao: VersaoFluxo = {
-          versao: novaVersao,
-          nodes: f.nodes,
-          edges: f.edges,
-          configuracoes: f.configuracoes,
-          publicadoEm: agora,
-          publicadoPor: usuario,
-        };
-        return {
-          ...f,
-          status: "publicado",
-          versaoAtual: novaVersao,
-          publicadoEm: agora,
-          publicadoPor: usuario,
-          atualizadoEm: agora,
-          historicoVersoes: [...f.historicoVersoes, versao],
-        };
-      }),
-    );
+    tocarFluxo(id, (f) => {
+      const agora = agoraISO();
+      const novaVersao = f.versaoAtual + 1;
+      const versao: VersaoFluxo = {
+        versao: novaVersao,
+        nodes: f.nodes,
+        edges: f.edges,
+        configuracoes: f.configuracoes,
+        publicadoEm: agora,
+        publicadoPor: usuario,
+      };
+      return {
+        ...f,
+        status: "publicado",
+        versaoAtual: novaVersao,
+        publicadoEm: agora,
+        publicadoPor: usuario,
+        atualizadoEm: agora,
+        historicoVersoes: [...f.historicoVersoes, versao],
+      };
+    });
     return problemas;
   }
 
   function restaurarVersao(fluxoId: string, versao: number) {
-    setFluxos((prev) =>
-      prev.map((f) => {
-        if (f.id !== fluxoId) return f;
-        const alvo = f.historicoVersoes.find((v) => v.versao === versao);
-        if (!alvo) return f;
-        return {
-          ...f,
-          nodes: alvo.nodes,
-          edges: alvo.edges,
-          configuracoes: alvo.configuracoes,
-          atualizadoEm: agoraISO(),
-        };
-      }),
-    );
+    tocarFluxo(fluxoId, (f) => {
+      const alvo = f.historicoVersoes.find((v) => v.versao === versao);
+      if (!alvo) return f;
+      return {
+        ...f,
+        nodes: alvo.nodes,
+        edges: alvo.edges,
+        configuracoes: alvo.configuracoes,
+        atualizadoEm: agoraISO(),
+      };
+    });
   }
 
   function duplicarFluxo(id: string): FluxoAutomacao | undefined {
@@ -229,38 +226,32 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
       modeloDemonstracao: false,
     };
     setFluxos((prev) => [...prev, copia]);
+    criarRemoto(copia);
     return copia;
   }
 
   function arquivarFluxo(id: string) {
-    setFluxos((prev) =>
-      prev.map((f) =>
-        f.id === id ? { ...f, ativa: false, arquivada: true, atualizadoEm: agoraISO() } : f,
-      ),
-    );
+    tocarFluxo(id, (f) => ({ ...f, ativa: false, arquivada: true, atualizadoEm: agoraISO() }));
   }
 
   function desarquivarFluxo(id: string) {
-    setFluxos((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, arquivada: false, atualizadoEm: agoraISO() } : f)),
-    );
+    tocarFluxo(id, (f) => ({ ...f, arquivada: false, atualizadoEm: agoraISO() }));
   }
 
   function excluirFluxo(id: string) {
     setFluxos((prev) => prev.filter((f) => f.id !== id));
+    fetch(`/api/automacoes-fluxos/${id}`, { method: "DELETE" }).catch((erro) =>
+      console.error("Falha ao excluir fluxo de automação na API:", erro),
+    );
   }
 
   function alternarAtivo(id: string) {
-    setFluxos((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, ativa: !f.ativa, atualizadoEm: agoraISO() } : f)),
-    );
+    tocarFluxo(id, (f) => ({ ...f, ativa: !f.ativa, atualizadoEm: agoraISO() }));
   }
 
   function registrarExecucao(registro: RegistroExecucao) {
     setExecucoes((prev) => [...prev, registro]);
-    setFluxos((prev) =>
-      prev.map((f) => (f.id === registro.fluxoId ? { ...f, execucoes: f.execucoes + 1 } : f)),
-    );
+    tocarFluxo(registro.fluxoId, (f) => ({ ...f, execucoes: f.execucoes + 1 }));
   }
 
   function execucoesDoFluxo(fluxoId: string): RegistroExecucao[] {
