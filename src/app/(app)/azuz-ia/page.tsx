@@ -6,21 +6,34 @@ import { azuzIaMensagens } from "@/lib/data";
 import { IconEnviar, IconSparkle } from "@/components/icons";
 import { Topbar } from "@/components/ui";
 
-const RESPOSTA_PADRAO =
-  "Essa é uma prévia da interface — ainda não estou conectada aos dados reais do seu workspace. Em breve vou conseguir responder perguntas como essa de verdade.";
+const RESPOSTA_ERRO =
+  "Não consegui responder agora — verifica se a Azuz IA está configurada (Configurações → Azuz IA) e tenta de novo em instantes.";
 
 export default function AzuzIaPage() {
   const [mensagens, setMensagens] = useState(azuzIaMensagens);
   const [pergunta, setPergunta] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
-  function enviarPergunta() {
+  async function enviarPergunta() {
     const texto = pergunta.trim();
-    if (!texto) return;
+    if (!texto || carregando) return;
     setPergunta("");
+    const historico = mensagens;
     setMensagens((prev) => [...prev, { tipo: "out", texto }]);
-    setTimeout(() => {
-      setMensagens((prev) => [...prev, { tipo: "in", texto: RESPOSTA_PADRAO }]);
-    }, 500);
+    setCarregando(true);
+    try {
+      const resposta = await fetch("/api/azuz-ia/perguntar", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mensagem: texto, historico }),
+      });
+      const dados = (await resposta.json()) as { resposta?: string; erro?: string };
+      setMensagens((prev) => [...prev, { tipo: "in", texto: dados.resposta ?? RESPOSTA_ERRO }]);
+    } catch {
+      setMensagens((prev) => [...prev, { tipo: "in", texto: RESPOSTA_ERRO }]);
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (
@@ -48,6 +61,7 @@ export default function AzuzIaPage() {
                 {msg.texto}
               </div>
             ))}
+            {carregando ? <div className="bubble in">Digitando…</div> : null}
           </div>
           <form
             className="chat-input"
@@ -61,12 +75,13 @@ export default function AzuzIaPage() {
               placeholder="Escrever pra Azuz IA…"
               value={pergunta}
               onChange={(e) => setPergunta(e.target.value)}
+              disabled={carregando}
             />
             <button
               type="submit"
               className="chat-mic-btn chat-send-btn"
               aria-label="Enviar pergunta"
-              disabled={!pergunta.trim()}
+              disabled={!pergunta.trim() || carregando}
             >
               <IconEnviar />
             </button>

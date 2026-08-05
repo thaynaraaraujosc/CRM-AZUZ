@@ -31,8 +31,8 @@ const DETALHAMENTOS: { valor: AzuzIaConfig["detalhamento"]; label: string }[] = 
 const DADOS_OPCOES = ["contatos", "conversas", "funis", "tarefas", "relatórios", "campanhas", "documentos"];
 const SUGESTOES_OPCOES = ["follow-ups", "tarefas", "automações", "mensagens", "mudanças de etapa", "responsáveis", "análises"];
 
-/** Azuz IA (item 33) — nenhuma chamada de IA real acontece aqui, é só a tela de preferências que vai
- * alimentar a IA quando ela for conectada de verdade. */
+/** Azuz IA (item 33) — tela de preferências (persistidas de verdade via `Preferencia`); alimenta o
+ * prompt que `/api/azuz-ia/perguntar` monta a cada pergunta no chat de `/azuz-ia`. */
 export function AzuzIaSecao() {
   const { estado, atualizarAzuzIa, setCategoriaSuja } = useConfiguracoes();
   const [aba, setAba] = useState<Aba>("comportamento");
@@ -139,7 +139,11 @@ export function AzuzIaSecao() {
 
       {aba === "privacidade" ? (
         <div className="config-bloco">
-          <p className="hint">Nenhum dado é enviado a um serviço de IA externo nesta fase — a Azuz IA ainda não está conectada de verdade.</p>
+          <p className="hint">
+            Os dados marcados em &quot;Dados permitidos&quot; são enviados à Anthropic (Claude) só no
+            momento em que você faz uma pergunta, pra gerar a resposta — nenhum dado fica armazenado
+            do lado deles. Categorias desmarcadas nunca saem do workspace.
+          </p>
         </div>
       ) : null}
 
