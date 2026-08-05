@@ -15,7 +15,6 @@ import {
   type PerguntaFormulario,
   type RespostaFormulario,
 } from "@/lib/formularios-context";
-import { EQUIPE_STORAGE_KEY } from "@/lib/equipe-context";
 import { FUNIS_STORAGE_KEY } from "@/lib/funis-context";
 import { AUTOMACOES_STORAGE_KEY } from "@/lib/automation-flow-context";
 import { avaliarGatilho, executarFluxo, type ContextoExecucao, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
@@ -48,11 +47,12 @@ async function carregarContatos(): Promise<Contato[]> {
   }
 }
 
-function carregarEquipe(): Membro[] {
-  if (typeof window === "undefined") return equipeMock;
+/** Equipe já vem do banco real via API (ver src/app/api/equipe/) — não é mais localStorage. */
+async function carregarEquipe(): Promise<Membro[]> {
   try {
-    const salvos = localStorage.getItem(EQUIPE_STORAGE_KEY);
-    return salvos ? (JSON.parse(salvos) as Membro[]) : equipeMock;
+    const resposta = await fetch("/api/equipe");
+    if (!resposta.ok) return equipeMock;
+    return (await resposta.json()) as Membro[];
   } catch {
     return equipeMock;
   }
@@ -241,13 +241,15 @@ function FormularioPreviewContent() {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setFormularios(carregarFormularios());
-    setEquipeDisponivel(carregarEquipe());
     setCarregado(true);
-    // Contatos vêm de uma API real agora (não mais localStorage síncrono) — carrega à parte, sem
-    // atrasar a exibição do formulário (só é usado pelos campos de busca de pessoas).
+    // Contatos e Equipe vêm de uma API real agora (não mais localStorage síncrono) — carrega à
+    // parte, sem atrasar a exibição do formulário (só são usados pelos campos de busca de pessoas).
     carregarContatos()
       .then(setContatos)
       .catch((erro) => console.error("Falha ao carregar contatos:", erro));
+    carregarEquipe()
+      .then(setEquipeDisponivel)
+      .catch((erro) => console.error("Falha ao carregar equipe:", erro));
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 

@@ -8,10 +8,8 @@ import {
   type ReactNode,
 } from "react";
 
-import { equipe as equipeInicial, type Membro } from "@/lib/data";
+import type { Membro } from "@/lib/data";
 import { slugId } from "@/lib/ids";
-
-export const EQUIPE_STORAGE_KEY = "azuz-crm-equipe";
 
 type NovoMembro = {
   nome: string;
@@ -45,29 +43,28 @@ type EquipeContextValue = {
 const EquipeContext = createContext<EquipeContextValue | null>(null);
 
 /**
- * Equipe/usuários vivem num contexto no topo do app pelo mesmo motivo de Funis e Contatos: convidar
- * ou editar alguém em /equipe precisa aparecer nos seletores de responsável em Tarefas, Agenda e nos
- * formulários de automação, sem cada tela ficar com uma cópia estática e dessincronizada de `equipe`.
+ * Núcleo comercial (2ª leva de migração pro banco real, ver `src/app/api/equipe/`) — mesmo padrão
+ * do piloto de Contatos: contrato público do Provider não muda, só o motor por dentro troca
+ * `localStorage` por `fetch` na API real, com atualização otimista local. Falha de rede só loga no
+ * console, sem toast de erro (mesma limitação assumida no piloto).
  */
 export function EquipeProvider({ children }: { children: ReactNode }) {
-  const [membros, setMembros] = useState<Membro[]>(() => {
-    if (typeof window === "undefined") return [...equipeInicial];
-    try {
-      const salvos = window.localStorage.getItem(EQUIPE_STORAGE_KEY);
-      if (!salvos) return [...equipeInicial];
-      return JSON.parse(salvos) as Membro[];
-    } catch {
-      return [...equipeInicial];
-    }
-  });
+  const [membros, setMembros] = useState<Membro[]>([]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(EQUIPE_STORAGE_KEY, JSON.stringify(membros));
-    } catch {
-      // localStorage indisponível (modo privado, por exemplo) — segue só em memória.
-    }
-  }, [membros]);
+    fetch("/api/equipe")
+      .then((r) => r.json())
+      .then((dados: Membro[]) => setMembros(dados))
+      .catch((erro) => console.error("Falha ao carregar equipe da API:", erro));
+  }, []);
+
+  function atualizarRemoto(id: string, dados: Partial<Membro> & Record<string, unknown>) {
+    fetch(`/api/equipe/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dados),
+    }).catch((erro) => console.error("Falha ao atualizar membro na API:", erro));
+  }
 
   function convidarMembro(dados: NovoMembro): Membro {
     const idNovo = slugId(dados.nome);
@@ -89,19 +86,36 @@ export function EquipeProvider({ children }: { children: ReactNode }) {
       convitePendente: true,
     };
     setMembros((prev) => [...prev, novo]);
+    fetch("/api/equipe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dados),
+    }).catch((erro) => console.error("Falha ao convidar membro na API:", erro));
     return novo;
   }
 
   function editarMembro(id: string, dados: Partial<Membro>) {
     setMembros((prev) => prev.map((m) => (m.id === id ? { ...m, ...dados } : m)));
+    atualizarRemoto(id, dados);
   }
 
   function alternarAtivo(id: string) {
-    setMembros((prev) => prev.map((m) => (m.id === id ? { ...m, ativo: !m.ativo } : m)));
+    let ativoFinal = false;
+    setMembros((prev) =>
+      prev.map((m) => {
+        if (m.id !== id) return m;
+        ativoFinal = !m.ativo;
+        return { ...m, ativo: ativoFinal };
+      }),
+    );
+    atualizarRemoto(id, { ativo: ativoFinal });
   }
 
   function removerMembro(id: string) {
     setMembros((prev) => prev.filter((m) => m.id !== id));
+    fetch(`/api/equipe/${id}`, { method: "DELETE" }).catch((erro) =>
+      console.error("Falha ao remover membro na API:", erro),
+    );
   }
 
   return (

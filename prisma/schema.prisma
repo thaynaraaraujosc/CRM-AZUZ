@@ -49,3 +49,31 @@ model Contato {
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 }
+
+// Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
+// Contato: id continua o slug do front, email vira @unique (já era a chave de busca de convite).
+model Membro {
+  id String @id
+
+  initials  String
+  nome      String
+  email     String  @unique
+  senha     String?
+  papel     String
+  papelTipo String
+  papelNota String?
+  leads     String
+  enxerga   String
+
+  // MySQL não tem array nativo — permissoes vira JSON (lista de strings).
+  permissoes Json
+
+  ativo           Boolean @default(true)
+  convitePendente Boolean @default(false)
+  // Foto hoje é gravada como data URL (base64 inline) — pode ficar grande, então usa TEXT em vez
+  // do VARCHAR padrão.
+  foto            String? @db.Text
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
