@@ -8,9 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { tarefas as tarefasIniciais, type ColunaTarefas, type TaskCard, type Urgencia } from "@/lib/data";
-
-export const TAREFAS_STORAGE_KEY = "azuz-crm-tarefas";
+import type { ColunaTarefas, TaskCard, Urgencia } from "@/lib/data";
 
 function cloneColunas(colunas: ColunaTarefas[]): ColunaTarefas[] {
   return colunas.map((c) => ({ ...c, cards: c.cards.map((card) => ({ ...card })) }));
@@ -50,26 +48,21 @@ const TarefasContext = createContext<TarefasContextValue | null>(null);
  * Tarefas vivem num contexto no topo do app pelo mesmo motivo de Funis e Contatos: criar/editar/mover
  * uma tarefa em /tarefas precisa aparecer em Agenda, Central do Dia, no contato relacionado e na
  * página de Equipe, sem cada tela ficar com uma cópia local dessincronizada do kanban.
+ *
+ * Núcleo comercial (2ª leva de migração pro banco real, ver `src/app/api/tarefas/`) — a lógica local
+ * de índice/splice (mover card, reordenar etapa) continua igual, porque já funcionava bem e mexer
+ * nela seria o ponto de maior risco dessa migração. O que muda: cada mutação também resolve os ids
+ * reais (vindos do fetch inicial) e dispara a chamada de API correspondente, sem bloquear a UI.
  */
 export function TarefasProvider({ children }: { children: ReactNode }) {
-  const [colunas, setColunas] = useState<ColunaTarefas[]>(() => {
-    if (typeof window === "undefined") return cloneColunas(tarefasIniciais);
-    try {
-      const salvas = window.localStorage.getItem(TAREFAS_STORAGE_KEY);
-      if (!salvas) return cloneColunas(tarefasIniciais);
-      return JSON.parse(salvas) as ColunaTarefas[];
-    } catch {
-      return cloneColunas(tarefasIniciais);
-    }
-  });
+  const [colunas, setColunas] = useState<ColunaTarefas[]>([]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(TAREFAS_STORAGE_KEY, JSON.stringify(colunas));
-    } catch {
-      // localStorage indisponível (modo privado, por exemplo) — segue só em memória.
-    }
-  }, [colunas]);
+    fetch("/api/tarefas")
+      .then((r) => r.json())
+      .then((dados: ColunaTarefas[]) => setColunas(dados))
+      .catch((erro) => console.error("Falha ao carregar tarefas da API:", erro));
+  }, []);
 
   function criarTarefa(dados: NovaTarefa): TaskCard {
     const nova: TaskCard = {
@@ -91,6 +84,18 @@ export function TarefasProvider({ children }: { children: ReactNode }) {
       colunaDestino?.cards.push(nova);
       return proximo;
     });
+    fetch("/api/tarefas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dados),
+    })
+      .then((r) => r.json())
+      .then((salva: TaskCard) => {
+        setColunas((prev) =>
+          prev.map((c) => ({ ...c, cards: c.cards.map((card) => (card.id === nova.id ? salva : card)) })),
+        );
+      })
+      .catch((erro) => console.error("Falha ao criar tarefa na API:", erro));
     return nova;
   }
 
@@ -101,10 +106,18 @@ export function TarefasProvider({ children }: { children: ReactNode }) {
         cards: c.cards.map((card) => (card.id === id ? { ...card, ...dados } : card)),
       })),
     );
+    fetch(`/api/tarefas/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dados),
+    }).catch((erro) => console.error("Falha ao editar tarefa na API:", erro));
   }
 
   function excluirTarefa(id: string) {
     setColunas((prev) => prev.map((c) => ({ ...c, cards: c.cards.filter((card) => card.id !== id) })));
+    fetch(`/api/tarefas/${id}`, { method: "DELETE" }).catch((erro) =>
+      console.error("Falha ao excluir tarefa na API:", erro),
+    );
   }
 
   function moverTarefaPara(
@@ -118,15 +131,36 @@ export function TarefasProvider({ children }: { children: ReactNode }) {
       const [card] = proximo[colOrigem].cards.splice(indiceOrigem, 1);
       if (!card) return prev;
 
-      const tituloDestino = proximo[colDestino].titulo;
-      card.concluida = tituloDestino === "Concluídas";
-      card.atrasada = tituloDestino === "Atrasadas";
+      const etapaDestino = proximo[colDestino];
+      card.concluida = etapaDestino.titulo === "Concluídas";
+      card.atrasada = etapaDestino.titulo === "Atrasadas";
 
-      const destino = proximo[colDestino].cards;
+      const destino = etapaDestino.cards;
       const posicao = indiceDestino ?? destino.length;
       const posicaoAjustada =
         colOrigem === colDestino && indiceOrigem < posicao ? posicao - 1 : posicao;
       destino.splice(posicaoAjustada, 0, card);
+
+      // Reenvia a ordem final de todos os cards das etapas afetadas — mais simples e seguro do que
+      // calcular só o delta, e o volume de cards por etapa é sempre pequeno nesse CRM.
+      const etapasAfetadas = colOrigem === colDestino ? [proximo[colOrigem]] : [proximo[colOrigem], proximo[colDestino]];
+      const cardsParaSincronizar = etapasAfetadas.flatMap((etapa) =>
+        etapa.cards.map((c, indice) => ({
+          id: c.id,
+          etapaId: etapa.id ?? "",
+          ordem: indice,
+          concluida: c.concluida,
+          atrasada: c.atrasada,
+        })),
+      );
+      if (cardsParaSincronizar.every((c) => c.etapaId)) {
+        fetch("/api/tarefas/mover", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cards: cardsParaSincronizar }),
+        }).catch((erro) => console.error("Falha ao mover tarefa na API:", erro));
+      }
+
       return proximo;
     });
   }
@@ -142,7 +176,16 @@ export function TarefasProvider({ children }: { children: ReactNode }) {
         const [card] = coluna.cards.splice(indice, 1);
         card.concluida = true;
         card.atrasada = false;
-        proximo[colDestinoIndex].cards.push(card);
+        const etapaDestino = proximo[colDestinoIndex];
+        const ordem = etapaDestino.cards.length;
+        etapaDestino.cards.push(card);
+        if (etapaDestino.id) {
+          fetch(`/api/tarefas/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ etapaId: etapaDestino.id, ordem, concluida: true, atrasada: false }),
+          }).catch((erro) => console.error("Falha ao concluir tarefa na API:", erro));
+        }
         break;
       }
       return proximo;
@@ -150,8 +193,17 @@ export function TarefasProvider({ children }: { children: ReactNode }) {
   }
 
   function renomearEtapa(colIndex: number, titulo: string) {
-    if (!titulo.trim()) return;
-    setColunas((prev) => prev.map((c, i) => (i === colIndex ? { ...c, titulo: titulo.trim() } : c)));
+    const nome = titulo.trim();
+    if (!nome) return;
+    const etapaId = colunas[colIndex]?.id;
+    setColunas((prev) => prev.map((c, i) => (i === colIndex ? { ...c, titulo: nome } : c)));
+    if (etapaId) {
+      fetch(`/api/tarefas/etapas/${etapaId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titulo: nome }),
+      }).catch((erro) => console.error("Falha ao renomear etapa na API:", erro));
+    }
   }
 
   function reordenarEtapa(origem: number, destino: number) {
@@ -161,6 +213,16 @@ export function TarefasProvider({ children }: { children: ReactNode }) {
       const [movida] = proximo.splice(origem, 1);
       if (!movida) return prev;
       proximo.splice(destino, 0, movida);
+
+      const etapas = proximo.map((c, indice) => ({ id: c.id ?? "", ordem: indice }));
+      if (etapas.every((e) => e.id)) {
+        fetch("/api/tarefas/etapas/reordenar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ etapas }),
+        }).catch((erro) => console.error("Falha ao reordenar etapas na API:", erro));
+      }
+
       return proximo;
     });
   }
@@ -168,11 +230,28 @@ export function TarefasProvider({ children }: { children: ReactNode }) {
   function criarEtapa(titulo: string) {
     const nome = titulo.trim();
     if (!nome) return;
-    setColunas((prev) => [...prev, { titulo: nome, cards: [] }]);
+    const idTemporario = `etapa-${Date.now()}`;
+    setColunas((prev) => [...prev, { id: idTemporario, titulo: nome, cards: [] }]);
+    fetch("/api/tarefas/etapas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ titulo: nome }),
+    })
+      .then((r) => r.json())
+      .then((etapa: { id: string }) => {
+        setColunas((prev) => prev.map((c) => (c.id === idTemporario ? { ...c, id: etapa.id } : c)));
+      })
+      .catch((erro) => console.error("Falha ao criar etapa na API:", erro));
   }
 
   function excluirEtapa(colIndex: number) {
+    const etapaId = colunas[colIndex]?.id;
     setColunas((prev) => prev.filter((_, i) => i !== colIndex));
+    if (etapaId) {
+      fetch(`/api/tarefas/etapas/${etapaId}`, { method: "DELETE" }).catch((erro) =>
+        console.error("Falha ao excluir etapa na API:", erro),
+      );
+    }
   }
 
   return (

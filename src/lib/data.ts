@@ -865,7 +865,13 @@ export type TaskCard = {
   modelo?: string;
 };
 
-export type ColunaTarefas = { titulo: string; cards: TaskCard[] };
+export type ColunaTarefas = {
+  /** Id real da etapa no banco (ver src/app/api/tarefas/etapas/) — ausente só no mock estático de
+   * seed, que nunca chega direto na UI (o Provider sempre popula a partir da API). */
+  id?: string;
+  titulo: string;
+  cards: TaskCard[];
+};
 
 export const tarefas: ColunaTarefas[] = [
   {

@@ -5,8 +5,6 @@
  * Se um novo contexto persistido for criado, adicione a chave dele aqui.
  */
 export const CHAVES_LOCALSTORAGE_CRM: string[] = [
-  "azuz-crm-tarefas",
-  "azuz-crm-agenda",
   "azuz-crm-documentos",
   "azuz-crm-documentos-modelos-usuario",
   "azuz-crm-documentos-modelos-favoritos",

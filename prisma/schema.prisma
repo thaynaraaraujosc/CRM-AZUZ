@@ -50,6 +50,66 @@ model Contato {
   atualizadoEm DateTime @updatedAt
 }
 
+// Núcleo comercial (2ª leva) — espelha o tipo `Compromisso` de src/lib/agenda-context.tsx. Registro
+// plano, sem aninhamento — só compromissos criados manualmente na Agenda (os derivados de Tarefa são
+// calculados ao vivo no cliente por `compromissosDeTarefas`, nunca persistidos).
+model Compromisso {
+  id String @id
+
+  contatoId          String?
+  contato            String
+  responsavel        String
+  dataIso            String
+  hora               String
+  horaFim            String?
+  tipo               String
+  categoria          String?
+  descricao          String?
+  local              String?
+  status             String
+  motivoCancelamento String?
+  origem             String
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+// Núcleo comercial (2ª leva) — espelha `ColunaTarefas`/`TaskCard` de src/lib/data.ts. Etapas são
+// editáveis pelo usuário (criar/renomear/reordenar/excluir em /tarefas), por isso viram tabela
+// própria (não dá pra derivar só dos cards, porque uma etapa pode existir vazia). Excluir uma etapa
+// remove os cards dela junto (mesmo comportamento que o Provider já tinha antes: `excluirEtapa`
+// simplesmente descartava a coluna com o que tivesse dentro).
+model TarefaEtapa {
+  id     String @id
+  titulo String
+  ordem  Int
+  cards  TarefaCard[]
+}
+
+model TarefaCard {
+  id      String      @id
+  etapaId String
+  etapa   TarefaEtapa @relation(fields: [etapaId], references: [id], onDelete: Cascade)
+  ordem   Int
+
+  titulo              String
+  contato             String
+  contatoId           String?
+  data                String
+  atrasada            Boolean @default(false)
+  responsavelNome     String
+  responsavelInitials String
+  concluida           Boolean @default(false)
+  urgencia            String
+  descricao           String
+  anexoArquivo        String?
+  anexoDetalhe        String?
+  modelo              String?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
 // Contato: id continua o slug do front, email vira @unique (já era a chave de busca de convite).
 model Membro {

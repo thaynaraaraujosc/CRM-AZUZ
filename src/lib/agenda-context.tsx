@@ -10,8 +10,6 @@ import {
 
 import type { ColunaTarefas } from "@/lib/data";
 
-export const AGENDA_STORAGE_KEY = "azuz-crm-agenda";
-
 /** Data de referência ("hoje") usada em todo o CRM mockado — sem backend/relógio real, fixamos um
  * dia pra Agenda, Central do Dia e o restante do app concordarem sobre o que é "hoje". */
 export const HOJE_ISO = "2026-07-30";
@@ -150,26 +148,28 @@ const AgendaContext = createContext<AgendaContextValue | null>(null);
  * um agendamento precisa aparecer na Agenda, no contato relacionado e na Central do Dia, sem cada tela
  * ficar com uma fonte própria e incompatível de "agenda" (antes eram duas: `EventoManual` só na
  * página Agenda, e `COMPROMISSOS_HOJE_MOCK` só na Central do Dia).
+ *
+ * Núcleo comercial (2ª leva de migração pro banco real, ver `src/app/api/agenda/`) — mesmo padrão do
+ * piloto de Contatos: contrato público não muda, só o motor por dentro troca `localStorage` por
+ * `fetch` na API real, com atualização otimista local. Falha de rede só loga no console.
  */
 export function AgendaProvider({ children }: { children: ReactNode }) {
-  const [compromissos, setCompromissos] = useState<Compromisso[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const salvos = window.localStorage.getItem(AGENDA_STORAGE_KEY);
-      if (!salvos) return [];
-      return JSON.parse(salvos) as Compromisso[];
-    } catch {
-      return [];
-    }
-  });
+  const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(AGENDA_STORAGE_KEY, JSON.stringify(compromissos));
-    } catch {
-      // localStorage indisponível (modo privado, por exemplo) — segue só em memória.
-    }
-  }, [compromissos]);
+    fetch("/api/agenda")
+      .then((r) => r.json())
+      .then((dados: Compromisso[]) => setCompromissos(dados))
+      .catch((erro) => console.error("Falha ao carregar agenda da API:", erro));
+  }, []);
+
+  function atualizarRemoto(id: string, dados: Partial<Compromisso>) {
+    fetch(`/api/agenda/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dados),
+    }).catch((erro) => console.error("Falha ao atualizar compromisso na API:", erro));
+  }
 
   function criarAgendamento(dados: NovoCompromisso): Compromisso {
     const novo: Compromisso = {
@@ -188,23 +188,39 @@ export function AgendaProvider({ children }: { children: ReactNode }) {
       origem: "manual",
     };
     setCompromissos((prev) => [...prev, novo]);
+    fetch("/api/agenda", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dados),
+    })
+      .then((r) => r.json())
+      .then((salvo: Compromisso) => {
+        // troca o id otimista pelo id real gerado no servidor (mesmo timestamp, mas evita
+        // divergência se as duas chamadas caírem em milissegundos diferentes).
+        setCompromissos((prev) => prev.map((c) => (c.id === novo.id ? salvo : c)));
+      })
+      .catch((erro) => console.error("Falha ao criar agendamento na API:", erro));
     return novo;
   }
 
   function editarAgendamento(id: string, dados: Partial<NovoCompromisso>) {
     setCompromissos((prev) => prev.map((c) => (c.id === id ? { ...c, ...dados } : c)));
+    atualizarRemoto(id, dados);
   }
 
   function reagendar(id: string, dataIso: string, hora: string, horaFim?: string) {
     setCompromissos((prev) => prev.map((c) => (c.id === id ? { ...c, dataIso, hora, horaFim } : c)));
+    atualizarRemoto(id, { dataIso, hora, horaFim });
   }
 
   function cancelar(id: string, motivo?: string) {
     setCompromissos((prev) => prev.map((c) => (c.id === id ? { ...c, status: "cancelado", motivoCancelamento: motivo } : c)));
+    atualizarRemoto(id, { status: "cancelado", motivoCancelamento: motivo });
   }
 
   function concluir(id: string) {
     setCompromissos((prev) => prev.map((c) => (c.id === id ? { ...c, status: "concluido" } : c)));
+    atualizarRemoto(id, { status: "concluido" });
   }
 
   return (
