@@ -253,7 +253,9 @@ model RespostaFormulario {
 model FluxoAutomacao {
   id                 String    @id
   nome               String
-  descricao          String?
+  // Texto livre — alguns fluxos de demonstração passam de 191 caracteres (VARCHAR padrão), por
+  // isso @db.Text (mesmo motivo do `objetivo` abaixo).
+  descricao          String?   @db.Text
   funilId            String?
   etapaId            String?
   categoria          String?
@@ -269,7 +271,7 @@ model FluxoAutomacao {
   publicadoPor       String?
   arquivada          Boolean   @default(false)
   modeloDemonstracao Boolean   @default(false)
-  objetivo           String?
+  objetivo           String?   @db.Text
   criadoEm           DateTime  @default(now())
   atualizadoEm       DateTime  @updatedAt
 }
