@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { Documento } from "@/lib/documentos-context";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function paraDocumento(linha: {
@@ -21,19 +22,30 @@ function paraDocumento(linha: {
   } as Documento;
 }
 
-/** GET lista todos os documentos (inclusive os na lixeira — o front filtra por `excluido`). */
+/** GET lista os documentos do workspace de quem está logado (inclusive os na lixeira — o front
+ * filtra por `excluido`). */
 export async function GET() {
-  const linhas = await prisma.documento.findMany({ orderBy: { criadoEm: "asc" } });
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
+  const linhas = await prisma.documento.findMany({
+    where: { workspaceId: sessao.user.workspaceId },
+    orderBy: { criadoEm: "asc" },
+  });
   return NextResponse.json(linhas.map(paraDocumento));
 }
 
 /** POST cria um documento novo (ou uma cópia) — mesma semântica de `criarDocumento`/`duplicarDocumento`. */
 export async function POST(request: Request) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
   const dados = (await request.json()) as Documento;
 
   const linha = await prisma.documento.create({
     data: {
       id: dados.id,
+      workspaceId: sessao.user.workspaceId,
       titulo: dados.titulo,
       favorito: dados.favorito,
       autor: dados.autor,

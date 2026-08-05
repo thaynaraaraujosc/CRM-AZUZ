@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import type { Prisma } from "@/generated/prisma/client";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /** nodes/edges/configuracoes/historicoVersoes têm tipos TS ricos (genéricos, uniões) que o Prisma
@@ -27,19 +28,29 @@ function paraFluxo(linha: {
   } as FluxoAutomacao;
 }
 
-/** GET lista todos os fluxos de automação. */
+/** GET lista os fluxos de automação do workspace de quem está logado. */
 export async function GET() {
-  const linhas = await prisma.fluxoAutomacao.findMany({ orderBy: { criadoEm: "asc" } });
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
+  const linhas = await prisma.fluxoAutomacao.findMany({
+    where: { workspaceId: sessao.user.workspaceId },
+    orderBy: { criadoEm: "asc" },
+  });
   return NextResponse.json(linhas.map(paraFluxo));
 }
 
 /** POST cria um fluxo novo (ou uma cópia) — mesma semântica de `criarFluxo`/`duplicarFluxo`. */
 export async function POST(request: Request) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
   const dados = (await request.json()) as FluxoAutomacao;
 
   const linha = await prisma.fluxoAutomacao.create({
     data: {
       id: dados.id,
+      workspaceId: sessao.user.workspaceId,
       nome: dados.nome,
       descricao: dados.descricao,
       funilId: dados.funilId,

@@ -14,58 +14,50 @@ import {
 } from "@/lib/formularios-context";
 import { avaliarGatilho, executarFluxo, type ContextoExecucao, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
-import { contatos as contatosMock, equipe as equipeMock, funis as funisMock, type Contato, type Funil, type Membro, type NegocioCard } from "@/lib/data";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
 
-/** Formulários já vêm do banco real via API (ver src/app/api/formularios/) — não é mais localStorage. */
-async function carregarFormularios(): Promise<Formulario[]> {
+type OpcaoNome = { id: string; nome: string };
+
+/**
+ * Formulário/contatos-sugeridos/equipe-sugerida/fluxos-automacao vêm de rotas públicas dedicadas
+ * (ver src/app/api/formularios/[id]/), cada uma resolvendo o workspace a partir do `id` do
+ * formulário na URL — nunca da lista inteira de `/api/contatos`, `/api/equipe`, `/api/funis`,
+ * `/api/automacoes-fluxos` (essas exigem sessão desde a Fase 2 do multi-tenancy, e listar tudo
+ * pra um público não logado vazaria dado de qualquer empresa cadastrada, não só a dona do link).
+ */
+async function carregarFormulario(id: string): Promise<Formulario | null> {
   try {
-    const resposta = await fetch("/api/formularios");
+    const resposta = await fetch(`/api/formularios/${id}`);
+    if (!resposta.ok) return null;
+    return migrarFormulario(await resposta.json());
+  } catch {
+    return null;
+  }
+}
+
+async function carregarContatosSugeridos(id: string): Promise<OpcaoNome[]> {
+  try {
+    const resposta = await fetch(`/api/formularios/${id}/contatos-sugeridos`);
     if (!resposta.ok) return [];
-    const lista = (await resposta.json()) as unknown[];
-    return lista.map(migrarFormulario);
+    return (await resposta.json()) as OpcaoNome[];
   } catch {
     return [];
   }
 }
 
-/** Contatos já vêm do banco real via API (ver src/app/api/contatos/) — não é mais localStorage. */
-async function carregarContatos(): Promise<Contato[]> {
+async function carregarEquipeSugerida(id: string): Promise<OpcaoNome[]> {
   try {
-    const resposta = await fetch("/api/contatos");
-    if (!resposta.ok) return contatosMock;
-    return (await resposta.json()) as Contato[];
+    const resposta = await fetch(`/api/formularios/${id}/equipe-sugerida`);
+    if (!resposta.ok) return [];
+    return (await resposta.json()) as OpcaoNome[];
   } catch {
-    return contatosMock;
+    return [];
   }
 }
 
-/** Equipe já vem do banco real via API (ver src/app/api/equipe/) — não é mais localStorage. */
-async function carregarEquipe(): Promise<Membro[]> {
+async function carregarFluxosSugeridos(id: string): Promise<FluxoAutomacao[]> {
   try {
-    const resposta = await fetch("/api/equipe");
-    if (!resposta.ok) return equipeMock;
-    return (await resposta.json()) as Membro[];
-  } catch {
-    return equipeMock;
-  }
-}
-
-/** Funis já vêm do banco real via API (ver src/app/api/funis/) — não é mais localStorage. */
-async function carregarFunis(): Promise<Funil[]> {
-  try {
-    const resposta = await fetch("/api/funis");
-    if (!resposta.ok) return funisMock;
-    return (await resposta.json()) as Funil[];
-  } catch {
-    return funisMock;
-  }
-}
-
-/** Fluxos já vêm do banco real via API (ver src/app/api/automacoes-fluxos/) — não é mais localStorage. */
-async function carregarFluxosAutomacao(): Promise<FluxoAutomacao[]> {
-  try {
-    const resposta = await fetch("/api/automacoes-fluxos");
+    const resposta = await fetch(`/api/formularios/${id}/fluxos-automacao`);
     if (!resposta.ok) return [];
     return (await resposta.json()) as FluxoAutomacao[];
   } catch {
@@ -74,53 +66,21 @@ async function carregarFluxosAutomacao(): Promise<FluxoAutomacao[]> {
 }
 
 /** Equivalente em runtime puro de `useFunis().atribuirContatoAoFunil` — move (ou cria) o card desse
- * contato pra etapa escolhida, tirando de onde estivesse antes em qualquer funil. Busca o estado
- * atual na API, calcula o resultado e manda de volta via PUT (mesmo endpoint que o Provider usa pra
- * sincronizar — ver src/app/api/funis/). Fire-and-forget: `Ligacoes.moverEtapa` é `void`, não espera
- * essa chamada terminar. */
+ * contato pra etapa escolhida, tirando de onde estivesse antes em qualquer funil do workspace do
+ * formulário. Ver src/app/api/formularios/[id]/funil/ — a movimentação acontece toda no servidor,
+ * a rota não aceita reconciliar funis inteiros vindos do cliente. Fire-and-forget: `Ligacoes.moverEtapa`
+ * é `void`, não espera essa chamada terminar. */
 function atribuirContatoAoFunilPublico(
+  formularioId: string,
   funilId: string,
   etapaTitulo: string,
-  contato: Omit<NegocioCard, "id"> & { id?: string },
+  card: { nome: string; valor: string; origem: string; dias: string; data: string; responsavel?: string },
 ) {
-  carregarFunis()
-    .then((funis) => {
-      const semDuplicata = funis.map((f) => ({
-        ...f,
-        colunas: f.colunas.map((c) => {
-          const cards = c.cards.filter((card) => card.nome !== contato.nome);
-          return cards.length === c.cards.length ? c : { ...c, cards, total: Math.max(0, c.total - 1) };
-        }),
-      }));
-
-      const novoCard: NegocioCard = {
-        id: contato.id ?? `negocio-${Date.now()}`,
-        nome: contato.nome,
-        valor: contato.valor,
-        origem: contato.origem,
-        dias: contato.dias,
-        data: contato.data,
-        responsavel: contato.responsavel,
-      };
-
-      const proximos = semDuplicata.map((f) => {
-        if (f.id !== funilId) return f;
-        let etapaEncontrada = false;
-        const colunas = f.colunas.map((c) => {
-          if (c.titulo !== etapaTitulo) return c;
-          etapaEncontrada = true;
-          return { ...c, cards: [...c.cards, novoCard], total: c.total + 1 };
-        });
-        return etapaEncontrada ? { ...f, colunas } : f;
-      });
-
-      return fetch("/api/funis", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(proximos),
-      });
-    })
-    .catch((erro) => console.error("Falha ao atribuir contato ao funil (público):", erro));
+  fetch(`/api/formularios/${formularioId}/funil`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ funilId, etapaTitulo, card }),
+  }).catch((erro) => console.error("Falha ao atribuir contato ao funil (público):", erro));
 }
 
 /** Grava a resposta via API real (ver src/app/api/formularios/[id]/respostas/) — fire-and-forget,
@@ -134,12 +94,12 @@ function registrarRespostaPublica(formularioId: string, valores: Record<string, 
 }
 
 /** Equivalente em runtime puro de `useContatos().salvarDadosContato` — cria o contato (se ainda não
- * existir, com origem "Formulário") ou funde os dados informados num já existente, via API real
- * (ver src/app/api/contatos/). Usado tanto pelo submit do formulário quanto pelas `Ligacoes`
- * (`salvarContato`/`atribuirAtendente`) do motor de automações. */
-function salvarDadosContatoPublico(nome: string, dados: Record<string, unknown>) {
+ * existir, com origem "Formulário") ou funde os dados informados num já existente, no workspace do
+ * formulário (ver src/app/api/formularios/[id]/contatos/). Usado tanto pelo submit do formulário
+ * quanto pelas `Ligacoes` (`salvarContato`/`atribuirAtendente`) do motor de automações. */
+function salvarDadosContatoPublico(formularioId: string, nome: string, dados: Record<string, unknown>) {
   if (!nome) return;
-  fetch("/api/contatos", {
+  fetch(`/api/formularios/${formularioId}/contatos`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nome, dados, origemPadrao: "Formulário" }),
@@ -148,22 +108,22 @@ function salvarDadosContatoPublico(nome: string, dados: Record<string, unknown>)
 
 /** Cria ou atualiza o contato de verdade a partir das perguntas mapeadas pro CRM — mesmo efeito de
  * `useContatos().criarContato`, mas em runtime puro (sem Provider), via API real. */
-function salvarContatoPublico(dadosMapeados: Record<string, string>) {
+function salvarContatoPublico(formularioId: string, dadosMapeados: Record<string, string>) {
   const nome = dadosMapeados.nome;
   if (!nome) return;
-  salvarDadosContatoPublico(nome, dadosMapeados);
+  salvarDadosContatoPublico(formularioId, nome, dadosMapeados);
 }
 
-/** Dispara "formulario_preenchido" pra todo fluxo publicado e ativo, exatamente como
- * `useAutomationFlows().dispararEvento` — mas em runtime puro (sem Provider), buscando os fluxos na
- * API real e usando `Ligacoes` que também chamam a API. */
-async function dispararEventoFormularioPublico(contexto: ContextoExecucao) {
-  const fluxos = await carregarFluxosAutomacao();
+/** Dispara "formulario_preenchido" pra todo fluxo publicado e ativo do workspace do formulário,
+ * exatamente como `useAutomationFlows().dispararEvento` — mas em runtime puro (sem Provider),
+ * buscando os fluxos na rota pública e usando `Ligacoes` que também chamam rotas públicas. */
+async function dispararEventoFormularioPublico(formularioId: string, contexto: ContextoExecucao) {
+  const fluxos = await carregarFluxosSugeridos(formularioId);
   const evento: EventoAutomacao = { tipo: "formulario_preenchido", contatoNome: contexto.contato.nome };
 
   const ligacoes: Ligacoes = {
     moverEtapa: (funilId, etapaTitulo, contato) =>
-      atribuirContatoAoFunilPublico(funilId, etapaTitulo, {
+      atribuirContatoAoFunilPublico(formularioId, funilId, etapaTitulo, {
         nome: contato.nome,
         valor: (contato.valor as string) ?? "—",
         origem: "Formulário",
@@ -171,8 +131,8 @@ async function dispararEventoFormularioPublico(contexto: ContextoExecucao) {
         data: new Date().toISOString().slice(0, 10),
         responsavel: contato.responsavel as string | undefined,
       }),
-    salvarContato: (nome, dados) => salvarDadosContatoPublico(nome, dados),
-    atribuirAtendente: (nome, atendente) => salvarDadosContatoPublico(nome, { responsavel: atendente }),
+    salvarContato: (nome, dados) => salvarDadosContatoPublico(formularioId, nome, dados),
+    atribuirAtendente: (nome, atendente) => salvarDadosContatoPublico(formularioId, nome, { responsavel: atendente }),
   };
 
   for (const fluxo of fluxos) {
@@ -219,44 +179,40 @@ function FormularioPreviewContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
   const chave = searchParams.get("chave");
-  // Carregados só depois de montar (não no initializer do useState) — essa página lê localStorage,
-  // que não existe durante o SSR; ler direto no initializer faz o HTML da primeira renderização no
-  // cliente divergir do HTML gerado no servidor (hydration mismatch).
-  const [formularios, setFormularios] = useState<Formulario[]>([]);
-  const [contatos, setContatos] = useState<Contato[]>([]);
-  const [equipeDisponivel, setEquipeDisponivel] = useState<Membro[]>([]);
+  // Carregados só depois de montar (não no initializer do useState) — essa página é pré-renderizada
+  // no servidor sem `id` disponível; ler direto no initializer faria o HTML da primeira renderização
+  // no cliente divergir do HTML do servidor (hydration mismatch).
+  const [formulario, setFormulario] = useState<Formulario | null>(null);
+  const [contatosOpcoes, setContatosOpcoes] = useState<OpcaoNome[]>([]);
+  const [responsaveisOpcoes, setResponsaveisOpcoes] = useState<OpcaoNome[]>([]);
   const [carregado, setCarregado] = useState(false);
   const [valores, setValores] = useState<Record<string, string>>({});
   const [paginaIndice, setPaginaIndice] = useState(0);
   const [erros, setErros] = useState<Record<string, string>>({});
   const [enviado, setEnviado] = useState(false);
 
-  // Formulários/Contatos/Equipe vêm de uma API real agora — carrega tudo depois de montar, sem
-  // atrasar a exibição do formulário em si (contatos/equipe só são usados pelos campos de busca).
   useEffect(() => {
-    carregarFormularios()
+    if (!id) return;
+    carregarFormulario(id)
       .then((dados) => {
-        setFormularios(dados);
+        setFormulario(dados);
         setCarregado(true);
       })
-      .catch((erro) => console.error("Falha ao carregar formulários:", erro));
-    carregarContatos()
-      .then(setContatos)
-      .catch((erro) => console.error("Falha ao carregar contatos:", erro));
-    carregarEquipe()
-      .then(setEquipeDisponivel)
-      .catch((erro) => console.error("Falha ao carregar equipe:", erro));
-  }, []);
+      .catch((erro) => console.error("Falha ao carregar formulário:", erro));
+    carregarContatosSugeridos(id)
+      .then(setContatosOpcoes)
+      .catch((erro) => console.error("Falha ao carregar contatos sugeridos:", erro));
+    carregarEquipeSugerida(id)
+      .then(setResponsaveisOpcoes)
+      .catch((erro) => console.error("Falha ao carregar equipe sugerida:", erro));
+  }, [id]);
 
-  const formulario = formularios.find((f) => f.id === id) ?? null;
+  const carregadoFinal = id ? carregado : true;
 
   const paginasAtivas = useMemo(() => (formulario ? paginasVisiveis(formulario, valores) : []), [formulario, valores]);
   const pagina = paginasAtivas[paginaIndice] ?? null;
   const camposDaPagina = useMemo(() => (pagina ? perguntasVisiveis(pagina, valores) : []), [pagina, valores]);
   const ehUltimaPagina = paginaIndice >= paginasAtivas.length - 1;
-
-  const contatosOpcoes = useMemo(() => contatos.map((c) => ({ id: c.id, nome: c.nome })), [contatos]);
-  const responsaveisOpcoes = useMemo(() => equipeDisponivel.map((m) => ({ id: m.id, nome: m.nome })), [equipeDisponivel]);
 
   function mudarValor(perguntaId: string, valor: string) {
     setValores((prev) => ({ ...prev, [perguntaId]: valor }));
@@ -311,12 +267,12 @@ function FormularioPreviewContent() {
         }
       }
     }
-    salvarContatoPublico(dadosMapeados);
+    salvarContatoPublico(formulario.id, dadosMapeados);
 
     const nomeContato = dadosMapeados.nome || `Resposta ${new Date().toLocaleString("pt-BR")}`;
     const integracoes = formulario.integracoes;
     if (integracoes?.funilId && integracoes.etapaTitulo) {
-      atribuirContatoAoFunilPublico(integracoes.funilId, integracoes.etapaTitulo, {
+      atribuirContatoAoFunilPublico(formulario.id, integracoes.funilId, integracoes.etapaTitulo, {
         nome: nomeContato,
         valor: "—",
         origem: "Formulário",
@@ -326,7 +282,7 @@ function FormularioPreviewContent() {
       });
     }
 
-    dispararEventoFormularioPublico({
+    dispararEventoFormularioPublico(formulario.id, {
       contato: {
         nome: nomeContato,
         etiquetas: [],
@@ -346,7 +302,7 @@ function FormularioPreviewContent() {
     setEnviado(true);
   }
 
-  if (!carregado) {
+  if (!carregadoFinal) {
     return <div className="form-public-page" />;
   }
 

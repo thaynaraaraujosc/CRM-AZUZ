@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { Formulario } from "@/lib/formularios-context";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function paraFormulario(linha: {
@@ -21,9 +22,27 @@ function paraFormulario(linha: {
   } as Formulario;
 }
 
+/**
+ * GET busca um formulário único — sem autenticação (rota pública, dentro do prefixo
+ * `/api/formularios` já liberado no proxy). Usada por `/formulario-preview`, que precisa desse
+ * único formulário (pra saber a que workspace ele pertence e resolver as rotas públicas
+ * `contatos-sugeridos`/`equipe-sugerida`/`fluxos-automacao`/etc. a partir daí), nunca a lista
+ * inteira de formulários de todas as empresas.
+ */
+export async function GET(_request: Request, ctx: RouteContext<"/api/formularios/[id]">) {
+  const { id } = await ctx.params;
+  const linha = await prisma.formulario.findUnique({ where: { id } });
+  if (!linha) return NextResponse.json({ erro: "Formulário não encontrado" }, { status: 404 });
+  return NextResponse.json(paraFormulario(linha));
+}
+
 /** Atualização por id — usada pelo helper `tocar()` do Context, que centraliza todo mutador que
- * edita um formulário existente (páginas, perguntas, publicação, versões...). */
+ * edita um formulário existente (páginas, perguntas, publicação, versões...). Só mexe em formulário
+ * do mesmo workspace de quem está logado. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/formularios/[id]">) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
   const { id } = await ctx.params;
   const body = (await request.json()) as Partial<Formulario>;
   // id/criadoEm/atualizadoEm são geridos pelo banco (PK e @updatedAt) — nunca vêm do front.
@@ -32,20 +51,32 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/formulario
   delete dados.criadoEm;
   delete dados.atualizadoEm;
 
-  const linha = await prisma.formulario.update({
-    where: { id },
+  const { count } = await prisma.formulario.updateMany({
+    where: { id, workspaceId: sessao.user.workspaceId },
     data: {
       ...dados,
       integracoes: dados.integracoes ?? undefined,
     },
   });
+  if (count === 0) return NextResponse.json({ erro: "Formulário não encontrado" }, { status: 404 });
+
+  const linha = await prisma.formulario.findUniqueOrThrow({ where: { id } });
   return NextResponse.json(paraFormulario(linha));
 }
 
 /** DELETE também apaga as respostas desse formulário — mesma regra que `excluirFormulario` já tinha
- * (RespostaFormulario não tem FK real pro Formulario no schema, então o cascade é manual). */
+ * (RespostaFormulario não tem FK real pro Formulario no schema, então o cascade é manual). Só mexe
+ * em formulário do mesmo workspace de quem está logado. */
 export async function DELETE(_request: Request, ctx: RouteContext<"/api/formularios/[id]">) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
   const { id } = await ctx.params;
+  const formulario = await prisma.formulario.findFirst({
+    where: { id, workspaceId: sessao.user.workspaceId },
+  });
+  if (!formulario) return NextResponse.json({ erro: "Formulário não encontrado" }, { status: 404 });
+
   await prisma.$transaction([
     prisma.respostaFormulario.deleteMany({ where: { formularioId: id } }),
     prisma.formulario.delete({ where: { id } }),

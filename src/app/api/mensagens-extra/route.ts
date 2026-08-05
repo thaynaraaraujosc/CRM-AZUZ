@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { ConvMensagem } from "@/lib/data";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 type LinhaMensagem = {
@@ -27,9 +28,15 @@ function paraMensagem(linha: LinhaMensagem): ConvMensagem {
   };
 }
 
-/** GET devolve `Record<contato, ConvMensagem[]>`, mesmo shape que o Context guarda em memória. */
+/** GET devolve `Record<contato, ConvMensagem[]>` do workspace de quem está logado. */
 export async function GET() {
-  const linhas = await prisma.mensagemExtra.findMany({ orderBy: { criadoEm: "asc" } });
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
+  const linhas = await prisma.mensagemExtra.findMany({
+    where: { workspaceId: sessao.user.workspaceId },
+    orderBy: { criadoEm: "asc" },
+  });
   const porContato: Record<string, ConvMensagem[]> = {};
   for (const linha of linhas) {
     (porContato[linha.contato] ??= []).push(paraMensagem(linha));
@@ -38,12 +45,17 @@ export async function GET() {
 }
 
 /**
- * PUT reconcilia o banco inteiro com o `Record<contato, ConvMensagem[]>` mandado pelo front — mesmo
- * molde de `PUT /api/funis`: não tem mutador dedicado no Context (`setMensagensExtraPorContato` é
- * cru, chamado direto de `funil/page.tsx`/`conversas/page.tsx`), então sincroniza tudo a cada
- * mudança em vez de granular por mensagem.
+ * PUT reconcilia as mensagens do workspace com o `Record<contato, ConvMensagem[]>` mandado pelo
+ * front — mesmo molde de `PUT /api/funis`: não tem mutador dedicado no Context
+ * (`setMensagensExtraPorContato` é cru), então sincroniza tudo a cada mudança. O `deleteMany` é
+ * sempre filtrado por `workspaceId` — mesma correção crítica do `/api/funis`, senão apagaria
+ * mensagens de outras empresas.
  */
 export async function PUT(request: Request) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+  const workspaceId = sessao.user.workspaceId;
+
   const porContato = (await request.json()) as Record<string, ConvMensagem[]>;
 
   const todasMensagens = Object.entries(porContato).flatMap(([contato, mensagens]) =>
@@ -55,7 +67,7 @@ export async function PUT(request: Request) {
 
   await prisma.$transaction([
     prisma.mensagemExtra.deleteMany({
-      where: { id: { notIn: idsAtuais.length ? idsAtuais : ["__nenhum__"] } },
+      where: { workspaceId, id: { notIn: idsAtuais.length ? idsAtuais : ["__nenhum__"] } },
     }),
     ...todasMensagens.map(({ contato, mensagem, indice }) => {
       const { id, tipo, texto, hora, criadoEm, status, ...extras } = mensagem;
@@ -71,7 +83,7 @@ export async function PUT(request: Request) {
       };
       return prisma.mensagemExtra.upsert({
         where: { id: idFinal },
-        create: { id: idFinal, ...dados },
+        create: { id: idFinal, workspaceId, ...dados },
         update: dados,
       });
     }),

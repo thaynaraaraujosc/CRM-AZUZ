@@ -117,6 +117,13 @@ export function Sidebar() {
   const [workspaceAberto, setWorkspaceAberto] = useState(false);
   const [nomeEmpresa, setNomeEmpresa] = useState(workspace.name);
   const [segmento, setSegmento] = useState(workspace.segment);
+  const [nomeEmpresaSincronizado, setNomeEmpresaSincronizado] = useState<string | null>(null);
+  // Sincroniza com a sessão assim que ela carregar — "ajustar estado durante a renderização" (não
+  // num useEffect) porque só precisa rodar uma vez, quando o nome do workspace muda de verdade.
+  if (sessao?.user?.workspaceNome && sessao.user.workspaceNome !== nomeEmpresaSincronizado) {
+    setNomeEmpresaSincronizado(sessao.user.workspaceNome);
+    setNomeEmpresa(sessao.user.workspaceNome);
+  }
   const [workspaceAnchorRect, setWorkspaceAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: workspacePopRef, posicao: workspacePos } = useFloatingPosition(workspaceAnchorRect, workspaceAberto);
 

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import type { Contato } from "@/lib/data";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
 
@@ -9,7 +8,6 @@ function iniciais(nome: string) {
   return nome.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
 }
 
-/** Linha do banco -> `Contato` do front — só o formato de `etiquetas` (JSON no banco) muda. */
 function paraContato(linha: { etiquetas: unknown; [k: string]: unknown }): Contato {
   return {
     ...linha,
@@ -17,39 +15,23 @@ function paraContato(linha: { etiquetas: unknown; [k: string]: unknown }): Conta
   } as Contato;
 }
 
-/** GET lista os contatos do workspace de quem está logado. */
-export async function GET() {
-  const sessao = await auth();
-  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
-
-  const linhas = await prisma.contato.findMany({
-    where: { workspaceId: sessao.user.workspaceId },
-    orderBy: { criadoEm: "asc" },
-  });
-  return NextResponse.json(linhas.map(paraContato));
-}
-
 /**
- * POST faz upsert por `nome` dentro do workspace — mesma semântica que
- * `salvarDadosContato`/`atribuirAtendente`/`criarContato` já tinham no Context (ver
- * contatos-context.tsx): cria com valores padrão se o nome ainda não existe nesse workspace, ou
- * funde os dados enviados se já existe. `id` leva o prefixo do workspace (`${workspaceId}-${slug}`)
- * porque `nome` só é único por workspace agora — sem o prefixo, duas empresas com um contato de
- * mesmo nome colidiriam na chave primária, que continua global.
+ * POST público (sem `auth()`) — equivalente de `POST /api/contatos`, mas pro fluxo de
+ * `/formulario-preview`: cria/atualiza o contato do lead que respondeu, no workspace do
+ * formulário (resolvido aqui, nunca enviado pelo cliente). Mesma semântica de upsert-por-nome.
  */
-export async function POST(request: Request) {
-  const sessao = await auth();
-  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
-  const workspaceId = sessao.user.workspaceId;
+export async function POST(request: Request, ctx: RouteContext<"/api/formularios/[id]/contatos">) {
+  const { id } = await ctx.params;
+  const formulario = await prisma.formulario.findUnique({ where: { id }, select: { workspaceId: true } });
+  if (!formulario) return NextResponse.json({ erro: "Formulário não encontrado" }, { status: 404 });
+  const workspaceId = formulario.workspaceId;
 
   const body = (await request.json()) as {
     nome: string;
     dados?: Partial<Contato> & Record<string, unknown>;
-    /** Origem só aplicada se o contato ainda não existir — ex.: `/formulario-preview` usa
-     * "Formulário" aqui, sem afetar a origem de um contato já existente que responde de novo. */
     origemPadrao?: Contato["origem"];
   };
-  const { nome, dados = {}, origemPadrao = "Indicação" } = body;
+  const { nome, dados = {}, origemPadrao = "Formulário" } = body;
   if (!nome) {
     return NextResponse.json({ erro: "Campo obrigatório: nome" }, { status: 400 });
   }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { Formulario } from "@/lib/formularios-context";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function paraFormulario(linha: {
@@ -21,19 +22,29 @@ function paraFormulario(linha: {
   } as Formulario;
 }
 
-/** GET lista todos os formulários. */
+/** GET lista os formulários do workspace de quem está logado. */
 export async function GET() {
-  const linhas = await prisma.formulario.findMany({ orderBy: { criadoEm: "asc" } });
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
+  const linhas = await prisma.formulario.findMany({
+    where: { workspaceId: sessao.user.workspaceId },
+    orderBy: { criadoEm: "asc" },
+  });
   return NextResponse.json(linhas.map(paraFormulario));
 }
 
 /** POST cria um formulário novo (ou uma cópia) — mesma semântica de `criarFormulario`/`duplicarFormulario`. */
 export async function POST(request: Request) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
   const dados = (await request.json()) as Formulario;
 
   const linha = await prisma.formulario.create({
     data: {
       id: dados.id,
+      workspaceId: sessao.user.workspaceId,
       nome: dados.nome,
       descricao: dados.descricao,
       status: dados.status,

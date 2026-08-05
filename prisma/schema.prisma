@@ -13,14 +13,18 @@ datasource db {
 }
 
 // Piloto de migração pra banco real — espelha o tipo `Contato` de src/lib/data.ts.
-// `id` continua String (mesmo slug já gerado por slugId() no front) pra não exigir reescrever
-// todo o app pra IDs numéricos. `nome` vira @unique — as buscas já eram por nome no Context,
-// isso só formaliza como constraint real.
+// `id` continua String, mas a partir da Fase 2 do multi-tenancy passa a ser prefixado com o
+// workspace (`${workspaceId}-${slugId(nome)}`, ver POST /api/contatos) — sem isso, duas empresas
+// com um contato de mesmo nome colidiriam na chave primária, que é global. `nome` deixa de ser
+// único globalmente e vira único por workspace (`@@unique`).
 model Contato {
   id String @id
 
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   initials    String
-  nome        String @unique
+  nome        String
   origem      String
   etapa       String
   responsavel String
@@ -48,6 +52,8 @@ model Contato {
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
+
+  @@unique([workspaceId, nome])
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Compromisso` de src/lib/agenda-context.tsx. Registro
@@ -55,6 +61,9 @@ model Contato {
 // calculados ao vivo no cliente por `compromissosDeTarefas`, nunca persistidos).
 model Compromisso {
   id String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
   contatoId          String?
   contato            String
@@ -81,6 +90,10 @@ model Compromisso {
 // simplesmente descartava a coluna com o que tivesse dentro).
 model TarefaEtapa {
   id     String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   titulo String
   ordem  Int
   cards  TarefaCard[]
@@ -91,6 +104,11 @@ model TarefaCard {
   etapaId String
   etapa   TarefaEtapa @relation(fields: [etapaId], references: [id], onDelete: Cascade)
   ordem   Int
+
+  // Denormalizado (não só via etapaId) pra toda rota conseguir checar posse do card direto, sem
+  // precisar de um join até TarefaEtapa — mesmo padrão usado em NegocioCard/FunilEtapa.
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
   titulo              String
   contato             String
@@ -120,6 +138,25 @@ model Workspace {
   criadoEm DateTime @default(now())
 
   membros Membro[]
+
+  // Fase 2 — back-relations exigidas pelo Prisma pra cada modelo de negócio que ganhou
+  // workspaceId. Nenhuma é consultada a partir do Workspace no código (sempre se busca o modelo
+  // filho direto, filtrado por workspaceId) — só formalizam a relação nos dois lados do schema.
+  contatos               Contato[]
+  compromissos           Compromisso[]
+  tarefaEtapas           TarefaEtapa[]
+  tarefaCards            TarefaCard[]
+  funis                  Funil[]
+  funilEtapas            FunilEtapa[]
+  negocioCards           NegocioCard[]
+  preferencias           Preferencia[]
+  mensagensExtra         MensagemExtra[]
+  documentosBiblioteca   DocumentoBiblioteca[]
+  formularios            Formulario[]
+  respostasFormulario    RespostaFormulario[]
+  fluxosAutomacao        FluxoAutomacao[]
+  documentos             Documento[]
+  modelosPersonalizados  ModeloPersonalizado[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -166,6 +203,10 @@ model Membro {
 // gravava tudo no localStorage antes, só que gravando de verdade.
 model Funil {
   id          String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   nome        String
   responsavel String?
   etapas      FunilEtapa[]
@@ -175,6 +216,12 @@ model FunilEtapa {
   id      String @id
   funilId String
   funil   Funil  @relation(fields: [funilId], references: [id], onDelete: Cascade)
+
+  // Denormalizado (mesmo motivo de TarefaCard) — o `PUT /api/funis` reconcilia a tabela inteira e
+  // precisa filtrar o que apaga por workspace sem depender de join.
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   titulo  String
   ordem   Int
   cards   NegocioCard[]
@@ -186,6 +233,9 @@ model NegocioCard {
   etapa   FunilEtapa @relation(fields: [etapaId], references: [id], onDelete: Cascade)
   ordem   Int
 
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   nome        String
   valor       String
   origem      String
@@ -196,11 +246,17 @@ model NegocioCard {
 }
 
 // Preferências simples (Notificações/Central do Dia/Configurações/Conversas-config) — cada Context
-// não tem entidade própria, é um blob de preferências de UI sem multi-usuário/workspace hoje, então
-// vira uma linha só por Context, identificada pela chave. Ver src/app/api/preferencias/[chave]/.
+// não tem entidade própria, é um blob de preferências de UI, então vira uma linha só por Context
+// identificada pela chave — a partir da Fase 2, uma linha por (workspace, chave), já que cada
+// empresa tem sua própria configuração. Ver src/app/api/preferencias/[chave]/.
 model Preferencia {
-  chave String @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  chave String
   dados Json
+
+  @@id([workspaceId, chave])
 }
 
 // Mensagens extras trocadas depois do seed (WhatsApp + popup de resposta rápida do Funil) — mesmo
@@ -210,6 +266,10 @@ model Preferencia {
 // espírito de `etiquetas`/`permissoes` Json já usado no resto do schema.
 model MensagemExtra {
   id       String    @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   contato  String
   tipo     String
   texto    String    @db.Text
@@ -222,6 +282,10 @@ model MensagemExtra {
 // Biblioteca de mídia reutilizável pelos blocos de automação (enviar documento/imagem/vídeo/áudio).
 model DocumentoBiblioteca {
   id           String  @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   nome         String
   categoria    String
   formato      String
@@ -242,6 +306,10 @@ model DocumentoBiblioteca {
 // substituem (nunca endereçam página/pergunta por id numa API própria).
 model Formulario {
   id          String   @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   nome        String
   descricao   String?
   status      String
@@ -256,9 +324,15 @@ model Formulario {
 }
 
 // Respostas de formulário — lista naturalmente crescente (igual Compromisso/TarefaCard), tabela
-// própria em vez de Json na linha do Formulario.
+// própria em vez de Json na linha do Formulario. `workspaceId` aqui NUNCA vem de uma sessão (quem
+// responde é um lead público, sem login) — é copiado do Formulario pai no momento da criação, em
+// POST /api/formularios/[id]/respostas.
 model RespostaFormulario {
   id           String   @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   formularioId String
   criadoEm     DateTime @default(now())
   valores      Json
@@ -269,6 +343,10 @@ model RespostaFormulario {
 // inteiros. Log de execução continua só em memória (nunca persistiu, sem mudança de comportamento).
 model FluxoAutomacao {
   id                 String    @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   nome               String
   // Texto livre — alguns fluxos de demonstração passam de 191 caracteres (VARCHAR padrão), por
   // isso @db.Text (mesmo motivo do `objetivo` abaixo).
@@ -300,6 +378,10 @@ model FluxoAutomacao {
 // "azuz-crm-documentos-prefs-ver", que já não fazia parte do Context.
 model Documento {
   id            String   @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   titulo        String
   favorito      Boolean  @default(false)
   autor         String
@@ -317,6 +399,10 @@ model Documento {
 
 model ModeloPersonalizado {
   id            String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
   nome          String
   descricao     String @db.Text
   categoria     String

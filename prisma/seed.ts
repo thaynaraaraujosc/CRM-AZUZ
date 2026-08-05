@@ -45,7 +45,7 @@ async function semearContatos() {
   }
 
   await prisma.contato.createMany({
-    data: contatosIniciais.map((c) => ({ ...c, etiquetas: c.etiquetas ?? undefined })),
+    data: contatosIniciais.map((c) => ({ ...c, workspaceId: WORKSPACE_SEED_ID, etiquetas: c.etiquetas ?? undefined })),
   });
   console.log(`Semeados ${contatosIniciais.length} contatos.`);
 }
@@ -80,12 +80,13 @@ async function semearTarefas() {
   let totalCards = 0;
   for (const [indice, coluna] of tarefasIniciais.entries()) {
     const etapa = await prisma.tarefaEtapa.create({
-      data: { id: `etapa-seed-${indice}`, titulo: coluna.titulo, ordem: indice },
+      data: { id: `etapa-seed-${indice}`, workspaceId: WORKSPACE_SEED_ID, titulo: coluna.titulo, ordem: indice },
     });
     for (const [ordem, card] of coluna.cards.entries()) {
       await prisma.tarefaCard.create({
         data: {
           id: card.id,
+          workspaceId: WORKSPACE_SEED_ID,
           etapaId: etapa.id,
           ordem,
           titulo: card.titulo,
@@ -119,16 +120,19 @@ async function semearFunis() {
   let totalEtapas = 0;
   let totalCards = 0;
   for (const funil of funisIniciais) {
-    await prisma.funil.create({ data: { id: funil.id, nome: funil.nome, responsavel: funil.responsavel } });
+    await prisma.funil.create({
+      data: { id: funil.id, workspaceId: WORKSPACE_SEED_ID, nome: funil.nome, responsavel: funil.responsavel },
+    });
     for (const [ordemEtapa, coluna] of funil.colunas.entries()) {
       await prisma.funilEtapa.create({
-        data: { id: coluna.id, funilId: funil.id, titulo: coluna.titulo, ordem: ordemEtapa },
+        data: { id: coluna.id, workspaceId: WORKSPACE_SEED_ID, funilId: funil.id, titulo: coluna.titulo, ordem: ordemEtapa },
       });
       totalEtapas += 1;
       for (const [ordemCard, card] of coluna.cards.entries()) {
         await prisma.negocioCard.create({
           data: {
             id: card.id,
+            workspaceId: WORKSPACE_SEED_ID,
             etapaId: coluna.id,
             ordem: ordemCard,
             nome: card.nome,
@@ -155,7 +159,7 @@ async function semearBibliotecaDocumentos() {
   }
 
   await prisma.documentoBiblioteca.createMany({
-    data: BIBLIOTECA_INICIAL.map((d) => ({ ...d, tags: d.tags ?? undefined })),
+    data: BIBLIOTECA_INICIAL.map((d) => ({ ...d, workspaceId: WORKSPACE_SEED_ID, tags: d.tags ?? undefined })),
   });
   console.log(`Semeados ${BIBLIOTECA_INICIAL.length} documentos da biblioteca.`);
 }
@@ -168,7 +172,7 @@ async function semearFormularios() {
   }
 
   await prisma.formulario.createMany({
-    data: FORMULARIOS_INICIAIS.map((f) => ({ ...f, integracoes: f.integracoes ?? undefined })),
+    data: FORMULARIOS_INICIAIS.map((f) => ({ ...f, workspaceId: WORKSPACE_SEED_ID, integracoes: f.integracoes ?? undefined })),
   });
   console.log(`Semeados ${FORMULARIOS_INICIAIS.length} formulários.`);
 }
@@ -186,6 +190,7 @@ async function semearFluxosAutomacao() {
     // estruturalmente com InputJsonValue — em runtime já é JSON puro, o cast é só pro TS.
     data: fluxos.map((f) => ({
       ...f,
+      workspaceId: WORKSPACE_SEED_ID,
       publicadoEm: f.publicadoEm ? new Date(f.publicadoEm) : undefined,
     })) as unknown as NonNullable<Parameters<typeof prisma.fluxoAutomacao.createMany>[0]>["data"],
   });
@@ -202,7 +207,9 @@ async function semearDocumentos() {
   await prisma.documento.createMany({
     // paginas/config/pessoasAcesso/comentarios/versoes têm tipos TS ricos que o Prisma não casa
     // estruturalmente com InputJsonValue — em runtime já é JSON puro, o cast é só pro TS.
-    data: DOCUMENTOS_INICIAIS as unknown as NonNullable<Parameters<typeof prisma.documento.createMany>[0]>["data"],
+    data: DOCUMENTOS_INICIAIS.map((d) => ({ ...d, workspaceId: WORKSPACE_SEED_ID })) as unknown as NonNullable<
+      Parameters<typeof prisma.documento.createMany>[0]
+    >["data"],
   });
   console.log(`Semeados ${DOCUMENTOS_INICIAIS.length} documentos.`);
 }

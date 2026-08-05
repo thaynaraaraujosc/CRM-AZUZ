@@ -3,6 +3,7 @@ import type { DefaultSession } from "next-auth";
 declare module "next-auth" {
   interface User {
     workspaceId: string;
+    workspaceNome: string;
     initials: string;
     papelTipo: string;
     role: string;
@@ -11,6 +12,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       workspaceId: string;
+      workspaceNome: string;
       initials: string;
       papelTipo: string;
       role: string;
@@ -21,6 +23,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     workspaceId: string;
+    workspaceNome: string;
     initials: string;
     papelTipo: string;
     role: string;

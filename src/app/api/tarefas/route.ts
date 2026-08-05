@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { ColunaTarefas, TaskCard } from "@/lib/data";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 type LinhaCard = {
@@ -39,9 +40,13 @@ function paraCard(linha: LinhaCard): TaskCard {
   };
 }
 
-/** GET lista todas as etapas com seus cards, na ordem salva. */
+/** GET lista as etapas com seus cards do workspace de quem está logado, na ordem salva. */
 export async function GET() {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
   const etapas = await prisma.tarefaEtapa.findMany({
+    where: { workspaceId: sessao.user.workspaceId },
     orderBy: { ordem: "asc" },
     include: { cards: { orderBy: { ordem: "asc" } } },
   });
@@ -58,6 +63,10 @@ export async function GET() {
  * Context: "Hoje" por padrão se `coluna` não vier).
  */
 export async function POST(request: Request) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+  const workspaceId = sessao.user.workspaceId;
+
   const body = (await request.json()) as {
     titulo: string;
     contato?: string;
@@ -72,8 +81,8 @@ export async function POST(request: Request) {
   };
 
   const etapa =
-    (await prisma.tarefaEtapa.findFirst({ where: { titulo: body.coluna ?? "Hoje" } })) ??
-    (await prisma.tarefaEtapa.findFirst({ orderBy: { ordem: "asc" } }));
+    (await prisma.tarefaEtapa.findFirst({ where: { workspaceId, titulo: body.coluna ?? "Hoje" } })) ??
+    (await prisma.tarefaEtapa.findFirst({ where: { workspaceId }, orderBy: { ordem: "asc" } }));
   if (!etapa) {
     return NextResponse.json({ erro: "Nenhuma etapa de tarefas existe ainda" }, { status: 400 });
   }
@@ -86,6 +95,7 @@ export async function POST(request: Request) {
   const linha = await prisma.tarefaCard.create({
     data: {
       id: `tarefa-${Date.now()}`,
+      workspaceId,
       etapaId: etapa.id,
       ordem: (ultimoCard?.ordem ?? -1) + 1,
       titulo: body.titulo,

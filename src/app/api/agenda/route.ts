@@ -1,16 +1,26 @@
 import { NextResponse } from "next/server";
 
 import type { Compromisso } from "@/lib/agenda-context";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-/** GET lista todos os compromissos manuais. */
+/** GET lista os compromissos manuais do workspace de quem está logado. */
 export async function GET() {
-  const linhas = await prisma.compromisso.findMany({ orderBy: { criadoEm: "asc" } });
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
+  const linhas = await prisma.compromisso.findMany({
+    where: { workspaceId: sessao.user.workspaceId },
+    orderBy: { criadoEm: "asc" },
+  });
   return NextResponse.json(linhas as Compromisso[]);
 }
 
 /** POST cria um agendamento novo — mesma semântica de `criarAgendamento` no Context. */
 export async function POST(request: Request) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
   const dados = (await request.json()) as Omit<Compromisso, "id" | "status" | "origem">;
   if (!dados.contato || !dados.dataIso) {
     return NextResponse.json({ erro: "Campos obrigatórios: contato, dataIso" }, { status: 400 });
@@ -19,6 +29,7 @@ export async function POST(request: Request) {
   const linha = await prisma.compromisso.create({
     data: {
       id: `compromisso-${Date.now()}`,
+      workspaceId: sessao.user.workspaceId,
       contato: dados.contato,
       contatoId: dados.contatoId,
       responsavel: dados.responsavel,
