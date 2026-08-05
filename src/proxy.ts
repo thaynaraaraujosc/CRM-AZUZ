@@ -16,7 +16,8 @@ export default async function proxy(request: NextRequest) {
     // Chamado direto pela Meta (verificação de webhook + mensagens recebidas), sem sessão de
     // navegador nenhuma — a validação de assinatura HMAC dentro da rota é que garante que é a
     // Meta chamando, não o proxy.
-    pathname === "/api/webhooks/whatsapp"
+    pathname === "/api/webhooks/whatsapp" ||
+    pathname === "/api/webhooks/instagram"
   ) {
     return NextResponse.next();
   }

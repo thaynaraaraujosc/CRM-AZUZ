@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { encriptar } from "@/lib/integracoes/crypto";
 import { META_GRAPH_URL, verificarState } from "@/lib/integracoes/meta";
+
+/** `metadados` tem forma diferente por provedor (união estrutural que o Prisma não casa com
+ * `InputJsonValue` automaticamente) — o valor em runtime já é JSON puro, o cast é só pro TS. */
+function comoJson(valor: Record<string, unknown>): Prisma.InputJsonValue {
+  return valor as Prisma.InputJsonValue;
+}
 
 type ErroGraph = { error?: { message?: string } };
 
@@ -15,18 +22,124 @@ async function graphGet<T>(caminho: string): Promise<T> {
   return corpo;
 }
 
+/** Página em Configurações (ou fora dela, no caso do Ads) pra onde volta depois do OAuth. */
+const CATEGORIA_POR_PROVEDOR: Record<string, string> = {
+  meta_whatsapp: "/configuracoes?categoria=whatsapp",
+  meta_instagram: "/configuracoes?categoria=instagram",
+  meta_ads: "/trafego",
+};
+
+/** Resolve o token de longa duração (~60 dias) a partir do `code` do OAuth — comum aos 3 provedores. */
+async function trocarCodePorToken(
+  code: string,
+  redirectUri: string,
+  appId: string,
+  appSecret: string,
+): Promise<{ accessToken: string; expiraEm: Date | null }> {
+  const tokenCurto = await graphGet<{ access_token: string }>(
+    `/oauth/access_token?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${appSecret}&code=${code}`,
+  );
+  const tokenLongo = await graphGet<{ access_token: string; expires_in?: number }>(
+    `/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${tokenCurto.access_token}`,
+  );
+  return {
+    accessToken: tokenLongo.access_token,
+    expiraEm: tokenLongo.expires_in ? new Date(Date.now() + tokenLongo.expires_in * 1000) : null,
+  };
+}
+
+/** Resolve o WhatsApp Business Account + número conectados — lógica original da Fase A, inalterada. */
+async function resolverWhatsapp(accessToken: string) {
+  const negocios = await graphGet<{ data: { id: string; name: string }[] }>(`/me/businesses?access_token=${accessToken}`);
+  const negocio = negocios.data?.[0];
+  if (!negocio) throw new Error("Nenhum Business Manager encontrado nessa conta.");
+
+  const wabas = await graphGet<{ data: { id: string; name: string }[] }>(
+    `/${negocio.id}/owned_whatsapp_business_accounts?access_token=${accessToken}`,
+  );
+  const waba = wabas.data?.[0];
+  if (!waba) throw new Error("Nenhuma conta do WhatsApp Business encontrada nesse Business Manager.");
+
+  const numeros = await graphGet<{ data: { id: string; display_phone_number: string; verified_name: string }[] }>(
+    `/${waba.id}/phone_numbers?access_token=${accessToken}`,
+  );
+  const numero = numeros.data?.[0];
+  if (!numero) throw new Error("Nenhum número de telefone encontrado nessa conta do WhatsApp Business.");
+
+  return {
+    accessToken,
+    metadados: {
+      businessId: negocio.id,
+      businessNome: negocio.name,
+      wabaId: waba.id,
+      phoneNumberId: numero.id,
+      numeroExibicao: numero.display_phone_number,
+      numeroVerificado: numero.verified_name,
+    },
+  };
+}
+
+/** Resolve a Página do Facebook com Instagram Business vinculado — usa o token da própria Página
+ * (não o de usuário) porque é esse que efetivamente funciona pra ler/enviar mensagens do Instagram. */
+async function resolverInstagram(accessTokenUsuario: string) {
+  const paginas = await graphGet<{ data: { id: string; name: string; access_token: string }[] }>(
+    `/me/accounts?access_token=${accessTokenUsuario}`,
+  );
+  if (!paginas.data?.length) throw new Error("Nenhuma página do Facebook encontrada nessa conta.");
+
+  for (const pagina of paginas.data) {
+    const detalhe = await graphGet<{
+      instagram_business_account?: { id: string; username: string; profile_picture_url?: string };
+    }>(`/${pagina.id}?fields=instagram_business_account{id,username,profile_picture_url}&access_token=${accessTokenUsuario}`);
+
+    const conta = detalhe.instagram_business_account;
+    if (conta) {
+      return {
+        accessToken: pagina.access_token,
+        metadados: {
+          pageId: pagina.id,
+          pageNome: pagina.name,
+          instagramContaId: conta.id,
+          instagramUsername: conta.username,
+          profilePictureUrl: conta.profile_picture_url ?? null,
+        },
+      };
+    }
+  }
+
+  throw new Error("Nenhuma conta do Instagram Business vinculada às suas páginas do Facebook.");
+}
+
+/** Resolve a conta de anúncios (ad account) — prioriza uma ativa, senão pega a primeira. */
+async function resolverAds(accessToken: string) {
+  const contas = await graphGet<{ data: { id: string; name: string; account_status: number; currency: string }[] }>(
+    `/me/adaccounts?fields=id,name,account_status,currency&access_token=${accessToken}`,
+  );
+  const conta = contas.data?.find((c) => c.account_status === 1) ?? contas.data?.[0];
+  if (!conta) throw new Error("Nenhuma conta de anúncios encontrada nessa conta.");
+
+  return {
+    accessToken,
+    metadados: { adAccountId: conta.id, adAccountNome: conta.name, moeda: conta.currency },
+  };
+}
+
 /**
- * GET recebe a volta do diálogo OAuth da Meta. Troca o `code` pelo token, resolve o WABA e o
- * número de telefone conectados, e grava tudo em `Integracao` — sempre no workspace do `state`
- * (nunca de uma sessão nova, o navegador pode ter perdido a sessão original durante o redirect).
+ * GET recebe a volta do diálogo OAuth da Meta — pro provedor que estava assinado no `state`. Troca
+ * o `code` pelo token, resolve os recursos daquele provedor, e grava tudo em `Integracao` — sempre
+ * no workspace do `state` (nunca de uma sessão nova, o navegador pode ter perdido a sessão original
+ * durante o redirect).
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const workspaceId = verificarState(url.searchParams.get("state"));
-  const redirecionarConfig = new URL("/configuracoes?categoria=whatsapp", url.origin);
+  const resultadoState = verificarState(url.searchParams.get("state"));
+  const workspaceId = resultadoState?.workspaceId;
+  const provedor = resultadoState?.provedor;
 
-  if (!workspaceId) {
+  const redirecionarConfig = new URL(provedor ? (CATEGORIA_POR_PROVEDOR[provedor] ?? "/configuracoes") : "/configuracoes", url.origin);
+
+  if (!workspaceId || !provedor) {
     redirecionarConfig.searchParams.set("integracaoErro", "Link de autorização inválido ou expirado.");
     return NextResponse.redirect(redirecionarConfig);
   }
@@ -45,76 +158,51 @@ export async function GET(request: Request) {
   const redirectUri = `${url.origin}/api/integracoes/meta/callback`;
 
   try {
-    const tokenCurto = await graphGet<{ access_token: string }>(
-      `/oauth/access_token?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${appSecret}&code=${code}`,
-    );
+    const { accessToken: accessTokenUsuario, expiraEm } = await trocarCodePorToken(code, redirectUri, appId, appSecret);
 
-    // Troca pelo token de longa duração (~60 dias) — o curto expira em poucas horas.
-    const tokenLongo = await graphGet<{ access_token: string; expires_in?: number }>(
-      `/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${tokenCurto.access_token}`,
-    );
-    const accessToken = tokenLongo.access_token;
-
-    const negocios = await graphGet<{ data: { id: string; name: string }[] }>(
-      `/me/businesses?access_token=${accessToken}`,
-    );
-    const negocio = negocios.data?.[0];
-    if (!negocio) throw new Error("Nenhum Business Manager encontrado nessa conta.");
-
-    const wabas = await graphGet<{ data: { id: string; name: string }[] }>(
-      `/${negocio.id}/owned_whatsapp_business_accounts?access_token=${accessToken}`,
-    );
-    const waba = wabas.data?.[0];
-    if (!waba) throw new Error("Nenhuma conta do WhatsApp Business encontrada nesse Business Manager.");
-
-    const numeros = await graphGet<{ data: { id: string; display_phone_number: string; verified_name: string }[] }>(
-      `/${waba.id}/phone_numbers?access_token=${accessToken}`,
-    );
-    const numero = numeros.data?.[0];
-    if (!numero) throw new Error("Nenhum número de telefone encontrado nessa conta do WhatsApp Business.");
+    let resolvido: { accessToken: string; metadados: Record<string, unknown> };
+    switch (provedor) {
+      case "meta_whatsapp":
+        resolvido = await resolverWhatsapp(accessTokenUsuario);
+        break;
+      case "meta_instagram":
+        resolvido = await resolverInstagram(accessTokenUsuario);
+        break;
+      case "meta_ads":
+        resolvido = await resolverAds(accessTokenUsuario);
+        break;
+      default:
+        throw new Error(`Provedor desconhecido: ${provedor}`);
+    }
 
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor: { workspaceId, provedor: "meta_whatsapp" } },
+      where: { workspaceId_provedor: { workspaceId, provedor } },
       create: {
-        id: `integracao-${workspaceId}-meta_whatsapp`,
+        id: `integracao-${workspaceId}-${provedor}`,
         workspaceId,
-        provedor: "meta_whatsapp",
+        provedor,
         status: "conectado",
-        accessTokenCriptografado: encriptar(accessToken),
-        expiraEm: tokenLongo.expires_in ? new Date(Date.now() + tokenLongo.expires_in * 1000) : null,
-        metadados: {
-          businessId: negocio.id,
-          businessNome: negocio.name,
-          wabaId: waba.id,
-          phoneNumberId: numero.id,
-          numeroExibicao: numero.display_phone_number,
-          numeroVerificado: numero.verified_name,
-        },
+        accessTokenCriptografado: encriptar(resolvido.accessToken),
+        expiraEm,
+        metadados: comoJson(resolvido.metadados),
         erroMensagem: null,
       },
       update: {
         status: "conectado",
-        accessTokenCriptografado: encriptar(accessToken),
-        expiraEm: tokenLongo.expires_in ? new Date(Date.now() + tokenLongo.expires_in * 1000) : null,
-        metadados: {
-          businessId: negocio.id,
-          businessNome: negocio.name,
-          wabaId: waba.id,
-          phoneNumberId: numero.id,
-          numeroExibicao: numero.display_phone_number,
-          numeroVerificado: numero.verified_name,
-        },
+        accessTokenCriptografado: encriptar(resolvido.accessToken),
+        expiraEm,
+        metadados: comoJson(resolvido.metadados),
         erroMensagem: null,
       },
     });
   } catch (erro) {
-    const mensagem = erro instanceof Error ? erro.message : "Falha desconhecida ao conectar o WhatsApp.";
+    const mensagem = erro instanceof Error ? erro.message : "Falha desconhecida ao conectar a integração.";
     await prisma.integracao.upsert({
-      where: { workspaceId_provedor: { workspaceId, provedor: "meta_whatsapp" } },
+      where: { workspaceId_provedor: { workspaceId, provedor } },
       create: {
-        id: `integracao-${workspaceId}-meta_whatsapp`,
+        id: `integracao-${workspaceId}-${provedor}`,
         workspaceId,
-        provedor: "meta_whatsapp",
+        provedor,
         status: "erro",
         erroMensagem: mensagem,
       },

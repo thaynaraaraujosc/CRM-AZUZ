@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import { ORIGENS, campanhas, contatos, funilJulho, kpisTrafego, type Origem } from "@/lib/data";
+import { ORIGENS, campanhas as campanhasMock, contatos, funilJulho, kpisTrafego, type Origem } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
+import { useIntegracaoMeta } from "@/components/configuracoes/useIntegracaoMeta";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { ChartCard, FunnelSteps } from "@/components/charts";
 import {
@@ -33,6 +34,32 @@ export default function TrafegoPage() {
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [campanhaAberta, setCampanhaAberta] = useState<string | null>(null);
 
+  const { integracao: adsIntegracao, desconectando: adsDesconectando, desconectar: desconectarAds } = useIntegracaoMeta("meta_ads");
+  const [campanhasReais, setCampanhasReais] = useState<typeof campanhasMock | null>(null);
+
+  // Ajusta durante a renderização (não num efeito) quando o status muda pra "não conectado" — evita
+  // setState síncrono dentro do corpo do efeito (regra `react-hooks/set-state-in-effect`).
+  const [ultimoStatusAds, setUltimoStatusAds] = useState<string | null | undefined>(undefined);
+  if (adsIntegracao?.status !== ultimoStatusAds) {
+    setUltimoStatusAds(adsIntegracao?.status ?? null);
+    if (adsIntegracao?.status !== "conectado") setCampanhasReais(null);
+  }
+
+  useEffect(() => {
+    if (adsIntegracao?.status !== "conectado") return;
+    fetch("/api/integracoes/meta/ads/campanhas")
+      .then((r) => r.json())
+      .then((dados) => (Array.isArray(dados) ? setCampanhasReais(dados) : setCampanhasReais(null)))
+      .catch((erro) => console.error("Falha ao carregar campanhas do Meta Ads:", erro));
+  }, [adsIntegracao?.status]);
+
+  // Enquanto o Meta Ads não estiver conectado, mostra o mock inteiro (Google Ads segue mockado até
+  // ter integração própria); conectado, troca só as linhas de Meta pelas reais.
+  const campanhas = useMemo(
+    () => (campanhasReais ? [...campanhasMock.filter((c) => c.plataforma !== "M"), ...campanhasReais] : campanhasMock),
+    [campanhasReais],
+  );
+
   const campanhasFiltradas = useMemo(
     () =>
       campanhas.filter((c) => {
@@ -40,7 +67,7 @@ export default function TrafegoPage() {
         if (busca && !c.nome.toLowerCase().includes(busca.toLowerCase())) return false;
         return true;
       }),
-    [plataformaFiltro, busca],
+    [campanhas, plataformaFiltro, busca],
   );
 
   const linhasCampanha = useMemo(() => {
@@ -137,6 +164,20 @@ export default function TrafegoPage() {
           <p className="sub">Da aquisição de leads até a receita atribuída às campanhas</p>
         </div>
         <div className="top-actions">
+          {adsIntegracao?.status === "conectado" ? (
+            <>
+              <span className="hint">
+                Meta Ads conectado — {(adsIntegracao.metadados?.adAccountNome as string | undefined) ?? "conta"}
+              </span>
+              <button type="button" className="btn ghost" onClick={desconectarAds} disabled={adsDesconectando}>
+                {adsDesconectando ? "Desconectando…" : "Desconectar Meta Ads"}
+              </button>
+            </>
+          ) : (
+            <a className="btn ghost" href="/api/integracoes/meta/conectar?provedor=meta_ads">
+              Conectar Meta Ads
+            </a>
+          )}
           <Link className="btn primary" href="/relatorios?tipo=trafego">
             Gerar relatório de tráfego
           </Link>
