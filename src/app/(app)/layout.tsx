@@ -12,6 +12,7 @@ import { DocumentosProvider } from "@/lib/documentos-context";
 import { EquipeProvider } from "@/lib/equipe-context";
 import { FormulariosProvider } from "@/lib/formularios-context";
 import { FunisProvider } from "@/lib/funis-context";
+import { MensagensExtraProvider } from "@/lib/mensagens-extra-context";
 import { NotificacoesProvider } from "@/lib/notificacoes-context";
 import { TarefasProvider } from "@/lib/tarefas-context";
 
@@ -31,17 +32,19 @@ export default function AppLayout({
                       <DocumentosProvider>
                         <BibliotecaDocumentosProvider>
                           <ConfigConversasProvider>
-                            <CentralDiaProvider>
-                              <ConfiguracoesProvider>
-                                <div className="shell">
-                                  <Sidebar />
-                                  <main className="main">
-                                    <AppHeader />
-                                    {children}
-                                  </main>
-                                </div>
-                              </ConfiguracoesProvider>
-                            </CentralDiaProvider>
+                            <MensagensExtraProvider>
+                              <CentralDiaProvider>
+                                <ConfiguracoesProvider>
+                                  <div className="shell">
+                                    <Sidebar />
+                                    <main className="main">
+                                      <AppHeader />
+                                      {children}
+                                    </main>
+                                  </div>
+                                </ConfiguracoesProvider>
+                              </CentralDiaProvider>
+                            </MensagensExtraProvider>
                           </ConfigConversasProvider>
                         </BibliotecaDocumentosProvider>
                       </DocumentosProvider>

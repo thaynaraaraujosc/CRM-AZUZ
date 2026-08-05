@@ -37,6 +37,7 @@ import {
   CATEGORIAS_DOCUMENTO,
 } from "@/lib/biblioteca-documentos-context";
 import { useFunis } from "@/lib/funis-context";
+import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useNotificacoes } from "@/lib/notificacoes-context";
 import {
   useConfigConversas,
@@ -74,9 +75,6 @@ const FILTROS_CONVERSA = [
   { valor: "nao-lidas", label: "Não lidas" },
   { valor: "favoritas", label: "Favoritas" },
 ] as const;
-
-/** Mesma chave usada em toda troca de página — as mensagens enviadas na conversa sobrevivem ao F5. */
-const MENSAGENS_STORAGE_KEY = "azuz-crm-conversas-mensagens";
 
 const FORMATOS_IMAGEM = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const TAMANHO_MAX_IMAGEM = 16 * 1024 * 1024;
@@ -792,29 +790,9 @@ function ConversasPageInner() {
     Record<string, HistoricoItem[]>
   >({});
   const [notaTexto, setNotaTexto] = useState("");
-  const [mensagensExtraPorContato, setMensagensExtraPorContato] = useState<
-    Record<string, ConvMensagem[]>
-  >(() => {
-    if (typeof window === "undefined") return {};
-    try {
-      const salvo = localStorage.getItem(MENSAGENS_STORAGE_KEY);
-      return salvo ? (JSON.parse(salvo) as Record<string, ConvMensagem[]>) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        MENSAGENS_STORAGE_KEY,
-        JSON.stringify(mensagensExtraPorContato),
-      );
-    } catch {
-      // localStorage indisponível (modo privado, por exemplo) ou anexo grande
-      // demais pra caber na cota — a conversa segue funcionando só em memória.
-    }
-  }, [mensagensExtraPorContato]);
+  // Compartilhado com o popup de resposta rápida do Funil — os dois módulos falam com o mesmo
+  // contato, então precisam ver a mesma conversa (ver src/lib/mensagens-extra-context.tsx).
+  const { mensagensExtraPorContato, setMensagensExtraPorContato } = useMensagensExtra();
   const [mensagemTexto, setMensagemTexto] = useState("");
 
   /* ---------------------------------------------------------------------- */

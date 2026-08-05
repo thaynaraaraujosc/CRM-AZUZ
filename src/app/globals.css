@@ -2700,6 +2700,25 @@ table.tbl tbody tr:hover td {
   box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
 }
 
+/* Popup pequena no rodapé (usada pela resposta rápida do Funil) — mesmo estilo visual do
+   `.wa-respostas-modal` do WhatsApp, só que ancorada embaixo à direita em vez de no topo. */
+.wa-respostas-modal.rodape {
+  top: auto;
+  bottom: 24px;
+  right: 24px;
+  width: 340px;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  animation: modal-scale-in var(--transition-base);
+}
+
+.wa-respostas-modal.rodape .chat-body {
+  flex: 1;
+  min-height: 120px;
+  max-height: 260px;
+}
+
 .wa-email-drag {
   display: flex;
   align-items: flex-start;
