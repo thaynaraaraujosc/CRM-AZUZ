@@ -1,6 +1,10 @@
+import { setDefaultResultOrder } from "node:dns";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import bcrypt from "bcryptjs";
+
+// Ver src/lib/prisma.ts — mesma correção pro script de seed, que abre sua própria conexão.
+setDefaultResultOrder("ipv4first");
 
 import {
   contatos as contatosIniciais,

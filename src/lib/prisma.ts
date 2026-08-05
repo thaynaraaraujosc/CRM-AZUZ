@@ -1,5 +1,11 @@
+import { setDefaultResultOrder } from "node:dns";
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+
+// Node 18+ prioriza resultado IPv6 na resolução de DNS por padrão — em redes onde a rota IPv6
+// pro host do banco não funciona direito, isso trava a conexão até estourar o timeout do pool
+// (em vez de falhar rápido e cair pro IPv4). Forçar IPv4 primeiro evita esse travamento.
+setDefaultResultOrder("ipv4first");
 
 /**
  * Instância única do Prisma Client por processo — cada instância abre um pool de conexões, e o
