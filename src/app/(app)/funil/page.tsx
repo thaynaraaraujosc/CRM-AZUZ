@@ -798,6 +798,8 @@ function FunilPageInner() {
                         <span
                           className="lname lname-com-msg"
                           title="Clique pra responder rapidinho"
+                          draggable={false}
+                          onMouseDown={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.stopPropagation();
                             abrirRespostaRapida(card.nome);
