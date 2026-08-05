@@ -87,7 +87,8 @@ type CentralDiaContextValue = {
 
 const CentralDiaContext = createContext<CentralDiaContextValue | null>(null);
 
-const CHAVE_STORAGE = "azuz-crm-central-dia";
+/** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
+const CHAVE_PREFERENCIA = "central-dia";
 
 type EstadoPersistido = {
   concluidos: ItemConcluido[];
@@ -103,12 +104,10 @@ const ESTADO_PADRAO: EstadoPersistido = {
   filtros: FILTROS_PADRAO,
 };
 
-function carregarEstado(): EstadoPersistido {
-  if (typeof window === "undefined") return ESTADO_PADRAO;
+async function carregarEstado(): Promise<EstadoPersistido> {
   try {
-    const salvo = localStorage.getItem(CHAVE_STORAGE);
-    if (!salvo) return ESTADO_PADRAO;
-    const parsed = JSON.parse(salvo) as Partial<EstadoPersistido>;
+    const resposta = await fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`);
+    const parsed = (await resposta.json()) as Partial<EstadoPersistido>;
     return {
       concluidos: parsed.concluidos ?? [],
       adiados: parsed.adiados ?? [],
@@ -137,23 +136,28 @@ export function CentralDiaProvider({ children }: { children: ReactNode }) {
   const hidratadoRef = useRef(false);
 
   useEffect(() => {
-    const carregado = carregarEstado();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setConcluidos(carregado.concluidos);
-    setAdiados(carregado.adiados);
-    setRecomendacoesIgnoradas(carregado.recomendacoesIgnoradas);
-    setFiltrosState(carregado.filtros);
-    hidratadoRef.current = true;
+    carregarEstado()
+      .then((carregado) => {
+        setConcluidos(carregado.concluidos);
+        setAdiados(carregado.adiados);
+        setRecomendacoesIgnoradas(carregado.recomendacoesIgnoradas);
+        setFiltrosState(carregado.filtros);
+        hidratadoRef.current = true;
+      })
+      .catch((erro) => console.error("Falha ao carregar preferências da Central do Dia:", erro));
   }, []);
 
   useEffect(() => {
     if (!hidratadoRef.current) return;
-    try {
+    const temporizador = setTimeout(() => {
       const estado: EstadoPersistido = { concluidos, adiados, recomendacoesIgnoradas, filtros };
-      localStorage.setItem(CHAVE_STORAGE, JSON.stringify(estado));
-    } catch {
-      // localStorage indisponível (modo privado, por exemplo) — segue só em memória.
-    }
+      fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(estado),
+      }).catch((erro) => console.error("Falha ao salvar preferências da Central do Dia:", erro));
+    }, 400);
+    return () => clearTimeout(temporizador);
   }, [concluidos, adiados, recomendacoesIgnoradas, filtros]);
 
   const avisar = useCallback((texto: string) => {

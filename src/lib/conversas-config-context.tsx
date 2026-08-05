@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 export type FundoConversa =
   | { tipo: "padrao" }
@@ -101,7 +101,8 @@ export const CONFIG_PADRAO: ConfigConversas = {
   manterPainelContatoAberto: false,
 };
 
-const STORAGE_KEY = "azuz-crm-conversas-config";
+/** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
+const CHAVE_PREFERENCIA = "conversas-config";
 
 type ConfigConversasContextValue = {
   config: ConfigConversas;
@@ -121,22 +122,29 @@ type ConfigConversasContextValue = {
 const ConfigConversasContext = createContext<ConfigConversasContextValue | null>(null);
 
 export function ConfigConversasProvider({ children }: { children: ReactNode }) {
-  const [config, setConfig] = useState<ConfigConversas>(() => {
-    if (typeof window === "undefined") return CONFIG_PADRAO;
-    try {
-      const salvo = localStorage.getItem(STORAGE_KEY);
-      return salvo ? { ...CONFIG_PADRAO, ...JSON.parse(salvo) } : CONFIG_PADRAO;
-    } catch {
-      return CONFIG_PADRAO;
-    }
-  });
+  const [config, setConfig] = useState<ConfigConversas>(CONFIG_PADRAO);
+  const hidratadoRef = useRef(false);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-    } catch {
-      // localStorage indisponível — segue só em memória.
-    }
+    fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`)
+      .then((r) => r.json())
+      .then((salvo: Partial<ConfigConversas>) => {
+        setConfig({ ...CONFIG_PADRAO, ...salvo });
+        hidratadoRef.current = true;
+      })
+      .catch((erro) => console.error("Falha ao carregar config de conversas:", erro));
+  }, []);
+
+  useEffect(() => {
+    if (!hidratadoRef.current) return;
+    const temporizador = setTimeout(() => {
+      fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      }).catch((erro) => console.error("Falha ao salvar config de conversas:", erro));
+    }, 400);
+    return () => clearTimeout(temporizador);
   }, [config]);
 
   function atualizarConfig(patch: Partial<ConfigConversas>) {

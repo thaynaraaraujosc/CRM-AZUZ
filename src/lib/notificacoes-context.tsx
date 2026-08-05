@@ -3,15 +3,21 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
 
 import { notificacoes as notificacoesIniciais } from "@/lib/data";
 
-const CHAVE_NOTIFICACOES = "azuz-crm-notificacoes-ativas";
-const CHAVE_NOTIFICACOES_TAREFA = "azuz-crm-notificacoes-nova-tarefa";
-const CHAVE_NOTIFICACOES_COMENTARIO = "azuz-crm-notificacoes-comentario";
+/** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
+const CHAVE_PREFERENCIA = "notificacoes";
+
+type PrefsNotificacoes = {
+  notificacoesAtivas: boolean;
+  notificarNovaTarefa: boolean;
+  notificarComentario: boolean;
+};
 
 export type ItemNotificacao = { titulo: string; meta: string; lida: boolean };
 
@@ -66,46 +72,42 @@ function tocarSinal() {
  */
 export function NotificacoesProvider({ children }: { children: ReactNode }) {
   const [itens, setItens] = useState<ItemNotificacao[]>(notificacoesIniciais);
-  const [notificacoesAtivas, setNotificacoesAtivas] = useState(() => {
-    if (typeof window === "undefined") return true;
-    try {
-      const salvo = localStorage.getItem(CHAVE_NOTIFICACOES);
-      return salvo === null ? true : salvo === "1";
-    } catch {
-      return true;
-    }
-  });
-  const [notificarNovaTarefa, setNotificarNovaTarefa] = useState(() => {
-    if (typeof window === "undefined") return true;
-    try {
-      const salvo = localStorage.getItem(CHAVE_NOTIFICACOES_TAREFA);
-      return salvo === null ? true : salvo === "1";
-    } catch {
-      return true;
-    }
-  });
-  const [notificarComentario, setNotificarComentario] = useState(() => {
-    if (typeof window === "undefined") return true;
-    try {
-      const salvo = localStorage.getItem(CHAVE_NOTIFICACOES_COMENTARIO);
-      return salvo === null ? true : salvo === "1";
-    } catch {
-      return true;
-    }
-  });
+  const [notificacoesAtivas, setNotificacoesAtivas] = useState(true);
+  const [notificarNovaTarefa, setNotificarNovaTarefa] = useState(true);
+  const [notificarComentario, setNotificarComentario] = useState(true);
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const [proximoToastId, setProximoToastId] = useState(0);
+
+  useEffect(() => {
+    fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`)
+      .then((r) => r.json())
+      .then((dados: Partial<PrefsNotificacoes>) => {
+        if (dados.notificacoesAtivas !== undefined) setNotificacoesAtivas(dados.notificacoesAtivas);
+        if (dados.notificarNovaTarefa !== undefined) setNotificarNovaTarefa(dados.notificarNovaTarefa);
+        if (dados.notificarComentario !== undefined) setNotificarComentario(dados.notificarComentario);
+      })
+      .catch((erro) => console.error("Falha ao carregar preferências de notificações:", erro));
+  }, []);
+
+  function salvarRemoto(patch: Partial<PrefsNotificacoes>) {
+    fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        notificacoesAtivas,
+        notificarNovaTarefa,
+        notificarComentario,
+        ...patch,
+      }),
+    }).catch((erro) => console.error("Falha ao salvar preferências de notificações:", erro));
+  }
 
   const naoLidas = itens.filter((n) => !n.lida).length;
 
   function alternarNotificacoes() {
     setNotificacoesAtivas((prev) => {
       const proximo = !prev;
-      try {
-        localStorage.setItem(CHAVE_NOTIFICACOES, proximo ? "1" : "0");
-      } catch {
-        // localStorage indisponível — só não persiste entre sessões
-      }
+      salvarRemoto({ notificacoesAtivas: proximo });
       return proximo;
     });
   }
@@ -113,11 +115,7 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
   function alternarNotificarNovaTarefa() {
     setNotificarNovaTarefa((prev) => {
       const proximo = !prev;
-      try {
-        localStorage.setItem(CHAVE_NOTIFICACOES_TAREFA, proximo ? "1" : "0");
-      } catch {
-        // localStorage indisponível — só não persiste entre sessões
-      }
+      salvarRemoto({ notificarNovaTarefa: proximo });
       return proximo;
     });
   }
@@ -125,11 +123,7 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
   function alternarNotificarComentario() {
     setNotificarComentario((prev) => {
       const proximo = !prev;
-      try {
-        localStorage.setItem(CHAVE_NOTIFICACOES_COMENTARIO, proximo ? "1" : "0");
-      } catch {
-        // localStorage indisponível — só não persiste entre sessões
-      }
+      salvarRemoto({ notificarComentario: proximo });
       return proximo;
     });
   }

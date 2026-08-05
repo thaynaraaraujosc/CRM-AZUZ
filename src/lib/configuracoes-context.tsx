@@ -109,7 +109,8 @@ export type ConfiguracoesEstado = {
   etiquetasPersonalizadas: { id: string; nome: string; cor: string }[];
 };
 
-const CHAVE_STORAGE = "azuz-crm-configuracoes";
+/** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
+const CHAVE_PREFERENCIA = "configuracoes";
 
 export const WORKSPACE_CONFIG_PADRAO: WorkspaceConfig = {
   nome: workspace.name,
@@ -229,12 +230,10 @@ type ConfiguracoesContextValue = {
 
 const ConfiguracoesContext = createContext<ConfiguracoesContextValue | null>(null);
 
-function carregarEstado(): ConfiguracoesEstado {
-  if (typeof window === "undefined") return ESTADO_PADRAO;
+async function carregarEstado(): Promise<ConfiguracoesEstado> {
   try {
-    const salvo = localStorage.getItem(CHAVE_STORAGE);
-    if (!salvo) return ESTADO_PADRAO;
-    const parsed = JSON.parse(salvo) as Partial<ConfiguracoesEstado>;
+    const resposta = await fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`);
+    const parsed = (await resposta.json()) as Partial<ConfiguracoesEstado>;
     return {
       workspace: { ...WORKSPACE_CONFIG_PADRAO, ...parsed.workspace },
       aparencia: { ...APARENCIA_PADRAO, ...parsed.aparencia },
@@ -264,18 +263,24 @@ export function ConfiguracoesProvider({ children }: { children: ReactNode }) {
   const hidratadoRef = useRef(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setEstado(carregarEstado());
-    hidratadoRef.current = true;
+    carregarEstado()
+      .then((carregado) => {
+        setEstado(carregado);
+        hidratadoRef.current = true;
+      })
+      .catch((erro) => console.error("Falha ao carregar configurações:", erro));
   }, []);
 
   useEffect(() => {
     if (!hidratadoRef.current) return;
-    try {
-      localStorage.setItem(CHAVE_STORAGE, JSON.stringify(estado));
-    } catch {
-      // localStorage indisponível (modo privado, por exemplo) — segue só em memória.
-    }
+    const temporizador = setTimeout(() => {
+      fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(estado),
+      }).catch((erro) => console.error("Falha ao salvar configurações:", erro));
+    }, 400);
+    return () => clearTimeout(temporizador);
   }, [estado]);
 
   function atualizarWorkspace(patch: Partial<WorkspaceConfig>) {

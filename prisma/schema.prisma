@@ -177,3 +177,130 @@ model NegocioCard {
   etiquetas   Json?
   responsavel String?
 }
+
+// Preferências simples (Notificações/Central do Dia/Configurações/Conversas-config) — cada Context
+// não tem entidade própria, é um blob de preferências de UI sem multi-usuário/workspace hoje, então
+// vira uma linha só por Context, identificada pela chave. Ver src/app/api/preferencias/[chave]/.
+model Preferencia {
+  chave String @id
+  dados Json
+}
+
+// Mensagens extras trocadas depois do seed (WhatsApp + popup de resposta rápida do Funil) — mesmo
+// Record<contato, ConvMensagem[]> de src/lib/mensagens-extra-context.tsx, só que relacional (uma
+// linha por mensagem, não um blob por contato) porque é uma lista naturalmente crescente. Os anexos
+// (imagem/vídeo/documento/áudio/localização/contato compartilhado/citação) ficam em `extras` — mesmo
+// espírito de `etiquetas`/`permissoes` Json já usado no resto do schema.
+model MensagemExtra {
+  id       String    @id
+  contato  String
+  tipo     String
+  texto    String    @db.Text
+  hora     String
+  criadoEm DateTime?
+  status   String?
+  extras   Json?
+}
+
+// Biblioteca de mídia reutilizável pelos blocos de automação (enviar documento/imagem/vídeo/áudio).
+model DocumentoBiblioteca {
+  id           String   @id
+  nome         String
+  categoria    String
+  formato      String
+  tamanho      String
+  autor        String
+  // Data URL — pode ser mídia grande, o TEXT padrão do MySQL (64KB) não é suficiente.
+  url          String   @db.LongText
+  tipoMidia    String?
+  descricao    String?
+  tags         Json?
+  atualizadoEm DateTime @default(now()) @updatedAt
+}
+
+// Form builder — páginas/perguntas/tema/versões ficam como Json na própria linha do formulário
+// porque os mutadores de src/lib/formularios-context.tsx sempre recalculam o array inteiro e
+// substituem (nunca endereçam página/pergunta por id numa API própria).
+model Formulario {
+  id          String   @id
+  nome        String
+  descricao   String?
+  status      String
+  paginas     Json
+  paginaFinal Json
+  tema        Json
+  senha       String?
+  integracoes Json?
+  versoes     Json
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+// Respostas de formulário — lista naturalmente crescente (igual Compromisso/TarefaCard), tabela
+// própria em vez de Json na linha do Formulario.
+model RespostaFormulario {
+  id           String   @id
+  formularioId String
+  criadoEm     DateTime @default(now())
+  valores      Json
+}
+
+// Motor de fluxo de automação (visual, nodes/edges) — mesmo raciocínio de Formulario: os mutadores
+// de src/lib/automation-flow-context.tsx sempre recalculam nodes/edges/configuracoes/historicoVersoes
+// inteiros. Log de execução continua só em memória (nunca persistiu, sem mudança de comportamento).
+model FluxoAutomacao {
+  id                 String    @id
+  nome               String
+  descricao          String?
+  funilId            String?
+  etapaId            String?
+  categoria          String?
+  status             String
+  ativa              Boolean   @default(false)
+  nodes              Json
+  edges              Json
+  versaoAtual        Int
+  configuracoes      Json
+  execucoes          Int       @default(0)
+  historicoVersoes   Json
+  publicadoEm        DateTime?
+  publicadoPor       String?
+  arquivada          Boolean   @default(false)
+  modeloDemonstracao Boolean   @default(false)
+  criadoEm           DateTime  @default(now())
+  atualizadoEm       DateTime  @updatedAt
+}
+
+// Editor de documentos (rich-text) — mesmo raciocínio: páginas/comentários/versões/acessos/config
+// ficam como Json na linha do documento (mutadores de src/lib/documentos-context.tsx sempre
+// recalculam o array inteiro). "Favoritos"/"recentes" de modelo (localStorage puro hoje, listas de
+// id de navegação, não conteúdo dono) continuam fora do banco — mesmo precedente de
+// "azuz-crm-documentos-prefs-ver", que já não fazia parte do Context.
+model Documento {
+  id            String   @id
+  titulo        String
+  favorito      Boolean  @default(false)
+  autor         String
+  paginas       Json
+  config        Json
+  pessoasAcesso Json
+  linkAtivo     Boolean  @default(false)
+  linkPermissao String?
+  comentarios   Json
+  versoes       Json
+  excluido      Boolean  @default(false)
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+}
+
+model ModeloPersonalizado {
+  id            String   @id
+  nome          String
+  categoria     String?
+  paginas       Json
+  config        Json?
+  favorito      Boolean  @default(false)
+  compartilhado Boolean  @default(false)
+  autor         String
+  criadoEm      DateTime @default(now())
+}
