@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
 
 import makeWASocket, {
@@ -95,6 +95,10 @@ export async function iniciarSessao(workspaceId: string) {
     // mensagens novas daqui pra frente), então desliga essa sincronização de propósito.
     syncFullHistory: false,
     markOnlineOnConnect: false,
+    // O padrão (60s) vem estourando com frequência daqui do Railway pra buscar
+    // props/blocklist/privacidade logo após conectar — não é fatal (a sessão segue funcionando),
+    // mas dá mais margem pra rede mais lenta/instável não gerar ruído nos logs à toa.
+    defaultQueryTimeoutMs: 120_000,
   });
   sessao.sock = sock;
 
@@ -125,9 +129,14 @@ export async function iniciarSessao(workspaceId: string) {
       sessao.status = "desconectado";
       sessao.qrDataUrl = null;
       sessao.sock = null;
-      // Qualquer motivo que não seja "deslogado explicitamente" tenta reconectar sozinho (queda de
-      // rede, restart do processo etc.) — reaproveita o auth state já salvo, sem novo QR.
-      if (!deslogado) {
+      if (deslogado) {
+        // Sessão invalidada pelo WhatsApp (401) — as credenciais salvas em disco não servem mais
+        // pra nada, e mantê-las faz a próxima tentativa de conectar reusá-las e cair no mesmo 401
+        // na hora, sem nunca gerar QR novo. Apaga pra próxima tentativa começar do zero de verdade.
+        rmSync(pastaDaSessao(workspaceId), { recursive: true, force: true });
+      } else {
+        // Qualquer outro motivo (queda de rede, restart do processo, timeout etc.) tenta reconectar
+        // sozinho, reaproveitando o auth state já salvo, sem precisar de novo QR.
         void iniciarSessao(workspaceId);
       }
     }
@@ -162,4 +171,6 @@ export async function desconectarSessao(workspaceId: string) {
     await sessao.sock.logout().catch(() => {});
   }
   sessoes.delete(workspaceId);
+  // Desconexão pedida manualmente também deve deixar tudo limpo pra próxima conexão pedir QR novo.
+  rmSync(pastaDaSessao(workspaceId), { recursive: true, force: true });
 }
