@@ -1,0 +1,25 @@
+{
+  "name": "azuz-crm-whatsapp-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Serviço separado (processo sempre ligado) que espelha um número de WhatsApp via Baileys e repassa mensagens/status pro CRM. Não roda dentro do Next.js/Vercel — precisa de host com processo persistente (Railway).",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.9",
+    "express": "^4.21.2",
+    "pino": "^9.5.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20",
+    "@types/qrcode": "^1.5.5",
+    "tsx": "^4.23.5",
+    "typescript": "^5"
+  }
+}

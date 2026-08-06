@@ -13,6 +13,12 @@ type StatusIntegracaoMeta = {
   erroMensagem: string | null;
 };
 
+type StatusIntegracaoNaoOficial = {
+  status: "desconectado" | "aguardando_qr" | "conectado" | "erro";
+  metadados: { qrDataUrl?: string | null; numero?: string | null } | null;
+  erroMensagem: string | null;
+};
+
 type Aba = "conexao" | "atendimento" | "mensagens" | "compatibilidade" | "horarios";
 const ABAS: { id: Aba; label: string }[] = [
   { id: "conexao", label: "Conexão" },
@@ -33,6 +39,8 @@ export function WhatsAppSecao() {
   const [aba, setAba] = useState<Aba>("conexao");
   const [integracao, setIntegracao] = useState<StatusIntegracaoMeta | null>(null);
   const [desconectando, setDesconectando] = useState(false);
+  const [naoOficial, setNaoOficial] = useState<StatusIntegracaoNaoOficial | null>(null);
+  const [desconectandoNaoOficial, setDesconectandoNaoOficial] = useState(false);
   // Lido direto de `window.location` (não `useSearchParams`) — essa página não tem um limite
   // <Suspense> em volta, e é só pra mostrar um erro pontual depois do redirect do OAuth. Inicializador
   // preguiçoso (não um efeito): já roda com o valor certo na primeira renderização no navegador.
@@ -62,6 +70,33 @@ export function WhatsAppSecao() {
   }
 
   const [tipoConexao, setTipoConexao] = useState("Conexão por provedor");
+
+  function carregarNaoOficial() {
+    fetch("/api/integracoes/whatsapp-nao-oficial")
+      .then((r) => r.json())
+      .then(setNaoOficial)
+      .catch((erro) => console.error("Falha ao carregar status do WhatsApp não oficial:", erro));
+  }
+
+  // Só faz sentido ficar perguntando o status (QR muda, conexão fecha) enquanto essa aba tá
+  // selecionada — evita poll parado em segundo plano nas outras opções de conexão.
+  useEffect(() => {
+    if (tipoConexao !== "Conexão não oficial") return;
+    carregarNaoOficial();
+    const intervalo = setInterval(carregarNaoOficial, 4000);
+    return () => clearInterval(intervalo);
+  }, [tipoConexao]);
+
+  async function desconectarNaoOficial() {
+    setDesconectandoNaoOficial(true);
+    try {
+      await fetch("/api/integracoes/whatsapp-nao-oficial/desconectar", { method: "POST" });
+      carregarNaoOficial();
+    } finally {
+      setDesconectandoNaoOficial(false);
+    }
+  }
+
   const [distribuir, setDistribuir] = useState(true);
   const [manterResponsavel, setManterResponsavel] = useState(true);
   const [encaminharFila, setEncaminharFila] = useState(false);
@@ -115,6 +150,38 @@ export function WhatsAppSecao() {
               </a>
             )}
           </div>
+
+          {tipoConexao === "Conexão não oficial" ? (
+            <div className="card" style={{ padding: 14, marginBottom: 14 }}>
+              <p className="int-title" style={{ margin: 0 }}>WhatsApp — Conexão não oficial (espelhado)</p>
+              {naoOficial?.status === "conectado" ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
+                  <p className="int-sub" style={{ margin: 0 }}>
+                    Conectado — {naoOficial.metadados?.numero ?? "número não identificado"}
+                  </p>
+                  <button type="button" className="btn danger" onClick={desconectarNaoOficial} disabled={desconectandoNaoOficial}>
+                    {desconectandoNaoOficial ? "Desconectando…" : "Desconectar"}
+                  </button>
+                </div>
+              ) : naoOficial?.status === "aguardando_qr" && naoOficial.metadados?.qrDataUrl ? (
+                <div style={{ marginTop: 10, textAlign: "center" }}>
+                  <p className="hint" style={{ marginBottom: 8 }}>
+                    Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho, e escaneie:
+                  </p>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- data URL gerado ao vivo pelo serviço, sem otimizador de imagem cabível aqui */}
+                  <img src={naoOficial.metadados.qrDataUrl} alt="QR code do WhatsApp" style={{ width: 220, height: 220 }} />
+                </div>
+              ) : naoOficial?.status === "erro" ? (
+                <p className="int-sub" style={{ margin: "8px 0 0", color: "var(--danger)" }}>
+                  Erro: {naoOficial.erroMensagem}
+                </p>
+              ) : (
+                <p className="int-sub" style={{ margin: "8px 0 0" }}>
+                  Aguardando o serviço gerar o QR code… confira se o whatsapp-service está rodando.
+                </p>
+              )}
+            </div>
+          ) : null}
 
           <div className="field">
             <label>Tipo de conexão</label>
