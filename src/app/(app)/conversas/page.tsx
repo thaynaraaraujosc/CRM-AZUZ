@@ -1557,15 +1557,36 @@ function ConversasPageInner() {
     atualizarMensagem(aberta.nome, id, { status: "reproduzido" });
   }
 
+  /** Conversa "pertence" ao canal WhatsApp via QR Code (Baileys) quando a última mensagem
+   * recebida chegou por ele — decide pra onde a resposta do atendente deve sair de verdade. */
+  function contatoUsaWhatsappBaileys(): boolean {
+    const extras = mensagensExtraPorContato[aberta.nome] ?? [];
+    for (let i = extras.length - 1; i >= 0; i--) {
+      if (extras[i].tipo === "in") return extras[i].canal === "whatsapp_baileys";
+    }
+    return false;
+  }
+
   function enviarMensagemTexto() {
     const texto = mensagemTexto.trim();
     if (!texto) return;
+    const viaBaileys = contatoUsaWhatsappBaileys();
     adicionarMensagem({
       tipo: "out",
       texto,
       hora: horaAgora(),
       respondendoA: respondendoMensagem ?? undefined,
+      canal: viaBaileys ? "whatsapp_baileys" : undefined,
     });
+    if (viaBaileys && contatoDaConversa?.whatsapp) {
+      fetch("/api/integracoes/whatsapp-baileys/enviar", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ destinatario: contatoDaConversa.whatsapp, texto }),
+      }).catch(() =>
+        avisarAutomacao("Não foi possível enviar pelo WhatsApp (QR Code) — verifica a conexão em Configurações."),
+      );
+    }
     setMensagemTexto("");
     setRespondendoMensagem(null);
   }

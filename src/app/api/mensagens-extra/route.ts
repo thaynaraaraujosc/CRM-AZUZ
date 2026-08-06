@@ -13,6 +13,7 @@ type LinhaMensagem = {
   criadoEm: Date | null;
   status: string | null;
   extras: unknown;
+  canal: string | null;
 };
 
 function paraMensagem(linha: LinhaMensagem): ConvMensagem {
@@ -25,6 +26,7 @@ function paraMensagem(linha: LinhaMensagem): ConvMensagem {
     hora: linha.hora,
     criadoEm: linha.criadoEm ? linha.criadoEm.getTime() : undefined,
     status: (linha.status as ConvMensagem["status"]) ?? undefined,
+    canal: linha.canal ?? undefined,
   };
 }
 
@@ -70,7 +72,7 @@ export async function PUT(request: Request) {
       where: { workspaceId, id: { notIn: idsAtuais.length ? idsAtuais : ["__nenhum__"] } },
     }),
     ...todasMensagens.map(({ contato, mensagem, indice }) => {
-      const { id, tipo, texto, hora, criadoEm, status, ...extras } = mensagem;
+      const { id, tipo, texto, hora, criadoEm, status, canal, ...extras } = mensagem;
       const idFinal = id ?? `${contato}-${indice}`;
       const dados = {
         contato,
@@ -79,6 +81,7 @@ export async function PUT(request: Request) {
         hora,
         criadoEm: criadoEm ? new Date(criadoEm) : null,
         status: status ?? null,
+        canal: canal ?? null,
         extras,
       };
       return prisma.mensagemExtra.upsert({

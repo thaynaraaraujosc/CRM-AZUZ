@@ -278,6 +278,10 @@ model MensagemExtra {
   criadoEm DateTime?
   status   String?
   extras   Json?
+  // Canal de origem/destino da mensagem — nulo = comportamento antigo (implicitamente Meta
+  // oficial); "whatsapp_baileys" marca mensagens da conexão não oficial via QR Code, pra saber
+  // por qual integração uma resposta deve sair quando o workspace tem as duas conectadas.
+  canal    String?
 }
 
 // Biblioteca de mídia reutilizável pelos blocos de automação (enviar documento/imagem/vídeo/áudio).

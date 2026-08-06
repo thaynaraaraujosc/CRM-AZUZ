@@ -563,6 +563,10 @@ export type ConvMensagem = {
   status?: StatusMensagem;
   /** Motivo do erro, quando status === "erro" — mostrado com a opção de tentar de novo. */
   erro?: string;
+  /** Canal de origem/destino real da mensagem (ex.: "whatsapp_baileys") — nada a ver com o `canal`
+   * (rótulo tipo WhatsApp/Instagram/TikTok) da `Conversa`; ausente = comportamento antigo,
+   * implicitamente a integração oficial da Meta. Decide por qual integração uma resposta sai. */
+  canal?: string;
 };
 
 export type Conversa = {
