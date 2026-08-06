@@ -86,13 +86,25 @@ export async function iniciarSessao(workspaceId: string) {
   const sessao = garantirEntrada(workspaceId);
   const { state, saveCreds } = await useMultiFileAuthState(pasta);
 
-  const sock = makeWASocket({ auth: state, logger });
+  const sock = makeWASocket({
+    auth: state,
+    logger,
+    // Logo após escanear o QR, o WhatsApp derruba a conexão uma vez (reconexão normal, código 515)
+    // e em seguida o Baileys tenta sincronizar o histórico completo de conversas — isso costuma
+    // travar/dar timeout em serviços hospedados (o worker não precisa de histórico antigo, só das
+    // mensagens novas daqui pra frente), então desliga essa sincronização de propósito.
+    syncFullHistory: false,
+    markOnlineOnConnect: false,
+  });
   sessao.sock = sock;
 
   sock.ev.on("creds.update", saveCreds);
 
   sock.ev.on("connection.update", async (update: BaileysEventMap["connection.update"]) => {
     const { connection, lastDisconnect, qr } = update;
+    if (connection) {
+      console.log(`[${workspaceId}] connection.update: ${connection}`);
+    }
 
     if (qr) {
       sessao.status = "aguardando_qr";
@@ -103,11 +115,13 @@ export async function iniciarSessao(workspaceId: string) {
       sessao.status = "conectado";
       sessao.qrDataUrl = null;
       sessao.numero = sock.user?.id?.split(":")[0] ?? null;
+      console.log(`[${workspaceId}] conectado como ${sessao.numero}`);
     }
 
     if (connection === "close") {
       const motivo = (lastDisconnect?.error as Boom | undefined)?.output?.statusCode;
       const deslogado = motivo === DisconnectReason.loggedOut;
+      console.log(`[${workspaceId}] conexão fechada, motivo: ${motivo}, deslogado: ${deslogado}`);
       sessao.status = "desconectado";
       sessao.qrDataUrl = null;
       sessao.sock = null;
