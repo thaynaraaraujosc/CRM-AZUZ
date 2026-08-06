@@ -55,11 +55,11 @@ export function statusDaSessao(workspaceId: string) {
 
 async function avisarMensagemRecebida(workspaceId: string, contato: string, texto: string) {
   if (!NEXTJS_BASE_URL || !WORKER_SECRET) {
-    logger.error("NEXTJS_BASE_URL/WORKER_SECRET não configurados — não dá pra avisar o CRM.");
+    console.error(`[${workspaceId}] NEXTJS_BASE_URL/WORKER_SECRET não configurados — não dá pra avisar o CRM.`);
     return;
   }
   try {
-    await fetch(`${NEXTJS_BASE_URL}/api/webhooks/whatsapp-baileys`, {
+    const resposta = await fetch(`${NEXTJS_BASE_URL}/api/webhooks/whatsapp-baileys`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-worker-secret": WORKER_SECRET },
       body: JSON.stringify({
@@ -69,8 +69,14 @@ async function avisarMensagemRecebida(workspaceId: string, contato: string, text
         hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
       }),
     });
+    const corpo = await resposta.text();
+    if (!resposta.ok) {
+      console.error(`[${workspaceId}] CRM recusou o aviso de mensagem: ${resposta.status} ${corpo}`);
+    } else {
+      console.log(`[${workspaceId}] avisou o CRM sobre mensagem de ${contato}: ${resposta.status}`);
+    }
   } catch (erro) {
-    logger.error({ erro }, "Falha ao avisar o CRM sobre mensagem recebida");
+    console.error(`[${workspaceId}] Falha ao avisar o CRM sobre mensagem recebida`, erro);
   }
 }
 
@@ -143,6 +149,7 @@ export async function iniciarSessao(workspaceId: string) {
   });
 
   sock.ev.on("messages.upsert", ({ messages, type }: BaileysEventMap["messages.upsert"]) => {
+    console.log(`[${workspaceId}] messages.upsert: type=${type}, ${messages.length} mensagem(ns)`);
     if (type !== "notify") return;
     for (const msg of messages) {
       if (msg.key.fromMe || !msg.message) continue;
