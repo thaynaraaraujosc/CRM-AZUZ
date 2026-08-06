@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 
 /**
  * POST recebe mensagens do `whatsapp-worker` quando chega algo novo numa sessão conectada — sem
@@ -42,6 +43,14 @@ export async function POST(request: Request) {
       criadoEm: new Date(),
       canal: "whatsapp_baileys",
     },
+  });
+
+  await upsertConversaAoReceberMensagem({
+    workspaceId,
+    nome: chaveContato,
+    canal: "WhatsApp",
+    contato,
+    origem: "Direto",
   });
 
   return NextResponse.json({ ok: true });

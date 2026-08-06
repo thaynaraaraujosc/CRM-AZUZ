@@ -13,7 +13,7 @@ import { createPortal } from "react-dom";
 
 import {
   classeOrigem,
-  conversas,
+  conversas as conversasMock,
   motivosPerda,
   oportunidadesPerdidas,
   type Canal,
@@ -27,7 +27,10 @@ import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { executarFluxo } from "@/lib/automation-flow/motor";
 import { useContatos } from "@/lib/contatos-context";
+import { useConversas, type ConversaReal } from "@/lib/conversas-context";
+import { useEquipe } from "@/lib/equipe-context";
 import { useTarefas } from "@/lib/tarefas-context";
+import { formatarTempoRelativoReal } from "@/lib/datas";
 import { estimarMinutosAtras, gerarLinhaDoTempo, type Evento } from "@/lib/timeline";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { Timeline } from "@/components/timeline";
@@ -319,6 +322,31 @@ const EMOJI_CATEGORIAS = [
 /** Mesmo dia de referência usado em todo o app (ver `today` em lib/data.ts). */
 const HOJE_ISO = "2026-07-30";
 
+/**
+ * Placeholder seguro pra quando ainda não existe nenhuma conversa real (workspace novo, ou
+ * ainda carregando) — em vez de deixar `aberta` ser `undefined` (o que quebraria os dezenas de
+ * `useState`/cálculos que assumem uma conversa selecionada, declarados antes de qualquer retorno
+ * condicional possível, por causa das Regras de Hooks), usa esse objeto vazio. A tela de fato
+ * mostra "nenhuma conversa" naturalmente: a lista lateral fica vazia (`conversas.length === 0`) e
+ * o painel principal não tem nada de real pra exibir (sem nome, sem mensagem).
+ */
+const CONVERSA_VAZIA: ConversaReal = {
+  id: "__vazio__",
+  workspaceId: "",
+  contatoId: null,
+  nome: "",
+  initials: "?",
+  canal: "WhatsApp",
+  contato: null,
+  origem: "Direto",
+  status: "Não respondido",
+  naoLidas: 0,
+  favorita: false,
+  atendenteSelecionado: null,
+  criadoEm: new Date(0).toISOString(),
+  atualizadoEm: new Date(0).toISOString(),
+};
+
 function localizarNoFunil(
   listaFunis: Funil[],
   nomeContato: string,
@@ -343,12 +371,13 @@ type HistoricoItem = {
 /** Monta o histórico automático (etapa do funil, tempo até fechar/perder) a partir dos dados já existentes do card no funil. */
 function historicoInicialDoContato(
   listaFunis: Funil[],
-  contato: { id: string; nome: string; mensagens: { hora?: string }[] },
+  contato: { id: string; nome: string },
+  primeiraMensagemHora?: string,
 ): HistoricoItem[] {
   const localizacao = localizarNoFunil(listaFunis, contato.nome);
   const itens: HistoricoItem[] = [];
 
-  const primeiraHora = contato.mensagens[0]?.hora;
+  const primeiraHora = primeiraMensagemHora;
   itens.push({
     id: `hist-inicio-${contato.id}`,
     tipo: "sistema",
@@ -426,6 +455,15 @@ function ConversasPageInner() {
     removerEtiqueta,
     criarContato,
   } = useContatos();
+  const {
+    conversas,
+    carregando: carregandoConversas,
+    marcarComoLida: marcarConversaLida,
+    alternarFavorita: alternarFavoritaConversa,
+    atualizarStatus: atualizarStatusConversa,
+    atribuirAtendente: atribuirAtendenteConversa,
+  } = useConversas();
+  const { membros: membrosEquipe } = useEquipe();
   const { colunas: tarefas } = useTarefas();
   const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
   const { fluxos, dispararEvento, registrarExecucao } = useAutomationFlows();
@@ -549,13 +587,18 @@ function ConversasPageInner() {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
   }
-  const [selectedId, setSelectedId] = useState(() => {
+  // `conversas` só chega depois do fetch no mount do ConversasProvider — a inicialização
+  // preguiçosa de `useState` não serve aqui (ela rodaria antes da lista existir). Em vez de
+  // useEffect, ajusta durante a renderização (padrão já usado nesta página, ver `abertaIdAnterior`
+  // mais abaixo): só seta uma vez, na primeira renderização em que a lista deixa de estar vazia.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIdInicializado, setSelectedIdInicializado] = useState(false);
+  if (!selectedIdInicializado && conversas.length > 0) {
     const nomeContato = searchParams.get("contato");
-    const encontrada = nomeContato
-      ? conversas.find((c) => c.nome === nomeContato)
-      : null;
-    return (encontrada ?? conversas[0]).id;
-  });
+    const encontrada = nomeContato ? conversas.find((c) => c.nome === nomeContato) : null;
+    setSelectedId((encontrada ?? conversas[0]).id);
+    setSelectedIdInicializado(true);
+  }
   const [infoAberto, setInfoAberto] = useState(false);
   const [abaInfo, setAbaInfo] = useState<
     "resumo" | "contato" | "negociacao" | "atividades" | "historico"
@@ -610,10 +653,9 @@ function ConversasPageInner() {
 
   function alternarFavorita(id: string) {
     const c = conversas.find((c) => c.id === id);
-    setFavoritasOverride((prev) => ({
-      ...prev,
-      [id]: !(prev[id] ?? c?.favorita ?? false),
-    }));
+    const proximo = !(favoritasOverride[id] ?? c?.favorita ?? false);
+    setFavoritasOverride((prev) => ({ ...prev, [id]: proximo }));
+    alternarFavoritaConversa(id, proximo);
     setRowMenuAberto(null);
   }
 
@@ -639,6 +681,7 @@ function ConversasPageInner() {
 
   function encerrarAtendimento(id: string) {
     setEncerradas((prev) => new Set(prev).add(id));
+    atualizarStatusConversa(id, "Finalizado");
     setRowMenuAberto(null);
   }
   const [midiasAberto, setMidiasAberto] = useState(false);
@@ -681,9 +724,7 @@ function ConversasPageInner() {
   const [canalTopRect, setCanalTopRect] = useState<DOMRect | null>(null);
   const [canalTopFiltro, setCanalTopFiltro] = useState("Todos");
 
-  const atendentesDisponiveis = Array.from(
-    new Set(conversas.map((c) => c.atendenteSelecionado)),
-  );
+  const atendentesDisponiveis = membrosEquipe.map((m) => m.nome);
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
   const conversasFiltradas = conversas
@@ -697,16 +738,20 @@ function ConversasPageInner() {
       if (canalTopFiltro !== "Todos" && c.origem !== canalTopFiltro) return false;
       if (!buscaConversa.trim()) return true;
       const termo = buscaConversa.trim().toLowerCase();
-      const ultima = c.mensagens[c.mensagens.length - 1];
-      return (
-        c.nome.toLowerCase().includes(termo) ||
-        ultima.texto.toLowerCase().includes(termo)
-      );
+      return c.nome.toLowerCase().includes(termo);
     })
     .sort((a, b) => Number(fixadas.has(b.id)) - Number(fixadas.has(a.id)));
 
-  const aberta = conversas.find((c) => c.id === selectedId) ?? conversas[0];
-  const { tarefa } = aberta;
+  const aberta = conversas.find((c) => c.id === selectedId) ?? conversas[0] ?? CONVERSA_VAZIA;
+  // `Conversa` real não carrega mais uma "tarefa vinculada" embutida (ver plano) — placeholder
+  // vazio mantém `tarefa.*` funcionando em todo o resto do arquivo, mostrando "sem tarefa" sempre.
+  const tarefa = {
+    data: "",
+    oQueFazer: "",
+    valor: "—",
+    responsavel: "",
+    anexo: null as { arquivo: string; detalhe: string } | null,
+  };
   const localizacao = localizarNoFunil(funis, aberta.nome);
 
   const contatoDaConversa = contatos.find((c) => c.nome === aberta.nome) ?? null;
@@ -728,7 +773,7 @@ function ConversasPageInner() {
     etapaPadraoPara(localizacao?.funilId ?? funis[0]?.id ?? ""),
   );
   const [atendenteSelecionado, setAtendenteSelecionado] = useState(
-    aberta.atendenteSelecionado,
+    aberta.atendenteSelecionado ?? "",
   );
   const [emailContato, setEmailContato] = useState(contatoDaConversa?.email ?? "");
   const [whatsappContato, setWhatsappContato] = useState(
@@ -751,7 +796,7 @@ function ConversasPageInner() {
   const [estadoContato, setEstadoContato] = useState(contatoDaConversa?.estado ?? "");
   const [paisContato, setPaisContato] = useState(contatoDaConversa?.pais ?? "");
   const [canalPreferidoContato, setCanalPreferidoContato] = useState(
-    contatoDaConversa?.canalPreferido ?? aberta.canal,
+    contatoDaConversa?.canalPreferido ?? (aberta.canal as Canal),
   );
   const [melhorHorarioContato, setMelhorHorarioContato] = useState(
     contatoDaConversa?.melhorHorario ?? "",
@@ -970,10 +1015,6 @@ function ConversasPageInner() {
 
   /** Acha a mensagem original (semente ou extra) a partir da mesma "chave" usada nos mapas de apagadas/favoritas. */
   function encontrarMensagemPorChave(chave: string): ConvMensagem | null {
-    if (chave.startsWith("seed-")) {
-      const indice = Number(chave.slice("seed-".length));
-      return aberta.mensagens[indice] ?? null;
-    }
     const extras = mensagensExtraPorContato[aberta.nome] ?? [];
     return extras.find((m, i) => (m.id ?? `extra-${i}`) === chave) ?? null;
   }
@@ -1407,7 +1448,7 @@ function ConversasPageInner() {
     const funilId = localizacao?.funilId ?? funis[0]?.id ?? "";
     setFunilSelecionadoId(funilId);
     setEtapaSelecionada(etapaPadraoPara(funilId));
-    setAtendenteSelecionado(aberta.atendenteSelecionado);
+    setAtendenteSelecionado(aberta.atendenteSelecionado ?? "");
     setEmailContato(contatoDaConversa?.email ?? "");
     setWhatsappContato(contatoDaConversa?.whatsapp ?? "");
     setNascimentoContato(contatoDaConversa?.nascimento ?? "");
@@ -1418,7 +1459,7 @@ function ConversasPageInner() {
     setCidadeContato(contatoDaConversa?.cidade ?? "");
     setEstadoContato(contatoDaConversa?.estado ?? "");
     setPaisContato(contatoDaConversa?.pais ?? "");
-    setCanalPreferidoContato(contatoDaConversa?.canalPreferido ?? aberta.canal);
+    setCanalPreferidoContato(contatoDaConversa?.canalPreferido ?? (aberta.canal as Canal));
     setMelhorHorarioContato(contatoDaConversa?.melhorHorario ?? "");
     setEditandoContato(false);
     setStatusSalvarContato("ocioso");
@@ -1434,7 +1475,11 @@ function ConversasPageInner() {
   if (!historicoPorContato[aberta.nome]) {
     setHistoricoPorContato((prev) => ({
       ...prev,
-      [aberta.nome]: historicoInicialDoContato(funis, aberta),
+      [aberta.nome]: historicoInicialDoContato(
+        funis,
+        aberta,
+        mensagensExtraPorContato[aberta.nome]?.[0]?.hora,
+      ),
     }));
   }
 
@@ -1485,7 +1530,7 @@ function ConversasPageInner() {
   const eventosTimelineContato: Evento[] = contatoDaConversa
     ? gerarLinhaDoTempo(
         contatoDaConversa.id,
-        { contatos, conversas, tarefas, funis, oportunidadesPerdidas },
+        { contatos, conversas: conversasMock, tarefas, funis, oportunidadesPerdidas },
         eventosExtrasTimeline,
       )
     : eventosExtrasTimeline.slice().sort((a, b) => a.minutosAtras - b.minutosAtras);
@@ -1494,7 +1539,8 @@ function ConversasPageInner() {
     setHistoricoPorContato((prev) => ({
       ...prev,
       [aberta.nome]: [
-        ...(prev[aberta.nome] ?? historicoInicialDoContato(funis, aberta)),
+        ...(prev[aberta.nome] ??
+          historicoInicialDoContato(funis, aberta, mensagensExtraPorContato[aberta.nome]?.[0]?.hora)),
         { id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, tipo, texto, quando: "agora" },
       ],
     }));
@@ -2708,7 +2754,7 @@ function ConversasPageInner() {
     setCidadeContato(contatoDaConversa?.cidade ?? "");
     setEstadoContato(contatoDaConversa?.estado ?? "");
     setPaisContato(contatoDaConversa?.pais ?? "");
-    setCanalPreferidoContato(contatoDaConversa?.canalPreferido ?? aberta.canal);
+    setCanalPreferidoContato(contatoDaConversa?.canalPreferido ?? (aberta.canal as Canal));
     setMelhorHorarioContato(contatoDaConversa?.melhorHorario ?? "");
     setStatusSalvarContato("ocioso");
     setEditandoContato(false);
@@ -2716,6 +2762,7 @@ function ConversasPageInner() {
 
   function trocarResponsavelRapido(novoResponsavel: string) {
     atribuirAtendente(aberta.nome, novoResponsavel);
+    if (aberta.id !== CONVERSA_VAZIA.id) atribuirAtendenteConversa(aberta.id, novoResponsavel);
     adicionarHistorico("sistema", `Responsável alterado pra ${novoResponsavel}`);
     avisarAutomacao(`${aberta.nome} agora é atendido por ${novoResponsavel}`);
     setTrocandoResponsavel(false);
@@ -2736,6 +2783,7 @@ function ConversasPageInner() {
 
   function salvarAtribuicao() {
     atribuirAtendente(aberta.nome, atendenteSelecionado);
+    if (aberta.id !== CONVERSA_VAZIA.id) atribuirAtendenteConversa(aberta.id, atendenteSelecionado);
     if (funilSelecionado && etapaSelecionada) {
       const cardExistente = funilSelecionado.colunas
         .flatMap((c) => c.cards)
@@ -2744,7 +2792,7 @@ function ConversasPageInner() {
         id: cardExistente?.id,
         nome: aberta.nome,
         valor: cardExistente?.valor ?? "—",
-        origem: cardExistente?.origem ?? aberta.origem,
+        origem: cardExistente?.origem ?? (aberta.origem as NegocioCard["origem"]),
         dias: cardExistente?.dias ?? "Hoje",
         data: cardExistente?.data ?? HOJE_ISO,
       };
@@ -2989,14 +3037,16 @@ function ConversasPageInner() {
           <div className="wa-list-rows">
           {conversasFiltradas.length === 0 ? (
             <p className="hint" style={{ padding: 20 }}>
-              Nenhuma conversa encontrada.
+              {carregandoConversas
+                ? "Carregando conversas…"
+                : conversas.length === 0
+                  ? "Nenhuma conversa ainda — conecte um canal em Configurações para começar a receber mensagens de verdade."
+                  : "Nenhuma conversa encontrada."}
             </p>
           ) : (
             conversasFiltradas.map((c) => {
               const active = c.id === aberta.id;
-              const last = c.mensagens[c.mensagens.length - 1];
               const ultimaExtra = (mensagensExtraPorContato[c.nome] ?? []).at(-1);
-              const previaMsg = ultimaExtra ?? last;
               const iconeTipo = ultimaExtra?.imagens
                 ? "🖼️ "
                 : ultimaExtra?.video
@@ -3011,8 +3061,8 @@ function ConversasPageInner() {
                           ? "👤 "
                           : "";
               const previaTexto =
-                previaMsg.texto ||
-                (ultimaExtra?.legenda ?? (iconeTipo ? "Anexo" : ""));
+                ultimaExtra?.texto ||
+                (ultimaExtra?.legenda ?? (iconeTipo ? "Anexo" : "Sem mensagens ainda"));
               return (
                 <div
                   key={c.id}
@@ -3023,6 +3073,7 @@ function ConversasPageInner() {
                   onClick={() => {
                     setSelectedId(c.id);
                     setLidas((prev) => (prev.has(c.id) ? prev : new Set(prev).add(c.id)));
+                    if (c.naoLidas > 0) marcarConversaLida(c.id);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -3035,7 +3086,7 @@ function ConversasPageInner() {
                   <span className="cr1">
                     <span className="avatar">
                       {c.initials}
-                      <CanalBadge canal={c.canal} />
+                      <CanalBadge canal={c.canal as Canal} />
                     </span>
                     <span className="cname">
                       {fixadas.has(c.id) ? <span className="wa-pin-icone">📌</span> : null}
@@ -3047,13 +3098,13 @@ function ConversasPageInner() {
                         </span>
                       ) : null}
                     </span>
-                    <span className="ctime">{c.tempo}</span>
+                    <span className="ctime">{formatarTempoRelativoReal(new Date(c.atualizadoEm))}</span>
                   </span>
                   <span className="cmsg">
-                    {previaMsg.tipo === "out" ? (
+                    {ultimaExtra?.tipo === "out" ? (
                       <>
                         Você:{" "}
-                        <StatusMensagemIcone status={previaMsg.status} />{" "}
+                        <StatusMensagemIcone status={ultimaExtra.status} />{" "}
                       </>
                     ) : (
                       ""
@@ -3068,7 +3119,7 @@ function ConversasPageInner() {
                     <span className="tag">
                       {encerradas.has(c.id) ? "Finalizado" : c.status}
                     </span>
-                    <span className={`tag ${classeOrigem(c.origem)}`}>
+                    <span className={`tag ${classeOrigem(c.origem as Parameters<typeof classeOrigem>[0])}`}>
                       {c.origem}
                     </span>
                   </span>
@@ -3214,72 +3265,6 @@ function ConversasPageInner() {
             {arrastandoArquivo ? (
               <div className="wa-dragover-aviso">Solte o arquivo pra anexar</div>
             ) : null}
-            {aberta.mensagens.map((msg, i) => {
-              const chave = `seed-${i}`;
-              if (mensagensApagadas.has(chave)) return null;
-              if (mensagensApagadasTodos.has(chave)) {
-                return (
-                  <div className="bubble sistema-apagada" key={i}>
-                    Esta mensagem foi apagada.
-                  </div>
-                );
-              }
-              return (
-                <div
-                  className={`bubble ${msg.tipo}`}
-                  key={i}
-                  onDoubleClick={() => {
-                    if (msg.tipo === "in") curtirMensagem(i);
-                  }}
-                  style={msg.tipo === "in" ? { cursor: "pointer" } : undefined}
-                  title={msg.tipo === "in" ? "Dois cliques pra curtir" : undefined}
-                >
-                  {msg.tipo !== "system" ? (
-                    <>
-                      <button
-                        type="button"
-                        className="wa-reply-btn"
-                        aria-label="Responder essa mensagem"
-                        title="Responder"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRespondendoMensagem({
-                            autor: msg.tipo === "in" ? aberta.nome : "Você",
-                            texto: msg.texto,
-                          });
-                          mensagemInputRef.current?.focus();
-                        }}
-                      >
-                        ↩
-                      </button>
-                      <button
-                        type="button"
-                        className="wa-msg-menu-btn"
-                        aria-label="Mais ações dessa mensagem"
-                        title="Mais ações"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          abrirMenuMensagem(chave, e.currentTarget.getBoundingClientRect());
-                        }}
-                      >
-                        ⋮
-                      </button>
-                    </>
-                  ) : null}
-                  {mensagensFavoritas.has(chave) ? (
-                    <span className="wa-msg-favorita" title="Favoritada">★</span>
-                  ) : null}
-                  {msg.texto}
-                  {msg.hora ? <span className="tm">{msg.hora}</span> : null}
-                  {mensagensCurtidas.has(i) ? (
-                    <span className="bubble-reacao">❤️</span>
-                  ) : null}
-                  {coracaoAnimando === i ? (
-                    <span className="bubble-coracao-anim">❤️</span>
-                  ) : null}
-                </div>
-              );
-            })}
             {(mensagensExtraPorContato[aberta.nome] ?? []).map((msg, i) => {
               const chave = msg.id ?? `extra-${i}`;
               if (mensagensApagadas.has(chave)) return null;
@@ -6219,7 +6204,7 @@ function ConversasPageInner() {
                   <span className="wa-resumo-label">E-mail</span>
                   <span className="wa-resumo-valor">{emailContato || "—"}</span>
                   <span className="wa-resumo-label">Responsável</span>
-                  <span className="wa-resumo-valor">{aberta.atendenteSelecionado}</span>
+                  <span className="wa-resumo-valor">{aberta.atendenteSelecionado ?? "—"}</span>
                   <span className="wa-resumo-label">Funil · Etapa</span>
                   <span className="wa-resumo-valor">
                     {funilSelecionado ? `${funilSelecionado.nome} · ${etapaSelecionada}` : "—"}
@@ -6227,7 +6212,7 @@ function ConversasPageInner() {
                   <span className="wa-resumo-label">Origem</span>
                   <span className="wa-resumo-valor">{aberta.origem}</span>
                   <span className="wa-resumo-label">Última interação</span>
-                  <span className="wa-resumo-valor">{aberta.tempo}</span>
+                  <span className="wa-resumo-valor">{formatarTempoRelativoReal(new Date(aberta.atualizadoEm))}</span>
                   <span className="wa-resumo-label">Situação</span>
                   <span className="wa-resumo-valor">{aberta.status}</span>
                   <span className="wa-resumo-label">Próxima atividade</span>
@@ -7257,12 +7242,12 @@ function ConversasPageInner() {
               ✕
             </button>
           </div>
-          {aberta.tarefa.anexo ? (
+          {tarefa.anexo ? (
             <div className="field" style={{ padding: "10px 0" }}>
               <div className="attach-chip">
                 <IconDoc />
-                <span className="fn">{aberta.tarefa.anexo.arquivo}</span>
-                <span className="fs">{aberta.tarefa.anexo.detalhe}</span>
+                <span className="fn">{tarefa.anexo.arquivo}</span>
+                <span className="fs">{tarefa.anexo.detalhe}</span>
               </div>
             </div>
           ) : (

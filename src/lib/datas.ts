@@ -117,3 +117,17 @@ export function estimarMinutosAtras(raw: string): number {
   if (!data) return 10 ** 8;
   return Math.round((HOJE.getTime() - data.getTime()) / 60000);
 }
+
+/**
+ * Tempo relativo pra dado REAL (ex.: `Conversa.atualizadoEm` vindo do banco) — diferente de
+ * `relativo()` (uso interno, comparado contra `HOJE`, o "hoje" fixo simulado que o resto do CRM
+ * mock usa). Aqui compara contra o instante real (`Date.now()`), porque não tem sentido nenhum
+ * comparar um timestamp real de banco contra uma data fixa de demonstração.
+ */
+export function formatarTempoRelativoReal(data: Date): string {
+  const diffMin = Math.round((Date.now() - data.getTime()) / 60000);
+  if (diffMin <= 0) return "agora";
+  if (diffMin < 60) return `${diffMin} min`;
+  if (diffMin < 24 * 60) return `${Math.round(diffMin / 60)}h`;
+  return `${Math.round(diffMin / 1440)} dias`;
+}

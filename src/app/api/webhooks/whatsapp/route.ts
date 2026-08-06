@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { validarAssinaturaWebhook } from "@/lib/integracoes/meta";
+import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 
 /**
  * GET — handshake de verificação que a Meta faz uma vez, ao cadastrar a URL do webhook no painel
@@ -96,6 +97,14 @@ export async function POST(request: Request) {
             }),
             criadoEm: new Date(Number(mensagem.timestamp) * 1000),
           },
+        });
+
+        await upsertConversaAoReceberMensagem({
+          workspaceId: integracaoDoNumero.workspaceId,
+          nome: chaveContato,
+          canal: "WhatsApp",
+          contato: waId,
+          origem: "Direto",
         });
       }
     }

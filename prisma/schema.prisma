@@ -50,6 +50,37 @@ model Contato {
   etiquetas Json?
   favorito  Boolean @default(false)
 
+  conversas Conversa[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([workspaceId, nome])
+}
+
+// Uma "conversa" (thread de atendimento por canal) — nasce sozinha quando chega a primeira
+// mensagem de um contato novo por um webhook conectado (WhatsApp oficial, WhatsApp via QR/Baileys
+// ou Instagram). As mensagens em si continuam em `MensagemExtra`, casadas pelo mesmo `nome` — essa
+// tabela só guarda o estado da thread (canal, status de atendimento, não lidas, favorita...).
+model Conversa {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  contatoId        String?
+  contatoVinculado Contato? @relation(fields: [contatoId], references: [id])
+
+  nome     String
+  initials String
+  canal    String // "WhatsApp" | "Instagram" | "TikTok"
+  contato  String? // telefone/@handle de exibição
+  origem   String  @default("Direto")
+  status   String  @default("Não respondido")
+  naoLidas Int     @default(0)
+  favorita Boolean @default(false)
+
+  atendenteSelecionado String?
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
@@ -151,6 +182,7 @@ model Workspace {
   negocioCards           NegocioCard[]
   preferencias           Preferencia[]
   mensagensExtra         MensagemExtra[]
+  conversas              Conversa[]
   documentosBiblioteca   DocumentoBiblioteca[]
   formularios            Formulario[]
   respostasFormulario    RespostaFormulario[]

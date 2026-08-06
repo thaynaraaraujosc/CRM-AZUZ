@@ -8,6 +8,7 @@ import { BibliotecaDocumentosProvider } from "@/lib/biblioteca-documentos-contex
 import { CentralDiaProvider } from "@/lib/central-dia-context";
 import { ConfiguracoesProvider } from "@/lib/configuracoes-context";
 import { ConfigConversasProvider } from "@/lib/conversas-config-context";
+import { ConversasProvider } from "@/lib/conversas-context";
 import { ContatosProvider } from "@/lib/contatos-context";
 import { DocumentosProvider } from "@/lib/documentos-context";
 import { EquipeProvider } from "@/lib/equipe-context";
@@ -24,6 +25,7 @@ export default function AppLayout({
     <SessionProvider>
     <FunisProvider>
       <ContatosProvider>
+      <ConversasProvider>
         <EquipeProvider>
           <TarefasProvider>
             <AgendaProvider>
@@ -57,6 +59,7 @@ export default function AppLayout({
             </AgendaProvider>
           </TarefasProvider>
         </EquipeProvider>
+      </ConversasProvider>
       </ContatosProvider>
     </FunisProvider>
     </SessionProvider>
