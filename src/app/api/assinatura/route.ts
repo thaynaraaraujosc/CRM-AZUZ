@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PLANOS, ehPlanoValido } from "@/lib/assinatura/planos";
 import {
+  cancelarAssinatura,
   criarAssinatura,
   criarOuBuscarCliente,
   listarCobrancas,
@@ -68,6 +69,19 @@ export async function POST(request: Request) {
   const workspaceId = sessao.user.workspaceId;
   const plano = PLANOS[corpo.plano];
 
+  // Se já existe uma assinatura salva pra esse workspace, cancela a antiga na Asaas antes de criar
+  // outra — sem isso, cada troca de plano (ou cada retry depois de um erro) deixa uma assinatura
+  // órfã cobrando em paralelo na Asaas, sem ligação nenhuma com o que fica salvo aqui.
+  const assinaturaExistente = await prisma.assinatura.findUnique({ where: { workspaceId } });
+  if (assinaturaExistente?.asaasSubscriptionId && assinaturaExistente.status !== "cancelada") {
+    try {
+      await cancelarAssinatura(assinaturaExistente.asaasSubscriptionId);
+    } catch {
+      // Segue mesmo se a assinatura antiga já não existir mais (ex.: cancelada manualmente na
+      // Asaas) — não pode travar quem só quer assinar de novo.
+    }
+  }
+
   try {
     const cliente = await criarOuBuscarCliente({
       workspaceId,
@@ -100,30 +114,39 @@ export async function POST(request: Request) {
         : undefined,
     });
 
-    const assinatura = await prisma.assinatura.upsert({
-      where: { workspaceId },
-      create: {
-        id: `assinatura-${workspaceId}`,
-        workspaceId,
-        plano: corpo.plano,
-        valor: plano.valor,
-        status: assinaturaAsaas.status === "ACTIVE" ? "ativa" : "pendente",
-        asaasCustomerId: cliente.id,
-        asaasSubscriptionId: assinaturaAsaas.id,
-        formaPagamento: corpo.formaPagamento,
-        proximoVencimento: new Date(assinaturaAsaas.nextDueDate),
-      },
-      update: {
-        plano: corpo.plano,
-        valor: plano.valor,
-        status: assinaturaAsaas.status === "ACTIVE" ? "ativa" : "pendente",
-        asaasCustomerId: cliente.id,
-        asaasSubscriptionId: assinaturaAsaas.id,
-        formaPagamento: corpo.formaPagamento,
-        proximoVencimento: new Date(assinaturaAsaas.nextDueDate),
-        canceladaEm: null,
-      },
-    });
+    let assinatura;
+    try {
+      assinatura = await prisma.assinatura.upsert({
+        where: { workspaceId },
+        create: {
+          id: `assinatura-${workspaceId}`,
+          workspaceId,
+          plano: corpo.plano,
+          valor: plano.valor,
+          status: assinaturaAsaas.status === "ACTIVE" ? "ativa" : "pendente",
+          asaasCustomerId: cliente.id,
+          asaasSubscriptionId: assinaturaAsaas.id,
+          formaPagamento: corpo.formaPagamento,
+          proximoVencimento: new Date(assinaturaAsaas.nextDueDate),
+        },
+        update: {
+          plano: corpo.plano,
+          valor: plano.valor,
+          status: assinaturaAsaas.status === "ACTIVE" ? "ativa" : "pendente",
+          asaasCustomerId: cliente.id,
+          asaasSubscriptionId: assinaturaAsaas.id,
+          formaPagamento: corpo.formaPagamento,
+          proximoVencimento: new Date(assinaturaAsaas.nextDueDate),
+          canceladaEm: null,
+        },
+      });
+    } catch (erroSalvar) {
+      // A assinatura já foi criada de verdade na Asaas nesse ponto — se não conseguir salvar
+      // localmente (ex.: banco fora do ar), cancela ela na Asaas também, pra não deixar cobrança
+      // órfã que ninguém vê nesta tela.
+      await cancelarAssinatura(assinaturaAsaas.id).catch(() => {});
+      throw erroSalvar;
+    }
 
     return NextResponse.json({ assinatura });
   } catch (erro) {
