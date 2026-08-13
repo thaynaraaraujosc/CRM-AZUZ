@@ -6,6 +6,30 @@ import { prisma } from "@/lib/prisma";
 
 const ROTAS_PUBLICAS = ["/login", "/cadastro", "/formulario-preview", "/acesso-bloqueado"];
 
+/** Módulo do CRM que cada rota pertence, pro bloqueio de permissão (item 4 do pedido: "se eu
+ * restringir Formulários/Automações/Configurações, o membro realmente não pode mexer"). Checa só
+ * a permissão `_visualizar` de cada módulo — é o suficiente pra decidir se a rota inteira abre ou
+ * não; ações mais finas (criar/editar/excluir) continuam decorativas por enquanto, ver
+ * `src/lib/configuracoes/permissoes.ts`. Rota que não aparece aqui não é restringível (fica aberta
+ * pra qualquer membro logado, mesmo sem nenhuma permissão marcada). */
+const ROTA_PERMISSAO: Record<string, string> = {
+  "/contatos": "contatos_visualizar",
+  "/conversas": "wa_visualizar",
+  "/funil": "funil_visualizar",
+  "/pipeline": "funil_visualizar",
+  "/formularios": "form_visualizar",
+  "/automacoes": "auto_visualizar",
+  "/configuracoes": "config_visualizar",
+  "/relatorios": "rel_visualizar",
+  "/trafego": "rel_visualizar",
+  "/performance-vendas": "rel_visualizar",
+  "/atividades-vendas": "rel_visualizar",
+  "/jornada-cliente": "rel_visualizar",
+  "/motivos-perda": "rel_visualizar",
+  "/crm-live": "rel_visualizar",
+  "/inteligencia-comercial": "rel_visualizar",
+};
+
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -69,6 +93,18 @@ export default async function proxy(request: NextRequest) {
     }
     if (bloqueado && sessao.user.papelTipo !== "admin") {
       return NextResponse.redirect(new URL("/acesso-bloqueado", request.url));
+    }
+  }
+
+  // Permissão por módulo — admin do workspace sempre vê tudo (é o dono da conta, restringir ele
+  // mesmo não faz sentido); qualquer outro papelTipo só entra se o módulo da rota estiver marcado
+  // nas permissões dele. Sem isso, o toggle de permissão em Configurações > Usuários era só
+  // decorativo (salvava no banco, nunca impedia nada de verdade).
+  if (!sessao.user.superAdmin && sessao.user.papelTipo !== "admin" && !pathname.startsWith("/api")) {
+    const rotaBase = "/" + pathname.split("/")[1];
+    const permissaoNecessaria = ROTA_PERMISSAO[rotaBase];
+    if (permissaoNecessaria && !sessao.user.permissoes.includes(permissaoNecessaria)) {
+      return NextResponse.redirect(new URL("/inicio", request.url));
     }
   }
 

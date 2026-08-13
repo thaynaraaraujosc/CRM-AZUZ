@@ -41,6 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           initials: membro.initials,
           papelTipo: membro.papelTipo,
           role: membro.papel,
+          permissoes: Array.isArray(membro.permissoes) ? (membro.permissoes as string[]) : [],
           // Super-admin da plataforma (não confundir com `papelTipo: "admin"`, que é só admin do
           // próprio workspace) — decidido por e-mail via env var em vez de coluna no banco, porque
           // é uma conta só (a da Azuz), não um papel que qualquer workspace atribui a alguém.
@@ -78,6 +79,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           initials: membro.initials,
           papelTipo: membro.papelTipo,
           role: membro.papel,
+          permissoes: Array.isArray(membro.permissoes) ? (membro.permissoes as string[]) : [],
           superAdmin: ehSuperAdmin(membro.email),
           impersonadoPorId: verificado.superAdminId ?? undefined,
         };
@@ -92,6 +94,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.initials = user.initials;
         token.papelTipo = user.papelTipo;
         token.role = user.role;
+        token.permissoes = user.permissoes;
         token.superAdmin = user.superAdmin;
         // Some do token quando a sessão nova não é impersonação (login normal ou "voltar pro
         // admin") — senão o campo ficaria "grudado" indefinidamente numa sessão que já não é mais
@@ -107,6 +110,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.initials = token.initials as string;
       session.user.papelTipo = token.papelTipo as string;
       session.user.role = token.role as string;
+      session.user.permissoes = Array.isArray(token.permissoes) ? (token.permissoes as string[]) : [];
       session.user.superAdmin = Boolean(token.superAdmin);
       session.user.impersonadoPorId = token.impersonadoPorId as string | undefined;
       return session;

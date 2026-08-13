@@ -1,21 +1,9 @@
-import { randomBytes } from "node:crypto";
-
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
-
-/** Gera um alfabeto sem caracteres ambíguos (0/O, 1/I/l) — a senha vai ser lida em voz alta ou
- * copiada por alguém tentando resolver um problema de acesso, então evita confusão visual. */
-const ALFABETO = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
-
-function gerarSenhaAleatoria(tamanho = 12): string {
-  const bytes = randomBytes(tamanho);
-  let senha = "";
-  for (let i = 0; i < tamanho; i++) senha += ALFABETO[bytes[i] % ALFABETO.length];
-  return senha;
-}
+import { gerarSenhaAleatoria } from "@/lib/senha-aleatoria";
 
 /**
  * POST gera uma senha nova aleatória pro membro e já salva o hash dela no banco — a senha em

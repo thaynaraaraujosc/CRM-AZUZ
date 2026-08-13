@@ -6,7 +6,12 @@ import { useState } from "react";
 import { useContatos } from "@/lib/contatos-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useTarefas } from "@/lib/tarefas-context";
+import { PERMISSOES_POR_MODULO } from "@/lib/configuracoes/permissoes";
 import { Toggle, Topbar } from "@/components/ui";
+
+const LABEL_PERMISSAO: Record<string, string> = Object.fromEntries(
+  PERMISSOES_POR_MODULO.flatMap((grupo) => grupo.permissoes.map((p) => [p.id, `${grupo.modulo} · ${p.label}`])),
+);
 
 function classePapel(papel: string) {
   const slug = papel.toLowerCase().replace(/[^a-z]+/g, "-");
@@ -14,11 +19,12 @@ function classePapel(papel: string) {
 }
 
 export default function EquipePage() {
-  const { membros: equipe, alternarAtivo } = useEquipe();
+  const { membros: equipe, alternarAtivo, removerMembro, resetarSenha } = useEquipe();
   const { colunas } = useTarefas();
   const { contatos } = useContatos();
   const [selecionado, setSelecionado] = useState<string | null>(null);
-  const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [senhaGerada, setSenhaGerada] = useState<string | null>(null);
+  const [gerandoSenha, setGerandoSenha] = useState(false);
 
   const membro = equipe.find((m) => m.nome === selecionado) ?? null;
   const tarefasDoMembro = membro
@@ -73,7 +79,7 @@ export default function EquipePage() {
                           setSelecionado((atual) =>
                             atual === m.nome ? null : m.nome,
                           );
-                          setSenhaVisivel(false);
+                          setSenhaGerada(null);
                         }}
                       >
                         <div className="avatar">
@@ -169,6 +175,21 @@ export default function EquipePage() {
                   {membro.papelNota ? ` ${membro.papelNota}` : ""}
                 </p>
               </div>
+              <button
+                type="button"
+                className="btn ghost danger"
+                style={{ marginLeft: "auto", marginRight: 10 }}
+                onClick={() => {
+                  const mensagem = membro.convitePendente
+                    ? `Excluir o convite de ${membro.nome}? Ele deixa de existir — dá pra convidar outro e-mail depois.`
+                    : `Excluir ${membro.nome} da equipe? Ele perde o acesso ao CRM na hora.`;
+                  if (!window.confirm(mensagem)) return;
+                  removerMembro(membro.id);
+                  setSelecionado(null);
+                }}
+              >
+                Excluir
+              </button>
               <span
                 className="close"
                 style={{ cursor: "pointer" }}
@@ -188,39 +209,38 @@ export default function EquipePage() {
                   <div className="input">{membro.email}</div>
                 </div>
                 <div className="field">
-                  <label>Senha atual</label>
-                  {membro.senha ? (
+                  <label>Senha</label>
+                  {membro.convitePendente ? (
+                    <span className="pill">Ainda não definida — convite pendente</span>
+                  ) : senhaGerada ? (
+                    <div className="key-row" style={{ padding: 0 }}>
+                      <div className="key-box">{senhaGerada}</div>
+                      <button type="button" className="btn ghost" onClick={() => navigator.clipboard?.writeText(senhaGerada)}>
+                        Copiar
+                      </button>
+                      <button type="button" className="btn ghost" onClick={() => setSenhaGerada(null)}>
+                        Fechar
+                      </button>
+                    </div>
+                  ) : (
                     <>
-                      <div className="key-row" style={{ padding: 0 }}>
-                        <div className="key-box">
-                          {senhaVisivel ? membro.senha : "•".repeat(membro.senha.length)}
-                        </div>
-                        <button
-                          type="button"
-                          className="btn ghost"
-                          onClick={() => setSenhaVisivel((v) => !v)}
-                        >
-                          {senhaVisivel ? "Ocultar" : "Mostrar"}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn ghost"
-                          onClick={() =>
-                            navigator.clipboard?.writeText(membro.senha ?? "")
-                          }
-                        >
-                          Copiar
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        disabled={gerandoSenha}
+                        onClick={async () => {
+                          setGerandoSenha(true);
+                          const nova = await resetarSenha(membro.id);
+                          setSenhaGerada(nova);
+                          setGerandoSenha(false);
+                        }}
+                      >
+                        {gerandoSenha ? "Gerando…" : "Gerar nova senha"}
+                      </button>
                       <p className="hint" style={{ padding: "8px 0 0" }}>
-                        Só quem é Admin enxerga essa senha — use pra ajudar em
-                        caso de esquecimento.
+                        A senha antiga não pode ser mostrada (é guardada de forma irreversível). Gerar uma nova substitui a atual — repasse pra pessoa.
                       </p>
                     </>
-                  ) : (
-                    <span className="pill">
-                      Ainda não definida — convite pendente
-                    </span>
                   )}
                 </div>
 
@@ -233,9 +253,8 @@ export default function EquipePage() {
                   </p>
                 ) : (
                   membro.permissoes.map((permissao) => (
-                    <div className="toggle-row" key={permissao}>
-                      <span className="tl">{permissao}</span>
-                      <Toggle defaultOn label={permissao} />
+                    <div className="stat-row" key={permissao}>
+                      <span className="sl">{LABEL_PERMISSAO[permissao] ?? permissao}</span>
                     </div>
                   ))
                 )}
