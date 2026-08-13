@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 
 import { Topbar } from "@/components/ui";
 import { PLANOS, type PlanoId } from "@/lib/assinatura/planos";
+import { useAcoesMembro } from "@/lib/admin/use-acoes-membro";
 
 type Membro = {
   id: string;
@@ -49,6 +50,7 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
   const { id } = use(params);
   const [workspace, setWorkspace] = useState<WorkspaceDetalhe | null>(null);
   const [salvandoAssinatura, setSalvandoAssinatura] = useState(false);
+  const { senhaGerada, setSenhaGerada, carregandoId, resetarSenha, entrarComo } = useAcoesMembro();
 
   function carregar() {
     fetch(`/api/admin/workspaces/${id}`)
@@ -161,6 +163,24 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
 
       <div className="config-bloco">
         <p className="config-bloco-titulo">Membros ({workspace.membros.length})</p>
+
+        {senhaGerada ? (
+          <div className="config-grid-2" style={{ padding: "0 17px 14px" }}>
+            <div className="field" style={{ padding: 0, gridColumn: "1 / -1" }}>
+              <label>Senha nova gerada — copie agora, ela não aparece de novo</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input className="input" style={{ width: "100%", fontFamily: "monospace" }} readOnly value={senhaGerada.senha} />
+                <button type="button" className="btn ghost" onClick={() => navigator.clipboard.writeText(senhaGerada.senha)}>
+                  Copiar
+                </button>
+                <button type="button" className="btn ghost" onClick={() => setSenhaGerada(null)}>
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <div className="config-tabela-scroll">
           <table className="config-tabela-notif">
             <thead>
@@ -170,6 +190,7 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
                 <th>Papel</th>
                 <th>Tipo</th>
                 <th>Acesso</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -192,6 +213,14 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
                   <td>
                     <button type="button" className={`btn ghost${m.ativo ? "" : " danger"}`} onClick={() => alterarMembro(m.id, { ativo: !m.ativo })}>
                       {m.ativo ? "Ativo" : "Bloqueado"}
+                    </button>
+                  </td>
+                  <td style={{ display: "flex", gap: 6 }}>
+                    <button type="button" className="btn ghost" disabled={carregandoId === m.id} onClick={() => resetarSenha(m.id)}>
+                      Gerar nova senha
+                    </button>
+                    <button type="button" className="btn ghost" disabled={carregandoId === m.id} onClick={() => entrarComo(m.id)}>
+                      Entrar como
                     </button>
                   </td>
                 </tr>

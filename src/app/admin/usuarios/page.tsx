@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { Topbar } from "@/components/ui";
+import { useAcoesMembro } from "@/lib/admin/use-acoes-membro";
 
 type MembroLinha = {
   id: string;
@@ -34,6 +35,7 @@ export default function AdminUsuariosPage() {
   const [membros, setMembros] = useState<MembroLinha[] | null>(null);
   const [busca, setBusca] = useState("");
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
+  const { senhaGerada, setSenhaGerada, carregandoId, resetarSenha, entrarComo } = useAcoesMembro();
 
   useEffect(() => {
     fetch("/api/admin/membros")
@@ -100,6 +102,21 @@ export default function AdminUsuariosPage() {
         />
       </div>
 
+      {senhaGerada ? (
+        <div className="field" style={{ padding: "0 17px 14px" }}>
+          <label>Senha nova gerada — copie agora, ela não aparece de novo</label>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input className="input" style={{ width: "100%", fontFamily: "monospace" }} readOnly value={senhaGerada.senha} />
+            <button type="button" className="btn ghost" onClick={() => navigator.clipboard.writeText(senhaGerada.senha)}>
+              Copiar
+            </button>
+            <button type="button" className="btn ghost" onClick={() => setSenhaGerada(null)}>
+              Fechar
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div style={{ padding: "0 17px 17px", display: "flex", flexDirection: "column", gap: 10 }}>
         {!membros ? (
           <p style={{ color: "var(--text-muted)" }}>Carregando…</p>
@@ -156,6 +173,7 @@ export default function AdminUsuariosPage() {
                           <th>Tipo</th>
                           <th>Desde</th>
                           <th>Acesso</th>
+                          <th>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -179,6 +197,14 @@ export default function AdminUsuariosPage() {
                                 onClick={() => alterarMembro(m.id, { ativo: !m.ativo })}
                               >
                                 {m.ativo ? "Ativo" : "Bloqueado"}
+                              </button>
+                            </td>
+                            <td style={{ display: "flex", gap: 6 }}>
+                              <button type="button" className="btn ghost" disabled={carregandoId === m.id} onClick={() => resetarSenha(m.id)}>
+                                Gerar nova senha
+                              </button>
+                              <button type="button" className="btn ghost" disabled={carregandoId === m.id} onClick={() => entrarComo(m.id)}>
+                                Entrar como
                               </button>
                             </td>
                           </tr>

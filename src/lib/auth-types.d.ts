@@ -8,6 +8,9 @@ declare module "next-auth" {
     papelTipo: string;
     role: string;
     superAdmin: boolean;
+    /** Id do Membro super-admin que iniciou a impersonação — só existe enquanto a sessão atual é
+     * um "entrar como" de outro usuário; ausente numa sessão normal. */
+    impersonadoPorId?: string;
   }
 
   interface Session {
@@ -18,6 +21,7 @@ declare module "next-auth" {
       papelTipo: string;
       role: string;
       superAdmin: boolean;
+      impersonadoPorId?: string;
     } & DefaultSession["user"];
   }
 }
@@ -30,5 +34,6 @@ declare module "next-auth/jwt" {
     papelTipo: string;
     role: string;
     superAdmin: boolean;
+    impersonadoPorId?: string;
   }
 }
