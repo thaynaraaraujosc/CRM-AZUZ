@@ -7,6 +7,7 @@ declare module "next-auth" {
     initials: string;
     papelTipo: string;
     role: string;
+    superAdmin: boolean;
   }
 
   interface Session {
@@ -16,6 +17,7 @@ declare module "next-auth" {
       initials: string;
       papelTipo: string;
       role: string;
+      superAdmin: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -27,5 +29,6 @@ declare module "next-auth/jwt" {
     initials: string;
     papelTipo: string;
     role: string;
+    superAdmin: boolean;
   }
 }

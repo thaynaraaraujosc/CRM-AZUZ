@@ -27,6 +27,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const senhaValida = await bcrypt.compare(senha, membro.senha);
         if (!senhaValida) return null;
 
+        // Super-admin da plataforma (não confundir com `papelTipo: "admin"`, que é só admin do
+        // próprio workspace) — decidido por e-mail via env var em vez de coluna no banco, porque é
+        // uma conta só (a da Azuz), não um papel que qualquer workspace atribui a alguém.
+        const superAdmin = membro.email.toLowerCase() === process.env.SUPERADMIN_EMAIL?.toLowerCase();
+
         return {
           id: membro.id,
           name: membro.nome,
@@ -36,6 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           initials: membro.initials,
           papelTipo: membro.papelTipo,
           role: membro.papel,
+          superAdmin,
         };
       },
     }),
@@ -48,6 +54,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.initials = user.initials;
         token.papelTipo = user.papelTipo;
         token.role = user.role;
+        token.superAdmin = user.superAdmin;
       }
       return token;
     },
@@ -58,6 +65,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.initials = token.initials as string;
       session.user.papelTipo = token.papelTipo as string;
       session.user.role = token.role as string;
+      session.user.superAdmin = Boolean(token.superAdmin);
       return session;
     },
   },

@@ -39,7 +39,16 @@ function LoginForm() {
       return;
     }
 
-    router.push(searchParams.get("callbackUrl") ?? "/inicio");
+    // callbackUrl (deep link, ex.: proxy mandou pra cá a partir de /admin/workspaces sem sessão)
+    // tem prioridade; sem ela, super-admin cai direto no painel de admin, todo o resto vai pro
+    // painel normal do workspace.
+    const callbackUrl = searchParams.get("callbackUrl");
+    if (callbackUrl) {
+      router.push(callbackUrl);
+    } else {
+      const sessao = await fetch("/api/auth/session").then((r) => r.json());
+      router.push(sessao?.user?.superAdmin ? "/admin" : "/inicio");
+    }
     router.refresh();
   }
 

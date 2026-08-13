@@ -35,6 +35,15 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Painel de super-admin (visão cross-tenant de todos os workspaces) — só a conta marcada como
+  // superAdmin em `auth.ts` (via SUPERADMIN_EMAIL) pode entrar; qualquer outro Membro logado que
+  // tentar acessar /admin ou /api/admin/* volta pro próprio workspace, não pro login (ele está
+  // autenticado, só não tem permissão pra essa área).
+  const rotaDeAdmin = pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/api/admin/");
+  if (rotaDeAdmin && !sessao.user.superAdmin) {
+    return NextResponse.redirect(new URL("/inicio", request.url));
+  }
+
   return NextResponse.next();
 }
 
