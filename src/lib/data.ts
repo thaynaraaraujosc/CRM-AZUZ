@@ -984,44 +984,6 @@ export const segmentos = [
 /** Interseção de "contatos de julho 2026" com "fecharam negócio". */
 export const audienciaSelecionada = 36;
 
-export const acaoRascunho = {
-  midia: "Imagem",
-  legenda:
-    "Promoção especial de agosto: acompanhamento nutricional com 20% off só essa semana 💙",
-  envio: "Hoje às 18h · WhatsApp e Instagram",
-};
-
-export const acoesAnteriores = [
-  {
-    titulo: "Dia Mundial do Diabetes · campanha",
-    meta: "247 contatos · leads de julho",
-    midia: "imagem" as const,
-    status: "Enviado",
-    agendado: false,
-    data: "14 nov",
-    /** Só uma amostra — os outros contatos que receberam não têm conversa aberta no WhatsApp. */
-    contatos: ["Marcos Aurélio", "Camila Duarte", "Fernando Lima"],
-  },
-  {
-    titulo: "Reativação · não fecharam há 6 meses",
-    meta: "89 contatos · áudio",
-    midia: "audio" as const,
-    status: "Enviado",
-    agendado: false,
-    data: "22 dez",
-    contatos: ["Renata Farias", "Paulo Lacerda"],
-  },
-  {
-    titulo: "Evento de agosto · convite",
-    meta: "36 contatos · imagem",
-    midia: "imagem" as const,
-    status: "Agendado · hoje 18h",
-    agendado: true,
-    data: "hoje 18h",
-    contatos: ["Beatriz Nogueira", "Julia Prado", "Lorena Bastos"],
-  },
-];
-
 /* -------------------------------------------------------------------------- */
 /* Equipe                                                                     */
 /* -------------------------------------------------------------------------- */

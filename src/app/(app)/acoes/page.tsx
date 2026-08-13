@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { acaoRascunho, acoesAnteriores, classeOrigem } from "@/lib/data";
+import { classeOrigem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { IconDoc, IconImage, IconMic, IconSearch } from "@/components/icons";
 import { FloatingDropdown, MediaPicker, SegmentChips, Topbar } from "@/components/ui";
@@ -31,10 +31,26 @@ const PERIODOS = [
 type PeriodoValor = (typeof PERIODOS)[number]["valor"] | "personalizado";
 type ModoAudiencia = "periodo" | "origem" | "manual";
 
+type AcaoEnvio = {
+  id: string;
+  titulo: string;
+  legenda: string | null;
+  midiaTipo: "imagem" | "audio" | "texto";
+  canais: string[];
+  agendadoPara: string;
+  contatos: string[];
+  criadoEm: string;
+};
+
+function formatarDataHora(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
 function formatarDataEnvio(iso: string) {
   if (!iso) return "Escolha a data";
   const [ano, mes, dia] = iso.split("-");
-  if (iso === "2026-08-02") return "Hoje";
+  if (iso === new Date().toISOString().slice(0, 10)) return "Hoje";
   return `${dia}/${mes}/${ano}`;
 }
 
@@ -72,18 +88,26 @@ export default function AcoesPage() {
   const [listaAberta, setListaAberta] = useState(false);
   const [buscaContato, setBuscaContato] = useState("");
   const [midia, setMidia] = useState("Imagem");
-  const [legenda, setLegenda] = useState(acaoRascunho.legenda);
+  const [legenda, setLegenda] = useState("");
   const [canaisEnvio, setCanaisEnvio] = useState(
     () => CANAIS_ENVIO.filter((c) => c.ativo).map((c) => c.label),
   );
-  const [historicoAcoes, setHistoricoAcoes] = useState<
-    (Omit<(typeof acoesAnteriores)[number], "midia"> & { midia: "imagem" | "audio" | "texto" })[]
-  >(acoesAnteriores);
+  const [historicoAcoes, setHistoricoAcoes] = useState<AcaoEnvio[]>([]);
+  const [carregandoHistorico, setCarregandoHistorico] = useState(true);
   const [toastAcao, setToastAcao] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/acoes")
+      .then((r) => r.json())
+      .then(setHistoricoAcoes)
+      .catch((erro) => console.error("Falha ao carregar ações:", erro))
+      .finally(() => setCarregandoHistorico(false));
+  }, []);
 
   const [envioAberto, setEnvioAberto] = useState(false);
   const [envioRect, setEnvioRect] = useState<DOMRect | null>(null);
-  const [envioData, setEnvioData] = useState("2026-08-02");
+  const [envioData, setEnvioData] = useState(() => new Date().toISOString().slice(0, 10));
   const [envioHora, setEnvioHora] = useState("18:00");
 
   const [modoAudiencia, setModoAudiencia] = useState<ModoAudiencia>("manual");
@@ -102,6 +126,7 @@ export default function AcoesPage() {
   const [submenuRect, setSubmenuRect] = useState<DOMRect | null>(null);
 
   const [acaoExpandida, setAcaoExpandida] = useState<string | null>(null);
+  const [agora] = useState(() => Date.now());
 
   function cancelarFechamentoAudiencia() {
     if (audienciaFecharRef.current) {
@@ -230,26 +255,39 @@ export default function AcoesPage() {
     setGravando(false);
   }
 
-  function agendarEnvio() {
-    if (selecionados.size === 0 || canaisEnvio.length === 0) return;
+  async function agendarEnvio() {
+    if (selecionados.size === 0 || canaisEnvio.length === 0 || enviando) return;
     const midiaChave = midia === "Imagem" ? "imagem" : midia === "Áudio" ? "audio" : "texto";
     const tituloBase = legenda.trim() || `Ação · ${midia.toLowerCase()}`;
-    const agendadoParaHoje = envioData === "2026-08-02";
-    const dataLabel = agendadoParaHoje ? `hoje ${envioHora}` : `${formatarDataEnvio(envioData)} ${envioHora}`;
-    setHistoricoAcoes((prev) => [
-      {
-        titulo: tituloBase.length > 60 ? `${tituloBase.slice(0, 57)}…` : tituloBase,
-        meta: `${selecionados.size} contatos · ${midia.toLowerCase()}`,
-        midia: midiaChave,
-        status: `Agendado · ${dataLabel}`,
-        agendado: true,
-        data: dataLabel,
-        contatos: Array.from(selecionados).slice(0, 3),
-      },
-      ...prev,
-    ]);
-    setToastAcao(`Envio agendado para ${selecionados.size} contatos.`);
-    setTimeout(() => setToastAcao(null), 4000);
+    const titulo = tituloBase.length > 60 ? `${tituloBase.slice(0, 57)}…` : tituloBase;
+    const agendadoPara = new Date(`${envioData}T${envioHora}:00`).toISOString();
+
+    setEnviando(true);
+    try {
+      const resposta = await fetch("/api/acoes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo,
+          legenda: legenda.trim() || undefined,
+          midiaTipo: midiaChave,
+          canais: canaisEnvio,
+          agendadoPara,
+          contatos: Array.from(selecionados),
+        }),
+      });
+      if (!resposta.ok) throw new Error("Falha ao agendar ação");
+      const acao: AcaoEnvio = await resposta.json();
+      setHistoricoAcoes((prev) => [acao, ...prev]);
+      setToastAcao(`Envio agendado para ${selecionados.size} contatos.`);
+      setTimeout(() => setToastAcao(null), 4000);
+    } catch (erro) {
+      console.error("Falha ao agendar ação:", erro);
+      setToastAcao("Não foi possível agendar o envio. Tente novamente.");
+      setTimeout(() => setToastAcao(null), 4000);
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -758,10 +796,10 @@ export default function AcoesPage() {
                 <button
                   type="button"
                   className="btn primary block"
-                  disabled={selecionados.size === 0 || canaisEnvio.length === 0}
+                  disabled={selecionados.size === 0 || canaisEnvio.length === 0 || enviando}
                   onClick={agendarEnvio}
                 >
-                  Agendar envio pra {selecionados.size} contatos
+                  {enviando ? "Agendando…" : `Agendar envio pra ${selecionados.size} contatos`}
                 </button>
               </div>
             </div>
@@ -771,57 +809,65 @@ export default function AcoesPage() {
             <div className="panel-h">
               <h4>Ações anteriores</h4>
             </div>
-            {historicoAcoes.map((acao) => {
-              const expandida = acaoExpandida === acao.titulo;
-              return (
-                <div key={acao.titulo}>
-                  <button
-                    type="button"
-                    className="broadcast-row"
-                    style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
-                    aria-expanded={expandida}
-                    onClick={() =>
-                      setAcaoExpandida((atual) => (atual === acao.titulo ? null : acao.titulo))
-                    }
-                  >
-                    <div className="broadcast-icon">{iconePorMidia[acao.midia]}</div>
-                    <div className="broadcast-body">
-                      <p className="broadcast-title">{acao.titulo}</p>
-                      <p className="broadcast-meta">{acao.meta}</p>
-                    </div>
-                    <span
-                      className={`broadcast-status ${
-                        acao.agendado ? "scheduled" : "sent"
-                      }`}
+            {carregandoHistorico ? (
+              <p className="hint" style={{ padding: "14px 17px" }}>
+                Carregando ações…
+              </p>
+            ) : historicoAcoes.length === 0 ? (
+              <p className="hint" style={{ padding: "14px 17px" }}>
+                Nenhuma ação agendada ainda. Configure ao lado e agende o primeiro envio.
+              </p>
+            ) : (
+              historicoAcoes.map((acao) => {
+                const expandida = acaoExpandida === acao.id;
+                const jaPassou = new Date(acao.agendadoPara).getTime() <= agora;
+                const meta = `${acao.contatos.length} contatos · ${acao.midiaTipo} · ${acao.canais.join(" e ")}`;
+                const statusLabel = `${jaPassou ? "Enviado" : "Agendado"} · ${formatarDataHora(acao.agendadoPara)}`;
+                return (
+                  <div key={acao.id}>
+                    <button
+                      type="button"
+                      className="broadcast-row"
+                      style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
+                      aria-expanded={expandida}
+                      onClick={() =>
+                        setAcaoExpandida((atual) => (atual === acao.id ? null : acao.id))
+                      }
                     >
-                      {acao.status}
-                    </span>
-                  </button>
-                  {expandida ? (
-                    <div style={{ padding: "0 17px 14px", borderBottom: "1px solid var(--line-soft)" }}>
-                      <p className="hint" style={{ margin: "0 0 8px" }}>
-                        Contatos que receberam — clique num contato pra ir direto na conversa
-                        do dia {acao.data}
-                      </p>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        {acao.contatos.map((nome) => (
-                          <Link
-                            key={nome}
-                            href={`/conversas?contato=${encodeURIComponent(nome)}`}
-                            className="activity-row activity-row-link"
-                          >
-                            <div className="body">
-                              <p className="name">{nome}</p>
-                            </div>
-                            <span className="meta">Ver conversa ▸</span>
-                          </Link>
-                        ))}
+                      <div className="broadcast-icon">{iconePorMidia[acao.midiaTipo]}</div>
+                      <div className="broadcast-body">
+                        <p className="broadcast-title">{acao.titulo}</p>
+                        <p className="broadcast-meta">{meta}</p>
                       </div>
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
+                      <span className={`broadcast-status ${jaPassou ? "sent" : "scheduled"}`}>
+                        {statusLabel}
+                      </span>
+                    </button>
+                    {expandida ? (
+                      <div style={{ padding: "0 17px 14px", borderBottom: "1px solid var(--line-soft)" }}>
+                        <p className="hint" style={{ margin: "0 0 8px" }}>
+                          Contatos que vão receber — clique num contato pra ir direto na conversa
+                        </p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          {acao.contatos.map((nome) => (
+                            <Link
+                              key={nome}
+                              href={`/conversas?contato=${encodeURIComponent(nome)}`}
+                              className="activity-row activity-row-link"
+                            >
+                              <div className="body">
+                                <p className="name">{nome}</p>
+                              </div>
+                              <span className="meta">Ver conversa ▸</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

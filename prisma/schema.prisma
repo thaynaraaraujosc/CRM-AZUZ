@@ -191,6 +191,7 @@ model Workspace {
   modelosPersonalizados  ModeloPersonalizado[]
   integracoes            Integracao[]
   assinatura             Assinatura?
+  acoesEnvio             AcaoEnvio[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -490,7 +491,7 @@ model Assinatura {
   workspaceId String    @unique
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  plano String // "essencial" | "completo" | "escala"
+  plano String // "completo" — plano único do CRM, ver src/lib/assinatura/planos.ts
   valor Decimal @db.Decimal(10, 2)
 
   status String // "pendente" | "ativa" | "atrasada" | "cancelada"
@@ -504,4 +505,28 @@ model Assinatura {
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
+}
+
+// Ações (item 7 do pedido de novas demandas) — lista de transmissão agendada/enviada, tela
+// "Ações". Antes o histórico inteiro (inclusive "Dia Mundial do Diabetes", "Reativação"...) era
+// mock fixo em src/lib/data.ts, e "Agendar envio" só empilhava em memória (sumia no F5). Guarda só
+// o registro da ação em si — o disparo de verdade pros contatos (via WhatsApp/Instagram/SMS) ainda
+// não existe (precisaria de um agendador/fila rodando fora do request, fora do escopo agora); por
+// enquanto fica marcado como "Agendado" e é isso.
+model AcaoEnvio {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  titulo     String
+  legenda    String?   @db.Text
+  midiaTipo  String // "imagem" | "audio" | "texto"
+  canais     Json // string[] — "WhatsApp" | "Instagram" | "E-mail" | "SMS"
+  agendadoPara DateTime
+  // Snapshot dos nomes dos contatos no momento da criação — não é uma relação de verdade porque
+  // Contato não tem id estável o suficiente pra isso ainda (mesmo padrão já aceito em outras
+  // tabelas desta fase, ver `TarefaCard.contato`).
+  contatos   Json // string[]
+
+  criadoEm DateTime @default(now())
 }
