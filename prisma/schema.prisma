@@ -190,6 +190,7 @@ model Workspace {
   documentos             Documento[]
   modelosPersonalizados  ModeloPersonalizado[]
   integracoes            Integracao[]
+  assinatura             Assinatura?
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -476,4 +477,31 @@ model Integracao {
   atualizadoEm DateTime @updatedAt
 
   @@unique([workspaceId, provedor])
+}
+
+// Assinatura do próprio CRM (cobrança da mensalidade do workspace via Asaas) — não confundir com
+// `Integracao`: aqui não é o cliente conectando a conta Asaas dele, é a Azuz cobrando o cliente
+// pela conta Asaas da própria Azuz. Uma linha por workspace (1:1). O histórico de cobranças não é
+// espelhado no banco — é buscado ao vivo na Asaas (`GET /subscriptions/{id}/payments`) pra nunca
+// dessincronizar; aqui só fica o suficiente pra saber o status atual sem chamar a API a cada
+// carregamento de tela.
+model Assinatura {
+  id          String    @id
+  workspaceId String    @unique
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  plano String // "essencial" | "completo" | "escala"
+  valor Decimal @db.Decimal(10, 2)
+
+  status String // "pendente" | "ativa" | "atrasada" | "cancelada"
+
+  asaasCustomerId     String
+  asaasSubscriptionId String?
+  formaPagamento      String? // "BOLETO" | "CREDIT_CARD" | "PIX"
+
+  proximoVencimento DateTime?
+  canceladaEm       DateTime?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 }
