@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-const ROTAS_PUBLICAS = ["/login", "/cadastro", "/formulario-preview"];
+const ROTAS_PUBLICAS = ["/login", "/cadastro", "/formulario-preview", "/acesso-bloqueado"];
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -42,6 +43,26 @@ export default async function proxy(request: NextRequest) {
   const rotaDeAdmin = pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/api/admin/");
   if (rotaDeAdmin && !sessao.user.superAdmin) {
     return NextResponse.redirect(new URL("/inicio", request.url));
+  }
+
+  // Bloqueio automático por assinatura atrasada/cancelada — consulta o banco a cada navegação de
+  // página (não em chamada de API, pra não quebrar os providers do shell que buscam dado em
+  // segundo plano) porque o status muda por webhook da Asaas, fora do controle de quando o token
+  // JWT da sessão foi emitido; não dá pra confiar em cache de sessão pra isso. Super-admin nunca é
+  // afetado (ele não é "de" nenhum workspace pra fins de cobrança).
+  if (!sessao.user.superAdmin && !pathname.startsWith("/api")) {
+    const assinatura = await prisma.assinatura.findUnique({
+      where: { workspaceId: sessao.user.workspaceId },
+      select: { status: true },
+    });
+    const bloqueado = assinatura && (assinatura.status === "atrasada" || assinatura.status === "cancelada");
+
+    if (bloqueado && sessao.user.papelTipo === "admin" && pathname !== "/configuracoes") {
+      return NextResponse.redirect(new URL("/configuracoes", request.url));
+    }
+    if (bloqueado && sessao.user.papelTipo !== "admin") {
+      return NextResponse.redirect(new URL("/acesso-bloqueado", request.url));
+    }
   }
 
   return NextResponse.next();
