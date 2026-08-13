@@ -10,7 +10,9 @@ export type PlanoId = "completo";
 export const PLANOS: Record<PlanoId, { nome: string; valor: number; recursos: string[] }> = {
   completo: {
     nome: "Completo",
-    valor: 249.9,
+    // TODO: valor de teste — voltar pra 249.9 antes de divulgar o cadastro (ver commit que
+    // baixou isso pra R$ 5 só pra testar o pagamento de ponta a ponta na Asaas produção).
+    valor: 5,
     recursos: ["Funis ilimitados", "WhatsApp/Instagram/TikTok", "Automações", "Azuz IA", "Usuários ilimitados"],
   },
 };

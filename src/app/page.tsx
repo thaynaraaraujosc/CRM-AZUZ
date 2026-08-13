@@ -11,6 +11,7 @@ import {
   IconRelatorios,
   IconSparkle,
 } from "@/components/icons";
+import { PLANOS } from "@/lib/assinatura/planos";
 
 export const metadata: Metadata = {
   title: "CRM AZUZ — WhatsApp, funil e automação num só lugar",
@@ -483,7 +484,8 @@ export default function LandingPage() {
           <section className="lp-pricing">
             <p className="lp-pricing-tag">Plano único</p>
             <p className="lp-price">
-              R$ 249,90<span>/mês</span>
+              {PLANOS.completo.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              <span>/mês</span>
             </p>
             <p className="lp-pricing-sub">Todos os recursos, usuários ilimitados, sem taxa de setup.</p>
             <div className="lp-checklist">
