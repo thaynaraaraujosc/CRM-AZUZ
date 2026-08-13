@@ -10,6 +10,9 @@ export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (
+    // Landing page pública — raiz do domínio, sem sessão nenhuma. Comparação exata (não prefixo,
+    // ao contrário de `ROTAS_PUBLICAS`) porque "/" é prefixo de tudo.
+    pathname === "/" ||
     ROTAS_PUBLICAS.some((rota) => pathname === rota || pathname.startsWith(`${rota}/`)) ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/formularios") ||
