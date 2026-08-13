@@ -209,30 +209,26 @@ export function PlanoSecao() {
       </div>
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Comparar planos</p>
+        <p className="config-bloco-titulo">Plano</p>
         <div className="config-canais-grid">
-          {(Object.entries(PLANOS) as [PlanoId, (typeof PLANOS)[PlanoId]][]).map(([id, p]) => (
-            <div className="config-canal-card" key={id}>
-              <div className="config-canal-card-h">
-                <span className="n">{p.nome}</span>
-                {id === planoAtualId ? <span className="pill on">Atual</span> : null}
-              </div>
-              <p className="plano-valor" style={{ fontSize: 20 }}>
-                {formatarMoeda(p.valor)}
-                <span style={{ fontSize: 11 }}>/mês</span>
-              </p>
-              <ul style={{ margin: "6px 0 10px", paddingLeft: 18, fontSize: 11.5, color: "var(--text-muted)" }}>
-                {p.recursos.map((r) => (
-                  <li key={r}>{r}</li>
-                ))}
-              </ul>
-              {id !== planoAtualId ? (
-                <button type="button" className="btn ghost" onClick={() => { setPlanoEmEdicao(id); setErroEnvio(null); }}>
-                  {assinatura ? "Alterar plano" : "Assinar"}
-                </button>
-              ) : null}
+          <div className="config-canal-card">
+            <div className="config-canal-card-h">
+              <span className="n">{PLANOS.completo.nome}</span>
+              {assinatura?.status === "ativa" ? <span className="pill on">Atual</span> : null}
             </div>
-          ))}
+            <p className="plano-valor" style={{ fontSize: 20 }}>
+              {formatarMoeda(PLANOS.completo.valor)}
+              <span style={{ fontSize: 11 }}>/mês</span>
+            </p>
+            <ul style={{ margin: "6px 0 10px", paddingLeft: 18, fontSize: 11.5, color: "var(--text-muted)" }}>
+              {PLANOS.completo.recursos.map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+            <button type="button" className="btn ghost" onClick={() => { setPlanoEmEdicao("completo"); setErroEnvio(null); }}>
+              {assinatura?.status === "ativa" ? "Atualizar forma de pagamento" : "Assinar agora"}
+            </button>
+          </div>
         </div>
       </div>
 

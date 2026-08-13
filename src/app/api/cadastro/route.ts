@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
+import { PLANOS } from "@/lib/assinatura/planos";
 
 /**
  * POST cria uma empresa nova (Workspace) + o primeiro Membro (admin) numa transação — fluxo de
@@ -82,6 +83,20 @@ export async function POST(request: Request) {
         permissoes: [],
         ativo: true,
         convitePendente: false,
+      },
+    });
+
+    // Assinatura nasce "pendente" — sem isso o proxy (bloqueio por pagamento, ver `proxy.ts`)
+    // trataria um workspace novo como "sem assinatura" e liberaria acesso total até alguém pagar,
+    // que é exatamente o buraco que fechamos: nenhum workspace fica sem essa linha.
+    await tx.assinatura.create({
+      data: {
+        id: `assinatura-${workspace.id}`,
+        workspaceId: workspace.id,
+        plano: "completo",
+        valor: PLANOS.completo.valor,
+        status: "pendente",
+        asaasCustomerId: "",
       },
     });
   });

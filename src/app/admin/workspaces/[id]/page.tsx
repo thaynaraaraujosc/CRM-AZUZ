@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 
 import { Topbar } from "@/components/ui";
-import { PLANOS, type PlanoId } from "@/lib/assinatura/planos";
+import { PLANOS } from "@/lib/assinatura/planos";
 import { useAcoesMembro } from "@/lib/admin/use-acoes-membro";
 
 type Membro = {
@@ -60,12 +60,12 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
 
   useEffect(carregar, [id]);
 
-  async function alterarAssinatura(campo: "plano" | "status", valor: string) {
+  async function alterarStatusAssinatura(valor: string) {
     setSalvandoAssinatura(true);
     await fetch(`/api/admin/workspaces/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ assinatura: { [campo]: valor } }),
+      body: JSON.stringify({ assinatura: { status: valor } }),
     });
     carregar();
     setSalvandoAssinatura(false);
@@ -98,19 +98,9 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
         <div className="config-grid-2">
           <div className="field">
             <label>Plano</label>
-            <select
-              className="input"
-              style={{ width: "100%" }}
-              value={workspace.assinatura?.plano ?? "essencial"}
-              disabled={salvandoAssinatura}
-              onChange={(e) => alterarAssinatura("plano", e.target.value)}
-            >
-              {(Object.keys(PLANOS) as PlanoId[]).map((id) => (
-                <option key={id} value={id}>
-                  {PLANOS[id].nome}
-                </option>
-              ))}
-            </select>
+            <p className="r">
+              {PLANOS.completo.nome} — {PLANOS.completo.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês
+            </p>
           </div>
           <div className="field">
             <label>Status</label>
@@ -119,7 +109,7 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
               style={{ width: "100%" }}
               value={workspace.assinatura?.status ?? "ativa"}
               disabled={salvandoAssinatura}
-              onChange={(e) => alterarAssinatura("status", e.target.value)}
+              onChange={(e) => alterarStatusAssinatura(e.target.value)}
             >
               <option value="pendente">Pendente</option>
               <option value="ativa">Ativo</option>

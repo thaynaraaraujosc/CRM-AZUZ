@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { Topbar } from "@/components/ui";
 import { useConfiguracoes } from "@/lib/configuracoes-context";
@@ -36,7 +37,20 @@ import { PlanoSecao } from "@/components/configuracoes/PlanoSecao";
  * recarregar a página (troca de estado local, mesma rota).
  */
 export default function ConfiguracoesPage() {
-  const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaId>("workspace");
+  return (
+    <Suspense fallback={null}>
+      <ConfiguracoesConteudo />
+    </Suspense>
+  );
+}
+
+function ConfiguracoesConteudo() {
+  const searchParams = useSearchParams();
+  // `?categoria=plano` — usado pelo redirect pós-cadastro (proxy manda direto pra tela de
+  // pagamento, ver `src/app/cadastro/page.tsx`) pra não obrigar a pessoa a achar "Plano e
+  // cobrança" sozinha na primeira vez que entra, já bloqueada até pagar.
+  const categoriaInicial = (searchParams.get("categoria") as CategoriaId | null) ?? "workspace";
+  const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaId>(categoriaInicial);
   const { categoriaSuja } = useConfiguracoes();
   const categoria = categoriaPorId(categoriaAtiva);
 

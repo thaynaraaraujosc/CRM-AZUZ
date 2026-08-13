@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
 
 /** GET agrega números da plataforma inteira (todos os workspaces) pro dashboard do super-admin:
- * totais, MRR (soma das assinaturas ativas), distribuição por plano e crescimento de workspaces
- * nos últimos 6 meses. Tudo calculado na hora — não guarda nada derivado no banco. */
+ * totais, MRR (soma das assinaturas ativas) e crescimento de workspaces nos últimos 6 meses. Tudo
+ * calculado na hora — não guarda nada derivado no banco. */
 export async function GET() {
   const guarda = await exigirSuperAdmin();
   if (!guarda.ok) return guarda.resposta;
@@ -14,16 +14,14 @@ export async function GET() {
     prisma.workspace.count(),
     prisma.membro.count(),
     prisma.membro.count({ where: { ativo: true } }),
-    prisma.assinatura.findMany({ select: { plano: true, status: true, valor: true } }),
+    prisma.assinatura.findMany({ select: { status: true, valor: true } }),
   ]);
 
   const mrr = assinaturas.filter((a) => a.status === "ativa").reduce((soma, a) => soma + Number(a.valor), 0);
 
   const porStatus: Record<string, number> = {};
-  const porPlano: Record<string, number> = {};
   for (const a of assinaturas) {
     porStatus[a.status] = (porStatus[a.status] ?? 0) + 1;
-    porPlano[a.plano] = (porPlano[a.plano] ?? 0) + 1;
   }
 
   // Crescimento — workspaces criados por mês, últimos 6 meses (incluindo o atual).
@@ -56,7 +54,6 @@ export async function GET() {
     totalAssinaturas: assinaturas.length,
     mrr,
     porStatus,
-    porPlano,
     crescimento,
   });
 }
