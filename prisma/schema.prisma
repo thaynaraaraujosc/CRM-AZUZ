@@ -50,6 +50,11 @@ model Contato {
   etiquetas Json?
   favorito  Boolean @default(false)
 
+  // "manual" (criado por um usuário na tela de Contatos) ou "whatsapp" (nasceu sozinho quando um
+  // número novo mandou mensagem, ver upsertConversaAoReceberMensagem) — só rastreabilidade, não
+  // muda nenhum comportamento.
+  criadoVia String @default("manual")
+
   conversas Conversa[]
 
   criadoEm     DateTime @default(now())
@@ -192,6 +197,7 @@ model Workspace {
   integracoes            Integracao[]
   assinatura             Assinatura?
   acoesEnvio             AcaoEnvio[]
+  motivosPerda           MotivoPerda[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -225,6 +231,23 @@ model Membro {
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
+
+  tokensRedefinicaoSenha TokenRedefinicaoSenha[]
+}
+
+// Token de "esqueci minha senha" — mesmo espírito do token de convite (`/convite/[token]`), só que
+// pra um Membro que já existe pedindo pra trocar a própria senha. `tokenHash` (não o token cru) é o
+// que fica gravado, igual senha — o valor em texto puro só existe no link do e-mail, nunca no
+// banco. Expira rápido (curto de propósito, é um link de e-mail) e só pode ser usado uma vez
+// (`usadoEm` marca isso, evita reuso do mesmo link).
+model TokenRedefinicaoSenha {
+  id        String    @id
+  membroId  String
+  membro    Membro    @relation(fields: [membroId], references: [id])
+  tokenHash String    @unique
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  criadoEm  DateTime  @default(now())
 }
 
 // Núcleo comercial (2ª leva, último módulo) — espelha `Funil`/`ColunaFunil`/`NegocioCard` de
@@ -278,6 +301,27 @@ model NegocioCard {
   data        String
   etiquetas   Json?
   responsavel String?
+
+  // Estado de fechamento real do negócio — null = ainda aberto (só a etapa/coluna descreve onde
+  // está no funil). "ganho"/"perdido" grava o desfecho de verdade, é o que faz Inteligência
+  // Comercial (conversão, motivo de perda, faturamento) calcular sobre dado real em vez de mock.
+  statusFechamento String? // "ganho" | "perdido"
+  motivoPerda      String?
+  dataFechamento   DateTime?
+}
+
+// Motivos de perda configuráveis por workspace — usados no seletor ao marcar um NegocioCard como
+// "perdido" (ver src/app/(app)/funil/page.tsx) e nos indicadores de Inteligência Comercial. Cada
+// workspace novo ganha um seed padrão na primeira vez que a tela é acessada (não em prisma/seed.ts,
+// que só semeia o workspace de demonstração).
+model MotivoPerda {
+  id          String   @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  nome        String
+  criadoEm    DateTime @default(now())
+
+  @@unique([workspaceId, nome])
 }
 
 // Preferências simples (Notificações/Central do Dia/Configurações/Conversas-config) — cada Context
