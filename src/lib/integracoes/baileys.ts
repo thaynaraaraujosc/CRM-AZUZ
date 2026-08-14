@@ -135,3 +135,20 @@ export async function enviarMensagemBaileys(
     body: JSON.stringify({ number: destinatario.replace(/\D/g, ""), text: texto }),
   });
 }
+
+/** Cartão de contato (vCard) de verdade via `/message/sendContact` da Evolution API — mesmo
+ * endpoint usado pelo envio de texto, troca só o corpo. */
+export async function enviarContatoBaileys(
+  workspaceId: string,
+  destinatario: string,
+  contato: { nome: string; whatsapp?: string; telefoneFixo?: string },
+): Promise<void> {
+  const numero = (contato.whatsapp || contato.telefoneFixo || "").replace(/\D/g, "");
+  await chamarEvolution(`/message/sendContact/${workspaceId}`, {
+    method: "POST",
+    body: JSON.stringify({
+      number: destinatario.replace(/\D/g, ""),
+      contact: [{ fullName: contato.nome, wuid: numero, phoneNumber: numero ? `+${numero}` : "" }],
+    }),
+  });
+}

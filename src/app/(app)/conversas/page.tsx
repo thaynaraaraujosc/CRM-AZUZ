@@ -1414,16 +1414,17 @@ function ConversasPageInner() {
     if (!audioPreview) return;
     setAudioEnviando(true);
     try {
-      // Camada de serviço provisória — hoje só transforma o blob local em
-      // Object URL pra tocar na hora; quando existir back-end, aqui sobe o
-      // arquivo de verdade e troca a URL pela do storage antes de enviar.
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      // Converte o blob gravado em base64 (mesmo padrão de imagem/documento — ver
+      // `lerComoDataUrl`) antes de gravar a mensagem, pra persistir de verdade no banco (campo
+      // `extras` de MensagemExtra) em vez de um blob: URL que só existe nesta aba do navegador.
+      const url = await lerComoDataUrl(audioPreview.blob);
+      URL.revokeObjectURL(audioPreview.url);
       adicionarMensagem({
         tipo: "out",
         texto: "",
         hora: horaAgora(),
         audio: {
-          url: audioPreview.url,
+          url,
           duracao: audioPreview.duracao,
           waveform: audioPreview.waveform,
         },
@@ -1433,6 +1434,8 @@ function ConversasPageInner() {
       setAudioNiveis([]);
       setAudioPreviewTocando(false);
       setAudioPreviewProgresso(0);
+    } catch {
+      setAudioPermissaoErro("Não deu pra processar o áudio gravado. Tente gravar de novo.");
     } finally {
       setAudioEnviando(false);
     }
@@ -2199,25 +2202,58 @@ function ConversasPageInner() {
     setContatoPickerEnviando(true);
     setContatoPickerErro(null);
     try {
-      // Camada de serviço provisória — hoje só cria a bolha localmente; no
-      // futuro monta o cartão no formato que o canal aceitar (vCard, cartão
-      // nativo da API) e confirma a entrega real antes de fechar.
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const viaBaileys = contatoUsaWhatsappBaileys();
+      const destinatario = viaBaileys
+        ? contatoDaConversa?.whatsapp
+        : aberta.canal === "WhatsApp"
+          ? aberta.contato ?? contatoDaConversa?.whatsapp
+          : undefined;
+
       for (const c of contatosSelecionadosPicker) {
+        const contatoPayload = {
+          nome: c.nome,
+          whatsapp: previaCampos.telefonePrincipal ? c.whatsapp : undefined,
+          telefoneFixo: previaCampos.telefoneAlternativo ? c.telefoneFixo : undefined,
+          email: previaCampos.email ? c.email : undefined,
+          empresa: previaCampos.empresa ? c.empresa : undefined,
+          cargo: previaCampos.cargo ? c.cargo : undefined,
+        };
         adicionarMensagem({
           tipo: "out",
           texto: `👤 Contato compartilhado: ${c.nome}`,
           hora: horaAgora(),
-          contatoCompartilhado: {
-            nome: c.nome,
-            initials: c.initials,
-            whatsapp: previaCampos.telefonePrincipal ? c.whatsapp : undefined,
-            telefoneFixo: previaCampos.telefoneAlternativo ? c.telefoneFixo : undefined,
-            email: previaCampos.email ? c.email : undefined,
-            empresa: previaCampos.empresa ? c.empresa : undefined,
-            cargo: previaCampos.cargo ? c.cargo : undefined,
-          },
+          contatoCompartilhado: { ...contatoPayload, initials: c.initials },
         });
+
+        if (!destinatario) {
+          adicionarMensagem({
+            tipo: "system",
+            texto: "⚠️ Não enviado: essa conversa não tem um número de WhatsApp associado.",
+            hora: horaAgora(),
+          });
+          continue;
+        }
+
+        // Envio real do cartão (vCard) pelo canal certo — mesmo padrão de `enviarMensagemTexto`:
+        // a bolha já entrou na conversa acima, o envio roda em segundo plano e qualquer falha vira
+        // uma mensagem de sistema, não um toast que some sozinho.
+        const rota = viaBaileys ? "/api/integracoes/whatsapp-baileys/enviar" : "/api/integracoes/meta/whatsapp/enviar";
+        fetch(rota, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ destinatario, contato: contatoPayload }),
+        })
+          .then(async (r) => {
+            if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+          })
+          .catch((erro) => {
+            const motivo = erro instanceof Error && erro.message ? erro.message : "motivo desconhecido";
+            adicionarMensagem({
+              tipo: "system",
+              texto: `⚠️ Falha ao enviar contato (${c.nome}): ${motivo}`,
+              hora: horaAgora(),
+            });
+          });
       }
       fecharContatoPicker();
     } catch {
