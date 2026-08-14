@@ -50,6 +50,7 @@ import {
   type FundoConversa,
 } from "@/lib/conversas-config-context";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useIntegracaoBaileys } from "@/components/configuracoes/useIntegracaoBaileys";
 import {
   CanalBadge,
   IconAutomacoes,
@@ -689,6 +690,7 @@ function ConversasPageInner() {
   const [conectarAba, setConectarAba] = useState<"qr" | "api">("qr");
   const [conectarPos, setConectarPos] = useState<{ x: number; y: number } | null>(null);
   const conectarRef = useRef<HTMLDivElement>(null);
+  const baileys = useIntegracaoBaileys();
   const [contatoDetalhePos, setContatoDetalhePos] = useState<{ x: number; y: number } | null>(null);
   const contatoDetalheRef = useRef<HTMLDivElement>(null);
   const [contatoDetalheAberto, setContatoDetalheAberto] = useState<{
@@ -7403,12 +7405,33 @@ function ConversasPageInner() {
           </div>
           {conectarAba === "qr" ? (
             <div style={{ textAlign: "center", padding: "6px 0 14px" }}>
-              <div className="wa-qr-box">📷</div>
-              <p className="hint" style={{ marginTop: 10 }}>
-                Abra o WhatsApp no celular da clínica → Aparelhos conectados →
-                Conectar um aparelho, e escaneie esse código.
-              </p>
-              <p className="hint">Aguardando leitura do QR…</p>
+              {baileys.erro ? (
+                <p className="hint" style={{ color: "var(--danger)", marginBottom: 10 }}>
+                  ⚠ {baileys.erro}
+                </p>
+              ) : null}
+
+              {baileys.estado?.status === "conectado" ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                  <p className="int-sub" style={{ margin: 0 }}>
+                    Conectado — {baileys.estado.numero ?? "número não identificado"}
+                  </p>
+                  <button type="button" className="btn danger" onClick={baileys.desconectar}>
+                    Desconectar
+                  </button>
+                </div>
+              ) : baileys.estado?.status === "aguardando_qr" && baileys.estado.qrDataUrl ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pelo worker, não é asset estático */}
+                  <img src={baileys.estado.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={220} height={220} />
+                  <p className="hint" style={{ marginTop: 4 }}>
+                    Abra o WhatsApp no celular da clínica → Aparelhos conectados → Conectar um
+                    aparelho, e escaneie esse código.
+                  </p>
+                </div>
+              ) : (
+                <div className="wa-qr-box">📷</div>
+              )}
             </div>
           ) : (
             <>
@@ -7425,16 +7448,14 @@ function ConversasPageInner() {
               <a href="/api/integracoes/meta/conectar" className="btn primary block">
                 Conectar com a Meta
               </a>
-            ) : (
+            ) : baileys.estado?.status === "conectado" ? null : (
               <button
                 type="button"
                 className="btn primary block"
-                onClick={() => {
-                  setConectarAberto(false);
-                  avisarAutomacao("WhatsApp conectado — conversas sendo importadas");
-                }}
+                onClick={baileys.conectar}
+                disabled={baileys.conectando}
               >
-                Simular leitura do QR
+                {baileys.conectando ? "Gerando QR Code…" : "Conectar via QR Code"}
               </button>
             )}
           </div>
