@@ -22,6 +22,15 @@ async function graphGet<T>(caminho: string): Promise<T> {
   return corpo;
 }
 
+async function graphPost<T>(caminho: string): Promise<T> {
+  const resposta = await fetch(`${META_GRAPH_URL}${caminho}`, { method: "POST" });
+  const corpo = (await resposta.json()) as T & ErroGraph;
+  if (!resposta.ok) {
+    throw new Error(corpo.error?.message ?? `Falha na Graph API (${resposta.status})`);
+  }
+  return corpo;
+}
+
 /** Página em Configurações (ou fora dela, no caso do Ads) pra onde volta depois do OAuth. */
 const CATEGORIA_POR_PROVEDOR: Record<string, string> = {
   meta_whatsapp: "/configuracoes?categoria=whatsapp",
@@ -65,6 +74,11 @@ async function resolverWhatsapp(accessToken: string) {
   );
   const numero = numeros.data?.[0];
   if (!numero) throw new Error("Nenhum número de telefone encontrado nessa conta do WhatsApp Business.");
+
+  // Sem isso, a Meta nunca manda os eventos de mensagem recebida pro nosso webhook — o app fica
+  // "conectado" (o resto acima funcionou) mas nenhuma mensagem real chega, porque o WABA nunca foi
+  // inscrito pra notificar ESTE app especificamente (é inscrição por WABA, não automática por OAuth).
+  await graphPost(`/${waba.id}/subscribed_apps?access_token=${accessToken}`);
 
   return {
     accessToken,
