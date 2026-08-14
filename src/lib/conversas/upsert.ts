@@ -30,12 +30,15 @@ export async function upsertConversaAoReceberMensagem(params: {
   canal: string;
   contato?: string;
   origem?: string;
+  /** Id do `Contato` já criado/casado pra essa mensagem (ver `src/lib/contatos/upsert.ts`) — grava
+   * a FK de verdade em vez de depender só do match por `nome` em runtime no front. */
+  contatoId?: string;
   /** `false` na importação de histórico (sync completo do WhatsApp ao conectar via QR Code) —
    * mensagem antiga não é "não lida" de verdade, incrementar o contador só gera badge enganoso.
    * Padrão `true` (mensagem chegando ao vivo). */
   contarComoNaoLida?: boolean;
 }) {
-  const { workspaceId, nome, canal, contato, origem, contarComoNaoLida = true } = params;
+  const { workspaceId, nome, canal, contato, origem, contatoId, contarComoNaoLida = true } = params;
   await prisma.conversa.upsert({
     where: { workspaceId_nome: { workspaceId, nome } },
     create: {
@@ -45,11 +48,15 @@ export async function upsertConversaAoReceberMensagem(params: {
       initials: iniciaisDe(nome),
       canal,
       contato,
+      contatoId,
       origem: origem ?? "Direto",
       naoLidas: contarComoNaoLida ? 1 : 0,
     },
-    update: contarComoNaoLida
-      ? { naoLidas: { increment: 1 }, atualizadoEm: new Date() }
-      : {},
+    // Grava/atualiza o contatoId também num update — conversa antiga criada antes dessa FK existir
+    // se auto-corrige assim que uma mensagem nova chega e o contato já foi resolvido.
+    update: {
+      ...(contatoId ? { contatoId } : {}),
+      ...(contarComoNaoLida ? { naoLidas: { increment: 1 }, atualizadoEm: new Date() } : {}),
+    },
   });
 }

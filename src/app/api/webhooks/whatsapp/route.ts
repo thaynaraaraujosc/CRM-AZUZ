@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { META_GRAPH_URL, normalizarNumeroBrasileiro, validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
+import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import type { ConvMensagem } from "@/lib/data";
 
 /**
@@ -120,9 +121,9 @@ async function extrasDeMidia(
  * (`X-Hub-Signature-256`) pra garantir que a chamada é mesmo da Meta.
  *
  * A mensagem é gravada em `MensagemExtra` (workspace-scoped) e a `Conversa` correspondente é
- * criada/atualizada via `upsertConversaAoReceberMensagem` — número novo, sem contato cadastrado
- * ainda, vira conversa na hora mesmo assim (usa o nome do perfil do WhatsApp ou o próprio número
- * como identificação provisória).
+ * criada/atualizada via `upsertConversaAoReceberMensagem`. Número novo (sem `Contato` cadastrado
+ * ainda) ganha um `Contato` de verdade automaticamente (`criarContatoPeloWhatsAppSeNaoExistir`),
+ * usando o nome do perfil do WhatsApp — não fica mais "órfão" até alguém salvar manualmente.
  */
 export async function POST(request: Request) {
   const payloadCru = await request.text();
@@ -155,16 +156,21 @@ export async function POST(request: Request) {
         const waId = normalizarNumeroBrasileiro(mensagem.from);
         const nomePerfil = valor.contacts?.find((c) => c.wa_id === mensagem.from)?.profile?.name;
 
-        // Tenta casar com um contato já existente pelo telefone, pra mensagem aparecer numa
-        // conversa que já existe — número totalmente novo cai no fallback (fica salvo, mas sem
-        // conversa correspondente na tela ainda, ver limitação acima).
-        const contatoExistente = await prisma.contato.findFirst({
-          where: { workspaceId: integracaoDoNumero.workspaceId, whatsapp: { contains: waId } },
-        });
-        const chaveContato = contatoExistente?.nome ?? nomePerfil ?? waId;
-
         const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: mensagem.id } });
         if (jaExiste) continue;
+
+        // Casa com um Contato já existente pelo telefone (comparação normalizada, não `contains`
+        // cru) — número totalmente novo ganha um Contato automaticamente, com o nome do perfil do
+        // WhatsApp quando disponível.
+        const contatoExistente = await encontrarContatoPorTelefone(integracaoDoNumero.workspaceId, waId);
+        const chaveContato = contatoExistente?.nome ?? nomePerfil ?? waId;
+        const contato =
+          contatoExistente ??
+          (await criarContatoPeloWhatsAppSeNaoExistir({
+            workspaceId: integracaoDoNumero.workspaceId,
+            nome: chaveContato,
+            whatsapp: waId,
+          }));
 
         const midia = mensagem.image ?? mensagem.sticker ?? mensagem.audio ?? mensagem.video ?? mensagem.document;
         const extras =
@@ -203,6 +209,7 @@ export async function POST(request: Request) {
           nome: chaveContato,
           canal: "WhatsApp",
           contato: waId,
+          contatoId: contato.id,
           origem: "Direto",
         });
       }

@@ -3,11 +3,7 @@ import { NextResponse } from "next/server";
 import type { Contato } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { slugId } from "@/lib/ids";
-
-function iniciais(nome: string) {
-  return nome.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
-}
+import { encontrarContatoPorTelefone, upsertContato } from "@/lib/contatos/upsert";
 
 /** Linha do banco -> `Contato` do front — só o formato de `etiquetas` (JSON no banco) muda. */
 function paraContato(linha: { etiquetas: unknown; [k: string]: unknown }): Contato {
@@ -33,9 +29,11 @@ export async function GET() {
  * POST faz upsert por `nome` dentro do workspace — mesma semântica que
  * `salvarDadosContato`/`atribuirAtendente`/`criarContato` já tinham no Context (ver
  * contatos-context.tsx): cria com valores padrão se o nome ainda não existe nesse workspace, ou
- * funde os dados enviados se já existe. `id` leva o prefixo do workspace (`${workspaceId}-${slug}`)
- * porque `nome` só é único por workspace agora — sem o prefixo, duas empresas com um contato de
- * mesmo nome colidiriam na chave primária, que continua global.
+ * funde os dados enviados se já existe.
+ *
+ * Dedupe por telefone: se o `nome` ainda não existe mas o `whatsapp` enviado já bate (comparação
+ * normalizada) com outro Contato já cadastrado, mescla nele em vez de criar um segundo registro
+ * "órfão" pro mesmo número — devolve `mesclado: true` pra UI avisar o usuário.
  */
 export async function POST(request: Request) {
   const sessao = await auth();
@@ -54,27 +52,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ erro: "Campo obrigatório: nome" }, { status: 400 });
   }
 
-  const existente = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome } } });
-  const linha = existente
-    ? await prisma.contato.update({
-        where: { workspaceId_nome: { workspaceId, nome } },
-        data: { ...dados, etiquetas: dados.etiquetas ?? undefined },
-      })
-    : await prisma.contato.create({
-        data: {
-          id: `${workspaceId}-${slugId(nome)}`,
-          workspaceId,
-          initials: iniciais(nome),
-          nome,
-          origem: origemPadrao,
-          etapa: "Novo",
-          responsavel: "—",
-          ultima: "Agora",
-          valor: "—",
-          ...dados,
-          etiquetas: dados.etiquetas ?? undefined,
-        },
-      });
+  const jaExistePorNome = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome } } });
+  const duplicataPorTelefone =
+    !jaExistePorNome && dados.whatsapp ? await encontrarContatoPorTelefone(workspaceId, dados.whatsapp) : null;
 
-  return NextResponse.json(paraContato(linha), { status: existente ? 200 : 201 });
+  if (duplicataPorTelefone) {
+    const linha = await prisma.contato.update({
+      where: { id: duplicataPorTelefone.id },
+      data: { ...dados, etiquetas: dados.etiquetas ?? undefined },
+    });
+    return NextResponse.json({ ...paraContato(linha), mesclado: true });
+  }
+
+  const linha = await upsertContato({ workspaceId, nome, dados, origemPadrao });
+  return NextResponse.json(paraContato(linha), { status: jaExistePorNome ? 200 : 201 });
 }

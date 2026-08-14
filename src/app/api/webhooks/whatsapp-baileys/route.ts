@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizarNumeroBrasileiro } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
+import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 
 /**
  * POST recebe os eventos que a Evolution API manda pra instância conectada (webhook configurado
@@ -67,13 +68,16 @@ function horaLocal(data: Date): string {
   return data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 }
 
-/** Acha o nome do contato já cadastrado pelo telefone, ou cai no `pushName`/número — mesmo
- * casamento já usado no webhook da Meta (`webhooks/whatsapp/route.ts`). */
-async function resolverChaveContato(workspaceId: string, contato: string, pushName?: string): Promise<string> {
-  const contatoExistente = await prisma.contato.findFirst({
-    where: { workspaceId, whatsapp: { contains: contato } },
+/** Acha (ou cria) o Contato pelo telefone — mesmo casamento normalizado usado no webhook da Meta
+ * (`webhooks/whatsapp/route.ts`); número novo ganha um Contato de verdade automaticamente. */
+async function resolverContato(workspaceId: string, telefone: string, pushName?: string) {
+  const existente = await encontrarContatoPorTelefone(workspaceId, telefone);
+  if (existente) return existente;
+  return criarContatoPeloWhatsAppSeNaoExistir({
+    workspaceId,
+    nome: pushName ?? telefone,
+    whatsapp: telefone,
   });
-  return contatoExistente?.nome ?? pushName ?? contato;
 }
 
 async function processarMensagemAoVivo(workspaceId: string, item: ItemMensagemEvolution) {
@@ -85,13 +89,13 @@ async function processarMensagemAoVivo(workspaceId: string, item: ItemMensagemEv
   const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: extraida.id } });
   if (jaExiste) return;
 
-  const chaveContato = await resolverChaveContato(workspaceId, extraida.contato, extraida.pushName);
+  const contato = await resolverContato(workspaceId, extraida.contato, extraida.pushName);
 
   await prisma.mensagemExtra.create({
     data: {
       id: extraida.id,
       workspaceId,
-      contato: chaveContato,
+      contato: contato.nome,
       tipo: "in",
       texto: extraida.texto,
       hora: horaLocal(extraida.criadoEm),
@@ -102,9 +106,10 @@ async function processarMensagemAoVivo(workspaceId: string, item: ItemMensagemEv
 
   await upsertConversaAoReceberMensagem({
     workspaceId,
-    nome: chaveContato,
+    nome: contato.nome,
     canal: "WhatsApp",
     contato: extraida.contato,
+    contatoId: contato.id,
     origem: "Direto",
   });
 }
@@ -128,17 +133,17 @@ async function processarPacoteHistorico(workspaceId: string, itens: ItemMensagem
   if (novas.length === 0) return;
 
   const contatosUnicos = [...new Set(novas.map((m) => m.contato))];
-  const chavesPorContato = new Map<string, string>();
-  for (const contato of contatosUnicos) {
-    const pushName = novas.find((m) => m.contato === contato)?.pushName;
-    chavesPorContato.set(contato, await resolverChaveContato(workspaceId, contato, pushName));
+  const contatosPorTelefone = new Map<string, Awaited<ReturnType<typeof resolverContato>>>();
+  for (const telefone of contatosUnicos) {
+    const pushName = novas.find((m) => m.contato === telefone)?.pushName;
+    contatosPorTelefone.set(telefone, await resolverContato(workspaceId, telefone, pushName));
   }
 
   await prisma.mensagemExtra.createMany({
     data: novas.map((m) => ({
       id: m.id,
       workspaceId,
-      contato: chavesPorContato.get(m.contato)!,
+      contato: contatosPorTelefone.get(m.contato)!.nome,
       tipo: m.fromMe ? "out" : "in",
       texto: m.texto,
       hora: horaLocal(m.criadoEm),
@@ -148,12 +153,13 @@ async function processarPacoteHistorico(workspaceId: string, itens: ItemMensagem
     skipDuplicates: true,
   });
 
-  for (const [contato, chaveContato] of chavesPorContato) {
+  for (const [telefone, contato] of contatosPorTelefone) {
     await upsertConversaAoReceberMensagem({
       workspaceId,
-      nome: chaveContato,
+      nome: contato.nome,
       canal: "WhatsApp",
-      contato,
+      contato: telefone,
+      contatoId: contato.id,
       origem: "Direto",
       contarComoNaoLida: false,
     });
