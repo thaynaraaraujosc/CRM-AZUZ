@@ -38,11 +38,10 @@ type PayloadWhatsApp = {
  * Meta, não um usuário logado). Em vez disso, valida a assinatura HMAC do corpo cru
  * (`X-Hub-Signature-256`) pra garantir que a chamada é mesmo da Meta.
  *
- * Limitação conhecida desta fase: a mensagem é gravada em `MensagemExtra` (workspace-scoped,
- * reaproveitando a Fase 2), mas a tela de Conversas hoje só junta essas mensagens extras às
- * conversas já existentes (por nome do contato) — um número totalmente novo, que ainda não é
- * contato nem conversa seedada, fica salvo no banco mas não aparece como conversa nova na tela
- * ainda (isso é uma frente de front-end separada, pra depois).
+ * A mensagem é gravada em `MensagemExtra` (workspace-scoped) e a `Conversa` correspondente é
+ * criada/atualizada via `upsertConversaAoReceberMensagem` — número novo, sem contato cadastrado
+ * ainda, vira conversa na hora mesmo assim (usa o nome do perfil do WhatsApp ou o próprio número
+ * como identificação provisória).
  */
 export async function POST(request: Request) {
   const payloadCru = await request.text();
