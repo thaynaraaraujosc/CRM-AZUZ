@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 const ROTAS_PUBLICAS = [
   "/login",
   "/cadastro",
+  "/esqueci-senha",
+  "/redefinir-senha",
   "/formulario-preview",
   "/acesso-bloqueado",
   "/politica-de-privacidade",

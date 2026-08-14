@@ -83,6 +83,10 @@ function LoginForm() {
           />
         </div>
 
+        <p className="auth-rodape" style={{ margin: "0 0 12px", textAlign: "right" }}>
+          <Link href="/esqueci-senha">Esqueci minha senha</Link>
+        </p>
+
         {erro && <p className="auth-erro">{erro}</p>}
 
         <button type="submit" className={`btn primary block${carregando ? " loading" : ""}`} disabled={carregando}>

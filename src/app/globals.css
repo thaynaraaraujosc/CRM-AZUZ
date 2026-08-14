@@ -833,6 +833,20 @@ table {
   color: var(--danger);
 }
 
+.auth-sucesso {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.auth-descricao {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
 .auth-rodape {
   margin: 16px 0 0;
   font-size: 12.5px;
