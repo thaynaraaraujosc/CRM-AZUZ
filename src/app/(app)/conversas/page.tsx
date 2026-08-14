@@ -516,9 +516,8 @@ function ConversasPageInner() {
   async function salvarConfigConversas() {
     setConfigStatusSalvar("salvando");
     try {
-      // Camada de serviço provisória — hoje só grava localStorage via o
-      // contexto; quando existir back-end, essa função troca pra uma
-      // chamada de API que persiste as preferências do usuário/equipe.
+      // `atualizarConfig` já persiste de verdade (ver configuracoes-context.tsx) — o delay aqui é
+      // só pra dar a sensação de salvamento antes de fechar o painel.
       await new Promise((resolve) => setTimeout(resolve, 450));
       atualizarConfig(configRascunho);
       setConfigStatusSalvar("sucesso");
@@ -984,9 +983,6 @@ function ConversasPageInner() {
   const [mensagensApagadasPorContato, setMensagensApagadasPorContato] = useState<
     Record<string, Set<string>>
   >({});
-  const [mensagensApagadasTodosPorContato, setMensagensApagadasTodosPorContato] = useState<
-    Record<string, Set<string>>
-  >({});
   const [mensagensFavoritasPorContato, setMensagensFavoritasPorContato] = useState<
     Record<string, Set<string>>
   >({});
@@ -996,14 +992,11 @@ function ConversasPageInner() {
     elegivel: boolean;
     motivoIndisponivel?: string;
   } | null>(null);
-  const [apagandoChave, setApagandoChave] = useState<string | null>(null);
-  const [erroApagarChave, setErroApagarChave] = useState<string | null>(null);
   const [detalhesMensagem, setDetalhesMensagem] = useState<{ msg: ConvMensagem; chave: string } | null>(
     null,
   );
 
   const mensagensApagadas = mensagensApagadasPorContato[aberta.nome] ?? new Set<string>();
-  const mensagensApagadasTodos = mensagensApagadasTodosPorContato[aberta.nome] ?? new Set<string>();
   const mensagensFavoritas = mensagensFavoritasPorContato[aberta.nome] ?? new Set<string>();
 
   function abrirMenuMensagem(chave: string, rect: DOMRect) {
@@ -1116,25 +1109,14 @@ function ConversasPageInner() {
     setConfirmarApagar(null);
   }
 
-  async function confirmarApagarParaTodos() {
+  function confirmarApagarParaTodos() {
     if (!confirmarApagar) return;
     const { chave } = confirmarApagar;
-    setApagandoChave(chave);
-    setErroApagarChave(null);
-    // Camada de serviço provisória — no back-end real essa chamada solicita
-    // a exclusão pro canal e só confirma quando ele retornar sucesso.
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    if (Math.random() < 0.12) {
-      setApagandoChave(null);
-      setErroApagarChave(chave);
-      return;
-    }
-    setMensagensApagadasTodosPorContato((prev) => {
-      const atual = new Set(prev[aberta.nome] ?? []);
-      atual.add(chave);
-      return { ...prev, [aberta.nome]: atual };
-    });
-    setApagandoChave(null);
+    // Grava de verdade em MensagemExtra.apagadaParaTodos (via o mesmo PUT sincronizado que
+    // qualquer outra mudança de mensagem usa) — some do balão pra qualquer sessão que reabrir essa
+    // conversa, não só localmente. Vale só dentro do CRM: nenhuma integração hoje (Meta/Baileys)
+    // expõe um jeito de recolher a mensagem do lado do destinatário no WhatsApp.
+    atualizarMensagem(aberta.nome, chave, { apagadaParaTodos: true });
     setConfirmarApagar(null);
   }
 
@@ -2260,7 +2242,8 @@ function ConversasPageInner() {
   async function salvarNovoContato(enviarDepois: boolean) {
     if (!novoContatoNome.trim() || !validarNovoContato()) return;
     setNovoContatoSalvando(true);
-    // Camada de serviço provisória — hoje só grava no estado do front-end.
+    // `criarContato` já persiste de verdade (ver contatos-context.tsx) — o delay aqui é só pra dar
+    // a sensação de salvamento antes de fechar o formulário.
     await new Promise((resolve) => setTimeout(resolve, 350));
     const criado = criarContato({
       nome: novoContatoNome.trim(),
@@ -2834,7 +2817,8 @@ function ConversasPageInner() {
     }
     setStatusSalvarContato("salvando");
     try {
-      // Camada de serviço provisória — troca por chamada real de API quando o back-end existir.
+      // `salvarDadosContato` já persiste de verdade (ver contatos-context.tsx) — o delay aqui é só
+      // pra dar a sensação de salvamento antes de fechar o formulário.
       await new Promise((resolve) => setTimeout(resolve, 450));
       salvarDadosContato(aberta.nome, {
         email: emailContato.trim() || undefined,
@@ -3377,7 +3361,7 @@ function ConversasPageInner() {
             {(mensagensExtraPorContato[aberta.nome] ?? []).map((msg, i) => {
               const chave = msg.id ?? `extra-${i}`;
               if (mensagensApagadas.has(chave)) return null;
-              if (mensagensApagadasTodos.has(chave)) {
+              if (msg.apagadaParaTodos) {
                 return (
                   <div className="bubble sistema-apagada" key={chave}>
                     Esta mensagem foi apagada.
@@ -6032,21 +6016,16 @@ function ConversasPageInner() {
                       <p className="n">Apagar pra todos</p>
                     </div>
                     <p className="hint" style={{ marginBottom: 16 }}>
-                      Deseja solicitar a exclusão desta mensagem para todos? Essa ação depende
-                      das regras e do prazo permitido pelo canal conectado.
+                      Apaga esta mensagem pra quem visualizar essa conversa no CRM. Não recolhe a
+                      mensagem do lado do contato no WhatsApp — isso depende de um recurso que a
+                      integração conectada ainda não oferece.
                     </p>
-                    {erroApagarChave === confirmarApagar.chave ? (
-                      <p className="wa-campo-erro" style={{ marginBottom: 10 }}>
-                        Não deu pra apagar agora — o canal não confirmou a exclusão. Tente de novo.
-                      </p>
-                    ) : null}
                     <div className="section-foot">
                       <button
                         type="button"
                         className="btn ghost"
                         style={{ flex: 1 }}
                         onClick={() => setConfirmarApagar(null)}
-                        disabled={apagandoChave === confirmarApagar.chave}
                       >
                         Cancelar
                       </button>
@@ -6055,9 +6034,8 @@ function ConversasPageInner() {
                         className="btn primary"
                         style={{ flex: 1 }}
                         onClick={confirmarApagarParaTodos}
-                        disabled={apagandoChave === confirmarApagar.chave}
                       >
-                        {apagandoChave === confirmarApagar.chave ? "Apagando…" : "Apagar pra todos"}
+                        Apagar pra todos
                       </button>
                     </div>
                   </>
@@ -6121,7 +6099,7 @@ function ConversasPageInner() {
                       <span className="valor">{detalhesMensagem.msg.erro}</span>
                     </div>
                   ) : null}
-                  {mensagensApagadasTodos.has(detalhesMensagem.chave) ? (
+                  {detalhesMensagem.msg.apagadaParaTodos ? (
                     <div className="wa-msg-detalhes-item">
                       <span className="rotulo">Apagada</span>
                       <span className="valor">Pra todos</span>

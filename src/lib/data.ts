@@ -578,6 +578,10 @@ export type ConvMensagem = {
    * (rótulo tipo WhatsApp/Instagram/TikTok) da `Conversa`; ausente = comportamento antigo,
    * implicitamente a integração oficial da Meta. Decide por qual integração uma resposta sai. */
   canal?: string;
+  /** "Apagar pra todos" real (persistido) — some do balão de qualquer sessão/usuário que reveja essa
+   * conversa, não só do navegador de quem apagou. Vale só dentro do CRM: nenhuma integração atual
+   * (Meta/Baileys) expõe um jeito de recolher a mensagem do lado do destinatário no WhatsApp. */
+  apagadaParaTodos?: boolean;
 };
 
 export type Conversa = {
