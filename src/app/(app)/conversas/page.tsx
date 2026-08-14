@@ -691,6 +691,30 @@ function ConversasPageInner() {
   const [conectarPos, setConectarPos] = useState<{ x: number; y: number } | null>(null);
   const conectarRef = useRef<HTMLDivElement>(null);
   const baileys = useIntegracaoBaileys();
+  // Status da API oficial (Meta) — sem hook compartilhado com polling (o `useIntegracaoMeta` só
+  // busca uma vez); polling próprio aqui porque a conversa some/reaparece conforme o canal
+  // conecta/desconecta, então precisa saber o estado atual, não só o do primeiro carregamento.
+  const [metaWhatsappConectado, setMetaWhatsappConectado] = useState(false);
+  const [statusMetaCarregado, setStatusMetaCarregado] = useState(false);
+  useEffect(() => {
+    function verificarMeta() {
+      fetch("/api/integracoes/meta?provedor=meta_whatsapp")
+        .then((r) => r.json())
+        .then((dados: { status?: string }) => {
+          setMetaWhatsappConectado(dados.status === "conectado");
+          setStatusMetaCarregado(true);
+        })
+        .catch(() => setStatusMetaCarregado(true));
+    }
+    verificarMeta();
+    const intervalo = setInterval(verificarMeta, 5000);
+    return () => clearInterval(intervalo);
+  }, []);
+  // Só passa a filtrar depois que os dois status (Meta e Baileys) já responderam pelo menos uma
+  // vez — sem essa guarda, a lista de conversas do WhatsApp pisca "vazia" por um instante em toda
+  // carga de página, mesmo com um canal já conectado.
+  const statusWhatsappPronto = statusMetaCarregado && baileys.estado !== null;
+  const whatsappConectado = metaWhatsappConectado || baileys.estado?.status === "conectado";
   const [contatoDetalhePos, setContatoDetalhePos] = useState<{ x: number; y: number } | null>(null);
   const contatoDetalheRef = useRef<HTMLDivElement>(null);
   const [contatoDetalheAberto, setContatoDetalheAberto] = useState<{
@@ -729,6 +753,9 @@ function ConversasPageInner() {
 
   const conversasFiltradas = conversas
     .filter((c) => {
+      // Conversa de WhatsApp sem nenhum canal conectado (nem Meta, nem QR Code) some da lista —
+      // volta a aparecer sozinha quando reconectar (não apaga nada, só deixa de listar).
+      if (c.canal === "WhatsApp" && statusWhatsappPronto && !whatsappConectado) return false;
       if (!mostrarArquivadas && arquivadas.has(c.id)) return false;
       if (mostrarArquivadas) return arquivadas.has(c.id);
       if (filtroConversa === "nao-lidas" && (!c.naoLidas || lidas.has(c.id))) return false;
@@ -991,20 +1018,6 @@ function ConversasPageInner() {
     return (
       <span className="wa-msg-favorita" title="Favoritada">
         ★
-      </span>
-    );
-  }
-
-  /** Etiqueta discreta indicando por qual conexão a mensagem passou — só aparece na conversa de
-   * WhatsApp, onde o mesmo número pode ter conversado ora pela API oficial (Meta), ora pelo QR
-   * Code (Baileys/Evolution API); ajuda a não confundir as duas quando o workspace tem as duas
-   * conectadas ao mesmo tempo (ou já teve, no passado). */
-  function tagCanalMensagem(msg: ConvMensagem) {
-    if (aberta.canal !== "WhatsApp") return null;
-    const viaBaileysMsg = msg.canal === "whatsapp_baileys";
-    return (
-      <span className={`wa-msg-canal-tag${viaBaileysMsg ? " qr" : ""}`}>
-        {viaBaileysMsg ? "QR Code" : "API oficial"}
       </span>
     );
   }
@@ -3318,7 +3331,6 @@ function ConversasPageInner() {
                   className={`bubble ${msg.tipo} bubble-localizacao`}
                 >
                   {botaoMenuMensagem(chave)}
-                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   <a
                     className="bubble-localizacao-link-area"
@@ -3360,7 +3372,6 @@ function ConversasPageInner() {
               ) : msg.contatoCompartilhado ? (
                 <div className={`bubble ${msg.tipo} bubble-contato`} key={chave}>
                   {botaoMenuMensagem(chave)}
-                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   <button
                     type="button"
@@ -3398,7 +3409,6 @@ function ConversasPageInner() {
                   key={chave}
                 >
                   {botaoMenuMensagem(chave)}
-                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   {midiaLiberada("imagem", msg.id) ? (
                     <div
@@ -3453,7 +3463,6 @@ function ConversasPageInner() {
                   key={chave}
                 >
                   {botaoMenuMensagem(chave)}
-                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   {midiaLiberada("video", msg.id) ? (
                     <video
@@ -3496,7 +3505,6 @@ function ConversasPageInner() {
                   key={chave}
                 >
                   {botaoMenuMensagem(chave)}
-                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   <a
                     className="bubble-documento-cartao"
@@ -3538,7 +3546,6 @@ function ConversasPageInner() {
                   key={chave}
                 >
                   {botaoMenuMensagem(chave)}
-                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   <AudioBubblePlayer
                     audio={msg.audio}
@@ -3566,7 +3573,6 @@ function ConversasPageInner() {
               ) : (
                 <div className={`bubble ${msg.tipo}`} key={chave}>
                   {botaoMenuMensagem(chave)}
-                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   {msg.respondendoA ? (
                     <span className="wa-citacao">
