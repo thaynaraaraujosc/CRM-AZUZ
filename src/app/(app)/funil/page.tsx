@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 
 import { classeOrigem, type ConvMensagem, type NegocioCard } from "@/lib/data";
+import { HOJE_ISO } from "@/lib/agenda-context";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
@@ -28,9 +29,6 @@ const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Google Ads",
   "Indicação",
 ];
-
-/** Mesmo dia de referência usado em todo o app (ver `today` em lib/data.ts). */
-const HOJE_ISO = "2026-07-30";
 
 export default function FunilPage() {
   return (

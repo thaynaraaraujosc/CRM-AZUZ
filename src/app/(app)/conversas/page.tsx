@@ -38,6 +38,7 @@ import {
   useBibliotecaDocumentos,
   CATEGORIAS_DOCUMENTO,
 } from "@/lib/biblioteca-documentos-context";
+import { HOJE_ISO } from "@/lib/agenda-context";
 import { useFunis } from "@/lib/funis-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import {
@@ -317,9 +318,6 @@ const EMOJI_CATEGORIAS = [
     ],
   },
 ] as const;
-
-/** Mesmo dia de referência usado em todo o app (ver `today` em lib/data.ts). */
-const HOJE_ISO = "2026-07-30";
 
 /**
  * Placeholder seguro pra quando ainda não existe nenhuma conversa real (workspace novo, ou

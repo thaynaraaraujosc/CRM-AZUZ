@@ -99,8 +99,8 @@ export default function AgendaPage() {
   const { data: sessao } = useSession();
   const responsavelPadrao = membros[0]?.nome ?? sessao?.user?.name ?? "";
 
-  const [ano, setAno] = useState(2026);
-  const [mesIndex0, setMesIndex0] = useState(6); // julho — mês de HOJE_ISO
+  const [ano, setAno] = useState(() => Number(HOJE_ISO.split("-")[0]));
+  const [mesIndex0, setMesIndex0] = useState(() => Number(HOJE_ISO.split("-")[1]) - 1);
   const [view, setView] = useState<"mes" | "lista">("mes");
   const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null);
 
