@@ -90,9 +90,12 @@ export async function POST(request: Request) {
             contato: chaveContato,
             tipo: "in",
             texto: mensagem.text?.body ?? "",
+            // `timeZone` explícito — sem isso, roda no fuso do servidor (UTC na Vercel), 3h
+            // adiantado do horário de Brasília.
             hora: new Date(Number(mensagem.timestamp) * 1000).toLocaleTimeString("pt-BR", {
               hour: "2-digit",
               minute: "2-digit",
+              timeZone: "America/Sao_Paulo",
             }),
             criadoEm: new Date(Number(mensagem.timestamp) * 1000),
           },
