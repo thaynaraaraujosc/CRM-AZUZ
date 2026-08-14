@@ -6,17 +6,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { createPortal } from "react-dom";
 
-import { classeOrigem, conversas, type ConvMensagem, type NegocioCard } from "@/lib/data";
+import { classeOrigem, type ConvMensagem, type NegocioCard } from "@/lib/data";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
 import { useContatos } from "@/lib/contatos-context";
+import { useConversas } from "@/lib/conversas-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
+import { useMotivosPerda } from "@/lib/motivos-perda";
 import { IconAutomacoes } from "@/components/icons";
 import { IconConfiguracoes } from "@/components/icons";
-import { ChipFilters, Topbar } from "@/components/ui";
+import { ChipFilters, FloatingDropdown, Topbar } from "@/components/ui";
 import { IconEnviar } from "@/components/icons";
 
 const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
@@ -47,7 +49,9 @@ function FunilPageInner() {
     useAutomacoes();
   const { dispararEvento } = useAutomationFlows();
   const { salvarDadosContato, atribuirAtendente } = useContatos();
+  const { conversas } = useConversas();
   const { membros: equipe } = useEquipe();
+  const motivosPerda = useMotivosPerda();
   const [configAberto, setConfigAberto] = useState(false);
   const [configAnchorRect, setConfigAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: configPopRef, posicao: configPos } = useFloatingPosition(configAnchorRect, configAberto);
@@ -97,10 +101,7 @@ function FunilPageInner() {
           .map((p) => p[0]?.toUpperCase())
           .join("")
       : "");
-  const mensagensRespostaRapida = [
-    ...(conversaDoContatoRapido?.mensagens ?? []),
-    ...(respostaRapidaContato ? mensagensExtraPorContato[respostaRapidaContato] ?? [] : []),
-  ];
+  const mensagensRespostaRapida = respostaRapidaContato ? mensagensExtraPorContato[respostaRapidaContato] ?? [] : [];
 
   function avisarAutomacao(texto: string) {
     const id = `toast-${proximoToastId.current++}`;
@@ -136,7 +137,56 @@ function FunilPageInner() {
   const [nomeRenomeando, setNomeRenomeando] = useState("");
   const [colunaArrastando, setColunaArrastando] = useState<number | null>(null);
 
+  // Menu "Marcar como ganho/perdido" — abre por card (⋮), grava statusFechamento/motivoPerda/
+  // dataFechamento de verdade no NegocioCard (persiste via o mesmo PUT /api/funis que já sincroniza
+  // o resto do kanban).
+  const [desfechoMenu, setDesfechoMenu] = useState<{ coluna: number; card: number; rect: DOMRect } | null>(null);
+  const [motivoEscolhido, setMotivoEscolhido] = useState("");
+
   const funilAtivo = funis.find((f) => f.id === funilAtivoId) ?? funis[0];
+
+  function marcarDesfecho(coluna: number, card: number, statusFechamento: "ganho" | "perdido", motivoPerda?: string) {
+    if (!funilAtivo) return;
+    setFunis((prev) =>
+      prev.map((f) => {
+        if (f.id !== funilAtivo.id) return f;
+        const colunas = f.colunas.map((c, i) => {
+          if (i !== coluna) return c;
+          return {
+            ...c,
+            cards: c.cards.map((cd, j) =>
+              j !== card
+                ? cd
+                : { ...cd, statusFechamento, motivoPerda: motivoPerda ?? null, dataFechamento: HOJE_ISO },
+            ),
+          };
+        });
+        return { ...f, colunas };
+      }),
+    );
+    setDesfechoMenu(null);
+    setMotivoEscolhido("");
+  }
+
+  function reabrirNegocio(coluna: number, card: number) {
+    if (!funilAtivo) return;
+    setFunis((prev) =>
+      prev.map((f) => {
+        if (f.id !== funilAtivo.id) return f;
+        const colunas = f.colunas.map((c, i) => {
+          if (i !== coluna) return c;
+          return {
+            ...c,
+            cards: c.cards.map((cd, j) =>
+              j !== card ? cd : { ...cd, statusFechamento: null, motivoPerda: null, dataFechamento: null },
+            ),
+          };
+        });
+        return { ...f, colunas };
+      }),
+    );
+    setDesfechoMenu(null);
+  }
 
   function passaNoFiltro(card: { origem: string; data: string }) {
     if (origensFiltro.size > 0 && !origensFiltro.has(card.origem)) {
@@ -809,12 +859,39 @@ function FunilPageInner() {
                           {card.nome}
                         </span>
                         <span className="lval">{card.valor}</span>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          aria-label="Marcar desfecho do negócio"
+                          title="Marcar como ganho/perdido"
+                          className="lead-card-menu-btn"
+                          draggable={false}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMotivoEscolhido("");
+                            setDesfechoMenu({
+                              coluna: colIndex,
+                              card: cardIndex,
+                              rect: e.currentTarget.getBoundingClientRect(),
+                            });
+                          }}
+                        >
+                          ⋮
+                        </span>
                       </span>
                       <span className="lr2">
                         <span className={`tag ${classeOrigem(card.origem)}`}>
                           {card.origem}
                         </span>
                         <span className="days">{card.dias}</span>
+                        {card.statusFechamento === "ganho" ? (
+                          <span className="stage-tag won">✅ Ganho</span>
+                        ) : card.statusFechamento === "perdido" ? (
+                          <span className="stage-tag" title={card.motivoPerda ?? undefined}>
+                            ❌ Perdido
+                          </span>
+                        ) : null}
                       </span>
                     </button>
                   );
@@ -824,6 +901,61 @@ function FunilPageInner() {
           })}
         </div>
       </div>
+
+      {desfechoMenu ? (
+        <FloatingDropdown anchorRect={desfechoMenu.rect} onClose={() => setDesfechoMenu(null)} width={260}>
+          {(() => {
+            const cardAtual = funilAtivo?.colunas[desfechoMenu.coluna]?.cards[desfechoMenu.card];
+            if (!cardAtual) return null;
+            if (cardAtual.statusFechamento) {
+              return (
+                <div style={{ padding: 12 }}>
+                  <p className="hint" style={{ margin: "0 0 10px" }}>
+                    {cardAtual.statusFechamento === "ganho" ? "Marcado como ganho." : `Marcado como perdido${cardAtual.motivoPerda ? ` — ${cardAtual.motivoPerda}` : ""}.`}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn ghost block"
+                    onClick={() => reabrirNegocio(desfechoMenu.coluna, desfechoMenu.card)}
+                  >
+                    ↺ Reabrir negócio
+                  </button>
+                </div>
+              );
+            }
+            return (
+              <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                <button
+                  type="button"
+                  className="btn primary block"
+                  onClick={() => marcarDesfecho(desfechoMenu.coluna, desfechoMenu.card, "ganho")}
+                >
+                  ✅ Marcar como ganho
+                </button>
+                <div className="field" style={{ margin: 0 }}>
+                  <label>Motivo da perda</label>
+                  <select className="input" value={motivoEscolhido} onChange={(e) => setMotivoEscolhido(e.target.value)}>
+                    <option value="">Selecione…</option>
+                    {motivosPerda.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  className="btn danger block"
+                  disabled={!motivoEscolhido}
+                  onClick={() => marcarDesfecho(desfechoMenu.coluna, desfechoMenu.card, "perdido", motivoEscolhido)}
+                >
+                  ❌ Marcar como perdido
+                </button>
+              </div>
+            );
+          })()}
+        </FloatingDropdown>
+      ) : null}
 
       {toasts.length > 0 ? (
         <div className="toast-stack">

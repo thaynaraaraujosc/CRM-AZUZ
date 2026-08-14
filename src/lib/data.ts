@@ -325,6 +325,12 @@ export type NegocioCard = {
   etiquetas?: string[];
   /** Responsável por esse negócio específico — distinto de `Funil.responsavel` (que é o funil inteiro). */
   responsavel?: string;
+  /** Desfecho real do negócio — `undefined`/`null` = ainda aberto. É o que faz Inteligência
+   * Comercial (conversão, motivo de perda, faturamento) calcular sobre dado real. */
+  statusFechamento?: "ganho" | "perdido" | null;
+  motivoPerda?: string | null;
+  /** ISO (aaaa-mm-dd) — quando o negócio foi marcado como ganho/perdido. */
+  dataFechamento?: string | null;
 };
 
 export type ColunaFunil = {

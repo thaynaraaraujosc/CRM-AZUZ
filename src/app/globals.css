@@ -1957,6 +1957,25 @@ table.tbl tbody tr:hover td {
   cursor: pointer;
 }
 
+.lead-card-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  color: var(--text-faint);
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.lead-card-menu-btn:hover {
+  background: var(--surface-hover, rgba(0, 0, 0, 0.06));
+  color: var(--ink);
+}
+
 .msg-dot {
   width: 8px;
   height: 8px;
