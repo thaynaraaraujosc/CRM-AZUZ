@@ -309,6 +309,18 @@ table {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
+.nav-badge-em-breve {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--brand-soft, rgba(37, 99, 235, 0.14));
+  color: var(--brand, #2563eb);
+  white-space: nowrap;
+}
+
 .nav-item svg {
   width: 17px;
   height: 17px;

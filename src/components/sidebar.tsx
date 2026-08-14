@@ -309,6 +309,7 @@ export function Sidebar() {
               >
                 <Icon />
                 {label}
+                {href === "/azuz-ia" ? <span className="nav-badge-em-breve">Em breve</span> : null}
               </Link>
               {href === "/funil" ? (
                 <div className="nav-sublist">

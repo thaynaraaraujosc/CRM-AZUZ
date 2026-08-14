@@ -192,7 +192,10 @@ export function PlanoSecao() {
           </div>
           <div className="field">
             <label>Recursos</label>
-            <p className="r">Funis, WhatsApp/Instagram/TikTok, Automações, Azuz IA, Relatórios</p>
+            <p className="r">
+              Funis, WhatsApp/Instagram/TikTok, Automações, Azuz IA{" "}
+              <span className="nav-badge-em-breve" style={{ marginLeft: 0 }}>Em breve</span>, Relatórios
+            </p>
           </div>
           <div className="field">
             <label>Próxima cobrança</label>
