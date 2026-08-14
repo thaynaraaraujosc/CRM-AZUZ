@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useConfiguracoes, type WorkspaceConfig } from "@/lib/configuracoes-context";
 import { FUSOS_HORARIOS, IDIOMAS, MOEDAS, PAISES, SEGMENTOS_NEGOCIO } from "@/lib/configuracoes/mock";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
-import { ModelosSegmento } from "./ModelosSegmento";
 import { SalvarBar } from "./SalvarBar";
 
 /** Workspace — dados gerais + modelo por segmento. Nasce em branco (nome/segmento/país/estado/
@@ -26,6 +25,15 @@ export function WorkspaceSecao() {
   }
 
   function salvar() {
+    // "Nome" também é coluna de verdade em `Workspace` (lido na sidebar, no painel de super-admin
+    // etc.) — o blob de preferências sozinho não bastaria pra refletir fora desta tela.
+    if (rascunho.nome !== estado.workspace.nome) {
+      fetch("/api/workspace", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: rascunho.nome }),
+      }).catch((erro) => console.error("Falha ao atualizar nome do workspace:", erro));
+    }
     atualizarWorkspace(rascunho);
   }
 
@@ -130,8 +138,6 @@ export function WorkspaceSecao() {
           </div>
         </div>
       </div>
-
-      <ModelosSegmento />
 
       <SalvarBar dirty={dirty} onSalvar={salvar} onDescartar={descartar} mensagemSalvo="Configurações do workspace atualizadas." />
     </div>

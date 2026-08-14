@@ -3,9 +3,10 @@
 import { useState } from "react";
 
 /**
- * Barra de "alterações não salvas" (item 41) — aparece fixa no rodapé do painel sempre que o rascunho
- * local (`dirty`) diverge do que foi salvo. Front-end apenas: "salvar" só grava no state/localStorage
- * do context, nunca chama uma API real.
+ * Barra de "alterações não salvas" — aparece fixa no rodapé do painel sempre que o rascunho local
+ * (`dirty`) diverge do que foi salvo. `onSalvar` é definido por quem usa o componente — cada seção
+ * de Configurações já persiste de verdade (via `/api/preferencias/[chave]` ou rota própria), esse
+ * componente só cuida da UI de "salvar/descartar".
  */
 export function SalvarBar({
   dirty,
