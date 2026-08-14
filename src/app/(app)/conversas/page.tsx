@@ -1629,17 +1629,33 @@ function ConversasPageInner() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ destinatario: contatoDaConversa.whatsapp, texto }),
-      }).catch(() =>
-        avisarAutomacao("Não foi possível enviar pelo WhatsApp (QR Code) — verifica a conexão em Configurações."),
-      );
+      })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+        })
+        .catch((erro) =>
+          avisarAutomacao(
+            erro instanceof Error && erro.message
+              ? `WhatsApp (QR Code): ${erro.message}`
+              : "Não foi possível enviar pelo WhatsApp (QR Code) — verifica a conexão em Configurações.",
+          ),
+        );
     } else if (!viaBaileys && aberta.canal === "WhatsApp" && (aberta.contato || contatoDaConversa?.whatsapp)) {
       fetch("/api/integracoes/meta/whatsapp/enviar", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ destinatario: aberta.contato ?? contatoDaConversa?.whatsapp, texto }),
-      }).catch(() =>
-        avisarAutomacao("Não foi possível enviar pelo WhatsApp (Meta) — verifica a conexão em Configurações."),
-      );
+      })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+        })
+        .catch((erro) =>
+          avisarAutomacao(
+            erro instanceof Error && erro.message
+              ? `WhatsApp (Meta): ${erro.message}`
+              : "Não foi possível enviar pelo WhatsApp (Meta) — verifica a conexão em Configurações.",
+          ),
+        );
     }
     setMensagemTexto("");
     setRespondendoMensagem(null);

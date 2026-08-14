@@ -49,11 +49,21 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    fetch("/api/conversas")
-      .then((r) => r.json())
-      .then((dados: ConversaReal[]) => setConversas(dados))
-      .catch((erro) => console.error("Falha ao carregar conversas da API:", erro))
-      .finally(() => setCarregando(false));
+    function buscar() {
+      return fetch("/api/conversas")
+        .then((r) => r.json())
+        .then((dados: ConversaReal[]) => setConversas(dados))
+        .catch((erro) => console.error("Falha ao carregar conversas da API:", erro));
+    }
+    buscar().finally(() => setCarregando(false));
+
+    // Polling — mensagem nova (do webhook do WhatsApp/Instagram) precisa aparecer sozinha, sem
+    // depender de recarregar a página, igual todo app de mensagem de verdade. Só busca quando a
+    // aba está visível, pra não gastar requisição à toa com o CRM aberto em segundo plano.
+    const intervalo = setInterval(() => {
+      if (document.visibilityState === "visible") buscar();
+    }, 5000);
+    return () => clearInterval(intervalo);
   }, []);
 
   function marcarComoLida(id: string) {
