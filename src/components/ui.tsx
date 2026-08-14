@@ -339,6 +339,16 @@ export function Toggle({
   onToggle?: (on: boolean) => void;
 }) {
   const [on, setOn] = useState(defaultOn);
+  // Ressincroniza quando `defaultOn` muda depois do primeiro render — sem isso, todo toggle cujo
+  // valor real só chega depois (fetch assíncrono de preferência salva, ver *-context.tsx) nasce
+  // mostrando o valor padrão errado até o usuário clicar nele, mesmo já tendo sido desligado antes.
+  // Ajuste durante o render (não em efeito) — padrão recomendado pelo React pra "adjusting state
+  // when a prop changes", evita o re-render em cascata de um `useEffect` fazendo a mesma coisa.
+  const [defaultOnAnterior, setDefaultOnAnterior] = useState(defaultOn);
+  if (defaultOn !== defaultOnAnterior) {
+    setDefaultOnAnterior(defaultOn);
+    setOn(defaultOn);
+  }
   return (
     <button
       type="button"
