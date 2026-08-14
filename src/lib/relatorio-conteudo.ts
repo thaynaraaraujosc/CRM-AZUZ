@@ -324,8 +324,13 @@ function secaoDadosCliente(ctx: ContextoRelatorio): SecaoRelatorio {
 function secaoResumoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
   const contato = contatos.find((c) => c.id === ctx.contatoId);
   if (!contato) return { titulo: "Resumo da jornada", observacao: "Nenhum contato selecionado." };
-  const eventos = gerarLinhaDoTempo(contato.id);
-  const resumo = calcularResumoJornada(contato, eventos);
+  // TODO(Fase 6 — Inteligência Comercial): este módulo inteiro ainda importa de `@/lib/data`
+  // (mock) — `conversas`/`mensagensPorContato` reais ficam pendentes até esse módulo ser
+  // reconectado a `useConversas()`/`useMensagensExtra()`. Timeline/resumo aqui só refletem
+  // tarefas/funil (já reais), não mensagens de WhatsApp ainda.
+  const fontesTimeline = { contatos, conversas: [], mensagensPorContato: {}, tarefas, funis, oportunidadesPerdidas };
+  const eventos = gerarLinhaDoTempo(contato.id, fontesTimeline);
+  const resumo = calcularResumoJornada(contato, eventos, { funis, tarefas, conversas: [] });
   return {
     titulo: "Resumo da jornada",
     linhas: [
@@ -345,7 +350,8 @@ function secaoResumoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
 
 function secaoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
   if (!ctx.contatoId) return { titulo: "Linha do tempo", observacao: "Nenhum contato selecionado." };
-  const eventos = gerarLinhaDoTempo(ctx.contatoId);
+  // Ver TODO(Fase 6) em `secaoResumoJornadaCliente` acima — mesma limitação.
+  const eventos = gerarLinhaDoTempo(ctx.contatoId, { contatos, conversas: [], mensagensPorContato: {}, tarefas, funis, oportunidadesPerdidas });
   return {
     titulo: "Linha do tempo",
     tabela: {

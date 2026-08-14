@@ -45,7 +45,10 @@ export const ORIGENS: Origem[] = [
 ];
 
 /** Classe CSS que pinta a nomenclatura da origem com a cor da própria plataforma. */
-export function classeOrigem(origem: Origem): string {
+/** Aceita `string` (não só `Origem`) porque `Conversa.origem`/`NegocioCard.origem` reais vêm do
+ * banco como texto livre (ex.: `"Direto"`, `"WhatsApp"`) — fora do conjunto fechado usado nos
+ * filtros de Contatos. Valor fora da lista conhecida cai no fallback, sem quebrar o card. */
+export function classeOrigem(origem: string): string {
   switch (origem) {
     case "Meta Ads":
       return "origem-meta";
@@ -59,6 +62,8 @@ export function classeOrigem(origem: Origem): string {
       return "origem-indicacao";
     case "Formulário":
       return "origem-formulario";
+    default:
+      return "origem-outro";
   }
 }
 

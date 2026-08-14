@@ -7,16 +7,16 @@ import { useSession } from "next-auth/react";
 
 import {
   classeOrigem,
-  conversas,
   oportunidadesPerdidas,
   type Canal,
   type Contato,
 } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
+import { useConversas } from "@/lib/conversas-context";
+import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { useTarefas } from "@/lib/tarefas-context";
-import { slugId } from "@/lib/ids";
 import { IconSearch } from "@/components/icons";
 import { FloatingDropdown } from "@/components/ui";
 import { Timeline } from "@/components/timeline";
@@ -85,6 +85,8 @@ function JornadaClientePageInner() {
   const { data: sessao } = useSession();
   const nomeUsuario = sessao?.user?.name ?? "";
   const { contatos, alternarFavorito } = useContatos();
+  const { conversas } = useConversas();
+  const { mensagensExtraPorContato } = useMensagensExtra();
   const { funis } = useFunis();
   const { colunas: tarefas } = useTarefas();
   const { membros: equipe } = useEquipe();
@@ -169,7 +171,7 @@ function JornadaClientePageInner() {
     );
   }
   function conversaDe(c: Contato) {
-    return conversas.find((cv) => cv.id === c.id || slugId(cv.nome) === c.id);
+    return conversas.find((cv) => cv.nome === c.nome);
   }
 
   const termo = normalizar(buscaDebounced);
@@ -230,7 +232,7 @@ function JornadaClientePageInner() {
         if (filtros.ativo === "Inativo" && ativo) return false;
       }
       if (filtros.primeiraEntrada !== "Todos") {
-        const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, tarefas, funis, oportunidadesPerdidas });
+        const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis, oportunidadesPerdidas });
         const primeiro = eventos[eventos.length - 2];
         const dias = primeiro ? primeiro.minutosAtras / 1440 : null;
         if (filtros.primeiraEntrada === "Últimos 7 dias" && (dias === null || dias > 7)) return false;
@@ -248,7 +250,7 @@ function JornadaClientePageInner() {
     if (colunasVisiveis.size === 0) return new Map<string, ResumoJornada>();
     const mapa = new Map<string, ResumoJornada>();
     for (const c of filtrados) {
-      const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, tarefas, funis, oportunidadesPerdidas });
+      const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis, oportunidadesPerdidas });
       mapa.set(c.id, calcularResumoJornada(c, eventos, { funis, tarefas, conversas }));
     }
     return mapa;
@@ -366,7 +368,7 @@ function JornadaClientePageInner() {
   const eventos = contato
     ? gerarLinhaDoTempo(
         contato.id,
-        { contatos, conversas, tarefas, funis, oportunidadesPerdidas },
+        { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis, oportunidadesPerdidas },
         anotacoes[contato.id] ?? [],
       )
     : [];

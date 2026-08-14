@@ -4,14 +4,19 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-import { classeOrigem, conversas, oportunidadesPerdidas, filtrosContatos } from "@/lib/data";
+import { classeOrigem, oportunidadesPerdidas, filtrosContatos, type Canal } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
+import { useConversas } from "@/lib/conversas-context";
+import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useFunis } from "@/lib/funis-context";
 import { useTarefas } from "@/lib/tarefas-context";
+import { PAISES } from "@/lib/configuracoes/mock";
 import { IconSearch } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
 import { Timeline } from "@/components/timeline";
 import { gerarLinhaDoTempo } from "@/lib/timeline";
+
+const CANAIS_PREFERIDOS = ["WhatsApp", "Instagram", "TikTok"] as const;
 
 export default function ContatosPage() {
   return (
@@ -21,11 +26,108 @@ export default function ContatosPage() {
   );
 }
 
+/** Campos de texto/select simples cadastrados na ficha do contato — mesmo conjunto usado no
+ * painel de detalhes da conversa (`conversas/page.tsx`), agora também editável direto por aqui em
+ * vez de só dentro de uma conversa aberta. */
+type CamposExtras = {
+  sobrenome: string;
+  empresa: string;
+  cargo: string;
+  telefoneFixo: string;
+  cidade: string;
+  estado: string;
+  pais: string;
+  canalPreferido: string;
+  melhorHorario: string;
+};
+
+const CAMPOS_EXTRAS_VAZIOS: CamposExtras = {
+  sobrenome: "",
+  empresa: "",
+  cargo: "",
+  telefoneFixo: "",
+  cidade: "",
+  estado: "",
+  pais: "",
+  canalPreferido: "",
+  melhorHorario: "",
+};
+
+function CamposExtrasFieldset({
+  valores,
+  onChange,
+}: {
+  valores: CamposExtras;
+  onChange: (patch: Partial<CamposExtras>) => void;
+}) {
+  return (
+    <div className="config-grid-2">
+      <div className="field">
+        <label>Sobrenome</label>
+        <input className="input" value={valores.sobrenome} onChange={(e) => onChange({ sobrenome: e.target.value })} />
+      </div>
+      <div className="field">
+        <label>Empresa</label>
+        <input className="input" value={valores.empresa} onChange={(e) => onChange({ empresa: e.target.value })} />
+      </div>
+      <div className="field">
+        <label>Cargo</label>
+        <input className="input" value={valores.cargo} onChange={(e) => onChange({ cargo: e.target.value })} />
+      </div>
+      <div className="field">
+        <label>Telefone fixo</label>
+        <input className="input" value={valores.telefoneFixo} onChange={(e) => onChange({ telefoneFixo: e.target.value })} />
+      </div>
+      <div className="field">
+        <label>Cidade</label>
+        <input className="input" value={valores.cidade} onChange={(e) => onChange({ cidade: e.target.value })} />
+      </div>
+      <div className="field">
+        <label>Estado</label>
+        <input className="input" value={valores.estado} onChange={(e) => onChange({ estado: e.target.value })} />
+      </div>
+      <div className="field">
+        <label>País</label>
+        <select className="input" value={valores.pais} onChange={(e) => onChange({ pais: e.target.value })}>
+          <option value="">Selecione…</option>
+          {PAISES.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="field">
+        <label>Canal preferido</label>
+        <select className="input" value={valores.canalPreferido} onChange={(e) => onChange({ canalPreferido: e.target.value })}>
+          <option value="">Selecione…</option>
+          {CANAIS_PREFERIDOS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="field">
+        <label>Melhor horário pra contato</label>
+        <input
+          className="input"
+          value={valores.melhorHorario}
+          onChange={(e) => onChange({ melhorHorario: e.target.value })}
+          placeholder="Ex.: Tardes, depois das 14h"
+        />
+      </div>
+    </div>
+  );
+}
+
 function ContatosPageInner() {
   const searchParams = useSearchParams();
   const { data: sessao } = useSession();
   const nomeUsuario = sessao?.user?.name ?? "";
   const { contatos, criarContato, atualizarContato, excluirContato } = useContatos();
+  const { conversas } = useConversas();
+  const { mensagensExtraPorContato } = useMensagensExtra();
   const { funis } = useFunis();
   const { colunas: tarefas } = useTarefas();
   const [selecionado, setSelecionado] = useState<string | null>(null);
@@ -37,6 +139,7 @@ function ContatosPageInner() {
   const [whatsappNovo, setWhatsappNovo] = useState("");
   const [nascimentoNovo, setNascimentoNovo] = useState("");
   const [enderecoNovo, setEnderecoNovo] = useState("");
+  const [extrasNovo, setExtrasNovo] = useState<CamposExtras>(CAMPOS_EXTRAS_VAZIOS);
   const [filtroOrigem, setFiltroOrigem] = useState(filtrosContatos[0]);
 
   const [editandoContato, setEditandoContato] = useState(false);
@@ -44,6 +147,7 @@ function ContatosPageInner() {
   const [whatsappEdit, setWhatsappEdit] = useState("");
   const [nascimentoEdit, setNascimentoEdit] = useState("");
   const [enderecoEdit, setEnderecoEdit] = useState("");
+  const [extrasEdit, setExtrasEdit] = useState<CamposExtras>(CAMPOS_EXTRAS_VAZIOS);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
 
   function abrirEdicao() {
@@ -52,6 +156,17 @@ function ContatosPageInner() {
     setWhatsappEdit(contato.whatsapp ?? "");
     setNascimentoEdit(contato.nascimento ?? "");
     setEnderecoEdit(contato.endereco ?? "");
+    setExtrasEdit({
+      sobrenome: contato.sobrenome ?? "",
+      empresa: contato.empresa ?? "",
+      cargo: contato.cargo ?? "",
+      telefoneFixo: contato.telefoneFixo ?? "",
+      cidade: contato.cidade ?? "",
+      estado: contato.estado ?? "",
+      pais: contato.pais ?? "",
+      canalPreferido: contato.canalPreferido ?? "",
+      melhorHorario: contato.melhorHorario ?? "",
+    });
     setEditandoContato(true);
   }
 
@@ -62,6 +177,15 @@ function ContatosPageInner() {
       whatsapp: whatsappEdit.trim() || undefined,
       nascimento: nascimentoEdit.trim() || undefined,
       endereco: enderecoEdit.trim() || undefined,
+      sobrenome: extrasEdit.sobrenome.trim() || undefined,
+      empresa: extrasEdit.empresa.trim() || undefined,
+      cargo: extrasEdit.cargo.trim() || undefined,
+      telefoneFixo: extrasEdit.telefoneFixo.trim() || undefined,
+      cidade: extrasEdit.cidade.trim() || undefined,
+      estado: extrasEdit.estado.trim() || undefined,
+      pais: extrasEdit.pais.trim() || undefined,
+      canalPreferido: (extrasEdit.canalPreferido.trim() || undefined) as Canal | undefined,
+      melhorHorario: extrasEdit.melhorHorario.trim() || undefined,
     });
     setEditandoContato(false);
   }
@@ -103,12 +227,22 @@ function ContatosPageInner() {
       whatsapp: whatsappNovo.trim() || undefined,
       nascimento: nascimentoNovo.trim() || undefined,
       endereco: enderecoNovo.trim() || undefined,
+      sobrenome: extrasNovo.sobrenome.trim() || undefined,
+      empresa: extrasNovo.empresa.trim() || undefined,
+      cargo: extrasNovo.cargo.trim() || undefined,
+      telefoneFixo: extrasNovo.telefoneFixo.trim() || undefined,
+      cidade: extrasNovo.cidade.trim() || undefined,
+      estado: extrasNovo.estado.trim() || undefined,
+      pais: extrasNovo.pais.trim() || undefined,
+      canalPreferido: (extrasNovo.canalPreferido.trim() || undefined) as Canal | undefined,
+      melhorHorario: extrasNovo.melhorHorario.trim() || undefined,
     });
     setNomeNovo("");
     setEmailNovo("");
     setWhatsappNovo("");
     setNascimentoNovo("");
     setEnderecoNovo("");
+    setExtrasNovo(CAMPOS_EXTRAS_VAZIOS);
     setNovoContatoAberto(false);
   }
 
@@ -212,6 +346,7 @@ function ContatosPageInner() {
                 placeholder="Onde ele mora"
               />
             </div>
+            <CamposExtrasFieldset valores={extrasNovo} onChange={(patch) => setExtrasNovo((prev) => ({ ...prev, ...patch }))} />
             <div className="section-foot">
               <button
                 type="button"
@@ -318,6 +453,14 @@ function ContatosPageInner() {
                 </p>
               </div>
               <div className="filters-row" style={{ margin: "0 0 0 auto" }}>
+                {contato.whatsapp ? (
+                  <a
+                    href={`/conversas?contato=${encodeURIComponent(contato.nome)}`}
+                    className="btn primary"
+                  >
+                    💬 Enviar WhatsApp
+                  </a>
+                ) : null}
                 {!editandoContato ? (
                   <button type="button" className="btn ghost" onClick={abrirEdicao}>
                     Editar
@@ -425,6 +568,7 @@ function ContatosPageInner() {
                     onChange={(e) => setEnderecoEdit(e.target.value)}
                   />
                 </div>
+                <CamposExtrasFieldset valores={extrasEdit} onChange={(patch) => setExtrasEdit((prev) => ({ ...prev, ...patch }))} />
                 <div className="filters-row" style={{ padding: "0 17px 14px" }}>
                   <button type="button" className="btn primary" onClick={salvarEdicao}>
                     Salvar alterações
@@ -452,6 +596,44 @@ function ContatosPageInner() {
                   <label>Endereço</label>
                   <div className="input">{contato.endereco || "—"}</div>
                 </div>
+                <div className="config-grid-2">
+                  <div className="field">
+                    <label>Sobrenome</label>
+                    <div className="input">{contato.sobrenome || "—"}</div>
+                  </div>
+                  <div className="field">
+                    <label>Empresa</label>
+                    <div className="input">{contato.empresa || "—"}</div>
+                  </div>
+                  <div className="field">
+                    <label>Cargo</label>
+                    <div className="input">{contato.cargo || "—"}</div>
+                  </div>
+                  <div className="field">
+                    <label>Telefone fixo</label>
+                    <div className="input">{contato.telefoneFixo || "—"}</div>
+                  </div>
+                  <div className="field">
+                    <label>Cidade</label>
+                    <div className="input">{contato.cidade || "—"}</div>
+                  </div>
+                  <div className="field">
+                    <label>Estado</label>
+                    <div className="input">{contato.estado || "—"}</div>
+                  </div>
+                  <div className="field">
+                    <label>País</label>
+                    <div className="input">{contato.pais || "—"}</div>
+                  </div>
+                  <div className="field">
+                    <label>Canal preferido</label>
+                    <div className="input">{contato.canalPreferido || "—"}</div>
+                  </div>
+                  <div className="field">
+                    <label>Melhor horário pra contato</label>
+                    <div className="input">{contato.melhorHorario || "—"}</div>
+                  </div>
+                </div>
               </>
             )}
 
@@ -465,6 +647,7 @@ function ContatosPageInner() {
               eventos={gerarLinhaDoTempo(contato.id, {
                 contatos,
                 conversas,
+                mensagensPorContato: mensagensExtraPorContato,
                 tarefas,
                 funis,
                 oportunidadesPerdidas,

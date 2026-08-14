@@ -13,7 +13,6 @@ import { createPortal } from "react-dom";
 
 import {
   classeOrigem,
-  conversas as conversasMock,
   motivosPerda,
   oportunidadesPerdidas,
   type Canal,
@@ -1557,7 +1556,7 @@ function ConversasPageInner() {
   const eventosTimelineContato: Evento[] = contatoDaConversa
     ? gerarLinhaDoTempo(
         contatoDaConversa.id,
-        { contatos, conversas: conversasMock, tarefas, funis, oportunidadesPerdidas },
+        { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis, oportunidadesPerdidas },
         eventosExtrasTimeline,
       )
     : eventosExtrasTimeline.slice().sort((a, b) => a.minutosAtras - b.minutosAtras);

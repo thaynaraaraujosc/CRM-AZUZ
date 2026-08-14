@@ -2676,6 +2676,10 @@ table.tbl tbody tr:hover td {
   color: #2e6bff;
 }
 
+.origem-outro {
+  color: var(--text-muted);
+}
+
 .wa-main {
   flex: 1;
   min-width: 0;

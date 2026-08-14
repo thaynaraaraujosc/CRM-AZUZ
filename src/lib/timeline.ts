@@ -3,29 +3,24 @@
  * dados que já existem em cada módulo (conversas, tarefas, funil, perdas),
  * em vez de manter uma lista de eventos separada e hardcoded.
  *
- * LIMITAÇÃO CONHECIDA (documentada aqui de propósito): como o CRM ainda não
- * tem backend/persistência, os dados de origem não guardam timestamp real —
- * só strings de exibição em formatos variados ("Há 6 min", "28 jul",
- * "22/07/2026", "09:14"...). `estimarMinutosAtras()` faz o melhor parse
- * possível desses formatos pra poder ordenar a timeline, mas é uma
- * heurística, não um relógio real. Quando existir timestamp de verdade
- * (após a camada de backend), essa função deixa de ser necessária — troque
- * `minutosAtras` por diferença de `Date` real e o resto do módulo não muda.
+ * Conversas/mensagens (`fontes.conversas`/`fontes.mensagensPorContato`) já vêm do banco de
+ * verdade (`useConversas()`/`useMensagensExtra()`) — `MensagemExtra.criadoEm` é timestamp real,
+ * então essa parte da timeline ordena por relógio de verdade, não heurística. Tarefas/funil ainda
+ * só têm strings de exibição de data (`estimarMinutosAtras()` segue fazendo o parse melhor-esforço
+ * pra essas), e `oportunidadesPerdidas` continua vindo do mock até o funil ganhar
+ * `NegocioCard.motivoPerda` de verdade (ver plano da Inteligência Comercial).
  */
 
 import {
-  contatos as contatosPadrao,
-  conversas as conversasPadrao,
-  funis as funisPadrao,
   oportunidadesPerdidas as perdasPadrao,
-  tarefas as tarefasPadrao,
   type Canal,
   type ColunaTarefas,
   type Contato,
-  type Conversa,
+  type ConvMensagem,
   type Funil,
   type Origem,
 } from "@/lib/data";
+import type { ConversaReal } from "@/lib/conversas-context";
 import { slugId } from "@/lib/ids";
 import { estimarMinutosAtras } from "@/lib/datas";
 
@@ -109,7 +104,9 @@ export type Evento = {
   quando: string;
   /** Chave de ordenação — ver nota de limitação no topo do arquivo. */
   minutosAtras: number;
-  origem?: Origem;
+  /** String livre — `Conversa.origem` real (`"Direto"`, `"WhatsApp"` etc) não é o mesmo conjunto
+   * fechado que `Contato.origem` (`Origem`, usado nos filtros de Contatos/Funil). */
+  origem?: string;
   responsavel?: string;
   link?: { modulo: "conversa" | "tarefa" | "funil" | "perdas"; href: string };
 };
@@ -144,34 +141,30 @@ export function inferirEstadoCicloDeVida(
 
 type FontesTimeline = {
   contatos: Contato[];
-  conversas: Conversa[];
+  conversas: ConversaReal[];
+  /** Mensagens reais por contato (chave = `Conversa.nome`/`Contato.nome`), mesmo dicionário que
+   * `useMensagensExtra()` expõe. */
+  mensagensPorContato: Record<string, ConvMensagem[]>;
   tarefas: ColunaTarefas[];
   funis: Funil[];
   oportunidadesPerdidas: typeof perdasPadrao;
 };
 
-const FONTES_PADRAO: FontesTimeline = {
-  contatos: contatosPadrao,
-  conversas: conversasPadrao,
-  tarefas: tarefasPadrao,
-  funis: funisPadrao,
-  oportunidadesPerdidas: perdasPadrao,
-};
-
 /**
  * Gera a linha do tempo de um contato cruzando conversas, tarefas, funil e
  * negociações perdidas — todas ligadas pelo mesmo `id`/nome, sem duplicar
- * dado nenhum: cada evento é derivado, nunca copiado.
+ * dado nenhum: cada evento é derivado, nunca copiado. `fontes` é sempre
+ * explícito (sem default) — cada chamador já tem os providers reais
+ * (`useContatos`/`useConversas`/`useMensagensExtra`/`useFunis`/`useTarefas`) disponíveis.
  */
 export function gerarLinhaDoTempo(
   contatoId: string,
-  fontes: FontesTimeline = FONTES_PADRAO,
+  fontes: FontesTimeline,
   /**
-   * Eventos extras que não têm uma fonte derivável em `data.ts` ainda —
-   * hoje anotações manuais e resultados de negociação registrados direto na
-   * conversa (venda/perda/adiada/cancelada). Entram no mesmo merge/ordenação
-   * dos eventos derivados; quando essas ações ganharem persistência própria,
-   * viram só mais uma fonte em `FontesTimeline` e esse parâmetro some.
+   * Eventos extras que não têm uma fonte derivável ainda — hoje anotações manuais e resultados de
+   * negociação registrados direto na conversa (venda/perda/adiada/cancelada). Entram no mesmo
+   * merge/ordenação dos eventos derivados; quando essas ações ganharem persistência própria, viram
+   * só mais uma fonte em `FontesTimeline` e esse parâmetro some.
    */
   extras: Evento[] = [],
 ): Evento[] {
@@ -180,56 +173,57 @@ export function gerarLinhaDoTempo(
 
   const eventos: Evento[] = [...extras];
 
-  const conversa = fontes.conversas.find(
-    (c) => c.id === contatoId || slugId(c.nome) === contatoId,
-  );
-  if (conversa) {
-    const ancora = estimarMinutosAtras(conversa.tempo);
-    let jaTeveMensagemRecebida = false;
-    conversa.mensagens.forEach((msg, i) => {
-      // Mensagens são cronológicas dentro da conversa (índice 0 = mais antiga).
-      // Sem timestamp real por mensagem, aproxima cada uma como "2 min mais
-      // antiga que a próxima", ancorado no tempo total da conversa (ver nota
-      // de limitação no topo do arquivo).
-      const passosAteFinal = conversa.mensagens.length - 1 - i;
-      const minutosAtras = ancora + passosAteFinal * 2;
-      const primeira = msg.tipo === "in" && !jaTeveMensagemRecebida;
-      if (msg.tipo === "in") jaTeveMensagemRecebida = true;
+  // Casamento por `nome` (não por id) — é a chave real que liga Contato/Conversa/MensagemExtra em
+  // todo o resto do app (ver `upsertConversaAoReceberMensagem`); tentar casar por id aqui nunca
+  // bateria com dado real (`Contato.id` leva o prefixo do workspace, `Conversa.id` é outro slug).
+  const conversa = fontes.conversas.find((c) => c.nome === contato.nome);
+  const mensagens = fontes.mensagensPorContato[contato.nome] ?? [];
+  let jaTeveMensagemRecebida = false;
+  mensagens.forEach((msg, i) => {
+    // `criadoEm` é timestamp real (ms) quando a mensagem já passou pelo backend — mensagem antiga
+    // sem esse campo (raríssimo, só dado de seed) cai num fallback aproximado, mais antiga quanto
+    // mais cedo no array.
+    const minutosAtras = msg.criadoEm
+      ? (Date.now() - msg.criadoEm) / 60000
+      : SEM_DATA - (mensagens.length - i);
+    const primeira = msg.tipo === "in" && !jaTeveMensagemRecebida;
+    if (msg.tipo === "in") jaTeveMensagemRecebida = true;
 
-      eventos.push({
-        id: `${conversa.id}-msg-${i}`,
-        contatoId,
-        tipo: msg.tipo === "in" ? "mensagem_recebida" : msg.tipo === "out" ? "mensagem_enviada" : "sistema",
-        titulo:
-          msg.tipo === "system"
-            ? msg.texto
-            : primeira
-              ? "Primeira mensagem recebida"
-              : msg.tipo === "in"
-                ? "Mensagem recebida"
-                : "Mensagem enviada",
-        descricao: msg.tipo === "system" ? undefined : msg.texto,
-        quando: msg.hora || conversa.tempo,
-        minutosAtras,
-        origem: conversa.origem,
-        link: { modulo: "conversa", href: `/conversas?id=${conversa.id}` },
-      });
+    const linkConversa = conversa ? { modulo: "conversa" as const, href: `/conversas?contato=${encodeURIComponent(contato.nome)}` } : undefined;
 
-      if (msg.documento) {
-        eventos.push({
-          id: `${conversa.id}-doc-${i}`,
-          contatoId,
-          tipo: "documento_enviado",
-          titulo: `Documento: ${msg.documento.nome}`,
-          descricao: `${msg.documento.formato.toUpperCase()} · ${msg.documento.origem === "crm" ? "biblioteca do CRM" : "enviado pelo computador"}`,
-          quando: msg.hora || conversa.tempo,
-          minutosAtras: minutosAtras - 0.1,
-          origem: conversa.origem,
-          link: { modulo: "conversa", href: `/conversas?id=${conversa.id}` },
-        });
-      }
+    eventos.push({
+      id: msg.id ?? `${contatoId}-msg-${i}`,
+      contatoId,
+      tipo: msg.tipo === "in" ? "mensagem_recebida" : msg.tipo === "out" ? "mensagem_enviada" : "sistema",
+      titulo:
+        msg.tipo === "system"
+          ? msg.texto
+          : primeira
+            ? "Primeira mensagem recebida"
+            : msg.tipo === "in"
+              ? "Mensagem recebida"
+              : "Mensagem enviada",
+      descricao: msg.tipo === "system" ? undefined : msg.texto,
+      quando: msg.hora,
+      minutosAtras,
+      origem: conversa?.origem,
+      link: linkConversa,
     });
-  }
+
+    if (msg.documento) {
+      eventos.push({
+        id: `${msg.id ?? `${contatoId}-msg-${i}`}-doc`,
+        contatoId,
+        tipo: "documento_enviado",
+        titulo: `Documento: ${msg.documento.nome}`,
+        descricao: `${msg.documento.formato.toUpperCase()} · ${msg.documento.origem === "crm" ? "biblioteca do CRM" : "enviado pelo computador"}`,
+        quando: msg.hora,
+        minutosAtras: minutosAtras - 0.1,
+        origem: conversa?.origem,
+        link: linkConversa,
+      });
+    }
+  });
 
   for (const coluna of fontes.tarefas) {
     for (const t of coluna.cards) {
@@ -362,7 +356,7 @@ export type ResumoJornada = {
 export function calcularResumoJornada(
   contato: Contato,
   eventos: Evento[],
-  fontes: Pick<FontesTimeline, "funis" | "tarefas" | "conversas"> = FONTES_PADRAO,
+  fontes: Pick<FontesTimeline, "funis" | "tarefas" | "conversas">,
 ): ResumoJornada {
   const eventosReais = eventos.slice(0, -1); // o último é sempre o sentinela "contato_criado"
   const primeiraEntradaEvento = eventosReais[eventosReais.length - 1] ?? null;
@@ -386,9 +380,8 @@ export function calcularResumoJornada(
   const receitaAcumulada = valoresCompras.length > 0 ? valoresCompras.reduce((s, v) => s + v, 0) : null;
   const ultimaCompraEvento = eventosReais.find((e) => e.tipo === "negociacao_fechada") ?? null;
 
-  const conversaDoContato = fontes.conversas.find(
-    (c) => c.id === contato.id || slugId(c.nome) === contato.id,
-  );
+  // Casamento por `nome`, mesmo motivo documentado em `gerarLinhaDoTempo`.
+  const conversaDoContato = fontes.conversas.find((c) => c.nome === contato.nome);
 
   const tarefasDoContato = fontes.tarefas
     .flatMap((c) => c.cards)
@@ -398,7 +391,7 @@ export function calcularResumoJornada(
   return {
     primeiraEntrada: primeiraEntradaEvento?.quando ?? null,
     origem: contato.origem,
-    canalInicial: conversaDoContato?.canal ?? null,
+    canalInicial: (conversaDoContato?.canal as Canal | undefined) ?? null,
     tempoAtePrimeiraResposta,
     quantidadeNegociacoes: cardsDoContato.length,
     quantidadeCompras: compras.length,
