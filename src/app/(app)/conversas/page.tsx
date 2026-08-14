@@ -1622,6 +1622,15 @@ function ConversasPageInner() {
       respondendoA: respondendoMensagem ?? undefined,
       canal: viaBaileys ? "whatsapp_baileys" : undefined,
     });
+    // Erro fica registrado como mensagem de sistema DENTRO da conversa (não só um toast que some
+    // sozinho em poucos segundos) — assim dá pra ver o motivo exato depois, sem precisar
+    // screenshotar na hora certa.
+    function avisarFalhaNaConversa(prefixo: string, erro: unknown) {
+      const motivo = erro instanceof Error && erro.message ? erro.message : "motivo desconhecido";
+      adicionarMensagem({ tipo: "system", texto: `⚠️ Falha ao enviar (${prefixo}): ${motivo}`, hora: horaAgora() });
+      avisarAutomacao(`Falha ao enviar pelo ${prefixo} — veja o motivo na conversa.`);
+    }
+
     if (viaBaileys && contatoDaConversa?.whatsapp) {
       fetch("/api/integracoes/whatsapp-baileys/enviar", {
         method: "POST",
@@ -1631,13 +1640,7 @@ function ConversasPageInner() {
         .then(async (r) => {
           if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
         })
-        .catch((erro) =>
-          avisarAutomacao(
-            erro instanceof Error && erro.message
-              ? `WhatsApp (QR Code): ${erro.message}`
-              : "Não foi possível enviar pelo WhatsApp (QR Code) — verifica a conexão em Configurações.",
-          ),
-        );
+        .catch((erro) => avisarFalhaNaConversa("WhatsApp QR Code", erro));
     } else if (!viaBaileys && aberta.canal === "WhatsApp" && (aberta.contato || contatoDaConversa?.whatsapp)) {
       fetch("/api/integracoes/meta/whatsapp/enviar", {
         method: "POST",
@@ -1647,13 +1650,16 @@ function ConversasPageInner() {
         .then(async (r) => {
           if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
         })
-        .catch((erro) =>
-          avisarAutomacao(
-            erro instanceof Error && erro.message
-              ? `WhatsApp (Meta): ${erro.message}`
-              : "Não foi possível enviar pelo WhatsApp (Meta) — verifica a conexão em Configurações.",
-          ),
-        );
+        .catch((erro) => avisarFalhaNaConversa("WhatsApp Meta", erro));
+    } else if (!viaBaileys) {
+      // Nenhum dos dois canais reais bateu (sem número/contato associado à conversa) — sem isso,
+      // a mensagem parecia "sumir": ficava só no estado local, sem nenhum aviso de que não tinha
+      // pra onde mandar de verdade.
+      adicionarMensagem({
+        tipo: "system",
+        texto: "⚠️ Não enviado: essa conversa não tem um número de WhatsApp associado.",
+        hora: horaAgora(),
+      });
     }
     setMensagemTexto("");
     setRespondendoMensagem(null);
