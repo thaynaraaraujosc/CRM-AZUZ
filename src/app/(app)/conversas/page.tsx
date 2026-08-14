@@ -445,7 +445,7 @@ function useFecharAoClicarFora(
 
 function ConversasPageInner() {
   const searchParams = useSearchParams();
-  const { funis, atribuirContatoAoFunil } = useFunis();
+  const { funis, setFunis, atribuirContatoAoFunil } = useFunis();
   const {
     contatos,
     salvarDadosContato,
@@ -2513,9 +2513,69 @@ function ConversasPageInner() {
     setResultadoMenuAberto(true);
   }
 
+  /**
+   * Marca venda/perda/reabertura de verdade no `NegocioCard` real (mesmo campo que o Funil usa —
+   * ver `marcarDesfecho` em `funil/page.tsx`), em vez de só guardar em `resultadoPorContato` (que
+   * é puramente local e se perde ao trocar de aba). Se o contato ainda não tiver negócio em
+   * nenhum funil, entra na etapa selecionada do painel (mesmo caminho de `salvarAtribuicao`) antes
+   * de marcar — não dá pra fechar um negócio que não existe.
+   */
+  function atualizarDesfechoNegocio(
+    statusFechamento: "ganho" | "perdido" | null,
+    motivoPerda: string | null,
+    valorOverride?: string,
+  ) {
+    const nome = aberta.nome;
+    const existente = funis
+      .flatMap((f) => f.colunas.flatMap((c) => c.cards.map((card) => ({ card, funilId: f.id }))))
+      .find((x) => x.card.nome === nome);
+
+    if (!existente) {
+      const funilDestino = funilSelecionado ?? funis[0];
+      const etapaDestino = funilDestino?.colunas[0];
+      if (!funilDestino || !etapaDestino) return;
+      atribuirContatoAoFunil(funilDestino.id, etapaDestino.titulo, {
+        nome,
+        valor: valorOverride || "—",
+        origem: (aberta.origem as NegocioCard["origem"]) ?? "Direto",
+        dias: "Hoje",
+        data: HOJE_ISO,
+        statusFechamento,
+        motivoPerda,
+        dataFechamento: statusFechamento ? HOJE_ISO : null,
+      });
+      return;
+    }
+
+    setFunis((prev) =>
+      prev.map((f) =>
+        f.id !== existente.funilId
+          ? f
+          : {
+              ...f,
+              colunas: f.colunas.map((c) => ({
+                ...c,
+                cards: c.cards.map((cd) =>
+                  cd.nome !== nome
+                    ? cd
+                    : {
+                        ...cd,
+                        statusFechamento,
+                        motivoPerda,
+                        dataFechamento: statusFechamento ? HOJE_ISO : null,
+                        valor: valorOverride || cd.valor,
+                      },
+                ),
+              })),
+            },
+      ),
+    );
+  }
+
   function escolherResultado(opcao: "venda" | "perda" | "andamento" | "adiada" | "cancelada") {
     setResultadoMenuAberto(false);
     if (opcao === "andamento") {
+      atualizarDesfechoNegocio(null, null);
       setResultadoPorContato((prev) => {
         const next = { ...prev };
         delete next[aberta.nome];
@@ -2537,8 +2597,9 @@ function ConversasPageInner() {
 
   async function confirmarVenda() {
     setRegistrandoResultado(true);
-    // Camada de serviço provisória — hoje só grava no estado do front-end;
-    // no futuro chama a API de negociações e recebe o id real de volta.
+    atualizarDesfechoNegocio("ganho", null, vendaValor || undefined);
+    // Feedback visual — a gravação em si (`setFunis`) já é síncrona; o delay é só pra dar
+    // sensação de confirmação antes de fechar o formulário.
     await new Promise((resolve) => setTimeout(resolve, 500));
     setResultadoPorContato((prev) => ({ ...prev, [aberta.nome]: "venda" }));
     adicionarHistorico(
@@ -2551,6 +2612,7 @@ function ConversasPageInner() {
   }
 
   function marcarPerda(motivo: string) {
+    atualizarDesfechoNegocio("perdido", motivo);
     setResultadoPorContato((prev) => ({ ...prev, [aberta.nome]: "perda" }));
     setMotivoPerdaPorContato((prev) => ({ ...prev, [aberta.nome]: motivo }));
     setEscolhendoMotivo(false);
