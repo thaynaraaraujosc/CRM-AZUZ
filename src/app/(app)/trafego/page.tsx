@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import { ORIGENS, campanhas as campanhasMock, contatos, funilJulho, kpisTrafego, type Origem } from "@/lib/data";
+import { ORIGENS, type Campanha, type Origem } from "@/lib/data";
+import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { useIntegracaoMeta } from "@/components/configuracoes/useIntegracaoMeta";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
@@ -15,6 +16,7 @@ import {
   calcularValorVendido,
   formatarMoeda,
   parseSubCampanha,
+  todosOsCards,
 } from "@/lib/metrics";
 
 type ColunaOrdenavel = "nome" | "investido" | "leads" | "cpl" | "roas";
@@ -22,10 +24,13 @@ type ColunaOrdenavel = "nome" | "investido" | "leads" | "cpl" | "roas";
 /**
  * Visão completa da aquisição — do investimento até a receita. Campos que o
  * modelo de dados atual não liga de verdade (ex.: venda por campanha
- * específica) mostram "Dados não conectados" em vez de número inventado.
+ * específica, Google Ads sem integração própria) mostram "Dados não
+ * conectados" em vez de número inventado — inclusive a lista de campanhas
+ * fica vazia até o Meta Ads ser conectado (antes mostrava mock inteiro).
  */
 export default function TrafegoPage() {
-  const { funis: funisPadrao } = useFunis();
+  const { funis } = useFunis();
+  const { contatos } = useContatos();
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
   const [plataformaFiltro, setPlataformaFiltro] = useState("Todas");
   const [busca, setBusca] = useState("");
@@ -35,7 +40,7 @@ export default function TrafegoPage() {
   const [campanhaAberta, setCampanhaAberta] = useState<string | null>(null);
 
   const { integracao: adsIntegracao, desconectando: adsDesconectando, desconectar: desconectarAds } = useIntegracaoMeta("meta_ads");
-  const [campanhasReais, setCampanhasReais] = useState<typeof campanhasMock | null>(null);
+  const [campanhasReais, setCampanhasReais] = useState<Campanha[] | null>(null);
 
   // Ajusta durante a renderização (não num efeito) quando o status muda pra "não conectado" — evita
   // setState síncrono dentro do corpo do efeito (regra `react-hooks/set-state-in-effect`).
@@ -53,12 +58,9 @@ export default function TrafegoPage() {
       .catch((erro) => console.error("Falha ao carregar campanhas do Meta Ads:", erro));
   }, [adsIntegracao?.status]);
 
-  // Enquanto o Meta Ads não estiver conectado, mostra o mock inteiro (Google Ads segue mockado até
-  // ter integração própria); conectado, troca só as linhas de Meta pelas reais.
-  const campanhas = useMemo(
-    () => (campanhasReais ? [...campanhasMock.filter((c) => c.plataforma !== "M"), ...campanhasReais] : campanhasMock),
-    [campanhasReais],
-  );
+  // Google Ads não tem integração própria ainda — só entra campanha de verdade (Meta Ads
+  // conectado). Sem conexão nenhuma, a lista fica vazia (não mais um mock inteiro).
+  const campanhas = campanhasReais ?? [];
 
   const campanhasFiltradas = useMemo(
     () =>
@@ -109,32 +111,26 @@ export default function TrafegoPage() {
   const leads = calcularLeadsTrafego(campanhasFiltradas);
   const roas = calcularRoasMedio(campanhasFiltradas);
   const custoPorLead = leads.valor > 0 ? investido.valor / leads.valor : 0;
-  const vendasKpi = kpisTrafego.find((k) => k.label === "Vendas");
-  const custoVendaKpi = kpisTrafego.find((k) => k.label === "Custo / venda");
-  const receita = calcularValorVendido();
+  const receita = calcularValorVendido(todosOsCards(funis));
+  const vendas = todosOsCards(funis).filter((c) => c.statusFechamento === "ganho").length;
+  const custoPorVenda = vendas > 0 ? investido.valor / vendas : 0;
 
-  const funilSteps = [
-    { chave: "gerados", label: "Leads gerados", quantidade: funilJulho[0]?.total ?? 0 },
-    { chave: "qualificados", label: "Leads qualificados", quantidade: funilJulho[1]?.total ?? 0 },
-    { chave: "negociacoes", label: "Negociações", quantidade: funilJulho[2]?.total ?? 0 },
-    {
-      chave: "vendas",
-      label: "Vendas",
-      quantidade: funilJulho[3]?.total ?? 0,
-      valorLabel: receita.label,
-    },
-  ];
+  // Funil de tráfego usa as etapas de verdade do funil ativo (nome/quantidade de colunas variam
+  // por workspace — não são mais 4 rótulos fixos de mock).
+  const funilPrincipal = funis[0];
+  const funilSteps = (funilPrincipal?.colunas ?? []).map((coluna, i, todas) => ({
+    chave: coluna.id,
+    label: coluna.titulo,
+    quantidade: coluna.cards.length,
+    valorLabel: i === todas.length - 1 ? receita.label : undefined,
+  }));
 
   const origensComDados = ORIGENS.map((origem: Origem) => {
     const leadsOrigem = contatos.filter((c) => c.origem === origem).length;
-    const vendasOrigem = funisPadrao
-      .flatMap((f) => f.colunas.filter((c) => c.titulo.startsWith("Fechado")).flatMap((c) => c.cards))
-      .filter((card) => card.origem === origem).length;
+    const vendasOrigem = todosOsCards(funis).filter((card) => card.origem === origem && card.statusFechamento === "ganho").length;
     const investimentoOrigem =
-      origem === "Meta Ads" || origem === "Google Ads"
-        ? campanhas
-            .filter((c) => (origem === "Meta Ads" ? c.plataforma === "M" : c.plataforma === "G"))
-            .reduce((s, c) => s + parseSubCampanha(c.sub).investido, 0)
+      origem === "Meta Ads"
+        ? campanhas.filter((c) => c.plataforma === "M").reduce((s, c) => s + parseSubCampanha(c.sub).investido, 0)
         : null;
     return { origem, leadsOrigem, vendasOrigem, investimentoOrigem };
   });
@@ -204,6 +200,16 @@ export default function TrafegoPage() {
           viewKey="trafego"
         />
 
+        {campanhas.length === 0 ? (
+          <div className="card mb14">
+            <div className="dados-nao-conectados" style={{ padding: 17 }}>
+              Você ainda não possui dados suficientes para gerar este indicador — conecte o Meta Ads
+              (botão acima) pra ver investimento, leads e ROAS reais aqui. Google Ads ainda não tem
+              integração própria no CRM.
+            </div>
+          </div>
+        ) : null}
+
         <div className="grid kpi6">
           <KpiCard label="Investido" value={investido.label} formula={investido.formula} />
           <KpiCard label="Leads" value={leads.label} formula={leads.formula} href="/funil" />
@@ -212,13 +218,17 @@ export default function TrafegoPage() {
             value={formatarMoeda(custoPorLead)}
             formula="Investido em tráfego ÷ leads gerados, nas campanhas filtradas"
           />
-          {vendasKpi ? <KpiCard label={vendasKpi.label} value={vendasKpi.value} href="/performance-vendas" /> : null}
-          {custoVendaKpi ? <KpiCard label={custoVendaKpi.label} value={custoVendaKpi.value} /> : null}
+          <KpiCard label="Vendas" value={String(vendas)} href="/performance-vendas" />
+          <KpiCard label="Custo / venda" value={formatarMoeda(custoPorVenda)} />
           <KpiCard label="ROAS" value={roas.label} formula={roas.formula} />
         </div>
 
         <ChartCard title="Funil de tráfego">
-          <FunnelSteps etapas={funilSteps} />
+          {funilSteps.length === 0 ? (
+            <p className="hint" style={{ padding: 17 }}>Crie um funil com etapas pra ver essa visão aqui.</p>
+          ) : (
+            <FunnelSteps etapas={funilSteps} />
+          )}
         </ChartCard>
 
         <div className="card mb14">

@@ -3,23 +3,20 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 
-import {
-  conversaoPorResponsavel,
-  equipe,
-  faturamentoPorResponsavel,
-  serieDashboardRelatorios,
-  tempoPrimeiroContatoPorResponsavel,
-} from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { BarList, ChartCard, LineChart } from "@/components/charts";
 import {
   calcularMotivoPrincipalPerda,
+  calcularPorResponsavel,
+  calcularSerieDiaria,
   calcularTaxaConversao,
   calcularTicketMedio,
   calcularValorPerdido,
   calcularValorVendido,
   formatarMoeda,
+  todosOsCards,
 } from "@/lib/metrics";
 
 const METRICAS_EVOLUCAO = [
@@ -32,8 +29,9 @@ type MetricaEvolucao = (typeof METRICAS_EVOLUCAO)[number]["chave"];
 /**
  * Performance mostra só desempenho e conversão — motivos de perda tem
  * página própria (/motivos-perda), com link daqui pro resumo completo.
- * A antiga visão de equipe com 4 botões (volume/percentual/lista/gráfico)
- * virou uma única linha combinada por pessoa (BarList).
+ * Tudo calculado sobre NegocioCard real (ver src/lib/metrics.ts) — sem
+ * indicador nenhum começa com dado fictício; workspace sem negócio fechado
+ * ainda mostra zero/vazio de verdade.
  */
 export default function PerformanceVendasPage() {
   return (
@@ -45,38 +43,33 @@ export default function PerformanceVendasPage() {
 
 function PerformanceVendasPageInner() {
   const { funis } = useFunis();
+  const { membros: equipe } = useEquipe();
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
   const [funilFiltro, setFuncilFiltro] = useState("Todos");
   const [responsavelFiltro, setResponsavelFiltro] = useState("Todos");
   const [metricaEvolucao, setMetricaEvolucao] = useState<MetricaEvolucao>("vendas");
   const [pessoaAberta, setPessoaAberta] = useState<string | null>(null);
 
-  const conversaoFiltrada = conversaoPorResponsavel.filter(
-    (r) => responsavelFiltro === "Todos" || r.nome === responsavelFiltro,
-  );
-  const faturamentoFiltrado = faturamentoPorResponsavel.filter(
-    (r) => responsavelFiltro === "Todos" || r.nome === responsavelFiltro,
-  );
+  const funisFiltrados = funilFiltro === "Todos" ? funis : funis.filter((f) => f.nome === funilFiltro);
+  const cardsTodos = todosOsCards(funisFiltrados);
+  const cardsFiltrados =
+    responsavelFiltro === "Todos" ? cardsTodos : cardsTodos.filter((c) => c.responsavel === responsavelFiltro);
 
-  const taxaConversao = calcularTaxaConversao(conversaoFiltrada);
-  const valorVendido = calcularValorVendido(faturamentoFiltrado);
-  const ticketMedio = calcularTicketMedio(faturamentoFiltrado, conversaoFiltrada);
-  const totalOportunidades = conversaoFiltrada.reduce((s, r) => s + r.vendidas + r.perdidas, 0);
-  const valorPerdido = calcularValorPerdido();
-  const motivoPrincipal = calcularMotivoPrincipalPerda();
+  const taxaConversao = calcularTaxaConversao(cardsFiltrados);
+  const valorVendido = calcularValorVendido(cardsFiltrados);
+  const ticketMedio = calcularTicketMedio(cardsFiltrados);
+  const totalOportunidades = cardsFiltrados.filter((c) => c.statusFechamento).length;
+  const valorPerdido = calcularValorPerdido(cardsFiltrados);
+  const motivoPrincipal = calcularMotivoPrincipalPerda(cardsFiltrados);
+  const porResponsavel = calcularPorResponsavel(cardsTodos);
+  const serieDiaria = calcularSerieDiaria(cardsFiltrados);
 
   const meta = 45000;
   const percentualMeta = Math.min(999, Math.round((valorVendido.valor / meta) * 100));
 
-  const pessoaDetalhe = pessoaAberta
-    ? {
-        conversao: conversaoPorResponsavel.find((r) => r.nome === pessoaAberta),
-        tempo: tempoPrimeiroContatoPorResponsavel.find((r) => r.nome === pessoaAberta),
-        faturamento: faturamentoPorResponsavel.find((r) => r.nome === pessoaAberta),
-      }
-    : null;
+  const pessoaDetalhe = pessoaAberta ? porResponsavel.find((r) => r.nome === pessoaAberta) : null;
 
-  const seriePonto = (dia: (typeof serieDashboardRelatorios)[number]) => {
+  const seriePonto = (dia: (typeof serieDiaria)[number]) => {
     if (metricaEvolucao === "vendas") return dia.vendas;
     if (metricaEvolucao === "receita") return dia.valorVendas;
     return dia.criadas > 0 ? Math.round((dia.vendas / dia.criadas) * 100) : 0;
@@ -123,8 +116,17 @@ function PerformanceVendasPageInner() {
           viewKey="performance"
         />
 
+        {totalOportunidades === 0 ? (
+          <div className="card mb14">
+            <div className="dados-nao-conectados" style={{ padding: 17 }}>
+              Você ainda não possui dados suficientes para gerar este indicador — marque negócios
+              como ganhos/perdidos no Funil pra ver a performance aqui.
+            </div>
+          </div>
+        ) : null}
+
         <div className="grid kpi4">
-          <KpiCard label="Total de negociações" value={String(totalOportunidades)} />
+          <KpiCard label="Total de negociações encerradas" value={String(totalOportunidades)} />
           <KpiCard label="Taxa de conversão" value={taxaConversao.label} formula={taxaConversao.formula} />
           <KpiCard label="Receita" value={valorVendido.label} formula={valorVendido.formula} />
           <KpiCard label="Ticket médio" value={ticketMedio.label} formula={ticketMedio.formula} />
@@ -146,20 +148,23 @@ function PerformanceVendasPageInner() {
             <h4>Desempenho por responsável</h4>
           </div>
           <div style={{ padding: 17 }}>
-            <BarList
-              items={conversaoFiltrada.map((r) => {
-                const total = r.vendidas + r.perdidas;
-                const taxa = total > 0 ? Math.round((r.vendidas / total) * 100) : 0;
-                const fat = faturamentoPorResponsavel.find((f) => f.nome === r.nome);
-                return {
-                  chave: r.nome,
-                  label: r.nome,
-                  meta: `${r.vendidas} vendas · ${r.perdidas} perda${r.perdidas === 1 ? "" : "s"} · ${taxa}% de conversão · ${fat ? formatarMoeda(fat.valor) : "—"}`,
-                  percentual: taxa,
-                  onClick: () => setPessoaAberta((atual) => (atual === r.nome ? null : r.nome)),
-                };
-              })}
-            />
+            {porResponsavel.length === 0 ? (
+              <p className="hint">Nenhum negócio com responsável e desfecho registrado ainda.</p>
+            ) : (
+              <BarList
+                items={porResponsavel.map((r) => {
+                  const total = r.vendidas + r.perdidas;
+                  const taxa = total > 0 ? Math.round((r.vendidas / total) * 100) : 0;
+                  return {
+                    chave: r.nome,
+                    label: r.nome,
+                    meta: `${r.vendidas} vendas · ${r.perdidas} perda${r.perdidas === 1 ? "" : "s"} · ${taxa}% de conversão · ${formatarMoeda(r.receita)}`,
+                    percentual: taxa,
+                    onClick: () => setPessoaAberta((atual) => (atual === r.nome ? null : r.nome)),
+                  };
+                })}
+              />
+            )}
           </div>
         </div>
 
@@ -173,26 +178,16 @@ function PerformanceVendasPageInner() {
             </div>
             <div style={{ padding: 17 }}>
               <div className="stat-row">
-                <span className="sl">Oportunidades contatadas</span>
-                <span className="sv">{pessoaDetalhe.tempo?.oportunidades ?? "—"}</span>
-              </div>
-              <div className="stat-row">
-                <span className="sl">Tempo médio de resposta</span>
-                <span className="sv">{pessoaDetalhe.tempo?.tempoMedio ?? "—"}</span>
-              </div>
-              <div className="stat-row">
                 <span className="sl">Vendas</span>
-                <span className="sv">{pessoaDetalhe.conversao?.vendidas ?? "—"}</span>
+                <span className="sv">{pessoaDetalhe.vendidas}</span>
               </div>
               <div className="stat-row">
                 <span className="sl">Perdas</span>
-                <span className="sv">{pessoaDetalhe.conversao?.perdidas ?? "—"}</span>
+                <span className="sv">{pessoaDetalhe.perdidas}</span>
               </div>
               <div className="stat-row">
                 <span className="sl">Receita</span>
-                <span className="sv">
-                  {pessoaDetalhe.faturamento ? formatarMoeda(pessoaDetalhe.faturamento.valor) : "—"}
-                </span>
+                <span className="sv">{formatarMoeda(pessoaDetalhe.receita)}</span>
               </div>
               <Link href={`/jornada-cliente`} className="link" style={{ display: "inline-block", marginTop: 8 }}>
                 Ver atividades desta pessoa →
@@ -218,16 +213,23 @@ function PerformanceVendasPageInner() {
             </div>
           }
         >
-          <LineChart
-            series={[
-              {
-                chave: metricaEvolucao,
-                cor: METRICAS_EVOLUCAO.find((m) => m.chave === metricaEvolucao)?.cor ?? "#2e6bff",
-                label: METRICAS_EVOLUCAO.find((m) => m.chave === metricaEvolucao)?.label ?? "",
-                pontos: serieDashboardRelatorios.map((p) => ({ x: p.dia, y: seriePonto(p) })),
-              },
-            ]}
-          />
+          {serieDiaria.length === 0 ? (
+            <p className="hint" style={{ padding: 17 }}>
+              Ainda sem movimento suficiente pra traçar uma evolução — o gráfico aparece assim que
+              houver negócios criados/fechados em mais de um dia.
+            </p>
+          ) : (
+            <LineChart
+              series={[
+                {
+                  chave: metricaEvolucao,
+                  cor: METRICAS_EVOLUCAO.find((m) => m.chave === metricaEvolucao)?.cor ?? "#2e6bff",
+                  label: METRICAS_EVOLUCAO.find((m) => m.chave === metricaEvolucao)?.label ?? "",
+                  pontos: serieDiaria.map((p) => ({ x: p.dia, y: seriePonto(p) })),
+                },
+              ]}
+            />
+          )}
         </ChartCard>
 
         <div className="card">
@@ -238,10 +240,14 @@ function PerformanceVendasPageInner() {
             </Link>
           </div>
           <div style={{ padding: 17 }}>
-            <p className="hint">
-              {valorPerdido.label} perdidos no período · principal motivo: {motivoPrincipal.motivo} (
-              {motivoPrincipal.valor}%)
-            </p>
+            {valorPerdido.registros.length === 0 ? (
+              <p className="hint">Nenhum negócio perdido registrado ainda.</p>
+            ) : (
+              <p className="hint">
+                {valorPerdido.label} perdidos no período · principal motivo: {motivoPrincipal.motivo} (
+                {motivoPrincipal.valor.toFixed(0)}%)
+              </p>
+            )}
           </div>
         </div>
       </div>

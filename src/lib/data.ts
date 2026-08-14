@@ -1152,7 +1152,18 @@ export const kpisTrafego = [
  * 42 + 26 + 16 = 84 leads
  * 7.992 + 3.952 + 1.496 = R$ 13.440 de receita → ROAS 4,2x
  */
-export const campanhas = [
+/** Mesmo formato usado pela rota real `GET /api/integracoes/meta/ads/campanhas` — texto pré-
+ * formatado (`sub`/`roas`) de propósito, pra não precisar mudar o parse (`parseSubCampanha` em
+ * `src/lib/metrics.ts`) quando a fonte troca de mock pra real. */
+export type Campanha = {
+  plataforma: "M" | "G";
+  nome: string;
+  sub: string;
+  roas: string;
+  barra: number;
+};
+
+export const campanhas: Campanha[] = [
   {
     plataforma: "M",
     nome: "Emagrecimento · Consulta jul",

@@ -4,10 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type jsPDF from "jspdf";
 
-import { workspace } from "@/lib/data";
+import { workspace, type Campanha } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
+import { useConversas } from "@/lib/conversas-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
+import { useMensagensExtra } from "@/lib/mensagens-extra-context";
+import { useTarefas } from "@/lib/tarefas-context";
 import { PERIODO_PADRAO, PeriodoPicker, periodoLabel, type PeriodoValor } from "@/components/ui";
 import {
   estimarPaginas,
@@ -94,6 +97,10 @@ export function ReportWizard({
   const { funis } = useFunis();
   const { contatos } = useContatos();
   const { membros: equipe } = useEquipe();
+  const { conversas } = useConversas();
+  const { mensagensExtraPorContato } = useMensagensExtra();
+  const { colunas: tarefas } = useTarefas();
+  const [campanhasReais, setCampanhasReais] = useState<Campanha[]>([]);
   const [etapa, setEtapa] = useState(0);
   const [tipo, setTipo] = useState<TipoRelatorio>(configuracaoInicial?.tipo ?? tipoInicial);
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
@@ -139,6 +146,15 @@ export function ReportWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /** Campanhas reais do Meta Ads (mesmo padrão de `trafego/page.tsx`) — lista vazia sem integração
+   * conectada, nunca dado fictício. */
+  useEffect(() => {
+    fetch("/api/integracoes/meta/ads/campanhas")
+      .then((r) => r.json())
+      .then((dados) => setCampanhasReais(Array.isArray(dados) ? dados : []))
+      .catch((erro) => console.error("Falha ao carregar campanhas do Meta Ads:", erro));
+  }, []);
+
   function trocarTipo(novoTipo: TipoRelatorio) {
     setTipo(novoTipo);
     setNomeRelatorio(tipoParaNomePadrao(novoTipo));
@@ -179,7 +195,20 @@ export function ReportWizard({
     invalidarPrevia();
   }
 
-  const ctx: ContextoRelatorio = { periodoLabel: periodoLabel(periodo), contatoId, nivelDetalhe };
+  const ctx: ContextoRelatorio = {
+    periodoLabel: periodoLabel(periodo),
+    contatoId,
+    nivelDetalhe,
+    dados: {
+      funis,
+      contatos,
+      equipe,
+      conversas,
+      mensagensPorContato: mensagensExtraPorContato,
+      tarefas,
+      campanhas: campanhasReais,
+    },
+  };
 
   const secoesFinais: SecaoRelatorio[] = useMemo(() => {
     const base = ordemSecoes
@@ -190,7 +219,21 @@ export function ReportWizard({
     if (observacoesExtra.trim()) base.push({ titulo: "Observações", observacao: observacoesExtra.trim() });
     return base;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ordemSecoes, secoesSelecionadas, tipo, contatoId, nivelDetalhe, observacoesExtra]);
+  }, [
+    ordemSecoes,
+    secoesSelecionadas,
+    tipo,
+    contatoId,
+    nivelDetalhe,
+    observacoesExtra,
+    funis,
+    contatos,
+    equipe,
+    conversas,
+    mensagensExtraPorContato,
+    tarefas,
+    campanhasReais,
+  ]);
 
   const filtrosLabel = [
     funilFiltro !== "Todos" ? `Funil: ${funilFiltro}` : null,
