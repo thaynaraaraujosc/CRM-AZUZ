@@ -198,6 +198,7 @@ model Workspace {
   assinatura             Assinatura?
   acoesEnvio             AcaoEnvio[]
   motivosPerda           MotivoPerda[]
+  relatoriosGerados      RelatorioGerado[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -571,6 +572,28 @@ model AcaoEnvio {
   // Contato não tem id estável o suficiente pra isso ainda (mesmo padrão já aceito em outras
   // tabelas desta fase, ver `TarefaCard.contato`).
   contatos   Json // string[]
+
+  criadoEm DateTime @default(now())
+}
+
+// Histórico de relatórios já gerados (Central de Relatórios) — antes só vivia no localStorage do
+// navegador (não sobrevivia a trocar de dispositivo, e conta nova começava com 3 relatórios de
+// exemplo fictícios). Só cria (histórico é sempre apêndice, nunca editado) — GET lista, POST
+// adiciona um novo registro.
+model RelatorioGerado {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  nome         String
+  tipo         String
+  contato      String?
+  periodo      String
+  filtros      String
+  autor        String
+  paginas      Int
+  formato      String
+  configuracao Json
 
   criadoEm DateTime @default(now())
 }

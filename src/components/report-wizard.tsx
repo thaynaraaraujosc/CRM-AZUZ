@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type jsPDF from "jspdf";
 
-import { workspace, type Campanha } from "@/lib/data";
+import { useSession } from "next-auth/react";
+
+import type { Campanha } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useConversas } from "@/lib/conversas-context";
 import { useEquipe } from "@/lib/equipe-context";
@@ -94,6 +96,7 @@ export function ReportWizard({
   onFechar: () => void;
   onGerado: (registro: RelatorioGerado) => void;
 }) {
+  const { data: sessao } = useSession();
   const { funis } = useFunis();
   const { contatos } = useContatos();
   const { membros: equipe } = useEquipe();
@@ -249,7 +252,7 @@ export function ReportWizard({
       nomeArquivo: nomeArquivoRelatorio(nomeRelatorio, periodoLabel(periodo)),
       titulo: nomeRelatorio,
       subtitulo: filtrosLabel,
-      empresa: { nome: workspace.name, segmento: workspace.segment },
+      empresa: { nome: sessao?.user?.workspaceNome ?? "" },
       periodoLabel: periodoLabel(periodo),
       secoes: secoesFinais,
       capa,
@@ -317,7 +320,7 @@ export function ReportWizard({
       contato: tipo === "cliente" ? contatos.find((c) => c.id === contatoId)?.nome : undefined,
       periodo: periodoLabel(periodo),
       filtros: filtrosLabel,
-      autor: "Você",
+      autor: sessao?.user?.name ?? "Você",
       data: new Date().toLocaleDateString("pt-BR"),
       paginas: totalPaginasPrevia || paginasEstimadas,
       formato,

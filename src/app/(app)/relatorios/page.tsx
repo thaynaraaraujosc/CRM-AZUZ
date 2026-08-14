@@ -2,39 +2,10 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 
-import { relatoriosAnteriores } from "@/lib/data";
 import { Topbar } from "@/components/ui";
 import { ReportWizard, type ConfiguracaoRelatorio, type RelatorioGerado } from "@/components/report-wizard";
 import { TIPOS_RELATORIO, type TipoRelatorio } from "@/lib/relatorio-conteudo";
-
-const CHAVE_HISTORICO = "azuz-relatorios-historico-v1";
-
-function historicoInicial(autor: string): RelatorioGerado[] {
-  return relatoriosAnteriores.map((r, i) => ({
-    id: `legado-${i}`,
-    nome: r.nome,
-    tipo: "executivo" as TipoRelatorio,
-    periodo: r.nome,
-    filtros: "Sem filtros adicionais",
-    autor,
-    data: r.gerado.replace("Gerado em ", ""),
-    paginas: 1,
-    formato: "PDF" as const,
-    configuracao: {
-      tipo: "executivo" as TipoRelatorio,
-      periodo: r.nome,
-      filtros: "Sem filtros adicionais",
-      secoes: [],
-      ordemSecoes: [],
-      capa: "compacta" as const,
-      orientacao: "p" as const,
-      nivelDetalhe: "resumido" as const,
-      formato: "PDF" as const,
-    },
-  }));
-}
 
 /**
  * Central de relatórios — entra numa seleção clara de tipos (nunca direto
@@ -53,35 +24,20 @@ export default function RelatoriosPage() {
 function RelatoriosPageInner() {
   const searchParams = useSearchParams();
   const tipoQuery = searchParams.get("tipo") as TipoRelatorio | null;
-  const { data: sessao } = useSession();
-  const nomeUsuario = sessao?.user?.name ?? "";
 
   const [wizardAberto, setWizardAberto] = useState(!!tipoQuery);
   const [tipoWizard, setTipoWizard] = useState<TipoRelatorio>(tipoQuery ?? "executivo");
   const [configWizard, setConfigWizard] = useState<ConfiguracaoRelatorio | undefined>(undefined);
-  // Começa com o histórico padrão (igual ao HTML pré-renderizado no build) e
-  // só lê o localStorage depois de montar — inicializar direto no useState
-  // causaria erro de hidratação sempre que o navegador já tivesse
-  // relatórios salvos (a página é pré-renderizada estática, sem acesso a
-  // localStorage).
-  const [historico, setHistorico] = useState<RelatorioGerado[]>(() => historicoInicial(nomeUsuario));
+  // Histórico real do workspace (`RelatorioGerado` no banco) — começa vazio de verdade (sem
+  // relatório de exemplo nenhum) até o primeiro relatório real ser gerado.
+  const [historico, setHistorico] = useState<RelatorioGerado[]>([]);
 
   useEffect(() => {
-    try {
-      const salvo = localStorage.getItem(CHAVE_HISTORICO);
-      if (salvo) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setHistorico(JSON.parse(salvo) as RelatorioGerado[]);
-      }
-    } catch {
-      // mantém o histórico padrão se o valor salvo estiver corrompido
-    }
+    fetch("/api/relatorios")
+      .then((r) => r.json())
+      .then((dados) => setHistorico(Array.isArray(dados) ? dados : []))
+      .catch((erro) => console.error("Falha ao carregar histórico de relatórios:", erro));
   }, []);
-
-  function salvarHistorico(next: RelatorioGerado[]) {
-    setHistorico(next);
-    if (typeof window !== "undefined") localStorage.setItem(CHAVE_HISTORICO, JSON.stringify(next));
-  }
 
   function abrirWizard(tipo: TipoRelatorio) {
     setTipoWizard(tipo);
@@ -90,11 +46,19 @@ function RelatoriosPageInner() {
   }
 
   function aoGerar(registro: RelatorioGerado) {
-    salvarHistorico([registro, ...historico]);
+    setHistorico((prev) => [registro, ...prev]);
+    fetch("/api/relatorios", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(registro),
+    }).catch((erro) => console.error("Falha ao salvar relatório gerado:", erro));
   }
 
   function excluir(id: string) {
-    salvarHistorico(historico.filter((r) => r.id !== id));
+    setHistorico((prev) => prev.filter((r) => r.id !== id));
+    fetch(`/api/relatorios/${id}`, { method: "DELETE" }).catch((erro) =>
+      console.error("Falha ao excluir relatório:", erro),
+    );
   }
 
   // Reabre o assistente já preenchido com a mesma configuração usada
