@@ -14,7 +14,8 @@ import { SecaoLista } from "@/components/central-dia/SecaoLista";
 import { useCentralDia } from "@/lib/central-dia-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { compromissosDeTarefas, HOJE_ISO, useAgenda } from "@/lib/agenda-context";
-import { conversas } from "@/lib/data";
+import { useConversas } from "@/lib/conversas-context";
+import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useFunis } from "@/lib/funis-context";
 import { useTarefas } from "@/lib/tarefas-context";
 import {
@@ -64,12 +65,19 @@ export default function InicioPage() {
   const { fluxos } = useAutomationFlows();
   const { colunas } = useTarefas();
   const { compromissos } = useAgenda();
+  const { conversas } = useConversas();
+  const { mensagensExtraPorContato } = useMensagensExtra();
   const { filtros, concluidos, adiados, ultimaAtualizacao, atualizando, atualizarAgora } = useCentralDia();
   const [organizarAberto, setOrganizarAberto] = useState(false);
 
   const itensBase = useMemo(
-    () => [...itensDeConversas(conversas), ...itensDeTarefas(colunas), ...itensDeLeads(funis), ...itensDeAutomacoes(fluxos)],
-    [colunas, funis, fluxos],
+    () => [
+      ...itensDeConversas(conversas, mensagensExtraPorContato),
+      ...itensDeTarefas(colunas),
+      ...itensDeLeads(funis),
+      ...itensDeAutomacoes(fluxos),
+    ],
+    [conversas, mensagensExtraPorContato, colunas, funis, fluxos],
   );
 
   const compromissosHoje = useMemo(
