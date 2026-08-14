@@ -1,5 +1,20 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+/**
+ * O `wa_id` que a Meta manda no webhook às vezes vem sem o 9º dígito do celular brasileiro
+ * (formato antigo: `5562XXXXXXXX`, 12 dígitos), mas o número cadastrado como destinatário
+ * autorizado (modo desenvolvimento) usa o formato atual com o 9 (`556293XXXXXXX`, 13 dígitos) —
+ * sem normalizar, a Graph API rejeita o envio com "Recipient phone number not in allowed list"
+ * mesmo sendo o mesmo número. Só mexe em número BR de celular (55 + DDD de 2 dígitos + 8 dígitos
+ * sem o 9); qualquer outro formato passa direto.
+ */
+export function normalizarNumeroBrasileiro(numeroLimpo: string): string {
+  if (numeroLimpo.startsWith("55") && numeroLimpo.length === 12) {
+    return `${numeroLimpo.slice(0, 4)}9${numeroLimpo.slice(4)}`;
+  }
+  return numeroLimpo;
+}
+
 /** Versão da Graph API usada em toda chamada à Meta — um lugar só pra atualizar quando a Meta
  * depreciar a versão atual. */
 export const META_GRAPH_VERSION = "v21.0";

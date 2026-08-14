@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { validarAssinaturaWebhook } from "@/lib/integracoes/meta";
+import { normalizarNumeroBrasileiro, validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 
 /**
@@ -69,8 +69,10 @@ export async function POST(request: Request) {
       if (!integracaoDoNumero) continue;
 
       for (const mensagem of valor.messages) {
-        const waId = mensagem.from;
-        const nomePerfil = valor.contacts?.find((c) => c.wa_id === waId)?.profile?.name;
+        // Normaliza aqui (não só na hora de enviar) — assim o número gravado na Conversa já sai
+        // certo desde a primeira mensagem, no formato que o resto do sistema (e a Meta) reconhece.
+        const waId = normalizarNumeroBrasileiro(mensagem.from);
+        const nomePerfil = valor.contacts?.find((c) => c.wa_id === mensagem.from)?.profile?.name;
 
         // Tenta casar com um contato já existente pelo telefone, pra mensagem aparecer numa
         // conversa que já existe — número totalmente novo cai no fallback (fica salvo, mas sem
@@ -83,13 +85,26 @@ export async function POST(request: Request) {
         const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: mensagem.id } });
         if (jaExiste) continue;
 
+        // Só mensagem de texto tem `text.body` — figurinha/imagem/áudio/vídeo chegam sem isso.
+        // Baixar e mostrar a mídia de verdade é um passo maior pra depois; por ora, um rótulo
+        // legível evita a bolha vazia/confusa que aparecia antes.
+        const RÓTULO_POR_TIPO: Record<string, string> = {
+          sticker: "[Figurinha]",
+          image: "[Imagem]",
+          audio: "[Áudio]",
+          video: "[Vídeo]",
+          document: "[Documento]",
+          location: "[Localização]",
+        };
+        const texto = mensagem.text?.body ?? RÓTULO_POR_TIPO[mensagem.type] ?? "[Mensagem não suportada]";
+
         await prisma.mensagemExtra.create({
           data: {
             id: mensagem.id,
             workspaceId: integracaoDoNumero.workspaceId,
             contato: chaveContato,
             tipo: "in",
-            texto: mensagem.text?.body ?? "",
+            texto,
             // `timeZone` explícito — sem isso, roda no fuso do servidor (UTC na Vercel), 3h
             // adiantado do horário de Brasília.
             hora: new Date(Number(mensagem.timestamp) * 1000).toLocaleTimeString("pt-BR", {

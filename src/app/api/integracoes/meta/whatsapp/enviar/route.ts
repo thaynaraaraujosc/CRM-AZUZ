@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
-import { META_GRAPH_URL } from "@/lib/integracoes/meta";
+import { META_GRAPH_URL, normalizarNumeroBrasileiro } from "@/lib/integracoes/meta";
 
 type ErroGraph = { error?: { message?: string } };
 
@@ -37,7 +37,8 @@ export async function POST(request: Request) {
 
   // A Meta exige o número em dígitos puros, com código do país — remove tudo que não for número
   // (o destinatário pode chegar como waId cru da Conversa, ou formatado do cadastro do contato).
-  const numeroLimpo = destinatario.replace(/\D/g, "");
+  // `normalizarNumeroBrasileiro` corrige o caso do wa_id vir sem o 9º dígito do celular.
+  const numeroLimpo = normalizarNumeroBrasileiro(destinatario.replace(/\D/g, ""));
 
   try {
     const accessToken = decriptar(integracao.accessTokenCriptografado);

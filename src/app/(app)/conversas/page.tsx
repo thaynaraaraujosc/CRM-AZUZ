@@ -41,7 +41,6 @@ import {
 } from "@/lib/biblioteca-documentos-context";
 import { useFunis } from "@/lib/funis-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
-import { useNotificacoes } from "@/lib/notificacoes-context";
 import {
   useConfigConversas,
   FUNDOS_PRESET,
@@ -467,7 +466,6 @@ function ConversasPageInner() {
   const { colunas: tarefas } = useTarefas();
   const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
   const { fluxos, dispararEvento, registrarExecucao } = useAutomationFlows();
-  const { simularNovaMensagem } = useNotificacoes();
   const { config, atualizarConfig, fundoDaConversa } = useConfigConversas();
   const [configConversasAberto, setConfigConversasAberto] = useState(false);
   const [configAba, setConfigAba] = useState<
@@ -2891,13 +2889,6 @@ function ConversasPageInner() {
         sub="WhatsApp, Instagram e TikTok — todas as conversas num só lugar"
         actions={
           <>
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={() => simularNovaMensagem(aberta.nome)}
-            >
-              🔔 Simular mensagem nova
-            </button>
             <button
               type="button"
               className="btn ghost"
