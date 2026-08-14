@@ -4,7 +4,13 @@ import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const ROTAS_PUBLICAS = ["/login", "/cadastro", "/formulario-preview", "/acesso-bloqueado"];
+const ROTAS_PUBLICAS = [
+  "/login",
+  "/cadastro",
+  "/formulario-preview",
+  "/acesso-bloqueado",
+  "/politica-de-privacidade",
+];
 
 /** Módulo do CRM que cada rota pertence, pro bloqueio de permissão (item 4 do pedido: "se eu
  * restringir Formulários/Automações/Configurações, o membro realmente não pode mexer"). Checa só
