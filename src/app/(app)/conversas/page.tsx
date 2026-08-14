@@ -995,6 +995,20 @@ function ConversasPageInner() {
     );
   }
 
+  /** Etiqueta discreta indicando por qual conexão a mensagem passou — só aparece na conversa de
+   * WhatsApp, onde o mesmo número pode ter conversado ora pela API oficial (Meta), ora pelo QR
+   * Code (Baileys/Evolution API); ajuda a não confundir as duas quando o workspace tem as duas
+   * conectadas ao mesmo tempo (ou já teve, no passado). */
+  function tagCanalMensagem(msg: ConvMensagem) {
+    if (aberta.canal !== "WhatsApp") return null;
+    const viaBaileysMsg = msg.canal === "whatsapp_baileys";
+    return (
+      <span className={`wa-msg-canal-tag${viaBaileysMsg ? " qr" : ""}`}>
+        {viaBaileysMsg ? "QR Code" : "API oficial"}
+      </span>
+    );
+  }
+
   /** Botão "⋮" reaproveitado em todos os tipos de bolha (não é componente à parte de propósito — evita remontar). */
   function botaoMenuMensagem(chave: string) {
     return (
@@ -3304,6 +3318,7 @@ function ConversasPageInner() {
                   className={`bubble ${msg.tipo} bubble-localizacao`}
                 >
                   {botaoMenuMensagem(chave)}
+                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   <a
                     className="bubble-localizacao-link-area"
@@ -3345,6 +3360,7 @@ function ConversasPageInner() {
               ) : msg.contatoCompartilhado ? (
                 <div className={`bubble ${msg.tipo} bubble-contato`} key={chave}>
                   {botaoMenuMensagem(chave)}
+                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   <button
                     type="button"
@@ -3382,6 +3398,7 @@ function ConversasPageInner() {
                   key={chave}
                 >
                   {botaoMenuMensagem(chave)}
+                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   {midiaLiberada("imagem", msg.id) ? (
                     <div
@@ -3436,6 +3453,7 @@ function ConversasPageInner() {
                   key={chave}
                 >
                   {botaoMenuMensagem(chave)}
+                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   {midiaLiberada("video", msg.id) ? (
                     <video
@@ -3478,6 +3496,7 @@ function ConversasPageInner() {
                   key={chave}
                 >
                   {botaoMenuMensagem(chave)}
+                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   <a
                     className="bubble-documento-cartao"
@@ -3519,6 +3538,7 @@ function ConversasPageInner() {
                   key={chave}
                 >
                   {botaoMenuMensagem(chave)}
+                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   <AudioBubblePlayer
                     audio={msg.audio}
@@ -3546,6 +3566,7 @@ function ConversasPageInner() {
               ) : (
                 <div className={`bubble ${msg.tipo}`} key={chave}>
                   {botaoMenuMensagem(chave)}
+                  {tagCanalMensagem(msg)}
                   {estrelaFavorita(chave)}
                   {msg.respondendoA ? (
                     <span className="wa-citacao">

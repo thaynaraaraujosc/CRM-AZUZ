@@ -5,25 +5,160 @@ import { normalizarNumeroBrasileiro } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 
 /**
- * POST recebe os eventos que a Evolution API manda quando chega mensagem nova numa instância
- * conectada (webhook configurado na criação da instância, ver `src/lib/integracoes/baileys.ts`) —
- * sem `auth()` de propósito (quem chama é a Evolution API, não um usuário logado). Validação é por
- * segredo fixo no header (`x-worker-secret`, cadastrado como `headers` do webhook na Evolution
- * API), comparação direta — mesmo espírito do `ASAAS_WEBHOOK_TOKEN`/`META_WEBHOOK_VERIFY_TOKEN`.
+ * POST recebe os eventos que a Evolution API manda pra instância conectada (webhook configurado
+ * na criação da instância, ver `src/lib/integracoes/baileys.ts`) — sem `auth()` de propósito
+ * (quem chama é a Evolution API, não um usuário logado). Validação é por segredo fixo no header
+ * (`x-worker-secret`, cadastrado como `headers` do webhook na Evolution API), comparação direta —
+ * mesmo espírito do `ASAAS_WEBHOOK_TOKEN`/`META_WEBHOOK_VERIFY_TOKEN`.
  *
  * `instance` no payload é o nome da instância, que é sempre o `workspaceId` (ver
  * `iniciarSessaoBaileys`) — não precisa resolver de outra forma.
+ *
+ * Dois eventos tratados:
+ * - `messages.upsert`: mensagem nova chegando ao vivo, uma por vez.
+ * - `messages.set`: pacote do histórico completo (sync ao conectar, `syncFullHistory: true` na
+ *   criação da instância) — `data` vem como ARRAY de mensagens, pode chegar em vários pacotes
+ *   (não só um POST).
  */
+type ItemMensagemEvolution = {
+  key?: { remoteJid?: string; fromMe?: boolean; id?: string };
+  pushName?: string;
+  message?: { conversation?: string; extendedTextMessage?: { text?: string } };
+  messageTimestamp?: number;
+};
+
 type PayloadEvolution = {
   event?: string;
   instance?: string;
-  data?: {
-    key?: { remoteJid?: string; fromMe?: boolean; id?: string };
-    pushName?: string;
-    message?: { conversation?: string; extendedTextMessage?: { text?: string } };
-    messageTimestamp?: number;
-  };
+  data?: ItemMensagemEvolution | ItemMensagemEvolution[];
 };
+
+type MensagemExtraida = {
+  id: string;
+  contato: string;
+  fromMe: boolean;
+  texto: string;
+  pushName?: string;
+  criadoEm: Date;
+};
+
+/** Extrai o que interessa de um item de mensagem cru da Evolution API — usado tanto pro evento ao
+ * vivo quanto pra cada item do histórico (mesmo formato nos dois). `null` = ignora (grupo, sem
+ * texto, ou faltando o essencial). */
+function extrairMensagem(item: ItemMensagemEvolution): MensagemExtraida | null {
+  if (!item.key?.remoteJid || !item.key.id || item.key.remoteJid.endsWith("@g.us")) return null;
+  const texto = item.message?.conversation ?? item.message?.extendedTextMessage?.text;
+  if (!texto) return null;
+
+  const numeroBruto = item.key.remoteJid.split("@")[0].replace(/\D/g, "");
+  return {
+    id: `baileys-${item.key.id}`,
+    contato: normalizarNumeroBrasileiro(numeroBruto),
+    fromMe: item.key.fromMe === true,
+    texto,
+    pushName: item.pushName,
+    criadoEm: item.messageTimestamp ? new Date(item.messageTimestamp * 1000) : new Date(),
+  };
+}
+
+function horaLocal(data: Date): string {
+  // `timeZone` explícito — sem isso, roda no fuso do servidor (UTC na Vercel), 3h adiantado do
+  // horário de Brasília.
+  return data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+}
+
+/** Acha o nome do contato já cadastrado pelo telefone, ou cai no `pushName`/número — mesmo
+ * casamento já usado no webhook da Meta (`webhooks/whatsapp/route.ts`). */
+async function resolverChaveContato(workspaceId: string, contato: string, pushName?: string): Promise<string> {
+  const contatoExistente = await prisma.contato.findFirst({
+    where: { workspaceId, whatsapp: { contains: contato } },
+  });
+  return contatoExistente?.nome ?? pushName ?? contato;
+}
+
+async function processarMensagemAoVivo(workspaceId: string, item: ItemMensagemEvolution) {
+  const extraida = extrairMensagem(item);
+  // `fromMe` ao vivo é eco da mensagem que o próprio CRM acabou de mandar — já foi gravada na
+  // hora do envio, ignora aqui pra não duplicar.
+  if (!extraida || extraida.fromMe) return;
+
+  const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: extraida.id } });
+  if (jaExiste) return;
+
+  const chaveContato = await resolverChaveContato(workspaceId, extraida.contato, extraida.pushName);
+
+  await prisma.mensagemExtra.create({
+    data: {
+      id: extraida.id,
+      workspaceId,
+      contato: chaveContato,
+      tipo: "in",
+      texto: extraida.texto,
+      hora: horaLocal(extraida.criadoEm),
+      criadoEm: extraida.criadoEm,
+      canal: "whatsapp_baileys",
+    },
+  });
+
+  await upsertConversaAoReceberMensagem({
+    workspaceId,
+    nome: chaveContato,
+    canal: "WhatsApp",
+    contato: extraida.contato,
+    origem: "Direto",
+  });
+}
+
+/** Processa um pacote do histórico completo — chega em lote, então usa `createMany` (uma query
+ * só) em vez de criar mensagem por mensagem; conversa é uma por contato único no lote, não por
+ * mensagem, e nunca conta como "não lida" (é histórico, não chegou agora). */
+async function processarPacoteHistorico(workspaceId: string, itens: ItemMensagemEvolution[]) {
+  const extraidas = itens.map(extrairMensagem).filter((m): m is MensagemExtraida => m !== null);
+  if (extraidas.length === 0) return;
+
+  const idsExistentes = new Set(
+    (
+      await prisma.mensagemExtra.findMany({
+        where: { id: { in: extraidas.map((m) => m.id) } },
+        select: { id: true },
+      })
+    ).map((m) => m.id),
+  );
+  const novas = extraidas.filter((m) => !idsExistentes.has(m.id));
+  if (novas.length === 0) return;
+
+  const contatosUnicos = [...new Set(novas.map((m) => m.contato))];
+  const chavesPorContato = new Map<string, string>();
+  for (const contato of contatosUnicos) {
+    const pushName = novas.find((m) => m.contato === contato)?.pushName;
+    chavesPorContato.set(contato, await resolverChaveContato(workspaceId, contato, pushName));
+  }
+
+  await prisma.mensagemExtra.createMany({
+    data: novas.map((m) => ({
+      id: m.id,
+      workspaceId,
+      contato: chavesPorContato.get(m.contato)!,
+      tipo: m.fromMe ? "out" : "in",
+      texto: m.texto,
+      hora: horaLocal(m.criadoEm),
+      criadoEm: m.criadoEm,
+      canal: "whatsapp_baileys",
+    })),
+    skipDuplicates: true,
+  });
+
+  for (const [contato, chaveContato] of chavesPorContato) {
+    await upsertConversaAoReceberMensagem({
+      workspaceId,
+      nome: chaveContato,
+      canal: "WhatsApp",
+      contato,
+      origem: "Direto",
+      contarComoNaoLida: false,
+    });
+  }
+}
 
 export async function POST(request: Request) {
   const segredo = request.headers.get("x-worker-secret");
@@ -33,61 +168,16 @@ export async function POST(request: Request) {
 
   const payload = (await request.json()) as PayloadEvolution;
   const workspaceId = payload.instance;
-  const dados = payload.data;
+  const evento = payload.event?.toLowerCase();
 
-  // Só interessa mensagem de texto recebida de verdade — ignora eco de mensagem que o próprio CRM
-  // mandou (`fromMe`), outros eventos (conexão, presença etc.) e grupos (`@g.us`, fora de escopo).
-  if (
-    payload.event?.toLowerCase() !== "messages.upsert" ||
-    !workspaceId ||
-    !dados?.key?.remoteJid ||
-    dados.key.fromMe ||
-    dados.key.remoteJid.endsWith("@g.us")
-  ) {
-    return NextResponse.json({ ok: true });
+  if (!workspaceId || !payload.data) return NextResponse.json({ ok: true });
+
+  if (evento === "messages.set") {
+    const itens = Array.isArray(payload.data) ? payload.data : [payload.data];
+    await processarPacoteHistorico(workspaceId, itens);
+  } else if (evento === "messages.upsert" && !Array.isArray(payload.data)) {
+    await processarMensagemAoVivo(workspaceId, payload.data);
   }
-
-  const texto = dados.message?.conversation ?? dados.message?.extendedTextMessage?.text;
-  if (!texto || !dados.key.id) return NextResponse.json({ ok: true });
-
-  const numeroBruto = dados.key.remoteJid.split("@")[0].replace(/\D/g, "");
-  const contato = normalizarNumeroBrasileiro(numeroBruto);
-
-  const idMensagem = `baileys-${dados.key.id}`;
-  const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: idMensagem } });
-  if (jaExiste) return NextResponse.json({ ok: true });
-
-  // Mesmo casamento por telefone já usado no webhook da Meta (`webhooks/whatsapp/route.ts`) —
-  // número novo sem contato cadastrado ainda cai no fallback do próprio número como "chave".
-  const contatoExistente = await prisma.contato.findFirst({
-    where: { workspaceId, whatsapp: { contains: contato } },
-  });
-  const chaveContato = contatoExistente?.nome ?? dados.pushName ?? contato;
-
-  const criadoEm = dados.messageTimestamp ? new Date(dados.messageTimestamp * 1000) : new Date();
-
-  await prisma.mensagemExtra.create({
-    data: {
-      id: idMensagem,
-      workspaceId,
-      contato: chaveContato,
-      tipo: "in",
-      texto,
-      // `timeZone` explícito — sem isso, roda no fuso do servidor (UTC na Vercel), 3h adiantado
-      // do horário de Brasília.
-      hora: criadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }),
-      criadoEm,
-      canal: "whatsapp_baileys",
-    },
-  });
-
-  await upsertConversaAoReceberMensagem({
-    workspaceId,
-    nome: chaveContato,
-    canal: "WhatsApp",
-    contato,
-    origem: "Direto",
-  });
 
   return NextResponse.json({ ok: true });
 }

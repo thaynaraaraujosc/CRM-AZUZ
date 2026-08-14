@@ -2189,6 +2189,7 @@ table.tbl tbody tr:hover td {
   background: var(--blue);
   align-self: flex-end;
   border-bottom-right-radius: 4px;
+  position: relative;
 }
 
 .bubble-localizacao {
@@ -10469,6 +10470,31 @@ button.camp-row:hover {
   margin-right: 4px;
   color: #d9a406;
   font-size: 11px;
+}
+
+.wa-msg-canal-tag {
+  position: absolute;
+  top: -16px;
+  left: 8px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--brand-soft, rgba(37, 99, 235, 0.12));
+  color: var(--brand, #2563eb);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.bubble.out .wa-msg-canal-tag {
+  right: 8px;
+  left: auto;
+}
+
+.wa-msg-canal-tag.qr {
+  background: rgba(16, 163, 74, 0.12);
+  color: #10a34a;
 }
 
 .wa-msg-detalhes-lista {

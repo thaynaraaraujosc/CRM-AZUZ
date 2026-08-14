@@ -60,7 +60,15 @@ type RespostaConexao =
   | { base64?: string; code?: string; count?: number; pairingCode?: string | null };
 
 /** Cria a instância na Evolution API já pedindo o QR — chamado só quando `GET /connect` falha
- * (instância ainda não existe pra esse workspace). */
+ * (instância ainda não existe pra esse workspace).
+ *
+ * `syncFullHistory: true` é campo solto na raiz do corpo (não dentro de `settings`) — pede pro
+ * WhatsApp mandar o histórico completo de conversas assim que a sessão conecta, igual o WhatsApp
+ * Web faz. Chega em vários pacotes via o evento `MESSAGES_SET` (por isso também nos eventos do
+ * webhook abaixo) — o último pacote vem com `isLatest: true`. Sem limite configurável de dias:
+ * tudo que o WhatsApp decidir mandar, chega. Tratamento no webhook (ver
+ * `src/app/api/webhooks/whatsapp-baileys/route.ts`).
+ */
 async function criarInstancia(instanceName: string): Promise<void> {
   await chamarEvolution("/instance/create", {
     method: "POST",
@@ -68,13 +76,14 @@ async function criarInstancia(instanceName: string): Promise<void> {
       instanceName,
       qrcode: true,
       integration: "WHATSAPP-BAILEYS",
+      syncFullHistory: true,
       webhook: {
         enabled: true,
         url: urlWebhook(),
         headers: { "x-worker-secret": segredoWebhook() },
         byEvents: false,
         base64: false,
-        events: ["MESSAGES_UPSERT"],
+        events: ["MESSAGES_UPSERT", "MESSAGES_SET"],
       },
     }),
   });

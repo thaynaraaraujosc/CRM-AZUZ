@@ -30,8 +30,12 @@ export async function upsertConversaAoReceberMensagem(params: {
   canal: string;
   contato?: string;
   origem?: string;
+  /** `false` na importação de histórico (sync completo do WhatsApp ao conectar via QR Code) —
+   * mensagem antiga não é "não lida" de verdade, incrementar o contador só gera badge enganoso.
+   * Padrão `true` (mensagem chegando ao vivo). */
+  contarComoNaoLida?: boolean;
 }) {
-  const { workspaceId, nome, canal, contato, origem } = params;
+  const { workspaceId, nome, canal, contato, origem, contarComoNaoLida = true } = params;
   await prisma.conversa.upsert({
     where: { workspaceId_nome: { workspaceId, nome } },
     create: {
@@ -42,11 +46,10 @@ export async function upsertConversaAoReceberMensagem(params: {
       canal,
       contato,
       origem: origem ?? "Direto",
-      naoLidas: 1,
+      naoLidas: contarComoNaoLida ? 1 : 0,
     },
-    update: {
-      naoLidas: { increment: 1 },
-      atualizadoEm: new Date(),
-    },
+    update: contarComoNaoLida
+      ? { naoLidas: { increment: 1 }, atualizadoEm: new Date() }
+      : {},
   });
 }
