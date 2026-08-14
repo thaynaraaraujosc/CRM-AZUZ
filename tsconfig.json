@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "whatsapp-worker"]
+  "exclude": ["node_modules"]
 }

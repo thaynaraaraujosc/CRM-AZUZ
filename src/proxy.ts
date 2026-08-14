@@ -52,7 +52,7 @@ export default async function proxy(request: NextRequest) {
     // Meta chamando, não o proxy.
     pathname === "/api/webhooks/whatsapp" ||
     pathname === "/api/webhooks/instagram" ||
-    // Chamado direto pelo whatsapp-worker (serviço separado, sessão via QR Code), validado por
+    // Chamado direto pela Evolution API (serviço separado, sessão via QR Code), validado por
     // segredo fixo dentro da própria rota — mesmo padrão dos outros webhooks acima.
     pathname === "/api/webhooks/whatsapp-baileys" ||
     // Chamado direto pela Asaas (eventos de cobrança da assinatura do CRM), validado pelo token
