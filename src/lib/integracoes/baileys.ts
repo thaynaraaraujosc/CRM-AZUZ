@@ -114,8 +114,15 @@ export async function statusSessaoBaileys(workspaceId: string): Promise<StatusSe
   return { status: "aguardando_qr", qrDataUrl: resposta.base64 ?? null, numero: null };
 }
 
+/**
+ * Apaga a instância inteira (não só desloga) — de propósito: `logout` sozinho mantém a instância
+ * (e a configuração dela, tipo `syncFullHistory`/webhook) do jeito que estava na criação, então
+ * reconectar depois de um logout simples reusa configuração antiga. Apagando, o próximo
+ * `iniciarSessaoBaileys` recria do zero, sempre com a configuração mais atual.
+ */
 export async function desconectarSessaoBaileys(workspaceId: string): Promise<void> {
   await chamarEvolution(`/instance/logout/${workspaceId}`, { method: "DELETE" }).catch(() => {});
+  await chamarEvolution(`/instance/delete/${workspaceId}`, { method: "DELETE" }).catch(() => {});
 }
 
 export async function enviarMensagemBaileys(
