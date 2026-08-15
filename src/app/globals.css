@@ -2373,6 +2373,7 @@ table.tbl tbody tr:hover td {
 
 .bubble.out {
   background: var(--blue);
+  color: #fff;
   align-self: flex-end;
   border-bottom-right-radius: 4px;
 }
@@ -2426,8 +2427,16 @@ table.tbl tbody tr:hover td {
   background: rgba(37, 211, 102, 0.12);
 }
 
+/* Cor real da bolha enviada do WhatsApp (não o verde do logo, #25d366 — esse é só o accent, a
+   bolha em si é um verde bem mais claro/pálido, texto escuro) — familiaridade de verdade com quem
+   já usa o app, não só "alguma coisa verde". */
 .wa-whatsapp .bubble.out {
-  background: #25d366;
+  background: #d9fdd3;
+  color: #111b21;
+}
+:root[data-theme="dark"] .wa-whatsapp .bubble.out {
+  background: #005c4b;
+  color: #e9edef;
 }
 
 .wa-whatsapp .wa-row.active {
@@ -2866,9 +2875,15 @@ table.tbl tbody tr:hover td {
   overflow: hidden;
 }
 
+/* Textura de fundo na área de mensagens — familiaridade explícita com o WhatsApp (fundo sempre
+   texturizado, nunca liso), mas um padrão PRÓPRIO (pontos, não os doodles do WhatsApp — evita
+   usar asset/ilustração deles, só a mesma IDEIA de "fundo com textura sutil"). */
 .wa-main .chat-body {
   flex: 1;
   max-height: none;
+  background-image: radial-gradient(var(--line) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-color: var(--navy);
 }
 
 .wa-main-gear {
