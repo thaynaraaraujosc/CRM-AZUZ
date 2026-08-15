@@ -2352,7 +2352,7 @@ function ConversasPageInner() {
     // Mock fixo, sem pedir geolocalização real do navegador — coerente com o resto do simulador
     // (nunca usa dados/permissões reais) e evita ficar pendurado esperando o usuário responder ao
     // prompt nativo de permissão (getCurrentPosition não tem timeout por padrão).
-    enviarLocalizacao(-16.6869, -49.2648, "Clínica Vitta · Goiânia, GO");
+    enviarLocalizacao(-16.6869, -49.2648, "Sede · Goiânia, GO");
   }
 
   function inserirEmoji(emoji: string) {

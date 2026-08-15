@@ -3,7 +3,7 @@
 import type { DestinatarioEmailModo, MensagemEmailData, SeSemEmailModo } from "@/lib/automation-flow/types";
 
 // Mocado — contas de e-mail configuradas no workspace, sem conexão real.
-const CONTAS_EMAIL = ["contato@clinicavitta.com", "comercial@clinicavitta.com"];
+const CONTAS_EMAIL: string[] = [];
 
 // Mocado — modelos de e-mail salvos, sem integração real.
 const MODELOS_EMAIL = [

@@ -199,7 +199,7 @@ const ROTULO_DESTINO_CONTATO: Record<string, string> = {
 };
 
 const LOCALIZACOES_SALVAS_ROTULOS: Record<string, string> = {
-  clinica_vitta: "Clínica Vitta · Goiânia/GO",
+  sede: "Sede · Goiânia/GO",
   unidade_centro: "Unidade Centro · Goiânia/GO",
   consultorio_principal: "Consultório principal · Goiânia/GO",
   escritorio: "Escritório · Goiânia/GO",

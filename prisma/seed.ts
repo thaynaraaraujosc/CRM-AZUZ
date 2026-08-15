@@ -20,21 +20,22 @@ import { DOCUMENTOS_INICIAIS } from "../src/lib/documentos-context";
 const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
 
-const WORKSPACE_SEED_ID = "clinicavitta";
+const WORKSPACE_SEED_ID = "empresa-demo";
 
-/** Multi-tenancy Fase 1 — Workspace "Clínica Vitta" (mesmo nome do mock atual), dono dos 6 membros
- * já semeados em `semearEquipe`. */
+/** Multi-tenancy Fase 1 — Workspace de demonstração local (dev only, nunca roda em produção — ver
+ * prisma.config.ts, só é chamado via `npx prisma db seed`), dono dos 6 membros já semeados em
+ * `semearEquipe`. */
 async function semearWorkspace() {
   const existente = await prisma.workspace.findUnique({ where: { id: WORKSPACE_SEED_ID } });
   if (existente) {
-    console.log("Workspace Clínica Vitta já existe — nada a semear.");
+    console.log("Workspace de demonstração já existe — nada a semear.");
     return;
   }
 
   await prisma.workspace.create({
-    data: { id: WORKSPACE_SEED_ID, nome: "Clínica Vitta", slug: WORKSPACE_SEED_ID },
+    data: { id: WORKSPACE_SEED_ID, nome: "Empresa Demo", slug: WORKSPACE_SEED_ID },
   });
-  console.log("Semeado o Workspace Clínica Vitta.");
+  console.log("Semeado o Workspace de demonstração.");
 }
 
 async function semearContatos() {

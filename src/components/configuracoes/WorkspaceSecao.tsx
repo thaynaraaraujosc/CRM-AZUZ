@@ -90,7 +90,7 @@ export function WorkspaceSecao() {
             <label>Nome do workspace</label>
             <input
               className="input"
-              placeholder={carregado ? "Ex.: Clínica Vitta" : "Carregando…"}
+              placeholder={carregado ? "Ex.: Nome do seu negócio" : "Carregando…"}
               value={rascunhoReal.nome}
               onChange={(e) => setReal({ nome: e.target.value })}
               disabled={!carregado}

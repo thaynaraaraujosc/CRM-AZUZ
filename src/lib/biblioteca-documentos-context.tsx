@@ -65,13 +65,13 @@ function svgPlaceholder(texto: string, cor: string) {
 export const DOCUMENTOS_INICIAIS: DocumentoBiblioteca[] = [
   {
     id: "doc-apresentacao",
-    nome: "Apresentação da Clínica Vitta.pdf",
+    nome: "Apresentação institucional.pdf",
     categoria: "Institucional",
     formato: "PDF",
     tamanho: 842_000,
     atualizadoEm: "2026-07-18",
     autor: "Ana Ferreira",
-    url: svgPlaceholder("Apresentação Vitta", "#2e6bff"),
+    url: svgPlaceholder("Apresentação institucional", "#2e6bff"),
     tipoMidia: "documento",
   },
   {

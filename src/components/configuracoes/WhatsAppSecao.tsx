@@ -171,7 +171,7 @@ export function WhatsAppSecao() {
             </div>
             <div className="field">
               <label>Nome exibido</label>
-              <input className="input" defaultValue="Clínica Vitta" />
+              <input className="input" placeholder="Ex.: Nome do seu negócio" />
             </div>
             <div className="field">
               <label>Equipe responsável</label>
@@ -240,7 +240,7 @@ export function WhatsAppSecao() {
           </div>
           <div className="field">
             <label>Assinatura do atendente</label>
-            <input className="input" defaultValue="— {atendente}, Clínica Vitta" />
+            <input className="input" defaultValue="— {atendente}" />
           </div>
         </div>
       ) : null}

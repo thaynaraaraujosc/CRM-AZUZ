@@ -378,7 +378,7 @@ export const FORMULARIOS_INICIAIS: Formulario[] = [
               oculta: false,
               somenteLeitura: false,
               largura: "total",
-              opcoes: ["Emagrecimento", "Controle de diabetes", "Avaliação geral"],
+              opcoes: ["Serviço A", "Serviço B", "Avaliação geral"],
             },
           ],
         },

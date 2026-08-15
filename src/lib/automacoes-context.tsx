@@ -151,7 +151,7 @@ const AutomacoesContext = createContext<AutomacoesContextValue | null>(null);
 export const AUTOMACOES_INICIAIS: Automacao[] = [
   {
     id: "auto-boas-vindas",
-    funilId: "emagrecimento-diabetes",
+    funilId: "funil-principal",
     etapaId: "novo",
     titulo: "Boas-vindas pro lead novo",
     gatilhoTipo: "entrou",
@@ -208,7 +208,7 @@ export const AUTOMACOES_INICIAIS: Automacao[] = [
   },
   {
     id: "auto-proposta-lembrete-24h",
-    funilId: "emagrecimento-diabetes",
+    funilId: "funil-principal",
     etapaId: "proposta",
     titulo: "Lembrete de proposta parada — 24h",
     gatilhoTipo: "parado",
@@ -240,7 +240,7 @@ export const REGRAS_COMENTARIO_INICIAIS: RegraComentario[] = [
     canal: "Instagram",
     palavraChave: "QUERO",
     mensagemDirect:
-      "Oi! Vi seu comentário 💙 Aqui está o link pra agendar sua consulta na Clínica Vitta: clinicavitta.com.br/agendar",
+      "Oi! Vi seu comentário 💙 Aqui está o link pra agendar seu horário: seusite.com.br/agendar",
     ativa: true,
     execucoes: "18 execuções",
   },

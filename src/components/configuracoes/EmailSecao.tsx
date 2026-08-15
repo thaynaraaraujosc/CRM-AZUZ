@@ -23,9 +23,9 @@ const MODELOS_INICIAIS: ModeloEmail[] = [
 export function EmailSecao() {
   const [aba, setAba] = useState<Aba>("contas");
   const [conectado, setConectado] = useState(false);
-  const [remetente, setRemetente] = useState("contato@clinicavitta.com.br");
-  const [nomeRemetente, setNomeRemetente] = useState("Clínica Vitta");
-  const [assinatura, setAssinatura] = useState("Atenciosamente,\nEquipe Clínica Vitta");
+  const [remetente, setRemetente] = useState("");
+  const [nomeRemetente, setNomeRemetente] = useState("");
+  const [assinatura, setAssinatura] = useState("");
   const [respostaAutomatica, setRespostaAutomatica] = useState(false);
   const [rastreamento, setRastreamento] = useState(true);
   const [vincularContato, setVincularContato] = useState(true);

@@ -435,7 +435,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     corClasse: corDaCategoria("mensagem"),
     dataPadrao: () => ({
       destinatarioModo: "contato_email",
-      remetente: "contato@clinicavitta.com",
+      remetente: "",
       assunto: "",
       corpo: "",
       quandoModo: "imediato",
