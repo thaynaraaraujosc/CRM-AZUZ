@@ -11244,8 +11244,19 @@ button.camp-row:hover {
   flex-wrap: wrap;
 }
 
+/* Reestruturação visual (redesign) — a seção INTEIRA (título + lista) é que forma a "caixinha"
+   (fundo, borda, raio, sombra), não cada item dentro dela — mesmo princípio dos blocos "Security
+   Status"/"System Alerts" da referência: um bloco bem demarcado contendo várias linhas simples, não
+   uma pilha de caixas menores. Sem isso, ficava "nem caixa nem flat" — cada linha perdeu a própria
+   caixa (pedido anterior) mas a seção não ganhou nenhuma, então tudo virou fundo liso sem nenhuma
+   demarcação visual. */
 .central-dia-secao {
   margin-bottom: var(--space-5);
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
 }
 
 .central-dia-secao-h {
@@ -11295,7 +11306,8 @@ button.camp-row:hover {
 .central-dia-secao-lista {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  /* Sem gap — dentro do cartão da seção, item vira linha simples separada só pela linha fina
+     (`.central-dia-card`'s `border-bottom`), não mais um bloco com respiro próprio. */
 }
 
 .central-dia-vazio {
