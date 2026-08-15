@@ -53,23 +53,46 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useIntegracaoNaoOficial } from "@/components/configuracoes/useIntegracaoNaoOficial";
 import {
   CanalBadge,
+  IconAlerta,
+  IconAlvo,
   IconAutomacoes,
+  IconCalendar,
+  IconCamera,
   IconCheck,
   IconCheckDuplo,
+  IconClose,
   IconConfiguracoes,
   IconContatos,
+  IconConversas,
+  IconCopy,
+  IconCut,
   IconDoc,
+  IconDownload,
+  IconEmail,
   IconEmoji,
+  IconEncaminhar,
   IconEnviar,
   IconErro,
+  IconEtiqueta,
   IconImage,
+  IconLink,
+  IconLixeira,
   IconLocalizacao,
   IconMic,
+  IconMudo,
+  IconPause,
+  IconPin,
+  IconPlay,
+  IconProibido,
   IconRefresh,
   IconRelogio,
   IconRespostaRapida,
+  IconSalvar,
   IconSearch,
+  IconStar,
+  IconTelefone,
   IconVideoCam,
+  IconVolume,
 } from "@/components/icons";
 import { FloatingDropdown, RadioList, Toggle, Topbar } from "@/components/ui";
 
@@ -1007,7 +1030,7 @@ function ConversasPageInner() {
     if (!mensagensFavoritas.has(chave)) return null;
     return (
       <span className="wa-msg-favorita" title="Favoritada">
-        ★
+        <IconStar width={11} height={11} fill="currentColor" />
       </span>
     );
   }
@@ -3010,8 +3033,9 @@ function ConversasPageInner() {
                 setConectarPos(null);
                 setConectarAberto(true);
               }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
             >
-              🔗 Conectar WhatsApp
+              <IconLink width={13} height={13} /> Conectar WhatsApp
             </button>
             <button
               type="button"
@@ -3176,19 +3200,19 @@ function ConversasPageInner() {
             conversasFiltradas.map((c) => {
               const active = c.id === aberta.id;
               const ultimaExtra = (mensagensExtraPorContato[c.nome] ?? []).at(-1);
-              const iconeTipo = ultimaExtra?.imagens
-                ? "🖼️ "
-                : ultimaExtra?.video
-                  ? "🎥 "
-                  : ultimaExtra?.audio
-                    ? "🎤 "
-                    : ultimaExtra?.documento
-                      ? "📄 "
-                      : ultimaExtra?.localizacao
-                        ? "📍 "
-                        : ultimaExtra?.contatoCompartilhado
-                          ? "👤 "
-                          : "";
+              const iconeTipo = ultimaExtra?.imagens ? (
+                <IconImage width={12} height={12} />
+              ) : ultimaExtra?.video ? (
+                <IconVideoCam width={12} height={12} />
+              ) : ultimaExtra?.audio ? (
+                <IconMic width={12} height={12} />
+              ) : ultimaExtra?.documento ? (
+                <IconDoc width={12} height={12} />
+              ) : ultimaExtra?.localizacao ? (
+                <IconLocalizacao width={12} height={12} />
+              ) : ultimaExtra?.contatoCompartilhado ? (
+                <IconContatos width={12} height={12} />
+              ) : null;
               const previaTexto =
                 ultimaExtra?.texto ||
                 (ultimaExtra?.legenda ?? (iconeTipo ? "Anexo" : "Sem mensagens ainda"));
@@ -3218,12 +3242,20 @@ function ConversasPageInner() {
                       <CanalBadge canal={c.canal as Canal} />
                     </span>
                     <span className="cname">
-                      {fixadas.has(c.id) ? <span className="wa-pin-icone">📌</span> : null}
+                      {fixadas.has(c.id) ? (
+                        <span className="wa-pin-icone">
+                          <IconPin width={11} height={11} />
+                        </span>
+                      ) : null}
                       {c.nome}
-                      {ehFavorita(c) ? <span className="wa-fav-star">★</span> : null}
+                      {ehFavorita(c) ? (
+                        <span className="wa-fav-star">
+                          <IconStar width={11} height={11} fill="currentColor" />
+                        </span>
+                      ) : null}
                       {silenciadas.has(c.id) ? (
                         <span className="wa-mute-icone" title="Silenciada">
-                          🔕
+                          <IconMudo width={11} height={11} />
                         </span>
                       ) : null}
                     </span>
@@ -3239,6 +3271,7 @@ function ConversasPageInner() {
                       ""
                     )}
                     {iconeTipo}
+                    {iconeTipo ? " " : null}
                     {previaTexto}
                     {c.naoLidas && !lidas.has(c.id) ? (
                       <span className="wa-unread-badge">{c.naoLidas}</span>
@@ -3423,7 +3456,9 @@ function ConversasPageInner() {
                       alt="Mapa com a localização compartilhada"
                     />
                     <div className="bubble-localizacao-info">
-                      <span className="bubble-localizacao-titulo">📍 Localização compartilhada</span>
+                      <span className="bubble-localizacao-titulo" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <IconLocalizacao width={12} height={12} /> Localização compartilhada
+                      </span>
                       {msg.localizacao.endereco ? (
                         <span className="bubble-localizacao-endereco">{msg.localizacao.endereco}</span>
                       ) : (
@@ -3728,7 +3763,7 @@ function ConversasPageInner() {
                     title="Excluir gravação"
                     onClick={pedirDescartarGravacao}
                   >
-                    🗑
+                    <IconLixeira width={14} height={14} />
                   </button>
                   <button
                     type="button"
@@ -3737,7 +3772,7 @@ function ConversasPageInner() {
                     title={audioPausado ? "Continuar" : "Pausar"}
                     onClick={pausarOuContinuarGravacao}
                   >
-                    {audioPausado ? "▶" : "⏸"}
+                    {audioPausado ? <IconPlay width={13} height={13} /> : <IconPause width={13} height={13} />}
                   </button>
                   <button
                     type="button"
@@ -3745,8 +3780,9 @@ function ConversasPageInner() {
                     aria-label="Concluir gravação"
                     title="Concluir gravação"
                     onClick={concluirGravacao}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    ✓ Concluir
+                    <IconCheck width={13} height={13} /> Concluir
                   </button>
                 </div>
               ) : audioPreview ? (
@@ -3774,7 +3810,7 @@ function ConversasPageInner() {
                     title={audioPreviewTocando ? "Pausar" : "Ouvir"}
                     onClick={alternarPreviaAudio}
                   >
-                    {audioPreviewTocando ? "⏸" : "▶"}
+                    {audioPreviewTocando ? <IconPause width={13} height={13} /> : <IconPlay width={13} height={13} />}
                   </button>
                   <div className="chat-audio-previa-meio">
                     <AudioWaveformBars
@@ -3808,7 +3844,7 @@ function ConversasPageInner() {
                     title="Excluir áudio"
                     onClick={pedirDescartarGravacao}
                   >
-                    🗑
+                    <IconLixeira width={14} height={14} />
                   </button>
                   <button
                     type="button"
@@ -3817,8 +3853,9 @@ function ConversasPageInner() {
                     title="Enviar áudio"
                     disabled={audioEnviando}
                     onClick={enviarAudioGravado}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    {audioEnviando ? "Enviando…" : "Enviar ➤"}
+                    {audioEnviando ? "Enviando…" : <><IconEnviar width={13} height={13} /> Enviar</>}
                   </button>
                 </div>
               ) : (
@@ -3848,7 +3885,7 @@ function ConversasPageInner() {
                         aria-label="Cancelar resposta"
                         onClick={() => setRespondendoMensagem(null)}
                       >
-                        ✕
+                        <IconClose width={11} height={11} />
                       </button>
                     </div>
                   ) : null}
@@ -3910,7 +3947,7 @@ function ConversasPageInner() {
                         style={{ width: "100%", textAlign: "left" }}
                         onClick={() => executarAutomacaoNaConversa(a.id)}
                       >
-                        <span className="n">⚡ {a.titulo}</span>
+                        <span className="n"><IconAutomacoes width={12} height={12} /> {a.titulo}</span>
                       </button>
                     ))
                   )}
@@ -4128,7 +4165,7 @@ function ConversasPageInner() {
                     aria-label="Cancelar"
                     onClick={fecharPreviewImagem}
                   >
-                    ✕
+                    <IconClose width={12} height={12} />
                   </button>
                 </div>
 
@@ -4223,11 +4260,17 @@ function ConversasPageInner() {
                       type="button"
                       className="btn ghost"
                       onClick={() => setImagemModoCorte(true)}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                     >
-                      ✂️ Cortar
+                      <IconCut width={13} height={13} /> Cortar
                     </button>
-                    <button type="button" className="btn ghost" onClick={girarImagem90}>
-                      🔄 Girar
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={girarImagem90}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                    >
+                      <IconRefresh width={13} height={13} /> Girar
                     </button>
                     <button
                       type="button"
@@ -4272,7 +4315,7 @@ function ConversasPageInner() {
                           aria-label={`Remover ${img.nome}`}
                           onClick={() => removerImagemSelecionada(img.id)}
                         >
-                          ✕
+                          <IconClose width={10} height={10} />
                         </button>
                       </div>
                     ))}
@@ -4331,7 +4374,7 @@ function ConversasPageInner() {
                     aria-label="Cancelar"
                     onClick={fecharPreviewVideo}
                   >
-                    ✕
+                    <IconClose width={12} height={12} />
                   </button>
                 </div>
 
@@ -4381,8 +4424,17 @@ function ConversasPageInner() {
                     type="button"
                     className={`btn ghost${videoMudo ? " active" : ""}`}
                     onClick={() => setVideoMudo((v) => !v)}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    {videoMudo ? "🔇 Sem áudio" : "🔊 Com áudio"}
+                    {videoMudo ? (
+                      <>
+                        <IconMudo width={13} height={13} /> Sem áudio
+                      </>
+                    ) : (
+                      <>
+                        <IconVolume width={13} height={13} /> Com áudio
+                      </>
+                    )}
                   </button>
                   <button
                     type="button"
@@ -4453,7 +4505,7 @@ function ConversasPageInner() {
                     aria-label="Fechar"
                     onClick={() => setDocumentoOrigemAberto(false)}
                   >
-                    ✕
+                    <IconClose width={12} height={12} />
                   </button>
                 </div>
                 <p className="hint" style={{ marginBottom: 14 }}>
@@ -4509,7 +4561,7 @@ function ConversasPageInner() {
                     aria-label="Fechar"
                     onClick={() => setBibliotecaAberta(false)}
                   >
-                    ✕
+                    <IconClose width={12} height={12} />
                   </button>
                 </div>
 
@@ -4637,7 +4689,7 @@ function ConversasPageInner() {
                       aria-label="Fechar"
                       onClick={() => setDocumentoPreviewAberto(null)}
                     >
-                      ✕
+                      <IconClose width={12} height={12} />
                     </button>
                   </div>
                 </div>
@@ -4664,7 +4716,7 @@ function ConversasPageInner() {
                     aria-label="Cancelar"
                     onClick={() => setDocumentoComputador(null)}
                   >
-                    ✕
+                    <IconClose width={12} height={12} />
                   </button>
                 </div>
                 <div className="wa-biblioteca-item" style={{ border: "1px solid var(--line)", borderRadius: 10 }}>
@@ -4729,7 +4781,7 @@ function ConversasPageInner() {
                 aria-label="Fechar"
                 onClick={() => setLightbox(null)}
               >
-                ✕
+                <IconClose width={12} height={12} />
               </button>
               {lightbox.urls.length > 1 ? (
                 <button
@@ -4829,7 +4881,7 @@ function ConversasPageInner() {
                     aria-label="Fechar"
                     onClick={pedirFecharConfig}
                   >
-                    ✕
+                    <IconClose width={12} height={12} />
                   </button>
                 </div>
 
@@ -4942,7 +4994,11 @@ function ConversasPageInner() {
                               }
                             >
                               <span className="wa-config-fundo-nome">{op.label}</span>
-                              {selecionado ? <span className="wa-config-fundo-check">✓</span> : null}
+                              {selecionado ? (
+                                <span className="wa-config-fundo-check">
+                                  <IconCheck width={12} height={12} />
+                                </span>
+                              ) : null}
                             </button>
                           );
                         })}
@@ -5279,8 +5335,9 @@ function ConversasPageInner() {
                             className="btn ghost"
                             disabled={configRascunho.somEscolhido === "nenhum"}
                             onClick={testarSomNotificacao}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                           >
-                            🔊 Testar som
+                            <IconVolume width={13} height={13} /> Testar som
                           </button>
                         </div>
                       </div>
@@ -5448,13 +5505,17 @@ function ConversasPageInner() {
                       disabled={!configAlterado || configStatusSalvar === "salvando"}
                       onClick={salvarConfigConversas}
                     >
-                      {configStatusSalvar === "salvando"
-                        ? "Salvando…"
-                        : configStatusSalvar === "sucesso"
-                          ? "✓ Salvo"
-                          : configStatusSalvar === "erro"
-                            ? "Tentar novamente"
-                            : "Salvar alterações"}
+                      {configStatusSalvar === "salvando" ? (
+                        "Salvando…"
+                      ) : configStatusSalvar === "sucesso" ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <IconCheck width={13} height={13} /> Salvo
+                        </span>
+                      ) : configStatusSalvar === "erro" ? (
+                        "Tentar novamente"
+                      ) : (
+                        "Salvar alterações"
+                      )}
                     </button>
                   </div>
                 )}
@@ -5488,7 +5549,7 @@ function ConversasPageInner() {
                     aria-label="Fechar"
                     onClick={fecharContatoPicker}
                   >
-                    ✕
+                    <IconClose width={12} height={12} />
                   </button>
                 </div>
 
@@ -5570,8 +5631,9 @@ function ConversasPageInner() {
                               type="button"
                               className={`fchip${somenteFavoritosPicker ? " active" : ""}`}
                               onClick={() => setSomenteFavoritosPicker((v) => !v)}
+                              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                             >
-                              ★ Favoritos
+                              <IconStar width={12} height={12} fill={somenteFavoritosPicker ? "currentColor" : "none"} /> Favoritos
                             </button>
                           </div>
 
@@ -5597,7 +5659,7 @@ function ConversasPageInner() {
                                       aria-label={`Remover ${c.nome} da seleção`}
                                       onClick={() => removerSelecaoContatoPicker(c.id)}
                                     >
-                                      ✕
+                                      <IconClose width={10} height={10} />
                                     </button>
                                   </span>
                                 ))}
@@ -5632,7 +5694,9 @@ function ConversasPageInner() {
                                     <span className="wa-contato-picker-card-info">
                                       <span className="wa-contato-picker-card-nome">
                                         {c.nome}
-                                        {c.favorito ? " ★" : ""}
+                                        {c.favorito ? (
+                                          <IconStar width={10} height={10} fill="currentColor" style={{ marginLeft: 4 }} />
+                                        ) : null}
                                       </span>
                                       {c.empresa || c.cargo ? (
                                         <span className="wa-contato-picker-card-linha">
@@ -5640,10 +5704,14 @@ function ConversasPageInner() {
                                         </span>
                                       ) : null}
                                       {c.whatsapp ? (
-                                        <span className="wa-contato-picker-card-linha">📞 {c.whatsapp}</span>
+                                        <span className="wa-contato-picker-card-linha" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                          <IconTelefone width={11} height={11} /> {c.whatsapp}
+                                        </span>
                                       ) : null}
                                       {c.email ? (
-                                        <span className="wa-contato-picker-card-linha">✉ {c.email}</span>
+                                        <span className="wa-contato-picker-card-linha" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                          <IconEmail width={11} height={11} /> {c.email}
+                                        </span>
                                       ) : null}
                                       {(c.etiquetas ?? []).length > 0 ? (
                                         <span className="wa-contato-picker-card-tags">
@@ -5656,7 +5724,7 @@ function ConversasPageInner() {
                                       ) : null}
                                     </span>
                                     <span className="wa-contato-picker-check" aria-hidden="true">
-                                      {selecionado ? "✓" : ""}
+                                      {selecionado ? <IconCheck width={12} height={12} /> : ""}
                                     </span>
                                   </div>
                                 );
@@ -5742,8 +5810,8 @@ function ConversasPageInner() {
                             />
                           </div>
                           {novoContatoSucesso ? (
-                            <p className="wa-status-inline wa-status-sucesso">
-                              ✓ Contato salvo no CRM
+                            <p className="wa-status-inline wa-status-sucesso" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <IconCheck width={13} height={13} /> Contato salvo no CRM
                             </p>
                           ) : null}
                         </>
@@ -5805,12 +5873,20 @@ function ConversasPageInner() {
                               {previaCampos.empresa && c.empresa ? <span>{c.empresa}</span> : null}
                               {previaCampos.cargo && c.cargo ? <span>{c.cargo}</span> : null}
                               {previaCampos.telefonePrincipal && c.whatsapp ? (
-                                <span>📞 {c.whatsapp}</span>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                  <IconTelefone width={11} height={11} /> {c.whatsapp}
+                                </span>
                               ) : null}
                               {previaCampos.telefoneAlternativo && c.telefoneFixo ? (
-                                <span>☎ {c.telefoneFixo}</span>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                  <IconTelefone width={11} height={11} /> {c.telefoneFixo}
+                                </span>
                               ) : null}
-                              {previaCampos.email && c.email ? <span>✉ {c.email}</span> : null}
+                              {previaCampos.email && c.email ? (
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                  <IconEmail width={11} height={11} /> {c.email}
+                                </span>
+                              ) : null}
                             </span>
                           </div>
                         ))}
@@ -5905,7 +5981,7 @@ function ConversasPageInner() {
                       style={{ width: "100%", textAlign: "left" }}
                       onClick={() => copiarMensagem(msg.texto)}
                     >
-                      <span className="n">📋 Copiar</span>
+                      <span className="n"><IconCopy width={12} height={12} /> Copiar</span>
                     </button>
                   ) : null}
                   <button
@@ -5917,7 +5993,7 @@ function ConversasPageInner() {
                       setEncaminharAberto({ chave, rect: e.currentTarget.getBoundingClientRect(), msg });
                     }}
                   >
-                    <span className="n">➤ Encaminhar</span>
+                    <span className="n"><IconEncaminhar width={12} height={12} /> Encaminhar</span>
                   </button>
                   <button
                     type="button"
@@ -5926,7 +6002,15 @@ function ConversasPageInner() {
                     onClick={() => alternarFavoritoMensagem(chave)}
                   >
                     <span className="n">
-                      {mensagensFavoritas.has(chave) ? "★ Remover dos favoritos" : "☆ Favoritar"}
+                      {mensagensFavoritas.has(chave) ? (
+                        <>
+                          <IconStar width={12} height={12} fill="currentColor" /> Remover dos favoritos
+                        </>
+                      ) : (
+                        <>
+                          <IconStar width={12} height={12} fill="none" /> Favoritar
+                        </>
+                      )}
                     </span>
                   </button>
                   <button
@@ -5944,7 +6028,7 @@ function ConversasPageInner() {
                       style={{ width: "100%", textAlign: "left" }}
                       onClick={() => baixarAnexoMensagem(msg)}
                     >
-                      <span className="n">⬇ Baixar</span>
+                      <span className="n"><IconDownload width={12} height={12} /> Baixar</span>
                     </button>
                   ) : null}
                   <div className="dropdown-sep" />
@@ -5954,7 +6038,7 @@ function ConversasPageInner() {
                     style={{ width: "100%", textAlign: "left" }}
                     onClick={() => pedirApagar(chave, msg, "para_mim")}
                   >
-                    <span className="n">🗑 Apagar pra mim</span>
+                    <span className="n"><IconLixeira width={12} height={12} /> Apagar pra mim</span>
                   </button>
                   <button
                     type="button"
@@ -5962,7 +6046,7 @@ function ConversasPageInner() {
                     style={{ width: "100%", textAlign: "left" }}
                     onClick={() => pedirApagar(chave, msg, "para_todos")}
                   >
-                    <span className="n">🗑 Apagar pra todos</span>
+                    <span className="n"><IconLixeira width={12} height={12} /> Apagar pra todos</span>
                   </button>
                 </FloatingDropdown>
               );
@@ -6091,7 +6175,7 @@ function ConversasPageInner() {
                     aria-label="Fechar"
                     onClick={() => setDetalhesMensagem(null)}
                   >
-                    ✕
+                    <IconClose width={12} height={12} />
                   </button>
                 </div>
                 <div className="wa-msg-detalhes-lista">
@@ -6209,7 +6293,7 @@ function ConversasPageInner() {
                   aria-label="Fechar"
                   onClick={() => setContatoDetalheAberto(null)}
                 >
-                  ✕
+                  <IconClose width={12} height={12} />
                 </button>
               </div>
               <div className="wa-contato-detalhe-corpo">
@@ -6223,15 +6307,21 @@ function ConversasPageInner() {
                   </p>
                 ) : null}
                 {contatoDetalheAberto.whatsapp ? (
-                  <p className="wa-contato-picker-numero">📞 {contatoDetalheAberto.whatsapp}</p>
+                  <p className="wa-contato-picker-numero" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <IconTelefone width={11} height={11} /> {contatoDetalheAberto.whatsapp}
+                  </p>
                 ) : (
                   <p className="hint">Sem número de WhatsApp cadastrado</p>
                 )}
                 {contatoDetalheAberto.telefoneFixo ? (
-                  <p className="wa-contato-picker-numero">☎ {contatoDetalheAberto.telefoneFixo}</p>
+                  <p className="wa-contato-picker-numero" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <IconTelefone width={11} height={11} /> {contatoDetalheAberto.telefoneFixo}
+                  </p>
                 ) : null}
                 {contatoDetalheAberto.email ? (
-                  <p className="wa-contato-picker-numero">✉ {contatoDetalheAberto.email}</p>
+                  <p className="wa-contato-picker-numero" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <IconEmail width={11} height={11} /> {contatoDetalheAberto.email}
+                  </p>
                 ) : null}
               </div>
               {contatoDetalheAberto.whatsapp ? (
@@ -6241,15 +6331,18 @@ function ConversasPageInner() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  💬 Conversar no WhatsApp
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "center", width: "100%" }}>
+                    <IconConversas width={13} height={13} /> Conversar no WhatsApp
+                  </span>
                 </a>
               ) : null}
               <button
                 type="button"
                 className="btn ghost block"
                 onClick={() => salvarContatoVcf(contatoDetalheAberto)}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
               >
-                💾 Salvar contato
+                <IconSalvar width={13} height={13} /> Salvar contato
               </button>
             </div>
           ) : null}
@@ -6366,14 +6459,14 @@ function ConversasPageInner() {
                     setTarefaAberta(true);
                   }}
                 >
-                  ✅ Criar tarefa
+                  <IconCheck width={13} height={13} /> Criar tarefa
                 </button>
                 <button
                   type="button"
                   className="wa-acao-rapida"
                   onClick={() => setAbaInfo("atividades")}
                 >
-                  🗓 Registrar atividade
+                  <IconCalendar width={13} height={13} /> Registrar atividade
                 </button>
                 <button
                   type="button"
@@ -6383,14 +6476,14 @@ function ConversasPageInner() {
                     mensagemInputRef.current?.focus();
                   }}
                 >
-                  ⚡ Executar automação
+                  <IconAutomacoes width={13} height={13} /> Executar automação
                 </button>
                 <button
                   type="button"
                   className="wa-acao-rapida"
                   onClick={() => setAbaInfo("contato")}
                 >
-                  🏷 Adicionar etiqueta
+                  <IconEtiqueta width={13} height={13} /> Adicionar etiqueta
                 </button>
                 <button
                   type="button"
@@ -6400,14 +6493,14 @@ function ConversasPageInner() {
                     e.currentTarget.scrollIntoView({ block: "nearest" });
                   }}
                 >
-                  👤 Trocar responsável
+                  <IconContatos width={13} height={13} /> Trocar responsável
                 </button>
                 <button
                   type="button"
                   className="wa-acao-rapida"
                   onClick={(e) => abrirMenuResultado(e.currentTarget.getBoundingClientRect())}
                 >
-                  🎯 Registrar resultado
+                  <IconAlvo width={13} height={13} /> Registrar resultado
                 </button>
               </div>
 
@@ -6437,15 +6530,25 @@ function ConversasPageInner() {
               {resultadoAtual ? (
                 <p
                   className={`wa-resultado-badge wa-resultado-${resultadoAtual}`}
-                  style={{ margin: "0 17px 14px" }}
+                  style={{ margin: "0 17px 14px", display: "flex", alignItems: "center", gap: 6 }}
                 >
-                  {resultadoAtual === "venda"
-                    ? "✅ Venda concluída"
-                    : resultadoAtual === "perda"
-                      ? `❌ Perdida · ${motivoPerdaPorContato[aberta.nome] ?? ""}`
-                      : resultadoAtual === "adiada"
-                        ? "⏳ Adiada"
-                        : "🚫 Cancelada"}
+                  {resultadoAtual === "venda" ? (
+                    <>
+                      <IconCheck width={12} height={12} /> Venda concluída
+                    </>
+                  ) : resultadoAtual === "perda" ? (
+                    <>
+                      <IconErro width={12} height={12} /> Perdida · {motivoPerdaPorContato[aberta.nome] ?? ""}
+                    </>
+                  ) : resultadoAtual === "adiada" ? (
+                    <>
+                      <IconRelogio width={12} height={12} /> Adiada
+                    </>
+                  ) : (
+                    <>
+                      <IconProibido width={12} height={12} /> Cancelada
+                    </>
+                  )}
                 </p>
               ) : null}
             </>
@@ -6652,7 +6755,7 @@ function ConversasPageInner() {
                           aria-label={`Remover etiqueta ${et}`}
                           onClick={() => removerEtiquetaRapida(et)}
                         >
-                          ✕
+                          <IconClose width={10} height={10} />
                         </button>
                       </span>
                     ))
@@ -6700,10 +6803,12 @@ function ConversasPageInner() {
                 </div>
               ) : null}
               {statusSalvarContato === "sucesso" ? (
-                <p className="wa-status-inline wa-status-sucesso">✓ Dados salvos</p>
+                <p className="wa-status-inline wa-status-sucesso" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <IconCheck width={13} height={13} /> Dados salvos
+                </p>
               ) : statusSalvarContato === "erro" ? (
-                <p className="wa-status-inline wa-status-erro">
-                  ✕ Não deu pra salvar — confira o e-mail
+                <p className="wa-status-inline wa-status-erro" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <IconClose width={13} height={13} /> Não deu pra salvar — confira o e-mail
                 </p>
               ) : null}
             </>
@@ -6755,14 +6860,27 @@ function ConversasPageInner() {
               </div>
               <div style={{ padding: "0 17px 14px" }}>
                 {resultadoAtual ? (
-                  <p className={`wa-resultado-badge wa-resultado-${resultadoAtual}`}>
-                    {resultadoAtual === "venda"
-                      ? "✅ Venda concluída"
-                      : resultadoAtual === "perda"
-                        ? `❌ Perdida · ${motivoPerdaPorContato[aberta.nome] ?? ""}`
-                        : resultadoAtual === "adiada"
-                          ? "⏳ Adiada"
-                          : "🚫 Cancelada"}
+                  <p
+                    className={`wa-resultado-badge wa-resultado-${resultadoAtual}`}
+                    style={{ display: "flex", alignItems: "center", gap: 6 }}
+                  >
+                    {resultadoAtual === "venda" ? (
+                      <>
+                        <IconCheck width={12} height={12} /> Venda concluída
+                      </>
+                    ) : resultadoAtual === "perda" ? (
+                      <>
+                        <IconErro width={12} height={12} /> Perdida · {motivoPerdaPorContato[aberta.nome] ?? ""}
+                      </>
+                    ) : resultadoAtual === "adiada" ? (
+                      <>
+                        <IconRelogio width={12} height={12} /> Adiada
+                      </>
+                    ) : (
+                      <>
+                        <IconProibido width={12} height={12} /> Cancelada
+                      </>
+                    )}
                   </p>
                 ) : (
                   <p className="hint" style={{ marginBottom: 10 }}>
@@ -6773,8 +6891,9 @@ function ConversasPageInner() {
                   type="button"
                   className="btn primary block"
                   onClick={(e) => abrirMenuResultado(e.currentTarget.getBoundingClientRect())}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
-                  🎯 Registrar resultado
+                  <IconAlvo width={13} height={13} /> Registrar resultado
                 </button>
               </div>
             </>
@@ -6794,10 +6913,10 @@ function ConversasPageInner() {
                 <button
                   type="button"
                   className="btn ghost"
-                  style={{ flex: "1 1 140px" }}
+                  style={{ flex: "1 1 140px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                   onClick={abrirEmailModal}
                 >
-                  ✉ Disparar e-mail
+                  <IconEmail width={13} height={13} /> Disparar e-mail
                 </button>
               </div>
 
@@ -6925,7 +7044,7 @@ function ConversasPageInner() {
             style={{ width: "100%", textAlign: "left" }}
             onClick={() => escolherResultado("venda")}
           >
-            <span className="n">✅ Venda concluída</span>
+            <span className="n"><IconCheck width={12} height={12} /> Venda concluída</span>
           </button>
           <button
             type="button"
@@ -6933,7 +7052,7 @@ function ConversasPageInner() {
             style={{ width: "100%", textAlign: "left" }}
             onClick={() => escolherResultado("perda")}
           >
-            <span className="n">❌ Negociação perdida</span>
+            <span className="n"><IconErro width={12} height={12} /> Negociação perdida</span>
           </button>
           <button
             type="button"
@@ -6941,7 +7060,7 @@ function ConversasPageInner() {
             style={{ width: "100%", textAlign: "left" }}
             onClick={() => escolherResultado("andamento")}
           >
-            <span className="n">🔄 Continua em andamento</span>
+            <span className="n"><IconRefresh width={12} height={12} /> Continua em andamento</span>
           </button>
           <button
             type="button"
@@ -6949,7 +7068,7 @@ function ConversasPageInner() {
             style={{ width: "100%", textAlign: "left" }}
             onClick={() => escolherResultado("adiada")}
           >
-            <span className="n">⏳ Adiada</span>
+            <span className="n"><IconRelogio width={12} height={12} /> Adiada</span>
           </button>
           <button
             type="button"
@@ -6957,7 +7076,7 @@ function ConversasPageInner() {
             style={{ width: "100%", textAlign: "left" }}
             onClick={() => escolherResultado("cancelada")}
           >
-            <span className="n">🚫 Cancelada</span>
+            <span className="n"><IconProibido width={12} height={12} /> Cancelada</span>
           </button>
         </FloatingDropdown>
       ) : null}
@@ -6973,7 +7092,7 @@ function ConversasPageInner() {
                 aria-label="Fechar"
                 onClick={() => setFormResultado(null)}
               >
-                ✕
+                <IconClose width={12} height={12} />
               </button>
             </div>
             <div className="field" style={{ padding: "0 0 10px" }}>
@@ -7057,7 +7176,7 @@ function ConversasPageInner() {
                 aria-label="Fechar"
                 onClick={() => setFormResultado(null)}
               >
-                ✕
+                <IconClose width={12} height={12} />
               </button>
             </div>
             <p className="hint" style={{ marginBottom: 10 }}>Escolha o motivo da perda:</p>
@@ -7110,7 +7229,7 @@ function ConversasPageInner() {
                 aria-label="Fechar"
                 onClick={() => setFormResultado(null)}
               >
-                ✕
+                <IconClose width={12} height={12} />
               </button>
             </div>
             <div className="field" style={{ padding: "0 0 10px" }}>
@@ -7166,7 +7285,7 @@ function ConversasPageInner() {
                 aria-label="Fechar"
                 onClick={() => setFormResultado(null)}
               >
-                ✕
+                <IconClose width={12} height={12} />
               </button>
             </div>
             <div className="field" style={{ padding: "0 0 10px" }}>
@@ -7221,7 +7340,7 @@ function ConversasPageInner() {
               aria-label="Fechar"
               onClick={fecharEmailModal}
             >
-              ✕
+              <IconClose width={12} height={12} />
             </button>
           </div>
             <div className="field" style={{ padding: "10px 0" }}>
@@ -7329,10 +7448,10 @@ function ConversasPageInner() {
                       <button
                         type="button"
                         className="btn ghost"
-                        style={{ padding: "4px 10px", fontSize: 11 }}
+                        style={{ padding: "4px 10px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}
                         onClick={() => verificarRastreamento(email)}
                       >
-                        🔄 Verificar
+                        <IconRefresh width={11} height={11} /> Verificar
                       </button>
                     </div>
                   ))}
@@ -7362,7 +7481,7 @@ function ConversasPageInner() {
               aria-label="Fechar"
               onClick={() => setMidiasAberto(false)}
             >
-              ✕
+              <IconClose width={12} height={12} />
             </button>
           </div>
           {tarefa.anexo ? (
@@ -7398,7 +7517,7 @@ function ConversasPageInner() {
               aria-label="Fechar"
               onClick={() => setRespostasGerenciarAberto(false)}
             >
-              ✕
+              <IconClose width={12} height={12} />
             </button>
           </div>
 
@@ -7454,7 +7573,7 @@ function ConversasPageInner() {
                     style={{ cursor: "pointer", flex: "0 0 auto" }}
                     onClick={() => excluirRespostaRapida(r.id)}
                   >
-                    ✕
+                    <IconClose width={11} height={11} />
                   </span>
                 </div>
               ))}
@@ -7484,7 +7603,7 @@ function ConversasPageInner() {
               aria-label="Fechar"
               onClick={() => setConectarAberto(false)}
             >
-              ✕
+              <IconClose width={12} height={12} />
             </button>
           </div>
           <div className="filters-row mb14">
@@ -7506,8 +7625,8 @@ function ConversasPageInner() {
           {conectarAba === "qr" ? (
             <div style={{ textAlign: "center", padding: "6px 0 14px" }}>
               {naoOficial.estado?.status === "erro" ? (
-                <p className="hint" style={{ color: "var(--danger)", marginBottom: 10 }}>
-                  ⚠ {naoOficial.estado.erroMensagem}
+                <p className="hint" style={{ color: "var(--danger)", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <IconAlerta width={13} height={13} /> {naoOficial.estado.erroMensagem}
                 </p>
               ) : null}
 
@@ -7530,7 +7649,9 @@ function ConversasPageInner() {
                   </p>
                 </div>
               ) : (
-                <div className="wa-qr-box">📷</div>
+                <div className="wa-qr-box">
+                  <IconCamera width={22} height={22} />
+                </div>
               )}
             </div>
           ) : (
