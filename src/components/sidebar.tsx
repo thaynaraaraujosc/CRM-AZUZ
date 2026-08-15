@@ -163,12 +163,14 @@ export function Sidebar() {
     setGestaoAtividadeAberta(true);
   }
 
-  /** Dá uma folga de 2s antes de fechar, pra dar tempo do mouse atravessar o espaço até o popup. */
+  /** Dá uma folga bem curta antes de fechar, só pra não fechar se o mouse passar rapidinho pelo
+   * vão até o submenu — 2s (valor anterior) dava a sensação de "não fecha nunca" quando o mouse
+   * saía de vez da sidebar. */
   function agendarFechamentoGestaoAtividade() {
     cancelarFechamentoGestaoAtividade();
     gestaoAtividadeFecharRef.current = setTimeout(() => {
       setGestaoAtividadeAberta(false);
-    }, 2000);
+    }, 200);
   }
 
   /** Se o mouse for direto pra outro item do menu (não pro submenu), fecha na hora. */
@@ -179,6 +181,26 @@ export function Sidebar() {
   }
 
   useEffect(() => cancelarFechamentoGestaoAtividade, []);
+
+  const gestaoAtividadePopRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!gestaoAtividadeAberta) return;
+    function aoClicarFora(e: MouseEvent) {
+      const alvo = e.target as Node;
+      if (gestaoAtividadeBtnRef.current?.contains(alvo)) return;
+      if (gestaoAtividadePopRef.current?.contains(alvo)) return;
+      setGestaoAtividadeAberta(false);
+    }
+    function aoTeclarEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setGestaoAtividadeAberta(false);
+    }
+    document.addEventListener("mousedown", aoClicarFora);
+    document.addEventListener("keydown", aoTeclarEsc);
+    return () => {
+      document.removeEventListener("mousedown", aoClicarFora);
+      document.removeEventListener("keydown", aoTeclarEsc);
+    };
+  }, [gestaoAtividadeAberta]);
 
   return (
     <aside className="sidebar">
@@ -334,6 +356,7 @@ export function Sidebar() {
       {gestaoAtividadeAberta && typeof document !== "undefined"
         ? createPortal(
             <div
+              ref={gestaoAtividadePopRef}
               className="dropdown-pop"
               style={{
                 position: "fixed",
