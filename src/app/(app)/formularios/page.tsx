@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { useEquipe } from "@/lib/equipe-context";
+import { IconAnexo, IconCadeado, IconClose, IconGlobo, IconOlho, IconOlhoFechado } from "@/components/icons";
 import {
   CAMPOS_CRM_MAPEAVEIS,
   CATEGORIAS_CAMPO,
@@ -340,7 +341,7 @@ export default function FormulariosPage() {
                           }
                         }}
                       >
-                        ✕
+                        <IconClose width={11} height={11} />
                       </span>
                     </div>
                   );
@@ -429,7 +430,7 @@ export default function FormulariosPage() {
                     ) : (
                       <>
                         <div className="form-link-box">
-                          <p className="form-link-h">🔒 Link privado, com senha</p>
+                          <p className="form-link-h" style={{ display: "flex", alignItems: "center", gap: 6 }}><IconCadeado width={13} height={13} /> Link privado, com senha</p>
                           <div className="field" style={{ padding: 0, marginBottom: 10 }}>
                             <label>Senha de acesso</label>
                             <input
@@ -450,7 +451,7 @@ export default function FormulariosPage() {
                           </div>
                         </div>
                         <div className="form-link-box">
-                          <p className="form-link-h">🌐 Link público</p>
+                          <p className="form-link-h" style={{ display: "flex", alignItems: "center", gap: 6 }}><IconGlobo width={13} height={13} /> Link público</p>
                           <div className="key-row" style={{ padding: 0 }}>
                             <div className="key-box">azuzcrm.com/f/{formularioAberto.id}</div>
                             <button type="button" className="btn ghost" onClick={copiarLinkPublico}>
@@ -488,8 +489,8 @@ export default function FormulariosPage() {
                         <div className="field" key={pergunta.id}>
                           <label>{pergunta.rotulo}</label>
                           {ehUpload && urlArquivo ? (
-                            <a className="input" href={urlArquivo} download={nomeArquivo} target="_blank" rel="noopener noreferrer">
-                              📎 {nomeArquivo}
+                            <a className="input" href={urlArquivo} download={nomeArquivo} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <IconAnexo width={13} height={13} /> {nomeArquivo}
                             </a>
                           ) : (
                             <div className="input">{ehUpload ? "—" : valor || "—"}</div>
@@ -581,7 +582,7 @@ export default function FormulariosPage() {
                             }
                           }}
                         >
-                          ✕
+                          <IconClose width={11} height={11} />
                         </button>
                       </span>
                     </div>
@@ -678,7 +679,7 @@ export default function FormulariosPage() {
                                     atualizarPergunta(formularioAberto.id, paginaAtiva.id, pergunta.id, { oculta: !pergunta.oculta });
                                   }}
                                 >
-                                  {pergunta.oculta ? "🙈" : "👁"}
+                                  {pergunta.oculta ? <IconOlhoFechado width={13} height={13} /> : <IconOlho width={13} height={13} />}
                                 </button>
                                 <button
                                   type="button"
@@ -689,7 +690,7 @@ export default function FormulariosPage() {
                                     if (campoSelecionadoId === pergunta.id) setCampoSelecionadoId(null);
                                   }}
                                 >
-                                  ✕
+                                  <IconClose width={11} height={11} />
                                 </button>
                               </div>
                             </div>
@@ -1039,7 +1040,7 @@ function PainelCampo({
                   className="btn ghost"
                   onClick={() => onAtualizar({ opcoes: (pergunta.opcoes ?? []).filter((_, idx) => idx !== i) })}
                 >
-                  ✕
+                  <IconClose width={11} height={11} />
                 </button>
               ) : null}
             </div>
