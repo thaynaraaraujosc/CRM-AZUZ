@@ -893,7 +893,7 @@ function ConversasPageInner() {
   const [anexoAberto, setAnexoAberto] = useState(false);
   const [anexoAnchorRect, setAnexoAnchorRect] = useState<AnchorRect | null>(null);
   const [anexoPosManual, setAnexoPosManual] = useState<{ x: number; y: number } | null>(null);
-  const { ref: anexoMenuRef, posicao: anexoPosicaoAuto } = useFloatingPosition(anexoAnchorRect, anexoAberto);
+  const { ref: anexoMenuRef, posicao: anexoPosicaoAuto } = useFloatingPosition(anexoAnchorRect, anexoAberto, 8, () => setAnexoAberto(false));
   const anexoPos = anexoPosManual ?? (anexoPosicaoAuto ? { x: anexoPosicaoAuto.left, y: anexoPosicaoAuto.top } : null);
   const anexoArrasteRef = useRef<{ dx: number; dy: number } | null>(null);
   const [emojiAberto, setEmojiAberto] = useState(false);

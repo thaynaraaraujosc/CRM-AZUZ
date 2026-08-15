@@ -52,7 +52,7 @@ function FunilPageInner() {
   const motivosPerda = useMotivosPerda();
   const [configAberto, setConfigAberto] = useState(false);
   const [configAnchorRect, setConfigAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: configPopRef, posicao: configPos } = useFloatingPosition(configAnchorRect, configAberto);
+  const { ref: configPopRef, posicao: configPos } = useFloatingPosition(configAnchorRect, configAberto, 8, () => setConfigAberto(false));
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const proximoToastId = useRef(0);
 

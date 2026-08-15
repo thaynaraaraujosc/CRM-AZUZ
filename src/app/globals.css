@@ -9,6 +9,10 @@
   --navy-raised: #f5f7fb;
   --navy-raised-2: #eaeefa;
   --navy-deep: #ffffff;
+  /* "Piso" atrás dos painéis flutuantes (sidebar + área principal) — precisa ser um tom visivelmente
+     diferente de `--navy`/`--navy-raised` (os painéis em si), senão os painéis "grudam" no fundo e o
+     respiro entre eles não se lê como respiro de verdade. */
+  --canvas: #e9edf5;
 
   --blue: #2e6bff;
   --blue-soft: rgba(46, 107, 255, 0.14);
@@ -130,6 +134,9 @@
   --navy-raised: #131f42;
   --navy-raised-2: #1a2a54;
   --navy-deep: #060a17;
+  /* Mesmo "piso" fixo da landing/telas de auth (`--lp-bg`/`.auth-page`) — o app logado agora usa a
+     mesma base por trás dos painéis flutuantes, reforçando que é o mesmo produto. */
+  --canvas: #05070f;
 
   --blue: #6a9bff;
   --blue-soft: rgba(106, 155, 255, 0.2);
@@ -179,7 +186,7 @@ body {
 
 body {
   margin: 0;
-  background: var(--navy);
+  background: var(--canvas);
   color: var(--ink);
   font-family: var(--body);
   font-size: 14px;
@@ -235,17 +242,26 @@ table {
 
 /* ---------------- App shell ---------------- */
 
+/* Reestruturação visual (redesign) — "painéis flutuantes" com respiro entre si sobre o `--canvas`,
+   em vez do layout anterior (sidebar e área principal grudadas, só separadas por uma borda de 1px).
+   `gap`+`padding` no `.shell` cria o respiro; sidebar e `.main` viram cartões com cantos
+   arredondados e sombra próprios, cada um a sua própria "caixinha". */
 .shell {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  gap: 14px;
+  padding: 14px;
+  background: var(--canvas);
 }
 
 .sidebar {
   width: 216px;
   flex: 0 0 auto;
-  background: var(--navy-deep);
-  border-right: 1px solid var(--line);
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
   padding: 20px 14px;
   display: flex;
   flex-direction: column;
@@ -499,6 +515,12 @@ table {
   display: flex;
   flex-direction: column;
   background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  /* Corta `.app-header`/`.content` nos cantos arredondados do painel — nenhum dos dois rola sozinho
+     (quem rola é o `.content` por dentro, via `overflow: auto` próprio), então não afeta scroll. */
+  overflow: hidden;
 }
 
 .app-header {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useEffect, useRef, useState } from "react";
 
 export type AnchorRect = Pick<DOMRect, "top" | "bottom" | "left" | "right" | "width" | "height">;
 
@@ -16,10 +16,38 @@ type Posicao = { top: number; left: number };
  * laterais. Recalcula em `scroll`/`resize` enquanto está aberto — nenhuma das implementações
  * anteriores de posicionamento flutuante no projeto fazia isso, o que deixava o menu preso na posição
  * errada se a janela fosse redimensionada com ele aberto.
+ *
+ * `aoFechar` (opcional) — clique fora do flutuante ou tecla Esc chamam esse callback. Sem isso, cada
+ * flutuante ficava por conta própria pra fechar sozinho, e boa parte não implementava nada (menu
+ * ficava aberto até um clique manual no próprio botão que abriu) — centralizando aqui, todo
+ * consumidor do hook ganha o comportamento padrão de propósito só de passar o callback.
  */
-export function useFloatingPosition(anchorRect: AnchorRect | null, aberto: boolean, margem = 8) {
+export function useFloatingPosition(
+  anchorRect: AnchorRect | null,
+  aberto: boolean,
+  margem = 8,
+  aoFechar?: () => void,
+) {
   const ref = useRef<HTMLDivElement>(null);
   const [posicao, setPosicao] = useState<Posicao | null>(null);
+
+  useEffect(() => {
+    if (!aberto || !aoFechar) return;
+
+    function aoClicar(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) aoFechar!();
+    }
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === "Escape") aoFechar!();
+    }
+
+    document.addEventListener("mousedown", aoClicar);
+    document.addEventListener("keydown", aoTeclar);
+    return () => {
+      document.removeEventListener("mousedown", aoClicar);
+      document.removeEventListener("keydown", aoTeclar);
+    };
+  }, [aberto, aoFechar]);
 
   useLayoutEffect(() => {
     if (!aberto || !anchorRect) {

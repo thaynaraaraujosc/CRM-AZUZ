@@ -110,7 +110,7 @@ export default function AgendaPage() {
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
 
   const [maisAberto, setMaisAberto] = useState<{ dataIso: string; anchor: AnchorRect } | null>(null);
-  const { ref: maisRef, posicao: maisPos } = useFloatingPosition(maisAberto?.anchor ?? null, !!maisAberto);
+  const { ref: maisRef, posicao: maisPos } = useFloatingPosition(maisAberto?.anchor ?? null, !!maisAberto, 8, () => setMaisAberto(null));
 
   const [formAberto, setFormAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);

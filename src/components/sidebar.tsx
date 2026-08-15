@@ -111,7 +111,7 @@ export function Sidebar() {
   const { membros: equipe } = useEquipe();
   const [contaAberta, setContaAberta] = useState(false);
   const [contaAnchorRect, setContaAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: contaPopRef, posicao: contaPos } = useFloatingPosition(contaAnchorRect, contaAberta);
+  const { ref: contaPopRef, posicao: contaPos } = useFloatingPosition(contaAnchorRect, contaAberta, 8, () => setContaAberta(false));
   const [workspaceAberto, setWorkspaceAberto] = useState(false);
   const [nomeEmpresa, setNomeEmpresa] = useState("");
   const [segmento, setSegmento] = useState("");
@@ -136,7 +136,7 @@ export function Sidebar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- só precisa refazer ao trocar de workspace, não a cada objeto de sessão recriado.
   }, [sessao?.user?.workspaceId]);
   const [workspaceAnchorRect, setWorkspaceAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: workspacePopRef, posicao: workspacePos } = useFloatingPosition(workspaceAnchorRect, workspaceAberto);
+  const { ref: workspacePopRef, posicao: workspacePos } = useFloatingPosition(workspaceAnchorRect, workspaceAberto, 8, () => setWorkspaceAberto(false));
 
   const souAdmin =
     equipe.find((m) => m.nome === currentUser.name)?.papelTipo === "admin";

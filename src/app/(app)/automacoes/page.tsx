@@ -287,7 +287,7 @@ function AutomacoesPageInner() {
   /* --------------------- "+ Nova automação" — popover ------------------- */
   const [novoAberto, setNovoAberto] = useState(false);
   const [novoAnchorRect, setNovoAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: novoPopoverRef, posicao: novoPosicao } = useFloatingPosition(novoAnchorRect, novoAberto);
+  const { ref: novoPopoverRef, posicao: novoPosicao } = useFloatingPosition(novoAnchorRect, novoAberto, 8, () => setNovoAberto(false));
   const [novoModoModelo, setNovoModoModelo] = useState(false);
   const [novoCarregando, setNovoCarregando] = useState(false);
   const [novoErro, setNovoErro] = useState<string | null>(null);
