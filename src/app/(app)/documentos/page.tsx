@@ -21,7 +21,38 @@ import {
   baixarRtf,
   baixarTxt,
 } from "@/lib/documentos-export";
-import { IconDoc, IconSearch } from "@/components/icons";
+import {
+  IconAlignJustify,
+  IconAnexo,
+  IconCadeado,
+  IconCadeadoAberto,
+  IconCheck,
+  IconChecklist,
+  IconClose,
+  IconConversas,
+  IconCopy,
+  IconCrop,
+  IconCut,
+  IconDoc,
+  IconDownload,
+  IconDuplicar,
+  IconEdit,
+  IconFolder,
+  IconImage,
+  IconLink,
+  IconLixeira,
+  IconPaint,
+  IconPaste,
+  IconPrint,
+  IconQuote,
+  IconRepeat,
+  IconRestaurar,
+  IconSearch,
+  IconSignature,
+  IconSpellCheck,
+  IconStar,
+  IconText,
+} from "@/components/icons";
 import { FloatingDropdown, Topbar } from "@/components/ui";
 
 /* Web Speech API — não faz parte do lib.dom.d.ts padrão do TypeScript, então declaramos o mínimo usado aqui. */
@@ -324,8 +355,8 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
           <button type="button" className="btn primary" onClick={() => novoDocumento()}>
             + Novo documento
           </button>
-          <button type="button" className="btn ghost" onClick={() => setModelosAberto((v) => !v)}>
-            📄 Modelos
+          <button type="button" className="btn ghost" onClick={() => setModelosAberto((v) => !v)} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <IconDoc width={14} height={14} /> Modelos
           </button>
           <label className="search" style={{ marginLeft: "auto", width: 240 }}>
             <IconSearch />
@@ -382,7 +413,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                 {abaModelos === "meus"
                   ? "Você ainda não salvou nenhum modelo — abra um documento e use Arquivo → Salvar como modelo."
                   : abaModelos === "favoritos"
-                  ? "Nenhum modelo favoritado ainda — passe o mouse num modelo e clique em ☆ pra favoritar."
+                  ? "Nenhum modelo favoritado ainda — passe o mouse num modelo e clique na estrela pra favoritar."
                   : "Nenhum modelo encontrado com esse filtro."}
               </p>
             ) : (
@@ -432,7 +463,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                         aria-label={modelosFavoritosIds.includes(m.id) ? "Remover dos favoritos" : "Favoritar"}
                         onClick={(e) => { e.stopPropagation(); alternarFavoritoModelo(m.id); }}
                       >
-                        {modelosFavoritosIds.includes(m.id) ? "⭐" : "☆"}
+                        <IconStar width={15} height={15} fill={modelosFavoritosIds.includes(m.id) ? "currentColor" : "none"} />
                       </button>
                     </div>
                     <span className="doc-modelo-categoria">{m.categoria}</span>
@@ -466,7 +497,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                   <h4>{modeloEmPreview.nome}</h4>
                   <p className="hint" style={{ margin: 0 }}>{modeloEmPreview.categoria} · {modeloEmPreview.descricao}</p>
                 </div>
-                <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setModeloPreviewId(null)}>✕</button>
+                <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setModeloPreviewId(null)}><IconClose width={12} height={12} /></button>
               </div>
               <div className="doc-modelo-preview-corpo">
                 {modeloEmPreview.conteudoHtml ? (
@@ -512,8 +543,9 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
 
         {filtrados.length === 0 ? (
           <div className="card" style={{ padding: 40, textAlign: "center" }}>
-            <p className="n" style={{ marginBottom: 6 }}>
-              {aba === "lixeira" ? "🗑 Lixeira vazia" : "📄 Nenhum documento aqui ainda"}
+            <p className="n" style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              {aba === "lixeira" ? <IconLixeira width={16} height={16} /> : <IconDoc width={16} height={16} />}
+              {aba === "lixeira" ? "Lixeira vazia" : "Nenhum documento aqui ainda"}
             </p>
             <p className="hint">
               {aba === "lixeira"
@@ -552,8 +584,8 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                       }}
                     />
                   ) : (
-                    <span className="n doc-lista-titulo">
-                      {d.favorito ? "⭐ " : ""}
+                    <span className="n doc-lista-titulo" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      {d.favorito ? <IconStar width={12} height={12} fill="currentColor" /> : null}
                       {d.titulo}
                     </span>
                   )}
@@ -589,7 +621,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                           setAcaoAbertaId(null);
                         }}
                       >
-                        <span className="n">↩ Restaurar</span>
+                        <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconRestaurar width={13} height={13} /> Restaurar</span>
                       </button>
                       <button
                         type="button"
@@ -602,7 +634,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                           setAcaoAbertaId(null);
                         }}
                       >
-                        <span className="n">🗑 Excluir definitivamente</span>
+                        <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconLixeira width={13} height={13} /> Excluir definitivamente</span>
                       </button>
                     </>
                   ) : (
@@ -613,7 +645,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                         style={{ width: "100%", textAlign: "left" }}
                         onClick={() => onAbrir(d.id)}
                       >
-                        <span className="n">📂 Abrir</span>
+                        <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconFolder width={13} height={13} /> Abrir</span>
                       </button>
                       <button
                         type="button"
@@ -625,7 +657,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                           setAcaoAbertaId(null);
                         }}
                       >
-                        <span className="n">✏️ Renomear</span>
+                        <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconEdit width={13} height={13} /> Renomear</span>
                       </button>
                       <button
                         type="button"
@@ -636,7 +668,9 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                           setAcaoAbertaId(null);
                         }}
                       >
-                        <span className="n">{d.favorito ? "☆ Desfavoritar" : "⭐ Favoritar"}</span>
+                        <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <IconStar width={13} height={13} fill={d.favorito ? "currentColor" : "none"} /> {d.favorito ? "Desfavoritar" : "Favoritar"}
+                        </span>
                       </button>
                       <button
                         type="button"
@@ -648,7 +682,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                           onAbrir(novoId);
                         }}
                       >
-                        <span className="n">📑 Duplicar</span>
+                        <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconDuplicar width={13} height={13} /> Duplicar</span>
                       </button>
                       <button
                         type="button"
@@ -659,7 +693,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                           setAcaoAbertaId(null);
                         }}
                       >
-                        <span className="n">⬇ Baixar como .txt</span>
+                        <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconDownload width={13} height={13} /> Baixar como .txt</span>
                       </button>
                       <div className="dropdown-sep" />
                       <button
@@ -671,7 +705,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                           setAcaoAbertaId(null);
                         }}
                       >
-                        <span className="n">🗑 Mover pra lixeira</span>
+                        <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconLixeira width={13} height={13} /> Mover pra lixeira</span>
                       </button>
                     </>
                   )}
@@ -825,7 +859,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [fonteAtual, setFonteAtual] = useState(FONTES_DOCUMENTO[0].valor);
   // Prioridade 5 da reformulação: o topo passa a mostrar só ações globais (desfazer/refazer/zoom/
   // imprimir, agora em doc-header-acoes) por padrão — a barra de formatação completa (fonte, negrito,
-  // Inserir/Parágrafo/Mais opções) fica escondida até o usuário pedir ("🎨 Formatação" no cabeçalho, ou
+  // Inserir/Parágrafo/Mais opções) fica escondida até o usuário pedir ("Formatação" no cabeçalho, ou
   // Ver → Mostrar barra de ferramentas), já que o painel lateral (aba Texto) cobre o mesmo terreno.
   const [mostrarToolbar, setMostrarToolbar] = useState(() => lerPrefVer("mostrarToolbar", false));
   const [telaCheia, setTelaCheia] = useState(false);
@@ -2599,7 +2633,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           aria-label={doc.favorito ? "Remover dos favoritos" : "Favoritar"}
           onClick={() => favoritarDocumento(id)}
         >
-          {doc.favorito ? "⭐" : "☆"}
+          <IconStar width={15} height={15} fill={doc.favorito ? "currentColor" : "none"} />
         </button>
         <span className="doc-estado-salvamento">
           {estadoSalvamento === "salvando" ? "Salvando…" : "Salvo"}
@@ -2610,26 +2644,28 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <button type="button" className="doc-toolbar-btn" title="Zoom: diminuir" onClick={() => setZoom((z) => Math.max(50, z - 10))}>−</button>
           <span className="hint" style={{ minWidth: 34, textAlign: "center" }}>{zoom}%</span>
           <button type="button" className="doc-toolbar-btn" title="Zoom: aumentar" onClick={() => setZoom((z) => Math.min(200, z + 10))}>+</button>
-          <button type="button" className="doc-toolbar-btn" title="Imprimir" onClick={abrirPreviaImpressao}>🖨</button>
+          <button type="button" className="doc-toolbar-btn" title="Imprimir" onClick={abrirPreviaImpressao}><IconPrint width={15} height={15} /></button>
           <span className="doc-header-sep" />
           <button
             type="button"
             className={`btn ghost${mostrarToolbar ? " active" : ""}`}
             title={mostrarToolbar ? "Ocultar ferramentas de formatação" : "Mostrar ferramentas de formatação"}
             onClick={() => setMostrarToolbar((v) => !v)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
           >
-            🎨 Formatação
+            <IconPaint width={14} height={14} /> Formatação
           </button>
           <button
             type="button"
             className={`btn ghost${painelLateralAberto ? " active" : ""}`}
             title={painelLateralAberto ? "Recolher painel lateral" : "Abrir painel lateral"}
             onClick={() => setPainelLateralAberto((v) => !v)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
           >
-            🎛 Painel
+            <IconAlignJustify width={14} height={14} /> Painel
           </button>
-          <button type="button" className="btn ghost" onClick={() => setComentariosAberto((v) => !v)}>
-            💬 Comentários{doc.comentarios.filter((c) => !c.resolvido).length > 0 ? ` (${doc.comentarios.filter((c) => !c.resolvido).length})` : ""}
+          <button type="button" className="btn ghost" onClick={() => setComentariosAberto((v) => !v)} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <IconConversas width={14} height={14} /> Comentários{doc.comentarios.filter((c) => !c.resolvido).length > 0 ? ` (${doc.comentarios.filter((c) => !c.resolvido).length})` : ""}
           </button>
           <button type="button" className="btn primary" onClick={() => setCompartilharAberto(true)}>
             Compartilhar
@@ -2674,14 +2710,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         <SeletorCor titulo="Cor do texto" cores={CORES_TEXTO} onEscolher={(c) => aplicarFormatacao("foreColor", c)} rotulo="A" />
         <span className="doc-toolbar-sep" />
         <button type="button" className="doc-toolbar-btn" title="Alinhar à esquerda" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyLeft")}>≡◧</button>
-        <button type="button" className="doc-toolbar-btn" title="Inserir imagem" onClick={inserirImagem}>🖼</button>
+        <button type="button" className="doc-toolbar-btn" title="Inserir imagem" onClick={inserirImagem}><IconImage width={15} height={15} /></button>
         <span className="doc-toolbar-sep" />
 
         <GrupoToolbar rotulo="+ Inserir" largura={260}>
           <div style={{ maxHeight: 420, overflowY: "auto" }}>
             <p className="doc-menu-categoria">Conteúdo</p>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina("<div>Novo texto</div>")}>
-              <span className="n">📝 Texto</span>
+              <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconText width={13} height={13} /> Texto</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina('<div style="border:1px solid #999;padding:8px;display:inline-block;">Caixa de texto</div>')}>
               <span className="n">▭ Caixa de texto</span>
@@ -2693,21 +2729,21 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <span className="n">• Lista</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina("<div>☐ </div>")}>
-              <span className="n">☑ Checklist</span>
+              <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconChecklist width={13} height={13} /> Checklist</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => aplicarFormatacao("formatBlock", "BLOCKQUOTE")}>
-              <span className="n">❝ Citação</span>
+              <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconQuote width={13} height={13} /> Citação</span>
             </button>
 
             <p className="doc-menu-categoria">Mídia</p>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirImagem}>
-              <span className="n">🖼 Imagem</span>
+              <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconImage width={13} height={13} /> Imagem</span>
             </button>
-            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina('<span style="border:1px solid #999;border-radius:6px;padding:4px 8px;display:inline-block;">📎 arquivo.pdf</span>')}>
-              <span className="n">📎 Arquivo</span>
+            <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina('<span style="border:1px solid #999;border-radius:6px;padding:4px 8px;display:inline-flex;align-items:center;gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg> arquivo.pdf</span>')}>
+              <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconAnexo width={13} height={13} /> Arquivo</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirSimbolo}>
-              <span className="n">☺ Ícone</span>
+              <span className="n">Ícone</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => aplicarFormatacao("insertHorizontalRule")}>
               <span className="n">— Linha</span>
@@ -2735,7 +2771,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <span className="n">⬓ Rodapé</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina('<div style="margin-top:40px;border-top:1px solid #333;width:240px;padding-top:4px;">Assinatura</div>')}>
-              <span className="n">✍ Assinatura</span>
+              <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconSignature width={13} height={13} /> Assinatura</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina('<span style="border:1px dashed #999;padding:2px 10px;display:inline-block;color:#888;">[assinar aqui]</span>')}>
               <span className="n">▢ Campo de assinatura</span>
@@ -2783,7 +2819,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             style={{ width: "100%", textAlign: "left" }}
             onClick={() => setCorretorAtivo((v) => !v)}
           >
-            <span className="n">ABC Corretor ortográfico{corretorAtivo ? " ✓" : ""}</span>
+            <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <IconSpellCheck width={13} height={13} /> Corretor ortográfico{corretorAtivo ? <IconCheck width={12} height={12} /> : null}
+            </span>
           </button>
           <button
             type="button"
@@ -2793,7 +2831,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             onDoubleClick={colarFormatacao}
             title="Clique pra copiar a formatação, clique duas vezes num trecho selecionado pra colar"
           >
-            <span className="n">🖌 Copiar formatação</span>
+            <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconPaint width={13} height={13} /> Copiar formatação</span>
           </button>
         </GrupoToolbar>
 
@@ -2814,8 +2852,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
       {modo === "sugestao" ? (
         <div className="doc-aviso-modo">
-          <span>
-            ✏️ Modo sugestão ativo —{" "}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <IconEdit width={13} height={13} /> Modo sugestão ativo —{" "}
             {statsSugestao && (statsSugestao.adicionados > 0 || statsSugestao.removidos > 0)
               ? `${statsSugestao.adicionados} caractere(s) adicionado(s), ${statsSugestao.removidos} removido(s) desde que o modo foi ativado.`
               : "edite normalmente; as mudanças feitas a partir de agora podem ser aceitas ou rejeitadas em bloco."}
@@ -2834,7 +2872,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <aside className="doc-estrutura-painel">
             <div className="panel-h">
               <h4>Estrutura do documento</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setEstruturaAberta(false)}>✕</button>
+              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setEstruturaAberta(false)}><IconClose width={12} height={12} /></button>
             </div>
             {estrutura.length === 0 ? (
               <p className="hint" style={{ padding: 17 }}>Use Título 1, Título 2 ou Título 3 no texto pra ver a estrutura aqui.</p>
@@ -2936,7 +2974,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               </div>
               <div className="doc-page-fim">
                 <button type="button" className="doc-page-fim-btn" onClick={novaPaginaAposAtiva}>+ Adicionar página</button>
-                <button type="button" className="doc-page-fim-btn doc-page-fim-apagar" disabled={paginasLocais.length <= 1} onClick={excluirPaginaAtiva}>🗑 Apagar essa página</button>
+                <button type="button" className="doc-page-fim-btn doc-page-fim-apagar" disabled={paginasLocais.length <= 1} onClick={excluirPaginaAtiva} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <IconLixeira width={13} height={13} /> Apagar essa página
+                </button>
               </div>
             </div>
           ))}
@@ -2957,7 +2997,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <aside className="doc-lateral-painel">
             <div className="panel-h">
               <h4>Tabela</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCelulaSelecionada(null)}>✕</button>
+              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCelulaSelecionada(null)}><IconClose width={12} height={12} /></button>
             </div>
             <div className="field">
               <label>Linha</label>
@@ -2983,7 +3023,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <aside className="doc-comentarios-painel">
             <div className="panel-h">
               <h4>Comentários</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setComentariosAberto(false)}>✕</button>
+              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setComentariosAberto(false)}><IconClose width={12} height={12} /></button>
             </div>
             {doc.comentarios.length === 0 ? (
               <p className="hint" style={{ padding: 17 }}>Selecione um trecho de texto e use &quot;Inserir → Comentário&quot; pra comentar.</p>
@@ -3018,7 +3058,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <aside className="doc-lateral-painel">
             <div className="panel-h">
               <h4>Painel</h4>
-              <button type="button" className="modal-close-btn" aria-label="Recolher painel" onClick={() => setPainelLateralAberto(false)}>✕</button>
+              <button type="button" className="modal-close-btn" aria-label="Recolher painel" onClick={() => setPainelLateralAberto(false)}><IconClose width={12} height={12} /></button>
             </div>
             <div className="doc-painel-tabs">
               <button type="button" className={`doc-painel-tab${abaPainelPadrao === "texto" ? " on" : ""}`} onClick={() => setAbaPainelPadrao("texto")}>Texto</button>
@@ -3060,7 +3100,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   <label>Cor</label>
                   <div className="filters-row" style={{ margin: 0 }}>
                     <SeletorCor titulo="Cor do texto" cores={CORES_TEXTO} onEscolher={(c) => aplicarFormatacao("foreColor", c)} rotulo="A Texto" />
-                    <SeletorCor titulo="Cor de destaque" cores={CORES_DESTAQUE} onEscolher={(c) => aplicarFormatacao("hiliteColor", c)} rotulo="🖊 Destaque" />
+                    <SeletorCor titulo="Cor de destaque" cores={CORES_DESTAQUE} onEscolher={(c) => aplicarFormatacao("hiliteColor", c)} rotulo="Destaque" />
                   </div>
                 </div>
                 <div className="field">
@@ -3089,7 +3129,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                     <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyLeft")}>≡◧</button>
                     <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyCenter")}>≡</button>
                     <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyRight")}>◨≡</button>
-                    <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyFull")}>☰</button>
+                    <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("justifyFull")}><IconAlignJustify width={13} height={13} /></button>
                   </div>
                 </div>
                 <div className="field">
@@ -3104,14 +3144,20 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   <div className="filters-row" style={{ margin: 0 }}>
                     <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertUnorderedList")}>• Marcadores</button>
                     <button type="button" className="fchip" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("insertOrderedList")}>1. Numerada</button>
-                    <button type="button" className="fchip" onClick={() => inserirNaPagina('<div>☐ </div>')}>☑ Checklist</button>
+                    <button type="button" className="fchip" onClick={() => inserirNaPagina('<div>☐ </div>')} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      <IconChecklist width={13} height={13} /> Checklist
+                    </button>
                   </div>
                 </div>
                 <div className="field">
-                  <button type="button" className="btn ghost block" onClick={inserirLink}>🔗 Inserir link</button>
+                  <button type="button" className="btn ghost block" onClick={inserirLink} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                    <IconLink width={14} height={14} /> Inserir link
+                  </button>
                 </div>
                 <div className="field">
-                  <button type="button" className="btn ghost block" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("removeFormat")}>✕A Limpar formatação</button>
+                  <button type="button" className="btn ghost block" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("removeFormat")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                    <IconClose width={13} height={13} />A Limpar formatação
+                  </button>
                 </div>
               </>
             ) : (
@@ -3186,7 +3232,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setLocalizarPos)}>
             <p className="n">Localizar e substituir</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setLocalizarAberto(false)}>✕</button>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setLocalizarAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="field" style={{ padding: "6px 0" }}>
             <input
@@ -3241,7 +3287,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setContagemPos)}>
             <p className="n">Contagem</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setContagemAberta(false)}>✕</button>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setContagemAberta(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="stat-row"><span className="sl">Palavras</span><span className="sv">{contagem.palavras}</span></div>
           <div className="stat-row"><span className="sl">Caracteres</span><span className="sv">{contagem.caracteres}</span></div>
@@ -3257,7 +3303,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setDetalhesPos)}>
             <p className="n">Detalhes do documento</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setDetalhesAberto(false)}>✕</button>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setDetalhesAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="stat-row"><span className="sl">Autor</span><span className="sv">{doc.autor}</span></div>
           <div className="stat-row"><span className="sl">Criado em</span><span className="sv">{formatarQuando(doc.criadoEm)}</span></div>
@@ -3274,7 +3320,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setAjudaPos)}>
             <p className="n">Central de ajuda — Documentos</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setAjudaAberta(false)}>✕</button>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setAjudaAberta(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="doc-ajuda-conteudo">
             <p className="hint" style={{ marginTop: 0 }}>Atalhos de teclado</p>
@@ -3307,7 +3353,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <div className="modal" style={{ width: "min(480px, 100%)" }} onClick={(e) => e.stopPropagation()}>
             <div className="panel-h">
               <h4>{cabecalhoRodapeAberto === "cabecalho" ? "Cabeçalho" : "Rodapé"}</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCabecalhoRodapeAberto(null)}>✕</button>
+              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCabecalhoRodapeAberto(null)}><IconClose width={12} height={12} /></button>
             </div>
             <div style={{ padding: 20 }}>
               <p className="hint" style={{ marginTop: 0 }}>
@@ -3379,7 +3425,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <div className="modal" style={{ width: "min(420px, 100%)" }} onClick={(e) => e.stopPropagation()}>
             <div className="panel-h">
               <h4>Salvar como modelo</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setSalvarModeloAberto(false)}>✕</button>
+              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setSalvarModeloAberto(false)}><IconClose width={12} height={12} /></button>
             </div>
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
               <div className="field">
@@ -3433,7 +3479,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setConfigPaginaPos)}>
             <p className="n">Configuração da página</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setConfigPaginaAberto(false)}>✕</button>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setConfigPaginaAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="field">
             <label>Tamanho do papel</label>
@@ -3515,7 +3561,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setCompartilharPos)}>
             <p className="n">Compartilhar &quot;{doc.titulo}&quot;</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCompartilharAberto(false)}>✕</button>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setCompartilharAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="field" style={{ display: "flex", gap: 8 }}>
             <input
@@ -3601,7 +3647,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setHistoricoPos)}>
             <p className="n">Histórico de versões</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setHistoricoAberto(false)}>✕</button>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setHistoricoAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <button
             type="button"
@@ -3645,7 +3691,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setColunasPos)}>
             <p className="n">Colunas</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setColunasAberto(false)}>✕</button>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setColunasAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="field">
             <label>Quantidade de colunas</label>
@@ -3696,7 +3742,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setExportarPdfPos)}>
             <p className="n">Baixar como PDF</p>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setExportarPdfAberto(false)}>✕</button>
+            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setExportarPdfAberto(false)}><IconClose width={12} height={12} /></button>
           </div>
           <p className="hint" style={{ marginBottom: 10 }}>
             {doc.titulo} · {paginasLocais.length} página(s) · {doc.config.tamanho} {doc.config.orientacao}
@@ -4012,13 +4058,13 @@ function PainelImagem({
   return (
     <aside className="doc-lateral-painel doc-img-painel">
       <div className="panel-h">
-        <h4>Imagem{bloqueada ? " 🔒" : ""}</h4>
-        <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}>✕</button>
+        <h4 style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>Imagem{bloqueada ? <IconCadeado width={13} height={13} /> : null}</h4>
+        <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}><IconClose width={12} height={12} /></button>
       </div>
 
       <div className="field">
-        <button type="button" className={`fchip${bloqueada ? " active" : ""}`} onClick={alternarBloqueio} style={{ width: "100%" }}>
-          {bloqueada ? "🔓 Desbloquear posição" : "🔒 Bloquear posição"}
+        <button type="button" className={`fchip${bloqueada ? " active" : ""}`} onClick={alternarBloqueio} style={{ width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          {bloqueada ? <IconCadeadoAberto width={13} height={13} /> : <IconCadeado width={13} height={13} />} {bloqueada ? "Desbloquear posição" : "Bloquear posição"}
         </button>
         {bloqueada ? <p className="hint" style={{ marginTop: 6 }}>Arrastar e redimensionar ficam desativados até desbloquear.</p> : null}
       </div>
@@ -4122,7 +4168,9 @@ function PainelImagem({
           <input type="number" className="input" placeholder="Baixo" value={cortarBaixo} onChange={(e) => setCortarBaixo(Number(e.target.value) || 0)} />
           <input type="number" className="input" placeholder="Esquerda" value={cortarEsquerda} onChange={(e) => setCortarEsquerda(Number(e.target.value) || 0)} />
         </div>
-        <button type="button" className="btn ghost block" style={{ marginTop: 8 }} onClick={aplicarCorte}>✂ Aplicar corte</button>
+        <button type="button" className="btn ghost block" style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={aplicarCorte}>
+          <IconCrop width={14} height={14} /> Aplicar corte
+        </button>
       </div>
 
       <div className="field">
@@ -4407,7 +4455,7 @@ function MenuContextoImagem({
       style={{ left: pos.x + ajuste.x, top: pos.y + ajuste.y }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <button type="button" onClick={onSubstituir}>🔁 Substituir imagem</button>
+      <button type="button" onClick={onSubstituir} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconRepeat width={13} height={13} /> Substituir imagem</button>
       <button type="button" onClick={onDuplicar}>⧉ Duplicar</button>
       <div className="doc-context-menu-sep" />
       <div className="doc-context-menu-linha">
@@ -4417,9 +4465,11 @@ function MenuContextoImagem({
       </div>
       <button type="button" onClick={onTrazerFrente}>⬆ Trazer pra frente</button>
       <button type="button" onClick={onEnviarTras}>⬇ Enviar pra trás</button>
-      <button type="button" onClick={onBloquear}>{bloqueada ? "🔓 Desbloquear" : "🔒 Bloquear"}</button>
+      <button type="button" onClick={onBloquear} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {bloqueada ? <IconCadeadoAberto width={13} height={13} /> : <IconCadeado width={13} height={13} />} {bloqueada ? "Desbloquear" : "Bloquear"}
+      </button>
       <div className="doc-context-menu-sep" />
-      <button type="button" className="perigo" onClick={onExcluir}>🗑 Excluir</button>
+      <button type="button" className="perigo" onClick={onExcluir} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconLixeira width={13} height={13} /> Excluir</button>
     </div>
   );
 }
@@ -4475,13 +4525,13 @@ function MenuContextoTexto({
       style={{ left: pos.x + ajuste.x, top: pos.y + ajuste.y }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <button type="button" onClick={onCopiar}>📋 Copiar</button>
-      <button type="button" onClick={onRecortar}>✂ Recortar</button>
-      <button type="button" onClick={onColar}>📥 Colar</button>
+      <button type="button" onClick={onCopiar} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconCopy width={13} height={13} /> Copiar</button>
+      <button type="button" onClick={onRecortar} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconCut width={13} height={13} /> Recortar</button>
+      <button type="button" onClick={onColar} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconPaste width={13} height={13} /> Colar</button>
       <div className="doc-context-menu-sep" />
       <button type="button" style={{ fontWeight: 700 }} onMouseDown={(e) => e.preventDefault()} onClick={onNegrito}>N Negrito</button>
       <button type="button" style={{ fontStyle: "italic" }} onMouseDown={(e) => e.preventDefault()} onClick={onItalico}>I Itálico</button>
-      <button type="button" onClick={onLink}>🔗 Link</button>
+      <button type="button" onClick={onLink} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconLink width={13} height={13} /> Link</button>
       <div className="doc-context-menu-linha">
         {CORES_MENU_TEXTO.map((c) => (
           <button
@@ -4501,7 +4551,7 @@ function MenuContextoTexto({
       </div>
       <div className="doc-context-menu-sep" />
       <button type="button" onClick={onDuplicarBloco}>⧉ Duplicar bloco</button>
-      <button type="button" className="perigo" onClick={onExcluirBloco}>🗑 Excluir bloco</button>
+      <button type="button" className="perigo" onClick={onExcluirBloco} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconLixeira width={13} height={13} /> Excluir bloco</button>
     </div>
   );
 }
@@ -4556,7 +4606,7 @@ function ToolbarFlutuanteTexto({
         />
       ))}
       <span className="doc-toolbar-flutuante-sep" />
-      <button type="button" onMouseDown={(e) => { e.preventDefault(); onLink(); }}>🔗</button>
+      <button type="button" onMouseDown={(e) => { e.preventDefault(); onLink(); }}><IconLink width={13} height={13} /></button>
     </div>
   );
 }

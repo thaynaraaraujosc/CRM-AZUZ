@@ -456,3 +456,204 @@ export function IconCadeado(props: Props) {
     </svg>
   );
 }
+
+export function IconCadeadoAberto(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 9.5-2.5" />
+    </svg>
+  );
+}
+
+export function IconLixeira(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 6h18" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
+}
+
+export function IconFolder(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+    </svg>
+  );
+}
+
+export function IconEdit(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+export function IconDuplicar(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="9" y="9" width="12" height="12" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+export function IconPrint(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 9V2h12v7" />
+      <rect x="4" y="9" width="16" height="8" rx="2" />
+      <path d="M6 17h12v5H6z" />
+    </svg>
+  );
+}
+
+export function IconPaint(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 2a7 7 0 0 0-7 7c0 3.5 2 4.5 2 7a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2c0-2.5 2-3.5 2-7a7 7 0 0 0-7-7Z" />
+      <circle cx="9" cy="9" r="1" />
+      <circle cx="13" cy="7" r="1" />
+      <circle cx="15" cy="11" r="1" />
+    </svg>
+  );
+}
+
+export function IconChecklist(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="4" width="6" height="6" rx="1" />
+      <path d="M4.5 7l1 1 2-2" />
+      <path d="M11 7h10" />
+      <rect x="3" y="14" width="6" height="6" rx="1" />
+      <path d="M11 17h10" />
+    </svg>
+  );
+}
+
+export function IconQuote(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M7 7a3 3 0 0 0-3 3v3a1 1 0 0 0 1 1h3v-4H6a2 2 0 0 1 2-2V7Z" />
+      <path d="M17 7a3 3 0 0 0-3 3v3a1 1 0 0 0 1 1h3v-4h-2a2 2 0 0 1 2-2V7Z" />
+    </svg>
+  );
+}
+
+export function IconSignature(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 17c2-4 4-6 6-4s0 4 2 4 3-6 5-6 2 3 4 3" />
+      <path d="M3 21h18" />
+    </svg>
+  );
+}
+
+export function IconSpellCheck(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 15 8 5l4 10" />
+      <path d="M5.5 11.5h5" />
+      <path d="M13 15l3-10 3 10" />
+      <path d="M20 21l-8-8" />
+      <path d="M12 21l8-8" />
+    </svg>
+  );
+}
+
+export function IconCut(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <path d="M20 4 8.5 15.5" />
+      <path d="M14.5 9.5 20 15" />
+      <path d="M8.5 8.5 6 6" />
+    </svg>
+  );
+}
+
+export function IconCopy(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="9" y="9" width="12" height="12" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+export function IconPaste(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="6" y="4" width="12" height="16" rx="2" />
+      <rect x="9" y="2" width="6" height="4" rx="1" />
+      <path d="M9 11h6" />
+      <path d="M9 15h6" />
+    </svg>
+  );
+}
+
+export function IconLink(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 17H7a5 5 0 0 1 0-10h2" />
+      <path d="M15 7h2a5 5 0 0 1 0 10h-2" />
+      <path d="M8 12h8" />
+    </svg>
+  );
+}
+
+export function IconCrop(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 2v14a2 2 0 0 0 2 2h14" />
+      <path d="M18 22V8a2 2 0 0 0-2-2H2" />
+    </svg>
+  );
+}
+
+export function IconRepeat(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M17 2l4 4-4 4" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <path d="M7 22l-4-4 4-4" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </svg>
+  );
+}
+
+export function IconDownload(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3v12" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M4 21h16" />
+    </svg>
+  );
+}
+
+export function IconRestaurar(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v5h5" />
+    </svg>
+  );
+}
+
+export function IconAlignJustify(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 6h18" />
+      <path d="M3 12h18" />
+      <path d="M3 18h18" />
+    </svg>
+  );
+}
