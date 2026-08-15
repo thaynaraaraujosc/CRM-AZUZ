@@ -11797,6 +11797,9 @@ button.camp-row:hover {
   gap: 6px;
 }
 
+/* Reestruturação visual (redesign) — sem caixa própria por padrão (o `.config-bloco` que envolve
+   já é a caixinha); só ganha fundo/borda quando ativa/selecionada, que é sinal de estado, não
+   decoração. */
 .config-linha-clicavel {
   display: flex;
   align-items: center;
@@ -11805,12 +11808,12 @@ button.camp-row:hover {
   text-align: left;
   padding: 10px 12px;
   border-radius: 9px;
-  border: 1px solid var(--line);
-  background: var(--navy);
+  border: 1px solid transparent;
+  background: transparent;
   cursor: pointer;
 }
 .config-linha-clicavel:hover {
-  border-color: var(--blue);
+  background: var(--surface-hover);
 }
 .config-linha-clicavel.active {
   border-color: var(--blue);
