@@ -20,6 +20,7 @@ import { useEquipe } from "@/lib/equipe-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { Topbar, Drawer } from "@/components/ui";
+import { IconAlerta } from "@/components/icons";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -762,8 +763,8 @@ export default function AgendaPage() {
 
         {conflitos.length > 0 ? (
           <div className="card" style={{ padding: 12, borderColor: "var(--red, #dc2626)" }}>
-            <p className="hint" style={{ marginBottom: 6 }}>
-              ⚠ Conflito de horário com {conflitos.length} compromisso(s) de {form.responsavel}:
+            <p className="hint" style={{ marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+              <IconAlerta width={13} height={13} /> Conflito de horário com {conflitos.length} compromisso(s) de {form.responsavel}:
             </p>
             {conflitos.map((c) => (
               <p key={c.id} className="hint" style={{ fontWeight: 600 }}>

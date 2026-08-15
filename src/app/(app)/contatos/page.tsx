@@ -11,7 +11,7 @@ import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useFunis } from "@/lib/funis-context";
 import { useTarefas } from "@/lib/tarefas-context";
 import { PAISES } from "@/lib/configuracoes/mock";
-import { IconSearch } from "@/components/icons";
+import { IconClose, IconSearch, IconWhatsApp } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
 import { Timeline } from "@/components/timeline";
 import { gerarLinhaDoTempo } from "@/lib/timeline";
@@ -288,7 +288,7 @@ function ContatosPageInner() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovoContatoAberto(false)}
               >
-                Fechar ✕
+                Fechar <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
@@ -457,8 +457,9 @@ function ContatosPageInner() {
                   <a
                     href={`/conversas?contato=${encodeURIComponent(contato.nome)}`}
                     className="btn primary"
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    💬 Enviar WhatsApp
+                    <IconWhatsApp width={14} height={14} /> Enviar WhatsApp
                   </a>
                 ) : null}
                 {!editandoContato ? (
@@ -484,7 +485,7 @@ function ContatosPageInner() {
                   setConfirmandoExclusao(false);
                 }}
               >
-                Fechar ✕
+                Fechar <IconClose width={11} height={11} />
               </span>
             </div>
 

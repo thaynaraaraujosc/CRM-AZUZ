@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
+import { IconClose } from "@/components/icons";
 import { BarList, ChartCard, LineChart } from "@/components/charts";
 import {
   calcularMotivoPrincipalPerda,
@@ -173,7 +174,7 @@ function PerformanceVendasPageInner() {
             <div className="panel-h">
               <h4>{pessoaAberta}</h4>
               <button type="button" className="link" onClick={() => setPessoaAberta(null)}>
-                Fechar ✕
+                Fechar <IconClose width={11} height={11} />
               </button>
             </div>
             <div style={{ padding: 17 }}>

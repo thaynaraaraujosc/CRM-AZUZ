@@ -659,6 +659,27 @@ export function IconOlhoFechado(props: Props) {
   );
 }
 
+export function IconAperto(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M11 13 4 6a2 2 0 0 1 3-3l5 5" />
+      <path d="M13 11l7 7a2 2 0 0 1-3 3l-5-5" />
+      <path d="M9 15l-3 3" />
+      <path d="M13 9l3-3" />
+    </svg>
+  );
+}
+
+export function IconMoeda(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v10" />
+      <path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1-3 2.3c0 3.2 6 1.6 6 4.7 0 1.4-1.3 2.5-3 2.5s-3-1.1-3-2.5" />
+    </svg>
+  );
+}
+
 export function IconDownload(props: Props) {
   return (
     <svg {...base} {...props}>

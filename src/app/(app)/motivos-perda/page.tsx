@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
+import { IconClose } from "@/components/icons";
 import { BarList, ChartCard, LineChart } from "@/components/charts";
 import {
   calcularDistribuicaoMotivosPerda,
@@ -219,7 +220,7 @@ export default function MotivosPerdaPage() {
             <h4>Negociações perdidas</h4>
             {motivoSelecionado ? (
               <button type="button" className="link" onClick={() => setMotivoSelecionado(null)}>
-                Limpar filtro: {motivoSelecionado} ✕
+                Limpar filtro: {motivoSelecionado} <IconClose width={11} height={11} />
               </button>
             ) : null}
           </div>

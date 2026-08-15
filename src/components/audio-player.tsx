@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { AnexoAudio, StatusMensagem } from "@/lib/data";
+import { IconPause, IconPlay } from "@/components/icons";
 
 /**
  * Só um áudio toca por vez no módulo inteiro — quando um player começa a
@@ -155,7 +156,7 @@ export function AudioBubblePlayer({
         aria-label={tocando ? "Pausar áudio" : "Reproduzir áudio"}
         title={tocando ? "Pausar" : "Reproduzir"}
       >
-        {tocando ? "⏸" : "▶"}
+        {tocando ? <IconPause width={13} height={13} /> : <IconPlay width={13} height={13} />}
       </button>
       <div className="audio-player-meio">
         <AudioWaveformBars waveform={audio.waveform} progresso={progresso} onSeek={buscar} />

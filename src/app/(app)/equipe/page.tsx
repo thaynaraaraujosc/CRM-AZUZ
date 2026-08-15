@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useContatos } from "@/lib/contatos-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useTarefas } from "@/lib/tarefas-context";
+import { IconClose } from "@/components/icons";
 import { PERMISSOES_POR_MODULO } from "@/lib/configuracoes/permissoes";
 import { Toggle, Topbar } from "@/components/ui";
 
@@ -195,7 +196,7 @@ export default function EquipePage() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setSelecionado(null)}
               >
-                Fechar ✕
+                Fechar <IconClose width={11} height={11} />
               </span>
             </div>
 

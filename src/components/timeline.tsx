@@ -5,16 +5,26 @@ import Link from "next/link";
 
 import { EVENTO_CATEGORIA, type CategoriaEvento, type Evento } from "@/lib/timeline";
 import { classeOrigem } from "@/lib/data";
+import {
+  IconAperto,
+  IconAutomacoes,
+  IconCheck,
+  IconConversas,
+  IconDoc,
+  IconLocalizacao,
+  IconMoeda,
+  IconText,
+} from "@/components/icons";
 
-const ICONE_CATEGORIA: Record<CategoriaEvento, string> = {
-  Conversas: "💬",
-  Atividades: "✅",
-  Funil: "📍",
-  Automações: "⚙️",
-  Negociações: "🤝",
-  Compras: "💰",
-  Documentos: "📄",
-  Anotações: "📝",
+const ICONE_CATEGORIA: Record<CategoriaEvento, typeof IconConversas> = {
+  Conversas: IconConversas,
+  Atividades: IconCheck,
+  Funil: IconLocalizacao,
+  Automações: IconAutomacoes,
+  Negociações: IconAperto,
+  Compras: IconMoeda,
+  Documentos: IconDoc,
+  Anotações: IconText,
 };
 
 /**
@@ -56,16 +66,20 @@ export function Timeline({ eventos }: { eventos: Evento[] }) {
           >
             Tudo
           </button>
-          {categoriasPresentes.map((cat) => (
-            <button
-              type="button"
-              key={cat}
-              className={`fchip${filtro === cat ? " active" : ""}`}
-              onClick={() => setFiltro(cat)}
-            >
-              {ICONE_CATEGORIA[cat]} {cat}
-            </button>
-          ))}
+          {categoriasPresentes.map((cat) => {
+            const IconeCategoria = ICONE_CATEGORIA[cat];
+            return (
+              <button
+                type="button"
+                key={cat}
+                className={`fchip${filtro === cat ? " active" : ""}`}
+                onClick={() => setFiltro(cat)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <IconeCategoria width={12} height={12} /> {cat}
+              </button>
+            );
+          })}
         </div>
       ) : null}
 
@@ -80,11 +94,12 @@ export function Timeline({ eventos }: { eventos: Evento[] }) {
 
 function TimelineItem({ evento }: { evento: Evento }) {
   const categoria = EVENTO_CATEGORIA[evento.tipo];
+  const IconeCategoria = ICONE_CATEGORIA[categoria];
   const conteudo = (
     <>
       <div className="timeline-card-top">
         <span className="timeline-card-titulo">
-          <span aria-hidden="true">{ICONE_CATEGORIA[categoria]}</span> {evento.titulo}
+          <span aria-hidden="true" style={{ display: "inline-flex" }}><IconeCategoria width={13} height={13} /></span> {evento.titulo}
         </span>
         <span className="timeline-card-quando">{evento.quando}</span>
       </div>

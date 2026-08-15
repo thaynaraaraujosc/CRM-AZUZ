@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { ORIGENS, type Campanha, type Origem } from "@/lib/data";
+import { IconClose } from "@/components/icons";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { useIntegracaoMeta } from "@/components/configuracoes/useIntegracaoMeta";
@@ -318,7 +319,7 @@ export default function TrafegoPage() {
             <div className="panel-h">
               <h4>{campanhaDetalhe.nome}</h4>
               <button type="button" className="link" onClick={() => setCampanhaAberta(null)}>
-                Fechar ✕
+                Fechar <IconClose width={11} height={11} />
               </button>
             </div>
             <div style={{ padding: 17 }}>
