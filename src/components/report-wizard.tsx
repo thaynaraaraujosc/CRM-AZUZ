@@ -14,6 +14,7 @@ import { useFunis } from "@/lib/funis-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useTarefas } from "@/lib/tarefas-context";
 import { PERIODO_PADRAO, PeriodoPicker, periodoLabel, type PeriodoValor } from "@/components/ui";
+import { IconAlerta, IconCheck, IconClose, IconRelogio } from "@/components/icons";
 import {
   estimarPaginas,
   gerarPdfRelatorio,
@@ -395,8 +396,13 @@ export function ReportWizard({
             </p>
             <p className="hint">{nomeRelatorio}</p>
           </div>
-          <button type="button" className="close" style={{ cursor: "pointer" }} onClick={onFechar}>
-            Fechar ✕
+          <button
+            type="button"
+            className="close"
+            style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
+            onClick={onFechar}
+          >
+            Fechar <IconClose width={12} height={12} />
           </button>
         </div>
 
@@ -737,15 +743,17 @@ export function ReportWizard({
                         <p
                           key={i}
                           className="hint"
-                          style={{ margin: "3px 0", color: a.nivel === "erro" ? "var(--danger)" : undefined }}
+                          style={{ margin: "3px 0", color: a.nivel === "erro" ? "var(--danger)" : undefined, display: "flex", alignItems: "center", gap: 4 }}
                         >
-                          {a.nivel === "erro" ? "✕ " : "⚠ "}
+                          {a.nivel === "erro" ? <IconClose width={12} height={12} /> : <IconAlerta width={12} height={12} />}
                           {a.mensagem}
                         </p>
                       ))}
                     </div>
                   ) : (
-                    <p className="hint">✓ Nenhum problema encontrado — {totalPaginasPrevia} página(s).</p>
+                    <p className="hint" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <IconCheck width={12} height={12} /> Nenhum problema encontrado — {totalPaginasPrevia} página(s).
+                    </p>
                   )}
 
                   <div className="filters-row" style={{ margin: 0 }}>
@@ -828,11 +836,19 @@ export function ReportWizard({
                     </button>
                   </div>
 
-                  {status === "gerando" ? <p className="hint">⏳ Preparando arquivo…</p> : null}
-                  {status === "sucesso" ? <p className="hint">✓ Concluído.</p> : null}
+                  {status === "gerando" ? (
+                    <p className="hint" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <IconRelogio width={12} height={12} /> Preparando arquivo…
+                    </p>
+                  ) : null}
+                  {status === "sucesso" ? (
+                    <p className="hint" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <IconCheck width={12} height={12} /> Concluído.
+                    </p>
+                  ) : null}
                   {status === "erro" ? (
-                    <p className="hint" style={{ color: "var(--danger)" }}>
-                      ✕ {mensagemErro || "Algo deu errado."}{" "}
+                    <p className="hint" style={{ color: "var(--danger)", display: "flex", alignItems: "center", gap: 4 }}>
+                      <IconClose width={12} height={12} /> {mensagemErro || "Algo deu errado."}{" "}
                       <button type="button" className="link" onClick={baixarPdf}>Tentar novamente</button>
                     </p>
                   ) : null}

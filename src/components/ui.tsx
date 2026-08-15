@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 
+import { IconCheck, IconClose, IconStar } from "./icons";
+
 /**
  * Drawer lateral genérico — mesmo padrão CSS (`.flow-side-overlay`/`.flow-side-panel`) já usado
  * pelo Simulador/Histórico de versões das automações, extraído aqui pra não duplicar o boilerplate
@@ -53,7 +55,7 @@ export function Drawer({
             {subtitulo ? <p className="hint" style={{ marginTop: 2 }}>{subtitulo}</p> : null}
           </div>
           <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}>
-            ✕
+            <IconClose width={14} height={14} />
           </button>
         </div>
         <div className="flow-side-body">{children}</div>
@@ -114,7 +116,7 @@ export function Modal({
         <div className="panel-h">
           <h4>{titulo}</h4>
           <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}>
-            ✕
+            <IconClose width={14} height={14} />
           </button>
         </div>
         <div style={{ padding: "0 17px 17px", overflowY: "auto", flex: 1 }}>{children}</div>
@@ -775,13 +777,17 @@ export function FilterBar({
                     Definir padrão
                   </button>
                 </div>
-                {visaoSalvaAgora ? <p className="hint">✓ Visão salva</p> : null}
+                {visaoSalvaAgora ? (
+                  <p className="hint" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <IconCheck width={12} height={12} /> Visão salva
+                  </p>
+                ) : null}
                 {visoesSalvas.length > 0 ? (
                   <div>
                     <p className="hint" style={{ marginBottom: 4 }}>Visões salvas</p>
                     {visoesSalvas.map((v) => (
-                      <p className="hint" key={v.nome}>
-                        ⭐ {v.nome}
+                      <p className="hint" key={v.nome} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <IconStar width={12} height={12} /> {v.nome}
                         {v.padrao ? " · padrão" : ""}
                       </p>
                     ))}
@@ -808,7 +814,7 @@ export function FilterBar({
             <span className="filterbar-chip" key={f.chave}>
               {f.label}: {f.opcoes.find((o) => o.valor === f.valor)?.label ?? f.valor}
               <button type="button" onClick={() => onFiltroChange?.(f.chave, "Todos")}>
-                ✕
+                <IconClose width={10} height={10} />
               </button>
             </span>
           ))}

@@ -380,3 +380,79 @@ export function CanalBadge({ canal }: { canal: "WhatsApp" | "Instagram" | "TikTo
     </span>
   );
 }
+
+/* Redesign — ícones lineares (mesma família Lucide-like do resto do arquivo) pra substituir emoji
+   usado como ícone de interface (⚠️✕✓⭐📌▶⏸📎📷🔒🎤🔔📍), que o pedido de redesign proíbe
+   explicitamente ("NÃO UTILIZAR EMOJIS NA INTERFACE"). Emoji digitado pelo usuário dentro de uma
+   mensagem de chat não entra aqui — é conteúdo, não ícone. */
+
+export function IconClose(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M18 6 6 18" />
+      <path d="M6 6l12 12" />
+    </svg>
+  );
+}
+
+export function IconStar(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01Z" />
+    </svg>
+  );
+}
+
+export function IconAlerta(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
+export function IconPin(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 17v5" />
+      <path d="M9 10.5a3 3 0 1 0 6 0V5a1 1 0 0 0-1-1H10a1 1 0 0 0-1 1Z" />
+      <path d="M6 10.5h12" />
+    </svg>
+  );
+}
+
+export function IconPlay(props: Props) {
+  return (
+    <svg {...base} fill="currentColor" stroke="none" {...props}>
+      <path d="M8 5v14l11-7Z" />
+    </svg>
+  );
+}
+
+export function IconPause(props: Props) {
+  return (
+    <svg {...base} fill="currentColor" stroke="none" {...props}>
+      <rect x="6" y="5" width="4" height="14" rx="1" />
+      <rect x="14" y="5" width="4" height="14" rx="1" />
+    </svg>
+  );
+}
+
+export function IconAnexo(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M21.44 11.05 12.25 20.24a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48" />
+    </svg>
+  );
+}
+
+export function IconCadeado(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
