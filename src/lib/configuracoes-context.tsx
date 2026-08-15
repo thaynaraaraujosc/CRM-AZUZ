@@ -9,13 +9,10 @@ import {
   type ReactNode,
 } from "react";
 
-import { workspace } from "@/lib/data";
-
 /**
- * Estado persistido de toda a tela de Configurações — front-end apenas, seguindo o mesmo padrão de
- * localStorage já usado em `formularios-context.tsx`/`documentos-context.tsx` (chave própria,
- * hidratação em duas etapas, try/catch silencioso). Um context só pra não espalhar 20 providers
- * novos no layout pra 20 categorias que, na prática, são todas "preferências do workspace".
+ * Estado persistido de toda a tela de Configurações — banco de verdade (`PUT /api/preferencias/{chave}`,
+ * debounced), não localStorage. Um context só pra não espalhar 20 providers novos no layout pra 20
+ * categorias que, na prática, são todas "preferências do workspace" salvas no mesmo blob JSON.
  */
 
 export type TemaAparencia = "claro" | "escuro" | "sistema";
@@ -23,10 +20,11 @@ export type DensidadeAparencia = "compacta" | "confortavel" | "espacosa";
 export type TamanhoAparencia = "pequeno" | "padrao" | "grande";
 export type MenuLateralModo = "expandido" | "recolhido" | "automatico";
 
+/** `nome`/`segmento` NÃO ficam aqui — são coluna real de `Workspace` (ver `GET/PATCH /api/workspace`),
+ * fonte única de verdade porque são lidos fora deste blob (sessão, sidebar, e-mails, relatórios). O
+ * resto continua descritivo, sem outro consumidor além desta tela. */
 export type WorkspaceConfig = {
-  nome: string;
   nomeEmpresa: string;
-  segmento: string;
   pais: string;
   estado: string;
   cidade: string;
@@ -36,11 +34,6 @@ export type WorkspaceConfig = {
   formatoData: string;
   formatoHora: string;
   semanaComecaEm: "domingo" | "segunda";
-  logoUrl: string | null;
-  nomeCurto: string;
-  corPrincipal: string;
-  corSecundaria: string;
-  corDestaque: string;
 };
 
 export type AparenciaConfig = {
@@ -112,24 +105,22 @@ export type ConfiguracoesEstado = {
 /** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
 const CHAVE_PREFERENCIA = "configuracoes";
 
+// Um workspace novo nasce sem nenhum dado de negócio preenchido — só preferências de plataforma
+// que fazem sentido como palpite (fuso/idioma/moeda/formato, todos ajustáveis). Nome de empresa/
+// país/estado/cidade ficam em branco de propósito: é a própria empresa que preenche depois do
+// cadastro, não um exemplo pré-pronto. Nome do workspace e segmento não ficam aqui — são coluna
+// real de `Workspace` (ver `WorkspaceConfig` acima).
 export const WORKSPACE_CONFIG_PADRAO: WorkspaceConfig = {
-  nome: workspace.name,
-  nomeEmpresa: workspace.name,
-  segmento: workspace.segment,
+  nomeEmpresa: "",
   pais: "Brasil",
-  estado: "Goiás",
-  cidade: "Goiânia",
+  estado: "",
+  cidade: "",
   fusoHorario: "America/Sao_Paulo",
   idioma: "Português (Brasil)",
   moeda: "BRL (R$)",
   formatoData: "DD/MM/AAAA",
   formatoHora: "24 horas",
   semanaComecaEm: "domingo",
-  logoUrl: null,
-  nomeCurto: workspace.name.split(" ")[0] ?? workspace.name,
-  corPrincipal: "#2e6bff",
-  corSecundaria: "#0b1a3a",
-  corDestaque: "#0f9d63",
 };
 
 const APARENCIA_PADRAO: AparenciaConfig = {

@@ -78,6 +78,7 @@ export async function POST(request: Request) {
           minute: "2-digit",
         }),
         criadoEm: new Date(payload.timestamp * 1000),
+        canal: "whatsapp_nao_oficial",
       },
     });
     return NextResponse.json({ ok: true });

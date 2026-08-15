@@ -30,6 +30,11 @@ export const metadata: Metadata = {
   title: "CRM AZUZ — Painel web",
   description:
     "Painel web do CRM AZUZ: Início, WhatsApp, Funil, Tarefas, Ações, Equipe, Contatos, Tráfego, Relatórios, Automações, Azuz IA e Configurações.",
+  // Prova de propriedade do domínio pro Business Manager da Meta (verificação de negócio) —
+  // gerado uma vez no painel deles, não é segredo (fica público no <head> de qualquer jeito).
+  verification: {
+    other: { "facebook-domain-verification": "93gk9hohnqd8s4triwtdsfe3s2es9t" },
+  },
 };
 
 export default function RootLayout({

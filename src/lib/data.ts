@@ -45,7 +45,10 @@ export const ORIGENS: Origem[] = [
 ];
 
 /** Classe CSS que pinta a nomenclatura da origem com a cor da própria plataforma. */
-export function classeOrigem(origem: Origem): string {
+/** Aceita `string` (não só `Origem`) porque `Conversa.origem`/`NegocioCard.origem` reais vêm do
+ * banco como texto livre (ex.: `"Direto"`, `"WhatsApp"`) — fora do conjunto fechado usado nos
+ * filtros de Contatos. Valor fora da lista conhecida cai no fallback, sem quebrar o card. */
+export function classeOrigem(origem: string): string {
   switch (origem) {
     case "Meta Ads":
       return "origem-meta";
@@ -59,6 +62,8 @@ export function classeOrigem(origem: Origem): string {
       return "origem-indicacao";
     case "Formulário":
       return "origem-formulario";
+    default:
+      return "origem-outro";
   }
 }
 
@@ -320,6 +325,12 @@ export type NegocioCard = {
   etiquetas?: string[];
   /** Responsável por esse negócio específico — distinto de `Funil.responsavel` (que é o funil inteiro). */
   responsavel?: string;
+  /** Desfecho real do negócio — `undefined`/`null` = ainda aberto. É o que faz Inteligência
+   * Comercial (conversão, motivo de perda, faturamento) calcular sobre dado real. */
+  statusFechamento?: "ganho" | "perdido" | null;
+  motivoPerda?: string | null;
+  /** ISO (aaaa-mm-dd) — quando o negócio foi marcado como ganho/perdido. */
+  dataFechamento?: string | null;
 };
 
 export type ColunaFunil = {
@@ -563,6 +574,14 @@ export type ConvMensagem = {
   status?: StatusMensagem;
   /** Motivo do erro, quando status === "erro" — mostrado com a opção de tentar de novo. */
   erro?: string;
+  /** Canal de origem/destino real da mensagem (ex.: "whatsapp_baileys") — nada a ver com o `canal`
+   * (rótulo tipo WhatsApp/Instagram/TikTok) da `Conversa`; ausente = comportamento antigo,
+   * implicitamente a integração oficial da Meta. Decide por qual integração uma resposta sai. */
+  canal?: string;
+  /** "Apagar pra todos" real (persistido) — some do balão de qualquer sessão/usuário que reveja essa
+   * conversa, não só do navegador de quem apagou. Vale só dentro do CRM: nenhuma integração atual
+   * (Meta/Baileys) expõe um jeito de recolher a mensagem do lado do destinatário no WhatsApp. */
+  apagadaParaTodos?: boolean;
 };
 
 export type Conversa = {
@@ -980,44 +999,6 @@ export const segmentos = [
 /** Interseção de "contatos de julho 2026" com "fecharam negócio". */
 export const audienciaSelecionada = 36;
 
-export const acaoRascunho = {
-  midia: "Imagem",
-  legenda:
-    "Promoção especial de agosto: acompanhamento nutricional com 20% off só essa semana 💙",
-  envio: "Hoje às 18h · WhatsApp e Instagram",
-};
-
-export const acoesAnteriores = [
-  {
-    titulo: "Dia Mundial do Diabetes · campanha",
-    meta: "247 contatos · leads de julho",
-    midia: "imagem" as const,
-    status: "Enviado",
-    agendado: false,
-    data: "14 nov",
-    /** Só uma amostra — os outros contatos que receberam não têm conversa aberta no WhatsApp. */
-    contatos: ["Marcos Aurélio", "Camila Duarte", "Fernando Lima"],
-  },
-  {
-    titulo: "Reativação · não fecharam há 6 meses",
-    meta: "89 contatos · áudio",
-    midia: "audio" as const,
-    status: "Enviado",
-    agendado: false,
-    data: "22 dez",
-    contatos: ["Renata Farias", "Paulo Lacerda"],
-  },
-  {
-    titulo: "Evento de agosto · convite",
-    meta: "36 contatos · imagem",
-    midia: "imagem" as const,
-    status: "Agendado · hoje 18h",
-    agendado: true,
-    data: "hoje 18h",
-    contatos: ["Beatriz Nogueira", "Julia Prado", "Lorena Bastos"],
-  },
-];
-
 /* -------------------------------------------------------------------------- */
 /* Equipe                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -1039,6 +1020,8 @@ export type Membro = {
   convitePendente?: boolean;
   /** Foto de perfil (data URL) que a pessoa colocou em "Meu Perfil" — se não tiver, mostra as iniciais. */
   foto?: string;
+  /** Timestamp ISO do último login real (`authorize()` em auth.ts) — null/ausente = nunca entrou. */
+  ultimoAcesso?: string | null;
 };
 
 export const PERMISSOES_CRM = [
@@ -1175,7 +1158,18 @@ export const kpisTrafego = [
  * 42 + 26 + 16 = 84 leads
  * 7.992 + 3.952 + 1.496 = R$ 13.440 de receita → ROAS 4,2x
  */
-export const campanhas = [
+/** Mesmo formato usado pela rota real `GET /api/integracoes/meta/ads/campanhas` — texto pré-
+ * formatado (`sub`/`roas`) de propósito, pra não precisar mudar o parse (`parseSubCampanha` em
+ * `src/lib/metrics.ts`) quando a fonte troca de mock pra real. */
+export type Campanha = {
+  plataforma: "M" | "G";
+  nome: string;
+  sub: string;
+  roas: string;
+  barra: number;
+};
+
+export const campanhas: Campanha[] = [
   {
     plataforma: "M",
     nome: "Emagrecimento · Consulta jul",

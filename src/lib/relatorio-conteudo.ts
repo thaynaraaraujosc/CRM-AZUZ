@@ -1,30 +1,29 @@
 import {
-  conversaoPorResponsavel,
-  contatos,
-  faturamentoPorResponsavel,
-  funilJulho,
-  funis,
-  motivosPerda,
   oportunidadesPerdidas,
-  serieDashboardRelatorios,
-  tarefas,
-  campanhas,
-  ligacoesPorResponsavel,
-  conversas,
+  type Campanha,
+  type ColunaTarefas,
+  type Contato,
+  type ConvMensagem,
+  type Funil,
+  type Membro,
 } from "@/lib/data";
+import type { ConversaReal } from "@/lib/conversas-context";
 import {
+  calcularDistribuicaoMotivosPerda,
   calcularInvestimentoTrafego,
   calcularLeadsAguardando,
   calcularLeadsTrafego,
   calcularMotivoPrincipalPerda,
+  calcularPorResponsavel,
   calcularRoasMedio,
+  calcularSerieDiaria,
   calcularTaxaConversao,
-  calcularTempoMedioPrimeiroContato,
   calcularTicketMedio,
   calcularValorPerdido,
   calcularValorVendido,
   formatarMoeda,
   parseSubCampanha,
+  todosOsCards,
 } from "@/lib/metrics";
 import { calcularResumoJornada, gerarLinhaDoTempo, EVENTO_CATEGORIA, EVENTO_LABELS } from "@/lib/timeline";
 import { dataParaDocumento } from "@/lib/pdf-generator";
@@ -72,10 +71,25 @@ export const TIPOS_RELATORIO: { tipo: TipoRelatorio; nome: string; descricao: st
   },
 ];
 
+/** Dado real do workspace logado — sempre fornecido por quem monta o relatório (`ReportWizard`),
+ * que já tem tudo isso via `useFunis`/`useContatos`/`useEquipe`/`useConversas`/`useMensagensExtra`/
+ * `useTarefas` + a busca de campanhas reais do Meta Ads (mesmo padrão de `trafego/page.tsx`). Sem
+ * default fictício — cada seção usa só o que vier aqui. */
+export type DadosRelatorio = {
+  funis: Funil[];
+  contatos: Contato[];
+  equipe: Membro[];
+  conversas: ConversaReal[];
+  mensagensPorContato: Record<string, ConvMensagem[]>;
+  tarefas: ColunaTarefas[];
+  campanhas: Campanha[];
+};
+
 export type ContextoRelatorio = {
   periodoLabel: string;
   contatoId?: string;
   nivelDetalhe?: NivelDetalhe;
+  dados: DadosRelatorio;
 };
 
 export type DefinicaoSecao = {
@@ -88,14 +102,15 @@ function limiteLinhas(ctx: ContextoRelatorio): number {
   return ctx.nivelDetalhe === "detalhado" ? 60 : 10;
 }
 
-function secaoResumoGeral(): SecaoRelatorio {
-  const taxa = calcularTaxaConversao();
-  const receita = calcularValorVendido();
-  const ticket = calcularTicketMedio();
+function secaoResumoGeral(ctx: ContextoRelatorio): SecaoRelatorio {
+  const cards = todosOsCards(ctx.dados.funis);
+  const taxa = calcularTaxaConversao(cards);
+  const receita = calcularValorVendido(cards);
+  const ticket = calcularTicketMedio(cards);
   return {
     titulo: "Resumo geral",
     linhas: [
-      { label: "Leads no período", value: String(funilJulho[0]?.total ?? 0) },
+      { label: "Leads no período", value: String(ctx.dados.conversas.length) },
       { label: "Taxa de conversão", value: taxa.label },
       { label: "Receita", value: receita.label },
       { label: "Ticket médio", value: ticket.label },
@@ -105,8 +120,8 @@ function secaoResumoGeral(): SecaoRelatorio {
 
 const META_PADRAO = 45000;
 
-function secaoMetas(): SecaoRelatorio {
-  const receita = calcularValorVendido();
+function secaoMetas(ctx: ContextoRelatorio): SecaoRelatorio {
+  const receita = calcularValorVendido(todosOsCards(ctx.dados.funis));
   const percentual = Math.round((receita.valor / META_PADRAO) * 100);
   return {
     titulo: "Metas",
@@ -118,12 +133,16 @@ function secaoMetas(): SecaoRelatorio {
   };
 }
 
-function secaoTendencias(): SecaoRelatorio {
-  const metade = Math.floor(serieDashboardRelatorios.length / 2);
-  const primeira = serieDashboardRelatorios.slice(0, metade);
-  const segunda = serieDashboardRelatorios.slice(metade);
-  const somaVendas = (arr: typeof serieDashboardRelatorios) => arr.reduce((s, d) => s + d.vendas, 0);
-  const somaReceita = (arr: typeof serieDashboardRelatorios) => arr.reduce((s, d) => s + d.valorVendas, 0);
+function secaoTendencias(ctx: ContextoRelatorio): SecaoRelatorio {
+  const serie = calcularSerieDiaria(todosOsCards(ctx.dados.funis));
+  if (serie.length < 2) {
+    return { titulo: "Tendências", observacao: "Ainda sem movimento suficiente pra traçar uma tendência." };
+  }
+  const metade = Math.floor(serie.length / 2);
+  const primeira = serie.slice(0, metade);
+  const segunda = serie.slice(metade);
+  const somaVendas = (arr: typeof serie) => arr.reduce((s, d) => s + d.vendas, 0);
+  const somaReceita = (arr: typeof serie) => arr.reduce((s, d) => s + d.valorVendas, 0);
   const vendas1 = somaVendas(primeira);
   const vendas2 = somaVendas(segunda);
   const receita1 = somaReceita(primeira);
@@ -141,22 +160,39 @@ function secaoTendencias(): SecaoRelatorio {
   };
 }
 
-function secaoConclusoes(): SecaoRelatorio {
-  const taxa = calcularTaxaConversao();
-  const receita = calcularValorVendido();
-  const principal = calcularMotivoPrincipalPerda();
+function secaoConclusoes(ctx: ContextoRelatorio): SecaoRelatorio {
+  const cards = todosOsCards(ctx.dados.funis);
+  const taxa = calcularTaxaConversao(cards);
+  const receita = calcularValorVendido(cards);
+  const principal = calcularMotivoPrincipalPerda(cards);
   const percentualMeta = Math.round((receita.valor / META_PADRAO) * 100);
+  if (receita.registros.length === 0) {
+    return {
+      titulo: "Conclusões",
+      observacao: "Ainda não há negócios ganhos ou perdidos suficientes pra gerar conclusões neste período.",
+    };
+  }
   const texto =
     `A operação fechou o período com ${receita.label} em receita (${percentualMeta}% da meta de ${formatarMoeda(META_PADRAO)}) ` +
-    `e taxa de conversão de ${taxa.label}. O principal motivo de perda foi "${principal.motivo}", responsável por ${principal.valor}% ` +
-    `das negociações perdidas — vale priorizar ação sobre esse ponto no próximo período.`;
+    `e taxa de conversão de ${taxa.label}.` +
+    (principal.motivo !== "—"
+      ? ` O principal motivo de perda foi "${principal.motivo}", responsável por ${principal.valor.toFixed(0)}% ` +
+        `das negociações perdidas — vale priorizar ação sobre esse ponto no próximo período.`
+      : "");
   return { titulo: "Conclusões", observacao: texto };
 }
 
-function secaoTrafego(): SecaoRelatorio {
-  const investido = calcularInvestimentoTrafego();
-  const leads = calcularLeadsTrafego();
-  const roas = calcularRoasMedio();
+function secaoTrafego(ctx: ContextoRelatorio): SecaoRelatorio {
+  const { campanhas } = ctx.dados;
+  if (campanhas.length === 0) {
+    return {
+      titulo: "Tráfego",
+      observacao: "Dados não conectados — conecte o Meta Ads em Configurações para ver investimento e leads de tráfego pago aqui.",
+    };
+  }
+  const investido = calcularInvestimentoTrafego(campanhas);
+  const leads = calcularLeadsTrafego(campanhas);
+  const roas = calcularRoasMedio(campanhas);
   return {
     titulo: "Tráfego",
     linhas: [
@@ -167,18 +203,30 @@ function secaoTrafego(): SecaoRelatorio {
   };
 }
 
-function secaoFunilTrafego(): SecaoRelatorio {
+function secaoFunilTrafego(ctx: ContextoRelatorio): SecaoRelatorio {
+  const funilPrincipal = ctx.dados.funis[0];
+  if (!funilPrincipal || funilPrincipal.colunas.every((c) => c.cards.length === 0)) {
+    return { titulo: "Funil de tráfego", observacao: "Nenhum negócio registrado no funil ainda." };
+  }
+  const primeiraColuna = funilPrincipal.colunas[0];
   return {
     titulo: "Funil de tráfego",
-    barras: funilJulho.map((e, i) => ({
-      label: e.etapa,
-      meta: `${e.total} negociações`,
-      percentual: i === 0 ? 100 : Math.round((e.total / funilJulho[0].total) * 100),
+    barras: funilPrincipal.colunas.map((c) => ({
+      label: c.titulo,
+      meta: `${c.cards.length} negociações`,
+      percentual: primeiraColuna.cards.length > 0 ? Math.round((c.cards.length / primeiraColuna.cards.length) * 100) : 0,
     })),
   };
 }
 
 function secaoCampanhas(ctx: ContextoRelatorio): SecaoRelatorio {
+  const { campanhas } = ctx.dados;
+  if (campanhas.length === 0) {
+    return {
+      titulo: "Campanhas",
+      observacao: "Dados não conectados — conecte o Meta Ads em Configurações para ver as campanhas aqui.",
+    };
+  }
   return {
     titulo: "Campanhas",
     tabela: {
@@ -191,28 +239,33 @@ function secaoCampanhas(ctx: ContextoRelatorio): SecaoRelatorio {
   };
 }
 
-function secaoPerformance(): SecaoRelatorio {
+function secaoPerformance(ctx: ContextoRelatorio): SecaoRelatorio {
+  const porResponsavel = calcularPorResponsavel(todosOsCards(ctx.dados.funis));
+  if (porResponsavel.length === 0) {
+    return { titulo: "Performance por responsável", observacao: "Nenhum negócio com responsável e desfecho registrado ainda." };
+  }
   return {
     titulo: "Performance por responsável",
-    barras: conversaoPorResponsavel.map((r) => {
+    barras: porResponsavel.map((r) => {
       const total = r.vendidas + r.perdidas;
       const taxa = total > 0 ? Math.round((r.vendidas / total) * 100) : 0;
-      const fat = faturamentoPorResponsavel.find((f) => f.nome === r.nome);
       return {
         label: r.nome,
-        meta: `${r.vendidas} vendas · ${r.perdidas} perdas · ${fat ? formatarMoeda(fat.valor) : "—"}`,
+        meta: `${r.vendidas} vendas · ${r.perdidas} perdas · ${formatarMoeda(r.receita)}`,
         percentual: taxa,
       };
     }),
   };
 }
 
-function secaoVendasResumo(): SecaoRelatorio {
-  const taxa = calcularTaxaConversao();
-  const receita = calcularValorVendido();
-  const ticket = calcularTicketMedio();
-  const total = conversaoPorResponsavel.reduce((s, r) => s + r.vendidas + r.perdidas, 0);
-  const vendidas = conversaoPorResponsavel.reduce((s, r) => s + r.vendidas, 0);
+function secaoVendasResumo(ctx: ContextoRelatorio): SecaoRelatorio {
+  const cards = todosOsCards(ctx.dados.funis);
+  const taxa = calcularTaxaConversao(cards);
+  const receita = calcularValorVendido(cards);
+  const ticket = calcularTicketMedio(cards);
+  const porResponsavel = calcularPorResponsavel(cards);
+  const total = porResponsavel.reduce((s, r) => s + r.vendidas + r.perdidas, 0);
+  const vendidas = porResponsavel.reduce((s, r) => s + r.vendidas, 0);
   return {
     titulo: "Resumo de vendas",
     linhas: [
@@ -233,45 +286,53 @@ function secaoProdutos(): SecaoRelatorio {
   };
 }
 
-function secaoPerdasResumo(): SecaoRelatorio {
-  const valorPerdido = calcularValorPerdido();
-  const principal = calcularMotivoPrincipalPerda();
+function secaoPerdasResumo(ctx: ContextoRelatorio): SecaoRelatorio {
+  const cards = todosOsCards(ctx.dados.funis);
+  const valorPerdido = calcularValorPerdido(cards);
+  const principal = calcularMotivoPrincipalPerda(cards);
+  if (valorPerdido.registros.length === 0) {
+    return { titulo: "Perdas (resumo)", observacao: "Nenhum negócio perdido registrado ainda." };
+  }
   return {
     titulo: "Perdas (resumo)",
     linhas: [
       { label: "Valor perdido", value: valorPerdido.label },
-      { label: "Quantidade perdida", value: String(oportunidadesPerdidas.length) },
-      { label: "Principal motivo", value: `${principal.motivo} (${principal.valor}%)` },
+      { label: "Quantidade perdida", value: String(valorPerdido.registros.length) },
+      { label: "Principal motivo", value: `${principal.motivo} (${principal.valor.toFixed(0)}%)` },
     ],
   };
 }
 
-function secaoMotivosDetalhado(): SecaoRelatorio {
+function secaoMotivosDetalhado(ctx: ContextoRelatorio): SecaoRelatorio {
+  const distribuicao = calcularDistribuicaoMotivosPerda(todosOsCards(ctx.dados.funis));
+  if (distribuicao.length === 0) {
+    return { titulo: "Motivos de perda", observacao: "Nenhum motivo de perda registrado ainda." };
+  }
   return {
     titulo: "Motivos de perda",
-    barras: motivosPerda.map((m) => ({
+    barras: distribuicao.map((m) => ({
       label: m.motivo,
-      meta: `${m.quantidade} perdas · ${m.valor}`,
-      percentual: m.percentual,
+      meta: `${m.quantidade} ${m.quantidade === 1 ? "perda" : "perdas"}`,
+      percentual: Math.round(m.percentual),
     })),
   };
 }
 
-function secaoAtendimento(): SecaoRelatorio {
-  const tempo = calcularTempoMedioPrimeiroContato();
-  const aguardando = calcularLeadsAguardando();
+function secaoAtendimento(ctx: ContextoRelatorio): SecaoRelatorio {
+  const { conversas } = ctx.dados;
+  const aguardando = calcularLeadsAguardando(conversas);
   return {
     titulo: "Atendimento",
     linhas: [
       { label: "Leads recebidos", value: String(conversas.length) },
       { label: "Leads aguardando atendimento", value: aguardando.label },
-      { label: "Tempo médio de primeira resposta", value: tempo.label },
     ],
+    observacao: "Tempo médio de primeira resposta: dados não conectados — o CRM ainda não rastreia qual responsável atendeu cada mensagem.",
   };
 }
 
-function secaoTarefas(): SecaoRelatorio {
-  const todas = tarefas.flatMap((c) => c.cards);
+function secaoTarefas(ctx: ContextoRelatorio): SecaoRelatorio {
+  const todas = ctx.dados.tarefas.flatMap((c) => c.cards);
   return {
     titulo: "Tarefas",
     linhas: [
@@ -282,30 +343,34 @@ function secaoTarefas(): SecaoRelatorio {
   };
 }
 
-function secaoInteracoes(): SecaoRelatorio {
-  const enviadas = conversas.reduce((s, c) => s + c.mensagens.filter((m) => m.tipo === "out").length, 0);
-  const recebidas = conversas.reduce((s, c) => s + c.mensagens.filter((m) => m.tipo === "in").length, 0);
-  const ligacoes = ligacoesPorResponsavel.reduce((s, r) => s + r.quantidade, 0);
+function secaoInteracoes(ctx: ContextoRelatorio): SecaoRelatorio {
+  const { conversas, mensagensPorContato } = ctx.dados;
+  const mensagensDe = (nome: string) => mensagensPorContato[nome] ?? [];
+  const enviadas = conversas.reduce((s, c) => s + mensagensDe(c.nome).filter((m) => m.tipo === "out").length, 0);
+  const recebidas = conversas.reduce((s, c) => s + mensagensDe(c.nome).filter((m) => m.tipo === "in").length, 0);
   return {
     titulo: "Interações",
     linhas: [
       { label: "Mensagens enviadas", value: String(enviadas) },
       { label: "Mensagens recebidas", value: String(recebidas) },
-      { label: "Ligações", value: String(ligacoes) },
     ],
+    observacao: "Ligações: dados não conectados — o CRM ainda não tem telefonia integrada.",
   };
 }
 
-function secaoAlertas(): SecaoRelatorio {
-  const atrasadas = tarefas.find((c) => c.titulo === "Atrasadas")?.cards.length ?? 0;
+function secaoAlertas(ctx: ContextoRelatorio): SecaoRelatorio {
+  const atrasadas = ctx.dados.tarefas.find((c) => c.titulo === "Atrasadas")?.cards.length ?? 0;
   return {
     titulo: "Alertas",
-    observacao: `${atrasadas} tarefa(s) atrasada(s) no período. Consulte a Inteligência comercial para ação imediata.`,
+    observacao:
+      atrasadas > 0
+        ? `${atrasadas} tarefa(s) atrasada(s) no período. Consulte a Inteligência comercial para ação imediata.`
+        : "Nenhum alerta no período.",
   };
 }
 
 function secaoDadosCliente(ctx: ContextoRelatorio): SecaoRelatorio {
-  const contato = contatos.find((c) => c.id === ctx.contatoId);
+  const contato = ctx.dados.contatos.find((c) => c.id === ctx.contatoId);
   if (!contato) return { titulo: "Dados do contato", observacao: "Nenhum contato selecionado." };
   return {
     titulo: "Dados do contato",
@@ -322,10 +387,19 @@ function secaoDadosCliente(ctx: ContextoRelatorio): SecaoRelatorio {
 }
 
 function secaoResumoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
-  const contato = contatos.find((c) => c.id === ctx.contatoId);
+  const { dados } = ctx;
+  const contato = dados.contatos.find((c) => c.id === ctx.contatoId);
   if (!contato) return { titulo: "Resumo da jornada", observacao: "Nenhum contato selecionado." };
-  const eventos = gerarLinhaDoTempo(contato.id);
-  const resumo = calcularResumoJornada(contato, eventos);
+  const fontesTimeline = {
+    contatos: dados.contatos,
+    conversas: dados.conversas,
+    mensagensPorContato: dados.mensagensPorContato,
+    tarefas: dados.tarefas,
+    funis: dados.funis,
+    oportunidadesPerdidas,
+  };
+  const eventos = gerarLinhaDoTempo(contato.id, fontesTimeline);
+  const resumo = calcularResumoJornada(contato, eventos, { funis: dados.funis, tarefas: dados.tarefas, conversas: dados.conversas });
   return {
     titulo: "Resumo da jornada",
     linhas: [
@@ -345,7 +419,15 @@ function secaoResumoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
 
 function secaoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
   if (!ctx.contatoId) return { titulo: "Linha do tempo", observacao: "Nenhum contato selecionado." };
-  const eventos = gerarLinhaDoTempo(ctx.contatoId);
+  const { dados } = ctx;
+  const eventos = gerarLinhaDoTempo(ctx.contatoId, {
+    contatos: dados.contatos,
+    conversas: dados.conversas,
+    mensagensPorContato: dados.mensagensPorContato,
+    tarefas: dados.tarefas,
+    funis: dados.funis,
+    oportunidadesPerdidas,
+  });
   return {
     titulo: "Linha do tempo",
     tabela: {
@@ -358,9 +440,10 @@ function secaoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
 }
 
 function secaoNegociacoesCliente(ctx: ContextoRelatorio): SecaoRelatorio {
-  const contato = contatos.find((c) => c.id === ctx.contatoId);
+  const { dados } = ctx;
+  const contato = dados.contatos.find((c) => c.id === ctx.contatoId);
   if (!contato) return { titulo: "Negociações", observacao: "Nenhum contato selecionado." };
-  const cards = funis.flatMap((f) =>
+  const cards = dados.funis.flatMap((f) =>
     f.colunas.flatMap((c) => c.cards.filter((card) => card.nome === contato.nome).map((card) => ({ card, coluna: c, funil: f }))),
   );
   if (cards.length === 0) return { titulo: "Negociações", observacao: "Nenhuma negociação registrada ainda." };
@@ -374,9 +457,10 @@ function secaoNegociacoesCliente(ctx: ContextoRelatorio): SecaoRelatorio {
 }
 
 function secaoComprasCliente(ctx: ContextoRelatorio): SecaoRelatorio {
-  const contato = contatos.find((c) => c.id === ctx.contatoId);
+  const { dados } = ctx;
+  const contato = dados.contatos.find((c) => c.id === ctx.contatoId);
   if (!contato) return { titulo: "Compras", observacao: "Nenhum contato selecionado." };
-  const compras = funis.flatMap((f) =>
+  const compras = dados.funis.flatMap((f) =>
     f.colunas
       .filter((c) => c.titulo.startsWith("Fechado"))
       .flatMap((c) => c.cards.filter((card) => card.nome === contato.nome)),
@@ -392,9 +476,10 @@ function secaoComprasCliente(ctx: ContextoRelatorio): SecaoRelatorio {
 }
 
 function secaoAtividadesCliente(ctx: ContextoRelatorio): SecaoRelatorio {
-  const contato = contatos.find((c) => c.id === ctx.contatoId);
+  const { dados } = ctx;
+  const contato = dados.contatos.find((c) => c.id === ctx.contatoId);
   if (!contato) return { titulo: "Atividades", observacao: "Nenhum contato selecionado." };
-  const doContato = tarefas.flatMap((c) => c.cards).filter((t) => t.contato === contato.nome);
+  const doContato = dados.tarefas.flatMap((c) => c.cards).filter((t) => t.contato === contato.nome);
   if (doContato.length === 0) return { titulo: "Atividades", observacao: "Nenhuma tarefa registrada pra esse contato." };
   return {
     titulo: "Atividades",

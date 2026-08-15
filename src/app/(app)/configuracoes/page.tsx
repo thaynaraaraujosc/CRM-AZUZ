@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { Topbar } from "@/components/ui";
 import { useConfiguracoes } from "@/lib/configuracoes-context";
@@ -13,7 +14,6 @@ import { UsuariosSecao } from "@/components/configuracoes/UsuariosSecao";
 import { EquipesSecao } from "@/components/configuracoes/EquipesSecao";
 import { SegurancaSecao } from "@/components/configuracoes/SegurancaSecao";
 import { AuditoriaSecao } from "@/components/configuracoes/AuditoriaSecao";
-import { FunisSecao } from "@/components/configuracoes/FunisSecao";
 import { CamposSecao } from "@/components/configuracoes/CamposSecao";
 import { EtiquetasSecao } from "@/components/configuracoes/EtiquetasSecao";
 import { AutomacoesPrefsSecao } from "@/components/configuracoes/AutomacoesPrefsSecao";
@@ -36,7 +36,20 @@ import { PlanoSecao } from "@/components/configuracoes/PlanoSecao";
  * recarregar a página (troca de estado local, mesma rota).
  */
 export default function ConfiguracoesPage() {
-  const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaId>("workspace");
+  return (
+    <Suspense fallback={null}>
+      <ConfiguracoesConteudo />
+    </Suspense>
+  );
+}
+
+function ConfiguracoesConteudo() {
+  const searchParams = useSearchParams();
+  // `?categoria=plano` — usado pelo redirect pós-cadastro (proxy manda direto pra tela de
+  // pagamento, ver `src/app/cadastro/page.tsx`) pra não obrigar a pessoa a achar "Plano e
+  // cobrança" sozinha na primeira vez que entra, já bloqueada até pagar.
+  const categoriaInicial = (searchParams.get("categoria") as CategoriaId | null) ?? "workspace";
+  const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaId>(categoriaInicial);
   const { categoriaSuja } = useConfiguracoes();
   const categoria = categoriaPorId(categoriaAtiva);
 
@@ -64,7 +77,6 @@ export default function ConfiguracoesPage() {
             {categoriaAtiva === "equipes" ? <EquipesSecao /> : null}
             {categoriaAtiva === "seguranca" ? <SegurancaSecao /> : null}
             {categoriaAtiva === "auditoria" ? <AuditoriaSecao /> : null}
-            {categoriaAtiva === "funis" ? <FunisSecao /> : null}
             {categoriaAtiva === "campos" ? <CamposSecao /> : null}
             {categoriaAtiva === "etiquetas" ? <EtiquetasSecao /> : null}
             {categoriaAtiva === "automacoes" ? <AutomacoesPrefsSecao /> : null}

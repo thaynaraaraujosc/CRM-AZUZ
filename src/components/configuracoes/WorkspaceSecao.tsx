@@ -1,23 +1,50 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { IconCamera } from "@/components/icons";
-import { useConfiguracoes, WORKSPACE_CONFIG_PADRAO, type WorkspaceConfig } from "@/lib/configuracoes-context";
+import { useConfiguracoes, type WorkspaceConfig } from "@/lib/configuracoes-context";
 import { FUSOS_HORARIOS, IDIOMAS, MOEDAS, PAISES, SEGMENTOS_NEGOCIO } from "@/lib/configuracoes/mock";
-import { resetarDadosMockados } from "@/lib/reset-mock-data";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
-import { ModelosSegmento } from "./ModelosSegmento";
 import { SalvarBar } from "./SalvarBar";
 
-/** Workspace (item 19-20) — dados gerais + identidade visual + modelo por segmento. O logotipo é só
- * um arquivo temporário no navegador (`URL.createObjectURL`), nunca enviado a servidor. */
+type NomeSegmento = { nome: string; segmento: string };
+const NOME_SEGMENTO_PADRAO: NomeSegmento = { nome: "", segmento: "" };
+
+/** Workspace — dados gerais + modelo por segmento. Nome/segmento são coluna real de `Workspace`
+ * (`GET/PATCH /api/workspace`, fonte única de verdade — lidos também na sessão/sidebar/e-mails/
+ * relatórios); o resto dos campos (país/cidade/fuso/idioma/moeda/formatos) fica no blob de
+ * preferências, que não tem outro consumidor. Nasce em branco, preenchido pela própria empresa
+ * depois do cadastro (nome do workspace já vem do nome digitado no cadastro — ver `salvo` abaixo). */
 export function WorkspaceSecao() {
   const { estado, atualizarWorkspace, setCategoriaSuja } = useConfiguracoes();
+  const [salvoReal, setSalvoReal] = useState<NomeSegmento>(NOME_SEGMENTO_PADRAO);
   const [rascunho, setRascunho] = useState<WorkspaceConfig>(estado.workspace);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [rascunhoReal, setRascunhoReal] = useState<NomeSegmento>(NOME_SEGMENTO_PADRAO);
+  const [carregado, setCarregado] = useState(false);
 
-  const dirty = JSON.stringify(rascunho) !== JSON.stringify(estado.workspace);
+  useEffect(() => {
+    fetch("/api/workspace")
+      .then((r) => r.json())
+      .then((dados: NomeSegmento) => {
+        setSalvoReal(dados);
+        setRascunhoReal(dados);
+        setCarregado(true);
+      })
+      .catch((erro) => console.error("Falha ao carregar dados do workspace:", erro));
+  }, []);
+
+  // O blob de preferências já resolve sozinho quando `estado.workspace` chega depois da hidratação
+  // assíncrona do provider (mesma renderização, sem efeito) — só ainda não tinha acontecido pra
+  // nome/segmento porque agora eles vêm de uma fonte separada (acima).
+  const [estadoBlobAnterior, setEstadoBlobAnterior] = useState(estado.workspace);
+  if (estado.workspace !== estadoBlobAnterior) {
+    setEstadoBlobAnterior(estado.workspace);
+    setRascunho(estado.workspace);
+  }
+
+  const dirty =
+    JSON.stringify(rascunho) !== JSON.stringify(estado.workspace) ||
+    JSON.stringify(rascunhoReal) !== JSON.stringify(salvoReal);
 
   useEffect(() => {
     setCategoriaSuja(dirty);
@@ -28,12 +55,29 @@ export function WorkspaceSecao() {
     setRascunho((prev) => ({ ...prev, ...patch }));
   }
 
+  function setReal(patch: Partial<NomeSegmento>) {
+    setRascunhoReal((prev) => ({ ...prev, ...patch }));
+  }
+
   function salvar() {
+    if (JSON.stringify(rascunhoReal) !== JSON.stringify(salvoReal)) {
+      fetch("/api/workspace", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rascunhoReal),
+      })
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          setSalvoReal(rascunhoReal);
+        })
+        .catch((erro) => console.error("Falha ao atualizar nome/segmento do workspace:", erro));
+    }
     atualizarWorkspace(rascunho);
   }
 
   function descartar() {
     setRascunho(estado.workspace);
+    setRascunhoReal(salvoReal);
   }
 
   return (
@@ -44,15 +88,22 @@ export function WorkspaceSecao() {
         <div className="config-grid-2">
           <div className="field">
             <label>Nome do workspace</label>
-            <input className="input" value={rascunho.nome} onChange={(e) => set({ nome: e.target.value })} />
+            <input
+              className="input"
+              placeholder={carregado ? "Ex.: Clínica Vitta" : "Carregando…"}
+              value={rascunhoReal.nome}
+              onChange={(e) => setReal({ nome: e.target.value })}
+              disabled={!carregado}
+            />
           </div>
           <div className="field">
             <label>Nome da empresa</label>
-            <input className="input" value={rascunho.nomeEmpresa} onChange={(e) => set({ nomeEmpresa: e.target.value })} />
+            <input className="input" placeholder="Razão social ou nome fantasia" value={rascunho.nomeEmpresa} onChange={(e) => set({ nomeEmpresa: e.target.value })} />
           </div>
           <div className="field">
             <label>Segmento</label>
-            <select className="input" value={rascunho.segmento} onChange={(e) => set({ segmento: e.target.value })}>
+            <select className="input" value={rascunhoReal.segmento} onChange={(e) => setReal({ segmento: e.target.value })} disabled={!carregado}>
+              <option value="">Selecione…</option>
               {SEGMENTOS_NEGOCIO.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -131,95 +182,6 @@ export function WorkspaceSecao() {
             </select>
           </div>
         </div>
-      </div>
-
-      <div className="config-bloco">
-        <p className="config-bloco-titulo">Logotipo</p>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div className="avatar" style={{ width: 56, height: 56, borderRadius: 12, fontSize: 15, overflow: "hidden" }}>
-            {rascunho.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={rascunho.logoUrl} alt="Logotipo atual" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            ) : (
-              rascunho.nomeCurto.slice(0, 2).toUpperCase()
-            )}
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" className="btn ghost" onClick={() => fileInputRef.current?.click()}>
-              <IconCamera width={14} height={14} /> Selecionar novo arquivo
-            </button>
-            <button type="button" className="btn ghost" disabled={!rascunho.logoUrl} onClick={() => set({ logoUrl: null })}>
-              Remover
-            </button>
-            <button type="button" className="btn ghost" onClick={() => set({ logoUrl: WORKSPACE_CONFIG_PADRAO.logoUrl })}>
-              Restaurar padrão
-            </button>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) set({ logoUrl: URL.createObjectURL(file) });
-              e.target.value = "";
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="config-bloco">
-        <p className="config-bloco-titulo">Identidade do workspace</p>
-        <p className="hint mb14">Preview local nesta fase — ainda não aplica de fato no restante do CRM.</p>
-        <div className="config-grid-2">
-          <div className="field">
-            <label>Nome curto</label>
-            <input className="input" value={rascunho.nomeCurto} onChange={(e) => set({ nomeCurto: e.target.value })} />
-          </div>
-          <div className="field">
-            <label>Cor principal</label>
-            <input className="input" type="color" value={rascunho.corPrincipal} onChange={(e) => set({ corPrincipal: e.target.value })} />
-          </div>
-          <div className="field">
-            <label>Cor secundária</label>
-            <input className="input" type="color" value={rascunho.corSecundaria} onChange={(e) => set({ corSecundaria: e.target.value })} />
-          </div>
-          <div className="field">
-            <label>Cor de destaque</label>
-            <input className="input" type="color" value={rascunho.corDestaque} onChange={(e) => set({ corDestaque: e.target.value })} />
-          </div>
-        </div>
-        <div className="config-identidade-preview" style={{ background: rascunho.corSecundaria }}>
-          <span style={{ background: rascunho.corPrincipal }} className="config-identidade-chip">
-            {rascunho.nomeCurto}
-          </span>
-          <span style={{ color: rascunho.corDestaque }} className="config-identidade-destaque">
-            Prévia da identidade
-          </span>
-        </div>
-      </div>
-
-      <ModelosSegmento />
-
-      <div className="config-bloco">
-        <p className="config-bloco-titulo">Dados de teste</p>
-        <p className="hint mb14">
-          O CRM ainda não tem backend — tudo que você cria (tarefas, agendamentos, membros da equipe,
-          documentos, formulários...) fica salvo só neste navegador. Use o botão abaixo pra apagar tudo
-          e voltar aos dados de demonstração originais, útil pra testar do zero.
-        </p>
-        <button
-          type="button"
-          className="btn ghost"
-          onClick={() => {
-            if (window.confirm("Isso apaga todos os dados de teste salvos neste navegador (tarefas, agenda, equipe, documentos, formulários...) e recarrega a página. Continuar?")) {
-              resetarDadosMockados();
-            }
-          }}
-        >
-          Restaurar dados de demonstração
-        </button>
       </div>
 
       <SalvarBar dirty={dirty} onSalvar={salvar} onDescartar={descartar} mensagemSalvo="Configurações do workspace atualizadas." />

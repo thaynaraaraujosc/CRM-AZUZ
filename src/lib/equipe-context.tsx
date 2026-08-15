@@ -38,6 +38,10 @@ type EquipeContextValue = {
   editarMembro: (id: string, dados: Partial<Membro>) => void;
   alternarAtivo: (id: string) => void;
   removerMembro: (id: string) => void;
+  /** Gera e salva uma senha nova pro membro, devolvendo o texto plano uma vez (ver rota) — pra
+   * quando o admin precisa ajudar alguém do time travado no acesso, sem nunca expor a senha
+   * antiga (impossível, é hash de mão única). */
+  resetarSenha: (id: string) => Promise<string | null>;
 };
 
 const EquipeContext = createContext<EquipeContextValue | null>(null);
@@ -118,8 +122,19 @@ export function EquipeProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  async function resetarSenha(id: string): Promise<string | null> {
+    try {
+      const resposta = await fetch(`/api/equipe/${id}/resetar-senha`, { method: "POST" });
+      const dados = await resposta.json();
+      return typeof dados.senha === "string" ? dados.senha : null;
+    } catch (erro) {
+      console.error("Falha ao resetar senha do membro:", erro);
+      return null;
+    }
+  }
+
   return (
-    <EquipeContext.Provider value={{ membros, convidarMembro, editarMembro, alternarAtivo, removerMembro }}>
+    <EquipeContext.Provider value={{ membros, convidarMembro, editarMembro, alternarAtivo, removerMembro, resetarSenha }}>
       {children}
     </EquipeContext.Provider>
   );

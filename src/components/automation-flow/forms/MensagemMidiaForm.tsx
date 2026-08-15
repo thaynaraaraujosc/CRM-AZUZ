@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 
 import {
   CATEGORIAS_ARQUIVO_AUTOMACAO,
@@ -53,15 +54,25 @@ function extensaoDoNome(nome: string): string {
   return partes.length > 1 ? partes[partes.length - 1].toUpperCase() : "";
 }
 
+function lerComoDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onload = () => resolve(leitor.result as string);
+    leitor.onerror = () => reject(new Error("Falha ao ler o arquivo"));
+    leitor.readAsDataURL(file);
+  });
+}
+
 function GlyphArquivo({ tipo }: { tipo: TipoMidiaArquivo }) {
   const glyph = { documento: "📄", imagem: "🖼️", video: "🎬", audio: "🎵" }[tipo];
   return <span aria-hidden="true">{glyph}</span>;
 }
 
 /**
- * Form dedicado dos 4 blocos "enviar mídia" (item 3-9 da spec) — substitui o antigo campo de texto
- * livre "Nome do arquivo (upload não simulado)" por: escolher da biblioteca reutilizável OU simular
- * um upload novo (estado local + `URL.createObjectURL`, nunca enviado a servidor de verdade).
+ * Form dedicado dos 4 blocos "enviar mídia" (item 3-9 da spec) — escolher da biblioteca reutilizável
+ * OU enviar um arquivo novo, que entra de verdade na mesma biblioteca (base64 real, mesmo padrão de
+ * imagem/documento/áudio em Conversas — ver `lerComoDataUrl`) em vez de um `blob:` URL que só existe
+ * na aba do navegador e não sobreviveria até a automação disparar de verdade mais tarde.
  */
 export function MensagemMidiaForm({
   node,
@@ -72,13 +83,15 @@ export function MensagemMidiaForm({
 }) {
   const data = node.data as MensagemMidiaData;
   const tipoMidia = tipoMidiaDoBloco(node.type);
-  const { documentos } = useBibliotecaDocumentos();
+  const { data: sessao } = useSession();
+  const { documentos, adicionarDocumento } = useBibliotecaDocumentos();
   const arquivosDoTipo = documentos.filter((d) => (d.tipoMidia ?? "documento") === tipoMidia);
   const arquivoBiblioteca = data.arquivoId ? documentos.find((d) => d.id === data.arquivoId) : undefined;
 
   const [modalAberto, setModalAberto] = useState(false);
   const [busca, setBusca] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("Todas");
+  const [enviando, setEnviando] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const legendaRef = useRef<HTMLTextAreaElement>(null);
   const [arrastando, setArrastando] = useState(false);
@@ -99,16 +112,32 @@ export function MensagemMidiaForm({
     setModalAberto(false);
   }
 
-  function processarUpload(file: File) {
-    const url = URL.createObjectURL(file);
-    set({
-      origemArquivo: "upload",
-      arquivoId: undefined,
-      arquivoNome: file.name,
-      arquivoTipo: extensaoDoNome(file.name),
-      arquivoTamanho: formatarTamanho(file.size),
-      arquivoUrlTemporaria: url,
-    });
+  async function processarUpload(file: File) {
+    setEnviando(true);
+    try {
+      const url = await lerComoDataUrl(file);
+      const salvo = adicionarDocumento({
+        nome: file.name,
+        categoria: "Outros",
+        formato: extensaoDoNome(file.name),
+        tamanho: file.size,
+        autor: sessao?.user?.name ?? "—",
+        url,
+        tipoMidia,
+      });
+      set({
+        origemArquivo: "biblioteca",
+        arquivoId: salvo.id,
+        arquivoNome: file.name,
+        arquivoTipo: extensaoDoNome(file.name),
+        arquivoTamanho: formatarTamanho(file.size),
+        arquivoUrlTemporaria: undefined,
+      });
+    } catch {
+      // Falha ao ler o arquivo (raríssimo) — não altera o estado, o usuário tenta de novo.
+    } finally {
+      setEnviando(false);
+    }
   }
 
   function removerArquivo() {
@@ -145,17 +174,18 @@ export function MensagemMidiaForm({
         <div className="flow-midia-origem">
           <button
             type="button"
-            className={`flow-midia-origem-btn${(data.origemArquivo ?? "biblioteca") === "biblioteca" ? " sel" : ""}`}
+            className="flow-midia-origem-btn"
             onClick={() => setModalAberto(true)}
           >
             📁 Escolher da biblioteca
           </button>
           <button
             type="button"
-            className={`flow-midia-origem-btn${data.origemArquivo === "upload" ? " sel" : ""}`}
+            className="flow-midia-origem-btn"
             onClick={() => fileInputRef.current?.click()}
+            disabled={enviando}
           >
-            ⬆ Enviar novo arquivo
+            {enviando ? "Enviando…" : "⬆ Enviar novo arquivo"}
           </button>
         </div>
         <input

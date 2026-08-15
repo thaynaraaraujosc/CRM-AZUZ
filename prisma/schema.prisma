@@ -50,6 +50,42 @@ model Contato {
   etiquetas Json?
   favorito  Boolean @default(false)
 
+  // "manual" (criado por um usuário na tela de Contatos) ou "whatsapp" (nasceu sozinho quando um
+  // número novo mandou mensagem, ver upsertConversaAoReceberMensagem) — só rastreabilidade, não
+  // muda nenhum comportamento.
+  criadoVia String @default("manual")
+
+  conversas Conversa[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([workspaceId, nome])
+}
+
+// Uma "conversa" (thread de atendimento por canal) — nasce sozinha quando chega a primeira
+// mensagem de um contato novo por um webhook conectado (WhatsApp oficial, WhatsApp via QR/Baileys
+// ou Instagram). As mensagens em si continuam em `MensagemExtra`, casadas pelo mesmo `nome` — essa
+// tabela só guarda o estado da thread (canal, status de atendimento, não lidas, favorita...).
+model Conversa {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  contatoId        String?
+  contatoVinculado Contato? @relation(fields: [contatoId], references: [id])
+
+  nome     String
+  initials String
+  canal    String // "WhatsApp" | "Instagram" | "TikTok"
+  contato  String? // telefone/@handle de exibição
+  origem   String  @default("Direto")
+  status   String  @default("Não respondido")
+  naoLidas Int     @default(0)
+  favorita Boolean @default(false)
+
+  atendenteSelecionado String?
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
@@ -134,6 +170,10 @@ model TarefaCard {
 model Workspace {
   id       String   @id
   nome     String
+  // Fonte única de verdade pro segmento do negócio — antes só existia dentro do blob de
+  // `Preferencia` (chave "configuracoes"), desencontrado da coluna `nome` real e sem sobreviver
+  // corretamente entre sessões/dispositivos. Null = ainda não preenchido pelo usuário.
+  segmento String?
   slug     String   @unique
   criadoEm DateTime @default(now())
 
@@ -151,6 +191,7 @@ model Workspace {
   negocioCards           NegocioCard[]
   preferencias           Preferencia[]
   mensagensExtra         MensagemExtra[]
+  conversas              Conversa[]
   documentosBiblioteca   DocumentoBiblioteca[]
   formularios            Formulario[]
   respostasFormulario    RespostaFormulario[]
@@ -158,6 +199,10 @@ model Workspace {
   documentos             Documento[]
   modelosPersonalizados  ModeloPersonalizado[]
   integracoes            Integracao[]
+  assinatura             Assinatura?
+  acoesEnvio             AcaoEnvio[]
+  motivosPerda           MotivoPerda[]
+  relatoriosGerados      RelatorioGerado[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -189,8 +234,26 @@ model Membro {
   // do VARCHAR padrão.
   foto            String? @db.Text
 
-  criadoEm     DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  ultimoAcesso DateTime?
+
+  tokensRedefinicaoSenha TokenRedefinicaoSenha[]
+}
+
+// Token de "esqueci minha senha" — mesmo espírito do token de convite (`/convite/[token]`), só que
+// pra um Membro que já existe pedindo pra trocar a própria senha. `tokenHash` (não o token cru) é o
+// que fica gravado, igual senha — o valor em texto puro só existe no link do e-mail, nunca no
+// banco. Expira rápido (curto de propósito, é um link de e-mail) e só pode ser usado uma vez
+// (`usadoEm` marca isso, evita reuso do mesmo link).
+model TokenRedefinicaoSenha {
+  id        String    @id
+  membroId  String
+  membro    Membro    @relation(fields: [membroId], references: [id])
+  tokenHash String    @unique
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  criadoEm  DateTime  @default(now())
 }
 
 // Núcleo comercial (2ª leva, último módulo) — espelha `Funil`/`ColunaFunil`/`NegocioCard` de
@@ -244,6 +307,27 @@ model NegocioCard {
   data        String
   etiquetas   Json?
   responsavel String?
+
+  // Estado de fechamento real do negócio — null = ainda aberto (só a etapa/coluna descreve onde
+  // está no funil). "ganho"/"perdido" grava o desfecho de verdade, é o que faz Inteligência
+  // Comercial (conversão, motivo de perda, faturamento) calcular sobre dado real em vez de mock.
+  statusFechamento String? // "ganho" | "perdido"
+  motivoPerda      String?
+  dataFechamento   DateTime?
+}
+
+// Motivos de perda configuráveis por workspace — usados no seletor ao marcar um NegocioCard como
+// "perdido" (ver src/app/(app)/funil/page.tsx) e nos indicadores de Inteligência Comercial. Cada
+// workspace novo ganha um seed padrão na primeira vez que a tela é acessada (não em prisma/seed.ts,
+// que só semeia o workspace de demonstração).
+model MotivoPerda {
+  id          String   @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  nome        String
+  criadoEm    DateTime @default(now())
+
+  @@unique([workspaceId, nome])
 }
 
 // Preferências simples (Notificações/Central do Dia/Configurações/Conversas-config) — cada Context
@@ -278,6 +362,10 @@ model MensagemExtra {
   criadoEm DateTime?
   status   String?
   extras   Json?
+  // Canal de origem/destino da mensagem — nulo = comportamento antigo (implicitamente Meta
+  // oficial); "whatsapp_baileys" marca mensagens da conexão não oficial via QR Code, pra saber
+  // por qual integração uma resposta deve sair quando o workspace tem as duas conectadas.
+  canal    String?
 }
 
 // Biblioteca de mídia reutilizável pelos blocos de automação (enviar documento/imagem/vídeo/áudio).
@@ -440,4 +528,77 @@ model Integracao {
   atualizadoEm DateTime @updatedAt
 
   @@unique([workspaceId, provedor])
+}
+
+// Assinatura do próprio CRM (cobrança da mensalidade do workspace via Asaas) — não confundir com
+// `Integracao`: aqui não é o cliente conectando a conta Asaas dele, é a Azuz cobrando o cliente
+// pela conta Asaas da própria Azuz. Uma linha por workspace (1:1). O histórico de cobranças não é
+// espelhado no banco — é buscado ao vivo na Asaas (`GET /subscriptions/{id}/payments`) pra nunca
+// dessincronizar; aqui só fica o suficiente pra saber o status atual sem chamar a API a cada
+// carregamento de tela.
+model Assinatura {
+  id          String    @id
+  workspaceId String    @unique
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  plano String // "completo" — plano único do CRM, ver src/lib/assinatura/planos.ts
+  valor Decimal @db.Decimal(10, 2)
+
+  status String // "pendente" | "ativa" | "atrasada" | "cancelada"
+
+  asaasCustomerId     String
+  asaasSubscriptionId String?
+  formaPagamento      String? // "BOLETO" | "CREDIT_CARD" | "PIX"
+
+  proximoVencimento DateTime?
+  canceladaEm       DateTime?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+// Ações (item 7 do pedido de novas demandas) — lista de transmissão agendada/enviada, tela
+// "Ações". Antes o histórico inteiro (inclusive "Dia Mundial do Diabetes", "Reativação"...) era
+// mock fixo em src/lib/data.ts, e "Agendar envio" só empilhava em memória (sumia no F5). Guarda só
+// o registro da ação em si — o disparo de verdade pros contatos (via WhatsApp/Instagram/SMS) ainda
+// não existe (precisaria de um agendador/fila rodando fora do request, fora do escopo agora); por
+// enquanto fica marcado como "Agendado" e é isso.
+model AcaoEnvio {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  titulo     String
+  legenda    String?   @db.Text
+  midiaTipo  String // "imagem" | "audio" | "texto"
+  canais     Json // string[] — "WhatsApp" | "Instagram" | "E-mail" | "SMS"
+  agendadoPara DateTime
+  // Snapshot dos nomes dos contatos no momento da criação — não é uma relação de verdade porque
+  // Contato não tem id estável o suficiente pra isso ainda (mesmo padrão já aceito em outras
+  // tabelas desta fase, ver `TarefaCard.contato`).
+  contatos   Json // string[]
+
+  criadoEm DateTime @default(now())
+}
+
+// Histórico de relatórios já gerados (Central de Relatórios) — antes só vivia no localStorage do
+// navegador (não sobrevivia a trocar de dispositivo, e conta nova começava com 3 relatórios de
+// exemplo fictícios). Só cria (histórico é sempre apêndice, nunca editado) — GET lista, POST
+// adiciona um novo registro.
+model RelatorioGerado {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  nome         String
+  tipo         String
+  contato      String?
+  periodo      String
+  filtros      String
+  autor        String
+  paginas      Int
+  formato      String
+  configuracao Json
+
+  criadoEm DateTime @default(now())
 }

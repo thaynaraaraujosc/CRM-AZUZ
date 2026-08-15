@@ -309,6 +309,18 @@ table {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
+.nav-badge-em-breve {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--brand-soft, rgba(37, 99, 235, 0.14));
+  color: var(--brand, #2563eb);
+  white-space: nowrap;
+}
+
 .nav-item svg {
   width: 17px;
   height: 17px;
@@ -819,6 +831,20 @@ table {
   margin: 0 0 12px;
   font-size: 12.5px;
   color: var(--danger);
+}
+
+.auth-sucesso {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.auth-descricao {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-faint);
 }
 
 .auth-rodape {
@@ -1945,6 +1971,25 @@ table.tbl tbody tr:hover td {
   cursor: pointer;
 }
 
+.lead-card-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  color: var(--text-faint);
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.lead-card-menu-btn:hover {
+  background: var(--surface-hover, rgba(0, 0, 0, 0.06));
+  color: var(--ink);
+}
+
 .msg-dot {
   width: 8px;
   height: 8px;
@@ -2662,6 +2707,10 @@ table.tbl tbody tr:hover td {
 
 .origem-formulario {
   color: #2e6bff;
+}
+
+.origem-outro {
+  color: var(--text-muted);
 }
 
 .wa-main {
@@ -10470,6 +10519,7 @@ button.camp-row:hover {
   color: #d9a406;
   font-size: 11px;
 }
+
 
 .wa-msg-detalhes-lista {
   display: flex;

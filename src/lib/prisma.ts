@@ -15,7 +15,11 @@ setDefaultResultOrder("ipv4first");
 const globalParaPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function criarPrismaClient() {
-  const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
+  // O CLI do Prisma (`db push`/`migrate`) exige o prefixo `mysql://` na `DATABASE_URL` (é o
+  // provider declarado no schema), mas o driver `@prisma/adapter-mariadb` só aceita `mariadb://`
+  // — convertendo aqui, a mesma variável serve pros dois sem o usuário precisar manter duas versões.
+  const url = process.env.DATABASE_URL!.replace(/^mysql:\/\//, "mariadb://");
+  const adapter = new PrismaMariaDb(url);
   return new PrismaClient({ adapter });
 }
 

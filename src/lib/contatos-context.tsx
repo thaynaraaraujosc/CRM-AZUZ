@@ -10,7 +10,7 @@ import {
   type SetStateAction,
 } from "react";
 
-import { contatos as contatosIniciais, type Contato } from "@/lib/data";
+import type { Contato } from "@/lib/data";
 import { slugId } from "@/lib/ids";
 
 type DadosContato = Omit<Contato, "initials" | "nome" | "origem" | "etapa" | "responsavel">;
@@ -58,7 +58,7 @@ function iniciais(nome: string) {
  * outros módulos).
  */
 export function ContatosProvider({ children }: { children: ReactNode }) {
-  const [contatos, setContatos] = useState<Contato[]>([...contatosIniciais]);
+  const [contatos, setContatos] = useState<Contato[]>([]);
 
   useEffect(() => {
     fetch("/api/contatos")

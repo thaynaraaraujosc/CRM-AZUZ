@@ -28,9 +28,10 @@ const CLASSE_ESTADO: Record<EstadoCanal, string> = {
 export function CanaisSecao() {
   const [testando, setTestando] = useState<string | null>(null);
   const [whatsappReal, setWhatsappReal] = useState<{ estado: EstadoCanal; conexao: string } | null>(null);
+  const [instagramReal, setInstagramReal] = useState<{ estado: EstadoCanal; conexao: string } | null>(null);
 
   useEffect(() => {
-    fetch("/api/integracoes/meta")
+    fetch("/api/integracoes/meta?provedor=meta_whatsapp")
       .then((r) => r.json())
       .then((dados: { status: string; metadados: { numeroExibicao?: string } | null }) => {
         setWhatsappReal({
@@ -39,9 +40,25 @@ export function CanaisSecao() {
         });
       })
       .catch((erro) => console.error("Falha ao carregar status do WhatsApp:", erro));
+
+    fetch("/api/integracoes/meta?provedor=meta_instagram")
+      .then((r) => r.json())
+      .then((dados: { status: string; metadados: { instagramUsername?: string } | null }) => {
+        setInstagramReal({
+          estado: dados.status === "conectado" ? "Conectado" : dados.status === "erro" ? "Requer atenção" : "Desconectado",
+          conexao: dados.status === "conectado" ? `API oficial — @${dados.metadados?.instagramUsername ?? ""}` : "Não configurado",
+        });
+      })
+      .catch((erro) => console.error("Falha ao carregar status do Instagram:", erro));
   }, []);
 
-  const canais = CANAIS_MOCK.map((c) => (c.id === "whatsapp" && whatsappReal ? { ...c, ...whatsappReal } : c));
+  const canais = CANAIS_MOCK.map((c) =>
+    c.id === "whatsapp" && whatsappReal
+      ? { ...c, ...whatsappReal }
+      : c.id === "instagram" && instagramReal
+        ? { ...c, ...instagramReal }
+        : c,
+  );
 
   return (
     <div className="config-secao">
@@ -77,8 +94,9 @@ export function CanaisSecao() {
       </div>
       <p className="hint mt14">
         <IconConversas width={12} height={12} style={{ verticalAlign: "middle", marginRight: 4 }} />
-        WhatsApp já reflete a conexão real com a Meta (ver Configurações → WhatsApp). Os demais canais
-        continuam mockados pra ilustrar como a tela vai se comportar quando forem conectados de verdade.
+        WhatsApp e Instagram já refletem a conexão real com a Meta (ver Configurações → WhatsApp/Instagram).
+        Facebook e os demais canais continuam mockados pra ilustrar como a tela vai se comportar quando
+        forem conectados de verdade.
       </p>
     </div>
   );

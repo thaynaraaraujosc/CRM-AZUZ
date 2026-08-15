@@ -116,6 +116,11 @@ export const TIPOS_LAYOUT: TipoCampoFormulario[] = [
   "imagem_bloco",
 ];
 
+/** Tipos de upload de arquivo — guardam a resposta como "nomeDoArquivo|data:...;base64,..." (ver
+ * `campo-resposta.tsx`), não texto puro. Assinatura fica de fora: já é só a imagem em data URL,
+ * sem nome de arquivo pra separar. */
+export const TIPOS_UPLOAD: TipoCampoFormulario[] = ["arquivo", "documento", "imagem", "video", "audio"];
+
 export function labelTipoCampo(tipo: TipoCampoFormulario) {
   return TIPOS_CAMPO_FORMULARIO.find((t) => t.tipo === tipo)?.label ?? tipo;
 }

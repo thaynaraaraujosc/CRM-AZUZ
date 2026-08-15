@@ -6,10 +6,12 @@
  * regras locais mockadas (não é IA de verdade), ambas comentadas como tal.
  */
 
-import type { Conversa, ColunaTarefas, Funil, TaskCard } from "@/lib/data";
+import type { ColunaTarefas, Funil, TaskCard, ConvMensagem } from "@/lib/data";
 import type { Compromisso } from "@/lib/agenda-context";
+import type { ConversaReal } from "@/lib/conversas-context";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { validarFluxo } from "@/lib/automation-flow/validacao";
+import { formatarTempoRelativoReal } from "@/lib/datas";
 import type { AcaoItemDia, CompromissoDia, ItemDia, RecomendacaoDia, StatusCompromisso } from "./tipos";
 
 /** Converte "9 min" / "1h" / "4 dias" em minutos — só pra comparar/ordenar, nunca mostrado direto. */
@@ -28,36 +30,44 @@ function acaoAbrirConversa(nome: string): AcaoItemDia {
 }
 
 /** Conversas em que a última mensagem foi do contato (tipo "in") — é a nossa vez de responder,
- * independente do rótulo de status (que descreve o estado geral do atendimento, não "de quem é a vez"). */
-export function itensDeConversas(conversas: Conversa[]): ItemDia[] {
+ * independente do rótulo de status (que descreve o estado geral do atendimento, não "de quem é a vez").
+ * `mensagensPorContato` vem de `useMensagensExtra()` — mensagens de verdade, indexadas pelo `nome`
+ * da conversa (mesmo padrão usado em `conversas/page.tsx`). Conversa sem nenhuma mensagem extra
+ * ainda (seed sem webhook processado) não entra — não tem "última mensagem" pra checar o tipo. */
+export function itensDeConversas(
+  conversas: ConversaReal[],
+  mensagensPorContato: Record<string, ConvMensagem[]>,
+): ItemDia[] {
   return conversas
     .filter((c) => c.status !== "Finalizado")
-    .filter((c) => {
-      const ultima = c.mensagens[c.mensagens.length - 1];
-      return ultima?.tipo === "in";
-    })
-    .map((c) => {
-      const ultima = c.mensagens[c.mensagens.length - 1];
-      const minutos = tempoParaMinutos(c.tempo);
+    .flatMap((c) => {
+      const mensagens = mensagensPorContato[c.nome] ?? [];
+      const ultima = mensagens[mensagens.length - 1];
+      if (!ultima || ultima.tipo !== "in") return [];
+
+      const tempo = formatarTempoRelativoReal(new Date(c.atualizadoEm));
+      const minutos = tempoParaMinutos(tempo);
       const prioridade = minutos >= 120 ? "urgente" : minutos >= 30 ? "atencao" : "oportunidade";
-      return {
-        id: `conversa-${c.id}`,
-        modulo: "conversa",
-        tipo: "Conversa",
-        titulo: `${c.nome} aguarda resposta`,
-        descricao: `Última mensagem recebida há ${c.tempo}${ultima?.texto ? `: "${ultima.texto.slice(0, 60)}${ultima.texto.length > 60 ? "…" : ""}"` : "."}`,
-        responsavel: c.atendenteSelecionado,
-        tempoEspera: c.tempo,
-        prioridade,
-        motivo: minutos >= 120 ? "Cliente aguardando resposta acima do tempo limite" : "Contato ainda sem resposta",
-        acaoPrincipal: { label: "Responder agora", href: `/conversas?contato=${encodeURIComponent(c.nome)}` },
-        acoesSecundarias: [
-          acaoAbrirConversa(c.nome),
-          { label: "Transferir", onClick: () => {} },
-          { label: "Criar tarefa", onClick: () => {} },
-        ],
-        extra: { canal: c.canal, initials: c.initials, naoLidas: c.naoLidas },
-      } satisfies ItemDia;
+      return [
+        {
+          id: `conversa-${c.id}`,
+          modulo: "conversa",
+          tipo: "Conversa",
+          titulo: `${c.nome} aguarda resposta`,
+          descricao: `Última mensagem recebida há ${tempo}${ultima.texto ? `: "${ultima.texto.slice(0, 60)}${ultima.texto.length > 60 ? "…" : ""}"` : "."}`,
+          responsavel: c.atendenteSelecionado ?? "",
+          tempoEspera: tempo,
+          prioridade,
+          motivo: minutos >= 120 ? "Cliente aguardando resposta acima do tempo limite" : "Contato ainda sem resposta",
+          acaoPrincipal: { label: "Responder agora", href: `/conversas?contato=${encodeURIComponent(c.nome)}` },
+          acoesSecundarias: [
+            acaoAbrirConversa(c.nome),
+            { label: "Transferir", onClick: () => {} },
+            { label: "Criar tarefa", onClick: () => {} },
+          ],
+          extra: { canal: c.canal, initials: c.initials, naoLidas: c.naoLidas },
+        } satisfies ItemDia,
+      ];
     });
 }
 

@@ -3,73 +3,74 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import {
-  contatos,
-  equipe,
-  motivosPerda,
-  oportunidadesPerdidas,
-  serieDashboardRelatorios,
-} from "@/lib/data";
+import { useEquipe } from "@/lib/equipe-context";
+import { useFunis } from "@/lib/funis-context";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { BarList, ChartCard, LineChart } from "@/components/charts";
-import { calcularMotivoPrincipalPerda, calcularValorPerdido } from "@/lib/metrics";
+import {
+  calcularDistribuicaoMotivosPerda,
+  calcularMotivoPrincipalPerda,
+  calcularSerieDiaria,
+  calcularValorPerdido,
+  todosOsCards,
+} from "@/lib/metrics";
 import { slugId } from "@/lib/ids";
+import type { NegocioCard } from "@/lib/data";
 
 const CORES_MOTIVO: Record<string, string> = {
-  "Achou caro / sem orçamento": "#d64545",
-  "Escolheu outra clínica": "#e0a83c",
-  "Sumiu, parou de responder": "#8a3ffc",
-  "Não é o momento": "#2e6bff",
+  "Achou caro": "#d64545",
+  "Fechou com concorrente": "#e0a83c",
+  "Sem retorno": "#8a3ffc",
+  "Não era o momento": "#2e6bff",
 };
 
-function origemDoCliente(nome: string): string {
-  return contatos.find((c) => c.nome === nome)?.origem ?? "Não identificada";
-}
+type PerdaComEtapa = NegocioCard & { etapa: string; funil: string };
 
 /**
- * Única página com a análise completa de motivos de perda — Performance
- * mostra só um resumo com link pra cá (ver seção 6/8 do escopo). Uma linha
- * combinada por motivo (barra + quantidade + percentual + valor) substitui
- * os antigos 4 botões de volume/porcentagem/lista/gráfico.
+ * Única página com a análise completa de motivos de perda — Performance mostra só um resumo com
+ * link pra cá. Tudo derivado de `NegocioCard.statusFechamento === "perdido"` real (marcado no
+ * Funil) — sem dado fictício, workspace sem nenhuma perda registrada mostra vazio.
  */
 export default function MotivosPerdaPage() {
+  const { funis } = useFunis();
+  const { membros: equipe } = useEquipe();
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
   const [responsavelFiltro, setResponsavelFiltro] = useState("Todos");
   const [etapaFiltro, setEtapaFiltro] = useState("Todos");
   const [motivoSelecionado, setMotivoSelecionado] = useState<string | null>(null);
 
-  const perdasFiltradas = oportunidadesPerdidas.filter((o) => {
+  const cardsComEtapa: PerdaComEtapa[] = funis.flatMap((f) =>
+    f.colunas.flatMap((c) => c.cards.map((card) => ({ ...card, etapa: c.titulo, funil: f.nome }))),
+  );
+  const todasAsPerdas = cardsComEtapa.filter((c) => c.statusFechamento === "perdido");
+
+  const perdasFiltradas = todasAsPerdas.filter((o) => {
     if (responsavelFiltro !== "Todos" && o.responsavel !== responsavelFiltro) return false;
     if (etapaFiltro !== "Todos" && o.etapa !== etapaFiltro) return false;
-    if (motivoSelecionado && o.motivo !== motivoSelecionado) return false;
+    if (motivoSelecionado && o.motivoPerda !== motivoSelecionado) return false;
     return true;
   });
 
-  const valorPerdido = calcularValorPerdido(
-    responsavelFiltro === "Todos" && etapaFiltro === "Todos" && !motivoSelecionado
-      ? oportunidadesPerdidas
-      : perdasFiltradas,
-  );
-  const motivoPrincipal = calcularMotivoPrincipalPerda();
+  const valorPerdido = calcularValorPerdido(perdasFiltradas);
+  const motivoPrincipal = calcularMotivoPrincipalPerda(todasAsPerdas);
+  const distribuicaoMotivos = calcularDistribuicaoMotivosPerda(todasAsPerdas);
+  const serieDiaria = calcularSerieDiaria(todosOsCards(funis));
 
-  const etapas = Array.from(new Set(oportunidadesPerdidas.map((o) => o.etapa)));
+  const etapas = Array.from(new Set(todasAsPerdas.map((o) => o.etapa)));
   const etapaMaisAfetada = etapas
-    .map((e) => ({ etapa: e, total: oportunidadesPerdidas.filter((o) => o.etapa === e).length }))
+    .map((e) => ({ etapa: e, total: todasAsPerdas.filter((o) => o.etapa === e).length }))
     .sort((a, b) => b.total - a.total)[0];
 
-  function agrupar(chaveFn: (o: (typeof oportunidadesPerdidas)[number]) => string) {
-    const chaves = Array.from(new Set(oportunidadesPerdidas.map(chaveFn)));
-    return chaves.map((chave) => {
-      const doGrupo = oportunidadesPerdidas.filter((o) => chaveFn(o) === chave);
-      return { chave, total: doGrupo.length };
-    });
+  function agrupar(chaveFn: (o: PerdaComEtapa) => string | undefined) {
+    const chaves = Array.from(new Set(todasAsPerdas.map(chaveFn).filter((v): v is string => Boolean(v))));
+    return chaves.map((chave) => ({ chave, total: todasAsPerdas.filter((o) => chaveFn(o) === chave).length }));
   }
 
   const porEtapa = agrupar((o) => o.etapa);
   const porResponsavel = agrupar((o) => o.responsavel);
-  const porOrigem = agrupar((o) => origemDoCliente(o.cliente));
+  const porOrigem = agrupar((o) => o.origem);
 
-  const totalPerdas = oportunidadesPerdidas.length;
+  const totalPerdas = todasAsPerdas.length;
 
   const filtros: FiltroDef[] = [
     {
@@ -116,6 +117,15 @@ export default function MotivosPerdaPage() {
           viewKey="motivos-perda"
         />
 
+        {totalPerdas === 0 ? (
+          <div className="card mb14">
+            <div className="dados-nao-conectados" style={{ padding: 17 }}>
+              Você ainda não possui dados suficientes para gerar este indicador — marque negócios
+              como &quot;perdido&quot; no Funil (com motivo) pra ver a análise aqui.
+            </div>
+          </div>
+        ) : null}
+
         <div className="grid kpi4">
           <KpiCard
             label="Valor perdido"
@@ -127,7 +137,7 @@ export default function MotivosPerdaPage() {
           <KpiCard
             label="Principal motivo"
             value={motivoPrincipal.motivo}
-            sub={`${motivoPrincipal.valor}% das perdas`}
+            sub={totalPerdas > 0 ? `${motivoPrincipal.valor.toFixed(0)}% das perdas` : undefined}
             formula={motivoPrincipal.formula}
           />
           <KpiCard
@@ -139,49 +149,63 @@ export default function MotivosPerdaPage() {
         </div>
 
         <ChartCard title="Motivos de perda no período">
-          <BarList
-            items={motivosPerda.map((m) => ({
-              chave: m.motivo,
-              label: m.motivo,
-              meta: `${m.quantidade} ${m.quantidade === 1 ? "perda" : "perdas"} · ${m.percentual}% · ${m.valor}`,
-              percentual: m.percentual,
-              cor: CORES_MOTIVO[m.motivo] ?? "#d64545",
-              onClick: () => setMotivoSelecionado((atual) => (atual === m.motivo ? null : m.motivo)),
-            }))}
-          />
+          {distribuicaoMotivos.length === 0 ? (
+            <p className="hint" style={{ padding: 17 }}>Nenhum motivo de perda registrado ainda.</p>
+          ) : (
+            <BarList
+              items={distribuicaoMotivos.map((m) => ({
+                chave: m.motivo,
+                label: m.motivo,
+                meta: `${m.quantidade} ${m.quantidade === 1 ? "perda" : "perdas"} · ${m.percentual.toFixed(0)}%`,
+                percentual: m.percentual,
+                cor: CORES_MOTIVO[m.motivo] ?? "#d64545",
+                onClick: () => setMotivoSelecionado((atual) => (atual === m.motivo ? null : m.motivo)),
+              }))}
+            />
+          )}
         </ChartCard>
 
         <ChartCard title="Evolução das perdas no período">
-          <LineChart
-            series={[
-              {
-                chave: "perdidas",
-                cor: "#d64545",
-                label: "Negociações perdidas",
-                pontos: serieDashboardRelatorios.map((p) => ({ x: p.dia, y: p.perdidas })),
-              },
-            ]}
-          />
+          {serieDiaria.length === 0 ? (
+            <p className="hint" style={{ padding: 17 }}>Ainda sem movimento suficiente pra traçar uma evolução.</p>
+          ) : (
+            <LineChart
+              series={[
+                {
+                  chave: "perdidas",
+                  cor: "#d64545",
+                  label: "Negociações perdidas",
+                  pontos: serieDiaria.map((p) => ({ x: p.dia, y: p.perdas })),
+                },
+              ]}
+            />
+          )}
         </ChartCard>
 
         <div className="grid split2">
           <ChartCard title="Motivos por etapa">
-            <BarList
-              items={porEtapa.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))}
-            />
+            {porEtapa.length === 0 ? (
+              <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
+            ) : (
+              <BarList items={porEtapa.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
+            )}
           </ChartCard>
           <ChartCard title="Motivos por responsável">
-            <BarList
-              items={porResponsavel.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))}
-            />
+            {porResponsavel.length === 0 ? (
+              <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
+            ) : (
+              <BarList items={porResponsavel.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
+            )}
           </ChartCard>
         </div>
 
         <div className="grid split2">
           <ChartCard title="Motivos por origem">
-            <BarList
-              items={porOrigem.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))}
-            />
+            {porOrigem.length === 0 ? (
+              <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
+            ) : (
+              <BarList items={porOrigem.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
+            )}
           </ChartCard>
           <ChartCard title="Produtos ou serviços mais afetados">
             <div className="dados-nao-conectados">
@@ -213,19 +237,26 @@ export default function MotivosPerdaPage() {
               </tr>
             </thead>
             <tbody>
+              {perdasFiltradas.length === 0 ? (
+                <tr>
+                  <td colSpan={7}>
+                    <p className="hint" style={{ padding: 17 }}>Nenhuma negociação perdida com esse filtro.</p>
+                  </td>
+                </tr>
+              ) : null}
               {perdasFiltradas.map((o) => (
-                <tr key={o.cliente}>
+                <tr key={o.id}>
                   <td>
-                    <Link href={`/jornada-cliente?contato=${slugId(o.cliente)}`} className="link">
-                      {o.cliente}
+                    <Link href={`/jornada-cliente?contato=${slugId(o.nome)}`} className="link">
+                      {o.nome}
                     </Link>
                   </td>
-                  <td>{o.responsavel}</td>
-                  <td>{o.motivo}</td>
+                  <td>{o.responsavel ?? "—"}</td>
+                  <td>{o.motivoPerda ?? "—"}</td>
                   <td>{o.etapa}</td>
-                  <td>{origemDoCliente(o.cliente)}</td>
+                  <td>{o.origem}</td>
                   <td>{o.valor}</td>
-                  <td>{o.data}</td>
+                  <td>{o.dataFechamento ?? "—"}</td>
                 </tr>
               ))}
             </tbody>

@@ -19,9 +19,12 @@ const FREQUENCIAS: { valor: FrequenciaNotificacao; label: string }[] = [
   { valor: "desativado", label: "Desativado" },
 ];
 
-/** Notificações (item 35) — a matriz evento × canal × frequência é nova (mockada, só estado local),
- * mas os 3 toggles que já existiam (som + toast dentro do CRM, `notificacoes-context.tsx`) continuam
- * aqui intactos, porque são a única parte desta tela que já é de verdade funcional. */
+/** Notificações — todo controle desta tela persiste de verdade: os 3 toggles de topo salvam via
+ * `notificacoes-context.tsx` (chave `"notificacoes"`), a matriz evento × canal × frequência salva
+ * via `configuracoes-context.tsx` (chave `"configuracoes"`) — chaves diferentes de preferência, mas
+ * as duas gravam no banco (`Preferencia`) e sobrevivem a refresh/logout. Nenhum controle aqui é só
+ * visual. (O que ainda não existe é o *disparo* de verdade — e-mail/push/WhatsApp respeitando essa
+ * matriz —, fora do escopo desta tela: aqui só a preferência é configurada.) */
 export function NotificacoesSecao() {
   const {
     notificacoesAtivas,

@@ -11,8 +11,8 @@ import { useFunis } from "@/lib/funis-context";
  * contatos/negócios (via `useContatos`/`useFunis`, reativos — não a cópia estática de `@/lib/data`,
  * que ficaria dessincronizada de edições feitas em /contatos ou /funil) com as criadas em
  * Configurações > Etiquetas (mesma fonte que `EtiquetasSecao`), sem duplicar. "+ Criar nova etiqueta"
- * grava em `configuracoes-context` (front-end apenas, sem backend) — assim a etiqueta criada aqui
- * também aparece em Configurações e em outros blocos. Exportado porque `CondicaoForm.tsx` usa a
+ * grava em `configuracoes-context` (persiste de verdade, ver `PUT /api/preferencias/{chave}`) —
+ * assim a etiqueta criada aqui também aparece em Configurações e em outros blocos. Exportado porque `CondicaoForm.tsx` usa a
  * mesma lógica — evita ter duas implementações paralelas lendo fontes diferentes.
  */
 export function useEtiquetasDisponiveis(): string[] {

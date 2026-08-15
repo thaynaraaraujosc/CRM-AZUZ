@@ -10,9 +10,10 @@ import {
 
 import type { ColunaTarefas } from "@/lib/data";
 
-/** Data de referência ("hoje") usada em todo o CRM mockado — sem backend/relógio real, fixamos um
- * dia pra Agenda, Central do Dia e o restante do app concordarem sobre o que é "hoje". */
-export const HOJE_ISO = "2026-07-30";
+/** Data de "hoje" de verdade (relógio real, não mais um dia fixo no passado) — calculada uma vez
+ * quando o app carrega, pra Agenda, Central do Dia e o restante do app concordarem sobre o que é
+ * "hoje" na mesma sessão. */
+export const HOJE_ISO = new Date().toISOString().slice(0, 10);
 
 export type StatusCompromisso = "agendado" | "concluido" | "cancelado";
 
@@ -87,12 +88,13 @@ function pad2(n: number) {
 
 /**
  * Deriva compromissos a partir das tarefas que têm data (mesma heurística que a Agenda já usava:
- * `TaskCard.data` é texto livre tipo "28 jul", sem ano — assume sempre 2026, o ano de referência do
- * app). Front-end apenas: quando o CRM tiver um jeito real de agendar hora/local numa tarefa, essa
- * função para de ser necessária. Reaproveitada tanto pela página Agenda quanto pela Central do Dia,
- * pra não ter duas heurísticas de parsing divergentes.
+ * `TaskCard.data` é texto livre tipo "28 jul", sem ano — assume o ano corrente por padrão, quem
+ * chama pode passar outro pra navegar entre anos no calendário). Front-end apenas: quando o CRM
+ * tiver um jeito real de agendar hora/local numa tarefa, essa função para de ser necessária.
+ * Reaproveitada tanto pela página Agenda quanto pela Central do Dia, pra não ter duas heurísticas
+ * de parsing divergentes.
  */
-export function compromissosDeTarefas(colunas: ColunaTarefas[], ano = 2026): Compromisso[] {
+export function compromissosDeTarefas(colunas: ColunaTarefas[], ano = new Date().getFullYear()): Compromisso[] {
   const compromissos: Compromisso[] = [];
   for (const coluna of colunas) {
     if (coluna.titulo === "Concluídas") continue;

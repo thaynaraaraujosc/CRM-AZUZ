@@ -13,7 +13,6 @@ import { createPortal } from "react-dom";
 
 import {
   classeOrigem,
-  conversas,
   motivosPerda,
   oportunidadesPerdidas,
   type Canal,
@@ -27,7 +26,10 @@ import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { executarFluxo } from "@/lib/automation-flow/motor";
 import { useContatos } from "@/lib/contatos-context";
+import { useConversas, type ConversaReal } from "@/lib/conversas-context";
+import { useEquipe } from "@/lib/equipe-context";
 import { useTarefas } from "@/lib/tarefas-context";
+import { formatarTempoRelativoReal } from "@/lib/datas";
 import { estimarMinutosAtras, gerarLinhaDoTempo, type Evento } from "@/lib/timeline";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { Timeline } from "@/components/timeline";
@@ -36,9 +38,9 @@ import {
   useBibliotecaDocumentos,
   CATEGORIAS_DOCUMENTO,
 } from "@/lib/biblioteca-documentos-context";
+import { HOJE_ISO } from "@/lib/agenda-context";
 import { useFunis } from "@/lib/funis-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
-import { useNotificacoes } from "@/lib/notificacoes-context";
 import {
   useConfigConversas,
   FUNDOS_PRESET,
@@ -48,6 +50,7 @@ import {
   type FundoConversa,
 } from "@/lib/conversas-config-context";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useIntegracaoNaoOficial } from "@/components/configuracoes/useIntegracaoNaoOficial";
 import {
   CanalBadge,
   IconAutomacoes,
@@ -316,8 +319,30 @@ const EMOJI_CATEGORIAS = [
   },
 ] as const;
 
-/** Mesmo dia de referência usado em todo o app (ver `today` em lib/data.ts). */
-const HOJE_ISO = "2026-07-30";
+/**
+ * Placeholder seguro pra quando ainda não existe nenhuma conversa real (workspace novo, ou
+ * ainda carregando) — em vez de deixar `aberta` ser `undefined` (o que quebraria os dezenas de
+ * `useState`/cálculos que assumem uma conversa selecionada, declarados antes de qualquer retorno
+ * condicional possível, por causa das Regras de Hooks), usa esse objeto vazio. A tela de fato
+ * mostra "nenhuma conversa" naturalmente: a lista lateral fica vazia (`conversas.length === 0`) e
+ * o painel principal não tem nada de real pra exibir (sem nome, sem mensagem).
+ */
+const CONVERSA_VAZIA: ConversaReal = {
+  id: "__vazio__",
+  workspaceId: "",
+  contatoId: null,
+  nome: "",
+  initials: "?",
+  canal: "WhatsApp",
+  contato: null,
+  origem: "Direto",
+  status: "Não respondido",
+  naoLidas: 0,
+  favorita: false,
+  atendenteSelecionado: null,
+  criadoEm: new Date(0).toISOString(),
+  atualizadoEm: new Date(0).toISOString(),
+};
 
 function localizarNoFunil(
   listaFunis: Funil[],
@@ -343,12 +368,13 @@ type HistoricoItem = {
 /** Monta o histórico automático (etapa do funil, tempo até fechar/perder) a partir dos dados já existentes do card no funil. */
 function historicoInicialDoContato(
   listaFunis: Funil[],
-  contato: { id: string; nome: string; mensagens: { hora?: string }[] },
+  contato: { id: string; nome: string },
+  primeiraMensagemHora?: string,
 ): HistoricoItem[] {
   const localizacao = localizarNoFunil(listaFunis, contato.nome);
   const itens: HistoricoItem[] = [];
 
-  const primeiraHora = contato.mensagens[0]?.hora;
+  const primeiraHora = primeiraMensagemHora;
   itens.push({
     id: `hist-inicio-${contato.id}`,
     tipo: "sistema",
@@ -417,7 +443,7 @@ function useFecharAoClicarFora(
 
 function ConversasPageInner() {
   const searchParams = useSearchParams();
-  const { funis, atribuirContatoAoFunil } = useFunis();
+  const { funis, setFunis, atribuirContatoAoFunil } = useFunis();
   const {
     contatos,
     salvarDadosContato,
@@ -426,10 +452,18 @@ function ConversasPageInner() {
     removerEtiqueta,
     criarContato,
   } = useContatos();
+  const {
+    conversas,
+    carregando: carregandoConversas,
+    marcarComoLida: marcarConversaLida,
+    alternarFavorita: alternarFavoritaConversa,
+    atualizarStatus: atualizarStatusConversa,
+    atribuirAtendente: atribuirAtendenteConversa,
+  } = useConversas();
+  const { membros: membrosEquipe } = useEquipe();
   const { colunas: tarefas } = useTarefas();
   const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
   const { fluxos, dispararEvento, registrarExecucao } = useAutomationFlows();
-  const { simularNovaMensagem } = useNotificacoes();
   const { config, atualizarConfig, fundoDaConversa } = useConfigConversas();
   const [configConversasAberto, setConfigConversasAberto] = useState(false);
   const [configAba, setConfigAba] = useState<
@@ -482,9 +516,8 @@ function ConversasPageInner() {
   async function salvarConfigConversas() {
     setConfigStatusSalvar("salvando");
     try {
-      // Camada de serviço provisória — hoje só grava localStorage via o
-      // contexto; quando existir back-end, essa função troca pra uma
-      // chamada de API que persiste as preferências do usuário/equipe.
+      // `atualizarConfig` já persiste de verdade (ver configuracoes-context.tsx) — o delay aqui é
+      // só pra dar a sensação de salvamento antes de fechar o painel.
       await new Promise((resolve) => setTimeout(resolve, 450));
       atualizarConfig(configRascunho);
       setConfigStatusSalvar("sucesso");
@@ -549,13 +582,18 @@ function ConversasPageInner() {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
   }
-  const [selectedId, setSelectedId] = useState(() => {
+  // `conversas` só chega depois do fetch no mount do ConversasProvider — a inicialização
+  // preguiçosa de `useState` não serve aqui (ela rodaria antes da lista existir). Em vez de
+  // useEffect, ajusta durante a renderização (padrão já usado nesta página, ver `abertaIdAnterior`
+  // mais abaixo): só seta uma vez, na primeira renderização em que a lista deixa de estar vazia.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIdInicializado, setSelectedIdInicializado] = useState(false);
+  if (!selectedIdInicializado && conversas.length > 0) {
     const nomeContato = searchParams.get("contato");
-    const encontrada = nomeContato
-      ? conversas.find((c) => c.nome === nomeContato)
-      : null;
-    return (encontrada ?? conversas[0]).id;
-  });
+    const encontrada = nomeContato ? conversas.find((c) => c.nome === nomeContato) : null;
+    setSelectedId((encontrada ?? conversas[0]).id);
+    setSelectedIdInicializado(true);
+  }
   const [infoAberto, setInfoAberto] = useState(false);
   const [abaInfo, setAbaInfo] = useState<
     "resumo" | "contato" | "negociacao" | "atividades" | "historico"
@@ -610,10 +648,9 @@ function ConversasPageInner() {
 
   function alternarFavorita(id: string) {
     const c = conversas.find((c) => c.id === id);
-    setFavoritasOverride((prev) => ({
-      ...prev,
-      [id]: !(prev[id] ?? c?.favorita ?? false),
-    }));
+    const proximo = !(favoritasOverride[id] ?? c?.favorita ?? false);
+    setFavoritasOverride((prev) => ({ ...prev, [id]: proximo }));
+    alternarFavoritaConversa(id, proximo);
     setRowMenuAberto(null);
   }
 
@@ -639,6 +676,7 @@ function ConversasPageInner() {
 
   function encerrarAtendimento(id: string) {
     setEncerradas((prev) => new Set(prev).add(id));
+    atualizarStatusConversa(id, "Finalizado");
     setRowMenuAberto(null);
   }
   const [midiasAberto, setMidiasAberto] = useState(false);
@@ -648,6 +686,31 @@ function ConversasPageInner() {
   const [conectarAba, setConectarAba] = useState<"qr" | "api">("qr");
   const [conectarPos, setConectarPos] = useState<{ x: number; y: number } | null>(null);
   const conectarRef = useRef<HTMLDivElement>(null);
+  const naoOficial = useIntegracaoNaoOficial();
+  // Status da API oficial (Meta) — sem hook compartilhado com polling (o `useIntegracaoMeta` só
+  // busca uma vez); polling próprio aqui porque a conversa some/reaparece conforme o canal
+  // conecta/desconecta, então precisa saber o estado atual, não só o do primeiro carregamento.
+  const [metaWhatsappConectado, setMetaWhatsappConectado] = useState(false);
+  const [statusMetaCarregado, setStatusMetaCarregado] = useState(false);
+  useEffect(() => {
+    function verificarMeta() {
+      fetch("/api/integracoes/meta?provedor=meta_whatsapp")
+        .then((r) => r.json())
+        .then((dados: { status?: string }) => {
+          setMetaWhatsappConectado(dados.status === "conectado");
+          setStatusMetaCarregado(true);
+        })
+        .catch(() => setStatusMetaCarregado(true));
+    }
+    verificarMeta();
+    const intervalo = setInterval(verificarMeta, 5000);
+    return () => clearInterval(intervalo);
+  }, []);
+  // Só passa a filtrar depois que os dois status (Meta e Baileys) já responderam pelo menos uma
+  // vez — sem essa guarda, a lista de conversas do WhatsApp pisca "vazia" por um instante em toda
+  // carga de página, mesmo com um canal já conectado.
+  const statusWhatsappPronto = statusMetaCarregado && naoOficial.estado !== null;
+  const whatsappConectado = metaWhatsappConectado || naoOficial.estado?.status === "conectado";
   const [contatoDetalhePos, setContatoDetalhePos] = useState<{ x: number; y: number } | null>(null);
   const contatoDetalheRef = useRef<HTMLDivElement>(null);
   const [contatoDetalheAberto, setContatoDetalheAberto] = useState<{
@@ -681,13 +744,14 @@ function ConversasPageInner() {
   const [canalTopRect, setCanalTopRect] = useState<DOMRect | null>(null);
   const [canalTopFiltro, setCanalTopFiltro] = useState("Todos");
 
-  const atendentesDisponiveis = Array.from(
-    new Set(conversas.map((c) => c.atendenteSelecionado)),
-  );
+  const atendentesDisponiveis = membrosEquipe.map((m) => m.nome);
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
   const conversasFiltradas = conversas
     .filter((c) => {
+      // Conversa de WhatsApp sem nenhum canal conectado (nem Meta, nem QR Code) some da lista —
+      // volta a aparecer sozinha quando reconectar (não apaga nada, só deixa de listar).
+      if (c.canal === "WhatsApp" && statusWhatsappPronto && !whatsappConectado) return false;
       if (!mostrarArquivadas && arquivadas.has(c.id)) return false;
       if (mostrarArquivadas) return arquivadas.has(c.id);
       if (filtroConversa === "nao-lidas" && (!c.naoLidas || lidas.has(c.id))) return false;
@@ -697,16 +761,20 @@ function ConversasPageInner() {
       if (canalTopFiltro !== "Todos" && c.origem !== canalTopFiltro) return false;
       if (!buscaConversa.trim()) return true;
       const termo = buscaConversa.trim().toLowerCase();
-      const ultima = c.mensagens[c.mensagens.length - 1];
-      return (
-        c.nome.toLowerCase().includes(termo) ||
-        ultima.texto.toLowerCase().includes(termo)
-      );
+      return c.nome.toLowerCase().includes(termo);
     })
     .sort((a, b) => Number(fixadas.has(b.id)) - Number(fixadas.has(a.id)));
 
-  const aberta = conversas.find((c) => c.id === selectedId) ?? conversas[0];
-  const { tarefa } = aberta;
+  const aberta = conversas.find((c) => c.id === selectedId) ?? conversas[0] ?? CONVERSA_VAZIA;
+  // `Conversa` real não carrega mais uma "tarefa vinculada" embutida (ver plano) — placeholder
+  // vazio mantém `tarefa.*` funcionando em todo o resto do arquivo, mostrando "sem tarefa" sempre.
+  const tarefa = {
+    data: "",
+    oQueFazer: "",
+    valor: "—",
+    responsavel: "",
+    anexo: null as { arquivo: string; detalhe: string } | null,
+  };
   const localizacao = localizarNoFunil(funis, aberta.nome);
 
   const contatoDaConversa = contatos.find((c) => c.nome === aberta.nome) ?? null;
@@ -728,7 +796,7 @@ function ConversasPageInner() {
     etapaPadraoPara(localizacao?.funilId ?? funis[0]?.id ?? ""),
   );
   const [atendenteSelecionado, setAtendenteSelecionado] = useState(
-    aberta.atendenteSelecionado,
+    aberta.atendenteSelecionado ?? "",
   );
   const [emailContato, setEmailContato] = useState(contatoDaConversa?.email ?? "");
   const [whatsappContato, setWhatsappContato] = useState(
@@ -751,7 +819,7 @@ function ConversasPageInner() {
   const [estadoContato, setEstadoContato] = useState(contatoDaConversa?.estado ?? "");
   const [paisContato, setPaisContato] = useState(contatoDaConversa?.pais ?? "");
   const [canalPreferidoContato, setCanalPreferidoContato] = useState(
-    contatoDaConversa?.canalPreferido ?? aberta.canal,
+    contatoDaConversa?.canalPreferido ?? (aberta.canal as Canal),
   );
   const [melhorHorarioContato, setMelhorHorarioContato] = useState(
     contatoDaConversa?.melhorHorario ?? "",
@@ -915,9 +983,6 @@ function ConversasPageInner() {
   const [mensagensApagadasPorContato, setMensagensApagadasPorContato] = useState<
     Record<string, Set<string>>
   >({});
-  const [mensagensApagadasTodosPorContato, setMensagensApagadasTodosPorContato] = useState<
-    Record<string, Set<string>>
-  >({});
   const [mensagensFavoritasPorContato, setMensagensFavoritasPorContato] = useState<
     Record<string, Set<string>>
   >({});
@@ -927,14 +992,11 @@ function ConversasPageInner() {
     elegivel: boolean;
     motivoIndisponivel?: string;
   } | null>(null);
-  const [apagandoChave, setApagandoChave] = useState<string | null>(null);
-  const [erroApagarChave, setErroApagarChave] = useState<string | null>(null);
   const [detalhesMensagem, setDetalhesMensagem] = useState<{ msg: ConvMensagem; chave: string } | null>(
     null,
   );
 
   const mensagensApagadas = mensagensApagadasPorContato[aberta.nome] ?? new Set<string>();
-  const mensagensApagadasTodos = mensagensApagadasTodosPorContato[aberta.nome] ?? new Set<string>();
   const mensagensFavoritas = mensagensFavoritasPorContato[aberta.nome] ?? new Set<string>();
 
   function abrirMenuMensagem(chave: string, rect: DOMRect) {
@@ -970,10 +1032,6 @@ function ConversasPageInner() {
 
   /** Acha a mensagem original (semente ou extra) a partir da mesma "chave" usada nos mapas de apagadas/favoritas. */
   function encontrarMensagemPorChave(chave: string): ConvMensagem | null {
-    if (chave.startsWith("seed-")) {
-      const indice = Number(chave.slice("seed-".length));
-      return aberta.mensagens[indice] ?? null;
-    }
     const extras = mensagensExtraPorContato[aberta.nome] ?? [];
     return extras.find((m, i) => (m.id ?? `extra-${i}`) === chave) ?? null;
   }
@@ -1051,25 +1109,14 @@ function ConversasPageInner() {
     setConfirmarApagar(null);
   }
 
-  async function confirmarApagarParaTodos() {
+  function confirmarApagarParaTodos() {
     if (!confirmarApagar) return;
     const { chave } = confirmarApagar;
-    setApagandoChave(chave);
-    setErroApagarChave(null);
-    // Camada de serviço provisória — no back-end real essa chamada solicita
-    // a exclusão pro canal e só confirma quando ele retornar sucesso.
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    if (Math.random() < 0.12) {
-      setApagandoChave(null);
-      setErroApagarChave(chave);
-      return;
-    }
-    setMensagensApagadasTodosPorContato((prev) => {
-      const atual = new Set(prev[aberta.nome] ?? []);
-      atual.add(chave);
-      return { ...prev, [aberta.nome]: atual };
-    });
-    setApagandoChave(null);
+    // Grava de verdade em MensagemExtra.apagadaParaTodos (via o mesmo PUT sincronizado que
+    // qualquer outra mudança de mensagem usa) — some do balão pra qualquer sessão que reabrir essa
+    // conversa, não só localmente. Vale só dentro do CRM: nenhuma integração hoje (Meta/Baileys)
+    // expõe um jeito de recolher a mensagem do lado do destinatário no WhatsApp.
+    atualizarMensagem(aberta.nome, chave, { apagadaParaTodos: true });
     setConfirmarApagar(null);
   }
 
@@ -1367,16 +1414,17 @@ function ConversasPageInner() {
     if (!audioPreview) return;
     setAudioEnviando(true);
     try {
-      // Camada de serviço provisória — hoje só transforma o blob local em
-      // Object URL pra tocar na hora; quando existir back-end, aqui sobe o
-      // arquivo de verdade e troca a URL pela do storage antes de enviar.
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      // Converte o blob gravado em base64 (mesmo padrão de imagem/documento — ver
+      // `lerComoDataUrl`) antes de gravar a mensagem, pra persistir de verdade no banco (campo
+      // `extras` de MensagemExtra) em vez de um blob: URL que só existe nesta aba do navegador.
+      const url = await lerComoDataUrl(audioPreview.blob);
+      URL.revokeObjectURL(audioPreview.url);
       adicionarMensagem({
         tipo: "out",
         texto: "",
         hora: horaAgora(),
         audio: {
-          url: audioPreview.url,
+          url,
           duracao: audioPreview.duracao,
           waveform: audioPreview.waveform,
         },
@@ -1386,6 +1434,8 @@ function ConversasPageInner() {
       setAudioNiveis([]);
       setAudioPreviewTocando(false);
       setAudioPreviewProgresso(0);
+    } catch {
+      setAudioPermissaoErro("Não deu pra processar o áudio gravado. Tente gravar de novo.");
     } finally {
       setAudioEnviando(false);
     }
@@ -1407,7 +1457,7 @@ function ConversasPageInner() {
     const funilId = localizacao?.funilId ?? funis[0]?.id ?? "";
     setFunilSelecionadoId(funilId);
     setEtapaSelecionada(etapaPadraoPara(funilId));
-    setAtendenteSelecionado(aberta.atendenteSelecionado);
+    setAtendenteSelecionado(aberta.atendenteSelecionado ?? "");
     setEmailContato(contatoDaConversa?.email ?? "");
     setWhatsappContato(contatoDaConversa?.whatsapp ?? "");
     setNascimentoContato(contatoDaConversa?.nascimento ?? "");
@@ -1418,7 +1468,7 @@ function ConversasPageInner() {
     setCidadeContato(contatoDaConversa?.cidade ?? "");
     setEstadoContato(contatoDaConversa?.estado ?? "");
     setPaisContato(contatoDaConversa?.pais ?? "");
-    setCanalPreferidoContato(contatoDaConversa?.canalPreferido ?? aberta.canal);
+    setCanalPreferidoContato(contatoDaConversa?.canalPreferido ?? (aberta.canal as Canal));
     setMelhorHorarioContato(contatoDaConversa?.melhorHorario ?? "");
     setEditandoContato(false);
     setStatusSalvarContato("ocioso");
@@ -1434,7 +1484,11 @@ function ConversasPageInner() {
   if (!historicoPorContato[aberta.nome]) {
     setHistoricoPorContato((prev) => ({
       ...prev,
-      [aberta.nome]: historicoInicialDoContato(funis, aberta),
+      [aberta.nome]: historicoInicialDoContato(
+        funis,
+        aberta,
+        mensagensExtraPorContato[aberta.nome]?.[0]?.hora,
+      ),
     }));
   }
 
@@ -1485,7 +1539,7 @@ function ConversasPageInner() {
   const eventosTimelineContato: Evento[] = contatoDaConversa
     ? gerarLinhaDoTempo(
         contatoDaConversa.id,
-        { contatos, conversas, tarefas, funis, oportunidadesPerdidas },
+        { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis, oportunidadesPerdidas },
         eventosExtrasTimeline,
       )
     : eventosExtrasTimeline.slice().sort((a, b) => a.minutosAtras - b.minutosAtras);
@@ -1494,7 +1548,8 @@ function ConversasPageInner() {
     setHistoricoPorContato((prev) => ({
       ...prev,
       [aberta.nome]: [
-        ...(prev[aberta.nome] ?? historicoInicialDoContato(funis, aberta)),
+        ...(prev[aberta.nome] ??
+          historicoInicialDoContato(funis, aberta, mensagensExtraPorContato[aberta.nome]?.[0]?.hora)),
         { id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, tipo, texto, quando: "agora" },
       ],
     }));
@@ -1557,15 +1612,66 @@ function ConversasPageInner() {
     atualizarMensagem(aberta.nome, id, { status: "reproduzido" });
   }
 
+  /** Conversa "pertence" ao canal WhatsApp via QR Code (Baileys) quando a última mensagem
+   * recebida chegou por ele — decide pra onde a resposta do atendente deve sair de verdade. */
+  function contatoUsaWhatsappNaoOficial(): boolean {
+    const extras = mensagensExtraPorContato[aberta.nome] ?? [];
+    for (let i = extras.length - 1; i >= 0; i--) {
+      if (extras[i].tipo === "in") return extras[i].canal === "whatsapp_nao_oficial";
+    }
+    return false;
+  }
+
   function enviarMensagemTexto() {
     const texto = mensagemTexto.trim();
     if (!texto) return;
+    const viaBaileys = contatoUsaWhatsappNaoOficial();
     adicionarMensagem({
       tipo: "out",
       texto,
       hora: horaAgora(),
       respondendoA: respondendoMensagem ?? undefined,
+      canal: viaBaileys ? "whatsapp_nao_oficial" : undefined,
     });
+    // Erro fica registrado como mensagem de sistema DENTRO da conversa (não só um toast que some
+    // sozinho em poucos segundos) — assim dá pra ver o motivo exato depois, sem precisar
+    // screenshotar na hora certa.
+    function avisarFalhaNaConversa(prefixo: string, erro: unknown) {
+      const motivo = erro instanceof Error && erro.message ? erro.message : "motivo desconhecido";
+      adicionarMensagem({ tipo: "system", texto: `⚠️ Falha ao enviar (${prefixo}): ${motivo}`, hora: horaAgora() });
+      avisarAutomacao(`Falha ao enviar pelo ${prefixo} — veja o motivo na conversa.`);
+    }
+
+    if (viaBaileys && contatoDaConversa?.whatsapp) {
+      fetch("/api/integracoes/whatsapp-nao-oficial/enviar", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ destinatario: contatoDaConversa.whatsapp, texto }),
+      })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+        })
+        .catch((erro) => avisarFalhaNaConversa("WhatsApp QR Code", erro));
+    } else if (!viaBaileys && aberta.canal === "WhatsApp" && (aberta.contato || contatoDaConversa?.whatsapp)) {
+      fetch("/api/integracoes/meta/whatsapp/enviar", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ destinatario: aberta.contato ?? contatoDaConversa?.whatsapp, texto }),
+      })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+        })
+        .catch((erro) => avisarFalhaNaConversa("WhatsApp Meta", erro));
+    } else if (!viaBaileys) {
+      // Nenhum dos dois canais reais bateu (sem número/contato associado à conversa) — sem isso,
+      // a mensagem parecia "sumir": ficava só no estado local, sem nenhum aviso de que não tinha
+      // pra onde mandar de verdade.
+      adicionarMensagem({
+        tipo: "system",
+        texto: "⚠️ Não enviado: essa conversa não tem um número de WhatsApp associado.",
+        hora: horaAgora(),
+      });
+    }
     setMensagemTexto("");
     setRespondendoMensagem(null);
   }
@@ -2096,25 +2202,58 @@ function ConversasPageInner() {
     setContatoPickerEnviando(true);
     setContatoPickerErro(null);
     try {
-      // Camada de serviço provisória — hoje só cria a bolha localmente; no
-      // futuro monta o cartão no formato que o canal aceitar (vCard, cartão
-      // nativo da API) e confirma a entrega real antes de fechar.
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const viaBaileys = contatoUsaWhatsappNaoOficial();
+      const destinatario = viaBaileys
+        ? contatoDaConversa?.whatsapp
+        : aberta.canal === "WhatsApp"
+          ? aberta.contato ?? contatoDaConversa?.whatsapp
+          : undefined;
+
       for (const c of contatosSelecionadosPicker) {
+        const contatoPayload = {
+          nome: c.nome,
+          whatsapp: previaCampos.telefonePrincipal ? c.whatsapp : undefined,
+          telefoneFixo: previaCampos.telefoneAlternativo ? c.telefoneFixo : undefined,
+          email: previaCampos.email ? c.email : undefined,
+          empresa: previaCampos.empresa ? c.empresa : undefined,
+          cargo: previaCampos.cargo ? c.cargo : undefined,
+        };
         adicionarMensagem({
           tipo: "out",
           texto: `👤 Contato compartilhado: ${c.nome}`,
           hora: horaAgora(),
-          contatoCompartilhado: {
-            nome: c.nome,
-            initials: c.initials,
-            whatsapp: previaCampos.telefonePrincipal ? c.whatsapp : undefined,
-            telefoneFixo: previaCampos.telefoneAlternativo ? c.telefoneFixo : undefined,
-            email: previaCampos.email ? c.email : undefined,
-            empresa: previaCampos.empresa ? c.empresa : undefined,
-            cargo: previaCampos.cargo ? c.cargo : undefined,
-          },
+          contatoCompartilhado: { ...contatoPayload, initials: c.initials },
         });
+
+        if (!destinatario) {
+          adicionarMensagem({
+            tipo: "system",
+            texto: "⚠️ Não enviado: essa conversa não tem um número de WhatsApp associado.",
+            hora: horaAgora(),
+          });
+          continue;
+        }
+
+        // Envio real do cartão (vCard) pelo canal certo — mesmo padrão de `enviarMensagemTexto`:
+        // a bolha já entrou na conversa acima, o envio roda em segundo plano e qualquer falha vira
+        // uma mensagem de sistema, não um toast que some sozinho.
+        const rota = viaBaileys ? "/api/integracoes/whatsapp-nao-oficial/enviar" : "/api/integracoes/meta/whatsapp/enviar";
+        fetch(rota, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ destinatario, contato: contatoPayload }),
+        })
+          .then(async (r) => {
+            if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+          })
+          .catch((erro) => {
+            const motivo = erro instanceof Error && erro.message ? erro.message : "motivo desconhecido";
+            adicionarMensagem({
+              tipo: "system",
+              texto: `⚠️ Falha ao enviar contato (${c.nome}): ${motivo}`,
+              hora: horaAgora(),
+            });
+          });
       }
       fecharContatoPicker();
     } catch {
@@ -2139,7 +2278,8 @@ function ConversasPageInner() {
   async function salvarNovoContato(enviarDepois: boolean) {
     if (!novoContatoNome.trim() || !validarNovoContato()) return;
     setNovoContatoSalvando(true);
-    // Camada de serviço provisória — hoje só grava no estado do front-end.
+    // `criarContato` já persiste de verdade (ver contatos-context.tsx) — o delay aqui é só pra dar
+    // a sensação de salvamento antes de fechar o formulário.
     await new Promise((resolve) => setTimeout(resolve, 350));
     const criado = criarContato({
       nome: novoContatoNome.trim(),
@@ -2390,9 +2530,69 @@ function ConversasPageInner() {
     setResultadoMenuAberto(true);
   }
 
+  /**
+   * Marca venda/perda/reabertura de verdade no `NegocioCard` real (mesmo campo que o Funil usa —
+   * ver `marcarDesfecho` em `funil/page.tsx`), em vez de só guardar em `resultadoPorContato` (que
+   * é puramente local e se perde ao trocar de aba). Se o contato ainda não tiver negócio em
+   * nenhum funil, entra na etapa selecionada do painel (mesmo caminho de `salvarAtribuicao`) antes
+   * de marcar — não dá pra fechar um negócio que não existe.
+   */
+  function atualizarDesfechoNegocio(
+    statusFechamento: "ganho" | "perdido" | null,
+    motivoPerda: string | null,
+    valorOverride?: string,
+  ) {
+    const nome = aberta.nome;
+    const existente = funis
+      .flatMap((f) => f.colunas.flatMap((c) => c.cards.map((card) => ({ card, funilId: f.id }))))
+      .find((x) => x.card.nome === nome);
+
+    if (!existente) {
+      const funilDestino = funilSelecionado ?? funis[0];
+      const etapaDestino = funilDestino?.colunas[0];
+      if (!funilDestino || !etapaDestino) return;
+      atribuirContatoAoFunil(funilDestino.id, etapaDestino.titulo, {
+        nome,
+        valor: valorOverride || "—",
+        origem: (aberta.origem as NegocioCard["origem"]) ?? "Direto",
+        dias: "Hoje",
+        data: HOJE_ISO,
+        statusFechamento,
+        motivoPerda,
+        dataFechamento: statusFechamento ? HOJE_ISO : null,
+      });
+      return;
+    }
+
+    setFunis((prev) =>
+      prev.map((f) =>
+        f.id !== existente.funilId
+          ? f
+          : {
+              ...f,
+              colunas: f.colunas.map((c) => ({
+                ...c,
+                cards: c.cards.map((cd) =>
+                  cd.nome !== nome
+                    ? cd
+                    : {
+                        ...cd,
+                        statusFechamento,
+                        motivoPerda,
+                        dataFechamento: statusFechamento ? HOJE_ISO : null,
+                        valor: valorOverride || cd.valor,
+                      },
+                ),
+              })),
+            },
+      ),
+    );
+  }
+
   function escolherResultado(opcao: "venda" | "perda" | "andamento" | "adiada" | "cancelada") {
     setResultadoMenuAberto(false);
     if (opcao === "andamento") {
+      atualizarDesfechoNegocio(null, null);
       setResultadoPorContato((prev) => {
         const next = { ...prev };
         delete next[aberta.nome];
@@ -2414,8 +2614,9 @@ function ConversasPageInner() {
 
   async function confirmarVenda() {
     setRegistrandoResultado(true);
-    // Camada de serviço provisória — hoje só grava no estado do front-end;
-    // no futuro chama a API de negociações e recebe o id real de volta.
+    atualizarDesfechoNegocio("ganho", null, vendaValor || undefined);
+    // Feedback visual — a gravação em si (`setFunis`) já é síncrona; o delay é só pra dar
+    // sensação de confirmação antes de fechar o formulário.
     await new Promise((resolve) => setTimeout(resolve, 500));
     setResultadoPorContato((prev) => ({ ...prev, [aberta.nome]: "venda" }));
     adicionarHistorico(
@@ -2428,6 +2629,7 @@ function ConversasPageInner() {
   }
 
   function marcarPerda(motivo: string) {
+    atualizarDesfechoNegocio("perdido", motivo);
     setResultadoPorContato((prev) => ({ ...prev, [aberta.nome]: "perda" }));
     setMotivoPerdaPorContato((prev) => ({ ...prev, [aberta.nome]: motivo }));
     setEscolhendoMotivo(false);
@@ -2651,7 +2853,8 @@ function ConversasPageInner() {
     }
     setStatusSalvarContato("salvando");
     try {
-      // Camada de serviço provisória — troca por chamada real de API quando o back-end existir.
+      // `salvarDadosContato` já persiste de verdade (ver contatos-context.tsx) — o delay aqui é só
+      // pra dar a sensação de salvamento antes de fechar o formulário.
       await new Promise((resolve) => setTimeout(resolve, 450));
       salvarDadosContato(aberta.nome, {
         email: emailContato.trim() || undefined,
@@ -2687,7 +2890,7 @@ function ConversasPageInner() {
     setCidadeContato(contatoDaConversa?.cidade ?? "");
     setEstadoContato(contatoDaConversa?.estado ?? "");
     setPaisContato(contatoDaConversa?.pais ?? "");
-    setCanalPreferidoContato(contatoDaConversa?.canalPreferido ?? aberta.canal);
+    setCanalPreferidoContato(contatoDaConversa?.canalPreferido ?? (aberta.canal as Canal));
     setMelhorHorarioContato(contatoDaConversa?.melhorHorario ?? "");
     setStatusSalvarContato("ocioso");
     setEditandoContato(false);
@@ -2695,6 +2898,7 @@ function ConversasPageInner() {
 
   function trocarResponsavelRapido(novoResponsavel: string) {
     atribuirAtendente(aberta.nome, novoResponsavel);
+    if (aberta.id !== CONVERSA_VAZIA.id) atribuirAtendenteConversa(aberta.id, novoResponsavel);
     adicionarHistorico("sistema", `Responsável alterado pra ${novoResponsavel}`);
     avisarAutomacao(`${aberta.nome} agora é atendido por ${novoResponsavel}`);
     setTrocandoResponsavel(false);
@@ -2715,6 +2919,7 @@ function ConversasPageInner() {
 
   function salvarAtribuicao() {
     atribuirAtendente(aberta.nome, atendenteSelecionado);
+    if (aberta.id !== CONVERSA_VAZIA.id) atribuirAtendenteConversa(aberta.id, atendenteSelecionado);
     if (funilSelecionado && etapaSelecionada) {
       const cardExistente = funilSelecionado.colunas
         .flatMap((c) => c.cards)
@@ -2723,7 +2928,7 @@ function ConversasPageInner() {
         id: cardExistente?.id,
         nome: aberta.nome,
         valor: cardExistente?.valor ?? "—",
-        origem: cardExistente?.origem ?? aberta.origem,
+        origem: cardExistente?.origem ?? (aberta.origem as NegocioCard["origem"]),
         dias: cardExistente?.dias ?? "Hoje",
         data: cardExistente?.data ?? HOJE_ISO,
       };
@@ -2798,13 +3003,6 @@ function ConversasPageInner() {
         sub="WhatsApp, Instagram e TikTok — todas as conversas num só lugar"
         actions={
           <>
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={() => simularNovaMensagem(aberta.nome)}
-            >
-              🔔 Simular mensagem nova
-            </button>
             <button
               type="button"
               className="btn ghost"
@@ -2968,14 +3166,16 @@ function ConversasPageInner() {
           <div className="wa-list-rows">
           {conversasFiltradas.length === 0 ? (
             <p className="hint" style={{ padding: 20 }}>
-              Nenhuma conversa encontrada.
+              {carregandoConversas
+                ? "Carregando conversas…"
+                : conversas.length === 0
+                  ? "Nenhuma conversa ainda — conecte um canal em Configurações para começar a receber mensagens de verdade."
+                  : "Nenhuma conversa encontrada."}
             </p>
           ) : (
             conversasFiltradas.map((c) => {
               const active = c.id === aberta.id;
-              const last = c.mensagens[c.mensagens.length - 1];
               const ultimaExtra = (mensagensExtraPorContato[c.nome] ?? []).at(-1);
-              const previaMsg = ultimaExtra ?? last;
               const iconeTipo = ultimaExtra?.imagens
                 ? "🖼️ "
                 : ultimaExtra?.video
@@ -2990,8 +3190,8 @@ function ConversasPageInner() {
                           ? "👤 "
                           : "";
               const previaTexto =
-                previaMsg.texto ||
-                (ultimaExtra?.legenda ?? (iconeTipo ? "Anexo" : ""));
+                ultimaExtra?.texto ||
+                (ultimaExtra?.legenda ?? (iconeTipo ? "Anexo" : "Sem mensagens ainda"));
               return (
                 <div
                   key={c.id}
@@ -3002,6 +3202,7 @@ function ConversasPageInner() {
                   onClick={() => {
                     setSelectedId(c.id);
                     setLidas((prev) => (prev.has(c.id) ? prev : new Set(prev).add(c.id)));
+                    if (c.naoLidas > 0) marcarConversaLida(c.id);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -3014,7 +3215,7 @@ function ConversasPageInner() {
                   <span className="cr1">
                     <span className="avatar">
                       {c.initials}
-                      <CanalBadge canal={c.canal} />
+                      <CanalBadge canal={c.canal as Canal} />
                     </span>
                     <span className="cname">
                       {fixadas.has(c.id) ? <span className="wa-pin-icone">📌</span> : null}
@@ -3026,13 +3227,13 @@ function ConversasPageInner() {
                         </span>
                       ) : null}
                     </span>
-                    <span className="ctime">{c.tempo}</span>
+                    <span className="ctime">{formatarTempoRelativoReal(new Date(c.atualizadoEm))}</span>
                   </span>
                   <span className="cmsg">
-                    {previaMsg.tipo === "out" ? (
+                    {ultimaExtra?.tipo === "out" ? (
                       <>
                         Você:{" "}
-                        <StatusMensagemIcone status={previaMsg.status} />{" "}
+                        <StatusMensagemIcone status={ultimaExtra.status} />{" "}
                       </>
                     ) : (
                       ""
@@ -3047,7 +3248,7 @@ function ConversasPageInner() {
                     <span className="tag">
                       {encerradas.has(c.id) ? "Finalizado" : c.status}
                     </span>
-                    <span className={`tag ${classeOrigem(c.origem)}`}>
+                    <span className={`tag ${classeOrigem(c.origem as Parameters<typeof classeOrigem>[0])}`}>
                       {c.origem}
                     </span>
                   </span>
@@ -3193,76 +3394,10 @@ function ConversasPageInner() {
             {arrastandoArquivo ? (
               <div className="wa-dragover-aviso">Solte o arquivo pra anexar</div>
             ) : null}
-            {aberta.mensagens.map((msg, i) => {
-              const chave = `seed-${i}`;
-              if (mensagensApagadas.has(chave)) return null;
-              if (mensagensApagadasTodos.has(chave)) {
-                return (
-                  <div className="bubble sistema-apagada" key={i}>
-                    Esta mensagem foi apagada.
-                  </div>
-                );
-              }
-              return (
-                <div
-                  className={`bubble ${msg.tipo}`}
-                  key={i}
-                  onDoubleClick={() => {
-                    if (msg.tipo === "in") curtirMensagem(i);
-                  }}
-                  style={msg.tipo === "in" ? { cursor: "pointer" } : undefined}
-                  title={msg.tipo === "in" ? "Dois cliques pra curtir" : undefined}
-                >
-                  {msg.tipo !== "system" ? (
-                    <>
-                      <button
-                        type="button"
-                        className="wa-reply-btn"
-                        aria-label="Responder essa mensagem"
-                        title="Responder"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRespondendoMensagem({
-                            autor: msg.tipo === "in" ? aberta.nome : "Você",
-                            texto: msg.texto,
-                          });
-                          mensagemInputRef.current?.focus();
-                        }}
-                      >
-                        ↩
-                      </button>
-                      <button
-                        type="button"
-                        className="wa-msg-menu-btn"
-                        aria-label="Mais ações dessa mensagem"
-                        title="Mais ações"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          abrirMenuMensagem(chave, e.currentTarget.getBoundingClientRect());
-                        }}
-                      >
-                        ⋮
-                      </button>
-                    </>
-                  ) : null}
-                  {mensagensFavoritas.has(chave) ? (
-                    <span className="wa-msg-favorita" title="Favoritada">★</span>
-                  ) : null}
-                  {msg.texto}
-                  {msg.hora ? <span className="tm">{msg.hora}</span> : null}
-                  {mensagensCurtidas.has(i) ? (
-                    <span className="bubble-reacao">❤️</span>
-                  ) : null}
-                  {coracaoAnimando === i ? (
-                    <span className="bubble-coracao-anim">❤️</span>
-                  ) : null}
-                </div>
-              );
-            })}
             {(mensagensExtraPorContato[aberta.nome] ?? []).map((msg, i) => {
               const chave = msg.id ?? `extra-${i}`;
               if (mensagensApagadas.has(chave)) return null;
-              if (mensagensApagadasTodos.has(chave)) {
+              if (msg.apagadaParaTodos) {
                 return (
                   <div className="bubble sistema-apagada" key={chave}>
                     Esta mensagem foi apagada.
@@ -5917,21 +6052,16 @@ function ConversasPageInner() {
                       <p className="n">Apagar pra todos</p>
                     </div>
                     <p className="hint" style={{ marginBottom: 16 }}>
-                      Deseja solicitar a exclusão desta mensagem para todos? Essa ação depende
-                      das regras e do prazo permitido pelo canal conectado.
+                      Apaga esta mensagem pra quem visualizar essa conversa no CRM. Não recolhe a
+                      mensagem do lado do contato no WhatsApp — isso depende de um recurso que a
+                      integração conectada ainda não oferece.
                     </p>
-                    {erroApagarChave === confirmarApagar.chave ? (
-                      <p className="wa-campo-erro" style={{ marginBottom: 10 }}>
-                        Não deu pra apagar agora — o canal não confirmou a exclusão. Tente de novo.
-                      </p>
-                    ) : null}
                     <div className="section-foot">
                       <button
                         type="button"
                         className="btn ghost"
                         style={{ flex: 1 }}
                         onClick={() => setConfirmarApagar(null)}
-                        disabled={apagandoChave === confirmarApagar.chave}
                       >
                         Cancelar
                       </button>
@@ -5940,9 +6070,8 @@ function ConversasPageInner() {
                         className="btn primary"
                         style={{ flex: 1 }}
                         onClick={confirmarApagarParaTodos}
-                        disabled={apagandoChave === confirmarApagar.chave}
                       >
-                        {apagandoChave === confirmarApagar.chave ? "Apagando…" : "Apagar pra todos"}
+                        Apagar pra todos
                       </button>
                     </div>
                   </>
@@ -6006,7 +6135,7 @@ function ConversasPageInner() {
                       <span className="valor">{detalhesMensagem.msg.erro}</span>
                     </div>
                   ) : null}
-                  {mensagensApagadasTodos.has(detalhesMensagem.chave) ? (
+                  {detalhesMensagem.msg.apagadaParaTodos ? (
                     <div className="wa-msg-detalhes-item">
                       <span className="rotulo">Apagada</span>
                       <span className="valor">Pra todos</span>
@@ -6198,7 +6327,7 @@ function ConversasPageInner() {
                   <span className="wa-resumo-label">E-mail</span>
                   <span className="wa-resumo-valor">{emailContato || "—"}</span>
                   <span className="wa-resumo-label">Responsável</span>
-                  <span className="wa-resumo-valor">{aberta.atendenteSelecionado}</span>
+                  <span className="wa-resumo-valor">{aberta.atendenteSelecionado ?? "—"}</span>
                   <span className="wa-resumo-label">Funil · Etapa</span>
                   <span className="wa-resumo-valor">
                     {funilSelecionado ? `${funilSelecionado.nome} · ${etapaSelecionada}` : "—"}
@@ -6206,7 +6335,7 @@ function ConversasPageInner() {
                   <span className="wa-resumo-label">Origem</span>
                   <span className="wa-resumo-valor">{aberta.origem}</span>
                   <span className="wa-resumo-label">Última interação</span>
-                  <span className="wa-resumo-valor">{aberta.tempo}</span>
+                  <span className="wa-resumo-valor">{formatarTempoRelativoReal(new Date(aberta.atualizadoEm))}</span>
                   <span className="wa-resumo-label">Situação</span>
                   <span className="wa-resumo-valor">{aberta.status}</span>
                   <span className="wa-resumo-label">Próxima atividade</span>
@@ -7236,12 +7365,12 @@ function ConversasPageInner() {
               ✕
             </button>
           </div>
-          {aberta.tarefa.anexo ? (
+          {tarefa.anexo ? (
             <div className="field" style={{ padding: "10px 0" }}>
               <div className="attach-chip">
                 <IconDoc />
-                <span className="fn">{aberta.tarefa.anexo.arquivo}</span>
-                <span className="fs">{aberta.tarefa.anexo.detalhe}</span>
+                <span className="fn">{tarefa.anexo.arquivo}</span>
+                <span className="fs">{tarefa.anexo.detalhe}</span>
               </div>
             </div>
           ) : (
@@ -7376,12 +7505,33 @@ function ConversasPageInner() {
           </div>
           {conectarAba === "qr" ? (
             <div style={{ textAlign: "center", padding: "6px 0 14px" }}>
-              <div className="wa-qr-box">📷</div>
-              <p className="hint" style={{ marginTop: 10 }}>
-                Abra o WhatsApp no celular da clínica → Aparelhos conectados →
-                Conectar um aparelho, e escaneie esse código.
-              </p>
-              <p className="hint">Aguardando leitura do QR…</p>
+              {naoOficial.estado?.status === "erro" ? (
+                <p className="hint" style={{ color: "var(--danger)", marginBottom: 10 }}>
+                  ⚠ {naoOficial.estado.erroMensagem}
+                </p>
+              ) : null}
+
+              {naoOficial.estado?.status === "conectado" ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                  <p className="int-sub" style={{ margin: 0 }}>
+                    Conectado — {naoOficial.estado.metadados?.numero ?? "número não identificado"}
+                  </p>
+                  <button type="button" className="btn danger" onClick={naoOficial.desconectar} disabled={naoOficial.desconectando}>
+                    {naoOficial.desconectando ? "Desconectando…" : "Desconectar"}
+                  </button>
+                </div>
+              ) : naoOficial.estado?.status === "aguardando_qr" && naoOficial.estado.metadados?.qrDataUrl ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pelo worker, não é asset estático */}
+                  <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={220} height={220} />
+                  <p className="hint" style={{ marginTop: 4 }}>
+                    Abra o WhatsApp no celular da clínica → Aparelhos conectados → Conectar um
+                    aparelho, e escaneie esse código.
+                  </p>
+                </div>
+              ) : (
+                <div className="wa-qr-box">📷</div>
+              )}
             </div>
           ) : (
             <>
@@ -7398,17 +7548,10 @@ function ConversasPageInner() {
               <a href="/api/integracoes/meta/conectar" className="btn primary block">
                 Conectar com a Meta
               </a>
-            ) : (
-              <button
-                type="button"
-                className="btn primary block"
-                onClick={() => {
-                  setConectarAberto(false);
-                  avisarAutomacao("WhatsApp conectado — conversas sendo importadas");
-                }}
-              >
-                Simular leitura do QR
-              </button>
+            ) : naoOficial.estado?.status === "conectado" || naoOficial.estado?.status === "aguardando_qr" ? null : (
+              <p className="hint" style={{ textAlign: "center", padding: "6px 0" }}>
+                Aguardando o serviço gerar o QR code…
+              </p>
             )}
           </div>
         </div>

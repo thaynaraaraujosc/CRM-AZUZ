@@ -17,6 +17,7 @@ import {
 import { useTarefas } from "@/lib/tarefas-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useEquipe } from "@/lib/equipe-context";
+import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { Topbar, Drawer } from "@/components/ui";
 
@@ -86,6 +87,7 @@ export default function AgendaPage() {
   const router = useRouter();
   const { colunas, criarTarefa } = useTarefas();
   const { contatos } = useContatos();
+  const { mensagensExtraPorContato } = useMensagensExtra();
   const { membros } = useEquipe();
   const {
     compromissos,
@@ -99,8 +101,8 @@ export default function AgendaPage() {
   const { data: sessao } = useSession();
   const responsavelPadrao = membros[0]?.nome ?? sessao?.user?.name ?? "";
 
-  const [ano, setAno] = useState(2026);
-  const [mesIndex0, setMesIndex0] = useState(6); // julho — mês de HOJE_ISO
+  const [ano, setAno] = useState(() => Number(HOJE_ISO.split("-")[0]));
+  const [mesIndex0, setMesIndex0] = useState(() => Number(HOJE_ISO.split("-")[1]) - 1);
   const [view, setView] = useState<"mes" | "lista">("mes");
   const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null);
 
@@ -282,14 +284,55 @@ export default function AgendaPage() {
     setDetalheId(null);
   }
 
+  /** Conversa "pertence" ao canal WhatsApp via QR Code (Baileys) quando a última mensagem recebida
+   * chegou por ele — mesmo critério de `contatoUsaWhatsappBaileys()` em conversas/page.tsx, decide
+   * pra onde o aviso de cancelamento deve sair de verdade. */
+  function contatoUsaWhatsappBaileys(nomeContato: string): boolean {
+    const extras = mensagensExtraPorContato[nomeContato] ?? [];
+    for (let i = extras.length - 1; i >= 0; i--) {
+      if (extras[i].tipo === "in") return extras[i].canal === "whatsapp_baileys";
+    }
+    return false;
+  }
+
   function confirmarCancelamento() {
     if (!compromissoDetalhe) return;
     cancelar(compromissoDetalhe.id, motivoCancelamento.trim() || undefined);
-    avisar(
-      enviarMensagemCancelamento
-        ? `Compromisso cancelado — mensagem simulada enviada a ${compromissoDetalhe.contato}.`
-        : "Compromisso cancelado.",
-    );
+
+    if (!enviarMensagemCancelamento) {
+      avisar("Compromisso cancelado.");
+      setDetalheId(null);
+      return;
+    }
+
+    const contato = contatos.find((c) => c.id === compromissoDetalhe.contatoId);
+    const numero = contato?.whatsapp;
+    if (!numero) {
+      avisar("Compromisso cancelado — esse contato não tem WhatsApp cadastrado pra avisar.");
+      setDetalheId(null);
+      return;
+    }
+
+    const primeiroNome = contato.nome.split(" ")[0];
+    const texto =
+      `Olá, ${primeiroNome}! Seu compromisso "${compromissoDetalhe.tipo}" foi cancelado.` +
+      (motivoCancelamento.trim() ? ` Motivo: ${motivoCancelamento.trim()}.` : "");
+    const rota = contatoUsaWhatsappBaileys(contato.nome)
+      ? "/api/integracoes/whatsapp-baileys/enviar"
+      : "/api/integracoes/meta/whatsapp/enviar";
+
+    avisar("Compromisso cancelado — enviando aviso pelo WhatsApp…");
+    fetch(rota, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ destinatario: numero, texto }),
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+        avisar(`Aviso de cancelamento enviado a ${contato.nome}.`);
+      })
+      .catch(() => avisar(`Compromisso cancelado, mas não deu pra avisar ${contato.nome} pelo WhatsApp.`));
+
     setDetalheId(null);
   }
 
@@ -903,7 +946,7 @@ export default function AgendaPage() {
                         checked={enviarMensagemCancelamento}
                         onChange={(e) => setEnviarMensagemCancelamento(e.target.checked)}
                       />
-                      Enviar mensagem simulada ao contato avisando do cancelamento
+                      Avisar o contato do cancelamento pelo WhatsApp
                     </label>
                     <button
                       type="button"

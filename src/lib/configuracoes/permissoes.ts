@@ -1,6 +1,8 @@
 /** Matriz de permissões por módulo (item 21) — usada tanto ao adicionar um usuário quanto ao criar
- * uma função personalizada (item 22). Cada permissão é só um id — front-end apenas, nunca aplicado a
- * uma checagem de acesso real. */
+ * uma função personalizada (item 22). Os ids com sufixo `_visualizar` são checados de verdade pelo
+ * proxy (ver `ROTA_PERMISSAO` em `src/proxy.ts`) pra bloquear a rota inteira do módulo — as demais
+ * ações (criar/editar/excluir dentro do módulo) continuam só de exibição, não têm checagem
+ * granular por enquanto. */
 export type PermissaoModulo = { modulo: string; permissoes: { id: string; label: string }[] };
 
 export const PERMISSOES_POR_MODULO: PermissaoModulo[] = [
@@ -34,6 +36,15 @@ export const PERMISSOES_POR_MODULO: PermissaoModulo[] = [
       { id: "funil_excluir_negocios", label: "Excluir negócios" },
       { id: "funil_alterar_responsavel", label: "Alterar responsável" },
       { id: "funil_ver_valores", label: "Visualizar valores" },
+    ],
+  },
+  {
+    modulo: "Formulários",
+    permissoes: [
+      { id: "form_visualizar", label: "Visualizar" },
+      { id: "form_criar", label: "Criar" },
+      { id: "form_editar", label: "Editar" },
+      { id: "form_excluir", label: "Excluir" },
     ],
   },
   {

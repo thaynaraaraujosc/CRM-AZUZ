@@ -4,12 +4,15 @@ import type { Membro } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
+import { enviarEmail, templateConvite } from "@/lib/email";
 
-/** Linha do banco -> `Membro` do front — só o formato de `permissoes` (JSON no banco) muda. */
-function paraMembro(linha: { permissoes: unknown; [k: string]: unknown }): Membro {
+/** Linha do banco -> `Membro` do front — formato de `permissoes` (JSON) e `ultimoAcesso` (Date ->
+ * ISO string) mudam. */
+function paraMembro(linha: { permissoes: unknown; ultimoAcesso?: Date | null; [k: string]: unknown }): Membro {
   return {
     ...linha,
     permissoes: Array.isArray(linha.permissoes) ? (linha.permissoes as string[]) : [],
+    ultimoAcesso: linha.ultimoAcesso ? linha.ultimoAcesso.toISOString() : null,
   } as Membro;
 }
 
@@ -74,6 +77,13 @@ export async function POST(request: Request) {
       ativo: false,
       convitePendente: true,
     },
+  });
+
+  const link = `${process.env.APP_URL ?? "https://azuzcrm.com.br"}/convite/${id}`;
+  await enviarEmail({
+    to: dados.email,
+    subject: `${sessao.user.workspaceNome ?? "Alguém"} te convidou pro CRM AZUZ`,
+    html: templateConvite(dados.nome, sessao.user.workspaceNome ?? "o workspace", link),
   });
 
   return NextResponse.json(paraMembro(linha), { status: 201 });

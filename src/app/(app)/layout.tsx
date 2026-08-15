@@ -1,4 +1,5 @@
 import { AppHeader } from "@/components/app-header";
+import { ImpersonandoBanner } from "@/components/impersonando-banner";
 import { Sidebar } from "@/components/sidebar";
 import { SessionProvider } from "@/components/session-provider";
 import { AgendaProvider } from "@/lib/agenda-context";
@@ -8,6 +9,7 @@ import { BibliotecaDocumentosProvider } from "@/lib/biblioteca-documentos-contex
 import { CentralDiaProvider } from "@/lib/central-dia-context";
 import { ConfiguracoesProvider } from "@/lib/configuracoes-context";
 import { ConfigConversasProvider } from "@/lib/conversas-config-context";
+import { ConversasProvider } from "@/lib/conversas-context";
 import { ContatosProvider } from "@/lib/contatos-context";
 import { DocumentosProvider } from "@/lib/documentos-context";
 import { EquipeProvider } from "@/lib/equipe-context";
@@ -24,6 +26,7 @@ export default function AppLayout({
     <SessionProvider>
     <FunisProvider>
       <ContatosProvider>
+      <ConversasProvider>
         <EquipeProvider>
           <TarefasProvider>
             <AgendaProvider>
@@ -40,6 +43,7 @@ export default function AppLayout({
                                   <div className="shell">
                                     <Sidebar />
                                     <main className="main">
+                                      <ImpersonandoBanner />
                                       <AppHeader />
                                       {children}
                                     </main>
@@ -57,6 +61,7 @@ export default function AppLayout({
             </AgendaProvider>
           </TarefasProvider>
         </EquipeProvider>
+      </ConversasProvider>
       </ContatosProvider>
     </FunisProvider>
     </SessionProvider>
