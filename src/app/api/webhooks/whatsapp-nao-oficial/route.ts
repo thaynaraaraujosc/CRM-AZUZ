@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { validarSegredoDoServico } from "@/lib/integracoes/whatsapp-nao-oficial";
+import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
+import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
+import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 
 type PayloadStatus = {
   tipo: "status";
@@ -58,13 +61,23 @@ export async function POST(request: Request) {
     const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: payload.id } });
     if (jaExiste) return NextResponse.json({ ok: true });
 
-    // Tenta casar com um contato já existente pelo telefone, pra mensagem aparecer numa conversa
-    // que já existe — mesmo comportamento do webhook oficial (Meta): número novo fica salvo, mas
-    // sem conversa correspondente na tela ainda (frente de front-end separada, pra depois).
-    const contatoExistente = await prisma.contato.findFirst({
-      where: { workspaceId: payload.workspaceId, whatsapp: { contains: payload.waId } },
-    });
+    // Casa com um Contato já existente pelo telefone (comparação normalizada, mesma lógica do
+    // webhook oficial da Meta) — número totalmente novo ganha um Contato automaticamente.
+    const contatoExistente = await encontrarContatoPorTelefone(payload.workspaceId, payload.waId);
     const chaveContato = contatoExistente?.nome ?? payload.nomePerfil ?? payload.waId;
+    const contato =
+      contatoExistente ??
+      (await criarContatoPeloWhatsAppSeNaoExistir({
+        workspaceId: payload.workspaceId,
+        nome: chaveContato,
+        whatsapp: payload.waId,
+      }));
+
+    // Regra de negócio: todo lead novo entra no funil pela primeira etapa. Contato que já existia
+    // (mandou mensagem de novo) nunca é mexido de etapa aqui — só o vendedor decide mover manualmente.
+    if (!contatoExistente) {
+      await entrarNaPrimeiraEtapaComoNovoLead({ workspaceId: payload.workspaceId, contatoNome: chaveContato, origem: "WhatsApp" });
+    }
 
     await prisma.mensagemExtra.create({
       data: {
@@ -81,6 +94,16 @@ export async function POST(request: Request) {
         canal: "whatsapp_nao_oficial",
       },
     });
+
+    await upsertConversaAoReceberMensagem({
+      workspaceId: payload.workspaceId,
+      nome: chaveContato,
+      canal: "WhatsApp",
+      contato: payload.waId,
+      contatoId: contato.id,
+      origem: "Direto",
+    });
+
     return NextResponse.json({ ok: true });
   }
 
