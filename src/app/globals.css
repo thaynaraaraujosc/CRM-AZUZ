@@ -1787,8 +1787,24 @@ a.timeline-card:hover {
   box-shadow: 0 0 0 3px var(--blue-soft-2);
 }
 
+/* Reestruturação visual (redesign) — a TABELA inteira é a caixinha (fundo/borda/raio/sombra), não
+   cada linha dela; mesmo princípio já aplicado em `.central-dia-secao`. `overflow: hidden` (não só
+   `-x`) pra cortar o cabeçalho/corpo nos cantos arredondados do wrapper. */
 .table-wrap {
   overflow-x: auto;
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Algumas telas já colocam a tabela dentro de um `.card` (ex.: com um `.panel-h` de título antes
+   dela) — sem isso, ficaria caixa dentro de caixa. Aqui o `.card` de fora é que vale. */
+.card .table-wrap {
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 table.tbl {
@@ -1834,44 +1850,11 @@ table.tbl tbody tr:hover td {
   gap: 10px;
 }
 
-/* Contatos — cada linha vira um "cartão" com espaço em branco de verdade entre uma e outra (o
-   fundo da página, `--navy`, aparece no vão), em vez de linhas coladas de tabela (pedido
-   explícito: "como se fossem botões separados"). */
-.contatos-tbl {
-  border-collapse: separate;
-  border-spacing: 0 10px;
-  background: transparent;
-}
-
-.contatos-tbl thead th {
-  border-bottom: none;
-  padding: 0 14px 8px;
-}
-
-.contatos-tbl tbody tr td {
-  background: var(--navy-raised);
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  box-shadow: var(--shadow-xs);
-  padding-top: 14px;
-  padding-bottom: 14px;
-}
-
-.contatos-tbl tbody tr td:first-child {
-  border-left: 1px solid var(--line);
-  border-top-left-radius: var(--radius-md);
-  border-bottom-left-radius: var(--radius-md);
-}
-
-.contatos-tbl tbody tr td:last-child {
-  border-right: 1px solid var(--line);
-  border-top-right-radius: var(--radius-md);
-  border-bottom-right-radius: var(--radius-md);
-}
-
-.contatos-tbl tbody tr:hover td {
-  background: var(--surface-hover);
-}
+/* Reestruturação visual (redesign) — o pedido anterior ("linhas como botões separados", cada uma
+   com fundo/borda própria) virou exatamente o padrão "empilhado de caixinhas" que o redesign tira
+   de propósito (mesmo motivo do ajuste em `.central-dia-card`): `.table-wrap` já é a caixinha
+   agora, então a tabela de Contatos volta a se comportar como `table.tbl` padrão — linhas flat,
+   só separadas por uma linha fina. */
 
 .name-cell .n {
   font-weight: var(--fw-semibold);

@@ -49,7 +49,7 @@ export default function EquipePage() {
       />
 
       <div className="content">
-        <div className="card mb14">
+        <div className="mb14">
           <div className="table-wrap">
             <table className="tbl equipe-tbl">
               <thead>
