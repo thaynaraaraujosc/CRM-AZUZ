@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { normalizarNumeroBrasileiro } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
+import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
 
 /**
  * POST recebe os eventos que a Evolution API manda pra instância conectada (webhook configurado
@@ -69,15 +70,22 @@ function horaLocal(data: Date): string {
 }
 
 /** Acha (ou cria) o Contato pelo telefone — mesmo casamento normalizado usado no webhook da Meta
- * (`webhooks/whatsapp/route.ts`); número novo ganha um Contato de verdade automaticamente. */
-async function resolverContato(workspaceId: string, telefone: string, pushName?: string) {
+ * (`webhooks/whatsapp/route.ts`); número novo ganha um Contato de verdade automaticamente.
+ * `novo: true` só quando esta chamada acabou de criar o Contato (não existia por telefone ainda) —
+ * é o sinal usado pra decidir se entra no funil (lead novo) ou não (contato já existia). */
+async function resolverContato(
+  workspaceId: string,
+  telefone: string,
+  pushName?: string,
+): Promise<{ contato: Awaited<ReturnType<typeof criarContatoPeloWhatsAppSeNaoExistir>>; novo: boolean }> {
   const existente = await encontrarContatoPorTelefone(workspaceId, telefone);
-  if (existente) return existente;
-  return criarContatoPeloWhatsAppSeNaoExistir({
+  if (existente) return { contato: existente, novo: false };
+  const contato = await criarContatoPeloWhatsAppSeNaoExistir({
     workspaceId,
     nome: pushName ?? telefone,
     whatsapp: telefone,
   });
+  return { contato, novo: true };
 }
 
 async function processarMensagemAoVivo(workspaceId: string, item: ItemMensagemEvolution) {
@@ -89,7 +97,13 @@ async function processarMensagemAoVivo(workspaceId: string, item: ItemMensagemEv
   const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: extraida.id } });
   if (jaExiste) return;
 
-  const contato = await resolverContato(workspaceId, extraida.contato, extraida.pushName);
+  const { contato, novo } = await resolverContato(workspaceId, extraida.contato, extraida.pushName);
+
+  // Regra de negócio: todo lead novo entra no funil pela primeira etapa. Contato que já existia
+  // (mandou mensagem de novo) nunca é mexido de etapa aqui — só o vendedor move manualmente.
+  if (novo) {
+    await entrarNaPrimeiraEtapaComoNovoLead({ workspaceId, contatoNome: contato.nome, origem: "WhatsApp" });
+  }
 
   await prisma.mensagemExtra.create({
     data: {
@@ -143,7 +157,7 @@ async function processarPacoteHistorico(workspaceId: string, itens: ItemMensagem
     data: novas.map((m) => ({
       id: m.id,
       workspaceId,
-      contato: contatosPorTelefone.get(m.contato)!.nome,
+      contato: contatosPorTelefone.get(m.contato)!.contato.nome,
       tipo: m.fromMe ? "out" : "in",
       texto: m.texto,
       hora: horaLocal(m.criadoEm),
@@ -153,7 +167,11 @@ async function processarPacoteHistorico(workspaceId: string, itens: ItemMensagem
     skipDuplicates: true,
   });
 
-  for (const [telefone, contato] of contatosPorTelefone) {
+  // Sync de histórico nunca entra no funil, mesmo pra contato recém-criado aqui — não é um lead
+  // "chegando agora", é mensagem antiga sendo importada; entrar no funil é reservado pro evento ao
+  // vivo (`processarMensagemAoVivo`), senão importar histórico empurraria gente de anos atrás pra
+  // dentro do funil como se fosse novidade.
+  for (const [telefone, { contato }] of contatosPorTelefone) {
     await upsertConversaAoReceberMensagem({
       workspaceId,
       nome: contato.nome,

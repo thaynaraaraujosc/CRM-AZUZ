@@ -5,6 +5,7 @@ import { decriptar } from "@/lib/integracoes/crypto";
 import { META_GRAPH_URL, normalizarNumeroBrasileiro, validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
+import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
 import type { ConvMensagem } from "@/lib/data";
 
 /**
@@ -171,6 +172,17 @@ export async function POST(request: Request) {
             nome: chaveContato,
             whatsapp: waId,
           }));
+
+        // Regra de negócio: todo lead novo entra no funil pela primeira etapa. Contato que já
+        // existia (recebeu mensagem de novo) nunca é mexido de etapa aqui — só o vendedor decide
+        // mover manualmente, mandar mensagem de novo não pode "resetar" onde ele estava.
+        if (!contatoExistente) {
+          await entrarNaPrimeiraEtapaComoNovoLead({
+            workspaceId: integracaoDoNumero.workspaceId,
+            contatoNome: chaveContato,
+            origem: "WhatsApp",
+          });
+        }
 
         const midia = mensagem.image ?? mensagem.sticker ?? mensagem.audio ?? mensagem.video ?? mensagem.document;
         const extras =
