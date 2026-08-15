@@ -96,6 +96,14 @@
   --ia: #8a3ffc;
   --ia-soft: rgba(138, 63, 252, 0.12);
 
+  /* Reestruturação visual (redesign) — accent secundário (ciano) e tokens de glow, usados com
+     moderação em estados ativos/seleção (item ativo da sidebar, indicador "ao vivo") pra reforçar
+     a sensação tecnológica sem virar neon — no light mode o glow fica quase imperceptível de
+     propósito, só ganha presença real no dark mode (ver bloco `[data-theme="dark"]` abaixo). */
+  --cyan: #0ea5b7;
+  --cyan-soft: rgba(14, 165, 183, 0.12);
+  --glow-accent: 0 0 0 rgba(46, 107, 255, 0);
+
   /* Escala tipográfica (item 45) — nomeia os tamanhos que já estavam em uso espalhados (`.topbar h2`
      19px, `.panel-h h4` 13px, `.hint` 11px…) e preenche as lacunas (card, indicador). Contraste entre
      informação principal e auxiliar já existia via `--ink`/`--text-muted`/`--text-faint`; aqui só
@@ -111,16 +119,25 @@
   --fs-table: 12px;
 }
 
-/* Tela escura — escolhida em Configurações > Tela, guardada em localStorage. */
+/* Tela escura — escolhida em Configurações > Tela, guardada em localStorage.
+   Redesign: paleta mais profunda (azul-marinho quase preto, não cinza-azulado) + ciano como
+   segundo accent, na mesma linguagem visual da landing page/telas de auth (`--lp-*` em page.tsx,
+   `.auth-page` mais abaixo neste arquivo) — mas SEM repetir o gradiente/grade fixos delas, que são
+   um tratamento de página cheia (marketing/pré-login); aqui é só paleta de superfície+cor, aplicada
+   dentro do shell normal do app (sidebar + header + conteúdo). */
 :root[data-theme="dark"] {
-  --navy: #0b1533;
-  --navy-raised: #141d3f;
-  --navy-raised-2: #1c274d;
-  --navy-deep: #060b1c;
+  --navy: #0d1730;
+  --navy-raised: #131f42;
+  --navy-raised-2: #1a2a54;
+  --navy-deep: #060a17;
 
   --blue: #6a9bff;
   --blue-soft: rgba(106, 155, 255, 0.2);
   --blue-soft-2: rgba(106, 155, 255, 0.1);
+
+  --cyan: #35d0e0;
+  --cyan-soft: rgba(53, 208, 224, 0.16);
+  --glow-accent: 0 0 16px rgba(106, 155, 255, 0.35);
 
   --line: rgba(255, 255, 255, 0.12);
   --line-soft: rgba(255, 255, 255, 0.07);
@@ -142,6 +159,11 @@
 
   --surface-hover: rgba(243, 245, 251, 0.06);
   --surface-active: rgba(243, 245, 251, 0.1);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.44);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.36);
 }
 
 *,
@@ -237,19 +259,23 @@ table {
   padding: 4px 8px 22px;
 }
 
+/* Marca com o mesmo tratamento (gradiente azul→roxo + glow) já usado na landing page e nas telas
+   de auth (`.auth-mark`) — reforça que é o mesmo produto em todas as superfícies, dentro e fora
+   do app logado. */
 .brand-mark {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: var(--blue-soft);
+  background: linear-gradient(135deg, #4c86ff, #8a3ffc);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--display);
   font-weight: 700;
   font-size: 14px;
-  color: var(--blue);
+  color: #fff;
   flex: 0 0 auto;
+  box-shadow: 0 0 14px rgba(76, 134, 255, 0.4);
 }
 
 .sb-brand .wordmark {
@@ -298,6 +324,7 @@ table {
 }
 
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -306,7 +333,29 @@ table {
   color: var(--text-muted);
   font-size: 12.5px;
   font-weight: 600;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background var(--transition-base), color var(--transition-base), box-shadow var(--transition-base);
+}
+
+/* Barra de destaque do item ativo — mesmo princípio de "accent bar" usado em produtos SaaS
+   (Linear, Vercel…), mais legível de relance que só uma mudança de fundo. `scaleY` em vez de
+   `height` pra poder animar sem gerar reflow. `left: 0` (inset, não protuberante) porque
+   `.sidebar` tem `overflow-y: auto`, que em alguns navegadores força `overflow-x` a cortar
+   também — a barra fica encostada na borda interna do item, sem vazar pro padding do `.sidebar`. */
+.nav-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 18px;
+  border-radius: 0 3px 3px 0;
+  background: var(--blue);
+  transform: translateY(-50%) scaleY(0);
+  transition: transform var(--transition-base);
+}
+
+.nav-item.active::before {
+  transform: translateY(-50%) scaleY(1);
 }
 
 .nav-badge-em-breve {
@@ -335,6 +384,7 @@ table {
 .nav-item.active {
   background: var(--blue-soft);
   color: var(--ink);
+  box-shadow: var(--glow-accent);
 }
 
 .nav-item.active svg {
