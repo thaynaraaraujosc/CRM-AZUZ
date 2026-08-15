@@ -8,7 +8,7 @@ import type { Urgencia } from "@/lib/data";
 import { useEquipe } from "@/lib/equipe-context";
 import { useNotificacoes } from "@/lib/notificacoes-context";
 import { useTarefas } from "@/lib/tarefas-context";
-import { IconConfiguracoes, IconDoc } from "@/components/icons";
+import { IconClose, IconConfiguracoes, IconDoc, IconFolder } from "@/components/icons";
 import { ChipFilters, RadioList, Toggle, Topbar } from "@/components/ui";
 
 const NIVEIS_URGENCIA: Urgencia[] = ["Baixa", "Média", "Alta"];
@@ -230,7 +230,7 @@ function TarefasContent() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovaEtapaAberta(false)}
               >
-                Fechar ✕
+                Fechar <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
@@ -269,7 +269,7 @@ function TarefasContent() {
                   aria-pressed={filtroModelo === m}
                   onClick={() => setFiltroModelo(m)}
                 >
-                  📁 {m}
+                  <IconFolder width={12} height={12} /> {m}
                 </button>
               ))}
               {novaPastaAberta ? (
@@ -315,7 +315,7 @@ function TarefasContent() {
                 <p className="s">Preencha e salve — ela entra no kanban abaixo</p>
               </div>
               <span className="close" style={{ cursor: "pointer" }} onClick={fecharNovaTarefa}>
-                Fechar ✕
+                Fechar <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
@@ -502,7 +502,7 @@ function TarefasContent() {
                       }
                     }}
                   >
-                    ✕
+                    <IconClose width={11} height={11} />
                   </span>
                 </span>
               </div>
@@ -615,7 +615,7 @@ function TarefasContent() {
                 </select>
               ) : null}
               <span className="close" style={{ cursor: "pointer" }} onClick={() => setSelectedId(null)}>
-                Fechar ✕
+                Fechar <IconClose width={11} height={11} />
               </span>
             </div>
 
