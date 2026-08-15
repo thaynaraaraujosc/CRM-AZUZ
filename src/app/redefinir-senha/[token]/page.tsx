@@ -49,6 +49,10 @@ export default function RedefinirSenhaPage({ params }: { params: Promise<{ token
 
   return (
     <div className="auth-page">
+      <Link href="/" className="auth-brand">
+        <span className="auth-mark">a</span>
+        <span className="auth-brand-name">azuz crm</span>
+      </Link>
       <div className="auth-card card">
         <h1 className="auth-title">Criar nova senha</h1>
 

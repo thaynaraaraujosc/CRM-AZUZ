@@ -792,24 +792,108 @@ table {
   box-shadow: var(--shadow-sm);
 }
 
-/* Multi-tenancy Fase 1 — telas de /login e /cadastro, fora do shell (sidebar/header) do app. */
+/* Multi-tenancy Fase 1 — telas de /login e /cadastro, fora do shell (sidebar/header) do app.
+   Reestruturação de design — visual futurista fixo (gradientes radiais + grade), igual à landing
+   page pública (`src/app/page.tsx`), independente do tema claro/escuro salvo pelo usuário (essas
+   telas são pré-login, não fazem parte do app "temável"). Sobrescreve os tokens globais (--navy,
+   --ink, --line…) só dentro de `.auth-page` — assim `.card`/`.input`/`.btn`/`.field` (usados sem
+   nenhuma mudança de marcação) herdam o visual escuro automaticamente, sem precisar de uma cópia
+   paralela de cada estilo. */
 .auth-page {
+  --navy: #101a38;
+  --navy-raised: rgba(20, 29, 63, 0.72);
+  --navy-raised-2: rgba(28, 39, 77, 0.85);
+  --navy-deep: #05070f;
+
+  --blue: #6a9bff;
+  --blue-soft: rgba(106, 155, 255, 0.2);
+  --blue-soft-2: rgba(106, 155, 255, 0.12);
+  --blue-strong: #8ab4ff;
+
+  --line: rgba(255, 255, 255, 0.12);
+  --line-soft: rgba(255, 255, 255, 0.07);
+
+  --ink: #eef1fb;
+  --text-muted: rgba(238, 241, 251, 0.66);
+  --text-faint: rgba(238, 241, 251, 0.44);
+
+  --danger: #ff8585;
+  --success: #4ade80;
+
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 480px at 12% -8%, rgba(76, 134, 255, 0.22), transparent 60%),
+    radial-gradient(760px 460px at 92% 8%, rgba(138, 63, 252, 0.16), transparent 55%),
+    radial-gradient(900px 560px at 50% 105%, rgba(76, 134, 255, 0.14), transparent 60%),
+    var(--navy-deep);
+  color: var(--ink);
+}
+
+.auth-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 45%, transparent 100%);
+  pointer-events: none;
+}
+
+.auth-brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.auth-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #4c86ff, #8a3ffc);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  background: var(--navy-deep);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 0 22px rgba(76, 134, 255, 0.5);
+}
+
+.auth-brand-name {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.01em;
 }
 
 .auth-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 380px;
   padding: 28px 26px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
 }
+
 
 .auth-title {
   font-family: var(--display);

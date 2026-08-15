@@ -25,6 +25,10 @@ export default async function ConvitePage({
   if (!membro || !membro.convitePendente) {
     return (
       <div className="auth-page">
+        <Link href="/" className="auth-brand">
+          <span className="auth-mark">a</span>
+          <span className="auth-brand-name">azuz crm</span>
+        </Link>
         <div className="auth-card card">
           <h1 className="auth-title">Convite não encontrado</h1>
           <p className="auth-descricao">
@@ -43,6 +47,10 @@ export default async function ConvitePage({
 
   return (
     <div className="auth-page">
+      <Link href="/" className="auth-brand">
+        <span className="auth-mark">a</span>
+        <span className="auth-brand-name">azuz crm</span>
+      </Link>
       <div className="auth-card card">
         <h1 className="auth-title">Bem-vindo, {primeiroNome}</h1>
         <p className="auth-descricao">
