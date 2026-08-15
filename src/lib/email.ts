@@ -38,3 +38,20 @@ export function templateRedefinicaoSenha(nome: string, link: string): string {
     </div>
   `;
 }
+
+export function templateConvite(nome: string, workspaceNome: string, link: string): string {
+  const primeiroNome = nome.split(" ")[0];
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+      <h2 style="color: #0b1533;">Você foi convidado(a)</h2>
+      <p>Olá, ${primeiroNome}.</p>
+      <p>Você foi convidado(a) pra fazer parte do CRM da <strong>${workspaceNome}</strong>. Clique no botão abaixo pra criar sua senha e começar a usar:</p>
+      <p style="margin: 28px 0;">
+        <a href="${link}" style="background: #2e6bff; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          Aceitar convite
+        </a>
+      </p>
+      <p style="font-size: 13px; color: #6e7694;">Se você não esperava esse convite, pode ignorar este e-mail.</p>
+    </div>
+  `;
+}

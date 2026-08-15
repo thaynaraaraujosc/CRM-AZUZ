@@ -1,13 +1,15 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
-import { convite, workspace } from "@/lib/data";
+import { prisma } from "@/lib/prisma";
+import { AceitarConviteForm } from "@/components/equipe/AceitarConviteForm";
 
 export const metadata: Metadata = { title: "Seu convite · CRM AZUZ" };
 
 /**
- * O que a pessoa convidada vê. O link já vem identificado, então aqui a marca
- * da clínica aparece — ela mesma cria a senha, ninguém da equipe digita por ela.
+ * O que a pessoa convidada vê — busca o convite real (`Membro.convitePendente`) direto no banco,
+ * server-side, sem sessão nenhuma (quem está aqui ainda não tem login). `token` é o id do Membro
+ * pendente, o mesmo usado no link mandado por e-mail em `POST /api/equipe`.
  */
 export default async function ConvitePage({
   params,
@@ -15,64 +17,39 @@ export default async function ConvitePage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const primeiroNome = convite.nome.split(" ")[0];
+  const membro = await prisma.membro.findUnique({
+    where: { id: token },
+    include: { workspace: { select: { nome: true } } },
+  });
+
+  if (!membro || !membro.convitePendente) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card card">
+          <h1 className="auth-title">Convite não encontrado</h1>
+          <p className="auth-descricao">
+            Esse link de convite não existe mais ou já foi usado. Peça pra quem te convidou mandar
+            um novo.
+          </p>
+          <p className="auth-rodape">
+            <Link href="/login">Ir pro login</Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const primeiroNome = membro.nome.split(" ")[0];
 
   return (
-    <div className="login-screen">
-      <div className="login-card">
-        <div className="login-brand">
-          <div className="mark">a</div>
-          <p className="login-title" style={{ marginBottom: 2 }}>
-            Bem-vindo, {primeiroNome}
-          </p>
-          <p className="ws">
-            {convite.convidadoPor} te convidou pro CRM da {workspace.name}
-          </p>
-        </div>
-
-        <div className="lfield">
-          <label htmlFor="email">E-mail</label>
-          <input
-            id="email"
-            className="input"
-            type="email"
-            defaultValue={convite.email}
-            readOnly
-          />
-        </div>
-
-        <div className="lfield">
-          <label htmlFor="senha">Crie sua senha</label>
-          <input
-            id="senha"
-            className="input"
-            type="password"
-            autoComplete="new-password"
-            placeholder="Mínimo 8 caracteres"
-          />
-        </div>
-
-        <div className="lfield">
-          <label htmlFor="senha2">Confirme sua senha</label>
-          <input
-            id="senha2"
-            className="input"
-            type="password"
-            autoComplete="new-password"
-            placeholder="Repita a senha"
-          />
-        </div>
-
-        <Link className="login-btn" href="/inicio">
-          Criar senha e entrar
-        </Link>
-
-        <p className="login-foot">
-          Papel: {convite.papelPersonalizado} · definido pela{" "}
-          {convite.convidadoPor}
-          <br />
-          <span style={{ opacity: 0.7 }}>Convite {token}</span>
+    <div className="auth-page">
+      <div className="auth-card card">
+        <h1 className="auth-title">Bem-vindo, {primeiroNome}</h1>
+        <p className="auth-descricao">
+          Você foi convidado(a) pro CRM da <strong>{membro.workspace.nome}</strong> como{" "}
+          {membro.papel}. Crie sua senha pra começar a usar.
         </p>
+        <AceitarConviteForm id={membro.id} email={membro.email} />
       </div>
     </div>
   );

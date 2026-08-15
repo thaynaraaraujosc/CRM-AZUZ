@@ -230,8 +230,9 @@ model Membro {
   // do VARCHAR padrão.
   foto            String? @db.Text
 
-  criadoEm     DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  ultimoAcesso DateTime?
 
   tokensRedefinicaoSenha TokenRedefinicaoSenha[]
 }

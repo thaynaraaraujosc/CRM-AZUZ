@@ -1020,6 +1020,8 @@ export type Membro = {
   convitePendente?: boolean;
   /** Foto de perfil (data URL) que a pessoa colocou em "Meu Perfil" — se não tiver, mostra as iniciais. */
   foto?: string;
+  /** Timestamp ISO do último login real (`authorize()` em auth.ts) — null/ausente = nunca entrou. */
+  ultimoAcesso?: string | null;
 };
 
 export const PERMISSOES_CRM = [

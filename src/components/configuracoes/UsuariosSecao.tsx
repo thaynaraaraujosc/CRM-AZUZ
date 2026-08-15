@@ -11,8 +11,9 @@ import { MatrizPermissoes } from "./MatrizPermissoes";
 
 const FUNCOES_OPCOES = [...FUNCOES_PADRAO.map((f) => f.nome), "Função personalizada"];
 
-/** Usuários e permissões + Funções (itens 21-22) — tabela real de `equipe` (data.ts); adicionar
- * usuário e criar função ficam em estado local (front-end apenas, sem convite/e-mail de verdade). */
+/** Usuários e permissões + Funções (itens 21-22) — tabela real de `equipe` (banco); "Adicionar
+ * usuário" cria o membro pendente de verdade e manda um e-mail de convite real (Resend), mesma
+ * função `convidarMembro` usada em /equipe/convidar. */
 export function UsuariosSecao() {
   const { estado, adicionarFuncao, removerFuncao } = useConfiguracoes();
   const { membros: equipe, convidarMembro } = useEquipe();
@@ -83,7 +84,7 @@ export function UsuariosSecao() {
                     <td>{m.email}</td>
                     <td>{m.papel}</td>
                     <td>{m.convitePendente ? "Pendente" : m.ativo ? "Ativo" : "Suspenso"}</td>
-                    <td>{m.convitePendente ? "—" : "Hoje"}</td>
+                    <td>{m.ultimoAcesso ? new Date(m.ultimoAcesso).toLocaleDateString("pt-BR") : "Nunca"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -121,7 +122,7 @@ export function UsuariosSecao() {
         aberto={drawerAberto}
         onFechar={() => setDrawerAberto(false)}
         titulo="Adicionar usuário"
-        subtitulo="Convite simulado — não envia e-mail real nesta fase."
+        subtitulo="A pessoa recebe um e-mail de convite de verdade e cria a própria senha."
         rodape={
           <>
             <button type="button" className="btn ghost" onClick={() => setDrawerAberto(false)}>

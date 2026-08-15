@@ -32,6 +32,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const senhaValida = await bcrypt.compare(senha, membro.senha);
         if (!senhaValida) return null;
 
+        // Fire-and-forget — não atrasa o login por causa disso; só alimenta a coluna "Último
+        // acesso" em Configurações > Usuários.
+        prisma.membro.update({ where: { id: membro.id }, data: { ultimoAcesso: new Date() } }).catch(() => {});
+
         return {
           id: membro.id,
           name: membro.nome,

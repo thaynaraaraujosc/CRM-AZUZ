@@ -9,6 +9,7 @@ const ROTAS_PUBLICAS = [
   "/cadastro",
   "/esqueci-senha",
   "/redefinir-senha",
+  "/convite",
   "/formulario-preview",
   "/acesso-bloqueado",
   "/politica-de-privacidade",
@@ -48,6 +49,7 @@ export default async function proxy(request: NextRequest) {
     ROTAS_PUBLICAS.some((rota) => pathname === rota || pathname.startsWith(`${rota}/`)) ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/formularios") ||
+    pathname.startsWith("/api/convite") ||
     pathname === "/api/cadastro" ||
     // Chamado direto pela Meta (verificação de webhook + mensagens recebidas), sem sessão de
     // navegador nenhuma — a validação de assinatura HMAC dentro da rota é que garante que é a
