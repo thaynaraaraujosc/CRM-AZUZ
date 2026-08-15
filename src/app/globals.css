@@ -11446,19 +11446,21 @@ button.camp-row:hover {
 
 /* ------------------------------------ Compromisso (agenda) ------------------------------------ */
 
+/* Mesmo ajuste de `.central-dia-card` — a seção (`.central-dia-secao`) já é a caixinha, esta linha
+   fica flat dentro dela. */
 .central-dia-compromisso {
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--line);
-  background: var(--navy-raised);
-  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+  padding: var(--space-4) var(--space-2);
+  border-bottom: 1px solid var(--line-soft);
+  transition: background var(--transition-base);
+}
+.central-dia-secao-lista .central-dia-compromisso:last-child {
+  border-bottom: none;
 }
 .central-dia-compromisso:hover {
-  box-shadow: var(--shadow-xs);
-  border-color: var(--gray-300);
+  background: var(--surface-hover);
 }
 
 .central-dia-compromisso-hora {
@@ -11497,10 +11499,11 @@ button.camp-row:hover {
 
 /* ----------------------------------------- Recomendações ----------------------------------------- */
 
+/* Mesmo ajuste de `.central-dia-card` — a seção (`.central-dia-secao`) já é a caixinha, esta linha
+   fica flat dentro dela. */
 .central-dia-recomendacoes {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .central-dia-recomendacao {
@@ -11509,10 +11512,11 @@ button.camp-row:hover {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--navy-raised);
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.central-dia-recomendacoes .central-dia-recomendacao:last-child {
+  border-bottom: none;
 }
 .central-dia-recomendacao .n {
   font-size: 12.5px;
