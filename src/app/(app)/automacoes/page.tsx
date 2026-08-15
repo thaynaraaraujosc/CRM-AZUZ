@@ -16,7 +16,7 @@ import type {
   RegistroExecucao,
 } from "@/lib/automation-flow/types";
 import type { Funil } from "@/lib/data";
-import { IconAutomacoes, IconSearch } from "@/components/icons";
+import { IconAutomacoes, IconClose, IconSearch } from "@/components/icons";
 import { FloatingDropdown, Toggle, Topbar } from "@/components/ui";
 import { VisualizarFluxo } from "@/components/automation-flow/VisualizarFluxo";
 
@@ -711,7 +711,7 @@ function AutomacoesPageInner() {
                   aria-label="Limpar busca"
                   onClick={() => setBusca("")}
                 >
-                  ✕
+                  <IconClose width={11} height={11} />
                 </button>
               ) : null}
             </label>
@@ -883,7 +883,7 @@ function AutomacoesPageInner() {
                           aria-label="Fechar filtros"
                           onClick={() => setFiltrosAbertos(false)}
                         >
-                          ✕ Fechar
+                          <IconClose width={11} height={11} /> Fechar
                         </button>
                         <button
                           type="button"
@@ -1191,7 +1191,7 @@ function AutomacoesPageInner() {
                 aria-label="Cancelar"
                 onClick={() => setExclusaoAlvo(null)}
               >
-                ✕
+                <IconClose width={11} height={11} />
               </button>
             </div>
             <div className="flow-side-body">
@@ -1230,7 +1230,7 @@ function AutomacoesPageInner() {
                 aria-label="Cancelar"
                 onClick={() => setAtivarDemoAlvo(null)}
               >
-                ✕
+                <IconClose width={11} height={11} />
               </button>
             </div>
             <div className="flow-side-body">
