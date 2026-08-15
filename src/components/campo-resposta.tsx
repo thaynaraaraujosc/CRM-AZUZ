@@ -4,6 +4,15 @@ import { useRef, useState } from "react";
 
 import { aplicarMascara, type PerguntaFormulario } from "@/lib/formularios-context";
 
+function lerComoDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onload = () => resolve(leitor.result as string);
+    leitor.onerror = () => reject(new Error("Falha ao ler o arquivo"));
+    leitor.readAsDataURL(file);
+  });
+}
+
 export type PessoaOpcao = { id: string; nome: string };
 
 /** Campo de tags — digita e aperta Enter/vírgula pra virar chip; Backspace num campo vazio remove o
@@ -298,10 +307,24 @@ export function CampoResposta({
       const accept = pergunta.tipo === "imagem" ? "image/*" : pergunta.tipo === "video" ? "video/*" : pergunta.tipo === "audio" ? "audio/*" : pergunta.tipo === "documento" ? ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" : undefined;
       const rotuloVazio =
         pergunta.tipo === "imagem" ? "🖼 Escolher imagem" : pergunta.tipo === "video" ? "🎬 Escolher vídeo" : pergunta.tipo === "audio" ? "🎙 Escolher áudio" : pergunta.tipo === "documento" ? "📄 Escolher documento" : "📎 Anexar arquivo";
+      // `valor` guarda "nomeDoArquivo|data:...;base64,..." — o conteúdo real do arquivo, não só o
+      // nome (que era tudo que se salvava antes: quem preenchia achava que tinha anexado o arquivo,
+      // mas ele nunca chegava no CRM). Mesmo delimitador "|" já usado no campo de intervalo de datas.
+      const nomeExibicao = valor?.split("|")[0];
       return interativo ? (
         <label className="form-upload-preview" style={{ cursor: "pointer" }}>
-          {valor ? `📎 ${valor}` : rotuloVazio}
-          <input type="file" accept={accept} style={{ display: "none" }} onChange={(e) => onMudarValor?.(e.target.files?.[0]?.name ?? "")} />
+          {nomeExibicao ? `📎 ${nomeExibicao}` : rotuloVazio}
+          <input
+            type="file"
+            accept={accept}
+            style={{ display: "none" }}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const url = await lerComoDataUrl(file);
+              onMudarValor?.(`${file.name}|${url}`);
+            }}
+          />
         </label>
       ) : (
         <div className="form-upload-preview">{rotuloVazio}</div>

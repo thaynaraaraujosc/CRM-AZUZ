@@ -230,7 +230,8 @@ export type MensagemMidiaData = {
   canal: CanalMensagem;
   /** De onde veio o arquivo escolhido — biblioteca reutilizável do CRM ou upload avulso nesse bloco. */
   origemArquivo?: OrigemArquivoMidia;
-  /** Só quando `origemArquivo === "biblioteca"` — id em `ArquivosDaBiblioteca`. */
+  /** Id em `DocumentoBiblioteca` — um upload avulso nesse bloco também entra de verdade na
+   * biblioteca (base64 real), então acaba sempre preenchido, venha o arquivo de onde vier. */
   arquivoId?: string;
   /** Nome real do arquivo (o que a biblioteca guarda, ou o nome do arquivo enviado nesse bloco). */
   arquivoNome?: string;
@@ -238,9 +239,10 @@ export type MensagemMidiaData = {
   arquivoNomeExibicao?: string;
   /** Extensão/categoria pro ícone e validação de tipo (PDF, DOC, XLS…). */
   arquivoTipo?: string;
-  /** Tamanho mockado (ex.: "4,2 MB") — nunca calculado de um upload de verdade. */
+  /** Tamanho real, calculado do arquivo (ex.: "4,2 MB"). */
   arquivoTamanho?: string;
-  /** Só quando `origemArquivo === "upload"` — `URL.createObjectURL` local, nunca enviado a servidor. */
+  /** Legado — não é mais escrito (upload avulso agora entra na biblioteca com base64 real, ver
+   * `MensagemMidiaForm.tsx`); mantido opcional só pra não quebrar fluxo salvo antes dessa mudança. */
   arquivoUrlTemporaria?: string;
   legenda?: string;
 };

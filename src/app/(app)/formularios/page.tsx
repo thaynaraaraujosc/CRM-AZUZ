@@ -14,6 +14,7 @@ import {
   OPERADORES_LOGICA,
   TIPOS_CAMPO_FORMULARIO,
   TIPOS_LAYOUT,
+  TIPOS_UPLOAD,
   labelTipoCampo,
   useFormularios,
   type Formulario,
@@ -476,12 +477,26 @@ export default function FormulariosPage() {
                     <div className="panel-h">
                       <h4>{nomeResposta(formularioAberto, respostaAberta)}</h4>
                     </div>
-                    {formularioAberto.paginas.flatMap((p) => p.perguntas).filter((q) => !TIPOS_LAYOUT.includes(q.tipo)).map((pergunta) => (
-                      <div className="field" key={pergunta.id}>
-                        <label>{pergunta.rotulo}</label>
-                        <div className="input">{respostaAberta.valores[pergunta.id] || "—"}</div>
-                      </div>
-                    ))}
+                    {formularioAberto.paginas.flatMap((p) => p.perguntas).filter((q) => !TIPOS_LAYOUT.includes(q.tipo)).map((pergunta) => {
+                      const valor = respostaAberta.valores[pergunta.id];
+                      // Campos de upload guardam "nomeDoArquivo|data:...;base64,..." (ver
+                      // campo-resposta.tsx) — mostra o nome com um link real pra abrir/baixar o
+                      // arquivo, em vez de despejar o base64 inteiro como texto.
+                      const ehUpload = TIPOS_UPLOAD.includes(pergunta.tipo);
+                      const [nomeArquivo, urlArquivo] = ehUpload && valor ? valor.split("|") : [undefined, undefined];
+                      return (
+                        <div className="field" key={pergunta.id}>
+                          <label>{pergunta.rotulo}</label>
+                          {ehUpload && urlArquivo ? (
+                            <a className="input" href={urlArquivo} download={nomeArquivo} target="_blank" rel="noopener noreferrer">
+                              📎 {nomeArquivo}
+                            </a>
+                          ) : (
+                            <div className="input">{ehUpload ? "—" : valor || "—"}</div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               ) : (
