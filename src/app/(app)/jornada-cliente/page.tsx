@@ -17,7 +17,7 @@ import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { useTarefas } from "@/lib/tarefas-context";
-import { IconSearch } from "@/components/icons";
+import { IconClose, IconSearch, IconStar } from "@/components/icons";
 import { FloatingDropdown } from "@/components/ui";
 import { Timeline } from "@/components/timeline";
 import {
@@ -417,7 +417,7 @@ function JornadaClientePageInner() {
             />
             {busca ? (
               <button type="button" className="jornada-busca-limpar" onClick={() => setBusca("")} aria-label="Limpar pesquisa">
-                ✕
+                <IconClose width={11} height={11} />
               </button>
             ) : null}
           </label>
@@ -481,7 +481,7 @@ function JornadaClientePageInner() {
               <span className="filterbar-chip" key={chave}>
                 {filtroDefs.find((f) => f.chave === chave)?.label}: {valor}
                 <button type="button" onClick={() => setFiltros((prev) => ({ ...prev, [chave]: "Todos" }))}>
-                  ✕
+                  <IconClose width={11} height={11} />
                 </button>
               </span>
             ))}
@@ -584,7 +584,7 @@ function JornadaClientePageInner() {
                                 aria-label={c.favorito ? "Remover dos favoritos" : "Favoritar"}
                                 title={c.favorito ? "Remover dos favoritos" : "Favoritar"}
                               >
-                                {c.favorito ? "★" : "☆"}
+                                <IconStar width={13} height={13} fill={c.favorito ? "currentColor" : "none"} />
                               </button>
                             </td>
                             <td>
@@ -678,7 +678,7 @@ function JornadaClientePageInner() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span className={CLASSE_ESTADO[estado]}>{estado}</span>
                   <button type="button" className="close" style={{ cursor: "pointer" }} onClick={fecharPainel}>
-                    Fechar ✕
+                    Fechar <IconClose width={11} height={11} />
                   </button>
                 </div>
               </div>
@@ -828,10 +828,10 @@ function SecaoContatosRecentes({
               </button>
               <div className="jornada-recente-acoes">
                 <button type="button" onClick={() => onFavoritar(c.nome)} title="Favoritar" aria-label="Favoritar">
-                  {c.favorito ? "★" : "☆"}
+                  <IconStar width={13} height={13} fill={c.favorito ? "currentColor" : "none"} />
                 </button>
                 <button type="button" onClick={() => onRemover(c.id)} title="Remover dos recentes" aria-label="Remover dos recentes">
-                  ✕
+                  <IconClose width={11} height={11} />
                 </button>
               </div>
             </div>
