@@ -1,5 +1,4 @@
 import {
-  oportunidadesPerdidas,
   type Campanha,
   type ColunaTarefas,
   type Contato,
@@ -396,7 +395,6 @@ function secaoResumoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
     mensagensPorContato: dados.mensagensPorContato,
     tarefas: dados.tarefas,
     funis: dados.funis,
-    oportunidadesPerdidas,
   };
   const eventos = gerarLinhaDoTempo(contato.id, fontesTimeline);
   const resumo = calcularResumoJornada(contato, eventos, { funis: dados.funis, tarefas: dados.tarefas, conversas: dados.conversas });
@@ -426,7 +424,6 @@ function secaoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
     mensagensPorContato: dados.mensagensPorContato,
     tarefas: dados.tarefas,
     funis: dados.funis,
-    oportunidadesPerdidas,
   });
   return {
     titulo: "Linha do tempo",

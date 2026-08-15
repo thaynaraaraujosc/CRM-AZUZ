@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-import { classeOrigem, oportunidadesPerdidas, filtrosContatos, type Canal } from "@/lib/data";
+import { classeOrigem, filtrosContatos, type Canal } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useConversas } from "@/lib/conversas-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
@@ -651,7 +651,6 @@ function ContatosPageInner() {
                 mensagensPorContato: mensagensExtraPorContato,
                 tarefas,
                 funis,
-                oportunidadesPerdidas,
               })}
             />
           </section>

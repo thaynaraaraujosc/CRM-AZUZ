@@ -13,8 +13,6 @@ import { createPortal } from "react-dom";
 
 import {
   classeOrigem,
-  motivosPerda,
-  oportunidadesPerdidas,
   type Canal,
   type Contato,
   type ConvMensagem,
@@ -29,6 +27,7 @@ import { useContatos } from "@/lib/contatos-context";
 import { useConversas, type ConversaReal } from "@/lib/conversas-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useTarefas } from "@/lib/tarefas-context";
+import { useMotivosPerda } from "@/lib/motivos-perda";
 import { formatarTempoRelativoReal } from "@/lib/datas";
 import { estimarMinutosAtras, gerarLinhaDoTempo, type Evento } from "@/lib/timeline";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
@@ -484,6 +483,7 @@ function ConversasPageInner() {
     atribuirAtendente: atribuirAtendenteConversa,
   } = useConversas();
   const { membros: membrosEquipe } = useEquipe();
+  const motivosPerdaBase = useMotivosPerda();
   const { colunas: tarefas } = useTarefas();
   const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
   const { fluxos, dispararEvento, registrarExecucao } = useAutomationFlows();
@@ -1519,7 +1519,7 @@ function ConversasPageInner() {
   const historico = historicoPorContato[aberta.nome] ?? [];
   const resultadoAtual = resultadoPorContato[aberta.nome];
   const motivosDisponiveis = [
-    ...motivosPerda.map((m) => m.motivo),
+    ...motivosPerdaBase,
     ...motivosPerdaCustom,
   ];
 
@@ -1562,7 +1562,7 @@ function ConversasPageInner() {
   const eventosTimelineContato: Evento[] = contatoDaConversa
     ? gerarLinhaDoTempo(
         contatoDaConversa.id,
-        { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis, oportunidadesPerdidas },
+        { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis },
         eventosExtrasTimeline,
       )
     : eventosExtrasTimeline.slice().sort((a, b) => a.minutosAtras - b.minutosAtras);

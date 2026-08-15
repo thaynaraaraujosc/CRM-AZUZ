@@ -7,7 +7,6 @@ import { useSession } from "next-auth/react";
 
 import {
   classeOrigem,
-  oportunidadesPerdidas,
   type Canal,
   type Contato,
 } from "@/lib/data";
@@ -167,7 +166,7 @@ function JornadaClientePageInner() {
   }
   function temCompra(c: Contato): boolean {
     return funis.some((f) =>
-      f.colunas.some((col) => col.titulo.startsWith("Fechado") && col.cards.some((card) => card.nome === c.nome)),
+      f.colunas.some((col) => col.cards.some((card) => card.nome === c.nome && card.statusFechamento === "ganho")),
     );
   }
   function conversaDe(c: Contato) {
@@ -209,7 +208,7 @@ function JornadaClientePageInner() {
         if (!m || m.papel !== filtros.papel) return false;
       }
       if (filtros.etiqueta !== "Todos" && !(c.etiquetas ?? []).includes(filtros.etiqueta)) return false;
-      if (filtros.situacao !== "Todos" && inferirEstadoCicloDeVida(c, oportunidadesPerdidas) !== filtros.situacao)
+      if (filtros.situacao !== "Todos" && inferirEstadoCicloDeVida(c, funis) !== filtros.situacao)
         return false;
       if (filtros.clienteOuLead !== "Todos") {
         const cliente = c.etapa === "Fechado";
@@ -232,7 +231,7 @@ function JornadaClientePageInner() {
         if (filtros.ativo === "Inativo" && ativo) return false;
       }
       if (filtros.primeiraEntrada !== "Todos") {
-        const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis, oportunidadesPerdidas });
+        const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis });
         const primeiro = eventos[eventos.length - 2];
         const dias = primeiro ? primeiro.minutosAtras / 1440 : null;
         if (filtros.primeiraEntrada === "Últimos 7 dias" && (dias === null || dias > 7)) return false;
@@ -250,7 +249,7 @@ function JornadaClientePageInner() {
     if (colunasVisiveis.size === 0) return new Map<string, ResumoJornada>();
     const mapa = new Map<string, ResumoJornada>();
     for (const c of filtrados) {
-      const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis, oportunidadesPerdidas });
+      const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis });
       mapa.set(c.id, calcularResumoJornada(c, eventos, { funis, tarefas, conversas }));
     }
     return mapa;
@@ -368,11 +367,11 @@ function JornadaClientePageInner() {
   const eventos = contato
     ? gerarLinhaDoTempo(
         contato.id,
-        { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis, oportunidadesPerdidas },
+        { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis },
         anotacoes[contato.id] ?? [],
       )
     : [];
-  const estado = contato ? inferirEstadoCicloDeVida(contato, oportunidadesPerdidas) : null;
+  const estado = contato ? inferirEstadoCicloDeVida(contato, funis) : null;
   const resumo = contato ? calcularResumoJornada(contato, eventos, { funis, tarefas, conversas }) : null;
 
   const filtroDefs: { chave: string; label: string; opcoes: string[] }[] = [
@@ -615,8 +614,8 @@ function JornadaClientePageInner() {
                             {colunasVisiveis.has("proximaAtividade") ? <td>{resumoLinha?.proximaAcao ?? "Nenhuma"}</td> : null}
                             {colunasVisiveis.has("situacao") ? (
                               <td>
-                                <span className={CLASSE_ESTADO[inferirEstadoCicloDeVida(c, oportunidadesPerdidas)]}>
-                                  {inferirEstadoCicloDeVida(c, oportunidadesPerdidas)}
+                                <span className={CLASSE_ESTADO[inferirEstadoCicloDeVida(c, funis)]}>
+                                  {inferirEstadoCicloDeVida(c, funis)}
                                 </span>
                               </td>
                             ) : null}

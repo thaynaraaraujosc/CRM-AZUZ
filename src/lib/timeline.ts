@@ -1,18 +1,17 @@
 /**
  * Linha do tempo unificada de um contato — deriva eventos reais a partir dos
- * dados que já existem em cada módulo (conversas, tarefas, funil, perdas),
- * em vez de manter uma lista de eventos separada e hardcoded.
+ * dados que já existem em cada módulo (conversas, tarefas, funil), em vez de
+ * manter uma lista de eventos separada e hardcoded.
  *
  * Conversas/mensagens (`fontes.conversas`/`fontes.mensagensPorContato`) já vêm do banco de
  * verdade (`useConversas()`/`useMensagensExtra()`) — `MensagemExtra.criadoEm` é timestamp real,
  * então essa parte da timeline ordena por relógio de verdade, não heurística. Tarefas/funil ainda
  * só têm strings de exibição de data (`estimarMinutosAtras()` segue fazendo o parse melhor-esforço
- * pra essas), e `oportunidadesPerdidas` continua vindo do mock até o funil ganhar
- * `NegocioCard.motivoPerda` de verdade (ver plano da Inteligência Comercial).
+ * pra essas). Negociação ganha/perdida vem de `NegocioCard.statusFechamento` de verdade (grava no
+ * Funil quando alguém marca "Marcar como ganho/perdido" — ver `src/app/(app)/funil/page.tsx`).
  */
 
 import {
-  oportunidadesPerdidas as perdasPadrao,
   type Canal,
   type ColunaTarefas,
   type Contato,
@@ -21,7 +20,6 @@ import {
   type Origem,
 } from "@/lib/data";
 import type { ConversaReal } from "@/lib/conversas-context";
-import { slugId } from "@/lib/ids";
 import { estimarMinutosAtras } from "@/lib/datas";
 
 export { estimarMinutosAtras };
@@ -129,10 +127,10 @@ export type EstadoCicloDeVida =
  */
 export function inferirEstadoCicloDeVida(
   contato: Pick<Contato, "nome" | "etapa">,
-  oportunidadesPerdidas: FontesTimeline["oportunidadesPerdidas"],
+  funis: Funil[],
 ): EstadoCicloDeVida {
   if (contato.etapa === "Fechado") return "Cliente";
-  const perdeu = oportunidadesPerdidas.some((o) => o.cliente === contato.nome);
+  const perdeu = funis.some((f) => f.colunas.some((c) => c.cards.some((cd) => cd.nome === contato.nome && cd.statusFechamento === "perdido")));
   if (perdeu && contato.etapa === "Novo") return "Perdido";
   if (contato.etapa === "Proposta") return "Em negociação";
   if (contato.etapa === "Qualificado") return "Em atendimento";
@@ -147,7 +145,6 @@ type FontesTimeline = {
   mensagensPorContato: Record<string, ConvMensagem[]>;
   tarefas: ColunaTarefas[];
   funis: Funil[];
-  oportunidadesPerdidas: typeof perdasPadrao;
 };
 
 /**
@@ -271,35 +268,35 @@ export function gerarLinhaDoTempo(
         origem: card.origem,
         link: { modulo: "funil", href: `/funil` },
       });
-      if (coluna.titulo.startsWith("Fechado")) {
+      if (card.statusFechamento === "ganho") {
+        const quandoFechou = card.dataFechamento || card.dias;
         eventos.push({
           id: `${funil.id}-${coluna.id}-${card.id}-venda`,
           contatoId,
           tipo: "negociacao_fechada",
           titulo: `Negociação fechada — ${card.valor}`,
           descricao: `Funil: ${funil.nome}`,
-          quando: card.dias,
-          minutosAtras: minutosAtras - 0.1,
+          quando: quandoFechou,
+          minutosAtras: estimarMinutosAtras(quandoFechou) - 0.1,
+          origem: card.origem,
+          link: { modulo: "funil", href: `/funil` },
+        });
+      } else if (card.statusFechamento === "perdido") {
+        const quandoPerdeu = card.dataFechamento || card.dias;
+        eventos.push({
+          id: `${funil.id}-${coluna.id}-${card.id}-perda`,
+          contatoId,
+          tipo: "negociacao_perdida",
+          titulo: `Negociação perdida${card.motivoPerda ? ` — ${card.motivoPerda}` : ""}`,
+          descricao: `Etapa: ${coluna.titulo} · Valor: ${card.valor} · Funil: ${funil.nome}`,
+          quando: quandoPerdeu,
+          minutosAtras: estimarMinutosAtras(quandoPerdeu) - 0.1,
+          responsavel: card.responsavel,
           origem: card.origem,
           link: { modulo: "funil", href: `/funil` },
         });
       }
     }
-  }
-
-  for (const perda of fontes.oportunidadesPerdidas) {
-    if (perda.cliente !== contato.nome) continue;
-    eventos.push({
-      id: `perda-${slugId(perda.cliente)}-${perda.data}`,
-      contatoId,
-      tipo: "negociacao_perdida",
-      titulo: `Negociação perdida — ${perda.motivo}`,
-      descricao: `Etapa: ${perda.etapa} · Valor: ${perda.valor}`,
-      quando: perda.data,
-      minutosAtras: estimarMinutosAtras(perda.data),
-      responsavel: perda.responsavel,
-      link: { modulo: "perdas", href: `/performance-vendas` },
-    });
   }
 
   eventos.sort((a, b) => a.minutosAtras - b.minutosAtras);
