@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import { aplicarMascara, type PerguntaFormulario } from "@/lib/formularios-context";
+import { IconAnexo, IconClose, IconDoc, IconImage, IconMic, IconStar, IconVideoCam } from "@/components/icons";
 
 function lerComoDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -59,7 +60,7 @@ function CampoTags({
         <span className="form-tag-chip" key={t}>
           {t}
           <button type="button" onClick={() => removerTag(t)} aria-label={`Remover tag ${t}`}>
-            ✕
+            <IconClose width={11} height={11} />
           </button>
         </span>
       ))}
@@ -305,15 +306,25 @@ export function CampoResposta({
     case "video":
     case "audio": {
       const accept = pergunta.tipo === "imagem" ? "image/*" : pergunta.tipo === "video" ? "video/*" : pergunta.tipo === "audio" ? "audio/*" : pergunta.tipo === "documento" ? ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" : undefined;
-      const rotuloVazio =
-        pergunta.tipo === "imagem" ? "🖼 Escolher imagem" : pergunta.tipo === "video" ? "🎬 Escolher vídeo" : pergunta.tipo === "audio" ? "🎙 Escolher áudio" : pergunta.tipo === "documento" ? "📄 Escolher documento" : "📎 Anexar arquivo";
+      const IconRotuloVazio =
+        pergunta.tipo === "imagem" ? IconImage : pergunta.tipo === "video" ? IconVideoCam : pergunta.tipo === "audio" ? IconMic : pergunta.tipo === "documento" ? IconDoc : IconAnexo;
+      const textoRotuloVazio =
+        pergunta.tipo === "imagem" ? "Escolher imagem" : pergunta.tipo === "video" ? "Escolher vídeo" : pergunta.tipo === "audio" ? "Escolher áudio" : pergunta.tipo === "documento" ? "Escolher documento" : "Anexar arquivo";
       // `valor` guarda "nomeDoArquivo|data:...;base64,..." — o conteúdo real do arquivo, não só o
       // nome (que era tudo que se salvava antes: quem preenchia achava que tinha anexado o arquivo,
       // mas ele nunca chegava no CRM). Mesmo delimitador "|" já usado no campo de intervalo de datas.
       const nomeExibicao = valor?.split("|")[0];
       return interativo ? (
-        <label className="form-upload-preview" style={{ cursor: "pointer" }}>
-          {nomeExibicao ? `📎 ${nomeExibicao}` : rotuloVazio}
+        <label className="form-upload-preview" style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          {nomeExibicao ? (
+            <>
+              <IconAnexo width={13} height={13} /> {nomeExibicao}
+            </>
+          ) : (
+            <>
+              <IconRotuloVazio width={13} height={13} /> {textoRotuloVazio}
+            </>
+          )}
           <input
             type="file"
             accept={accept}
@@ -327,7 +338,9 @@ export function CampoResposta({
           />
         </label>
       ) : (
-        <div className="form-upload-preview">{rotuloVazio}</div>
+        <div className="form-upload-preview" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <IconRotuloVazio width={13} height={13} /> {textoRotuloVazio}
+        </div>
       );
     }
     case "assinatura":
@@ -482,7 +495,7 @@ export function CampoResposta({
               onClick={() => onMudarValor?.(String(estrela))}
               style={{ color: estrela <= n ? "#f5a623" : "var(--text-faint)" }}
             >
-              ★
+              <IconStar width={16} height={16} fill={estrela <= n ? "currentColor" : "none"} />
             </button>
           ))}
         </div>
@@ -541,7 +554,9 @@ export function CampoResposta({
         // eslint-disable-next-line @next/next/no-img-element -- URL livre informada pelo usuário, sem otimização de imagem local
         <img className="form-bloco-imagem" src={pergunta.placeholder} alt={pergunta.rotulo || ""} />
       ) : (
-        <div className="form-bloco-imagem-vazia">🖼 Sem imagem definida</div>
+        <div className="form-bloco-imagem-vazia" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          <IconImage width={14} height={14} /> Sem imagem definida
+        </div>
       );
     default:
       return (
