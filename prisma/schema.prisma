@@ -170,6 +170,10 @@ model TarefaCard {
 model Workspace {
   id       String   @id
   nome     String
+  // Fonte única de verdade pro segmento do negócio — antes só existia dentro do blob de
+  // `Preferencia` (chave "configuracoes"), desencontrado da coluna `nome` real e sem sobreviver
+  // corretamente entre sessões/dispositivos. Null = ainda não preenchido pelo usuário.
+  segmento String?
   slug     String   @unique
   criadoEm DateTime @default(now())
 

@@ -56,7 +56,7 @@ function GlobalSearch() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: popRef, posicao } = useFloatingPosition(anchorRect, open && !!query.trim());
+  const { ref: popRef, posicao } = useFloatingPosition(anchorRect, open && !!query.trim(), 8, () => setOpen(false));
 
   const resultados =
     query.trim().length === 0
@@ -115,7 +115,7 @@ function GlobalSearch() {
 function CriarMenu() {
   const [open, setOpen] = useState(false);
   const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: popRef, posicao } = useFloatingPosition(anchorRect, open);
+  const { ref: popRef, posicao } = useFloatingPosition(anchorRect, open, 8, () => setOpen(false));
 
   return (
     <div className="dropdown-anchor">
@@ -189,7 +189,7 @@ function CriarMenu() {
 function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: popRef, posicao } = useFloatingPosition(anchorRect, open);
+  const { ref: popRef, posicao } = useFloatingPosition(anchorRect, open, 8, () => setOpen(false));
   const { itens, naoLidas, marcarTodasLidas } = useNotificacoes();
 
   return (

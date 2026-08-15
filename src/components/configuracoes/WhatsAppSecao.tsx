@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Toggle } from "@/components/ui";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
-import { useIntegracaoBaileys } from "./useIntegracaoBaileys";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
+
+type StatusIntegracaoNaoOficial = {
+  status: "desconectado" | "aguardando_qr" | "conectado" | "erro";
+  metadados: { qrDataUrl?: string | null; numero?: string | null } | null;
+  erroMensagem: string | null;
+};
 
 type Aba = "conexao" | "atendimento" | "mensagens" | "compatibilidade" | "horarios";
 const ABAS: { id: Aba; label: string }[] = [
@@ -28,9 +33,37 @@ export function WhatsAppSecao() {
   const { funis } = useFunis();
   const [aba, setAba] = useState<Aba>("conexao");
   const { integracao, desconectando, desconectar, erroDoRedirect } = useIntegracaoMeta("meta_whatsapp");
-  const baileys = useIntegracaoBaileys();
+  const [naoOficial, setNaoOficial] = useState<StatusIntegracaoNaoOficial | null>(null);
+  const [desconectandoNaoOficial, setDesconectandoNaoOficial] = useState(false);
 
   const [tipoConexao, setTipoConexao] = useState("Conexão por provedor");
+
+  function carregarNaoOficial() {
+    fetch("/api/integracoes/whatsapp-nao-oficial")
+      .then((r) => r.json())
+      .then(setNaoOficial)
+      .catch((erro) => console.error("Falha ao carregar status do WhatsApp não oficial:", erro));
+  }
+
+  // Só faz sentido ficar perguntando o status (QR muda, conexão fecha) enquanto essa aba tá
+  // selecionada — evita poll parado em segundo plano nas outras opções de conexão.
+  useEffect(() => {
+    if (tipoConexao !== "Conexão não oficial") return;
+    carregarNaoOficial();
+    const intervalo = setInterval(carregarNaoOficial, 4000);
+    return () => clearInterval(intervalo);
+  }, [tipoConexao]);
+
+  async function desconectarNaoOficial() {
+    setDesconectandoNaoOficial(true);
+    try {
+      await fetch("/api/integracoes/whatsapp-nao-oficial/desconectar", { method: "POST" });
+      carregarNaoOficial();
+    } finally {
+      setDesconectandoNaoOficial(false);
+    }
+  }
+
   const [distribuir, setDistribuir] = useState(true);
   const [manterResponsavel, setManterResponsavel] = useState(true);
   const [encaminharFila, setEncaminharFila] = useState(false);
@@ -85,6 +118,38 @@ export function WhatsAppSecao() {
             )}
           </div>
 
+          {tipoConexao === "Conexão não oficial" ? (
+            <div className="card" style={{ padding: 14, marginBottom: 14 }}>
+              <p className="int-title" style={{ margin: 0 }}>WhatsApp — Conexão não oficial (espelhado)</p>
+              {naoOficial?.status === "conectado" ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
+                  <p className="int-sub" style={{ margin: 0 }}>
+                    Conectado — {naoOficial.metadados?.numero ?? "número não identificado"}
+                  </p>
+                  <button type="button" className="btn danger" onClick={desconectarNaoOficial} disabled={desconectandoNaoOficial}>
+                    {desconectandoNaoOficial ? "Desconectando…" : "Desconectar"}
+                  </button>
+                </div>
+              ) : naoOficial?.status === "aguardando_qr" && naoOficial.metadados?.qrDataUrl ? (
+                <div style={{ marginTop: 10, textAlign: "center" }}>
+                  <p className="hint" style={{ marginBottom: 8 }}>
+                    Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho, e escaneie:
+                  </p>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- data URL gerado ao vivo pelo serviço, sem otimizador de imagem cabível aqui */}
+                  <img src={naoOficial.metadados.qrDataUrl} alt="QR code do WhatsApp" style={{ width: 220, height: 220 }} />
+                </div>
+              ) : naoOficial?.status === "erro" ? (
+                <p className="int-sub" style={{ margin: "8px 0 0", color: "var(--danger)" }}>
+                  Erro: {naoOficial.erroMensagem}
+                </p>
+              ) : (
+                <p className="int-sub" style={{ margin: "8px 0 0" }}>
+                  Aguardando o serviço gerar o QR code… confira se o whatsapp-service está rodando.
+                </p>
+              )}
+            </div>
+          ) : null}
+
           <div className="field">
             <label>Tipo de conexão</label>
             <select className="input" value={tipoConexao} onChange={(e) => setTipoConexao(e.target.value)}>
@@ -94,44 +159,6 @@ export function WhatsAppSecao() {
               <option>Não configurado</option>
             </select>
           </div>
-
-          {tipoConexao === "Conexão não oficial" ? (
-            <div className="card" style={{ padding: 14, marginBottom: 14 }}>
-              <p className="int-title" style={{ margin: 0 }}>WhatsApp via QR Code (conexão não oficial)</p>
-              <p className="hint" style={{ margin: "4px 0 10px" }}>
-                Escaneia como o WhatsApp Web — não é a API oficial da Meta, então não passa pela
-                verificação de negócio, mas o número corre risco de ser banido a qualquer momento por
-                violar os termos de uso do WhatsApp.
-              </p>
-
-              {baileys.erro ? (
-                <p className="hint" style={{ color: "var(--danger)", marginBottom: 10 }}>
-                  ⚠ {baileys.erro}
-                </p>
-              ) : null}
-
-              {baileys.estado?.status === "conectado" ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                  <p className="int-sub" style={{ margin: 0 }}>
-                    Conectado — {baileys.estado.numero ?? "número não identificado"}
-                  </p>
-                  <button type="button" className="btn danger" onClick={baileys.desconectar}>
-                    Desconectar
-                  </button>
-                </div>
-              ) : baileys.estado?.status === "aguardando_qr" && baileys.estado.qrDataUrl ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pelo worker, não é asset estático */}
-                  <img src={baileys.estado.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={220} height={220} />
-                  <p className="hint">Abre o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.</p>
-                </div>
-              ) : (
-                <button type="button" className="btn primary" onClick={baileys.conectar} disabled={baileys.conectando}>
-                  {baileys.conectando ? "Gerando QR Code…" : "Conectar via QR Code"}
-                </button>
-              )}
-            </div>
-          ) : null}
 
           <div className="config-grid-2">
             <div className="field">
@@ -144,7 +171,7 @@ export function WhatsAppSecao() {
             </div>
             <div className="field">
               <label>Nome exibido</label>
-              <input className="input" defaultValue="Clínica Vitta" />
+              <input className="input" placeholder="Ex.: Nome do seu negócio" />
             </div>
             <div className="field">
               <label>Equipe responsável</label>
@@ -213,7 +240,7 @@ export function WhatsAppSecao() {
           </div>
           <div className="field">
             <label>Assinatura do atendente</label>
-            <input className="input" defaultValue="— {atendente}, Clínica Vitta" />
+            <input className="input" defaultValue="— {atendente}" />
           </div>
         </div>
       ) : null}

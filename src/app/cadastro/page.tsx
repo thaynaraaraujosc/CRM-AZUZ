@@ -50,6 +50,10 @@ export default function CadastroPage() {
 
   return (
     <div className="auth-page">
+      <Link href="/" className="auth-brand">
+        <span className="auth-mark">a</span>
+        <span className="auth-brand-name">azuz crm</span>
+      </Link>
       <form className="auth-card card" onSubmit={handleSubmit}>
         <h1 className="auth-title">Cadastre sua empresa</h1>
 

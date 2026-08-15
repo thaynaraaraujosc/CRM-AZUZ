@@ -12,7 +12,6 @@ import {
   type SVGProps,
 } from "react";
 
-import { workspace } from "@/lib/data";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
@@ -20,7 +19,6 @@ import {
   IconAcoes,
   IconAutomacoes,
   IconCalendar,
-  IconCamera,
   IconConfiguracoes,
   IconContatos,
   IconDoc,
@@ -113,10 +111,10 @@ export function Sidebar() {
   const { membros: equipe } = useEquipe();
   const [contaAberta, setContaAberta] = useState(false);
   const [contaAnchorRect, setContaAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: contaPopRef, posicao: contaPos } = useFloatingPosition(contaAnchorRect, contaAberta);
+  const { ref: contaPopRef, posicao: contaPos } = useFloatingPosition(contaAnchorRect, contaAberta, 8, () => setContaAberta(false));
   const [workspaceAberto, setWorkspaceAberto] = useState(false);
-  const [nomeEmpresa, setNomeEmpresa] = useState(workspace.name);
-  const [segmento, setSegmento] = useState(workspace.segment);
+  const [nomeEmpresa, setNomeEmpresa] = useState("");
+  const [segmento, setSegmento] = useState("");
   const [nomeEmpresaSincronizado, setNomeEmpresaSincronizado] = useState<string | null>(null);
   // Sincroniza com a sessão assim que ela carregar — "ajustar estado durante a renderização" (não
   // num useEffect) porque só precisa rodar uma vez, quando o nome do workspace muda de verdade.
@@ -124,8 +122,21 @@ export function Sidebar() {
     setNomeEmpresaSincronizado(sessao.user.workspaceNome);
     setNomeEmpresa(sessao.user.workspaceNome);
   }
+  // Segmento não vai na sessão (só nome) — busca direto de `/api/workspace` uma vez que a sessão
+  // exista. Esse popover é só visualização rápida (dado real, mas somente-leitura) — editar de
+  // verdade acontece em Configurações > Workspace, pra não ter dois formulários editando a mesma
+  // coisa com o risco de um ficar sem salvar (era exatamente esse o bug: os campos aqui eram só
+  // estado local, sem nenhum onSalvar, e voltavam pro valor de exemplo a cada F5).
+  useEffect(() => {
+    if (!sessao?.user) return;
+    fetch("/api/workspace")
+      .then((r) => r.json())
+      .then((dados: { segmento?: string }) => setSegmento(dados.segmento ?? ""))
+      .catch((erro) => console.error("Falha ao carregar segmento do workspace:", erro));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só precisa refazer ao trocar de workspace, não a cada objeto de sessão recriado.
+  }, [sessao?.user?.workspaceId]);
   const [workspaceAnchorRect, setWorkspaceAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: workspacePopRef, posicao: workspacePos } = useFloatingPosition(workspaceAnchorRect, workspaceAberto);
+  const { ref: workspacePopRef, posicao: workspacePos } = useFloatingPosition(workspaceAnchorRect, workspaceAberto, 8, () => setWorkspaceAberto(false));
 
   const souAdmin =
     equipe.find((m) => m.nome === currentUser.name)?.papelTipo === "admin";
@@ -152,12 +163,14 @@ export function Sidebar() {
     setGestaoAtividadeAberta(true);
   }
 
-  /** Dá uma folga de 2s antes de fechar, pra dar tempo do mouse atravessar o espaço até o popup. */
+  /** Dá uma folga bem curta antes de fechar, só pra não fechar se o mouse passar rapidinho pelo
+   * vão até o submenu — 2s (valor anterior) dava a sensação de "não fecha nunca" quando o mouse
+   * saía de vez da sidebar. */
   function agendarFechamentoGestaoAtividade() {
     cancelarFechamentoGestaoAtividade();
     gestaoAtividadeFecharRef.current = setTimeout(() => {
       setGestaoAtividadeAberta(false);
-    }, 2000);
+    }, 200);
   }
 
   /** Se o mouse for direto pra outro item do menu (não pro submenu), fecha na hora. */
@@ -168,6 +181,26 @@ export function Sidebar() {
   }
 
   useEffect(() => cancelarFechamentoGestaoAtividade, []);
+
+  const gestaoAtividadePopRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!gestaoAtividadeAberta) return;
+    function aoClicarFora(e: MouseEvent) {
+      const alvo = e.target as Node;
+      if (gestaoAtividadeBtnRef.current?.contains(alvo)) return;
+      if (gestaoAtividadePopRef.current?.contains(alvo)) return;
+      setGestaoAtividadeAberta(false);
+    }
+    function aoTeclarEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setGestaoAtividadeAberta(false);
+    }
+    document.addEventListener("mousedown", aoClicarFora);
+    document.addEventListener("keydown", aoTeclarEsc);
+    return () => {
+      document.removeEventListener("mousedown", aoClicarFora);
+      document.removeEventListener("keydown", aoTeclarEsc);
+    };
+  }, [gestaoAtividadeAberta]);
 
   return (
     <aside className="sidebar">
@@ -217,37 +250,24 @@ export function Sidebar() {
                   className="avatar"
                   style={{ width: 44, height: 44, borderRadius: 12, fontSize: 15 }}
                 >
-                  {nomeEmpresa
+                  {(nomeEmpresa || "?")
                     .split(" ")
                     .slice(0, 2)
                     .map((p) => p[0])
                     .join("")
                     .toUpperCase()}
                 </div>
-                <button type="button" className="btn ghost">
-                  <IconCamera width={14} height={14} />
-                  Trocar foto
-                </button>
+                <Link className="btn ghost" href="/configuracoes" onClick={() => setWorkspaceAberto(false)}>
+                  Editar workspace
+                </Link>
               </div>
               <div className="field">
                 <label>Nome da empresa</label>
-                <input
-                  className="input"
-                  style={{ width: "100%" }}
-                  type="text"
-                  value={nomeEmpresa}
-                  onChange={(e) => setNomeEmpresa(e.target.value)}
-                />
+                <div className="input">{nomeEmpresa || "—"}</div>
               </div>
               <div className="field">
                 <label>Segmento</label>
-                <input
-                  className="input"
-                  style={{ width: "100%" }}
-                  type="text"
-                  value={segmento}
-                  onChange={(e) => setSegmento(e.target.value)}
-                />
+                <div className="input">{segmento || "—"}</div>
               </div>
               <div className="panel-h divided">
                 <h4>Quem está logado agora</h4>
@@ -336,6 +356,7 @@ export function Sidebar() {
       {gestaoAtividadeAberta && typeof document !== "undefined"
         ? createPortal(
             <div
+              ref={gestaoAtividadePopRef}
               className="dropdown-pop"
               style={{
                 position: "fixed",

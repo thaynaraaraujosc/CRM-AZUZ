@@ -7,7 +7,7 @@ import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
 import { apiKey, webhooks } from "@/lib/data";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
-import type { StatusIntegracaoBaileys } from "./useIntegracaoBaileys";
+import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 
 type AppFuturo = { nome: string; descricao: string; categoria: string };
 const APPS_EM_BREVE: AppFuturo[] = [
@@ -66,15 +66,14 @@ export function IntegracoesSecao() {
   const instagram = useIntegracaoMeta("meta_instagram");
   const metaAds = useIntegracaoMeta("meta_ads");
 
-  // Status do Baileys direto aqui (não via `useIntegracaoBaileys`, que só consulta depois de
-  // `conectar()` ser chamado — feito pro fluxo interativo do QR Code, não pra exibir o status
-  // atual ao abrir a tela). Falha em silêncio (worker fora do ar não pode quebrar essa tela).
-  const [baileysStatus, setBaileysStatus] = useState<StatusIntegracaoBaileys | null>(null);
+  // Status do WhatsApp não oficial (whatsapp-service) direto aqui, sem polling — só pra mostrar o
+  // estado atual ao abrir a tela. Falha em silêncio (serviço fora do ar não pode quebrar essa tela).
+  const [naoOficialStatus, setNaoOficialStatus] = useState<StatusIntegracaoNaoOficial | null>(null);
   useEffect(() => {
-    fetch("/api/integracoes/whatsapp-baileys/status")
+    fetch("/api/integracoes/whatsapp-nao-oficial")
       .then((r) => r.json())
-      .then((dados) => setBaileysStatus("erro" in dados ? null : dados))
-      .catch(() => setBaileysStatus(null));
+      .then((dados) => setNaoOficialStatus("erro" in dados ? null : dados))
+      .catch(() => setNaoOficialStatus(null));
   }, []);
 
   const [categoriaFiltro, setCategoriaFiltro] = useState("Todas");
@@ -97,8 +96,8 @@ export function IntegracoesSecao() {
           <LinhaReal
             icone={<IconWhatsApp width={20} height={20} />}
             titulo="WhatsApp via QR Code"
-            sub={baileysStatus?.status === "conectado" ? `Número conectado${baileysStatus.numero ? `: ${baileysStatus.numero}` : ""}` : "Escaneia o QR Code, sem precisar de aprovação da Meta"}
-            conectado={baileysStatus?.status === "conectado"}
+            sub={naoOficialStatus?.status === "conectado" ? `Número conectado${naoOficialStatus.metadados?.numero ? `: ${naoOficialStatus.metadados.numero}` : ""}` : "Escaneia o QR Code, sem precisar de aprovação da Meta"}
+            conectado={naoOficialStatus?.status === "conectado"}
             href="/configuracoes?categoria=whatsapp"
           />
           <LinhaReal

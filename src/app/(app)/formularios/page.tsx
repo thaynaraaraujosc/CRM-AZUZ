@@ -153,11 +153,11 @@ export default function FormulariosPage() {
 
   const [menuAdicionarAberto, setMenuAdicionarAberto] = useState(false);
   const [menuAdicionarRect, setMenuAdicionarRect] = useState<AnchorRect | null>(null);
-  const { ref: menuAdicionarRef, posicao: menuAdicionarPos } = useFloatingPosition(menuAdicionarRect, menuAdicionarAberto);
+  const { ref: menuAdicionarRef, posicao: menuAdicionarPos } = useFloatingPosition(menuAdicionarRect, menuAdicionarAberto, 8, () => setMenuAdicionarAberto(false));
 
   const [menuCompartilharAberto, setMenuCompartilharAberto] = useState(false);
   const [menuCompartilharRect, setMenuCompartilharRect] = useState<AnchorRect | null>(null);
-  const { ref: menuCompartilharRef, posicao: menuCompartilharPos } = useFloatingPosition(menuCompartilharRect, menuCompartilharAberto);
+  const { ref: menuCompartilharRef, posicao: menuCompartilharPos } = useFloatingPosition(menuCompartilharRect, menuCompartilharAberto, 8, () => setMenuCompartilharAberto(false));
   const [linkPrivadoCopiado, setLinkPrivadoCopiado] = useState(false);
   const [linkPublicoCopiado, setLinkPublicoCopiado] = useState(false);
 

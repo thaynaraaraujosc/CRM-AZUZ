@@ -20,10 +20,11 @@ export type DensidadeAparencia = "compacta" | "confortavel" | "espacosa";
 export type TamanhoAparencia = "pequeno" | "padrao" | "grande";
 export type MenuLateralModo = "expandido" | "recolhido" | "automatico";
 
+/** `nome`/`segmento` NÃO ficam aqui — são coluna real de `Workspace` (ver `GET/PATCH /api/workspace`),
+ * fonte única de verdade porque são lidos fora deste blob (sessão, sidebar, e-mails, relatórios). O
+ * resto continua descritivo, sem outro consumidor além desta tela. */
 export type WorkspaceConfig = {
-  nome: string;
   nomeEmpresa: string;
-  segmento: string;
   pais: string;
   estado: string;
   cidade: string;
@@ -105,13 +106,12 @@ export type ConfiguracoesEstado = {
 const CHAVE_PREFERENCIA = "configuracoes";
 
 // Um workspace novo nasce sem nenhum dado de negócio preenchido — só preferências de plataforma
-// que fazem sentido como palpite (fuso/idioma/moeda/formato, todos ajustáveis). Nome/segmento/
+// que fazem sentido como palpite (fuso/idioma/moeda/formato, todos ajustáveis). Nome de empresa/
 // país/estado/cidade ficam em branco de propósito: é a própria empresa que preenche depois do
-// cadastro, não um exemplo pré-pronto (antes vinha tudo com o nome/segmento da "Clínica Vitta").
+// cadastro, não um exemplo pré-pronto. Nome do workspace e segmento não ficam aqui — são coluna
+// real de `Workspace` (ver `WorkspaceConfig` acima).
 export const WORKSPACE_CONFIG_PADRAO: WorkspaceConfig = {
-  nome: "",
   nomeEmpresa: "",
-  segmento: "",
   pais: "Brasil",
   estado: "",
   cidade: "",

@@ -4,13 +4,13 @@ import type { MensagemLocalizacaoData, OrigemLocalizacao } from "@/lib/automatio
 
 // Mocado — localizações salvas do workspace, sem integração real com mapa.
 const LOCALIZACOES_SALVAS = [
-  { id: "clinica_vitta", nome: "Clínica Vitta", endereco: "Av. Exemplo, 123", cidade: "Goiânia", estado: "GO" },
+  { id: "sede", nome: "Sede", endereco: "Av. Exemplo, 123", cidade: "Goiânia", estado: "GO" },
   { id: "unidade_centro", nome: "Unidade Centro", endereco: "Rua das Flores, 45", cidade: "Goiânia", estado: "GO" },
   { id: "consultorio_principal", nome: "Consultório principal", endereco: "Av. T-4, 900", cidade: "Goiânia", estado: "GO" },
   { id: "escritorio", nome: "Escritório", endereco: "Rua 9, 320", cidade: "Goiânia", estado: "GO" },
 ];
 
-const LOCALIZACAO_WORKSPACE = { nome: "Clínica Vitta", endereco: "Av. Exemplo, 123", cidade: "Goiânia", estado: "GO" };
+const LOCALIZACAO_WORKSPACE = { nome: "Sede", endereco: "Av. Exemplo, 123", cidade: "Goiânia", estado: "GO" };
 
 /** Ação "Enviar localização" (item 4) — de onde vem a localização enviada ao contato. */
 export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLocalizacaoData; onChange: (novo: MensagemLocalizacaoData) => void }) {
@@ -60,7 +60,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
         <>
           <div className="field">
             <label>Nome do local</label>
-            <input className="input" placeholder="Ex.: Clínica Vitta" value={data.nomeLocal ?? ""} onChange={(e) => onChange({ ...data, nomeLocal: e.target.value })} />
+            <input className="input" placeholder="Ex.: Sede" value={data.nomeLocal ?? ""} onChange={(e) => onChange({ ...data, nomeLocal: e.target.value })} />
           </div>
           <div className="field">
             <label>Endereço</label>

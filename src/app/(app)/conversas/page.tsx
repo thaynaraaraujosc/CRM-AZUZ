@@ -50,7 +50,7 @@ import {
   type FundoConversa,
 } from "@/lib/conversas-config-context";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useIntegracaoBaileys } from "@/components/configuracoes/useIntegracaoBaileys";
+import { useIntegracaoNaoOficial } from "@/components/configuracoes/useIntegracaoNaoOficial";
 import {
   CanalBadge,
   IconAutomacoes,
@@ -686,7 +686,7 @@ function ConversasPageInner() {
   const [conectarAba, setConectarAba] = useState<"qr" | "api">("qr");
   const [conectarPos, setConectarPos] = useState<{ x: number; y: number } | null>(null);
   const conectarRef = useRef<HTMLDivElement>(null);
-  const baileys = useIntegracaoBaileys();
+  const naoOficial = useIntegracaoNaoOficial();
   // Status da API oficial (Meta) — sem hook compartilhado com polling (o `useIntegracaoMeta` só
   // busca uma vez); polling próprio aqui porque a conversa some/reaparece conforme o canal
   // conecta/desconecta, então precisa saber o estado atual, não só o do primeiro carregamento.
@@ -709,8 +709,8 @@ function ConversasPageInner() {
   // Só passa a filtrar depois que os dois status (Meta e Baileys) já responderam pelo menos uma
   // vez — sem essa guarda, a lista de conversas do WhatsApp pisca "vazia" por um instante em toda
   // carga de página, mesmo com um canal já conectado.
-  const statusWhatsappPronto = statusMetaCarregado && baileys.estado !== null;
-  const whatsappConectado = metaWhatsappConectado || baileys.estado?.status === "conectado";
+  const statusWhatsappPronto = statusMetaCarregado && naoOficial.estado !== null;
+  const whatsappConectado = metaWhatsappConectado || naoOficial.estado?.status === "conectado";
   const [contatoDetalhePos, setContatoDetalhePos] = useState<{ x: number; y: number } | null>(null);
   const contatoDetalheRef = useRef<HTMLDivElement>(null);
   const [contatoDetalheAberto, setContatoDetalheAberto] = useState<{
@@ -893,7 +893,7 @@ function ConversasPageInner() {
   const [anexoAberto, setAnexoAberto] = useState(false);
   const [anexoAnchorRect, setAnexoAnchorRect] = useState<AnchorRect | null>(null);
   const [anexoPosManual, setAnexoPosManual] = useState<{ x: number; y: number } | null>(null);
-  const { ref: anexoMenuRef, posicao: anexoPosicaoAuto } = useFloatingPosition(anexoAnchorRect, anexoAberto);
+  const { ref: anexoMenuRef, posicao: anexoPosicaoAuto } = useFloatingPosition(anexoAnchorRect, anexoAberto, 8, () => setAnexoAberto(false));
   const anexoPos = anexoPosManual ?? (anexoPosicaoAuto ? { x: anexoPosicaoAuto.left, y: anexoPosicaoAuto.top } : null);
   const anexoArrasteRef = useRef<{ dx: number; dy: number } | null>(null);
   const [emojiAberto, setEmojiAberto] = useState(false);
@@ -1614,10 +1614,10 @@ function ConversasPageInner() {
 
   /** Conversa "pertence" ao canal WhatsApp via QR Code (Baileys) quando a última mensagem
    * recebida chegou por ele — decide pra onde a resposta do atendente deve sair de verdade. */
-  function contatoUsaWhatsappBaileys(): boolean {
+  function contatoUsaWhatsappNaoOficial(): boolean {
     const extras = mensagensExtraPorContato[aberta.nome] ?? [];
     for (let i = extras.length - 1; i >= 0; i--) {
-      if (extras[i].tipo === "in") return extras[i].canal === "whatsapp_baileys";
+      if (extras[i].tipo === "in") return extras[i].canal === "whatsapp_nao_oficial";
     }
     return false;
   }
@@ -1625,13 +1625,13 @@ function ConversasPageInner() {
   function enviarMensagemTexto() {
     const texto = mensagemTexto.trim();
     if (!texto) return;
-    const viaBaileys = contatoUsaWhatsappBaileys();
+    const viaBaileys = contatoUsaWhatsappNaoOficial();
     adicionarMensagem({
       tipo: "out",
       texto,
       hora: horaAgora(),
       respondendoA: respondendoMensagem ?? undefined,
-      canal: viaBaileys ? "whatsapp_baileys" : undefined,
+      canal: viaBaileys ? "whatsapp_nao_oficial" : undefined,
     });
     // Erro fica registrado como mensagem de sistema DENTRO da conversa (não só um toast que some
     // sozinho em poucos segundos) — assim dá pra ver o motivo exato depois, sem precisar
@@ -1643,7 +1643,7 @@ function ConversasPageInner() {
     }
 
     if (viaBaileys && contatoDaConversa?.whatsapp) {
-      fetch("/api/integracoes/whatsapp-baileys/enviar", {
+      fetch("/api/integracoes/whatsapp-nao-oficial/enviar", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ destinatario: contatoDaConversa.whatsapp, texto }),
@@ -2202,7 +2202,7 @@ function ConversasPageInner() {
     setContatoPickerEnviando(true);
     setContatoPickerErro(null);
     try {
-      const viaBaileys = contatoUsaWhatsappBaileys();
+      const viaBaileys = contatoUsaWhatsappNaoOficial();
       const destinatario = viaBaileys
         ? contatoDaConversa?.whatsapp
         : aberta.canal === "WhatsApp"
@@ -2237,7 +2237,7 @@ function ConversasPageInner() {
         // Envio real do cartão (vCard) pelo canal certo — mesmo padrão de `enviarMensagemTexto`:
         // a bolha já entrou na conversa acima, o envio roda em segundo plano e qualquer falha vira
         // uma mensagem de sistema, não um toast que some sozinho.
-        const rota = viaBaileys ? "/api/integracoes/whatsapp-baileys/enviar" : "/api/integracoes/meta/whatsapp/enviar";
+        const rota = viaBaileys ? "/api/integracoes/whatsapp-nao-oficial/enviar" : "/api/integracoes/meta/whatsapp/enviar";
         fetch(rota, {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -2352,7 +2352,7 @@ function ConversasPageInner() {
     // Mock fixo, sem pedir geolocalização real do navegador — coerente com o resto do simulador
     // (nunca usa dados/permissões reais) e evita ficar pendurado esperando o usuário responder ao
     // prompt nativo de permissão (getCurrentPosition não tem timeout por padrão).
-    enviarLocalizacao(-16.6869, -49.2648, "Clínica Vitta · Goiânia, GO");
+    enviarLocalizacao(-16.6869, -49.2648, "Sede · Goiânia, GO");
   }
 
   function inserirEmoji(emoji: string) {
@@ -7505,25 +7505,25 @@ function ConversasPageInner() {
           </div>
           {conectarAba === "qr" ? (
             <div style={{ textAlign: "center", padding: "6px 0 14px" }}>
-              {baileys.erro ? (
+              {naoOficial.estado?.status === "erro" ? (
                 <p className="hint" style={{ color: "var(--danger)", marginBottom: 10 }}>
-                  ⚠ {baileys.erro}
+                  ⚠ {naoOficial.estado.erroMensagem}
                 </p>
               ) : null}
 
-              {baileys.estado?.status === "conectado" ? (
+              {naoOficial.estado?.status === "conectado" ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
                   <p className="int-sub" style={{ margin: 0 }}>
-                    Conectado — {baileys.estado.numero ?? "número não identificado"}
+                    Conectado — {naoOficial.estado.metadados?.numero ?? "número não identificado"}
                   </p>
-                  <button type="button" className="btn danger" onClick={baileys.desconectar}>
-                    Desconectar
+                  <button type="button" className="btn danger" onClick={naoOficial.desconectar} disabled={naoOficial.desconectando}>
+                    {naoOficial.desconectando ? "Desconectando…" : "Desconectar"}
                   </button>
                 </div>
-              ) : baileys.estado?.status === "aguardando_qr" && baileys.estado.qrDataUrl ? (
+              ) : naoOficial.estado?.status === "aguardando_qr" && naoOficial.estado.metadados?.qrDataUrl ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                   {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pelo worker, não é asset estático */}
-                  <img src={baileys.estado.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={220} height={220} />
+                  <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={220} height={220} />
                   <p className="hint" style={{ marginTop: 4 }}>
                     Abra o WhatsApp no celular da clínica → Aparelhos conectados → Conectar um
                     aparelho, e escaneie esse código.
@@ -7548,15 +7548,10 @@ function ConversasPageInner() {
               <a href="/api/integracoes/meta/conectar" className="btn primary block">
                 Conectar com a Meta
               </a>
-            ) : baileys.estado?.status === "conectado" ? null : (
-              <button
-                type="button"
-                className="btn primary block"
-                onClick={baileys.conectar}
-                disabled={baileys.conectando}
-              >
-                {baileys.conectando ? "Gerando QR Code…" : "Conectar via QR Code"}
-              </button>
+            ) : naoOficial.estado?.status === "conectado" || naoOficial.estado?.status === "aguardando_qr" ? null : (
+              <p className="hint" style={{ textAlign: "center", padding: "6px 0" }}>
+                Aguardando o serviço gerar o QR code…
+              </p>
             )}
           </div>
         </div>

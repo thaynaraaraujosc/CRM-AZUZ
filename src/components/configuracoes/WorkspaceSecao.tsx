@@ -7,13 +7,44 @@ import { FUSOS_HORARIOS, IDIOMAS, MOEDAS, PAISES, SEGMENTOS_NEGOCIO } from "@/li
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { SalvarBar } from "./SalvarBar";
 
-/** Workspace — dados gerais + modelo por segmento. Nasce em branco (nome/segmento/país/estado/
- * cidade), preenchido pela própria empresa depois do cadastro — ver `WORKSPACE_CONFIG_PADRAO`. */
+type NomeSegmento = { nome: string; segmento: string };
+const NOME_SEGMENTO_PADRAO: NomeSegmento = { nome: "", segmento: "" };
+
+/** Workspace — dados gerais + modelo por segmento. Nome/segmento são coluna real de `Workspace`
+ * (`GET/PATCH /api/workspace`, fonte única de verdade — lidos também na sessão/sidebar/e-mails/
+ * relatórios); o resto dos campos (país/cidade/fuso/idioma/moeda/formatos) fica no blob de
+ * preferências, que não tem outro consumidor. Nasce em branco, preenchido pela própria empresa
+ * depois do cadastro (nome do workspace já vem do nome digitado no cadastro — ver `salvo` abaixo). */
 export function WorkspaceSecao() {
   const { estado, atualizarWorkspace, setCategoriaSuja } = useConfiguracoes();
+  const [salvoReal, setSalvoReal] = useState<NomeSegmento>(NOME_SEGMENTO_PADRAO);
   const [rascunho, setRascunho] = useState<WorkspaceConfig>(estado.workspace);
+  const [rascunhoReal, setRascunhoReal] = useState<NomeSegmento>(NOME_SEGMENTO_PADRAO);
+  const [carregado, setCarregado] = useState(false);
 
-  const dirty = JSON.stringify(rascunho) !== JSON.stringify(estado.workspace);
+  useEffect(() => {
+    fetch("/api/workspace")
+      .then((r) => r.json())
+      .then((dados: NomeSegmento) => {
+        setSalvoReal(dados);
+        setRascunhoReal(dados);
+        setCarregado(true);
+      })
+      .catch((erro) => console.error("Falha ao carregar dados do workspace:", erro));
+  }, []);
+
+  // O blob de preferências já resolve sozinho quando `estado.workspace` chega depois da hidratação
+  // assíncrona do provider (mesma renderização, sem efeito) — só ainda não tinha acontecido pra
+  // nome/segmento porque agora eles vêm de uma fonte separada (acima).
+  const [estadoBlobAnterior, setEstadoBlobAnterior] = useState(estado.workspace);
+  if (estado.workspace !== estadoBlobAnterior) {
+    setEstadoBlobAnterior(estado.workspace);
+    setRascunho(estado.workspace);
+  }
+
+  const dirty =
+    JSON.stringify(rascunho) !== JSON.stringify(estado.workspace) ||
+    JSON.stringify(rascunhoReal) !== JSON.stringify(salvoReal);
 
   useEffect(() => {
     setCategoriaSuja(dirty);
@@ -24,21 +55,29 @@ export function WorkspaceSecao() {
     setRascunho((prev) => ({ ...prev, ...patch }));
   }
 
+  function setReal(patch: Partial<NomeSegmento>) {
+    setRascunhoReal((prev) => ({ ...prev, ...patch }));
+  }
+
   function salvar() {
-    // "Nome" também é coluna de verdade em `Workspace` (lido na sidebar, no painel de super-admin
-    // etc.) — o blob de preferências sozinho não bastaria pra refletir fora desta tela.
-    if (rascunho.nome !== estado.workspace.nome) {
+    if (JSON.stringify(rascunhoReal) !== JSON.stringify(salvoReal)) {
       fetch("/api/workspace", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome: rascunho.nome }),
-      }).catch((erro) => console.error("Falha ao atualizar nome do workspace:", erro));
+        body: JSON.stringify(rascunhoReal),
+      })
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          setSalvoReal(rascunhoReal);
+        })
+        .catch((erro) => console.error("Falha ao atualizar nome/segmento do workspace:", erro));
     }
     atualizarWorkspace(rascunho);
   }
 
   function descartar() {
     setRascunho(estado.workspace);
+    setRascunhoReal(salvoReal);
   }
 
   return (
@@ -49,7 +88,13 @@ export function WorkspaceSecao() {
         <div className="config-grid-2">
           <div className="field">
             <label>Nome do workspace</label>
-            <input className="input" placeholder="Ex.: Clínica Vitta" value={rascunho.nome} onChange={(e) => set({ nome: e.target.value })} />
+            <input
+              className="input"
+              placeholder={carregado ? "Ex.: Nome do seu negócio" : "Carregando…"}
+              value={rascunhoReal.nome}
+              onChange={(e) => setReal({ nome: e.target.value })}
+              disabled={!carregado}
+            />
           </div>
           <div className="field">
             <label>Nome da empresa</label>
@@ -57,7 +102,7 @@ export function WorkspaceSecao() {
           </div>
           <div className="field">
             <label>Segmento</label>
-            <select className="input" value={rascunho.segmento} onChange={(e) => set({ segmento: e.target.value })}>
+            <select className="input" value={rascunhoReal.segmento} onChange={(e) => setReal({ segmento: e.target.value })} disabled={!carregado}>
               <option value="">Selecione…</option>
               {SEGMENTOS_NEGOCIO.map((s) => (
                 <option key={s} value={s}>

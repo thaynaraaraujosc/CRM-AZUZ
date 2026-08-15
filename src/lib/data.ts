@@ -1,6 +1,7 @@
 /**
- * Dados fictícios do CRM AZUZ.
- * Workspace de exemplo: Clínica Vitta (endocrinologia — emagrecimento e diabetes).
+ * Dados fictícios do CRM AZUZ — não é usado como fonte real de nome/segmento do workspace (isso
+ * vem de `Workspace.nome`/`segmento` no banco, ver `src/app/api/workspace/route.ts`); serve só de
+ * exemplo/seed pra telas ainda não conectadas e pro `prisma/seed.ts` de desenvolvimento local.
  *
  * Os números são consistentes entre as telas de propósito:
  *   julho/2026 · 247 leads · 143 qualificados · 36 fechados · 14,6% de conversão
@@ -9,17 +10,17 @@
  */
 
 export const workspace = {
-  name: "Clínica Vitta",
-  slug: "clinicavitta",
-  segment: "Emagrecimento e diabetes",
-  email: "secretaria@clinicavitta.com.br",
+  name: "Empresa Demo",
+  slug: "empresa-demo",
+  segment: "Serviços",
+  email: "contato@empresademo.com.br",
 };
 
 export const currentUser = {
   name: "Ana Ferreira",
   initials: "AF",
   role: "Gestora de tráfego",
-  email: "ana@clinicavitta.com.br",
+  email: "ana@empresademo.com.br",
 };
 
 /** Quinta, 30 de julho de 2026 — dia de referência de todas as telas. */
@@ -219,7 +220,7 @@ export const contatos: Contato[] = [
     estado: "GO",
     pais: "Brasil",
     canalPreferido: "WhatsApp",
-    etiquetas: ["Quente", "Diabetes"],
+    etiquetas: ["Quente", "Prioridade"],
     favorito: true,
   },
   {
@@ -360,7 +361,7 @@ export const ETAPAS_PADRAO_FUNIL = [
 
 export const funis: Funil[] = [
   {
-    id: "emagrecimento-diabetes",
+    id: "funil-principal",
     nome: "Funil principal",
     colunas: [
       {
@@ -628,7 +629,7 @@ export const conversas: Conversa[] = [
     mensagens: [
       {
         tipo: "in",
-        texto: "Oi! Vi o anúncio de vocês sobre acompanhamento de diabetes",
+        texto: "Oi! Vi o anúncio de vocês e quero saber mais",
         hora: "09:14",
       },
       {
@@ -1040,7 +1041,7 @@ export const equipe: Membro[] = [
     id: "ana-ferreira",
     initials: "AF",
     nome: "Ana Ferreira",
-    email: "ana@clinicavitta.com.br",
+    email: "ana@empresademo.com.br",
     senha: "Az7!vitta26",
     papel: "Admin",
     papelTipo: "admin",
@@ -1053,7 +1054,7 @@ export const equipe: Membro[] = [
     id: "bruno-salles",
     initials: "BS",
     nome: "Bruno Salles",
-    email: "bruno@clinicavitta.com.br",
+    email: "bruno@empresademo.com.br",
     senha: "Bs@vitta318",
     papel: "Vendedor",
     papelTipo: "padrao",
@@ -1066,7 +1067,7 @@ export const equipe: Membro[] = [
     id: "carla-mendes",
     initials: "CM",
     nome: "Carla Mendes",
-    email: "carla@clinicavitta.com.br",
+    email: "carla@empresademo.com.br",
     senha: "Cm#vitta742",
     papel: "Vendedor",
     papelTipo: "padrao",
@@ -1079,7 +1080,7 @@ export const equipe: Membro[] = [
     id: "dr-helio-marinho",
     initials: "HM",
     nome: "Dr. Hélio Marinho",
-    email: "helio@clinicavitta.com.br",
+    email: "helio@empresademo.com.br",
     senha: "Hm$vitta905",
     papel: "Especialista",
     papelTipo: "custom",
@@ -1093,7 +1094,7 @@ export const equipe: Membro[] = [
     id: "dr-lucas-vitta",
     initials: "LV",
     nome: "Dr. Lucas Vitta",
-    email: "lucas@clinicavitta.com.br",
+    email: "lucas@empresademo.com.br",
     senha: "Lv&vitta064",
     papel: "Cliente",
     papelTipo: "padrao",
@@ -1106,7 +1107,7 @@ export const equipe: Membro[] = [
     id: "roberto-alves",
     initials: "RA",
     nome: "Roberto Alves",
-    email: "roberto@clinicavitta.com.br",
+    email: "roberto@empresademo.com.br",
     senha: null,
     papel: "Estoquista",
     papelTipo: "custom",
@@ -1121,7 +1122,7 @@ export const equipe: Membro[] = [
 
 export const convite = {
   nome: "Roberto Alves",
-  email: "roberto@clinicavitta.com.br",
+  email: "roberto@empresademo.com.br",
   papelPersonalizado: "Estoquista",
   token: "8f2a1e",
   convidadoPor: "Ana",
@@ -1172,14 +1173,14 @@ export type Campanha = {
 export const campanhas: Campanha[] = [
   {
     plataforma: "M",
-    nome: "Emagrecimento · Consulta jul",
+    nome: "Campanha principal · jul",
     sub: "42 leads · R$ 1.480 investidos",
     roas: "5,4x",
     barra: 90,
   },
   {
     plataforma: "G",
-    nome: "Diabetes · Busca",
+    nome: "Campanha de busca",
     sub: "26 leads · R$ 1.040 investidos",
     roas: "3,8x",
     barra: 63,
@@ -1640,7 +1641,7 @@ export const integracoes = [
         logo: "M",
         cor: "var(--blue)",
         titulo: "Meta Ads",
-        sub: "Conta conectada: Clínica Vitta Anúncios · atualiza a cada 1h",
+        sub: "Conta conectada: Empresa Demo Anúncios · atualiza a cada 1h",
         status: "Conectado" as const,
         acao: "Gerenciar",
       },
@@ -1674,7 +1675,7 @@ export const integracoes = [
       {
         logo: "ig",
         titulo: "Instagram Direct",
-        sub: "@clinicavitta",
+        sub: "@empresademo",
         status: "Conectado" as const,
         acao: "Gerenciar",
       },

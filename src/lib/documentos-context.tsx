@@ -661,7 +661,7 @@ export const DOCUMENTOS_INICIAIS: Documento[] = [
     criadoEm: "2026-01-05T09:00:00.000Z",
     atualizadoEm: "2026-01-05T09:00:00.000Z",
     // Dado de seed fixo (usado por prisma/seed.ts) — não depende de sessão, é o mesmo autor
-    // mockado que o resto dos dados de demonstração da Clínica Vitta já usa.
+    // mockado que o resto dos dados de demonstração já usa.
     autor: "Ana Ferreira",
     paginas: [{ id: "pagina-1", conteudoHtml: "" }],
     config: CONFIG_PAGINA_PADRAO,

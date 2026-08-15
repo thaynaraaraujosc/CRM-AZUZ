@@ -113,7 +113,7 @@ function fluxoDemo(base: {
 
 /* Funil/etapa reais do seed (`src/lib/data.ts`) usados nos nós de ação que
    precisam de um valor concreto pra serem testáveis/válidos.               */
-const FUNIL_ID_SEED = "emagrecimento-diabetes";
+const FUNIL_ID_SEED = "funil-principal";
 const ETAPA_NOVO_SEED = "Novo";
 
 /* -------------------------------------------------------------------------- */

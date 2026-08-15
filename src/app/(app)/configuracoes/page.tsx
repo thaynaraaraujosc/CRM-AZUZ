@@ -14,7 +14,6 @@ import { UsuariosSecao } from "@/components/configuracoes/UsuariosSecao";
 import { EquipesSecao } from "@/components/configuracoes/EquipesSecao";
 import { SegurancaSecao } from "@/components/configuracoes/SegurancaSecao";
 import { AuditoriaSecao } from "@/components/configuracoes/AuditoriaSecao";
-import { FunisSecao } from "@/components/configuracoes/FunisSecao";
 import { CamposSecao } from "@/components/configuracoes/CamposSecao";
 import { EtiquetasSecao } from "@/components/configuracoes/EtiquetasSecao";
 import { AutomacoesPrefsSecao } from "@/components/configuracoes/AutomacoesPrefsSecao";
@@ -78,7 +77,6 @@ function ConfiguracoesConteudo() {
             {categoriaAtiva === "equipes" ? <EquipesSecao /> : null}
             {categoriaAtiva === "seguranca" ? <SegurancaSecao /> : null}
             {categoriaAtiva === "auditoria" ? <AuditoriaSecao /> : null}
-            {categoriaAtiva === "funis" ? <FunisSecao /> : null}
             {categoriaAtiva === "campos" ? <CamposSecao /> : null}
             {categoriaAtiva === "etiquetas" ? <EtiquetasSecao /> : null}
             {categoriaAtiva === "automacoes" ? <AutomacoesPrefsSecao /> : null}
