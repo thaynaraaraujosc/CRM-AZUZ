@@ -12,7 +12,6 @@ import {
   type SVGProps,
 } from "react";
 
-import { workspace } from "@/lib/data";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
@@ -20,7 +19,6 @@ import {
   IconAcoes,
   IconAutomacoes,
   IconCalendar,
-  IconCamera,
   IconConfiguracoes,
   IconContatos,
   IconDoc,
@@ -115,8 +113,8 @@ export function Sidebar() {
   const [contaAnchorRect, setContaAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: contaPopRef, posicao: contaPos } = useFloatingPosition(contaAnchorRect, contaAberta);
   const [workspaceAberto, setWorkspaceAberto] = useState(false);
-  const [nomeEmpresa, setNomeEmpresa] = useState(workspace.name);
-  const [segmento, setSegmento] = useState(workspace.segment);
+  const [nomeEmpresa, setNomeEmpresa] = useState("");
+  const [segmento, setSegmento] = useState("");
   const [nomeEmpresaSincronizado, setNomeEmpresaSincronizado] = useState<string | null>(null);
   // Sincroniza com a sessão assim que ela carregar — "ajustar estado durante a renderização" (não
   // num useEffect) porque só precisa rodar uma vez, quando o nome do workspace muda de verdade.
@@ -124,6 +122,19 @@ export function Sidebar() {
     setNomeEmpresaSincronizado(sessao.user.workspaceNome);
     setNomeEmpresa(sessao.user.workspaceNome);
   }
+  // Segmento não vai na sessão (só nome) — busca direto de `/api/workspace` uma vez que a sessão
+  // exista. Esse popover é só visualização rápida (dado real, mas somente-leitura) — editar de
+  // verdade acontece em Configurações > Workspace, pra não ter dois formulários editando a mesma
+  // coisa com o risco de um ficar sem salvar (era exatamente esse o bug: os campos aqui eram só
+  // estado local, sem nenhum onSalvar, e voltavam pro valor de exemplo a cada F5).
+  useEffect(() => {
+    if (!sessao?.user) return;
+    fetch("/api/workspace")
+      .then((r) => r.json())
+      .then((dados: { segmento?: string }) => setSegmento(dados.segmento ?? ""))
+      .catch((erro) => console.error("Falha ao carregar segmento do workspace:", erro));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só precisa refazer ao trocar de workspace, não a cada objeto de sessão recriado.
+  }, [sessao?.user?.workspaceId]);
   const [workspaceAnchorRect, setWorkspaceAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: workspacePopRef, posicao: workspacePos } = useFloatingPosition(workspaceAnchorRect, workspaceAberto);
 
@@ -217,37 +228,24 @@ export function Sidebar() {
                   className="avatar"
                   style={{ width: 44, height: 44, borderRadius: 12, fontSize: 15 }}
                 >
-                  {nomeEmpresa
+                  {(nomeEmpresa || "?")
                     .split(" ")
                     .slice(0, 2)
                     .map((p) => p[0])
                     .join("")
                     .toUpperCase()}
                 </div>
-                <button type="button" className="btn ghost">
-                  <IconCamera width={14} height={14} />
-                  Trocar foto
-                </button>
+                <Link className="btn ghost" href="/configuracoes" onClick={() => setWorkspaceAberto(false)}>
+                  Editar workspace
+                </Link>
               </div>
               <div className="field">
                 <label>Nome da empresa</label>
-                <input
-                  className="input"
-                  style={{ width: "100%" }}
-                  type="text"
-                  value={nomeEmpresa}
-                  onChange={(e) => setNomeEmpresa(e.target.value)}
-                />
+                <div className="input">{nomeEmpresa || "—"}</div>
               </div>
               <div className="field">
                 <label>Segmento</label>
-                <input
-                  className="input"
-                  style={{ width: "100%" }}
-                  type="text"
-                  value={segmento}
-                  onChange={(e) => setSegmento(e.target.value)}
-                />
+                <div className="input">{segmento || "—"}</div>
               </div>
               <div className="panel-h divided">
                 <h4>Quem está logado agora</h4>
