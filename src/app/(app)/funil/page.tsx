@@ -21,6 +21,7 @@ import { IconAutomacoes } from "@/components/icons";
 import { IconConfiguracoes } from "@/components/icons";
 import { ChipFilters, FloatingDropdown, Topbar } from "@/components/ui";
 import { IconEnviar } from "@/components/icons";
+import { IconCheck, IconClose, IconErro } from "@/components/icons";
 
 const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Instagram",
@@ -506,7 +507,7 @@ function FunilPageInner() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovaEtapaAberta(false)}
               >
-                Fechar ✕
+                Fechar <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
@@ -551,7 +552,7 @@ function FunilPageInner() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovoFunilAberto(false)}
               >
-                Fechar ✕
+                Fechar <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
@@ -599,7 +600,7 @@ function FunilPageInner() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovoNegocioAberto(false)}
               >
-                Fechar ✕
+                Fechar <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
@@ -805,7 +806,7 @@ function FunilPageInner() {
                         }
                       }}
                     >
-                      ✕
+                      <IconClose width={11} height={11} />
                     </span>
                   </span>
                 </div>
@@ -884,10 +885,10 @@ function FunilPageInner() {
                         </span>
                         <span className="days">{card.dias}</span>
                         {card.statusFechamento === "ganho" ? (
-                          <span className="stage-tag won">✅ Ganho</span>
+                          <span className="stage-tag won" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><IconCheck width={11} height={11} /> Ganho</span>
                         ) : card.statusFechamento === "perdido" ? (
-                          <span className="stage-tag" title={card.motivoPerda ?? undefined}>
-                            ❌ Perdido
+                          <span className="stage-tag" title={card.motivoPerda ?? undefined} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            <IconErro width={11} height={11} /> Perdido
                           </span>
                         ) : null}
                       </span>
@@ -927,8 +928,9 @@ function FunilPageInner() {
                   type="button"
                   className="btn primary block"
                   onClick={() => marcarDesfecho(desfechoMenu.coluna, desfechoMenu.card, "ganho")}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
-                  ✅ Marcar como ganho
+                  <IconCheck width={13} height={13} /> Marcar como ganho
                 </button>
                 <div className="field" style={{ margin: 0 }}>
                   <label>Motivo da perda</label>
@@ -946,8 +948,9 @@ function FunilPageInner() {
                   className="btn danger block"
                   disabled={!motivoEscolhido}
                   onClick={() => marcarDesfecho(desfechoMenu.coluna, desfechoMenu.card, "perdido", motivoEscolhido)}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
-                  ❌ Marcar como perdido
+                  <IconErro width={13} height={13} /> Marcar como perdido
                 </button>
               </div>
             );
@@ -982,7 +985,7 @@ function FunilPageInner() {
               aria-label="Fechar"
               onClick={() => setRespostaRapidaContato(null)}
             >
-              ✕
+              <IconClose width={12} height={12} />
             </button>
           </div>
 
