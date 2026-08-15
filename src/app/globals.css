@@ -1738,21 +1738,23 @@ a.timeline-card:hover {
   flex-wrap: wrap;
 }
 
+/* Reestruturação visual (redesign) — chip "flat": sem caixa (fundo/borda) parada na tela, só texto;
+   ganha fundo (`--surface-hover`) só ao passar o mouse, pra não empilhar caixinha atrás de caixinha
+   junto com o card/painel que já envolve a barra de filtros inteira. */
 .fchip {
   font-size: 11.5px;
   font-weight: 700;
   padding: 8px 13px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   color: var(--text-muted);
-  background: var(--navy-raised);
+  background: transparent;
   cursor: pointer;
   transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
 .fchip:hover:not(.active) {
   background: var(--surface-hover);
-  border-color: var(--gray-400);
   color: var(--ink);
 }
 
@@ -11326,20 +11328,25 @@ button.camp-row:hover {
 
 /* ------------------------------- Card padrão de item do dia ------------------------------- */
 
+/* Reestruturação visual (redesign) — linha "flat": sem caixa própria (fundo/borda ao redor), só o
+   traço de cor à esquerda (sinal de prioridade, continua) + um fio embaixo separando um item do
+   próximo — em vez de cada item ser uma caixinha empilhada em cima de outra caixinha (a seção
+   inteira já é delimitada pelo `.central-dia-secao`/painel `.main`, não precisa de mais uma camada
+   de caixa por linha). */
 .central-dia-card {
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--line);
-  background: var(--navy-raised);
-  border-left: 3px solid var(--line);
-  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+  padding: var(--space-4) var(--space-2);
+  border-bottom: 1px solid var(--line-soft);
+  border-left: 3px solid transparent;
+  transition: background var(--transition-base), border-color var(--transition-base);
+}
+.central-dia-secao-lista .central-dia-card:last-child {
+  border-bottom: none;
 }
 .central-dia-card:hover {
-  box-shadow: var(--shadow-xs);
-  border-color: var(--gray-300);
+  background: var(--surface-hover);
 }
 .central-dia-card.is-urgente {
   border-left-color: var(--danger);
