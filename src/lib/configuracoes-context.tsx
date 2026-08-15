@@ -10,10 +10,9 @@ import {
 } from "react";
 
 /**
- * Estado persistido de toda a tela de Configurações — front-end apenas, seguindo o mesmo padrão de
- * localStorage já usado em `formularios-context.tsx`/`documentos-context.tsx` (chave própria,
- * hidratação em duas etapas, try/catch silencioso). Um context só pra não espalhar 20 providers
- * novos no layout pra 20 categorias que, na prática, são todas "preferências do workspace".
+ * Estado persistido de toda a tela de Configurações — banco de verdade (`PUT /api/preferencias/{chave}`,
+ * debounced), não localStorage. Um context só pra não espalhar 20 providers novos no layout pra 20
+ * categorias que, na prática, são todas "preferências do workspace" salvas no mesmo blob JSON.
  */
 
 export type TemaAparencia = "claro" | "escuro" | "sistema";
