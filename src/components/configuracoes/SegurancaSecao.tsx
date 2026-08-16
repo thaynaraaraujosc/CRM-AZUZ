@@ -1,74 +1,165 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
-import { Toggle } from "@/components/ui";
-import { useConfiguracoes } from "@/lib/configuracoes-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 
-type Sessao = { id: string; dispositivo: string; local: string; ultimoAcesso: string; atual?: boolean };
-const SESSOES_MOCK: Sessao[] = [
-  { id: "s1", dispositivo: "Chrome · Windows", local: "Goiânia, GO", ultimoAcesso: "Agora", atual: true },
-  { id: "s2", dispositivo: "App · iPhone 14", local: "Goiânia, GO", ultimoAcesso: "há 2h" },
-  { id: "s3", dispositivo: "Chrome · Android", local: "Aparecida de Goiânia, GO", ultimoAcesso: "ontem" },
-];
+type SessaoReal = { id: string; dispositivo: string; ip: string | null; criadoEm: string; atual: boolean };
 
-/** Segurança (item 37) — tudo simulado: nenhuma sessão real é encerrada, 2FA não liga em provedor
- * nenhum. */
+function formatarData(iso: string): string {
+  return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+/** Segurança — só senha (redefinição por e-mail, sem 2FA/política de senha/expiração/bloqueio por
+ * tentativa, que nunca chegaram a ser aplicados de verdade) e sessões ativas reais (`SessaoAtiva`,
+ * criada no login em `src/lib/auth.ts` — dispositivo/navegador parseados do User-Agent real). */
 export function SegurancaSecao() {
-  const { estado, atualizarSeguranca } = useConfiguracoes();
-  const [sessoes, setSessoes] = useState(SESSOES_MOCK);
+  const { data: sessao } = useSession();
+  const emailAtual = sessao?.user?.email ?? "";
+
+  const [enviandoReset, setEnviandoReset] = useState(false);
+  const [resetEnviado, setResetEnviado] = useState(false);
+
+  const [trocandoEmail, setTrocandoEmail] = useState(false);
+  const [novoEmail, setNovoEmail] = useState("");
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [salvandoEmail, setSalvandoEmail] = useState(false);
+  const [erroEmail, setErroEmail] = useState<string | null>(null);
+  const [emailAlterado, setEmailAlterado] = useState(false);
+
+  const [sessoes, setSessoes] = useState<SessaoReal[] | null>(null);
+
+  useEffect(() => {
+    fetch("/api/seguranca/sessoes")
+      .then((r) => r.json())
+      .then((dados: SessaoReal[]) => setSessoes(dados))
+      .catch((erro) => console.error("Falha ao carregar sessões ativas:", erro));
+  }, []);
+
+  function pedirRedefinicaoSenha() {
+    if (!emailAtual) return;
+    setEnviandoReset(true);
+    fetch("/api/auth/esqueci-senha", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: emailAtual }),
+    })
+      .then(() => setResetEnviado(true))
+      .catch((erro) => console.error("Falha ao pedir redefinição de senha:", erro))
+      .finally(() => setEnviandoReset(false));
+  }
+
+  function salvarNovoEmail() {
+    setErroEmail(null);
+    setSalvandoEmail(true);
+    fetch("/api/auth/alterar-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ senhaAtual, novoEmail }),
+    })
+      .then(async (r) => {
+        const dados = await r.json();
+        if (!r.ok) throw new Error(dados?.erro || "Não foi possível alterar o e-mail.");
+        setEmailAlterado(true);
+        setTrocandoEmail(false);
+        setSenhaAtual("");
+        setNovoEmail("");
+      })
+      .catch((erro: Error) => setErroEmail(erro.message))
+      .finally(() => setSalvandoEmail(false));
+  }
+
+  function encerrarSessao(id: string) {
+    setSessoes((prev) => prev?.filter((s) => s.id !== id) ?? prev);
+    fetch(`/api/seguranca/sessoes/${id}`, { method: "DELETE" }).catch((erro) =>
+      console.error("Falha ao encerrar sessão:", erro),
+    );
+  }
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="Segurança" descricao="Autenticação, sessões e políticas de acesso." />
+      <CabecalhoCategoria titulo="Segurança" descricao="Senha, e-mail de acesso e sessões ativas." />
 
       <div className="config-bloco">
-        <div className="toggle-row" style={{ padding: "10px 0", borderBottom: "1px solid var(--line-soft)" }}>
-          <span className="tl">Autenticação em duas etapas</span>
-          <Toggle defaultOn={estado.seguranca.doisFatores} label="Autenticação em duas etapas" onToggle={(v) => atualizarSeguranca({ doisFatores: v })} />
+        <p className="config-bloco-titulo">Senha</p>
+        <div className="toggle-row" style={{ padding: "6px 0" }}>
+          <span className="tl">
+            Redefinir por e-mail — enviamos um link pra <strong>{emailAtual || "seu e-mail cadastrado"}</strong>, sem precisar digitar a senha atual.
+          </span>
+          <button type="button" className="btn ghost" onClick={pedirRedefinicaoSenha} disabled={enviandoReset || resetEnviado}>
+            {resetEnviado ? "Link enviado" : enviandoReset ? "Enviando…" : "Redefinir senha"}
+          </button>
         </div>
-        <div className="toggle-row" style={{ padding: "10px 0", borderBottom: "1px solid var(--line-soft)" }}>
-          <span className="tl">Exigir senha forte</span>
-          <Toggle defaultOn={estado.seguranca.politicaSenhaForte} label="Exigir senha forte" onToggle={(v) => atualizarSeguranca({ politicaSenhaForte: v })} />
-        </div>
-        <div className="toggle-row" style={{ padding: "10px 0" }}>
-          <span className="tl">Restringir por função</span>
-          <Toggle defaultOn={estado.seguranca.restringirPorFuncao} label="Restringir por função" onToggle={(v) => atualizarSeguranca({ restringirPorFuncao: v })} />
-        </div>
-        <div className="config-grid-2 mt14">
-          <div className="field">
-            <label>Expirar sessão após (minutos)</label>
-            <input className="input" type="number" value={estado.seguranca.expirarSessaoMin} onChange={(e) => atualizarSeguranca({ expirarSessaoMin: Number(e.target.value) })} />
+        {resetEnviado ? <p className="hint">Confira a caixa de entrada de {emailAtual} (e o spam).</p> : null}
+      </div>
+
+      <div className="config-bloco">
+        <p className="config-bloco-titulo">E-mail de acesso</p>
+        {!trocandoEmail ? (
+          <div className="toggle-row" style={{ padding: "6px 0" }}>
+            <span className="tl">{emailAtual}</span>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => {
+                setTrocandoEmail(true);
+                setEmailAlterado(false);
+                setErroEmail(null);
+              }}
+            >
+              Alterar e-mail
+            </button>
           </div>
-          <div className="field">
-            <label>Bloquear após tentativas incorretas</label>
-            <input className="input" type="number" value={estado.seguranca.bloquearAposTentativas} onChange={(e) => atualizarSeguranca({ bloquearAposTentativas: Number(e.target.value) })} />
+        ) : (
+          <div className="config-grid-2">
+            <div className="field">
+              <label>Senha atual</label>
+              <input className="input" type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder="Confirme sua senha" />
+            </div>
+            <div className="field">
+              <label>Novo e-mail</label>
+              <input className="input" type="email" value={novoEmail} onChange={(e) => setNovoEmail(e.target.value)} placeholder="novo@email.com" />
+            </div>
+            {erroEmail ? <p style={{ gridColumn: "1 / -1", color: "var(--danger)", fontSize: 12.5 }}>{erroEmail}</p> : null}
+            <div style={{ display: "flex", gap: 8, gridColumn: "1 / -1" }}>
+              <button type="button" className="btn primary" onClick={salvarNovoEmail} disabled={salvandoEmail || !senhaAtual || !novoEmail}>
+                {salvandoEmail ? "Salvando…" : "Confirmar troca"}
+              </button>
+              <button type="button" className="btn ghost" onClick={() => setTrocandoEmail(false)} disabled={salvandoEmail}>
+                Cancelar
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+        {emailAlterado ? <p className="hint">E-mail alterado. Use o novo e-mail (com a mesma senha) da próxima vez que entrar.</p> : null}
       </div>
 
       <div className="config-bloco">
         <p className="config-bloco-titulo">Sessões ativas</p>
-        <div className="config-lista-linhas">
-          {sessoes.map((s) => (
-            <div className="config-linha-clicavel" key={s.id} style={{ cursor: "default" }}>
-              <div>
-                <p className="n">
-                  {s.dispositivo} {s.atual ? <span className="pill on">Esta sessão</span> : null}
-                </p>
-                <p className="r">
-                  {s.local} · último acesso {s.ultimoAcesso}
-                </p>
+        {sessoes === null ? (
+          <p className="hint">Carregando…</p>
+        ) : (
+          <div className="config-lista-linhas">
+            {sessoes.map((s) => (
+              <div className="config-linha-clicavel" key={s.id} style={{ cursor: "default" }}>
+                <div>
+                  <p className="n">
+                    {s.dispositivo} {s.atual ? <span className="pill on">Esta sessão</span> : null}
+                  </p>
+                  <p className="r">
+                    {s.ip ? `${s.ip} · ` : ""}conectado desde {formatarData(s.criadoEm)}
+                  </p>
+                </div>
+                {!s.atual ? (
+                  <button type="button" className="btn danger" onClick={() => encerrarSessao(s.id)}>
+                    Encerrar sessão
+                  </button>
+                ) : null}
               </div>
-              {!s.atual ? (
-                <button type="button" className="btn danger" onClick={() => setSessoes((prev) => prev.filter((x) => x.id !== s.id))}>
-                  Encerrar sessão
-                </button>
-              ) : null}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -98,9 +98,32 @@ function posicionarFlyoutLateral(
   return { top, left };
 }
 
+const CHAVE_SIDEBAR_RECOLHIDA = "azuz-crm-sidebar-recolhida";
+
 export function Sidebar() {
   const pathname = usePathname();
   const { data: sessao } = useSession();
+  // Aberta por padrão pra quem entra — só recolhe se a própria pessoa pedir (guardado por
+  // navegador, não é preferência de conta). Lazy-init lê `localStorage` uma vez, sem flash.
+  const [recolhida, setRecolhida] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem(CHAVE_SIDEBAR_RECOLHIDA) === "1";
+    } catch {
+      return false;
+    }
+  });
+  function alternarRecolhida() {
+    setRecolhida((prev) => {
+      const proximo = !prev;
+      try {
+        localStorage.setItem(CHAVE_SIDEBAR_RECOLHIDA, proximo ? "1" : "0");
+      } catch {
+        // localStorage indisponível — só não persiste entre sessões
+      }
+      return proximo;
+    });
+  }
   const currentUser = {
     name: sessao?.user?.name ?? "",
     initials: sessao?.user?.initials ?? "",
@@ -114,29 +137,35 @@ export function Sidebar() {
   const { ref: contaPopRef, posicao: contaPos } = useFloatingPosition(contaAnchorRect, contaAberta, 8, () => setContaAberta(false));
   const [workspaceAberto, setWorkspaceAberto] = useState(false);
   const [nomeEmpresa, setNomeEmpresa] = useState("");
-  const [segmento, setSegmento] = useState("");
   const [nomeEmpresaSincronizado, setNomeEmpresaSincronizado] = useState<string | null>(null);
+  const [salvandoNome, setSalvandoNome] = useState(false);
   // Sincroniza com a sessão assim que ela carregar — "ajustar estado durante a renderização" (não
   // num useEffect) porque só precisa rodar uma vez, quando o nome do workspace muda de verdade.
   if (sessao?.user?.workspaceNome && sessao.user.workspaceNome !== nomeEmpresaSincronizado) {
     setNomeEmpresaSincronizado(sessao.user.workspaceNome);
     setNomeEmpresa(sessao.user.workspaceNome);
   }
-  // Segmento não vai na sessão (só nome) — busca direto de `/api/workspace` uma vez que a sessão
-  // exista. Esse popover é só visualização rápida (dado real, mas somente-leitura) — editar de
-  // verdade acontece em Configurações > Workspace, pra não ter dois formulários editando a mesma
-  // coisa com o risco de um ficar sem salvar (era exatamente esse o bug: os campos aqui eram só
-  // estado local, sem nenhum onSalvar, e voltavam pro valor de exemplo a cada F5).
-  useEffect(() => {
-    if (!sessao?.user) return;
-    fetch("/api/workspace")
-      .then((r) => r.json())
-      .then((dados: { segmento?: string }) => setSegmento(dados.segmento ?? ""))
-      .catch((erro) => console.error("Falha ao carregar segmento do workspace:", erro));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- só precisa refazer ao trocar de workspace, não a cada objeto de sessão recriado.
-  }, [sessao?.user?.workspaceId]);
   const [workspaceAnchorRect, setWorkspaceAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: workspacePopRef, posicao: workspacePos } = useFloatingPosition(workspaceAnchorRect, workspaceAberto, 8, () => setWorkspaceAberto(false));
+
+  // Único lugar do CRM que edita o nome do workspace (`PATCH /api/workspace`, coluna real) — a
+  // categoria "Workspace" de Configurações > Geral foi removida por ser redundante com isto aqui.
+  function salvarNomeWorkspace() {
+    const nome = nomeEmpresa.trim();
+    if (!nome || nome === nomeEmpresaSincronizado) return;
+    setSalvandoNome(true);
+    fetch("/api/workspace", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        setNomeEmpresaSincronizado(nome);
+      })
+      .catch((erro) => console.error("Falha ao atualizar nome do workspace:", erro))
+      .finally(() => setSalvandoNome(false));
+  }
 
   const souAdmin =
     equipe.find((m) => m.nome === currentUser.name)?.papelTipo === "admin";
@@ -203,10 +232,21 @@ export function Sidebar() {
   }, [gestaoAtividadeAberta]);
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${recolhida ? " recolhida" : ""}`}>
       <div className="sb-brand">
         <div className="brand-mark">a</div>
-        <span className="wordmark">azuz crm</span>
+        {!recolhida ? <span className="wordmark">azuz crm</span> : null}
+        <button
+          type="button"
+          className="sb-recolher"
+          aria-label={recolhida ? "Expandir menu lateral" : "Recolher menu lateral"}
+          title={recolhida ? "Expandir menu" : "Recolher menu"}
+          onClick={alternarRecolhida}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: recolhida ? "rotate(180deg)" : "none" }}>
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
       </div>
 
       <div className="dropdown-anchor">
@@ -222,8 +262,21 @@ export function Sidebar() {
             }
           }}
         >
-          <p className="l">Workspace</p>
-          <p className="v">{nomeEmpresa}</p>
+          {!recolhida ? (
+            <>
+              <p className="l">Workspace</p>
+              <p className="v">{nomeEmpresa}</p>
+            </>
+          ) : (
+            <div className="avatar sm" title={nomeEmpresa}>
+              {(nomeEmpresa || "?")
+                .split(" ")
+                .slice(0, 2)
+                .map((p) => p[0])
+                .join("")
+                .toUpperCase()}
+            </div>
+          )}
         </button>
 
         {workspaceAberto && workspacePos && typeof document !== "undefined"
@@ -257,17 +310,25 @@ export function Sidebar() {
                     .join("")
                     .toUpperCase()}
                 </div>
-                <Link className="btn ghost" href="/configuracoes" onClick={() => setWorkspaceAberto(false)}>
-                  Editar workspace
-                </Link>
               </div>
               <div className="field">
                 <label>Nome da empresa</label>
-                <div className="input">{nomeEmpresa || "—"}</div>
-              </div>
-              <div className="field">
-                <label>Segmento</label>
-                <div className="input">{segmento || "—"}</div>
+                {souAdmin ? (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input
+                      className="input"
+                      value={nomeEmpresa}
+                      onChange={(e) => setNomeEmpresa(e.target.value)}
+                      onBlur={salvarNomeWorkspace}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.currentTarget.blur();
+                      }}
+                      disabled={salvandoNome}
+                    />
+                  </div>
+                ) : (
+                  <div className="input">{nomeEmpresa || "—"}</div>
+                )}
               </div>
               <div className="panel-h divided">
                 <h4>Quem está logado agora</h4>
@@ -311,10 +372,15 @@ export function Sidebar() {
                   style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
                   aria-haspopup="true"
                   aria-expanded={gestaoAtividadeAberta}
+                  title={recolhida ? "Inteligência comercial" : undefined}
                 >
                   <IconRelatorios />
-                  Inteligência comercial
-                  <span className="r" style={{ marginLeft: "auto" }}>▸</span>
+                  {!recolhida ? (
+                    <>
+                      Inteligência comercial
+                      <span className="r" style={{ marginLeft: "auto" }}>▸</span>
+                    </>
+                  ) : null}
                 </button>
               </div>
             );
@@ -326,12 +392,17 @@ export function Sidebar() {
                 href={href}
                 className={`nav-item${href === "/conversas" ? " nav-item-whatsapp" : ""}${active ? " active" : ""}`}
                 aria-current={active ? "page" : undefined}
+                title={recolhida ? label : undefined}
               >
                 <Icon />
-                {label}
-                {href === "/azuz-ia" ? <span className="nav-badge-em-breve">Em breve</span> : null}
+                {!recolhida ? (
+                  <>
+                    {label}
+                    {href === "/azuz-ia" ? <span className="nav-badge-em-breve">Em breve</span> : null}
+                  </>
+                ) : null}
               </Link>
-              {href === "/funil" ? (
+              {href === "/funil" && !recolhida ? (
                 <div className="nav-sublist">
                   {funis.map((f) => {
                     const subAtivo = active && f.id === funilAtivoId;
@@ -421,14 +492,16 @@ export function Sidebar() {
             }
           }}
         >
-          <div className="avatar sm">{currentUser.initials}</div>
-          <div>
-            <p className="who">
-              {currentUser.name}
-              <span className="sb-foot-chevron">▾</span>
-            </p>
-            <p className="role">{currentUser.role}</p>
-          </div>
+          <div className="avatar sm" title={recolhida ? currentUser.name : undefined}>{currentUser.initials}</div>
+          {!recolhida ? (
+            <div>
+              <p className="who">
+                {currentUser.name}
+                <span className="sb-foot-chevron">▾</span>
+              </p>
+              <p className="role">{currentUser.role}</p>
+            </div>
+          ) : null}
         </button>
 
         {contaAberta && contaPos && typeof document !== "undefined"

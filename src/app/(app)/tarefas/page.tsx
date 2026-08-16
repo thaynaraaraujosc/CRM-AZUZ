@@ -15,7 +15,7 @@ const NIVEIS_URGENCIA: Urgencia[] = ["Baixa", "Média", "Alta"];
 
 function TarefasContent() {
   const searchParams = useSearchParams();
-  const { simularNovaTarefa } = useNotificacoes();
+  const { notificarNovaTarefaCriada } = useNotificacoes();
   const { membros } = useEquipe();
   const RESPONSAVEIS = membros.map((m) => ({ nome: m.nome, descricao: m.papel }));
   const {
@@ -178,7 +178,7 @@ function TarefasContent() {
       anexo: null,
       modelo: equipeNovaTarefa,
     });
-    simularNovaTarefa(titulo);
+    notificarNovaTarefaCriada(titulo);
     fecharNovaTarefa();
   }
 

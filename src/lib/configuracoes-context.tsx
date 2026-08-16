@@ -15,44 +15,6 @@ import {
  * categorias que, na prática, são todas "preferências do workspace" salvas no mesmo blob JSON.
  */
 
-export type TemaAparencia = "claro" | "escuro" | "sistema";
-export type DensidadeAparencia = "compacta" | "confortavel" | "espacosa";
-export type TamanhoAparencia = "pequeno" | "padrao" | "grande";
-export type MenuLateralModo = "expandido" | "recolhido" | "automatico";
-
-/** `nome`/`segmento` NÃO ficam aqui — são coluna real de `Workspace` (ver `GET/PATCH /api/workspace`),
- * fonte única de verdade porque são lidos fora deste blob (sessão, sidebar, e-mails, relatórios). O
- * resto continua descritivo, sem outro consumidor além desta tela. */
-export type WorkspaceConfig = {
-  nomeEmpresa: string;
-  pais: string;
-  estado: string;
-  cidade: string;
-  fusoHorario: string;
-  idioma: string;
-  moeda: string;
-  formatoData: string;
-  formatoHora: string;
-  semanaComecaEm: "domingo" | "segunda";
-};
-
-export type AparenciaConfig = {
-  tema: TemaAparencia;
-  densidade: DensidadeAparencia;
-  tamanho: TamanhoAparencia;
-  menuLateral: MenuLateralModo;
-};
-
-export type FrequenciaNotificacao = "imediatamente" | "resumo_diario" | "resumo_semanal" | "desativado";
-
-export type PreferenciaEvento = {
-  dentroCrm: boolean;
-  email: boolean;
-  push: boolean;
-  whatsapp: boolean;
-  frequencia: FrequenciaNotificacao;
-};
-
 export type AutomacoesPrefsConfig = {
   permitirAtivacaoSemTeste: boolean;
   exigirValidacaoAntesAtivar: boolean;
@@ -79,21 +41,9 @@ export type AzuzIaConfig = {
   comportamentoPersonalizado: string;
 };
 
-export type SegurancaConfig = {
-  doisFatores: boolean;
-  politicaSenhaForte: boolean;
-  expirarSessaoMin: number;
-  bloquearAposTentativas: number;
-  restringirPorFuncao: boolean;
-};
-
 export type ConfiguracoesEstado = {
-  workspace: WorkspaceConfig;
-  aparencia: AparenciaConfig;
-  notificacoes: Record<string, PreferenciaEvento>;
   automacoesPrefs: AutomacoesPrefsConfig;
   azuzIa: AzuzIaConfig;
-  seguranca: SegurancaConfig;
   /** Entidades simples criadas nas telas de gestão (equipes, funções, campos, etiquetas) — cada uma
    * guarda só o essencial, tudo mockado/local. */
   funcoesPersonalizadas: { id: string; nome: string; descricao: string; cor: string; baseadaEm: string }[];
@@ -104,51 +54,6 @@ export type ConfiguracoesEstado = {
 
 /** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
 const CHAVE_PREFERENCIA = "configuracoes";
-
-// Um workspace novo nasce sem nenhum dado de negócio preenchido — só preferências de plataforma
-// que fazem sentido como palpite (fuso/idioma/moeda/formato, todos ajustáveis). Nome de empresa/
-// país/estado/cidade ficam em branco de propósito: é a própria empresa que preenche depois do
-// cadastro, não um exemplo pré-pronto. Nome do workspace e segmento não ficam aqui — são coluna
-// real de `Workspace` (ver `WorkspaceConfig` acima).
-export const WORKSPACE_CONFIG_PADRAO: WorkspaceConfig = {
-  nomeEmpresa: "",
-  pais: "Brasil",
-  estado: "",
-  cidade: "",
-  fusoHorario: "America/Sao_Paulo",
-  idioma: "Português (Brasil)",
-  moeda: "BRL (R$)",
-  formatoData: "DD/MM/AAAA",
-  formatoHora: "24 horas",
-  semanaComecaEm: "domingo",
-};
-
-const APARENCIA_PADRAO: AparenciaConfig = {
-  tema: "sistema",
-  densidade: "confortavel",
-  tamanho: "padrao",
-  menuLateral: "expandido",
-};
-
-export const EVENTOS_NOTIFICACAO: { id: string; label: string }[] = [
-  { id: "novo_lead", label: "Novo lead" },
-  { id: "lead_sem_responsavel", label: "Lead sem responsável" },
-  { id: "nova_mensagem", label: "Nova mensagem" },
-  { id: "tarefa_vencida", label: "Tarefa vencida" },
-  { id: "proposta_vencendo", label: "Proposta próxima do vencimento" },
-  { id: "negocio_ganho", label: "Negócio ganho" },
-  { id: "negocio_perdido", label: "Negócio perdido" },
-  { id: "automacao_erro", label: "Automação com erro" },
-  { id: "meta_atingida", label: "Meta atingida" },
-  { id: "tempo_resposta", label: "Tempo de resposta acima da meta" },
-];
-
-const NOTIFICACOES_PADRAO: Record<string, PreferenciaEvento> = Object.fromEntries(
-  EVENTOS_NOTIFICACAO.map((e) => [
-    e.id,
-    { dentroCrm: true, email: e.id === "negocio_ganho" || e.id === "meta_atingida", push: false, whatsapp: false, frequencia: "imediatamente" as FrequenciaNotificacao },
-  ]),
-);
 
 const AUTOMACOES_PREFS_PADRAO: AutomacoesPrefsConfig = {
   permitirAtivacaoSemTeste: false,
@@ -176,21 +81,9 @@ const AZUZ_IA_PADRAO: AzuzIaConfig = {
   comportamentoPersonalizado: "",
 };
 
-const SEGURANCA_PADRAO: SegurancaConfig = {
-  doisFatores: false,
-  politicaSenhaForte: true,
-  expirarSessaoMin: 480,
-  bloquearAposTentativas: 5,
-  restringirPorFuncao: true,
-};
-
 const ESTADO_PADRAO: ConfiguracoesEstado = {
-  workspace: WORKSPACE_CONFIG_PADRAO,
-  aparencia: APARENCIA_PADRAO,
-  notificacoes: NOTIFICACOES_PADRAO,
   automacoesPrefs: AUTOMACOES_PREFS_PADRAO,
   azuzIa: AZUZ_IA_PADRAO,
-  seguranca: SEGURANCA_PADRAO,
   funcoesPersonalizadas: [],
   equipesPersonalizadas: [],
   camposPersonalizados: [],
@@ -199,16 +92,12 @@ const ESTADO_PADRAO: ConfiguracoesEstado = {
 
 type ConfiguracoesContextValue = {
   estado: ConfiguracoesEstado;
-  /** Rascunho não salvo em alguma seção (Workspace/Automações/Azuz IA) — usado pelo painel de
-   * Configurações pra confirmar antes de trocar de categoria e descartar a edição em andamento. */
+  /** Rascunho não salvo em alguma seção (Automações/Azuz IA) — usado pelo painel de Configurações
+   * pra confirmar antes de trocar de categoria e descartar a edição em andamento. */
   categoriaSuja: boolean;
   setCategoriaSuja: (valor: boolean) => void;
-  atualizarWorkspace: (patch: Partial<WorkspaceConfig>) => void;
-  atualizarAparencia: (patch: Partial<AparenciaConfig>) => void;
-  atualizarNotificacao: (eventoId: string, patch: Partial<PreferenciaEvento>) => void;
   atualizarAutomacoesPrefs: (patch: Partial<AutomacoesPrefsConfig>) => void;
   atualizarAzuzIa: (patch: Partial<AzuzIaConfig>) => void;
-  atualizarSeguranca: (patch: Partial<SegurancaConfig>) => void;
   adicionarFuncao: (f: Omit<ConfiguracoesEstado["funcoesPersonalizadas"][number], "id">) => void;
   removerFuncao: (id: string) => void;
   adicionarEquipe: (e: Omit<ConfiguracoesEstado["equipesPersonalizadas"][number], "id">) => void;
@@ -226,12 +115,8 @@ async function carregarEstado(): Promise<ConfiguracoesEstado> {
     const resposta = await fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`);
     const parsed = (await resposta.json()) as Partial<ConfiguracoesEstado>;
     return {
-      workspace: { ...WORKSPACE_CONFIG_PADRAO, ...parsed.workspace },
-      aparencia: { ...APARENCIA_PADRAO, ...parsed.aparencia },
-      notificacoes: { ...NOTIFICACOES_PADRAO, ...parsed.notificacoes },
       automacoesPrefs: { ...AUTOMACOES_PREFS_PADRAO, ...parsed.automacoesPrefs },
       azuzIa: { ...AZUZ_IA_PADRAO, ...parsed.azuzIa },
-      seguranca: { ...SEGURANCA_PADRAO, ...parsed.seguranca },
       funcoesPersonalizadas: parsed.funcoesPersonalizadas ?? [],
       equipesPersonalizadas: parsed.equipesPersonalizadas ?? [],
       camposPersonalizados: parsed.camposPersonalizados ?? [],
@@ -274,26 +159,11 @@ export function ConfiguracoesProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(temporizador);
   }, [estado]);
 
-  function atualizarWorkspace(patch: Partial<WorkspaceConfig>) {
-    setEstado((prev) => ({ ...prev, workspace: { ...prev.workspace, ...patch } }));
-  }
-  function atualizarAparencia(patch: Partial<AparenciaConfig>) {
-    setEstado((prev) => ({ ...prev, aparencia: { ...prev.aparencia, ...patch } }));
-  }
-  function atualizarNotificacao(eventoId: string, patch: Partial<PreferenciaEvento>) {
-    setEstado((prev) => ({
-      ...prev,
-      notificacoes: { ...prev.notificacoes, [eventoId]: { ...prev.notificacoes[eventoId], ...patch } },
-    }));
-  }
   function atualizarAutomacoesPrefs(patch: Partial<AutomacoesPrefsConfig>) {
     setEstado((prev) => ({ ...prev, automacoesPrefs: { ...prev.automacoesPrefs, ...patch } }));
   }
   function atualizarAzuzIa(patch: Partial<AzuzIaConfig>) {
     setEstado((prev) => ({ ...prev, azuzIa: { ...prev.azuzIa, ...patch } }));
-  }
-  function atualizarSeguranca(patch: Partial<SegurancaConfig>) {
-    setEstado((prev) => ({ ...prev, seguranca: { ...prev.seguranca, ...patch } }));
   }
   function adicionarFuncao(f: Omit<ConfiguracoesEstado["funcoesPersonalizadas"][number], "id">) {
     setEstado((prev) => ({ ...prev, funcoesPersonalizadas: [...prev.funcoesPersonalizadas, { ...f, id: novoId("funcao") }] }));
@@ -326,12 +196,8 @@ export function ConfiguracoesProvider({ children }: { children: ReactNode }) {
         estado,
         categoriaSuja,
         setCategoriaSuja,
-        atualizarWorkspace,
-        atualizarAparencia,
-        atualizarNotificacao,
         atualizarAutomacoesPrefs,
         atualizarAzuzIa,
-        atualizarSeguranca,
         adicionarFuncao,
         removerFuncao,
         adicionarEquipe,

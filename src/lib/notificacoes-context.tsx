@@ -8,15 +8,12 @@ import {
   type ReactNode,
 } from "react";
 
-import { notificacoes as notificacoesIniciais } from "@/lib/data";
-
 /** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
 const CHAVE_PREFERENCIA = "notificacoes";
 
 type PrefsNotificacoes = {
   notificacoesAtivas: boolean;
   notificarNovaTarefa: boolean;
-  notificarComentario: boolean;
 };
 
 export type ItemNotificacao = { titulo: string; meta: string; lida: boolean };
@@ -28,15 +25,12 @@ type NotificacoesContextValue = {
   alternarNotificacoes: () => void;
   notificarNovaTarefa: boolean;
   alternarNotificarNovaTarefa: () => void;
-  notificarComentario: boolean;
-  alternarNotificarComentario: () => void;
   marcarTodasLidas: () => void;
-  /** Simula uma nova mensagem chegando no WhatsApp — toca o sinal se estiver ativado. */
-  simularNovaMensagem: (nomeContato: string) => void;
-  /** Dispara ao criar uma tarefa nova — toca o sinal se estiver ativado. */
-  simularNovaTarefa: (titulo: string) => void;
-  /** Simula alguém comentando (ainda não existe comentário de verdade no CRM). */
-  simularComentario: (nomeAutor: string) => void;
+  /** Dispara quando chega mensagem nova de verdade no WhatsApp — ver `NotificacoesPonte`, que
+   * detecta isso comparando o `naoLidas` real de `conversas-context.tsx` a cada nova busca. */
+  notificarNovaMensagem: (nomeContato: string) => void;
+  /** Dispara ao criar uma tarefa nova de verdade (ver `tarefas/page.tsx`). */
+  notificarNovaTarefaCriada: (titulo: string) => void;
   toasts: { id: string; texto: string }[];
 };
 
@@ -71,10 +65,9 @@ function tocarSinal() {
  * qualquer tela, não só dentro do WhatsApp.
  */
 export function NotificacoesProvider({ children }: { children: ReactNode }) {
-  const [itens, setItens] = useState<ItemNotificacao[]>(notificacoesIniciais);
+  const [itens, setItens] = useState<ItemNotificacao[]>([]);
   const [notificacoesAtivas, setNotificacoesAtivas] = useState(true);
   const [notificarNovaTarefa, setNotificarNovaTarefa] = useState(true);
-  const [notificarComentario, setNotificarComentario] = useState(true);
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const [proximoToastId, setProximoToastId] = useState(0);
 
@@ -84,7 +77,6 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       .then((dados: Partial<PrefsNotificacoes>) => {
         if (dados.notificacoesAtivas !== undefined) setNotificacoesAtivas(dados.notificacoesAtivas);
         if (dados.notificarNovaTarefa !== undefined) setNotificarNovaTarefa(dados.notificarNovaTarefa);
-        if (dados.notificarComentario !== undefined) setNotificarComentario(dados.notificarComentario);
       })
       .catch((erro) => console.error("Falha ao carregar preferências de notificações:", erro));
   }, []);
@@ -96,7 +88,6 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({
         notificacoesAtivas,
         notificarNovaTarefa,
-        notificarComentario,
         ...patch,
       }),
     }).catch((erro) => console.error("Falha ao salvar preferências de notificações:", erro));
@@ -120,14 +111,6 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     });
   }
 
-  function alternarNotificarComentario() {
-    setNotificarComentario((prev) => {
-      const proximo = !prev;
-      salvarRemoto({ notificarComentario: proximo });
-      return proximo;
-    });
-  }
-
   function marcarTodasLidas() {
     setItens((prev) => prev.map((n) => ({ ...n, lida: true })));
   }
@@ -142,7 +125,7 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     }, 4000);
   }
 
-  function simularNovaMensagem(nomeContato: string) {
+  function notificarNovaMensagem(nomeContato: string) {
     setItens((prev) => [
       {
         titulo: `${nomeContato} mandou uma mensagem no WhatsApp`,
@@ -155,22 +138,13 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     adicionarToast(`Nova mensagem de ${nomeContato} no WhatsApp`);
   }
 
-  function simularNovaTarefa(titulo: string) {
+  function notificarNovaTarefaCriada(titulo: string) {
     setItens((prev) => [
       { titulo: `Nova tarefa: ${titulo}`, meta: "agora", lida: false },
       ...prev,
     ]);
     if (!notificarNovaTarefa) return;
     adicionarToast(`Nova tarefa criada: ${titulo}`);
-  }
-
-  function simularComentario(nomeAutor: string) {
-    setItens((prev) => [
-      { titulo: `${nomeAutor} comentou`, meta: "agora", lida: false },
-      ...prev,
-    ]);
-    if (!notificarComentario) return;
-    adicionarToast(`${nomeAutor} deixou um comentário`);
   }
 
   return (
@@ -182,12 +156,9 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
         alternarNotificacoes,
         notificarNovaTarefa,
         alternarNotificarNovaTarefa,
-        notificarComentario,
-        alternarNotificarComentario,
         marcarTodasLidas,
-        simularNovaMensagem,
-        simularNovaTarefa,
-        simularComentario,
+        notificarNovaMensagem,
+        notificarNovaTarefaCriada,
         toasts,
       }}
     >

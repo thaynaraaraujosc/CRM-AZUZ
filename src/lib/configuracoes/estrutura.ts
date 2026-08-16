@@ -4,7 +4,6 @@ import {
   IconAutomacoes,
   IconCalendar,
   IconCartao,
-  IconConfiguracoes,
   IconConversas,
   IconEquipe,
   IconErro,
@@ -13,7 +12,6 @@ import {
   IconImage,
   IconImportar,
   IconInstagram,
-  IconPipeline,
   IconSparkle,
   IconSwitch,
   IconText,
@@ -23,7 +21,6 @@ import {
 } from "@/components/icons";
 
 export type CategoriaId =
-  | "workspace"
   | "aparencia"
   | "notificacoes"
   | "seguranca"
@@ -70,8 +67,7 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
   {
     titulo: "Geral",
     categorias: [
-      { id: "workspace", label: "Workspace", descricao: "Informações gerais e preferências deste ambiente de trabalho.", Icon: IconConfiguracoes },
-      { id: "aparencia", label: "Aparência", descricao: "Tema, densidade e tamanho da interface.", Icon: IconImage },
+      { id: "aparencia", label: "Aparência", descricao: "Tema claro ou escuro.", Icon: IconImage },
       { id: "notificacoes", label: "Notificações", descricao: "Quando e como você é avisado.", Icon: IconBell },
       { id: "seguranca", label: "Segurança", descricao: "Autenticação, sessões e políticas de acesso.", Icon: IconEscudo },
       { id: "usuarios", label: "Funções e permissões", descricao: "Papéis personalizados e o que cada um pode fazer.", Icon: IconEquipe },

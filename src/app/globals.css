@@ -287,6 +287,16 @@ table {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  overflow-x: hidden;
+  transition: width var(--transition-base);
+}
+
+/* Recolhida — só os ícones, largura fixa pequena; abre por padrão pra quem entra, guardado por
+   navegador (`localStorage`, ver `sidebar.tsx`), não é preferência de conta. */
+.sidebar.recolhida {
+  width: 68px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .sb-brand {
@@ -294,6 +304,35 @@ table {
   align-items: center;
   gap: 10px;
   padding: 4px 8px 22px;
+}
+
+.sidebar.recolhida .sb-brand {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sb-recolher {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--navy);
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.sb-recolher:hover {
+  background: var(--blue-soft-2);
+  color: var(--ink);
+}
+.sidebar.recolhida .sb-recolher {
+  margin-left: 0;
 }
 
 /* Marca com o mesmo tratamento (gradiente azul→roxo + glow) já usado na landing page e nas telas
@@ -413,6 +452,17 @@ table {
   flex: 0 0 auto;
 }
 
+.sidebar.recolhida .nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+.sidebar.recolhida .sb-workspace {
+  display: flex;
+  justify-content: center;
+  padding: 6px;
+}
+
 .nav-item:hover {
   background: var(--blue-soft-2);
   color: var(--ink);
@@ -523,6 +573,16 @@ table {
 .sb-foot-chevron {
   color: var(--text-faint);
   font-size: 9px;
+}
+
+.sidebar.recolhida .sb-foot {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+.sidebar.recolhida .sb-foot-info {
+  flex: 0 0 auto;
+  justify-content: center;
 }
 
 .sb-foot .role {

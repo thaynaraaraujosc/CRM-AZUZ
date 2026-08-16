@@ -7,7 +7,6 @@ import { Topbar } from "@/components/ui";
 import { useConfiguracoes } from "@/lib/configuracoes-context";
 import { categoriaPorId, type CategoriaId } from "@/lib/configuracoes/estrutura";
 import { CategoriasNav } from "@/components/configuracoes/CategoriasNav";
-import { WorkspaceSecao } from "@/components/configuracoes/WorkspaceSecao";
 import { AparenciaSecao } from "@/components/configuracoes/AparenciaSecao";
 import { NotificacoesSecao } from "@/components/configuracoes/NotificacoesSecao";
 import { UsuariosSecao } from "@/components/configuracoes/UsuariosSecao";
@@ -48,7 +47,7 @@ function ConfiguracoesConteudo() {
   // `?categoria=plano` — usado pelo redirect pós-cadastro (proxy manda direto pra tela de
   // pagamento, ver `src/app/cadastro/page.tsx`) pra não obrigar a pessoa a achar "Plano e
   // cobrança" sozinha na primeira vez que entra, já bloqueada até pagar.
-  const categoriaInicial = (searchParams.get("categoria") as CategoriaId | null) ?? "workspace";
+  const categoriaInicial = (searchParams.get("categoria") as CategoriaId | null) ?? "aparencia";
   const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaId>(categoriaInicial);
   const { categoriaSuja } = useConfiguracoes();
   const categoria = categoriaPorId(categoriaAtiva);
@@ -70,7 +69,6 @@ function ConfiguracoesConteudo() {
           <CategoriasNav ativa={categoriaAtiva} onSelecionar={selecionarCategoria} />
 
           <div className="config-detalhe">
-            {categoriaAtiva === "workspace" ? <WorkspaceSecao /> : null}
             {categoriaAtiva === "aparencia" ? <AparenciaSecao /> : null}
             {categoriaAtiva === "notificacoes" ? <NotificacoesSecao /> : null}
             {categoriaAtiva === "usuarios" ? <UsuariosSecao /> : null}

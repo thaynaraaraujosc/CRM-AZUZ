@@ -135,35 +135,6 @@ export const atividadeRecente = [
   },
 ];
 
-/** Central de notificações — sino no topo de todas as telas. */
-export const notificacoes = [
-  {
-    titulo: "Marcos Aurélio respondeu no WhatsApp",
-    meta: "há 6 min",
-    lida: false,
-  },
-  {
-    titulo: "Julia Prado — proposta parada há 4 dias",
-    meta: "há 1h",
-    lida: false,
-  },
-  {
-    titulo: "Roberto Alves ainda não aceitou o convite",
-    meta: "há 3h",
-    lida: false,
-  },
-  {
-    titulo: "Automação \"Follow-up sem resposta\" disparou 4 vezes hoje",
-    meta: "há 5h",
-    lida: true,
-  },
-  {
-    titulo: "Paulo Lacerda fechou negócio de R$ 1.560",
-    meta: "ontem",
-    lida: true,
-  },
-];
-
 /* -------------------------------------------------------------------------- */
 /* Contatos                                                                   */
 /* -------------------------------------------------------------------------- */

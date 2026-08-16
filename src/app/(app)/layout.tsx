@@ -1,6 +1,7 @@
 import { AppHeader } from "@/components/app-header";
 import { ImpersonandoBanner } from "@/components/impersonando-banner";
 import { MainShell } from "@/components/main-shell";
+import { NotificacoesPonte } from "@/components/notificacoes-ponte";
 import { Sidebar } from "@/components/sidebar";
 import { SessionProvider } from "@/components/session-provider";
 import { AgendaProvider } from "@/lib/agenda-context";
@@ -42,6 +43,7 @@ export default function AppLayout({
                               <CentralDiaProvider>
                                 <ConfiguracoesProvider>
                                   <div className="shell">
+                                    <NotificacoesPonte />
                                     <Sidebar />
                                     <MainShell>
                                       <ImpersonandoBanner />

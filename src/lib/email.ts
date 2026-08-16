@@ -39,6 +39,18 @@ export function templateRedefinicaoSenha(nome: string, link: string): string {
   `;
 }
 
+export function templateEmailAlterado(nome: string, novoEmail: string): string {
+  const primeiroNome = nome.split(" ")[0];
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+      <h2 style="color: #0b1533;">Seu e-mail de acesso foi alterado</h2>
+      <p>Olá, ${primeiroNome}.</p>
+      <p>O e-mail de acesso da sua conta no CRM AZUZ foi alterado para <strong>${novoEmail}</strong>. A partir de agora, use esse novo e-mail (com sua senha atual) pra entrar.</p>
+      <p style="font-size: 13px; color: #6e7694;">Se você não fez essa alteração, entre em contato com a equipe AZUZ imediatamente — sua senha atual continua sendo a única forma de acessar a conta.</p>
+    </div>
+  `;
+}
+
 export function templateConvite(nome: string, workspaceNome: string, link: string): string {
   const primeiroNome = nome.split(" ")[0];
   return `

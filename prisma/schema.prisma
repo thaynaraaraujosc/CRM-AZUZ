@@ -239,6 +239,7 @@ model Membro {
   ultimoAcesso DateTime?
 
   tokensRedefinicaoSenha TokenRedefinicaoSenha[]
+  sessoesAtivas          SessaoAtiva[]
 }
 
 // Token de "esqueci minha senha" — mesmo espírito do token de convite (`/convite/[token]`), só que
@@ -254,6 +255,24 @@ model TokenRedefinicaoSenha {
   expiraEm  DateTime
   usadoEm   DateTime?
   criadoEm  DateTime  @default(now())
+}
+
+// Sessão de login real — uma linha por login bem-sucedido (JWT carrega o `jti`, ver `src/lib/
+// auth.ts`). Alimenta "Sessões ativas" em Configurações > Segurança com dispositivo/navegador de
+// verdade (parseados do User-Agent no momento do login) em vez do mock anterior. `revogadaEm`
+// marcado é conferido no callback `jwt` do NextAuth a cada request — sessão revogada para de
+// autenticar, então "Encerrar sessão" derruba o acesso de verdade, não só remove da lista.
+model SessaoAtiva {
+  id          String    @id
+  membroId    String
+  membro      Membro    @relation(fields: [membroId], references: [id])
+  jti         String    @unique
+  userAgent   String?
+  ip          String?
+  criadoEm    DateTime  @default(now())
+  revogadaEm  DateTime?
+
+  @@index([membroId])
 }
 
 // Núcleo comercial (2ª leva, último módulo) — espelha `Funil`/`ColunaFunil`/`NegocioCard` de
