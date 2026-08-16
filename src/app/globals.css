@@ -544,6 +544,28 @@ table {
   overflow: hidden;
 }
 
+/* Início troca o `.main` branco pelo fundo real do login (`.auth-page`, mesma fórmula, não uma
+   variação minha) — quadriculado + brilho azul sutil, cobrindo até atrás da busca. */
+.main-inicio {
+  /* Cor fixa (não `var(--navy-deep)`, que é branco no `:root` do modo claro — só a `.auth-page`
+     redefine esse token localmente) — o fundo do Início fica escuro sempre, como o do login. */
+  background:
+    radial-gradient(900px 480px at 12% -8%, rgba(76, 134, 255, 0.16), transparent 60%),
+    radial-gradient(900px 560px at 50% 105%, rgba(76, 134, 255, 0.1), transparent 60%),
+    #05070f;
+}
+.main-inicio::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 45%, transparent 100%);
+  pointer-events: none;
+}
+
 .app-header {
   display: flex;
   align-items: center;
@@ -553,6 +575,14 @@ table {
   border-bottom: 1px solid var(--line);
   background: var(--navy-raised);
   flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
+}
+/* Início troca o `.main` branco pelo mesmo fundo marinho do login (`.main-inicio`) — a busca some
+   nele em vez de ficar com a faixa branca e a linha embaixo. */
+.app-header-transparente {
+  background: transparent;
+  border-bottom-color: transparent;
 }
 
 .app-header-right {
@@ -11363,11 +11393,12 @@ button.camp-row:hover {
    vira seu próprio quadrado branco solto direto em cima do marinho. Só esta página faz isso — as
    outras continuam usando `.topbar`/`.content` normalmente, sem mexer no `.main` compartilhado. */
 .inicio-tela {
+  position: relative;
+  z-index: 1;
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  background: var(--canvas);
   padding: 22px 26px 32px;
   overflow: auto;
 }
@@ -11472,7 +11503,9 @@ button.camp-row:hover {
   font-size: var(--fs-section-title);
   font-weight: var(--fw-semibold);
   font-family: var(--display);
-  color: var(--ink);
+  /* Fica solto direto no fundo marinho de `.main-inicio` (não dentro de uma caixa branca) — cor
+     clara fixa, não `var(--ink)` (escuro no modo claro, ficaria ilegível aqui). */
+  color: #eef1fb;
 }
 .inicio-diario-grade {
   display: flex;

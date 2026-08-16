@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { createPortal } from "react-dom";
@@ -243,9 +244,14 @@ function NotificationsBell() {
 export function AppHeader() {
   const { toasts } = useNotificacoes();
   const { toasts: toastsCentralDia } = useCentralDia();
+  const pathname = usePathname();
+  // O Início troca o `.main` branco padrão pelo mesmo fundo marinho quadriculado do login
+  // (`.main-inicio`, ver globals.css) — a busca acompanha, ficando transparente em cima desse
+  // fundo em vez de manter a faixa branca com linha embaixo.
+  const naTelaInicio = pathname === "/inicio";
 
   return (
-    <header className="app-header">
+    <header className={`app-header${naTelaInicio ? " app-header-transparente" : ""}`}>
       <GlobalSearch />
       <div className="app-header-right">
         <CriarMenu />
