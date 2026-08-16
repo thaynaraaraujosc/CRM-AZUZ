@@ -105,26 +105,34 @@ export function WhatsAppSecao() {
                     </p>
                   </div>
                   {!painelNaoOficialAberto ? (
-                    <button type="button" className="btn ghost" onClick={() => setPainelNaoOficialAberto(true)}>
-                      Conectar
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => {
+                        setPainelNaoOficialAberto(true);
+                        naoOficial.conectar();
+                      }}
+                      disabled={naoOficial.conectando}
+                    >
+                      {naoOficial.conectando ? "Conectando…" : "Conectar"}
                     </button>
                   ) : null}
                 </div>
 
                 {painelNaoOficialAberto ? (
-                  naoOficial.estado?.status === "erro" ? (
+                  naoOficial.erro || naoOficial.estado?.status === "erro" ? (
                     <p className="hint" style={{ color: "var(--danger)", marginTop: 10 }}>
-                      ⚠ {naoOficial.estado.erroMensagem}
+                      ⚠ {naoOficial.erro ?? naoOficial.estado?.erroMensagem}
                     </p>
                   ) : naoOficial.estado?.status === "aguardando_qr" && naoOficial.estado.metadados?.qrDataUrl ? (
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 14 }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pelo worker, não é asset estático */}
+                      {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pela Evolution API, não é asset estático */}
                       <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={200} height={200} />
                       <p className="hint">Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.</p>
                     </div>
                   ) : (
                     <p className="hint" style={{ marginTop: 10 }}>
-                      Aguardando o serviço de conexão gerar o QR Code… confira se o whatsapp-service está rodando.
+                      {naoOficial.conectando ? "Gerando QR Code…" : "Aguardando o QR Code…"}
                     </p>
                   )
                 ) : null}

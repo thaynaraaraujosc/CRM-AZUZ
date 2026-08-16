@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/whatsapp-nao-oficial";
+import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 
-/** POST manda uma mensagem de texto pelo WhatsApp não oficial (whatsapp-service) — chamada pela
+/** POST manda uma mensagem de texto pelo WhatsApp não oficial (Evolution API) — chamada pela
  * tela de Conversas quando o atendente responde numa conversa desse canal. */
 export async function POST(request: Request) {
   const sessao = await auth();
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await enviarMensagemWhatsAppNaoOficial(destinatario.replace(/\D/g, ""), texto);
+    await enviarMensagemWhatsAppNaoOficial(sessao.user.workspaceId, destinatario.replace(/\D/g, ""), texto);
   } catch (erro) {
     return NextResponse.json(
       { erro: erro instanceof Error ? erro.message : "Falha ao enviar mensagem" },

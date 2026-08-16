@@ -66,7 +66,7 @@ export function IntegracoesSecao() {
   const instagram = useIntegracaoMeta("meta_instagram");
   const metaAds = useIntegracaoMeta("meta_ads");
 
-  // Status do WhatsApp não oficial (whatsapp-service) direto aqui, sem polling — só pra mostrar o
+  // Status do WhatsApp não oficial (Evolution API) direto aqui, sem polling — só pra mostrar o
   // estado atual ao abrir a tela. Falha em silêncio (serviço fora do ar não pode quebrar essa tela).
   const [naoOficialStatus, setNaoOficialStatus] = useState<StatusIntegracaoNaoOficial | null>(null);
   useEffect(() => {
