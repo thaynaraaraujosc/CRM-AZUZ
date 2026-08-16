@@ -762,11 +762,25 @@ function ConversasPageInner() {
   const atendentesDisponiveis = membrosEquipe.map((m) => m.nome);
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
+  const naoOficialConectado = naoOficial.estado?.status === "conectado";
   const conversasFiltradas = conversas
     .filter((c) => {
       // Conversa de WhatsApp sem nenhum canal conectado (nem Meta, nem QR Code) some da lista —
       // volta a aparecer sozinha quando reconectar (não apaga nada, só deixa de listar).
-      if (c.canal === "WhatsApp" && statusWhatsappPronto && !whatsappConectado) return false;
+      if (c.canal === "WhatsApp") {
+        if (statusWhatsappPronto && !whatsappConectado) return false;
+        // Com só UMA das duas integrações ativa, a lista mostra só as conversas dessa integração
+        // (uma conta só tem uma conexão de WhatsApp por vez, então misturar não faz sentido) — a
+        // "origem" de cada conversa vem da última mensagem com canal marcado (ver
+        // `conversaUsaWhatsappNaoOficial`); sem nenhuma mensagem com canal marcado, conta como Meta
+        // (comportamento antigo, de antes da integração não oficial existir).
+        if (statusWhatsappPronto && metaWhatsappConectado && !naoOficialConectado && conversaUsaWhatsappNaoOficial(c.nome)) {
+          return false;
+        }
+        if (statusWhatsappPronto && naoOficialConectado && !metaWhatsappConectado && !conversaUsaWhatsappNaoOficial(c.nome)) {
+          return false;
+        }
+      }
       if (!mostrarArquivadas && arquivadas.has(c.id)) return false;
       if (mostrarArquivadas) return arquivadas.has(c.id);
       if (filtroConversa === "nao-lidas" && (!c.naoLidas || lidas.has(c.id))) return false;
@@ -1628,16 +1642,21 @@ function ConversasPageInner() {
   }
 
   /** Conversa "pertence" ao canal WhatsApp via QR Code (não oficial) quando a última mensagem —
-   * recebida OU mandada do celular conectado (espelhada) — veio por ele — decide pra onde a
-   * resposta do atendente deve sair de verdade. Olha mensagem de qualquer tipo (não só "in"): uma
-   * conversa só com mensagens espelhadas "out" (a pessoa mandou primeiro do próprio celular, ainda
-   * sem resposta) já deve contar como sendo desse canal. */
-  function contatoUsaWhatsappNaoOficial(): boolean {
-    const extras = mensagensExtraPorContato[aberta.nome] ?? [];
+   * recebida OU mandada do celular conectado (espelhada) — veio por ele; sem nenhuma mensagem com
+   * canal marcado, conta como API oficial (Meta), o comportamento antigo de antes dessa integração
+   * existir. Usado tanto pra decidir pra onde a resposta do atendente deve sair (`aberta.nome`)
+   * quanto pra filtrar a lista de conversas pela integração realmente conectada (ver
+   * `conversasFiltradas`) — nesse segundo uso, olha qualquer contato, não só o aberto no momento. */
+  function conversaUsaWhatsappNaoOficial(nomeContato: string): boolean {
+    const extras = mensagensExtraPorContato[nomeContato] ?? [];
     for (let i = extras.length - 1; i >= 0; i--) {
       if (extras[i].canal) return extras[i].canal === "whatsapp_nao_oficial";
     }
     return false;
+  }
+
+  function contatoUsaWhatsappNaoOficial(): boolean {
+    return conversaUsaWhatsappNaoOficial(aberta.nome);
   }
 
   function enviarMensagemTexto() {

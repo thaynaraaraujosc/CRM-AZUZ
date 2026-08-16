@@ -74,81 +74,98 @@ export async function POST(request: Request) {
   }
 
   if (evento === "messages.upsert") {
-    const data = payload.data as {
-      key?: { id?: string; remoteJid?: string; fromMe?: boolean };
-      message?: { conversation?: string; extendedTextMessage?: { text?: string } };
-      messageTimestamp?: number;
-      pushName?: string;
-    };
-
-    const fromMe = data.key?.fromMe === true;
-    const texto = data.message?.conversation ?? data.message?.extendedTextMessage?.text;
-    // `remoteJid` é sempre "a outra parte" da conversa, tanto em mensagem recebida quanto enviada
-    // (a Evolution segue a convenção do Baileys) — então serve pra achar o contato nos dois casos.
-    const waId = data.key?.remoteJid?.split("@")[0];
-    if (!texto || !waId || !data.key?.id) return NextResponse.json({ ok: true }); // mídia sem legenda, evento incompleto
-
-    const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: data.key.id } });
-    if (jaExiste) return NextResponse.json({ ok: true });
-
-    const contatoExistente = await encontrarContatoPorTelefone(workspaceId, waId);
-    const chaveContato = contatoExistente?.nome ?? data.pushName ?? waId;
-
-    if (fromMe) {
-      // Mensagem mandada do próprio celular conectado (espelhamento, igual WhatsApp Web) — se foi
-      // o CRM que mandou pela tela de Conversas, ela já foi persistida na hora do envio (com um id
-      // diferente, gerado no navegador); esse eco chegando pelo webhook não deve virar uma segunda
-      // bolha. Sem um id em comum entre os dois lados pra comparar, o jeito é checar se já existe
-      // uma mensagem "out" idêntica (mesmo contato/texto) nos últimos segundos.
-      const jaFoiMandadaPeloCrm = await prisma.mensagemExtra.findFirst({
-        where: {
-          workspaceId,
-          contato: chaveContato,
-          tipo: "out",
-          texto,
-          criadoEm: { gte: new Date(Date.now() - 30_000) },
-        },
-      });
-      if (jaFoiMandadaPeloCrm) return NextResponse.json({ ok: true });
+    // A Evolution normalmente manda uma mensagem só, já achatada, direto em `data` — mas
+    // dependendo da versão/config ela pode repassar o formato bruto do Baileys
+    // (`{ messages: [...], type: "notify" }`). Trata os dois pra não descartar tudo silenciosamente
+    // se vier no formato que a gente não esperava.
+    const bruto = payload.data as { messages?: unknown[] };
+    const mensagens = Array.isArray(bruto?.messages) ? bruto.messages : [payload.data];
+    for (const item of mensagens) {
+      await processarMensagemRecebida(workspaceId, item);
     }
-
-    const contato =
-      contatoExistente ??
-      (await criarContatoPeloWhatsAppSeNaoExistir({ workspaceId, nome: chaveContato, whatsapp: waId }));
-
-    // Só entra como lead novo no funil quando ALGUÉM DE FORA escreveu primeiro pra um contato que
-    // ainda não existia — mensagem que a própria pessoa manda do celular pra alguém (ex.: um
-    // contato pessoal) não deve virar negócio no funil sozinha.
-    if (!fromMe && !contatoExistente) {
-      await entrarNaPrimeiraEtapaComoNovoLead({ workspaceId, contatoNome: chaveContato, origem: "WhatsApp" });
-    }
-
-    const timestampMs = (data.messageTimestamp ?? Math.floor(Date.now() / 1000)) * 1000;
-    await prisma.mensagemExtra.create({
-      data: {
-        id: data.key.id,
-        workspaceId,
-        contato: chaveContato,
-        tipo: fromMe ? "out" : "in",
-        texto,
-        hora: new Date(timestampMs).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-        criadoEm: new Date(timestampMs),
-        canal: "whatsapp_nao_oficial",
-      },
-    });
-
-    await upsertConversaAoReceberMensagem({
-      workspaceId,
-      nome: chaveContato,
-      canal: "WhatsApp",
-      contato: waId,
-      contatoId: contato.id,
-      origem: "Direto",
-      contarComoNaoLida: !fromMe,
-    });
-
     return NextResponse.json({ ok: true });
   }
 
   return NextResponse.json({ ok: true }); // evento que não precisamos tratar (ex.: presence.update)
+}
+
+async function processarMensagemRecebida(workspaceId: string, item: unknown) {
+  const data = item as {
+    key?: { id?: string; remoteJid?: string; fromMe?: boolean };
+    message?: { conversation?: string; extendedTextMessage?: { text?: string } };
+    messageTimestamp?: number;
+    pushName?: string;
+  };
+
+  const fromMe = data.key?.fromMe === true;
+  const texto = data.message?.conversation ?? data.message?.extendedTextMessage?.text;
+  // `remoteJid` é sempre "a outra parte" da conversa, tanto em mensagem recebida quanto enviada
+  // (a Evolution segue a convenção do Baileys) — então serve pra achar o contato nos dois casos.
+  const waId = data.key?.remoteJid?.split("@")[0];
+  if (!texto || !waId || !data.key?.id) {
+    // Log temporário pra depurar formato de payload em produção (ex.: mídia sem legenda, ou um
+    // formato de evento diferente do esperado) — sem isso não dá pra ver pelos logs da Vercel por
+    // que uma mensagem específica não apareceu no CRM.
+    console.log("[webhook evolution] messages.upsert sem texto/waId/id reconhecível:", JSON.stringify(data).slice(0, 500));
+    return;
+  }
+
+  const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: data.key.id } });
+  if (jaExiste) return;
+
+  const contatoExistente = await encontrarContatoPorTelefone(workspaceId, waId);
+  const chaveContato = contatoExistente?.nome ?? data.pushName ?? waId;
+
+  if (fromMe) {
+    // Mensagem mandada do próprio celular conectado (espelhamento, igual WhatsApp Web) — se foi
+    // o CRM que mandou pela tela de Conversas, ela já foi persistida na hora do envio (com um id
+    // diferente, gerado no navegador); esse eco chegando pelo webhook não deve virar uma segunda
+    // bolha. Sem um id em comum entre os dois lados pra comparar, o jeito é checar se já existe
+    // uma mensagem "out" idêntica (mesmo contato/texto) nos últimos segundos.
+    const jaFoiMandadaPeloCrm = await prisma.mensagemExtra.findFirst({
+      where: {
+        workspaceId,
+        contato: chaveContato,
+        tipo: "out",
+        texto,
+        criadoEm: { gte: new Date(Date.now() - 30_000) },
+      },
+    });
+    if (jaFoiMandadaPeloCrm) return;
+  }
+
+  const contato =
+    contatoExistente ??
+    (await criarContatoPeloWhatsAppSeNaoExistir({ workspaceId, nome: chaveContato, whatsapp: waId }));
+
+  // Só entra como lead novo no funil quando ALGUÉM DE FORA escreveu primeiro pra um contato que
+  // ainda não existia — mensagem que a própria pessoa manda do celular pra alguém (ex.: um
+  // contato pessoal) não deve virar negócio no funil sozinha.
+  if (!fromMe && !contatoExistente) {
+    await entrarNaPrimeiraEtapaComoNovoLead({ workspaceId, contatoNome: chaveContato, origem: "WhatsApp" });
+  }
+
+  const timestampMs = (data.messageTimestamp ?? Math.floor(Date.now() / 1000)) * 1000;
+  await prisma.mensagemExtra.create({
+    data: {
+      id: data.key.id,
+      workspaceId,
+      contato: chaveContato,
+      tipo: fromMe ? "out" : "in",
+      texto,
+      hora: new Date(timestampMs).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+      criadoEm: new Date(timestampMs),
+      canal: "whatsapp_nao_oficial",
+    },
+  });
+
+  await upsertConversaAoReceberMensagem({
+    workspaceId,
+    nome: chaveContato,
+    canal: "WhatsApp",
+    contato: waId,
+    contatoId: contato.id,
+    origem: "Direto",
+    contarComoNaoLida: !fromMe,
+  });
 }

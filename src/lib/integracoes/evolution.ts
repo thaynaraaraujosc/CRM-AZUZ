@@ -69,6 +69,27 @@ export function validarTokenWebhook(tokenRecebido: string | null): boolean {
 
 type RespostaQrCode = { qrDataUrl: string | null };
 
+const EVENTOS_WEBHOOK = ["QRCODE_UPDATED", "CONNECTION_UPDATE", "MESSAGES_UPSERT"];
+
+/** Registra (ou atualiza) o webhook da instância numa chamada própria, separada da criação —
+ * várias versões/instalações da Evolution ignoram silenciosamente o campo `webhook` passado dentro
+ * de `POST /instance/create`, então confiar só nisso deixa instância sem nenhum evento chegando no
+ * CRM. Chamado sempre que a pessoa clica em "Conectar", idempotente (não tem problema registrar de
+ * novo numa instância que já tinha webhook certo). */
+async function configurarWebhook(instancia: string): Promise<void> {
+  await chamarEvolution(`/webhook/set/${instancia}`, "POST", {
+    webhook: {
+      enabled: true,
+      url: webhookUrl(),
+      byEvents: false,
+      base64: true,
+      events: EVENTOS_WEBHOOK,
+    },
+  }).catch((erro) => {
+    console.error(`Falha ao configurar webhook da instância ${instancia}:`, erro);
+  });
+}
+
 /** Garante que a instância do workspace existe na Evolution (cria na primeira vez) e devolve o QR
  * Code atual pra escanear. Instância que já existe e já está conectada não tem QR novo — o status
  * `conectado` é o que importa nesse caso, não o QR. */
@@ -78,8 +99,8 @@ export async function conectarWhatsAppNaoOficial(workspaceId: string): Promise<R
   const estadoAtual = await chamarEvolution(`/instance/connectionState/${instancia}`, "GET").catch(() => null);
 
   if (!estadoAtual) {
-    // Instância ainda não existe nesse servidor Evolution — cria já configurando o webhook de
-    // eventos pra esse workspace específico.
+    // Instância ainda não existe nesse servidor Evolution — cria já tentando configurar o webhook
+    // inline (funciona em algumas versões) e confirma com uma chamada separada logo depois.
     const criada = await chamarEvolution("/instance/create", "POST", {
       instanceName: instancia,
       qrcode: true,
@@ -88,12 +109,15 @@ export async function conectarWhatsAppNaoOficial(workspaceId: string): Promise<R
         url: webhookUrl(),
         byEvents: false,
         base64: true,
-        events: ["QRCODE_UPDATED", "CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+        events: EVENTOS_WEBHOOK,
       },
     });
+    await configurarWebhook(instancia);
     const base64 = criada?.qrcode?.base64 ?? null;
     return { qrDataUrl: base64 };
   }
+
+  await configurarWebhook(instancia);
 
   if (estadoAtual?.instance?.state === "open") {
     return { qrDataUrl: null };
