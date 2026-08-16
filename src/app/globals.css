@@ -544,26 +544,14 @@ table {
   overflow: hidden;
 }
 
-/* Início troca o `.main` branco pelo fundo real do login (`.auth-page`, mesma fórmula, não uma
-   variação minha) — quadriculado + brilho azul sutil, cobrindo até atrás da busca. */
+/* Início não tem fundo/moldura própria — nada de caixa escura (nem clara) por baixo dos cartões:
+   o `.main` fica totalmente transparente e o quadriculado que aparece é o mesmo `.shell::before`
+   (mesmo fundo da sidebar/vão entre painéis), sem uma segunda textura por cima. */
 .main-inicio {
-  /* Cor fixa (não `var(--navy-deep)`, que é branco no `:root` do modo claro — só a `.auth-page`
-     redefine esse token localmente) — o fundo do Início fica escuro sempre, como o do login. */
-  background:
-    radial-gradient(900px 480px at 12% -8%, rgba(76, 134, 255, 0.16), transparent 60%),
-    radial-gradient(900px 560px at 50% 105%, rgba(76, 134, 255, 0.1), transparent 60%),
-    #05070f;
-}
-.main-inicio::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 45%, transparent 100%);
-  pointer-events: none;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .app-header {
@@ -583,6 +571,16 @@ table {
 .app-header-transparente {
   background: transparent;
   border-bottom-color: transparent;
+}
+/* A busca (`.search`) tem fundo/borda próprios (`var(--navy-raised)`/`var(--line)`) que não somem
+   só com o `.app-header` ficando transparente — precisa da própria transparência aqui. */
+.app-header-transparente .search {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.55);
+}
+.app-header-transparente .search input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .app-header-right {
@@ -11426,6 +11424,10 @@ button.camp-row:hover {
   grid-template-columns: minmax(0, 1fr) 260px;
   gap: var(--space-4);
   align-items: stretch;
+  /* Cresce pra ocupar todo o espaço vertical sobrando na tela, em vez de deixar vão vazio de
+     quadriculado embaixo dos cartões (a lista de Pendências rola por dentro, ver abaixo). */
+  flex: 1;
+  min-height: 0;
 }
 
 .inicio-col-esquerda {
@@ -11433,6 +11435,7 @@ button.camp-row:hover {
   flex-direction: column;
   gap: var(--space-4);
   min-width: 0;
+  min-height: 0;
 }
 
 .inicio-col-lateral {
@@ -11446,6 +11449,12 @@ button.camp-row:hover {
 
 .inicio-pendencias-box {
   margin-bottom: 0;
+  /* Cresce dentro da coluna esquerda (o Diário mantém altura natural abaixo) — é quem absorve o
+     espaço vertical sobrando, com a lista rolando por dentro em vez de esticar itens. */
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .inicio-pendencias-resumo {
@@ -11489,7 +11498,8 @@ button.camp-row:hover {
 }
 
 .inicio-pendencias-lista {
-  max-height: 200px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
