@@ -11357,12 +11357,22 @@ button.camp-row:hover {
 
 /* ------------------------- Início: 2 colunas (pendências+diário · funil) ------------------------- */
 
+/* Mesmo truque visual da sidebar/`.main` (painéis separados, com o marinho da marca aparecendo no
+   vão entre eles) — aplicado numa escala menor aqui dentro: Pendências+Diário formam um grupo,
+   Oportunidades/Vendas-perdidas/Vendas-realizadas formam outro, com esse "respiro" escuro entre os
+   dois em vez de ficarem soltos no mesmo fundo branco do `.content`. */
+.inicio-painel {
+  background: var(--canvas);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
 .inicio-grid-principal {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
   gap: var(--space-4);
-  align-items: start;
-  margin-bottom: var(--space-5);
+  align-items: stretch;
 }
 
 .inicio-col-esquerda {
@@ -11376,6 +11386,9 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+.inicio-col-lateral > * {
+  flex: 1;
 }
 
 .inicio-pendencias-box {
@@ -11483,6 +11496,29 @@ button.camp-row:hover {
 }
 .inicio-stat-mini.is-ganho .n {
   color: var(--success);
+}
+
+.inicio-stat-mini-obs {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  font-size: var(--fs-secondary);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Versão maior — usada nos 3 quadrados da coluna do funil (Oportunidades/Vendas perdidas/Vendas
+   realizadas), que ficam esticados (`.inicio-col-lateral > * { flex: 1 }`) pra ocupar o espaço
+   vazio ao lado de Pendências+Diário, em vez de sobrar fundo em branco. */
+.inicio-stat-grande {
+  justify-content: center;
+}
+.inicio-stat-grande .n {
+  font-size: 34px;
+}
+.inicio-stat-grande .r {
+  font-size: var(--fs-body);
 }
 
 @media (max-width: 1100px) {
