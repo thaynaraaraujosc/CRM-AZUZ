@@ -40,17 +40,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Registra a sessão de verdade (dispositivo/navegador reais, ver `src/lib/sessoes.ts`) —
         // o `jti` vai pro token JWT (callback `jwt` abaixo) e é o que "Encerrar sessão" em
-        // Configurações > Segurança revoga de fato (ver callback `jwt`, que confere a cada request).
+        // Configurações > Segurança revoga de fato (ver callback `jwt`, que confere a cada
+        // request). Fire-and-forget igual o `ultimoAcesso` acima — gerado o `jti` na hora (não
+        // depende do banco), então o login nunca trava esperando essa gravação. Uma lentidão ou
+        // falha aqui só significa que essa sessão não aparece em "Sessões ativas", nunca impede
+        // login (era exatamente esse o bug: um `await` aqui travava o login inteiro sempre que o
+        // banco demorava um pouco mais, ex.: lock temporário de outra query).
         const jti = randomUUID();
-        await prisma.sessaoAtiva.create({
-          data: {
-            id: randomUUID(),
-            membroId: membro.id,
-            jti,
-            userAgent: request.headers.get("user-agent"),
-            ip: capturarIp(request),
-          },
-        });
+        prisma.sessaoAtiva
+          .create({
+            data: {
+              id: randomUUID(),
+              membroId: membro.id,
+              jti,
+              userAgent: request.headers.get("user-agent"),
+              ip: capturarIp(request),
+            },
+          })
+          .catch(() => {});
 
         return {
           id: membro.id,
@@ -127,9 +134,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Requests seguintes (sem `user`, só refresh do token existente) — confere se a sessão
       // ainda está viva em `SessaoAtiva`. Retornar `null` aqui derruba a sessão de verdade, é o
       // que faz "Encerrar sessão" em Configurações > Segurança funcionar em outro dispositivo.
+      // Isso roda em TODA request autenticada (não só login) — uma falha/lentidão passageira do
+      // banco aqui não pode derrubar todo mundo que já está logado, então só nega de verdade
+      // quando a consulta responde e confirma revogação; erro de banco deixa passar (fail-open).
       if (token.jti) {
-        const sessaoAtiva = await prisma.sessaoAtiva.findUnique({ where: { jti: token.jti } });
-        if (!sessaoAtiva || sessaoAtiva.revogadaEm) return null;
+        try {
+          const sessaoAtiva = await prisma.sessaoAtiva.findUnique({ where: { jti: token.jti } });
+          if (!sessaoAtiva || sessaoAtiva.revogadaEm) return null;
+        } catch (erro) {
+          console.error("Falha ao conferir SessaoAtiva (deixando passar):", erro);
+        }
       }
       return token;
     },
