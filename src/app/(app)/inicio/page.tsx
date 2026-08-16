@@ -6,7 +6,6 @@ import Link from "next/link";
 
 import { IconRefresh } from "@/components/icons";
 import { CompromissoCard } from "@/components/central-dia/CompromissoCard";
-import { ConcluidosHoje } from "@/components/central-dia/ConcluidosHoje";
 import { ItemCard } from "@/components/central-dia/ItemCard";
 import { OrganizarMeuDia } from "@/components/central-dia/OrganizarMeuDia";
 import { Recomendacoes } from "@/components/central-dia/Recomendacoes";
@@ -251,19 +250,19 @@ export default function InicioPage() {
               )}
             </section>
 
-            <section className="central-dia-secao inicio-leads-box">
-              <div className="central-dia-secao-h">
-                <h3>Diário</h3>
+            <div className="inicio-diario-secao">
+              <h3 className="inicio-diario-titulo">Diário</h3>
+              <div className="inicio-diario-grade">
+                <div className="inicio-stat-mini">
+                  <span className="n">{leadsHoje.trafego}</span>
+                  <span className="r">Tráfego/Anúncios</span>
+                </div>
+                <div className="inicio-stat-mini">
+                  <span className="n">{leadsHoje.outros}</span>
+                  <span className="r">Outros</span>
+                </div>
               </div>
-              <div className="inicio-leads-linha">
-                <span className="n">{leadsHoje.trafego}</span>
-                <span className="r">Tráfego/Anúncios</span>
-              </div>
-              <div className="inicio-leads-linha">
-                <span className="n">{leadsHoje.outros}</span>
-                <span className="r">Outros</span>
-              </div>
-            </section>
+            </div>
           </div>
 
           <div className="inicio-col-lateral">
@@ -283,8 +282,6 @@ export default function InicioPage() {
         </div>
 
         <Recomendacoes recomendacoes={recomendacoes} onVerItens={() => {}} />
-
-        <ConcluidosHoje />
       </div>
 
       <OrganizarMeuDia

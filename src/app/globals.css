@@ -9,10 +9,10 @@
   --navy-raised: #f5f7fb;
   --navy-raised-2: #eaeefa;
   --navy-deep: #ffffff;
-  /* "Piso" atrás dos painéis flutuantes (sidebar + área principal) — precisa ser um tom visivelmente
-     diferente de `--navy`/`--navy-raised` (os painéis em si), senão os painéis "grudam" no fundo e o
-     respiro entre eles não se lê como respiro de verdade. */
-  --canvas: #e9edf5;
+  /* "Piso" atrás dos painéis flutuantes (sidebar + área principal) — o azul vibrante da marca, não
+     cinza neutro: só esse fundo muda de cor, os painéis (`--navy`/`--navy-raised`) continuam brancos
+     por cima. Nada de escurecer isso pro tom do dark mode — é um azul de dia, não o Night. */
+  --canvas: #2e6bff;
 
   --blue: #2e6bff;
   --blue-soft: rgba(46, 107, 255, 0.14);
@@ -11339,7 +11339,7 @@ button.camp-row:hover {
 
 .inicio-grid-principal {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr) 260px;
   gap: var(--space-4);
   align-items: start;
   margin-bottom: var(--space-5);
@@ -11403,38 +11403,28 @@ button.camp-row:hover {
 }
 
 .inicio-pendencias-lista {
-  max-height: 280px;
+  max-height: 200px;
   overflow-y: auto;
 }
 
-.inicio-leads-box {
-  margin-bottom: 0;
-}
-
-.inicio-leads-linha {
+.inicio-diario-secao {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: var(--space-3) 0;
-  border-top: 1px solid var(--line-soft);
+  gap: var(--space-2);
 }
-.inicio-leads-linha:first-of-type {
-  border-top: none;
-  padding-top: var(--space-2);
-}
-.inicio-leads-linha .n {
-  font-size: var(--fs-indicator);
+.inicio-diario-titulo {
+  margin: 0;
+  font-size: var(--fs-section-title);
   font-weight: var(--fw-semibold);
-  line-height: var(--lh-tight);
-  color: var(--ink);
   font-family: var(--display);
+  color: var(--ink);
 }
-.inicio-leads-linha .r {
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-medium);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+.inicio-diario-grade {
+  display: flex;
+  gap: var(--space-3);
+}
+.inicio-diario-grade .inicio-stat-mini {
+  flex: 1;
 }
 
 .inicio-stat-mini {
@@ -11445,7 +11435,7 @@ button.camp-row:hover {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  padding: var(--space-4);
+  padding: var(--space-5) var(--space-4);
   text-decoration: none;
   transition: box-shadow var(--transition-base), border-color var(--transition-base), transform var(--transition-fast);
 }
