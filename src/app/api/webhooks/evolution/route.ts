@@ -76,9 +76,14 @@ export async function POST(request: Request) {
   if (evento === "messages.upsert") {
     // A Evolution normalmente manda uma mensagem só, já achatada, direto em `data` — mas
     // dependendo da versão/config ela pode repassar o formato bruto do Baileys
-    // (`{ messages: [...], type: "notify" }`). Trata os dois pra não descartar tudo silenciosamente
-    // se vier no formato que a gente não esperava.
-    const bruto = payload.data as { messages?: unknown[] };
+    // (`{ messages: [...], type: "notify" | "append" | ... }`). Trata os dois pra não descartar
+    // tudo silenciosamente se vier no formato que a gente não esperava. `type` diferente de
+    // "notify" (quando presente) é sincronização de histórico ao conectar, não mensagem ao vivo —
+    // nem entra na função de processar (ver guarda de idade da mensagem lá dentro pro caso desse
+    // campo não vir, que foi o que floodou o banco na primeira conexão: a Evolution manda TODO o
+    // histórico do celular pelo mesmo evento, sem marcar `type` de jeito nenhum).
+    const bruto = payload.data as { messages?: unknown[]; type?: string };
+    if (bruto?.type && bruto.type !== "notify") return NextResponse.json({ ok: true });
     const mensagens = Array.isArray(bruto?.messages) ? bruto.messages : [payload.data];
     for (const item of mensagens) {
       await processarMensagemRecebida(workspaceId, item);
@@ -88,6 +93,12 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: true }); // evento que não precisamos tratar (ex.: presence.update)
 }
+
+/** Mensagem mandada/recebida há mais que isso é sincronização de histórico (conexão inicial ou
+ * reconexão trazendo o backlog inteiro do celular), não mensagem ao vivo — não deve virar
+ * conversa/lead novo no CRM. Único jeito confiável de filtrar isso, já que a Evolution nem sempre
+ * marca `type` no evento (ver acima): comparar o timestamp da própria mensagem com agora. */
+const IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS = 2 * 60 * 1000;
 
 async function processarMensagemRecebida(workspaceId: string, item: unknown) {
   const data = item as {
@@ -109,6 +120,9 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
     console.log("[webhook evolution] messages.upsert sem texto/waId/id reconhecível:", JSON.stringify(data).slice(0, 500));
     return;
   }
+
+  const timestampMs = (data.messageTimestamp ?? Math.floor(Date.now() / 1000)) * 1000;
+  if (Date.now() - timestampMs > IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS) return; // sincronização de histórico, ignora
 
   const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: data.key.id } });
   if (jaExiste) return;
@@ -145,7 +159,6 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
     await entrarNaPrimeiraEtapaComoNovoLead({ workspaceId, contatoNome: chaveContato, origem: "WhatsApp" });
   }
 
-  const timestampMs = (data.messageTimestamp ?? Math.floor(Date.now() / 1000)) * 1000;
   await prisma.mensagemExtra.create({
     data: {
       id: data.key.id,
