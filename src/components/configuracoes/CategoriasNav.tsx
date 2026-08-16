@@ -45,6 +45,7 @@ export function CategoriasNav({
               >
                 <cat.Icon width={16} height={16} aria-hidden="true" />
                 <span>{cat.label}</span>
+                {cat.emBreve ? <span className="nav-badge-em-breve" style={{ marginLeft: "auto" }}>Em breve</span> : null}
               </button>
             ))}
           </div>

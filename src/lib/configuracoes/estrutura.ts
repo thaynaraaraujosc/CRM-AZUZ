@@ -1,20 +1,16 @@
 import type { ComponentType, SVGProps } from "react";
 
 import {
-  IconAutomacoes,
-  IconCalendar,
   IconCartao,
   IconConversas,
-  IconEquipe,
-  IconErro,
   IconEscudo,
+  IconErro,
   IconHistorico,
   IconImage,
   IconImportar,
   IconInstagram,
   IconSparkle,
   IconSwitch,
-  IconText,
   IconWhatsApp,
   IconBell,
   IconDoc,
@@ -24,12 +20,7 @@ export type CategoriaId =
   | "aparencia"
   | "notificacoes"
   | "seguranca"
-  | "usuarios"
-  | "equipes"
-  | "campos"
   | "etiquetas"
-  | "automacoes"
-  | "agenda"
   | "importacao"
   | "auditoria"
   | "azuz-ia"
@@ -47,6 +38,9 @@ export type CategoriaConfig = {
   label: string;
   descricao: string;
   Icon: IconeCategoria;
+  /** Mostra a tag "Em breve" ao lado do label e troca o conteúdo da categoria por uma vitrine
+   * informativa em vez do formulário — mesmo padrão já usado em Azuz IA (`/azuz-ia`). */
+  emBreve?: boolean;
 };
 
 export type GrupoConfig = {
@@ -56,12 +50,9 @@ export type GrupoConfig = {
 
 /**
  * Estrutura enxuta: só configurações realmente globais da conta ficam aqui — o que já tem módulo
- * próprio no menu principal (Funis e etapas → /funil; lista de usuários e convite → /equipe e
- * /equipe/convidar) saiu da navegação (o componente/código continua existindo, só não tem mais um
- * segundo caminho de navegação pra chegar nele). "Geral" ficou maior do que os 4 itens do pedido
- * original porque várias categorias (Campos personalizados, Etiquetas, Automações, Agenda,
- * Importação, Auditoria, Equipes, Funções) não têm nenhum outro módulo no CRM — escondê-las tornaria
- * a funcionalidade inacessível, o que contraria "não apagar/quebrar funcionalidade existente".
+ * próprio no menu principal (Funis e etapas → /funil; usuários/equipes/campos/automações/agenda →
+ * /equipe, /automacoes, /agenda) saiu daqui de vez (eram redundantes com o módulo real, não só uma
+ * segunda navegação pro mesmo lugar).
  */
 export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
   {
@@ -70,20 +61,15 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
       { id: "aparencia", label: "Aparência", descricao: "Tema claro ou escuro.", Icon: IconImage },
       { id: "notificacoes", label: "Notificações", descricao: "Quando e como você é avisado.", Icon: IconBell },
       { id: "seguranca", label: "Segurança", descricao: "Autenticação, sessões e políticas de acesso.", Icon: IconEscudo },
-      { id: "usuarios", label: "Funções e permissões", descricao: "Papéis personalizados e o que cada um pode fazer.", Icon: IconEquipe },
-      { id: "equipes", label: "Equipes", descricao: "Grupos de atendimento e distribuição de leads.", Icon: IconEquipe },
-      { id: "campos", label: "Campos personalizados", descricao: "Campos extras em contatos, negócios e mais.", Icon: IconText },
       { id: "etiquetas", label: "Etiquetas", descricao: "Marcações usadas em contatos e automações.", Icon: IconErro },
-      { id: "automacoes", label: "Automações", descricao: "Preferências gerais do construtor de automações.", Icon: IconAutomacoes },
-      { id: "agenda", label: "Agenda e horários", descricao: "Duração, horários e tipos de compromisso.", Icon: IconCalendar },
-      { id: "importacao", label: "Importação e exportação", descricao: "Trazer ou tirar dados do CRM.", Icon: IconImportar },
+      { id: "importacao", label: "Importação e exportação", descricao: "Trazer ou tirar dados do CRM.", Icon: IconImportar, emBreve: true },
       { id: "auditoria", label: "Auditoria e atividades", descricao: "Histórico do que aconteceu no workspace.", Icon: IconHistorico },
     ],
   },
   {
     titulo: "Inteligências",
     categorias: [
-      { id: "azuz-ia", label: "Azuz IA", descricao: "Comportamento, dados permitidos e sugestões.", Icon: IconSparkle },
+      { id: "azuz-ia", label: "Azuz IA", descricao: "Comportamento, dados permitidos e sugestões.", Icon: IconSparkle, emBreve: true },
     ],
   },
   {

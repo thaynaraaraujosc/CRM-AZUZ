@@ -15,23 +15,6 @@ import {
  * categorias que, na prática, são todas "preferências do workspace" salvas no mesmo blob JSON.
  */
 
-export type AutomacoesPrefsConfig = {
-  permitirAtivacaoSemTeste: boolean;
-  exigirValidacaoAntesAtivar: boolean;
-  registrarHistorico: boolean;
-  pausarEmErro: boolean;
-  impedirDuplicadas: boolean;
-  horarioInicio: string;
-  horarioFim: string;
-  limiteAcoes: number;
-  responsavelPadrao: string;
-  funilPadrao: string;
-  comportamentoEtapaRemovida: "mover_padrao" | "pausar_automacao";
-  modoConstrucao: "guiado" | "avancado" | "lembrar";
-  explicacoesAutomaticas: boolean;
-  mostrarResumo: "sempre" | "ao_testar" | "nunca";
-};
-
 export type AzuzIaConfig = {
   tom: "direto" | "consultivo" | "amigavel" | "formal" | "personalizado";
   detalhamento: "resumido" | "equilibrado" | "detalhado";
@@ -42,7 +25,6 @@ export type AzuzIaConfig = {
 };
 
 export type ConfiguracoesEstado = {
-  automacoesPrefs: AutomacoesPrefsConfig;
   azuzIa: AzuzIaConfig;
   /** Entidades simples criadas nas telas de gestão (equipes, funções, campos, etiquetas) — cada uma
    * guarda só o essencial, tudo mockado/local. */
@@ -55,23 +37,6 @@ export type ConfiguracoesEstado = {
 /** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
 const CHAVE_PREFERENCIA = "configuracoes";
 
-const AUTOMACOES_PREFS_PADRAO: AutomacoesPrefsConfig = {
-  permitirAtivacaoSemTeste: false,
-  exigirValidacaoAntesAtivar: true,
-  registrarHistorico: true,
-  pausarEmErro: true,
-  impedirDuplicadas: true,
-  horarioInicio: "08:00",
-  horarioFim: "20:00",
-  limiteAcoes: 500,
-  responsavelPadrao: "Ana Ferreira",
-  funilPadrao: "Funil principal",
-  comportamentoEtapaRemovida: "pausar_automacao",
-  modoConstrucao: "lembrar",
-  explicacoesAutomaticas: true,
-  mostrarResumo: "sempre",
-};
-
 const AZUZ_IA_PADRAO: AzuzIaConfig = {
   tom: "consultivo",
   detalhamento: "equilibrado",
@@ -82,7 +47,6 @@ const AZUZ_IA_PADRAO: AzuzIaConfig = {
 };
 
 const ESTADO_PADRAO: ConfiguracoesEstado = {
-  automacoesPrefs: AUTOMACOES_PREFS_PADRAO,
   azuzIa: AZUZ_IA_PADRAO,
   funcoesPersonalizadas: [],
   equipesPersonalizadas: [],
@@ -96,7 +60,6 @@ type ConfiguracoesContextValue = {
    * pra confirmar antes de trocar de categoria e descartar a edição em andamento. */
   categoriaSuja: boolean;
   setCategoriaSuja: (valor: boolean) => void;
-  atualizarAutomacoesPrefs: (patch: Partial<AutomacoesPrefsConfig>) => void;
   atualizarAzuzIa: (patch: Partial<AzuzIaConfig>) => void;
   adicionarFuncao: (f: Omit<ConfiguracoesEstado["funcoesPersonalizadas"][number], "id">) => void;
   removerFuncao: (id: string) => void;
@@ -115,7 +78,6 @@ async function carregarEstado(): Promise<ConfiguracoesEstado> {
     const resposta = await fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`);
     const parsed = (await resposta.json()) as Partial<ConfiguracoesEstado>;
     return {
-      automacoesPrefs: { ...AUTOMACOES_PREFS_PADRAO, ...parsed.automacoesPrefs },
       azuzIa: { ...AZUZ_IA_PADRAO, ...parsed.azuzIa },
       funcoesPersonalizadas: parsed.funcoesPersonalizadas ?? [],
       equipesPersonalizadas: parsed.equipesPersonalizadas ?? [],
@@ -159,9 +121,6 @@ export function ConfiguracoesProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(temporizador);
   }, [estado]);
 
-  function atualizarAutomacoesPrefs(patch: Partial<AutomacoesPrefsConfig>) {
-    setEstado((prev) => ({ ...prev, automacoesPrefs: { ...prev.automacoesPrefs, ...patch } }));
-  }
   function atualizarAzuzIa(patch: Partial<AzuzIaConfig>) {
     setEstado((prev) => ({ ...prev, azuzIa: { ...prev.azuzIa, ...patch } }));
   }
@@ -196,7 +155,6 @@ export function ConfiguracoesProvider({ children }: { children: ReactNode }) {
         estado,
         categoriaSuja,
         setCategoriaSuja,
-        atualizarAutomacoesPrefs,
         atualizarAzuzIa,
         adicionarFuncao,
         removerFuncao,
