@@ -7,11 +7,9 @@ import Link from "next/link";
 import { IconRefresh } from "@/components/icons";
 import { CompromissoCard } from "@/components/central-dia/CompromissoCard";
 import { ConcluidosHoje } from "@/components/central-dia/ConcluidosHoje";
-import { FiltrosBar } from "@/components/central-dia/FiltrosBar";
 import { ItemCard } from "@/components/central-dia/ItemCard";
 import { OrganizarMeuDia } from "@/components/central-dia/OrganizarMeuDia";
 import { Recomendacoes } from "@/components/central-dia/Recomendacoes";
-import { SecaoLista } from "@/components/central-dia/SecaoLista";
 import { useCentralDia } from "@/lib/central-dia-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { compromissosDeTarefas, HOJE_ISO, useAgenda } from "@/lib/agenda-context";
@@ -199,38 +197,63 @@ export default function InicioPage() {
       </div>
 
       <div className="content">
-        <div className="central-dia-resumo">
-          <div className="central-dia-resumo-item">
-            <span className="n">{itensFiltrados.length}</span>
-            <span className="r">Pendentes</span>
-          </div>
-          <div className="central-dia-resumo-item is-urgente">
-            <span className="n">{urgentesCount}</span>
-            <span className="r">Urgentes</span>
-          </div>
-          <div className="central-dia-resumo-item is-concluido">
-            <span className="n">{concluidos.length}</span>
-            <span className="r">Concluídos</span>
-          </div>
-          <div className="central-dia-resumo-item is-atrasado">
-            <span className="n">{atrasadosCount}</span>
-            <span className="r">Atrasados</span>
-          </div>
-          <div className="central-dia-resumo-atualizacao">
-            <span className="hint">Atualizado há {tempoDesde(ultimaAtualizacao)}</span>
-            <button type="button" className="icon-btn subtle" aria-label="Atualizar" onClick={atualizarAgora} disabled={atualizando}>
-              <IconRefresh width={15} height={15} className={atualizando ? "spin" : ""} />
-            </button>
-          </div>
-        </div>
-
-        <FiltrosBar />
-
         <div className="inicio-grid-principal">
-          <div className="inicio-col-lateral">
+          <div className="inicio-col-esquerda">
+            <section className="central-dia-secao inicio-pendencias-box">
+              <div className="central-dia-secao-h">
+                <h3>Pendências</h3>
+                <span className="central-dia-secao-contagem">{itensParaPendencias.length + compromissosHoje.length}</span>
+              </div>
+
+              <div className="inicio-pendencias-resumo">
+                <div className="inicio-pendencias-resumo-item">
+                  <span className="n">{itensFiltrados.length}</span>
+                  <span className="r">Pendentes</span>
+                </div>
+                <div className="inicio-pendencias-resumo-item is-urgente">
+                  <span className="n">{urgentesCount}</span>
+                  <span className="r">Urgentes</span>
+                </div>
+                <div className="inicio-pendencias-resumo-item is-concluido">
+                  <span className="n">{concluidos.length}</span>
+                  <span className="r">Concluídos</span>
+                </div>
+                <div className="inicio-pendencias-resumo-item is-atrasado">
+                  <span className="n">{atrasadosCount}</span>
+                  <span className="r">Atrasados</span>
+                </div>
+                <button
+                  type="button"
+                  className="icon-btn subtle"
+                  aria-label="Atualizar"
+                  title={`Atualizado há ${tempoDesde(ultimaAtualizacao)}`}
+                  onClick={atualizarAgora}
+                  disabled={atualizando}
+                >
+                  <IconRefresh width={14} height={14} className={atualizando ? "spin" : ""} />
+                </button>
+              </div>
+
+              {tudoConcluido ? (
+                <p className="hint">Você concluiu todas as pendências de hoje. Bom trabalho!</p>
+              ) : (
+                <div className="central-dia-secao-lista inicio-pendencias-lista">
+                  {itensParaPendencias.map((item) => (
+                    <ItemCard key={item.id} item={item} />
+                  ))}
+                  {compromissosHoje.map((c) => (
+                    <CompromissoCard key={c.id} compromisso={c} />
+                  ))}
+                  {itensParaPendencias.length === 0 && compromissosHoje.length === 0 ? (
+                    <p className="hint">Nada pendente por aqui agora.</p>
+                  ) : null}
+                </div>
+              )}
+            </section>
+
             <section className="central-dia-secao inicio-leads-box">
               <div className="central-dia-secao-h">
-                <h3>Leads hoje</h3>
+                <h3>Diário</h3>
               </div>
               <div className="inicio-leads-linha">
                 <span className="n">{leadsHoje.trafego}</span>
@@ -241,31 +264,6 @@ export default function InicioPage() {
                 <span className="r">Outros</span>
               </div>
             </section>
-          </div>
-
-          <div className="inicio-col-central">
-            {tudoConcluido ? (
-              <div className="central-dia-vazio-geral">
-                <p className="n">Você concluiu todas as prioridades de hoje.</p>
-                <p className="r">Bom trabalho! Novos itens aparecem aqui conforme chegam.</p>
-                <button type="button" className="btn ghost">
-                  Ver esta semana
-                </button>
-              </div>
-            ) : (
-              <SecaoLista
-                titulo="Pendências"
-                contagem={itensParaPendencias.length + compromissosHoje.length}
-                vazio={<p className="hint">Nada pendente por aqui agora.</p>}
-              >
-                {itensParaPendencias.map((item) => (
-                  <ItemCard key={item.id} item={item} />
-                ))}
-                {compromissosHoje.map((c) => (
-                  <CompromissoCard key={c.id} compromisso={c} />
-                ))}
-              </SecaoLista>
-            )}
           </div>
 
           <div className="inicio-col-lateral">

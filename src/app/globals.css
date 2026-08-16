@@ -11304,8 +11304,7 @@ button.camp-row:hover {
 .central-dia-secao-lista {
   display: flex;
   flex-direction: column;
-  /* Sem gap — dentro do cartão da seção, item vira linha simples separada só pela linha fina
-     (`.central-dia-card`'s `border-bottom`), não mais um bloco com respiro próprio. */
+  gap: var(--space-2);
 }
 
 .central-dia-vazio {
@@ -11336,14 +11335,21 @@ button.camp-row:hover {
   margin: 0 0 14px;
 }
 
-/* ------------------------- Início: grid de 3 colunas (leads · pendências · funil) ------------------------- */
+/* ------------------------- Início: 2 colunas (pendências+diário · funil) ------------------------- */
 
 .inicio-grid-principal {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr) 220px;
   gap: var(--space-4);
   align-items: start;
   margin-bottom: var(--space-5);
+}
+
+.inicio-col-esquerda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
 }
 
 .inicio-col-lateral {
@@ -11352,12 +11358,52 @@ button.camp-row:hover {
   gap: var(--space-4);
 }
 
-.inicio-col-central .central-dia-secao {
+.inicio-pendencias-box {
   margin-bottom: 0;
 }
 
-.inicio-col-central .central-dia-secao-lista {
-  max-height: 560px;
+.inicio-pendencias-resumo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line-soft);
+}
+.inicio-pendencias-resumo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.inicio-pendencias-resumo-item .n {
+  font-size: var(--fs-card-title);
+  font-weight: var(--fw-semibold);
+  font-family: var(--display);
+  color: var(--ink);
+  line-height: var(--lh-tight);
+}
+.inicio-pendencias-resumo-item .r {
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.inicio-pendencias-resumo-item.is-urgente .n {
+  color: var(--danger);
+}
+.inicio-pendencias-resumo-item.is-concluido .n {
+  color: var(--success);
+}
+.inicio-pendencias-resumo-item.is-atrasado .n {
+  color: var(--warning);
+}
+.inicio-pendencias-resumo .icon-btn {
+  margin-left: auto;
+}
+
+.inicio-pendencias-lista {
+  max-height: 280px;
   overflow-y: auto;
 }
 
@@ -11445,25 +11491,22 @@ button.camp-row:hover {
 
 /* ------------------------------- Card padrão de item do dia ------------------------------- */
 
-/* Reestruturação visual (redesign) — linha "flat": sem caixa própria (fundo/borda ao redor), só o
-   traço de cor à esquerda (sinal de prioridade, continua) + um fio embaixo separando um item do
-   próximo — em vez de cada item ser uma caixinha empilhada em cima de outra caixinha (a seção
-   inteira já é delimitada pelo `.central-dia-secao`/painel `.main`, não precisa de mais uma camada
-   de caixa por linha). */
 .central-dia-card {
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
-  padding: var(--space-4) var(--space-2);
-  border-bottom: 1px solid var(--line-soft);
-  border-left: 3px solid transparent;
-  transition: background var(--transition-base), border-color var(--transition-base);
-}
-.central-dia-secao-lista .central-dia-card:last-child {
-  border-bottom: none;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--navy-raised-2);
+  border-left: 3px solid var(--line);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
 }
 .central-dia-card:hover {
-  background: var(--surface-hover);
+  box-shadow: var(--shadow-xs);
+  border-color: var(--gray-300);
 }
 .central-dia-card.is-urgente {
   border-left-color: var(--danger);
@@ -11574,15 +11617,15 @@ button.camp-row:hover {
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
-  padding: var(--space-4) var(--space-2);
-  border-bottom: 1px solid var(--line-soft);
-  transition: background var(--transition-base);
-}
-.central-dia-secao-lista .central-dia-compromisso:last-child {
-  border-bottom: none;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--navy-raised-2);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
 }
 .central-dia-compromisso:hover {
-  background: var(--surface-hover);
+  box-shadow: var(--shadow-xs);
+  border-color: var(--gray-300);
 }
 
 .central-dia-compromisso-hora {
