@@ -9,10 +9,10 @@
   --navy-raised: #f5f7fb;
   --navy-raised-2: #eaeefa;
   --navy-deep: #ffffff;
-  /* "Piso" atrás dos painéis flutuantes (sidebar + área principal) — o azul vibrante da marca, não
-     cinza neutro: só esse fundo muda de cor, os painéis (`--navy`/`--navy-raised`) continuam brancos
-     por cima. Nada de escurecer isso pro tom do dark mode — é um azul de dia, não o Night. */
-  --canvas: #2e6bff;
+  /* "Piso" atrás dos painéis flutuantes (sidebar + área principal) — o marinho da marca (#0B1533,
+     mesmo tom do fundo das telas de login/cadastro), não azul vibrante sólido nem cinza neutro. Só
+     esse fundo muda de cor — os painéis (`--navy`/`--navy-raised`) continuam brancos por cima. */
+  --canvas: #0b1533;
 
   --blue: #2e6bff;
   --blue-soft: rgba(46, 107, 255, 0.14);
@@ -247,12 +247,33 @@ table {
    `gap`+`padding` no `.shell` cria o respiro; sidebar e `.main` viram cartões com cantos
    arredondados e sombra próprios, cada um a sua própria "caixinha". */
 .shell {
+  position: relative;
   display: flex;
   height: 100vh;
   overflow: hidden;
   gap: 14px;
   padding: 14px;
   background: var(--canvas);
+}
+
+/* Mesmo quadriculado sutil do fundo das telas de login/cadastro (`.auth-page::before`) — textura,
+   não decoração pesada: fica atrás dos painéis (`z-index: 0`), nunca por cima do conteúdo. */
+.shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sidebar,
+.main {
+  position: relative;
+  z-index: 1;
 }
 
 .sidebar {
