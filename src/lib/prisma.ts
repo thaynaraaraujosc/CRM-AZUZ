@@ -23,8 +23,32 @@ function criarPrismaClient() {
   return new PrismaClient({ adapter });
 }
 
-export const prisma = globalParaPrisma.prisma ?? criarPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalParaPrisma.prisma = prisma;
+/**
+ * Criação sob demanda (não no carregamento do módulo) — o build do Next.js importa toda rota de
+ * API pra analisá-la (`next build`/"collect page data"), sem `DATABASE_URL` disponível nessa etapa
+ * no Railway. Um Prisma Client criado eager no import quebrava o build inteiro; este `Proxy` só
+ * instancia de verdade no primeiro uso real (dentro de um handler, em runtime, quando a variável
+ * já existe).
+ */
+function obterPrismaClient(): PrismaClient {
+  if (!globalParaPrisma.prisma) {
+    const cliente = criarPrismaClient();
+    if (process.env.NODE_ENV !== "production") {
+      globalParaPrisma.prisma = cliente;
+    }
+    return cliente;
+  }
+  return globalParaPrisma.prisma;
 }
+
+let instanciaProducao: PrismaClient | undefined;
+
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_alvo, propriedade, receptor) {
+    const cliente =
+      process.env.NODE_ENV !== "production"
+        ? obterPrismaClient()
+        : (instanciaProducao ??= criarPrismaClient());
+    return Reflect.get(cliente as object, propriedade, receptor);
+  },
+});
