@@ -52,11 +52,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useIntegracaoNaoOficial } from "@/components/configuracoes/useIntegracaoNaoOficial";
 import {
   CanalBadge,
-  IconAlerta,
   IconAlvo,
   IconAutomacoes,
   IconCalendar,
-  IconCamera,
   IconCheck,
   IconCheckDuplo,
   IconClose,
@@ -74,7 +72,6 @@ import {
   IconErro,
   IconEtiqueta,
   IconImage,
-  IconLink,
   IconLixeira,
   IconLocalizacao,
   IconMic,
@@ -705,10 +702,6 @@ function ConversasPageInner() {
   const [midiasAberto, setMidiasAberto] = useState(false);
   const [midiasPos, setMidiasPos] = useState<{ x: number; y: number } | null>(null);
   const midiasRef = useRef<HTMLDivElement>(null);
-  const [conectarAberto, setConectarAberto] = useState(false);
-  const [conectarAba, setConectarAba] = useState<"qr" | "api">("qr");
-  const [conectarPos, setConectarPos] = useState<{ x: number; y: number } | null>(null);
-  const conectarRef = useRef<HTMLDivElement>(null);
   const naoOficial = useIntegracaoNaoOficial();
   // Status da API oficial (Meta) — sem hook compartilhado com polling (o `useIntegracaoMeta` só
   // busca uma vez); polling próprio aqui porque a conversa some/reaparece conforme o canal
@@ -749,7 +742,6 @@ function ConversasPageInner() {
   const [sincronizando, setSincronizando] = useState(false);
 
   useFecharAoClicarFora(midiasRef, midiasAberto, () => setMidiasAberto(false));
-  useFecharAoClicarFora(conectarRef, conectarAberto, () => setConectarAberto(false));
   useFecharAoClicarFora(contatoDetalheRef, !!contatoDetalheAberto, () => setContatoDetalheAberto(null));
 
   /** Força um recarregamento da lista — usado se as mensagens do celular conectado saírem de sincronia com o servidor. */
@@ -3026,17 +3018,6 @@ function ConversasPageInner() {
         sub="WhatsApp, Instagram e TikTok — todas as conversas num só lugar"
         actions={
           <>
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={() => {
-                setConectarPos(null);
-                setConectarAberto(true);
-              }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-            >
-              <IconLink width={13} height={13} /> Conectar WhatsApp
-            </button>
             <button
               type="button"
               className="fsel"
@@ -7579,102 +7560,6 @@ function ConversasPageInner() {
               ))}
             </div>
           )}
-        </div>
-      ) : null}
-
-      {conectarAberto ? (
-        <div
-          ref={conectarRef}
-          className="wa-email-modal wa-email-floating"
-          style={
-            conectarPos
-              ? { left: conectarPos.x, top: conectarPos.y, right: "auto", bottom: "auto" }
-              : undefined
-          }
-        >
-          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setConectarPos)}>
-            <div>
-              <p className="n">Conectar WhatsApp</p>
-              <p className="s">Escolha como conectar o número da clínica</p>
-            </div>
-            <button
-              type="button"
-              className="modal-close-btn"
-              aria-label="Fechar"
-              onClick={() => setConectarAberto(false)}
-            >
-              <IconClose width={12} height={12} />
-            </button>
-          </div>
-          <div className="filters-row mb14">
-            <button
-              type="button"
-              className={`fchip${conectarAba === "qr" ? " active" : ""}`}
-              onClick={() => setConectarAba("qr")}
-            >
-              QR Code (não oficial)
-            </button>
-            <button
-              type="button"
-              className={`fchip${conectarAba === "api" ? " active" : ""}`}
-              onClick={() => setConectarAba("api")}
-            >
-              API oficial (Meta)
-            </button>
-          </div>
-          {conectarAba === "qr" ? (
-            <div style={{ textAlign: "center", padding: "6px 0 14px" }}>
-              {naoOficial.estado?.status === "erro" ? (
-                <p className="hint" style={{ color: "var(--danger)", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                  <IconAlerta width={13} height={13} /> {naoOficial.estado.erroMensagem}
-                </p>
-              ) : null}
-
-              {naoOficial.estado?.status === "conectado" ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-                  <p className="int-sub" style={{ margin: 0 }}>
-                    Conectado — {naoOficial.estado.metadados?.numero ?? "número não identificado"}
-                  </p>
-                  <button type="button" className="btn danger" onClick={naoOficial.desconectar} disabled={naoOficial.desconectando}>
-                    {naoOficial.desconectando ? "Desconectando…" : "Desconectar"}
-                  </button>
-                </div>
-              ) : naoOficial.estado?.status === "aguardando_qr" && naoOficial.estado.metadados?.qrDataUrl ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pelo worker, não é asset estático */}
-                  <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={220} height={220} />
-                  <p className="hint" style={{ marginTop: 4 }}>
-                    Abra o WhatsApp no celular da clínica → Aparelhos conectados → Conectar um
-                    aparelho, e escaneie esse código.
-                  </p>
-                </div>
-              ) : (
-                <div className="wa-qr-box">
-                  <IconCamera width={22} height={22} />
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <p className="hint" style={{ padding: "10px 0" }}>
-                Você vai autorizar o CRM a acessar sua conta do WhatsApp Business direto pela
-                Meta — sem precisar copiar token nenhum. Conversas, fotos e nomes de contato são
-                importados automaticamente depois de conectar; a organização no funil continua
-                manual.
-              </p>
-            </>
-          )}
-          <div className="section-foot">
-            {conectarAba === "api" ? (
-              <a href="/api/integracoes/meta/conectar" className="btn primary block">
-                Conectar com a Meta
-              </a>
-            ) : naoOficial.estado?.status === "conectado" || naoOficial.estado?.status === "aguardando_qr" ? null : (
-              <p className="hint" style={{ textAlign: "center", padding: "6px 0" }}>
-                Aguardando o serviço gerar o QR code…
-              </p>
-            )}
-          </div>
         </div>
       ) : null}
 

@@ -1,18 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Toggle } from "@/components/ui";
-import { useEquipe } from "@/lib/equipe-context";
-import { useFunis } from "@/lib/funis-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
+import { useIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
-
-type StatusIntegracaoNaoOficial = {
-  status: "desconectado" | "aguardando_qr" | "conectado" | "erro";
-  metadados: { qrDataUrl?: string | null; numero?: string | null } | null;
-  erroMensagem: string | null;
-};
 
 type Aba = "conexao" | "atendimento" | "mensagens" | "compatibilidade" | "horarios";
 const ABAS: { id: Aba; label: string }[] = [
@@ -25,44 +18,16 @@ const ABAS: { id: Aba; label: string }[] = [
 
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
-/** WhatsApp (item 28) — reaproveita o mesmo texto de compatibilidade já usado no construtor de
- * automações (menu numerado/texto livre = compatibilidade ampla; botões/lista = conforme integração),
- * pra não divergir a mensagem entre as duas telas. */
+/** WhatsApp (item 28) — único lugar do CRM pra conectar o número (o botão que existia solto em
+ * /conversas saiu de lá, ver commit). Uma conta só tem uma integração de WhatsApp: oficial (Meta)
+ * OU não oficial (QR Code), nunca as duas ao mesmo tempo — por isso, com uma conectada, a outra
+ * opção nem aparece. Responsável/funil padrão saíram: a integração já é da conta que está logada,
+ * não faz sentido escolher "responsável" separado — quem manda mensagem é quem está logado. */
 export function WhatsAppSecao() {
-  const { membros: equipe } = useEquipe();
-  const { funis } = useFunis();
   const [aba, setAba] = useState<Aba>("conexao");
   const { integracao, desconectando, desconectar, erroDoRedirect } = useIntegracaoMeta("meta_whatsapp");
-  const [naoOficial, setNaoOficial] = useState<StatusIntegracaoNaoOficial | null>(null);
-  const [desconectandoNaoOficial, setDesconectandoNaoOficial] = useState(false);
-
-  const [tipoConexao, setTipoConexao] = useState("Conexão por provedor");
-
-  function carregarNaoOficial() {
-    fetch("/api/integracoes/whatsapp-nao-oficial")
-      .then((r) => r.json())
-      .then(setNaoOficial)
-      .catch((erro) => console.error("Falha ao carregar status do WhatsApp não oficial:", erro));
-  }
-
-  // Só faz sentido ficar perguntando o status (QR muda, conexão fecha) enquanto essa aba tá
-  // selecionada — evita poll parado em segundo plano nas outras opções de conexão.
-  useEffect(() => {
-    if (tipoConexao !== "Conexão não oficial") return;
-    carregarNaoOficial();
-    const intervalo = setInterval(carregarNaoOficial, 4000);
-    return () => clearInterval(intervalo);
-  }, [tipoConexao]);
-
-  async function desconectarNaoOficial() {
-    setDesconectandoNaoOficial(true);
-    try {
-      await fetch("/api/integracoes/whatsapp-nao-oficial/desconectar", { method: "POST" });
-      carregarNaoOficial();
-    } finally {
-      setDesconectandoNaoOficial(false);
-    }
-  }
+  const naoOficial = useIntegracaoNaoOficial();
+  const [painelNaoOficialAberto, setPainelNaoOficialAberto] = useState(false);
 
   const [distribuir, setDistribuir] = useState(true);
   const [manterResponsavel, setManterResponsavel] = useState(true);
@@ -72,6 +37,14 @@ export function WhatsAppSecao() {
   const [criarContato, setCriarContato] = useState(true);
   const [criarNegocio, setCriarNegocio] = useState(false);
   const [diasAtivos, setDiasAtivos] = useState<string[]>(["Seg", "Ter", "Qua", "Qui", "Sex"]);
+
+  const metaConectada = integracao?.status === "conectado";
+  const naoOficialConectada = naoOficial.estado?.status === "conectado";
+  const numeroConectado = metaConectada
+    ? ((integracao?.metadados?.numeroExibicao as string | undefined) ?? "número não identificado")
+    : naoOficialConectada
+      ? (naoOficial.estado?.metadados?.numero ?? "número não identificado")
+      : null;
 
   return (
     <div className="config-secao">
@@ -92,114 +65,75 @@ export function WhatsAppSecao() {
             </p>
           ) : null}
 
-          <div className="card" style={{ padding: 14, marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div>
-              <p className="int-title" style={{ margin: 0 }}>WhatsApp Business (API oficial da Meta)</p>
-              {integracao?.status === "conectado" ? (
-                <p className="int-sub" style={{ margin: "4px 0 0" }}>
-                  Conectado — {(integracao.metadados?.numeroExibicao as string | undefined) ?? "número não identificado"}
+          {numeroConectado ? (
+            <div className="card" style={{ padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <div>
+                <p className="int-title" style={{ margin: 0 }}>
+                  {metaConectada ? "WhatsApp Business (API oficial da Meta)" : "WhatsApp (API não oficial, QR Code)"}
                 </p>
-              ) : integracao?.status === "erro" ? (
-                <p className="int-sub" style={{ margin: "4px 0 0", color: "var(--danger)" }}>
-                  Erro na última tentativa: {integracao.erroMensagem}
-                </p>
-              ) : (
-                <p className="int-sub" style={{ margin: "4px 0 0" }}>Ainda não conectado.</p>
-              )}
-            </div>
-            {integracao?.status === "conectado" ? (
-              <button type="button" className="btn danger" onClick={desconectar} disabled={desconectando}>
-                {desconectando ? "Desconectando…" : "Desconectar"}
+                <p className="int-sub" style={{ margin: "4px 0 0" }}>Conectado — {numeroConectado}</p>
+              </div>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={metaConectada ? desconectar : naoOficial.desconectar}
+                disabled={(metaConectada && desconectando) || (!metaConectada && naoOficial.desconectando)}
+              >
+                {(metaConectada && desconectando) || (!metaConectada && naoOficial.desconectando) ? "Desconectando…" : "Desconectar"}
               </button>
-            ) : (
-              <a className="btn primary" href="/api/integracoes/meta/conectar">
-                Conectar com a Meta
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <a href="/api/integracoes/meta/conectar" className="card" style={{ padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textDecoration: "none" }}>
+                <div>
+                  <p className="int-title" style={{ margin: 0 }}>Conectar com a API oficial (Meta)</p>
+                  <p className="hint" style={{ margin: "4px 0 0" }}>
+                    Autoriza o CRM a acessar sua conta do WhatsApp Business direto pela Meta — sem
+                    copiar token nenhum.
+                  </p>
+                </div>
+                <span className="btn primary">Conectar</span>
               </a>
-            )}
-          </div>
 
-          {tipoConexao === "Conexão não oficial" ? (
-            <div className="card" style={{ padding: 14, marginBottom: 14 }}>
-              <p className="int-title" style={{ margin: 0 }}>WhatsApp — Conexão não oficial (espelhado)</p>
-              {naoOficial?.status === "conectado" ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
-                  <p className="int-sub" style={{ margin: 0 }}>
-                    Conectado — {naoOficial.metadados?.numero ?? "número não identificado"}
-                  </p>
-                  <button type="button" className="btn danger" onClick={desconectarNaoOficial} disabled={desconectandoNaoOficial}>
-                    {desconectandoNaoOficial ? "Desconectando…" : "Desconectar"}
-                  </button>
+              <div className="card" style={{ padding: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <div>
+                    <p className="int-title" style={{ margin: 0 }}>Conectar com a API não oficial (QR Code)</p>
+                    <p className="hint" style={{ margin: "4px 0 0" }}>
+                      Escaneia como o WhatsApp Web — não passa pela verificação de negócio da Meta,
+                      e o número corre risco de ser banido por violar os termos de uso do WhatsApp.
+                    </p>
+                  </div>
+                  {!painelNaoOficialAberto ? (
+                    <button type="button" className="btn ghost" onClick={() => setPainelNaoOficialAberto(true)}>
+                      Conectar
+                    </button>
+                  ) : null}
                 </div>
-              ) : naoOficial?.status === "aguardando_qr" && naoOficial.metadados?.qrDataUrl ? (
-                <div style={{ marginTop: 10, textAlign: "center" }}>
-                  <p className="hint" style={{ marginBottom: 8 }}>
-                    Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho, e escaneie:
-                  </p>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- data URL gerado ao vivo pelo serviço, sem otimizador de imagem cabível aqui */}
-                  <img src={naoOficial.metadados.qrDataUrl} alt="QR code do WhatsApp" style={{ width: 220, height: 220 }} />
-                </div>
-              ) : naoOficial?.status === "erro" ? (
-                <p className="int-sub" style={{ margin: "8px 0 0", color: "var(--danger)" }}>
-                  Erro: {naoOficial.erroMensagem}
-                </p>
-              ) : (
-                <p className="int-sub" style={{ margin: "8px 0 0" }}>
-                  Aguardando o serviço gerar o QR code… confira se o whatsapp-service está rodando.
-                </p>
-              )}
-            </div>
-          ) : null}
 
-          <div className="field">
-            <label>Tipo de conexão</label>
-            <select className="input" value={tipoConexao} onChange={(e) => setTipoConexao(e.target.value)}>
-              <option>API oficial</option>
-              <option>Conexão por provedor</option>
-              <option>Conexão não oficial</option>
-              <option>Não configurado</option>
-            </select>
-          </div>
-
-          <div className="config-grid-2">
-            <div className="field">
-              <label>Nome da conexão</label>
-              <input className="input" defaultValue="WhatsApp — Atendimento" />
+                {painelNaoOficialAberto ? (
+                  naoOficial.estado?.status === "erro" ? (
+                    <p className="hint" style={{ color: "var(--danger)", marginTop: 10 }}>
+                      ⚠ {naoOficial.estado.erroMensagem}
+                    </p>
+                  ) : naoOficial.estado?.status === "aguardando_qr" && naoOficial.estado.metadados?.qrDataUrl ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 14 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pelo worker, não é asset estático */}
+                      <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={200} height={200} />
+                      <p className="hint">Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.</p>
+                    </div>
+                  ) : (
+                    <p className="hint" style={{ marginTop: 10 }}>
+                      Aguardando o serviço de conexão gerar o QR Code… confira se o whatsapp-service está rodando.
+                    </p>
+                  )
+                ) : null}
+              </div>
             </div>
-            <div className="field">
-              <label>Número</label>
-              <input className="input" defaultValue="+55 62 99999-0000" />
-            </div>
-            <div className="field">
-              <label>Nome exibido</label>
-              <input className="input" placeholder="Ex.: Nome do seu negócio" />
-            </div>
-            <div className="field">
-              <label>Equipe responsável</label>
-              <select className="input" defaultValue={equipe[0]?.nome}>
-                {equipe.map((m) => (
-                  <option key={m.id}>{m.nome}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label>Responsável padrão</label>
-              <select className="input" defaultValue={equipe[0]?.nome}>
-                {equipe.map((m) => (
-                  <option key={m.id}>{m.nome}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label>Funil padrão</label>
-              <select className="input" defaultValue={funis[0]?.nome}>
-                {funis.map((f) => (
-                  <option key={f.id}>{f.nome}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+          )}
         </div>
       ) : null}
+
 
       {aba === "atendimento" ? (
         <div className="config-bloco">
@@ -240,7 +174,7 @@ export function WhatsAppSecao() {
           </div>
           <div className="field">
             <label>Assinatura do atendente</label>
-            <input className="input" defaultValue="— {atendente}" />
+            <input className="input" defaultValue="— {atendente}, Clínica Vitta" />
           </div>
         </div>
       ) : null}
