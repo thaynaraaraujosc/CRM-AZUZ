@@ -902,9 +902,8 @@ table {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(900px 480px at 12% -8%, rgba(76, 134, 255, 0.22), transparent 60%),
-    radial-gradient(760px 460px at 92% 8%, rgba(138, 63, 252, 0.16), transparent 55%),
-    radial-gradient(900px 560px at 50% 105%, rgba(76, 134, 255, 0.14), transparent 60%),
+    radial-gradient(900px 480px at 12% -8%, rgba(76, 134, 255, 0.16), transparent 60%),
+    radial-gradient(900px 560px at 50% 105%, rgba(76, 134, 255, 0.1), transparent 60%),
     var(--navy-deep);
   color: var(--ink);
 }
