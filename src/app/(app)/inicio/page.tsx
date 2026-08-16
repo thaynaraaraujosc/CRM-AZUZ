@@ -58,8 +58,9 @@ function ehHoje(dataIso: string): boolean {
 
 function saudacao(): string {
   const hora = new Date().getHours();
-  if (hora < 12) return "Bom dia";
-  if (hora < 18) return "Boa tarde";
+  if (hora < 5) return "Boa madrugada";
+  if (hora < 13) return "Bom dia";
+  if (hora < 19) return "Boa tarde";
   return "Boa noite";
 }
 
