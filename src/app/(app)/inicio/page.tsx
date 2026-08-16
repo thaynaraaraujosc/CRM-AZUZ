@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 import { IconRefresh } from "@/components/icons";
 import { CompromissoCard } from "@/components/central-dia/CompromissoCard";
@@ -34,6 +35,29 @@ const MODULO_DO_FILTRO_RAPIDO: Record<string, ModuloOrigem | undefined> = {
   Leads: "lead",
   Automações: "automacao",
 };
+
+const PRIORIDADE_PESO: Record<ItemDia["prioridade"], number> = {
+  urgente: 0,
+  atencao: 1,
+  oportunidade: 2,
+};
+
+/** Origens pagas (tráfego/anúncios) — o resto (Direto, Instagram, TikTok, Indicação, Formulário…)
+ * entra em "Outros". Hoje só o Meta Ads grava atribuição real em `Conversa.origem`; Google Ads fica
+ * zerado até essa integração existir — número real, não fictício, mesmo que comece em zero. */
+function ehOrigemPaga(origem: string): boolean {
+  return origem === "Meta Ads" || origem === "Google Ads";
+}
+
+function ehHoje(dataIso: string): boolean {
+  const d = new Date(dataIso);
+  const agora = new Date();
+  return (
+    d.getFullYear() === agora.getFullYear() &&
+    d.getMonth() === agora.getMonth() &&
+    d.getDate() === agora.getDate()
+  );
+}
 
 function saudacao(): string {
   const hora = new Date().getHours();
@@ -106,20 +130,12 @@ export default function InicioPage() {
     });
   }, [itensAtivos, filtros, nomeUsuario]);
 
-  const mostrarAgenda = filtros.rapido === "Todos" || filtros.rapido === "Agenda" || filtros.rapido === "Meus itens" || filtros.rapido === "Minha equipe" || filtros.rapido === "Urgentes";
-  const mostrarModulo = (modulo: ModuloOrigem) =>
-    !MODULO_DO_FILTRO_RAPIDO[filtros.rapido] || MODULO_DO_FILTRO_RAPIDO[filtros.rapido] === modulo;
+  const itensParaPendencias = useMemo(
+    () => [...itensFiltrados].sort((a, b) => PRIORIDADE_PESO[a.prioridade] - PRIORIDADE_PESO[b.prioridade]),
+    [itensFiltrados],
+  );
 
-  const grupos: { chave: ItemDia["prioridade"]; titulo: string; vazio: string }[] = [
-    { chave: "urgente", titulo: "Urgente", vazio: "Nenhum item urgente no momento." },
-    { chave: "atencao", titulo: "Precisa de atenção", vazio: "Nada precisando de atenção agora." },
-    { chave: "oportunidade", titulo: "Oportunidades", vazio: "Nenhuma oportunidade identificada agora." },
-  ];
-
-  const conversasSecao = itensFiltrados.filter((i) => i.modulo === "conversa");
   const tarefasSecao = itensFiltrados.filter((i) => i.modulo === "tarefa");
-  const leadsSecao = itensFiltrados.filter((i) => i.modulo === "lead");
-  const automacoesSecao = itensFiltrados.filter((i) => i.modulo === "automacao");
   const recomendacoes = useMemo(
     () => gerarRecomendacoes(itensAtivos, compromissosHoje),
     [itensAtivos, compromissosHoje],
@@ -130,7 +146,36 @@ export default function InicioPage() {
     compromissosHoje.filter((c) => c.status === "Atrasado").length;
   const urgentesCount = itensFiltrados.filter((i) => i.prioridade === "urgente").length;
 
-  const tudoConcluido = itensFiltrados.length === 0 && concluidos.length > 0;
+  const tudoConcluido = itensFiltrados.length === 0 && compromissosHoje.length === 0 && concluidos.length > 0;
+
+  /** Leads que entraram hoje (conversa criada de verdade hoje), divididos por origem — atualiza
+   * sozinho conforme `useConversas()` recebe mensagem nova (mesmo hook que alimenta o resto do
+   * app). `Conversa.criadoEm` é timestamp real de banco, por isso compara contra a data real de
+   * agora, não contra o "HOJE" simulado que a agenda mockada usa. */
+  const leadsHoje = useMemo(() => {
+    const criadasHoje = conversas.filter((c) => ehHoje(c.criadoEm));
+    const trafego = criadasHoje.filter((c) => ehOrigemPaga(c.origem)).length;
+    return { trafego, outros: criadasHoje.length - trafego };
+  }, [conversas]);
+
+  /** Oportunidades = negócios abertos que já saíram da 1ª etapa do funil (não são mais "lead novo",
+   * viraram negociação/atendimento/fechamento). Vendas ganhas/perdidas = `NegocioCard.statusFechamento`
+   * real, o mesmo campo que o Funil grava ao marcar "ganho"/"perdido". */
+  const funilStats = useMemo(() => {
+    let oportunidades = 0;
+    let ganhas = 0;
+    let perdidas = 0;
+    for (const funil of funis) {
+      funil.colunas.forEach((coluna, idx) => {
+        for (const card of coluna.cards) {
+          if (card.statusFechamento === "ganho") ganhas++;
+          else if (card.statusFechamento === "perdido") perdidas++;
+          else if (idx > 0) oportunidades++;
+        }
+      });
+    }
+    return { oportunidades, ganhas, perdidas };
+  }, [funis]);
 
   return (
     <>
@@ -181,78 +226,63 @@ export default function InicioPage() {
 
         <FiltrosBar />
 
-        {tudoConcluido ? (
-          <div className="central-dia-vazio-geral">
-            <p className="n">Você concluiu todas as prioridades de hoje.</p>
-            <p className="r">Bom trabalho! Novos itens aparecem aqui conforme chegam.</p>
-            <button type="button" className="btn ghost">
-              Ver esta semana
-            </button>
+        <div className="inicio-grid-principal">
+          <div className="inicio-col-lateral">
+            <section className="central-dia-secao inicio-leads-box">
+              <div className="central-dia-secao-h">
+                <h3>Leads hoje</h3>
+              </div>
+              <div className="inicio-leads-linha">
+                <span className="n">{leadsHoje.trafego}</span>
+                <span className="r">Tráfego/Anúncios</span>
+              </div>
+              <div className="inicio-leads-linha">
+                <span className="n">{leadsHoje.outros}</span>
+                <span className="r">Outros</span>
+              </div>
+            </section>
           </div>
-        ) : (
-          grupos.map((g) => {
-            const itensGrupo = itensFiltrados.filter((i) => i.prioridade === g.chave);
-            return (
-              <SecaoLista key={g.chave} titulo={g.titulo} contagem={itensGrupo.length} vazio={<p className="hint">{g.vazio}</p>}>
-                {itensGrupo.map((item) => (
+
+          <div className="inicio-col-central">
+            {tudoConcluido ? (
+              <div className="central-dia-vazio-geral">
+                <p className="n">Você concluiu todas as prioridades de hoje.</p>
+                <p className="r">Bom trabalho! Novos itens aparecem aqui conforme chegam.</p>
+                <button type="button" className="btn ghost">
+                  Ver esta semana
+                </button>
+              </div>
+            ) : (
+              <SecaoLista
+                titulo="Pendências"
+                contagem={itensParaPendencias.length + compromissosHoje.length}
+                vazio={<p className="hint">Nada pendente por aqui agora.</p>}
+              >
+                {itensParaPendencias.map((item) => (
                   <ItemCard key={item.id} item={item} />
                 ))}
+                {compromissosHoje.map((c) => (
+                  <CompromissoCard key={c.id} compromisso={c} />
+                ))}
               </SecaoLista>
-            );
-          })
-        )}
+            )}
+          </div>
 
-        {mostrarModulo("conversa") ? (
-          <SecaoLista
-            titulo="Conversas aguardando resposta"
-            contagem={conversasSecao.length}
-            vazio={<p className="hint">Nenhuma conversa esperando resposta agora.</p>}
-          >
-            {conversasSecao.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </SecaoLista>
-        ) : null}
-
-        {mostrarAgenda ? (
-          <SecaoLista titulo="Agenda de hoje" contagem={compromissosHoje.length} vazio={<p className="hint">Nenhum compromisso hoje.</p>}>
-            {compromissosHoje.map((c) => (
-              <CompromissoCard key={c.id} compromisso={c} />
-            ))}
-          </SecaoLista>
-        ) : null}
-
-        {mostrarModulo("tarefa") ? (
-          <SecaoLista titulo="Tarefas" contagem={tarefasSecao.length} vazio={<p className="hint">Nenhuma tarefa pendente.</p>}>
-            {tarefasSecao.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </SecaoLista>
-        ) : null}
-
-        {mostrarModulo("lead") ? (
-          <SecaoLista
-            titulo="Leads que precisam de ação"
-            contagem={leadsSecao.length}
-            vazio={<p className="hint">Nenhum lead precisando de ação agora.</p>}
-          >
-            {leadsSecao.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </SecaoLista>
-        ) : null}
-
-        {mostrarModulo("automacao") ? (
-          <SecaoLista
-            titulo="Automações que precisam de atenção"
-            contagem={automacoesSecao.length}
-            vazio={<p className="hint">Nenhuma automação com pendência agora.</p>}
-          >
-            {automacoesSecao.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </SecaoLista>
-        ) : null}
+          <div className="inicio-col-lateral">
+            <Link href="/funil" className="inicio-stat-mini">
+              <span className="n">{funilStats.oportunidades}</span>
+              <span className="r">Oportunidades</span>
+            </Link>
+            <Link href="/motivos-perda" className="inicio-stat-mini is-perdido">
+              <span className="n">{funilStats.perdidas}</span>
+              <span className="r">Vendas perdidas</span>
+            </Link>
+            <Link href="/performance-vendas" className="inicio-stat-mini is-ganho">
+              <span className="n">{funilStats.ganhas}</span>
+              <span className="r">Vendas realizadas</span>
+            </Link>
+          </div>
+        </div>
 
         <Recomendacoes recomendacoes={recomendacoes} onVerItens={() => {}} />
 

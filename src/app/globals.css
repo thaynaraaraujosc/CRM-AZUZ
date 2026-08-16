@@ -11336,6 +11336,113 @@ button.camp-row:hover {
   margin: 0 0 14px;
 }
 
+/* ------------------------- Início: grid de 3 colunas (leads · pendências · funil) ------------------------- */
+
+.inicio-grid-principal {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 220px;
+  gap: var(--space-4);
+  align-items: start;
+  margin-bottom: var(--space-5);
+}
+
+.inicio-col-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.inicio-col-central .central-dia-secao {
+  margin-bottom: 0;
+}
+
+.inicio-col-central .central-dia-secao-lista {
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.inicio-leads-box {
+  margin-bottom: 0;
+}
+
+.inicio-leads-linha {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--line-soft);
+}
+.inicio-leads-linha:first-of-type {
+  border-top: none;
+  padding-top: var(--space-2);
+}
+.inicio-leads-linha .n {
+  font-size: var(--fs-indicator);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  color: var(--ink);
+  font-family: var(--display);
+}
+.inicio-leads-linha .r {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.inicio-stat-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
+  text-decoration: none;
+  transition: box-shadow var(--transition-base), border-color var(--transition-base), transform var(--transition-fast);
+}
+.inicio-stat-mini:hover {
+  box-shadow: var(--shadow-hover);
+  border-color: var(--gray-300);
+  transform: translateY(-1px);
+}
+.inicio-stat-mini .n {
+  font-size: var(--fs-indicator);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  color: var(--ink);
+  font-family: var(--display);
+}
+.inicio-stat-mini .r {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.inicio-stat-mini.is-perdido .n {
+  color: var(--danger);
+}
+.inicio-stat-mini.is-ganho .n {
+  color: var(--success);
+}
+
+@media (max-width: 1100px) {
+  .inicio-grid-principal {
+    grid-template-columns: 1fr;
+  }
+  .inicio-col-lateral {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .inicio-col-lateral > * {
+    flex: 1;
+    min-width: 200px;
+  }
+}
+
 /* ------------------------------- Card padrão de item do dia ------------------------------- */
 
 /* Reestruturação visual (redesign) — linha "flat": sem caixa própria (fundo/borda ao redor), só o
