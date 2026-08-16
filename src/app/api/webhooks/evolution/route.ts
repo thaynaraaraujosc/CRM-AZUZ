@@ -81,8 +81,10 @@ export async function POST(request: Request) {
       pushName?: string;
     };
 
-    if (data.key?.fromMe) return NextResponse.json({ ok: true }); // eco da própria mensagem enviada pelo CRM
+    const fromMe = data.key?.fromMe === true;
     const texto = data.message?.conversation ?? data.message?.extendedTextMessage?.text;
+    // `remoteJid` é sempre "a outra parte" da conversa, tanto em mensagem recebida quanto enviada
+    // (a Evolution segue a convenção do Baileys) — então serve pra achar o contato nos dois casos.
     const waId = data.key?.remoteJid?.split("@")[0];
     if (!texto || !waId || !data.key?.id) return NextResponse.json({ ok: true }); // mídia sem legenda, evento incompleto
 
@@ -91,11 +93,33 @@ export async function POST(request: Request) {
 
     const contatoExistente = await encontrarContatoPorTelefone(workspaceId, waId);
     const chaveContato = contatoExistente?.nome ?? data.pushName ?? waId;
+
+    if (fromMe) {
+      // Mensagem mandada do próprio celular conectado (espelhamento, igual WhatsApp Web) — se foi
+      // o CRM que mandou pela tela de Conversas, ela já foi persistida na hora do envio (com um id
+      // diferente, gerado no navegador); esse eco chegando pelo webhook não deve virar uma segunda
+      // bolha. Sem um id em comum entre os dois lados pra comparar, o jeito é checar se já existe
+      // uma mensagem "out" idêntica (mesmo contato/texto) nos últimos segundos.
+      const jaFoiMandadaPeloCrm = await prisma.mensagemExtra.findFirst({
+        where: {
+          workspaceId,
+          contato: chaveContato,
+          tipo: "out",
+          texto,
+          criadoEm: { gte: new Date(Date.now() - 30_000) },
+        },
+      });
+      if (jaFoiMandadaPeloCrm) return NextResponse.json({ ok: true });
+    }
+
     const contato =
       contatoExistente ??
       (await criarContatoPeloWhatsAppSeNaoExistir({ workspaceId, nome: chaveContato, whatsapp: waId }));
 
-    if (!contatoExistente) {
+    // Só entra como lead novo no funil quando ALGUÉM DE FORA escreveu primeiro pra um contato que
+    // ainda não existia — mensagem que a própria pessoa manda do celular pra alguém (ex.: um
+    // contato pessoal) não deve virar negócio no funil sozinha.
+    if (!fromMe && !contatoExistente) {
       await entrarNaPrimeiraEtapaComoNovoLead({ workspaceId, contatoNome: chaveContato, origem: "WhatsApp" });
     }
 
@@ -105,7 +129,7 @@ export async function POST(request: Request) {
         id: data.key.id,
         workspaceId,
         contato: chaveContato,
-        tipo: "in",
+        tipo: fromMe ? "out" : "in",
         texto,
         hora: new Date(timestampMs).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
         criadoEm: new Date(timestampMs),
@@ -120,6 +144,7 @@ export async function POST(request: Request) {
       contato: waId,
       contatoId: contato.id,
       origem: "Direto",
+      contarComoNaoLida: !fromMe,
     });
 
     return NextResponse.json({ ok: true });

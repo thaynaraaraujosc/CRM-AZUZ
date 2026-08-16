@@ -1627,12 +1627,15 @@ function ConversasPageInner() {
     atualizarMensagem(aberta.nome, id, { status: "reproduzido" });
   }
 
-  /** Conversa "pertence" ao canal WhatsApp via QR Code (Baileys) quando a última mensagem
-   * recebida chegou por ele — decide pra onde a resposta do atendente deve sair de verdade. */
+  /** Conversa "pertence" ao canal WhatsApp via QR Code (não oficial) quando a última mensagem —
+   * recebida OU mandada do celular conectado (espelhada) — veio por ele — decide pra onde a
+   * resposta do atendente deve sair de verdade. Olha mensagem de qualquer tipo (não só "in"): uma
+   * conversa só com mensagens espelhadas "out" (a pessoa mandou primeiro do próprio celular, ainda
+   * sem resposta) já deve contar como sendo desse canal. */
   function contatoUsaWhatsappNaoOficial(): boolean {
     const extras = mensagensExtraPorContato[aberta.nome] ?? [];
     for (let i = extras.length - 1; i >= 0; i--) {
-      if (extras[i].tipo === "in") return extras[i].canal === "whatsapp_nao_oficial";
+      if (extras[i].canal) return extras[i].canal === "whatsapp_nao_oficial";
     }
     return false;
   }
