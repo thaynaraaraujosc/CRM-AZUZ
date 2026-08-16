@@ -11355,17 +11355,39 @@ button.camp-row:hover {
   margin: 0 0 14px;
 }
 
-/* ------------------------- Início: 2 colunas (pendências+diário · funil) ------------------------- */
+/* ------------------------- Início: fundo marinho de página inteira, quadrados soltos ------------------------- */
 
 /* Mesmo truque visual da sidebar/`.main` (painéis separados, com o marinho da marca aparecendo no
-   vão entre eles) — aplicado numa escala menor aqui dentro: Pendências+Diário formam um grupo,
-   Oportunidades/Vendas-perdidas/Vendas-realizadas formam outro, com esse "respiro" escuro entre os
-   dois em vez de ficarem soltos no mesmo fundo branco do `.content`. */
-.inicio-painel {
+   vão entre eles) — mas agora tomando a página inteira do Início, não só um recorte: em vez de um
+   `.topbar`/`.content` brancos padrão, cada bloco (saudação, Pendências, Diário, Oportunidades...)
+   vira seu próprio quadrado branco solto direto em cima do marinho. Só esta página faz isso — as
+   outras continuam usando `.topbar`/`.content` normalmente, sem mexer no `.main` compartilhado. */
+.inicio-tela {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   background: var(--canvas);
-  border-radius: var(--radius-xl);
-  padding: var(--space-4);
-  margin-bottom: var(--space-5);
+  padding: 22px 26px 32px;
+  overflow: auto;
+}
+
+.inicio-topbar-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  background: var(--navy-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4) var(--space-5);
+}
+.inicio-topbar-card h2 {
+  margin: 0;
+}
+.inicio-topbar-card .sub {
+  margin: 2px 0 0;
 }
 
 .inicio-grid-principal {

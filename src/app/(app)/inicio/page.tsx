@@ -176,113 +176,111 @@ export default function InicioPage() {
 
   return (
     <>
-      <div className="topbar">
-        <div>
-          <div className="topbar-title-row">
-            <h2>
-              {saudacao()}, {nomeUsuario.split(" ")[0]}.
-            </h2>
+      <div className="inicio-tela">
+        <div className="inicio-topbar-card">
+          <div>
+            <div className="topbar-title-row">
+              <h2>
+                {saudacao()}, {nomeUsuario.split(" ")[0]}.
+              </h2>
+            </div>
+            <p className="sub">
+              Você possui {itensFiltrados.length} {itensFiltrados.length === 1 ? "item" : "itens"} que precisa
+              {itensFiltrados.length === 1 ? "" : "m"} da sua atenção hoje.
+            </p>
           </div>
-          <p className="sub">
-            Você possui {itensFiltrados.length} {itensFiltrados.length === 1 ? "item" : "itens"} que precisa
-            {itensFiltrados.length === 1 ? "" : "m"} da sua atenção hoje.
-          </p>
+          <div className="top-actions">
+            <button type="button" className="btn primary" onClick={() => setOrganizarAberto(true)}>
+              Organizar meu dia
+            </button>
+          </div>
         </div>
-        <div className="top-actions">
-          <button type="button" className="btn primary" onClick={() => setOrganizarAberto(true)}>
-            Organizar meu dia
-          </button>
-        </div>
-      </div>
 
-      <div className="content">
-        <div className="inicio-painel">
-          <div className="inicio-grid-principal">
-            <div className="inicio-col-esquerda">
-              <section className="central-dia-secao inicio-pendencias-box">
-                <div className="central-dia-secao-h">
-                  <h3>Pendências</h3>
-                  <span className="central-dia-secao-contagem">{itensParaPendencias.length + compromissosHoje.length}</span>
+        <div className="inicio-grid-principal">
+          <div className="inicio-col-esquerda">
+            <section className="central-dia-secao inicio-pendencias-box">
+              <div className="central-dia-secao-h">
+                <h3>Pendências</h3>
+                <span className="central-dia-secao-contagem">{itensParaPendencias.length + compromissosHoje.length}</span>
+              </div>
+
+              <div className="inicio-pendencias-resumo">
+                <div className="inicio-pendencias-resumo-item">
+                  <span className="n">{itensFiltrados.length}</span>
+                  <span className="r">Pendentes</span>
                 </div>
-
-                <div className="inicio-pendencias-resumo">
-                  <div className="inicio-pendencias-resumo-item">
-                    <span className="n">{itensFiltrados.length}</span>
-                    <span className="r">Pendentes</span>
-                  </div>
-                  <div className="inicio-pendencias-resumo-item is-urgente">
-                    <span className="n">{urgentesCount}</span>
-                    <span className="r">Urgentes</span>
-                  </div>
-                  <div className="inicio-pendencias-resumo-item is-concluido">
-                    <span className="n">{concluidos.length}</span>
-                    <span className="r">Concluídos</span>
-                  </div>
-                  <div className="inicio-pendencias-resumo-item is-atrasado">
-                    <span className="n">{atrasadosCount}</span>
-                    <span className="r">Atrasados</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="icon-btn subtle"
-                    aria-label="Atualizar"
-                    title={`Atualizado há ${tempoDesde(ultimaAtualizacao)}`}
-                    onClick={atualizarAgora}
-                    disabled={atualizando}
-                  >
-                    <IconRefresh width={14} height={14} className={atualizando ? "spin" : ""} />
-                  </button>
+                <div className="inicio-pendencias-resumo-item is-urgente">
+                  <span className="n">{urgentesCount}</span>
+                  <span className="r">Urgentes</span>
                 </div>
+                <div className="inicio-pendencias-resumo-item is-concluido">
+                  <span className="n">{concluidos.length}</span>
+                  <span className="r">Concluídos</span>
+                </div>
+                <div className="inicio-pendencias-resumo-item is-atrasado">
+                  <span className="n">{atrasadosCount}</span>
+                  <span className="r">Atrasados</span>
+                </div>
+                <button
+                  type="button"
+                  className="icon-btn subtle"
+                  aria-label="Atualizar"
+                  title={`Atualizado há ${tempoDesde(ultimaAtualizacao)}`}
+                  onClick={atualizarAgora}
+                  disabled={atualizando}
+                >
+                  <IconRefresh width={14} height={14} className={atualizando ? "spin" : ""} />
+                </button>
+              </div>
 
-                {tudoConcluido ? (
-                  <p className="hint">Você concluiu todas as pendências de hoje. Bom trabalho!</p>
-                ) : (
-                  <div className="central-dia-secao-lista inicio-pendencias-lista">
-                    {itensParaPendencias.map((item) => (
-                      <ItemCard key={item.id} item={item} />
-                    ))}
-                    {compromissosHoje.map((c) => (
-                      <CompromissoCard key={c.id} compromisso={c} />
-                    ))}
-                    {itensParaPendencias.length === 0 && compromissosHoje.length === 0 ? (
-                      <p className="hint">Nada pendente por aqui agora.</p>
-                    ) : null}
-                  </div>
-                )}
-              </section>
+              {tudoConcluido ? (
+                <p className="hint">Você concluiu todas as pendências de hoje. Bom trabalho!</p>
+              ) : (
+                <div className="central-dia-secao-lista inicio-pendencias-lista">
+                  {itensParaPendencias.map((item) => (
+                    <ItemCard key={item.id} item={item} />
+                  ))}
+                  {compromissosHoje.map((c) => (
+                    <CompromissoCard key={c.id} compromisso={c} />
+                  ))}
+                  {itensParaPendencias.length === 0 && compromissosHoje.length === 0 ? (
+                    <p className="hint">Nada pendente por aqui agora.</p>
+                  ) : null}
+                </div>
+              )}
+            </section>
 
-              <div className="inicio-diario-secao">
-                <h3 className="inicio-diario-titulo">Diário</h3>
-                <div className="inicio-diario-grade">
-                  <div className="inicio-stat-mini">
-                    <span className="n">{leadsHoje.trafego}</span>
-                    <span className="r">Tráfego/Anúncios</span>
-                  </div>
-                  <div className="inicio-stat-mini">
-                    <span className="n">{leadsHoje.outros}</span>
-                    <span className="r">Outros</span>
-                  </div>
+            <div className="inicio-diario-secao">
+              <h3 className="inicio-diario-titulo">Diário</h3>
+              <div className="inicio-diario-grade">
+                <div className="inicio-stat-mini">
+                  <span className="n">{leadsHoje.trafego}</span>
+                  <span className="r">Tráfego/Anúncios</span>
+                </div>
+                <div className="inicio-stat-mini">
+                  <span className="n">{leadsHoje.outros}</span>
+                  <span className="r">Outros</span>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="inicio-col-lateral">
-              <Link href="/funil" className="inicio-stat-mini inicio-stat-grande">
-                <span className="n">{funilStats.oportunidades}</span>
-                <span className="r">Oportunidades</span>
-                <span className="inicio-stat-mini-obs">Clientes em fechamento</span>
-              </Link>
-              <Link href="/motivos-perda" className="inicio-stat-mini inicio-stat-grande is-perdido">
-                <span className="n">{funilStats.perdidas}</span>
-                <span className="r">Vendas perdidas</span>
-                <span className="inicio-stat-mini-obs">Clientes que desistiram ou não compraram</span>
-              </Link>
-              <Link href="/performance-vendas" className="inicio-stat-mini inicio-stat-grande is-ganho">
-                <span className="n">{funilStats.ganhas}</span>
-                <span className="r">Vendas realizadas</span>
-                <span className="inicio-stat-mini-obs">Sucesso</span>
-              </Link>
-            </div>
+          <div className="inicio-col-lateral">
+            <Link href="/funil" className="inicio-stat-mini inicio-stat-grande">
+              <span className="n">{funilStats.oportunidades}</span>
+              <span className="r">Oportunidades</span>
+              <span className="inicio-stat-mini-obs">Clientes em fechamento</span>
+            </Link>
+            <Link href="/motivos-perda" className="inicio-stat-mini inicio-stat-grande is-perdido">
+              <span className="n">{funilStats.perdidas}</span>
+              <span className="r">Vendas perdidas</span>
+              <span className="inicio-stat-mini-obs">Clientes que desistiram ou não compraram</span>
+            </Link>
+            <Link href="/performance-vendas" className="inicio-stat-mini inicio-stat-grande is-ganho">
+              <span className="n">{funilStats.ganhas}</span>
+              <span className="r">Vendas realizadas</span>
+              <span className="inicio-stat-mini-obs">Sucesso</span>
+            </Link>
           </div>
         </div>
 
