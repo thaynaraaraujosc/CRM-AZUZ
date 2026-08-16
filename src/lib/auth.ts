@@ -1,11 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { randomUUID } from "node:crypto";
 
 import { prisma } from "@/lib/prisma";
 import { verificarTokenImpersonar } from "@/lib/admin/impersonar";
-import { capturarIp } from "@/lib/sessoes";
 
 function ehSuperAdmin(email: string): boolean {
   return email.toLowerCase() === process.env.SUPERADMIN_EMAIL?.toLowerCase();
@@ -20,7 +18,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         email: { label: "E-mail", type: "email" },
         senha: { label: "Senha", type: "password" },
       },
-      async authorize(credenciais, request) {
+      async authorize(credenciais) {
         const email = credenciais?.email;
         const senha = credenciais?.senha;
         if (typeof email !== "string" || typeof senha !== "string") return null;
@@ -38,27 +36,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // acesso" em Configurações > Usuários.
         prisma.membro.update({ where: { id: membro.id }, data: { ultimoAcesso: new Date() } }).catch(() => {});
 
-        // Registra a sessão de verdade (dispositivo/navegador reais, ver `src/lib/sessoes.ts`) —
-        // o `jti` vai pro token JWT (callback `jwt` abaixo) e é o que "Encerrar sessão" em
-        // Configurações > Segurança revoga de fato (ver callback `jwt`, que confere a cada
-        // request). Fire-and-forget igual o `ultimoAcesso` acima — gerado o `jti` na hora (não
-        // depende do banco), então o login nunca trava esperando essa gravação. Uma lentidão ou
-        // falha aqui só significa que essa sessão não aparece em "Sessões ativas", nunca impede
-        // login (era exatamente esse o bug: um `await` aqui travava o login inteiro sempre que o
-        // banco demorava um pouco mais, ex.: lock temporário de outra query).
-        const jti = randomUUID();
-        prisma.sessaoAtiva
-          .create({
-            data: {
-              id: randomUUID(),
-              membroId: membro.id,
-              jti,
-              userAgent: request.headers.get("user-agent"),
-              ip: capturarIp(request),
-            },
-          })
-          .catch(() => {});
-
         return {
           id: membro.id,
           name: membro.nome,
@@ -73,7 +50,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           // próprio workspace) — decidido por e-mail via env var em vez de coluna no banco, porque
           // é uma conta só (a da Azuz), não um papel que qualquer workspace atribui a alguém.
           superAdmin: ehSuperAdmin(membro.email),
-          jti,
         };
       },
     }),
@@ -128,27 +104,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // admin") — senão o campo ficaria "grudado" indefinidamente numa sessão que já não é mais
         // um "entrar como".
         token.impersonadoPorId = user.impersonadoPorId;
-        token.jti = user.jti;
-        return token;
-      }
-      // Requests seguintes (sem `user`, só refresh do token existente) — confere se a sessão
-      // ainda está viva em `SessaoAtiva`. Retornar `null` aqui derruba a sessão de verdade, é o
-      // que faz "Encerrar sessão" em Configurações > Segurança funcionar em outro dispositivo.
-      // Isso roda em TODA request autenticada (não só login) — uma falha/lentidão passageira do
-      // banco aqui não pode derrubar todo mundo que já está logado, então só nega de verdade
-      // quando a consulta responde e confirma revogação; erro de banco deixa passar (fail-open).
-      if (token.jti) {
-        try {
-          const sessaoAtiva = await prisma.sessaoAtiva.findUnique({ where: { jti: token.jti } });
-          if (!sessaoAtiva || sessaoAtiva.revogadaEm) return null;
-        } catch (erro) {
-          console.error("Falha ao conferir SessaoAtiva (deixando passar):", erro);
-        }
       }
       return token;
     },
     async session({ session, token }) {
-      session.jti = token.jti;
       session.user.id = token.sub as string;
       session.user.workspaceId = token.workspaceId as string;
       session.user.workspaceNome = token.workspaceNome as string;
