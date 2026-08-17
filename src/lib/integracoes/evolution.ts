@@ -90,6 +90,24 @@ async function configurarWebhook(instancia: string): Promise<void> {
   });
 }
 
+/** Desliga a sincronização do histórico inteiro do celular ao conectar — sem isso, a primeira
+ * conexão (ou reconexão) traz TODAS as mensagens que já existiam no WhatsApp de quem escaneou o QR
+ * (no caso real que motivou isso, mais de 41 mil mensagens de uma vez), o que trava o CRM tentando
+ * importar tudo. Chamado numa etapa própria, separada da criação, pelo mesmo motivo do webhook
+ * acima: o campo inline em `/instance/create` não é confiável em toda versão/instalação. */
+async function desativarSincronizacaoDeHistorico(instancia: string): Promise<void> {
+  await chamarEvolution(`/settings/set/${instancia}`, "POST", {
+    rejectCall: false,
+    groupsIgnore: false,
+    alwaysOnline: false,
+    readMessages: false,
+    readStatus: false,
+    syncFullHistory: false,
+  }).catch((erro) => {
+    console.error(`Falha ao desativar sincronização de histórico da instância ${instancia}:`, erro);
+  });
+}
+
 /** Garante que a instância do workspace existe na Evolution (cria na primeira vez) e devolve o QR
  * Code atual pra escanear. Instância que já existe e já está conectada não tem QR novo — o status
  * `conectado` é o que importa nesse caso, não o QR. */
@@ -100,11 +118,13 @@ export async function conectarWhatsAppNaoOficial(workspaceId: string): Promise<R
 
   if (!estadoAtual) {
     // Instância ainda não existe nesse servidor Evolution — cria já tentando configurar o webhook
-    // inline (funciona em algumas versões) e confirma com uma chamada separada logo depois.
+    // e desligar a sincronização de histórico inline (funciona em algumas versões) e confirma com
+    // chamadas separadas logo depois.
     const criada = await chamarEvolution("/instance/create", "POST", {
       instanceName: instancia,
       qrcode: true,
       integration: "WHATSAPP-BAILEYS",
+      syncFullHistory: false,
       webhook: {
         url: webhookUrl(),
         byEvents: false,
@@ -112,12 +132,12 @@ export async function conectarWhatsAppNaoOficial(workspaceId: string): Promise<R
         events: EVENTOS_WEBHOOK,
       },
     });
-    await configurarWebhook(instancia);
+    await Promise.all([configurarWebhook(instancia), desativarSincronizacaoDeHistorico(instancia)]);
     const base64 = criada?.qrcode?.base64 ?? null;
     return { qrDataUrl: base64 };
   }
 
-  await configurarWebhook(instancia);
+  await Promise.all([configurarWebhook(instancia), desativarSincronizacaoDeHistorico(instancia)]);
 
   if (estadoAtual?.instance?.state === "open") {
     return { qrDataUrl: null };

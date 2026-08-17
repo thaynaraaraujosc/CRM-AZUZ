@@ -85,6 +85,15 @@ export async function POST(request: Request) {
     const bruto = payload.data as { messages?: unknown[]; type?: string };
     if (bruto?.type && bruto.type !== "notify") return NextResponse.json({ ok: true });
     const mensagens = Array.isArray(bruto?.messages) ? bruto.messages : [payload.data];
+    // Trava de segurança: mensagem ao vivo chega uma de cada vez (ou em rajadas bem pequenas) —
+    // um lote grande num evento só só acontece em sincronização de histórico (o `syncFullHistory`
+    // desligado na instância já devia impedir isso, mas essa é a última linha de defesa caso o
+    // servidor Evolution não honre essa configuração). Loga e descarta o lote inteiro, sem tentar
+    // processar nada dele.
+    if (mensagens.length > 20) {
+      console.log(`[webhook evolution] lote de ${mensagens.length} mensagens descartado (parece sincronização de histórico, não mensagem ao vivo)`);
+      return NextResponse.json({ ok: true });
+    }
     for (const item of mensagens) {
       await processarMensagemRecebida(workspaceId, item);
     }
