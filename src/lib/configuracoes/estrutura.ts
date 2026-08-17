@@ -75,8 +75,8 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
   {
     titulo: "Integrações",
     categorias: [
-      { id: "whatsapp", label: "WhatsApp", descricao: "Conexão, atendimento, mensagens e horários.", Icon: IconWhatsApp },
-      { id: "instagram", label: "Instagram e Facebook", descricao: "Comentários, diretas e formulários de leads.", Icon: IconInstagram },
+      { id: "whatsapp", label: "WhatsApp", descricao: "Conecte o número do WhatsApp do CRM.", Icon: IconWhatsApp },
+      { id: "instagram", label: "Instagram e Facebook", descricao: "Conecte suas contas da Meta.", Icon: IconInstagram },
       { id: "canais", label: "Canais de atendimento", descricao: "Visão geral de todos os canais conectados.", Icon: IconConversas },
       { id: "email", label: "E-mail", descricao: "Contas, assinaturas e modelos de e-mail.", Icon: IconDoc },
       { id: "integracoes", label: "Outras integrações", descricao: "Conexões com outras ferramentas.", Icon: IconSwitch },
