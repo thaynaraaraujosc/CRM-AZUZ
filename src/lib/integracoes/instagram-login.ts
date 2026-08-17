@@ -1,0 +1,121 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+/**
+ * "API do Instagram com Login do Instagram" — fluxo de OAuth separado do Login do Facebook usado
+ * pelo resto da integração da Meta (`src/lib/integracoes/meta.ts`). A Meta migrou o acesso a
+ * mensagens/comentários do Instagram pra esse produto novo (login direto pela conta do Instagram,
+ * sem precisar de Página do Facebook nem da verificação de empresa que isso exige) — as permissões
+ * antigas baseadas em Login do Facebook (`instagram_basic` etc.) já não são aceitas.
+ *
+ * Tem App ID/Secret PRÓPRIOS, diferentes do App principal (`META_APP_ID`/`META_APP_SECRET`) — são
+ * dois produtos separados dentro do mesmo App da Meta, cada um com seu painel de credenciais.
+ */
+
+const INSTAGRAM_GRAPH_VERSION = "v21.0";
+
+function appId(): string {
+  const valor = process.env.META_INSTAGRAM_APP_ID;
+  if (!valor) throw new Error("META_INSTAGRAM_APP_ID não configurado.");
+  return valor;
+}
+
+function appSecret(): string {
+  const valor = process.env.META_INSTAGRAM_APP_SECRET;
+  if (!valor) throw new Error("META_INSTAGRAM_APP_SECRET não configurado.");
+  return valor;
+}
+
+/** Permissões atuais do produto "API do Instagram com Login do Instagram" — nomes diferentes das
+ * antigas baseadas em Página do Facebook (`instagram_basic`, `instagram_manage_messages`...). */
+export const ESCOPOS_INSTAGRAM_LOGIN = [
+  "instagram_business_basic",
+  "instagram_business_manage_messages",
+  "instagram_business_manage_comments",
+];
+
+export function urlAutorizacao(redirectUri: string, state: string): string {
+  const dialogo = new URL("https://www.instagram.com/oauth/authorize");
+  dialogo.searchParams.set("client_id", appId());
+  dialogo.searchParams.set("redirect_uri", redirectUri);
+  dialogo.searchParams.set("scope", ESCOPOS_INSTAGRAM_LOGIN.join(","));
+  dialogo.searchParams.set("response_type", "code");
+  dialogo.searchParams.set("state", state);
+  return dialogo.toString();
+}
+
+type ErroGraph = { error_message?: string; error?: { message?: string } };
+
+/**
+ * Troca o `code` do redirect pelo token de longa duração (~60 dias) — dois passos, formato
+ * diferente do fluxo de Login do Facebook: primeiro token curto via POST form-encoded em
+ * `api.instagram.com`, depois troca por um de longa duração via GET em `graph.instagram.com`.
+ */
+export async function trocarCodePorTokenInstagram(
+  code: string,
+  redirectUri: string,
+): Promise<{ accessToken: string; instagramContaId: string; expiraEm: Date | null }> {
+  const corpo = new URLSearchParams({
+    client_id: appId(),
+    client_secret: appSecret(),
+    grant_type: "authorization_code",
+    redirect_uri: redirectUri,
+    code,
+  });
+  const respostaCurta = await fetch("https://api.instagram.com/oauth/access_token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: corpo,
+  });
+  const tokenCurto = (await respostaCurta.json()) as { access_token?: string; user_id?: string } & ErroGraph;
+  if (!respostaCurta.ok || !tokenCurto.access_token) {
+    throw new Error(tokenCurto.error_message ?? tokenCurto.error?.message ?? "Falha ao trocar o código de autorização do Instagram.");
+  }
+
+  const respostaLonga = await fetch(
+    `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${appSecret()}&access_token=${tokenCurto.access_token}`,
+  );
+  const tokenLongo = (await respostaLonga.json()) as { access_token?: string; expires_in?: number } & ErroGraph;
+  if (!respostaLonga.ok || !tokenLongo.access_token) {
+    throw new Error(tokenLongo.error_message ?? tokenLongo.error?.message ?? "Falha ao gerar o token de longa duração do Instagram.");
+  }
+
+  return {
+    accessToken: tokenLongo.access_token,
+    instagramContaId: tokenCurto.user_id ?? "",
+    expiraEm: tokenLongo.expires_in ? new Date(Date.now() + tokenLongo.expires_in * 1000) : null,
+  };
+}
+
+/** Busca @usuário e id da conta a partir do token — o `user_id` que já vem da troca de token acima
+ * deveria bastar, mas confirma/complementa com o `username` de exibição. */
+export async function buscarPerfilInstagram(accessToken: string): Promise<{ instagramContaId: string; username: string }> {
+  const resposta = await fetch(
+    `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me?fields=user_id,username&access_token=${accessToken}`,
+  );
+  const dados = (await resposta.json()) as { user_id?: string; username?: string } & ErroGraph;
+  if (!resposta.ok || !dados.username) {
+    throw new Error(dados.error_message ?? dados.error?.message ?? "Falha ao buscar o perfil do Instagram conectado.");
+  }
+  return { instagramContaId: dados.user_id ?? "", username: dados.username };
+}
+
+/** Assina/verifica o `state` do OAuth — mesma lógica de `assinarState`/`verificarState` de
+ * `meta.ts`, chave própria (não precisa ser a mesma do App principal, só interna a este fluxo). */
+export function assinarStateInstagram(workspaceId: string): string {
+  const assinatura = createHmac("sha256", appSecret()).update(workspaceId).digest("hex");
+  return `${workspaceId}.${assinatura}`;
+}
+
+export function verificarStateInstagram(state: string | null): string | null {
+  if (!state) return null;
+  const partes = state.split(".");
+  if (partes.length !== 2) return null;
+  const [workspaceId, assinatura] = partes;
+  if (!workspaceId || !assinatura) return null;
+
+  const esperada = createHmac("sha256", appSecret()).update(workspaceId).digest("hex");
+  const bufAssinatura = Buffer.from(assinatura);
+  const bufEsperada = Buffer.from(esperada);
+  if (bufAssinatura.length !== bufEsperada.length) return null;
+  return timingSafeEqual(bufAssinatura, bufEsperada) ? workspaceId : null;
+}

@@ -34,7 +34,6 @@ async function graphPost<T>(caminho: string): Promise<T> {
 /** Página em Configurações (ou fora dela, no caso do Ads) pra onde volta depois do OAuth. */
 const CATEGORIA_POR_PROVEDOR: Record<string, string> = {
   meta_whatsapp: "/configuracoes?categoria=whatsapp",
-  meta_instagram: "/configuracoes?categoria=instagram",
   meta_ads: "/trafego",
 };
 
@@ -93,37 +92,6 @@ async function resolverWhatsapp(accessToken: string) {
   };
 }
 
-/** Resolve a Página do Facebook com Instagram Business vinculado — usa o token da própria Página
- * (não o de usuário) porque é esse que efetivamente funciona pra ler/enviar mensagens do Instagram. */
-async function resolverInstagram(accessTokenUsuario: string) {
-  const paginas = await graphGet<{ data: { id: string; name: string; access_token: string }[] }>(
-    `/me/accounts?access_token=${accessTokenUsuario}`,
-  );
-  if (!paginas.data?.length) throw new Error("Nenhuma página do Facebook encontrada nessa conta.");
-
-  for (const pagina of paginas.data) {
-    const detalhe = await graphGet<{
-      instagram_business_account?: { id: string; username: string; profile_picture_url?: string };
-    }>(`/${pagina.id}?fields=instagram_business_account{id,username,profile_picture_url}&access_token=${accessTokenUsuario}`);
-
-    const conta = detalhe.instagram_business_account;
-    if (conta) {
-      return {
-        accessToken: pagina.access_token,
-        metadados: {
-          pageId: pagina.id,
-          pageNome: pagina.name,
-          instagramContaId: conta.id,
-          instagramUsername: conta.username,
-          profilePictureUrl: conta.profile_picture_url ?? null,
-        },
-      };
-    }
-  }
-
-  throw new Error("Nenhuma conta do Instagram Business vinculada às suas páginas do Facebook.");
-}
-
 /** Resolve a conta de anúncios (ad account) — prioriza uma ativa, senão pega a primeira. */
 async function resolverAds(accessToken: string) {
   const contas = await graphGet<{ data: { id: string; name: string; account_status: number; currency: string }[] }>(
@@ -178,9 +146,6 @@ export async function GET(request: Request) {
     switch (provedor) {
       case "meta_whatsapp":
         resolvido = await resolverWhatsapp(accessTokenUsuario);
-        break;
-      case "meta_instagram":
-        resolvido = await resolverInstagram(accessTokenUsuario);
         break;
       case "meta_ads":
         resolvido = await resolverAds(accessTokenUsuario);

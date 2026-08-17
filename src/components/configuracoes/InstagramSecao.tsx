@@ -5,18 +5,22 @@ import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 
 /**
- * Instagram e Facebook (Configurações > Integrações) — só conecta a Meta e controla o que entra no
- * CRM a partir dessa conexão. Regras de automação (criar contato ao comentar, responder story
- * etc.) saíram daqui de propósito: pertencem ao módulo Automação, que ainda vai consumir os eventos
- * dessa integração — aqui é só "conectar e disponibilizar o canal", não "o que fazer quando algo
- * acontecer".
+ * Instagram e Facebook (Configurações > Integrações) — só conecta o Instagram e controla o que
+ * entra no CRM a partir dessa conexão. Regras de automação (criar contato ao comentar, responder
+ * story etc.) saíram daqui de propósito: pertencem ao módulo Automação, que ainda vai consumir os
+ * eventos dessa integração — aqui é só "conectar e disponibilizar o canal", não "o que fazer quando
+ * algo acontecer".
+ *
+ * O Instagram conecta pelo produto "Login do Instagram" (`/api/integracoes/instagram/conectar`,
+ * ver src/lib/integracoes/instagram-login.ts) — separado do Login do Facebook usado por Anúncios
+ * (mesmo `provedor: "meta_instagram"` de sempre em `Integracao`, só muda QUEM autentica). Por isso
+ * não tem mais uma "Página do Facebook" junto: esse fluxo não passa por Página nenhuma.
  */
 export function InstagramSecao() {
   const { integracao, desconectando, desconectar, erroDoRedirect } = useIntegracaoMeta("meta_instagram");
   const anuncios = useIntegracaoMeta("meta_ads");
 
   const conectado = integracao?.status === "conectado";
-  const pageNome = integracao?.metadados?.pageNome as string | undefined;
   const instagramUsername = integracao?.metadados?.instagramUsername as string | undefined;
   const adAccountNome = anuncios.integracao?.metadados?.adAccountNome as string | undefined;
   const anunciosConectados = anuncios.integracao?.status === "conectado";
@@ -35,7 +39,7 @@ export function InstagramSecao() {
     <div className="config-secao">
       <CabecalhoCategoria
         titulo="Instagram e Facebook"
-        descricao="Conecte suas contas da Meta para centralizar informações do Instagram e Facebook, receber mensagens e utilizar esses canais nas automações do CRM."
+        descricao="Conecte sua conta profissional do Instagram para receber mensagens e utilizar esse canal nas automações do CRM."
       />
 
       {erroDoRedirect ? (
@@ -49,37 +53,25 @@ export function InstagramSecao() {
       ) : null}
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Conexão com a Meta</p>
+        <p className="config-bloco-titulo">Conexão</p>
 
         {!conectado ? (
           <a
-            href="/api/integracoes/meta/conectar?provedor=meta_instagram"
+            href="/api/integracoes/instagram/conectar"
             className="card"
             style={{ padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textDecoration: "none" }}
           >
             <div>
-              <p className="int-title" style={{ margin: 0 }}>Conectar com Meta</p>
+              <p className="int-title" style={{ margin: 0 }}>Conectar Instagram</p>
               <p className="hint" style={{ margin: "4px 0 0" }}>
-                Autoriza o CRM a acessar sua Página do Facebook e sua conta profissional do
-                Instagram — sem precisar copiar token nenhum.
+                Autoriza o CRM a acessar sua conta profissional do Instagram — sem precisar copiar
+                token nenhum.
               </p>
             </div>
             <span className="btn primary">Conectar</span>
           </a>
         ) : (
           <div className="card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span className="int-status connected">Meta conectada</span>
-            </div>
-
-            <div className="int-row" style={{ padding: 0 }}>
-              <div className="int-body">
-                <p className="int-title">Facebook</p>
-                <p className="int-sub">{pageNome ? `Página ${pageNome}` : "Página conectada"}</p>
-              </div>
-              <span className="int-status connected">Conectado</span>
-            </div>
-
             <div className="int-row" style={{ padding: 0 }}>
               <div className="int-body">
                 <p className="int-title">Instagram</p>
@@ -100,7 +92,7 @@ export function InstagramSecao() {
 
             <div style={{ marginTop: 4 }}>
               <button type="button" className="btn danger" onClick={desconectar} disabled={desconectando}>
-                {desconectando ? "Desconectando…" : "Desconectar Meta"}
+                {desconectando ? "Desconectando…" : "Desconectar Instagram"}
               </button>
             </div>
           </div>

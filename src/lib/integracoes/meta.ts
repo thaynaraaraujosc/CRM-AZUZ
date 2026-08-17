@@ -26,17 +26,11 @@ function appSecret(): string {
   return segredo;
 }
 
-/** Escopos do diálogo OAuth por provedor — um App só da Meta atende os três, cada um pedindo o
- * subconjunto de permissões que precisa. */
+/** Escopos do diálogo OAuth por provedor — um App só da Meta atende os dois, cada um pedindo o
+ * subconjunto de permissões que precisa. Instagram NÃO está aqui: usa um fluxo de OAuth separado
+ * (Login do Instagram, não Login do Facebook), ver src/lib/integracoes/instagram-login.ts. */
 export const ESCOPOS_POR_PROVEDOR: Record<string, string[]> = {
   meta_whatsapp: ["whatsapp_business_management", "whatsapp_business_messaging", "business_management"],
-  meta_instagram: [
-    "instagram_basic",
-    "instagram_manage_messages",
-    "instagram_manage_comments",
-    "pages_show_list",
-    "pages_read_engagement",
-  ],
   meta_ads: ["ads_management", "ads_read"],
 };
 
