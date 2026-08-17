@@ -113,80 +113,6 @@ function GlobalSearch() {
   );
 }
 
-function CriarMenu() {
-  const [open, setOpen] = useState(false);
-  const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null);
-  const { ref: popRef, posicao } = useFloatingPosition(anchorRect, open, 8, () => setOpen(false));
-
-  return (
-    <div className="dropdown-anchor">
-      <button
-        type="button"
-        className="btn primary"
-        onClick={(e) => {
-          if (open) {
-            setOpen(false);
-          } else {
-            setAnchorRect(e.currentTarget.getBoundingClientRect());
-            setOpen(true);
-          }
-        }}
-      >
-        + Criar
-      </button>
-      {open && posicao && typeof document !== "undefined"
-        ? createPortal(
-            <>
-              <div
-                onClick={() => setOpen(false)}
-                style={{ position: "fixed", inset: 0, zIndex: 190 }}
-              />
-              <div
-                ref={popRef}
-                className="dropdown-pop"
-                style={{ position: "fixed", top: posicao.top, left: posicao.left, zIndex: 200 }}
-              >
-            <Link
-              href="/funil?criarNegocio=1"
-              className="dropdown-item"
-              onClick={() => setOpen(false)}
-            >
-              <span className="n">Criar negociação</span>
-              <span className="r">Entra na 1ª etapa do funil ativo</span>
-            </Link>
-            <Link
-              href="/configuracoes#workspace"
-              className="dropdown-item"
-              onClick={() => setOpen(false)}
-            >
-              <span className="n">Criar empresa</span>
-              <span className="r">Cadastra o workspace/clínica</span>
-            </Link>
-            <Link
-              href="/contatos?novoContato=1"
-              className="dropdown-item"
-              onClick={() => setOpen(false)}
-            >
-              <span className="n">Criar contato</span>
-              <span className="r">Abre o formulário em Contatos</span>
-            </Link>
-            <Link
-              href="/tarefas?nova=1"
-              className="dropdown-item"
-              onClick={() => setOpen(false)}
-            >
-              <span className="n">Criar tarefa</span>
-              <span className="r">Abre o formulário em Tarefas</span>
-            </Link>
-              </div>
-            </>,
-            document.body,
-          )
-        : null}
-    </div>
-  );
-}
-
 function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null);
@@ -254,7 +180,6 @@ export function AppHeader() {
     <header className={`app-header${naTelaInicio ? " app-header-transparente" : ""}`}>
       <GlobalSearch />
       <div className="app-header-right">
-        <CriarMenu />
         <NotificationsBell />
       </div>
 

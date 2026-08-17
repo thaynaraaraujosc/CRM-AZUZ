@@ -70,6 +70,13 @@ export async function POST(request: Request) {
       );
       if (!integracaoDaConta) continue;
 
+      // "Receber mensagens do Instagram no CRM" (Configurações > Integrações > Instagram e
+      // Facebook) — desligado não desconecta a conta, só para de trazer mensagem nova pra
+      // Conversas. Padrão ligado (`?? true`) pra não mudar o comportamento de quem já tinha a
+      // conta conectada antes desse toggle existir.
+      const receberMensagens = (integracaoDaConta.metadados as { receberMensagens?: boolean } | null)?.receberMensagens ?? true;
+      if (!receberMensagens) continue;
+
       const chaveContato = evento.sender?.id;
       if (!chaveContato) continue;
 

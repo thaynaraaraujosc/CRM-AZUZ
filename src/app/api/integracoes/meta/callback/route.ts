@@ -189,6 +189,16 @@ export async function GET(request: Request) {
         throw new Error(`Provedor desconhecido: ${provedor}`);
     }
 
+    // Preserva preferências guardadas em `metadados` que não vêm da Graph API (ex.: o toggle
+    // "Receber mensagens do Instagram no CRM", ver PATCH em /api/integracoes/meta) — sem isso, toda
+    // reconexão apagaria essa escolha e voltaria ao padrão sozinha.
+    const existente = await prisma.integracao.findUnique({
+      where: { workspaceId_provedor: { workspaceId, provedor } },
+      select: { metadados: true },
+    });
+    const metadadosPreservados = (existente?.metadados as Record<string, unknown> | null) ?? {};
+    const metadadosFinal = comoJson({ ...metadadosPreservados, ...resolvido.metadados });
+
     await prisma.integracao.upsert({
       where: { workspaceId_provedor: { workspaceId, provedor } },
       create: {
@@ -198,14 +208,14 @@ export async function GET(request: Request) {
         status: "conectado",
         accessTokenCriptografado: encriptar(resolvido.accessToken),
         expiraEm,
-        metadados: comoJson(resolvido.metadados),
+        metadados: metadadosFinal,
         erroMensagem: null,
       },
       update: {
         status: "conectado",
         accessTokenCriptografado: encriptar(resolvido.accessToken),
         expiraEm,
-        metadados: comoJson(resolvido.metadados),
+        metadados: metadadosFinal,
         erroMensagem: null,
       },
     });

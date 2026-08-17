@@ -1,122 +1,126 @@
 "use client";
 
-import { useState } from "react";
-
-import { useEquipe } from "@/lib/equipe-context";
-import { useFunis } from "@/lib/funis-context";
+import { Toggle } from "@/components/ui";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 
-const GATILHOS = ["receber mensagem", "receber comentário com palavra-chave", "preencher formulário", "responder story"];
-
-/** Instagram e Facebook (item 29) — o card de conexão no topo é real (OAuth com a Meta); o
- * construtor visual de "quando X, fazer Y" abaixo continua só front-end (a automação em si ainda
- * não está ligada às mensagens/comentários reais recebidos). */
+/**
+ * Instagram e Facebook (Configurações > Integrações) — só conecta a Meta e controla o que entra no
+ * CRM a partir dessa conexão. Regras de automação (criar contato ao comentar, responder story
+ * etc.) saíram daqui de propósito: pertencem ao módulo Automação, que ainda vai consumir os eventos
+ * dessa integração — aqui é só "conectar e disponibilizar o canal", não "o que fazer quando algo
+ * acontecer".
+ */
 export function InstagramSecao() {
-  const { membros: equipe } = useEquipe();
-  const { funis } = useFunis();
   const { integracao, desconectando, desconectar, erroDoRedirect } = useIntegracaoMeta("meta_instagram");
-  const [gatilho, setGatilho] = useState(GATILHOS[1]);
-  const [palavraChave, setPalavraChave] = useState("QUERO");
-  const [funil, setFunil] = useState(funis[0]?.nome ?? "");
-  const [etapa, setEtapa] = useState(funis[0]?.colunas[0]?.titulo ?? "");
-  const [etiqueta, setEtiqueta] = useState("Instagram");
-  const [equipeResp, setEquipeResp] = useState(equipe[0]?.nome ?? "");
+  const anuncios = useIntegracaoMeta("meta_ads");
+
+  const conectado = integracao?.status === "conectado";
+  const pageNome = integracao?.metadados?.pageNome as string | undefined;
+  const instagramUsername = integracao?.metadados?.instagramUsername as string | undefined;
+  const adAccountNome = anuncios.integracao?.metadados?.adAccountNome as string | undefined;
+  const anunciosConectados = anuncios.integracao?.status === "conectado";
+
+  async function alternarReceberMensagens(ligado: boolean) {
+    await fetch("/api/integracoes/meta", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provedor: "meta_instagram", metadados: { receberMensagens: ligado } }),
+    }).catch((erro) => console.error("Falha ao salvar preferência de mensagens do Instagram:", erro));
+  }
+
+  const receberMensagens = (integracao?.metadados?.receberMensagens as boolean | undefined) ?? true;
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="Instagram e Facebook" descricao="Comentários, mensagens diretas e formulários de leads." />
+      <CabecalhoCategoria
+        titulo="Instagram e Facebook"
+        descricao="Conecte suas contas da Meta para centralizar informações do Instagram e Facebook, receber mensagens e utilizar esses canais nas automações do CRM."
+      />
 
       {erroDoRedirect ? (
         <p className="hint" style={{ color: "var(--danger)", marginBottom: 10 }}>
           ⚠ Não foi possível conectar: {erroDoRedirect}
         </p>
+      ) : integracao?.status === "erro" ? (
+        <p className="hint" style={{ color: "var(--danger)", marginBottom: 10 }}>
+          ⚠ Erro na última tentativa: {integracao.erroMensagem}
+        </p>
       ) : null}
 
-      <div className="card" style={{ padding: 14, marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <div>
-          <p className="int-title" style={{ margin: 0 }}>Instagram (API oficial da Meta)</p>
-          {integracao?.status === "conectado" ? (
-            <p className="int-sub" style={{ margin: "4px 0 0" }}>
-              Conectado — @{(integracao.metadados?.instagramUsername as string | undefined) ?? "conta não identificada"}
-            </p>
-          ) : integracao?.status === "erro" ? (
-            <p className="int-sub" style={{ margin: "4px 0 0", color: "var(--danger)" }}>
-              Erro na última tentativa: {integracao.erroMensagem}
-            </p>
-          ) : (
-            <p className="int-sub" style={{ margin: "4px 0 0" }}>Ainda não conectado.</p>
-          )}
-        </div>
-        {integracao?.status === "conectado" ? (
-          <button type="button" className="btn danger" onClick={desconectar} disabled={desconectando}>
-            {desconectando ? "Desconectando…" : "Desconectar"}
-          </button>
-        ) : (
-          <a className="btn primary" href="/api/integracoes/meta/conectar?provedor=meta_instagram">
-            Conectar com a Meta
+      <div className="config-bloco">
+        <p className="config-bloco-titulo">Conexão com a Meta</p>
+
+        {!conectado ? (
+          <a
+            href="/api/integracoes/meta/conectar?provedor=meta_instagram"
+            className="card"
+            style={{ padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textDecoration: "none" }}
+          >
+            <div>
+              <p className="int-title" style={{ margin: 0 }}>Conectar com Meta</p>
+              <p className="hint" style={{ margin: "4px 0 0" }}>
+                Autoriza o CRM a acessar sua Página do Facebook e sua conta profissional do
+                Instagram — sem precisar copiar token nenhum.
+              </p>
+            </div>
+            <span className="btn primary">Conectar</span>
           </a>
+        ) : (
+          <div className="card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="int-status connected">Meta conectada</span>
+            </div>
+
+            <div className="int-row" style={{ padding: 0 }}>
+              <div className="int-body">
+                <p className="int-title">Facebook</p>
+                <p className="int-sub">{pageNome ? `Página ${pageNome}` : "Página conectada"}</p>
+              </div>
+              <span className="int-status connected">Conectado</span>
+            </div>
+
+            <div className="int-row" style={{ padding: 0 }}>
+              <div className="int-body">
+                <p className="int-title">Instagram</p>
+                <p className="int-sub">{instagramUsername ? `@${instagramUsername}` : "Conta conectada"}</p>
+              </div>
+              <span className="int-status connected">Conectado</span>
+            </div>
+
+            <div className="int-row" style={{ padding: 0 }}>
+              <div className="int-body">
+                <p className="int-title">Conta de anúncios</p>
+                <p className="int-sub">{anunciosConectados ? adAccountNome ?? "Conta conectada" : "Conecte em Tráfego, se quiser usar dados de anúncios"}</p>
+              </div>
+              <span className={`int-status ${anunciosConectados ? "connected" : "off"}`}>
+                {anunciosConectados ? "Conectado" : "Não conectado"}
+              </span>
+            </div>
+
+            <div style={{ marginTop: 4 }}>
+              <button type="button" className="btn danger" onClick={desconectar} disabled={desconectando}>
+                {desconectando ? "Desconectando…" : "Desconectar Meta"}
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
-      <div className="config-bloco">
-        <p className="hint mb14">
-          ⓘ As regras abaixo ainda são só uma prévia visual — receber mensagem direta já funciona de
-          verdade (assim que a conta estiver conectada); comentário/story/formulário ainda são mockados.
-        </p>
-        <p className="config-bloco-titulo">Criar contato quando</p>
-        <div className="filters-row mb14">
-          {GATILHOS.map((g) => (
-            <button type="button" key={g} className={`fchip${gatilho === g ? " active" : ""}`} onClick={() => setGatilho(g)}>
-              {g}
-            </button>
-          ))}
+      {conectado ? (
+        <div className="config-bloco">
+          <p className="config-bloco-titulo">Mensagens do Instagram</p>
+          <div className="toggle-row" style={{ padding: "10px 0" }}>
+            <span className="tl">Receber mensagens do Instagram no CRM</span>
+            <Toggle defaultOn={receberMensagens} label="Receber mensagens do Instagram no CRM" onToggle={alternarReceberMensagens} />
+          </div>
+          <p className="hint">
+            {receberMensagens
+              ? "Mensagens recebidas pelo Instagram são encaminhadas para o módulo de Conversas, identificadas como Instagram, pra sua equipe acompanhar e responder por lá."
+              : "Mensagens do Instagram não são encaminhadas para o módulo de Conversas — a conta continua conectada, só o recebimento fica pausado."}
+          </p>
         </div>
-
-        {gatilho === "receber comentário com palavra-chave" ? (
-          <div className="field">
-            <label>Palavra-chave</label>
-            <input className="input" value={palavraChave} onChange={(e) => setPalavraChave(e.target.value)} />
-          </div>
-        ) : null}
-
-        <div className="config-grid-2">
-          <div className="field">
-            <label>Funil</label>
-            <select className="input" value={funil} onChange={(e) => setFunil(e.target.value)}>
-              {funis.map((f) => (
-                <option key={f.id}>{f.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label>Etapa</label>
-            <select className="input" value={etapa} onChange={(e) => setEtapa(e.target.value)}>
-              {funis.find((f) => f.nome === funil)?.colunas.map((c) => (
-                <option key={c.id}>{c.titulo}</option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label>Etiqueta</label>
-            <input className="input" value={etiqueta} onChange={(e) => setEtiqueta(e.target.value)} />
-          </div>
-          <div className="field">
-            <label>Equipe</label>
-            <select className="input" value={equipeResp} onChange={(e) => setEquipeResp(e.target.value)}>
-              {equipe.map((m) => (
-                <option key={m.id}>{m.nome}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="config-exemplo-visual">
-          Quando alguém {gatilho === "receber comentário com palavra-chave" ? `comentar "${palavraChave}"` : gatilho}, criar contato, adicionar
-          etiqueta <strong>{etiqueta}</strong> e mover pra etapa <strong>{etapa}</strong> do funil <strong>{funil}</strong>, com a equipe{" "}
-          <strong>{equipeResp}</strong> responsável.
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 }
