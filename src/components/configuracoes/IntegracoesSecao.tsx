@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
-import { apiKey, webhooks } from "@/lib/data";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
@@ -114,31 +113,6 @@ export function IntegracoesSecao() {
             conectado={metaAds.integracao?.status === "conectado"}
             href="/trafego"
           />
-        </div>
-      </div>
-
-      <div className="int-group">
-        <p className="int-group-h">API e webhooks — pra conectar qualquer outro sistema seu</p>
-        <div className="card">
-          <p className="hint" style={{ padding: "10px 17px 0" }}>Em breve — ainda não é possível gerar chave de API própria.</p>
-          <div className="key-row">
-            <div className="key-box">{apiKey}</div>
-            <button type="button" className="btn ghost" disabled>
-              Copiar
-            </button>
-            <button type="button" className="btn ghost" disabled>
-              Gerar nova chave
-            </button>
-          </div>
-          {webhooks.map((hook) => (
-            <div className="int-row" key={hook.titulo}>
-              <div className="int-body">
-                <p className="int-title">{hook.titulo}</p>
-                <p className="int-sub">{hook.sub}</p>
-              </div>
-              <span className="int-status off">Em breve</span>
-            </div>
-          ))}
         </div>
       </div>
 
