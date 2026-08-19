@@ -16,6 +16,14 @@ type LinhaMensagem = {
   canal: string | null;
 };
 
+/**
+ * Teto de linhas trazidas por `GET` — sem isso, um workspace com uso contínuo (não precisa nem
+ * ser flood) acumula histórico o suficiente pra transformar essa busca num table scan gigante a
+ * cada abertura de tela e a cada poll de 5s, travando `/conversas` (bug real já visto em produção).
+ * Pega as mais recentes primeiro e devolve em ordem cronológica.
+ */
+const LIMITE_MENSAGENS = 3000;
+
 function paraMensagem(linha: LinhaMensagem): ConvMensagem {
   const extras = (linha.extras as Partial<ConvMensagem>) ?? {};
   return {
@@ -30,15 +38,19 @@ function paraMensagem(linha: LinhaMensagem): ConvMensagem {
   };
 }
 
-/** GET devolve `Record<contato, ConvMensagem[]>` do workspace de quem está logado. */
+/** GET devolve `Record<contato, ConvMensagem[]>` do workspace de quem está logado, limitado às
+ * `LIMITE_MENSAGENS` mais recentes. */
 export async function GET() {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
   const linhas = await prisma.mensagemExtra.findMany({
     where: { workspaceId: sessao.user.workspaceId },
-    orderBy: { criadoEm: "asc" },
+    orderBy: { criadoEm: "desc" },
+    take: LIMITE_MENSAGENS,
   });
+  linhas.reverse();
+
   const porContato: Record<string, ConvMensagem[]> = {};
   for (const linha of linhas) {
     (porContato[linha.contato] ??= []).push(paraMensagem(linha));
@@ -46,34 +58,29 @@ export async function GET() {
   return NextResponse.json(porContato);
 }
 
+type ItemUpsert = { contato: string; idFinal: string; mensagem: ConvMensagem };
+
 /**
- * PUT reconcilia as mensagens do workspace com o `Record<contato, ConvMensagem[]>` mandado pelo
- * front — mesmo molde de `PUT /api/funis`: não tem mutador dedicado no Context
- * (`setMensagensExtraPorContato` é cru), então sincroniza tudo a cada mudança. O `deleteMany` é
- * sempre filtrado por `workspaceId` — mesma correção crítica do `/api/funis`, senão apagaria
- * mensagens de outras empresas.
+ * PUT recebe só a DIFERENÇA (mensagens novas/alteradas + ids apagados) calculada no cliente
+ * (`mensagens-extra-context.tsx`) — nunca mais o `Record` inteiro. A versão antiga reconciliava a
+ * tabela inteira do workspace a cada mudança (um upsert por mensagem existente + delete em massa),
+ * o que virava uma transação gigante disparada a cada 5s pelo polling; era a mesma causa raiz do
+ * flood de WhatsApp que já tinha derrubado essa tela antes, só que estrutural em vez de pontual.
  */
 export async function PUT(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
   const workspaceId = sessao.user.workspaceId;
 
-  const porContato = (await request.json()) as Record<string, ConvMensagem[]>;
+  const corpo = (await request.json()) as { upserts?: ItemUpsert[]; deletarIds?: string[] };
+  const upserts = corpo.upserts ?? [];
+  const deletarIds = corpo.deletarIds ?? [];
 
-  const todasMensagens = Object.entries(porContato).flatMap(([contato, mensagens]) =>
-    mensagens.map((m, indice) => ({ contato, mensagem: m, indice })),
-  );
-  const idsAtuais = todasMensagens
-    .map(({ mensagem, contato, indice }) => mensagem.id ?? `${contato}-${indice}`)
-    .filter(Boolean);
-
-  await prisma.$transaction([
-    prisma.mensagemExtra.deleteMany({
-      where: { workspaceId, id: { notIn: idsAtuais.length ? idsAtuais : ["__nenhum__"] } },
-    }),
-    ...todasMensagens.map(({ contato, mensagem, indice }) => {
-      const { id, tipo, texto, hora, criadoEm, status, canal, ...extras } = mensagem;
-      const idFinal = id ?? `${contato}-${indice}`;
+  const operacoes = [
+    ...(deletarIds.length ? [prisma.mensagemExtra.deleteMany({ where: { workspaceId, id: { in: deletarIds } } })] : []),
+    ...upserts.map(({ contato, idFinal, mensagem }) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- só pra excluir `id` de `extras`, já vira a coluna própria
+      const { id: _id, tipo, texto, hora, criadoEm, status, canal, ...extras } = mensagem;
       const dados = {
         contato,
         tipo,
@@ -90,7 +97,9 @@ export async function PUT(request: Request) {
         update: dados,
       });
     }),
-  ]);
+  ];
+
+  if (operacoes.length) await prisma.$transaction(operacoes);
 
   return NextResponse.json({ ok: true });
 }

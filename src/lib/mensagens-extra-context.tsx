@@ -37,6 +37,49 @@ function chaveMensagem(m: ConvMensagem, indice: number): string {
   return m.id ?? `${m.texto}-${m.hora}-${indice}`;
 }
 
+/** Chave estável e globalmente única de uma mensagem — usada pra achar o que mudou entre dois
+ * estados (ver `calcularDelta`) e como `id` de fallback no upsert do servidor. */
+function chaveGlobal(contato: string, m: ConvMensagem, indice: number): string {
+  return m.id ?? `${contato}::${indice}`;
+}
+
+/**
+ * Compara o estado atual com o último estado que já se sabe estar refletido no servidor (depois
+ * de um GET ou de um PUT bem-sucedido) e devolve só o que precisa ser enviado — nunca a tabela
+ * inteira. Isso é o que evita reprocessar/retransmitir todo o histórico do workspace a cada
+ * mudança de estado (inclusive as que vêm do próprio polling), que era a causa raiz do
+ * travamento em `/conversas`.
+ */
+function calcularDelta(
+  anterior: Record<string, ConvMensagem[]>,
+  atual: Record<string, ConvMensagem[]>,
+): { upserts: { contato: string; idFinal: string; mensagem: ConvMensagem }[]; deletarIds: string[] } {
+  const mapaAnterior = new Map<string, { contato: string; mensagem: ConvMensagem }>();
+  for (const [contato, mensagens] of Object.entries(anterior)) {
+    mensagens.forEach((m, i) => mapaAnterior.set(chaveGlobal(contato, m, i), { contato, mensagem: m }));
+  }
+
+  const upserts: { contato: string; idFinal: string; mensagem: ConvMensagem }[] = [];
+  const chavesAtuais = new Set<string>();
+  for (const [contato, mensagens] of Object.entries(atual)) {
+    mensagens.forEach((m, i) => {
+      const chave = chaveGlobal(contato, m, i);
+      chavesAtuais.add(chave);
+      const antiga = mapaAnterior.get(chave);
+      if (!antiga || JSON.stringify(antiga.mensagem) !== JSON.stringify(m)) {
+        upserts.push({ contato, idFinal: chave, mensagem: m });
+      }
+    });
+  }
+
+  const deletarIds: string[] = [];
+  for (const [chave, { mensagem }] of mapaAnterior) {
+    if (!chavesAtuais.has(chave)) deletarIds.push(mensagem.id ?? chave);
+  }
+
+  return { upserts, deletarIds };
+}
+
 /**
  * Funde o que o servidor devolveu com o que já está na tela — nunca um `set` bruto. Um polling
  * (rodando em qualquer aba aberta, e você pode ter mais de uma) sempre reflete um instante do
@@ -69,12 +112,16 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
     Record<string, ConvMensagem[]>
   >({});
   const carregadoRef = useRef(false);
+  // Último estado que já se sabe estar refletido no servidor — a base pra calcular o delta do
+  // próximo PUT. Atualizado depois de todo GET/PUT bem-sucedido, nunca durante o merge otimista.
+  const ultimoSincronizadoRef = useRef<Record<string, ConvMensagem[]>>({});
 
   useEffect(() => {
     function buscar() {
       return fetch("/api/mensagens-extra")
         .then((r) => r.json())
         .then((dados: Record<string, ConvMensagem[]>) => {
+          ultimoSincronizadoRef.current = dados;
           setMensagensExtraPorContato((prev) => fundirMensagensPorContato(prev, dados));
         })
         .catch((erro) => console.error("Falha ao carregar mensagens extras da API:", erro));
@@ -94,10 +141,13 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!carregadoRef.current) return;
     const temporizador = setTimeout(() => {
+      const { upserts, deletarIds } = calcularDelta(ultimoSincronizadoRef.current, mensagensExtraPorContato);
+      if (!upserts.length && !deletarIds.length) return;
+      ultimoSincronizadoRef.current = mensagensExtraPorContato;
       fetch("/api/mensagens-extra", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(mensagensExtraPorContato),
+        body: JSON.stringify({ upserts, deletarIds }),
       }).catch((erro) => console.error("Falha ao sincronizar mensagens extras na API:", erro));
     }, 400);
     return () => clearTimeout(temporizador);

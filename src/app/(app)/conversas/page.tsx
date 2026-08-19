@@ -795,6 +795,16 @@ function ConversasPageInner() {
     .sort((a, b) => Number(fixadas.has(b.id)) - Number(fixadas.has(a.id)));
 
   const aberta = conversas.find((c) => c.id === selectedId) ?? conversas[0] ?? CONVERSA_VAZIA;
+
+  // Renderizar de uma vez o histórico inteiro de um contato com muita mensagem trava a tela (DOM
+  // gigante, cada bolha com menu/portal próprio) — mostra só as últimas por padrão, com botão pra
+  // carregar mais sob demanda. Reseta pro padrão sempre que troca de conversa.
+  const [limiteMensagensVisiveis, setLimiteMensagensVisiveis] = useState(200);
+  const idConversaAnteriorRef = useRef(aberta.id);
+  if (idConversaAnteriorRef.current !== aberta.id) {
+    idConversaAnteriorRef.current = aberta.id;
+    setLimiteMensagensVisiveis(200);
+  }
   // `Conversa` real não carrega mais uma "tarefa vinculada" embutida (ver plano) — placeholder
   // vazio mantém `tarefa.*` funcionando em todo o resto do arquivo, mostrando "sem tarefa" sempre.
   const tarefa = {
@@ -3430,7 +3440,22 @@ function ConversasPageInner() {
             {arrastandoArquivo ? (
               <div className="wa-dragover-aviso">Solte o arquivo pra anexar</div>
             ) : null}
-            {(mensagensExtraPorContato[aberta.nome] ?? []).map((msg, i) => {
+            {(() => {
+              const todasDaConversa = mensagensExtraPorContato[aberta.nome] ?? [];
+              const ocultas = todasDaConversa.length - limiteMensagensVisiveis;
+              return ocultas > 0 ? (
+                <button
+                  type="button"
+                  className="btn ghost"
+                  style={{ display: "block", margin: "8px auto 16px" }}
+                  onClick={() => setLimiteMensagensVisiveis((v) => v + 200)}
+                >
+                  Carregar {Math.min(ocultas, 200)} mensagens anteriores
+                </button>
+              ) : null;
+            })()}
+            {(mensagensExtraPorContato[aberta.nome] ?? []).slice(-limiteMensagensVisiveis).map((msg, iRelativo, arr) => {
+              const i = (mensagensExtraPorContato[aberta.nome]?.length ?? arr.length) - arr.length + iRelativo;
               const chave = msg.id ?? `extra-${i}`;
               if (mensagensApagadas.has(chave)) return null;
               if (msg.apagadaParaTodos) {

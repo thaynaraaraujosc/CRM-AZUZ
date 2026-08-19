@@ -385,6 +385,9 @@ model MensagemExtra {
   // oficial); "whatsapp_baileys" marca mensagens da conexão não oficial via QR Code, pra saber
   // por qual integração uma resposta deve sair quando o workspace tem as duas conectadas.
   canal    String?
+
+  @@index([workspaceId, criadoEm])
+  @@index([workspaceId, contato])
 }
 
 // Biblioteca de mídia reutilizável pelos blocos de automação (enviar documento/imagem/vídeo/áudio).
