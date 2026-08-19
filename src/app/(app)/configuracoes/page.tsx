@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Topbar } from "@/components/ui";
@@ -46,6 +46,16 @@ function ConfiguracoesConteudo() {
   const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaId>(categoriaInicial);
   const { categoriaSuja } = useConfiguracoes();
   const categoria = categoriaPorId(categoriaAtiva);
+
+  // Links tipo `<Link href="/configuracoes?categoria=whatsapp">` (cards de "Conectar" na tela de
+  // Integrações) navegam pra essa mesma rota com um parâmetro novo — como o componente já está
+  // montado, `categoriaInicial` acima não recalcula sozinho (só roda no mount). Sem isso, clicar
+  // num desses links dava a impressão de botão quebrado: a URL mudava, a tela não.
+  const paramCategoria = searchParams.get("categoria");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza com navegação por URL (Link), não é reset de prop derivado
+    if (paramCategoria) setCategoriaAtiva(paramCategoria as CategoriaId);
+  }, [paramCategoria]);
 
   function selecionarCategoria(id: CategoriaId) {
     if (id === categoriaAtiva) return;
