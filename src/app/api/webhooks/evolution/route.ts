@@ -41,10 +41,24 @@ async function atualizarStatus(
  * src/lib/integracoes/evolution.ts) — autenticado por um token fixo na query string (não header
  * customizado, porque nem toda versão da Evolution permite configurar headers extra no webhook).
  */
+/** Teto de tamanho do corpo do webhook — o CRM só lê texto, nunca mídia (ver comentário sobre
+ * `base64: false` em `configurarWebhook()`), então um payload legítimo é sempre pequeno (poucos
+ * KB). Um payload gigante só acontece se a Evolution mandar mídia embutida mesmo assim (bug dela
+ * ou config divergente) — rejeitar antes de `request.json()` evita que o processo do Node inteiro
+ * trave/estoure memória tentando parsear um JSON de vários MB (bug real que já derrubou o
+ * servidor inteiro, não só essa rota). */
+const TAMANHO_MAXIMO_PAYLOAD_BYTES = 256 * 1024;
+
 export async function POST(request: Request) {
   const token = new URL(request.url).searchParams.get("token");
   if (!validarTokenWebhook(token)) {
     return NextResponse.json({ erro: "Token inválido" }, { status: 401 });
+  }
+
+  const tamanho = Number(request.headers.get("content-length") ?? 0);
+  if (tamanho > TAMANHO_MAXIMO_PAYLOAD_BYTES) {
+    console.log(`[webhook evolution] payload de ${tamanho} bytes rejeitado (provavelmente mídia embutida, não deveria vir mais)`);
+    return NextResponse.json({ ok: true });
   }
 
   const payload = (await request.json()) as PayloadEvolution;

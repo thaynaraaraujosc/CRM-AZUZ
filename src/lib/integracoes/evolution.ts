@@ -82,7 +82,12 @@ async function configurarWebhook(instancia: string): Promise<void> {
       enabled: true,
       url: webhookUrl(),
       byEvents: false,
-      base64: true,
+      // `false`: o CRM não usa mídia recebida pelo webhook (só lê o texto da mensagem em
+      // `processarMensagemRecebida`, qualquer mensagem sem texto é descartada) — pedir a Evolution
+      // pra embutir o arquivo inteiro em base64 dentro do JSON do webhook incha o payload em vários
+      // MB pra cada foto/áudio/vídeo, o suficiente pra derrubar o processo do Node ao tentar
+      // parsear (bug real: crashava o servidor inteiro toda vez que chegava mídia numa conta ativa).
+      base64: false,
       events: EVENTOS_WEBHOOK,
     },
   }).catch((erro) => {
@@ -128,7 +133,7 @@ export async function conectarWhatsAppNaoOficial(workspaceId: string): Promise<R
       webhook: {
         url: webhookUrl(),
         byEvents: false,
-        base64: true,
+        base64: false, // ver comentário em configurarWebhook() sobre por que não
         events: EVENTOS_WEBHOOK,
       },
     });
