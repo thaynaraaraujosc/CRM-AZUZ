@@ -18,7 +18,14 @@ function criarPrismaClient() {
   // O CLI do Prisma (`db push`/`migrate`) exige o prefixo `mysql://` na `DATABASE_URL` (é o
   // provider declarado no schema), mas o driver `@prisma/adapter-mariadb` só aceita `mariadb://`
   // — convertendo aqui, a mesma variável serve pros dois sem o usuário precisar manter duas versões.
-  const url = process.env.DATABASE_URL!.replace(/^mysql:\/\//, "mariadb://");
+  let url = process.env.DATABASE_URL!.replace(/^mysql:\/\//, "mariadb://");
+  // Sem isso o driver `mariadb` abre um pool de até 10 conexões por padrão — o banco compartilhado
+  // (plano pequeno do Railway) tem um teto de conexões simultâneas bem menor que isso, e cada
+  // restart de container (deploy, crash-loop, `prisma db push` no boot) soma mais conexões em cima
+  // das que containers anteriores ainda não liberaram. Já aconteceu de estourar o limite do banco
+  // de verdade ("Too many connections", derrubando o site inteiro) só de reiniciar algumas vezes
+  // seguidas. Um teto baixo aqui é o suficiente pro tráfego de um workspace só.
+  url += url.includes("?") ? "&connectionLimit=3" : "?connectionLimit=3";
   const adapter = new PrismaMariaDb(url);
   return new PrismaClient({ adapter });
 }
