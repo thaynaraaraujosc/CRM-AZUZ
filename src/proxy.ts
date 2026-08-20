@@ -57,8 +57,11 @@ export default async function proxy(request: NextRequest) {
     pathname === "/api/webhooks/whatsapp" ||
     pathname === "/api/webhooks/instagram" ||
     // Chamado direto pela Evolution API (serviço separado, sessão via QR Code), validado por
-    // segredo fixo dentro da própria rota — mesmo padrão dos outros webhooks acima.
-    pathname === "/api/webhooks/whatsapp-baileys" ||
+    // segredo fixo dentro da própria rota — mesmo padrão dos outros webhooks acima. A rota já foi
+    // renomeada de `whatsapp-baileys` pra `evolution`, mas essa exceção não tinha acompanhado —
+    // toda chamada da Evolution caía no redirect pro /login (sem sessão de navegador nenhuma) e
+    // nunca chegava na rota de verdade, então nenhuma mensagem nunca espelhava no CRM.
+    pathname === "/api/webhooks/evolution" ||
     // Chamado direto pela Asaas (eventos de cobrança da assinatura do CRM), validado pelo token
     // `asaas-access-token` dentro da própria rota — mesmo padrão dos outros webhooks acima.
     pathname === "/api/webhooks/asaas"
