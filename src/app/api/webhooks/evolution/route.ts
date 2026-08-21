@@ -158,6 +158,8 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
   let chaveContato: string;
   let contatoExistente: { id: string; nome: string } | null = null;
   let participantesGrupo: { nome: string; telefone: string }[] | undefined;
+  let descricaoGrupo: string | null | undefined;
+  let criacaoGrupo: Date | null | undefined;
   let fotoUrlExistente: string | null = null;
 
   if (ehGrupo) {
@@ -175,6 +177,8 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
       const info = await buscarInfoGrupo(workspaceId, remoteJid!);
       chaveContato = info?.nome ?? waId;
       participantesGrupo = info?.participantes;
+      descricaoGrupo = info?.descricao;
+      criacaoGrupo = info?.criacao;
     }
   } else {
     contatoExistente = await encontrarContatoPorTelefone(workspaceId, waId);
@@ -250,5 +254,7 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
     ehGrupo,
     participantesGrupo,
     fotoUrl,
+    descricaoGrupo,
+    criacaoGrupo,
   });
 }

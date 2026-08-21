@@ -19,6 +19,8 @@ export type ConversaReal = {
   ehGrupo: boolean;
   participantesGrupo: { nome: string; telefone: string }[] | null;
   fotoUrl: string | null;
+  descricaoGrupo: string | null;
+  criacaoGrupo: string | null;
   criadoEm: string;
   atualizadoEm: string;
 };

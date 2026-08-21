@@ -365,6 +365,8 @@ const CONVERSA_VAZIA: ConversaReal = {
   ehGrupo: false,
   participantesGrupo: null,
   fotoUrl: null,
+  descricaoGrupo: null,
+  criacaoGrupo: null,
   criadoEm: new Date(0).toISOString(),
   atualizadoEm: new Date(0).toISOString(),
 };
@@ -706,6 +708,16 @@ function ConversasPageInner() {
   const [participantesAberto, setParticipantesAberto] = useState(false);
   const [participantesPos, setParticipantesPos] = useState<{ x: number; y: number } | null>(null);
   const participantesRef = useRef<HTMLDivElement>(null);
+  const [dadosGrupoAberto, setDadosGrupoAberto] = useState(false);
+  const [dadosGrupoPos, setDadosGrupoPos] = useState<{ x: number; y: number } | null>(null);
+  const dadosGrupoRef = useRef<HTMLDivElement>(null);
+  // Participante clicado dentro do painel de Participantes — abre um popup próprio (foto buscada
+  // sob demanda, nome, telefone, "Enviar mensagem"), igual clicar num contato dentro de um grupo no
+  // WhatsApp de verdade.
+  const [participanteAberto, setParticipanteAberto] = useState<{ nome: string; telefone: string } | null>(null);
+  const [fotoParticipante, setFotoParticipante] = useState<string | null>(null);
+  const [carregandoFotoParticipante, setCarregandoFotoParticipante] = useState(false);
+  const participanteRef = useRef<HTMLDivElement>(null);
   const naoOficial = useIntegracaoNaoOficial();
   // Status da API oficial (Meta) — sem hook compartilhado com polling (o `useIntegracaoMeta` só
   // busca uma vez); polling próprio aqui porque a conversa some/reaparece conforme o canal
@@ -747,6 +759,30 @@ function ConversasPageInner() {
 
   useFecharAoClicarFora(midiasRef, midiasAberto, () => setMidiasAberto(false));
   useFecharAoClicarFora(participantesRef, participantesAberto, () => setParticipantesAberto(false));
+  useFecharAoClicarFora(dadosGrupoRef, dadosGrupoAberto, () => setDadosGrupoAberto(false));
+  useFecharAoClicarFora(participanteRef, !!participanteAberto, () => setParticipanteAberto(null));
+
+  // Reseta o estado da foto assim que o participante clicado muda — ajusta durante a renderização
+  // (não num `useEffect`), mesmo padrão já usado no resto do arquivo pra "resetar estado derivado
+  // de uma prop que mudou" sem passar por uma cascata extra de render.
+  const participanteAnteriorRef = useRef(participanteAberto);
+  if (participanteAberto !== participanteAnteriorRef.current) {
+    participanteAnteriorRef.current = participanteAberto;
+    if (participanteAberto) {
+      setFotoParticipante(null);
+      setCarregandoFotoParticipante(true);
+    }
+  }
+
+  // Busca a foto do participante clicado sob demanda (não vem já pronta na lista de 384 pessoas).
+  useEffect(() => {
+    if (!participanteAberto) return;
+    fetch(`/api/integracoes/whatsapp-nao-oficial/foto-perfil?numero=${encodeURIComponent(participanteAberto.telefone)}`)
+      .then((r) => r.json())
+      .then((dados: { fotoUrl?: string | null }) => setFotoParticipante(dados.fotoUrl ?? null))
+      .catch(() => setFotoParticipante(null))
+      .finally(() => setCarregandoFotoParticipante(false));
+  }, [participanteAberto]);
   useFecharAoClicarFora(contatoDetalheRef, !!contatoDetalheAberto, () => setContatoDetalheAberto(null));
 
   /** Força um recarregamento da lista — usado se as mensagens do celular conectado saírem de sincronia com o servidor. */
@@ -3423,14 +3459,14 @@ function ConversasPageInner() {
               className="wa-conv-titulo-btn"
               onClick={() => {
                 if (aberta.ehGrupo) {
-                  setParticipantesPos(null);
-                  setParticipantesAberto(true);
+                  setDadosGrupoPos(null);
+                  setDadosGrupoAberto(true);
                 } else {
                   setMidiasPos(null);
                   setMidiasAberto(true);
                 }
               }}
-              title={aberta.ehGrupo ? "Ver participantes do grupo" : "Ver mídias e arquivos trocados nessa conversa"}
+              title={aberta.ehGrupo ? "Ver dados do grupo" : "Ver mídias e arquivos trocados nessa conversa"}
             >
               <div className="avatar">
                 {aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : aberta.initials}
@@ -7576,6 +7612,68 @@ function ConversasPageInner() {
         </div>
       ) : null}
 
+      {dadosGrupoAberto ? (
+        <div
+          ref={dadosGrupoRef}
+          className="wa-email-modal wa-email-floating wa-dados-grupo-modal"
+          style={
+            dadosGrupoPos
+              ? { left: dadosGrupoPos.x, top: dadosGrupoPos.y, right: "auto", bottom: "auto" }
+              : undefined
+          }
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setDadosGrupoPos)}>
+            <div>
+              <p className="n">Dados do grupo</p>
+            </div>
+            <button
+              type="button"
+              className="modal-close-btn"
+              aria-label="Fechar"
+              onClick={() => setDadosGrupoAberto(false)}
+            >
+              <IconClose width={12} height={12} />
+            </button>
+          </div>
+          <div className="wa-dados-grupo-corpo">
+            <div className="avatar wa-dados-grupo-avatar">
+              {aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : aberta.initials}
+            </div>
+            <p className="wa-dados-grupo-nome">{aberta.nome}</p>
+            {aberta.descricaoGrupo ? (
+              <p className="wa-dados-grupo-descricao">{aberta.descricaoGrupo}</p>
+            ) : (
+              <p className="wa-dados-grupo-descricao hint">Esse grupo ainda não tem descrição.</p>
+            )}
+            {aberta.criacaoGrupo ? (
+              <p className="wa-dados-grupo-criado">
+                Grupo criado em{" "}
+                {new Date(aberta.criacaoGrupo).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="wa-dados-grupo-membros-btn"
+              onClick={() => {
+                setDadosGrupoAberto(false);
+                setParticipantesPos(dadosGrupoPos);
+                setParticipantesAberto(true);
+              }}
+            >
+              <span>
+                <IconEquipe width={15} height={15} />
+                Participantes
+              </span>
+              <span className="wa-dados-grupo-membros-count">{aberta.participantesGrupo?.length ?? 0} ›</span>
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {participantesAberto ? (
         <div
           ref={participantesRef}
@@ -7602,49 +7700,97 @@ function ConversasPageInner() {
           </div>
           {aberta.participantesGrupo?.length ? (
             <div className="wa-participantes-lista">
-              {aberta.participantesGrupo.map((p) => {
-                const conversaDele = conversaIndividualDoParticipante(p.telefone);
-                return (
-                  <div className="wa-participante-linha" key={p.telefone}>
-                    <span className="avatar" style={{ width: 32, height: 32, fontSize: 12 }}>
-                      {p.nome
-                        .split(" ")
-                        .filter(Boolean)
-                        .slice(0, 2)
-                        .map((parte) => parte[0])
-                        .join("")
-                        .toUpperCase() || "?"}
-                    </span>
-                    <div className="wa-participante-info">
-                      <p className="n">{p.nome}</p>
-                      <p className="s">{p.telefone}</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      disabled={!conversaDele}
-                      title={
-                        conversaDele
-                          ? `Abrir conversa individual com ${p.nome}`
-                          : "Ainda não tem conversa individual com essa pessoa (fora do grupo)"
-                      }
-                      onClick={() => {
-                        if (!conversaDele) return;
-                        setSelectedId(conversaDele.id);
-                        setParticipantesAberto(false);
-                      }}
-                    >
-                      Enviar mensagem
-                    </button>
+              {aberta.participantesGrupo.map((p) => (
+                <button
+                  type="button"
+                  className="wa-participante-linha"
+                  key={p.telefone}
+                  onClick={() => {
+                    setParticipantesAberto(false);
+                    setParticipanteAberto(p);
+                  }}
+                >
+                  <span className="avatar" style={{ width: 32, height: 32, fontSize: 12 }}>
+                    {p.nome
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((parte) => parte[0])
+                      .join("")
+                      .toUpperCase() || "?"}
+                  </span>
+                  <div className="wa-participante-info">
+                    <p className="n">{p.nome}</p>
+                    <p className="s">{p.telefone}</p>
                   </div>
-                );
-              })}
+                </button>
+              ))}
             </div>
           ) : (
             <p className="hint" style={{ padding: "10px 0" }}>
               Lista de participantes ainda não disponível.
             </p>
           )}
+        </div>
+      ) : null}
+
+      {participanteAberto ? (
+        <div ref={participanteRef} className="wa-email-modal wa-email-floating wa-participante-modal">
+          <div className="wa-email-drag">
+            <div>
+              <p className="n">Contato</p>
+            </div>
+            <button
+              type="button"
+              className="modal-close-btn"
+              aria-label="Fechar"
+              onClick={() => setParticipanteAberto(null)}
+            >
+              <IconClose width={12} height={12} />
+            </button>
+          </div>
+          <div className="wa-dados-grupo-corpo">
+            <div className="avatar wa-dados-grupo-avatar">
+              {carregandoFotoParticipante ? (
+                <span className="wa-participante-foto-carregando" />
+              ) : fotoParticipante ? (
+                <img src={fotoParticipante} alt="" className="wa-avatar-foto" />
+              ) : (
+                participanteAberto.nome
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((p) => p[0])
+                  .join("")
+                  .toUpperCase() || "?"
+              )}
+            </div>
+            <p className="wa-dados-grupo-nome">{participanteAberto.nome}</p>
+            <p className="wa-dados-grupo-descricao hint">{participanteAberto.telefone}</p>
+            {(() => {
+              const conversaDele = conversaIndividualDoParticipante(participanteAberto.telefone);
+              return (
+                <button
+                  type="button"
+                  className="btn primary"
+                  style={{ marginTop: 12, width: "100%" }}
+                  disabled={!conversaDele}
+                  title={
+                    conversaDele
+                      ? `Abrir conversa individual com ${participanteAberto.nome}`
+                      : "Ainda não tem conversa individual com essa pessoa (fora do grupo)"
+                  }
+                  onClick={() => {
+                    if (!conversaDele) return;
+                    setSelectedId(conversaDele.id);
+                    setParticipanteAberto(null);
+                  }}
+                >
+                  Enviar mensagem
+                </button>
+              );
+            })()}
+          </div>
         </div>
       ) : null}
 

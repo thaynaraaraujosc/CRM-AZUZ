@@ -167,13 +167,23 @@ export function enviarMensagemWhatsAppNaoOficial(workspaceId: string, numero: st
   return chamarEvolution(`/message/sendText/${nomeInstancia(workspaceId)}`, "POST", { number: numero, text: texto });
 }
 
-export type InfoGrupo = { nome: string; participantes: { nome: string; telefone: string }[] };
+export type InfoGrupo = {
+  nome: string;
+  descricao: string | null;
+  criacao: Date | null;
+  participantes: { nome: string; telefone: string }[];
+};
 
-/** Busca nome e participantes de um grupo de WhatsApp (JID terminado em `@g.us`) — chamado pelo
- * webhook na primeira mensagem vista de um grupo ainda não cadastrado como `Conversa`, pra exibir
- * nome/lista de participantes de verdade em vez de só o JID numérico. Falha em silêncio (`null`):
- * um grupo sem esse detalhe ainda funciona (mensagens continuam chegando na thread certa), só
- * mostra o JID como nome até a próxima tentativa. */
+/** Busca nome, descrição, data de criação e participantes de um grupo de WhatsApp (JID terminado
+ * em `@g.us`) — chamado pelo webhook na primeira mensagem vista de um grupo ainda não cadastrado
+ * como `Conversa`, pra exibir os dados de verdade do grupo em vez de só o JID numérico. Falha em
+ * silêncio (`null`): um grupo sem esse detalhe ainda funciona (mensagens continuam chegando na
+ * thread certa), só mostra o JID como nome até a próxima tentativa.
+ *
+ * `pushName`/`name` do participante geralmente NÃO vem preenchido pra quem nunca trocou mensagem
+ * direta com esse número antes — é limitação da própria API do WhatsApp/Baileys, não do CRM; nesse
+ * caso o telefone aparece no lugar do nome (igual mostraria "número desconhecido" no WhatsApp Web
+ * pra alguém fora da sua agenda). */
 export async function buscarInfoGrupo(workspaceId: string, groupJid: string): Promise<InfoGrupo | null> {
   const instancia = nomeInstancia(workspaceId);
   const dados = await chamarEvolution(
@@ -183,6 +193,9 @@ export async function buscarInfoGrupo(workspaceId: string, groupJid: string): Pr
   if (!dados) return null;
 
   const nome: string | undefined = dados.subject ?? dados.name;
+  const descricao: string | null = dados.desc ?? dados.description ?? null;
+  const criacaoSegundos: number | undefined = dados.creation ?? dados.subjectTime;
+  const criacao = criacaoSegundos ? new Date(criacaoSegundos * 1000) : null;
   const participantesBrutos: unknown[] = Array.isArray(dados.participants) ? dados.participants : [];
   const participantes = participantesBrutos
     .map((p) => {
@@ -195,7 +208,7 @@ export async function buscarInfoGrupo(workspaceId: string, groupJid: string): Pr
     .filter((p): p is { nome: string; telefone: string } => p !== null);
 
   if (!nome && !participantes.length) return null;
-  return { nome: nome ?? groupJid.split("@")[0], participantes };
+  return { nome: nome ?? groupJid.split("@")[0], descricao, criacao, participantes };
 }
 
 /** Busca a URL da foto de perfil (grupo OU pessoa) de um JID/número — chamado uma vez, quando a

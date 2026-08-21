@@ -104,6 +104,12 @@ model Conversa {
   // (`buscarFotoPerfil`) quando a conversa é vista pela primeira vez. Null até a busca ter sucesso
   // (WhatsApp sem foto definida, ou busca falhou) — nesse caso a tela cai pras iniciais como antes.
   fotoUrl             String?
+  // Descrição do grupo (texto livre configurado no WhatsApp) e data real de criação DO GRUPO no
+  // WhatsApp — não confundir com `criadoEm` abaixo, que é quando essa linha nasceu NESTE banco.
+  // Ambos exibidos no painel "Dados do grupo" (clicar no cabeçalho da conversa), separado do painel
+  // de participantes (que é outro clique, dentro desse).
+  descricaoGrupo      String?  @db.Text
+  criacaoGrupo        DateTime?
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt

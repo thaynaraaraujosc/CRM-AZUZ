@@ -43,6 +43,9 @@ export async function upsertConversaAoReceberMensagem(params: {
   participantesGrupo?: { nome: string; telefone: string }[];
   /** Foto de perfil real (grupo ou pessoa) — ver comentário do campo no schema. */
   fotoUrl?: string | null;
+  /** Descrição e data de criação real do grupo no WhatsApp — só em grupo. */
+  descricaoGrupo?: string | null;
+  criacaoGrupo?: Date | null;
 }) {
   const {
     workspaceId,
@@ -55,6 +58,8 @@ export async function upsertConversaAoReceberMensagem(params: {
     ehGrupo = false,
     participantesGrupo,
     fotoUrl,
+    descricaoGrupo,
+    criacaoGrupo,
   } = params;
   await prisma.conversa.upsert({
     where: { workspaceId_nome: { workspaceId, nome } },
@@ -71,15 +76,19 @@ export async function upsertConversaAoReceberMensagem(params: {
       ehGrupo,
       participantesGrupo,
       fotoUrl,
+      descricaoGrupo,
+      criacaoGrupo,
     },
     // Grava/atualiza o contatoId também num update — conversa antiga criada antes dessa FK existir
-    // se auto-corrige assim que uma mensagem nova chega e o contato já foi resolvido. Participantes
-    // e foto só sobrescrevem quando veio um valor novo (busca na Evolution pode falhar em
-    // silêncio — não apaga um valor que já tinha sido resolvido antes).
+    // se auto-corrige assim que uma mensagem nova chega e o contato já foi resolvido. Participantes,
+    // foto, descrição e data de criação só sobrescrevem quando veio um valor novo (busca na
+    // Evolution pode falhar em silêncio — não apaga um valor que já tinha sido resolvido antes).
     update: {
       ...(contatoId ? { contatoId } : {}),
       ...(participantesGrupo ? { participantesGrupo } : {}),
       ...(fotoUrl ? { fotoUrl } : {}),
+      ...(descricaoGrupo ? { descricaoGrupo } : {}),
+      ...(criacaoGrupo ? { criacaoGrupo } : {}),
       ...(contarComoNaoLida ? { naoLidas: { increment: 1 }, atualizadoEm: new Date() } : {}),
     },
   });
