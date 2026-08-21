@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado } from "@/lib/integracoes/evolution";
+import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado, buscarInfoGrupo } from "@/lib/integracoes/evolution";
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
@@ -125,7 +125,7 @@ const IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS = 2 * 60 * 1000;
 
 async function processarMensagemRecebida(workspaceId: string, item: unknown) {
   const data = item as {
-    key?: { id?: string; remoteJid?: string; fromMe?: boolean };
+    key?: { id?: string; remoteJid?: string; fromMe?: boolean; participant?: string };
     message?: { conversation?: string; extendedTextMessage?: { text?: string } };
     messageTimestamp?: number;
     pushName?: string;
@@ -133,9 +133,14 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
 
   const fromMe = data.key?.fromMe === true;
   const texto = data.message?.conversation ?? data.message?.extendedTextMessage?.text;
-  // `remoteJid` é sempre "a outra parte" da conversa, tanto em mensagem recebida quanto enviada
-  // (a Evolution segue a convenção do Baileys) — então serve pra achar o contato nos dois casos.
-  const waId = data.key?.remoteJid?.split("@")[0];
+  const remoteJid = data.key?.remoteJid;
+  // Grupo de WhatsApp — a Evolution/Baileys segue a convenção do próprio WhatsApp: `remoteJid`
+  // termina em "@g.us" pra grupo (e é o JID do GRUPO, o mesmo pra qualquer participante que
+  // escreva nele) contra "@s.whatsapp.net" pra conversa individual (aí sim é a outra pessoa).
+  const ehGrupo = remoteJid?.endsWith("@g.us") ?? false;
+  // Em grupo, `remoteJid` (acima) já identifica a thread — `waId` aqui não é telefone de ninguém,
+  // é só o id numérico do grupo, usado como último recurso se a Evolution não devolver o nome dele.
+  const waId = remoteJid?.split("@")[0];
   if (!texto || !waId || !data.key?.id) {
     // Log temporário pra depurar formato de payload em produção (ex.: mídia sem legenda, ou um
     // formato de evento diferente do esperado) — sem isso não dá pra ver pelos logs da Vercel por
@@ -150,8 +155,29 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
   const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: data.key.id } });
   if (jaExiste) return;
 
-  const contatoExistente = await encontrarContatoPorTelefone(workspaceId, waId);
-  const chaveContato = contatoExistente?.nome ?? data.pushName ?? waId;
+  let chaveContato: string;
+  let contatoExistente: { id: string; nome: string } | null = null;
+  let participantesGrupo: { nome: string; telefone: string }[] | undefined;
+
+  if (ehGrupo) {
+    // Acha a conversa do grupo pelo JID (estável) — nunca pelo nome (`nome` guarda o "assunto" do
+    // grupo, que a pessoa pode trocar a qualquer momento no WhatsApp; usar ele como chave faria o
+    // grupo virar uma conversa nova toda vez que o nome mudasse).
+    const conversaExistente = await prisma.conversa.findFirst({
+      where: { workspaceId, contato: remoteJid, ehGrupo: true },
+      select: { nome: true },
+    });
+    if (conversaExistente) {
+      chaveContato = conversaExistente.nome;
+    } else {
+      const info = await buscarInfoGrupo(workspaceId, remoteJid!);
+      chaveContato = info?.nome ?? waId;
+      participantesGrupo = info?.participantes;
+    }
+  } else {
+    contatoExistente = await encontrarContatoPorTelefone(workspaceId, waId);
+    chaveContato = contatoExistente?.nome ?? data.pushName ?? waId;
+  }
 
   if (fromMe) {
     // Mensagem mandada do próprio celular conectado (espelhamento, igual WhatsApp Web) — se foi
@@ -171,14 +197,17 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
     if (jaFoiMandadaPeloCrm) return;
   }
 
-  const contato =
-    contatoExistente ??
-    (await criarContatoPeloWhatsAppSeNaoExistir({ workspaceId, nome: chaveContato, whatsapp: waId }));
+  // Grupo não é uma pessoa — não cria/casa `Contato` nem vira lead novo no funil sozinho, só a
+  // thread de conversa mesmo (ver `ehGrupo` no upsert abaixo).
+  const contato = ehGrupo
+    ? null
+    : (contatoExistente ??
+      (await criarContatoPeloWhatsAppSeNaoExistir({ workspaceId, nome: chaveContato, whatsapp: waId })));
 
   // Só entra como lead novo no funil quando ALGUÉM DE FORA escreveu primeiro pra um contato que
   // ainda não existia — mensagem que a própria pessoa manda do celular pra alguém (ex.: um
   // contato pessoal) não deve virar negócio no funil sozinha.
-  if (!fromMe && !contatoExistente) {
+  if (!ehGrupo && !fromMe && !contatoExistente) {
     await entrarNaPrimeiraEtapaComoNovoLead({ workspaceId, contatoNome: chaveContato, origem: "WhatsApp" });
   }
 
@@ -192,6 +221,10 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
       hora: new Date(timestampMs).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
       criadoEm: new Date(timestampMs),
       canal: "whatsapp_nao_oficial",
+      // Nome de quem escreveu DENTRO do grupo — sem isso não dá pra distinguir os balões de cada
+      // participante na tela, igual o WhatsApp de verdade mostra. Não se aplica fora de grupo (lá
+      // "quem mandou" já é o próprio nome da conversa).
+      extras: ehGrupo && !fromMe ? { remetenteNome: data.pushName ?? waId } : undefined,
     },
   });
 
@@ -199,9 +232,11 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
     workspaceId,
     nome: chaveContato,
     canal: "WhatsApp",
-    contato: waId,
-    contatoId: contato.id,
+    contato: ehGrupo ? remoteJid : waId,
+    contatoId: contato?.id,
     origem: "Direto",
     contarComoNaoLida: !fromMe,
+    ehGrupo,
+    participantesGrupo,
   });
 }

@@ -77,6 +77,7 @@ import {
   IconMic,
   IconMudo,
   IconPause,
+  IconEquipe,
   IconPin,
   IconPlay,
   IconProibido,
@@ -359,6 +360,8 @@ const CONVERSA_VAZIA: ConversaReal = {
   naoLidas: 0,
   favorita: false,
   atendenteSelecionado: null,
+  ehGrupo: false,
+  participantesGrupo: null,
   criadoEm: new Date(0).toISOString(),
   atualizadoEm: new Date(0).toISOString(),
 };
@@ -1696,11 +1699,13 @@ function ConversasPageInner() {
       avisarAutomacao(`Falha ao enviar pelo ${prefixo} — veja o motivo na conversa.`);
     }
 
-    if (viaBaileys && contatoDaConversa?.whatsapp) {
+    if (viaBaileys && (contatoDaConversa?.whatsapp ?? aberta.contato)) {
+      // Grupo não tem `Contato` vinculado (não é uma pessoa) — o destinatário nesse caso é o JID
+      // do grupo, guardado direto em `aberta.contato` (ver `upsertConversaAoReceberMensagem`).
       fetch("/api/integracoes/whatsapp-nao-oficial/enviar", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ destinatario: contatoDaConversa.whatsapp, texto }),
+        body: JSON.stringify({ destinatario: contatoDaConversa?.whatsapp ?? aberta.contato, texto }),
       })
         .then(async (r) => {
           if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
@@ -3267,6 +3272,11 @@ function ConversasPageInner() {
                           <IconPin width={11} height={11} />
                         </span>
                       ) : null}
+                      {c.ehGrupo ? (
+                        <span className="wa-pin-icone" title="Grupo do WhatsApp">
+                          <IconEquipe width={11} height={11} />
+                        </span>
+                      ) : null}
                       {c.nome}
                       {ehFavorita(c) ? (
                         <span className="wa-fav-star">
@@ -3403,9 +3413,14 @@ function ConversasPageInner() {
             >
               <div className="avatar">{aberta.initials}</div>
               <div>
-                <p className="n">{aberta.nome}</p>
+                <p className="n">
+                  {aberta.ehGrupo ? <IconEquipe width={13} height={13} style={{ marginRight: 4, verticalAlign: -2 }} /> : null}
+                  {aberta.nome}
+                </p>
                 <p className="s">
-                  {aberta.canal} · {aberta.contato}
+                  {aberta.ehGrupo
+                    ? `Grupo · ${aberta.participantesGrupo?.length ?? 0} participantes`
+                    : `${aberta.canal} · ${aberta.contato}`}
                 </p>
               </div>
             </button>
@@ -3723,6 +3738,9 @@ function ConversasPageInner() {
                 <div className={`bubble ${msg.tipo}`} key={chave}>
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
+                  {aberta.ehGrupo && msg.tipo === "in" && msg.remetenteNome ? (
+                    <span className="wa-remetente-grupo">{msg.remetenteNome}</span>
+                  ) : null}
                   {msg.respondendoA ? (
                     <span className="wa-citacao">
                       <span className="wa-citacao-autor">{msg.respondendoA.autor}</span>

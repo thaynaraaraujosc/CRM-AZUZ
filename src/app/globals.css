@@ -10531,6 +10531,16 @@ button.camp-row:hover {
   color: var(--text-faint);
 }
 
+/* Nome de quem mandou, em mensagem recebida dentro de um grupo de WhatsApp — mesmo padrão visual
+   do WhatsApp de verdade (nome colorido acima do texto, um por remetente diferente). */
+.wa-remetente-grupo {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
 .chat-input-campo-coluna {
   flex: 1;
   min-width: 0;

@@ -14,8 +14,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ erro: "destinatario e texto são obrigatórios" }, { status: 400 });
   }
 
+  // JID de grupo (`<id>@g.us`) precisa ir inteiro pra Evolution — só numeral vira número de
+  // telefone pra ela, não acha o grupo. Telefone de pessoa continua só-dígitos como sempre.
+  const numeroOuJid = destinatario.endsWith("@g.us") ? destinatario : destinatario.replace(/\D/g, "");
+
   try {
-    await enviarMensagemWhatsAppNaoOficial(sessao.user.workspaceId, destinatario.replace(/\D/g, ""), texto);
+    await enviarMensagemWhatsAppNaoOficial(sessao.user.workspaceId, numeroOuJid, texto);
   } catch (erro) {
     return NextResponse.json(
       { erro: erro instanceof Error ? erro.message : "Falha ao enviar mensagem" },

@@ -167,6 +167,37 @@ export function enviarMensagemWhatsAppNaoOficial(workspaceId: string, numero: st
   return chamarEvolution(`/message/sendText/${nomeInstancia(workspaceId)}`, "POST", { number: numero, text: texto });
 }
 
+export type InfoGrupo = { nome: string; participantes: { nome: string; telefone: string }[] };
+
+/** Busca nome e participantes de um grupo de WhatsApp (JID terminado em `@g.us`) — chamado pelo
+ * webhook na primeira mensagem vista de um grupo ainda não cadastrado como `Conversa`, pra exibir
+ * nome/lista de participantes de verdade em vez de só o JID numérico. Falha em silêncio (`null`):
+ * um grupo sem esse detalhe ainda funciona (mensagens continuam chegando na thread certa), só
+ * mostra o JID como nome até a próxima tentativa. */
+export async function buscarInfoGrupo(workspaceId: string, groupJid: string): Promise<InfoGrupo | null> {
+  const instancia = nomeInstancia(workspaceId);
+  const dados = await chamarEvolution(
+    `/group/findGroupInfos/${instancia}?groupJid=${encodeURIComponent(groupJid)}`,
+    "GET",
+  ).catch(() => null);
+  if (!dados) return null;
+
+  const nome: string | undefined = dados.subject ?? dados.name;
+  const participantesBrutos: unknown[] = Array.isArray(dados.participants) ? dados.participants : [];
+  const participantes = participantesBrutos
+    .map((p) => {
+      const item = p as { id?: string; jid?: string; pushName?: string; name?: string };
+      const jid = item.id ?? item.jid;
+      const telefone = jid?.split("@")[0];
+      if (!telefone) return null;
+      return { nome: item.pushName ?? item.name ?? telefone, telefone };
+    })
+    .filter((p): p is { nome: string; telefone: string } => p !== null);
+
+  if (!nome && !participantes.length) return null;
+  return { nome: nome ?? groupJid.split("@")[0], participantes };
+}
+
 /** Busca o número (JID) do WhatsApp conectado numa instância — a Evolution não manda isso direto
  * no evento `connection.update`, só no cadastro da instância em si. Chamado pelo webhook assim que
  * o estado vira `open`, pra guardar o número junto do status `conectado`. */

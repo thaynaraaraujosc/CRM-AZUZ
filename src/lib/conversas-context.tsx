@@ -15,6 +15,8 @@ export type ConversaReal = {
   naoLidas: number;
   favorita: boolean;
   atendenteSelecionado: string | null;
+  ehGrupo: boolean;
+  participantesGrupo: { nome: string; telefone: string }[] | null;
   criadoEm: string;
   atualizadoEm: string;
 };

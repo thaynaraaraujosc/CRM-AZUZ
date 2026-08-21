@@ -37,8 +37,22 @@ export async function upsertConversaAoReceberMensagem(params: {
    * mensagem antiga não é "não lida" de verdade, incrementar o contador só gera badge enganoso.
    * Padrão `true` (mensagem chegando ao vivo). */
   contarComoNaoLida?: boolean;
+  /** Grupo de WhatsApp — `nome` já é o nome do grupo nesse caso (não de uma pessoa), `contato` já
+   * é o JID do grupo (`<id>@g.us`). Ver comentário do campo no schema. */
+  ehGrupo?: boolean;
+  participantesGrupo?: { nome: string; telefone: string }[];
 }) {
-  const { workspaceId, nome, canal, contato, origem, contatoId, contarComoNaoLida = true } = params;
+  const {
+    workspaceId,
+    nome,
+    canal,
+    contato,
+    origem,
+    contatoId,
+    contarComoNaoLida = true,
+    ehGrupo = false,
+    participantesGrupo,
+  } = params;
   await prisma.conversa.upsert({
     where: { workspaceId_nome: { workspaceId, nome } },
     create: {
@@ -51,11 +65,16 @@ export async function upsertConversaAoReceberMensagem(params: {
       contatoId,
       origem: origem ?? "Direto",
       naoLidas: contarComoNaoLida ? 1 : 0,
+      ehGrupo,
+      participantesGrupo,
     },
     // Grava/atualiza o contatoId também num update — conversa antiga criada antes dessa FK existir
-    // se auto-corrige assim que uma mensagem nova chega e o contato já foi resolvido.
+    // se auto-corrige assim que uma mensagem nova chega e o contato já foi resolvido. Participantes
+    // só sobrescreve quando veio um valor novo (busca na Evolution pode falhar em silêncio — não
+    // apaga uma lista que já tinha sido resolvida antes).
     update: {
       ...(contatoId ? { contatoId } : {}),
+      ...(participantesGrupo ? { participantesGrupo } : {}),
       ...(contarComoNaoLida ? { naoLidas: { increment: 1 }, atualizadoEm: new Date() } : {}),
     },
   });

@@ -554,6 +554,10 @@ export type ConvMensagem = {
    * conversa, não só do navegador de quem apagou. Vale só dentro do CRM: nenhuma integração atual
    * (Meta/Baileys) expõe um jeito de recolher a mensagem do lado do destinatário no WhatsApp. */
   apagadaParaTodos?: boolean;
+  /** Nome de quem mandou, só em mensagem recebida (`tipo === "in"`) DENTRO de um grupo de WhatsApp
+   * (`Conversa.ehGrupo`) — sem isso não dá pra saber qual dos participantes escreveu cada balão,
+   * igual o WhatsApp de verdade mostra. Ausente em conversa individual (não faz sentido lá). */
+  remetenteNome?: string;
 };
 
 export type Conversa = {

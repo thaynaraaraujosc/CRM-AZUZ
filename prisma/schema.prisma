@@ -86,6 +86,16 @@ model Conversa {
 
   atendenteSelecionado String?
 
+  // Grupo de WhatsApp — sem isso, o webhook tratava cada mensagem de grupo como se fosse de um
+  // contato individual (usava o nome de quem mandou como chave), então cada pessoa que falava no
+  // mesmo grupo virava uma "conversa" separada em vez de tudo cair na thread do grupo. `nome` (a
+  // coluna acima) já guarda o nome do grupo nesse caso; `contato` guarda o JID do grupo
+  // (`<id>@g.us`) — é essa dupla que identifica a thread, igual telefone identifica uma pessoa.
+  ehGrupo             Boolean @default(false)
+  // Lista de participantes ({ nome, telefone }) — buscada na Evolution API quando o grupo é visto
+  // pela primeira vez (ver `buscarInfoGrupo`), null até a primeira busca ter sucesso.
+  participantesGrupo  Json?
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
