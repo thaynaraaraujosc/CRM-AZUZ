@@ -167,6 +167,17 @@ export function enviarMensagemWhatsAppNaoOficial(workspaceId: string, numero: st
   return chamarEvolution(`/message/sendText/${nomeInstancia(workspaceId)}`, "POST", { number: numero, text: texto });
 }
 
+/** Manda um áudio (nota de voz) gravado no CRM pelo número conectado — `audioBase64` é só o
+ * conteúdo (sem o prefixo `data:audio/...;base64,` do blob gravado no navegador, tirado antes de
+ * chegar aqui). Endpoint ainda não validado contra a instância de produção (mesmo aviso de
+ * `buscarFotoPerfil`) — o `.catch` de quem chama loga o erro real se o nome/formato estiver errado. */
+export function enviarAudioWhatsAppNaoOficial(workspaceId: string, numero: string, audioBase64: string) {
+  return chamarEvolution(`/message/sendWhatsAppAudio/${nomeInstancia(workspaceId)}`, "POST", {
+    number: numero,
+    audio: audioBase64,
+  });
+}
+
 export type InfoGrupo = {
   nome: string;
   descricao: string | null;

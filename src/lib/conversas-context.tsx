@@ -33,6 +33,7 @@ type ConversasContextValue = {
   alternarArquivada: (id: string, arquivada: boolean) => void;
   atualizarStatus: (id: string, status: string) => void;
   atribuirAtendente: (id: string, atendente: string | null) => void;
+  atualizarFoto: (id: string, fotoUrl: string) => void;
 };
 
 const ConversasContext = createContext<ConversasContextValue | null>(null);
@@ -100,6 +101,14 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
     atualizarRemoto(id, { atendenteSelecionado: atendente });
   }
 
+  // Preenchida sob demanda pela tela (ver `conversas/page.tsx`) quando a conversa é aberta e ainda
+  // não tem foto salva — não passa pelo otimista+PATCH normal porque não é uma ação do usuário, é
+  // só "guardar o que a Evolution devolveu" pra não ter que buscar de novo na próxima vez.
+  function atualizarFoto(id: string, fotoUrl: string) {
+    setConversas((prev) => prev.map((c) => (c.id === id ? { ...c, fotoUrl } : c)));
+    atualizarRemoto(id, { fotoUrl });
+  }
+
   return (
     <ConversasContext.Provider
       value={{
@@ -110,6 +119,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
         alternarArquivada,
         atualizarStatus,
         atribuirAtendente,
+        atualizarFoto,
       }}
     >
       {children}

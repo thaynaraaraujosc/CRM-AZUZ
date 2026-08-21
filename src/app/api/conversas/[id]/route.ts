@@ -16,6 +16,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/conversas/
     arquivada?: boolean;
     status?: string;
     atendenteSelecionado?: string | null;
+    fotoUrl?: string | null;
   };
 
   const { count } = await prisma.conversa.updateMany({

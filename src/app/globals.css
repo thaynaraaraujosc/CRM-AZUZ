@@ -2425,6 +2425,22 @@ table.tbl tbody tr:hover td {
   border-radius: 13px;
   font-size: 12px;
   line-height: 1.4;
+  /* Sem isso, quebra de linha da mensagem original (`\n`) colapsava — um aviso de várias linhas
+     virava um parágrafo único gigante, exatamente o "texto enorme sem sentido" que a tela mostrava
+     em mensagem de grupo mais longa. */
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.wa-ler-mais {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--blue);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .bubble.in {

@@ -126,13 +126,36 @@ const IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS = 2 * 60 * 1000;
 async function processarMensagemRecebida(workspaceId: string, item: unknown) {
   const data = item as {
     key?: { id?: string; remoteJid?: string; fromMe?: boolean; participant?: string };
-    message?: { conversation?: string; extendedTextMessage?: { text?: string } };
+    message?: {
+      conversation?: string;
+      extendedTextMessage?: { text?: string };
+      audioMessage?: unknown;
+      imageMessage?: { caption?: string };
+      videoMessage?: { caption?: string };
+      documentMessage?: { caption?: string; fileName?: string };
+      stickerMessage?: unknown;
+    };
     messageTimestamp?: number;
     pushName?: string;
   };
 
   const fromMe = data.key?.fromMe === true;
-  const texto = data.message?.conversation ?? data.message?.extendedTextMessage?.text;
+  // Mídia sem legenda não tem "texto" nenhum no sentido normal — mas precisa aparecer na conversa
+  // mesmo assim (era isso que fazia áudio/imagem recebido sumir sem deixar rastro: caía direto no
+  // "sem texto reconhecível" e era descartado). O conteúdo real do arquivo não vem no payload
+  // (mídia embutida em base64 foi desligada de propósito — ver `configurarWebhook`), então por
+  // enquanto só o AVISO de que chegou mídia aparece na tela, sem o áudio/imagem em si tocável
+  // dentro do CRM; ainda dá pra abrir e ouvir/ver no próprio celular.
+  const texto =
+    data.message?.conversation ??
+    data.message?.extendedTextMessage?.text ??
+    (data.message?.audioMessage ? "🎤 Mensagem de voz (ouça no celular conectado)" : undefined) ??
+    (data.message?.imageMessage ? (data.message.imageMessage.caption || "📷 Foto (veja no celular conectado)") : undefined) ??
+    (data.message?.videoMessage ? (data.message.videoMessage.caption || "🎬 Vídeo (veja no celular conectado)") : undefined) ??
+    (data.message?.documentMessage
+      ? (data.message.documentMessage.caption ?? `📄 Documento: ${data.message.documentMessage.fileName ?? "arquivo"}`)
+      : undefined) ??
+    (data.message?.stickerMessage ? "🩶 Figurinha (veja no celular conectado)" : undefined);
   const remoteJid = data.key?.remoteJid;
   // Grupo de WhatsApp — a Evolution/Baileys segue a convenção do próprio WhatsApp: `remoteJid`
   // termina em "@g.us" pra grupo (e é o JID do GRUPO, o mesmo pra qualquer participante que

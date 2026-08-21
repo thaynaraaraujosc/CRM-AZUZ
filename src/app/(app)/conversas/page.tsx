@@ -487,6 +487,7 @@ function ConversasPageInner() {
     alternarArquivada: alternarArquivadaConversa,
     atualizarStatus: atualizarStatusConversa,
     atribuirAtendente: atribuirAtendenteConversa,
+    atualizarFoto: atualizarFotoConversa,
   } = useConversas();
   const { membros: membrosEquipe } = useEquipe();
   const motivosPerdaBase = useMotivosPerda();
@@ -783,6 +784,7 @@ function ConversasPageInner() {
       .catch(() => setFotoParticipante(null))
       .finally(() => setCarregandoFotoParticipante(false));
   }, [participanteAberto]);
+
   useFecharAoClicarFora(contatoDetalheRef, !!contatoDetalheAberto, () => setContatoDetalheAberto(null));
 
   /** Força um recarregamento da lista — usado se as mensagens do celular conectado saírem de sincronia com o servidor. */
@@ -847,10 +849,27 @@ function ConversasPageInner() {
 
   const aberta = conversas.find((c) => c.id === selectedId) ?? conversas[0] ?? CONVERSA_VAZIA;
 
+  // Busca a foto da conversa aberta quando ela ainda não tem uma salva — cobre o caso de conversa
+  // antiga (criada antes dessa funcionalidade existir) ou de a busca automática do webhook ter
+  // falhado silenciosamente na hora: agora só abrir a conversa já tenta de novo, sem depender de
+  // esperar a próxima mensagem chegar.
+  useEffect(() => {
+    if (aberta.fotoUrl || aberta.canal !== "WhatsApp" || !aberta.contato) return;
+    fetch(`/api/integracoes/whatsapp-nao-oficial/foto-perfil?numero=${encodeURIComponent(aberta.contato)}`)
+      .then((r) => r.json())
+      .then((dados: { fotoUrl?: string | null }) => {
+        if (dados.fotoUrl) atualizarFotoConversa(aberta.id, dados.fotoUrl);
+      })
+      .catch(() => {});
+  }, [aberta.id, aberta.fotoUrl, aberta.canal, aberta.contato, atualizarFotoConversa]);
+
   // Renderizar de uma vez o histórico inteiro de um contato com muita mensagem trava a tela (DOM
   // gigante, cada bolha com menu/portal próprio) — mostra só as últimas por padrão, com botão pra
   // carregar mais sob demanda. Reseta pro padrão sempre que troca de conversa.
   const [limiteMensagensVisiveis, setLimiteMensagensVisiveis] = useState(200);
+  // Mensagem de texto muito longa (mais comum em grupo grande, tipo aviso de condomínio) tomava a
+  // tela inteira de rolagem — trunca com "Ler mais/menos", igual qualquer app de mensagem faz.
+  const [mensagensExpandidas, setMensagensExpandidas] = useState<Set<string>>(() => new Set());
   const idConversaAnteriorRef = useRef(aberta.id);
   if (idConversaAnteriorRef.current !== aberta.id) {
     idConversaAnteriorRef.current = aberta.id;
@@ -1506,16 +1525,44 @@ function ConversasPageInner() {
       // `extras` de MensagemExtra) em vez de um blob: URL que só existe nesta aba do navegador.
       const url = await lerComoDataUrl(audioPreview.blob);
       URL.revokeObjectURL(audioPreview.url);
+      const viaBaileys = contatoUsaWhatsappNaoOficial();
       adicionarMensagem({
         tipo: "out",
         texto: "",
         hora: horaAgora(),
+        canal: viaBaileys ? "whatsapp_nao_oficial" : undefined,
         audio: {
           url,
           duracao: audioPreview.duracao,
           waveform: audioPreview.waveform,
         },
       });
+      // Envio real do áudio — sem isso, a bolha aparecia na tela do CRM mas nunca saía de verdade
+      // pro WhatsApp (bug real: gravar/mandar áudio não fazia nenhuma chamada de API, só guardava
+      // localmente). Só a integração não oficial (Evolution) por enquanto — a oficial (Meta) exige
+      // um fluxo de upload de mídia em duas etapas, ainda não implementado.
+      const destinatarioAudio = contatoDaConversa?.whatsapp ?? aberta.contato;
+      if (viaBaileys && destinatarioAudio) {
+        const audioBase64 = url.split(",")[1] ?? url;
+        fetch("/api/integracoes/whatsapp-nao-oficial/enviar", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ destinatario: destinatarioAudio, audioBase64 }),
+        })
+          .then(async (r) => {
+            if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+          })
+          .catch((erro) => {
+            const motivo = erro instanceof Error && erro.message ? erro.message : "motivo desconhecido";
+            adicionarMensagem({ tipo: "system", texto: `⚠️ Falha ao enviar áudio: ${motivo}`, hora: horaAgora() });
+          });
+      } else if (!viaBaileys) {
+        adicionarMensagem({
+          tipo: "system",
+          texto: "⚠️ Envio de áudio pela API oficial (Meta) ainda não é suportado — só pelo WhatsApp via QR Code.",
+          hora: horaAgora(),
+        });
+      }
       setAudioPreview(null);
       setAudioSegundos(0);
       setAudioNiveis([]);
@@ -3254,16 +3301,14 @@ function ConversasPageInner() {
                 {f.label}
               </button>
             ))}
-            {conversas.some((c) => c.arquivada) ? (
-              <button
-                type="button"
-                className={`wa-filter-chip${mostrarArquivadas ? " active" : ""}`}
-                aria-pressed={mostrarArquivadas}
-                onClick={() => setMostrarArquivadas((v) => !v)}
-              >
-                Arquivadas ({conversas.filter((c) => c.arquivada).length})
-              </button>
-            ) : null}
+            <button
+              type="button"
+              className={`wa-filter-chip${mostrarArquivadas ? " active" : ""}`}
+              aria-pressed={mostrarArquivadas}
+              onClick={() => setMostrarArquivadas((v) => !v)}
+            >
+              Arquivadas ({conversas.filter((c) => c.arquivada).length})
+            </button>
           </div>
 
           <div className="wa-list-rows">
@@ -3806,7 +3851,20 @@ function ConversasPageInner() {
                       <span className="wa-citacao-texto">{msg.respondendoA.texto}</span>
                     </span>
                   ) : null}
-                  {msg.texto}
+                  {msg.texto.length > 500 && !mensagensExpandidas.has(chave) ? (
+                    <>
+                      {msg.texto.slice(0, 500)}…{" "}
+                      <button
+                        type="button"
+                        className="wa-ler-mais"
+                        onClick={() => setMensagensExpandidas((prev) => new Set(prev).add(chave))}
+                      >
+                        Ler mais
+                      </button>
+                    </>
+                  ) : (
+                    msg.texto
+                  )}
                   <span className="tm">
                     {msg.hora}
                     {msg.tipo === "out" ? (
