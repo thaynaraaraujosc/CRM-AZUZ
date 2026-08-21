@@ -860,24 +860,30 @@ function ConversasPageInner() {
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
   const naoOficialConectado = naoOficial.estado?.status === "conectado";
+
+  // Conversa de WhatsApp sem nenhum canal conectado (nem Meta, nem QR Code) some da lista — volta a
+  // aparecer sozinha quando reconectar (não apaga nada do banco, só deixa de mostrar; ver pedido
+  // explícito: ao desconectar, nem a conversa aberta no momento pode continuar visível). Com só UMA
+  // das duas integrações ativa, mostra só as conversas dessa integração (uma conta só tem uma
+  // conexão de WhatsApp por vez, então misturar não faz sentido) — a "origem" de cada conversa vem
+  // da última mensagem com canal marcado (ver `conversaUsaWhatsappNaoOficial`); sem nenhuma
+  // mensagem com canal marcado, conta como Meta (comportamento antigo, de antes da integração não
+  // oficial existir).
+  function conversaEscondidaPeloWhatsapp(c: ConversaReal): boolean {
+    if (c.canal !== "WhatsApp") return false;
+    if (statusWhatsappPronto && !whatsappConectado) return true;
+    if (statusWhatsappPronto && metaWhatsappConectado && !naoOficialConectado && conversaUsaWhatsappNaoOficial(c.nome)) {
+      return true;
+    }
+    if (statusWhatsappPronto && naoOficialConectado && !metaWhatsappConectado && !conversaUsaWhatsappNaoOficial(c.nome)) {
+      return true;
+    }
+    return false;
+  }
+
   const conversasFiltradas = conversas
     .filter((c) => {
-      // Conversa de WhatsApp sem nenhum canal conectado (nem Meta, nem QR Code) some da lista —
-      // volta a aparecer sozinha quando reconectar (não apaga nada, só deixa de listar).
-      if (c.canal === "WhatsApp") {
-        if (statusWhatsappPronto && !whatsappConectado) return false;
-        // Com só UMA das duas integrações ativa, a lista mostra só as conversas dessa integração
-        // (uma conta só tem uma conexão de WhatsApp por vez, então misturar não faz sentido) — a
-        // "origem" de cada conversa vem da última mensagem com canal marcado (ver
-        // `conversaUsaWhatsappNaoOficial`); sem nenhuma mensagem com canal marcado, conta como Meta
-        // (comportamento antigo, de antes da integração não oficial existir).
-        if (statusWhatsappPronto && metaWhatsappConectado && !naoOficialConectado && conversaUsaWhatsappNaoOficial(c.nome)) {
-          return false;
-        }
-        if (statusWhatsappPronto && naoOficialConectado && !metaWhatsappConectado && !conversaUsaWhatsappNaoOficial(c.nome)) {
-          return false;
-        }
-      }
+      if (conversaEscondidaPeloWhatsapp(c)) return false;
       if (!mostrarArquivadas && c.arquivada) return false;
       if (mostrarArquivadas) return c.arquivada;
       if (filtroConversa === "nao-lidas" && (!c.naoLidas || lidas.has(c.id))) return false;
@@ -891,7 +897,9 @@ function ConversasPageInner() {
     })
     .sort((a, b) => Number(fixadas.has(b.id)) - Number(fixadas.has(a.id)));
 
-  const aberta = conversas.find((c) => c.id === selectedId) ?? conversas[0] ?? CONVERSA_VAZIA;
+  const abertaCandidata = conversas.find((c) => c.id === selectedId) ?? conversas[0];
+  const aberta =
+    abertaCandidata && !conversaEscondidaPeloWhatsapp(abertaCandidata) ? abertaCandidata : CONVERSA_VAZIA;
 
   // Busca a foto de TODAS as conversas de WhatsApp sem uma salva ainda — não só a aberta. Sem isso
   // a foto só aparecia (e sumia de novo, ao trocar de conversa e voltar) porque cada abertura
