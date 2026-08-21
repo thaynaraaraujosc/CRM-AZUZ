@@ -28,8 +28,15 @@ export async function POST() {
 
   const metadados = await lerMetadados(workspaceId);
   let historico = metadados.historico as HistoricoSync | undefined;
-  if (!historico || historico.status !== "em_andamento") {
-    return NextResponse.json({ historico: historico ?? null });
+  // Sem `historico` nenhum ainda: normalmente só acontece antes da PRIMEIRA conexão (o webhook
+  // inicia sozinho no evento `connection.update`/`open`) — mas quem já estava conectado ANTES
+  // dessa funcionalidade existir nunca recebeu esse evento de novo, então nunca ganhou uma
+  // sincronização. Iniciar aqui também (sob demanda, chamado pelo próprio front ao detectar que
+  // está conectado mas sem histórico) cobre esse caso sem exigir desconectar e reconectar.
+  if (!historico) {
+    historico = { status: "em_andamento", totalChats: null, chatsProcessados: 0, filaRestante: null };
+  } else if (historico.status !== "em_andamento") {
+    return NextResponse.json({ historico });
   }
 
   try {

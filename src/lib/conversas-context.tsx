@@ -35,6 +35,9 @@ type ConversasContextValue = {
   atribuirAtendente: (id: string, atendente: string | null) => void;
   atualizarFoto: (id: string, fotoUrl: string) => void;
   criarConversaIndividual: (nome: string, contato: string, canal?: string) => Promise<ConversaReal>;
+  /** Força buscar as conversas de novo agora, sem esperar o próximo ciclo do polling — usado pelo
+   * botão de atualizar da tela de Conversas. */
+  recarregar: () => void;
 };
 
 const ConversasContext = createContext<ConversasContextValue | null>(null);
@@ -72,20 +75,21 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
   const [conversas, setConversas] = useState<ConversaReal[]>([]);
   const [carregando, setCarregando] = useState(true);
 
+  function recarregar() {
+    return fetch("/api/conversas")
+      .then((r) => r.json())
+      .then((dados: ConversaReal[]) => setConversas((prev) => mesclarConversas(prev, dados)))
+      .catch((erro) => console.error("Falha ao carregar conversas da API:", erro));
+  }
+
   useEffect(() => {
-    function buscar() {
-      return fetch("/api/conversas")
-        .then((r) => r.json())
-        .then((dados: ConversaReal[]) => setConversas((prev) => mesclarConversas(prev, dados)))
-        .catch((erro) => console.error("Falha ao carregar conversas da API:", erro));
-    }
-    buscar().finally(() => setCarregando(false));
+    recarregar().finally(() => setCarregando(false));
 
     // Polling — mensagem nova (do webhook do WhatsApp/Instagram) precisa aparecer sozinha, sem
     // depender de recarregar a página, igual todo app de mensagem de verdade. Só busca quando a
     // aba está visível, pra não gastar requisição à toa com o CRM aberto em segundo plano.
     const intervalo = setInterval(() => {
-      if (document.visibilityState === "visible") buscar();
+      if (document.visibilityState === "visible") recarregar();
     }, 5000);
     return () => clearInterval(intervalo);
   }, []);
@@ -155,6 +159,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
         atribuirAtendente,
         atualizarFoto,
         criarConversaIndividual,
+        recarregar,
       }}
     >
       {children}

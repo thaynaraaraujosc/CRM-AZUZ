@@ -46,9 +46,16 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
   // sincronização pausa) — retoma sozinha da próxima vez que alguém abrir, porque o progresso já
   // está salvo no servidor (`Integracao.metadados.historico`), não perdido.
   const sincronizandoRef = useRef(false);
+  const historicoStatus = estado?.metadados?.historico?.status;
+  const temHistorico = Boolean(estado?.metadados?.historico);
+  const conectada = estado?.status === "conectado";
   useEffect(() => {
-    const emAndamento = estado?.metadados?.historico?.status === "em_andamento";
-    if (!emAndamento || sincronizandoRef.current) return;
+    // Dispara também quando NUNCA teve histórico nenhum (não só quando já está "em_andamento") —
+    // cobre quem já estava conectado ANTES dessa sincronização existir: o gatilho normal
+    // (`connection.update`/`open` no webhook) só dispara numa conexão nova, não pra quem já tava
+    // conectado, então sem isso essa conta nunca ganhava a sincronização sozinha.
+    const deveComecar = historicoStatus === "em_andamento" || (conectada && !temHistorico);
+    if (!deveComecar || sincronizandoRef.current) return;
     sincronizandoRef.current = true;
     let cancelado = false;
 
@@ -78,7 +85,7 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     return () => {
       cancelado = true;
     };
-  }, [estado?.metadados?.historico?.status]);
+  }, [historicoStatus, temHistorico, conectada]);
 
   /** Cria a instância na Evolution (se ainda não existir) e busca o primeiro QR Code — chamado
    * quando a pessoa clica em "Conectar"; depois disso, o polling e os eventos de webhook cuidam do

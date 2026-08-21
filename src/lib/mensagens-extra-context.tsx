@@ -26,6 +26,9 @@ import type { ConvMensagem } from "@/lib/data";
 type MensagensExtraContextValue = {
   mensagensExtraPorContato: Record<string, ConvMensagem[]>;
   setMensagensExtraPorContato: Dispatch<SetStateAction<Record<string, ConvMensagem[]>>>;
+  /** Força buscar as mensagens de novo agora, sem esperar o próximo ciclo do polling — usado pelo
+   * botão de atualizar da tela de Conversas. */
+  recarregar: () => void;
 };
 
 const MensagensExtraContext = createContext<MensagensExtraContextValue | null>(null);
@@ -140,24 +143,25 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
   // próximo PUT. Atualizado depois de todo GET/PUT bem-sucedido, nunca durante o merge otimista.
   const ultimoSincronizadoRef = useRef<Record<string, ConvMensagem[]>>({});
 
+  function recarregar() {
+    return fetch("/api/mensagens-extra")
+      .then((r) => r.json())
+      .then((dados: Record<string, ConvMensagem[]>) => {
+        ultimoSincronizadoRef.current = dados;
+        setMensagensExtraPorContato((prev) => fundirMensagensPorContato(prev, dados));
+      })
+      .catch((erro) => console.error("Falha ao carregar mensagens extras da API:", erro));
+  }
+
   useEffect(() => {
-    function buscar() {
-      return fetch("/api/mensagens-extra")
-        .then((r) => r.json())
-        .then((dados: Record<string, ConvMensagem[]>) => {
-          ultimoSincronizadoRef.current = dados;
-          setMensagensExtraPorContato((prev) => fundirMensagensPorContato(prev, dados));
-        })
-        .catch((erro) => console.error("Falha ao carregar mensagens extras da API:", erro));
-    }
-    buscar().finally(() => {
+    recarregar().finally(() => {
       carregadoRef.current = true;
     });
 
     // Polling — mensagem nova (do webhook do WhatsApp/Instagram) precisa aparecer sozinha, sem
     // depender de recarregar a página, igual todo app de mensagem de verdade.
     const intervalo = setInterval(() => {
-      if (document.visibilityState === "visible") buscar();
+      if (document.visibilityState === "visible") recarregar();
     }, 5000);
     return () => clearInterval(intervalo);
   }, []);
@@ -178,7 +182,9 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
   }, [mensagensExtraPorContato]);
 
   return (
-    <MensagensExtraContext.Provider value={{ mensagensExtraPorContato, setMensagensExtraPorContato }}>
+    <MensagensExtraContext.Provider
+      value={{ mensagensExtraPorContato, setMensagensExtraPorContato, recarregar }}
+    >
       {children}
     </MensagensExtraContext.Provider>
   );

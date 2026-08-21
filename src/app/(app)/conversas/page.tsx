@@ -510,6 +510,7 @@ function ConversasPageInner() {
     atribuirAtendente: atribuirAtendenteConversa,
     atualizarFoto: atualizarFotoConversa,
     criarConversaIndividual,
+    recarregar: recarregarConversas,
   } = useConversas();
   const { membros: membrosEquipe } = useEquipe();
   const motivosPerdaBase = useMotivosPerda();
@@ -810,11 +811,15 @@ function ConversasPageInner() {
 
   useFecharAoClicarFora(contatoDetalheRef, !!contatoDetalheAberto, () => setContatoDetalheAberto(null));
 
-  /** Força um recarregamento da lista — usado se as mensagens do celular conectado saírem de sincronia com o servidor. */
+  /** Busca conversas e mensagens de novo AGORA, sem esperar o próximo ciclo do polling de 5s — não
+   * "conecta o WhatsApp" (isso é feito em Configurações), só traz o que já chegou no servidor mais
+   * rápido pra tela. Não força a Evolution a reenviar nada. */
   function sincronizarConversas() {
     if (sincronizando) return;
     setSincronizando(true);
-    setTimeout(() => setSincronizando(false), 900);
+    Promise.allSettled([recarregarConversas(), recarregarMensagens()]).finally(() =>
+      setSincronizando(false),
+    );
   }
 
   const [atendenteTopAberto, setAtendenteTopAberto] = useState(false);
@@ -833,7 +838,11 @@ function ConversasPageInner() {
   // (WhatsApp conectado + conversa do canal WhatsApp na lista) o filtro chega a chamar a função
   // que usa essa variável. Bug real que derrubava a tela de Conversas (e, por ela abrir de novo a
   // cada navegação, o app inteiro) só depois de conectar o WhatsApp.
-  const { mensagensExtraPorContato, setMensagensExtraPorContato } = useMensagensExtra();
+  const {
+    mensagensExtraPorContato,
+    setMensagensExtraPorContato,
+    recarregar: recarregarMensagens,
+  } = useMensagensExtra();
 
   const atendentesDisponiveis = membrosEquipe.map((m) => m.nome);
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
