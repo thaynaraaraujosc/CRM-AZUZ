@@ -5,6 +5,7 @@ import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado, bus
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
+import { iniciarHistoricoSeNecessario } from "@/lib/integracoes/historico-whatsapp";
 
 /** Formato de evento que a Evolution API manda pro webhook configurado na instância — mesmo body
  * pra todo tipo de evento, o que muda é `event` e o formato de `data`. */
@@ -14,11 +15,21 @@ type PayloadEvolution = {
   data: Record<string, unknown>;
 };
 
+/** Mantém `historico` (progresso da sincronização sob demanda, ver `historico-whatsapp.ts`) intacto
+ * — sem isso, toda troca de status (QR renovado, reconexão) apagaria o progresso já feito, porque
+ * `metadados` é uma coluna Json substituída inteira, não mesclada campo a campo pelo Prisma. */
 async function atualizarStatus(
   workspaceId: string,
   status: "aguardando_qr" | "conectado" | "desconectado",
   extra: { qrDataUrl?: string | null; numero?: string | null } = {},
 ) {
+  const atual = await prisma.integracao.findUnique({
+    where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+    select: { metadados: true },
+  });
+  const metadadosAtuais = (atual?.metadados as Record<string, unknown>) ?? {};
+  const metadados = { ...metadadosAtuais, qrDataUrl: extra.qrDataUrl ?? null, numero: extra.numero ?? null };
+
   await prisma.integracao.upsert({
     where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
     create: {
@@ -26,13 +37,9 @@ async function atualizarStatus(
       workspaceId,
       provedor: "whatsapp_nao_oficial",
       status,
-      metadados: { qrDataUrl: extra.qrDataUrl ?? null, numero: extra.numero ?? null },
+      metadados,
     },
-    update: {
-      status,
-      metadados: { qrDataUrl: extra.qrDataUrl ?? null, numero: extra.numero ?? null },
-      erroMensagem: null,
-    },
+    update: { status, metadados, erroMensagem: null },
   });
 }
 
@@ -81,6 +88,11 @@ export async function POST(request: Request) {
     if (estado === "open") {
       const numero = await buscarNumeroConectado(workspaceId).catch(() => null);
       await atualizarStatus(workspaceId, "conectado", { numero });
+      // Só a PRIMEIRA vez que esse workspace conecta — reconexão (celular caiu e voltou) não deve
+      // reprocessar o histórico inteiro de novo, só as mensagens novas (via `messages.upsert` normal).
+      await iniciarHistoricoSeNecessario(workspaceId).catch((erro) =>
+        console.error("[webhook evolution] Falha ao iniciar sincronização de histórico:", erro),
+      );
     } else if (estado === "close") {
       await atualizarStatus(workspaceId, "desconectado");
     }
@@ -120,10 +132,16 @@ export async function POST(request: Request) {
 /** Mensagem mandada/recebida há mais que isso é sincronização de histórico (conexão inicial ou
  * reconexão trazendo o backlog inteiro do celular), não mensagem ao vivo — não deve virar
  * conversa/lead novo no CRM. Único jeito confiável de filtrar isso, já que a Evolution nem sempre
- * marca `type` no evento (ver acima): comparar o timestamp da própria mensagem com agora. */
+ * marca `type` no evento (ver acima): comparar o timestamp da própria mensagem com agora. Ignorado
+ * quando `permitirHistorico` é `true` (chamado pela sincronização de histórico sob demanda, ver
+ * `POST .../sincronizar-historico` — lá o objetivo É trazer mensagem antiga). */
 const IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS = 2 * 60 * 1000;
 
-async function processarMensagemRecebida(workspaceId: string, item: unknown) {
+export async function processarMensagemRecebida(
+  workspaceId: string,
+  item: unknown,
+  opcoes: { permitirHistorico?: boolean } = {},
+) {
   const data = item as {
     key?: { id?: string; remoteJid?: string; fromMe?: boolean; participant?: string };
     message?: {
@@ -173,7 +191,7 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
   }
 
   const timestampMs = (data.messageTimestamp ?? Math.floor(Date.now() / 1000)) * 1000;
-  if (Date.now() - timestampMs > IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS) return; // sincronização de histórico, ignora
+  if (!opcoes.permitirHistorico && Date.now() - timestampMs > IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS) return;
 
   const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: data.key.id } });
   if (jaExiste) return;

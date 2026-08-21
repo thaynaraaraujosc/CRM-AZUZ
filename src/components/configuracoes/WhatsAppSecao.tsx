@@ -3,8 +3,30 @@
 import { useState } from "react";
 
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
-import { useIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
+import { useIntegracaoNaoOficial, type HistoricoSync } from "./useIntegracaoNaoOficial";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
+
+/** Progresso da sincronização de histórico sob demanda (ver `sincronizar-historico/route.ts`) —
+ * "Sincronizando conversas antigas: 34 de 180" enquanto roda, some sozinho quando termina. */
+function SincronizacaoHistoricoStatus({ historico }: { historico: HistoricoSync }) {
+  if (historico.status === "concluido") return null;
+  if (historico.status === "erro") {
+    return (
+      <p className="hint" style={{ color: "var(--danger)", marginTop: 10 }}>
+        ⚠ Não consegui terminar de trazer o histórico de conversas ({historico.erro ?? "erro desconhecido"}).
+        As mensagens novas continuam chegando normal.
+      </p>
+    );
+  }
+  const total = historico.totalChats;
+  return (
+    <p className="hint" style={{ marginTop: 10 }}>
+      Trazendo o histórico de conversas do celular
+      {total != null ? ` — ${historico.chatsProcessados} de ${total}` : "…"}
+      {total != null ? "." : ""} Pode continuar usando o CRM normal enquanto isso.
+    </p>
+  );
+}
 
 /** WhatsApp (Configurações > Integrações) — só conecta o número, igual Instagram e Facebook. As
  * abas de Atendimento/Mensagens/Compatibilidade/Horários que existiam aqui saíram: eram só
@@ -43,21 +65,26 @@ export function WhatsAppSecao() {
         ) : null}
 
         {numeroConectado ? (
-          <div className="card" style={{ padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div>
-              <p className="int-title" style={{ margin: 0 }}>
-                {metaConectada ? "WhatsApp Business (API oficial da Meta)" : "WhatsApp (API não oficial, QR Code)"}
-              </p>
-              <p className="int-sub" style={{ margin: "4px 0 0" }}>Conectado — {numeroConectado}</p>
+          <div className="card" style={{ padding: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <div>
+                <p className="int-title" style={{ margin: 0 }}>
+                  {metaConectada ? "WhatsApp Business (API oficial da Meta)" : "WhatsApp (API não oficial, QR Code)"}
+                </p>
+                <p className="int-sub" style={{ margin: "4px 0 0" }}>Conectado — {numeroConectado}</p>
+              </div>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={metaConectada ? desconectar : naoOficial.desconectar}
+                disabled={(metaConectada && desconectando) || (!metaConectada && naoOficial.desconectando)}
+              >
+                {(metaConectada && desconectando) || (!metaConectada && naoOficial.desconectando) ? "Desconectando…" : "Desconectar"}
+              </button>
             </div>
-            <button
-              type="button"
-              className="btn danger"
-              onClick={metaConectada ? desconectar : naoOficial.desconectar}
-              disabled={(metaConectada && desconectando) || (!metaConectada && naoOficial.desconectando)}
-            >
-              {(metaConectada && desconectando) || (!metaConectada && naoOficial.desconectando) ? "Desconectando…" : "Desconectar"}
-            </button>
+            {!metaConectada && naoOficial.estado?.metadados?.historico ? (
+              <SincronizacaoHistoricoStatus historico={naoOficial.estado.metadados.historico} />
+            ) : null}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

@@ -274,3 +274,58 @@ export async function buscarNumeroConectado(workspaceId: string): Promise<string
   if (!owner) return null;
   return owner.split("@")[0] ?? null;
 }
+
+export type ChatResumo = { remoteJid: string; ehGrupo: boolean };
+
+/**
+ * Lista TODAS as conversas já existentes no celular conectado — usado só pela sincronização de
+ * histórico sob demanda (ver `POST .../sincronizar-historico`), nunca pelo fluxo normal de
+ * mensagem ao vivo. Diferente do `syncFullHistory` da Evolution (desligado de propósito, ver
+ * `desativarSincronizacaoDeHistorico` — foi o que floodou o banco com 41 mil mensagens de uma vez
+ * numa conexão real): aqui é o CRM que PEDE a lista, em vez da Evolution EMPURRAR tudo sozinha, o
+ * que permite processar em lotes pequenos e controlados. Endpoint ainda não validado contra a
+ * instância de produção — o `.catch` de quem chama loga o erro real se o formato estiver errado.
+ */
+export async function buscarChats(workspaceId: string): Promise<ChatResumo[]> {
+  const instancia = nomeInstancia(workspaceId);
+  const dados = await chamarEvolution(`/chat/findChats/${instancia}`, "POST", {}).catch((erro) => {
+    console.error("[evolution] Falha ao buscar lista de conversas pra sincronização de histórico:", erro);
+    return null;
+  });
+  const lista: unknown[] = Array.isArray(dados) ? dados : [];
+  return lista
+    .map((item) => {
+      const c = item as { id?: string; remoteJid?: string };
+      const remoteJid = c.id ?? c.remoteJid;
+      if (!remoteJid) return null;
+      return { remoteJid, ehGrupo: remoteJid.endsWith("@g.us") };
+    })
+    .filter((c): c is ChatResumo => c !== null);
+}
+
+/**
+ * Busca as últimas mensagens de UMA conversa (uma chamada por chat, deliberadamente — nunca "tudo
+ * de uma vez") — cada item devolvido tem o mesmo formato bruto do Baileys que já chega ao vivo
+ * pelo webhook (`messages.upsert`), pra poder ser processado pela mesma função
+ * (`processarMensagemRecebida`) sem duplicar a lógica de extrair texto/mídia/remetente. Limite
+ * padrão de 200 cobre meses de histórico numa conta comercial sem trazer a conversa inteira de uma
+ * vez. Endpoint ainda não validado contra a instância de produção.
+ */
+export async function buscarMensagensDoChat(
+  workspaceId: string,
+  remoteJid: string,
+  limite = 200,
+): Promise<unknown[]> {
+  const instancia = nomeInstancia(workspaceId);
+  const dados = await chamarEvolution(`/chat/findMessages/${instancia}`, "POST", {
+    where: { key: { remoteJid } },
+    limit: limite,
+  }).catch((erro) => {
+    console.error(`[evolution] Falha ao buscar histórico de mensagens de ${remoteJid}:`, erro);
+    return null;
+  });
+  if (Array.isArray(dados)) return dados;
+  if (Array.isArray(dados?.messages)) return dados.messages;
+  if (Array.isArray(dados?.records)) return dados.records;
+  return [];
+}
