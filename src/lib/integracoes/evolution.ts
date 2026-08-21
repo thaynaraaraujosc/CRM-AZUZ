@@ -239,6 +239,27 @@ export async function buscarFotoPerfil(workspaceId: string, jidOuNumero: string)
   return dados?.profilePictureUrl ?? null;
 }
 
+/** Busca o conteúdo real (base64 + tipo) de uma mídia já recebida — mídia embutida no webhook em
+ * si foi desligada de propósito (ver `configurarWebhook`), então uma mensagem de áudio/imagem/etc.
+ * chega só com metadado; pra tocar/ver o conteúdo de verdade dentro do CRM é preciso pedir esse
+ * conteúdo à parte, sob demanda (só quando a pessoa clica pra carregar, não pra toda mídia que
+ * chega). Endpoint ainda não validado contra a instância de produção — o `.catch` de quem chama
+ * loga o erro real se o nome/formato estiver errado. */
+export async function buscarMidiaBase64(
+  workspaceId: string,
+  chave: { remoteJid: string; id: string; fromMe: boolean },
+): Promise<{ base64: string; mimetype: string } | null> {
+  const instancia = nomeInstancia(workspaceId);
+  const dados = await chamarEvolution(`/chat/getBase64FromMediaMessage/${instancia}`, "POST", {
+    message: { key: chave },
+  }).catch((erro) => {
+    console.error(`[evolution] Falha ao buscar mídia da mensagem ${chave.id}:`, erro);
+    return null;
+  });
+  if (!dados?.base64) return null;
+  return { base64: dados.base64, mimetype: dados.mimetype ?? "audio/ogg" };
+}
+
 /** Busca o número (JID) do WhatsApp conectado numa instância — a Evolution não manda isso direto
  * no evento `connection.update`, só no cadastro da instância em si. Chamado pelo webhook assim que
  * o estado vira `open`, pra guardar o número junto do status `conectado`. */

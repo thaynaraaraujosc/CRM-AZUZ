@@ -192,6 +192,27 @@ function lerComoDataUrl(file: File | Blob): Promise<string> {
   });
 }
 
+const REGEX_URL = /(https?:\/\/[^\s]+)/g;
+
+/** Detecta link (http/https) dentro do texto de uma mensagem e transforma em `<a>` clicável, que
+ * abre numa aba nova — sem isso, um link mandado ou recebido na conversa era só texto plano, sem
+ * como abrir de dentro do CRM. */
+function renderizarTextoComLinks(texto: string): ReactNode[] {
+  // `String.split` com um grupo de captura intercala os pedaços não casados com os casados — índice
+  // ímpar é sempre a URL capturada, par é texto comum. Mais seguro que re-testar a regex global (que
+  // mantém `lastIndex` entre chamadas e dá resultado errado se reusada assim).
+  const partes = texto.split(REGEX_URL);
+  return partes.map((parte, i) =>
+    i % 2 === 1 ? (
+      <a key={i} href={parte} target="_blank" rel="noopener noreferrer" className="wa-link-mensagem">
+        {parte}
+      </a>
+    ) : (
+      <span key={i}>{parte}</span>
+    ),
+  );
+}
+
 /** Ícone + rótulo + descrição de acessibilidade do estado real de uma mensagem enviada. */
 function StatusMensagemIcone({
   status,
@@ -849,19 +870,39 @@ function ConversasPageInner() {
 
   const aberta = conversas.find((c) => c.id === selectedId) ?? conversas[0] ?? CONVERSA_VAZIA;
 
-  // Busca a foto da conversa aberta quando ela ainda não tem uma salva — cobre o caso de conversa
-  // antiga (criada antes dessa funcionalidade existir) ou de a busca automática do webhook ter
-  // falhado silenciosamente na hora: agora só abrir a conversa já tenta de novo, sem depender de
-  // esperar a próxima mensagem chegar.
+  // Busca a foto de TODAS as conversas de WhatsApp sem uma salva ainda — não só a aberta. Sem isso
+  // a foto só aparecia (e sumia de novo, ao trocar de conversa e voltar) porque cada abertura
+  // buscava de novo em vez de ficar resolvido pra sempre; rodando uma vez pra lista inteira aqui,
+  // qualquer conversa já chega com a foto pronta assim que a lista carrega. `tentadasRef` evita
+  // tentar de novo a mesma conversa write nesta sessão (WhatsApp sem foto definida é normal, não
+  // precisa martelar a Evolution de novo a cada render).
+  const fotosTentadasRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (aberta.fotoUrl || aberta.canal !== "WhatsApp" || !aberta.contato) return;
-    fetch(`/api/integracoes/whatsapp-nao-oficial/foto-perfil?numero=${encodeURIComponent(aberta.contato)}`)
-      .then((r) => r.json())
-      .then((dados: { fotoUrl?: string | null }) => {
-        if (dados.fotoUrl) atualizarFotoConversa(aberta.id, dados.fotoUrl);
-      })
-      .catch(() => {});
-  }, [aberta.id, aberta.fotoUrl, aberta.canal, aberta.contato, atualizarFotoConversa]);
+    const pendentes = conversas.filter(
+      (c) => !c.fotoUrl && c.canal === "WhatsApp" && c.contato && !fotosTentadasRef.current.has(c.id),
+    );
+    if (!pendentes.length) return;
+    let cancelado = false;
+    (async () => {
+      for (const c of pendentes) {
+        if (cancelado) return;
+        fotosTentadasRef.current.add(c.id);
+        try {
+          const r = await fetch(`/api/integracoes/whatsapp-nao-oficial/foto-perfil?numero=${encodeURIComponent(c.contato!)}`);
+          const dados = (await r.json()) as { fotoUrl?: string | null };
+          if (dados.fotoUrl) atualizarFotoConversa(c.id, dados.fotoUrl);
+        } catch {
+          // segue pra próxima — uma falha isolada não deve travar o resto da lista
+        }
+        // Pausa curta entre chamadas — não é urgente, e evita virar uma rajada de dezenas de
+        // chamadas simultâneas pra Evolution assim que a lista de conversas carrega.
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [conversas, atualizarFotoConversa]);
 
   // Renderizar de uma vez o histórico inteiro de um contato com muita mensagem trava a tela (DOM
   // gigante, cada bolha com menu/portal próprio) — mostra só as últimas por padrão, com botão pra
@@ -870,6 +911,8 @@ function ConversasPageInner() {
   // Mensagem de texto muito longa (mais comum em grupo grande, tipo aviso de condomínio) tomava a
   // tela inteira de rolagem — trunca com "Ler mais/menos", igual qualquer app de mensagem faz.
   const [mensagensExpandidas, setMensagensExpandidas] = useState<Set<string>>(() => new Set());
+  // Ids de mensagem com o botão "Carregar áudio" em andamento — evita clique duplo enquanto busca.
+  const [midiasCarregando, setMidiasCarregando] = useState<Set<string>>(() => new Set());
   const idConversaAnteriorRef = useRef(aberta.id);
   if (idConversaAnteriorRef.current !== aberta.id) {
     idConversaAnteriorRef.current = aberta.id;
@@ -1711,6 +1754,46 @@ function ConversasPageInner() {
         m.id === id ? { ...m, ...patch } : m,
       ),
     }));
+  }
+
+  /** Busca o conteúdo real de uma mídia recebida (áudio, por enquanto) que só chegou como aviso —
+   * chamado quando a pessoa clica pra carregar. Substitui `midiaPendente` pelo campo específico do
+   * tipo (`audio`) assim que carrega, então na próxima render a bolha já mostra o player normal. */
+  function carregarMidiaPendente(msg: ConvMensagem) {
+    if (!msg.midiaPendente || !msg.id) return;
+    const contatoNome = aberta.nome;
+    setMidiasCarregando((prev) => new Set(prev).add(msg.id!));
+    const { remoteJid, id, fromMe, tipo } = msg.midiaPendente;
+    fetch(
+      `/api/integracoes/whatsapp-nao-oficial/midia?remoteJid=${encodeURIComponent(remoteJid)}&id=${encodeURIComponent(id)}&fromMe=${fromMe}`,
+    )
+      .then((r) => r.json())
+      .then((dados: { dataUrl?: string | null }) => {
+        if (dados.dataUrl && tipo === "audio") {
+          atualizarMensagem(contatoNome, msg.id!, {
+            audio: { url: dados.dataUrl, duracao: 0, waveform: [] },
+            midiaPendente: undefined,
+          });
+        } else {
+          atualizarMensagem(contatoNome, msg.id!, {
+            texto: "⚠️ Não consegui carregar esse áudio — ouça no celular conectado.",
+            midiaPendente: undefined,
+          });
+        }
+      })
+      .catch(() => {
+        atualizarMensagem(contatoNome, msg.id!, {
+          texto: "⚠️ Não consegui carregar esse áudio — ouça no celular conectado.",
+          midiaPendente: undefined,
+        });
+      })
+      .finally(() => {
+        setMidiasCarregando((prev) => {
+          const next = new Set(prev);
+          next.delete(msg.id!);
+          return next;
+        });
+      });
   }
 
   /** Adiciona a mensagem já com id — mensagens "out" sem status ganham "pendente" e entram na simulação real de entrega. */
@@ -3808,6 +3891,20 @@ function ConversasPageInner() {
                     ) : null}
                   </span>
                 </div>
+              ) : msg.midiaPendente?.tipo === "audio" ? (
+                <div className={`bubble ${msg.tipo}`} key={chave}>
+                  {botaoMenuMensagem(chave)}
+                  {estrelaFavorita(chave)}
+                  <button
+                    type="button"
+                    className="wa-carregar-midia"
+                    disabled={!!msg.id && midiasCarregando.has(msg.id)}
+                    onClick={() => carregarMidiaPendente(msg)}
+                  >
+                    🎤 {msg.id && midiasCarregando.has(msg.id) ? "Carregando…" : "Carregar áudio"}
+                  </button>
+                  <span className="tm">{msg.hora}</span>
+                </div>
               ) : msg.audio ? (
                 <div
                   className={`bubble ${msg.tipo} bubble-audio`}
@@ -3853,7 +3950,7 @@ function ConversasPageInner() {
                   ) : null}
                   {msg.texto.length > 500 && !mensagensExpandidas.has(chave) ? (
                     <>
-                      {msg.texto.slice(0, 500)}…{" "}
+                      {renderizarTextoComLinks(msg.texto.slice(0, 500))}…{" "}
                       <button
                         type="button"
                         className="wa-ler-mais"
@@ -3863,7 +3960,7 @@ function ConversasPageInner() {
                       </button>
                     </>
                   ) : (
-                    msg.texto
+                    renderizarTextoComLinks(msg.texto)
                   )}
                   <span className="tm">
                     {msg.hora}

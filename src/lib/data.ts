@@ -558,6 +558,12 @@ export type ConvMensagem = {
    * (`Conversa.ehGrupo`) — sem isso não dá pra saber qual dos participantes escreveu cada balão,
    * igual o WhatsApp de verdade mostra. Ausente em conversa individual (não faz sentido lá). */
   remetenteNome?: string;
+  /** Mídia recebida cujo conteúdo real não veio no webhook (mídia embutida em base64 foi desligada
+   * de propósito, pra não derrubar o servidor com arquivo grande — ver `configurarWebhook`) — só
+   * texto de aviso apareceu na hora. Guarda o suficiente pra buscar o conteúdo de verdade sob
+   * demanda (ver `GET /api/integracoes/whatsapp-nao-oficial/midia`), só quando a pessoa clicar pra
+   * carregar. Some assim que carregado (o campo específico do tipo, ex. `audio`, passa a existir). */
+  midiaPendente?: { remoteJid: string; id: string; fromMe: boolean; tipo: "audio" };
 };
 
 export type Conversa = {

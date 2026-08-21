@@ -2443,6 +2443,33 @@ table.tbl tbody tr:hover td {
   cursor: pointer;
 }
 
+/* Link dentro de mensagem (`renderizarTextoComLinks`) — sublinhado (não só cor) pra ficar
+   reconhecível como clicável independente do fundo do balão (`.in` claro, `.out` escuro). */
+.wa-link-mensagem {
+  color: inherit;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+/* Botão "Carregar áudio" — mídia recebida sem conteúdo embutido no webhook, buscada sob demanda. */
+.wa-carregar-midia {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wa-carregar-midia:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .bubble.in {
   background: var(--navy);
   border: 1px solid var(--line);

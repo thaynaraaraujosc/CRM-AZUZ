@@ -149,7 +149,7 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
   const texto =
     data.message?.conversation ??
     data.message?.extendedTextMessage?.text ??
-    (data.message?.audioMessage ? "🎤 Mensagem de voz (ouça no celular conectado)" : undefined) ??
+    (data.message?.audioMessage ? "🎤 Mensagem de voz" : undefined) ??
     (data.message?.imageMessage ? (data.message.imageMessage.caption || "📷 Foto (veja no celular conectado)") : undefined) ??
     (data.message?.videoMessage ? (data.message.videoMessage.caption || "🎬 Vídeo (veja no celular conectado)") : undefined) ??
     (data.message?.documentMessage
@@ -259,10 +259,18 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
       hora: new Date(timestampMs).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
       criadoEm: new Date(timestampMs),
       canal: "whatsapp_nao_oficial",
-      // Nome de quem escreveu DENTRO do grupo — sem isso não dá pra distinguir os balões de cada
-      // participante na tela, igual o WhatsApp de verdade mostra. Não se aplica fora de grupo (lá
-      // "quem mandou" já é o próprio nome da conversa).
-      extras: ehGrupo && !fromMe ? { remetenteNome: data.pushName ?? waId } : undefined,
+      extras: {
+        // Nome de quem escreveu DENTRO do grupo — sem isso não dá pra distinguir os balões de cada
+        // participante na tela, igual o WhatsApp de verdade mostra. Não se aplica fora de grupo (lá
+        // "quem mandou" já é o próprio nome da conversa).
+        ...(ehGrupo && !fromMe ? { remetenteNome: data.pushName ?? waId } : {}),
+        // Áudio recebido — conteúdo real não veio no payload (base64 desligado de propósito), só
+        // esse aviso de que existe. Guarda o suficiente pra buscar sob demanda quando clicado (ver
+        // GET /api/integracoes/whatsapp-nao-oficial/midia).
+        ...(data.message?.audioMessage
+          ? { midiaPendente: { remoteJid: remoteJid!, id: data.key.id, fromMe, tipo: "audio" } }
+          : {}),
+      },
     },
   });
 

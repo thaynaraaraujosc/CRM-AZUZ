@@ -103,8 +103,13 @@ export function WhatsAppSecao() {
                   </p>
                 ) : naoOficial.estado?.status === "aguardando_qr" && naoOficial.estado.metadados?.qrDataUrl ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 14 }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pela Evolution API, não é asset estático */}
-                    <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={200} height={200} />
+                    {/* Fundo branco explícito — o PNG que a Evolution devolve tem fundo TRANSPARENTE
+                        (não branco de verdade), então sem isso o card do CRM (levemente azulado)
+                        aparecia por trás, dando aquele efeito de QR "com uma tela azul em cima". */}
+                    <div style={{ background: "#fff", padding: 12, borderRadius: 8 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pela Evolution API, não é asset estático */}
+                      <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={200} height={200} />
+                    </div>
                     <p className="hint">Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.</p>
                   </div>
                 ) : (
