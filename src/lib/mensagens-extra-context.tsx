@@ -89,6 +89,24 @@ function calcularDelta(
  * ganha em conteúdo/status quando os dois lados já concordam, e nada que só existe localmente
  * ainda (otimista, PUT em voo) é descartado.
  */
+/**
+ * Uma mídia pendente (áudio/imagem recebida sem conteúdo no webhook) é resolvida localmente sob
+ * demanda — o PUT que persiste isso no servidor é debounçado (400ms) e só reflete no GET depois.
+ * Sem isso, o polling de 5s pega o servidor ainda com o placeholder antigo e sobrescreve o áudio/
+ * imagem já carregado na tela, fazendo ele "aparecer e sumir" e disparando um novo fetch à toa.
+ */
+function mesclarMensagem(doServidor: ConvMensagem, local: ConvMensagem): ConvMensagem {
+  if (local.midiaPendente === undefined && doServidor.midiaPendente) {
+    return {
+      ...doServidor,
+      midiaPendente: undefined,
+      audio: local.audio ?? doServidor.audio,
+      imagens: local.imagens ?? doServidor.imagens,
+    };
+  }
+  return doServidor;
+}
+
 function fundirMensagensPorContato(
   local: Record<string, ConvMensagem[]>,
   doServidor: Record<string, ConvMensagem[]>,
@@ -98,9 +116,15 @@ function fundirMensagensPorContato(
   for (const contato of contatos) {
     const msgsServidor = doServidor[contato] ?? [];
     const msgsLocais = local[contato] ?? [];
+    const mapaLocal = new Map(msgsLocais.map((m, i) => [chaveMensagem(m, i), m]));
     const chavesServidor = new Set(msgsServidor.map((m, i) => chaveMensagem(m, i)));
     const somenteLocais = msgsLocais.filter((m, i) => !chavesServidor.has(chaveMensagem(m, i)));
-    resultado[contato] = [...msgsServidor, ...somenteLocais].sort(
+    const mescladas = msgsServidor.map((m, i) => {
+      const chave = chaveMensagem(m, i);
+      const localCorrespondente = mapaLocal.get(chave);
+      return localCorrespondente ? mesclarMensagem(m, localCorrespondente) : m;
+    });
+    resultado[contato] = [...mescladas, ...somenteLocais].sort(
       (a, b) => (a.criadoEm ?? 0) - (b.criadoEm ?? 0),
     );
   }

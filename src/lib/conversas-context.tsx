@@ -34,6 +34,7 @@ type ConversasContextValue = {
   atualizarStatus: (id: string, status: string) => void;
   atribuirAtendente: (id: string, atendente: string | null) => void;
   atualizarFoto: (id: string, fotoUrl: string) => void;
+  criarConversaIndividual: (nome: string, contato: string, canal?: string) => Promise<ConversaReal>;
 };
 
 const ConversasContext = createContext<ConversasContextValue | null>(null);
@@ -109,6 +110,24 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
     atualizarRemoto(id, { fotoUrl });
   }
 
+  // Usado quando a usuária quer ser a PRIMEIRA a escrever pra alguém sem conversa ainda (ex.: um
+  // participante de grupo visto só de longe) — cria de verdade no banco (não é otimista, precisa do
+  // `id` real devolvido antes de poder navegar pra ela).
+  async function criarConversaIndividual(
+    nome: string,
+    contato: string,
+    canal = "WhatsApp",
+  ): Promise<ConversaReal> {
+    const resposta = await fetch("/api/conversas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, contato, canal }),
+    });
+    const criada = (await resposta.json()) as ConversaReal;
+    setConversas((prev) => (prev.some((c) => c.id === criada.id) ? prev : [criada, ...prev]));
+    return criada;
+  }
+
   return (
     <ConversasContext.Provider
       value={{
@@ -120,6 +139,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
         atualizarStatus,
         atribuirAtendente,
         atualizarFoto,
+        criarConversaIndividual,
       }}
     >
       {children}

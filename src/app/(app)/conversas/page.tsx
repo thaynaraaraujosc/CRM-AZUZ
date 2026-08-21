@@ -509,6 +509,7 @@ function ConversasPageInner() {
     atualizarStatus: atualizarStatusConversa,
     atribuirAtendente: atribuirAtendenteConversa,
     atualizarFoto: atualizarFotoConversa,
+    criarConversaIndividual,
   } = useConversas();
   const { membros: membrosEquipe } = useEquipe();
   const motivosPerdaBase = useMotivosPerda();
@@ -739,6 +740,7 @@ function ConversasPageInner() {
   const [participanteAberto, setParticipanteAberto] = useState<{ nome: string; telefone: string } | null>(null);
   const [fotoParticipante, setFotoParticipante] = useState<string | null>(null);
   const [carregandoFotoParticipante, setCarregandoFotoParticipante] = useState(false);
+  const [criandoConversaParticipante, setCriandoConversaParticipante] = useState(false);
   const participanteRef = useRef<HTMLDivElement>(null);
   const naoOficial = useIntegracaoNaoOficial();
   // Status da API oficial (Meta) — sem hook compartilhado com polling (o `useIntegracaoMeta` só
@@ -1774,16 +1776,27 @@ function ConversasPageInner() {
             audio: { url: dados.dataUrl, duracao: 0, waveform: [] },
             midiaPendente: undefined,
           });
+        } else if (dados.dataUrl && tipo === "imagem") {
+          atualizarMensagem(contatoNome, msg.id!, {
+            imagens: [{ url: dados.dataUrl, nome: "imagem.jpg", tamanho: 0 }],
+            midiaPendente: undefined,
+          });
         } else {
           atualizarMensagem(contatoNome, msg.id!, {
-            texto: "⚠️ Não consegui carregar esse áudio — ouça no celular conectado.",
+            texto:
+              tipo === "audio"
+                ? "⚠️ Não consegui carregar esse áudio — ouça no celular conectado."
+                : "⚠️ Não consegui carregar essa imagem — veja no celular conectado.",
             midiaPendente: undefined,
           });
         }
       })
       .catch(() => {
         atualizarMensagem(contatoNome, msg.id!, {
-          texto: "⚠️ Não consegui carregar esse áudio — ouça no celular conectado.",
+          texto:
+            tipo === "audio"
+              ? "⚠️ Não consegui carregar esse áudio — ouça no celular conectado."
+              : "⚠️ Não consegui carregar essa imagem — veja no celular conectado.",
           midiaPendente: undefined,
         });
       })
@@ -1795,6 +1808,25 @@ function ConversasPageInner() {
         });
       });
   }
+
+  // Carrega mídia pendente (áudio recebido) automaticamente assim que ela aparece na conversa
+  // aberta — o usuário só precisa clicar em play, igual no WhatsApp de verdade, sem precisar
+  // clicar num botão "Carregar" antes.
+  useEffect(() => {
+    // `carregarMidiaPendente` chama `setMidiasCarregando` — adiado pro próximo tick pra não fazer
+    // um `setState` síncrono dentro do corpo do efeito (o lint trava nisso, com razão: dispararia
+    // uma cascata de renders ainda dentro do commit atual).
+    const id = setTimeout(() => {
+      const mensagens = mensagensExtraPorContato[aberta.nome] ?? [];
+      for (const msg of mensagens) {
+        if (msg.midiaPendente && msg.id && !midiasCarregando.has(msg.id)) {
+          carregarMidiaPendente(msg);
+        }
+      }
+    }, 0);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mensagensExtraPorContato, aberta.nome]);
 
   /** Adiciona a mensagem já com id — mensagens "out" sem status ganham "pendente" e entram na simulação real de entrega. */
   function adicionarMensagem(msg: ConvMensagem) {
@@ -3474,17 +3506,19 @@ function ConversasPageInner() {
                     <span className="ctime">{formatarTempoRelativoReal(new Date(c.atualizadoEm))}</span>
                   </span>
                   <span className="cmsg">
-                    {ultimaExtra?.tipo === "out" ? (
-                      <>
-                        Você:{" "}
-                        <StatusMensagemIcone status={ultimaExtra.status} />{" "}
-                      </>
-                    ) : (
-                      ""
-                    )}
-                    {iconeTipo}
-                    {iconeTipo ? " " : null}
-                    {previaTexto}
+                    <span className="cmsg-texto">
+                      {ultimaExtra?.tipo === "out" ? (
+                        <>
+                          Você:{" "}
+                          <StatusMensagemIcone status={ultimaExtra.status} />{" "}
+                        </>
+                      ) : (
+                        ""
+                      )}
+                      {iconeTipo}
+                      {iconeTipo ? " " : null}
+                      {previaTexto.replace(/\s+/g, " ").trim()}
+                    </span>
                     {c.naoLidas && !lidas.has(c.id) ? (
                       <span className="wa-unread-badge">{c.naoLidas}</span>
                     ) : null}
@@ -3895,14 +3929,18 @@ function ConversasPageInner() {
                 <div className={`bubble ${msg.tipo}`} key={chave}>
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
-                  <button
-                    type="button"
-                    className="wa-carregar-midia"
-                    disabled={!!msg.id && midiasCarregando.has(msg.id)}
-                    onClick={() => carregarMidiaPendente(msg)}
-                  >
-                    🎤 {msg.id && midiasCarregando.has(msg.id) ? "Carregando…" : "Carregar áudio"}
-                  </button>
+                  <span className="wa-carregar-midia">
+                    <span className="wa-participante-foto-carregando" /> 🎤 Carregando áudio…
+                  </span>
+                  <span className="tm">{msg.hora}</span>
+                </div>
+              ) : msg.midiaPendente?.tipo === "imagem" ? (
+                <div className={`bubble ${msg.tipo}`} key={chave}>
+                  {botaoMenuMensagem(chave)}
+                  {estrelaFavorita(chave)}
+                  <span className="wa-carregar-midia">
+                    <span className="wa-participante-foto-carregando" /> 📷 Carregando imagem…
+                  </span>
                   <span className="tm">{msg.hora}</span>
                 </div>
               ) : msg.audio ? (
@@ -7929,19 +7967,35 @@ function ConversasPageInner() {
                   type="button"
                   className="btn primary"
                   style={{ marginTop: 12, width: "100%" }}
-                  disabled={!conversaDele}
+                  disabled={criandoConversaParticipante}
                   title={
                     conversaDele
                       ? `Abrir conversa individual com ${participanteAberto.nome}`
-                      : "Ainda não tem conversa individual com essa pessoa (fora do grupo)"
+                      : `Iniciar conversa com ${participanteAberto.nome}`
                   }
-                  onClick={() => {
-                    if (!conversaDele) return;
-                    setSelectedId(conversaDele.id);
-                    setParticipanteAberto(null);
+                  onClick={async () => {
+                    if (conversaDele) {
+                      setSelectedId(conversaDele.id);
+                      setParticipanteAberto(null);
+                      return;
+                    }
+                    setCriandoConversaParticipante(true);
+                    try {
+                      const nova = await criarConversaIndividual(
+                        participanteAberto.nome,
+                        participanteAberto.telefone,
+                        "WhatsApp",
+                      );
+                      setSelectedId(nova.id);
+                      setParticipanteAberto(null);
+                    } catch (erro) {
+                      console.error("Falha ao iniciar conversa com participante:", erro);
+                    } finally {
+                      setCriandoConversaParticipante(false);
+                    }
                   }}
                 >
-                  Enviar mensagem
+                  {criandoConversaParticipante ? "Iniciando…" : "Enviar mensagem"}
                 </button>
               );
             })()}

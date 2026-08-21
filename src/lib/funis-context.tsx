@@ -60,17 +60,40 @@ export function FunisProvider({ children }: { children: ReactNode }) {
   // direto em setFunis) — por isso sincroniza o estado inteiro com o banco a cada mudança, em vez de
   // granular por operação (mesmo espírito do antigo useEffect que gravava tudo no localStorage).
   // Debounça 500ms pra não disparar um PUT a cada pixel de um drag de card/coluna.
+  const pendenteRef = useRef<Funil[] | null>(null);
+
+  function persistirFunis(dados: Funil[]) {
+    pendenteRef.current = null;
+    fetch("/api/funis", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dados),
+      keepalive: true,
+    }).catch((erro) => console.error("Falha ao sincronizar funis na API:", erro));
+  }
+
   useEffect(() => {
     if (!carregadoRef.current) return;
-    const temporizador = setTimeout(() => {
-      fetch("/api/funis", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(funis),
-      }).catch((erro) => console.error("Falha ao sincronizar funis na API:", erro));
-    }, 500);
+    pendenteRef.current = funis;
+    const temporizador = setTimeout(() => persistirFunis(funis), 500);
     return () => clearTimeout(temporizador);
   }, [funis]);
+
+  // Um F5/fechar aba logo após arrastar um card cancela o setTimeout acima antes dele disparar
+  // (a navegação mata o JS antes dos 500ms) — sem isso, a mudança nunca chega a ser salva e o
+  // usuário vê o funil "voltar" pro estado anterior ao recarregar. `keepalive` garante que o PUT
+  // sobrevive à navegação em vez de ser abortado junto com a página.
+  useEffect(() => {
+    function flush() {
+      if (pendenteRef.current) persistirFunis(pendenteRef.current);
+    }
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+    };
+  }, []);
 
   function atribuirContatoAoFunil(
     funilId: string,

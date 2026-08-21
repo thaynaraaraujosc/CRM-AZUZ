@@ -2443,12 +2443,16 @@ table.tbl tbody tr:hover td {
   cursor: pointer;
 }
 
-/* Link dentro de mensagem (`renderizarTextoComLinks`) — sublinhado (não só cor) pra ficar
-   reconhecível como clicável independente do fundo do balão (`.in` claro, `.out` escuro). */
+/* Link dentro de mensagem (`renderizarTextoComLinks`) — azul visível pra reconhecer que é
+   clicável. No balão `.out` o fundo já é azul, então usamos um azul claro pra manter contraste. */
 .wa-link-mensagem {
-  color: inherit;
+  color: var(--blue);
   text-decoration: underline;
   word-break: break-all;
+}
+
+.bubble.out .wa-link-mensagem {
+  color: #d6e4ff;
 }
 
 /* Botão "Carregar áudio" — mídia recebida sem conteúdo embutido no webhook, buscada sob demanda. */
@@ -2972,6 +2976,17 @@ table.tbl tbody tr:hover td {
 
 .wa-row .cmsg {
   margin-bottom: 8px;
+}
+
+/* Prévia da última mensagem no menu lateral — sempre uma linha só, tamanho proporcional às
+   outras conversas, independente de quão longa a mensagem original seja (texto inteiro só
+   aparece depois de abrir a conversa). */
+.wa-row .cmsg-texto {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .wa-row .cr3 {

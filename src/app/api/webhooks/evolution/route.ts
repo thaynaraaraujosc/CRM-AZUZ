@@ -264,12 +264,15 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
         // participante na tela, igual o WhatsApp de verdade mostra. Não se aplica fora de grupo (lá
         // "quem mandou" já é o próprio nome da conversa).
         ...(ehGrupo && !fromMe ? { remetenteNome: data.pushName ?? waId } : {}),
-        // Áudio recebido — conteúdo real não veio no payload (base64 desligado de propósito), só
-        // esse aviso de que existe. Guarda o suficiente pra buscar sob demanda quando clicado (ver
-        // GET /api/integracoes/whatsapp-nao-oficial/midia).
+        // Áudio/imagem recebidos — conteúdo real não veio no payload (base64 desligado de
+        // propósito), só esse aviso de que existe. Guarda o suficiente pra buscar sob demanda (ver
+        // GET /api/integracoes/whatsapp-nao-oficial/midia) — hoje isso acontece automaticamente
+        // assim que a conversa é aberta, não precisa mais de clique.
         ...(data.message?.audioMessage
-          ? { midiaPendente: { remoteJid: remoteJid!, id: data.key.id, fromMe, tipo: "audio" } }
-          : {}),
+          ? { midiaPendente: { remoteJid: remoteJid!, id: data.key.id, fromMe, tipo: "audio" as const } }
+          : data.message?.imageMessage
+            ? { midiaPendente: { remoteJid: remoteJid!, id: data.key.id, fromMe, tipo: "imagem" as const } }
+            : {}),
       },
     },
   });

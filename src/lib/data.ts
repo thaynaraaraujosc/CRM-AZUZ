@@ -563,7 +563,7 @@ export type ConvMensagem = {
    * texto de aviso apareceu na hora. Guarda o suficiente pra buscar o conteúdo de verdade sob
    * demanda (ver `GET /api/integracoes/whatsapp-nao-oficial/midia`), só quando a pessoa clicar pra
    * carregar. Some assim que carregado (o campo específico do tipo, ex. `audio`, passa a existir). */
-  midiaPendente?: { remoteJid: string; id: string; fromMe: boolean; tipo: "audio" };
+  midiaPendente?: { remoteJid: string; id: string; fromMe: boolean; tipo: "audio" | "imagem" };
 };
 
 export type Conversa = {
