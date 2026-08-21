@@ -95,6 +95,10 @@ model Conversa {
   // Lista de participantes ({ nome, telefone }) — buscada na Evolution API quando o grupo é visto
   // pela primeira vez (ver `buscarInfoGrupo`), null até a primeira busca ter sucesso.
   participantesGrupo  Json?
+  // Foto de perfil real (do WhatsApp) — grupo ou contato individual, buscada na Evolution API
+  // (`buscarFotoPerfil`) quando a conversa é vista pela primeira vez. Null até a busca ter sucesso
+  // (WhatsApp sem foto definida, ou busca falhou) — nesse caso a tela cai pras iniciais como antes.
+  fotoUrl             String?
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt

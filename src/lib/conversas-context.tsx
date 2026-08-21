@@ -17,6 +17,7 @@ export type ConversaReal = {
   atendenteSelecionado: string | null;
   ehGrupo: boolean;
   participantesGrupo: { nome: string; telefone: string }[] | null;
+  fotoUrl: string | null;
   criadoEm: string;
   atualizadoEm: string;
 };

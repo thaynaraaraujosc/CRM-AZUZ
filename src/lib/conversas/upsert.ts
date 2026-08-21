@@ -41,6 +41,8 @@ export async function upsertConversaAoReceberMensagem(params: {
    * é o JID do grupo (`<id>@g.us`). Ver comentário do campo no schema. */
   ehGrupo?: boolean;
   participantesGrupo?: { nome: string; telefone: string }[];
+  /** Foto de perfil real (grupo ou pessoa) — ver comentário do campo no schema. */
+  fotoUrl?: string | null;
 }) {
   const {
     workspaceId,
@@ -52,6 +54,7 @@ export async function upsertConversaAoReceberMensagem(params: {
     contarComoNaoLida = true,
     ehGrupo = false,
     participantesGrupo,
+    fotoUrl,
   } = params;
   await prisma.conversa.upsert({
     where: { workspaceId_nome: { workspaceId, nome } },
@@ -67,14 +70,16 @@ export async function upsertConversaAoReceberMensagem(params: {
       naoLidas: contarComoNaoLida ? 1 : 0,
       ehGrupo,
       participantesGrupo,
+      fotoUrl,
     },
     // Grava/atualiza o contatoId também num update — conversa antiga criada antes dessa FK existir
     // se auto-corrige assim que uma mensagem nova chega e o contato já foi resolvido. Participantes
-    // só sobrescreve quando veio um valor novo (busca na Evolution pode falhar em silêncio — não
-    // apaga uma lista que já tinha sido resolvida antes).
+    // e foto só sobrescrevem quando veio um valor novo (busca na Evolution pode falhar em
+    // silêncio — não apaga um valor que já tinha sido resolvido antes).
     update: {
       ...(contatoId ? { contatoId } : {}),
       ...(participantesGrupo ? { participantesGrupo } : {}),
+      ...(fotoUrl ? { fotoUrl } : {}),
       ...(contarComoNaoLida ? { naoLidas: { increment: 1 }, atualizadoEm: new Date() } : {}),
     },
   });

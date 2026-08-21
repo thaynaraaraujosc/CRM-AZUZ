@@ -198,6 +198,17 @@ export async function buscarInfoGrupo(workspaceId: string, groupJid: string): Pr
   return { nome: nome ?? groupJid.split("@")[0], participantes };
 }
 
+/** Busca a URL da foto de perfil (grupo OU pessoa) de um JID/número — chamado uma vez, quando a
+ * conversa é vista pela primeira vez (webhook grava em `Conversa.fotoUrl`). Falha em silêncio
+ * (`null`): sem foto (perfil sem uma definida) é o caso normal, não um erro real. */
+export async function buscarFotoPerfil(workspaceId: string, jidOuNumero: string): Promise<string | null> {
+  const instancia = nomeInstancia(workspaceId);
+  const dados = await chamarEvolution(`/chat/fetchProfilePictureUrl/${instancia}`, "POST", {
+    number: jidOuNumero,
+  }).catch(() => null);
+  return dados?.profilePictureUrl ?? null;
+}
+
 /** Busca o número (JID) do WhatsApp conectado numa instância — a Evolution não manda isso direto
  * no evento `connection.update`, só no cadastro da instância em si. Chamado pelo webhook assim que
  * o estado vira `open`, pra guardar o número junto do status `conectado`. */

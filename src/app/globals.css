@@ -10541,6 +10541,52 @@ button.camp-row:hover {
   color: var(--blue);
 }
 
+/* Foto de perfil real (WhatsApp) dentro do círculo `.avatar` — substitui as iniciais quando existe. */
+.wa-avatar-foto {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Lista de participantes de um grupo de WhatsApp (painel flutuante aberto pelo cabeçalho da
+   conversa) — uma linha por pessoa, com atalho pra abrir a conversa individual com ela. */
+.wa-participantes-lista {
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.wa-participante-linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.wa-participante-linha:last-child {
+  border-bottom: none;
+}
+
+.wa-participante-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wa-participante-info .n {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wa-participante-info .s {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
 .chat-input-campo-coluna {
   flex: 1;
   min-width: 0;

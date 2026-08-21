@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado, buscarInfoGrupo } from "@/lib/integracoes/evolution";
+import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado, buscarInfoGrupo, buscarFotoPerfil } from "@/lib/integracoes/evolution";
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
@@ -158,6 +158,7 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
   let chaveContato: string;
   let contatoExistente: { id: string; nome: string } | null = null;
   let participantesGrupo: { nome: string; telefone: string }[] | undefined;
+  let fotoUrlExistente: string | null = null;
 
   if (ehGrupo) {
     // Acha a conversa do grupo pelo JID (estável) — nunca pelo nome (`nome` guarda o "assunto" do
@@ -165,10 +166,11 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
     // grupo virar uma conversa nova toda vez que o nome mudasse).
     const conversaExistente = await prisma.conversa.findFirst({
       where: { workspaceId, contato: remoteJid, ehGrupo: true },
-      select: { nome: true },
+      select: { nome: true, fotoUrl: true },
     });
     if (conversaExistente) {
       chaveContato = conversaExistente.nome;
+      fotoUrlExistente = conversaExistente.fotoUrl;
     } else {
       const info = await buscarInfoGrupo(workspaceId, remoteJid!);
       chaveContato = info?.nome ?? waId;
@@ -177,7 +179,16 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
   } else {
     contatoExistente = await encontrarContatoPorTelefone(workspaceId, waId);
     chaveContato = contatoExistente?.nome ?? data.pushName ?? waId;
+    const conversaExistente = await prisma.conversa.findUnique({
+      where: { workspaceId_nome: { workspaceId, nome: chaveContato } },
+      select: { fotoUrl: true },
+    });
+    fotoUrlExistente = conversaExistente?.fotoUrl ?? null;
   }
+
+  // Busca a foto de perfil só na primeira vez (conversa ainda sem uma) — pedir de novo a cada
+  // mensagem seria uma chamada extra à Evolution toda hora à toa, sem necessidade real.
+  const fotoUrl = fotoUrlExistente ?? (await buscarFotoPerfil(workspaceId, ehGrupo ? remoteJid! : waId).catch(() => null));
 
   if (fromMe) {
     // Mensagem mandada do próprio celular conectado (espelhamento, igual WhatsApp Web) — se foi
@@ -238,5 +249,6 @@ async function processarMensagemRecebida(workspaceId: string, item: unknown) {
     contarComoNaoLida: !fromMe,
     ehGrupo,
     participantesGrupo,
+    fotoUrl,
   });
 }

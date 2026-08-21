@@ -40,6 +40,7 @@ import {
 import { HOJE_ISO } from "@/lib/agenda-context";
 import { useFunis } from "@/lib/funis-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
+import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
 import {
   useConfigConversas,
   FUNDOS_PRESET,
@@ -362,6 +363,7 @@ const CONVERSA_VAZIA: ConversaReal = {
   atendenteSelecionado: null,
   ehGrupo: false,
   participantesGrupo: null,
+  fotoUrl: null,
   criadoEm: new Date(0).toISOString(),
   atualizadoEm: new Date(0).toISOString(),
 };
@@ -705,6 +707,9 @@ function ConversasPageInner() {
   const [midiasAberto, setMidiasAberto] = useState(false);
   const [midiasPos, setMidiasPos] = useState<{ x: number; y: number } | null>(null);
   const midiasRef = useRef<HTMLDivElement>(null);
+  const [participantesAberto, setParticipantesAberto] = useState(false);
+  const [participantesPos, setParticipantesPos] = useState<{ x: number; y: number } | null>(null);
+  const participantesRef = useRef<HTMLDivElement>(null);
   const naoOficial = useIntegracaoNaoOficial();
   // Status da API oficial (Meta) — sem hook compartilhado com polling (o `useIntegracaoMeta` só
   // busca uma vez); polling próprio aqui porque a conversa some/reaparece conforme o canal
@@ -745,6 +750,7 @@ function ConversasPageInner() {
   const [sincronizando, setSincronizando] = useState(false);
 
   useFecharAoClicarFora(midiasRef, midiasAberto, () => setMidiasAberto(false));
+  useFecharAoClicarFora(participantesRef, participantesAberto, () => setParticipantesAberto(false));
   useFecharAoClicarFora(contatoDetalheRef, !!contatoDetalheAberto, () => setContatoDetalheAberto(null));
 
   /** Força um recarregamento da lista — usado se as mensagens do celular conectado saírem de sincronia com o servidor. */
@@ -2484,6 +2490,22 @@ function ConversasPageInner() {
     setMensagemTexto(texto);
   }
 
+  /** Acha, entre as conversas individuais já existentes, uma cujo telefone bate com o de um
+   * participante do grupo (comparação normalizada — mesma regra usada no back, ver
+   * `normalizarTelefoneParaComparacao`) — usado pelo "Enviar mensagem" no painel de participantes.
+   * `null` quando ainda não existe conversa individual com essa pessoa (o CRM não cria uma do
+   * zero aqui; ela nasce sozinha na primeira mensagem trocada fora do grupo, igual qualquer
+   * outra). */
+  function conversaIndividualDoParticipante(telefone: string): ConversaReal | null {
+    const alvo = normalizarTelefoneParaComparacao(telefone);
+    if (!alvo) return null;
+    return (
+      conversas.find(
+        (c) => !c.ehGrupo && c.contato && normalizarTelefoneParaComparacao(c.contato) === alvo,
+      ) ?? null
+    );
+  }
+
   /** Fábrica de handler de arrastar — usada pelos popups flutuantes menores (mídias, conectar, detalhe do contato). */
   function criarIniciarArraste(
     seletor: string,
@@ -3263,7 +3285,7 @@ function ConversasPageInner() {
                 >
                   <span className="cr1">
                     <span className="avatar">
-                      {c.initials}
+                      {c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : c.initials}
                       <CanalBadge canal={c.canal as Canal} />
                     </span>
                     <span className="cname">
@@ -3406,12 +3428,19 @@ function ConversasPageInner() {
               type="button"
               className="wa-conv-titulo-btn"
               onClick={() => {
-                setMidiasPos(null);
-                setMidiasAberto(true);
+                if (aberta.ehGrupo) {
+                  setParticipantesPos(null);
+                  setParticipantesAberto(true);
+                } else {
+                  setMidiasPos(null);
+                  setMidiasAberto(true);
+                }
               }}
-              title="Ver mídias e arquivos trocados nessa conversa"
+              title={aberta.ehGrupo ? "Ver participantes do grupo" : "Ver mídias e arquivos trocados nessa conversa"}
             >
-              <div className="avatar">{aberta.initials}</div>
+              <div className="avatar">
+                {aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : aberta.initials}
+              </div>
               <div>
                 <p className="n">
                   {aberta.ehGrupo ? <IconEquipe width={13} height={13} style={{ marginRight: 4, verticalAlign: -2 }} /> : null}
@@ -7548,6 +7577,78 @@ function ConversasPageInner() {
           ) : (
             <p className="hint" style={{ padding: "10px 0" }}>
               Nenhuma mídia trocada nessa conversa ainda.
+            </p>
+          )}
+        </div>
+      ) : null}
+
+      {participantesAberto ? (
+        <div
+          ref={participantesRef}
+          className="wa-email-modal wa-email-floating"
+          style={
+            participantesPos
+              ? { left: participantesPos.x, top: participantesPos.y, right: "auto", bottom: "auto" }
+              : undefined
+          }
+        >
+          <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setParticipantesPos)}>
+            <div>
+              <p className="n">Participantes</p>
+              <p className="s">{aberta.participantesGrupo?.length ?? 0} pessoas em {aberta.nome}</p>
+            </div>
+            <button
+              type="button"
+              className="modal-close-btn"
+              aria-label="Fechar"
+              onClick={() => setParticipantesAberto(false)}
+            >
+              <IconClose width={12} height={12} />
+            </button>
+          </div>
+          {aberta.participantesGrupo?.length ? (
+            <div className="wa-participantes-lista">
+              {aberta.participantesGrupo.map((p) => {
+                const conversaDele = conversaIndividualDoParticipante(p.telefone);
+                return (
+                  <div className="wa-participante-linha" key={p.telefone}>
+                    <span className="avatar" style={{ width: 32, height: 32, fontSize: 12 }}>
+                      {p.nome
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((parte) => parte[0])
+                        .join("")
+                        .toUpperCase() || "?"}
+                    </span>
+                    <div className="wa-participante-info">
+                      <p className="n">{p.nome}</p>
+                      <p className="s">{p.telefone}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      disabled={!conversaDele}
+                      title={
+                        conversaDele
+                          ? `Abrir conversa individual com ${p.nome}`
+                          : "Ainda não tem conversa individual com essa pessoa (fora do grupo)"
+                      }
+                      onClick={() => {
+                        if (!conversaDele) return;
+                        setSelectedId(conversaDele.id);
+                        setParticipantesAberto(false);
+                      }}
+                    >
+                      Enviar mensagem
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="hint" style={{ padding: "10px 0" }}>
+              Lista de participantes ainda não disponível.
             </p>
           )}
         </div>
