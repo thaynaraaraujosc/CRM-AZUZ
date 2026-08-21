@@ -275,7 +275,7 @@ export async function buscarNumeroConectado(workspaceId: string): Promise<string
   return owner.split("@")[0] ?? null;
 }
 
-export type ChatResumo = { remoteJid: string; ehGrupo: boolean };
+export type ChatResumo = { remoteJid: string; ehGrupo: boolean; arquivada: boolean };
 
 /**
  * Lista TODAS as conversas já existentes no celular conectado — usado só pela sincronização de
@@ -295,10 +295,10 @@ export async function buscarChats(workspaceId: string): Promise<ChatResumo[]> {
   const lista: unknown[] = Array.isArray(dados) ? dados : [];
   return lista
     .map((item) => {
-      const c = item as { id?: string; remoteJid?: string };
+      const c = item as { id?: string; remoteJid?: string; archived?: boolean; archive?: boolean };
       const remoteJid = c.id ?? c.remoteJid;
       if (!remoteJid) return null;
-      return { remoteJid, ehGrupo: remoteJid.endsWith("@g.us") };
+      return { remoteJid, ehGrupo: remoteJid.endsWith("@g.us"), arquivada: c.archived ?? c.archive ?? false };
     })
     .filter((c): c is ChatResumo => c !== null);
 }
