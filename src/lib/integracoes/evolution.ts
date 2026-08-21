@@ -247,7 +247,7 @@ export async function buscarFotoPerfil(workspaceId: string, jidOuNumero: string)
  * loga o erro real se o nome/formato estiver errado. */
 export async function buscarMidiaBase64(
   workspaceId: string,
-  chave: { remoteJid: string; id: string; fromMe: boolean },
+  chave: { remoteJid: string; id: string; fromMe: boolean; tipo: "audio" | "imagem" },
 ): Promise<{ base64: string; mimetype: string } | null> {
   const instancia = nomeInstancia(workspaceId);
   const dados = await chamarEvolution(`/chat/getBase64FromMediaMessage/${instancia}`, "POST", {
@@ -257,7 +257,10 @@ export async function buscarMidiaBase64(
     return null;
   });
   if (!dados?.base64) return null;
-  return { base64: dados.base64, mimetype: dados.mimetype ?? "audio/ogg" };
+  // Sem `mimetype` na resposta, o fallback precisa bater com o tipo pedido — um áudio servido como
+  // `data:audio/ogg` dentro de uma tag `<img>` (ou vice-versa) simplesmente não renderiza nada.
+  const fallback = chave.tipo === "imagem" ? "image/jpeg" : "audio/ogg";
+  return { base64: dados.base64, mimetype: dados.mimetype ?? dados.mimeType ?? fallback };
 }
 
 /** Busca o número (JID) do WhatsApp conectado numa instância — a Evolution não manda isso direto

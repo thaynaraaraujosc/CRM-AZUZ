@@ -17,11 +17,12 @@ export async function GET(request: Request) {
   const remoteJid = url.searchParams.get("remoteJid");
   const id = url.searchParams.get("id");
   const fromMe = url.searchParams.get("fromMe") === "true";
+  const tipo = url.searchParams.get("tipo") === "imagem" ? "imagem" : "audio";
   if (!remoteJid || !id) {
     return NextResponse.json({ erro: "remoteJid e id são obrigatórios" }, { status: 400 });
   }
 
-  const midia = await buscarMidiaBase64(sessao.user.workspaceId, { remoteJid, id, fromMe });
+  const midia = await buscarMidiaBase64(sessao.user.workspaceId, { remoteJid, id, fromMe, tipo });
   if (!midia) return NextResponse.json({ dataUrl: null });
 
   return NextResponse.json({ dataUrl: `data:${midia.mimetype};base64,${midia.base64}` });

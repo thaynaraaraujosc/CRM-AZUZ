@@ -53,6 +53,21 @@ function atualizarRemoto(id: string, dados: Record<string, unknown>) {
  * exemplo/mock aqui. Mesmo espírito de `contatos-context.tsx`: estado local otimista + fetch no
  * mount + mutações que atualizam o estado na hora e disparam a chamada real em paralelo.
  */
+/**
+ * A foto de perfil é salva com um PATCH imediato (sem debounce) — mas o polling de 5s pode chegar
+ * ANTES desse PATCH terminar de persistir, trazendo o servidor ainda com `fotoUrl: null` e apagando
+ * a foto que acabou de aparecer na tela (o bug do "aparece e some" relatado). Preserva a foto local
+ * quando o servidor ainda não tem uma.
+ */
+function mesclarConversas(local: ConversaReal[], doServidor: ConversaReal[]): ConversaReal[] {
+  const mapaLocal = new Map(local.map((c) => [c.id, c]));
+  return doServidor.map((c) => {
+    const anterior = mapaLocal.get(c.id);
+    if (anterior?.fotoUrl && !c.fotoUrl) return { ...c, fotoUrl: anterior.fotoUrl };
+    return c;
+  });
+}
+
 export function ConversasProvider({ children }: { children: ReactNode }) {
   const [conversas, setConversas] = useState<ConversaReal[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -61,7 +76,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
     function buscar() {
       return fetch("/api/conversas")
         .then((r) => r.json())
-        .then((dados: ConversaReal[]) => setConversas(dados))
+        .then((dados: ConversaReal[]) => setConversas((prev) => mesclarConversas(prev, dados)))
         .catch((erro) => console.error("Falha ao carregar conversas da API:", erro));
     }
     buscar().finally(() => setCarregando(false));

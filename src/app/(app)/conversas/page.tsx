@@ -1767,7 +1767,7 @@ function ConversasPageInner() {
     setMidiasCarregando((prev) => new Set(prev).add(msg.id!));
     const { remoteJid, id, fromMe, tipo } = msg.midiaPendente;
     fetch(
-      `/api/integracoes/whatsapp-nao-oficial/midia?remoteJid=${encodeURIComponent(remoteJid)}&id=${encodeURIComponent(id)}&fromMe=${fromMe}`,
+      `/api/integracoes/whatsapp-nao-oficial/midia?remoteJid=${encodeURIComponent(remoteJid)}&id=${encodeURIComponent(id)}&fromMe=${fromMe}&tipo=${tipo}`,
     )
       .then((r) => r.json())
       .then((dados: { dataUrl?: string | null }) => {
