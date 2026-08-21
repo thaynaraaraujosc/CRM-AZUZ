@@ -10921,6 +10921,29 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   min-width: 240px;
+  max-width: 320px;
+}
+
+/* Áudio tem cor própria (branco recebido / azul enviado), diferente do verde padrão do resto da
+   tela do WhatsApp — pedido explícito pra diferenciar áudio visualmente do texto. */
+.bubble.in.bubble-audio {
+  background: #fff;
+  border: 1px solid var(--line);
+  color: #1a1a1a;
+}
+
+.bubble.in.bubble-audio .audio-player-duracao {
+  color: #6b7280;
+}
+
+.bubble.in.bubble-audio .audio-player-velocidade {
+  border-color: #d8dce3;
+  color: #4b5563;
+}
+
+.wa-whatsapp .bubble.out.bubble-audio {
+  background: var(--blue);
+  color: #fff;
 }
 
 /* -------------------------------------------------------------------------- */

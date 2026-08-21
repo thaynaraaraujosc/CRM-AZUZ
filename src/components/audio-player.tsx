@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type { AnexoAudio, StatusMensagem } from "@/lib/data";
+import type { AnexoAudio } from "@/lib/data";
 import { IconPause, IconPlay } from "@/components/icons";
 
 /**
@@ -89,16 +89,11 @@ const VELOCIDADES = [1, 1.5, 2] as const;
 export function AudioBubblePlayer({
   audio,
   tipo,
-  status,
   velocidadeInicial = 1,
-  onMarcarReproduzido,
 }: {
   audio: AnexoAudio;
   tipo: "in" | "out";
-  status?: StatusMensagem;
   velocidadeInicial?: 1 | 1.5 | 2;
-  /** Presente só em mensagens enviadas ainda não marcadas como reproduzidas — ação de demonstração explícita, nunca automática. */
-  onMarcarReproduzido?: () => void;
 }) {
   const audioElRef = useRef<HTMLAudioElement>(null);
   const [tocando, setTocando] = useState(false);
@@ -173,16 +168,6 @@ export function AudioBubblePlayer({
       >
         {velocidade}x
       </button>
-      {tipo === "out" && status && status !== "reproduzido" && status !== "erro" && onMarcarReproduzido ? (
-        <button
-          type="button"
-          className="audio-player-demo-reproduzido"
-          onClick={onMarcarReproduzido}
-          title="Ambiente de demonstração — sem back-end conectado ainda, ninguém ouviu esse áudio de verdade"
-        >
-          Simular: destinatário ouviu (teste)
-        </button>
-      ) : null}
     </div>
   );
 }

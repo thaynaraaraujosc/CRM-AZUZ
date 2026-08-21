@@ -1851,16 +1851,6 @@ function ConversasPageInner() {
     agendarSimulacaoDeEntrega((patch) => atualizarMensagem(contatoNome, id, patch));
   }
 
-  /**
-   * Ambiente de demonstração: sem back-end/webhook do canal conectado ainda
-   * não existe forma real de saber se o destinatário ouviu um áudio enviado
-   * — esse botão só existe pra pré-visualizar o estado visual "reproduzido",
-   * nunca dispara sozinho.
-   */
-  function marcarAudioComoReproduzidoDemo(id: string) {
-    atualizarMensagem(aberta.nome, id, { status: "reproduzido" });
-  }
-
   /** Conversa "pertence" ao canal WhatsApp via QR Code (não oficial) quando a última mensagem —
    * recebida OU mandada do celular conectado (espelhada) — veio por ele; sem nenhuma mensagem com
    * canal marcado, conta como API oficial (Meta), o comportamento antigo de antes dessa integração
@@ -3953,11 +3943,7 @@ function ConversasPageInner() {
                   <AudioBubblePlayer
                     audio={msg.audio}
                     tipo={msg.tipo === "in" ? "in" : "out"}
-                    status={msg.status}
                     velocidadeInicial={config.velocidadeAudioPadrao}
-                    onMarcarReproduzido={
-                      msg.id ? () => marcarAudioComoReproduzidoDemo(msg.id!) : undefined
-                    }
                   />
                   <span className="tm">
                     {msg.hora}
