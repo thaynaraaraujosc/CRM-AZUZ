@@ -759,6 +759,16 @@ function ConversasPageInner() {
   const [canalTopRect, setCanalTopRect] = useState<DOMRect | null>(null);
   const [canalTopFiltro, setCanalTopFiltro] = useState("Todos");
 
+  // Movido pra antes de `conversasFiltradas` (que chama `conversaUsaWhatsappNaoOficial`, definida
+  // mais abaixo mas que fecha sobre esta variável) — como é `const`, ficava numa "zona morta
+  // temporal" até esta linha rodar; `conversasFiltradas` é calculado direto no corpo do
+  // componente, então rodava ANTES desta declaração (quando ela vinha depois), lançando
+  // `ReferenceError: Cannot access before initialization` — só na hora, porque só nesse caso
+  // (WhatsApp conectado + conversa do canal WhatsApp na lista) o filtro chega a chamar a função
+  // que usa essa variável. Bug real que derrubava a tela de Conversas (e, por ela abrir de novo a
+  // cada navegação, o app inteiro) só depois de conectar o WhatsApp.
+  const { mensagensExtraPorContato, setMensagensExtraPorContato } = useMensagensExtra();
+
   const atendentesDisponiveis = membrosEquipe.map((m) => m.nome);
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
@@ -897,9 +907,6 @@ function ConversasPageInner() {
     Record<string, HistoricoItem[]>
   >({});
   const [notaTexto, setNotaTexto] = useState("");
-  // Compartilhado com o popup de resposta rápida do Funil — os dois módulos falam com o mesmo
-  // contato, então precisam ver a mesma conversa (ver src/lib/mensagens-extra-context.tsx).
-  const { mensagensExtraPorContato, setMensagensExtraPorContato } = useMensagensExtra();
   const [mensagemTexto, setMensagemTexto] = useState("");
 
   /* ---------------------------------------------------------------------- */
