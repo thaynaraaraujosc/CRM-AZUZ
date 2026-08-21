@@ -492,6 +492,17 @@ function useFecharAoClicarFora(
 function ConversasPageInner() {
   const searchParams = useSearchParams();
   const { funis, setFunis, atribuirContatoAoFunil } = useFunis();
+
+  /** Etapa do funil onde esse contato está agora (procura em todos os funis, não só o principal) —
+   * `null` quando ele ainda não é um negócio em nenhum funil (ex.: grupo, ou lead que nunca entrou). */
+  function etapaAtualDoContato(nomeContato: string): string | null {
+    for (const f of funis) {
+      for (const c of f.colunas) {
+        if (c.cards.some((card) => card.nome === nomeContato)) return c.titulo;
+      }
+    }
+    return null;
+  }
   const {
     contatos,
     salvarDadosContato,
@@ -3530,6 +3541,11 @@ function ConversasPageInner() {
                     <span className={`tag ${classeOrigem(c.origem as Parameters<typeof classeOrigem>[0])}`}>
                       {c.origem}
                     </span>
+                    {!c.ehGrupo && etapaAtualDoContato(c.nome) ? (
+                      <span className="tag wa-etapa-funil-tag" title="Etapa atual no funil">
+                        {etapaAtualDoContato(c.nome)}
+                      </span>
+                    ) : null}
                   </span>
                   <button
                     type="button"

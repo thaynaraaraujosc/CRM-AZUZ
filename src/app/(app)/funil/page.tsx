@@ -31,6 +31,23 @@ const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Indicação",
 ];
 
+/** Formata um telefone salvo cru (só dígitos, com DDI — ex.: "5562982041013") pra leitura —
+ * "+55 62 98204-1013". Sem DDI reconhecido (não é BR, ou veio incompleto) devolve só com "+" na
+ * frente, ainda melhor que uma sequência crua de números. */
+function formatarTelefoneExibicao(numero: string | null | undefined): string | null {
+  if (!numero) return null;
+  const digitos = numero.replace(/\D/g, "");
+  if (!digitos) return null;
+  if (digitos.startsWith("55") && (digitos.length === 12 || digitos.length === 13)) {
+    const ddd = digitos.slice(2, 4);
+    const resto = digitos.slice(4);
+    const meio = resto.length === 9 ? resto.slice(0, 5) : resto.slice(0, 4);
+    const fim = resto.length === 9 ? resto.slice(5) : resto.slice(4);
+    return `+55 ${ddd} ${meio}-${fim}`;
+  }
+  return `+${digitos}`;
+}
+
 export default function FunilPage() {
   return (
     <Suspense fallback={null}>
@@ -839,6 +856,8 @@ function FunilPageInner() {
                 {cardsVisiveis.map(({ card, cardIndex }) => {
                   const conversaDoCard = conversas.find((c) => c.nome === card.nome);
                   const temMensagemNova = (conversaDoCard?.naoLidas ?? 0) > 0;
+                  // "AD" — lead veio de anúncio (Meta/Google Ads), não de contato direto/indicação.
+                  const veioDeAnuncio = card.origem === "Meta Ads" || card.origem === "Google Ads";
                   return (
                     <button
                       type="button"
@@ -870,6 +889,11 @@ function FunilPageInner() {
                         >
                           {temMensagemNova ? <span className="msg-dot" aria-label="Mensagem nova" /> : null}
                           {card.nome}
+                          {veioDeAnuncio ? (
+                            <span className="lead-card-ad-badge" title={card.origem}>
+                              AD
+                            </span>
+                          ) : null}
                         </span>
                         <span className="lval">{card.valor}</span>
                         <span
@@ -893,6 +917,11 @@ function FunilPageInner() {
                           ⋮
                         </span>
                       </span>
+                      {formatarTelefoneExibicao(conversaDoCard?.contato) ? (
+                        <span className="lead-card-telefone">
+                          {formatarTelefoneExibicao(conversaDoCard?.contato)}
+                        </span>
+                      ) : null}
                       <span className="lr2">
                         <span className={`tag ${classeOrigem(card.origem)}`}>
                           {card.origem}
