@@ -83,6 +83,11 @@ model Conversa {
   status   String  @default("Não respondido")
   naoLidas Int     @default(0)
   favorita Boolean @default(false)
+  // Antes só existia como `Set` local no navegador (`useState`) — sumia a cada F5/login novo,
+  // então uma conversa "arquivada" voltava a aparecer em "Tudo" sozinha, e a aba "Arquivadas" (que
+  // só nasce quando tem pelo menos uma) sumia junto. Vira coluna real pelo mesmo motivo de
+  // `favorita` acima: precisa sobreviver a atualizar a página.
+  arquivada Boolean @default(false)
 
   atendenteSelecionado String?
 

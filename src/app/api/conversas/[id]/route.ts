@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-/** PATCH atualiza campos pontuais de uma conversa (marcar como lida, favoritar, mudar status ou
- * atendente) — só mexe em conversa do mesmo workspace de quem está logado. */
+/** PATCH atualiza campos pontuais de uma conversa (marcar como lida, favoritar, arquivar, mudar
+ * status ou atendente) — só mexe em conversa do mesmo workspace de quem está logado. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/conversas/[id]">) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
@@ -13,6 +13,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/conversas/
   const dados = (await request.json()) as {
     naoLidas?: number;
     favorita?: boolean;
+    arquivada?: boolean;
     status?: string;
     atendenteSelecionado?: string | null;
   };

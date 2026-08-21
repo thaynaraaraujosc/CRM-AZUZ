@@ -205,7 +205,13 @@ export async function buscarFotoPerfil(workspaceId: string, jidOuNumero: string)
   const instancia = nomeInstancia(workspaceId);
   const dados = await chamarEvolution(`/chat/fetchProfilePictureUrl/${instancia}`, "POST", {
     number: jidOuNumero,
-  }).catch(() => null);
+  }).catch((erro) => {
+    // Log de verdade (não só `null` em silêncio) — esse endpoint específico ainda não foi validado
+    // contra a versão real da Evolution em produção; se o nome/formato dele estiver errado, é
+    // aqui que vai aparecer nos logs da Vercel/Railway pra corrigir.
+    console.error(`[evolution] Falha ao buscar foto de perfil de ${jidOuNumero}:`, erro);
+    return null;
+  });
   return dados?.profilePictureUrl ?? null;
 }
 

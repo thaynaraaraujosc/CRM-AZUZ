@@ -14,6 +14,7 @@ export type ConversaReal = {
   status: string;
   naoLidas: number;
   favorita: boolean;
+  arquivada: boolean;
   atendenteSelecionado: string | null;
   ehGrupo: boolean;
   participantesGrupo: { nome: string; telefone: string }[] | null;
@@ -27,6 +28,7 @@ type ConversasContextValue = {
   carregando: boolean;
   marcarComoLida: (id: string) => void;
   alternarFavorita: (id: string, favorita: boolean) => void;
+  alternarArquivada: (id: string, arquivada: boolean) => void;
   atualizarStatus: (id: string, status: string) => void;
   atribuirAtendente: (id: string, atendente: string | null) => void;
 };
@@ -79,6 +81,11 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
     atualizarRemoto(id, { favorita });
   }
 
+  function alternarArquivada(id: string, arquivada: boolean) {
+    setConversas((prev) => prev.map((c) => (c.id === id ? { ...c, arquivada } : c)));
+    atualizarRemoto(id, { arquivada });
+  }
+
   function atualizarStatus(id: string, status: string) {
     setConversas((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
     atualizarRemoto(id, { status });
@@ -93,7 +100,15 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
 
   return (
     <ConversasContext.Provider
-      value={{ conversas, carregando, marcarComoLida, alternarFavorita, atualizarStatus, atribuirAtendente }}
+      value={{
+        conversas,
+        carregando,
+        marcarComoLida,
+        alternarFavorita,
+        alternarArquivada,
+        atualizarStatus,
+        atribuirAtendente,
+      }}
     >
       {children}
     </ConversasContext.Provider>

@@ -360,6 +360,7 @@ const CONVERSA_VAZIA: ConversaReal = {
   status: "Não respondido",
   naoLidas: 0,
   favorita: false,
+  arquivada: false,
   atendenteSelecionado: null,
   ehGrupo: false,
   participantesGrupo: null,
@@ -481,6 +482,7 @@ function ConversasPageInner() {
     carregando: carregandoConversas,
     marcarComoLida: marcarConversaLida,
     alternarFavorita: alternarFavoritaConversa,
+    alternarArquivada: alternarArquivadaConversa,
     atualizarStatus: atualizarStatusConversa,
     atribuirAtendente: atribuirAtendenteConversa,
   } = useConversas();
@@ -641,7 +643,6 @@ function ConversasPageInner() {
   const [lidas, setLidas] = useState<Set<string>>(() => new Set());
   const [fixadas, setFixadas] = useState<Set<string>>(() => new Set());
   const [silenciadas, setSilenciadas] = useState<Set<string>>(() => new Set());
-  const [arquivadas, setArquivadas] = useState<Set<string>>(() => new Set());
   const [favoritasOverride, setFavoritasOverride] = useState<Record<string, boolean>>({});
   const [encerradas, setEncerradas] = useState<Set<string>>(() => new Set());
   const [rowMenuAberto, setRowMenuAberto] = useState<string | null>(null);
@@ -689,13 +690,8 @@ function ConversasPageInner() {
     setRowMenuAberto(null);
   }
 
-  function alternarArquivada(id: string) {
-    setArquivadas((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  function alternarArquivada(id: string, jaArquivada: boolean) {
+    alternarArquivadaConversa(id, !jaArquivada);
     setRowMenuAberto(null);
   }
 
@@ -800,8 +796,8 @@ function ConversasPageInner() {
           return false;
         }
       }
-      if (!mostrarArquivadas && arquivadas.has(c.id)) return false;
-      if (mostrarArquivadas) return arquivadas.has(c.id);
+      if (!mostrarArquivadas && c.arquivada) return false;
+      if (mostrarArquivadas) return c.arquivada;
       if (filtroConversa === "nao-lidas" && (!c.naoLidas || lidas.has(c.id))) return false;
       if (filtroConversa === "favoritas" && !ehFavorita(c)) return false;
       if (atendenteTopFiltro !== "Todos" && c.atendenteSelecionado !== atendenteTopFiltro)
@@ -3222,14 +3218,14 @@ function ConversasPageInner() {
                 {f.label}
               </button>
             ))}
-            {arquivadas.size > 0 ? (
+            {conversas.some((c) => c.arquivada) ? (
               <button
                 type="button"
                 className={`wa-filter-chip${mostrarArquivadas ? " active" : ""}`}
                 aria-pressed={mostrarArquivadas}
                 onClick={() => setMostrarArquivadas((v) => !v)}
               >
-                Arquivadas ({arquivadas.size})
+                Arquivadas ({conversas.filter((c) => c.arquivada).length})
               </button>
             ) : null}
           </div>
@@ -3399,11 +3395,9 @@ function ConversasPageInner() {
                         type="button"
                         className="dropdown-item"
                         style={{ width: "100%", textAlign: "left" }}
-                        onClick={() => alternarArquivada(c.id)}
+                        onClick={() => alternarArquivada(c.id, c.arquivada)}
                       >
-                        <span className="n">
-                          {arquivadas.has(c.id) ? "Desarquivar" : "Arquivar conversa"}
-                        </span>
+                        <span className="n">{c.arquivada ? "Desarquivar" : "Arquivar conversa"}</span>
                       </button>
                       <button
                         type="button"
