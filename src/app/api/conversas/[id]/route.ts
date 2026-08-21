@@ -28,3 +28,26 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/conversas/
   const linha = await prisma.conversa.findUniqueOrThrow({ where: { id } });
   return NextResponse.json(linha);
 }
+
+/** DELETE apaga a conversa e as mensagens dela — usado pra limpar uma conversa avulsa que nasceu
+ * errada (ex.: mensagem de grupo importada sem reconhecer o grupo, virou uma conversa solta com o
+ * nome/telefone de quem escreveu em vez de cair dentro da thread do grupo). Não desfaz sozinho:
+ * mensagem nova chegando de novo pra esse mesmo nome cria a conversa de novo. */
+export async function DELETE(request: Request, ctx: RouteContext<"/api/conversas/[id]">) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
+  const { id } = await ctx.params;
+  const conversa = await prisma.conversa.findFirst({
+    where: { id, workspaceId: sessao.user.workspaceId },
+    select: { nome: true },
+  });
+  if (!conversa) return NextResponse.json({ erro: "Conversa não encontrada" }, { status: 404 });
+
+  await prisma.$transaction([
+    prisma.mensagemExtra.deleteMany({ where: { workspaceId: sessao.user.workspaceId, contato: conversa.nome } }),
+    prisma.conversa.delete({ where: { id } }),
+  ]);
+
+  return NextResponse.json({ ok: true });
+}

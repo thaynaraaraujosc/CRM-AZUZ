@@ -59,7 +59,22 @@ export async function POST() {
     for (const chat of proximoLote) {
       const mensagens = await buscarMensagensDoChat(workspaceId, chat.remoteJid, MENSAGENS_POR_CHAT);
       for (const item of mensagens) {
-        await processarMensagemRecebida(workspaceId, item, { permitirHistorico: true }).catch((erro) =>
+        // Já sabemos de QUAL conversa essa mensagem é — pedimos ela pelo remoteJid de `chat`. Não
+        // confia no `key.remoteJid` que vem dentro de cada mensagem: era isso que fazia mensagem de
+        // grupo importada pelo histórico virar conversa avulsa (algumas respostas de
+        // `findMessages` trazem o JID de quem mandou dentro do grupo, não o JID do grupo em si, no
+        // campo que a gente esperava ser sempre o do chat).
+        const corrigido =
+          item && typeof item === "object"
+            ? {
+                ...(item as Record<string, unknown>),
+                key: {
+                  ...((item as { key?: Record<string, unknown> }).key ?? {}),
+                  remoteJid: chat.remoteJid,
+                },
+              }
+            : item;
+        await processarMensagemRecebida(workspaceId, corrigido, { permitirHistorico: true }).catch((erro) =>
           console.error(`[sincronizar-historico] Falha ao processar mensagem de ${chat.remoteJid}:`, erro),
         );
       }

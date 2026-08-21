@@ -285,6 +285,20 @@ function FunilPageInner() {
     );
 
     if (cardMovido && etapaDestino) {
+      // Persiste esse card imediatamente (não espera o debounce de 500ms do sync geral do array de
+      // funis) — ver comentário em src/app/api/funis/mover-card/route.ts pra entender por que isso
+      // é necessário pra não perder o drag num F5 rápido ou com mais de uma aba aberta.
+      fetch("/api/funis/mover-card", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cardId: cardMovido.id,
+          etapaId: etapaDestino.id,
+          ordem: etapaDestino.cards.length,
+        }),
+        keepalive: true,
+      }).catch((erro) => console.error("Falha ao mover card imediatamente na API:", erro));
+
       const disparadas = automacoesDeEntradaAtivas(funilAtivo.id, etapaDestino.id);
       for (const automacao of disparadas) {
         avisarAutomacao(

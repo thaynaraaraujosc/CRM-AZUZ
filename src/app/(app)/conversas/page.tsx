@@ -511,6 +511,7 @@ function ConversasPageInner() {
     atualizarFoto: atualizarFotoConversa,
     criarConversaIndividual,
     recarregar: recarregarConversas,
+    excluirConversa,
   } = useConversas();
   const { membros: membrosEquipe } = useEquipe();
   const motivosPerdaBase = useMotivosPerda();
@@ -3603,6 +3604,20 @@ function ConversasPageInner() {
                         onClick={() => encerrarAtendimento(c.id)}
                       >
                         <span className="n">Encerrar atendimento</span>
+                      </button>
+                      <div className="dropdown-sep" />
+                      <button
+                        type="button"
+                        className="dropdown-item"
+                        style={{ width: "100%", textAlign: "left", color: "var(--danger)" }}
+                        onClick={() => {
+                          if (window.confirm(`Excluir a conversa com ${c.nome}? Isso apaga as mensagens dela também — não dá pra desfazer.`)) {
+                            excluirConversa(c.id);
+                          }
+                          setRowMenuAberto(null);
+                        }}
+                      >
+                        <span className="n">Excluir conversa</span>
                       </button>
                     </FloatingDropdown>
                   ) : null}

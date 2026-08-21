@@ -38,6 +38,9 @@ type ConversasContextValue = {
   /** Força buscar as conversas de novo agora, sem esperar o próximo ciclo do polling — usado pelo
    * botão de atualizar da tela de Conversas. */
   recarregar: () => void;
+  /** Apaga a conversa e as mensagens dela — usado pra limpar uma conversa avulsa (ex.: mensagem de
+   * grupo que nasceu como conversa solta antes de existir a correção do sincronizador). */
+  excluirConversa: (id: string) => void;
 };
 
 const ConversasContext = createContext<ConversasContextValue | null>(null);
@@ -147,6 +150,13 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
     return criada;
   }
 
+  function excluirConversa(id: string) {
+    setConversas((prev) => prev.filter((c) => c.id !== id));
+    fetch(`/api/conversas/${id}`, { method: "DELETE" }).catch((erro) =>
+      console.error("Falha ao excluir conversa na API:", erro),
+    );
+  }
+
   return (
     <ConversasContext.Provider
       value={{
@@ -160,6 +170,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
         atualizarFoto,
         criarConversaIndividual,
         recarregar,
+        excluirConversa,
       }}
     >
       {children}
