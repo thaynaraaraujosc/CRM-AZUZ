@@ -13,7 +13,7 @@ import { prisma } from "@/lib/prisma";
 export type ChatNaFila = { remoteJid: string; arquivada: boolean };
 
 export type HistoricoSync = {
-  status: "em_andamento" | "concluido" | "erro";
+  status: "em_andamento" | "pausado" | "concluido" | "erro";
   totalChats: number | null;
   chatsProcessados: number;
   filaRestante: ChatNaFila[] | null;

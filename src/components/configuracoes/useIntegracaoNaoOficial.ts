@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 export type HistoricoSync = {
-  status: "em_andamento" | "concluido" | "erro";
+  status: "em_andamento" | "pausado" | "concluido" | "erro";
   totalChats: number | null;
   chatsProcessados: number;
   filaRestante: { remoteJid: string; arquivada: boolean }[] | null;
@@ -76,7 +76,10 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
           );
         }
         if (!dados?.historico || dados.historico.status !== "em_andamento") break;
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        // 4s entre conversas (não 800ms) — uma sessão do WhatsApp recém-conectada é mais sensível a
+        // comportamento automatizado; ir mais devagar reduz o risco de a própria WhatsApp derrubar
+        // a sessão de novo por parecer bot batendo na API sem parar.
+        await new Promise((resolve) => setTimeout(resolve, 4000));
       }
     })().finally(() => {
       sincronizandoRef.current = false;
@@ -86,6 +89,33 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
       cancelado = true;
     };
   }, [historicoStatus, temHistorico, conectada]);
+
+  /** Pausa a sincronização de histórico sem perder o progresso — pode retomar depois clicando de
+   * novo. Existe pra usuária ter controle se desconfiar que a sincronização está sobrecarregando a
+   * conexão do WhatsApp. */
+  async function pausarSincronizacaoHistorico() {
+    const resposta = await fetch("/api/integracoes/whatsapp-nao-oficial/sincronizar-historico", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "pausado" }),
+    }).catch(() => null);
+    const dados = (await resposta?.json().catch(() => null)) as { historico?: HistoricoSync } | null;
+    if (dados?.historico) {
+      setEstado((prev) => (prev ? { ...prev, metadados: { ...prev.metadados, historico: dados.historico } } : prev));
+    }
+  }
+
+  async function retomarSincronizacaoHistorico() {
+    const resposta = await fetch("/api/integracoes/whatsapp-nao-oficial/sincronizar-historico", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "em_andamento" }),
+    }).catch(() => null);
+    const dados = (await resposta?.json().catch(() => null)) as { historico?: HistoricoSync } | null;
+    if (dados?.historico) {
+      setEstado((prev) => (prev ? { ...prev, metadados: { ...prev.metadados, historico: dados.historico } } : prev));
+    }
+  }
 
   /** Cria a instância na Evolution (se ainda não existir) e busca o primeiro QR Code — chamado
    * quando a pessoa clica em "Conectar"; depois disso, o polling e os eventos de webhook cuidam do
@@ -115,5 +145,14 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     }
   }
 
-  return { estado, desconectando, desconectar, conectando, conectar, erro };
+  return {
+    estado,
+    desconectando,
+    desconectar,
+    conectando,
+    conectar,
+    erro,
+    pausarSincronizacaoHistorico,
+    retomarSincronizacaoHistorico,
+  };
 }

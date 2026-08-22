@@ -21,6 +21,29 @@ import { lerMetadados, salvarHistorico, type HistoricoSync } from "@/lib/integra
 const CHATS_POR_LOTE = 1;
 const MENSAGENS_POR_CHAT = 200;
 
+/** PATCH pausa/retoma a sincronização sem perder o progresso — dá controle pra usuária, caso
+ * desconfie que a sincronização está sobrecarregando a conexão do WhatsApp. */
+export async function PATCH(request: Request) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+  const workspaceId = sessao.user.workspaceId;
+
+  const { status } = (await request.json()) as { status?: "pausado" | "em_andamento" };
+  if (status !== "pausado" && status !== "em_andamento") {
+    return NextResponse.json({ erro: "status inválido" }, { status: 400 });
+  }
+
+  const metadados = await lerMetadados(workspaceId);
+  const historico = metadados.historico as HistoricoSync | undefined;
+  if (!historico || historico.status === "concluido" || historico.status === "erro") {
+    return NextResponse.json({ historico: historico ?? null });
+  }
+
+  const atualizado: HistoricoSync = { ...historico, status };
+  await salvarHistorico(workspaceId, metadados, atualizado);
+  return NextResponse.json({ historico: atualizado });
+}
+
 export async function POST() {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

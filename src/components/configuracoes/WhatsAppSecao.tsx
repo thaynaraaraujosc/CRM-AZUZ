@@ -7,8 +7,17 @@ import { useIntegracaoNaoOficial, type HistoricoSync } from "./useIntegracaoNaoO
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 
 /** Progresso da sincronização de histórico sob demanda (ver `sincronizar-historico/route.ts`) —
- * "Sincronizando conversas antigas: 34 de 180" enquanto roda, some sozinho quando termina. */
-function SincronizacaoHistoricoStatus({ historico }: { historico: HistoricoSync }) {
+ * "Sincronizando conversas antigas: 34 de 180" enquanto roda, some sozinho quando termina. Tem um
+ * botão de pausar/retomar — dá controle pra usuária caso desconfie que está pesando na conexão. */
+function SincronizacaoHistoricoStatus({
+  historico,
+  onPausar,
+  onRetomar,
+}: {
+  historico: HistoricoSync;
+  onPausar: () => void;
+  onRetomar: () => void;
+}) {
   if (historico.status === "concluido") return null;
   if (historico.status === "erro") {
     return (
@@ -19,12 +28,19 @@ function SincronizacaoHistoricoStatus({ historico }: { historico: HistoricoSync 
     );
   }
   const total = historico.totalChats;
+  const pausado = historico.status === "pausado";
   return (
-    <p className="hint" style={{ marginTop: 10 }}>
-      Trazendo o histórico de conversas do celular
-      {total != null ? ` — ${historico.chatsProcessados} de ${total}` : "…"}
-      {total != null ? "." : ""} Pode continuar usando o CRM normal enquanto isso.
-    </p>
+    <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+      <p className="hint" style={{ margin: 0 }}>
+        {pausado ? "Sincronização de histórico pausada" : "Trazendo o histórico de conversas do celular"}
+        {total != null ? ` — ${historico.chatsProcessados} de ${total}` : "…"}
+        {total != null ? "." : ""}
+        {!pausado ? " Pode continuar usando o CRM normal enquanto isso." : ""}
+      </p>
+      <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={pausado ? onRetomar : onPausar}>
+        {pausado ? "Retomar" : "Pausar"}
+      </button>
+    </div>
   );
 }
 
@@ -83,7 +99,11 @@ export function WhatsAppSecao() {
               </button>
             </div>
             {!metaConectada && naoOficial.estado?.metadados?.historico ? (
-              <SincronizacaoHistoricoStatus historico={naoOficial.estado.metadados.historico} />
+              <SincronizacaoHistoricoStatus
+                historico={naoOficial.estado.metadados.historico}
+                onPausar={naoOficial.pausarSincronizacaoHistorico}
+                onRetomar={naoOficial.retomarSincronizacaoHistorico}
+              />
             ) : null}
           </div>
         ) : (
