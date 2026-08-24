@@ -3,8 +3,50 @@
 import { useState } from "react";
 
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
+import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { useIntegracaoNaoOficial, type HistoricoSync } from "./useIntegracaoNaoOficial";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
+
+/** Semáforo de qualidade que a Meta atribui ao número — cai pra amarelo/vermelho quando as pessoas
+ * bloqueiam/denunciam, e vermelho por tempo demais leva a restrição de envio. */
+function SaudeConexaoOficial({ metadados }: { metadados: Record<string, unknown> }) {
+  const qualidade = metadados.qualityRating as string | undefined;
+  const limite = metadados.limiteEnvio as string | undefined;
+  const verificado = metadados.ultimaVerificacaoSaude as string | undefined;
+  const banimento = metadados.banimento as string | undefined;
+  const pinPendente = metadados.pinPendente as boolean | undefined;
+
+  const corQualidade =
+    qualidade === "GREEN" ? "#25d366" : qualidade === "YELLOW" ? "#f2b100" : qualidade === "RED" ? "var(--danger)" : undefined;
+
+  return (
+    <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+      {banimento ? (
+        <p className="hint" style={{ color: "var(--danger)", margin: 0 }}>
+          ⚠ A Meta restringiu esta conta ({banimento}). Resolva pelo WhatsApp Manager.
+        </p>
+      ) : null}
+      {pinPendente ? (
+        <p className="hint" style={{ color: "var(--danger)", margin: 0 }}>
+          ⚠ Este número já tinha sido registrado antes com outro PIN — informe o PIN antigo pra
+          concluir o registro na Cloud API.
+        </p>
+      ) : null}
+      {qualidade ? (
+        <p className="hint" style={{ margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: corQualidade, display: "inline-block" }} />
+          Qualidade do número: {qualidade === "GREEN" ? "boa" : qualidade === "YELLOW" ? "média" : "baixa"}
+        </p>
+      ) : null}
+      {limite ? <p className="hint" style={{ margin: 0 }}>Limite de envio atual: {limite}</p> : null}
+      {verificado ? (
+        <p className="hint" style={{ margin: 0 }}>
+          Última verificação: {new Date(verificado).toLocaleString("pt-BR")}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 /** Progresso da sincronização de histórico sob demanda (ver `sincronizar-historico/route.ts`) —
  * "Sincronizando conversas antigas: 34 de 180" enquanto roda, some sozinho quando termina. Tem um
@@ -98,6 +140,9 @@ export function WhatsAppSecao() {
                 {(metaConectada && desconectando) || (!metaConectada && naoOficial.desconectando) ? "Desconectando…" : "Desconectar"}
               </button>
             </div>
+            {metaConectada && integracao?.metadados ? (
+              <SaudeConexaoOficial metadados={integracao.metadados as Record<string, unknown>} />
+            ) : null}
             {!metaConectada && naoOficial.estado?.metadados?.historico ? (
               <SincronizacaoHistoricoStatus
                 historico={naoOficial.estado.metadados.historico}
@@ -108,16 +153,16 @@ export function WhatsAppSecao() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <a href="/api/integracoes/meta/conectar" className="card" style={{ padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textDecoration: "none" }}>
+            <div className="card" style={{ padding: 14 }}>
               <div>
                 <p className="int-title" style={{ margin: 0 }}>Conectar com a API oficial (Meta)</p>
                 <p className="hint" style={{ margin: "4px 0 0" }}>
-                  Autoriza o CRM a acessar sua conta do WhatsApp Business direto pela Meta — sem
-                  copiar token nenhum.
+                  Abre o cadastro da própria Meta aqui dentro — cria (ou conecta) sua conta do
+                  WhatsApp Business sem sair do CRM e sem copiar token nenhum.
                 </p>
               </div>
-              <span className="btn primary">Conectar</span>
-            </a>
+              <EmbeddedSignupWhatsApp />
+            </div>
 
             <div className="card" style={{ padding: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>

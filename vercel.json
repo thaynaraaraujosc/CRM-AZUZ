@@ -3,5 +3,11 @@
     "deploymentEnabled": {
       "gh-pages": false
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/integracoes/meta/whatsapp/saude",
+      "schedule": "0 9 * * *"
+    }
+  ]
 }

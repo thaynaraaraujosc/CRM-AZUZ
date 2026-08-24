@@ -228,6 +228,7 @@ model Workspace {
   acoesEnvio             AcaoEnvio[]
   motivosPerda           MotivoPerda[]
   relatoriosGerados      RelatorioGerado[]
+  whatsappTemplates      WhatsappTemplate[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -648,4 +649,29 @@ model RelatorioGerado {
   configuracao Json
 
   criadoEm DateTime @default(now())
+}
+
+// Modelo de mensagem (template) do WhatsApp Business oficial — cada WABA tem os próprios, não
+// existe template global. Nasce como espelho local do que existe na Graph API (criado por lá ou
+// por aqui), pra não precisar fazer polling: a aprovação/rejeição chega pelo webhook
+// `message_template_status_update` e atualiza esse registro na hora.
+model WhatsappTemplate {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  metaId         String // id do template na Graph API
+  wabaId         String
+  nome           String
+  idioma         String
+  categoria      String // MARKETING | UTILITY | AUTHENTICATION
+  status         String // PENDING | APPROVED | REJECTED | PAUSED
+  motivoRejeicao String?
+  componentes    Json
+
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([workspaceId, metaId])
+  @@index([workspaceId])
 }

@@ -29,7 +29,11 @@ type MidiaWhatsApp = { id: string; mime_type?: string; caption?: string; filenam
 
 type PayloadWhatsApp = {
   entry?: {
+    /** WABA ID — usado só pra log; o roteamento de verdade é pelo `phone_number_id` (um WABA pode
+     * ter mais de um número, e é o número que identifica a integração). */
+    id?: string;
     changes?: {
+      field?: string;
       value?: {
         metadata?: { phone_number_id?: string };
         contacts?: { profile?: { name?: string }; wa_id?: string }[];
@@ -45,6 +49,24 @@ type PayloadWhatsApp = {
           video?: MidiaWhatsApp;
           document?: MidiaWhatsApp;
         }[];
+        /** `statuses` — confirmação de entrega/leitura de mensagem que NÓS mandamos. */
+        statuses?: {
+          id: string;
+          status?: string; // sent | delivered | read | failed
+          timestamp?: string;
+          errors?: { code?: number; title?: string; message?: string }[];
+        }[];
+        /** `message_template_status_update` — aprovação/rejeição de modelo de mensagem. */
+        message_template_id?: string | number;
+        message_template_name?: string;
+        message_template_language?: string;
+        event?: string; // APPROVED | REJECTED | PAUSED | ...
+        reason?: string;
+        /** `phone_number_quality_update` / `account_update` — saúde da conta. */
+        display_phone_number?: string;
+        current_limit?: string;
+        event_type?: string;
+        ban_info?: { waba_ban_state?: string; waba_ban_date?: string };
       };
     }[];
   }[];
@@ -116,10 +138,37 @@ async function extrasDeMidia(
   }
 }
 
+/** Acha a integração DAQUELE número (não do workspace da sessão — aqui não tem sessão nenhuma, quem
+ * chama é a Meta). `metadados` é Json, então não dá pra filtrar `phoneNumberId` no `where` de forma
+ * portável: filtra em memória, o custo é desprezível pro número de integrações ativas. */
+async function integracaoDoNumero(phoneNumberId: string) {
+  const conectadas = await prisma.integracao.findMany({
+    where: { provedor: "meta_whatsapp", status: "conectado" },
+  });
+  return (
+    conectadas.find((i) => (i.metadados as { phoneNumberId?: string } | null)?.phoneNumberId === phoneNumberId) ?? null
+  );
+}
+
+/** Mescla campos em `Integracao.metadados` sem apagar o resto — `metadados` é uma coluna Json
+ * substituída inteira pelo Prisma, então tem que ler antes de gravar. */
+async function atualizarMetadados(integracaoId: string, novos: Record<string, unknown>, status?: string) {
+  const atual = await prisma.integracao.findUnique({ where: { id: integracaoId }, select: { metadados: true } });
+  const metadados = { ...((atual?.metadados as Record<string, unknown> | null) ?? {}), ...novos };
+  await prisma.integracao.update({
+    where: { id: integracaoId },
+    data: { metadados: metadados as never, ...(status ? { status } : {}) },
+  });
+}
+
 /**
  * POST recebe mensagem recebida/status de entrega — sem `auth()` de propósito (quem chama é a
  * Meta, não um usuário logado). Em vez disso, valida a assinatura HMAC do corpo cru
  * (`X-Hub-Signature-256`) pra garantir que a chamada é mesmo da Meta.
+ *
+ * É UM webhook só pra todos os workspaces (é assim que a Cloud API funciona: um app, um endpoint,
+ * N clientes conectados). O roteamento é sempre por `value.metadata.phone_number_id` → a
+ * `Integracao` daquele número → o `workspaceId` dela. O workspace NUNCA vem do payload.
  *
  * A mensagem é gravada em `MensagemExtra` (workspace-scoped) e a `Conversa` correspondente é
  * criada/atualizada via `upsertConversaAoReceberMensagem`. Número novo (sem `Contato` cadastrado
@@ -139,17 +188,72 @@ export async function POST(request: Request) {
     for (const change of entry.changes ?? []) {
       const valor = change.value;
       const phoneNumberId = valor?.metadata?.phone_number_id;
+
+      // ---- statuses: confirmação de entrega/leitura de mensagem que NÓS mandamos ----
+      if (valor?.statuses?.length && phoneNumberId) {
+        const integracao = await integracaoDoNumero(phoneNumberId);
+        if (!integracao) continue;
+        for (const s of valor.statuses) {
+          // Só atualiza mensagem que já existe (a nossa, gravada no envio) — status de mensagem
+          // desconhecida é ruído, não vira registro novo.
+          await prisma.mensagemExtra
+            .updateMany({
+              where: { id: s.id, workspaceId: integracao.workspaceId },
+              data: { status: s.status ?? undefined },
+            })
+            .catch((erro) => console.error("[webhook whatsapp] falha ao atualizar status:", erro));
+          if (s.status === "failed" && s.errors?.length) {
+            console.error(`[webhook whatsapp] mensagem ${s.id} falhou:`, s.errors[0]?.code, s.errors[0]?.title);
+          }
+        }
+        continue;
+      }
+
+      // ---- message_template_status_update: aprovação/rejeição de modelo de mensagem ----
+      if (change.field === "message_template_status_update" && valor?.message_template_id) {
+        const wabaId = entry.id;
+        const integracao = wabaId
+          ? (
+              await prisma.integracao.findMany({ where: { provedor: "meta_whatsapp", status: "conectado" } })
+            ).find((i) => (i.metadados as { wabaId?: string } | null)?.wabaId === wabaId)
+          : null;
+        if (!integracao) continue;
+        await prisma.whatsappTemplate
+          .updateMany({
+            where: { workspaceId: integracao.workspaceId, metaId: String(valor.message_template_id) },
+            data: { status: valor.event ?? "PENDING", motivoRejeicao: valor.reason ?? null },
+          })
+          .catch((erro) => console.error("[webhook whatsapp] falha ao atualizar template:", erro));
+        continue;
+      }
+
+      // ---- account_update / phone_number_quality_update: saúde da conta ----
+      if (change.field === "account_update" || change.field === "phone_number_quality_update") {
+        const integracao = phoneNumberId ? await integracaoDoNumero(phoneNumberId) : null;
+        if (!integracao) continue;
+        const banido = valor?.ban_info?.waba_ban_state;
+        await atualizarMetadados(
+          integracao.id,
+          {
+            ...(valor?.current_limit ? { limiteEnvio: valor.current_limit } : {}),
+            ...(valor?.event_type ? { ultimoEventoConta: valor.event_type } : {}),
+            ...(banido ? { banimento: banido } : {}),
+            ultimaVerificacaoSaude: new Date().toISOString(),
+          },
+          banido ? "erro" : undefined,
+        ).catch((erro) => console.error("[webhook whatsapp] falha ao atualizar saúde da conta:", erro));
+        continue;
+      }
+
       if (!phoneNumberId || !valor?.messages?.length) continue;
 
-      // `metadados` é Json — não dá pra filtrar phoneNumberId direto no `where` de forma portável,
-      // então filtra em memória (poucas integrações ativas, custo desprezível).
-      const todasConectadas = await prisma.integracao.findMany({
-        where: { provedor: "meta_whatsapp", status: "conectado" },
-      });
-      const integracaoDoNumero = todasConectadas.find(
-        (i) => (i.metadados as { phoneNumberId?: string } | null)?.phoneNumberId === phoneNumberId,
-      );
-      if (!integracaoDoNumero) continue;
+      const integracao = await integracaoDoNumero(phoneNumberId);
+      if (!integracao) {
+        // WABA/número órfão (conectado a este app mas sem integração no CRM) — loga e segue, não
+        // pode derrubar o processamento do resto do lote.
+        console.log(`[webhook whatsapp] mensagem de número não cadastrado (${phoneNumberId}), descartada.`);
+        continue;
+      }
 
       for (const mensagem of valor.messages) {
         // Normaliza aqui (não só na hora de enviar) — assim o número gravado na Conversa já sai
@@ -163,12 +267,12 @@ export async function POST(request: Request) {
         // Casa com um Contato já existente pelo telefone (comparação normalizada, não `contains`
         // cru) — número totalmente novo ganha um Contato automaticamente, com o nome do perfil do
         // WhatsApp quando disponível.
-        const contatoExistente = await encontrarContatoPorTelefone(integracaoDoNumero.workspaceId, waId);
+        const contatoExistente = await encontrarContatoPorTelefone(integracao.workspaceId, waId);
         const chaveContato = contatoExistente?.nome ?? nomePerfil ?? waId;
         const contato =
           contatoExistente ??
           (await criarContatoPeloWhatsAppSeNaoExistir({
-            workspaceId: integracaoDoNumero.workspaceId,
+            workspaceId: integracao.workspaceId,
             nome: chaveContato,
             whatsapp: waId,
           }));
@@ -178,7 +282,7 @@ export async function POST(request: Request) {
         // mover manualmente, mandar mensagem de novo não pode "resetar" onde ele estava.
         if (!contatoExistente) {
           await entrarNaPrimeiraEtapaComoNovoLead({
-            workspaceId: integracaoDoNumero.workspaceId,
+            workspaceId: integracao.workspaceId,
             contatoNome: chaveContato,
             origem: "WhatsApp",
           });
@@ -186,8 +290,8 @@ export async function POST(request: Request) {
 
         const midia = mensagem.image ?? mensagem.sticker ?? mensagem.audio ?? mensagem.video ?? mensagem.document;
         const extras =
-          midia && integracaoDoNumero.accessTokenCriptografado
-            ? await extrasDeMidia(mensagem.type, midia, decriptar(integracaoDoNumero.accessTokenCriptografado))
+          midia && integracao.accessTokenCriptografado
+            ? await extrasDeMidia(mensagem.type, midia, decriptar(integracao.accessTokenCriptografado))
             : {};
         const temMidiaBaixada = Object.keys(extras).length > 0;
         // Rótulo em texto sempre existe (aparece na lista de conversas e como legenda/fallback),
@@ -200,7 +304,7 @@ export async function POST(request: Request) {
         await prisma.mensagemExtra.create({
           data: {
             id: mensagem.id,
-            workspaceId: integracaoDoNumero.workspaceId,
+            workspaceId: integracao.workspaceId,
             contato: chaveContato,
             tipo: "in",
             texto,
@@ -217,7 +321,7 @@ export async function POST(request: Request) {
         });
 
         await upsertConversaAoReceberMensagem({
-          workspaceId: integracaoDoNumero.workspaceId,
+          workspaceId: integracao.workspaceId,
           nome: chaveContato,
           canal: "WhatsApp",
           contato: waId,

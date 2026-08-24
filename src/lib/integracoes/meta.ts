@@ -16,9 +16,61 @@ export function normalizarNumeroBrasileiro(numeroLimpo: string): string {
 }
 
 /** Versão da Graph API usada em toda chamada à Meta — um lugar só pra atualizar quando a Meta
- * depreciar a versão atual. */
-export const META_GRAPH_VERSION = "v21.0";
+ * depreciar a versão atual. `NEXT_PUBLIC_` porque o Embedded Signup roda no navegador (SDK JS do
+ * Facebook) e precisa da mesma versão que o servidor usa. */
+export const META_GRAPH_VERSION = process.env.NEXT_PUBLIC_META_GRAPH_VERSION ?? "v23.0";
 export const META_GRAPH_URL = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
+
+export type ErroGraph = { error?: { message?: string; code?: number } };
+
+/**
+ * Chamada autenticada à Graph API com o token DAQUELE tenant (nunca um token global) — `Bearer` no
+ * header, não `?access_token=` na query, pra token não vazar em log de servidor/proxy. Erro da
+ * Graph vira `Error` com a mensagem original da Meta, pra quem chama decidir o que mostrar.
+ */
+export async function chamarGraph<T>(
+  caminho: string,
+  accessToken: string,
+  init: { method?: "GET" | "POST" | "DELETE"; body?: Record<string, unknown> } = {},
+): Promise<T> {
+  const resposta = await fetch(`${META_GRAPH_URL}${caminho}`, {
+    method: init.method ?? "GET",
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      ...(init.body ? { "content-type": "application/json" } : {}),
+    },
+    body: init.body ? JSON.stringify(init.body) : undefined,
+  });
+  const corpo = (await resposta.json()) as T & ErroGraph;
+  if (!resposta.ok) {
+    const erro = new Error(corpo.error?.message ?? `Falha na Graph API (${resposta.status})`);
+    // Preserva o código numérico da Meta — é ele que distingue "janela de 24h fechada" de "token
+    // revogado" etc. (ver `MENSAGEM_POR_CODIGO_META`), a mensagem em texto não é confiável pra isso.
+    (erro as Error & { codigoMeta?: number }).codigoMeta = corpo.error?.code;
+    throw erro;
+  }
+  return corpo;
+}
+
+/**
+ * Códigos de erro da Cloud API que precisam de tratamento explícito na tela — a mensagem crua da
+ * Meta vem em inglês e técnica demais pra mostrar pro atendente. Código fora dessa lista cai na
+ * mensagem original da Meta (melhor que um "erro desconhecido" genérico).
+ */
+export const MENSAGEM_POR_CODIGO_META: Record<number, string> = {
+  131047:
+    "Passaram mais de 24h desde a última mensagem dessa pessoa — pra falar agora só usando um modelo de mensagem aprovado.",
+  131026: "Esse número não tem WhatsApp.",
+  132000: "O modelo de mensagem espera uma quantidade diferente de informações.",
+  190: "A conexão com o WhatsApp expirou ou foi revogada — precisa conectar de novo.",
+  133010: "O número ainda não foi registrado na Cloud API — refaça a conexão.",
+};
+
+/** Erro da Meta que significa "essa conexão morreu, precisa reconectar" (token revogado/expirado) —
+ * quem chama marca a integração como desconectada em vez de só mostrar o erro. */
+export function ehTokenInvalido(codigoMeta: number | undefined): boolean {
+  return codigoMeta === 190;
+}
 
 function appSecret(): string {
   const segredo = process.env.META_APP_SECRET;

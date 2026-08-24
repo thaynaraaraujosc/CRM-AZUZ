@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { decriptar } from "@/lib/integracoes/crypto";
-import { META_GRAPH_URL, normalizarNumeroBrasileiro } from "@/lib/integracoes/meta";
+import {
+  contaConectada,
+  enviarPelaCloudApi,
+  janelaDeAtendimentoAberta,
+  tratarErroEnvio,
+} from "@/lib/integracoes/whatsapp-oficial";
 
-type ErroGraph = { error?: { message?: string } };
 type ContatoPayload = {
   nome: string;
   whatsapp?: string;
@@ -27,70 +29,74 @@ export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
-  const { destinatario, texto, contato } = (await request.json()) as {
+  const { destinatario, texto, contato, contatoNome, template } = (await request.json()) as {
     destinatario?: string;
     texto?: string;
     contato?: ContatoPayload;
+    /** Nome da conversa no CRM — usado pra checar a janela de 24h daquela pessoa. */
+    contatoNome?: string;
+    /** Modelo de mensagem aprovado, único jeito de falar com a janela de 24h fechada. */
+    template?: { nome: string; idioma: string; componentes?: unknown[] };
   };
-  if (!destinatario || (!texto?.trim() && !contato)) {
-    return NextResponse.json({ erro: "destinatario e texto (ou contato) são obrigatórios" }, { status: 400 });
+  if (!destinatario || (!texto?.trim() && !contato && !template)) {
+    return NextResponse.json({ erro: "destinatario e texto (ou contato/template) são obrigatórios" }, { status: 400 });
   }
 
-  const integracao = await prisma.integracao.findUnique({
-    where: { workspaceId_provedor: { workspaceId: sessao.user.workspaceId, provedor: "meta_whatsapp" } },
-  });
-  if (!integracao || integracao.status !== "conectado" || !integracao.accessTokenCriptografado) {
+  const conta = await contaConectada(sessao.user.workspaceId);
+  if (!conta) {
     return NextResponse.json({ erro: "WhatsApp Business (Meta) não conectado" }, { status: 404 });
   }
 
-  const { phoneNumberId } = integracao.metadados as { phoneNumberId?: string };
-  if (!phoneNumberId) {
-    return NextResponse.json({ erro: "Número de telefone da integração não configurado" }, { status: 404 });
+  // Janela de atendimento: passadas 24h da última mensagem recebida, a Cloud API só aceita modelo
+  // aprovado. Barrar aqui dá um erro claro em português em vez do 131047 cru da Meta lá na frente.
+  if (!template && contatoNome) {
+    const janelaAberta = await janelaDeAtendimentoAberta(sessao.user.workspaceId, contatoNome);
+    if (!janelaAberta) {
+      return NextResponse.json(
+        {
+          erro: "Passaram mais de 24h desde a última mensagem dessa pessoa — pra falar agora só usando um modelo de mensagem aprovado.",
+          precisaTemplate: true,
+        },
+        { status: 409 },
+      );
+    }
   }
 
-  // A Meta exige o número em dígitos puros, com código do país — remove tudo que não for número
-  // (o destinatário pode chegar como waId cru da Conversa, ou formatado do cadastro do contato).
-  // `normalizarNumeroBrasileiro` corrige o caso do wa_id vir sem o 9º dígito do celular.
-  const numeroLimpo = normalizarNumeroBrasileiro(destinatario.replace(/\D/g, ""));
-
-  const corpoMensagem = contato
+  const corpoMensagem = template
     ? {
-        messaging_product: "whatsapp",
-        to: numeroLimpo,
-        type: "contacts",
-        contacts: [
-          {
-            name: { formatted_name: contato.nome, first_name: contato.nome.split(" ")[0] },
-            phones: [
-              ...(contato.whatsapp ? [{ phone: contato.whatsapp, type: "CELL" }] : []),
-              ...(contato.telefoneFixo ? [{ phone: contato.telefoneFixo, type: "WORK" }] : []),
-            ],
-            ...(contato.email ? { emails: [{ email: contato.email, type: "WORK" }] } : {}),
-            ...(contato.empresa || contato.cargo
-              ? { org: { company: contato.empresa, title: contato.cargo } }
-              : {}),
-          },
-        ],
+        type: "template",
+        template: {
+          name: template.nome,
+          language: { code: template.idioma },
+          ...(template.componentes?.length ? { components: template.componentes } : {}),
+        },
       }
-    : { messaging_product: "whatsapp", to: numeroLimpo, type: "text", text: { body: texto } };
+    : contato
+      ? {
+          type: "contacts",
+          contacts: [
+            {
+              name: { formatted_name: contato.nome, first_name: contato.nome.split(" ")[0] },
+              phones: [
+                ...(contato.whatsapp ? [{ phone: contato.whatsapp, type: "CELL" }] : []),
+                ...(contato.telefoneFixo ? [{ phone: contato.telefoneFixo, type: "WORK" }] : []),
+              ],
+              ...(contato.email ? { emails: [{ email: contato.email, type: "WORK" }] } : {}),
+              ...(contato.empresa || contato.cargo
+                ? { org: { company: contato.empresa, title: contato.cargo } }
+                : {}),
+            },
+          ],
+        }
+      : { type: "text", text: { body: texto } };
 
   try {
-    const accessToken = decriptar(integracao.accessTokenCriptografado);
-    const resposta = await fetch(`${META_GRAPH_URL}/${phoneNumberId}/messages`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(corpoMensagem),
-    });
-    const corpo = (await resposta.json()) as ErroGraph;
-    if (!resposta.ok) {
-      throw new Error(corpo.error?.message ?? `Falha na Graph API (${resposta.status})`);
-    }
-    return NextResponse.json({ ok: true });
+    // `wamid` volta pra quem chamou porque é ele que casa os webhooks de entrega/leitura com esta
+    // mensagem — sem guardar isso, `statuses` do webhook não encontram nada pra atualizar.
+    const wamid = await enviarPelaCloudApi(conta, destinatario, corpoMensagem);
+    return NextResponse.json({ ok: true, wamid });
   } catch (erro) {
-    const mensagemErro = erro instanceof Error ? erro.message : "Falha ao enviar mensagem.";
+    const mensagemErro = await tratarErroEnvio(erro, conta.integracaoId);
     return NextResponse.json({ erro: mensagemErro }, { status: 502 });
   }
 }
