@@ -199,9 +199,18 @@ export function EmbeddedSignupWhatsApp({
         {conectando ? "Conectando…" : sdkPronto ? "Conectar com a API oficial (Meta)" : "Carregando…"}
       </button>
       {erro ? (
-        <p className="hint" style={{ color: "var(--danger)", marginTop: 8 }}>
-          ⚠ {erro}
-        </p>
+        <>
+          <p className="hint" style={{ color: "var(--danger)", marginTop: 8 }}>
+            ⚠ {erro}
+          </p>
+          {/* O erro mais comum aqui ("Falha ao iniciar sessão", mostrado dentro do popup da Meta) é
+              a configuração de login pertencer a um App diferente do App ID que o site usa. Mostrar
+              os dois lado a lado deixa isso óbvio sem ter que abrir o console. */}
+          <p className="hint" style={{ marginTop: 4, fontSize: 11 }}>
+            App ID em uso: <b>{appId}</b> · Configuração de login: <b>{configId}</b> · Graph{" "}
+            <b>{versaoGraph}</b>. Os dois primeiros precisam ser do MESMO app no painel da Meta.
+          </p>
+        </>
       ) : null}
     </div>
   );
