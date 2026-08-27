@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
+import { ConexaoManualWhatsApp } from "./ConexaoManualWhatsApp";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { useIntegracaoNaoOficial, type HistoricoSync } from "./useIntegracaoNaoOficial";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
@@ -99,7 +100,7 @@ function SincronizacaoHistoricoStatus({
  * padrão saíram: a integração já é da conta que está logada, não faz sentido escolher "responsável"
  * separado — quem manda mensagem é quem está logado. */
 export function WhatsAppSecao() {
-  const { integracao, desconectando, desconectar, erroDoRedirect } = useIntegracaoMeta("meta_whatsapp");
+  const { integracao, desconectando, desconectar, erroDoRedirect, recarregar } = useIntegracaoMeta("meta_whatsapp");
   const naoOficial = useIntegracaoNaoOficial();
   const [painelNaoOficialAberto, setPainelNaoOficialAberto] = useState(false);
 
@@ -162,6 +163,10 @@ export function WhatsAppSecao() {
                 </p>
               </div>
               <EmbeddedSignupWhatsApp />
+              {/* Saída pra quem já tem a conta criada: o Embedded Signup acima só funciona com o
+                  app aprovado como Provedor de Tecnologia pela Meta, o que leva dias. Com a WABA
+                  já aprovada, conectar por token não depende de aprovação nenhuma. */}
+              <ConexaoManualWhatsApp aoConectar={recarregar} />
             </div>
 
             <div className="card" style={{ padding: 14 }}>

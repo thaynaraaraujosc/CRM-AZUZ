@@ -46,5 +46,7 @@ export function useIntegracaoMeta(provedor: string) {
     }
   }
 
-  return { integracao, desconectando, desconectar, erroDoRedirect };
+  // `recarregar` deixa quem conectou por fora do hook (ex.: o formulário de conexão por token)
+  // refletir o novo status na hora, sem esperar um F5.
+  return { integracao, desconectando, desconectar, erroDoRedirect, recarregar: carregarIntegracao };
 }
