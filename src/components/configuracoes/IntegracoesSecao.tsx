@@ -7,6 +7,7 @@ import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
 import { ConexaoQrCode } from "./ConexaoQrCode";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
 import { ConexaoInstagram, ConexaoMetaAds } from "./ConexoesOAuth";
+import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
@@ -129,7 +130,14 @@ export function IntegracoesSecao() {
             titulo="WhatsApp via QR Code"
             sub={naoOficialStatus?.status === "conectado" ? `Número conectado${naoOficialStatus.metadados?.numero ? `: ${naoOficialStatus.metadados.numero}` : ""}` : "Escaneia o QR Code, sem precisar de aprovação da Meta"}
             conectado={naoOficialStatus?.status === "conectado"}
-            painel={<ConexaoQrCode />}
+            painel={
+              <>
+                <ConexaoQrCode />
+                {/* A limpeza morava só na categoria WhatsApp, que não está no menu — ficava
+                    inalcançável. Aqui ela está no canal de onde os dados vieram. */}
+                <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />
+              </>
+            }
           />
           <LinhaReal
             icone={<IconInstagram width={20} height={20} />}
