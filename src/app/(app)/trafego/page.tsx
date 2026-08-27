@@ -166,7 +166,7 @@ export default function TrafegoPage() {
               <span className="hint">
                 Meta Ads conectado — {(adsIntegracao.metadados?.adAccountNome as string | undefined) ?? "conta"}
               </span>
-              <button type="button" className="btn ghost" onClick={desconectarAds} disabled={adsDesconectando}>
+              <button type="button" className="btn ghost" onClick={() => void desconectarAds()} disabled={adsDesconectando}>
                 {adsDesconectando ? "Desconectando…" : "Desconectar Meta Ads"}
               </button>
             </>

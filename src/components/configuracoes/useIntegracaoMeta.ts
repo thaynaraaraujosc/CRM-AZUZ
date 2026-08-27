@@ -36,10 +36,14 @@ export function useIntegracaoMeta(provedor: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provedor]);
 
-  async function desconectar() {
+  async function desconectar(limparDados = false) {
     setDesconectando(true);
     try {
-      await fetch(`/api/integracoes/meta/desconectar?provedor=${provedor}`, { method: "POST" });
+      await fetch(`/api/integracoes/meta/desconectar?provedor=${provedor}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ limparDados }),
+      });
       carregarIntegracao();
     } finally {
       setDesconectando(false);

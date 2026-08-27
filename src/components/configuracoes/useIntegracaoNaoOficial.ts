@@ -158,10 +158,14 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     }
   }
 
-  async function desconectar() {
+  async function desconectar(limparDados = false) {
     setDesconectando(true);
     try {
-      await fetch("/api/integracoes/whatsapp-nao-oficial/desconectar", { method: "POST" });
+      await fetch("/api/integracoes/whatsapp-nao-oficial/desconectar", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ limparDados }),
+      });
       carregar();
     } finally {
       setDesconectando(false);

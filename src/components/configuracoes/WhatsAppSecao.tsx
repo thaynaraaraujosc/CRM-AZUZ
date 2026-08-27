@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { ConexaoManualWhatsApp } from "./ConexaoManualWhatsApp";
+import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { useIntegracaoNaoOficial, type HistoricoSync } from "./useIntegracaoNaoOficial";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
@@ -135,7 +136,19 @@ export function WhatsAppSecao() {
               <button
                 type="button"
                 className="btn danger"
-                onClick={metaConectada ? desconectar : naoOficial.desconectar}
+                onClick={() => {
+                  // Desconectar sem limpar deixava o espelho do WhatsApp para trás (contatos, cards
+                  // no funil, pendências no Início, conversa órfã), que se misturava com o do canal
+                  // conectado depois. Apagar é irreversível, então é escolha explícita — e "Cancelar"
+                  // mantém o comportamento antigo em vez de abortar a desconexão.
+                  const limpar = window.confirm(
+                    "Desconectar e apagar tudo que veio deste WhatsApp?\n\n" +
+                      "Serão removidos as conversas e mensagens, os contatos criados automaticamente " +
+                      "e os cards de funil desses leads. Contatos e cards que você criou à mão ficam.\n\n" +
+                      "OK = desconectar e apagar · Cancelar = só desconectar, mantendo os dados.",
+                  );
+                  void (metaConectada ? desconectar(limpar) : naoOficial.desconectar(limpar));
+                }}
                 disabled={(metaConectada && desconectando) || (!metaConectada && naoOficial.desconectando)}
               >
                 {(metaConectada && desconectando) || (!metaConectada && naoOficial.desconectando) ? "Desconectando…" : "Desconectar"}
@@ -216,6 +229,9 @@ export function WhatsAppSecao() {
                 )
               ) : null}
             </div>
+            {/* Espelho de um WhatsApp desconectado antes de a limpeza no "Desconectar" existir —
+                sem isso não há como remover esses dados, e eles se misturam com o próximo número. */}
+            <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />
           </div>
         )}
       </div>

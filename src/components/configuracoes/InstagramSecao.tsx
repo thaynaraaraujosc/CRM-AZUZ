@@ -91,7 +91,7 @@ export function InstagramSecao() {
             </div>
 
             <div style={{ marginTop: 4 }}>
-              <button type="button" className="btn danger" onClick={desconectar} disabled={desconectando}>
+              <button type="button" className="btn danger" onClick={() => void desconectar()} disabled={desconectando}>
                 {desconectando ? "Desconectando…" : "Desconectar Instagram"}
               </button>
             </div>
