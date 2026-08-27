@@ -35,7 +35,11 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
 
   useEffect(() => {
     carregar();
-    const intervalo = setInterval(carregar, intervaloMs);
+    // Só busca com a aba à frente — com o CRM aberto em segundo plano (o normal, é uma aba que
+    // fica o dia inteiro) isso era requisição a cada 4s sem ninguém olhando.
+    const intervalo = setInterval(() => {
+      if (document.visibilityState === "visible") carregar();
+    }, intervaloMs);
     return () => clearInterval(intervalo);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intervaloMs é constante na prática, não precisa reiniciar o polling se mudar
   }, []);
@@ -54,10 +58,20 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     // cobre quem já estava conectado ANTES dessa sincronização existir: o gatilho normal
     // (`connection.update`/`open` no webhook) só dispara numa conexão nova, não pra quem já tava
     // conectado, então sem isso essa conta nunca ganhava a sincronização sozinha.
-    const deveComecar = historicoStatus === "em_andamento" || (conectada && !temHistorico);
+    // `conectada` é condição pra TUDO: sem sessão do WhatsApp de pé não há o que sincronizar, e
+    // `historico.status` pode continuar "em_andamento" para sempre depois de uma queda (fica
+    // gravado assim no servidor). Sem essa checagem, o motor abaixo virava um laço apertado
+    // batendo no endpoint várias vezes por segundo, indefinidamente, contra uma conexão morta.
+    const deveComecar = conectada && (historicoStatus === "em_andamento" || !temHistorico);
     if (!deveComecar || sincronizandoRef.current) return;
     sincronizandoRef.current = true;
     let cancelado = false;
+
+    // Uma resposta sem `historico` é falha (rede, sessão caída, erro no servidor). Desistir na
+    // primeira seria frágil demais numa sincronização longa, mas insistir sem limite foi o que
+    // gerou o laço apertado — então: espera antes de tentar de novo e para depois de 3 seguidas.
+    const MAX_FALHAS_SEGUIDAS = 3;
+    let falhasSeguidas = 0;
 
     (async function passo() {
       while (!cancelado) {
@@ -71,11 +85,20 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
           | { historico?: HistoricoSync }
           | null;
         if (dados?.historico) {
+          falhasSeguidas = 0;
           setEstado((prev) =>
             prev ? { ...prev, metadados: { ...prev.metadados, historico: dados.historico } } : prev,
           );
+        } else {
+          falhasSeguidas += 1;
+          if (falhasSeguidas >= MAX_FALHAS_SEGUIDAS) {
+            console.error("Sincronização de histórico parada após falhas seguidas.");
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 4000));
+          continue;
         }
-        if (!dados?.historico || dados.historico.status !== "em_andamento") break;
+        if (dados.historico.status !== "em_andamento") break;
         // 4s entre conversas (não 800ms) — uma sessão do WhatsApp recém-conectada é mais sensível a
         // comportamento automatizado; ir mais devagar reduz o risco de a própria WhatsApp derrubar
         // a sessão de novo por parecer bot batendo na API sem parar.
