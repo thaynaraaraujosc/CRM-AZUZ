@@ -18,10 +18,24 @@ export async function GET(request: Request) {
   const token = url.searchParams.get("hub.verify_token");
   const challenge = url.searchParams.get("hub.challenge");
 
-  if (modo === "subscribe" && token === process.env.META_WEBHOOK_VERIFY_TOKEN && challenge) {
+  const esperado = process.env.META_WEBHOOK_VERIFY_TOKEN;
+  if (modo === "subscribe" && token === esperado && challenge) {
     return new NextResponse(challenge, { status: 200 });
   }
-  return NextResponse.json({ erro: "Verificação inválida" }, { status: 403 });
+  // Diagnóstico do que exatamente falhou. Sem isso, "Verificação inválida" cobre três causas bem
+  // diferentes — variável ausente no servidor, valor diferente, ou chamada malformada — e não há
+  // como distinguir de fora. Nada aqui revela o valor esperado: só se ele existe e se o recebido
+  // bate, que é o que a pessoa cadastrando o webhook precisa saber.
+  return NextResponse.json(
+    {
+      erro: "Verificação inválida",
+      tokenConfiguradoNoServidor: Boolean(esperado),
+      tokenRecebido: Boolean(token),
+      tokensIguais: Boolean(esperado) && token === esperado,
+      modoRecebido: modo,
+    },
+    { status: 403 },
+  );
 }
 
 type PayloadInstagram = {
