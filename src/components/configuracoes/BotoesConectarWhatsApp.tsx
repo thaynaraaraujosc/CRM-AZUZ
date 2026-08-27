@@ -31,13 +31,18 @@ export function BotoesConectarWhatsApp() {
         <div className="modal-overlay" onClick={() => setAberto(null)}>
           {/* `stopPropagation` no conteúdo — sem isso, clicar dentro do painel (num campo, num
               botão) borbulha pro overlay e fecha o modal no meio do preenchimento. */}
-          <div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
-            <div
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}
-            >
-              <p className="int-title" style={{ margin: 0 }}>
-                {aberto === "qrcode" ? "Conectar por QR Code" : "Conectar pela API oficial (Meta)"}
-              </p>
+          <div className="modal" style={{ width: "min(520px, 100%)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-cabecalho">
+              <div>
+                <p className="int-title" style={{ margin: 0 }}>
+                  {aberto === "qrcode" ? "Conectar por QR Code" : "Conectar pela API oficial (Meta)"}
+                </p>
+                <p className="hint" style={{ margin: "6px 0 0" }}>
+                  {aberto === "qrcode"
+                    ? "Escaneia como o WhatsApp Web — não passa pela verificação de negócio da Meta, e o número corre risco de ser banido por violar os termos de uso do WhatsApp."
+                    : "Canal oficial da Meta. Mantém o número em conformidade e não corre risco de banimento."}
+                </p>
+              </div>
               <button
                 type="button"
                 className="modal-close-btn"
@@ -48,13 +53,9 @@ export function BotoesConectarWhatsApp() {
               </button>
             </div>
 
-            <p className="hint" style={{ margin: "6px 0 14px" }}>
-              {aberto === "qrcode"
-                ? "Escaneia como o WhatsApp Web — não passa pela verificação de negócio da Meta, e o número corre risco de ser banido por violar os termos de uso do WhatsApp."
-                : "Canal oficial da Meta. Mantém o número em conformidade e não corre risco de banimento."}
-            </p>
-
-            {aberto === "qrcode" ? <ConexaoQrCode /> : <ConexaoWhatsAppOficial />}
+            <div className="modal-corpo">
+              {aberto === "qrcode" ? <ConexaoQrCode /> : <ConexaoWhatsAppOficial />}
+            </div>
           </div>
         </div>
       ) : null}

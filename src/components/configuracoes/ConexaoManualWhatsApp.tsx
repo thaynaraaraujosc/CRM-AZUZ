@@ -98,7 +98,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
 
   return (
     <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
-      <p className="hint" style={{ margin: 0 }}>
+      <p className="hint" style={{ margin: "0 0 4px" }}>
         Use isto se a sua conta do WhatsApp Business já existe e está aprovada no Gerenciador de
         Negócios. Os três valores ficam em business.facebook.com → Configurações → Contas do
         WhatsApp; o token vem de Usuários do sistema → Gerar novo token, com as permissões
@@ -154,7 +154,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
         />
       </div>
 
-      <div style={{ display: "flex", gap: 8 }}>
+      <div className="modal-acoes">
         <button type="button" className="btn primary" onClick={conectar} disabled={!podeEnviar}>
           {enviando ? "Conectando…" : "Conectar"}
         </button>
