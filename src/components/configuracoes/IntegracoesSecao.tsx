@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
+import { ConexaoQrCode } from "./ConexaoQrCode";
+import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
@@ -24,30 +26,59 @@ const APPS_EM_BREVE: AppFuturo[] = [
 ];
 const CATEGORIAS = ["Todas", "Comunicação", "Marketing", "Produtividade", "Pagamentos", "Agenda", "Dados"];
 
+/**
+ * Uma integração da lista "Prontas pra usar".
+ *
+ * Com `painel`, "Conectar" abre o fluxo AQUI MESMO, logo abaixo da linha — antes ele levava pra
+ * outra tela onde a pessoa tinha que escolher de novo entre os canais que ela já tinha escolhido
+ * clicando naquela linha. Sem `painel` (integração cujo fluxo é um redirect externo, como o OAuth
+ * do Instagram, ou que vive noutra tela, como o painel de Tráfego), continua sendo um link.
+ */
 function LinhaReal({
   icone,
   titulo,
   sub,
   conectado,
   href,
+  painel,
 }: {
   icone: React.ReactNode;
   titulo: string;
   sub: string;
   conectado: boolean;
-  href: string;
+  href?: string;
+  painel?: React.ReactNode;
 }) {
+  const [aberto, setAberto] = useState(false);
+
   return (
-    <div className="int-row">
-      <div className="int-logo">{icone}</div>
-      <div className="int-body">
-        <p className="int-title">{titulo}</p>
-        <p className="int-sub">{sub}</p>
+    <div>
+      <div className="int-row">
+        <div className="int-logo">{icone}</div>
+        <div className="int-body">
+          <p className="int-title">{titulo}</p>
+          <p className="int-sub">{sub}</p>
+        </div>
+        <span className={`int-status ${conectado ? "connected" : "off"}`}>
+          {conectado ? "Conectado" : "Não conectado"}
+        </span>
+        {painel ? (
+          <button
+            type="button"
+            className={`btn ${conectado || aberto ? "ghost" : "primary"}`}
+            onClick={() => setAberto((v) => !v)}
+          >
+            {aberto ? "Fechar" : conectado ? "Gerenciar" : "Conectar"}
+          </button>
+        ) : (
+          <Link href={href ?? "#"} className={`btn ${conectado ? "ghost" : "primary"}`}>
+            {conectado ? "Gerenciar" : "Conectar"}
+          </Link>
+        )}
       </div>
-      <span className={`int-status ${conectado ? "connected" : "off"}`}>{conectado ? "Conectado" : "Não conectado"}</span>
-      <Link href={href} className={`btn ${conectado ? "ghost" : "primary"}`}>
-        {conectado ? "Gerenciar" : "Conectar"}
-      </Link>
+      {painel && aberto ? (
+        <div style={{ padding: "0 14px 14px", borderBottom: "1px solid var(--line)" }}>{painel}</div>
+      ) : null}
     </div>
   );
 }
@@ -90,14 +121,14 @@ export function IntegracoesSecao() {
             titulo="WhatsApp Business (API oficial)"
             sub={whatsappMeta.integracao?.status === "conectado" ? "Meta Business conectado" : "Conecte via Meta Business Manager"}
             conectado={whatsappMeta.integracao?.status === "conectado"}
-            href="/configuracoes?categoria=whatsapp"
+            painel={<ConexaoWhatsAppOficial />}
           />
           <LinhaReal
             icone={<IconWhatsApp width={20} height={20} />}
             titulo="WhatsApp via QR Code"
             sub={naoOficialStatus?.status === "conectado" ? `Número conectado${naoOficialStatus.metadados?.numero ? `: ${naoOficialStatus.metadados.numero}` : ""}` : "Escaneia o QR Code, sem precisar de aprovação da Meta"}
             conectado={naoOficialStatus?.status === "conectado"}
-            href="/configuracoes?categoria=whatsapp"
+            painel={<ConexaoQrCode />}
           />
           <LinhaReal
             icone={<IconInstagram width={20} height={20} />}

@@ -20,6 +20,7 @@ import {
   type NegocioCard,
   type StatusMensagem,
 } from "@/lib/data";
+import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { executarFluxo } from "@/lib/automation-flow/motor";
@@ -3380,6 +3381,9 @@ function ConversasPageInner() {
                 </button>
               ))}
             </FloatingDropdown>
+            {/* Conectar um número é a primeira coisa que se quer fazer numa tela de atendimento
+                vazia — antes era preciso sair daqui e ir até Configurações → WhatsApp. */}
+            <BotoesConectarWhatsApp />
           </>
         }
       />
