@@ -114,12 +114,23 @@ export function verificarState(state: string | null): { workspaceId: string; pro
   return timingSafeEqual(bufAssinatura, bufEsperada) ? { workspaceId, provedor } : null;
 }
 
-/** Valida a assinatura `X-Hub-Signature-256` que a Meta manda em todo POST de webhook — garante
- * que a chamada é mesmo da Meta (o payload é assinado com o App Secret). */
-export function validarAssinaturaWebhook(payloadCru: string, assinaturaHeader: string | null): boolean {
+/**
+ * Valida a assinatura `X-Hub-Signature-256` que a Meta manda em todo POST de webhook — garante que
+ * a chamada é mesmo da Meta (o payload é assinado com o App Secret).
+ *
+ * `segredo` existe porque nem todo webhook vem do mesmo app: o Instagram conecta por um app
+ * PRÓPRIO (`META_INSTAGRAM_APP_SECRET`), e a Meta assina com o segredo do app dono da inscrição.
+ * Validar tudo com o segredo do app principal recusava toda mensagem do Direct — que chegava,
+ * falhava na conferência e era descartada em silêncio.
+ */
+export function validarAssinaturaWebhook(
+  payloadCru: string,
+  assinaturaHeader: string | null,
+  segredo?: string,
+): boolean {
   if (!assinaturaHeader?.startsWith("sha256=")) return false;
   const assinaturaRecebida = assinaturaHeader.slice("sha256=".length);
-  const assinaturaEsperada = createHmac("sha256", appSecret()).update(payloadCru).digest("hex");
+  const assinaturaEsperada = createHmac("sha256", segredo ?? appSecret()).update(payloadCru).digest("hex");
 
   const bufRecebida = Buffer.from(assinaturaRecebida);
   const bufEsperada = Buffer.from(assinaturaEsperada);

@@ -51,9 +51,21 @@ type PayloadInstagram = {
 export async function POST(request: Request) {
   const payloadCru = await request.text();
   const assinatura = request.headers.get("x-hub-signature-256");
-  if (!validarAssinaturaWebhook(payloadCru, assinatura)) {
+  // Segredo do app do Instagram, não o do app principal — ver `validarAssinaturaWebhook`. Cai no
+  // principal se não estiver configurado (quem usa um app só pros dois).
+  const segredo = process.env.META_INSTAGRAM_APP_SECRET;
+  if (!validarAssinaturaWebhook(payloadCru, assinatura, segredo)) {
+    // Sem este log a falha é indistinguível de "a Meta nunca chamou": as duas dão em nenhuma
+    // mensagem na tela.
+    console.error(
+      "[webhook instagram] assinatura invalida — chamada recebida e descartada.",
+      segredo
+        ? "Confira se META_INSTAGRAM_APP_SECRET e o secret do app do Instagram."
+        : "META_INSTAGRAM_APP_SECRET nao esta definida; tentou validar com META_APP_SECRET.",
+    );
     return NextResponse.json({ erro: "Assinatura inválida" }, { status: 401 });
   }
+  console.log("[webhook instagram] chamada valida recebida da Meta.");
 
   const payload = JSON.parse(payloadCru) as PayloadInstagram;
 
