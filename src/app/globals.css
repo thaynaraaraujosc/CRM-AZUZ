@@ -6376,6 +6376,17 @@ button.camp-row:hover {
   animation: modal-scale-in var(--transition-base);
 }
 
+/* Painel que abre embaixo de uma linha de integração quando se clica em "Conectar". Recuo alinhado
+   ao conteúdo da linha (não colado nas bordas do card) e um respiro acima, pra ficar claro que
+   pertence à linha de cima e não é uma linha nova da lista. */
+.int-painel {
+  margin: 0 14px 14px;
+  padding: 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: var(--navy-raised);
+}
+
 /* Cabeçalho e corpo de modal que é FORMULÁRIO (conectar canal, etc.), não painel de listagem.
    `.field` nasceu pra linha de painel — recuo lateral próprio e borda embaixo — e dentro de um
    modal isso vira uma lista densa, com o conteúdo colado nas bordas. Aqui ele volta a ser um campo

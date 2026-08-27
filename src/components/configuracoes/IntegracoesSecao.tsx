@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
 import { ConexaoQrCode } from "./ConexaoQrCode";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
+import { ConexaoInstagram, ConexaoMetaAds } from "./ConexoesOAuth";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
@@ -77,7 +78,7 @@ function LinhaReal({
         )}
       </div>
       {painel && aberto ? (
-        <div style={{ padding: "0 14px 14px", borderBottom: "1px solid var(--line)" }}>{painel}</div>
+        <div className="int-painel">{painel}</div>
       ) : null}
     </div>
   );
@@ -135,14 +136,14 @@ export function IntegracoesSecao() {
             titulo="Instagram Direct"
             sub={instagram.integracao?.status === "conectado" ? "Conta conectada" : "Conecte via Meta Business Manager"}
             conectado={instagram.integracao?.status === "conectado"}
-            href="/configuracoes?categoria=instagram"
+            painel={<ConexaoInstagram />}
           />
           <LinhaReal
             icone={<IconCalendar width={19} height={19} style={{ color: "var(--blue)" }} />}
             titulo="Meta Ads"
             sub={metaAds.integracao?.status === "conectado" ? "Alimenta o painel de Tráfego automaticamente" : "Conecte pra ver essa origem no painel de Tráfego"}
             conectado={metaAds.integracao?.status === "conectado"}
-            href="/trafego"
+            painel={<ConexaoMetaAds />}
           />
         </div>
       </div>

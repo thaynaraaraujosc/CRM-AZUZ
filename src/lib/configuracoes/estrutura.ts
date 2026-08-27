@@ -2,7 +2,6 @@ import type { ComponentType, SVGProps } from "react";
 
 import {
   IconCartao,
-  IconConversas,
   IconEscudo,
   IconErro,
   IconHistorico,
@@ -24,7 +23,6 @@ export type CategoriaId =
   | "importacao"
   | "auditoria"
   | "azuz-ia"
-  | "canais"
   | "whatsapp"
   | "instagram"
   | "email"
@@ -75,7 +73,6 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
   {
     titulo: "Integrações",
     categorias: [
-      { id: "canais", label: "Canais de atendimento", descricao: "Visão geral de todos os canais conectados.", Icon: IconConversas },
       { id: "email", label: "E-mail", descricao: "Contas, assinaturas e modelos de e-mail.", Icon: IconDoc },
       { id: "integracoes", label: "Outras integrações", descricao: "Conexões com outras ferramentas.", Icon: IconSwitch },
     ],
