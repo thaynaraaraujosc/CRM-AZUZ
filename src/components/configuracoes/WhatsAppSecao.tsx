@@ -229,11 +229,13 @@ export function WhatsAppSecao() {
                 )
               ) : null}
             </div>
-            {/* Espelho de um WhatsApp desconectado antes de a limpeza no "Desconectar" existir —
-                sem isso não há como remover esses dados, e eles se misturam com o próximo número. */}
-            <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />
           </div>
         )}
+
+        {/* Fora do ramo acima de propósito: o espelho de um WhatsApp antigo continua no CRM mesmo
+            com OUTRO canal já conectado — foi o que aconteceu ao conectar a API oficial por cima do
+            QR Code — e era exatamente aí que o botão sumia, sem forma nenhuma de limpar. */}
+        <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />
       </div>
     </div>
   );
