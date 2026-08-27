@@ -179,8 +179,19 @@ export async function POST(request: Request) {
   const payloadCru = await request.text();
   const assinatura = request.headers.get("x-hub-signature-256");
   if (!validarAssinaturaWebhook(payloadCru, assinatura)) {
+    // Falha de assinatura é indistinguível, do lado de fora, de "a Meta nunca chamou": os dois
+    // acabam em nenhuma mensagem no CRM. A causa quase sempre é `META_APP_SECRET` desencontrado do
+    // secret do app (secret redefinido na Meta e não atualizado aqui, ou de outro app). Sem este
+    // log, o sintoma é silencioso e não há como saber qual dos dois casos está acontecendo.
+    console.error(
+      "[webhook whatsapp] assinatura invalida — chamada recebida e descartada.",
+      assinatura
+        ? "Cabecalho X-Hub-Signature-256 presente: confira se META_APP_SECRET e o secret do app que envia o webhook."
+        : "Sem cabecalho X-Hub-Signature-256 — chamada nao veio da Meta.",
+    );
     return NextResponse.json({ erro: "Assinatura inválida" }, { status: 401 });
   }
+  console.log("[webhook whatsapp] chamada valida recebida da Meta.");
 
   const payload = JSON.parse(payloadCru) as PayloadWhatsApp;
 
