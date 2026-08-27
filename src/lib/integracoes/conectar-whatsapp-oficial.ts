@@ -32,7 +32,14 @@ type NumeroWaba = {
   code_verification_status?: string;
 };
 
-export type ResultadoConexao = { ok: true; pin: string | null; pinPendente: boolean };
+export type ResultadoConexao = {
+  ok: true;
+  pin: string | null;
+  pinPendente: boolean;
+  /** `true` quando o número vive no app do WhatsApp Business (SMB/coexistência) e a Meta não
+   * aceita o passo de registro — não há PIN a gerar nesse modo. */
+  registroDispensado: boolean;
+};
 
 export class ErroConexao extends Error {
   passo: Passo;
@@ -80,6 +87,7 @@ export async function finalizarConexaoWhatsapp({
     // registrado antes com outro PIN recusa um PIN novo).
     const pin = pinExistente ?? String(randomInt(0, 1_000_000)).padStart(6, "0");
     let pinJaRegistrado = false;
+    let registroDispensado = false;
     try {
       await chamarGraph(`/${phoneNumberId}/register`, accessToken, {
         method: "POST",
@@ -89,8 +97,15 @@ export async function finalizarConexaoWhatsapp({
       // Número já registrado com outro PIN: não é motivo pra abortar a conexão inteira — o resto
       // funciona, e a tela pede o PIN antigo pra completar esse passo depois.
       const codigoMeta = (erro as Error & { codigoMeta?: number }).codigoMeta;
+      const mensagemMeta = erro instanceof Error ? erro.message : "";
       if (codigoMeta === 133005 || codigoMeta === 133010) {
         pinJaRegistrado = true;
+      } else if (/not available for SMB/i.test(mensagemMeta)) {
+        // Conta de número que vive no app do WhatsApp Business (SMB/coexistência), não uma conta
+        // criada direto na Cloud API: ali o número já nasce registrado e a Meta recusa o
+        // `/register` por completo. Não é falha de conexão — é um passo que não se aplica, então
+        // segue em frente sem PIN (não existe PIN a gerar nesse modo).
+        registroDispensado = true;
       } else {
         throw erro;
       }
@@ -121,8 +136,10 @@ export async function finalizarConexaoWhatsapp({
       numeroVerificado: numero?.verified_name,
       qualityRating: numero?.quality_rating,
       verificacaoNumero: numero?.code_verification_status,
-      registerPinCriptografado: pinJaRegistrado ? metadadosAnteriores.registerPinCriptografado : encriptar(pin),
+      registerPinCriptografado:
+        pinJaRegistrado || registroDispensado ? metadadosAnteriores.registerPinCriptografado : encriptar(pin),
       pinPendente: pinJaRegistrado,
+      registroDispensado,
       passoConexao: "concluido",
       ultimaVerificacaoSaude: new Date().toISOString(),
     });
@@ -147,7 +164,12 @@ export async function finalizarConexaoWhatsapp({
     });
 
     // O PIN só sai daqui nesta resposta, uma vez — depois disso fica só criptografado no banco.
-    return { ok: true, pin: pinJaRegistrado ? null : pin, pinPendente: pinJaRegistrado };
+    return {
+      ok: true,
+      pin: pinJaRegistrado || registroDispensado ? null : pin,
+      pinPendente: pinJaRegistrado,
+      registroDispensado,
+    };
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : "Falha ao conectar o WhatsApp Business.";
     throw new ErroConexao(mensagem, passo);

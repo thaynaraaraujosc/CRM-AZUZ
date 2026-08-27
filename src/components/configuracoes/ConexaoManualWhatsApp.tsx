@@ -23,6 +23,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
   const [dica, setDica] = useState<string | null>(null);
   const [pin, setPin] = useState<string | null>(null);
   const [pinPendente, setPinPendente] = useState(false);
+  const [conectado, setConectado] = useState(false);
 
   async function conectar() {
     setEnviando(true);
@@ -39,6 +40,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
         dica?: string;
         pin?: string | null;
         pinPendente?: boolean;
+        registroDispensado?: boolean;
       };
       if (!resposta.ok) {
         setDica(dados.dica ?? null);
@@ -48,6 +50,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       setAccessToken("");
       setPin(dados.pin ?? null);
       setPinPendente(Boolean(dados.pinPendente));
+      setConectado(true);
       aoConectar?.();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Falha ao conectar.");
@@ -56,7 +59,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
     }
   }
 
-  if (pin || pinPendente) {
+  if (conectado) {
     return (
       <div style={{ marginTop: 10 }}>
         {pin ? (
@@ -68,10 +71,15 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
               anote agora num lugar seguro.
             </p>
           </>
-        ) : (
+        ) : pinPendente ? (
           <p className="hint" style={{ margin: 0 }}>
             Conectado. O número já estava registrado na Meta com um PIN anterior, então esse passo
             ficou pendente — informe o PIN antigo aqui pra completar, se precisar reenviá-lo.
+          </p>
+        ) : (
+          <p className="hint" style={{ margin: 0 }}>
+            Conectado. Seu número usa o app do WhatsApp Business, que já vem registrado na Meta —
+            por isso não há PIN a guardar.
           </p>
         )}
       </div>
