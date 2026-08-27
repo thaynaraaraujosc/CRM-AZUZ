@@ -18,8 +18,11 @@ export async function GET(request: Request) {
   const token = url.searchParams.get("hub.verify_token");
   const challenge = url.searchParams.get("hub.challenge");
 
-  const esperado = process.env.META_WEBHOOK_VERIFY_TOKEN;
-  if (modo === "subscribe" && token === esperado && challenge) {
+  // `.trim()` nos dois lados: valor colado num painel de hospedagem costuma carregar espaço ou
+  // quebra de linha no fim, invisível na tela, e isso fazia a comparação falhar com dois valores
+  // que pareciam idênticos — sintoma que custou várias rodadas pra identificar.
+  const esperado = process.env.META_WEBHOOK_VERIFY_TOKEN?.trim();
+  if (modo === "subscribe" && token?.trim() === esperado && challenge) {
     return new NextResponse(challenge, { status: 200 });
   }
   // Diagnóstico do que exatamente falhou. Sem isso, "Verificação inválida" cobre três causas bem
@@ -31,7 +34,7 @@ export async function GET(request: Request) {
       erro: "Verificação inválida",
       tokenConfiguradoNoServidor: Boolean(esperado),
       tokenRecebido: Boolean(token),
-      tokensIguais: Boolean(esperado) && token === esperado,
+      tokensIguais: Boolean(esperado) && token?.trim() === esperado,
       modoRecebido: modo,
     },
     { status: 403 },

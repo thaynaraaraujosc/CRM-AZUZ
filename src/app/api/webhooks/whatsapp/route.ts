@@ -20,7 +20,9 @@ export async function GET(request: Request) {
   const token = url.searchParams.get("hub.verify_token");
   const challenge = url.searchParams.get("hub.challenge");
 
-  if (modo === "subscribe" && token === process.env.META_WEBHOOK_VERIFY_TOKEN && challenge) {
+  // `.trim()` pelo mesmo motivo do webhook do Instagram: valor colado no painel de hospedagem
+  // pode carregar espaço/quebra de linha invisível no fim.
+  if (modo === "subscribe" && token?.trim() === process.env.META_WEBHOOK_VERIFY_TOKEN?.trim() && challenge) {
     return new NextResponse(challenge, { status: 200 });
   }
   return NextResponse.json({ erro: "Verificação inválida" }, { status: 403 });
