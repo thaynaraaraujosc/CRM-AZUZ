@@ -99,6 +99,36 @@ export async function buscarPerfilInstagram(accessToken: string): Promise<{ inst
   return { instagramContaId: dados.user_id ?? "", username: dados.username };
 }
 
+/**
+ * Busca o @ de QUEM MANDOU uma mensagem, a partir do id que o webhook entrega.
+ *
+ * O Direct identifica o remetente por um id interno e longo (`17841400...`), específico daquela
+ * conta — sem essa busca, a conversa aparece no CRM com esse número no lugar do nome, e não há
+ * como saber com quem se está falando.
+ *
+ * Devolve `null` em qualquer falha (perfil sem permissão, id de um app diferente, API fora do ar):
+ * quem chama cai no id como antes. Uma mensagem nunca deixa de chegar por causa disto.
+ */
+export async function buscarPerfilDeQuemMandou(
+  accessToken: string,
+  remetenteId: string,
+): Promise<{ username?: string; nome?: string } | null> {
+  try {
+    const resposta = await fetch(
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${remetenteId}?fields=username,name&access_token=${accessToken}`,
+    );
+    const dados = (await resposta.json()) as { username?: string; name?: string } & ErroGraph;
+    if (!resposta.ok) {
+      console.error("[instagram] Falha ao buscar o perfil de quem mandou:", dados.error?.message ?? resposta.status);
+      return null;
+    }
+    return { username: dados.username, nome: dados.name };
+  } catch (erro) {
+    console.error("[instagram] Falha ao buscar o perfil de quem mandou:", erro);
+    return null;
+  }
+}
+
 /** Assina/verifica o `state` do OAuth — mesma lógica de `assinarState`/`verificarState` de
  * `meta.ts`, chave própria (não precisa ser a mesma do App principal, só interna a este fluxo). */
 export function assinarStateInstagram(workspaceId: string): string {

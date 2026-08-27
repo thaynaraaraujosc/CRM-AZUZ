@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { CANAL_INSTAGRAM, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
+import { decriptar } from "@/lib/integracoes/crypto";
+import { buscarPerfilDeQuemMandou } from "@/lib/integracoes/instagram-login";
 
 /**
  * GET — handshake de verificação que a Meta faz uma vez, ao cadastrar a URL do webhook no painel
@@ -78,8 +80,28 @@ export async function POST(request: Request) {
       const receberMensagens = (integracaoDaConta.metadados as { receberMensagens?: boolean } | null)?.receberMensagens ?? true;
       if (!receberMensagens) continue;
 
-      const chaveContato = evento.sender?.id;
-      if (!chaveContato) continue;
+      const remetenteId = evento.sender?.id;
+      if (!remetenteId) continue;
+
+      // O Direct entrega só um id interno de quem mandou. A conversa é achada por ele (estável),
+      // mas EXIBIDA pelo @ — senão a lista de Conversas vira uma coluna de números e não dá pra
+      // saber com quem se está falando.
+      //
+      // A busca do @ só acontece na PRIMEIRA mensagem de cada pessoa: existindo conversa pra esse
+      // id, reaproveita o nome já resolvido. Sem isso seria uma chamada à API da Meta por mensagem
+      // recebida, à toa.
+      const conversaExistente = await prisma.conversa.findFirst({
+        where: { workspaceId: integracaoDaConta.workspaceId, contato: remetenteId, canal: "Instagram" },
+        select: { nome: true },
+      });
+
+      let chaveContato = conversaExistente?.nome;
+      if (!chaveContato) {
+        const perfil = integracaoDaConta.accessTokenCriptografado
+          ? await buscarPerfilDeQuemMandou(decriptar(integracaoDaConta.accessTokenCriptografado), remetenteId)
+          : null;
+        chaveContato = perfil?.username ? `@${perfil.username}` : (perfil?.nome ?? remetenteId);
+      }
 
       const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: mensagem.mid } });
       if (jaExiste) continue;
@@ -109,6 +131,10 @@ export async function POST(request: Request) {
         workspaceId: integracaoDaConta.workspaceId,
         nome: chaveContato,
         canal: "Instagram",
+        // `contato` guarda o id interno do remetente — é a chave estável da thread, do mesmo jeito
+        // que o JID identifica um grupo de WhatsApp. `nome` (acima) é só o rótulo de exibição, e
+        // pode mudar se a pessoa trocar de @.
+        contato: remetenteId,
         origem: "Instagram",
         contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
       });
