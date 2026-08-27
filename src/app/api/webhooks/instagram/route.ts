@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
+import { CANAL_INSTAGRAM, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 
 /**
  * GET — handshake de verificação que a Meta faz uma vez, ao cadastrar a URL do webhook no painel
@@ -99,6 +100,8 @@ export async function POST(request: Request) {
             timeZone: "America/Sao_Paulo",
           }),
           criadoEm,
+          canal: CANAL_INSTAGRAM,
+          contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
         },
       });
 
@@ -107,6 +110,7 @@ export async function POST(request: Request) {
         nome: chaveContato,
         canal: "Instagram",
         origem: "Instagram",
+        contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
       });
     }
   }

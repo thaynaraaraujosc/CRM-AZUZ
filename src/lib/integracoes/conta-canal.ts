@@ -17,6 +17,7 @@ import { prisma } from "@/lib/prisma";
  * `whatsapp_nao_oficial`), o que fez um filtro escrito a partir do comentário não casar nada. */
 export const CANAL_NAO_OFICIAL = "whatsapp_nao_oficial";
 export const CANAL_OFICIAL = "meta_whatsapp";
+export const CANAL_INSTAGRAM = "meta_instagram";
 
 export function contaCanalDaConexao(provedor: string, identificador: string | null | undefined): string | null {
   const limpo = identificador?.toString().trim();
@@ -37,7 +38,10 @@ export async function contasCanalVisiveis(workspaceId: string): Promise<(string 
     where: {
       workspaceId,
       status: "conectado",
-      provedor: { in: ["whatsapp_nao_oficial", "meta_whatsapp"] },
+      // Instagram entra aqui junto com os dois WhatsApp: a regra é a mesma pra qualquer canal de
+      // conversa. Deixá-lo de fora fazia a mensagem do Direct ser gravada e nunca aparecer, porque
+      // nenhuma conexão ativa reivindicava aquelas linhas.
+      provedor: { in: ["whatsapp_nao_oficial", "meta_whatsapp", "meta_instagram"] },
     },
     select: { provedor: true, metadados: true },
   });
@@ -49,6 +53,8 @@ export async function contasCanalVisiveis(workspaceId: string): Promise<(string 
       contas.push(contaCanalDaConexao(CANAL_NAO_OFICIAL, metadados.numero as string | undefined));
       // Histórico anterior a esta coluna — ver comentário acima.
       contas.push(null);
+    } else if (integracao.provedor === "meta_instagram") {
+      contas.push(contaCanalDaConexao(CANAL_INSTAGRAM, metadados.instagramContaId as string | undefined));
     } else {
       contas.push(contaCanalDaConexao(CANAL_OFICIAL, metadados.phoneNumberId as string | undefined));
     }
