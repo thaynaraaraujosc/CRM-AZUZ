@@ -71,6 +71,15 @@ export async function encontrarContatoPorTelefone(workspaceId: string, telefone:
   );
 }
 
+/** Identificador de grupo do WhatsApp (`<id>@g.us`, ou só os dígitos dele). Telefone brasileiro
+ * com DDI tem 12–13 dígitos; id de grupo tem 15 ou mais e começa por `1203`. */
+export function ehIdentificadorDeGrupo(valor: string | null | undefined): boolean {
+  if (!valor) return false;
+  if (valor.includes("@g.us")) return true;
+  const digitos = valor.replace(/\D/g, "");
+  return digitos.length >= 15;
+}
+
 /**
  * Chamado pelos webhooks do WhatsApp (Meta oficial e Evolution API/QR Code) quando chega mensagem
  * de um número — cria o Contato automaticamente se ainda não existir (por telefone OU por nome já
@@ -84,6 +93,13 @@ export async function criarContatoPeloWhatsAppSeNaoExistir(params: {
   whatsapp: string;
 }) {
   const { workspaceId, nome, whatsapp } = params;
+
+  // Um grupo NÃO é um lead. O identificador de grupo do WhatsApp (`<id>@g.us`, 15+ dígitos, ex.:
+  // `120363422457482263`) não é telefone de ninguém — quando virava contato, aparecia na carteira
+  // de clientes e no funil como "+120363422457482263", entulhando as duas telas com algo que nunca
+  // deveria estar lá. A conversa do grupo continua existindo normalmente; só não gera contato.
+  if (ehIdentificadorDeGrupo(whatsapp)) return null;
+
   const porTelefone = await encontrarContatoPorTelefone(workspaceId, whatsapp);
   if (porTelefone) return porTelefone;
 

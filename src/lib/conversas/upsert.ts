@@ -41,6 +41,9 @@ export async function upsertConversaAoReceberMensagem(params: {
    * é o JID do grupo (`<id>@g.us`). Ver comentário do campo no schema. */
   ehGrupo?: boolean;
   participantesGrupo?: { nome: string; telefone: string }[];
+  /** Conexão dona da conversa (`<provedor>:<número>`, ver `src/lib/integracoes/conta-canal.ts`) —
+   * é o que faz a caixa de entrada zerar ao desconectar e voltar inteira ao reconectar. */
+  contaCanal?: string | null;
   /** Foto de perfil real (grupo ou pessoa) — ver comentário do campo no schema. */
   fotoUrl?: string | null;
   /** Descrição e data de criação real do grupo no WhatsApp — só em grupo. */
@@ -55,6 +58,7 @@ export async function upsertConversaAoReceberMensagem(params: {
     origem,
     contatoId,
     contarComoNaoLida = true,
+    contaCanal,
     ehGrupo = false,
     participantesGrupo,
     fotoUrl,
@@ -73,6 +77,7 @@ export async function upsertConversaAoReceberMensagem(params: {
       contatoId,
       origem: origem ?? "Direto",
       naoLidas: contarComoNaoLida ? 1 : 0,
+      contaCanal,
       ehGrupo,
       participantesGrupo,
       fotoUrl,
@@ -85,6 +90,8 @@ export async function upsertConversaAoReceberMensagem(params: {
     // Evolution pode falhar em silêncio — não apaga um valor que já tinha sido resolvido antes).
     update: {
       ...(contatoId ? { contatoId } : {}),
+      // Conversa criada antes desta coluna existir ganha dono na primeira mensagem nova.
+      ...(contaCanal ? { contaCanal } : {}),
       ...(participantesGrupo ? { participantesGrupo } : {}),
       ...(fotoUrl ? { fotoUrl } : {}),
       ...(descricaoGrupo ? { descricaoGrupo } : {}),

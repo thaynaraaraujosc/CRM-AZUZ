@@ -2,14 +2,20 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { contasCanalVisiveis, filtroContaCanal } from "@/lib/integracoes/conta-canal";
 
-/** GET lista as conversas do workspace de quem está logado, mais recentes primeiro. */
+/**
+ * GET lista as conversas do workspace de quem está logado, mais recentes primeiro — só as da(s)
+ * conexão(ões) de WhatsApp conectada(s) agora (ver `conta-canal.ts`). Nada é apagado ao
+ * desconectar: a conversa continua no banco e reaparece inteira se aquele número voltar.
+ */
 export async function GET() {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
+  const contas = await contasCanalVisiveis(sessao.user.workspaceId);
   const linhas = await prisma.conversa.findMany({
-    where: { workspaceId: sessao.user.workspaceId },
+    where: { workspaceId: sessao.user.workspaceId, ...filtroContaCanal(contas) },
     orderBy: { atualizadoEm: "desc" },
   });
   return NextResponse.json(linhas);

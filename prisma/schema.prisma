@@ -111,10 +111,19 @@ model Conversa {
   descricaoGrupo      String?  @db.Text
   criacaoGrupo        DateTime?
 
+  // Conexão dona desta conversa: `<provedor>:<identificador do número>` (ex.:
+  // `whatsapp_baileys:5562963404 38`, `meta_whatsapp:143588938831846`). Existe porque uma conversa
+  // pertence a UM número conectado, não ao workspace inteiro: ao trocar de canal ou de número, a
+  // caixa de entrada tem que zerar sem apagar nada — e voltar inteira se aquela conexão voltar.
+  // Null = conversa anterior a esta coluna (tratada como do canal não oficial, ver
+  // `contaCanalDaConexao`).
+  contaCanal String?
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
   @@unique([workspaceId, nome])
+  @@index([workspaceId, contaCanal])
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Compromisso` de src/lib/agenda-context.tsx. Registro
@@ -411,9 +420,14 @@ model MensagemExtra {
   // oficial); "whatsapp_baileys" marca mensagens da conexão não oficial via QR Code, pra saber
   // por qual integração uma resposta deve sair quando o workspace tem as duas conectadas.
   canal    String?
+  // Conexão dona desta mensagem — mesmo formato e mesmo motivo de `Conversa.contaCanal`. `canal`
+  // acima diz só o tipo de conexão; este diz QUAL número, que é o que separa duas contas do mesmo
+  // canal (a pessoa troca de número e a caixa de entrada precisa zerar).
+  contaCanal String?
 
   @@index([workspaceId, criadoEm])
   @@index([workspaceId, contato])
+  @@index([workspaceId, contaCanal])
 }
 
 // Biblioteca de mídia reutilizável pelos blocos de automação (enviar documento/imagem/vídeo/áudio).

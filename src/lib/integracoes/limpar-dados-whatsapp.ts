@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { CANAL_NAO_OFICIAL, CANAL_OFICIAL } from "@/lib/integracoes/conta-canal";
+import { ehIdentificadorDeGrupo } from "@/lib/contatos/upsert";
 
 /**
  * Apaga tudo que um canal de WhatsApp trouxe pro CRM — conversas, mensagens, contatos criados
@@ -29,8 +31,8 @@ export type ResumoLimpeza = {
  * existir) conta como não oficial: é de onde vem todo o histórico já espelhado até aqui. Precisa
  * ser `OR` e não `in` porque o `in` do Prisma não casa NULL. */
 const FILTRO_CANAL: Record<"nao_oficial" | "oficial", { OR: { canal: string | null }[] }> = {
-  nao_oficial: { OR: [{ canal: "whatsapp_baileys" }, { canal: null }] },
-  oficial: { OR: [{ canal: "meta_whatsapp" }] },
+  nao_oficial: { OR: [{ canal: CANAL_NAO_OFICIAL }, { canal: null }] },
+  oficial: { OR: [{ canal: CANAL_OFICIAL }] },
 };
 
 export async function limparDadosDoWhatsApp(
@@ -84,4 +86,29 @@ export async function limparDadosDoWhatsApp(
     contatos: contatos.count,
     cards: cards.count,
   };
+}
+
+/**
+ * Remove contatos e cards de funil que na verdade são GRUPOS do WhatsApp — entulho deixado por
+ * antes de `criarContatoPeloWhatsAppSeNaoExistir` recusar identificador de grupo. Apareciam na
+ * carteira de clientes e no funil como "+120363422457482263", que não é telefone de ninguém.
+ *
+ * Diferente da limpeza por canal, isto NÃO é opcional nem depende de conexão: é lixo em qualquer
+ * cenário. A conversa do grupo em si não é tocada — ela é legítima e continua na caixa de entrada.
+ */
+export async function removerGruposViradosContato(workspaceId: string): Promise<{ contatos: number; cards: number }> {
+  const candidatos = await prisma.contato.findMany({
+    where: { workspaceId, criadoVia: "whatsapp" },
+    select: { id: true, nome: true, whatsapp: true },
+  });
+  const grupos = candidatos.filter((c) => ehIdentificadorDeGrupo(c.whatsapp));
+  if (!grupos.length) return { contatos: 0, cards: 0 };
+
+  // Cards primeiro: depois de apagar o contato não dá mais pra saber quais cards eram dele.
+  const cards = await prisma.negocioCard.deleteMany({
+    where: { workspaceId, origem: "WhatsApp", nome: { in: grupos.map((g) => g.nome) } },
+  });
+  const contatos = await prisma.contato.deleteMany({ where: { id: { in: grupos.map((g) => g.id) } } });
+
+  return { contatos: contatos.count, cards: cards.count };
 }

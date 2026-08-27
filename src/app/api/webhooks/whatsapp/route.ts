@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { META_GRAPH_URL, normalizarNumeroBrasileiro, validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
+import { CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
 import type { ConvMensagem } from "@/lib/data";
@@ -328,6 +329,11 @@ export async function POST(request: Request) {
             }),
             criadoEm: new Date(Number(mensagem.timestamp) * 1000),
             extras: temMidiaBaixada ? extras : undefined,
+            // Sem `canal`, mensagem da API oficial ficava indistinguível do histórico antigo do QR
+            // Code (as duas com NULL) — e `contaCanal` amarra ao número exato, pra caixa de entrada
+            // zerar ao desconectar e voltar ao reconectar.
+            canal: CANAL_OFICIAL,
+            contaCanal: contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
           },
         });
 
@@ -336,8 +342,9 @@ export async function POST(request: Request) {
           nome: chaveContato,
           canal: "WhatsApp",
           contato: waId,
-          contatoId: contato.id,
+          contatoId: contato?.id,
           origem: "Direto",
+          contaCanal: contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
         });
       }
     }

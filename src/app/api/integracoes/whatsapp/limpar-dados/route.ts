@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { limparDadosDoWhatsApp } from "@/lib/integracoes/limpar-dados-whatsapp";
+import { limparDadosDoWhatsApp, removerGruposViradosContato } from "@/lib/integracoes/limpar-dados-whatsapp";
 
 /**
  * Limpeza avulsa do espelho do WhatsApp, para quando o canal JÁ foi desconectado antes de a
@@ -16,9 +16,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ erro: "Só o admin do workspace pode apagar esses dados." }, { status: 403 });
   }
 
-  const { conexao } = (await request.json().catch(() => ({}))) as {
+  const { conexao, acao } = (await request.json().catch(() => ({}))) as {
     conexao?: "nao_oficial" | "oficial";
+    acao?: "canal" | "grupos";
   };
+
+  // "grupos": tira da carteira e do funil os GRUPOS que viraram contato/card por um bug antigo —
+  // é lixo em qualquer cenário, não depende de canal nem apaga conversa nenhuma.
+  if (acao === "grupos") {
+    const grupos = await removerGruposViradosContato(sessao.user.workspaceId);
+    return NextResponse.json({ ok: true, grupos });
+  }
+
   if (conexao !== "nao_oficial" && conexao !== "oficial") {
     return NextResponse.json({ erro: "Informe a conexão: 'nao_oficial' ou 'oficial'." }, { status: 400 });
   }

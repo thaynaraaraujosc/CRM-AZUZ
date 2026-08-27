@@ -5,6 +5,7 @@ import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado, bus
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
+import { CANAL_NAO_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { iniciarHistoricoSeNecessario } from "@/lib/integracoes/historico-whatsapp";
 
 /** Formato de evento que a Evolution API manda pro webhook configurado na instância — mesmo body
@@ -235,6 +236,17 @@ export async function processarMensagemRecebida(
   // mensagem seria uma chamada extra à Evolution toda hora à toa, sem necessidade real.
   const fotoUrl = fotoUrlExistente ?? (await buscarFotoPerfil(workspaceId, ehGrupo ? remoteJid! : waId).catch(() => null));
 
+  // Conexão dona desta mensagem — é o número conectado por QR Code neste workspace. Sem isso, a
+  // mensagem fica sem dono e não some da tela quando esse número é desconectado.
+  const integracaoNaoOficial = await prisma.integracao.findUnique({
+    where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+    select: { metadados: true },
+  });
+  const contaCanal = contaCanalDaConexao(
+    CANAL_NAO_OFICIAL,
+    (integracaoNaoOficial?.metadados as { numero?: string } | null)?.numero,
+  );
+
   if (fromMe) {
     // Mensagem mandada do próprio celular conectado (espelhamento, igual WhatsApp Web) — se foi
     // o CRM que mandou pela tela de Conversas, ela já foi persistida na hora do envio (com um id
@@ -276,7 +288,8 @@ export async function processarMensagemRecebida(
       texto,
       hora: new Date(timestampMs).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
       criadoEm: new Date(timestampMs),
-      canal: "whatsapp_nao_oficial",
+      canal: CANAL_NAO_OFICIAL,
+      contaCanal,
       extras: {
         // Nome de quem escreveu DENTRO do grupo — sem isso não dá pra distinguir os balões de cada
         // participante na tela, igual o WhatsApp de verdade mostra. Não se aplica fora de grupo (lá
@@ -297,6 +310,7 @@ export async function processarMensagemRecebida(
 
   await upsertConversaAoReceberMensagem({
     workspaceId,
+    contaCanal,
     nome: chaveContato,
     canal: "WhatsApp",
     contato: ehGrupo ? remoteJid : waId,

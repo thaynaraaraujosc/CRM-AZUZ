@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { ConvMensagem } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { contasCanalVisiveis, filtroContaCanal } from "@/lib/integracoes/conta-canal";
 
 type LinhaMensagem = {
   id: string;
@@ -44,8 +45,11 @@ export async function GET() {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
+  // Mesmo filtro por conexão das conversas — mensagem de um número desconectado some da tela sem
+  // sair do banco (ver `conta-canal.ts`).
+  const contas = await contasCanalVisiveis(sessao.user.workspaceId);
   const linhas = await prisma.mensagemExtra.findMany({
-    where: { workspaceId: sessao.user.workspaceId },
+    where: { workspaceId: sessao.user.workspaceId, ...filtroContaCanal(contas) },
     orderBy: { criadoEm: "desc" },
     take: LIMITE_MENSAGENS,
   });
