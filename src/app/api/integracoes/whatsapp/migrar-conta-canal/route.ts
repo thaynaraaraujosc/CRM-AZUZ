@@ -20,6 +20,10 @@ import { prisma } from "@/lib/prisma";
  *     alterado ou apagado.
  *
  * É temporário. Assim que existir um caminho de migração de verdade no deploy, esta rota sai.
+ *
+ * NÃO mora em `/api/admin/` de propósito: aquele prefixo é do painel de super-admin (visão
+ * cross-tenant), e o middleware redireciona qualquer outra conta pra fora dele — o admin do
+ * workspace, que é quem precisa disto, recebia uma página de redirect no lugar do JSON.
  */
 type Passo = { comando: string; resultado: "aplicado" | "ja_existia" };
 

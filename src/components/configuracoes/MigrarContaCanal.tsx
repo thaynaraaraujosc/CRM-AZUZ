@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 /**
- * Aciona a criação das colunas `contaCanal` no banco (ver `/api/admin/migrar-conta-canal`).
+ * Aciona a criação das colunas `contaCanal` no banco (ver `/api/integracoes/whatsapp/migrar-conta-canal`).
  *
  * Existe porque hoje nada aplica mudança de schema em produção: o `prisma db push` mora no `start`,
  * que a Vercel (serverless) nunca executa, e o serviço do Railway que faria isso nunca foi
@@ -23,7 +23,7 @@ export function MigrarContaCanal() {
     setRodando(true);
     setErro(null);
     try {
-      const resposta = await fetch("/api/admin/migrar-conta-canal", { method: "POST" });
+      const resposta = await fetch("/api/integracoes/whatsapp/migrar-conta-canal", { method: "POST" });
       const dados = (await resposta.json()) as { erro?: string; passos?: Passo[] };
       if (!resposta.ok) throw new Error(dados.erro ?? "Falha ao aplicar.");
       setPassos(dados.passos ?? []);
