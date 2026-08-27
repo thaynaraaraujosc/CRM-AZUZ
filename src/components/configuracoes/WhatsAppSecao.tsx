@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { ConexaoManualWhatsApp } from "./ConexaoManualWhatsApp";
 import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
+import { MigrarContaCanal } from "./MigrarContaCanal";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { useIntegracaoNaoOficial, type HistoricoSync } from "./useIntegracaoNaoOficial";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
@@ -236,6 +237,7 @@ export function WhatsAppSecao() {
             com OUTRO canal já conectado — foi o que aconteceu ao conectar a API oficial por cima do
             QR Code — e era exatamente aí que o botão sumia, sem forma nenhuma de limpar. */}
         <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />
+        <MigrarContaCanal />
       </div>
     </div>
   );
