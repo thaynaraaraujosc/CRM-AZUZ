@@ -100,6 +100,37 @@ export async function buscarPerfilInstagram(accessToken: string): Promise<{ inst
 }
 
 /**
+ * Inscreve o app nos webhooks da conta do Instagram recém-conectada.
+ *
+ * SEM ISSO O WEBHOOK NUNCA DISPARA: a conta autoriza, o CRM mostra "Conectado" e nenhuma mensagem
+ * do Direct chega — exatamente o mesmo passo que o WhatsApp exige por WABA (`subscribed_apps`) e
+ * que aqui simplesmente não existia. Autorizar no OAuth dá permissão de acesso, não assinatura de
+ * eventos; são duas coisas.
+ *
+ * Devolve o erro em texto em vez de lançar: a conexão em si já deu certo neste ponto, e derrubá-la
+ * por causa da assinatura deixaria a pessoa sem nada. Quem chama guarda isso pra mostrar na tela.
+ */
+export async function inscreverAppNoInstagram(accessToken: string): Promise<string | null> {
+  try {
+    const resposta = await fetch(
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/subscribed_apps?subscribed_fields=messages`,
+      { method: "POST", headers: { authorization: `Bearer ${accessToken}` } },
+    );
+    const dados = (await resposta.json()) as { success?: boolean } & ErroGraph;
+    if (!resposta.ok || dados.success === false) {
+      const mensagem = dados.error_message ?? dados.error?.message ?? `HTTP ${resposta.status}`;
+      console.error("[instagram] Falha ao inscrever o app nos webhooks da conta:", mensagem);
+      return mensagem;
+    }
+    return null;
+  } catch (erro) {
+    const mensagem = erro instanceof Error ? erro.message : "Falha desconhecida";
+    console.error("[instagram] Falha ao inscrever o app nos webhooks da conta:", mensagem);
+    return mensagem;
+  }
+}
+
+/**
  * Busca o @ de QUEM MANDOU uma mensagem, a partir do id que o webhook entrega.
  *
  * O Direct identifica o remetente por um id interno e longo (`17841400...`), específico daquela

@@ -3,7 +3,12 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { encriptar } from "@/lib/integracoes/crypto";
-import { trocarCodePorTokenInstagram, buscarPerfilInstagram, verificarStateInstagram } from "@/lib/integracoes/instagram-login";
+import {
+  trocarCodePorTokenInstagram,
+  buscarPerfilInstagram,
+  inscreverAppNoInstagram,
+  verificarStateInstagram,
+} from "@/lib/integracoes/instagram-login";
 
 function comoJson(valor: Record<string, unknown>): Prisma.InputJsonValue {
   return valor as Prisma.InputJsonValue;
@@ -37,9 +42,15 @@ export async function GET(request: Request) {
     const { accessToken, instagramContaId, expiraEm } = await trocarCodePorTokenInstagram(code, redirectUri);
     const perfil = await buscarPerfilInstagram(accessToken);
 
+    // Assinatura dos eventos da conta — autorizar no OAuth dá acesso, não assina webhook. Sem este
+    // passo a conta fica "Conectada" e nenhuma mensagem do Direct chega (ver o comentário da
+    // função). O erro, se houver, fica guardado pra tela poder avisar em vez de mentir "conectado".
+    const erroAssinatura = await inscreverAppNoInstagram(accessToken);
+
     const metadadosResolvidos = {
       instagramContaId: perfil.instagramContaId || instagramContaId,
       instagramUsername: perfil.username,
+      assinaturaWebhookErro: erroAssinatura,
     };
 
     // Preserva o que não vem dessa troca (ex.: o toggle "Receber mensagens do Instagram no CRM",

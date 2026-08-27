@@ -52,15 +52,26 @@ function PainelOAuth({
 export function ConexaoInstagram() {
   const { integracao } = useIntegracaoMeta("meta_instagram");
   const usuario = integracao?.metadados?.instagramUsername as string | undefined;
+  // Conta autorizada mas sem assinatura de webhook = "Conectado" que não recebe nada. Melhor dizer
+  // isso do que deixar a pessoa esperando mensagem que nunca vem.
+  const erroAssinatura = integracao?.metadados?.assinaturaWebhookErro as string | null | undefined;
 
   return (
-    <PainelOAuth
-      provedor="meta_instagram"
-      href="/api/integracoes/instagram/conectar"
-      descricao="Autoriza o CRM a acessar sua conta profissional do Instagram e receber as mensagens do Direct — sem copiar token nenhum."
-      rotuloConectado={usuario ? `Conectado — @${usuario}` : "Conta conectada"}
-      rotuloDesconectar="Desconectar Instagram"
-    />
+    <>
+      <PainelOAuth
+        provedor="meta_instagram"
+        href="/api/integracoes/instagram/conectar"
+        descricao="Autoriza o CRM a acessar sua conta profissional do Instagram e receber as mensagens do Direct — sem copiar token nenhum."
+        rotuloConectado={usuario ? `Conectado — @${usuario}` : "Conta conectada"}
+        rotuloDesconectar="Desconectar Instagram"
+      />
+      {erroAssinatura ? (
+        <p className="hint" style={{ color: "var(--danger)", margin: "8px 0 0" }}>
+          ⚠ A conta conectou, mas o CRM não conseguiu assinar o recebimento de mensagens:{" "}
+          {erroAssinatura} — as mensagens do Direct não vão chegar até isso ser resolvido.
+        </p>
+      ) : null}
+    </>
   );
 }
 
