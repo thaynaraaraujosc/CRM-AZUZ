@@ -15,9 +15,17 @@ import { slugId } from "@/lib/ids";
 export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   workspaceId: string;
   contatoNome: string;
+  /** Conversa de grupo — grupo não entra no funil nem em automação (ver dentro da função). */
+  ehGrupo?: boolean;
   origem: string;
 }) {
-  const { workspaceId, contatoNome, origem } = params;
+  const { workspaceId, contatoNome, ehGrupo = false, origem } = params;
+
+  // Grupo do WhatsApp nunca vira negócio. Um grupo não é um lead: ele existe no CRM só pra ser
+  // respondido em Conversas, sem sair do sistema. A regra vive AQUI, e não só em quem chama, pra
+  // valer pra qualquer caminho que venha a criar lead no futuro (importação, outro canal, gatilho
+  // de automação) sem depender de cada um lembrar de checar.
+  if (ehGrupo) return null;
 
   const jaTemCard = await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome } });
   if (jaTemCard) return jaTemCard;

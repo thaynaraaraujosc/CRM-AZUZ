@@ -276,7 +276,7 @@ export async function processarMensagemRecebida(
   // ainda não existia — mensagem que a própria pessoa manda do celular pra alguém (ex.: um
   // contato pessoal) não deve virar negócio no funil sozinha.
   if (!ehGrupo && !fromMe && !contatoExistente) {
-    await entrarNaPrimeiraEtapaComoNovoLead({ workspaceId, contatoNome: chaveContato, origem: "WhatsApp" });
+    await entrarNaPrimeiraEtapaComoNovoLead({ workspaceId, contatoNome: chaveContato, ehGrupo, origem: "WhatsApp" });
   }
 
   await prisma.mensagemExtra.create({
