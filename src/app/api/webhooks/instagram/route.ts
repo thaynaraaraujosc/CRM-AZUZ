@@ -6,7 +6,7 @@ import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import type { ConvMensagem } from "@/lib/data";
 import { CANAL_INSTAGRAM, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { decriptar } from "@/lib/integracoes/crypto";
-import { buscarPerfilDeQuemMandou } from "@/lib/integracoes/instagram-login";
+import { baixarFotoPerfil, buscarPerfilDeQuemMandou } from "@/lib/integracoes/instagram-login";
 
 /**
  * GET — handshake de verificação que a Meta faz uma vez, ao cadastrar a URL do webhook no painel
@@ -203,11 +203,15 @@ export async function POST(request: Request) {
       });
 
       let chaveContato = conversaExistente?.nome;
+      // Foto de perfil junto do @, na mesma busca — sem ela a conversa fica só com as iniciais, e
+      // numa caixa de entrada de Direct a foto é o que faz reconhecer quem é.
+      let fotoUrl: string | null = null;
       if (!chaveContato) {
         const perfil = integracaoDaConta.accessTokenCriptografado
           ? await buscarPerfilDeQuemMandou(decriptar(integracaoDaConta.accessTokenCriptografado), remetenteId)
           : null;
         chaveContato = perfil?.username ? `@${perfil.username}` : (perfil?.nome ?? remetenteId);
+        fotoUrl = perfil?.fotoUrl ? await baixarFotoPerfil(perfil.fotoUrl) : null;
       }
 
       const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: mensagem.mid } });
@@ -251,6 +255,7 @@ export async function POST(request: Request) {
         // pode mudar se a pessoa trocar de @.
         contato: remetenteId,
         origem: "Instagram",
+        fotoUrl,
         // Mensagem que você mesma mandou não é "não lida".
         contarComoNaoLida: !ehEco,
         contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),

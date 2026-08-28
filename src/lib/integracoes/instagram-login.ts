@@ -127,6 +127,28 @@ export async function enviarDirectInstagram(
 }
 
 /**
+ * Baixa a foto de perfil e devolve embutida (data URL).
+ *
+ * O link que o Instagram entrega é de CDN e expira em poucas horas — guardar só a URL deixaria a
+ * conversa sem foto no dia seguinte. Foto de perfil é pequena, então embutir sai barato e resolve
+ * de vez. Falha vira `null`, e a tela cai nas iniciais como já fazia.
+ */
+export async function baixarFotoPerfil(url: string): Promise<string | null> {
+  try {
+    const resposta = await fetch(url);
+    if (!resposta.ok) return null;
+    const bytes = Buffer.from(await resposta.arrayBuffer());
+    // Acima disso não é foto de perfil — não vale embutir no banco.
+    if (bytes.length > 2 * 1024 * 1024) return null;
+    const mimeType = resposta.headers.get("content-type") ?? "image/jpeg";
+    return `data:${mimeType};base64,${bytes.toString("base64")}`;
+  } catch (erro) {
+    console.error("[instagram] Falha ao baixar a foto de perfil:", erro);
+    return null;
+  }
+}
+
+/**
  * Inscreve o app nos webhooks da conta do Instagram recém-conectada.
  *
  * SEM ISSO O WEBHOOK NUNCA DISPARA: a conta autoriza, o CRM mostra "Conectado" e nenhuma mensagem
@@ -170,17 +192,17 @@ export async function inscreverAppNoInstagram(accessToken: string): Promise<stri
 export async function buscarPerfilDeQuemMandou(
   accessToken: string,
   remetenteId: string,
-): Promise<{ username?: string; nome?: string } | null> {
+): Promise<{ username?: string; nome?: string; fotoUrl?: string } | null> {
   try {
     const resposta = await fetch(
-      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${remetenteId}?fields=username,name&access_token=${accessToken}`,
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${remetenteId}?fields=username,name,profile_pic&access_token=${accessToken}`,
     );
-    const dados = (await resposta.json()) as { username?: string; name?: string } & ErroGraph;
+    const dados = (await resposta.json()) as { username?: string; name?: string; profile_pic?: string } & ErroGraph;
     if (!resposta.ok) {
       console.error("[instagram] Falha ao buscar o perfil de quem mandou:", dados.error?.message ?? resposta.status);
       return null;
     }
-    return { username: dados.username, nome: dados.name };
+    return { username: dados.username, nome: dados.name, fotoUrl: dados.profile_pic };
   } catch (erro) {
     console.error("[instagram] Falha ao buscar o perfil de quem mandou:", erro);
     return null;
