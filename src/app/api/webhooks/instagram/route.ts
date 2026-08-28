@@ -106,9 +106,17 @@ async function extrasDeAnexoInstagram(anexo: AnexoInstagram): Promise<Partial<Co
     const tamanho = Number(resposta.headers.get("content-length") ?? 0);
     if (tamanho > TAMANHO_MAX_ANEXO) return {};
 
+    // A URL do Instagram nem sempre entrega o arquivo: quando ela exige sessão, volta uma PÁGINA
+    // HTML (de login ou de erro) com status 200. Sem esta checagem isso virava um "documento" de
+    // centenas de KB grudado na mensagem — um card de download inútil no lugar da prévia.
+    const mimeType = resposta.headers.get("content-type") ?? "application/octet-stream";
+    if (!/^(image|video|audio)\//.test(mimeType)) {
+      console.log("[webhook instagram] anexo nao veio como midia; content-type:", mimeType);
+      return {};
+    }
+
     const bytes = Buffer.from(await resposta.arrayBuffer());
     if (bytes.length > TAMANHO_MAX_ANEXO) return {};
-    const mimeType = resposta.headers.get("content-type") ?? "application/octet-stream";
     const dataUrl = `data:${mimeType};base64,${bytes.toString("base64")}`;
     const formato = mimeType.split("/")[1] ?? "arquivo";
 
@@ -124,6 +132,8 @@ async function extrasDeAnexoInstagram(anexo: AnexoInstagram): Promise<Partial<Co
         return { video: { url: dataUrl, nome: `video.${formato}`, tamanho: bytes.length, comAudio: true } };
       case "audio":
         return { audio: { url: dataUrl, duracao: 0, waveform: [] } };
+      // Só chega aqui com mimeType de mídia (a checagem acima barra o resto), então documento
+      // aqui é arquivo de verdade, não página HTML disfarçada.
       default:
         return {
           documento: {
