@@ -42,7 +42,16 @@ export async function GET(request: Request) {
   );
 }
 
-type AnexoInstagram = { type?: string; payload?: { url?: string; title?: string } };
+type AnexoInstagram = {
+  type?: string;
+  payload?: {
+    url?: string;
+    title?: string;
+    /** Post/reel compartilhado: link pro conteúdo no Instagram. A Meta nem sempre manda — quando
+     * não vem, sobra a prévia sem o clique. */
+    permalink_url?: string;
+  };
+};
 
 type PayloadInstagram = {
   entry?: {
@@ -56,6 +65,10 @@ type PayloadInstagram = {
         /** Foto, vídeo, áudio, arquivo, story compartilhado. Sem tratar isto, a mensagem entrava
          * com texto vazio e a bolha aparecia em branco na tela. */
         attachments?: AnexoInstagram[];
+        /** Resposta a um story: vem FORA de `attachments`, num campo próprio. Sem tratar isto, a
+         * mensagem chegava só com o texto — sem a miniatura do story que a pessoa respondeu, que é
+         * justamente o que dá contexto ("ela respondeu ao story de qual post?"). */
+        reply_to?: { story?: { url?: string; id?: string } };
         /** `true` quando a mensagem foi enviada PELA conta conectada — inclusive de fora do CRM,
          * respondendo pelo app do Instagram. É o que permite o histórico ficar completo. */
         is_echo?: boolean;
@@ -100,6 +113,11 @@ async function extrasDeAnexoInstagram(anexo: AnexoInstagram): Promise<Partial<Co
     const formato = mimeType.split("/")[1] ?? "arquivo";
 
     switch (anexo.type) {
+      // Post, reel e resposta de story compartilhados vêm como imagem de prévia — mostrar como
+      // documento (que era o que caía no `default`) escondia justamente o que identifica o
+      // conteúdo. Aqui aparecem igual ao Instagram: a imagem.
+      case "share":
+      case "story_mention":
       case "image":
         return { imagens: [{ url: dataUrl, nome: `imagem.${formato}`, tamanho: bytes.length }] };
       case "video":
@@ -222,9 +240,31 @@ export async function POST(request: Request) {
       // Anexo vira mídia de verdade; se o download falhar, sobra o rótulo em texto — melhor uma
       // bolha escrita "[Vídeo]" do que uma bolha em branco, que foi o que acontecia antes.
       const anexo = mensagem.attachments?.[0];
-      const extras = anexo ? await extrasDeAnexoInstagram(anexo) : {};
+      // Resposta a story entra como a miniatura do story respondido — mesmo tratamento de imagem,
+      // pra aparecer como prévia e não como arquivo pra baixar.
+      const story = mensagem.reply_to?.story;
+      const extras = anexo
+        ? await extrasDeAnexoInstagram(anexo)
+        : story?.url
+          ? await extrasDeAnexoInstagram({ type: "image", payload: { url: story.url } })
+          : {};
       const temMidia = Object.keys(extras).length > 0;
-      const texto = mensagem.text ?? (anexo ? (ROTULO_POR_ANEXO[anexo.type ?? ""] ?? "[Anexo]") : "");
+      // Link do post compartilhado vai no texto: a tela já transforma URL em link clicável, então
+      // clicar leva pro conteúdo no Instagram sem precisar de um tipo de bolha novo. Nem toda
+      // mensagem de `share` traz o link — quando não vem, fica só a prévia.
+      const linkDoPost = anexo?.payload?.permalink_url;
+      const rotuloPadrao = anexo
+        ? (ROTULO_POR_ANEXO[anexo.type ?? ""] ?? "[Anexo]")
+        : story
+          ? "[Resposta ao seu story]"
+          : "";
+      const texto = [mensagem.text ?? rotuloPadrao, linkDoPost].filter(Boolean).join("\n") || "";
+
+      // Formato de `share` varia entre versões da API. Registrar as chaves (nunca o conteúdo) é o
+      // que permite descobrir de onde tirar o link quando ele não vier em `permalink_url`.
+      if (anexo?.type === "share" && !linkDoPost) {
+        console.log("[webhook instagram] share sem permalink; chaves do payload:", Object.keys(anexo.payload ?? {}));
+      }
       await prisma.mensagemExtra.create({
         data: {
           id: mensagem.mid,
