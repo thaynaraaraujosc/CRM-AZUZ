@@ -202,6 +202,12 @@ export async function buscarPerfilDeQuemMandou(
       console.error("[instagram] Falha ao buscar o perfil de quem mandou:", dados.error?.message ?? resposta.status);
       return null;
     }
+    // A foto vem em `profile_pic` — mas nem toda conta/permissão devolve esse campo, e quando ele
+    // falta a conversa fica só com as iniciais sem nenhuma pista do porquê. Registrar quais campos
+    // vieram (nunca os valores) é o que permite saber se é ausência de permissão ou outro nome.
+    if (!dados.profile_pic) {
+      console.log("[instagram] perfil sem profile_pic; campos recebidos:", Object.keys(dados));
+    }
     return { username: dados.username, nome: dados.name, fotoUrl: dados.profile_pic };
   } catch (erro) {
     console.error("[instagram] Falha ao buscar o perfil de quem mandou:", erro);

@@ -131,31 +131,21 @@ async function extrasDeAnexoInstagram(
     const dataUrl = `data:${mimeType};base64,${bytes.toString("base64")}`;
     const formato = mimeType.split("/")[1] ?? "arquivo";
 
-    switch (anexo.type) {
-      // Post, reel e resposta de story compartilhados vêm como imagem de prévia — mostrar como
-      // documento (que era o que caía no `default`) escondia justamente o que identifica o
-      // conteúdo. Aqui aparecem igual ao Instagram: a imagem.
-      case "share":
-      case "story_mention":
-      case "image":
-        return { imagens: [{ url: dataUrl, nome: `imagem.${formato}`, tamanho: bytes.length }] };
-      case "video":
-        return { video: { url: dataUrl, nome: `video.${formato}`, tamanho: bytes.length, comAudio: true } };
-      case "audio":
-        return { audio: { url: dataUrl, duracao: 0, waveform: [] } };
-      // Só chega aqui com mimeType de mídia (a checagem acima barra o resto), então documento
-      // aqui é arquivo de verdade, não página HTML disfarçada.
-      default:
-        return {
-          documento: {
-            url: dataUrl,
-            nome: anexo.payload?.title ?? `arquivo.${formato}`,
-            tamanho: bytes.length,
-            formato,
-            origem: "computador",
-          },
-        };
+    // Decide pelo CONTEÚDO, não pelo nome do tipo que a Meta declara. Os nomes variam mais do que
+    // a documentação sugere (`share`, `ig_reel`, `story_mention`, `template`...), e um tipo
+    // desconhecido caía no ramo genérico e virava card de download — foi assim que um reel com
+    // prévia em JPEG apareceu como "jpeg · 617 KB" em vez de miniatura. O mimeType do arquivo
+    // baixado não tem essa ambiguidade.
+    if (mimeType.startsWith("image/")) {
+      return { imagens: [{ url: dataUrl, nome: `imagem.${formato}`, tamanho: bytes.length }] };
     }
+    if (mimeType.startsWith("video/")) {
+      return { video: { url: dataUrl, nome: `video.${formato}`, tamanho: bytes.length, comAudio: true } };
+    }
+    if (mimeType.startsWith("audio/")) {
+      return { audio: { url: dataUrl, duracao: 0, waveform: [] } };
+    }
+    return {};
   } catch (erro) {
     console.error("[webhook instagram] Falha ao baixar anexo:", erro);
     return {};
