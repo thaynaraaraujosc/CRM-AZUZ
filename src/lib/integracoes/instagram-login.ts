@@ -113,11 +113,18 @@ export async function enviarDirectInstagram(
   accessToken: string,
   destinatarioId: string,
   texto: string,
+  /** `mid` da mensagem sendo respondida. Faz a citação aparecer TAMBÉM no Instagram da pessoa —
+   * sem isso, o CRM mostrava a citação só de um lado e a cliente recebia uma mensagem solta, sem
+   * saber a que ela respondia. */
+  respondendoMid?: string,
 ): Promise<string | undefined> {
   const resposta = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/messages`, {
     method: "POST",
     headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
-    body: JSON.stringify({ recipient: { id: destinatarioId }, message: { text: texto } }),
+    body: JSON.stringify({
+      recipient: { id: destinatarioId },
+      message: { text: texto, ...(respondendoMid ? { reply_to: { mid: respondendoMid } } : {}) },
+    }),
   });
   const dados = (await resposta.json()) as { message_id?: string } & ErroGraph;
   if (!resposta.ok) {
@@ -158,11 +165,15 @@ export async function baixarFotoPerfil(url: string): Promise<string | null> {
  *
  * Devolve o erro em texto em vez de lançar: a conexão em si já deu certo neste ponto, e derrubá-la
  * por causa da assinatura deixaria a pessoa sem nada. Quem chama guarda isso pra mostrar na tela.
+ *
+ * `messaging_reactions` entra junto de `messages`: sem esse campo, a curtida que a cliente dá numa
+ * mensagem simplesmente não chega — a Meta manda cada tipo de evento só pra quem assinou aquele
+ * campo. Quem conectou antes disto precisa reconectar pra assinatura ser refeita.
  */
 export async function inscreverAppNoInstagram(accessToken: string): Promise<string | null> {
   try {
     const resposta = await fetch(
-      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/subscribed_apps?subscribed_fields=messages`,
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/subscribed_apps?subscribed_fields=messages,messaging_reactions`,
       { method: "POST", headers: { authorization: `Bearer ${accessToken}` } },
     );
     const dados = (await resposta.json()) as { success?: boolean } & ErroGraph;
@@ -234,4 +245,37 @@ export function verificarStateInstagram(state: string | null): string | null {
   const bufEsperada = Buffer.from(esperada);
   if (bufAssinatura.length !== bufEsperada.length) return null;
   return timingSafeEqual(bufAssinatura, bufEsperada) ? workspaceId : null;
+}
+
+/**
+ * Curte (ou descurte) uma mensagem do Direct — o mesmo coração que o app do Instagram manda ao dar
+ * dois cliques numa mensagem.
+ *
+ * Não é uma mensagem nova: é uma `sender_action` sobre uma mensagem que já existe, identificada
+ * pelo `mid` que veio no webhook. Por isso não gera bolha nova na conversa, nem do lado de lá.
+ *
+ * `emoji: null` desfaz a reação. A Meta aceita só um punhado de emojis aqui; o coração é o único
+ * que o CRM manda, que é também o que o duplo clique faz no app.
+ */
+export async function reagirNoDirectInstagram(
+  accessToken: string,
+  destinatarioId: string,
+  mensagemId: string,
+  emoji: string | null,
+): Promise<void> {
+  const resposta = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/messages`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      recipient: { id: destinatarioId },
+      sender_action: emoji ? "react" : "unreact",
+      payload: emoji ? { message_id: mensagemId, reaction: "love" } : { message_id: mensagemId },
+    }),
+  });
+  if (!resposta.ok) {
+    const dados = (await resposta.json().catch(() => ({}))) as ErroGraph;
+    throw new Error(
+      dados.error_message ?? dados.error?.message ?? `Falha ao reagir (HTTP ${resposta.status})`,
+    );
+  }
 }

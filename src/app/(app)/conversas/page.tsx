@@ -1022,10 +1022,11 @@ function ConversasPageInner() {
   const [novaEtiquetaTexto, setNovaEtiquetaTexto] = useState("");
   const [trocandoResponsavel, setTrocandoResponsavel] = useState(false);
   const [abertaIdAnterior, setAbertaIdAnterior] = useState(aberta.id);
-  const [mensagensCurtidas, setMensagensCurtidas] = useState<Set<number>>(
-    () => new Set(),
-  );
-  const [coracaoAnimando, setCoracaoAnimando] = useState<number | null>(null);
+  // Chave da mensagem cujo coração acabou de aparecer — só pra tocar a animação uma vez. A curtida
+  // em si NÃO mora aqui: ela vem da própria mensagem (`reacaoMinha`/`reacaoContato`), porque
+  // precisa sobreviver a recarregar a página e ser a mesma pra qualquer pessoa da equipe.
+  const [coracaoAnimando, setCoracaoAnimando] = useState<string | null>(null);
+  const [erroCurtir, setErroCurtir] = useState<string | null>(null);
   const [tarefaAberta, setTarefaAberta] = useState(false);
   const [emailsEnviados, setEmailsEnviados] = useState<
     {
@@ -1155,6 +1156,8 @@ function ConversasPageInner() {
   const [respondendoMensagem, setRespondendoMensagem] = useState<{
     autor: string;
     texto: string;
+    /** Id da mensagem citada — vai junto no envio pro Instagram, pra citação existir dos dois lados. */
+    mid?: string;
   } | null>(null);
 
   /* ---------------------------------------------------------------------- */
@@ -1693,8 +1696,8 @@ function ConversasPageInner() {
     setEditandoContato(false);
     setStatusSalvarContato("ocioso");
     setTrocandoResponsavel(false);
-    setMensagensCurtidas(new Set());
     setCoracaoAnimando(null);
+    setErroCurtir(null);
     setTarefaAberta(false);
     setEmailModalAberto(false);
     setNotaTexto("");
@@ -1959,7 +1962,9 @@ function ConversasPageInner() {
       fetch("/api/integracoes/instagram/enviar", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ destinatario: aberta.contato, texto }),
+        // `respondendoMid` faz a citação aparecer no Instagram da pessoa também. Sem ele, o
+        // vendedor via "Respondendo a…" aqui e a cliente recebia uma mensagem solta do outro lado.
+        body: JSON.stringify({ destinatario: aberta.contato, texto, respondendoMid: respondendoMensagem?.mid }),
       })
         .then(async (r) => {
           if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
@@ -3139,17 +3144,80 @@ function ConversasPageInner() {
     );
   }
 
-  function curtirMensagem(indice: number) {
-    setMensagensCurtidas((prev) => {
-      const next = new Set(prev);
-      if (next.has(indice)) next.delete(indice);
-      else next.add(indice);
-      return next;
-    });
-    setCoracaoAnimando(indice);
-    setTimeout(() => {
-      setCoracaoAnimando((atual) => (atual === indice ? null : atual));
-    }, 700);
+  /**
+   * Duplo clique numa mensagem curte/descurte, igual ao Direct do Instagram.
+   *
+   * Só vale no Instagram: é onde a Meta aceita reagir a uma mensagem já enviada e devolve a reação
+   * da outra pessoa pelo webhook. Nos outros canais o coração ficaria só na nossa tela, e a cliente
+   * nunca saberia — por isso o duplo clique simplesmente não faz nada lá.
+   *
+   * A tela muda na hora (otimista) e volta atrás se a Meta recusar: esperar a ida e volta pra
+   * pintar o coração faz o duplo clique parecer quebrado.
+   */
+  async function curtirMensagem(chave: string) {
+    if (aberta.canal !== "Instagram") return;
+    const mensagens = mensagensExtraPorContato[aberta.nome] ?? [];
+    const alvo = mensagens.find((m, i) => (m.id ?? `extra-${i}`) === chave);
+    if (!alvo?.id) return;
+
+    const curtir = !alvo.reacaoMinha;
+    const idAlvo = alvo.id;
+    const aplicar = (valor: string | undefined) =>
+      setMensagensExtraPorContato((prev) => ({
+        ...prev,
+        [aberta.nome]: (prev[aberta.nome] ?? []).map((m) =>
+          m.id === idAlvo ? { ...m, reacaoMinha: valor } : m,
+        ),
+      }));
+
+    setErroCurtir(null);
+    aplicar(curtir ? "❤️" : undefined);
+    if (curtir) {
+      setCoracaoAnimando(chave);
+      setTimeout(() => setCoracaoAnimando((atual) => (atual === chave ? null : atual)), 700);
+    }
+
+    try {
+      const resposta = await fetch("/api/conversas/reagir", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mensagemId: idAlvo, curtir }),
+      });
+      if (!resposta.ok) {
+        const dados = (await resposta.json().catch(() => ({}))) as { erro?: string };
+        throw new Error(dados.erro ?? "Não foi possível curtir a mensagem.");
+      }
+    } catch (e) {
+      aplicar(curtir ? undefined : "❤️");
+      setErroCurtir(e instanceof Error ? e.message : "Não foi possível curtir a mensagem.");
+    }
+  }
+
+  /** Coração colado no balão — o da cliente e o meu, quando existem — mais o coração grande que
+   * estoura no meio da bolha no momento do duplo clique, como no Direct. */
+  function reacaoNaMensagem(msg: ConvMensagem, chave: string) {
+    const animando = coracaoAnimando === chave;
+    if (!msg.reacaoContato && !msg.reacaoMinha) {
+      return animando ? <span className="bubble-coracao-anim">❤️</span> : null;
+    }
+    return (
+      <>
+      {animando ? <span className="bubble-coracao-anim">❤️</span> : null}
+      <span
+        className={`wa-msg-reacao${animando ? " pulando" : ""}`}
+        title={
+          msg.reacaoContato && msg.reacaoMinha
+            ? "Vocês dois curtiram"
+            : msg.reacaoContato
+              ? "Curtido pelo contato"
+              : "Você curtiu"
+        }
+      >
+        {msg.reacaoContato ?? msg.reacaoMinha}
+        {msg.reacaoContato && msg.reacaoMinha ? <span className="wa-msg-reacao-2">❤️</span> : null}
+      </span>
+      </>
+    );
   }
 
   const funilSelecionado =
@@ -3729,7 +3797,13 @@ function ConversasPageInner() {
                 <p className="s">
                   {aberta.ehGrupo
                     ? `Grupo · ${aberta.participantesGrupo?.length ?? 0} participantes`
-                    : `${aberta.canal} · ${aberta.contato}`}
+                    : /* No Instagram, `contato` é o id interno da thread (algo como
+                         "828654933601920") — número que não significa nada pra quem atende e que a
+                         pessoa nem pode usar pra achar o perfil. O @ já é o nome exibido acima,
+                         então aqui fica só o canal. No WhatsApp, `contato` É o telefone: aí vale. */
+                      aberta.canal === "Instagram"
+                      ? aberta.canal
+                      : `${aberta.canal} · ${aberta.contato}`}
                 </p>
               </div>
             </button>
@@ -3747,6 +3821,15 @@ function ConversasPageInner() {
           <div
             className={`chat-body wa-fonte-${config.tamanhoFonte}${arrastandoArquivo ? " wa-dragover" : ""}`}
             style={estiloFundoConversa(fundoDaConversa(aberta.id), config.fundoOpacidade)}
+            // Um ouvinte só no container em vez de um por bolha: são dez formatos de balão
+            // (texto, imagem, áudio, documento, localização...) e repetir o mesmo handler em cada
+            // um é onde nasce a variante que ninguém lembrou de atualizar. `data-msg-chave` marca
+            // qual mensagem recebeu o duplo clique.
+            onDoubleClick={(e) => {
+              const alvo = (e.target as HTMLElement).closest<HTMLElement>("[data-msg-chave]");
+              const chave = alvo?.dataset.msgChave;
+              if (chave) void curtirMensagem(chave);
+            }}
             onDragOver={(e) => {
               e.preventDefault();
               if (e.dataTransfer.types.includes("Files")) setArrastandoArquivo(true);
@@ -3771,6 +3854,20 @@ function ConversasPageInner() {
             {arrastandoArquivo ? (
               <div className="wa-dragover-aviso">Solte o arquivo pra anexar</div>
             ) : null}
+            {/* A curtida já foi desfeita na tela quando isso aparece — o aviso existe pra explicar
+                POR QUE o coração sumiu (janela de 24h vencida, conta desconectada), em vez de
+                deixar parecer que o clique não funcionou. */}
+            {erroCurtir ? (
+              <button
+                type="button"
+                className="wa-campo-erro"
+                style={{ alignSelf: "center", background: "none", border: "none", cursor: "pointer" }}
+                onClick={() => setErroCurtir(null)}
+                title="Dispensar"
+              >
+                ⚠ {erroCurtir}
+              </button>
+            ) : null}
             {(() => {
               const todasDaConversa = mensagensExtraPorContato[aberta.nome] ?? [];
               const ocultas = todasDaConversa.length - limiteMensagensVisiveis;
@@ -3791,18 +3888,19 @@ function ConversasPageInner() {
               if (mensagensApagadas.has(chave)) return null;
               if (msg.apagadaParaTodos) {
                 return (
-                  <div className="bubble sistema-apagada" key={chave}>
+                  <div className="bubble sistema-apagada" key={chave} data-msg-chave={chave}>
                     Esta mensagem foi apagada.
                   </div>
                 );
               }
               return msg.localizacao ? (
                 <div
-                  key={chave}
+                  key={chave} data-msg-chave={chave}
                   className={`bubble ${msg.tipo} bubble-localizacao`}
                 >
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
+                  {reacaoNaMensagem(msg, chave)}
                   <a
                     className="bubble-localizacao-link-area"
                     href={`https://www.google.com/maps?q=${msg.localizacao.lat},${msg.localizacao.lng}`}
@@ -3843,9 +3941,10 @@ function ConversasPageInner() {
                   </span>
                 </div>
               ) : msg.contatoCompartilhado ? (
-                <div className={`bubble ${msg.tipo} bubble-contato`} key={chave}>
+                <div className={`bubble ${msg.tipo} bubble-contato`} key={chave} data-msg-chave={chave}>
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
+                  {reacaoNaMensagem(msg, chave)}
                   <button
                     type="button"
                     className="bubble-contato-area"
@@ -3879,10 +3978,11 @@ function ConversasPageInner() {
               ) : msg.imagens && msg.imagens.length > 0 ? (
                 <div
                   className={`bubble ${msg.tipo} bubble-midia`}
-                  key={chave}
+                  key={chave} data-msg-chave={chave}
                 >
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
+                  {reacaoNaMensagem(msg, chave)}
                   {midiaLiberada("imagem", msg.id, msg.imagens?.[0]?.url) ? (
                     <div
                       className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}
@@ -3933,10 +4033,11 @@ function ConversasPageInner() {
               ) : msg.video ? (
                 <div
                   className={`bubble ${msg.tipo} bubble-midia`}
-                  key={chave}
+                  key={chave} data-msg-chave={chave}
                 >
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
+                  {reacaoNaMensagem(msg, chave)}
                   {midiaLiberada("video", msg.id, msg.video?.url) ? (
                     <video
                       className="bubble-video"
@@ -3975,10 +4076,11 @@ function ConversasPageInner() {
               ) : msg.documento ? (
                 <div
                   className={`bubble ${msg.tipo} bubble-documento`}
-                  key={chave}
+                  key={chave} data-msg-chave={chave}
                 >
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
+                  {reacaoNaMensagem(msg, chave)}
                   <a
                     className="bubble-documento-cartao"
                     href={msg.documento.url}
@@ -4014,18 +4116,20 @@ function ConversasPageInner() {
                   </span>
                 </div>
               ) : msg.midiaPendente?.tipo === "audio" ? (
-                <div className={`bubble ${msg.tipo}`} key={chave}>
+                <div className={`bubble ${msg.tipo}`} key={chave} data-msg-chave={chave}>
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
+                  {reacaoNaMensagem(msg, chave)}
                   <span className="wa-carregar-midia">
                     <span className="wa-participante-foto-carregando" /> 🎤 Carregando áudio…
                   </span>
                   <span className="tm">{msg.hora}</span>
                 </div>
               ) : msg.midiaPendente?.tipo === "imagem" ? (
-                <div className={`bubble ${msg.tipo}`} key={chave}>
+                <div className={`bubble ${msg.tipo}`} key={chave} data-msg-chave={chave}>
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
+                  {reacaoNaMensagem(msg, chave)}
                   <span className="wa-carregar-midia">
                     <span className="wa-participante-foto-carregando" /> 📷 Carregando imagem…
                   </span>
@@ -4034,10 +4138,11 @@ function ConversasPageInner() {
               ) : msg.audio ? (
                 <div
                   className={`bubble ${msg.tipo} bubble-audio`}
-                  key={chave}
+                  key={chave} data-msg-chave={chave}
                 >
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
+                  {reacaoNaMensagem(msg, chave)}
                   <AudioBubblePlayer
                     audio={msg.audio}
                     tipo={msg.tipo === "in" ? "in" : "out"}
@@ -4058,9 +4163,10 @@ function ConversasPageInner() {
                   </span>
                 </div>
               ) : (
-                <div className={`bubble ${msg.tipo}`} key={chave}>
+                <div className={`bubble ${msg.tipo}`} key={chave} data-msg-chave={chave}>
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
+                  {reacaoNaMensagem(msg, chave)}
                   {aberta.ehGrupo && msg.tipo === "in" && msg.remetenteNome ? (
                     <span className="wa-remetente-grupo">{msg.remetenteNome}</span>
                   ) : null}
@@ -6356,21 +6462,28 @@ function ConversasPageInner() {
                   width={220}
                   onClose={() => setMsgMenuAberto(null)}
                 >
-                  <button
-                    type="button"
-                    className="dropdown-item"
-                    style={{ width: "100%", textAlign: "left" }}
-                    onClick={() => {
-                      setMsgMenuAberto(null);
-                      setRespondendoMensagem({
-                        autor: msg.tipo === "in" ? aberta.nome : "Você",
-                        texto: msg.texto || "Anexo",
-                      });
-                      mensagemInputRef.current?.focus();
-                    }}
-                  >
-                    <span className="n">↩ Responder</span>
-                  </button>
+                  {/* No Instagram a citação só existe do lado da cliente se o CRM souber o id da
+                      mensagem citada (`reply_to`). Sem id, responder mostraria "Respondendo a…"
+                      aqui e mandaria uma mensagem solta lá — então a opção nem aparece, em vez de
+                      dar a impressão de que a pessoa vai ver a citação. */}
+                  {aberta.canal === "Instagram" && !msg.id ? null : (
+                    <button
+                      type="button"
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => {
+                        setMsgMenuAberto(null);
+                        setRespondendoMensagem({
+                          autor: msg.tipo === "in" ? aberta.nome : "Você",
+                          texto: msg.texto || "Anexo",
+                          mid: msg.id,
+                        });
+                        mensagemInputRef.current?.focus();
+                      }}
+                    >
+                      <span className="n">↩ Responder</span>
+                    </button>
+                  )}
                   {msg.texto ? (
                     <button
                       type="button"
@@ -6812,8 +6925,16 @@ function ConversasPageInner() {
                 <p className="wa-resumo-nome">{aberta.nome}</p>
                 {empresaContato ? <p className="wa-resumo-empresa">{empresaContato}</p> : null}
                 <div className="wa-resumo-grid">
-                  <span className="wa-resumo-label">Telefone</span>
-                  <span className="wa-resumo-valor">{whatsappContato || aberta.contato}</span>
+                  <span className="wa-resumo-label">
+                    {aberta.canal === "Instagram" ? "Instagram" : "Telefone"}
+                  </span>
+                  <span className="wa-resumo-valor">
+                    {aberta.canal === "Instagram"
+                      ? // Mesmo motivo do cabeçalho: o id interno não serve de contato. O @ está em
+                        // `nome`; sem ele resolvido ainda, "—" é mais honesto que um número solto.
+                        (aberta.nome.startsWith("@") ? aberta.nome : "—")
+                      : whatsappContato || aberta.contato}
+                  </span>
                   <span className="wa-resumo-label">E-mail</span>
                   <span className="wa-resumo-valor">{emailContato || "—"}</span>
                   <span className="wa-resumo-label">Responsável</span>

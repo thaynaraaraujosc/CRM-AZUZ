@@ -57,6 +57,9 @@ type AnexoInstagram = {
 
 type PayloadInstagram = {
   entry?: {
+    /** Id da conta do Instagram dona do evento — é por ele que se sabe se quem reagiu foi a
+     * própria conta conectada ou a pessoa do outro lado. */
+    id?: string;
     messaging?: {
       sender?: { id: string };
       recipient?: { id: string };
@@ -74,6 +77,16 @@ type PayloadInstagram = {
         /** `true` quando a mensagem foi enviada PELA conta conectada — inclusive de fora do CRM,
          * respondendo pelo app do Instagram. É o que permite o histórico ficar completo. */
         is_echo?: boolean;
+      };
+      /** Curtida (ou descurtida) numa mensagem que já existe — evento próprio, não vem dentro de
+       * `message`. `mid` aponta pra mensagem reagida; `action` diz se foi curtir ou desfazer. */
+      reaction?: {
+        mid?: string;
+        action?: "react" | "unreact";
+        /** Nome da reação na Meta ("love"). */
+        reaction?: string;
+        /** O emoji em si ("❤️") — nem sempre vem, por isso o coração é o padrão. */
+        emoji?: string;
       };
     }[];
   }[];
@@ -208,10 +221,14 @@ export async function POST(request: Request) {
   for (const entry of payload.entry ?? []) {
     for (const evento of entry.messaging ?? []) {
       const mensagem = evento.message;
+      const reacao = evento.reaction;
       // Em mensagem recebida, a conta conectada é o destinatário; num eco (mensagem que ela mesma
-      // mandou), é o remetente. Os dois lados invertem.
-      const instagramContaId = mensagem?.is_echo ? evento.sender?.id : evento.recipient?.id;
-      if (!instagramContaId || !mensagem) continue;
+      // mandou), é o remetente. Os dois lados invertem. Numa reação vale o mesmo raciocínio: se
+      // QUEM reagiu foi a própria conta (curtiu pelo app do Instagram), ela é o `sender`.
+      const ehEcoDeReacao = Boolean(reacao) && evento.sender?.id === entry.id;
+      const instagramContaId =
+        mensagem?.is_echo || ehEcoDeReacao ? evento.sender?.id : evento.recipient?.id;
+      if (!instagramContaId || (!mensagem && !reacao)) continue;
 
       // `metadados` é Json — não dá pra filtrar direto no `where` de forma portável, filtra em
       // memória (poucas integrações ativas, custo desprezível), mesmo padrão do webhook do WhatsApp.
@@ -229,6 +246,26 @@ export async function POST(request: Request) {
       // conta conectada antes desse toggle existir.
       const receberMensagens = (integracaoDaConta.metadados as { receberMensagens?: boolean } | null)?.receberMensagens ?? true;
       if (!receberMensagens) continue;
+
+      // Curtida numa mensagem que já está na tela. Não vira bolha nova: atualiza a mensagem
+      // reagida, do mesmo jeito que o Instagram mostra o coração grudado no balão. Guardamos em
+      // lados separados porque cada pessoa da conversa pode reagir à mesma mensagem — o coração da
+      // cliente e o meu não se sobrescrevem.
+      if (reacao) {
+        if (!reacao.mid) continue;
+        const alvo = await prisma.mensagemExtra.findUnique({ where: { id: reacao.mid } });
+        if (!alvo || alvo.workspaceId !== integracaoDaConta.workspaceId) continue;
+
+        const extrasAtuais = (alvo.extras as Record<string, unknown> | null) ?? {};
+        const campo = ehEcoDeReacao ? "reacaoMinha" : "reacaoContato";
+        const valor = reacao.action === "unreact" ? undefined : (reacao.emoji ?? "❤️");
+        await prisma.mensagemExtra.update({
+          where: { id: reacao.mid },
+          data: { extras: { ...extrasAtuais, [campo]: valor } as object },
+        });
+        continue;
+      }
+      if (!mensagem) continue;
 
       // Eco: mensagem que a PRÓPRIA conta conectada enviou, inclusive respondendo pelo app do
       // Instagram em vez do CRM. Aí quem interessa é o destinatário, não o remetente — senão a

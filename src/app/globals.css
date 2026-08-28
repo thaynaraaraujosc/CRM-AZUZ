@@ -2512,19 +2512,51 @@ table.tbl tbody tr:hover td {
   position: relative;
 }
 
-.bubble-reacao {
+/* Coração da curtida, grudado na borda de baixo do balão — mesma posição que o Instagram usa, pra
+   quem vem de lá reconhecer sem precisar aprender nada. */
+.wa-msg-reacao {
   position: absolute;
   bottom: -9px;
   right: -6px;
-  font-size: 13px;
-  background: var(--navy);
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 1px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 1;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+/* No balão enviado o "⋮" fica à esquerda, então o coração vai pro lado oposto — assim um nunca
+   cobre o outro. */
+.bubble.out .wa-msg-reacao {
+  right: auto;
+  left: -6px;
+}
+
+.wa-msg-reacao.pulando {
+  animation: coracao-pop-badge 0.7s ease-out;
+}
+
+.wa-msg-reacao-2 {
+  margin-left: -3px;
+}
+
+@keyframes coracao-pop-badge {
+  0% {
+    transform: scale(0);
+  }
+  45% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .bubble-coracao-anim {
@@ -2561,6 +2593,9 @@ table.tbl tbody tr:hover td {
   color: #fff;
   align-self: flex-end;
   border-bottom-right-radius: 4px;
+  /* Igual ao `.bubble.in`: o coração da curtida e o botão "⋮" são posicionados em relação ao
+     balão, então ele precisa ser a referência dos dois lados da conversa. */
+  position: relative;
 }
 
 .bubble-localizacao {

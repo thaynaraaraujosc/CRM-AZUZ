@@ -542,8 +542,16 @@ export type ConvMensagem = {
   audio?: AnexoAudio;
   /** Legenda opcional que acompanha imagem/vídeo. */
   legenda?: string;
-  /** Presente quando o usuário respondeu a uma mensagem específica — mostra a citação em cima do texto. */
-  respondendoA?: { autor: string; texto: string };
+  /** Presente quando o usuário respondeu a uma mensagem específica — mostra a citação em cima do
+   * texto. `mid` é o id da mensagem citada no canal de origem: é ele que faz a citação aparecer
+   * também do lado da pessoa (hoje usado no Direct do Instagram, via `reply_to`). */
+  respondendoA?: { autor: string; texto: string; mid?: string };
+  /** Curtida do Instagram nessa mensagem. Cada lado tem a sua: `reacaoContato` é o coração que a
+   * pessoa do outro lado deu, `reacaoMinha` é o que saiu daqui (ou do app do Instagram, pela conta
+   * conectada). Ficam separadas porque as duas podem existir na MESMA mensagem — sobrescrever uma
+   * com a outra apagaria da tela a curtida da cliente, que é justamente o que se quer ver. */
+  reacaoContato?: string;
+  reacaoMinha?: string;
   /** Só existe em mensagens "out" — o estado real reportado pelo canal. */
   status?: StatusMensagem;
   /** Motivo do erro, quando status === "erro" — mostrado com a opção de tentar de novo. */

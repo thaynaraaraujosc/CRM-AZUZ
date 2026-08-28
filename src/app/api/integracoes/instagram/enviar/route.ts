@@ -19,7 +19,11 @@ export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
-  const { destinatario, texto } = (await request.json()) as { destinatario?: string; texto?: string };
+  const { destinatario, texto, respondendoMid } = (await request.json()) as {
+    destinatario?: string;
+    texto?: string;
+    respondendoMid?: string;
+  };
   if (!destinatario?.trim() || !texto?.trim()) {
     return NextResponse.json({ erro: "destinatario e texto são obrigatórios" }, { status: 400 });
   }
@@ -36,6 +40,7 @@ export async function POST(request: Request) {
       decriptar(integracao.accessTokenCriptografado),
       destinatario.trim(),
       texto,
+      respondendoMid,
     );
     return NextResponse.json({ ok: true, messageId });
   } catch (erro) {
