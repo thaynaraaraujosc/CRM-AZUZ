@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
+import type { ConvMensagem } from "@/lib/data";
 import { CANAL_INSTAGRAM, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { buscarPerfilDeQuemMandou } from "@/lib/integracoes/instagram-login";
@@ -41,16 +42,86 @@ export async function GET(request: Request) {
   );
 }
 
+type AnexoInstagram = { type?: string; payload?: { url?: string; title?: string } };
+
 type PayloadInstagram = {
   entry?: {
     messaging?: {
       sender?: { id: string };
       recipient?: { id: string };
       timestamp?: number;
-      message?: { mid: string; text?: string };
+      message?: {
+        mid: string;
+        text?: string;
+        /** Foto, vídeo, áudio, arquivo, story compartilhado. Sem tratar isto, a mensagem entrava
+         * com texto vazio e a bolha aparecia em branco na tela. */
+        attachments?: AnexoInstagram[];
+        /** `true` quando a mensagem foi enviada PELA conta conectada — inclusive de fora do CRM,
+         * respondendo pelo app do Instagram. É o que permite o histórico ficar completo. */
+        is_echo?: boolean;
+      };
     }[];
   }[];
 };
+
+/** Rótulo em texto de cada tipo de anexo — é o que aparece na lista de conversas e o que sobra
+ * quando o download do arquivo falha. */
+const ROTULO_POR_ANEXO: Record<string, string> = {
+  image: "[Imagem]",
+  video: "[Vídeo]",
+  audio: "[Áudio]",
+  file: "[Arquivo]",
+  share: "[Publicação compartilhada]",
+  story_mention: "[Menção em story]",
+};
+
+/** Teto do que vale a pena guardar embutido no banco (data URL). Acima disso fica só o rótulo —
+ * melhor uma bolha que diz "[Vídeo]" do que inflar o banco com dezenas de MB por mensagem. */
+const TAMANHO_MAX_ANEXO = 12 * 1024 * 1024;
+
+/**
+ * Baixa o anexo e devolve nos mesmos campos que o resto do CRM já usa pra mídia. A URL que o
+ * Instagram manda é temporária (expira em horas), então guardar só o link deixaria a conversa
+ * quebrada no dia seguinte — por isso o arquivo é embutido, igual o webhook do WhatsApp faz.
+ */
+async function extrasDeAnexoInstagram(anexo: AnexoInstagram): Promise<Partial<ConvMensagem>> {
+  const url = anexo.payload?.url;
+  if (!url) return {};
+  try {
+    const resposta = await fetch(url);
+    if (!resposta.ok) return {};
+    const tamanho = Number(resposta.headers.get("content-length") ?? 0);
+    if (tamanho > TAMANHO_MAX_ANEXO) return {};
+
+    const bytes = Buffer.from(await resposta.arrayBuffer());
+    if (bytes.length > TAMANHO_MAX_ANEXO) return {};
+    const mimeType = resposta.headers.get("content-type") ?? "application/octet-stream";
+    const dataUrl = `data:${mimeType};base64,${bytes.toString("base64")}`;
+    const formato = mimeType.split("/")[1] ?? "arquivo";
+
+    switch (anexo.type) {
+      case "image":
+        return { imagens: [{ url: dataUrl, nome: `imagem.${formato}`, tamanho: bytes.length }] };
+      case "video":
+        return { video: { url: dataUrl, nome: `video.${formato}`, tamanho: bytes.length, comAudio: true } };
+      case "audio":
+        return { audio: { url: dataUrl, duracao: 0, waveform: [] } };
+      default:
+        return {
+          documento: {
+            url: dataUrl,
+            nome: anexo.payload?.title ?? `arquivo.${formato}`,
+            tamanho: bytes.length,
+            formato,
+            origem: "computador",
+          },
+        };
+    }
+  } catch (erro) {
+    console.error("[webhook instagram] Falha ao baixar anexo:", erro);
+    return {};
+  }
+}
 
 /**
  * POST recebe mensagem direta recebida — sem `auth()` de propósito (quem chama é a Meta). Valida a
@@ -88,8 +159,10 @@ export async function POST(request: Request) {
 
   for (const entry of payload.entry ?? []) {
     for (const evento of entry.messaging ?? []) {
-      const instagramContaId = evento.recipient?.id;
       const mensagem = evento.message;
+      // Em mensagem recebida, a conta conectada é o destinatário; num eco (mensagem que ela mesma
+      // mandou), é o remetente. Os dois lados invertem.
+      const instagramContaId = mensagem?.is_echo ? evento.sender?.id : evento.recipient?.id;
       if (!instagramContaId || !mensagem) continue;
 
       // `metadados` é Json — não dá pra filtrar direto no `where` de forma portável, filtra em
@@ -109,7 +182,12 @@ export async function POST(request: Request) {
       const receberMensagens = (integracaoDaConta.metadados as { receberMensagens?: boolean } | null)?.receberMensagens ?? true;
       if (!receberMensagens) continue;
 
-      const remetenteId = evento.sender?.id;
+      // Eco: mensagem que a PRÓPRIA conta conectada enviou, inclusive respondendo pelo app do
+      // Instagram em vez do CRM. Aí quem interessa é o destinatário, não o remetente — senão a
+      // conversa seria arquivada sob o id da própria conta. Sem tratar isto, o histórico ficava
+      // pela metade: só o que a outra pessoa escreveu.
+      const ehEco = mensagem.is_echo === true;
+      const remetenteId = ehEco ? evento.recipient?.id : evento.sender?.id;
       if (!remetenteId) continue;
 
       // O Direct entrega só um id interno de quem mandou. A conversa é achada por ele (estável),
@@ -136,13 +214,20 @@ export async function POST(request: Request) {
       if (jaExiste) continue;
 
       const criadoEm = evento.timestamp ? new Date(evento.timestamp) : new Date();
+
+      // Anexo vira mídia de verdade; se o download falhar, sobra o rótulo em texto — melhor uma
+      // bolha escrita "[Vídeo]" do que uma bolha em branco, que foi o que acontecia antes.
+      const anexo = mensagem.attachments?.[0];
+      const extras = anexo ? await extrasDeAnexoInstagram(anexo) : {};
+      const temMidia = Object.keys(extras).length > 0;
+      const texto = mensagem.text ?? (anexo ? (ROTULO_POR_ANEXO[anexo.type ?? ""] ?? "[Anexo]") : "");
       await prisma.mensagemExtra.create({
         data: {
           id: mensagem.mid,
           workspaceId: integracaoDaConta.workspaceId,
           contato: chaveContato,
-          tipo: "in",
-          texto: mensagem.text ?? "",
+          tipo: ehEco ? "out" : "in",
+          texto,
           // `timeZone` explícito — sem isso, roda no fuso do servidor (UTC na Vercel), 3h
           // adiantado do horário de Brasília.
           hora: criadoEm.toLocaleTimeString("pt-BR", {
@@ -153,6 +238,7 @@ export async function POST(request: Request) {
           criadoEm,
           canal: CANAL_INSTAGRAM,
           contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
+          extras: temMidia ? (extras as object) : undefined,
         },
       });
 
@@ -165,6 +251,8 @@ export async function POST(request: Request) {
         // pode mudar se a pessoa trocar de @.
         contato: remetenteId,
         origem: "Instagram",
+        // Mensagem que você mesma mandou não é "não lida".
+        contarComoNaoLida: !ehEco,
         contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
       });
     }
