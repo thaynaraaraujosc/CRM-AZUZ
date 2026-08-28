@@ -1361,7 +1361,11 @@ function ConversasPageInner() {
   // Mídias liberadas manualmente quando o download automático está desligado pra esse tipo.
   const [midiasLiberadas, setMidiasLiberadas] = useState<Set<string>>(() => new Set());
 
-  function midiaLiberada(tipo: "imagem" | "video" | "documento", id?: string) {
+  function midiaLiberada(tipo: "imagem" | "video" | "documento", id?: string, url?: string) {
+    // Mídia já embutida na mensagem (`data:`) não tem o que baixar — o arquivo veio junto. A trava
+    // existe pra mídia que mora no servidor e só é buscada sob demanda; aqui ela só escondia o que
+    // já estava em mãos, e a pessoa via "Baixar vídeo" no lugar da miniatura.
+    if (url?.startsWith("data:")) return true;
     if (config.downloadAutomatico && config.tiposDownloadAutomatico.includes(tipo)) {
       return true;
     }
@@ -3849,7 +3853,7 @@ function ConversasPageInner() {
                 >
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
-                  {midiaLiberada("imagem", msg.id) ? (
+                  {midiaLiberada("imagem", msg.id, msg.imagens?.[0]?.url) ? (
                     <div
                       className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}
                     >
@@ -3903,7 +3907,7 @@ function ConversasPageInner() {
                 >
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
-                  {midiaLiberada("video", msg.id) ? (
+                  {midiaLiberada("video", msg.id, msg.video?.url) ? (
                     <video
                       className="bubble-video"
                       src={msg.video.url}
