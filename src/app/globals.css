@@ -2892,6 +2892,13 @@ table.tbl tbody tr:hover td {
   white-space: nowrap;
 }
 
+/* Canal anunciado mas ainda sem recebimento (TikTok) — visível de propósito, pra não parecer que
+   não existe, mas claramente indisponível. */
+.wa-filter-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .wa-whatsapp .wa-filter-chip.active {
   background: #25d366;
   color: #fff;

@@ -101,6 +101,21 @@ const FILTROS_CONVERSA = [
   { valor: "favoritas", label: "Favoritas" },
 ] as const;
 
+/**
+ * Filtro por canal, separado dos filtros de situação acima porque são coisas independentes: dá pra
+ * querer "não lidas do Instagram". Com WhatsApp e Instagram ligados ao mesmo tempo, a lista mistura
+ * os dois e fica difícil saber por onde a pessoa está falando.
+ *
+ * TikTok aparece desativado de propósito: o canal está anunciado no produto mas ainda não recebe
+ * mensagem, e esconder a aba faria parecer que ele não existe.
+ */
+const CANAIS_CONVERSA = [
+  { valor: "todos", label: "Todos os canais", emBreve: false },
+  { valor: "WhatsApp", label: "WhatsApp", emBreve: false },
+  { valor: "Instagram", label: "Instagram", emBreve: false },
+  { valor: "TikTok", label: "TikTok", emBreve: true },
+] as const;
+
 const FORMATOS_IMAGEM = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const TAMANHO_MAX_IMAGEM = 16 * 1024 * 1024;
 const FORMATOS_VIDEO = ["video/mp4", "video/webm", "video/quicktime", "video/3gpp"];
@@ -679,6 +694,7 @@ function ConversasPageInner() {
   const [registrandoResultado, setRegistrandoResultado] = useState(false);
   const [buscaConversa, setBuscaConversa] = useState("");
   const [filtroConversa, setFiltroConversa] = useState<FiltroConversa>("tudo");
+  const [canalAba, setCanalAba] = useState<string>("todos");
   const [lidas, setLidas] = useState<Set<string>>(() => new Set());
   const [fixadas, setFixadas] = useState<Set<string>>(() => new Set());
   const [silenciadas, setSilenciadas] = useState<Set<string>>(() => new Set());
@@ -889,6 +905,7 @@ function ConversasPageInner() {
       if (mostrarArquivadas) return c.arquivada;
       if (filtroConversa === "nao-lidas" && (!c.naoLidas || lidas.has(c.id))) return false;
       if (filtroConversa === "favoritas" && !ehFavorita(c)) return false;
+      if (canalAba !== "todos" && c.canal !== canalAba) return false;
       if (atendenteTopFiltro !== "Todos" && c.atendenteSelecionado !== atendenteTopFiltro)
         return false;
       if (canalTopFiltro !== "Todos" && c.origem !== canalTopFiltro) return false;
@@ -3463,6 +3480,29 @@ function ConversasPageInner() {
             >
               Arquivadas ({conversas.filter((c) => c.arquivada).length})
             </button>
+          </div>
+
+          <div className="wa-list-filters">
+            {CANAIS_CONVERSA.map((canal) => {
+              const quantidade =
+                canal.valor === "todos"
+                  ? conversas.length
+                  : conversas.filter((c) => c.canal === canal.valor).length;
+              return (
+                <button
+                  type="button"
+                  key={canal.valor}
+                  className={`wa-filter-chip${canalAba === canal.valor ? " active" : ""}`}
+                  aria-pressed={canalAba === canal.valor}
+                  disabled={canal.emBreve}
+                  title={canal.emBreve ? "Ainda não disponível" : undefined}
+                  onClick={() => setCanalAba(canal.valor)}
+                >
+                  {canal.label}
+                  {canal.emBreve ? " · em breve" : quantidade > 0 ? ` (${quantidade})` : ""}
+                </button>
+              );
+            })}
           </div>
 
           <div className="wa-list-rows">
