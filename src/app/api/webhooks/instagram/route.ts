@@ -88,9 +88,16 @@ const ROTULO_POR_ANEXO: Record<string, string> = {
   story_mention: "[Menção em story]",
 };
 
-/** Teto do que vale a pena guardar embutido no banco (data URL). Acima disso fica só o rótulo —
- * melhor uma bolha que diz "[Vídeo]" do que inflar o banco com dezenas de MB por mensagem. */
-const TAMANHO_MAX_ANEXO = 12 * 1024 * 1024;
+/**
+ * Teto do anexo guardado embutido (data URL). Acima disso fica só o rótulo — melhor uma bolha que
+ * diz "[Vídeo]" do que derrubar o servidor.
+ *
+ * O arquivo é baixado INTEIRO para a memória e convertido para base64, o que infla ~33%: com 12 MB
+ * (o valor anterior) uma única mensagem podia passar de 16 MB só nessa conversão, e num container
+ * pequeno isso mata o processo sem deixar erro no log. 4 MB cobre foto, prévia de reel e vídeo
+ * curto — que é o que chega por Direct — com folga confortável.
+ */
+const TAMANHO_MAX_ANEXO = 4 * 1024 * 1024;
 
 /**
  * Baixa o anexo e devolve nos mesmos campos que o resto do CRM já usa pra mídia. A URL que o
