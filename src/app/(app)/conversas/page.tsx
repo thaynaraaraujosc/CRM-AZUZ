@@ -1941,13 +1941,25 @@ function ConversasPageInner() {
           if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
         })
         .catch((erro) => avisarFalhaNaConversa("WhatsApp Meta", erro));
+    } else if (!viaBaileys && aberta.canal === "Instagram" && aberta.contato) {
+      // Instagram tem rota própria: o destinatário é o id interno de quem escreveu (guardado em
+      // `Conversa.contato`), não um telefone. Sem este ramo, conversa do Direct caía no aviso de
+      // "sem número de WhatsApp" — o CRM recebia a mensagem e não deixava responder.
+      fetch("/api/integracoes/instagram/enviar", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ destinatario: aberta.contato, texto }),
+      })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+        })
+        .catch((erro) => avisarFalhaNaConversa("Instagram", erro));
     } else if (!viaBaileys) {
-      // Nenhum dos dois canais reais bateu (sem número/contato associado à conversa) — sem isso,
-      // a mensagem parecia "sumir": ficava só no estado local, sem nenhum aviso de que não tinha
-      // pra onde mandar de verdade.
+      // Nenhum canal real bateu (sem número/contato associado à conversa) — sem isso, a mensagem
+      // parecia "sumir": ficava só no estado local, sem nenhum aviso de que não tinha pra onde ir.
       adicionarMensagem({
         tipo: "system",
-        texto: "⚠️ Não enviado: essa conversa não tem um número de WhatsApp associado.",
+        texto: "⚠️ Não enviado: essa conversa não tem um canal de envio associado.",
         hora: horaAgora(),
       });
     }

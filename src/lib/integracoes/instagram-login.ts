@@ -100,6 +100,33 @@ export async function buscarPerfilInstagram(accessToken: string): Promise<{ inst
 }
 
 /**
+ * Manda uma mensagem pelo Direct.
+ *
+ * `destinatarioId` é o id interno de quem vai receber (o mesmo que chega no webhook e fica em
+ * `Conversa.contato`), não o @ — é o que a API aceita, e ele não muda se a pessoa trocar de nome
+ * de usuário.
+ *
+ * Vale a mesma janela de 24h do WhatsApp: fora dela a Meta recusa mensagem livre. Aqui o erro dela
+ * sobe como está, porque a mensagem já é específica o bastante pra quem está atendendo entender.
+ */
+export async function enviarDirectInstagram(
+  accessToken: string,
+  destinatarioId: string,
+  texto: string,
+): Promise<string | undefined> {
+  const resposta = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/messages`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
+    body: JSON.stringify({ recipient: { id: destinatarioId }, message: { text: texto } }),
+  });
+  const dados = (await resposta.json()) as { message_id?: string } & ErroGraph;
+  if (!resposta.ok) {
+    throw new Error(dados.error_message ?? dados.error?.message ?? `Falha ao enviar (HTTP ${resposta.status})`);
+  }
+  return dados.message_id;
+}
+
+/**
  * Inscreve o app nos webhooks da conta do Instagram recém-conectada.
  *
  * SEM ISSO O WEBHOOK NUNCA DISPARA: a conta autoriza, o CRM mostra "Conectado" e nenhuma mensagem
