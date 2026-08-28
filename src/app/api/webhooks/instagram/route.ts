@@ -227,18 +227,21 @@ export async function POST(request: Request) {
       // recebida, à toa.
       const conversaExistente = await prisma.conversa.findFirst({
         where: { workspaceId: integracaoDaConta.workspaceId, contato: remetenteId, canal: "Instagram" },
-        select: { nome: true },
+        select: { nome: true, fotoUrl: true },
       });
 
       let chaveContato = conversaExistente?.nome;
       // Foto de perfil junto do @, na mesma busca — sem ela a conversa fica só com as iniciais, e
       // numa caixa de entrada de Direct a foto é o que faz reconhecer quem é.
       let fotoUrl: string | null = null;
-      if (!chaveContato) {
+      // Busca também quando a conversa já existe mas está SEM foto — antes só a primeira mensagem
+      // de cada pessoa buscava, então quem já tinha conversa (criada antes disto existir) nunca
+      // ganhava foto e a lista ficava só com iniciais.
+      if (!chaveContato || !conversaExistente?.fotoUrl) {
         const perfil = integracaoDaConta.accessTokenCriptografado
           ? await buscarPerfilDeQuemMandou(decriptar(integracaoDaConta.accessTokenCriptografado), remetenteId)
           : null;
-        chaveContato = perfil?.username ? `@${perfil.username}` : (perfil?.nome ?? remetenteId);
+        chaveContato = chaveContato ?? (perfil?.username ? `@${perfil.username}` : (perfil?.nome ?? remetenteId));
         fotoUrl = perfil?.fotoUrl ? await baixarFotoPerfil(perfil.fotoUrl) : null;
       }
 
@@ -250,30 +253,37 @@ export async function POST(request: Request) {
       // Anexo vira mídia de verdade; se o download falhar, sobra o rótulo em texto — melhor uma
       // bolha escrita "[Vídeo]" do que uma bolha em branco, que foi o que acontecia antes.
       const anexo = mensagem.attachments?.[0];
-      // Resposta a story entra como a miniatura do story respondido — mesmo tratamento de imagem,
-      // pra aparecer como prévia e não como arquivo pra baixar.
       const story = mensagem.reply_to?.story;
-      const extras = anexo
-        ? await extrasDeAnexoInstagram(anexo)
-        : story?.url
-          ? await extrasDeAnexoInstagram({ type: "image", payload: { url: story.url } })
-          : {};
+
+      // Post compartilhado e story respondido: a URL que a Meta manda aponta pro CONTEÚDO no
+      // Instagram, não pro arquivo — baixá-la traz a página HTML, não a imagem (foi o que gerou os
+      // cards "html · 669 KB"). Então ela não é baixada: vira o link da mensagem, e clicar abre o
+      // post/story no Instagram, que é o comportamento esperado.
+      const ehConteudoDoInstagram = anexo?.type === "share" || anexo?.type === "story_mention" || (!anexo && !!story);
+      const linkDoConteudo = ehConteudoDoInstagram
+        ? (anexo?.payload?.permalink_url ?? anexo?.payload?.url ?? story?.url)
+        : anexo?.payload?.permalink_url;
+
+      const extras = anexo && !ehConteudoDoInstagram ? await extrasDeAnexoInstagram(anexo) : {};
       const temMidia = Object.keys(extras).length > 0;
       // Link do post compartilhado vai no texto: a tela já transforma URL em link clicável, então
       // clicar leva pro conteúdo no Instagram sem precisar de um tipo de bolha novo. Nem toda
       // mensagem de `share` traz o link — quando não vem, fica só a prévia.
-      const linkDoPost = anexo?.payload?.permalink_url;
-      const rotuloPadrao = anexo
-        ? (ROTULO_POR_ANEXO[anexo.type ?? ""] ?? "[Anexo]")
-        : story
-          ? "[Resposta ao seu story]"
+
+      const rotuloPadrao = story && !anexo
+        ? "Respondeu ao seu story:"
+        : anexo
+          ? (ROTULO_POR_ANEXO[anexo.type ?? ""] ?? "[Anexo]")
           : "";
-      const texto = [mensagem.text ?? rotuloPadrao, linkDoPost].filter(Boolean).join("\n") || "";
+      const texto = [mensagem.text ?? rotuloPadrao, linkDoConteudo].filter(Boolean).join("\n") || "";
 
       // Formato de `share` varia entre versões da API. Registrar as chaves (nunca o conteúdo) é o
-      // que permite descobrir de onde tirar o link quando ele não vier em `permalink_url`.
-      if (anexo?.type === "share" && !linkDoPost) {
-        console.log("[webhook instagram] share sem permalink; chaves do payload:", Object.keys(anexo.payload ?? {}));
+      // que permite descobrir de onde tirar o link quando nenhuma das conhecidas vier preenchida.
+      if (ehConteudoDoInstagram && !linkDoConteudo) {
+        console.log(
+          "[webhook instagram] conteúdo compartilhado sem link; chaves do payload:",
+          Object.keys(anexo?.payload ?? story ?? {}),
+        );
       }
       await prisma.mensagemExtra.create({
         data: {
