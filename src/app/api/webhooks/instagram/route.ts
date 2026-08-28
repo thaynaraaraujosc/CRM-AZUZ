@@ -278,6 +278,14 @@ export async function POST(request: Request) {
           : "";
       const texto = [mensagem.text ?? rotuloPadrao, linkDoConteudo].filter(Boolean).join("\n") || "";
 
+      // Com mídia, a bolha desenha a LEGENDA, não o texto — então uma resposta a story chegava só
+      // como a miniatura, sem o que a pessoa escreveu. O texto vai para os dois lugares: `texto`
+      // alimenta a prévia na lista de conversas, `legenda` é o que aparece sob a imagem.
+      const legenda = temMidiaBaixada
+        ? [story ? "Respondeu ao seu story" : null, mensagem.text].filter(Boolean).join(" · ")
+        : undefined;
+      const extrasComLegenda = legenda ? { ...extras, legenda } : extras;
+
       await prisma.mensagemExtra.create({
         data: {
           id: mensagem.mid,
@@ -295,7 +303,7 @@ export async function POST(request: Request) {
           criadoEm,
           canal: CANAL_INSTAGRAM,
           contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
-          extras: temMidiaBaixada ? (extras as object) : undefined,
+          extras: temMidiaBaixada ? (extrasComLegenda as object) : undefined,
         },
       });
 
