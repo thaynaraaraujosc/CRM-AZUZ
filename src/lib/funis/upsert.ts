@@ -27,6 +27,16 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   // de automação) sem depender de cada um lembrar de checar.
   if (ehGrupo) return null;
 
+  // Conversa arquivada também não vira negócio. Arquivar é o gesto de "isso aqui não está em
+  // atendimento" — se gerasse card, o funil voltaria a encher exatamente com o que a pessoa acabou
+  // de tirar da caixa de entrada. Quando ela voltar a mandar mensagem a conversa desarquiva sozinha
+  // (ver `upsertConversaAoReceberMensagem`), e aí sim entra no funil pelo caminho normal.
+  const conversa = await prisma.conversa.findUnique({
+    where: { workspaceId_nome: { workspaceId, nome: contatoNome } },
+    select: { arquivada: true },
+  });
+  if (conversa?.arquivada) return null;
+
   const jaTemCard = await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome } });
   if (jaTemCard) return jaTemCard;
 

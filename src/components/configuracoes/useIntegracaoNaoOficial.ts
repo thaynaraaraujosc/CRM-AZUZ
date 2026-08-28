@@ -4,7 +4,7 @@ export type HistoricoSync = {
   status: "em_andamento" | "pausado" | "concluido" | "erro";
   totalChats: number | null;
   chatsProcessados: number;
-  filaRestante: { remoteJid: string; arquivada: boolean }[] | null;
+  filaRestante: { remoteJid: string }[] | null;
   erro?: string;
 };
 

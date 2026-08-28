@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
  * chamada do batch busca a lista inteira uma vez e preenche isso); depois disso, cada chamada tira
  * um lote pequeno da fila e processa, até esvaziar.
  */
-export type ChatNaFila = { remoteJid: string; arquivada: boolean };
+export type ChatNaFila = { remoteJid: string };
 
 export type HistoricoSync = {
   status: "em_andamento" | "pausado" | "concluido" | "erro";

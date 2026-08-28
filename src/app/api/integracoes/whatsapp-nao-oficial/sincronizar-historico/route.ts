@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { buscarChats, buscarMensagensDoChat } from "@/lib/integracoes/evolution";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 import { lerMetadados, salvarHistorico, type HistoricoSync } from "@/lib/integracoes/historico-whatsapp";
@@ -70,7 +69,7 @@ export async function POST() {
       historico = {
         ...historico,
         totalChats: chats.length,
-        filaRestante: chats.map((c) => ({ remoteJid: c.remoteJid, arquivada: c.arquivada })),
+        filaRestante: chats.map((c) => ({ remoteJid: c.remoteJid })),
       };
       await salvarHistorico(workspaceId, metadados, historico);
       return NextResponse.json({ historico });
@@ -101,20 +100,6 @@ export async function POST() {
           console.error(`[sincronizar-historico] Falha ao processar mensagem de ${chat.remoteJid}:`, erro),
         );
       }
-      // Reflete o estado "arquivada" de verdade do celular — sem isso, uma conversa/grupo arquivado
-      // no WhatsApp aparecia solto em "Tudo" assim que a primeira mensagem dele fosse importada.
-      // `contato` guarda o JID inteiro pra grupo (`@g.us`) e só os dígitos do número pra conversa
-      // individual (mesma convenção usada no webhook ao vivo, ver `processarMensagemRecebida`).
-      const ehGrupo = chat.remoteJid.endsWith("@g.us");
-      const contatoNoBanco = ehGrupo ? chat.remoteJid : chat.remoteJid.split("@")[0];
-      await prisma.conversa
-        .updateMany({
-          where: { workspaceId, contato: contatoNoBanco, ehGrupo },
-          data: { arquivada: chat.arquivada },
-        })
-        .catch((erro) =>
-          console.error(`[sincronizar-historico] Falha ao marcar arquivada de ${chat.remoteJid}:`, erro),
-        );
     }
 
     historico = {

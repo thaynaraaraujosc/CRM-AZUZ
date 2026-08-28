@@ -96,7 +96,13 @@ export async function upsertConversaAoReceberMensagem(params: {
       ...(fotoUrl ? { fotoUrl } : {}),
       ...(descricaoGrupo ? { descricaoGrupo } : {}),
       ...(criacaoGrupo ? { criacaoGrupo } : {}),
-      ...(contarComoNaoLida ? { naoLidas: { increment: 1 }, atualizadoEm: new Date() } : {}),
+      // Mensagem nova ao vivo desarquiva sozinha: arquivar quer dizer "essa conversa não está em
+      // atendimento agora", não "nunca mais me mostre". Se a pessoa voltar a falar e a conversa
+      // continuasse escondida em "Arquivadas", o atendimento se perderia em silêncio. Só vale pra
+      // mensagem ao vivo — importação de histórico (`contarComoNaoLida: false`) não desarquiva nada.
+      ...(contarComoNaoLida
+        ? { naoLidas: { increment: 1 }, arquivada: false, atualizadoEm: new Date() }
+        : {}),
     },
   });
 }
