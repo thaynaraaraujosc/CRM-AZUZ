@@ -44,7 +44,6 @@ import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
 import {
   useConfigConversas,
-  FUNDOS_PRESET,
   SONS_DISPONIVEIS,
   CONFIG_PADRAO,
   type ConfigConversas,
@@ -144,18 +143,8 @@ function estiloFundoConversa(
       backgroundPosition: "center",
     };
   }
-  if (fundo.tipo === "preset") {
-    const preset = FUNDOS_PRESET.find((p) => p.id === fundo.id);
-    if (preset) {
-      return {
-        backgroundColor: preset.cor,
-        backgroundImage:
-          "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
-        backgroundSize: "14px 14px",
-        opacity: alfa < 1 ? 0.4 + alfa * 0.6 : 1,
-      };
-    }
-  }
+  // Qualquer outro valor (inclusive um fundo "pronto" salvo antes deles deixarem de existir) cai
+  // no padrão: fundo branco, sem estilo nenhum aplicado por cima.
   return {};
 }
 
@@ -566,6 +555,7 @@ function ConversasPageInner() {
   const [fundoEscopoForm, setFundoEscopoForm] = useState<"todas" | "atual">("todas");
   const [erroFundoImagem, setErroFundoImagem] = useState<string | null>(null);
   const fundoUploadInputRef = useRef<HTMLInputElement>(null);
+  const fundoCorInputRef = useRef<HTMLInputElement>(null);
 
   function abrirConfigConversas() {
     setConfigRascunho(config);
@@ -5351,120 +5341,128 @@ function ConversasPageInner() {
                         </button>
                       </div>
 
-                      <p className="hint" style={{ marginBottom: 6 }}>
-                        Fundos prontos
+                      <p className="hint" style={{ marginBottom: 8 }}>
+                        Escolha o fundo
                       </p>
-                      <div className="wa-config-fundos-grid">
-                        {(
-                          [
-                            { id: "padrao", label: "Padrão", classe: "wa-config-fundo-padrao" },
-                            ...FUNDOS_PRESET.map((p) => ({
-                              id: p.id,
-                              label: p.label,
-                              classe: "",
-                              cor: p.cor,
-                            })),
-                          ] as { id: string; label: string; classe: string; cor?: string }[]
-                        ).map((op) => {
-                          const fundoAtual =
-                            fundoEscopoForm === "atual"
-                              ? (configRascunho.fundoPorConversa[aberta.id] ?? configRascunho.fundo)
-                              : configRascunho.fundo;
-                          const selecionado =
-                            op.id === "padrao"
-                              ? fundoAtual.tipo === "padrao"
-                              : fundoAtual.tipo === "preset" && fundoAtual.id === op.id;
-                          return (
+                      {(() => {
+                        const fundoAtual =
+                          fundoEscopoForm === "atual"
+                            ? (configRascunho.fundoPorConversa[aberta.id] ?? configRascunho.fundo)
+                            : configRascunho.fundo;
+                        // Cor mostrada na amostra do cartão "Cor sólida": a escolhida, ou um cinza
+                        // neutro enquanto nenhuma foi. Sem um valor aqui o `input[type=color]`
+                        // assumiria preto sozinho, sugerindo uma escolha que ninguém fez.
+                        const corEscolhida = fundoAtual.tipo === "cor" ? fundoAtual.cor : "#e6e8f0";
+                        const aplicar = (fundo: FundoConversa) =>
+                          setConfigRascunho((prev) =>
+                            aplicarFundoRascunho(prev, fundo, fundoEscopoForm, aberta.id),
+                          );
+                        return (
+                          <div className="wa-fundo-opcoes">
                             <button
                               type="button"
-                              key={op.id}
-                              className={`wa-config-fundo-opcao ${op.classe}${selecionado ? " sel" : ""}`}
-                              style={op.cor ? { background: op.cor, color: "white" } : undefined}
-                              aria-pressed={selecionado}
-                              onClick={() =>
-                                setConfigRascunho((prev) =>
-                                  aplicarFundoRascunho(
-                                    prev,
-                                    op.id === "padrao" ? { tipo: "padrao" } : { tipo: "preset", id: op.id },
-                                    fundoEscopoForm,
-                                    aberta.id,
-                                  ),
-                                )
-                              }
+                              className={`wa-fundo-card${fundoAtual.tipo === "padrao" ? " sel" : ""}`}
+                              aria-pressed={fundoAtual.tipo === "padrao"}
+                              onClick={() => {
+                                setErroFundoImagem(null);
+                                aplicar({ tipo: "padrao" });
+                              }}
                             >
-                              <span className="wa-config-fundo-nome">{op.label}</span>
-                              {selecionado ? (
-                                <span className="wa-config-fundo-check">
+                              <span className="wa-fundo-amostra wa-fundo-amostra-branco" />
+                              <span className="wa-fundo-rotulo">Padrão</span>
+                              <span className="wa-fundo-sub">Fundo branco</span>
+                              {fundoAtual.tipo === "padrao" ? (
+                                <span className="wa-fundo-check">
                                   <IconCheck width={12} height={12} />
                                 </span>
                               ) : null}
                             </button>
-                          );
-                        })}
-                      </div>
 
-                      <div className="wa-config-fundo-acoes">
-                        <button
-                          type="button"
-                          className="btn ghost"
-                          onClick={() => fundoUploadInputRef.current?.click()}
-                        >
-                          Enviar imagem do computador
-                        </button>
-                        <input
-                          ref={fundoUploadInputRef}
-                          type="file"
-                          accept="image/*"
-                          style={{ display: "none" }}
-                          onChange={async (e) => {
-                            const f = e.target.files?.[0];
-                            e.target.value = "";
-                            if (!f) return;
-                            if (!f.type.startsWith("image/")) {
-                              setErroFundoImagem("Formato não aceito. Envie uma imagem JPG, PNG ou WebP.");
-                              return;
-                            }
-                            if (f.size > TAMANHO_MAX_IMAGEM) {
-                              setErroFundoImagem(
-                                `Imagem acima do limite permitido (máx. ${formatarTamanho(TAMANHO_MAX_IMAGEM)}).`,
-                              );
-                              return;
-                            }
-                            setErroFundoImagem(null);
-                            const url = await lerComoDataUrl(f);
-                            setConfigRascunho((prev) =>
-                              aplicarFundoRascunho(prev, { tipo: "imagem", url }, fundoEscopoForm, aberta.id),
-                            );
-                          }}
-                        />
-                        <label className="wa-config-cor-label">
-                          Cor sólida
-                          <input
-                            type="color"
-                            onChange={(e) =>
-                              setConfigRascunho((prev) =>
-                                aplicarFundoRascunho(
-                                  prev,
-                                  { tipo: "cor", cor: e.target.value },
-                                  fundoEscopoForm,
-                                  aberta.id,
-                                ),
-                              )
-                            }
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          className="btn ghost"
-                          onClick={() =>
-                            setConfigRascunho((prev) =>
-                              aplicarFundoRascunho(prev, { tipo: "padrao" }, fundoEscopoForm, aberta.id),
-                            )
-                          }
-                        >
-                          Remover fundo
-                        </button>
-                      </div>
+                            <button
+                              type="button"
+                              className={`wa-fundo-card${fundoAtual.tipo === "imagem" ? " sel" : ""}`}
+                              aria-pressed={fundoAtual.tipo === "imagem"}
+                              onClick={() => fundoUploadInputRef.current?.click()}
+                            >
+                              <span
+                                className={`wa-fundo-amostra${fundoAtual.tipo === "imagem" ? "" : " wa-fundo-amostra-vazia"}`}
+                                style={
+                                  fundoAtual.tipo === "imagem"
+                                    ? {
+                                        backgroundImage: `url(${fundoAtual.url})`,
+                                        backgroundSize: "cover",
+                                        backgroundPosition: "center",
+                                      }
+                                    : undefined
+                                }
+                              >
+                                {fundoAtual.tipo === "imagem" ? null : "+"}
+                              </span>
+                              <span className="wa-fundo-rotulo">Imagem</span>
+                              <span className="wa-fundo-sub">
+                                {fundoAtual.tipo === "imagem" ? "Trocar imagem" : "Do computador"}
+                              </span>
+                              {fundoAtual.tipo === "imagem" ? (
+                                <span className="wa-fundo-check">
+                                  <IconCheck width={12} height={12} />
+                                </span>
+                              ) : null}
+                            </button>
+
+                            <button
+                              type="button"
+                              className={`wa-fundo-card${fundoAtual.tipo === "cor" ? " sel" : ""}`}
+                              aria-pressed={fundoAtual.tipo === "cor"}
+                              onClick={() => fundoCorInputRef.current?.click()}
+                            >
+                              <span className="wa-fundo-amostra" style={{ background: corEscolhida }} />
+                              <span className="wa-fundo-rotulo">Cor sólida</span>
+                              <span className="wa-fundo-sub">
+                                {fundoAtual.tipo === "cor" ? corEscolhida.toUpperCase() : "Escolher cor"}
+                              </span>
+                              {fundoAtual.tipo === "cor" ? (
+                                <span className="wa-fundo-check">
+                                  <IconCheck width={12} height={12} />
+                                </span>
+                              ) : null}
+                            </button>
+
+                            {/* Os dois inputs ficam escondidos: quem abre o seletor é o cartão
+                                inteiro, não um controle pequeno ao lado dele. */}
+                            <input
+                              ref={fundoCorInputRef}
+                              type="color"
+                              className="wa-fundo-input-oculto"
+                              value={corEscolhida}
+                              onChange={(e) => aplicar({ tipo: "cor", cor: e.target.value })}
+                            />
+                            <input
+                              ref={fundoUploadInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="wa-fundo-input-oculto"
+                              onChange={async (e) => {
+                                const f = e.target.files?.[0];
+                                e.target.value = "";
+                                if (!f) return;
+                                if (!f.type.startsWith("image/")) {
+                                  setErroFundoImagem("Formato não aceito. Envie uma imagem JPG, PNG ou WebP.");
+                                  return;
+                                }
+                                if (f.size > TAMANHO_MAX_IMAGEM) {
+                                  setErroFundoImagem(
+                                    `Imagem acima do limite permitido (máx. ${formatarTamanho(TAMANHO_MAX_IMAGEM)}).`,
+                                  );
+                                  return;
+                                }
+                                setErroFundoImagem(null);
+                                const url = await lerComoDataUrl(f);
+                                aplicar({ tipo: "imagem", url });
+                              }}
+                            />
+                          </div>
+                        );
+                      })()}
                       {erroFundoImagem ? <p className="wa-campo-erro">{erroFundoImagem}</p> : null}
 
                       <label className="hint" style={{ display: "block", marginTop: 10 }}>

@@ -10263,87 +10263,95 @@ button.camp-row:hover {
   justify-content: center;
 }
 
-.wa-config-fundos-grid {
+/* Fundo da conversa (Configurações das conversas > Aparência): três cartões — branco, imagem do
+   computador, cor sólida. Cada um mostra uma AMOSTRA do que vai acontecer em vez de só um rótulo,
+   porque escolher fundo é uma decisão visual: dá pra ver a cor/imagem antes de aplicar. */
+.wa-fundo-opcoes {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 10px;
   margin-bottom: 14px;
 }
 
-.wa-config-fundo-opcao {
+.wa-fundo-card {
   position: relative;
-  height: 64px;
-  border-radius: 10px;
-  border: 2px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
   background: var(--navy-raised);
   color: var(--ink);
   cursor: pointer;
-  display: flex;
-  align-items: flex-end;
-  padding: 8px;
-  font-size: 11.5px;
-  font-weight: 600;
   text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
-.wa-config-fundo-opcao:hover {
+.wa-fundo-card:hover {
   border-color: var(--blue-soft-2);
+  transform: translateY(-1px);
 }
 
-.wa-config-fundo-opcao.sel {
+.wa-fundo-card.sel {
   border-color: var(--blue);
-  box-shadow: 0 0 0 2px var(--blue-soft-2);
+  box-shadow: 0 0 0 3px var(--blue-soft-2);
 }
 
-.wa-config-fundo-padrao {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--navy-raised),
-    var(--navy-raised) 8px,
-    var(--navy-raised-2) 8px,
-    var(--navy-raised-2) 16px
-  );
-}
-
-.wa-config-fundo-nome {
-  display: block;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-.wa-config-fundo-check {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--blue);
-}
-
-.wa-config-fundo-acoes {
+.wa-fundo-amostra {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.wa-config-cor-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.wa-config-cor-label input[type="color"] {
-  width: 30px;
-  height: 30px;
-  padding: 0;
+  justify-content: center;
+  height: 56px;
+  margin-bottom: 8px;
+  border-radius: 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  cursor: pointer;
-  background: none;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.wa-fundo-amostra-branco {
+  background: #ffffff;
+}
+
+.wa-fundo-amostra-vazia {
+  background: transparent;
+  border-style: dashed;
+}
+
+.wa-fundo-rotulo {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wa-fundo-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.wa-fundo-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+}
+
+/* Escondido de verdade (não `display:none`): o navegador precisa do input no layout pra abrir o
+   seletor nativo de cor/arquivo quando o cartão inteiro é clicado. */
+.wa-fundo-input-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .wa-config-radio-lista {

@@ -2,18 +2,18 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
+/**
+ * Fundo da conversa: branco (`padrao`), uma imagem do computador ou uma cor sólida escolhida.
+ *
+ * Os fundos "prontos" (pontilhado, ondas, folhas, geométrico) foram removidos — eram texturas
+ * escuras que destoavam do resto do produto e ninguém escolheria pra uma tela de trabalho. Quem
+ * tiver um deles salvo cai no branco sozinho, sem migração: `estiloFundoConversa` (conversas/page)
+ * devolve estilo vazio pra qualquer tipo que não reconheça.
+ */
 export type FundoConversa =
   | { tipo: "padrao" }
-  | { tipo: "preset"; id: string }
   | { tipo: "imagem"; url: string }
   | { tipo: "cor"; cor: string };
-
-export const FUNDOS_PRESET = [
-  { id: "pontilhado", label: "Pontilhado", cor: "#0b1533" },
-  { id: "ondas", label: "Ondas", cor: "#12294f" },
-  { id: "folhas", label: "Folhas", cor: "#0f3d2e" },
-  { id: "geometrico", label: "Geométrico", cor: "#3a1f5c" },
-] as const;
 
 export type PreferenciaConfirmacaoLeitura = "todos" | "salvos" | "desativado";
 export type TamanhoFonteConversa = "pequena" | "media" | "grande";
