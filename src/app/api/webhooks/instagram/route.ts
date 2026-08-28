@@ -107,6 +107,10 @@ const TAMANHO_MAX_ANEXO = 4 * 1024 * 1024;
 async function extrasDeAnexoInstagram(
   anexo: AnexoInstagram,
   accessToken: string | null,
+  /** `true` para conteúdo que já vive no Instagram (story, reel, post compartilhado): guarda a
+   * imagem de prévia — que precisa durar, pra conversa antiga continuar legível — mas nunca o
+   * vídeo ou o áudio, que devem ser vistos no Instagram. */
+  somenteImagem = false,
 ): Promise<Partial<ConvMensagem>> {
   const url = anexo.payload?.url;
   if (!url) return {};
@@ -133,6 +137,10 @@ async function extrasDeAnexoInstagram(
       return {};
     }
 
+    // Vídeo de origem do Instagram nem chega a ser trazido — seria baixar megabytes pra descartar
+    // logo em seguida, que foi o que ameaçou a memória do servidor.
+    if (somenteImagem && !mimeType.startsWith("image/")) return {};
+
     const bytes = Buffer.from(await resposta.arrayBuffer());
     if (bytes.length > TAMANHO_MAX_ANEXO) return {};
     const dataUrl = `data:${mimeType};base64,${bytes.toString("base64")}`;
@@ -147,9 +155,11 @@ async function extrasDeAnexoInstagram(
       return { imagens: [{ url: dataUrl, nome: `imagem.${formato}`, tamanho: bytes.length }] };
     }
     if (mimeType.startsWith("video/")) {
+      if (somenteImagem) return {};
       return { video: { url: dataUrl, nome: `video.${formato}`, tamanho: bytes.length, comAudio: true } };
     }
     if (mimeType.startsWith("audio/")) {
+      if (somenteImagem) return {};
       return { audio: { url: dataUrl, duracao: 0, waveform: [] } };
     }
     return {};
@@ -273,26 +283,16 @@ export async function POST(request: Request) {
       const ehConteudoDoInstagram =
         (!anexo && !!story) || anexo?.type === "share" || anexo?.type === "story_mention" || anexo?.type === "ig_reel";
 
-      // Conteúdo do Instagram não é copiado pro banco: fica só o endereço, servido na hora de
-      // exibir pela rota que autentica no CDN (`/api/integracoes/instagram/midia`). Assim a
-      // miniatura aparece — sem ela não dá pra saber A QUAL story a pessoa respondeu quando há
-      // dezenas no ar — e nenhum arquivo do Instagram é guardado aqui.
-      const urlDoConteudo = anexoEfetivo?.payload?.url;
-      const extras: Partial<ConvMensagem> = ehConteudoDoInstagram
-        ? urlDoConteudo
-          ? {
-              imagens: [
-                {
-                  url: `/api/integracoes/instagram/midia?url=${encodeURIComponent(urlDoConteudo)}`,
-                  nome: story ? "story.jpg" : "publicacao.jpg",
-                  tamanho: 0,
-                },
-              ],
-            }
-          : {}
-        : anexoEfetivo
-          ? await extrasDeAnexoInstagram(anexoEfetivo, tokenDaConta)
-          : {};
+      // A miniatura de conteúdo do Instagram é GUARDADA, não apenas apontada. O link do CDN expira
+      // em horas: servir por ele deixava a conversa antiga sem prévia justamente quando ela é mais
+      // necessária — reler um atendimento e saber a qual story a cliente respondeu. Guardar uma
+      // imagem pequena é o único jeito de a miniatura existir daqui a um mês.
+      //
+      // O que NÃO é guardado continua não sendo: vídeo e áudio de origem do Instagram. Assistir é
+      // lá, que é onde o conteúdo mora.
+      const extras = anexoEfetivo
+        ? await extrasDeAnexoInstagram(anexoEfetivo, tokenDaConta, ehConteudoDoInstagram)
+        : {};
 
       // Só link de post DE VERDADE (permalink) entra no texto. A URL do CDN não vira link: ela é o
       // arquivo, expira, e despejada na bolha só polui a conversa com um endereço gigante.
