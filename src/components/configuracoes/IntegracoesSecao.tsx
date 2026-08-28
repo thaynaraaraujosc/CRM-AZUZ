@@ -7,6 +7,7 @@ import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
 import { ConexaoQrCode } from "./ConexaoQrCode";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
 import { ConexaoInstagram, ConexaoMetaAds } from "./ConexoesOAuth";
+import { DadosWebhook } from "./DadosWebhook";
 import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
@@ -155,6 +156,11 @@ export function IntegracoesSecao() {
           />
         </div>
       </div>
+
+      {/* Antes da lista de "Em breve": cadastrar webhook na Meta exige copiar URL e token exatos, e
+          errar qualquer um dos dois dá a mesma mensagem genérica lá. Aqui os valores vêm do
+          servidor que responde. */}
+      <DadosWebhook />
 
       <div className="config-bloco">
         <p className="config-bloco-titulo">Em breve</p>
