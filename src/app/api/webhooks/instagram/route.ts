@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
+import { criarContatoPeloInstagramSeNaoExistir, encontrarContatoPorInstagram } from "@/lib/contatos/upsert";
+import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
 import type { ConvMensagem } from "@/lib/data";
 import { CANAL_INSTAGRAM, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { decriptar } from "@/lib/integracoes/crypto";
@@ -268,6 +270,38 @@ export async function POST(request: Request) {
       const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: mensagem.mid } });
       if (jaExiste) continue;
 
+      // "Levar as conversas do Instagram para o funil" (Configurações > Integrações > Instagram
+      // Direct > Gerenciar). Desligado, o Direct fica valendo só como caixa de entrada: a conversa
+      // aparece em Conversas normalmente, mas ninguém vira contato nem card — que é o caso de quem
+      // recebe muita mensagem que não é lead. Padrão ligado (`?? true`), igual ao WhatsApp: mensagem
+      // nova de gente nova é um lead até prova em contrário.
+      const entrarNoFunil =
+        (integracaoDaConta.metadados as { entrarNoFunil?: boolean } | null)?.entrarNoFunil ?? true;
+
+      let contatoId: string | undefined;
+      if (entrarNoFunil) {
+        const arroba = chaveContato.replace(/^@/, "");
+        const contatoExistente = await encontrarContatoPorInstagram(integracaoDaConta.workspaceId, arroba);
+        const contato =
+          contatoExistente ??
+          (await criarContatoPeloInstagramSeNaoExistir({
+            workspaceId: integracaoDaConta.workspaceId,
+            nome: chaveContato,
+            instagram: arroba,
+          }));
+        contatoId = contato?.id;
+
+        // Mesma regra do WhatsApp: só quem ACABOU de ser criado entra no funil. Contato que já
+        // existia mandar mensagem de novo não pode mexer na etapa em que o vendedor o deixou.
+        if (!contatoExistente) {
+          await entrarNaPrimeiraEtapaComoNovoLead({
+            workspaceId: integracaoDaConta.workspaceId,
+            contatoNome: chaveContato,
+            origem: "Instagram",
+          });
+        }
+      }
+
       const criadoEm = evento.timestamp ? new Date(evento.timestamp) : new Date();
 
       // Anexo vira mídia de verdade; se o download falhar, sobra o rótulo em texto — melhor uma
@@ -347,6 +381,7 @@ export async function POST(request: Request) {
         // pode mudar se a pessoa trocar de @.
         contato: remetenteId,
         origem: "Instagram",
+        contatoId,
         fotoUrl,
         // Mensagem que você mesma mandou não é "não lida".
         contarComoNaoLida: !ehEco,

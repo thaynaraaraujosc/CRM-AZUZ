@@ -168,6 +168,8 @@ export type Contato = {
   pais?: string;
   canalPreferido?: Canal;
   melhorHorario?: string;
+  /** @ do Instagram (sem arroba) — preenchido sozinho quando a pessoa chega pelo Direct. */
+  instagram?: string;
   etiquetas?: string[];
   favorito?: boolean;
 };

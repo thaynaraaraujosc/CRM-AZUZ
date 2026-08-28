@@ -110,3 +110,36 @@ export async function criarContatoPeloWhatsAppSeNaoExistir(params: {
     origemPadrao: "WhatsApp",
   });
 }
+
+/**
+ * Equivalente do `criarContatoPeloWhatsAppSeNaoExistir` pro Direct: cria o Contato quando chega
+ * mensagem de um @ que ainda não está na carteira. Casa primeiro pelo próprio @ (a chave estável
+ * daquele canal) e só depois cai no nome, porque a pessoa pode ter sido cadastrada à mão antes com
+ * o mesmo nome de exibição.
+ */
+export async function criarContatoPeloInstagramSeNaoExistir(params: {
+  workspaceId: string;
+  nome: string;
+  instagram: string;
+}) {
+  const { workspaceId, nome, instagram } = params;
+
+  const porInstagram = await encontrarContatoPorInstagram(workspaceId, instagram);
+  if (porInstagram) return porInstagram;
+
+  return upsertContato({
+    workspaceId,
+    nome,
+    dados: { instagram, criadoVia: "instagram" },
+    origemPadrao: "Instagram",
+  });
+}
+
+/** Busca por @ do Instagram ignorando arroba e caixa — "@Fulana" e "fulana" são a mesma pessoa. */
+export async function encontrarContatoPorInstagram(workspaceId: string, arroba: string) {
+  const alvo = arroba.replace(/^@/, "").trim().toLowerCase();
+  if (!alvo) return null;
+
+  const candidatos = await prisma.contato.findMany({ where: { workspaceId, instagram: { not: null } } });
+  return candidatos.find((c) => c.instagram?.replace(/^@/, "").trim().toLowerCase() === alvo) ?? null;
+}

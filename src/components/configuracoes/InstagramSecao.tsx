@@ -25,15 +25,19 @@ export function InstagramSecao() {
   const adAccountNome = anuncios.integracao?.metadados?.adAccountNome as string | undefined;
   const anunciosConectados = anuncios.integracao?.status === "conectado";
 
-  async function alternarReceberMensagens(ligado: boolean) {
+  // Mesmas chaves que o painel "Gerenciar" da lista de Integrações grava (ver `ConexaoInstagram` em
+  // ConexoesOAuth.tsx): as duas telas mexem no mesmo lugar, então a preferência é uma só, apareça
+  // por onde aparecer.
+  async function salvarPreferencia(chave: string, ligado: boolean) {
     await fetch("/api/integracoes/meta", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provedor: "meta_instagram", metadados: { receberMensagens: ligado } }),
-    }).catch((erro) => console.error("Falha ao salvar preferência de mensagens do Instagram:", erro));
+      body: JSON.stringify({ provedor: "meta_instagram", metadados: { [chave]: ligado } }),
+    }).catch((erro) => console.error(`Falha ao salvar ${chave} do Instagram:`, erro));
   }
 
   const receberMensagens = (integracao?.metadados?.receberMensagens as boolean | undefined) ?? true;
+  const entrarNoFunil = (integracao?.metadados?.entrarNoFunil as boolean | undefined) ?? true;
 
   return (
     <div className="config-secao">
@@ -104,12 +108,30 @@ export function InstagramSecao() {
           <p className="config-bloco-titulo">Mensagens do Instagram</p>
           <div className="toggle-row" style={{ padding: "10px 0" }}>
             <span className="tl">Receber mensagens do Instagram no CRM</span>
-            <Toggle defaultOn={receberMensagens} label="Receber mensagens do Instagram no CRM" onToggle={alternarReceberMensagens} />
+            <Toggle
+              defaultOn={receberMensagens}
+              label="Receber mensagens do Instagram no CRM"
+              onToggle={(on) => void salvarPreferencia("receberMensagens", on)}
+            />
           </div>
           <p className="hint">
             {receberMensagens
               ? "Mensagens recebidas pelo Instagram são encaminhadas para o módulo de Conversas, identificadas como Instagram, pra sua equipe acompanhar e responder por lá."
               : "Mensagens do Instagram não são encaminhadas para o módulo de Conversas — a conta continua conectada, só o recebimento fica pausado."}
+          </p>
+
+          <div className="toggle-row" style={{ padding: "10px 0" }}>
+            <span className="tl">Levar as conversas do Instagram para o funil</span>
+            <Toggle
+              defaultOn={entrarNoFunil}
+              label="Levar as conversas do Instagram para o funil"
+              onToggle={(on) => void salvarPreferencia("entrarNoFunil", on)}
+            />
+          </div>
+          <p className="hint">
+            {entrarNoFunil
+              ? "Quem manda Direct pela primeira vez vira contato e entra na primeira etapa do funil, igual ao WhatsApp."
+              : "O Direct funciona só como caixa de entrada: dá pra responder por Conversas sem gerar contato nem card no funil."}
           </p>
         </div>
       ) : null}

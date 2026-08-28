@@ -45,14 +45,19 @@ model Contato {
   canalPreferido String?
   melhorHorario String?
 
+  // @ do Instagram (sem arroba) — preenchido sozinho quando a pessoa chega pelo Direct e o CRM
+  // resolve o username na primeira mensagem. É o equivalente do `whatsapp` pro outro canal: sem
+  // ele, um lead vindo do Direct virava contato sem nenhuma forma de reencontrar a pessoa.
+  instagram String?
+
   // MySQL não tem array nativo — etiquetas vira JSON (lista de strings) pra não inflar o
   // escopo do piloto com uma tabela relacionada agora.
   etiquetas Json?
   favorito  Boolean @default(false)
 
-  // "manual" (criado por um usuário na tela de Contatos) ou "whatsapp" (nasceu sozinho quando um
-  // número novo mandou mensagem, ver upsertConversaAoReceberMensagem) — só rastreabilidade, não
-  // muda nenhum comportamento.
+  // "manual" (criado por um usuário na tela de Contatos), "whatsapp" ou "instagram" (nasceu
+  // sozinho quando uma mensagem nova chegou por aquele canal) — só rastreabilidade, não muda
+  // nenhum comportamento.
   criadoVia String @default("manual")
 
   conversas Conversa[]
