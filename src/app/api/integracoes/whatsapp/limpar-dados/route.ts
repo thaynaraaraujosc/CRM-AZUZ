@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { limparDadosDoWhatsApp, removerGruposViradosContato } from "@/lib/integracoes/limpar-dados-whatsapp";
+import {
+  limparAnexosInvalidosInstagram,
+  limparDadosDoWhatsApp,
+  removerGruposViradosContato,
+} from "@/lib/integracoes/limpar-dados-whatsapp";
 
 /**
  * Limpeza avulsa do espelho do WhatsApp, para quando o canal JÁ foi desconectado antes de a
@@ -18,8 +22,15 @@ export async function POST(request: Request) {
 
   const { conexao, acao } = (await request.json().catch(() => ({}))) as {
     conexao?: "nao_oficial" | "oficial";
-    acao?: "canal" | "grupos";
+    acao?: "canal" | "grupos" | "anexos_instagram";
   };
+
+  // Entulho das tentativas de baixar anexo do Instagram sem autenticação: página HTML guardada
+  // como se fosse arquivo. Tira só o anexo inválido, o texto da mensagem fica.
+  if (acao === "anexos_instagram") {
+    const corrigidas = await limparAnexosInvalidosInstagram(sessao.user.workspaceId);
+    return NextResponse.json({ ok: true, corrigidas });
+  }
 
   // "grupos": tira da carteira e do funil os GRUPOS que viraram contato/card por um bug antigo —
   // é lixo em qualquer cenário, não depende de canal nem apaga conversa nenhuma.

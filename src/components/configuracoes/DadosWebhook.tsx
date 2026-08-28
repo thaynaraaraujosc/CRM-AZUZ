@@ -47,6 +47,50 @@ function LinhaCopiavel({ rotulo, valor }: { rotulo: string; valor: string }) {
   );
 }
 
+/** Tira das conversas os "anexos" que na verdade são página HTML — sobra do período em que o CRM
+ * baixava a mídia do Instagram sem autenticação. Some daqui quando não houver mais nenhum. */
+function LimparAnexosInstagram() {
+  const [rodando, setRodando] = useState(false);
+  const [resultado, setResultado] = useState<number | null>(null);
+
+  async function limpar() {
+    setRodando(true);
+    try {
+      const resposta = await fetch("/api/integracoes/whatsapp/limpar-dados", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ acao: "anexos_instagram" }),
+      });
+      const dados = (await resposta.json()) as { corrigidas?: number };
+      setResultado(dados.corrigidas ?? 0);
+    } finally {
+      setRodando(false);
+    }
+  }
+
+  if (resultado !== null) {
+    return (
+      <p className="hint" style={{ margin: "12px 0 0" }}>
+        {resultado === 0
+          ? "Nenhum anexo inválido encontrado."
+          : `${resultado} mensagens corrigidas — o anexo inválido saiu e o texto ficou.`}
+      </p>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      <button type="button" className="btn ghost" onClick={limpar} disabled={rodando}>
+        {rodando ? "Limpando…" : "Limpar anexos quebrados do Instagram"}
+      </button>
+      <p className="hint" style={{ margin: "6px 0 0" }}>
+        Tira das conversas os cards de arquivo que apareceram como “html · 669 KB”. O texto das
+        mensagens é preservado.
+      </p>
+    </div>
+  );
+}
+
 export function DadosWebhook() {
   const [dados, setDados] = useState<Dados | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -72,6 +116,8 @@ export function DadosWebhook() {
 
       <LinhaCopiavel rotulo="URL do webhook — WhatsApp" valor={dados.urlWhatsapp} />
       <LinhaCopiavel rotulo="URL do webhook — Instagram" valor={dados.urlInstagram} />
+
+      <LimparAnexosInstagram />
 
       {dados.tokenVerificacao ? (
         <LinhaCopiavel rotulo="Token de verificação (os dois usam o mesmo)" valor={dados.tokenVerificacao} />

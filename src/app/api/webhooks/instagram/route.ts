@@ -97,12 +97,23 @@ const TAMANHO_MAX_ANEXO = 12 * 1024 * 1024;
  * Instagram manda é temporária (expira em horas), então guardar só o link deixaria a conversa
  * quebrada no dia seguinte — por isso o arquivo é embutido, igual o webhook do WhatsApp faz.
  */
-async function extrasDeAnexoInstagram(anexo: AnexoInstagram): Promise<Partial<ConvMensagem>> {
+async function extrasDeAnexoInstagram(
+  anexo: AnexoInstagram,
+  accessToken: string | null,
+): Promise<Partial<ConvMensagem>> {
   const url = anexo.payload?.url;
   if (!url) return {};
   try {
-    const resposta = await fetch(url);
-    if (!resposta.ok) return {};
+    // O CDN de mídia do Instagram (`lookaside.fbsbx.com/ig_messaging_cdn/...`) EXIGE o token: sem
+    // ele a resposta é uma página HTML de erro com status 200 — foi o que virou aqueles cards
+    // "html · 669 KB" e o que fez a miniatura nunca aparecer.
+    const resposta = await fetch(url, {
+      headers: accessToken ? { authorization: `Bearer ${accessToken}` } : {},
+    });
+    if (!resposta.ok) {
+      console.log("[webhook instagram] anexo recusado pelo CDN:", resposta.status);
+      return {};
+    }
     const tamanho = Number(resposta.headers.get("content-length") ?? 0);
     if (tamanho > TAMANHO_MAX_ANEXO) return {};
 
@@ -230,6 +241,10 @@ export async function POST(request: Request) {
         select: { nome: true, fotoUrl: true },
       });
 
+      const tokenDaConta = integracaoDaConta.accessTokenCriptografado
+        ? decriptar(integracaoDaConta.accessTokenCriptografado)
+        : null;
+
       let chaveContato = conversaExistente?.nome;
       // Foto de perfil junto do @, na mesma busca — sem ela a conversa fica só com as iniciais, e
       // numa caixa de entrada de Direct a foto é o que faz reconhecer quem é.
@@ -238,9 +253,7 @@ export async function POST(request: Request) {
       // de cada pessoa buscava, então quem já tinha conversa (criada antes disto existir) nunca
       // ganhava foto e a lista ficava só com iniciais.
       if (!chaveContato || !conversaExistente?.fotoUrl) {
-        const perfil = integracaoDaConta.accessTokenCriptografado
-          ? await buscarPerfilDeQuemMandou(decriptar(integracaoDaConta.accessTokenCriptografado), remetenteId)
-          : null;
+        const perfil = tokenDaConta ? await buscarPerfilDeQuemMandou(tokenDaConta, remetenteId) : null;
         chaveContato = chaveContato ?? (perfil?.username ? `@${perfil.username}` : (perfil?.nome ?? remetenteId));
         fotoUrl = perfil?.fotoUrl ? await baixarFotoPerfil(perfil.fotoUrl) : null;
       }
@@ -255,36 +268,26 @@ export async function POST(request: Request) {
       const anexo = mensagem.attachments?.[0];
       const story = mensagem.reply_to?.story;
 
-      // Post compartilhado e story respondido: a URL que a Meta manda aponta pro CONTEÚDO no
-      // Instagram, não pro arquivo — baixá-la traz a página HTML, não a imagem (foi o que gerou os
-      // cards "html · 669 KB"). Então ela não é baixada: vira o link da mensagem, e clicar abre o
-      // post/story no Instagram, que é o comportamento esperado.
-      const ehConteudoDoInstagram = anexo?.type === "share" || anexo?.type === "story_mention" || (!anexo && !!story);
-      const linkDoConteudo = ehConteudoDoInstagram
-        ? (anexo?.payload?.permalink_url ?? anexo?.payload?.url ?? story?.url)
-        : anexo?.payload?.permalink_url;
+      // Story respondido chega fora de `attachments`, num campo próprio — mesma busca de mídia.
+      const anexoEfetivo: AnexoInstagram | null =
+        anexo ?? (story?.url ? { type: "image", payload: { url: story.url } } : null);
+      const extras = anexoEfetivo ? await extrasDeAnexoInstagram(anexoEfetivo, tokenDaConta) : {};
 
-      const extras = anexo && !ehConteudoDoInstagram ? await extrasDeAnexoInstagram(anexo) : {};
-      const temMidia = Object.keys(extras).length > 0;
+      // Só link de post DE VERDADE (permalink) entra no texto. A URL do CDN não vira link: ela é o
+      // arquivo, expira, e despejada na bolha só polui a conversa com um endereço gigante.
+      const linkDoConteudo = anexo?.payload?.permalink_url;
       // Link do post compartilhado vai no texto: a tela já transforma URL em link clicável, então
       // clicar leva pro conteúdo no Instagram sem precisar de um tipo de bolha novo. Nem toda
       // mensagem de `share` traz o link — quando não vem, fica só a prévia.
 
+      const temMidiaBaixada = Object.keys(extras).length > 0;
       const rotuloPadrao = story && !anexo
-        ? "Respondeu ao seu story:"
+        ? "Respondeu ao seu story"
         : anexo
           ? (ROTULO_POR_ANEXO[anexo.type ?? ""] ?? "[Anexo]")
           : "";
       const texto = [mensagem.text ?? rotuloPadrao, linkDoConteudo].filter(Boolean).join("\n") || "";
 
-      // Formato de `share` varia entre versões da API. Registrar as chaves (nunca o conteúdo) é o
-      // que permite descobrir de onde tirar o link quando nenhuma das conhecidas vier preenchida.
-      if (ehConteudoDoInstagram && !linkDoConteudo) {
-        console.log(
-          "[webhook instagram] conteúdo compartilhado sem link; chaves do payload:",
-          Object.keys(anexo?.payload ?? story ?? {}),
-        );
-      }
       await prisma.mensagemExtra.create({
         data: {
           id: mensagem.mid,
@@ -302,7 +305,7 @@ export async function POST(request: Request) {
           criadoEm,
           canal: CANAL_INSTAGRAM,
           contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
-          extras: temMidia ? (extras as object) : undefined,
+          extras: temMidiaBaixada ? (extras as object) : undefined,
         },
       });
 

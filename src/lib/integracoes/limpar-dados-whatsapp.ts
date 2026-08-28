@@ -1,5 +1,6 @@
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { CANAL_NAO_OFICIAL, CANAL_OFICIAL } from "@/lib/integracoes/conta-canal";
+import { CANAL_INSTAGRAM, CANAL_NAO_OFICIAL, CANAL_OFICIAL } from "@/lib/integracoes/conta-canal";
 import { ehIdentificadorDeGrupo } from "@/lib/contatos/upsert";
 
 /**
@@ -111,4 +112,30 @@ export async function removerGruposViradosContato(workspaceId: string): Promise<
   const contatos = await prisma.contato.deleteMany({ where: { id: { in: grupos.map((g) => g.id) } } });
 
   return { contatos: contatos.count, cards: cards.count };
+}
+
+/**
+ * Remove o entulho que as tentativas de baixar anexo do Instagram sem autenticação deixaram: o CDN
+ * respondia uma página HTML com status 200, e ela era guardada como se fosse arquivo — virando um
+ * card de download de centenas de KB grudado em mensagens que muitas vezes eram só texto.
+ *
+ * Não apaga a mensagem: tira só o anexo inválido, preservando o texto que a pessoa escreveu.
+ */
+export async function limparAnexosInvalidosInstagram(workspaceId: string): Promise<number> {
+  const mensagens = await prisma.mensagemExtra.findMany({
+    where: { workspaceId, canal: CANAL_INSTAGRAM, NOT: { extras: { equals: Prisma.DbNull } } },
+    select: { id: true, extras: true },
+  });
+
+  let corrigidas = 0;
+  for (const mensagem of mensagens) {
+    const extras = mensagem.extras as { documento?: { url?: string } } | null;
+    const url = extras?.documento?.url ?? "";
+    // Documento cujo conteúdo embutido é HTML — nunca foi arquivo de verdade.
+    if (!url.startsWith("data:text/html")) continue;
+
+    await prisma.mensagemExtra.update({ where: { id: mensagem.id }, data: { extras: Prisma.DbNull } });
+    corrigidas += 1;
+  }
+  return corrigidas;
 }
