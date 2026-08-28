@@ -62,8 +62,20 @@ export async function contasCanalVisiveis(workspaceId: string): Promise<(string 
   return contas.filter((c, i) => contas.indexOf(c) === i);
 }
 
-/** Monta o `where` do Prisma pra filtrar por conexão visível. Lista vazia (nada conectado) devolve
- * um filtro que não casa nada — a caixa de entrada fica vazia, que é o comportamento certo. */
+/**
+ * Monta o `where` do Prisma pra filtrar por conexão visível.
+ *
+ * A regra vale pro WhatsApp, que é onde ela nasceu: trocar de número precisa zerar a caixa de
+ * entrada sem apagar nada. O Instagram tem UMA conta por workspace — ali o filtro não protege de
+ * nada e só cria risco: basta o identificador gravado na mensagem divergir por um fio do que está
+ * nos metadados da integração pra mensagem ser gravada e nunca aparecer. Isso já aconteceu duas
+ * vezes, e o sintoma (conversa na lista, "sem mensagens ainda" dentro) não aponta pra causa.
+ *
+ * Então: canal de WhatsApp entra na regra; qualquer outro aparece enquanto seu canal existir.
+ *
+ * Lista vazia (nada conectado) devolve um filtro que não casa nada — caixa de entrada vazia, que é
+ * o comportamento certo.
+ */
 export function filtroContaCanal(contas: (string | null)[]) {
   if (!contas.length) return { contaCanal: { in: ["__nenhuma-conexao-ativa__"] } };
   const valores = contas.filter((c): c is string => c !== null);
@@ -73,6 +85,8 @@ export function filtroContaCanal(contas: (string | null)[]) {
     OR: [
       ...(valores.length ? [{ contaCanal: { in: valores } }] : []),
       ...(incluiNulo ? [{ contaCanal: null }] : []),
+      // Escape pros canais que não são WhatsApp — ver o comentário acima.
+      { contaCanal: { startsWith: `${CANAL_INSTAGRAM}:` } },
     ],
   };
 }
