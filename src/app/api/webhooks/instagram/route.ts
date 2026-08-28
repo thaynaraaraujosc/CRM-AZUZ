@@ -107,6 +107,10 @@ const TAMANHO_MAX_ANEXO = 4 * 1024 * 1024;
 async function extrasDeAnexoInstagram(
   anexo: AnexoInstagram,
   accessToken: string | null,
+  /** `true` para conteúdo que já vive no Instagram (story respondido, reel, post compartilhado).
+   * Nesses casos o CRM guarda só a imagem de prévia e nunca o vídeo: o conteúdo é do Instagram, é
+   * lá que ele deve ser assistido, e guardar cópia de vídeo aqui só pesa o banco e a memória. */
+  somenteMiniatura = false,
 ): Promise<Partial<ConvMensagem>> {
   const url = anexo.payload?.url;
   if (!url) return {};
@@ -133,6 +137,10 @@ async function extrasDeAnexoInstagram(
       return {};
     }
 
+    // Conteúdo do Instagram que não é imagem nem chega a ser baixado — economiza memória e evita
+    // trazer um vídeo inteiro pra jogar fora logo em seguida.
+    if (somenteMiniatura && !mimeType.startsWith("image/")) return {};
+
     const bytes = Buffer.from(await resposta.arrayBuffer());
     if (bytes.length > TAMANHO_MAX_ANEXO) return {};
     const dataUrl = `data:${mimeType};base64,${bytes.toString("base64")}`;
@@ -147,9 +155,13 @@ async function extrasDeAnexoInstagram(
       return { imagens: [{ url: dataUrl, nome: `imagem.${formato}`, tamanho: bytes.length }] };
     }
     if (mimeType.startsWith("video/")) {
+      // Conteúdo do Instagram: não guarda o vídeo. Fica o rótulo e o link, e assistir é no
+      // Instagram — que é onde ele mora.
+      if (somenteMiniatura) return {};
       return { video: { url: dataUrl, nome: `video.${formato}`, tamanho: bytes.length, comAudio: true } };
     }
     if (mimeType.startsWith("audio/")) {
+      if (somenteMiniatura) return {};
       return { audio: { url: dataUrl, duracao: 0, waveform: [] } };
     }
     return {};
@@ -268,7 +280,13 @@ export async function POST(request: Request) {
       // Story respondido chega fora de `attachments`, num campo próprio — mesma busca de mídia.
       const anexoEfetivo: AnexoInstagram | null =
         anexo ?? (story?.url ? { type: "image", payload: { url: story.url } } : null);
-      const extras = anexoEfetivo ? await extrasDeAnexoInstagram(anexoEfetivo, tokenDaConta) : {};
+      // Story respondido, reel e post compartilhado são conteúdo que já vive no Instagram; mídia
+      // enviada direto na conversa é da pessoa e fica guardada normalmente.
+      const ehConteudoDoInstagram =
+        (!anexo && !!story) || anexo?.type === "share" || anexo?.type === "story_mention" || anexo?.type === "ig_reel";
+      const extras = anexoEfetivo
+        ? await extrasDeAnexoInstagram(anexoEfetivo, tokenDaConta, ehConteudoDoInstagram)
+        : {};
 
       // Só link de post DE VERDADE (permalink) entra no texto. A URL do CDN não vira link: ela é o
       // arquivo, expira, e despejada na bolha só polui a conversa com um endereço gigante.
