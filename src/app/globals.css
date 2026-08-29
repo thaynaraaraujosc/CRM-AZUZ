@@ -13025,11 +13025,18 @@ button.camp-row:hover {
   min-height: 0;
 }
 
+/* As mensagens ficam encostadas EMBAIXO, como em qualquer aplicativo de conversa. Alinhadas ao
+   topo, uma conversa curta deixava metade do painel em branco embaixo e parecia que as mensagens
+   tinham sumido. */
 .painel-conversa-mensagens {
   flex: 1;
   min-width: 0;
   overflow-y: auto;
   padding: 10px 2px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 /* Ficha do contato: janela IRMÃ da conversa, encostada nela — não uma coluna espremida lá dentro.
@@ -13125,4 +13132,23 @@ button.camp-row:hover {
   .painel-conversa-dados {
     display: none;
   }
+}
+
+/* Cartão de conteúdo que vive fora do CRM (reel, publicação, carrossel do Instagram).
+   Não é um player nem um botão de download: é a porta pra publicação, aberta numa aba nova. */
+.bubble-midia-externa {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-hover);
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bubble-midia-externa:hover {
+  background: var(--surface-active);
 }

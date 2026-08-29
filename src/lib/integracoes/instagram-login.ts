@@ -211,9 +211,18 @@ export async function buscarPerfilDeQuemMandou(
 ): Promise<{ username?: string; nome?: string; fotoUrl?: string } | null> {
   try {
     const resposta = await fetch(
-      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${remetenteId}?fields=username,name,profile_pic&access_token=${accessToken}`,
+      // Pede os DOIS nomes de campo da foto. A Meta usa `profile_pic` na API de mensagens e
+      // `profile_picture_url` noutros pontos, e a versão que responde varia — pedindo só um, a
+      // conversa ficava eternamente sem foto sem nenhum erro, porque o campo simplesmente não
+      // vinha. Pedir os dois custa a mesma chamada.
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${remetenteId}?fields=username,name,profile_pic,profile_picture_url&access_token=${accessToken}`,
     );
-    const dados = (await resposta.json()) as { username?: string; name?: string; profile_pic?: string } & ErroGraph;
+    const dados = (await resposta.json()) as {
+      username?: string;
+      name?: string;
+      profile_pic?: string;
+      profile_picture_url?: string;
+    } & ErroGraph;
     if (!resposta.ok) {
       console.error("[instagram] Falha ao buscar o perfil de quem mandou:", dados.error?.message ?? resposta.status);
       return null;
@@ -221,10 +230,11 @@ export async function buscarPerfilDeQuemMandou(
     // A foto vem em `profile_pic` — mas nem toda conta/permissão devolve esse campo, e quando ele
     // falta a conversa fica só com as iniciais sem nenhuma pista do porquê. Registrar quais campos
     // vieram (nunca os valores) é o que permite saber se é ausência de permissão ou outro nome.
-    if (!dados.profile_pic) {
-      console.log("[instagram] perfil sem profile_pic; campos recebidos:", Object.keys(dados));
+    const fotoUrl = dados.profile_pic ?? dados.profile_picture_url;
+    if (!fotoUrl) {
+      console.log("[instagram] perfil sem foto; campos recebidos:", Object.keys(dados));
     }
-    return { username: dados.username, nome: dados.name, fotoUrl: dados.profile_pic };
+    return { username: dados.username, nome: dados.name, fotoUrl };
   } catch (erro) {
     console.error("[instagram] Falha ao buscar o perfil de quem mandou:", erro);
     return null;

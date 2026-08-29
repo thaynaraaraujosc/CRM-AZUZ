@@ -45,6 +45,18 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
   }
 
   if (msg.video) {
+    // Vídeo que vive no Instagram: o CRM não guarda cópia, então o que existe é a porta pra lá.
+    if (msg.linkExterno) {
+      return (
+        <div className={`bubble ${msg.tipo} bubble-midia`}>
+          <a className="bubble-midia-externa" href={msg.linkExterno} target="_blank" rel="noopener noreferrer">
+            ▶ Ver publicação no Instagram
+          </a>
+          {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
+          <span className="tm">{msg.hora}</span>
+        </div>
+      );
+    }
     return (
       <div className={`bubble ${msg.tipo} bubble-midia`}>
         <video className="bubble-video" src={msg.video.url} controls preload="metadata" />

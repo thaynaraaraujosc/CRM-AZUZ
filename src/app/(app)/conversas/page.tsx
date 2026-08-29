@@ -4314,7 +4314,21 @@ function ConversasPageInner() {
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
                   {reacaoNaMensagem(msg, chave)}
-                  {midiaLiberada("video", msg.id, msg.video?.url) ? (
+                  {msg.linkExterno ? (
+                    // Vídeo que vive no Instagram (reel, publicação, carrossel). O CRM não guarda
+                    // cópia — assistir é lá. "Baixar vídeo" aqui era uma promessa falsa: não há o
+                    // que baixar, e clicar não levava a lugar nenhum. Vira um cartão que abre a
+                    // publicação numa aba nova.
+                    <a
+                      className="bubble-midia-externa"
+                      href={msg.linkExterno}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <IconVideoCam width={18} height={18} />
+                      Ver publicação no Instagram
+                    </a>
+                  ) : midiaLiberada("video", msg.id, msg.video?.url) ? (
                     <video
                       className="bubble-video"
                       src={msg.video.url}
