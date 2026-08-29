@@ -123,6 +123,25 @@ export function ConexaoInstagram() {
   const receberMensagens = (integracao?.metadados?.receberMensagens as boolean | undefined) ?? true;
   const entrarNoFunil = (integracao?.metadados?.entrarNoFunil as boolean | undefined) ?? true;
 
+  const [reassinando, setReassinando] = useState(false);
+  const [resultadoAssinatura, setResultadoAssinatura] = useState<string | null>(null);
+
+  async function reassinar() {
+    setReassinando(true);
+    setResultadoAssinatura(null);
+    try {
+      const resposta = await fetch("/api/integracoes/instagram/reassinar", { method: "POST" });
+      const dados = (await resposta.json()) as { erro?: string };
+      if (!resposta.ok) throw new Error(dados.erro ?? "Falha ao reativar.");
+      setResultadoAssinatura("Recebimento reativado. Peça uma mensagem nova pra confirmar.");
+    } catch (e) {
+      setResultadoAssinatura(e instanceof Error ? e.message : "Falha ao reativar.");
+    } finally {
+      setReassinando(false);
+      recarregar();
+    }
+  }
+
   return (
     <>
       <PainelOAuth
@@ -132,11 +151,22 @@ export function ConexaoInstagram() {
         rotuloConectado={usuario ? `Conectado — @${usuario}` : "Conta conectada"}
         rotuloDesconectar="Desconectar Instagram"
       />
-      {erroAssinatura ? (
-        <p className="hint" style={{ color: "var(--danger)", margin: "8px 0 0" }}>
-          ⚠ A conta conectou, mas o CRM não conseguiu assinar o recebimento de mensagens:{" "}
-          {erroAssinatura} — as mensagens do Direct não vão chegar até isso ser resolvido.
-        </p>
+      {conectado ? (
+        <div style={{ marginTop: 8 }}>
+          {erroAssinatura ? (
+            <p className="hint" style={{ color: "var(--danger)", margin: "0 0 6px" }}>
+              ⚠ A conta conectou, mas o CRM não conseguiu assinar o recebimento de mensagens:{" "}
+              {erroAssinatura} — as mensagens do Direct não vão chegar até isso ser resolvido.
+            </p>
+          ) : null}
+          <button type="button" className="btn ghost" disabled={reassinando} onClick={() => void reassinar()}>
+            {reassinando ? "Reativando…" : "Reativar recebimento de mensagens"}
+          </button>
+          <p className="hint" style={{ margin: "4px 0 0" }}>
+            {resultadoAssinatura ??
+              "Use se as mensagens pararem de chegar no CRM mesmo com a conta conectada. Refaz só a assinatura dos eventos na Meta — não desconecta nada nem apaga conversa."}
+          </p>
+        </div>
       ) : null}
 
       {conectado ? (
