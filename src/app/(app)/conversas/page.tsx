@@ -1343,6 +1343,8 @@ function ConversasPageInner() {
 
   const [arrastandoArquivo, setArrastandoArquivo] = useState(false);
   const [erroAnexo, setErroAnexo] = useState<string | null>(null);
+  const [localizacaoBuscando, setLocalizacaoBuscando] = useState(false);
+  const [localizacaoErro, setLocalizacaoErro] = useState<string | null>(null);
 
   // Imagem: seleção múltipla + pré-visualização + edição real (recorte/rotação).
   const [imagensSelecionadas, setImagensSelecionadas] = useState<
@@ -1915,17 +1917,16 @@ function ConversasPageInner() {
     return conversaUsaWhatsappNaoOficial(aberta.nome);
   }
 
-  function enviarMensagemTexto() {
-    const texto = mensagemTexto.trim();
-    if (!texto) return;
+  /**
+   * Manda um texto pelo canal da conversa aberta.
+   *
+   * Extraído de `enviarMensagemTexto` pra ser reaproveitado por quem também precisa entregar texto
+   * — hoje o compartilhamento de localização, que vira um link de mapa. Duplicar esse if/else foi
+   * a origem de mais de um "aparece no CRM mas não chega do outro lado": um caminho novo nascia
+   * sem o ramo de algum canal.
+   */
+  function despacharTexto(texto: string, respondendoMid?: string) {
     const viaBaileys = contatoUsaWhatsappNaoOficial();
-    adicionarMensagem({
-      tipo: "out",
-      texto,
-      hora: horaAgora(),
-      respondendoA: respondendoMensagem ?? undefined,
-      canal: viaBaileys ? "whatsapp_nao_oficial" : undefined,
-    });
     // Erro fica registrado como mensagem de sistema DENTRO da conversa (não só um toast que some
     // sozinho em poucos segundos) — assim dá pra ver o motivo exato depois, sem precisar
     // screenshotar na hora certa.
@@ -1966,7 +1967,7 @@ function ConversasPageInner() {
         headers: { "content-type": "application/json" },
         // `respondendoMid` faz a citação aparecer no Instagram da pessoa também. Sem ele, o
         // vendedor via "Respondendo a…" aqui e a cliente recebia uma mensagem solta do outro lado.
-        body: JSON.stringify({ destinatario: aberta.contato, texto, respondendoMid: respondendoMensagem?.mid }),
+        body: JSON.stringify({ destinatario: aberta.contato, texto, respondendoMid }),
       })
         .then(async (r) => {
           if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
@@ -1981,6 +1982,20 @@ function ConversasPageInner() {
         hora: horaAgora(),
       });
     }
+  }
+
+  function enviarMensagemTexto() {
+    const texto = mensagemTexto.trim();
+    if (!texto) return;
+    const viaBaileys = contatoUsaWhatsappNaoOficial();
+    adicionarMensagem({
+      tipo: "out",
+      texto,
+      hora: horaAgora(),
+      respondendoA: respondendoMensagem ?? undefined,
+      canal: viaBaileys ? "whatsapp_nao_oficial" : undefined,
+    });
+    despacharTexto(texto, respondendoMensagem?.mid);
     setMensagemTexto("");
     setRespondendoMensagem(null);
   }
@@ -2182,10 +2197,60 @@ function ConversasPageInner() {
     });
   }
 
+  /**
+   * Manda o anexo de verdade quando o canal sabe entregá-lo; avisa quando não sabe.
+   *
+   * Hoje só o Instagram tem esse caminho (ver `/api/integracoes/instagram/enviar-anexo`). Nos
+   * outros canais o comportamento continua sendo dizer que não foi — que é melhor do que a bolha
+   * silenciosa de antes, quando o vendedor achava que a proposta tinha chegado.
+   *
+   * `idBolha` é a mensagem que já apareceu na tela: ela nasce "pendente" e só vira entregue se a
+   * Meta aceitar. Falhando, vira erro com o motivo — o duplo tique não pode aparecer num arquivo
+   * que a pessoa não recebeu.
+   */
+  function enviarAnexoPeloCanal(params: {
+    idBolha: string;
+    oQue: string;
+    tipo: "image" | "video" | "audio" | "file";
+    dataUrl: string;
+    nome: string;
+  }) {
+    const { idBolha, oQue, tipo, dataUrl, nome } = params;
+    const contatoNome = aberta.nome;
+
+    if (aberta.canal !== "Instagram" || !aberta.contato) {
+      avisarAnexoNaoEnviado(oQue);
+      atualizarMensagem(contatoNome, idBolha, {
+        status: "erro",
+        erro: `O CRM ainda não envia esse tipo de anexo por ${aberta.canal}.`,
+      });
+      return;
+    }
+
+    fetch("/api/integracoes/instagram/enviar-anexo", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ destinatario: aberta.contato, dataUrl, nome, tipo }),
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+        atualizarMensagem(contatoNome, idBolha, { status: "entregue", erro: undefined });
+      })
+      .catch((erro) => {
+        const motivo = erro instanceof Error && erro.message ? erro.message : "motivo desconhecido";
+        atualizarMensagem(contatoNome, idBolha, { status: "erro", erro: motivo });
+        adicionarMensagem({
+          tipo: "system",
+          texto: `⚠️ ${oQue} não chegou (Instagram): ${motivo}`,
+          hora: horaAgora(),
+        });
+      });
+  }
+
   async function enviarImagensSelecionadas() {
     if (imagensSelecionadas.length === 0) return;
     setEnviandoImagens(true);
-    adicionarMensagem({
+    const idBolha = adicionarMensagem({
       tipo: "out",
       texto: "",
       hora: horaAgora(),
@@ -2195,8 +2260,23 @@ function ConversasPageInner() {
         tamanho: img.tamanho,
       })),
       legenda: legendaImagem.trim() || undefined,
+      // "pendente" explícito desliga a simulação de entrega de `adicionarMensagem`: quem decide se
+      // isso vira tique é a resposta da Meta, não um temporizador.
+      status: "pendente",
     });
-    avisarAnexoNaoEnviado(imagensSelecionadas.length > 1 ? "As imagens" : "A imagem");
+    // O Direct manda um anexo por mensagem: a primeira imagem vai como a mídia dessa bolha. Com
+    // várias selecionadas, o que passar da primeira fica registrado aqui sem ter sido enviado — e
+    // o aviso diz isso, em vez de deixar parecer que todas foram.
+    enviarAnexoPeloCanal({
+      idBolha,
+      oQue: "A imagem",
+      tipo: "image",
+      dataUrl: imagensSelecionadas[0].atual,
+      nome: imagensSelecionadas[0].nome,
+    });
+    if (imagensSelecionadas.length > 1 && aberta.canal === "Instagram") {
+      avisarAnexoNaoEnviado(`As outras ${imagensSelecionadas.length - 1} imagens`);
+    }
     setEnviandoImagens(false);
     fecharPreviewImagem();
   }
@@ -2300,7 +2380,7 @@ function ConversasPageInner() {
         urlFinal = await lerComoDataUrl(videoSelecionado.original);
       }
 
-      adicionarMensagem({
+      const idBolhaVideo = adicionarMensagem({
         tipo: "out",
         texto: "",
         hora: horaAgora(),
@@ -2312,8 +2392,15 @@ function ConversasPageInner() {
           comAudio: !precisaMutar,
         },
         legenda: legendaVideo.trim() || undefined,
+        status: "pendente",
       });
-      avisarAnexoNaoEnviado("O vídeo");
+      enviarAnexoPeloCanal({
+        idBolha: idBolhaVideo,
+        oQue: "O vídeo",
+        tipo: "video",
+        dataUrl: urlFinal,
+        nome: videoSelecionado.nome,
+      });
       fecharPreviewVideo();
     } catch {
       setVideoErro("Não deu pra processar o vídeo. Tente enviar sem editar.");
@@ -2425,7 +2512,7 @@ function ConversasPageInner() {
       documentosSelecionadosBiblioteca.includes(d.id),
     );
     for (const doc of escolhidos) {
-      adicionarMensagem({
+      const idBolha = adicionarMensagem({
         tipo: "out",
         texto: "",
         hora: horaAgora(),
@@ -2436,9 +2523,16 @@ function ConversasPageInner() {
           formato: doc.formato,
           origem: "crm",
         },
+        status: "pendente",
+      });
+      enviarAnexoPeloCanal({
+        idBolha,
+        oQue: `O documento "${doc.nome}"`,
+        tipo: "file",
+        dataUrl: doc.url,
+        nome: doc.nome,
       });
     }
-    if (escolhidos.length) avisarAnexoNaoEnviado(escolhidos.length > 1 ? "Os documentos" : "O documento");
     setBibliotecaAberta(false);
     setDocumentosSelecionadosBiblioteca([]);
   }
@@ -2472,7 +2566,7 @@ function ConversasPageInner() {
   function enviarDocumentoComputador() {
     if (!documentoComputador) return;
     setEnviandoDocumento(true);
-    adicionarMensagem({
+    const idBolhaDoc = adicionarMensagem({
       tipo: "out",
       texto: "",
       hora: horaAgora(),
@@ -2484,8 +2578,15 @@ function ConversasPageInner() {
         origem: "computador",
       },
       legenda: legendaDocumento.trim() || undefined,
+      status: "pendente",
     });
-    avisarAnexoNaoEnviado("O documento");
+    enviarAnexoPeloCanal({
+      idBolha: idBolhaDoc,
+      oQue: "O documento",
+      tipo: "file",
+      dataUrl: documentoComputador.url,
+      nome: documentoComputador.nome,
+    });
     setEnviandoDocumento(false);
     setDocumentoComputador(null);
     setLegendaDocumento("");
@@ -2686,12 +2787,47 @@ function ConversasPageInner() {
     });
   }
 
+  /**
+   * Compartilha a localização REAL de quem está atendendo.
+   *
+   * Antes daqui saía um ponto fixo de Goiânia, inventado — a bolha aparecia com "Localização
+   * enviada" e o endereço não era o de ninguém, além de nunca sair do CRM. Agora pede a posição ao
+   * navegador e manda um link de mapa pelo canal da conversa, que é o que de fato chega do outro
+   * lado (nem o Direct nem a via de texto têm um tipo "localização" próprio).
+   */
   function compartilharLocalizacao() {
     setAnexoAberto(false);
-    // Mock fixo, sem pedir geolocalização real do navegador — coerente com o resto do simulador
-    // (nunca usa dados/permissões reais) e evita ficar pendurado esperando o usuário responder ao
-    // prompt nativo de permissão (getCurrentPosition não tem timeout por padrão).
-    enviarLocalizacao(-16.6869, -49.2648, "Sede · Goiânia, GO");
+    setLocalizacaoErro(null);
+
+    if (!navigator.geolocation) {
+      setLocalizacaoErro("Este navegador não sabe informar a localização.");
+      return;
+    }
+
+    setLocalizacaoBuscando(true);
+    navigator.geolocation.getCurrentPosition(
+      (posicao) => {
+        setLocalizacaoBuscando(false);
+        const { latitude, longitude } = posicao.coords;
+        enviarLocalizacao(latitude, longitude);
+        // O link vai no texto porque é a única forma de a localização realmente chegar: abre o
+        // mapa no aparelho de quem recebe, em qualquer canal.
+        despacharTexto(`📍 Minha localização: https://www.google.com/maps?q=${latitude},${longitude}`);
+      },
+      (erro) => {
+        setLocalizacaoBuscando(false);
+        // Sem isto o clique simplesmente fechava o menu e nada acontecia — que foi exatamente o
+        // que apareceu na tela quando a permissão não foi concedida.
+        setLocalizacaoErro(
+          erro.code === erro.PERMISSION_DENIED
+            ? "Você precisa permitir o acesso à localização no navegador pra compartilhar."
+            : "Não deu pra obter sua localização agora. Tente de novo.",
+        );
+      },
+      // Sem `timeout`, `getCurrentPosition` pode ficar pendurado pra sempre — e a pessoa fica
+      // olhando pra uma tela que não responde nem dá erro.
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
   }
 
   function inserirEmoji(emoji: string) {
@@ -3889,6 +4025,22 @@ function ConversasPageInner() {
             {/* A curtida já foi desfeita na tela quando isso aparece — o aviso existe pra explicar
                 POR QUE o coração sumiu (janela de 24h vencida, conta desconectada), em vez de
                 deixar parecer que o clique não funcionou. */}
+            {localizacaoBuscando ? (
+              <span className="hint" style={{ alignSelf: "center" }}>
+                Obtendo sua localização…
+              </span>
+            ) : null}
+            {localizacaoErro ? (
+              <button
+                type="button"
+                className="wa-campo-erro"
+                style={{ alignSelf: "center", background: "none", border: "none", cursor: "pointer" }}
+                onClick={() => setLocalizacaoErro(null)}
+                title="Dispensar"
+              >
+                ⚠ {localizacaoErro}
+              </button>
+            ) : null}
             {erroCurtir ? (
               <button
                 type="button"

@@ -243,6 +243,7 @@ model Workspace {
   motivosPerda           MotivoPerda[]
   relatoriosGerados      RelatorioGerado[]
   whatsappTemplates      WhatsappTemplate[]
+  anexosPublicos AnexoPublico[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -693,4 +694,33 @@ model WhatsappTemplate {
 
   @@unique([workspaceId, metaId])
   @@index([workspaceId])
+}
+
+// Arquivo exposto por um link público, assinado e de vida curta — existe só pra a Meta conseguir
+// buscá-lo.
+//
+// Mandar anexo pelo Direct do Instagram não aceita o arquivo no corpo da requisição: a API recebe
+// um ENDEREÇO e vai buscar o conteúdo ela mesma, de fora. Todas as rotas de mídia do CRM exigem
+// sessão, então a Meta batia numa porta fechada. Esta tabela guarda o arquivo por pouco tempo e o
+// serve num endereço que não pede login, mas exige uma assinatura e expira — é o mínimo de
+// exposição que faz o envio funcionar.
+model AnexoPublico {
+  id String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  nome     String
+  mimeType String
+  // Base64 do arquivo (sem o prefixo `data:`). LongText porque o TEXT padrão do MySQL (64KB) não
+  // serve nem pra um PDF pequeno.
+  conteudo String @db.LongText
+
+  // Passado disso o link para de responder. Curto de propósito: a Meta busca o arquivo em
+  // segundos, logo depois do envio; deixar aberto por dias só aumentaria a janela de exposição.
+  expiraEm DateTime
+
+  criadoEm DateTime @default(now())
+
+  @@index([expiraEm])
 }

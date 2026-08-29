@@ -279,3 +279,36 @@ export async function reagirNoDirectInstagram(
     );
   }
 }
+
+/** Tipo de anexo aceito pelo Direct. Documento (PDF e afins) entra como `file`. */
+export type TipoAnexoInstagram = "image" | "video" | "audio" | "file";
+
+/**
+ * Manda um anexo pelo Direct.
+ *
+ * A API NÃO recebe o arquivo: recebe um endereço e vai buscar o conteúdo ela mesma. Por isso o
+ * `url` precisa ser público e alcançável de fora (ver `publicarAnexoTemporario`) — um endereço que
+ * exija sessão faz a Meta desistir em silêncio, e a mensagem nunca chega.
+ */
+export async function enviarAnexoDirectInstagram(
+  accessToken: string,
+  destinatarioId: string,
+  tipo: TipoAnexoInstagram,
+  url: string,
+): Promise<string | undefined> {
+  const resposta = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/messages`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      recipient: { id: destinatarioId },
+      message: { attachment: { type: tipo, payload: { url, is_reusable: false } } },
+    }),
+  });
+  const dados = (await resposta.json()) as { message_id?: string } & ErroGraph;
+  if (!resposta.ok) {
+    throw new Error(
+      dados.error_message ?? dados.error?.message ?? `Falha ao enviar anexo (HTTP ${resposta.status})`,
+    );
+  }
+  return dados.message_id;
+}
