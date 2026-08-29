@@ -13032,15 +13032,53 @@ button.camp-row:hover {
   padding: 10px 2px;
 }
 
+/* Ficha do contato: janela IRMÃ da conversa, encostada nela — não uma coluna espremida lá dentro.
+   Dentro do painel, o formulário roubava a largura das mensagens e a conversa virava uma coluna
+   estreita justamente enquanto a pessoa lia pra responder. */
 .painel-conversa-dados {
-  width: 240px;
-  flex: 0 0 240px;
-  overflow-y: auto;
-  padding-left: 14px;
-  border-left: 1px solid var(--line);
+  position: absolute;
+  right: calc(min(760px, 100vw - 48px) + 36px);
+  bottom: 24px;
+  width: 320px;
+  height: min(660px, 100vh - 120px);
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.32);
   display: flex;
   flex-direction: column;
   gap: 10px;
+  animation: modal-scale-in var(--transition-base);
+}
+
+.painel-conversa-dados-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.painel-conversa-historico {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+
+/* Sem espaço pras duas janelas lado a lado, a ficha vira uma sobreposição da conversa em vez de
+   sair da tela pela esquerda. */
+@media (max-width: 1180px) {
+  .painel-conversa-dados {
+    right: 24px;
+    bottom: 24px;
+  }
 }
 
 .painel-conversa-rodape {

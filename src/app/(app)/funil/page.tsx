@@ -1036,6 +1036,11 @@ function FunilPageInner() {
           contatoNome={respostaRapidaContato}
           canal={conversaDoContatoRapido?.canal}
           initials={iniciaisContatoRapido}
+          etapaAtual={
+            funilAtivo?.colunas.find((coluna) =>
+              coluna.cards.some((card) => card.nome === respostaRapidaContato),
+            )?.titulo
+          }
           fotoUrl={conversaDoContatoRapido?.fotoUrl}
           aoFechar={() => setRespostaRapidaContato(null)}
         />

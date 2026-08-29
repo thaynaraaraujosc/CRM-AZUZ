@@ -4,7 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
-import { inscreverAppNoInstagram } from "@/lib/integracoes/instagram-login";
+import { camposAssinadosNoInstagram, inscreverAppNoInstagram } from "@/lib/integracoes/instagram-login";
 
 /**
  * Refaz a assinatura dos webhooks da conta do Instagram já conectada.
@@ -28,7 +28,11 @@ export async function POST() {
     return NextResponse.json({ erro: "Instagram não está conectado." }, { status: 400 });
   }
 
-  const erro = await inscreverAppNoInstagram(decriptar(integracao.accessTokenCriptografado));
+  const token = decriptar(integracao.accessTokenCriptografado);
+  const erro = await inscreverAppNoInstagram(token);
+  // Confere na fonte se a assinatura ficou mesmo de pé — a chamada de inscrição pode responder OK
+  // e a conta continuar sem os campos, e aí a pessoa clicaria no botão achando que resolveu.
+  const campos = await camposAssinadosNoInstagram(token);
 
   const metadados = (integracao.metadados as Record<string, unknown> | null) ?? {};
   await prisma.integracao.update({
@@ -38,6 +42,15 @@ export async function POST() {
     },
   });
 
-  if (erro) return NextResponse.json({ erro }, { status: 502 });
-  return NextResponse.json({ ok: true });
+  if (erro) return NextResponse.json({ erro, campos }, { status: 502 });
+  if (campos && !campos.includes("messages")) {
+    return NextResponse.json(
+      {
+        erro: `A Meta aceitou a chamada mas a conta não está assinando "messages" (assinando: ${campos.join(", ") || "nada"}). Reconecte a conta do Instagram.`,
+        campos,
+      },
+      { status: 502 },
+    );
+  }
+  return NextResponse.json({ ok: true, campos });
 }

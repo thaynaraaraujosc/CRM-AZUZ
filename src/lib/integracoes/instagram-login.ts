@@ -317,3 +317,29 @@ export async function enviarAnexoDirectInstagram(
   }
   return dados.message_id;
 }
+
+/**
+ * Quais campos de webhook a conta está assinando AGORA, direto da Meta.
+ *
+ * Sem isto, "as mensagens não chegam" é indistinguível de "a assinatura caiu": a tela mostra
+ * "Conectado" nos dois casos, e o único jeito de saber era mandar mensagem e esperar. Aqui a
+ * resposta vem da fonte — se `messages` não estiver na lista, nada vai chegar mesmo.
+ */
+export async function camposAssinadosNoInstagram(accessToken: string): Promise<string[] | null> {
+  try {
+    const resposta = await fetch(
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/subscribed_apps?access_token=${accessToken}`,
+    );
+    const dados = (await resposta.json()) as {
+      data?: { subscribed_fields?: string[] }[];
+    } & ErroGraph;
+    if (!resposta.ok) {
+      console.error("[instagram] Falha ao ler a assinatura:", dados.error?.message ?? resposta.status);
+      return null;
+    }
+    return dados.data?.[0]?.subscribed_fields ?? [];
+  } catch (erro) {
+    console.error("[instagram] Falha ao ler a assinatura:", erro);
+    return null;
+  }
+}

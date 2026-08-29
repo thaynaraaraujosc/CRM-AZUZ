@@ -30,6 +30,7 @@ export function PainelConversa({
   initials,
   fotoUrl,
   respostasRapidas = [],
+  etapaAtual,
   aoFechar,
 }: {
   contatoNome: string;
@@ -37,6 +38,8 @@ export function PainelConversa({
   initials: string;
   fotoUrl?: string | null;
   respostasRapidas?: RespostaRapida[];
+  /** Etapa em que o negócio está no funil — mostrada na aba Negociação. */
+  etapaAtual?: string;
   aoFechar: () => void;
 }) {
   const { mensagensExtraPorContato, setMensagensExtraPorContato } = useMensagensExtra();
@@ -45,6 +48,7 @@ export function PainelConversa({
   const [texto, setTexto] = useState("");
   const [maisAberto, setMaisAberto] = useState(false);
   const [dadosAberto, setDadosAberto] = useState(false);
+  const [aba, setAba] = useState<"contato" | "negociacao" | "atividades" | "historico">("contato");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -53,6 +57,7 @@ export function PainelConversa({
   const arquivoDocumentoRef = useRef<HTMLInputElement>(null);
 
   const mensagens = mensagensExtraPorContato[contatoNome] ?? [];
+  const ultima = mensagens[mensagens.length - 1];
   const contato = contatos.find((c) => c.nome === contatoNome);
 
   const [nomeEdit, setNomeEdit] = useState(contatoNome);
@@ -204,30 +209,6 @@ export function PainelConversa({
             <div ref={fimDaListaRef} />
           </div>
 
-          {dadosAberto ? (
-            <aside className="painel-conversa-dados">
-              <p className="config-bloco-titulo">Dados do contato</p>
-              <div className="field">
-                <label>Nome</label>
-                <input className="input" value={nomeEdit} onChange={(e) => setNomeEdit(e.target.value)} disabled />
-              </div>
-              <div className="field">
-                <label>WhatsApp</label>
-                <input className="input" value={whatsappEdit} onChange={(e) => setWhatsappEdit(e.target.value)} />
-              </div>
-              <div className="field">
-                <label>E-mail</label>
-                <input className="input" value={emailEdit} onChange={(e) => setEmailEdit(e.target.value)} />
-              </div>
-              <div className="field">
-                <label>Empresa</label>
-                <input className="input" value={empresaEdit} onChange={(e) => setEmpresaEdit(e.target.value)} />
-              </div>
-              <button type="button" className="btn primary block" onClick={salvarDados}>
-                {salvo ? "Salvo!" : "Salvar dados"}
-              </button>
-            </aside>
-          ) : null}
         </div>
 
         {erro ? <p className="hint" style={{ color: "var(--danger)", margin: "0 0 6px" }}>⚠ {erro}</p> : null}
@@ -321,6 +302,112 @@ export function PainelConversa({
           }}
         />
       </div>
+
+      {/* Fora da janela da conversa, ao lado dela — como o painel do WhatsApp. Espremido lá dentro,
+          o formulário roubava a largura das mensagens e a conversa virava uma coluna estreita
+          justamente enquanto a pessoa lia pra responder. */}
+      {dadosAberto ? (
+        <aside className="painel-conversa-dados" onClick={(e) => e.stopPropagation()}>
+          <div className="wa-info-tabs" role="tablist" aria-label="Painel do contato">
+            {(
+              [
+                { id: "contato", label: "Contato" },
+                { id: "negociacao", label: "Negociação" },
+                { id: "atividades", label: "Atividades" },
+                { id: "historico", label: "Histórico" },
+              ] as const
+            ).map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={aba === t.id}
+                className={`wa-info-tab${aba === t.id ? " active" : ""}`}
+                onClick={() => setAba(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="painel-conversa-dados-scroll">
+            {aba === "contato" ? (
+              <>
+                <div className="field">
+                  <label>Nome</label>
+                  <input className="input" value={nomeEdit} disabled />
+                </div>
+                <div className="field">
+                  <label>WhatsApp</label>
+                  <input className="input" value={whatsappEdit} onChange={(e) => setWhatsappEdit(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>E-mail</label>
+                  <input className="input" value={emailEdit} onChange={(e) => setEmailEdit(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>Empresa</label>
+                  <input className="input" value={empresaEdit} onChange={(e) => setEmpresaEdit(e.target.value)} />
+                </div>
+                <button type="button" className="btn primary block" onClick={salvarDados}>
+                  {salvo ? "Salvo!" : "Salvar dados"}
+                </button>
+              </>
+            ) : null}
+
+            {aba === "negociacao" ? (
+              <>
+                <div className="field">
+                  <label>Etapa atual</label>
+                  <div className="input">{etapaAtual ?? "Fora do funil"}</div>
+                </div>
+                <div className="field">
+                  <label>Origem</label>
+                  <div className="input">{canal ?? "—"}</div>
+                </div>
+                <p className="hint" style={{ margin: 0 }}>
+                  Pra mover de etapa, arraste o card no funil atrás desta janela — assim a mudança
+                  passa pelas automações de entrada da etapa, como qualquer outro movimento.
+                </p>
+              </>
+            ) : null}
+
+            {aba === "atividades" ? (
+              <>
+                <p className="hint" style={{ margin: "0 0 8px" }}>
+                  {mensagens.length} {mensagens.length === 1 ? "mensagem" : "mensagens"} nesta conversa.
+                </p>
+                <div className="field">
+                  <label>Última mensagem</label>
+                  <div className="input">{ultima ? `${ultima.hora} · ${resumo(ultima.texto)}` : "—"}</div>
+                </div>
+                <div className="field">
+                  <label>Recebidas / enviadas</label>
+                  <div className="input">
+                    {mensagens.filter((m) => m.tipo === "in").length} recebidas ·{" "}
+                    {mensagens.filter((m) => m.tipo === "out").length} enviadas
+                  </div>
+                </div>
+              </>
+            ) : null}
+
+            {aba === "historico" ? (
+              <ol className="painel-conversa-historico">
+                {[...mensagens]
+                  .reverse()
+                  .slice(0, 40)
+                  .map((m, i) => (
+                    <li key={m.id ?? i}>
+                      <span className="hint">{m.hora}</span> {m.tipo === "in" ? "Recebida" : m.tipo === "out" ? "Enviada" : "Sistema"} ·{" "}
+                      {resumo(m.texto)}
+                    </li>
+                  ))}
+                {mensagens.length === 0 ? <li className="hint">Sem histórico ainda.</li> : null}
+              </ol>
+            ) : null}
+          </div>
+        </aside>
+      ) : null}
     </div>
   );
 
@@ -373,6 +460,13 @@ function adicionarBolhaOtimista(
       ...prev,
       [contatoNome]: (prev[contatoNome] ?? []).map((m) => (m.id === id ? { ...m, ...patch } : m)),
     }));
+}
+
+/** Primeira linha do texto, curta — o histórico é uma lista de referências, não a conversa toda. */
+function resumo(texto: string): string {
+  const limpo = texto.split("\n")[0].trim();
+  if (!limpo) return "(anexo)";
+  return limpo.length > 60 ? `${limpo.slice(0, 60)}…` : limpo;
 }
 
 function lerComoDataUrl(arquivo: File): Promise<string> {
