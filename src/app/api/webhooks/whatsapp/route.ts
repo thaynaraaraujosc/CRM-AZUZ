@@ -7,6 +7,7 @@ import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
+import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
 import type { ConvMensagem } from "@/lib/data";
 
 /**
@@ -348,6 +349,13 @@ export async function POST(request: Request) {
           origem: "Direto",
           contaCanal: contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
         });
+
+        await dispararAutomacoesDeMensagemRecebida({
+          workspaceId: integracao.workspaceId,
+          contatoNome: chaveContato,
+          canal: "WhatsApp",
+          textoRecebido: texto,
+        }).catch((erro) => console.error("[webhook whatsapp] falha ao disparar automações:", erro));
       }
     }
   }

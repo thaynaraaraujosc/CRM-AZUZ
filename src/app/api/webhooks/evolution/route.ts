@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado, buscarInfoGrupo, buscarFotoPerfil } from "@/lib/integracoes/evolution";
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
+import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { CANAL_NAO_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { iniciarHistoricoSeNecessario } from "@/lib/integracoes/historico-whatsapp";
@@ -323,4 +324,16 @@ export async function processarMensagemRecebida(
     descricaoGrupo,
     criacaoGrupo,
   });
+
+  // `fromMe` é mensagem que saiu do próprio celular conectado (espelhada aqui) — não é uma pessoa
+  // falando com você, e disparar automação nela faria o CRM responder a si mesmo. Grupo também
+  // fica de fora: automação num grupo escreveria pra todo mundo de uma vez.
+  if (!fromMe && !ehGrupo) {
+    await dispararAutomacoesDeMensagemRecebida({
+      workspaceId,
+      contatoNome: chaveContato,
+      canal: "WhatsApp",
+      textoRecebido: texto,
+    }).catch((erro) => console.error("[webhook evolution] falha ao disparar automações:", erro));
+  }
 }

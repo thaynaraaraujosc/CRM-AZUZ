@@ -7,6 +7,7 @@ import { renomearConversa } from "@/lib/conversas/renomear";
 import { nomeAindaEhIdCru } from "@/lib/conversas/exibicao";
 import { criarContatoPeloInstagramSeNaoExistir, encontrarContatoPorInstagram } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
+import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
 import type { ConvMensagem } from "@/lib/data";
 import { CANAL_INSTAGRAM, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { decriptar } from "@/lib/integracoes/crypto";
@@ -454,6 +455,18 @@ export async function POST(request: Request) {
         contarComoNaoLida: !ehEco,
         contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
       });
+
+      // Automação só dispara em mensagem RECEBIDA. Num eco (mensagem que a própria conta mandou,
+      // inclusive a resposta automática que acabou de sair daqui) o fluxo dispararia de novo, e a
+      // conversa entraria num vai-e-vem sem fim com a pessoa do outro lado.
+      if (!ehEco) {
+        await dispararAutomacoesDeMensagemRecebida({
+          workspaceId: integracaoDaConta.workspaceId,
+          contatoNome: chaveContato,
+          canal: "Instagram",
+          textoRecebido: texto,
+        }).catch((erro) => console.error("[instagram] falha ao disparar automações:", erro));
+      }
     }
   }
 
