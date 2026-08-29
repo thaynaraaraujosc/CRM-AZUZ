@@ -23,14 +23,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const senha = credenciais?.senha;
         if (typeof email !== "string" || typeof senha !== "string") return null;
 
-        const membro = await prisma.membro.findUnique({
-          where: { email },
-          include: { workspace: true },
-        });
-        if (!membro || !membro.senha || !membro.ativo) return null;
+        // `authorize` devolvendo `null` cobre quatro situações bem diferentes — e-mail que não
+        // existe, conta desativada, conta sem senha e senha errada — que na tela viram a mesma
+        // frase. Isso é proposital pra fora (dizer "esse e-mail não existe" entrega quem tem conta),
+        // mas sem registro nenhum ficava impossível diagnosticar de dentro. O log fica no servidor,
+        // com o e-mail e o motivo, nunca a senha.
+        let membro;
+        try {
+          membro = await prisma.membro.findUnique({ where: { email }, include: { workspace: true } });
+        } catch (erro) {
+          // Banco fora do ar. Lançar (em vez de devolver `null`) mantém a diferença entre "não
+          // consegui conferir" e "conferi e está errado" — ver `/api/saude/banco`, que é o que a
+          // tela de login consulta pra não acusar a senha de uma falha de infraestrutura.
+          console.error("[login] falha ao consultar o banco:", erro instanceof Error ? erro.message : erro);
+          throw erro;
+        }
+        if (!membro) {
+          console.warn(`[login] recusado: nenhum membro com o e-mail ${email}.`);
+          return null;
+        }
+        if (!membro.ativo) {
+          console.warn(`[login] recusado: conta de ${email} está desativada.`);
+          return null;
+        }
+        if (!membro.senha) {
+          console.warn(`[login] recusado: ${email} não tem senha definida (convite não aceito?).`);
+          return null;
+        }
 
         const senhaValida = await bcrypt.compare(senha, membro.senha);
-        if (!senhaValida) return null;
+        if (!senhaValida) {
+          console.warn(`[login] recusado: senha incorreta para ${email}.`);
+          return null;
+        }
 
         // Fire-and-forget — não atrasa o login por causa disso; só alimenta a coluna "Último
         // acesso" em Configurações > Usuários.

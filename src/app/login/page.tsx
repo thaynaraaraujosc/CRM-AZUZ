@@ -35,7 +35,18 @@ function LoginForm() {
     setCarregando(false);
 
     if (resultado?.error) {
-      setErro("E-mail ou senha incorretos.");
+      // O NextAuth devolve o mesmo erro quando a senha está errada e quando `authorize` não
+      // conseguiu nem consultar o banco. Sem essa checagem, uma queda do banco aparecia aqui como
+      // "senha incorreta" — a pessoa tentava de novo, trocava a senha, e nada funcionava, porque
+      // a senha nunca foi o problema.
+      const bancoOk = await fetch("/api/saude/banco")
+        .then((r) => r.ok)
+        .catch(() => false);
+      setErro(
+        bancoOk
+          ? "E-mail ou senha incorretos."
+          : "O servidor não está conseguindo acessar o banco de dados agora — não é a sua senha. Tente de novo em alguns minutos.",
+      );
       return;
     }
 
