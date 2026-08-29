@@ -90,3 +90,43 @@ export function filtroContaCanal(contas: (string | null)[]) {
     ],
   };
 }
+
+
+/**
+ * Provedores de conversa CONECTADOS agora (`meta_instagram`, `meta_whatsapp`,
+ * `whatsapp_nao_oficial`).
+ */
+export async function provedoresConectados(workspaceId: string): Promise<string[]> {
+  const integracoes = await prisma.integracao.findMany({
+    where: {
+      workspaceId,
+      status: "conectado",
+      provedor: { in: [CANAL_NAO_OFICIAL, CANAL_OFICIAL, CANAL_INSTAGRAM] },
+    },
+    select: { provedor: true },
+  });
+  return integracoes.map((i) => i.provedor);
+}
+
+/**
+ * Filtro por conexão para NEGÓCIOS do funil — parecido com o das conversas, mas com duas regras
+ * diferentes de propósito:
+ *
+ * 1. `contaCanal` nulo aparece SEMPRE. No funil, nulo quer dizer "card criado à mão" ou "card
+ *    anterior a esta coluna" — não pertence a conexão nenhuma. Reusar o filtro das conversas aqui
+ *    escondeu todos os cards antigos de uma vez, porque lá o nulo só aparece quando o WhatsApp por
+ *    QR Code está conectado.
+ *
+ * 2. Compara pelo PROVEDOR, não pelo identificador exato da conta. Um negócio não precisa da
+ *    precisão de "qual número exatamente" — e casar o identificador exato já fez mensagem
+ *    desaparecer duas vezes por divergir de um fio. Aqui o custo de errar é esconder o trabalho
+ *    comercial da pessoa, que é pior.
+ */
+export function filtroConexaoDeNegocio(provedores: string[]) {
+  return {
+    OR: [
+      { contaCanal: null },
+      ...provedores.map((provedor) => ({ contaCanal: { startsWith: `${provedor}:` } })),
+    ],
+  };
+}
