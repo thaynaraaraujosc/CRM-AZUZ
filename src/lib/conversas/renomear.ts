@@ -21,6 +21,11 @@ export async function renomearConversa(workspaceId: string, de: string, para: st
 
   await prisma.$transaction([
     prisma.mensagemExtra.updateMany({ where: { workspaceId, contato: de }, data: { contato: para } }),
+    // O negócio no funil também é casado pelo nome. Sem renomear junto, o card ficava órfão: o
+    // contato aparecia no funil com o nome velho e não existia mais em Conversas — os dois lados
+    // do CRM falando de pessoas diferentes.
+    prisma.negocioCard.updateMany({ where: { workspaceId, nome: de }, data: { nome: para } }),
+    prisma.contato.updateMany({ where: { workspaceId, nome: de }, data: { nome: para } }),
     ...(jaExisteDestino
       ? [prisma.conversa.deleteMany({ where: { workspaceId, nome: de } })]
       : [

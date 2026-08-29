@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { contasCanalVisiveis, filtroContaCanal } from "@/lib/integracoes/conta-canal";
+import { contasCanalVisiveis, filtroContaCanal, provedoresConectados } from "@/lib/integracoes/conta-canal";
 
 /**
  * GET lista as conversas do workspace de quem está logado, mais recentes primeiro — só as da(s)
@@ -14,8 +14,20 @@ export async function GET() {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
   const contas = await contasCanalVisiveis(sessao.user.workspaceId);
+  const provedores = await provedoresConectados(sessao.user.workspaceId);
+  const filtro = filtroContaCanal(contas);
+
+  // Conversa do Instagram aparece enquanto o Instagram estiver conectado, tenha ela conexão
+  // marcada ou não. Sem isto, uma conversa criada antes dessa coluna existir (ou sem o
+  // identificador gravado) caía na regra do WhatsApp e só apareceria com o QR Code conectado —
+  // ficava invisível em Conversas enquanto o negócio dela continuava no funil. Ver o card órfão
+  // que apareceu na tela: o mesmo contato existindo num lugar e não no outro.
+  const where = provedores.includes("meta_instagram")
+    ? { workspaceId: sessao.user.workspaceId, OR: [...filtro.OR ?? [{ contaCanal: filtro.contaCanal }], { canal: "Instagram" }] }
+    : { workspaceId: sessao.user.workspaceId, ...filtro };
+
   const linhas = await prisma.conversa.findMany({
-    where: { workspaceId: sessao.user.workspaceId, ...filtroContaCanal(contas) },
+    where,
     orderBy: { atualizadoEm: "desc" },
   });
   return NextResponse.json(linhas);
