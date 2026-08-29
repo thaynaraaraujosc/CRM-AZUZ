@@ -387,6 +387,22 @@ export async function POST(request: Request) {
       // mensagem de `share` traz o link — quando não vem, fica só a prévia.
 
       const temMidiaBaixada = Object.keys(extras).length > 0;
+
+      // Mensagem que TINHA o que virar prévia e não virou. Sem este registro, "chegou só o texto,
+      // sem a miniatura" é indistinguível de três coisas bem diferentes: a Meta não mandou o story
+      // no evento, mandou e o download foi recusado, ou mandou um tipo que a gente ignora. Só
+      // metadado — nunca o conteúdo da mensagem nem o endereço do arquivo (LGPD).
+      if (!temMidiaBaixada && (story || anexo)) {
+        console.log("[instagram] sem miniatura:", {
+          ehEco,
+          temStory: Boolean(story),
+          storyComUrl: Boolean(story?.url),
+          tipoAnexo: anexo?.type ?? null,
+          anexoComUrl: Boolean(anexo?.payload?.url),
+          ehConteudoDoInstagram,
+          temToken: Boolean(tokenDaConta),
+        });
+      }
       const rotuloPadrao = story && !anexo
         ? "Respondeu ao seu story"
         : anexo
