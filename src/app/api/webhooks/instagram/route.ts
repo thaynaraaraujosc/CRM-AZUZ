@@ -407,9 +407,18 @@ export async function POST(request: Request) {
       const rotuloPadrao = story && !anexo
         ? "Respondeu ao seu story"
         : anexo
-          ? (ROTULO_POR_ANEXO[anexo.type ?? ""] ?? "[Anexo]")
+          ? (ROTULO_POR_ANEXO[anexo.type ?? ""] ?? "")
           : "";
       const texto = [mensagem.text ?? rotuloPadrao, linkDoConteudo].filter(Boolean).join("\n") || "";
+
+      // Bolha que não diz nada: anexo de um tipo que o CRM não conhece, sem arquivo baixado e sem
+      // texto nenhum. É o que acontece quando alguém manda um número pelo Instagram — o app envia o
+      // número como texto E um anexo interativo junto, que aqui virava um "[Anexo]" solto embaixo
+      // do número, sem conteúdo pra abrir. Guardar isso só polui a conversa.
+      if (!texto && !temMidiaBaixada) {
+        console.log("[instagram] anexo sem conteúdo util, descartado:", { tipoAnexo: anexo?.type ?? null });
+        continue;
+      }
 
       // Com mídia, a bolha desenha a LEGENDA, não o texto — então uma resposta a story chegava só
       // como a miniatura, sem o que a pessoa escreveu. O texto vai para os dois lugares: `texto`

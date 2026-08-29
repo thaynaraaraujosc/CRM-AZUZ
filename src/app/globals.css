@@ -12951,3 +12951,21 @@ button.camp-row:hover {
 .bubble.in .wa-telefone-acao {
   background: rgba(0, 0, 0, 0.18);
 }
+
+/* Mídia dentro do popup de resposta rápida do Funil.
+   A janela tem 400px e altura limitada; uma foto vertical entrava no tamanho original e sozinha
+   ocupava a conversa inteira, empurrando o resto pra fora da vista. Aqui ela é limitada à caixa,
+   não ao arquivo. */
+.wa-respostas-modal.rodape-chat .bubble-imagem,
+.wa-respostas-modal.rodape-chat .bubble-video {
+  max-width: 100%;
+  max-height: 180px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.wa-respostas-modal.rodape-chat .bubble {
+  max-width: 85%;
+}
