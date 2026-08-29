@@ -300,6 +300,7 @@ export async function POST(request: Request) {
             workspaceId: integracao.workspaceId,
             contatoNome: chaveContato,
             origem: "WhatsApp",
+            contaCanal: contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
           });
         }
 

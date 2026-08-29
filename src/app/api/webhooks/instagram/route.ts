@@ -350,6 +350,7 @@ export async function POST(request: Request) {
             workspaceId: integracaoDaConta.workspaceId,
             contatoNome: chaveContato,
             origem: "Instagram",
+            contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
           });
         }
       }

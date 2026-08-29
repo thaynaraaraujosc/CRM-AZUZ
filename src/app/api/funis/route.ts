@@ -3,15 +3,25 @@ import { NextResponse } from "next/server";
 import type { Funil } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { contasCanalVisiveis, filtroContaCanal } from "@/lib/integracoes/conta-canal";
 
 /** GET lista os funis do workspace de quem está logado, com etapas e negócios, na ordem salva. */
 export async function GET() {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
+  // Mesmo filtro por conexão das conversas: negócio que nasceu de um canal desconectado some do
+  // funil sem sair do banco, e volta inteiro se aquela conexão voltar (ver `conta-canal.ts`). Card
+  // criado à mão tem `contaCanal` nulo e aparece sempre.
+  const contas = await contasCanalVisiveis(sessao.user.workspaceId);
   const linhas = await prisma.funil.findMany({
     where: { workspaceId: sessao.user.workspaceId },
-    include: { etapas: { orderBy: { ordem: "asc" }, include: { cards: { orderBy: { ordem: "asc" } } } } },
+    include: {
+      etapas: {
+        orderBy: { ordem: "asc" },
+        include: { cards: { where: filtroContaCanal(contas), orderBy: { ordem: "asc" } } },
+      },
+    },
   });
 
   const funis: Funil[] = linhas.map((f) => ({

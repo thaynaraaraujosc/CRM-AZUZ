@@ -18,8 +18,11 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   /** Conversa de grupo — grupo não entra no funil nem em automação (ver dentro da função). */
   ehGrupo?: boolean;
   origem: string;
+  /** Conexão que originou o negócio — é o que faz o card sumir do funil quando aquele canal é
+   * desconectado, e voltar quando ele reconecta (ver o campo no schema). */
+  contaCanal?: string | null;
 }) {
-  const { workspaceId, contatoNome, ehGrupo = false, origem } = params;
+  const { workspaceId, contatoNome, ehGrupo = false, origem, contaCanal } = params;
 
   // Grupo do WhatsApp nunca vira negócio. Um grupo não é um lead: ele existe no CRM só pra ser
   // respondido em Conversas, sem sair do sistema. A regra vive AQUI, e não só em quem chama, pra
@@ -62,6 +65,7 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
       nome: contatoNome,
       valor: "—",
       origem,
+      contaCanal,
       dias: "Hoje",
       data: new Date().toISOString().slice(0, 10),
     },

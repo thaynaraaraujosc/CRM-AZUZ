@@ -374,6 +374,14 @@ model NegocioCard {
   statusFechamento String? // "ganho" | "perdido"
   motivoPerda      String?
   dataFechamento   DateTime?
+  // Conexão que originou este negócio (`<provedor>:<identificador>`, mesmo formato de
+  // `Conversa.contaCanal`). Existe pelo mesmo motivo: ao desconectar um canal, o funil precisa
+  // parar de mostrar os negócios que vieram DELE — e mostrá-los de novo se aquela conexão voltar.
+  // Nada é apagado: some da vista, continua no banco.
+  //
+  // Null = card criado à mão, ou anterior a esta coluna. Esses aparecem sempre: não pertencem a
+  // conexão nenhuma, e sumir com eles seria esconder trabalho que a pessoa fez dentro do CRM.
+  contaCanal String?
 }
 
 // Motivos de perda configuráveis por workspace — usados no seletor ao marcar um NegocioCard como
