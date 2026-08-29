@@ -950,7 +950,25 @@ function ConversasPageInner() {
       const termo = buscaConversa.trim().toLowerCase();
       return c.nome.toLowerCase().includes(termo);
     })
-    .sort((a, b) => Number(fixadas.has(b.id)) - Number(fixadas.has(a.id)));
+    // Fixadas no topo; o resto pela atividade mais recente. Sem o segundo critério, a lista ficava
+    // na ordem em que o banco devolveu — uma conversa que acabou de receber mensagem podia ficar no
+    // meio ou no fim, e a pessoa só descobria a mensagem nova rolando a lista inteira.
+    .sort((a, b) => {
+      const fixada = Number(fixadas.has(b.id)) - Number(fixadas.has(a.id));
+      if (fixada !== 0) return fixada;
+      return ultimaAtividadeDaConversa(b.nome) - ultimaAtividadeDaConversa(a.nome);
+    });
+
+  /** Quando a última mensagem dessa conversa chegou (ou saiu). Zero quando ainda não há nenhuma —
+   * conversa sem mensagem vai pro fim, não pro topo. */
+  function ultimaAtividadeDaConversa(nomeContato: string): number {
+    const mensagens = mensagensExtraPorContato[nomeContato] ?? [];
+    for (let i = mensagens.length - 1; i >= 0; i--) {
+      const quando = mensagens[i].criadoEm;
+      if (quando) return quando;
+    }
+    return 0;
+  }
 
   const abertaCandidata = conversas.find((c) => c.id === selectedId) ?? conversas[0];
   const aberta =

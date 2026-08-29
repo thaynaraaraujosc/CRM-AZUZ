@@ -78,6 +78,38 @@ function FunilPageInner() {
    * mensagem mandada de um lugar aparece no outro. */
   const [respostaRapidaContato, setRespostaRapidaContato] = useState<string | null>(null);
 
+  const [importando, setImportando] = useState(false);
+
+  /**
+   * Traz pro funil as conversas que ainda não viraram negócio.
+   *
+   * Só quem escreve pela primeira vez entra no funil sozinho — o que é certo pro dia a dia (mandar
+   * mensagem de novo não pode mexer na etapa em que o vendedor deixou a pessoa), mas deixa de fora
+   * quem já era contato antes. Este botão é a porta de entrada em massa: quem começa com a caixa
+   * cheia puxa tudo de uma vez, e quem perdeu cards recupera sem abrir conversa por conversa.
+   */
+  async function importarConversas() {
+    setImportando(true);
+    try {
+      const resposta = await fetch("/api/funis/importar-conversas", { method: "POST" });
+      const dados = (await resposta.json()) as { criados?: number; erro?: string };
+      if (!resposta.ok) throw new Error(dados.erro ?? "Não foi possível trazer as conversas.");
+      avisarAutomacao(
+        dados.criados
+          ? `${dados.criados} ${dados.criados === 1 ? "conversa trazida" : "conversas trazidas"} pro funil.`
+          : "Todas as conversas já estão no funil.",
+      );
+      // Recarrega do servidor — os cards novos foram criados lá, não aqui; sem isso a tela só
+      // mostraria a mudança no próximo F5.
+      const atualizados = await fetch("/api/funis").then((r) => r.json());
+      setFunis(atualizados);
+    } catch (erro) {
+      avisarAutomacao(erro instanceof Error ? erro.message : "Não foi possível trazer as conversas.");
+    } finally {
+      setImportando(false);
+    }
+  }
+
   function abrirRespostaRapida(nomeContato: string) {
     setRespostaRapidaContato(nomeContato);
   }
@@ -405,6 +437,15 @@ function FunilPageInner() {
         sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} ${totalVisivel === 1 ? "negócio" : "negócios"} ${filtroAtivo ? (totalVisivel === 1 ? "encontrado" : "encontrados") : "no funil"}`}
         actions={
           <>
+            <button
+              type="button"
+              className="btn ghost"
+              disabled={importando}
+              title="Cria um negócio para cada conversa que ainda não tem um"
+              onClick={() => void importarConversas()}
+            >
+              {importando ? "Trazendo…" : "+ Trazer conversas"}
+            </button>
             <button
               type="button"
               className="btn ghost"
