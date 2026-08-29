@@ -20,6 +20,7 @@ import {
   type NegocioCard,
   type StatusMensagem,
 } from "@/lib/data";
+import { ehLinkDeMidia } from "@/lib/conversas/midia-mensagem";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";

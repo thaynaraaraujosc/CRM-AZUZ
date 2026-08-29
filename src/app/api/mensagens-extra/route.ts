@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 
+import type { Prisma } from "@/generated/prisma/client";
 import type { ConvMensagem } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { contasCanalVisiveis, filtroContaCanal } from "@/lib/integracoes/conta-canal";
+import { preservarMidiaGuardada, trocarMidiaPorLink } from "@/lib/conversas/midia-mensagem";
 
 type LinhaMensagem = {
   id: string;
@@ -26,7 +28,11 @@ type LinhaMensagem = {
 const LIMITE_MENSAGENS = 3000;
 
 function paraMensagem(linha: LinhaMensagem): ConvMensagem {
-  const extras = (linha.extras as Partial<ConvMensagem>) ?? {};
+  // O anexo sai daqui como LINK, não embutido: este GET traz o histórico inteiro do workspace de
+  // uma vez (e repete a cada 5s no polling), então mandar foto/áudio/vídeo dentro do JSON obrigava
+  // o navegador a baixar tudo antes de desenhar a primeira bolha — a demora que aparecia ao
+  // atualizar a página. Ver `midia-mensagem.ts`.
+  const extras = (linha.extras ? trocarMidiaPorLink(linha.extras, linha.id) : {}) as Partial<ConvMensagem>;
   return {
     ...extras,
     id: linha.id,
@@ -80,6 +86,17 @@ export async function PUT(request: Request) {
   const upserts = corpo.upserts ?? [];
   const deletarIds = corpo.deletarIds ?? [];
 
+  // O cliente nunca recebeu o conteúdo dos anexos (só um link pra eles), então não pode ser fonte
+  // de verdade sobre eles: sem isto, o primeiro PUT depois de um GET gravaria o link por cima da
+  // data URL e o arquivo se perderia. Busca o que já está guardado pra restaurar esses campos.
+  const guardadas = upserts.length
+    ? await prisma.mensagemExtra.findMany({
+        where: { workspaceId, id: { in: upserts.map((u) => u.idFinal) } },
+        select: { id: true, extras: true },
+      })
+    : [];
+  const extrasGuardados = new Map(guardadas.map((m) => [m.id, m.extras]));
+
   const operacoes = [
     ...(deletarIds.length ? [prisma.mensagemExtra.deleteMany({ where: { workspaceId, id: { in: deletarIds } } })] : []),
     ...upserts.map(({ contato, idFinal, mensagem }) => {
@@ -93,7 +110,7 @@ export async function PUT(request: Request) {
         criadoEm: criadoEm ? new Date(criadoEm) : null,
         status: status ?? null,
         canal: canal ?? null,
-        extras,
+        extras: preservarMidiaGuardada(extras, extrasGuardados.get(idFinal)) as Prisma.InputJsonValue,
       };
       return prisma.mensagemExtra.upsert({
         where: { id: idFinal },
