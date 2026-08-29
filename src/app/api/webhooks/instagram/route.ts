@@ -11,7 +11,7 @@ import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disp
 import type { ConvMensagem } from "@/lib/data";
 import { CANAL_INSTAGRAM, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { decriptar } from "@/lib/integracoes/crypto";
-import { baixarFotoPerfil, buscarPerfilDeQuemMandou } from "@/lib/integracoes/instagram-login";
+import { baixarFotoPerfil, buscarPerfilDeQuemMandou, buscarPerfilNasConversas } from "@/lib/integracoes/instagram-login";
 
 /**
  * GET — handshake de verificação que a Meta faz uma vez, ao cadastrar a URL do webhook no painel
@@ -306,7 +306,14 @@ export async function POST(request: Request) {
       // de cada pessoa buscava, então quem já tinha conversa (criada antes disto existir) nunca
       // ganhava foto e a lista ficava só com iniciais.
       if (!chaveContato || !conversaExistente?.fotoUrl) {
-        const perfil = tokenDaConta ? await buscarPerfilDeQuemMandou(tokenDaConta, remetenteId) : null;
+        // Duas vias: a busca direta pelo id e, se ela não trouxer o @, a lista de conversas — que
+        // passa por outra permissão. Sem a segunda, a pessoa entrava como "Contato do Instagram",
+        // sem @ e sem foto, que é o pior resultado possível pra quem atende.
+        let perfil = tokenDaConta ? await buscarPerfilDeQuemMandou(tokenDaConta, remetenteId) : null;
+        if (tokenDaConta && !perfil?.username) {
+          const pelaConversa = await buscarPerfilNasConversas(tokenDaConta, remetenteId);
+          if (pelaConversa?.username) perfil = { ...perfil, ...pelaConversa };
+        }
         const resolvido = perfil?.username ? `@${perfil.username}` : perfil?.nome;
         // Resolveu agora o que não tinha resolvido antes: renomeia a conversa que estava com o
         // número e leva o histórico junto, em vez de abrir uma segunda thread da mesma pessoa.
@@ -384,6 +391,12 @@ export async function POST(request: Request) {
       // Só link de post DE VERDADE (permalink) entra no texto. A URL do CDN não vira link: ela é o
       // arquivo, expira, e despejada na bolha só polui a conversa com um endereço gigante.
       const linkDoConteudo = anexo?.payload?.permalink_url;
+      // Sem o permalink não existe pra onde mandar quem clica na prévia — e a Meta nem sempre o
+      // envia. Registrar quando ele falta é o que separa "o CRM não usou o link" de "o link nunca
+      // veio"; sem isso, "clicar não abre a publicação" fica sem causa.
+      if (anexo && !linkDoConteudo) {
+        console.log("[instagram] anexo sem permalink_url:", { tipoAnexo: anexo.type ?? null });
+      }
       // Link do post compartilhado vai no texto: a tela já transforma URL em link clicável, então
       // clicar leva pro conteúdo no Instagram sem precisar de um tipo de bolha novo. Nem toda
       // mensagem de `share` traz o link — quando não vem, fica só a prévia.

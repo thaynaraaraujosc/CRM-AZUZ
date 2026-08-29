@@ -353,3 +353,42 @@ export async function camposAssinadosNoInstagram(accessToken: string): Promise<s
     return null;
   }
 }
+
+/**
+ * Segunda tentativa de descobrir o @ de alguém: pela lista de conversas da conta.
+ *
+ * A busca direta pelo id (`buscarPerfilDeQuemMandou`) é a via principal, mas ela depende de uma
+ * permissão que nem toda conta concede — e quando falha, a pessoa entra na caixa de entrada como
+ * "Contato do Instagram", sem @ e sem foto, que é o pior resultado possível pra quem atende.
+ *
+ * A lista de conversas devolve os participantes de cada thread com `username`, por outro caminho de
+ * permissão. Custa uma chamada a mais e só roda quando a primeira não trouxe nada.
+ */
+export async function buscarPerfilNasConversas(
+  accessToken: string,
+  remetenteId: string,
+): Promise<{ username?: string; nome?: string; fotoUrl?: string } | null> {
+  try {
+    const resposta = await fetch(
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/conversations?fields=participants&access_token=${accessToken}`,
+    );
+    const dados = (await resposta.json()) as {
+      data?: { participants?: { data?: { id?: string; username?: string; name?: string; profile_pic?: string }[] } }[];
+    } & ErroGraph;
+    if (!resposta.ok) {
+      console.error("[instagram] Falha ao listar conversas pra achar o @:", dados.error?.message ?? resposta.status);
+      return null;
+    }
+    for (const conversa of dados.data ?? []) {
+      const participante = conversa.participants?.data?.find((p) => p.id === remetenteId);
+      if (participante?.username || participante?.name) {
+        return { username: participante.username, nome: participante.name, fotoUrl: participante.profile_pic };
+      }
+    }
+    console.log("[instagram] o @ não veio nem pela lista de conversas.");
+    return null;
+  } catch (erro) {
+    console.error("[instagram] Falha ao listar conversas pra achar o @:", erro);
+    return null;
+  }
+}
