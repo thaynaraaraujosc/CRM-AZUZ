@@ -3113,14 +3113,13 @@ table.tbl tbody tr:hover td {
   overflow: hidden;
 }
 
-/* Textura de fundo na área de mensagens — familiaridade explícita com o WhatsApp (fundo sempre
-   texturizado, nunca liso), mas um padrão PRÓPRIO (pontos, não os doodles do WhatsApp — evita
-   usar asset/ilustração deles, só a mesma IDEIA de "fundo com textura sutil"). */
+/* Fundo da área de mensagens: cor SÓLIDA, sem textura.
+   Havia aqui um padrão de pontinhos, na ideia de lembrar o fundo texturizado do WhatsApp. Na
+   prática ele aparecia por cima de qualquer fundo escolhido nas configurações da conversa — cor
+   sólida ou imagem — e sujava o resultado. Fundo é escolha de quem usa; o CRM não impõe textura. */
 .wa-main .chat-body {
   flex: 1;
   max-height: none;
-  background-image: radial-gradient(var(--line) 1px, transparent 1px);
-  background-size: 20px 20px;
   background-color: var(--navy);
 }
 
@@ -12971,30 +12970,34 @@ button.camp-row:hover {
 }
 
 /* Painel de conversa aberto pelo Funil (`PainelConversa`).
-   Sobreposto e centralizado, ocupando cerca de metade da tela: é a janela onde o vendedor atende
-   sem sair do funil. Fecha inteiro — o arraste dos cards continua livre atrás dele. */
+
+   Ancorado embaixo à direita e subindo — a mesma origem da janelinha que existia antes, só que
+   grande o bastante pra atender de verdade. Centralizar com a tela escurecida atrás parecia um
+   modal de confirmação e tirava o funil de vista; aqui o funil continua visível ao lado, que é o
+   ponto: abrir, responder, fechar e voltar a arrastar. */
 .painel-conversa-fundo {
   position: fixed;
   inset: 0;
   z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(11, 21, 51, 0.42);
-  backdrop-filter: blur(2px);
+  /* Captura o clique fora pra fechar, sem escurecer nem borrar o funil atrás. */
+  background: transparent;
 }
 
 .painel-conversa {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
   display: flex;
   flex-direction: column;
-  width: min(920px, 92vw);
-  height: min(76vh, 720px);
+  width: min(760px, calc(100vw - 48px));
+  height: min(660px, calc(100vh - 120px));
   padding: 16px 18px 14px;
   border-radius: 16px;
-  background: var(--card);
+  /* Fundo SÓLIDO — com uma variável inexistente aqui o painel ficava translúcido e o funil
+     aparecia por trás do texto, impossível de ler. */
+  background: var(--navy);
   border: 1px solid var(--line);
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.28);
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.32);
   animation: modal-scale-in var(--transition-base);
 }
 
@@ -13030,8 +13033,8 @@ button.camp-row:hover {
 }
 
 .painel-conversa-dados {
-  width: 260px;
-  flex: 0 0 260px;
+  width: 240px;
+  flex: 0 0 240px;
   overflow-y: auto;
   padding-left: 14px;
   border-left: 1px solid var(--line);
@@ -13058,10 +13061,24 @@ button.camp-row:hover {
   overflow-y: auto;
 }
 
-/* Numa tela estreita a ficha do contato empilharia e espremeria as duas coisas — melhor virar
-   tela cheia e manter a conversa legível. */
+/* Mídia limitada à caixa, não ao arquivo: uma foto vertical no tamanho original ocupava a
+   conversa inteira e empurrava o resto pra fora da vista. */
+.painel-conversa .bubble-imagem,
+.painel-conversa .bubble-video {
+  max-width: 100%;
+  max-height: 220px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* Numa tela estreita a ficha do contato espremeria as duas coisas — melhor virar tela cheia e
+   manter a conversa legível. */
 @media (max-width: 760px) {
   .painel-conversa {
+    right: 0;
+    bottom: 0;
     width: 100vw;
     height: 100vh;
     border-radius: 0;
