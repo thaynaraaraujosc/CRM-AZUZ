@@ -459,10 +459,24 @@ export async function POST(request: Request) {
       // O link vai TAMBÉM nos extras, não só no texto: é ele que faz a miniatura virar um clique
       // que abre a publicação no Instagram. Só no texto, a pessoa via a prévia e tinha que caçar o
       // endereço embaixo pra chegar no conteúdo.
+      // Pra onde o clique na prévia deve levar.
+      //
+      // O ideal é a própria publicação (`permalink_url`) — mas a Meta nem sempre manda esse campo,
+      // e sem ele o CRM recebeu a imagem sem saber QUAL publicação é: não há como deduzir o
+      // endereço a partir da foto.
+      //
+      // Nesse caso o clique leva pra CONVERSA no Instagram, pelo @ de quem mandou. Não é a
+      // publicação exata, mas é um clique e a pessoa está diante do conteúdo — melhor do que abrir
+      // um visualizador de zoom, que era o que acontecia e não leva a lugar nenhum.
+      const arrobaDeQuemMandou = chaveContato.startsWith("@") ? chaveContato.slice(1) : null;
+      const linkExternoDaMensagem =
+        linkDoConteudo ??
+        (ehConteudoDoInstagram && arrobaDeQuemMandou ? `https://ig.me/m/${arrobaDeQuemMandou}` : undefined);
+
       const extrasComLegenda = {
         ...extras,
         ...(legenda ? { legenda } : {}),
-        ...(linkDoConteudo ? { linkExterno: linkDoConteudo } : {}),
+        ...(linkExternoDaMensagem ? { linkExterno: linkExternoDaMensagem } : {}),
       };
 
       await prisma.mensagemExtra.create({
