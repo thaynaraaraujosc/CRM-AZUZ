@@ -4349,6 +4349,19 @@ function ConversasPageInner() {
                   {msg.legenda ? (
                     <p className="bubble-legenda">{msg.legenda}</p>
                   ) : null}
+                  {/* Botão explícito embaixo da prévia: clicar na imagem funciona, mas ninguém
+                      adivinha que funciona — e conteúdo do Instagram não é uma foto pra ampliar, é
+                      uma publicação pra abrir. */}
+                  {msg.linkExterno ? (
+                    <a
+                      className="bubble-acao-externa"
+                      href={msg.linkExterno}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Ver publicação no Instagram ↗
+                    </a>
+                  ) : null}
                   <span className="tm">
                     {msg.hora}
                     {msg.tipo === "out" ? (

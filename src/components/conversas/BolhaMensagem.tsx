@@ -39,6 +39,11 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
       <div className={`bubble ${msg.tipo} bubble-midia`}>
         <span className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}>{imagens}</span>
         {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
+        {msg.linkExterno ? (
+          <a className="bubble-acao-externa" href={msg.linkExterno} target="_blank" rel="noopener noreferrer">
+            Ver publicação no Instagram ↗
+          </a>
+        ) : null}
         <span className="tm">{msg.hora}</span>
       </div>
     );
