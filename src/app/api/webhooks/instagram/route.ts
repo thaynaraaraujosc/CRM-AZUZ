@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
+import { nomeAindaEhIdCru, renomearConversa } from "@/lib/conversas/renomear";
 import { criarContatoPeloInstagramSeNaoExistir, encontrarContatoPorInstagram } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
 import type { ConvMensagem } from "@/lib/data";
@@ -291,7 +292,11 @@ export async function POST(request: Request) {
         ? decriptar(integracaoDaConta.accessTokenCriptografado)
         : null;
 
-      let chaveContato = conversaExistente?.nome;
+      // Conversa que nasceu com o id no lugar do nome (a busca do @ falhou na primeira mensagem)
+      // ganha uma nova chance a cada mensagem nova. Sem isso o número ficava pra sempre na lista,
+      // e não havia como saber com quem se estava falando.
+      const nomeEhNumero = nomeAindaEhIdCru(conversaExistente?.nome);
+      let chaveContato = nomeEhNumero ? undefined : conversaExistente?.nome;
       // Foto de perfil junto do @, na mesma busca — sem ela a conversa fica só com as iniciais, e
       // numa caixa de entrada de Direct a foto é o que faz reconhecer quem é.
       let fotoUrl: string | null = null;
@@ -300,7 +305,15 @@ export async function POST(request: Request) {
       // ganhava foto e a lista ficava só com iniciais.
       if (!chaveContato || !conversaExistente?.fotoUrl) {
         const perfil = tokenDaConta ? await buscarPerfilDeQuemMandou(tokenDaConta, remetenteId) : null;
-        chaveContato = chaveContato ?? (perfil?.username ? `@${perfil.username}` : (perfil?.nome ?? remetenteId));
+        const resolvido = perfil?.username ? `@${perfil.username}` : perfil?.nome;
+        // Resolveu agora o que não tinha resolvido antes: renomeia a conversa que estava com o
+        // número e leva o histórico junto, em vez de abrir uma segunda thread da mesma pessoa.
+        if (nomeEhNumero && resolvido && conversaExistente?.nome) {
+          await renomearConversa(integracaoDaConta.workspaceId, conversaExistente.nome, resolvido).catch((erro) =>
+            console.error("[instagram] Falha ao renomear a conversa que estava com o id:", erro),
+          );
+        }
+        chaveContato = chaveContato ?? resolvido ?? conversaExistente?.nome ?? remetenteId;
         fotoUrl = perfil?.fotoUrl ? await baixarFotoPerfil(perfil.fotoUrl) : null;
       }
 
