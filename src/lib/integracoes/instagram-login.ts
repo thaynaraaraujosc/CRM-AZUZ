@@ -166,14 +166,19 @@ export async function baixarFotoPerfil(url: string): Promise<string | null> {
  * Devolve o erro em texto em vez de lançar: a conexão em si já deu certo neste ponto, e derrubá-la
  * por causa da assinatura deixaria a pessoa sem nada. Quem chama guarda isso pra mostrar na tela.
  *
- * `messaging_reactions` entra junto de `messages`: sem esse campo, a curtida que a cliente dá numa
+ * `message_reactions` entra junto de `messages`: sem esse campo, a curtida que a cliente dá numa
  * mensagem simplesmente não chega — a Meta manda cada tipo de evento só pra quem assinou aquele
  * campo. Quem conectou antes disto precisa reconectar pra assinatura ser refeita.
+ *
+ * ATENÇÃO ao nome: é `message_reactions`, no singular em "message". Escrito como
+ * `messaging_reactions` (que é o padrão dos OUTROS campos: `messaging_seen`, `messaging_postbacks`)
+ * a Meta REJEITA A CHAMADA INTEIRA — não só aquele campo. O resultado é a conta ficar "Conectada"
+ * sem assinatura nenhuma, e NENHUMA mensagem chegar. Já aconteceu.
  */
 export async function inscreverAppNoInstagram(accessToken: string): Promise<string | null> {
   try {
     const resposta = await fetch(
-      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/subscribed_apps?subscribed_fields=messages,messaging_reactions`,
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/subscribed_apps?subscribed_fields=messages,message_reactions`,
       { method: "POST", headers: { authorization: `Bearer ${accessToken}` } },
     );
     const dados = (await resposta.json()) as { success?: boolean } & ErroGraph;
