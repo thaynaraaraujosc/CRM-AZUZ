@@ -411,7 +411,13 @@ export async function POST(request: Request) {
       // envia. Registrar quando ele falta é o que separa "o CRM não usou o link" de "o link nunca
       // veio"; sem isso, "clicar não abre a publicação" fica sem causa.
       if (anexo && !linkDoConteudo) {
-        console.log("[instagram] anexo sem permalink_url:", { tipoAnexo: anexo.type ?? null });
+        // Além de dizer que o link faltou, registra QUAIS campos vieram no anexo. É assim que se
+        // descobre se a Meta manda autor e legenda da publicação (pra montar o cartão completo) ou
+        // se manda só a imagem — sem isso, seria adivinhar o que existe do outro lado.
+        console.log("[instagram] anexo sem permalink_url:", {
+          tipoAnexo: anexo.type ?? null,
+          camposDoPayload: Object.keys(anexo.payload ?? {}),
+        });
       }
       // Link do post compartilhado vai no texto: a tela já transforma URL em link clicável, então
       // clicar leva pro conteúdo no Instagram sem precisar de um tipo de bolha novo. Nem toda
@@ -477,6 +483,7 @@ export async function POST(request: Request) {
         ...extras,
         ...(legenda ? { legenda } : {}),
         ...(linkExternoDaMensagem ? { linkExterno: linkExternoDaMensagem } : {}),
+        ...(ehConteudoDoInstagram ? { compartilhadoPor: chaveContato } : {}),
       };
 
       await prisma.mensagemExtra.create({

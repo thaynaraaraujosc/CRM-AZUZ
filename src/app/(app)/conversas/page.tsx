@@ -4241,6 +4241,9 @@ function ConversasPageInner() {
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
                   {reacaoNaMensagem(msg, chave)}
+                  {msg.compartilhadoPor ? (
+                    <span className="bubble-share-topo">{msg.compartilhadoPor}</span>
+                  ) : null}
                   {midiaLiberada("imagem", msg.id, msg.imagens?.[0]?.url) ? (
                     <div
                       className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}
