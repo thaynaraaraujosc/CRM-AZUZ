@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { assinaturaConfere } from "@/lib/integracoes/anexo-publico";
+import { assinaturaConfere, idSemExtensao } from "@/lib/integracoes/anexo-publico";
 
 /**
  * Entrega um anexo pra quem tem o link assinado — SEM exigir sessão.
@@ -13,7 +13,10 @@ import { assinaturaConfere } from "@/lib/integracoes/anexo-publico";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request, contexto: RouteContext<"/api/anexos/publico/[id]">) {
-  const { id } = await contexto.params;
+  const { id: parametro } = await contexto.params;
+  // O endereço carrega a extensão do arquivo (`<id>.jpg`) porque a Meta decide o formato do anexo
+  // por ela — mas quem foi assinado e guardado é o id puro.
+  const id = idSemExtensao(parametro);
   const assinatura = new URL(request.url).searchParams.get("a");
 
   // Assinatura conferida ANTES de tocar no banco: sem isso, a rota viraria um jeito de descobrir

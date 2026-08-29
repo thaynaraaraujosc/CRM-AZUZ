@@ -1,5 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
+
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -64,6 +65,10 @@ export async function publicarAnexoTemporario(params: {
   const conteudo = dataUrl.slice(separador + 1);
 
   const id = randomBytes(16).toString("hex");
+  // A extensão vai no ENDEREÇO, não só no content-type: a Meta decide o formato do anexo olhando a
+  // URL, e um link sem extensão era recusado com "This attachment format is not supported" mesmo
+  // servindo um JPEG correto. A assinatura continua sendo do id puro, sem a extensão.
+  const extensao = extensaoDe(mimeType, nome);
   await prisma.anexoPublico.create({
     data: {
       id,
@@ -75,7 +80,34 @@ export async function publicarAnexoTemporario(params: {
     },
   });
 
-  return { id, url: `${appUrl}/api/anexos/publico/${id}?a=${assinar(id)}` };
+  return { id, url: `${appUrl}/api/anexos/publico/${id}${extensao}?a=${assinar(id)}` };
+}
+
+/** Extensão pro endereço do anexo — do nome do arquivo quando ele tem uma, senão do tipo. */
+function extensaoDe(mimeType: string, nome: string): string {
+  const doNome = nome.includes(".") ? nome.split(".").pop() : null;
+  if (doNome && /^[a-z0-9]{1,5}$/i.test(doNome)) return `.${doNome.toLowerCase()}`;
+
+  const porTipo: Record<string, string> = {
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+    "video/mp4": ".mp4",
+    "video/quicktime": ".mov",
+    "audio/mpeg": ".mp3",
+    "audio/mp4": ".m4a",
+    "audio/ogg": ".ogg",
+    "application/pdf": ".pdf",
+  };
+  return porTipo[mimeType] ?? "";
+}
+
+/** Tira a extensão que o endereço carrega, devolvendo o id que foi assinado. */
+export function idSemExtensao(parametro: string): string {
+  const ponto = parametro.indexOf(".");
+  return ponto < 0 ? parametro : parametro.slice(0, ponto);
 }
 
 /** Remove os que já venceram. Chamado a cada publicação nova: sem isso a tabela viraria um depósito

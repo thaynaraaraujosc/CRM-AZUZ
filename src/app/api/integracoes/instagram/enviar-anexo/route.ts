@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
-import { enviarAnexoDirectInstagram, type TipoAnexoInstagram } from "@/lib/integracoes/instagram-login";
+import {
+  enviarAnexoDirectInstagram,
+  enviarDirectInstagram,
+  type TipoAnexoInstagram,
+} from "@/lib/integracoes/instagram-login";
 import { limparAnexosVencidos, publicarAnexoTemporario } from "@/lib/integracoes/anexo-publico";
 
 /**
@@ -22,6 +26,20 @@ import { limparAnexosVencidos, publicarAnexoTemporario } from "@/lib/integracoes
 const TAMANHO_MAX = 25 * 1024 * 1024;
 
 const TIPOS: TipoAnexoInstagram[] = ["image", "video", "audio", "file"];
+
+/**
+ * Validade do link quando o arquivo vai como LINK, não como anexo.
+ *
+ * O Direct só aceita imagem, vídeo e áudio — documento a Meta recusa com "This attachment format
+ * is not supported" (o próprio app do Instagram também não deixa mandar PDF numa conversa). A
+ * saída é mandar o endereço do arquivo no texto, que é o que qualquer pessoa faria na mão.
+ *
+ * Aí o prazo não pode ser de uma hora: quem recebe abre a proposta quando puder, não em segundos.
+ * 30 dias é o meio-termo entre a pessoa conseguir abrir depois e o link não ficar de pé pra
+ * sempre. O endereço continua assinado e com id aleatório — não é público no sentido de
+ * "descobrível", só no de "não pede login".
+ */
+const VALIDADE_LINK_MS = 30 * 24 * 60 * 60 * 1000;
 
 export async function POST(request: Request) {
   const sessao = await auth();
@@ -58,18 +76,23 @@ export async function POST(request: Request) {
 
   let publicado: { id: string; url: string } | null = null;
   try {
+    // Documento vai como link no texto; o resto vai como anexo de verdade.
+    const comoLink = tipo === "file";
+    const nomeArquivo = nome?.trim() || "arquivo";
+
     publicado = await publicarAnexoTemporario({
       workspaceId,
-      nome: nome?.trim() || "arquivo",
+      nome: nomeArquivo,
       dataUrl,
+      validadeMs: comoLink ? VALIDADE_LINK_MS : undefined,
     });
-    const messageId = await enviarAnexoDirectInstagram(
-      decriptar(integracao.accessTokenCriptografado),
-      destinatario.trim(),
-      tipo,
-      publicado.url,
-    );
-    return NextResponse.json({ ok: true, messageId });
+
+    const token = decriptar(integracao.accessTokenCriptografado);
+    const messageId = comoLink
+      ? await enviarDirectInstagram(token, destinatario.trim(), `📎 ${nomeArquivo}\n${publicado.url}`)
+      : await enviarAnexoDirectInstagram(token, destinatario.trim(), tipo, publicado.url);
+
+    return NextResponse.json({ ok: true, messageId, comoLink });
   } catch (erro) {
     // Falhou o envio: o link não tem mais razão de existir, então sai na hora em vez de esperar o
     // prazo — não faz sentido manter exposto um arquivo que não chegou a lugar nenhum.

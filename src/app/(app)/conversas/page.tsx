@@ -2233,8 +2233,19 @@ function ConversasPageInner() {
       body: JSON.stringify({ destinatario: aberta.contato, dataUrl, nome, tipo }),
     })
       .then(async (r) => {
-        if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+        const dados = (await r.json()) as { erro?: string; comoLink?: boolean };
+        if (!r.ok) throw new Error(dados.erro);
         atualizarMensagem(contatoNome, idBolha, { status: "entregue", erro: undefined });
+        // O Direct não aceita documento — ele vai como link no texto. Dizer isso evita a confusão
+        // de o vendedor achar que a pessoa recebeu o arquivo anexado, e deixa claro que existe um
+        // endereço em circulação com aquele conteúdo.
+        if (dados.comoLink) {
+          adicionarMensagem({
+            tipo: "system",
+            texto: `📎 ${oQue} foi enviado como link: o Instagram não aceita documento anexado na conversa. O link fica disponível por 30 dias.`,
+            hora: horaAgora(),
+          });
+        }
       })
       .catch((erro) => {
         const motivo = erro instanceof Error && erro.message ? erro.message : "motivo desconhecido";
