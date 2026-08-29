@@ -46,14 +46,35 @@ export async function POST(request: Request) {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
   const workspaceId = sessao.user.workspaceId;
 
-  const { destinatario, dataUrl, nome, tipo } = (await request.json()) as {
+  const corpo = (await request.json()) as {
     destinatario?: string;
+    /** Alternativa a `destinatario`: o nome da conversa, e o servidor resolve o resto. É o que as
+     * telas novas usam — quem chama não precisa saber o id interno da thread nem o canal. */
+    conversaNome?: string;
     dataUrl?: string;
     nome?: string;
     tipo?: TipoAnexoInstagram;
   };
-  if (!destinatario?.trim() || !dataUrl?.startsWith("data:") || !tipo || !TIPOS.includes(tipo)) {
-    return NextResponse.json({ erro: "destinatario, dataUrl e tipo são obrigatórios" }, { status: 400 });
+  const { dataUrl, nome, tipo } = corpo;
+  if (!dataUrl?.startsWith("data:") || !tipo || !TIPOS.includes(tipo)) {
+    return NextResponse.json({ erro: "dataUrl e tipo são obrigatórios" }, { status: 400 });
+  }
+
+  let destinatario = corpo.destinatario?.trim();
+  if (!destinatario && corpo.conversaNome) {
+    const conversa = await prisma.conversa.findUnique({
+      where: { workspaceId_nome: { workspaceId, nome: corpo.conversaNome } },
+    });
+    if (conversa?.canal !== "Instagram") {
+      return NextResponse.json(
+        { erro: "Por enquanto o CRM só envia anexo por conversas do Instagram." },
+        { status: 400 },
+      );
+    }
+    destinatario = conversa.contato ?? undefined;
+  }
+  if (!destinatario) {
+    return NextResponse.json({ erro: "Conversa sem destinatário" }, { status: 400 });
   }
 
   // Base64 infla ~33%: o tamanho real do arquivo é ~3/4 do que chegou aqui.
@@ -89,7 +110,7 @@ export async function POST(request: Request) {
 
     const token = decriptar(integracao.accessTokenCriptografado);
     const messageId = comoLink
-      ? await enviarDirectInstagram(token, destinatario.trim(), `📎 ${nomeArquivo}\n${publicado.url}`)
+      ? await enviarDirectInstagram(token, destinatario, `📎 ${nomeArquivo}\n${publicado.url}`)
       : await enviarAnexoDirectInstagram(token, destinatario.trim(), tipo, publicado.url);
 
     return NextResponse.json({ ok: true, messageId, comoLink });

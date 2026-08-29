@@ -12969,3 +12969,105 @@ button.camp-row:hover {
 .wa-respostas-modal.rodape-chat .bubble {
   max-width: 85%;
 }
+
+/* Painel de conversa aberto pelo Funil (`PainelConversa`).
+   Sobreposto e centralizado, ocupando cerca de metade da tela: é a janela onde o vendedor atende
+   sem sair do funil. Fecha inteiro — o arraste dos cards continua livre atrás dele. */
+.painel-conversa-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(11, 21, 51, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.painel-conversa {
+  display: flex;
+  flex-direction: column;
+  width: min(920px, 92vw);
+  height: min(76vh, 720px);
+  padding: 16px 18px 14px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.28);
+  animation: modal-scale-in var(--transition-base);
+}
+
+.painel-conversa-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.painel-conversa-acoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Mensagens e ficha do contato lado a lado — a ficha só existe quando a engrenagem está ligada,
+   então a conversa usa a largura inteira no uso normal. */
+.painel-conversa-corpo {
+  display: flex;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+
+.painel-conversa-mensagens {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 10px 2px;
+}
+
+.painel-conversa-dados {
+  width: 260px;
+  flex: 0 0 260px;
+  overflow-y: auto;
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.painel-conversa-rodape {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.painel-conversa-mais {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 0 10px;
+}
+
+.painel-conversa-respostas {
+  flex: 1 0 100%;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+/* Numa tela estreita a ficha do contato empilharia e espremeria as duas coisas — melhor virar
+   tela cheia e manter a conversa legível. */
+@media (max-width: 760px) {
+  .painel-conversa {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .painel-conversa-dados {
+    display: none;
+  }
+}
