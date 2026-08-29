@@ -59,6 +59,12 @@ export async function GET() {
  * cada funil/etapa/card presente, e apaga o que sumiu do array — **sempre filtrado por
  * `workspaceId`** nos `deleteMany`, senão apagaria funis/etapas/cards de outras empresas (qualquer
  * id que não seja dessa empresa "não está no payload dela").
+ *
+ * O `deleteMany` dos cards leva TAMBÉM o filtro por conexão, e isso não é detalhe: o GET esconde
+ * os negócios de um canal desconectado, então o front nunca os recebe — e "não veio no payload"
+ * passaria a significar "apague". Sem esta linha, desconectar um canal deixava de esconder os
+ * negócios dele e passava a APAGÁ-LOS no primeiro salvamento seguinte. Regra geral: um PUT que
+ * reconcilia estado inteiro só pode apagar dentro do mesmo recorte que o GET mostrou.
  */
 export async function PUT(request: Request) {
   const sessao = await auth();
@@ -67,13 +73,19 @@ export async function PUT(request: Request) {
 
   const funis = (await request.json()) as Funil[];
 
+  const provedores = await provedoresConectados(workspaceId);
+
   const idsFunis = funis.map((f) => f.id);
   const idsEtapas = funis.flatMap((f) => f.colunas.map((c) => c.id));
   const idsCards = funis.flatMap((f) => f.colunas.flatMap((c) => c.cards.map((card) => card.id)));
 
   await prisma.$transaction([
     prisma.negocioCard.deleteMany({
-      where: { workspaceId, id: { notIn: idsCards.length ? idsCards : ["__nenhum__"] } },
+      where: {
+        workspaceId,
+        ...filtroConexaoDeNegocio(provedores),
+        id: { notIn: idsCards.length ? idsCards : ["__nenhum__"] },
+      },
     }),
     prisma.funilEtapa.deleteMany({
       where: { workspaceId, id: { notIn: idsEtapas.length ? idsEtapas : ["__nenhum__"] } },
