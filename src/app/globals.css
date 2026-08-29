@@ -12915,3 +12915,39 @@ button.camp-row:hover {
     align-items: stretch;
   }
 }
+
+/* Telefone detectado no texto da mensagem — mesma ideia dos atalhos que o Instagram mostra quando
+   alguém manda um número: dá pra abrir a conversa no WhatsApp ou ligar sem copiar na mão. */
+.wa-telefone-detectado {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wa-telefone-acoes {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.wa-telefone-acao {
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.14);
+  color: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wa-telefone-acao:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+/* No balão recebido o fundo é escuro e o branco translúcido some — aqui o contorno é que dá o
+   contraste. */
+.bubble.in .wa-telefone-acao {
+  background: rgba(0, 0, 0, 0.18);
+}

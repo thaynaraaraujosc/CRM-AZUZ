@@ -199,25 +199,70 @@ function lerComoDataUrl(file: File | Blob): Promise<string> {
   });
 }
 
-const REGEX_URL = /(https?:\/\/[^\s]+)/g;
+// URL e telefone no mesmo passe: dois grupos de captura, um por tipo, pra `split` continuar
+// devolvendo os pedaços intercalados de forma previsível.
+//
+// O telefone cobre o jeito que as pessoas escrevem de verdade — com e sem +55, com DDD entre
+// parênteses, com hífen, com espaço. Exige 10 a 13 dígitos pra não transformar preço, CEP ou
+// número de pedido em link de ligação.
+const REGEX_LINKIFICAVEL = /(https?:\/\/[^\s]+)|((?:\+?55\s?)?(?:\(?\d{2}\)?[\s.-]?)?\d{4,5}[\s.-]?\d{4})/g;
 
-/** Detecta link (http/https) dentro do texto de uma mensagem e transforma em `<a>` clicável, que
- * abre numa aba nova — sem isso, um link mandado ou recebido na conversa era só texto plano, sem
- * como abrir de dentro do CRM. */
+/** Só dígitos, com o 55 do Brasil na frente — formato que `wa.me` exige. */
+function telefoneParaWhatsapp(bruto: string): string | null {
+  const digitos = bruto.replace(/\D/g, "");
+  if (digitos.length < 10 || digitos.length > 13) return null;
+  return digitos.startsWith("55") ? digitos : `55${digitos}`;
+}
+
+/**
+ * Transforma link e telefone do texto da mensagem em algo clicável.
+ *
+ * O link já era: sem isso, um endereço mandado na conversa ficava como texto plano.
+ *
+ * O telefone entrou depois, por paridade com o Instagram: lá, mandar um número faz aparecer os
+ * atalhos de "Mensagem no WhatsApp" e "Ligar" pra quem recebe. No CRM ficava um número solto, e
+ * quem atendia tinha que selecionar e copiar na mão pra ligar ou abrir a conversa.
+ */
 function renderizarTextoComLinks(texto: string): ReactNode[] {
-  // `String.split` com um grupo de captura intercala os pedaços não casados com os casados — índice
-  // ímpar é sempre a URL capturada, par é texto comum. Mais seguro que re-testar a regex global (que
-  // mantém `lastIndex` entre chamadas e dá resultado errado se reusada assim).
-  const partes = texto.split(REGEX_URL);
-  return partes.map((parte, i) =>
-    i % 2 === 1 ? (
-      <a key={i} href={parte} target="_blank" rel="noopener noreferrer" className="wa-link-mensagem">
-        {parte}
-      </a>
-    ) : (
-      <span key={i}>{parte}</span>
-    ),
-  );
+  // `String.split` com grupos de captura intercala os pedaços não casados com os casados — com dois
+  // grupos, cada trecho casado vira uma dupla (url, telefone) em que só um dos dois é preenchido.
+  // Mais seguro que re-testar a regex global (que mantém `lastIndex` entre chamadas e dá resultado
+  // errado se reusada assim).
+  const partes = texto.split(REGEX_LINKIFICAVEL);
+  return partes.map((parte, i) => {
+    if (parte === undefined || parte === "") return null;
+    const resto = i % 3;
+    if (resto === 1) {
+      return (
+        <a key={i} href={parte} target="_blank" rel="noopener noreferrer" className="wa-link-mensagem">
+          {parte}
+        </a>
+      );
+    }
+    if (resto === 2) {
+      const numero = telefoneParaWhatsapp(parte);
+      if (!numero) return <span key={i}>{parte}</span>;
+      return (
+        <span key={i} className="wa-telefone-detectado">
+          {parte}
+          <span className="wa-telefone-acoes">
+            <a
+              href={`https://wa.me/${numero}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="wa-telefone-acao"
+            >
+              WhatsApp
+            </a>
+            <a href={`tel:+${numero}`} className="wa-telefone-acao">
+              Ligar
+            </a>
+          </span>
+        </span>
+      );
+    }
+    return <span key={i}>{parte}</span>;
+  });
 }
 
 /** Ícone + rótulo + descrição de acessibilidade do estado real de uma mensagem enviada. */
