@@ -4245,21 +4245,39 @@ function ConversasPageInner() {
                     <div
                       className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}
                     >
-                      {msg.imagens.map((img, ix) => (
-                        <button
-                          type="button"
-                          key={`${msg.id}-img-${ix}`}
-                          className="bubble-imagem-btn"
-                          onClick={() =>
-                            abrirLightbox(
-                              msg.imagens!.map((im) => im.url),
-                              ix,
-                            )
-                          }
-                        >
-                          <img src={img.url} alt={img.nome} loading="lazy" />
-                        </button>
-                      ))}
+                      {msg.imagens.map((img, ix) =>
+                        // Post, reel ou story compartilhado: a miniatura é a porta pra publicação,
+                        // não uma foto pra ampliar. Abrir o visualizador aqui daria uma imagem
+                        // pequena e sem contexto, quando o que se quer é ver o conteúdo no
+                        // Instagram — inclusive o carrossel inteiro, que o Direct só entrega como
+                        // uma prévia.
+                        msg.linkExterno ? (
+                          <a
+                            key={`${msg.id}-img-${ix}`}
+                            className="bubble-imagem-btn"
+                            href={msg.linkExterno}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Abrir a publicação no Instagram"
+                          >
+                            <img src={img.url} alt={img.nome} loading="lazy" />
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            key={`${msg.id}-img-${ix}`}
+                            className="bubble-imagem-btn"
+                            onClick={() =>
+                              abrirLightbox(
+                                msg.imagens!.map((im) => im.url),
+                                ix,
+                              )
+                            }
+                          >
+                            <img src={img.url} alt={img.nome} loading="lazy" />
+                          </button>
+                        ),
+                      )}
                     </div>
                   ) : (
                     <button

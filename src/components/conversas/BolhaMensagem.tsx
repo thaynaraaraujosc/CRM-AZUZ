@@ -22,14 +22,22 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
   const legenda = msg.legenda ?? (msg.texto || undefined);
 
   if (msg.imagens?.length) {
+    // Conteúdo que vive no Instagram (post, reel, story): a miniatura é a porta pra publicação.
+    // Sem isso a prévia era decorativa — dava contexto e não levava a lugar nenhum.
+    const imagens = msg.imagens.map((img, i) => {
+      // eslint-disable-next-line @next/next/no-img-element
+      const figura = <img key={i} src={img.url} alt={img.nome ?? "imagem"} className="bubble-imagem" />;
+      return msg.linkExterno ? (
+        <a key={i} href={msg.linkExterno} target="_blank" rel="noopener noreferrer" title="Abrir no Instagram">
+          {figura}
+        </a>
+      ) : (
+        figura
+      );
+    });
     return (
       <div className={`bubble ${msg.tipo} bubble-midia`}>
-        <span className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}>
-          {msg.imagens.map((img, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={i} src={img.url} alt={img.nome ?? "imagem"} className="bubble-imagem" />
-          ))}
-        </span>
+        <span className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}>{imagens}</span>
         {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
         <span className="tm">{msg.hora}</span>
       </div>

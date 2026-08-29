@@ -427,7 +427,14 @@ export async function POST(request: Request) {
       const legenda = temMidiaBaixada
         ? [story ? "Respondeu ao seu story" : null, mensagem.text].filter(Boolean).join(" · ")
         : undefined;
-      const extrasComLegenda = legenda ? { ...extras, legenda } : extras;
+      // O link vai TAMBÉM nos extras, não só no texto: é ele que faz a miniatura virar um clique
+      // que abre a publicação no Instagram. Só no texto, a pessoa via a prévia e tinha que caçar o
+      // endereço embaixo pra chegar no conteúdo.
+      const extrasComLegenda = {
+        ...extras,
+        ...(legenda ? { legenda } : {}),
+        ...(linkDoConteudo ? { linkExterno: linkDoConteudo } : {}),
+      };
 
       await prisma.mensagemExtra.create({
         data: {
@@ -446,7 +453,7 @@ export async function POST(request: Request) {
           criadoEm,
           canal: CANAL_INSTAGRAM,
           contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
-          extras: temMidiaBaixada ? (extrasComLegenda as object) : undefined,
+          extras: Object.keys(extrasComLegenda).length ? (extrasComLegenda as object) : undefined,
         },
       });
 

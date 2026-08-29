@@ -1,5 +1,7 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -95,6 +97,7 @@ function LinhaReal({
  * funciona) — cada integração nova entra aqui trocando de lista, não com um botão fake.
  */
 export function IntegracoesSecao() {
+  const { data: sessao } = useSession();
   const whatsappMeta = useIntegracaoMeta("meta_whatsapp");
   const instagram = useIntegracaoMeta("meta_instagram");
   const metaAds = useIntegracaoMeta("meta_ads");
@@ -157,10 +160,12 @@ export function IntegracoesSecao() {
         </div>
       </div>
 
-      {/* Antes da lista de "Em breve": cadastrar webhook na Meta exige copiar URL e token exatos, e
-          errar qualquer um dos dois dá a mesma mensagem genérica lá. Aqui os valores vêm do
-          servidor que responde. */}
-      <DadosWebhook />
+      {/* Só pra quem administra a plataforma.
+          Cadastrar o webhook na Meta é feito UMA vez, no app da Meta, por quem é dono dele — não
+          por cada empresa que usa o CRM. O cliente conecta a conta dele por um clique de
+          autorização e nunca precisa ver URL nem token: expor isso na tela dele só assusta e
+          convida a mexer no que pode quebrar o recebimento de todo mundo. */}
+      {sessao?.user?.superAdmin ? <DadosWebhook /> : null}
 
       <div className="config-bloco">
         <p className="config-bloco-titulo">Em breve</p>

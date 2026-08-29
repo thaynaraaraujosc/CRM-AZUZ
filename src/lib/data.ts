@@ -542,6 +542,10 @@ export type ConvMensagem = {
   audio?: AnexoAudio;
   /** Legenda opcional que acompanha imagem/vídeo. */
   legenda?: string;
+  /** Endereço da publicação original, quando a mensagem é um conteúdo que vive fora do CRM (post,
+   * reel ou story compartilhado no Direct). Clicar na prévia leva pra lá — o arquivo continua no
+   * Instagram; o CRM guarda só a miniatura pra dar contexto na conversa. */
+  linkExterno?: string;
   /** Presente quando o usuário respondeu a uma mensagem específica — mostra a citação em cima do
    * texto. `mid` é o id da mensagem citada no canal de origem: é ele que faz a citação aparecer
    * também do lado da pessoa (hoje usado no Direct do Instagram, via `reply_to`). */
