@@ -21,6 +21,7 @@ import {
   type StatusMensagem,
 } from "@/lib/data";
 import { ehLinkDeMidia } from "@/lib/conversas/midia-mensagem";
+import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
@@ -3615,7 +3616,7 @@ function ConversasPageInner() {
                 >
                   <span className="cr1">
                     <span className="avatar">
-                      {c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : c.initials}
+                      {c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : iniciaisExibidas(c.nome, c.initials)}
                       <CanalBadge canal={c.canal as Canal} />
                     </span>
                     <span className="cname">
@@ -3629,7 +3630,7 @@ function ConversasPageInner() {
                           <IconEquipe width={11} height={11} />
                         </span>
                       ) : null}
-                      {c.nome}
+                      {nomeExibido(c.nome)}
                       {ehFavorita(c) ? (
                         <span className="wa-fav-star">
                           <IconStar width={11} height={11} fill="currentColor" />
@@ -3788,12 +3789,12 @@ function ConversasPageInner() {
               title={aberta.ehGrupo ? "Ver dados do grupo" : "Ver mídias e arquivos trocados nessa conversa"}
             >
               <div className="avatar">
-                {aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : aberta.initials}
+                {aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : iniciaisExibidas(aberta.nome, aberta.initials)}
               </div>
               <div>
                 <p className="n">
                   {aberta.ehGrupo ? <IconEquipe width={13} height={13} style={{ marginRight: 4, verticalAlign: -2 }} /> : null}
-                  {aberta.nome}
+                  {nomeExibido(aberta.nome)}
                 </p>
                 <p className="s">
                   {aberta.ehGrupo
@@ -6922,8 +6923,8 @@ function ConversasPageInner() {
           {abaInfo === "resumo" ? (
             <>
               <div className="wa-resumo-card">
-                <span className="avatar wa-resumo-avatar">{aberta.initials}</span>
-                <p className="wa-resumo-nome">{aberta.nome}</p>
+                <span className="avatar wa-resumo-avatar">{iniciaisExibidas(aberta.nome, aberta.initials)}</span>
+                <p className="wa-resumo-nome">{nomeExibido(aberta.nome)}</p>
                 {empresaContato ? <p className="wa-resumo-empresa">{empresaContato}</p> : null}
                 <div className="wa-resumo-grid">
                   <span className="wa-resumo-label">
@@ -6931,9 +6932,13 @@ function ConversasPageInner() {
                   </span>
                   <span className="wa-resumo-valor">
                     {aberta.canal === "Instagram"
-                      ? // Mesmo motivo do cabeçalho: o id interno não serve de contato. O @ está em
-                        // `nome`; sem ele resolvido ainda, "—" é mais honesto que um número solto.
-                        (aberta.nome.startsWith("@") ? aberta.nome : "—")
+                      ? // O @ mora em `nome`. Enquanto ele não foi resolvido, a lista mostra um
+                        // rótulo neutro (ver `nomeExibido`) — mas o id interno da thread continua
+                        // existindo, e é AQUI que ele aparece: escondido da vitrine, à mão pra quem
+                        // precisar dele num suporte.
+                        aberta.nome.startsWith("@")
+                        ? aberta.nome
+                        : `sem @ · id ${aberta.nome}`
                       : whatsappContato || aberta.contato}
                   </span>
                   <span className="wa-resumo-label">E-mail</span>

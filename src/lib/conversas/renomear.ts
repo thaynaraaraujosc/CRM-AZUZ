@@ -1,18 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
 /**
- * Uma conversa do Instagram cujo nome ainda é o id interno da thread — só dígitos, algo como
- * `3984605438508218`.
- *
- * Acontece quando a busca do @ falha na primeira mensagem (perfil sem permissão, API fora do ar):
- * o CRM cai no id pra não perder a mensagem, e a conversa nasce com um número no lugar do nome. Sem
- * uma segunda tentativa, esse número ficaria pra sempre — foi o que apareceu na caixa de entrada.
- */
-export function nomeAindaEhIdCru(nome: string | null | undefined): boolean {
-  return !!nome && /^\d{5,}$/.test(nome);
-}
-
-/**
  * Troca o nome de uma conversa e leva as mensagens junto.
  *
  * As mensagens são casadas com a conversa pelo NOME (`MensagemExtra.contato`), não por uma FK — então
