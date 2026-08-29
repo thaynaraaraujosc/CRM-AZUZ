@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 
 import { classeOrigem, type ConvMensagem, type NegocioCard } from "@/lib/data";
+import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
 import { HOJE_ISO } from "@/lib/agenda-context";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
@@ -86,22 +87,53 @@ function FunilPageInner() {
     setMensagemRapida("");
   }
 
-  function enviarRespostaRapida() {
+  /**
+   * Responde de verdade a partir do Funil.
+   *
+   * Antes daqui a mensagem só entrava no estado local — e nascia com `status: "lido"`, ou seja, o
+   * vendedor via "entregue e lida" numa mensagem que nunca saiu do CRM. Agora ela nasce pendente,
+   * vai pro canal da conversa pela rota única de envio (`/api/conversas/enviar`, que escolhe o
+   * canal pela própria conversa) e só vira enviada quando o canal aceita.
+   */
+  async function enviarRespostaRapida() {
     const texto = mensagemRapida.trim();
     if (!texto || !respostaRapidaContato) return;
+    const contato = respostaRapidaContato;
+    const id = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const nova: ConvMensagem = {
-      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id,
       tipo: "out",
       texto,
       hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
       criadoEm: Date.now(),
-      status: "lido",
+      status: "pendente",
     };
     setMensagensExtraPorContato((prev) => ({
       ...prev,
-      [respostaRapidaContato]: [...(prev[respostaRapidaContato] ?? []), nova],
+      [contato]: [...(prev[contato] ?? []), nova],
     }));
     setMensagemRapida("");
+
+    function marcar(patch: Partial<ConvMensagem>) {
+      setMensagensExtraPorContato((prev) => ({
+        ...prev,
+        [contato]: (prev[contato] ?? []).map((m) => (m.id === id ? { ...m, ...patch } : m)),
+      }));
+    }
+
+    try {
+      const resposta = await fetch("/api/conversas/enviar", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ conversaNome: contato, texto }),
+      });
+      if (!resposta.ok) {
+        throw new Error(((await resposta.json()) as { erro?: string }).erro ?? "Falha ao enviar.");
+      }
+      marcar({ status: "enviado" });
+    } catch (erro) {
+      marcar({ status: "erro", erro: erro instanceof Error ? erro.message : "Falha ao enviar." });
+    }
   }
 
   const conversaDoContatoRapido = respostaRapidaContato
@@ -1036,11 +1068,7 @@ function FunilPageInner() {
             {mensagensRespostaRapida.length === 0 ? (
               <p className="hint">Nenhuma mensagem ainda.</p>
             ) : (
-              mensagensRespostaRapida.map((msg, i) => (
-                <div className={`bubble ${msg.tipo}`} key={msg.id ?? i}>
-                  {msg.texto}
-                </div>
-              ))
+              mensagensRespostaRapida.map((msg, i) => <BolhaMensagem key={msg.id ?? i} msg={msg} />)
             )}
           </div>
           <div className="chat-input" style={{ padding: "10px 0 0" }}>
