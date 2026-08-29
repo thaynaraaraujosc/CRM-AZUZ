@@ -2164,6 +2164,24 @@ function ConversasPageInner() {
     }));
   }
 
+  /**
+   * Anexo que o CRM ainda não sabe ENTREGAR no canal da conversa.
+   *
+   * Imagem, vídeo e documento hoje só viram bolha na tela: não existe caminho de envio pra nenhum
+   * canal (o WhatsApp oficial exige upload de mídia em duas etapas, o Instagram exige um endereço
+   * público do arquivo, e a via QR Code nunca foi ligada nesses tipos). Enquanto isso não existe,
+   * a bolha não pode parecer entregue — foi assim que uma foto, um contato e um PDF "saíram" do
+   * CRM sem nunca chegar do outro lado. Registrar a falha dentro da conversa é o mínimo: quem está
+   * atendendo precisa saber na hora que aquele arquivo não foi, pra mandar por outro caminho.
+   */
+  function avisarAnexoNaoEnviado(oQue: string) {
+    adicionarMensagem({
+      tipo: "system",
+      texto: `⚠️ ${oQue} não foi enviado: o CRM ainda não envia esse tipo de anexo por ${aberta.canal}. Ele ficou registrado aqui na conversa, mas a pessoa não recebeu.`,
+      hora: horaAgora(),
+    });
+  }
+
   async function enviarImagensSelecionadas() {
     if (imagensSelecionadas.length === 0) return;
     setEnviandoImagens(true);
@@ -2178,6 +2196,7 @@ function ConversasPageInner() {
       })),
       legenda: legendaImagem.trim() || undefined,
     });
+    avisarAnexoNaoEnviado(imagensSelecionadas.length > 1 ? "As imagens" : "A imagem");
     setEnviandoImagens(false);
     fecharPreviewImagem();
   }
@@ -2294,6 +2313,7 @@ function ConversasPageInner() {
         },
         legenda: legendaVideo.trim() || undefined,
       });
+      avisarAnexoNaoEnviado("O vídeo");
       fecharPreviewVideo();
     } catch {
       setVideoErro("Não deu pra processar o vídeo. Tente enviar sem editar.");
@@ -2418,6 +2438,7 @@ function ConversasPageInner() {
         },
       });
     }
+    if (escolhidos.length) avisarAnexoNaoEnviado(escolhidos.length > 1 ? "Os documentos" : "O documento");
     setBibliotecaAberta(false);
     setDocumentosSelecionadosBiblioteca([]);
   }
@@ -2464,6 +2485,7 @@ function ConversasPageInner() {
       },
       legenda: legendaDocumento.trim() || undefined,
     });
+    avisarAnexoNaoEnviado("O documento");
     setEnviandoDocumento(false);
     setDocumentoComputador(null);
     setLegendaDocumento("");
@@ -2533,6 +2555,14 @@ function ConversasPageInner() {
           hora: horaAgora(),
           contatoCompartilhado: { ...contatoPayload, initials: c.initials },
         });
+
+        if (aberta.canal === "Instagram") {
+          // O cartão de contato é um vCard, formato do WhatsApp — o Direct não tem equivalente.
+          // Sem esta parada, o envio ia pra rota do WhatsApp levando o id do Instagram como se
+          // fosse telefone: falhava de um jeito confuso, em vez de dizer o que realmente acontece.
+          avisarAnexoNaoEnviado(`O contato (${c.nome})`);
+          continue;
+        }
 
         if (!destinatario) {
           adicionarMensagem({
