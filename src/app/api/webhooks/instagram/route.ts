@@ -247,6 +247,22 @@ export async function POST(request: Request) {
       // Facebook) — desligado não desconecta a conta, só para de trazer mensagem nova pra
       // Conversas. Padrão ligado (`?? true`) pra não mudar o comportamento de quem já tinha a
       // conta conectada antes desse toggle existir.
+      // Carimbo do último evento que a Meta entregou — é o que responde, dentro do CRM, a pergunta
+      // que hoje só se responde caçando log: "a Meta está mesmo chamando o CRM?". Sem ele, "não
+      // chega mensagem" é indistinguível de "chega e o CRM descarta", e as duas causas levam a
+      // caminhos opostos.
+      await prisma.integracao
+        .update({
+          where: { workspaceId_provedor: { workspaceId: integracaoDaConta.workspaceId, provedor: "meta_instagram" } },
+          data: {
+            metadados: {
+              ...((integracaoDaConta.metadados as Record<string, unknown> | null) ?? {}),
+              ultimoEventoEm: new Date().toISOString(),
+            } as object,
+          },
+        })
+        .catch(() => {});
+
       const receberMensagens = (integracaoDaConta.metadados as { receberMensagens?: boolean } | null)?.receberMensagens ?? true;
       if (!receberMensagens) continue;
 

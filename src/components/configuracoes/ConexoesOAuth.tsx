@@ -123,6 +123,8 @@ export function ConexaoInstagram() {
   const receberMensagens = (integracao?.metadados?.receberMensagens as boolean | undefined) ?? true;
   const entrarNoFunil = (integracao?.metadados?.entrarNoFunil as boolean | undefined) ?? true;
 
+  const ultimoEventoEm = integracao?.metadados?.ultimoEventoEm as string | undefined;
+
   const [reassinando, setReassinando] = useState(false);
   const [resultadoAssinatura, setResultadoAssinatura] = useState<string | null>(null);
 
@@ -165,6 +167,13 @@ export function ConexaoInstagram() {
           <p className="hint" style={{ margin: "4px 0 0" }}>
             {resultadoAssinatura ??
               "Use se as mensagens pararem de chegar no CRM mesmo com a conta conectada. Refaz só a assinatura dos eventos na Meta — não desconecta nada nem apaga conversa."}
+          </p>
+          {/* Responde dentro do CRM a pergunta que antes só se respondia caçando log do servidor:
+              a Meta está mesmo chamando o CRM? Se este carimbo não avança quando chega mensagem no
+              Instagram, o problema está na assinatura/webhook — não no que o CRM faz depois. */}
+          <p className="hint" style={{ margin: "6px 0 0" }}>
+            Último evento recebido da Meta:{" "}
+            <b>{ultimoEventoEm ? new Date(ultimoEventoEm).toLocaleString("pt-BR") : "nenhum ainda"}</b>
           </p>
         </div>
       ) : null}
