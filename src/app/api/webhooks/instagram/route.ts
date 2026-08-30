@@ -500,15 +500,28 @@ export async function POST(request: Request) {
         anexo?.payload?.caption ?? anexo?.payload?.title ?? anexo?.payload?.description ?? anexo?.payload?.text;
 
       const arrobaDeQuemMandou = chaveContato.startsWith("@") ? chaveContato.slice(1) : null;
+
+      // O link vale pra QUALQUER mídia recebida pelo Direct, não só pro que a Meta marca como
+      // conteúdo compartilhado.
+      //
+      // Descoberta ao ver uma publicação encaminhada chegar: a Meta entregou como anexo do tipo
+      // `image`, igual a uma foto qualquer — sem permalink, sem autor, sem legenda. Ou seja, do
+      // lado de cá é impossível distinguir "publicação que a pessoa encaminhou" de "foto que ela
+      // tirou", e apostar em `share` deixava justamente o caso real sem botão nenhum.
+      //
+      // Então: com permalink, o clique abre a publicação exata. Sem ele, abre a conversa no
+      // Instagram, onde o conteúdo está logo ali. O rótulo do botão muda junto, pra não prometer
+      // uma publicação que o CRM não sabe qual é.
       const linkExternoDaMensagem =
         linkDoConteudo ??
-        (ehConteudoDoInstagram && arrobaDeQuemMandou ? `https://ig.me/m/${arrobaDeQuemMandou}` : undefined);
+        (temMidiaBaixada && !ehEco && arrobaDeQuemMandou ? `https://ig.me/m/${arrobaDeQuemMandou}` : undefined);
 
       const extrasComLegenda = {
         ...extras,
         ...(legenda ? { legenda } : {}),
         ...(linkExternoDaMensagem ? { linkExterno: linkExternoDaMensagem } : {}),
-        ...(ehConteudoDoInstagram
+        ...(linkExternoDaMensagem && !linkDoConteudo ? { linkEhConversa: true } : {}),
+        ...(ehConteudoDoInstagram || autorPublicacao
           ? {
               compartilhadoPor: autorPublicacao ? `@${autorPublicacao.replace(/^@/, "")}` : chaveContato,
               ...(legendaPublicacao ? { legendaPublicacao } : {}),

@@ -548,6 +548,9 @@ export type ConvMensagem = {
   /** Legenda da publicação compartilhada (a do post, não a da mensagem) — mostrada abaixo da
    * prévia, cortada, como o Instagram faz. Só existe quando a Meta a envia. */
   legendaPublicacao?: string;
+  /** `true` quando `linkExterno` aponta pra CONVERSA no Instagram, não pra publicação — a Meta nem
+   * sempre manda o endereço do post. Serve pra o botão não prometer o que não vai cumprir. */
+  linkEhConversa?: boolean;
   /** Endereço da publicação original, quando a mensagem é um conteúdo que vive fora do CRM (post,
    * reel ou story compartilhado no Direct). Clicar na prévia leva pra lá — o arquivo continua no
    * Instagram; o CRM guarda só a miniatura pra dar contexto na conversa. */

@@ -50,7 +50,7 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
         {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
         {msg.linkExterno ? (
           <a className="bubble-acao-externa" href={msg.linkExterno} target="_blank" rel="noopener noreferrer">
-            Ver publicação no Instagram ↗
+            {msg.linkEhConversa ? "Ver no Instagram ↗" : "Ver publicação no Instagram ↗"}
           </a>
         ) : null}
         <span className="tm">{msg.hora}</span>
@@ -64,7 +64,7 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
       return (
         <div className={`bubble ${msg.tipo} bubble-midia`}>
           <a className="bubble-midia-externa" href={msg.linkExterno} target="_blank" rel="noopener noreferrer">
-            ▶ Ver publicação no Instagram
+            ▶ {msg.linkEhConversa ? "Ver no Instagram" : "Ver publicação no Instagram"}
           </a>
           {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
           <span className="tm">{msg.hora}</span>

@@ -4356,7 +4356,7 @@ function ConversasPageInner() {
                       rel="noopener noreferrer"
                     >
                       <IconVideoCam width={18} height={18} />
-                      Ver publicação no Instagram
+                      {msg.linkEhConversa ? "Ver no Instagram" : "Ver publicação no Instagram"}
                     </a>
                   ) : midiaLiberada("video", msg.id, msg.video?.url) ? (
                     <video
@@ -4392,7 +4392,7 @@ function ConversasPageInner() {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Ver publicação no Instagram ↗
+                      {msg.linkEhConversa ? "Ver no Instagram ↗" : "Ver publicação no Instagram ↗"}
                     </a>
                   ) : null}
                   <span className="tm">
