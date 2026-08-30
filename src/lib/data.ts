@@ -545,6 +545,9 @@ export type ConvMensagem = {
   /** @ de quem compartilhou o conteúdo, mostrado no topo do cartão de publicação — como o Instagram
    * faz. Só existe em conteúdo compartilhado (post, reel, story), não em mídia enviada direto. */
   compartilhadoPor?: string;
+  /** Legenda da publicação compartilhada (a do post, não a da mensagem) — mostrada abaixo da
+   * prévia, cortada, como o Instagram faz. Só existe quando a Meta a envia. */
+  legendaPublicacao?: string;
   /** Endereço da publicação original, quando a mensagem é um conteúdo que vive fora do CRM (post,
    * reel ou story compartilhado no Direct). Clicar na prévia leva pra lá — o arquivo continua no
    * Instagram; o CRM guarda só a miniatura pra dar contexto na conversa. */

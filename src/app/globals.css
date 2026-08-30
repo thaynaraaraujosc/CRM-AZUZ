@@ -13181,3 +13181,16 @@ button.camp-row:hover {
   font-weight: 700;
   opacity: 0.85;
 }
+
+/* Legenda da publicação compartilhada — cortada em três linhas, como o Instagram faz no cartão de
+   compartilhamento. A legenda inteira pode ter parágrafos e dominar a conversa. */
+.bubble-share-legenda {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: 0.85;
+}

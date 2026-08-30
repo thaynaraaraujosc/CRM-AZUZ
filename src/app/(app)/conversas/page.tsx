@@ -4349,6 +4349,9 @@ function ConversasPageInner() {
                       Baixar vídeo
                     </button>
                   )}
+                  {msg.legendaPublicacao ? (
+                    <p className="bubble-share-legenda">{msg.legendaPublicacao}</p>
+                  ) : null}
                   {msg.legenda ? (
                     <p className="bubble-legenda">{msg.legenda}</p>
                   ) : null}

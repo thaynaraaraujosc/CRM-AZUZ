@@ -44,6 +44,9 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
           <span className="bubble-share-topo">{msg.compartilhadoPor}</span>
         ) : null}
         <span className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}>{imagens}</span>
+        {msg.legendaPublicacao ? (
+          <span className="bubble-share-legenda">{msg.legendaPublicacao}</span>
+        ) : null}
         {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
         {msg.linkExterno ? (
           <a className="bubble-acao-externa" href={msg.linkExterno} target="_blank" rel="noopener noreferrer">

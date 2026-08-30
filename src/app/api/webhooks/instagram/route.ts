@@ -51,7 +51,20 @@ type AnexoInstagram = {
   type?: string;
   payload?: {
     url?: string;
+    /** Autor e legenda da publicação compartilhada.
+     *
+     * A Meta não documenta um conjunto fixo aqui e o que vem varia com o tipo do anexo, então o
+     * CRM lê TODOS os nomes plausíveis e usa o primeiro que aparecer. Enumerar é feio, mas a
+     * alternativa era escolher um nome no escuro e o cartão ficar sem autor pra sempre — sem erro
+     * nenhum, porque o campo simplesmente não existiria na resposta. */
     title?: string;
+    caption?: string;
+    description?: string;
+    text?: string;
+    username?: string;
+    author?: string;
+    owner?: { username?: string; name?: string };
+    from?: { username?: string; name?: string };
     /** Post/reel compartilhado: link pro conteúdo no Instagram. A Meta nem sempre manda — quando
      * não vem, sobra a prévia sem o clique. */
     permalink_url?: string;
@@ -474,6 +487,18 @@ export async function POST(request: Request) {
       // Nesse caso o clique leva pra CONVERSA no Instagram, pelo @ de quem mandou. Não é a
       // publicação exata, mas é um clique e a pessoa está diante do conteúdo — melhor do que abrir
       // um visualizador de zoom, que era o que acontecia e não leva a lugar nenhum.
+      // Autor e legenda da publicação, quando a Meta os manda. Sem eles o cartão mostra quem
+      // encaminhou, que é o que o CRM sempre sabe.
+      const autorPublicacao =
+        anexo?.payload?.owner?.username ??
+        anexo?.payload?.from?.username ??
+        anexo?.payload?.username ??
+        anexo?.payload?.author ??
+        anexo?.payload?.owner?.name ??
+        anexo?.payload?.from?.name;
+      const legendaPublicacao =
+        anexo?.payload?.caption ?? anexo?.payload?.title ?? anexo?.payload?.description ?? anexo?.payload?.text;
+
       const arrobaDeQuemMandou = chaveContato.startsWith("@") ? chaveContato.slice(1) : null;
       const linkExternoDaMensagem =
         linkDoConteudo ??
@@ -483,7 +508,12 @@ export async function POST(request: Request) {
         ...extras,
         ...(legenda ? { legenda } : {}),
         ...(linkExternoDaMensagem ? { linkExterno: linkExternoDaMensagem } : {}),
-        ...(ehConteudoDoInstagram ? { compartilhadoPor: chaveContato } : {}),
+        ...(ehConteudoDoInstagram
+          ? {
+              compartilhadoPor: autorPublicacao ? `@${autorPublicacao.replace(/^@/, "")}` : chaveContato,
+              ...(legendaPublicacao ? { legendaPublicacao } : {}),
+            }
+          : {}),
       };
 
       await prisma.mensagemExtra.create({
