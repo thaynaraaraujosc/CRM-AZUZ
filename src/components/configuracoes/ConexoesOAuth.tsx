@@ -125,6 +125,23 @@ export function ConexaoInstagram() {
 
   const ultimoEventoEm = integracao?.metadados?.ultimoEventoEm as string | undefined;
 
+  const [diagnosticando, setDiagnosticando] = useState(false);
+  const [diagnostico, setDiagnostico] = useState<string | null>(null);
+
+  async function rodarDiagnostico() {
+    setDiagnosticando(true);
+    setDiagnostico(null);
+    try {
+      const resposta = await fetch("/api/integracoes/instagram/diagnostico-perfil", { method: "POST" });
+      const dados = (await resposta.json()) as Record<string, unknown>;
+      setDiagnostico(JSON.stringify(dados, null, 2));
+    } catch (e) {
+      setDiagnostico(e instanceof Error ? e.message : "Falha ao testar.");
+    } finally {
+      setDiagnosticando(false);
+    }
+  }
+
   const [reassinando, setReassinando] = useState(false);
   const [resultadoAssinatura, setResultadoAssinatura] = useState<string | null>(null);
 
@@ -175,6 +192,23 @@ export function ConexaoInstagram() {
             Último evento recebido da Meta:{" "}
             <b>{ultimoEventoEm ? new Date(ultimoEventoEm).toLocaleString("pt-BR") : "nenhum ainda"}</b>
           </p>
+
+          {/* Pergunta à Meta o perfil de alguém que já escreveu e mostra o que ela respondeu.
+              "A foto não aparece" e "o @ não aparece" já custaram várias rodadas de tentativa: o
+              CRM pede, a Meta não manda, e nada na tela diz se faltou permissão, se o campo mudou
+              de nome ou se a pessoa não tem foto. */}
+          <button
+            type="button"
+            className="btn ghost"
+            style={{ marginTop: 8 }}
+            disabled={diagnosticando}
+            onClick={() => void rodarDiagnostico()}
+          >
+            {diagnosticando ? "Testando…" : "Testar foto e @ do perfil"}
+          </button>
+          {diagnostico ? (
+            <pre className="hint" style={{ margin: "6px 0 0", whiteSpace: "pre-wrap" }}>{diagnostico}</pre>
+          ) : null}
         </div>
       ) : null}
 

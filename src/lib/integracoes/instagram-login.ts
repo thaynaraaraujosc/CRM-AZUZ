@@ -11,7 +11,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * dois produtos separados dentro do mesmo App da Meta, cada um com seu painel de credenciais.
  */
 
-const INSTAGRAM_GRAPH_VERSION = "v21.0";
+export const INSTAGRAM_GRAPH_VERSION = "v21.0";
 
 function appId(): string {
   const valor = process.env.META_INSTAGRAM_APP_ID;
