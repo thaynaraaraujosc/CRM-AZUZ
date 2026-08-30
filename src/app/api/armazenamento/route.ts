@@ -41,9 +41,33 @@ export async function GET(request: Request) {
   return NextResponse.json(resposta, { headers: { "cache-control": "no-store" } });
 }
 
-async function testarR2(workspaceId: string): Promise<{ ok: boolean; detalhe: string }> {
+/**
+ * Estado de cada variável, SEM revelar o valor.
+ *
+ * Diz só se existe e quantos caracteres tem — o suficiente pra separar "não chegou no container"
+ * de "chegou com espaço/quebra de linha colada junto", que é invisível na tela do Railway e quebra
+ * a assinatura do mesmo jeito. Nenhum pedaço do segredo sai daqui.
+ */
+function conferirVariaveis(): Record<string, string> {
+  const nomes = ["R2_ENDPOINT", "R2_BUCKET", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"];
+  const estado: Record<string, string> = {};
+  for (const nome of nomes) {
+    const valor = process.env[nome];
+    if (valor === undefined) estado[nome] = "AUSENTE";
+    else if (valor.trim() === "") estado[nome] = "VAZIA";
+    else if (valor !== valor.trim()) estado[nome] = `${valor.trim().length} caracteres + espaço/quebra de linha sobrando`;
+    else estado[nome] = `ok, ${valor.length} caracteres`;
+  }
+  return estado;
+}
+
+async function testarR2(workspaceId: string): Promise<{ ok: boolean; detalhe: string; variaveis?: Record<string, string> }> {
   if (!r2Configurado()) {
-    return { ok: false, detalhe: "Faltam variáveis: R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID ou R2_SECRET_ACCESS_KEY." };
+    return {
+      ok: false,
+      detalhe: "O servidor não recebeu as quatro variáveis. Veja abaixo qual está faltando.",
+      variaveis: conferirVariaveis(),
+    };
   }
 
   const chave = chaveDeArquivo({ workspaceId, id: `teste-${Date.now()}`, extensao: "txt" });
