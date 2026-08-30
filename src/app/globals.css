@@ -13209,3 +13209,30 @@ button.camp-row:hover {
   text-transform: capitalize;
   opacity: 0.9;
 }
+
+/* Barra de espaço usado em Plano e cobrança. O aviso muda de cor a partir de 80% porque encher o
+   armazenamento sem perceber significa anexo do cliente deixando de ser salvo — precisa avisar
+   antes, não depois. */
+.armazenamento-barra {
+  height: 8px;
+  width: 100%;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  margin: 6px 0;
+}
+
+.armazenamento-barra-preenchida {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--azul, #2563eb);
+  transition: width 0.3s ease;
+}
+
+.armazenamento-barra-preenchida.cheia {
+  background: #e0a340;
+}
+
+.armazenamento-aviso {
+  color: #b26b00;
+}

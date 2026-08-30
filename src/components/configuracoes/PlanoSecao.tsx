@@ -25,6 +25,13 @@ type Cobranca = {
 
 type FormaPagamento = "CREDIT_CARD" | "PIX" | "BOLETO";
 
+type Armazenamento = {
+  configurado: boolean;
+  usadoBytes: number;
+  limiteBytes: number;
+  percentual: number;
+};
+
 const NOME_STATUS: Record<string, string> = {
   pendente: "Pagamento pendente",
   ativa: "Ativo",
@@ -45,6 +52,13 @@ function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+/** Tamanho em unidade legível — ninguém entende "3.221.225.472 bytes". */
+function formatarTamanho(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
 function formatarData(iso: string | null): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("pt-BR");
@@ -59,6 +73,7 @@ export function PlanoSecao() {
   const [carregando, setCarregando] = useState(true);
   const [assinatura, setAssinatura] = useState<Assinatura | null>(null);
   const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
+  const [armazenamento, setArmazenamento] = useState<Armazenamento | null>(null);
 
   const [planoEmEdicao, setPlanoEmEdicao] = useState<PlanoId | null>(null);
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>("CREDIT_CARD");
@@ -96,6 +111,13 @@ export function PlanoSecao() {
       })
       .catch((erro) => console.error("Falha ao carregar assinatura:", erro))
       .finally(() => setCarregando(false));
+
+    // Busca separada da assinatura de propósito: se o armazenamento falhar, o bloco some e o resto
+    // da tela de cobrança continua funcionando.
+    fetch("/api/armazenamento")
+      .then((r) => r.json())
+      .then(setArmazenamento)
+      .catch((erro) => console.error("Falha ao carregar armazenamento:", erro));
   }, []);
 
   async function assinarPlano(e: React.FormEvent) {
@@ -209,6 +231,28 @@ export function PlanoSecao() {
             <p className="r">Mensal</p>
           </div>
         </div>
+
+        {armazenamento?.configurado ? (
+          <div className="field" style={{ marginTop: 16 }}>
+            <label>Armazenamento de arquivos</label>
+            <div className="armazenamento-barra">
+              <div
+                className={`armazenamento-barra-preenchida${armazenamento.percentual >= 80 ? " cheia" : ""}`}
+                style={{ width: `${Math.max(armazenamento.percentual, 1)}%` }}
+              />
+            </div>
+            <p className="r">
+              {formatarTamanho(armazenamento.usadoBytes)} de {formatarTamanho(armazenamento.limiteBytes)} usados
+              {armazenamento.percentual >= 80 ? (
+                <span className="armazenamento-aviso">
+                  {" "}
+                  · Perto do limite. Ao encher, novos anexos param de ser salvos — as mensagens de texto continuam
+                  normalmente.
+                </span>
+              ) : null}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <div className="config-bloco">
