@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { espacoUsado } from "@/lib/armazenamento/midia";
 import { apagarDoR2, chaveDeArquivo, guardarNoR2, lerDoR2, r2Configurado } from "@/lib/armazenamento/r2";
 
@@ -20,6 +21,14 @@ export async function GET(request: Request) {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
   const usado = await espacoUsado(sessao.user.workspaceId);
+  // Quantas mensagens ainda carregam o arquivo embutido, do formato antigo. É o que decide se o
+  // botão de mover pra nuvem aparece — some sozinho quando chega a zero, então nenhum cliente vê
+  // um botão de manutenção que não tem mais o que fazer.
+  const pendentes = r2Configurado()
+    ? await prisma.mensagemExtra.count({
+        where: { workspaceId: sessao.user.workspaceId, extras: { string_contains: "data:" } },
+      })
+    : 0;
   const limite = Number(process.env.R2_LIMITE_BYTES ?? LIMITE_PADRAO_BYTES);
 
   const resposta: Record<string, unknown> = {
@@ -37,6 +46,7 @@ export async function GET(request: Request) {
     usadoBytes: usado,
     limiteBytes: limite,
     percentual: limite > 0 ? Math.min(100, Math.round((usado / limite) * 100)) : 0,
+    pendentesNoBanco: pendentes,
   };
 
   // `?teste=1` grava, lê e apaga um arquivo de verdade. É o único jeito honesto de saber se as

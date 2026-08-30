@@ -30,6 +30,7 @@ type Armazenamento = {
   usadoBytes: number;
   limiteBytes: number;
   percentual: number;
+  pendentesNoBanco: number;
 };
 
 const NOME_STATUS: Record<string, string> = {
@@ -74,6 +75,7 @@ export function PlanoSecao() {
   const [assinatura, setAssinatura] = useState<Assinatura | null>(null);
   const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
   const [armazenamento, setArmazenamento] = useState<Armazenamento | null>(null);
+  const [migrando, setMigrando] = useState(false);
 
   const [planoEmEdicao, setPlanoEmEdicao] = useState<PlanoId | null>(null);
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>("CREDIT_CARD");
@@ -119,6 +121,34 @@ export function PlanoSecao() {
       .then(setArmazenamento)
       .catch((erro) => console.error("Falha ao carregar armazenamento:", erro));
   }, []);
+
+  /**
+   * Move pros poucos os arquivos antigos pra nuvem, um lote por vez até acabar.
+   *
+   * O laço fica aqui e não no servidor porque cada lote é uma requisição curta: assim a barra anda
+   * na tela, dá pra fechar a página no meio sem estragar nada, e nenhuma chamada corre o risco de
+   * estourar o tempo limite carregando vídeo de vários MB.
+   */
+  async function moverArquivosParaNuvem() {
+    setMigrando(true);
+    try {
+      for (;;) {
+        const resposta = await fetch("/api/armazenamento/migrar", { method: "POST" });
+        if (!resposta.ok) break;
+        const dados = (await resposta.json()) as { migradas: number; restantes: number };
+        setArmazenamento((atual) => (atual ? { ...atual, pendentesNoBanco: dados.restantes } : atual));
+        // Nenhuma migrada e ainda restam: são arquivos que falham sempre (corrompidos, ou tipo que
+        // o R2 recusa). Insistir aqui viraria laço infinito — eles ficam no banco, funcionando.
+        if (dados.restantes === 0 || dados.migradas === 0) break;
+      }
+      const atualizado = await fetch("/api/armazenamento").then((r) => r.json());
+      setArmazenamento(atualizado);
+    } catch (erro) {
+      console.error("Falha ao mover arquivos pra nuvem:", erro);
+    } finally {
+      setMigrando(false);
+    }
+  }
 
   async function assinarPlano(e: React.FormEvent) {
     e.preventDefault();
@@ -251,6 +281,15 @@ export function PlanoSecao() {
                 </span>
               ) : null}
             </p>
+
+            {armazenamento.pendentesNoBanco > 0 ? (
+              <p className="r" style={{ marginTop: 8 }}>
+                {armazenamento.pendentesNoBanco} mensagens ainda guardam o arquivo no banco de dados.{" "}
+                <button type="button" className="btn-link" onClick={moverArquivosParaNuvem} disabled={migrando}>
+                  {migrando ? "Movendo…" : "Mover para a nuvem"}
+                </button>
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>

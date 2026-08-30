@@ -13236,3 +13236,20 @@ button.camp-row:hover {
 .armazenamento-aviso {
   color: #b26b00;
 }
+
+/* Ação em texto dentro de um parágrafo — usada no aviso de arquivos ainda guardados no banco. Não
+   é um botão de destaque de propósito: é manutenção pontual, não uma ação principal da tela. */
+.btn-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--azul, #2563eb);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.btn-link:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
