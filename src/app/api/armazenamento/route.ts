@@ -36,7 +36,9 @@ export async function GET(request: Request) {
     resposta.teste = await testarR2(sessao.user.workspaceId);
   }
 
-  return NextResponse.json(resposta);
+  // Sem cache: essa rota é usada pra conferir configuração e espaço usado, e uma resposta guardada
+  // pelo navegador faria parecer que nada mudou depois de mexer nas variáveis ou apagar arquivo.
+  return NextResponse.json(resposta, { headers: { "cache-control": "no-store" } });
 }
 
 async function testarR2(workspaceId: string): Promise<{ ok: boolean; detalhe: string }> {
