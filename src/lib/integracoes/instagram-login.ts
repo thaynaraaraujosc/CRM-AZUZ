@@ -392,3 +392,38 @@ export async function buscarPerfilNasConversas(
     return null;
   }
 }
+
+/**
+ * Endereço da CAPA de uma mídia do Instagram, a partir do id dela.
+ *
+ * Resolve a miniatura de story em vídeo sem processar vídeo nenhum: a Meta já gera a capa e a
+ * entrega em `thumbnail_url`. A alternativa era baixar o vídeo inteiro no servidor e extrair o
+ * primeiro quadro — pesado, e num container pequeno é o tipo de coisa que derruba o processo sem
+ * deixar erro no log.
+ *
+ * Só faz sentido pra vídeo: em foto a Meta não devolve `thumbnail_url`, e `media_url` já é a
+ * imagem. Devolve `null` em qualquer falha — a mensagem continua chegando, só sem prévia.
+ */
+export async function buscarCapaDaMidia(accessToken: string, midiaId: string): Promise<string | null> {
+  try {
+    const resposta = await fetch(
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${midiaId}?fields=thumbnail_url,media_url,media_type&access_token=${accessToken}`,
+    );
+    const dados = (await resposta.json()) as {
+      thumbnail_url?: string;
+      media_url?: string;
+      media_type?: string;
+    } & ErroGraph;
+    if (!resposta.ok) {
+      console.error("[instagram] Falha ao buscar a capa da mídia:", dados.error?.message ?? resposta.status);
+      return null;
+    }
+    // `media_url` só entra quando NÃO é vídeo: em vídeo ela é o arquivo, e guardar isso como
+    // "miniatura" traria de volta o problema que a capa veio resolver.
+    if (dados.thumbnail_url) return dados.thumbnail_url;
+    return dados.media_type === "VIDEO" ? null : (dados.media_url ?? null);
+  } catch (erro) {
+    console.error("[instagram] Falha ao buscar a capa da mídia:", erro);
+    return null;
+  }
+}

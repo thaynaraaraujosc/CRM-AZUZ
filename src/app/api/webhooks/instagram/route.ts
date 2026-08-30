@@ -11,7 +11,12 @@ import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disp
 import type { ConvMensagem } from "@/lib/data";
 import { CANAL_INSTAGRAM, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { decriptar } from "@/lib/integracoes/crypto";
-import { baixarFotoPerfil, buscarPerfilDeQuemMandou, buscarPerfilNasConversas } from "@/lib/integracoes/instagram-login";
+import {
+  baixarFotoPerfil,
+  buscarCapaDaMidia,
+  buscarPerfilDeQuemMandou,
+  buscarPerfilNasConversas,
+} from "@/lib/integracoes/instagram-login";
 
 /**
  * GET — handshake de verificação que a Meta faz uma vez, ao cadastrar a URL do webhook no painel
@@ -68,6 +73,8 @@ type AnexoInstagram = {
     /** Post/reel compartilhado: link pro conteúdo no Instagram. A Meta nem sempre manda — quando
      * não vem, sobra a prévia sem o clique. */
     permalink_url?: string;
+    /** Id da mídia — é por ele que se pede a capa de um story em vídeo (ver `buscarCapaDaMidia`). */
+    id?: string;
   };
 };
 
@@ -415,9 +422,24 @@ export async function POST(request: Request) {
       //
       // O que NÃO é guardado continua não sendo: vídeo e áudio de origem do Instagram. Assistir é
       // lá, que é onde o conteúdo mora.
-      const extras = anexoEfetivo
+      let extras = anexoEfetivo
         ? await extrasDeAnexoInstagram(anexoEfetivo, tokenDaConta, ehConteudoDoInstagram)
         : {};
+
+      // Story em VÍDEO não tem miniatura no endereço que o webhook entrega: aquele link é o vídeo
+      // em si, e a política aqui é não guardar vídeo do Instagram — então a bolha chegava só com o
+      // texto ("Respondeu ao seu story", "Você foi marcado em um story") e sem prévia nenhuma, que
+      // é justamente quando a prévia mais importa: saber A QUAL story a pessoa reagiu.
+      //
+      // A capa é pedida à Meta pelo id da mídia (`thumbnail_url`), que ela já gera. Assim a
+      // miniatura existe sem o servidor abrir vídeo nenhum.
+      const idDaMidiaDoStory = story?.id ?? (anexo?.type === "story_mention" ? anexo.payload?.id : undefined);
+      if (!Object.keys(extras).length && idDaMidiaDoStory && tokenDaConta) {
+        const capa = await buscarCapaDaMidia(tokenDaConta, idDaMidiaDoStory);
+        if (capa) {
+          extras = await extrasDeAnexoInstagram({ type: "image", payload: { url: capa } }, tokenDaConta, true);
+        }
+      }
 
       // Só link de post DE VERDADE (permalink) entra no texto. A URL do CDN não vira link: ela é o
       // arquivo, expira, e despejada na bolha só polui a conversa com um endereço gigante.
