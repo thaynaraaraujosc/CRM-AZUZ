@@ -9,6 +9,7 @@ import {
   type TipoAnexoInstagram,
 } from "@/lib/integracoes/instagram-login";
 import { limparAnexosVencidos, publicarAnexoTemporario } from "@/lib/integracoes/anexo-publico";
+import { apagarArquivo } from "@/lib/armazenamento/midia";
 
 /**
  * Envia um anexo (documento, imagem, vídeo, áudio) pelo Direct do Instagram.
@@ -40,6 +41,41 @@ const TIPOS: TipoAnexoInstagram[] = ["image", "video", "audio", "file"];
  * "descobrível", só no de "não pede login".
  */
 const VALIDADE_LINK_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * O que o Direct do Instagram realmente aceita como anexo.
+ *
+ * A Meta responde "This attachment format is not supported" pra tudo que está fora desta lista —
+ * uma frase igual pra formato errado, arquivo ilegível e link inalcançável, o que torna
+ * impossível saber o que houve só pelo erro dela. Barrar aqui troca esse beco sem saída por uma
+ * frase que diz o que fazer.
+ *
+ * WEBP e HEIC ficam de fora de propósito, e são justamente os que mais aparecem: HEIC é o padrão
+ * de foto do iPhone e WEBP é o que o navegador salva ao baixar imagem de site. Os dois abrem
+ * normalmente no Mac, então parecem arquivos comuns — e a Meta recusa os dois.
+ */
+const FORMATOS_ACEITOS: Record<Exclude<TipoAnexoInstagram, "file">, string[]> = {
+  image: ["image/jpeg", "image/jpg", "image/png", "image/gif"],
+  video: ["video/mp4", "video/quicktime", "video/webm", "video/x-msvideo", "video/ogg"],
+  audio: ["audio/aac", "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/mpeg", "audio/wav", "audio/ogg"],
+};
+
+const NOME_AMIGAVEL: Record<string, string> = {
+  "image/webp": "WEBP",
+  "image/heic": "HEIC (formato de foto do iPhone)",
+  "image/heif": "HEIC (formato de foto do iPhone)",
+  "image/avif": "AVIF",
+  "image/svg+xml": "SVG",
+  "image/bmp": "BMP",
+  "image/tiff": "TIFF",
+};
+
+/** Tipo declarado dentro da própria data URL (`data:image/webp;base64,...`). */
+function tipoDoArquivo(dataUrl: string): string {
+  const separador = dataUrl.indexOf(",");
+  if (separador < 0) return "desconhecido";
+  return dataUrl.slice(5, separador).split(";")[0] || "desconhecido";
+}
 
 export async function POST(request: Request) {
   const sessao = await auth();
@@ -86,6 +122,28 @@ export async function POST(request: Request) {
     );
   }
 
+  // Recusa ANTES de publicar o arquivo e chamar a Meta: sem isto, o formato errado só aparecia
+  // como a mensagem genérica dela, depois de o arquivo já ter sido exposto num link público.
+  const mimeType = tipoDoArquivo(dataUrl);
+  if (tipo !== "file") {
+    const aceitos = FORMATOS_ACEITOS[tipo];
+    if (!aceitos.includes(mimeType.toLowerCase())) {
+      const apelido = NOME_AMIGAVEL[mimeType.toLowerCase()] ?? mimeType;
+      return NextResponse.json(
+        {
+          erro:
+            `O Instagram não aceita arquivos em ${apelido}. ` +
+            (tipo === "image"
+              ? "Converta a imagem para JPG ou PNG e mande de novo."
+              : tipo === "video"
+                ? "Converta o vídeo para MP4 e mande de novo."
+                : "Converta o áudio para MP3 ou M4A e mande de novo."),
+        },
+        { status: 400 },
+      );
+    }
+  }
+
   const integracao = await prisma.integracao.findUnique({
     where: { workspaceId_provedor: { workspaceId, provedor: "meta_instagram" } },
   });
@@ -118,9 +176,17 @@ export async function POST(request: Request) {
     // Falhou o envio: o link não tem mais razão de existir, então sai na hora em vez de esperar o
     // prazo — não faz sentido manter exposto um arquivo que não chegou a lugar nenhum.
     if (publicado) {
+      // Apaga o registro E o arquivo no R2. Só apagar a linha deixaria o objeto órfão no bucket,
+      // ocupando espaço pago pra sempre sem nada no banco sabendo que ele existe.
+      const registro = await prisma.anexoPublico
+        .findUnique({ where: { id: publicado.id }, select: { conteudo: true } })
+        .catch(() => null);
+      if (registro) await apagarArquivo(registro.conteudo).catch(() => {});
       await prisma.anexoPublico.delete({ where: { id: publicado.id } }).catch(() => {});
     }
+    // O tipo do arquivo vai junto do erro da Meta: a frase dela é a mesma pra formato recusado,
+    // arquivo ilegível e link inalcançável, e sem saber o que foi enviado não dá pra separar.
     const texto = erro instanceof Error ? erro.message : "Falha ao enviar o anexo.";
-    return NextResponse.json({ erro: texto }, { status: 502 });
+    return NextResponse.json({ erro: `${texto} (arquivo enviado como ${mimeType})` }, { status: 502 });
   }
 }
