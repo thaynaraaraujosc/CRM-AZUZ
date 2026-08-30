@@ -23,6 +23,16 @@ export async function GET(request: Request) {
   const limite = Number(process.env.R2_LIMITE_BYTES ?? LIMITE_PADRAO_BYTES);
 
   const resposta: Record<string, unknown> = {
+    // Quem está respondendo. O Railway injeta isso sozinho em todo container que ele roda, então é
+    // a única fonte confiável sobre QUAL serviço atende o domínio — mais confiável do que ler o
+    // painel, onde dois projetos com o mesmo nome de serviço são fáceis de confundir. Nada aqui é
+    // segredo: são nomes de projeto e o commit que está no ar.
+    ondeEstouRodando: {
+      projeto: process.env.RAILWAY_PROJECT_NAME ?? "(fora do Railway)",
+      servico: process.env.RAILWAY_SERVICE_NAME ?? "—",
+      ambiente: process.env.RAILWAY_ENVIRONMENT_NAME ?? "—",
+      commit: (process.env.RAILWAY_GIT_COMMIT_SHA ?? "—").slice(0, 7),
+    },
     configurado: r2Configurado(),
     usadoBytes: usado,
     limiteBytes: limite,
