@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { assinaturaConfere, idSemExtensao } from "@/lib/integracoes/anexo-publico";
+import { lerArquivo } from "@/lib/armazenamento/midia";
 
 /**
  * Entrega um anexo pra quem tem o link assinado — SEM exigir sessão.
@@ -30,7 +31,13 @@ export async function GET(request: Request, contexto: RouteContext<"/api/anexos/
     return NextResponse.json({ erro: "Não encontrado" }, { status: 404 });
   }
 
-  const bytes = Buffer.from(anexo.conteudo, "base64");
+  // `conteudo` é a referência ao arquivo no R2 ou o base64 do formato antigo.
+  const arquivo = anexo.conteudo.startsWith("r2:")
+    ? await lerArquivo(anexo.conteudo)
+    : { conteudo: Buffer.from(anexo.conteudo, "base64"), mimeType: anexo.mimeType };
+  if (!arquivo) return NextResponse.json({ erro: "Não encontrado" }, { status: 404 });
+
+  const bytes = arquivo.conteudo;
   return new NextResponse(new Uint8Array(bytes), {
     headers: {
       "content-type": anexo.mimeType,

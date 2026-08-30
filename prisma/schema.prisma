@@ -31,19 +31,19 @@ model Contato {
   ultima      String
   valor       String
 
-  email         String?
-  whatsapp      String?
-  nascimento    String?
-  endereco      String?
-  sobrenome     String?
-  empresa       String?
-  cargo         String?
-  telefoneFixo  String?
-  cidade        String?
-  estado        String?
-  pais          String?
+  email          String?
+  whatsapp       String?
+  nascimento     String?
+  endereco       String?
+  sobrenome      String?
+  empresa        String?
+  cargo          String?
+  telefoneFixo   String?
+  cidade         String?
+  estado         String?
+  pais           String?
   canalPreferido String?
-  melhorHorario String?
+  melhorHorario  String?
 
   // @ do Instagram (sem arroba) — preenchido sozinho quando a pessoa chega pelo Direct e o CRM
   // resolve o username na primeira mensagem. É o equivalente do `whatsapp` pro outro canal: sem
@@ -80,14 +80,14 @@ model Conversa {
   contatoId        String?
   contatoVinculado Contato? @relation(fields: [contatoId], references: [id])
 
-  nome     String
-  initials String
-  canal    String // "WhatsApp" | "Instagram" | "TikTok"
-  contato  String? // telefone/@handle de exibição
-  origem   String  @default("Direto")
-  status   String  @default("Não respondido")
-  naoLidas Int     @default(0)
-  favorita Boolean @default(false)
+  nome      String
+  initials  String
+  canal     String // "WhatsApp" | "Instagram" | "TikTok"
+  contato   String? // telefone/@handle de exibição
+  origem    String  @default("Direto")
+  status    String  @default("Não respondido")
+  naoLidas  Int     @default(0)
+  favorita  Boolean @default(false)
   // Antes só existia como `Set` local no navegador (`useState`) — sumia a cada F5/login novo,
   // então uma conversa "arquivada" voltava a aparecer em "Tudo" sozinha, e a aba "Arquivadas" (que
   // só nasce quando tem pelo menos uma) sumia junto. Vira coluna real pelo mesmo motivo de
@@ -101,20 +101,20 @@ model Conversa {
   // mesmo grupo virava uma "conversa" separada em vez de tudo cair na thread do grupo. `nome` (a
   // coluna acima) já guarda o nome do grupo nesse caso; `contato` guarda o JID do grupo
   // (`<id>@g.us`) — é essa dupla que identifica a thread, igual telefone identifica uma pessoa.
-  ehGrupo             Boolean @default(false)
+  ehGrupo            Boolean   @default(false)
   // Lista de participantes ({ nome, telefone }) — buscada na Evolution API quando o grupo é visto
   // pela primeira vez (ver `buscarInfoGrupo`), null até a primeira busca ter sucesso.
-  participantesGrupo  Json?
+  participantesGrupo Json?
   // Foto de perfil real (do WhatsApp) — grupo ou contato individual, buscada na Evolution API
   // (`buscarFotoPerfil`) quando a conversa é vista pela primeira vez. Null até a busca ter sucesso
   // (WhatsApp sem foto definida, ou busca falhou) — nesse caso a tela cai pras iniciais como antes.
-  fotoUrl             String?
+  fotoUrl            String?
   // Descrição do grupo (texto livre configurado no WhatsApp) e data real de criação DO GRUPO no
   // WhatsApp — não confundir com `criadoEm` abaixo, que é quando essa linha nasceu NESTE banco.
   // Ambos exibidos no painel "Dados do grupo" (clicar no cabeçalho da conversa), separado do painel
   // de participantes (que é outro clique, dentro desse).
-  descricaoGrupo      String?  @db.Text
-  criacaoGrupo        DateTime?
+  descricaoGrupo     String?   @db.Text
+  criacaoGrupo       DateTime?
 
   // Conexão dona desta conversa: `<provedor>:<identificador do número>` (ex.:
   // `whatsapp_baileys:5562963404 38`, `meta_whatsapp:143588938831846`). Existe porque uma conversa
@@ -164,7 +164,7 @@ model Compromisso {
 // remove os cards dela junto (mesmo comportamento que o Provider já tinha antes: `excluirEtapa`
 // simplesmente descartava a coluna com o que tivesse dentro).
 model TarefaEtapa {
-  id     String @id
+  id String @id
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
@@ -221,29 +221,30 @@ model Workspace {
   // Fase 2 — back-relations exigidas pelo Prisma pra cada modelo de negócio que ganhou
   // workspaceId. Nenhuma é consultada a partir do Workspace no código (sempre se busca o modelo
   // filho direto, filtrado por workspaceId) — só formalizam a relação nos dois lados do schema.
-  contatos               Contato[]
-  compromissos           Compromisso[]
-  tarefaEtapas           TarefaEtapa[]
-  tarefaCards            TarefaCard[]
-  funis                  Funil[]
-  funilEtapas            FunilEtapa[]
-  negocioCards           NegocioCard[]
-  preferencias           Preferencia[]
-  mensagensExtra         MensagemExtra[]
-  conversas              Conversa[]
-  documentosBiblioteca   DocumentoBiblioteca[]
-  formularios            Formulario[]
-  respostasFormulario    RespostaFormulario[]
-  fluxosAutomacao        FluxoAutomacao[]
-  documentos             Documento[]
-  modelosPersonalizados  ModeloPersonalizado[]
-  integracoes            Integracao[]
-  assinatura             Assinatura?
-  acoesEnvio             AcaoEnvio[]
-  motivosPerda           MotivoPerda[]
-  relatoriosGerados      RelatorioGerado[]
-  whatsappTemplates      WhatsappTemplate[]
-  anexosPublicos AnexoPublico[]
+  contatos              Contato[]
+  compromissos          Compromisso[]
+  tarefaEtapas          TarefaEtapa[]
+  tarefaCards           TarefaCard[]
+  funis                 Funil[]
+  funilEtapas           FunilEtapa[]
+  negocioCards          NegocioCard[]
+  preferencias          Preferencia[]
+  mensagensExtra        MensagemExtra[]
+  conversas             Conversa[]
+  documentosBiblioteca  DocumentoBiblioteca[]
+  formularios           Formulario[]
+  respostasFormulario   RespostaFormulario[]
+  fluxosAutomacao       FluxoAutomacao[]
+  documentos            Documento[]
+  modelosPersonalizados ModeloPersonalizado[]
+  integracoes           Integracao[]
+  assinatura            Assinatura?
+  acoesEnvio            AcaoEnvio[]
+  motivosPerda          MotivoPerda[]
+  relatoriosGerados     RelatorioGerado[]
+  whatsappTemplates     WhatsappTemplate[]
+  anexosPublicos        AnexoPublico[]
+  arquivosArmazenados   ArquivoArmazenado[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -304,14 +305,14 @@ model TokenRedefinicaoSenha {
 // marcado é conferido no callback `jwt` do NextAuth a cada request — sessão revogada para de
 // autenticar, então "Encerrar sessão" derruba o acesso de verdade, não só remove da lista.
 model SessaoAtiva {
-  id          String    @id
-  membroId    String
-  membro      Membro    @relation(fields: [membroId], references: [id])
-  jti         String    @unique
-  userAgent   String?
-  ip          String?
-  criadoEm    DateTime  @default(now())
-  revogadaEm  DateTime?
+  id         String    @id
+  membroId   String
+  membro     Membro    @relation(fields: [membroId], references: [id])
+  jti        String    @unique
+  userAgent  String?
+  ip         String?
+  criadoEm   DateTime  @default(now())
+  revogadaEm DateTime?
 
   @@index([membroId])
 }
@@ -326,7 +327,7 @@ model SessaoAtiva {
 // mudança (`PUT /api/funis`, que reconcilia tudo numa transação) — mesmo espírito do `useEffect` que
 // gravava tudo no localStorage antes, só que gravando de verdade.
 model Funil {
-  id          String @id
+  id String @id
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
@@ -346,9 +347,9 @@ model FunilEtapa {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  titulo  String
-  ordem   Int
-  cards   NegocioCard[]
+  titulo String
+  ordem  Int
+  cards  NegocioCard[]
 }
 
 model NegocioCard {
@@ -381,7 +382,7 @@ model NegocioCard {
   //
   // Null = card criado à mão, ou anterior a esta coluna. Esses aparecem sempre: não pertencem a
   // conexão nenhuma, e sumir com eles seria esconder trabalho que a pessoa fez dentro do CRM.
-  contaCanal String?
+  contaCanal       String?
 }
 
 // Motivos de perda configuráveis por workspace — usados no seletor ao marcar um NegocioCard como
@@ -389,11 +390,11 @@ model NegocioCard {
 // workspace novo ganha um seed padrão na primeira vez que a tela é acessada (não em prisma/seed.ts,
 // que só semeia o workspace de demonstração).
 model MotivoPerda {
-  id          String   @id
+  id          String    @id
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
   nome        String
-  criadoEm    DateTime @default(now())
+  criadoEm    DateTime  @default(now())
 
   @@unique([workspaceId, nome])
 }
@@ -418,22 +419,22 @@ model Preferencia {
 // (imagem/vídeo/documento/áudio/localização/contato compartilhado/citação) ficam em `extras` — mesmo
 // espírito de `etiquetas`/`permissoes` Json já usado no resto do schema.
 model MensagemExtra {
-  id       String    @id
+  id String @id
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  contato  String
-  tipo     String
-  texto    String    @db.Text
-  hora     String
-  criadoEm DateTime?
-  status   String?
-  extras   Json?
+  contato    String
+  tipo       String
+  texto      String    @db.Text
+  hora       String
+  criadoEm   DateTime?
+  status     String?
+  extras     Json?
   // Canal de origem/destino da mensagem — nulo = comportamento antigo (implicitamente Meta
   // oficial); "whatsapp_baileys" marca mensagens da conexão não oficial via QR Code, pra saber
   // por qual integração uma resposta deve sair quando o workspace tem as duas conectadas.
-  canal    String?
+  canal      String?
   // Conexão dona desta mensagem — mesmo formato e mesmo motivo de `Conversa.contaCanal`. `canal`
   // acima diz só o tipo de conexão; este diz QUAL número, que é o que separa duas contas do mesmo
   // canal (a pessoa troca de número e a caixa de entrada precisa zerar).
@@ -446,7 +447,7 @@ model MensagemExtra {
 
 // Biblioteca de mídia reutilizável pelos blocos de automação (enviar documento/imagem/vídeo/áudio).
 model DocumentoBiblioteca {
-  id           String  @id
+  id String @id
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
@@ -470,21 +471,21 @@ model DocumentoBiblioteca {
 // porque os mutadores de src/lib/formularios-context.tsx sempre recalculam o array inteiro e
 // substituem (nunca endereçam página/pergunta por id numa API própria).
 model Formulario {
-  id          String   @id
+  id String @id
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  nome        String
-  descricao   String?
-  status      String
-  paginas     Json
-  paginaFinal Json
-  tema        Json
-  senha       String?
-  integracoes Json?
-  versoes     Json
-  criadoEm    DateTime @default(now())
+  nome         String
+  descricao    String?
+  status       String
+  paginas      Json
+  paginaFinal  Json
+  tema         Json
+  senha        String?
+  integracoes  Json?
+  versoes      Json
+  criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 }
 
@@ -493,7 +494,7 @@ model Formulario {
 // responde é um lead público, sem login) — é copiado do Formulario pai no momento da criação, em
 // POST /api/formularios/[id]/respostas.
 model RespostaFormulario {
-  id           String   @id
+  id String @id
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
@@ -507,7 +508,7 @@ model RespostaFormulario {
 // de src/lib/automation-flow-context.tsx sempre recalculam nodes/edges/configuracoes/historicoVersoes
 // inteiros. Log de execução continua só em memória (nunca persistiu, sem mudança de comportamento).
 model FluxoAutomacao {
-  id                 String    @id
+  id String @id
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
@@ -542,7 +543,7 @@ model FluxoAutomacao {
 // id de navegação, não conteúdo dono) continuam fora do banco — mesmo precedente de
 // "azuz-crm-documentos-prefs-ver", que já não fazia parte do Context.
 model Documento {
-  id            String   @id
+  id String @id
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
@@ -563,16 +564,16 @@ model Documento {
 }
 
 model ModeloPersonalizado {
-  id            String @id
+  id String @id
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
   nome          String
-  descricao     String @db.Text
+  descricao     String   @db.Text
   categoria     String
   // HTML do conteúdo do documento — pode ser grande, TEXT padrão (64KB) não é suficiente.
-  conteudoHtml  String @db.LongText
+  conteudoHtml  String   @db.LongText
   compartilhado Boolean  @default(false)
   autor         String
   criadoEm      DateTime @default(now())
@@ -591,8 +592,8 @@ model Integracao {
   provedor String // "meta_whatsapp"
   status   String // "desconectado" | "conectado" | "erro"
 
-  accessTokenCriptografado  String? @db.Text
-  refreshTokenCriptografado String? @db.Text
+  accessTokenCriptografado  String?   @db.Text
+  refreshTokenCriptografado String?   @db.Text
   expiraEm                  DateTime?
 
   // Dados específicos do provedor (ex.: phoneNumberId/wabaId da Meta) — cada provedor usa um
@@ -644,15 +645,15 @@ model AcaoEnvio {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  titulo     String
-  legenda    String?   @db.Text
-  midiaTipo  String // "imagem" | "audio" | "texto"
-  canais     Json // string[] — "WhatsApp" | "Instagram" | "E-mail" | "SMS"
+  titulo       String
+  legenda      String?  @db.Text
+  midiaTipo    String // "imagem" | "audio" | "texto"
+  canais       Json // string[] — "WhatsApp" | "Instagram" | "E-mail" | "SMS"
   agendadoPara DateTime
   // Snapshot dos nomes dos contatos no momento da criação — não é uma relação de verdade porque
   // Contato não tem id estável o suficiente pra isso ainda (mesmo padrão já aceito em outras
   // tabelas desta fase, ver `TarefaCard.contato`).
-  contatos   Json // string[]
+  contatos     Json // string[]
 
   criadoEm DateTime @default(now())
 }
@@ -697,7 +698,7 @@ model WhatsappTemplate {
   motivoRejeicao String?
   componentes    Json
 
-  criadoEm    DateTime @default(now())
+  criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
   @@unique([workspaceId, metaId])
@@ -731,4 +732,28 @@ model AnexoPublico {
   criadoEm DateTime @default(now())
 
   @@index([expiraEm])
+}
+
+/// Um arquivo guardado no Cloudflare R2.
+///
+/// O arquivo em si NÃO está aqui — no banco fica só o registro dele. Existe por dois motivos:
+/// somar o espaço usado por workspace sem precisar varrer o bucket inteiro (o R2 cobra por
+/// listagem, e um cliente com anos de conversa tem dezenas de milhares de objetos), e saber o que
+/// apagar quando um cliente sai, sem tocar no arquivo de ninguém.
+model ArquivoArmazenado {
+  /// Caminho do objeto dentro do bucket (`<workspaceId>/<ano>/<mes>/<id>.<ext>`).
+  chave String @id @db.VarChar(255)
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  bytes    Int
+  mimeType String
+
+  /// De onde veio: "mensagem" (anexo de conversa) ou "envio" (arquivo publicado pra Meta buscar).
+  origem String
+
+  criadoEm DateTime @default(now())
+
+  @@index([workspaceId])
 }

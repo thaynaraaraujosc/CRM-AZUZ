@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { contasCanalVisiveis, filtroContaCanal } from "@/lib/integracoes/conta-canal";
 import { preservarMidiaGuardada, trocarMidiaPorLink } from "@/lib/conversas/midia-mensagem";
+import { guardarMidiasDosExtras } from "@/lib/armazenamento/midia";
 
 type LinhaMensagem = {
   id: string;
@@ -97,27 +98,39 @@ export async function PUT(request: Request) {
     : [];
   const extrasGuardados = new Map(guardadas.map((m) => [m.id, m.extras]));
 
-  const operacoes = [
-    ...(deletarIds.length ? [prisma.mensagemExtra.deleteMany({ where: { workspaceId, id: { in: deletarIds } } })] : []),
-    ...upserts.map(({ contato, idFinal, mensagem }) => {
+  // Os anexos sobem pro R2 ANTES da transação: subir arquivo é uma chamada de rede que pode levar
+  // segundos, e uma transação aberta esse tempo todo segura conexão do banco à toa — foi assim que
+  // essa mesma rota já travou `/conversas` antes. Aqui a transação só grava texto e referência.
+  const preparados = await Promise.all(
+    upserts.map(async ({ contato, idFinal, mensagem }) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars -- só pra excluir `id` de `extras`, já vira a coluna própria
       const { id: _id, tipo, texto, hora, criadoEm, status, canal, ...extras } = mensagem;
-      const dados = {
-        contato,
-        tipo,
-        texto,
-        hora,
-        criadoEm: criadoEm ? new Date(criadoEm) : null,
-        status: status ?? null,
-        canal: canal ?? null,
-        extras: preservarMidiaGuardada(extras, extrasGuardados.get(idFinal)) as Prisma.InputJsonValue,
+      const preservados = preservarMidiaGuardada(extras, extrasGuardados.get(idFinal));
+      return {
+        idFinal,
+        dados: {
+          contato,
+          tipo,
+          texto,
+          hora,
+          criadoEm: criadoEm ? new Date(criadoEm) : null,
+          status: status ?? null,
+          canal: canal ?? null,
+          extras: (await guardarMidiasDosExtras(preservados, workspaceId)) as Prisma.InputJsonValue,
+        },
       };
-      return prisma.mensagemExtra.upsert({
+    }),
+  );
+
+  const operacoes = [
+    ...(deletarIds.length ? [prisma.mensagemExtra.deleteMany({ where: { workspaceId, id: { in: deletarIds } } })] : []),
+    ...preparados.map(({ idFinal, dados }) =>
+      prisma.mensagemExtra.upsert({
         where: { id: idFinal },
         create: { id: idFinal, workspaceId, ...dados },
         update: dados,
-      });
-    }),
+      }),
+    ),
   ];
 
   if (operacoes.length) await prisma.$transaction(operacoes);

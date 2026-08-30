@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { lerMidiaNoCaminho } from "@/lib/conversas/midia-mensagem";
+import { lerArquivo } from "@/lib/armazenamento/midia";
 
 /**
  * Serve UM anexo de UMA mensagem, como arquivo de verdade.
@@ -30,17 +31,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ erro: "Anexo não encontrado" }, { status: 404 });
   }
 
-  const dataUrl = lerMidiaNoCaminho(mensagem.extras, campo);
-  if (!dataUrl) return NextResponse.json({ erro: "Anexo não encontrado" }, { status: 404 });
+  const guardado = lerMidiaNoCaminho(mensagem.extras, campo);
+  if (!guardado) return NextResponse.json({ erro: "Anexo não encontrado" }, { status: 404 });
 
-  const separador = dataUrl.indexOf(",");
-  const cabecalho = dataUrl.slice(5, separador); // "image/jpeg;base64"
-  const tipo = cabecalho.split(";")[0] || "application/octet-stream";
-  const bytes = Buffer.from(dataUrl.slice(separador + 1), "base64");
+  // O arquivo pode estar no R2 ou embutido na própria mensagem (formato antigo) — quem chama esta
+  // rota não precisa saber a diferença. Ver `armazenamento/midia.ts`.
+  const arquivo = await lerArquivo(guardado);
+  if (!arquivo) return NextResponse.json({ erro: "Anexo não encontrado" }, { status: 404 });
+  const bytes = arquivo.conteudo;
 
   return new NextResponse(new Uint8Array(bytes), {
     headers: {
-      "content-type": tipo,
+      "content-type": arquivo.mimeType,
       "content-length": String(bytes.length),
       // O conteúdo de uma mensagem já enviada nunca muda, então o navegador pode guardar pra
       // sempre — é o que faz a segunda visita à conversa não baixar nada de novo. `private` porque

@@ -2,6 +2,7 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 
 import { prisma } from "@/lib/prisma";
+import { apagarArquivo, guardarArquivo } from "@/lib/armazenamento/midia";
 
 /**
  * Link público, assinado e temporário pra um arquivo — a ponte que faz o envio de anexo funcionar.
@@ -62,7 +63,11 @@ export async function publicarAnexoTemporario(params: {
   const separador = dataUrl.indexOf(",");
   if (!dataUrl.startsWith("data:") || separador < 0) throw new Error("Arquivo em formato inesperado.");
   const mimeType = dataUrl.slice(5, separador).split(";")[0] || "application/octet-stream";
-  const conteudo = dataUrl.slice(separador + 1);
+  // `conteudo` guarda o base64 (formato antigo) OU a referência `r2:<chave>` quando o R2 está
+  // configurado. Quem lê usa `lerArquivo`, que trata os dois — ver `armazenamento/midia.ts`.
+  const conteudo = await guardarArquivo({ workspaceId, dataUrl, origem: "envio" }).then((valor) =>
+    valor === dataUrl ? dataUrl.slice(separador + 1) : valor,
+  );
 
   const id = randomBytes(16).toString("hex");
   // A extensão vai no ENDEREÇO, não só no content-type: a Meta decide o formato do anexo olhando a
@@ -113,7 +118,24 @@ export function idSemExtensao(parametro: string): string {
 /** Remove os que já venceram. Chamado a cada publicação nova: sem isso a tabela viraria um depósito
  * de tudo que já foi enviado, com cada arquivo continuando acessível muito depois de precisar. */
 export async function limparAnexosVencidos(): Promise<void> {
-  await prisma.anexoPublico
-    .deleteMany({ where: { expiraEm: { lt: new Date() } } })
-    .catch((erro) => console.error("[anexo-publico] Falha ao limpar anexos vencidos:", erro));
+  try {
+    const vencidos = await prisma.anexoPublico.findMany({
+      where: { expiraEm: { lt: new Date() } },
+      select: { id: true, conteudo: true },
+    });
+    if (!vencidos.length) return;
+
+    // O arquivo no R2 é apagado ANTES da linha: perdida a linha, some a chave e o objeto ficaria
+    // pagando armazenamento pra sempre sem ninguém saber que ele existe.
+    await Promise.all(
+      vencidos.map((anexo) =>
+        apagarArquivo(anexo.conteudo).catch((erro) =>
+          console.error("[anexo-publico] Falha ao apagar arquivo vencido no R2:", erro),
+        ),
+      ),
+    );
+    await prisma.anexoPublico.deleteMany({ where: { id: { in: vencidos.map((a) => a.id) } } });
+  } catch (erro) {
+    console.error("[anexo-publico] Falha ao limpar anexos vencidos:", erro);
+  }
 }

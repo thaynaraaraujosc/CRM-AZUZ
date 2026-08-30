@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { guardarMidiasDosExtras } from "@/lib/armazenamento/midia";
 import { validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { renomearConversa } from "@/lib/conversas/renomear";
@@ -575,7 +576,10 @@ export async function POST(request: Request) {
           criadoEm,
           canal: CANAL_INSTAGRAM,
           contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
-          extras: Object.keys(extrasComLegenda).length ? (extrasComLegenda as object) : undefined,
+          // Anexo vai pro R2 e a mensagem guarda só a referência (ver `armazenamento/midia.ts`).
+          extras: Object.keys(extrasComLegenda).length
+            ? ((await guardarMidiasDosExtras(extrasComLegenda, integracaoDaConta.workspaceId)) as object)
+            : undefined,
         },
       });
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { guardarMidiasDosExtras } from "@/lib/armazenamento/midia";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { META_GRAPH_URL, normalizarNumeroBrasileiro, validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
@@ -332,7 +333,10 @@ export async function POST(request: Request) {
               timeZone: "America/Sao_Paulo",
             }),
             criadoEm: new Date(Number(mensagem.timestamp) * 1000),
-            extras: temMidiaBaixada ? extras : undefined,
+            // Anexo vai pro R2 e a mensagem guarda só a referência (ver `armazenamento/midia.ts`).
+            extras: temMidiaBaixada
+              ? await guardarMidiasDosExtras(extras, integracao.workspaceId)
+              : undefined,
             // Sem `canal`, mensagem da API oficial ficava indistinguível do histórico antigo do QR
             // Code (as duas com NULL) — e `contaCanal` amarra ao número exato, pra caixa de entrada
             // zerar ao desconectar e voltar ao reconectar.
