@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 import type { ConvMensagem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
@@ -204,7 +204,18 @@ export function PainelConversa({
             {mensagens.length === 0 ? (
               <p className="hint">Nenhuma mensagem ainda.</p>
             ) : (
-              mensagens.map((msg, i) => <BolhaMensagem key={msg.id ?? i} msg={msg} />)
+              mensagens.map((msg, i) => {
+                // Mesmo separador de dia da tela de Conversas — sem ele o histórico é um rolo
+                // contínuo e não dá pra saber onde termina um dia e começa o outro.
+                const dia = rotuloDoDia(msg.criadoEm);
+                const diaAnterior = i > 0 ? rotuloDoDia(mensagens[i - 1].criadoEm) : null;
+                return (
+                  <Fragment key={msg.id ?? i}>
+                    {dia && dia !== diaAnterior ? <span className="wa-separador-dia">{dia}</span> : null}
+                    <BolhaMensagem msg={msg} />
+                  </Fragment>
+                );
+              })
             )}
             <div ref={fimDaListaRef} />
           </div>
@@ -460,6 +471,25 @@ function adicionarBolhaOtimista(
       ...prev,
       [contatoNome]: (prev[contatoNome] ?? []).map((m) => (m.id === id ? { ...m, ...patch } : m)),
     }));
+}
+
+/** "Hoje", "Ontem" ou a data por extenso — o separador de dia da conversa. Mora aqui e na tela de
+ * Conversas; quando o painel substituir aquela tela, sobra só esta cópia. */
+function rotuloDoDia(criadoEm: number | undefined): string | null {
+  if (!criadoEm) return null;
+  const data = new Date(criadoEm);
+  const hoje = new Date();
+  const ontem = new Date();
+  ontem.setDate(hoje.getDate() - 1);
+  const mesmoDia = (a: Date, b: Date) =>
+    a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
+  if (mesmoDia(data, hoje)) return "Hoje";
+  if (mesmoDia(data, ontem)) return "Ontem";
+  return data.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: data.getFullYear() === hoje.getFullYear() ? undefined : "numeric",
+  });
 }
 
 /** Primeira linha do texto, curta — o histórico é uma lista de referências, não a conversa toda. */

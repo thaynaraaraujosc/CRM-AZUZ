@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   Suspense,
   useEffect,
   useRef,
@@ -262,6 +263,32 @@ function renderizarTextoComLinks(texto: string): ReactNode[] {
       );
     }
     return <span key={i}>{parte}</span>;
+  });
+}
+
+/**
+ * "Hoje", "Ontem" ou a data por extenso — o rótulo do separador de dia da conversa.
+ *
+ * Mensagem sem `criadoEm` (as de exemplo antigas) devolve `null`: melhor nenhum separador do que
+ * um separador com a data errada.
+ */
+function rotuloDoDia(criadoEm: number | undefined): string | null {
+  if (!criadoEm) return null;
+  const data = new Date(criadoEm);
+  const hoje = new Date();
+  const ontem = new Date();
+  ontem.setDate(hoje.getDate() - 1);
+
+  const mesmoDia = (a: Date, b: Date) =>
+    a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
+
+  if (mesmoDia(data, hoje)) return "Hoje";
+  if (mesmoDia(data, ontem)) return "Ontem";
+  return data.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    // O ano só entra quando não é o corrente — repetir "de 2026" em toda conversa é ruído.
+    year: data.getFullYear() === hoje.getFullYear() ? undefined : "numeric",
   });
 }
 
@@ -4151,7 +4178,7 @@ function ConversasPageInner() {
                   </div>
                 );
               }
-              return msg.localizacao ? (
+              const bolha = msg.localizacao ? (
                 <div
                   key={chave} data-msg-chave={chave}
                   className={`bubble ${msg.tipo} bubble-localizacao`}
@@ -4513,6 +4540,20 @@ function ConversasPageInner() {
                     ) : null}
                   </span>
                 </div>
+              );
+
+              // Separador de dia entre as bolhas — sem ele a conversa é um rolo contínuo e não dá
+              // pra saber onde termina um dia e começa o outro, que é justamente o que se procura
+              // ao reler um atendimento.
+              const diaDesta = rotuloDoDia(msg.criadoEm);
+              const diaDaAnterior = iRelativo > 0 ? rotuloDoDia(arr[iRelativo - 1].criadoEm) : null;
+              const mudouDeDia = Boolean(diaDesta) && diaDesta !== diaDaAnterior;
+
+              return (
+                <Fragment key={`bloco-${chave}`}>
+                  {mudouDeDia ? <span className="wa-separador-dia">{diaDesta}</span> : null}
+                  {bolha}
+                </Fragment>
               );
             })}
           </div>
