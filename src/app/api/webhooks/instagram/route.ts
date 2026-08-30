@@ -116,7 +116,9 @@ const ROTULO_POR_ANEXO: Record<string, string> = {
   audio: "[Áudio]",
   file: "[Arquivo]",
   share: "[Publicação compartilhada]",
-  story_mention: "[Menção em story]",
+  // Frase inteira, não rótulo entre colchetes: quem atende precisa entender o que aconteceu
+  // sem traduzir jargão. "[Menção em story]" não diz que a pessoa apareceu no story de alguém.
+  story_mention: "Você foi marcado em um story",
 };
 
 /**
@@ -458,6 +460,11 @@ export async function POST(request: Request) {
         : anexo
           ? (ROTULO_POR_ANEXO[anexo.type ?? ""] ?? "")
           : "";
+
+      // A legenda vale pra mídia guardada, e a frase do que aconteceu (resposta a story, menção)
+      // precisa aparecer JUNTO da miniatura — não só como texto solto numa bolha separada, que era
+      // o que acontecia: chegava "Você foi marcado em um story" numa bolha e a imagem noutra, sem
+      // ligação visível entre as duas.
       const texto = [mensagem.text ?? rotuloPadrao, linkDoConteudo].filter(Boolean).join("\n") || "";
 
       // Bolha que não diz nada: anexo de um tipo que o CRM não conhece, sem arquivo baixado e sem
@@ -473,7 +480,7 @@ export async function POST(request: Request) {
       // como a miniatura, sem o que a pessoa escreveu. O texto vai para os dois lugares: `texto`
       // alimenta a prévia na lista de conversas, `legenda` é o que aparece sob a imagem.
       const legenda = temMidiaBaixada
-        ? [story ? "Respondeu ao seu story" : null, mensagem.text].filter(Boolean).join(" · ")
+        ? [story ? "Respondeu ao seu story" : rotuloPadrao || null, mensagem.text].filter(Boolean).join(" · ")
         : undefined;
       // O link vai TAMBÉM nos extras, não só no texto: é ele que faz a miniatura virar um clique
       // que abre a publicação no Instagram. Só no texto, a pessoa via a prévia e tinha que caçar o
