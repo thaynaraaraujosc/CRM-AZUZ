@@ -6,7 +6,7 @@ import type { ConvMensagem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { BolhaMensagem } from "./BolhaMensagem";
-import { IconDoc, IconImage, IconLocalizacao } from "@/components/icons";
+import { IconClose, IconConfiguracoes, IconDoc, IconImage, IconLocalizacao } from "@/components/icons";
 
 /**
  * Painel de conversa completo, em popup — a janela que abre ao clicar num card do Funil.
@@ -233,7 +233,13 @@ export function PainelConversa({
             </div>
             <div>
               <p className="n">{nomeEdit}</p>
-              <p className="s">{canal ?? "Conversa"}</p>
+              {/* Canal + identificador + responsável numa linha só: é o que o atendente precisa
+                  saber antes de escrever, e ocupa o espaço de uma linha em vez de três. */}
+              <p className="s">
+                {[canal ?? "Conversa", contato?.instagram ?? contato?.whatsapp, contato?.responsavel]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
             </div>
           </div>
           <div className="painel-conversa-acoes">
@@ -244,10 +250,10 @@ export function PainelConversa({
               title="Dados do contato"
               onClick={() => setDadosAberto((v) => !v)}
             >
-              ⚙
+              <IconConfiguracoes width={15} height={15} />
             </button>
             <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={aoFechar}>
-              ✕
+              <IconClose width={13} height={13} />
             </button>
           </div>
         </header>
@@ -275,7 +281,11 @@ export function PainelConversa({
 
         </div>
 
-        {erro ? <p className="hint" style={{ color: "var(--danger)", margin: "0 0 6px" }}>⚠ {erro}</p> : null}
+        {erro ? (
+          <p className="painel-conversa-erro" role="alert">
+            {erro}
+          </p>
+        ) : null}
 
         {/* Prévia do que vai ser enviado — com legenda e a chance de desistir. */}
         {previa ? (
@@ -470,7 +480,27 @@ export function PainelConversa({
                 </div>
                 <div className="field">
                   <label>Origem</label>
-                  <div className="input">{canal ?? "—"}</div>
+                  <div className="input">{contato?.origem ?? canal ?? "—"}</div>
+                </div>
+                <div className="field">
+                  <label>Responsável</label>
+                  <div className="input">{contato?.responsavel ?? "Sem responsável"}</div>
+                </div>
+                <div className="field">
+                  <label>Etiquetas</label>
+                  {/* Etiquetas como pastilhas, não como texto separado por vírgula: é assim que
+                      elas aparecem no resto do CRM, e o atendente reconhece pela cor/forma. */}
+                  <div className="painel-etiquetas">
+                    {(contato?.etiquetas ?? []).length ? (
+                      (contato?.etiquetas ?? []).map((etiqueta) => (
+                        <span key={etiqueta} className="painel-etiqueta">
+                          {etiqueta}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="hint">Nenhuma etiqueta</span>
+                    )}
+                  </div>
                 </div>
                 <p className="hint" style={{ margin: 0 }}>
                   Pra mover de etapa, arraste o card no funil atrás desta janela — assim a mudança

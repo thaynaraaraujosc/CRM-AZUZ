@@ -13511,3 +13511,50 @@ button.camp-row:hover {
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* Painel do funil — passada de acabamento -------------------------------- */
+
+/* Erro do envio: uma faixa discreta acima do composer, não um parágrafo com símbolo colado. */
+.painel-conversa-erro {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(214, 69, 69, 0.28);
+  background: rgba(214, 69, 69, 0.08);
+  color: var(--danger, #d64545);
+  font-size: 12px;
+}
+
+.painel-etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.painel-etiqueta {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--navy-raised-2, rgba(255, 255, 255, 0.08));
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Hover discreto nos itens do menu de anexo — dá resposta ao ponteiro sem pesar a interface. */
+.painel-conversa-mais .wa-anexo-item {
+  transition: background var(--transition-fast, 120ms ease);
+}
+
+.painel-conversa-mais .wa-anexo-item:hover {
+  background: var(--navy-raised-2, rgba(255, 255, 255, 0.06));
+}
+
+/* A engrenagem e o fechar ficam do mesmo tamanho e alinhados — antes eram um glifo de texto cada,
+   com alturas diferentes conforme a fonte do sistema. */
+.painel-conversa-acoes .gear-btn,
+.painel-conversa-acoes .modal-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+}
