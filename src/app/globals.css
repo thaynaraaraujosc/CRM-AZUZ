@@ -13442,3 +13442,38 @@ button.camp-row:hover {
   color: #b23c3c;
   font-size: 12px;
 }
+
+/* Contatos sugeridos na busca de conversas — o caminho pra falar com quem ainda não escreveu. */
+.conversa-contatos-novos {
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.conversa-contatos-novos > .hint {
+  margin: 0 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.conversa-contato-novo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.conversa-contato-novo:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.conversa-contato-nome {
+  font-size: 13px;
+  font-weight: 600;
+}

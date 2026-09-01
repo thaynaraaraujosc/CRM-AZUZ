@@ -990,6 +990,39 @@ function ConversasPageInner() {
       return ultimaAtividadeDaConversa(b.nome) - ultimaAtividadeDaConversa(a.nome);
     });
 
+  const [iniciandoConversa, setIniciandoConversa] = useState<string | null>(null);
+
+  /**
+   * Contatos que dá pra chamar e que ainda não têm conversa aberta.
+   *
+   * Só aparece com algo digitado na busca: listar a agenda inteira embaixo das conversas viraria
+   * ruído permanente numa tela que é, antes de tudo, a caixa de entrada.
+   */
+  const contatosSemConversa = (() => {
+    const termo = buscaConversa.trim().toLowerCase();
+    if (termo.length < 2) return [];
+    const nomesComConversa = new Set(conversas.map((c) => c.nome.toLowerCase()));
+    return contatos
+      .filter((c) => Boolean(c.whatsapp))
+      .filter((c) => !nomesComConversa.has(c.nome.toLowerCase()))
+      .filter((c) => c.nome.toLowerCase().includes(termo) || (c.whatsapp ?? "").includes(termo))
+      .slice(0, 8);
+  })();
+
+  async function iniciarConversaCom(contato: { id: string; nome: string; whatsapp?: string | null }) {
+    if (!contato.whatsapp) return;
+    setIniciandoConversa(contato.id);
+    try {
+      const nova = await criarConversaIndividual(contato.nome, contato.whatsapp, "WhatsApp");
+      setSelectedId(nova.id);
+      setBuscaConversa("");
+    } catch (erro) {
+      console.error("Falha ao iniciar conversa:", erro);
+    } finally {
+      setIniciandoConversa(null);
+    }
+  }
+
   /** Quando a última mensagem dessa conversa chegou (ou saiu). Zero quando ainda não há nenhuma —
    * conversa sem mensagem vai pro fim, não pro topo. */
   function ultimaAtividadeDaConversa(nomeContato: string): number {
@@ -3893,13 +3926,34 @@ function ConversasPageInner() {
           </div>
 
           <div className="wa-list-rows">
-          {conversasFiltradas.length === 0 ? (
+          {/* Contatos que ainda não têm conversa. A caixa de busca sempre prometeu "ou começar uma
+              nova conversa" e não cumpria: o único jeito de iniciar uma era pelo participante de um
+              grupo. Quem salvava um contato não tinha por onde falar com ele. */}
+          {contatosSemConversa.length > 0 ? (
+            <div className="conversa-contatos-novos">
+              <p className="hint">Começar uma conversa</p>
+              {contatosSemConversa.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className="conversa-contato-novo"
+                  disabled={iniciandoConversa === c.id}
+                  onClick={() => void iniciarConversaCom(c)}
+                >
+                  <span className="conversa-contato-nome">{c.nome}</span>
+                  <span className="hint">{iniciandoConversa === c.id ? "Abrindo…" : c.whatsapp}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {conversasFiltradas.length === 0 && contatosSemConversa.length === 0 ? (
             <p className="hint" style={{ padding: 20 }}>
               {carregandoConversas
                 ? "Carregando conversas…"
                 : conversas.length === 0
                   ? "Nenhuma conversa ainda — conecte um canal em Configurações para começar a receber mensagens de verdade."
-                  : "Nenhuma conversa encontrada."}
+                  : "Nenhuma conversa encontrada. Digite o nome de um contato pra começar uma conversa com ele."}
             </p>
           ) : (
             conversasFiltradas.map((c) => {
