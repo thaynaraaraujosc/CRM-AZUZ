@@ -800,7 +800,7 @@ export async function POST(request: Request) {
         remetenteId,
         remetenteUsername: arrobaDeQuemMandou ?? undefined,
         mensagemId: mensagem.mid,
-        midiaId: idDaMidiaDoStory ?? undefined,
+        midiaId: idDaMidiaDoConteudo ?? undefined,
         permalink: linkDoConteudo ?? undefined,
         texto,
         dados: {
