@@ -1,6 +1,8 @@
 "use client";
 
 import type { ConvMensagem } from "@/lib/data";
+import { IconLocalizacao } from "@/components/icons";
+import { StatusMensagemIcone } from "./StatusMensagem";
 
 /**
  * Desenha UMA mensagem — texto, imagem, vídeo, documento, áudio ou localização.
@@ -14,9 +16,95 @@ import type { ConvMensagem } from "@/lib/data";
  * Conversas: são interações daquela tela, não da mensagem em si — misturar as duas coisas foi o
  * que tornou aquele trecho impossível de reaproveitar.
  */
-export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
+export function BolhaMensagem({
+  msg,
+  onTentarNovamente,
+}: {
+  msg: ConvMensagem;
+  onTentarNovamente?: () => void;
+}) {
   if (msg.tipo === "system") {
     return <div className="bubble sistema">{msg.texto}</div>;
+  }
+
+  /** Hora + tiquinhos, o rodapé que toda bolha tem. */
+  const rodape = (
+    <span className="tm">
+      {msg.hora}
+      {msg.tipo === "out" ? <StatusMensagemIcone status={msg.status} onTentarNovamente={onTentarNovamente} /> : null}
+    </span>
+  );
+
+  /** Trecho citado quando a mensagem responde outra — mesmo desenho da tela de Conversas. */
+  const citacao = msg.respondendoA ? (
+    <span className="wa-citacao">
+      <span className="wa-citacao-autor">{msg.respondendoA.autor}</span>
+      <span className="wa-citacao-texto">{msg.respondendoA.texto}</span>
+    </span>
+  ) : null;
+
+  /** A reação que a pessoa (ou você) deixou, grudada na bolha. */
+  const reacao =
+    msg.reacaoContato || msg.reacaoMinha ? (
+      <span className="wa-msg-reacao">
+        {msg.reacaoContato ?? msg.reacaoMinha}
+        {msg.reacaoContato && msg.reacaoMinha ? <span className="wa-msg-reacao-2">❤️</span> : null}
+      </span>
+    ) : null;
+
+  // Localização: cartão com prévia do mapa, e não uma linha de texto com um emoji. O mapa estático
+  // vem do OpenStreetMap — sem chave de API, sem custo, sem dependência nova.
+  if (msg.localizacao) {
+    const { lat, lng, endereco } = msg.localizacao;
+    return (
+      <div className={`bubble ${msg.tipo} bubble-localizacao`}>
+        {reacao}
+        {citacao}
+        <a
+          className="bubble-localizacao-link-area"
+          href={`https://www.google.com/maps?q=${lat},${lng}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- mapa estático externo, sem otimização do Next */}
+          <img
+            className="bubble-localizacao-mapa"
+            src={`https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=15&size=280x140&maptype=mapnik&markers=${lat},${lng},red-pushpin`}
+            alt="Mapa com a localização compartilhada"
+          />
+          <div className="bubble-localizacao-info">
+            <span className="bubble-localizacao-titulo" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <IconLocalizacao width={12} height={12} /> Localização compartilhada
+            </span>
+            <span className="bubble-localizacao-endereco">
+              {endereco ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`}
+            </span>
+            <span className="bubble-localizacao-link">Abrir no mapa →</span>
+          </div>
+        </a>
+        {rodape}
+      </div>
+    );
+  }
+
+  // Contato compartilhado — cartão com iniciais e número, igual à tela de Conversas.
+  if (msg.contatoCompartilhado) {
+    return (
+      <div className={`bubble ${msg.tipo} bubble-contato`}>
+        {reacao}
+        {citacao}
+        <span className="bubble-contato-area" style={{ cursor: "default" }}>
+          <span className="avatar">{msg.contatoCompartilhado.initials}</span>
+          <span className="bubble-contato-info">
+            <span className="bubble-contato-nome">{msg.contatoCompartilhado.nome}</span>
+            {msg.contatoCompartilhado.whatsapp ? (
+              <span className="bubble-contato-numero">{msg.contatoCompartilhado.whatsapp}</span>
+            ) : null}
+          </span>
+        </span>
+        {rodape}
+      </div>
+    );
   }
 
   const legenda = msg.legenda ?? (msg.texto || undefined);
@@ -56,7 +144,7 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
             {msg.linkEhConversa ? "Abrir conversa no Instagram ↗" : "Ver publicação no Instagram ↗"}
           </a>
         ) : null}
-        <span className="tm">{msg.hora}</span>
+        {rodape}
       </div>
     );
   }
@@ -70,7 +158,7 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
             ▶ {msg.linkEhConversa ? "Abrir conversa no Instagram" : "Ver publicação no Instagram"}
           </a>
           {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
-          <span className="tm">{msg.hora}</span>
+          {rodape}
         </div>
       );
     }
@@ -78,7 +166,7 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
       <div className={`bubble ${msg.tipo} bubble-midia`}>
         <video className="bubble-video" src={msg.video.url} controls preload="metadata" />
         {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
-        <span className="tm">{msg.hora}</span>
+        {rodape}
       </div>
     );
   }
@@ -87,7 +175,7 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
     return (
       <div className={`bubble ${msg.tipo} bubble-audio`}>
         <audio src={msg.audio.url} controls preload="metadata" style={{ maxWidth: "100%" }} />
-        <span className="tm">{msg.hora}</span>
+        {rodape}
       </div>
     );
   }
@@ -106,31 +194,21 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
           <span className="bubble-doc-meta">{msg.documento.formato}</span>
         </a>
         {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
-        <span className="tm">{msg.hora}</span>
-      </div>
-    );
-  }
-
-  if (msg.localizacao) {
-    return (
-      <div className={`bubble ${msg.tipo}`}>
-        <a
-          href={`https://www.google.com/maps?q=${msg.localizacao.lat},${msg.localizacao.lng}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="wa-link-mensagem"
-        >
-          📍 {msg.localizacao.endereco ?? "Ver no mapa"}
-        </a>
-        <span className="tm">{msg.hora}</span>
+        {rodape}
       </div>
     );
   }
 
   return (
     <div className={`bubble ${msg.tipo}`}>
+      {reacao}
+      {citacao}
+      {/* Nome de quem escreveu DENTRO de um grupo — sem isso não dá pra distinguir os balões. */}
+      {msg.tipo === "in" && msg.remetenteNome ? (
+        <span className="wa-remetente-grupo">{msg.remetenteNome}</span>
+      ) : null}
       {msg.texto}
-      <span className="tm">{msg.hora}</span>
+      {rodape}
     </div>
   );
 }

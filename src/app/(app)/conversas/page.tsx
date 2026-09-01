@@ -24,6 +24,7 @@ import {
 import { ehLinkDeMidia } from "@/lib/conversas/midia-mensagem";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
+import { StatusMensagemIcone } from "@/components/conversas/StatusMensagem";
 import { EnviarTemplateWhatsApp } from "@/components/conversas/EnviarTemplateWhatsApp";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
@@ -297,79 +298,6 @@ function rotuloDoDia(criadoEm: number | undefined): string | null {
 }
 
 /** Ícone + rótulo + descrição de acessibilidade do estado real de uma mensagem enviada. */
-function StatusMensagemIcone({
-  status,
-  onTentarNovamente,
-}: {
-  status?: StatusMensagem;
-  onTentarNovamente?: () => void;
-}) {
-  if (!status) return null;
-  if (status === "erro") {
-    return (
-      <span className="msg-status msg-status-erro">
-        <span
-          className="msg-status-icone"
-          title="Não enviada — toque para tentar de novo"
-          aria-label="Mensagem não enviada"
-        >
-          <IconErro width={13} height={13} />
-        </span>
-        {onTentarNovamente ? (
-          <button
-            type="button"
-            className="msg-status-retry"
-            onClick={onTentarNovamente}
-          >
-            Tentar novamente
-          </button>
-        ) : null}
-      </span>
-    );
-  }
-  const mapa: Record<
-    Exclude<StatusMensagem, "erro">,
-    { icone: ReactNode; titulo: string; classe: string }
-  > = {
-    pendente: {
-      icone: <IconRelogio width={12} height={12} />,
-      titulo: "Aguardando envio",
-      classe: "",
-    },
-    enviado: {
-      icone: <IconCheck width={13} height={13} />,
-      titulo: "Enviada",
-      classe: "",
-    },
-    entregue: {
-      icone: <IconCheckDuplo width={14} height={14} />,
-      titulo: "Entregue no aparelho do lead",
-      classe: "",
-    },
-    lido: {
-      icone: <IconCheckDuplo width={14} height={14} />,
-      titulo: "Lida pelo lead",
-      classe: "lido",
-    },
-    reproduzido: {
-      icone: <IconMic width={12} height={12} />,
-      titulo: "Áudio reproduzido pelo lead",
-      classe: "reproduzido",
-    },
-  };
-  const info = mapa[status];
-  return (
-    <span
-      className={`msg-status-icone ${info.classe}`}
-      title={info.titulo}
-      aria-label={info.titulo}
-      role="img"
-    >
-      {info.icone}
-    </span>
-  );
-}
-
 type FiltroConversa = (typeof FILTROS_CONVERSA)[number]["valor"];
 
 const EMOJI_CATEGORIAS = [
