@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
-import { INSTAGRAM_GRAPH_VERSION } from "@/lib/integracoes/instagram-login";
+import {
+  INSTAGRAM_GRAPH_VERSION,
+  baixarFotoPerfil,
+  buscarPerfilDeQuemMandou,
+} from "@/lib/integracoes/instagram-login";
 
 /**
  * Pergunta à Meta o perfil de alguém que já escreveu, e devolve o que ela respondeu.
@@ -54,7 +58,40 @@ export async function POST() {
   });
   const extras = (ultimaComAnexo?.extras as Record<string, unknown> | null) ?? {};
 
+  // Preenche as conversas que ficaram sem foto.
+  //
+  // Até ontem a busca de perfil estava quebrada (pedíamos um campo inexistente e a Graph recusava a
+  // chamada inteira), então só quem mandou mensagem DEPOIS da correção ganhou foto. As conversas
+  // antigas continuariam com as iniciais para sempre, porque a foto só é buscada quando chega
+  // mensagem nova. Isto passa uma vez por elas.
+  const semFoto = await prisma.conversa.findMany({
+    where: { workspaceId, canal: "Instagram", fotoUrl: null, contato: { not: null } },
+    select: { id: true, contato: true, contatoId: true },
+    // Em lote pequeno: cada uma é uma chamada à Meta, e estourar o limite de chamadas dela
+    // atrapalharia o recebimento de mensagem, que é mais importante que a foto.
+    take: 20,
+  });
+
+  let fotosPreenchidas = 0;
+  for (const alvo of semFoto) {
+    try {
+      const perfilDela = await buscarPerfilDeQuemMandou(token, alvo.contato!);
+      if (!perfilDela?.fotoUrl) continue;
+      const guardada = await baixarFotoPerfil(perfilDela.fotoUrl);
+      if (!guardada) continue;
+      await prisma.conversa.update({ where: { id: alvo.id }, data: { fotoUrl: guardada } });
+      if (alvo.contatoId) {
+        await prisma.contato.update({ where: { id: alvo.contatoId }, data: { fotoUrl: guardada } });
+      }
+      fotosPreenchidas += 1;
+    } catch (erro) {
+      console.error("[diagnostico-perfil] falha ao preencher foto:", erro);
+    }
+  }
+
   return NextResponse.json({
+    conversasSemFoto: semFoto.length,
+    fotosPreenchidas,
     conversaTestada: conversa.nome,
     ultimaMensagemComAnexo: ultimaComAnexo?.criadoEm ?? null,
     camposGuardadosNoAnexo: Object.keys(extras),

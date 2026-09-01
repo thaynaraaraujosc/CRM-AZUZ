@@ -133,8 +133,22 @@ export function ConexaoInstagram() {
     setDiagnostico(null);
     try {
       const resposta = await fetch("/api/integracoes/instagram/diagnostico-perfil", { method: "POST" });
-      const dados = (await resposta.json()) as Record<string, unknown>;
-      setDiagnostico(JSON.stringify(dados, null, 2));
+      const dados = (await resposta.json()) as Record<string, unknown> & {
+        fotosPreenchidas?: number;
+        conversasSemFoto?: number;
+        temFoto?: boolean;
+      };
+      // Resumo em português primeiro; o JSON continua abaixo pra investigar quando algo não bate.
+      const resumo =
+        dados.fotosPreenchidas && dados.fotosPreenchidas > 0
+          ? `${dados.fotosPreenchidas} fotos de perfil foram recuperadas. ` +
+            ((dados.conversasSemFoto ?? 0) > (dados.fotosPreenchidas ?? 0)
+              ? "Clique de novo pra continuar — vai de 20 em 20 pra não estourar o limite da Meta."
+              : "")
+          : dados.temFoto
+            ? "A Meta está entregando a foto normalmente."
+            : "A Meta não devolveu foto pra esse perfil — veja o detalhe abaixo.";
+      setDiagnostico(`${resumo}\n\n${JSON.stringify(dados, null, 2)}`);
     } catch (e) {
       setDiagnostico(e instanceof Error ? e.message : "Falha ao testar.");
     } finally {
