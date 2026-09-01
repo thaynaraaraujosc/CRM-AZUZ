@@ -24,6 +24,7 @@ import {
 import { ehLinkDeMidia } from "@/lib/conversas/midia-mensagem";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
+import { EnviarTemplateWhatsApp } from "@/components/conversas/EnviarTemplateWhatsApp";
 import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { executarFluxo } from "@/lib/automation-flow/motor";
@@ -1248,6 +1249,8 @@ function ConversasPageInner() {
     Record<string, { id: string; titulo: string; texto: string }[]>
   >({});
   const mensagemInputRef = useRef<HTMLTextAreaElement>(null);
+  /** Seletor de modelo aprovado — o único caminho pra falar primeiro, ou depois das 24h. */
+  const [templateAberto, setTemplateAberto] = useState(false);
   const [respondendoMensagem, setRespondendoMensagem] = useState<{
     autor: string;
     texto: string;
@@ -2072,6 +2075,9 @@ function ConversasPageInner() {
                 texto: `⚠️ ${dados.erro ?? "Fora da janela de 24h — só com modelo aprovado."}`,
                 hora: horaAgora(),
               });
+              // Em vez de só avisar do impedimento, abre o caminho que funciona. Avisar e parar
+              // deixava quem atende sem saída — a regra da Meta não tem contorno, mas o modelo tem.
+              setTemplateAberto(true);
               return;
             }
             throw new Error(dados.erro);
@@ -3694,6 +3700,19 @@ function ConversasPageInner() {
 
   return (
     <>
+      {/* Modelo aprovado: o caminho pra falar PRIMEIRO com alguém, ou depois de fechada a janela
+          de 24h. Só faz sentido em conversa de WhatsApp oficial — nos outros canais não existe
+          essa regra nem esse recurso. */}
+      {templateAberto && aberta.canal === "WhatsApp" && (aberta.contato || contatoDaConversa?.whatsapp) ? (
+        <EnviarTemplateWhatsApp
+          destinatario={aberta.contato ?? contatoDaConversa?.whatsapp ?? ""}
+          contatoNome={aberta.nome}
+          aoFechar={() => setTemplateAberto(false)}
+          aoEnviar={(texto, wamid) =>
+            adicionarMensagem({ tipo: "out", texto, hora: horaAgora(), status: "enviado", wamid })
+          }
+        />
+      ) : null}
       <Topbar
         title="WhatsApp"
         sub="WhatsApp, Instagram e TikTok — todas as conversas num só lugar"
@@ -4992,6 +5011,24 @@ function ConversasPageInner() {
                         </span>
                         <span className="wa-anexo-label">Localização</span>
                       </button>
+                      {/* Só no WhatsApp oficial: é o único canal com a regra das 24h e com modelo
+                          aprovado. No QR Code e no Direct isso não existe. */}
+                      {aberta.canal === "WhatsApp" && !conversaUsaWhatsappNaoOficial(aberta.nome) ? (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="wa-anexo-item"
+                          onClick={() => {
+                            setAnexoAberto(false);
+                            setTemplateAberto(true);
+                          }}
+                        >
+                          <span className="wa-anexo-icone wa-anexo-icone-contato">
+                            <IconContatos width={19} height={19} />
+                          </span>
+                          <span className="wa-anexo-label">Modelo aprovado</span>
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         role="menuitem"
