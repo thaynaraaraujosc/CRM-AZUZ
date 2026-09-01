@@ -103,6 +103,20 @@ export async function PUT(request: Request) {
   // Os anexos sobem pro R2 ANTES da transação: subir arquivo é uma chamada de rede que pode levar
   // segundos, e uma transação aberta esse tempo todo segura conexão do banco à toa — foi assim que
   // essa mesma rota já travou `/conversas` antes. Aqui a transação só grava texto e referência.
+  // De qual conexão é cada conversa. As mensagens que a tela envia chegam aqui SEM `contaCanal` —
+  // o navegador não sabe (nem deve saber) por qual número a conversa fala. Sem preencher isso, a
+  // mensagem enviada nascia com a marca vazia e sumia da tela na primeira recarga em que o QR Code
+  // não estivesse conectado: o filtro por conexão não a reivindicava, e ela ficava gravada e
+  // invisível, do mesmo jeito que já aconteceu antes com o Instagram.
+  const nomesDeConversa = [...new Set(upserts.map((u) => u.contato))];
+  const conversas = nomesDeConversa.length
+    ? await prisma.conversa.findMany({
+        where: { workspaceId, nome: { in: nomesDeConversa } },
+        select: { nome: true, contaCanal: true },
+      })
+    : [];
+  const contaCanalPorConversa = new Map(conversas.map((c) => [c.nome, c.contaCanal]));
+
   const preparados = await Promise.all(
     upserts.map(async ({ contato, idFinal, mensagem }) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars -- só pra excluir `id` de `extras`, já vira a coluna própria
@@ -119,6 +133,7 @@ export async function PUT(request: Request) {
           status: status ?? null,
           canal: canal ?? null,
           wamid: wamid ?? null,
+          contaCanal: contaCanalPorConversa.get(contato) ?? null,
           extras: (await guardarMidiasDosExtras(preservados, workspaceId)) as Prisma.InputJsonValue,
         },
       };
