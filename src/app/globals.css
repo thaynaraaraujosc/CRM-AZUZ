@@ -13680,10 +13680,35 @@ button.camp-row:hover {
 }
 
 /* Mídia com cantos alinhados à bolha, sem o degrau que aparecia entre a foto e a borda. */
-.bubble-imagem,
 .bubble-video {
   border-radius: 10px;
   display: block;
+}
+
+/* TODA imagem dentro de uma bolha é limitada aqui, não importa o que a embrulhe.
+   Existia regra só pra `.bubble-imagem-btn img` (o caso de abrir o visualizador). Quando a foto
+   vem de uma publicação compartilhada, ela é embrulhada num link — e sem regra o navegador
+   desenhava a imagem no tamanho natural, ocupando a conversa inteira. */
+.bubble-imagens img {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: 9px;
+  display: block;
+}
+
+/* O link precisa se comportar como bloco, senão ele encolhe pro tamanho do texto e a imagem
+   escapa da largura da bolha. */
+.bubble-imagens > a {
+  display: block;
+  min-width: 0;
+  line-height: 0;
+}
+
+/* Trava de segurança: a bolha de mídia nunca passa da largura da conversa, seja qual for o
+   conteúdo. */
+.bubble.bubble-midia {
+  max-width: min(78%, 340px);
 }
 
 /* Cartão de publicação do Instagram: separa o conteúdo compartilhado do que a pessoa escreveu. */

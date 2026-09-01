@@ -192,7 +192,7 @@ export function BolhaMensagem({
                   title="Abrir a publicação no Instagram"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- anexo servido pelo próprio CRM */}
-                  <img src={img.url} alt={img.nome ?? "imagem"} className="bubble-imagem" loading="lazy" decoding="async" />
+                  <img src={img.url} alt={img.nome ?? "imagem"} loading="lazy" decoding="async" />
                 </a>
               ) : aoAbrirImagem ? (
                 <button
@@ -202,7 +202,7 @@ export function BolhaMensagem({
                   onClick={() => aoAbrirImagem(msg.imagens!.map((im) => im.url), ix)}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- anexo servido pelo próprio CRM */}
-                  <img src={img.url} alt={img.nome ?? "imagem"} className="bubble-imagem" loading="lazy" decoding="async" />
+                  <img src={img.url} alt={img.nome ?? "imagem"} loading="lazy" decoding="async" />
                 </button>
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element -- anexo servido pelo próprio CRM
@@ -210,7 +210,6 @@ export function BolhaMensagem({
                   key={`${msg.id}-img-${ix}`}
                   src={img.url}
                   alt={img.nome ?? "imagem"}
-                  className="bubble-imagem"
                   loading="lazy"
                   decoding="async"
                 />
