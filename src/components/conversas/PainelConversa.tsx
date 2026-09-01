@@ -49,6 +49,9 @@ export function PainelConversa({
   const [maisAberto, setMaisAberto] = useState(false);
   const [dadosAberto, setDadosAberto] = useState(false);
   const [aba, setAba] = useState<"contato" | "negociacao" | "atividades" | "historico">("contato");
+  const [linhaDoTempo, setLinhaDoTempo] = useState<
+    { id: string; tipo: string; canal: string; descricao: string; criadoEm: string }[]
+  >([]);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -59,6 +62,22 @@ export function PainelConversa({
   const mensagens = mensagensExtraPorContato[contatoNome] ?? [];
   const ultima = mensagens[mensagens.length - 1];
   const contato = contatos.find((c) => c.nome === contatoNome);
+
+  // Busca só quando a aba Histórico está aberta: a linha do tempo cresce com o tempo e não faz
+  // sentido pagar essa consulta em toda conversa aberta, sendo que a maioria nunca abre essa aba.
+  useEffect(() => {
+    if (aba !== "historico" || !contatoNome) return;
+    let cancelado = false;
+    fetch(`/api/contatos/linha-do-tempo?contato=${encodeURIComponent(contatoNome)}`)
+      .then((r) => r.json())
+      .then((dados: { eventos?: typeof linhaDoTempo }) => {
+        if (!cancelado) setLinhaDoTempo(dados.eventos ?? []);
+      })
+      .catch((erro) => console.error("Falha ao carregar a linha do tempo:", erro));
+    return () => {
+      cancelado = true;
+    };
+  }, [aba, contatoNome]);
 
   const [nomeEdit, setNomeEdit] = useState(contatoNome);
   const [whatsappEdit, setWhatsappEdit] = useState(contato?.whatsapp ?? "");
@@ -404,16 +423,38 @@ export function PainelConversa({
 
             {aba === "historico" ? (
               <ol className="painel-conversa-historico">
-                {[...mensagens]
-                  .reverse()
-                  .slice(0, 40)
-                  .map((m, i) => (
-                    <li key={m.id ?? i}>
-                      <span className="hint">{m.hora}</span> {m.tipo === "in" ? "Recebida" : m.tipo === "out" ? "Enviada" : "Sistema"} ·{" "}
-                      {resumo(m.texto)}
-                    </li>
-                  ))}
-                {mensagens.length === 0 ? <li className="hint">Sem histórico ainda.</li> : null}
+                {/* Linha do tempo real: inclui o que NÃO é mensagem — comentou numa publicação, a
+                    automação disparou, o CRM respondeu, entrou no funil. É esse encadeamento que
+                    explica por que a pessoa está falando com a gente. */}
+                {linhaDoTempo.map((e) => (
+                  <li key={e.id}>
+                    <span className="hint">
+                      {new Date(e.criadoEm).toLocaleString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>{" "}
+                    {e.descricao}
+                  </li>
+                ))}
+                {/* Mensagens entram depois, como complemento: quem já usava o CRM antes da linha do
+                    tempo existir não pode abrir esta aba e encontrá-la vazia. */}
+                {linhaDoTempo.length === 0
+                  ? [...mensagens]
+                      .reverse()
+                      .slice(0, 40)
+                      .map((m, i) => (
+                        <li key={m.id ?? i}>
+                          <span className="hint">{m.hora}</span>{" "}
+                          {m.tipo === "in" ? "Recebida" : m.tipo === "out" ? "Enviada" : "Sistema"} · {resumo(m.texto)}
+                        </li>
+                      ))
+                  : null}
+                {linhaDoTempo.length === 0 && mensagens.length === 0 ? (
+                  <li className="hint">Sem histórico ainda.</li>
+                ) : null}
               </ol>
             ) : null}
           </div>

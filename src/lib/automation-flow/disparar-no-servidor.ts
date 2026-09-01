@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { avaliarGatilho, executarFluxo, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
-import { marcarExecucaoDeAutomacao } from "@/lib/integracoes/instagram-eventos";
+import { anotarNaLinhaDoTempo, marcarExecucaoDeAutomacao } from "@/lib/integracoes/instagram-eventos";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 
@@ -150,6 +150,17 @@ async function dispararAutomacoes(params: {
       continue;
     }
 
+    // A automação entra na linha do tempo do lead — sem isso, o histórico mostrava a mensagem
+    // automática saindo do nada, sem dizer que foi um fluxo que a mandou.
+    await anotarNaLinhaDoTempo({
+      workspaceId,
+      contatoNome,
+      canal,
+      tipo: "automacao_iniciou",
+      descricao: `automação "${linha.nome}" começou`,
+      dados: { fluxoId: linha.id },
+    });
+
     for (const texto of respostasDeComentario) {
       await params.responderComentario?.(texto).catch((erro) =>
         console.error(`[automacao] falha ao responder comentário:`, erro),
@@ -166,6 +177,14 @@ async function dispararAutomacoes(params: {
       await moverCardDeEtapa(workspaceId, contatoNome, movimento.funilId, movimento.etapaTitulo).catch((erro) =>
         console.error(`[automacao] falha ao mover etapa:`, erro),
       );
+      await anotarNaLinhaDoTempo({
+        workspaceId,
+        contatoNome,
+        canal,
+        tipo: "entrou_no_funil",
+        descricao: `entrou na etapa "${movimento.etapaTitulo}"`,
+        dados: { funilId: movimento.funilId },
+      });
     }
 
     for (const mensagem of mensagensParaEnviar) {
@@ -173,6 +192,18 @@ async function dispararAutomacoes(params: {
       if (!resultado.enviado) {
         console.error(`[automacao] mensagem do fluxo ${linha.id} não saiu: ${resultado.motivo}`);
       }
+      await anotarNaLinhaDoTempo({
+        workspaceId,
+        contatoNome,
+        canal,
+        // Falha também é registrada: uma automação que não conseguiu falar com o lead precisa
+        // aparecer no histórico, senão o vendedor assume que a mensagem foi entregue.
+        tipo: resultado.enviado ? "crm_enviou_mensagem" : "crm_falhou_ao_enviar",
+        descricao: resultado.enviado
+          ? `CRM enviou: "${mensagem.conteudo.slice(0, 120)}"`
+          : `CRM não conseguiu enviar: ${resultado.motivo ?? "motivo desconhecido"}`,
+        dados: { fluxoId: linha.id },
+      });
     }
 
     await prisma.fluxoAutomacao
