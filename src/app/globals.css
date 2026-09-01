@@ -13635,3 +13635,74 @@ button.camp-row:hover {
   padding-top: 4px;
   align-self: flex-end;
 }
+
+/* ========================================================================== */
+/* Acabamento das conversas — vale nas DUAS telas                            */
+/* ========================================================================== */
+
+/* Estas regras vivem no fim do arquivo e usam os mesmos seletores que a tela de Conversas e o
+   painel do funil já compartilham (`.bubble`, `.tm`, `.wa-*`). É de propósito: refinar por aqui
+   melhora as duas ao mesmo tempo, sem tocar em nenhuma lógica de renderização — que é o que
+   tornaria a mudança arriscada.
+
+   O ganho de "produto caro" não vem de efeito: vem de proporção, respiro e hierarquia. Por isso
+   nada aqui adiciona brilho, gradiente ou vidro. */
+
+.bubble {
+  /* Sombra quase imperceptível: separa a bolha do fundo sem desenhar uma caixa. Uma borda dura
+     faria a conversa parecer uma tabela. */
+  box-shadow: 0 1px 2px rgba(11, 21, 51, 0.06);
+  transition:
+    box-shadow var(--transition-fast, 0.12s ease),
+    transform var(--transition-fast, 0.12s ease);
+}
+
+.bubble:hover {
+  box-shadow: 0 2px 8px rgba(11, 21, 51, 0.09);
+}
+
+/* Cantos: o lado de quem falou fica com o canto "mordido", como em qualquer aplicativo de
+   mensagem. É o detalhe que faz a conversa ser lida sem precisar procurar de que lado a bolha
+   está. */
+.bubble.in {
+  border-bottom-left-radius: 5px;
+}
+
+.bubble.out {
+  border-bottom-right-radius: 5px;
+}
+
+/* A hora respira e perde peso — ela é referência, não conteúdo. */
+.bubble .tm {
+  opacity: 0.72;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* Mídia com cantos alinhados à bolha, sem o degrau que aparecia entre a foto e a borda. */
+.bubble-imagem,
+.bubble-video {
+  border-radius: 10px;
+  display: block;
+}
+
+/* Cartão de publicação do Instagram: separa o conteúdo compartilhado do que a pessoa escreveu. */
+.bubble-share-topo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.bubble-acao-externa {
+  transition:
+    background var(--transition-fast, 0.12s ease),
+    border-color var(--transition-fast, 0.12s ease);
+}
+
+.bubble-acao-externa:hover {
+  border-color: var(--blue);
+}
