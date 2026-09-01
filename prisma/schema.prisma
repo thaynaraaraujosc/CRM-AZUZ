@@ -442,10 +442,19 @@ model MensagemExtra {
   // acima diz só o tipo de conexão; este diz QUAL número, que é o que separa duas contas do mesmo
   // canal (a pessoa troca de número e a caixa de entrada precisa zerar).
   contaCanal String?
+  /// Id que a Meta gera pra mensagem que NÓS enviamos (`wamid`).
+  ///
+  /// É por ele que os webhooks de entrega/leitura encontram a mensagem certa: a Meta não conhece o
+  /// id interno do CRM, ela só devolve o dela. Sem guardar isto, o webhook de status chegava,
+  /// procurava a mensagem e não achava nada — entregue e lido nunca saíam do lugar.
+  ///
+  /// Nulo em mensagem recebida (ali o próprio id JÁ é o wamid) e em canal que não devolve id.
+  wamid      String?   @db.VarChar(191)
 
   @@index([workspaceId, criadoEm])
   @@index([workspaceId, contato])
   @@index([workspaceId, contaCanal])
+  @@index([wamid])
 }
 
 // Biblioteca de mídia reutilizável pelos blocos de automação (enviar documento/imagem/vídeo/áudio).

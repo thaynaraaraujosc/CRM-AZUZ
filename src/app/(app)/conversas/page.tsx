@@ -162,18 +162,21 @@ function gerarIdMensagem() {
  * contato/id certos) pra não misturar código com efeito colateral agendado
  * dentro do corpo do componente.
  */
-function agendarSimulacaoDeEntrega(
-  atualizar: (patch: Partial<ConvMensagem>) => void,
-) {
-  const tEnviado = 450 + Math.random() * 350;
-  const tEntregue = tEnviado + 900 + Math.random() * 1100;
-  const tLido = tEntregue + 1800 + Math.random() * 4000;
-  setTimeout(() => atualizar({ status: "enviado" }), tEnviado);
-  setTimeout(() => atualizar({ status: "entregue" }), tEntregue);
-  if (Math.random() < 0.82) {
-    setTimeout(() => atualizar({ status: "lido" }), tLido);
-  }
-}
+/**
+ * REMOVIDA: a simulação de entrega.
+ *
+ * Havia aqui uma função que, por temporizador, marcava toda mensagem enviada como "enviado",
+ * depois "entregue" e — com 82% de chance, sorteada — "lido". Nada disso vinha do WhatsApp: os
+ * dois tiquinhos azuis apareciam mesmo que a mensagem não tivesse saído do servidor.
+ *
+ * Isso é pior do que não mostrar status nenhum. Quem atende decide o que fazer olhando o tique: se
+ * ele diz que o cliente leu, ninguém liga pra cobrar. E como o sorteio era aleatório, o mesmo envio
+ * podia mostrar histórias diferentes a cada recarga da página.
+ *
+ * Agora o status vem de onde ele existe de verdade: "enviado" quando a Meta confirma o envio e
+ * devolve o `wamid`, e "entregue"/"lido" quando o webhook de status chega (casado pelo `wamid`).
+ * Canal que não informa entrega para em "enviado" — que é a verdade sobre o que sabemos.
+ */
 
 /** Aplica um fundo no rascunho de configurações — "todas" grava no padrão, "atual" só nessa conversa. */
 function aplicarFundoRascunho(
@@ -1977,16 +1980,13 @@ function ConversasPageInner() {
       ...prev,
       [contatoNome]: [...(prev[contatoNome] ?? []), pronta],
     }));
-    if (pronta.tipo === "out" && pronta.status === "pendente") {
-      agendarSimulacaoDeEntrega((patch) => atualizarMensagem(contatoNome, id, patch));
-    }
     return id;
   }
 
   function tentarNovamenteMensagem(id: string) {
     const contatoNome = aberta.nome;
+    // Volta pra "pendente" e limpa o erro; quem manda de novo é o canal, e o status real vem de lá.
     atualizarMensagem(contatoNome, id, { status: "pendente", erro: undefined });
-    agendarSimulacaoDeEntrega((patch) => atualizarMensagem(contatoNome, id, patch));
   }
 
   /** Conversa "pertence" ao canal WhatsApp via QR Code (não oficial) quando a última mensagem —
@@ -2015,7 +2015,12 @@ function ConversasPageInner() {
    * a origem de mais de um "aparece no CRM mas não chega do outro lado": um caminho novo nascia
    * sem o ramo de algum canal.
    */
-  function despacharTexto(texto: string, respondendoMid?: string) {
+  /**
+   * `idLocal` é o id da bolha que já está na tela. O envio é assíncrono e o status verdadeiro só
+   * se conhece quando a Meta responde — sem esse id, não havia como voltar e marcar a bolha certa,
+   * e era essa lacuna que a simulação de entrega escondia.
+   */
+  function despacharTexto(texto: string, respondendoMid?: string, idLocal?: string) {
     const viaBaileys = contatoUsaWhatsappNaoOficial();
     // Erro fica registrado como mensagem de sistema DENTRO da conversa (não só um toast que some
     // sozinho em poucos segundos) — assim dá pra ver o motivo exato depois, sem precisar
@@ -2036,18 +2041,49 @@ function ConversasPageInner() {
       })
         .then(async (r) => {
           if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+          // Esta conexão não informa entrega nem leitura, então o status honesto para em "enviado".
+          if (idLocal) atualizarMensagem(aberta.nome, idLocal, { status: "enviado" });
         })
-        .catch((erro) => avisarFalhaNaConversa("WhatsApp QR Code", erro));
+        .catch((erro) => {
+          if (idLocal) atualizarMensagem(aberta.nome, idLocal, { status: "erro" });
+          avisarFalhaNaConversa("WhatsApp QR Code", erro);
+        });
     } else if (!viaBaileys && aberta.canal === "WhatsApp" && (aberta.contato || contatoDaConversa?.whatsapp)) {
+      const nomeDaConversa = aberta.nome;
       fetch("/api/integracoes/meta/whatsapp/enviar", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ destinatario: aberta.contato ?? contatoDaConversa?.whatsapp, texto }),
+        body: JSON.stringify({
+          destinatario: aberta.contato ?? contatoDaConversa?.whatsapp,
+          texto,
+          // Sem `contatoNome` o servidor NÃO conseguia conferir a janela de 24h — a checagem existia
+          // e nunca rodava. Fora da janela, o CRM tentava mandar mensagem livre e recebia um erro
+          // técnico da Meta, em vez de dizer que ali só cabe modelo aprovado.
+          contatoNome: nomeDaConversa,
+        }),
       })
         .then(async (r) => {
-          if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+          const dados = (await r.json()) as { erro?: string; wamid?: string; precisaTemplate?: boolean };
+          if (!r.ok) {
+            if (dados.precisaTemplate) {
+              if (idLocal) atualizarMensagem(nomeDaConversa, idLocal, { status: "erro", erro: dados.erro });
+              adicionarMensagem({
+                tipo: "system",
+                texto: `⚠️ ${dados.erro ?? "Fora da janela de 24h — só com modelo aprovado."}`,
+                hora: horaAgora(),
+              });
+              return;
+            }
+            throw new Error(dados.erro);
+          }
+          // Guarda o id que a Meta devolveu: é por ele que os webhooks de entregue/lido vão
+          // encontrar esta mensagem depois. E "enviado" aqui é fato, não temporizador.
+          if (idLocal) atualizarMensagem(nomeDaConversa, idLocal, { status: "enviado", wamid: dados.wamid });
         })
-        .catch((erro) => avisarFalhaNaConversa("WhatsApp Meta", erro));
+        .catch((erro) => {
+          if (idLocal) atualizarMensagem(nomeDaConversa, idLocal, { status: "erro" });
+          avisarFalhaNaConversa("WhatsApp Meta", erro);
+        });
     } else if (!viaBaileys && aberta.canal === "Instagram" && aberta.contato) {
       // Instagram tem rota própria: o destinatário é o id interno de quem escreveu (guardado em
       // `Conversa.contato`), não um telefone. Sem este ramo, conversa do Direct caía no aviso de
@@ -2061,8 +2097,13 @@ function ConversasPageInner() {
       })
         .then(async (r) => {
           if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
+          // O Direct não devolve entrega nem leitura pra API — "enviado" é tudo que sabemos.
+          if (idLocal) atualizarMensagem(aberta.nome, idLocal, { status: "enviado" });
         })
-        .catch((erro) => avisarFalhaNaConversa("Instagram", erro));
+        .catch((erro) => {
+          if (idLocal) atualizarMensagem(aberta.nome, idLocal, { status: "erro" });
+          avisarFalhaNaConversa("Instagram", erro);
+        });
     } else if (!viaBaileys) {
       // Nenhum canal real bateu (sem número/contato associado à conversa) — sem isso, a mensagem
       // parecia "sumir": ficava só no estado local, sem nenhum aviso de que não tinha pra onde ir.
@@ -2078,14 +2119,14 @@ function ConversasPageInner() {
     const texto = mensagemTexto.trim();
     if (!texto) return;
     const viaBaileys = contatoUsaWhatsappNaoOficial();
-    adicionarMensagem({
+    const idLocal = adicionarMensagem({
       tipo: "out",
       texto,
       hora: horaAgora(),
       respondendoA: respondendoMensagem ?? undefined,
       canal: viaBaileys ? "whatsapp_nao_oficial" : undefined,
     });
-    despacharTexto(texto, respondendoMensagem?.mid);
+    despacharTexto(texto, respondendoMensagem?.mid, idLocal);
     setMensagemTexto("");
     setRespondendoMensagem(null);
   }

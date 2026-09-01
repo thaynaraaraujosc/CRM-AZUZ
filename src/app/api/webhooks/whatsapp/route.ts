@@ -210,14 +210,35 @@ export async function POST(request: Request) {
         const integracao = await integracaoDoNumero(phoneNumberId);
         if (!integracao) continue;
         for (const s of valor.statuses) {
-          // Só atualiza mensagem que já existe (a nossa, gravada no envio) — status de mensagem
-          // desconhecida é ruído, não vira registro novo.
-          await prisma.mensagemExtra
+          // Casa pelo `wamid` — o id que a Meta gerou no envio e que o CRM passou a guardar. O
+          // `id` interno entra como segunda tentativa por dois motivos: mensagem RECEBIDA é
+          // gravada com o próprio wamid como id, e mensagens enviadas antes desta correção não têm
+          // a coluna preenchida.
+          //
+          // Só atualiza mensagem que já existe — status de mensagem desconhecida é ruído, não vira
+          // registro novo.
+          const atualizadas = await prisma.mensagemExtra
             .updateMany({
-              where: { id: s.id, workspaceId: integracao.workspaceId },
+              where: { wamid: s.id, workspaceId: integracao.workspaceId },
               data: { status: s.status ?? undefined },
             })
-            .catch((erro) => console.error("[webhook whatsapp] falha ao atualizar status:", erro));
+            .catch((erro) => {
+              console.error("[webhook whatsapp] falha ao atualizar status:", erro);
+              return { count: 0 };
+            });
+          if (atualizadas.count === 0) {
+            await prisma.mensagemExtra
+              .updateMany({
+                where: { id: s.id, workspaceId: integracao.workspaceId },
+                data: { status: s.status ?? undefined },
+              })
+              .catch((erro) => console.error("[webhook whatsapp] falha ao atualizar status:", erro));
+          }
+          console.log("[webhook whatsapp] status recebido:", {
+            wamid: s.id,
+            status: s.status,
+            casouPeloWamid: atualizadas.count > 0,
+          });
           if (s.status === "failed" && s.errors?.length) {
             console.error(`[webhook whatsapp] mensagem ${s.id} falhou:`, s.errors[0]?.code, s.errors[0]?.title);
           }

@@ -559,6 +559,9 @@ export type ConvMensagem = {
    * texto. `mid` é o id da mensagem citada no canal de origem: é ele que faz a citação aparecer
    * também do lado da pessoa (hoje usado no Direct do Instagram, via `reply_to`). */
   respondendoA?: { autor: string; texto: string; mid?: string };
+  /** Id que a Meta gerou pra esta mensagem enviada (`wamid`) — é a chave que casa os webhooks de
+   * entrega/leitura com ela. Sem isso, os ticks nunca passavam de "enviado". */
+  wamid?: string;
   /** "Reel" | "Publicação" | "Story" | "Carrossel" — etiqueta do que o conteúdo é, quando a Meta
    * declara o tipo. Sem ela, prévia de reel e foto comum ficam idênticas na conversa. */
   tipoConteudo?: string;

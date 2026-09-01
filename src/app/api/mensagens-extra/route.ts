@@ -18,6 +18,7 @@ type LinhaMensagem = {
   status: string | null;
   extras: unknown;
   canal: string | null;
+  wamid: string | null;
 };
 
 /**
@@ -43,6 +44,7 @@ function paraMensagem(linha: LinhaMensagem): ConvMensagem {
     criadoEm: linha.criadoEm ? linha.criadoEm.getTime() : undefined,
     status: (linha.status as ConvMensagem["status"]) ?? undefined,
     canal: linha.canal ?? undefined,
+    wamid: linha.wamid ?? undefined,
   };
 }
 
@@ -104,7 +106,7 @@ export async function PUT(request: Request) {
   const preparados = await Promise.all(
     upserts.map(async ({ contato, idFinal, mensagem }) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars -- só pra excluir `id` de `extras`, já vira a coluna própria
-      const { id: _id, tipo, texto, hora, criadoEm, status, canal, ...extras } = mensagem;
+      const { id: _id, tipo, texto, hora, criadoEm, status, canal, wamid, ...extras } = mensagem;
       const preservados = preservarMidiaGuardada(extras, extrasGuardados.get(idFinal));
       return {
         idFinal,
@@ -116,6 +118,7 @@ export async function PUT(request: Request) {
           criadoEm: criadoEm ? new Date(criadoEm) : null,
           status: status ?? null,
           canal: canal ?? null,
+          wamid: wamid ?? null,
           extras: (await guardarMidiasDosExtras(preservados, workspaceId)) as Prisma.InputJsonValue,
         },
       };
