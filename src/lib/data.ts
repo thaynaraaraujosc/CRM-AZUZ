@@ -559,6 +559,9 @@ export type ConvMensagem = {
    * texto. `mid` é o id da mensagem citada no canal de origem: é ele que faz a citação aparecer
    * também do lado da pessoa (hoje usado no Direct do Instagram, via `reply_to`). */
   respondendoA?: { autor: string; texto: string; mid?: string };
+  /** "Reel" | "Publicação" | "Story" | "Carrossel" — etiqueta do que o conteúdo é, quando a Meta
+   * declara o tipo. Sem ela, prévia de reel e foto comum ficam idênticas na conversa. */
+  tipoConteudo?: string;
   /** Curtida do Instagram nessa mensagem. Cada lado tem a sua: `reacaoContato` é o coração que a
    * pessoa do outro lado deu, `reacaoMinha` é o que saiu daqui (ou do app do Instagram, pela conta
    * conectada). Ficam separadas porque as duas podem existir na MESMA mensagem — sobrescrever uma

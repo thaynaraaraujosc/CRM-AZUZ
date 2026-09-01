@@ -13357,3 +13357,18 @@ button.camp-row:hover {
   font-weight: 600;
   padding: 12px 6px;
 }
+
+/* Etiqueta do tipo de conteúdo no cartão de publicação (Reel, Story, Carrossel). Discreta de
+   propósito: informa sem competir com a prévia, que é o que a pessoa olha primeiro. */
+.bubble-tipo-conteudo {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}

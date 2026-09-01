@@ -40,8 +40,11 @@ export function BolhaMensagem({ msg }: { msg: ConvMensagem }) {
         {/* Cabeçalho do cartão de publicação, no formato que o Instagram usa: quem compartilhou em
             cima, a prévia no meio, o texto embaixo. Sem ele, uma imagem solta no meio da conversa
             não diz se é uma foto da pessoa ou uma publicação que ela encaminhou. */}
-        {msg.compartilhadoPor ? (
-          <span className="bubble-share-topo">{msg.compartilhadoPor}</span>
+        {msg.tipoConteudo || msg.compartilhadoPor ? (
+          <span className="bubble-share-topo">
+            {msg.tipoConteudo ? <em className="bubble-tipo-conteudo">{msg.tipoConteudo}</em> : null}
+            {msg.compartilhadoPor ?? null}
+          </span>
         ) : null}
         <span className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}>{imagens}</span>
         {msg.legendaPublicacao ? (

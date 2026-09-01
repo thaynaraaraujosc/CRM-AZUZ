@@ -150,9 +150,11 @@ export function ConexaoInstagram() {
     setResultadoAssinatura(null);
     try {
       const resposta = await fetch("/api/integracoes/instagram/reassinar", { method: "POST" });
-      const dados = (await resposta.json()) as { erro?: string };
+      const dados = (await resposta.json()) as { erro?: string; aviso?: string };
       if (!resposta.ok) throw new Error(dados.erro ?? "Falha ao reativar.");
-      setResultadoAssinatura("Recebimento reativado. Peça uma mensagem nova pra confirmar.");
+      // O aviso não é erro: o Direct volta a funcionar, mas as automações de comentário ficariam
+      // mudas — e isso precisa ser dito, não descoberto depois.
+      setResultadoAssinatura(dados.aviso ?? "Recebimento reativado. Peça uma mensagem nova pra confirmar.");
     } catch (e) {
       setResultadoAssinatura(e instanceof Error ? e.message : "Falha ao reativar.");
     } finally {

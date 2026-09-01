@@ -83,6 +83,9 @@ type AnexoInstagram = {
     author?: string;
     owner?: { username?: string; name?: string };
     from?: { username?: string; name?: string };
+    /** "FEED" | "REELS" | "CAROUSEL_ALBUM" | "STORY" quando a Meta declara. É o que permite
+     * rotular o cartão sem adivinhar pelo formato do arquivo. */
+    media_product_type?: string;
     /** Post/reel compartilhado: link pro conteúdo no Instagram. A Meta nem sempre manda — quando
      * não vem, sobra a prévia sem o clique. */
     permalink_url?: string;
@@ -674,8 +677,28 @@ export async function POST(request: Request) {
         linkDoConteudo ??
         (temMidiaBaixada && !ehEco && arrobaDeQuemMandou ? `https://ig.me/m/${arrobaDeQuemMandou}` : undefined);
 
+      // Etiqueta do que é o conteúdo — Reel, publicação, story, carrossel. O CRM sabe disso pelo
+      // tipo que a Meta declara no anexo; sem mostrar, uma prévia de reel e uma foto qualquer ficam
+      // visualmente idênticas na conversa, e o vendedor perde o contexto do que a pessoa mandou.
+      //
+      // Carrossel entra como rótulo e nada além: a Meta entrega UMA mídia, não os itens. Dizer
+      // "carrossel" e mostrar a capa é honesto; simular a navegação entre fotos que não temos, não.
+      const tipoDeConteudo =
+        anexo?.type === "ig_reel"
+          ? "Reel"
+          : anexo?.type === "share"
+            ? "Publicação"
+            : anexo?.type === "story_mention"
+              ? "Story"
+              : story
+                ? "Story"
+                : anexo?.payload?.media_product_type === "CAROUSEL_ALBUM"
+                  ? "Carrossel"
+                  : undefined;
+
       const extrasComLegenda = {
         ...extras,
+        ...(tipoDeConteudo ? { tipoConteudo: tipoDeConteudo } : {}),
         ...(respondendoA ? { respondendoA } : {}),
         ...(legenda ? { legenda } : {}),
         ...(linkExternoDaMensagem ? { linkExterno: linkExternoDaMensagem } : {}),

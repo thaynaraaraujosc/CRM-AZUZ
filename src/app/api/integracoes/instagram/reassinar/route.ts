@@ -52,5 +52,19 @@ export async function POST() {
       { status: 502 },
     );
   }
-  return NextResponse.json({ ok: true, campos });
+  // `comments` é assinado junto de `messages`, mas confirmar separado importa: sem ele o Direct
+  // funciona e as automações de comentário ficam mudas — falha silenciosa, a pior de todas. Não é
+  // erro fatal (o Direct segue), só um aviso honesto de que metade não vai funcionar.
+  const semComentarios = campos ? !campos.includes("comments") : false;
+  return NextResponse.json({
+    ok: true,
+    campos,
+    ...(semComentarios
+      ? {
+          aviso:
+            "As mensagens do Direct vão chegar, mas os COMENTÁRIOS não: a conta não está assinando \"comments\". " +
+            "Desconecte e conecte o Instagram de novo, aceitando o acesso a comentários.",
+        }
+      : {}),
+  });
 }
