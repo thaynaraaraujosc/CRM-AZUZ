@@ -834,6 +834,17 @@ export async function POST(request: Request) {
           tipoAnexo: anexo?.type ?? null,
           temMidia: temMidiaBaixada,
           autorPublicacao: autorPublicacao ?? null,
+          // O que a Meta mandou DENTRO do anexo — só os NOMES dos campos e se os três que
+          // importam existem. Nunca os valores: as URLs do CDN são assinadas e temporárias, e
+          // guardá-las seria guardar credencial.
+          //
+          // É esta a evidência que faltava pra saber por que uma publicação compartilhada chega
+          // sem miniatura: sem ela, "não apareceu" é indistinguível de "a Meta não mandou nada",
+          // "mandou e o download falhou" e "mandou vídeo e a política recusou".
+          camposDoAnexo: anexo?.payload ? Object.keys(anexo.payload) : [],
+          temUrlNoAnexo: Boolean(anexo?.payload?.url),
+          temIdDaMidia: Boolean(idDaMidiaDoConteudo),
+          temPermalink: Boolean(linkDoConteudo),
         },
       });
 

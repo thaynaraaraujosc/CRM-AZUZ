@@ -19,7 +19,7 @@ export async function GET() {
 
   const desde = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [porTipo, falhas, ultimo] = await Promise.all([
+  const [porTipo, falhas, ultimo, compartilhamentos] = await Promise.all([
     prisma.instagramEvento.groupBy({
       by: ["tipo"],
       where: { workspaceId, criadoEm: { gte: desde } },
@@ -36,12 +36,28 @@ export async function GET() {
       orderBy: { criadoEm: "desc" },
       select: { criadoEm: true, tipo: true },
     }),
+    // Os últimos conteúdos compartilhados, com o que a Meta entregou em cada um. É o que responde
+    // "por que esse reel chegou sem miniatura?" sem depender de ler log de servidor.
+    prisma.instagramEvento.findMany({
+      where: { workspaceId, tipo: { in: ["publicacao_compartilhada", "midia_recebida", "mencao_em_story"] } },
+      orderBy: { criadoEm: "desc" },
+      take: 5,
+      select: { tipo: true, texto: true, permalink: true, midiaId: true, dados: true, criadoEm: true },
+    }),
   ]);
 
   return NextResponse.json(
     {
       ultimoEvento: ultimo ? { tipo: ultimo.tipo, quando: ultimo.criadoEm.toISOString() } : null,
       seteDias: porTipo.map((t) => ({ tipo: t.tipo, quantidade: t._count._all })),
+      compartilhamentos: compartilhamentos.map((c) => ({
+        tipo: c.tipo,
+        texto: c.texto,
+        temPermalink: Boolean(c.permalink),
+        temIdDaMidia: Boolean(c.midiaId),
+        oQueAMetaMandou: c.dados,
+        quando: c.criadoEm.toISOString(),
+      })),
       falhas: falhas.map((f) => ({
         id: f.id,
         tipo: f.tipo,
