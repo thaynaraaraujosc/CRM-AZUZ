@@ -6,6 +6,7 @@ import type { ConvMensagem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { BolhaMensagem } from "./BolhaMensagem";
+import { IconDoc, IconImage, IconLocalizacao } from "@/components/icons";
 
 /**
  * Painel de conversa completo, em popup — a janela que abre ao clicar num card do Funil.
@@ -47,6 +48,15 @@ export function PainelConversa({
 
   const [texto, setTexto] = useState("");
   const [maisAberto, setMaisAberto] = useState(false);
+  /**
+   * Arquivo escolhido, ainda não enviado.
+   *
+   * Antes o clique em "Foto" já disparava o envio: escolheu errado, era mensagem errada na
+   * conversa do cliente, sem volta. Agora passa por uma prévia, com legenda opcional e a chance de
+   * desistir — que é como qualquer aplicativo de mensagem se comporta.
+   */
+  const [previa, setPrevia] = useState<{ arquivo: File; dataUrl: string; tipo: "image" | "file" } | null>(null);
+  const [legendaPrevia, setLegendaPrevia] = useState("");
   const [dadosAberto, setDadosAberto] = useState(false);
   const [aba, setAba] = useState<"contato" | "negociacao" | "atividades" | "historico">("contato");
   const [linhaDoTempo, setLinhaDoTempo] = useState<
@@ -117,12 +127,16 @@ export function PainelConversa({
     return adicionarBolhaOtimista(contatoNome, msg, setMensagensExtraPorContato);
   }
 
-  async function enviarTexto(conteudo?: string) {
+  /**
+   * `extras` deixa a bolha carregar mais do que texto (uma localização, por exemplo) sem que o
+   * envio precise saber disso: o que sai pelo canal continua sendo o texto.
+   */
+  async function enviarTexto(conteudo?: string, extras?: Partial<ConvMensagem>) {
     const corpo = (conteudo ?? texto).trim();
     if (!corpo || enviando) return;
     setErro(null);
     setEnviando(true);
-    const marcar = bolhaOtimista({ tipo: "out", texto: corpo });
+    const marcar = bolhaOtimista({ tipo: "out", texto: corpo, ...extras });
     if (!conteudo) setTexto("");
     setMaisAberto(false);
 
@@ -141,6 +155,26 @@ export function PainelConversa({
     } finally {
       setEnviando(false);
     }
+  }
+
+  /** Escolheu o arquivo: mostra a prévia. O envio só acontece quando a pessoa confirma. */
+  async function prepararArquivo(arquivo: File, tipo: "image" | "file") {
+    setErro(null);
+    setMaisAberto(false);
+    setLegendaPrevia("");
+    setPrevia({ arquivo, dataUrl: await lerComoDataUrl(arquivo), tipo });
+  }
+
+  async function confirmarEnvioDaPrevia() {
+    if (!previa || enviando) return;
+    const { arquivo, tipo } = previa;
+    const legenda = legendaPrevia.trim();
+    setPrevia(null);
+    setLegendaPrevia("");
+    await enviarArquivo(arquivo, tipo);
+    // A legenda vai como mensagem própria: nem todo canal aceita legenda junto do anexo, e mandar
+    // separado funciona em todos — melhor do que a legenda sumir em silêncio num deles.
+    if (legenda) await enviarTexto(legenda);
   }
 
   async function enviarArquivo(arquivo: File, tipo: "image" | "file") {
@@ -243,17 +277,60 @@ export function PainelConversa({
 
         {erro ? <p className="hint" style={{ color: "var(--danger)", margin: "0 0 6px" }}>⚠ {erro}</p> : null}
 
+        {/* Prévia do que vai ser enviado — com legenda e a chance de desistir. */}
+        {previa ? (
+          <div className="painel-previa">
+            {previa.tipo === "image" ? (
+              // eslint-disable-next-line @next/next/no-img-element -- arquivo local, ainda não enviado
+              <img className="painel-previa-imagem" src={previa.dataUrl} alt={previa.arquivo.name} />
+            ) : (
+              <div className="painel-previa-doc">
+                <IconDoc width={20} height={20} />
+                <span>{previa.arquivo.name}</span>
+              </div>
+            )}
+            <input
+              className="input"
+              placeholder="Escreva uma legenda (opcional)"
+              value={legendaPrevia}
+              onChange={(e) => setLegendaPrevia(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void confirmarEnvioDaPrevia();
+              }}
+            />
+            <div className="painel-previa-acoes">
+              <button type="button" className="btn ghost" onClick={() => setPrevia(null)} disabled={enviando}>
+                Remover
+              </button>
+              <button type="button" className="btn" onClick={() => void confirmarEnvioDaPrevia()} disabled={enviando}>
+                {enviando ? "Enviando…" : "Enviar"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <div className="painel-conversa-rodape">
           {maisAberto ? (
             <div className="painel-conversa-mais">
+              {/* Ícones do sistema, não emoji: emoji muda de desenho a cada sistema operacional e
+                  a cada versão, e num menu de ação isso vira ruído em vez de sinal. */}
               <button type="button" className="wa-anexo-item" onClick={() => arquivoImagemRef.current?.click()}>
-                <span className="wa-anexo-label">🖼 Foto</span>
+                <span className="wa-anexo-icone wa-anexo-icone-imagem">
+                  <IconImage width={17} height={17} />
+                </span>
+                <span className="wa-anexo-label">Foto ou vídeo</span>
               </button>
               <button type="button" className="wa-anexo-item" onClick={() => arquivoDocumentoRef.current?.click()}>
-                <span className="wa-anexo-label">📄 Documento</span>
+                <span className="wa-anexo-icone wa-anexo-icone-documento">
+                  <IconDoc width={17} height={17} />
+                </span>
+                <span className="wa-anexo-label">Documento</span>
               </button>
               <button type="button" className="wa-anexo-item" onClick={() => void compartilharLocalizacao()}>
-                <span className="wa-anexo-label">📍 Localização</span>
+                <span className="wa-anexo-icone wa-anexo-icone-localizacao">
+                  <IconLocalizacao width={17} height={17} />
+                </span>
+                <span className="wa-anexo-label">Localização</span>
               </button>
               {respostasRapidas.length ? (
                 <div className="painel-conversa-respostas">
@@ -317,7 +394,7 @@ export function PainelConversa({
           hidden
           onChange={(e) => {
             const arquivo = e.target.files?.[0];
-            if (arquivo) void enviarArquivo(arquivo, "image");
+            if (arquivo) void prepararArquivo(arquivo, "image");
             e.target.value = "";
           }}
         />
@@ -327,7 +404,7 @@ export function PainelConversa({
           hidden
           onChange={(e) => {
             const arquivo = e.target.files?.[0];
-            if (arquivo) void enviarArquivo(arquivo, "file");
+            if (arquivo) void prepararArquivo(arquivo, "file");
             e.target.value = "";
           }}
         />
@@ -472,7 +549,13 @@ export function PainelConversa({
     navigator.geolocation.getCurrentPosition(
       (posicao) => {
         const { latitude, longitude } = posicao.coords;
-        void enviarTexto(`📍 Minha localização: https://www.google.com/maps?q=${latitude},${longitude}`);
+        // O texto ainda carrega o endereço do mapa — é o que a pessoa do outro lado recebe, já
+        // que nem WhatsApp nem Instagram aceitam localização estruturada pela nossa camada de
+        // envio. Mas a bolha DAQUI vira um cartão com prévia do mapa, em vez de uma linha com um
+        // endereço gigante: URL é camada técnica, não conteúdo de leitura.
+        void enviarTexto(`https://www.google.com/maps?q=${latitude},${longitude}`, {
+          localizacao: { lat: latitude, lng: longitude },
+        });
       },
       (falha) =>
         setErro(

@@ -13477,3 +13477,37 @@ button.camp-row:hover {
   font-size: 13px;
   font-weight: 600;
 }
+
+/* Prévia do anexo no painel do funil — o passo entre escolher e enviar. */
+.painel-previa {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.painel-previa-imagem {
+  max-height: 180px;
+  width: auto;
+  align-self: center;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.painel-previa-doc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 6px 2px;
+}
+
+.painel-previa-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
