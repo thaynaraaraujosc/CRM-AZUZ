@@ -544,12 +544,27 @@ export async function POST(request: Request) {
       //
       // A capa é pedida à Meta pelo id da mídia (`thumbnail_url`), que ela já gera. Assim a
       // miniatura existe sem o servidor abrir vídeo nenhum.
-      const idDaMidiaDoStory = story?.id ?? (anexo?.type === "story_mention" ? anexo.payload?.id : undefined);
-      if (!Object.keys(extras).length && idDaMidiaDoStory && tokenDaConta) {
-        const capa = await buscarCapaDaMidia(tokenDaConta, idDaMidiaDoStory);
+      // Vale pro story E pra reel/publicação compartilhada: os três chegam como vídeo quando o
+      // conteúdo é vídeo, e nos três a bolha ficava só com a frase, sem prévia — foi o que
+      // aconteceu com "Compartilhou um reel", que chegou sem miniatura nenhuma.
+      const idDaMidiaDoConteudo = story?.id ?? anexo?.payload?.id;
+      if (!Object.keys(extras).length && idDaMidiaDoConteudo && tokenDaConta) {
+        const capa = await buscarCapaDaMidia(tokenDaConta, idDaMidiaDoConteudo);
         if (capa) {
           extras = await extrasDeAnexoInstagram({ type: "image", payload: { url: capa } }, tokenDaConta, true);
         }
+      }
+
+      // Último recurso pra conteúdo compartilhado que continuou sem prévia: guardar o próprio
+      // vídeo, respeitando o teto de tamanho.
+      //
+      // A regra de não guardar vídeo do Instagram nasceu quando anexo era base64 dentro do banco —
+      // ali cada megabyte pesava no MySQL e na memória do servidor. Com os arquivos no R2 e o teto
+      // de 4 MB valendo, o custo virou pequeno, e a alternativa é o que você está vendo: uma bolha
+      // escrita "Compartilhou um reel" e nada mais. Reel grande continua sem prévia — aí o teto
+      // barra, e a frase é tudo que dá pra mostrar honestamente.
+      if (!Object.keys(extras).length && anexoEfetivo && ehConteudoDoInstagram) {
+        extras = await extrasDeAnexoInstagram(anexoEfetivo, tokenDaConta, false);
       }
 
       // Só link de post DE VERDADE (permalink) entra no texto. A URL do CDN não vira link: ela é o
