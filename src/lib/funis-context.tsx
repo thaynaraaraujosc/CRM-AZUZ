@@ -30,6 +30,24 @@ type FunisContextValue = {
   ) => void;
   /** Não deixa apagar o último funil que sobrou — sempre precisa ter pelo menos um. */
   excluirFunil: (funilId: string) => void;
+  /**
+   * Move UM negócio de etapa/funil e, opcionalmente, troca o responsável — gravado na hora.
+   *
+   * Devolve `{ ok }`. Quando dá errado, a tela volta ao que está no banco em vez de continuar
+   * mostrando uma mudança que não aconteceu.
+   */
+  moverNegocio: (params: {
+    cardId: string;
+    etapaId: string;
+    responsavel?: string | null;
+  }) => Promise<{ ok: boolean; erro?: string }>;
+  /** Cria um funil gravando no banco antes de aparecer na tela. */
+  criarFunilPersistido: (funil: Funil) => Promise<{ ok: boolean; erro?: string }>;
+  /** Cria uma etapa gravando no banco antes de aparecer na tela. */
+  criarEtapaPersistida: (funilId: string, etapa: { id: string; titulo: string }) => Promise<{ ok: boolean; erro?: string }>;
+  /** Último erro de gravação, pra tela avisar em vez de fingir que salvou. */
+  erroSincronizacao: string | null;
+  limparErroSincronizacao: () => void;
 };
 
 const FunisContext = createContext<FunisContextValue | null>(null);
@@ -43,6 +61,8 @@ const FunisContext = createContext<FunisContextValue | null>(null);
 export function FunisProvider({ children }: { children: ReactNode }) {
   const [funis, setFunis] = useState<Funil[]>([]);
   const [funilAtivoId, setFunilAtivoId] = useState("");
+  /** Último erro de gravação — a tela mostra pra ninguém achar que salvou quando não salvou. */
+  const [erroSincronizacao, setErroSincronizacao] = useState<string | null>(null);
   const carregadoRef = useRef(false);
 
   useEffect(() => {
@@ -69,7 +89,31 @@ export function FunisProvider({ children }: { children: ReactNode }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dados),
       keepalive: true,
-    }).catch((erro) => console.error("Falha ao sincronizar funis na API:", erro));
+    })
+      .then(async (resposta) => {
+        // O `.catch` sozinho NÃO pega isto: um HTTP 500 resolve a promessa normalmente. Sem
+        // conferir `ok`, uma gravação recusada pelo banco era invisível — a tela mostrava o funil
+        // novo, o banco não tinha nada, e no F5 ele "sumia" sem nenhum erro em lugar nenhum. Era a
+        // causa do bug de funil e etapa desaparecendo.
+        if (resposta.ok) return;
+        const dadosErro = (await resposta.json().catch(() => ({}))) as { erro?: string };
+        console.error("Funis não foram salvos:", dadosErro.erro ?? resposta.status);
+        setErroSincronizacao(
+          dadosErro.erro ?? "As alterações do funil não foram salvas. Recarregando do servidor…",
+        );
+        // Recarrega do banco: melhor a tela voltar ao que está gravado do que seguir mostrando uma
+        // versão que não existe. Front e banco nunca ficam divergentes em silêncio.
+        await recarregar();
+      })
+      .catch((erro) => console.error("Falha ao sincronizar funis na API:", erro));
+  }
+
+  /** Relê os funis do banco — usado depois de uma gravação recusada e depois de cada operação
+   * imediata, pra tela e banco contarem a mesma história. */
+  async function recarregar() {
+    const dados = (await fetch("/api/funis").then((r) => r.json())) as Funil[];
+    setFunis(dados);
+    return dados;
   }
 
   useEffect(() => {
@@ -94,6 +138,101 @@ export function FunisProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("beforeunload", flush);
     };
   }, []);
+
+  /**
+   * Grava a movimentação imediatamente e só então mexe na tela.
+   *
+   * O contrário do que existia: o card se movia primeiro e a gravação vinha meio segundo depois,
+   * dentro de uma reconciliação do funil inteiro. Se ela falhasse — e falhava em silêncio — o card
+   * aparecia na etapa nova e voltava pra antiga no próximo F5.
+   */
+  async function moverNegocio({
+    cardId,
+    etapaId,
+    responsavel,
+  }: {
+    cardId: string;
+    etapaId: string;
+    responsavel?: string | null;
+  }): Promise<{ ok: boolean; erro?: string }> {
+    try {
+      const resposta = await fetch("/api/funis/mover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId, etapaId, responsavel }),
+      });
+      const dados = (await resposta.json()) as { erro?: string };
+      if (!resposta.ok) {
+        setErroSincronizacao(dados.erro ?? "Não foi possível mover o negócio.");
+        await recarregar();
+        return { ok: false, erro: dados.erro };
+      }
+      // Relê do banco: é a única forma de a tela refletir exatamente o que ficou gravado,
+      // inclusive contadores e a posição final dentro da coluna.
+      await recarregar();
+      return { ok: true };
+    } catch {
+      setErroSincronizacao("Falha de conexão ao mover o negócio.");
+      await recarregar();
+      return { ok: false, erro: "Falha de conexão." };
+    }
+  }
+
+  async function criarFunilPersistido(funil: Funil): Promise<{ ok: boolean; erro?: string }> {
+    try {
+      const resposta = await fetch("/api/funis/estrutura", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tipo: "funil",
+          id: funil.id,
+          nome: funil.nome,
+          responsavel: funil.responsavel ?? null,
+          etapas: funil.colunas.map((c) => ({ id: c.id, titulo: c.titulo })),
+        }),
+      });
+      const dados = (await resposta.json()) as { erro?: string };
+      if (!resposta.ok) {
+        setErroSincronizacao(dados.erro ?? "Não foi possível criar o funil.");
+        return { ok: false, erro: dados.erro };
+      }
+      // Só entra na tela DEPOIS de existir no banco — nunca mais um funil que some no F5.
+      setFunis((prev) => [...prev, funil]);
+      return { ok: true };
+    } catch {
+      setErroSincronizacao("Falha de conexão ao criar o funil.");
+      return { ok: false, erro: "Falha de conexão." };
+    }
+  }
+
+  async function criarEtapaPersistida(
+    funilId: string,
+    etapa: { id: string; titulo: string },
+  ): Promise<{ ok: boolean; erro?: string }> {
+    try {
+      const resposta = await fetch("/api/funis/estrutura", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo: "etapa", id: etapa.id, nome: etapa.titulo, funilId }),
+      });
+      const dados = (await resposta.json()) as { erro?: string };
+      if (!resposta.ok) {
+        setErroSincronizacao(dados.erro ?? "Não foi possível criar a etapa.");
+        return { ok: false, erro: dados.erro };
+      }
+      setFunis((prev) =>
+        prev.map((f) =>
+          f.id === funilId
+            ? { ...f, colunas: [...f.colunas, { id: etapa.id, titulo: etapa.titulo, total: 0, cards: [] }] }
+            : f,
+        ),
+      );
+      return { ok: true };
+    } catch {
+      setErroSincronizacao("Falha de conexão ao criar a etapa.");
+      return { ok: false, erro: "Falha de conexão." };
+    }
+  }
 
   function atribuirContatoAoFunil(
     funilId: string,
@@ -156,6 +295,11 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         setFunilAtivoId,
         atribuirContatoAoFunil,
         excluirFunil,
+        moverNegocio,
+        criarFunilPersistido,
+        criarEtapaPersistida,
+        erroSincronizacao,
+        limparErroSincronizacao: () => setErroSincronizacao(null),
       }}
     >
       {children}

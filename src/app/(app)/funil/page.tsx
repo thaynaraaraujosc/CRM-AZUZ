@@ -58,8 +58,19 @@ export default function FunilPage() {
 function FunilPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { funis, setFunis, funilAtivoId, setFunilAtivoId, excluirFunil, atribuirContatoAoFunil } =
-    useFunis();
+  const {
+    funis,
+    setFunis,
+    funilAtivoId,
+    setFunilAtivoId,
+    excluirFunil,
+    atribuirContatoAoFunil,
+    moverNegocio,
+    criarFunilPersistido,
+    criarEtapaPersistida,
+    erroSincronizacao,
+    limparErroSincronizacao,
+  } = useFunis();
   const { automacoesDaEtapa, automacoesDeEntradaAtivas, excluirAutomacoesDaEtapa, excluirAutomacoesDoFunil } =
     useAutomacoes();
   const { dispararEvento } = useAutomationFlows();
@@ -257,10 +268,12 @@ function FunilPageInner() {
         { id: `fechado-${carimbo}`, titulo: "Fechado", total: 0, cards: [] },
       ],
     };
-    setFunis((prev) => [...prev, novo]);
-    setFunilAtivoId(novo.id);
-    setAtendenteNovoFunil(equipe[0]?.nome ?? "");
-    setNovoFunilAberto(false);
+    void criarFunilPersistido(novo).then(({ ok }) => {
+      if (!ok) return;
+      setFunilAtivoId(novo.id);
+      setAtendenteNovoFunil(equipe[0]?.nome ?? "");
+      setNovoFunilAberto(false);
+    });
   }
 
   function criarNegocio() {
@@ -312,19 +325,11 @@ function FunilPageInner() {
     );
 
     if (cardMovido && etapaDestino) {
-      // Persiste esse card imediatamente (não espera o debounce de 500ms do sync geral do array de
-      // funis) — ver comentário em src/app/api/funis/mover-card/route.ts pra entender por que isso
-      // é necessário pra não perder o drag num F5 rápido ou com mais de uma aba aberta.
-      fetch("/api/funis/mover-card", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cardId: cardMovido.id,
-          etapaId: etapaDestino.id,
-          ordem: etapaDestino.cards.length,
-        }),
-        keepalive: true,
-      }).catch((erro) => console.error("Falha ao mover card imediatamente na API:", erro));
+      // Grava na hora e CONFERE o resultado. Antes a chamada era disparada e esquecida: se o banco
+      // recusasse, o card ficava na etapa nova só na tela e voltava no F5 seguinte — sem erro em
+      // lugar nenhum. Agora, se a gravação falhar, `moverNegocio` relê o funil do banco e a tela
+      // volta ao que realmente está salvo.
+      void moverNegocio({ cardId: cardMovido.id, etapaId: etapaDestino.id });
 
       const disparadas = automacoesDeEntradaAtivas(funilAtivo.id, etapaDestino.id);
       for (const automacao of disparadas) {
@@ -366,21 +371,13 @@ function FunilPageInner() {
     }
   }
 
-  function criarEtapa() {
+  async function criarEtapa() {
     const titulo = nomeNovaEtapa.trim();
     if (!titulo || !funilAtivo) return;
-    setFunis((prev) =>
-      prev.map((f) => {
-        if (f.id !== funilAtivo.id) return f;
-        return {
-          ...f,
-          colunas: [
-            ...f.colunas,
-            { id: `etapa-${Date.now()}`, titulo, total: 0, cards: [] },
-          ],
-        };
-      }),
-    );
+    // Grava ANTES de aparecer na tela. Antes a etapa entrava no estado e dependia do sync geral do
+    // funil pra ser salva — quando aquele sync falhava, ela sumia no F5 sem nenhum aviso.
+    const { ok } = await criarEtapaPersistida(funilAtivo.id, { id: `etapa-${Date.now()}`, titulo });
+    if (!ok) return;
     setNomeNovaEtapa("");
     setNovaEtapaAberta(false);
   }
@@ -432,6 +429,17 @@ function FunilPageInner() {
 
   return (
     <>
+      {/* Gravação recusada pelo banco. Aparece porque o pior comportamento possível aqui é a tela
+          mostrar uma mudança que não existe: a pessoa arrasta o lead, vê ele na etapa nova, e só
+          descobre no dia seguinte que ele nunca saiu do lugar. */}
+      {erroSincronizacao ? (
+        <div className="funil-erro-sync" role="alert">
+          <span>{erroSincronizacao}</span>
+          <button type="button" onClick={limparErroSincronizacao} aria-label="Fechar aviso">
+            ×
+          </button>
+        </div>
+      ) : null}
       <Topbar
         title="Funil"
         sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} ${totalVisivel === 1 ? "negócio" : "negócios"} ${filtroAtivo ? (totalVisivel === 1 ? "encontrado" : "encontrados") : "no funil"}`}

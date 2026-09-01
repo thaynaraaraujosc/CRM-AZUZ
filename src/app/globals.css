@@ -13558,3 +13558,33 @@ button.camp-row:hover {
   width: 26px;
   height: 26px;
 }
+
+/* Aviso de gravação recusada no funil — fica sobre a tela até a pessoa fechar, porque perder uma
+   movimentação de lead sem saber é o pior desfecho possível deste módulo. */
+.funil-erro-sync {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(214, 69, 69, 0.35);
+  background: #fff5f5;
+  color: #9b2c2c;
+  font-size: 13px;
+  box-shadow: 0 10px 30px rgba(11, 21, 51, 0.18);
+}
+
+.funil-erro-sync button {
+  background: none;
+  border: 0;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
