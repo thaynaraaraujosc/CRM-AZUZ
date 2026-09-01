@@ -178,7 +178,14 @@ export async function baixarFotoPerfil(url: string): Promise<string | null> {
 export async function inscreverAppNoInstagram(accessToken: string): Promise<string | null> {
   try {
     const resposta = await fetch(
-      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/subscribed_apps?subscribed_fields=messages,message_reactions`,
+      // `comments` é o que faz comentário em publicação e resposta a comentário chegarem no webhook.
+      // Sem ele o CRM recebia só Direct — e o gatilho "Comentário no Instagram", que já existia no
+      // construtor de automações, nunca disparava: a pessoa montava o fluxo e nada acontecia.
+      //
+      // Os nomes têm que estar exatos: a Meta recusa a chamada INTEIRA se um campo estiver errado,
+      // e a conta fica "conectada" sem assinatura nenhuma, sem receber mensagem alguma. Foi o que
+      // aconteceu com `messaging_reactions` (o certo é `message_reactions`).
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/subscribed_apps?subscribed_fields=messages,message_reactions,comments`,
       { method: "POST", headers: { authorization: `Bearer ${accessToken}` } },
     );
     const dados = (await resposta.json()) as { success?: boolean } & ErroGraph;
@@ -426,4 +433,158 @@ export async function buscarCapaDaMidia(accessToken: string, midiaId: string): P
     console.error("[instagram] Falha ao buscar a capa da mídia:", erro);
     return null;
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Comentários                                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Responde a um comentário na própria publicação.
+ *
+ * Exige o escopo `instagram_business_manage_comments`, que já é pedido no login. Vale a ressalva
+ * comercial: pra contas de TERCEIROS (seus clientes), esse escopo só funciona depois da revisão do
+ * app pela Meta — em desenvolvimento ele funciona só pra quem tem papel no app.
+ */
+export async function responderComentarioInstagram(
+  accessToken: string,
+  comentarioId: string,
+  mensagem: string,
+): Promise<string | undefined> {
+  const resposta = await fetch(
+    `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${comentarioId}/replies`,
+    {
+      method: "POST",
+      headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ message: mensagem }),
+    },
+  );
+  const dados = (await resposta.json()) as { id?: string } & ErroGraph;
+  if (!resposta.ok) {
+    throw new Error(dados.error_message ?? dados.error?.message ?? `Falha ao responder comentário (HTTP ${resposta.status})`);
+  }
+  return dados.id;
+}
+
+/** Oculta ou reexibe um comentário. Útil pra moderação automática de spam. */
+export async function ocultarComentarioInstagram(
+  accessToken: string,
+  comentarioId: string,
+  ocultar: boolean,
+): Promise<void> {
+  const resposta = await fetch(
+    `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${comentarioId}?hide=${ocultar}`,
+    { method: "POST", headers: { authorization: `Bearer ${accessToken}` } },
+  );
+  if (!resposta.ok) {
+    const dados = (await resposta.json().catch(() => ({}))) as ErroGraph;
+    throw new Error(dados.error_message ?? dados.error?.message ?? `HTTP ${resposta.status}`);
+  }
+}
+
+export type PublicacaoInstagram = {
+  id: string;
+  tipo: string;
+  legenda: string;
+  miniatura: string | null;
+  permalink: string | null;
+  publicadoEm: string | null;
+};
+
+/**
+ * Publicações da conta conectada — pra escolher em qual delas uma automação de comentário vale.
+ *
+ * `thumbnail_url` só existe em vídeo/reel; em imagem e carrossel a capa é a própria `media_url`.
+ * Por isso os dois campos são pedidos e o primeiro que existir é usado.
+ */
+export async function listarPublicacoesInstagram(
+  accessToken: string,
+  limite = 25,
+): Promise<PublicacaoInstagram[]> {
+  const campos = "id,media_type,caption,media_url,thumbnail_url,permalink,timestamp";
+  const resposta = await fetch(
+    `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/media?fields=${campos}&limit=${limite}`,
+    { headers: { authorization: `Bearer ${accessToken}` } },
+  );
+  const dados = (await resposta.json()) as {
+    data?: {
+      id: string;
+      media_type?: string;
+      caption?: string;
+      media_url?: string;
+      thumbnail_url?: string;
+      permalink?: string;
+      timestamp?: string;
+    }[];
+  } & ErroGraph;
+  if (!resposta.ok) {
+    throw new Error(dados.error_message ?? dados.error?.message ?? `HTTP ${resposta.status}`);
+  }
+  return (dados.data ?? []).map((item) => ({
+    id: item.id,
+    tipo: item.media_type ?? "IMAGE",
+    legenda: item.caption ?? "",
+    miniatura: item.thumbnail_url ?? item.media_url ?? null,
+    permalink: item.permalink ?? null,
+    publicadoEm: item.timestamp ?? null,
+  }));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Erros da Meta                                                              */
+/* -------------------------------------------------------------------------- */
+
+export type MotivoFalhaMeta =
+  | "limite_de_chamadas"
+  | "token_expirado"
+  | "permissao_removida"
+  | "fora_da_janela"
+  | "conteudo_indisponivel"
+  | "temporario"
+  | "desconhecido";
+
+/**
+ * Classifica a falha da Meta em algo sobre o que dá pra decidir.
+ *
+ * A mensagem crua dela é técnica e em inglês, e o código sozinho não diz se vale tentar de novo.
+ * Sem essa separação, "excedeu o limite de chamadas" (espere e repita) e "token expirado"
+ * (reconecte a conta) chegavam na tela como o mesmo "erro ao enviar", e ninguém sabia o que fazer.
+ */
+export function classificarErroMeta(mensagem: string): { motivo: MotivoFalhaMeta; explicacao: string } {
+  const texto = mensagem.toLowerCase();
+
+  if (texto.includes("rate limit") || texto.includes("too many") || texto.includes("#4") || texto.includes("#613")) {
+    return {
+      motivo: "limite_de_chamadas",
+      explicacao: "O Instagram limitou temporariamente as chamadas. Vai voltar sozinho em alguns minutos.",
+    };
+  }
+  if (texto.includes("expired") || texto.includes("session has been invalidated") || texto.includes("#190")) {
+    return {
+      motivo: "token_expirado",
+      explicacao: "A conexão com o Instagram expirou. Reconecte a conta em Integrações.",
+    };
+  }
+  if (texto.includes("permission") || texto.includes("#200") || texto.includes("#10")) {
+    return {
+      motivo: "permissao_removida",
+      explicacao: "Falta permissão nessa conta do Instagram. Reconecte aceitando todos os acessos pedidos.",
+    };
+  }
+  if (texto.includes("outside") && texto.includes("window")) {
+    return {
+      motivo: "fora_da_janela",
+      explicacao: "Passaram-se mais de 24h desde a última mensagem da pessoa — o Instagram não deixa mais responder.",
+    };
+  }
+  if (texto.includes("does not exist") || texto.includes("deleted") || texto.includes("unavailable")) {
+    return {
+      motivo: "conteudo_indisponivel",
+      explicacao: "O conteúdo foi apagado ou não está mais acessível no Instagram.",
+    };
+  }
+  if (texto.includes("temporarily") || texto.includes("try again") || texto.includes("#2")) {
+    return { motivo: "temporario", explicacao: "Instabilidade momentânea do Instagram. Tente de novo em instantes." };
+  }
+  return { motivo: "desconhecido", explicacao: mensagem };
 }

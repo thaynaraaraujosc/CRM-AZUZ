@@ -245,6 +245,9 @@ model Workspace {
   whatsappTemplates     WhatsappTemplate[]
   anexosPublicos        AnexoPublico[]
   arquivosArmazenados   ArquivoArmazenado[]
+  instagramEventos      InstagramEvento[]
+  automacaoExecucaos    AutomacaoExecucao[]
+  eventoDoLeads         EventoDoLead[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -756,4 +759,120 @@ model ArquivoArmazenado {
   criadoEm DateTime @default(now())
 
   @@index([workspaceId])
+}
+
+/// Evento do Instagram, já normalizado — a camada que separa o CRM do formato cru da Meta.
+///
+/// Por que existe: até aqui o webhook lia o corpo da Meta e gravava direto em `MensagemExtra`.
+/// Funcionava pro Direct, mas amarrava o CRM inteiro ao formato dela: todo evento novo (comentário,
+/// menção, resposta a comentário) exigiria espalhar o conhecimento do payload por mais lugares, e
+/// nada que não fosse "mensagem" tinha onde ser guardado.
+///
+/// Agora o webhook só traduz; quem consome lê daqui. A tradução é o único ponto do sistema que
+/// precisa saber como a Meta nomeia as coisas.
+///
+/// O `id` é a chave natural do evento na Meta (o `mid` da mensagem, o id do comentário). Como é
+/// chave primária, um webhook reenviado — coisa que a Meta faz rotineiramente — falha ao gravar em
+/// vez de duplicar. A deduplicação não depende de ninguém lembrar de checar.
+model InstagramEvento {
+  id String @id @db.VarChar(191)
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  /// IGSID da conta conectada que recebeu o evento — separa duas contas do mesmo workspace.
+  contaInstagramId String
+
+  /// Tipo normalizado: mensagem_recebida, mensagem_enviada, midia_recebida, story_respondido,
+  /// publicacao_compartilhada, reacao_adicionada, reacao_removida, comentario_criado,
+  /// resposta_comentario, mencao. Nome do CRM, não da Meta.
+  tipo String
+
+  /// Chave da conversa/contato no CRM (o @ quando conhecido, senão o IGSID).
+  contatoNome String?
+
+  remetenteId       String?
+  remetenteUsername String?
+
+  mensagemId      String?
+  midiaId         String?
+  comentarioId    String?
+  comentarioPaiId String?
+  permalink       String? @db.Text
+
+  texto String? @db.Text
+
+  /// O que não cabe nas colunas: tipo de mídia, emoji da reação, payload extra. Consultar por
+  /// coluna é o caminho normal; isto é a folga pro que aparecer depois sem migração.
+  dados Json?
+
+  /// Processado com sucesso pelo pipeline (persistência + automações). Falso = ficou pendente e
+  /// pode ser reprocessado sem risco, já que a gravação é idempotente.
+  processado Boolean @default(false)
+  erro       String? @db.Text
+
+  criadoEm DateTime @default(now())
+
+  @@index([workspaceId, criadoEm])
+  @@index([workspaceId, tipo])
+  @@index([workspaceId, contatoNome])
+  @@index([comentarioId])
+}
+
+/// Uma automação que já rodou para um evento — a trava contra disparo repetido.
+///
+/// Sem isso, o mesmo comentário podia executar o mesmo fluxo várias vezes: a Meta reenvia webhook,
+/// e do lado de cá cada reenvio parecia um comentário novo. Na prática o cliente receberia a mesma
+/// resposta duas, três vezes.
+///
+/// A unicidade é (fluxo, evento): o mesmo comentário PODE disparar fluxos diferentes, o que é
+/// desejado, mas nunca o mesmo fluxo duas vezes.
+model AutomacaoExecucao {
+  id String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  fluxoId String
+
+  /// Identificador do que disparou: "comentario:<id>", "mensagem:<mid>", "reacao:<mid>".
+  chaveEvento String @db.VarChar(191)
+
+  /// Quem era a pessoa do outro lado — útil pra investigar disparo indevido depois.
+  instagramUserId String?
+
+  executadoEm DateTime @default(now())
+
+  @@unique([fluxoId, chaveEvento])
+  @@index([workspaceId, executadoEm])
+}
+
+/// Linha do tempo do lead — o histórico legível de tudo que aconteceu com um contato.
+///
+/// Serve a duas coisas: o atendente entender o contexto sem reconstruir a história na cabeça, e a
+/// Inteligência Comercial / IA receberem esse contexto já estruturado, em vez de terem que inferir
+/// a partir de mensagens soltas.
+model EventoDoLead {
+  id String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  /// Mesma chave usada em `Conversa.nome` e `MensagemExtra.contato`.
+  contatoNome String
+
+  canal String
+
+  /// comentou, automacao_iniciou, respondeu_comentario, enviou_direct, respondeu_direct,
+  /// entrou_no_funil, mudou_de_etapa, etiqueta_adicionada, atendente_assumiu, reagiu.
+  tipo String
+
+  /// Frase pronta pra exibir ("comentou 'quero' no Reel X").
+  descricao String @db.Text
+
+  dados Json?
+
+  criadoEm DateTime @default(now())
+
+  @@index([workspaceId, contatoNome, criadoEm])
 }
