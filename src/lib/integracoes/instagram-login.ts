@@ -413,15 +413,31 @@ export async function buscarPerfilNasConversas(
  * Só faz sentido pra vídeo: em foto a Meta não devolve `thumbnail_url`, e `media_url` já é a
  * imagem. Devolve `null` em qualquer falha — a mensagem continua chegando, só sem prévia.
  */
+/**
+ * Permalink da última mídia consultada por `buscarCapaDaMidia`.
+ *
+ * Guardado à parte pra não mudar a assinatura da função, que já é usada em vários pontos. Vale só
+ * imediatamente após a chamada — quem precisa lê na sequência.
+ */
+let ultimoPermalinkDaMidia: string | null = null;
+
+export function permalinkDaUltimaMidia(): string | null {
+  return ultimoPermalinkDaMidia;
+}
+
 export async function buscarCapaDaMidia(accessToken: string, midiaId: string): Promise<string | null> {
   try {
     const resposta = await fetch(
-      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${midiaId}?fields=thumbnail_url,media_url,media_type&access_token=${accessToken}`,
+      // `permalink` vai junto: quando a Meta o devolve, é ele o destino certo do clique — o
+      // endereço real da publicação no Instagram, e não a URL temporária do CDN. Uma chamada só
+      // resolve capa e link.
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${midiaId}?fields=thumbnail_url,media_url,media_type,permalink&access_token=${accessToken}`,
     );
     const dados = (await resposta.json()) as {
       thumbnail_url?: string;
       media_url?: string;
       media_type?: string;
+      permalink?: string;
     } & ErroGraph;
     if (!resposta.ok) {
       console.error("[instagram] Falha ao buscar a capa da mídia:", dados.error?.message ?? resposta.status);
@@ -429,6 +445,7 @@ export async function buscarCapaDaMidia(accessToken: string, midiaId: string): P
     }
     // `media_url` só entra quando NÃO é vídeo: em vídeo ela é o arquivo, e guardar isso como
     // "miniatura" traria de volta o problema que a capa veio resolver.
+    ultimoPermalinkDaMidia = dados.permalink ?? null;
     if (dados.thumbnail_url) return dados.thumbnail_url;
     return dados.media_type === "VIDEO" ? null : (dados.media_url ?? null);
   } catch (erro) {

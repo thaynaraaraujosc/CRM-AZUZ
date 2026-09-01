@@ -114,7 +114,18 @@ export function BolhaMensagem({
     // Sem isso a prévia era decorativa — dava contexto e não levava a lugar nenhum.
     const imagens = msg.imagens.map((img, i) => {
       // eslint-disable-next-line @next/next/no-img-element
-      const figura = <img key={i} src={img.url} alt={img.nome ?? "imagem"} className="bubble-imagem" />;
+      // `lazy` porque uma conversa antiga pode ter dezenas de fotos: sem isso, abrir a conversa
+      // dispara o download de todas de uma vez, mesmo as que estão muito acima da rolagem.
+      const figura = (
+        <img
+          key={i}
+          src={img.url}
+          alt={img.nome ?? "imagem"}
+          className="bubble-imagem"
+          loading="lazy"
+          decoding="async"
+        />
+      );
       return msg.linkExterno ? (
         <a key={i} href={msg.linkExterno} target="_blank" rel="noopener noreferrer" title="Abrir no Instagram">
           {figura}

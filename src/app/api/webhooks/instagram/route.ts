@@ -27,6 +27,7 @@ import { decriptar } from "@/lib/integracoes/crypto";
 import {
   baixarFotoPerfil,
   buscarCapaDaMidia,
+  permalinkDaUltimaMidia,
   buscarPerfilDeQuemMandou,
   buscarPerfilNasConversas,
 } from "@/lib/integracoes/instagram-login";
@@ -555,8 +556,12 @@ export async function POST(request: Request) {
       // conteúdo é vídeo, e nos três a bolha ficava só com a frase, sem prévia — foi o que
       // aconteceu com "Compartilhou um reel", que chegou sem miniatura nenhuma.
       const idDaMidiaDoConteudo = story?.id ?? anexo?.payload?.id;
+      // Permalink descoberto pelo id da mídia — quando a Meta o entrega, é ele o destino certo do
+      // clique, e não a URL temporária do CDN nem a conversa da pessoa.
+      let permalinkDescoberto: string | null = null;
       if (!Object.keys(extras).length && idDaMidiaDoConteudo && tokenDaConta) {
         const capa = await buscarCapaDaMidia(tokenDaConta, idDaMidiaDoConteudo);
+        permalinkDescoberto = permalinkDaUltimaMidia();
         if (capa) {
           extras = await extrasDeAnexoInstagram({ type: "image", payload: { url: capa } }, tokenDaConta, true);
         }
@@ -576,7 +581,7 @@ export async function POST(request: Request) {
 
       // Só link de post DE VERDADE (permalink) entra no texto. A URL do CDN não vira link: ela é o
       // arquivo, expira, e despejada na bolha só polui a conversa com um endereço gigante.
-      const linkDoConteudo = anexo?.payload?.permalink_url;
+      const linkDoConteudo = anexo?.payload?.permalink_url ?? permalinkDescoberto ?? undefined;
       // Sem o permalink não existe pra onde mandar quem clica na prévia — e a Meta nem sempre o
       // envia. Registrar quando ele falta é o que separa "o CRM não usou o link" de "o link nunca
       // veio"; sem isso, "clicar não abre a publicação" fica sem causa.
