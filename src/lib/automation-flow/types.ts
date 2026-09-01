@@ -21,6 +21,13 @@ export type FlowNodeCategory =
   | "fim";
 
 export type FlowNodeType =
+  // gatilho — Instagram (categoria própria: o canal tem eventos que nenhum outro tem)
+  | "instagram_midia_recebida"
+  | "instagram_publicacao_compartilhada"
+  | "instagram_story_respondido"
+  | "instagram_mencao_story"
+  | "instagram_reacao_recebida"
+  | "instagram_resposta_comentario"
   // gatilho
   | "lead_criado"
   | "lead_entrou_etapa"
@@ -96,6 +103,8 @@ export type FlowNodeType =
   // humano
   | "encaminhar_humano"
   // fim
+  | "responder_comentario_instagram"
+  | "ocultar_comentario_instagram"
   | "encerrar_fluxo";
 
 /** Metadado estático de cada tipo de nó — categoria, rótulo, cor e ícone pra paleta/palette e canvas. */

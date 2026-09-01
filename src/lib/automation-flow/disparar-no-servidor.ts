@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { avaliarGatilho, executarFluxo, type Ligacoes } from "@/lib/automation-flow/motor";
+import { avaliarGatilho, executarFluxo, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
+import { marcarExecucaoDeAutomacao } from "@/lib/integracoes/instagram-eventos";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 
@@ -20,6 +21,51 @@ export async function dispararAutomacoesDeMensagemRecebida(params: {
   /** "WhatsApp" | "Instagram" — o rótulo do canal da conversa, como fica em `Conversa.canal`. */
   canal: string;
   textoRecebido: string;
+}): Promise<void> {
+  await dispararAutomacoes({
+    workspaceId: params.workspaceId,
+    contatoNome: params.contatoNome,
+    canal: params.canal,
+    textoRecebido: params.textoRecebido,
+    tipoGatilho: "mensagem_recebida",
+  });
+}
+
+/**
+ * Dispara as automações de um evento do Instagram que NÃO é mensagem — comentário, resposta a
+ * comentário, reação, mídia, publicação compartilhada.
+ *
+ * Reaproveita o mesmo motor e as mesmas ações do resto do CRM de propósito: o Instagram é só a
+ * origem do gatilho, e depois dele tudo que já existe (etiqueta, funil, tarefa, IA, atendente)
+ * continua disponível. Um motor paralelo só pro Instagram significaria manter duas vezes cada
+ * ação, e as duas divergiriam na primeira correção feita só de um lado.
+ */
+export async function dispararAutomacoesDeEventoInstagram(params: {
+  workspaceId: string;
+  contatoNome: string;
+  tipoGatilho: string;
+  textoRecebido: string;
+  /** Id da publicação, quando o evento vier de uma — permite a automação valer só pra ela. */
+  publicacaoId?: string;
+  /** Trava contra disparo repetido: "comentario:<id>". */
+  chaveEvento?: string;
+  instagramUserId?: string;
+  /** Como responder ao comentário que disparou, quando o fluxo pedir isso. */
+  responderComentario?: (texto: string) => Promise<void>;
+}): Promise<void> {
+  await dispararAutomacoes({ ...params, canal: "Instagram" });
+}
+
+async function dispararAutomacoes(params: {
+  workspaceId: string;
+  contatoNome: string;
+  canal: string;
+  textoRecebido: string;
+  tipoGatilho: string;
+  publicacaoId?: string;
+  chaveEvento?: string;
+  instagramUserId?: string;
+  responderComentario?: (texto: string) => Promise<void>;
 }): Promise<void> {
   const { workspaceId, contatoNome, canal, textoRecebido } = params;
 
@@ -47,10 +93,11 @@ export async function dispararAutomacoesDeMensagemRecebida(params: {
     const fluxo = linha as unknown as FluxoAutomacao;
 
     const evento = {
-      tipo: "mensagem_recebida" as const,
+      tipo: params.tipoGatilho as EventoAutomacao["tipo"],
       contatoNome,
       canal: canalDoGatilho(canal),
       mensagem: textoRecebido,
+      ...(params.publicacaoId ? { publicacaoId: params.publicacaoId } : {}),
     };
     if (!avaliarGatilho(fluxo, evento)) continue;
 
@@ -63,7 +110,20 @@ export async function dispararAutomacoesDeMensagemRecebida(params: {
     const primeiraAresta = fluxo.edges.find((e) => e.source === noGatilho?.id);
     if (!primeiraAresta) continue;
 
+    // Trava de idempotência: o mesmo comentário nunca executa o mesmo fluxo duas vezes. A Meta
+    // reenvia webhook rotineiramente, e sem isto a pessoa receberia a mesma resposta repetida.
+    if (params.chaveEvento) {
+      const primeiraVez = await marcarExecucaoDeAutomacao({
+        workspaceId,
+        fluxoId: linha.id,
+        chaveEvento: params.chaveEvento,
+        instagramUserId: params.instagramUserId,
+      });
+      if (!primeiraVez) continue;
+    }
+
     const mensagensParaEnviar: { canal: string; conteudo: string }[] = [];
+    const respostasDeComentario: string[] = [];
     const contatosParaSalvar: Record<string, unknown>[] = [];
     const movimentosDeFunil: { funilId: string; etapaTitulo: string }[] = [];
 
@@ -74,6 +134,12 @@ export async function dispararAutomacoesDeMensagemRecebida(params: {
       // Deixa de ser "simulada": o que o fluxo manda escrever entra na fila e sai de verdade
       // logo abaixo.
       registrarMensagemSimulada: (info) => mensagensParaEnviar.push(info),
+      // Responder o comentário só faz sentido quando FOI um comentário que disparou o fluxo — em
+      // outro gatilho não existe comentário a que responder, e a ação é ignorada em silêncio em
+      // vez de falhar o fluxo inteiro.
+      responderComentario: (texto) => {
+        if (params.responderComentario) respostasDeComentario.push(texto);
+      },
     };
 
     let registro;
@@ -82,6 +148,12 @@ export async function dispararAutomacoesDeMensagemRecebida(params: {
     } catch (erro) {
       console.error(`[automacao] fluxo ${linha.id} falhou:`, erro);
       continue;
+    }
+
+    for (const texto of respostasDeComentario) {
+      await params.responderComentario?.(texto).catch((erro) =>
+        console.error(`[automacao] falha ao responder comentário:`, erro),
+      );
     }
 
     for (const dados of contatosParaSalvar) {

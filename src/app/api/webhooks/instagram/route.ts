@@ -2,13 +2,25 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { guardarMidiasDosExtras } from "@/lib/armazenamento/midia";
+import {
+  processarComentarioInstagram,
+  type ComentarioInstagram,
+} from "@/lib/integracoes/instagram-comentarios";
+import {
+  anotarNaLinhaDoTempo,
+  registrarEvento,
+  type TipoEventoInstagram,
+} from "@/lib/integracoes/instagram-eventos";
 import { validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { renomearConversa } from "@/lib/conversas/renomear";
 import { nomeAindaEhIdCru } from "@/lib/conversas/exibicao";
 import { criarContatoPeloInstagramSeNaoExistir, encontrarContatoPorInstagram } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
-import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
+import {
+  dispararAutomacoesDeEventoInstagram,
+  dispararAutomacoesDeMensagemRecebida,
+} from "@/lib/automation-flow/disparar-no-servidor";
 import type { ConvMensagem } from "@/lib/data";
 import { CANAL_INSTAGRAM, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { decriptar } from "@/lib/integracoes/crypto";
@@ -84,6 +96,11 @@ type PayloadInstagram = {
     /** Id da conta do Instagram dona do evento — é por ele que se sabe se quem reagiu foi a
      * própria conta conectada ou a pessoa do outro lado. */
     id?: string;
+    /** Comentários chegam por aqui, não em `messaging` — outro formato, outro caminho. */
+    changes?: {
+      field?: string;
+      value?: ComentarioInstagram;
+    }[];
     messaging?: {
       sender?: { id: string };
       recipient?: { id: string };
@@ -244,6 +261,24 @@ async function extrasDeAnexoInstagram(
  * Também não existe ainda um campo `Contato.instagram` pra casar com um contato já existente (o
  * WhatsApp tem `Contato.whatsapp`) — a mensagem sempre usa o `sender.id` como chave da conversa.
  */
+/**
+ * De quem é a conta do Instagram que recebeu o evento.
+ *
+ * `metadados` é Json e não dá pra filtrar direto no `where` de forma portável entre bancos — o
+ * filtro é em memória, o que é barato porque há poucas integrações ativas. Mesmo padrão do webhook
+ * do WhatsApp.
+ */
+async function integracaoDaContaInstagram(instagramContaId: string) {
+  const conectadas = await prisma.integracao.findMany({
+    where: { provedor: "meta_instagram", status: "conectado" },
+  });
+  return (
+    conectadas.find(
+      (i) => (i.metadados as { instagramContaId?: string } | null)?.instagramContaId === instagramContaId,
+    ) ?? null
+  );
+}
+
 export async function POST(request: Request) {
   const payloadCru = await request.text();
   const assinatura = request.headers.get("x-hub-signature-256");
@@ -266,6 +301,21 @@ export async function POST(request: Request) {
   const payload = JSON.parse(payloadCru) as PayloadInstagram;
 
   for (const entry of payload.entry ?? []) {
+    // Comentários: caminho separado do Direct porque o formato da Meta é outro. A decisão do que
+    // fazer com um comentário vive em `instagram-comentarios.ts` — aqui só se resolve de quem é a
+    // conta e entrega. Ver item "separar responsabilidades" da arquitetura de webhooks.
+    for (const mudanca of entry.changes ?? []) {
+      if (mudanca.field !== "comments" || !mudanca.value || !entry.id) continue;
+      const integracao = await integracaoDaContaInstagram(entry.id);
+      if (!integracao) continue;
+      await processarComentarioInstagram({
+        workspaceId: integracao.workspaceId,
+        contaInstagramId: entry.id,
+        accessTokenCriptografado: integracao.accessTokenCriptografado,
+        comentario: mudanca.value,
+      });
+    }
+
     for (const evento of entry.messaging ?? []) {
       const mensagem = evento.message;
       const reacao = evento.reaction;
@@ -326,6 +376,42 @@ export async function POST(request: Request) {
           where: { id: reacao.mid },
           data: { extras: { ...extrasAtuais, [campo]: valor } as object },
         });
+
+        // Reação da PESSOA (não a nossa) é interação de lead: entra na linha do tempo e pode
+        // disparar automação. A dedup usa a ação junto do mid — curtir e descurtir a mesma
+        // mensagem são dois eventos legítimos, não um reenvio.
+        if (!ehEcoDeReacao) {
+          const adicionou = reacao.action !== "unreact";
+          const idEvento = `reacao:${reacao.mid}:${reacao.action ?? "react"}:${evento.timestamp ?? ""}`;
+          const novoEvento = await registrarEvento(integracaoDaConta.workspaceId, {
+            id: idEvento,
+            tipo: adicionou ? "reacao_adicionada" : "reacao_removida",
+            contaInstagramId: instagramContaId,
+            contatoNome: alvo.contato,
+            remetenteId: evento.sender?.id,
+            mensagemId: reacao.mid,
+            texto: valor,
+            dados: { emoji: valor ?? null },
+          });
+          if (novoEvento && adicionou) {
+            await anotarNaLinhaDoTempo({
+              workspaceId: integracaoDaConta.workspaceId,
+              contatoNome: alvo.contato,
+              canal: "Instagram",
+              tipo: "reagiu",
+              descricao: `reagiu ${valor ?? "❤️"} a uma mensagem`,
+              dados: { mid: reacao.mid },
+            });
+            await dispararAutomacoesDeEventoInstagram({
+              workspaceId: integracaoDaConta.workspaceId,
+              contatoNome: alvo.contato,
+              tipoGatilho: "instagram_reacao_recebida",
+              textoRecebido: valor ?? "❤️",
+              chaveEvento: idEvento,
+              instagramUserId: evento.sender?.id,
+            });
+          }
+        }
         continue;
       }
       if (!mensagem) continue;
@@ -653,13 +739,76 @@ export async function POST(request: Request) {
       // Automação só dispara em mensagem RECEBIDA. Num eco (mensagem que a própria conta mandou,
       // inclusive a resposta automática que acabou de sair daqui) o fluxo dispararia de novo, e a
       // conversa entraria num vai-e-vem sem fim com a pessoa do outro lado.
+      // Evento normalizado do Direct — o mesmo registro que os comentários usam. É por ele que a
+      // IA e a Inteligência Comercial vão conseguir ler o histórico sem depender do formato da
+      // Meta nem de vasculhar `MensagemExtra`.
+      const tipoDoEvento: TipoEventoInstagram = ehEco
+        ? "mensagem_enviada"
+        : story
+          ? "story_respondido"
+          : anexo?.type === "story_mention"
+            ? "mencao_em_story"
+            : anexo?.type === "share" || anexo?.type === "ig_reel"
+              ? "publicacao_compartilhada"
+              : temMidiaBaixada
+                ? "midia_recebida"
+                : "mensagem_recebida";
+
+      await registrarEvento(integracaoDaConta.workspaceId, {
+        id: `mensagem:${mensagem.mid}`,
+        tipo: tipoDoEvento,
+        contaInstagramId: instagramContaId,
+        contatoNome: chaveContato,
+        remetenteId,
+        remetenteUsername: arrobaDeQuemMandou ?? undefined,
+        mensagemId: mensagem.mid,
+        midiaId: idDaMidiaDoStory ?? undefined,
+        permalink: linkDoConteudo ?? undefined,
+        texto,
+        dados: {
+          tipoAnexo: anexo?.type ?? null,
+          temMidia: temMidiaBaixada,
+          autorPublicacao: autorPublicacao ?? null,
+        },
+      });
+
       if (!ehEco) {
+        await anotarNaLinhaDoTempo({
+          workspaceId: integracaoDaConta.workspaceId,
+          contatoNome: chaveContato,
+          canal: "Instagram",
+          tipo: "respondeu_direct",
+          descricao: texto ? `mandou no Direct: "${texto.slice(0, 120)}"` : "mandou um anexo no Direct",
+          dados: { mid: mensagem.mid, tipoEvento: tipoDoEvento },
+        });
+
         await dispararAutomacoesDeMensagemRecebida({
           workspaceId: integracaoDaConta.workspaceId,
           contatoNome: chaveContato,
           canal: "Instagram",
           textoRecebido: texto,
         }).catch((erro) => console.error("[instagram] falha ao disparar automações:", erro));
+
+        // Gatilhos específicos do Instagram — só quando o evento é mesmo um deles, pra que um
+        // fluxo de "story respondido" não dispare em mensagem comum. O gatilho genérico de
+        // mensagem recebida acima continua valendo pros dois casos.
+        if (tipoDoEvento !== "mensagem_recebida") {
+          await dispararAutomacoesDeEventoInstagram({
+            workspaceId: integracaoDaConta.workspaceId,
+            contatoNome: chaveContato,
+            tipoGatilho:
+              tipoDoEvento === "story_respondido"
+                ? "instagram_story_respondido"
+                : tipoDoEvento === "mencao_em_story"
+                  ? "instagram_mencao_story"
+                  : tipoDoEvento === "publicacao_compartilhada"
+                    ? "instagram_publicacao_compartilhada"
+                    : "instagram_midia_recebida",
+            textoRecebido: texto,
+            chaveEvento: `mensagem:${mensagem.mid}`,
+            instagramUserId: remetenteId,
+          }).catch((erro) => console.error("[instagram] falha no gatilho específico:", erro));
+        }
       }
     }
   }

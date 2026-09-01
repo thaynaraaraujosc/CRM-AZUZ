@@ -64,6 +64,9 @@ export type Ligacoes = {
   registrarMensagemSimulada?: (info: { canal: string; conteudo: string }) => void;
   /** Hook opcional pra registrar uma chamada de webhook simulada. */
   registrarWebhookSimulado?: (info: { url: string; payload: unknown }) => void;
+  /** Responde ao comentário do Instagram que disparou o fluxo. Só existe quando foi um comentário
+   * que disparou — nos demais gatilhos não há comentário a que responder. */
+  responderComentario?: (texto: string) => void;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -178,14 +181,78 @@ export type EventoAutomacao = {
   [k: string]: unknown;
 };
 
+/** Tira acentos e caixa, pra "GUIA", "guia" e "guía" contarem como a mesma palavra. */
+function normalizar(texto: string, ignorarAcentos: boolean): string {
+  const minusculo = texto.toLowerCase().trim();
+  return ignorarAcentos ? minusculo.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : minusculo;
+}
+
+export type ConfiguracaoDePalavras = {
+  /** Lista configurada. `palavraChave` (campo antigo, uma só) continua valendo. */
+  palavras?: string[];
+  palavraChave?: string;
+  /** "contem" (padrão), "exata" ou "qualquer" — qualquer uma das palavras, como palavra inteira. */
+  modoPalavra?: "contem" | "exata" | "qualquer";
+  ignorarAcentos?: boolean;
+};
+
+/**
+ * Se o texto recebido casa com as palavras configuradas no gatilho.
+ *
+ * Sem palavra configurada, casa com tudo — é o comportamento de "qualquer comentário dispara", que
+ * é o que a pessoa espera ao deixar o campo vazio.
+ *
+ * "qualquer" compara PALAVRA INTEIRA de propósito: com "contém", uma automação de "quero" também
+ * dispararia em "não quero", que é o oposto da intenção de quem montou o fluxo.
+ */
+export function textoCasaComPalavras(texto: string, config: ConfiguracaoDePalavras): boolean {
+  const lista = (config.palavras ?? [])
+    .concat(config.palavraChave ? [config.palavraChave] : [])
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (!lista.length) return true;
+
+  const ignorarAcentos = config.ignorarAcentos ?? true;
+  const alvo = normalizar(texto, ignorarAcentos);
+  const modo = config.modoPalavra ?? "contem";
+
+  return lista.some((palavra) => {
+    const p = normalizar(palavra, ignorarAcentos);
+    if (!p) return false;
+    if (modo === "exata") return alvo === p;
+    if (modo === "qualquer") {
+      // `\b` não funciona com acentos em JS; a fronteira é conferida na mão pelo que cerca a
+      // ocorrência — só conta se não houver letra ou número colado dos dois lados.
+      const posicao = alvo.indexOf(p);
+      if (posicao < 0) return false;
+      const antes = alvo[posicao - 1];
+      const depois = alvo[posicao + p.length];
+      const ehLetra = (c?: string) => Boolean(c && /[\p{L}\p{N}]/u.test(c));
+      return !ehLetra(antes) && !ehLetra(depois);
+    }
+    return alvo.includes(p);
+  });
+}
+
 export function avaliarGatilho(fluxo: FluxoAutomacao, evento: EventoAutomacao): boolean {
   const noGatilho = fluxo.nodes.find((n) => n.category === "gatilho");
   if (!noGatilho) return false;
   if (noGatilho.type !== evento.tipo) return false;
 
-  const data = noGatilho.data as { funilId?: string; etapaId?: string };
+  const data = noGatilho.data as {
+    funilId?: string;
+    etapaId?: string;
+    publicacaoId?: string;
+  } & ConfiguracaoDePalavras;
   if (data.funilId && evento.funilId && data.funilId !== evento.funilId) return false;
   if (data.etapaId && evento.etapaId && data.etapaId !== evento.etapaId) return false;
+
+  // Automação de comentário pode valer só pra UMA publicação. Vazio = qualquer publicação.
+  if (data.publicacaoId && evento.publicacaoId && data.publicacaoId !== evento.publicacaoId) return false;
+
+  // Palavra configurada no gatilho: comentário ou mensagem só dispara se casar.
+  const textoDoEvento = typeof evento.mensagem === "string" ? evento.mensagem : undefined;
+  if (textoDoEvento !== undefined && !textoCasaComPalavras(textoDoEvento, data)) return false;
 
   const agora = new Date();
   if (!dentroDaJanela(fluxo, agora)) return false;
@@ -446,6 +513,31 @@ function executarNo(
       const conteudo = data.texto ?? data.mensagem ?? data.assunto ?? "";
       ligacoes.registrarMensagemSimulada?.({ canal: data.canal ?? "whatsapp", conteudo });
       return { passo: novoPasso(node, "ok", "Envio simulado — sem canal de mensagens real conectado.", agora), parar: false };
+    }
+
+    case "responder_comentario_instagram": {
+      const data = node.data as { texto?: string };
+      const texto = (data.texto ?? "").trim();
+      if (!texto) {
+        return { passo: novoPasso(node, "erro", "Sem texto configurado pra resposta.", agora), parar: false };
+      }
+      if (!ligacoes.responderComentario) {
+        // Não é erro do fluxo: é o mesmo fluxo sendo disparado por outro gatilho, onde não existe
+        // comentário a que responder. Segue adiante em vez de derrubar o resto das ações.
+        return {
+          passo: novoPasso(node, "ok", "Ignorado — este disparo não veio de um comentário.", agora),
+          parar: false,
+        };
+      }
+      ligacoes.responderComentario(texto);
+      return { passo: novoPasso(node, "ok", "Resposta ao comentário enfileirada.", agora), parar: false };
+    }
+
+    case "ocultar_comentario_instagram": {
+      return {
+        passo: novoPasso(node, "ok", "Ocultar comentário — aplicado no envio real.", agora),
+        parar: false,
+      };
     }
 
     case "chamar_webhook": {
