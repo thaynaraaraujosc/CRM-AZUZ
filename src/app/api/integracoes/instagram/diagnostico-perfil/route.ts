@@ -39,7 +39,7 @@ export async function POST() {
 
   const token = decriptar(integracao.accessTokenCriptografado);
   const resposta = await fetch(
-    `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${conversa.contato}?fields=username,name,profile_pic,profile_picture_url&access_token=${token}`,
+    `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${conversa.contato}?fields=username,name,profile_pic&access_token=${token}`,
   );
   const dados = (await resposta.json()) as Record<string, unknown> & {
     error?: { message?: string; code?: number; type?: string };
@@ -63,7 +63,7 @@ export async function POST() {
     httpStatus: resposta.status,
     camposRecebidos: Object.keys(dados).filter((c) => c !== "error"),
     temUsername: Boolean(dados.username),
-    temFoto: Boolean(dados.profile_pic ?? dados.profile_picture_url),
+    temFoto: Boolean(dados.profile_pic),
     erroDaMeta: dados.error?.message ?? null,
     codigoDaMeta: dados.error?.code ?? null,
   });

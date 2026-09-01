@@ -218,17 +218,19 @@ export async function buscarPerfilDeQuemMandou(
 ): Promise<{ username?: string; nome?: string; fotoUrl?: string } | null> {
   try {
     const resposta = await fetch(
-      // Pede os DOIS nomes de campo da foto. A Meta usa `profile_pic` na API de mensagens e
-      // `profile_picture_url` noutros pontos, e a versão que responde varia — pedindo só um, a
-      // conversa ficava eternamente sem foto sem nenhum erro, porque o campo simplesmente não
-      // vinha. Pedir os dois custa a mesma chamada.
-      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${remetenteId}?fields=username,name,profile_pic,profile_picture_url&access_token=${accessToken}`,
+      // SÓ `profile_pic`. Pedir também `profile_picture_url` — que não existe neste objeto —
+      // derrubava a chamada INTEIRA: a Graph responde "Tried accessing nonexistent field" e não
+      // devolve nada, nem o @ nem a foto. Era uma tentativa de cobrir os dois nomes possíveis do
+      // campo, e o efeito foi o oposto: em vez de aumentar a chance de vir foto, garantia que
+      // nunca viesse nenhuma.
+      //
+      // A lição vale pra toda a Graph: campo inexistente não é ignorado, ele invalida a requisição.
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${remetenteId}?fields=username,name,profile_pic&access_token=${accessToken}`,
     );
     const dados = (await resposta.json()) as {
       username?: string;
       name?: string;
       profile_pic?: string;
-      profile_picture_url?: string;
     } & ErroGraph;
     if (!resposta.ok) {
       console.error("[instagram] Falha ao buscar o perfil de quem mandou:", dados.error?.message ?? resposta.status);
@@ -237,7 +239,7 @@ export async function buscarPerfilDeQuemMandou(
     // A foto vem em `profile_pic` — mas nem toda conta/permissão devolve esse campo, e quando ele
     // falta a conversa fica só com as iniciais sem nenhuma pista do porquê. Registrar quais campos
     // vieram (nunca os valores) é o que permite saber se é ausência de permissão ou outro nome.
-    const fotoUrl = dados.profile_pic ?? dados.profile_picture_url;
+    const fotoUrl = dados.profile_pic;
     if (!fotoUrl) {
       console.log("[instagram] perfil sem foto; campos recebidos:", Object.keys(dados));
     }
