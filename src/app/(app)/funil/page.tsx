@@ -21,6 +21,7 @@ import { IconAutomacoes } from "@/components/icons";
 import { IconConfiguracoes } from "@/components/icons";
 import { ChipFilters, FloatingDropdown, Topbar } from "@/components/ui";
 import { IconCheck, IconClose, IconErro } from "@/components/icons";
+import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
 
 const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Instagram",
@@ -79,6 +80,8 @@ function FunilPageInner() {
   const { membros: equipe } = useEquipe();
   const motivosPerda = useMotivosPerda();
   const [configAberto, setConfigAberto] = useState(false);
+  /** Negócio sendo transferido — a janela é a mesma usada no painel do funil e nas conversas. */
+  const [transferindo, setTransferindo] = useState<{ id: string; nome: string; responsavel?: string } | null>(null);
   const [configAnchorRect, setConfigAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: configPopRef, posicao: configPos } = useFloatingPosition(configAnchorRect, configAberto, 8, () => setConfigAberto(false));
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
@@ -432,6 +435,15 @@ function FunilPageInner() {
       {/* Gravação recusada pelo banco. Aparece porque o pior comportamento possível aqui é a tela
           mostrar uma mudança que não existe: a pessoa arrasta o lead, vê ele na etapa nova, e só
           descobre no dia seguinte que ele nunca saiu do lugar. */}
+      {transferindo ? (
+        <TransferirNegocio
+          cardId={transferindo.id}
+          nomeDoNegocio={transferindo.nome}
+          responsavelAtual={transferindo.responsavel}
+          aoFechar={() => setTransferindo(null)}
+        />
+      ) : null}
+
       {erroSincronizacao ? (
         <div className="funil-erro-sync" role="alert">
           <span>{erroSincronizacao}</span>
@@ -994,6 +1006,18 @@ function FunilPageInner() {
             }
             return (
               <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                {/* Transferir vem primeiro: mover o lead é o que se faz todo dia; marcar ganho ou
+                    perdido acontece uma vez por negócio, no fim. */}
+                <button
+                  type="button"
+                  className="btn ghost block"
+                  onClick={() => {
+                    setTransferindo({ id: cardAtual.id, nome: cardAtual.nome, responsavel: cardAtual.responsavel });
+                    setDesfechoMenu(null);
+                  }}
+                >
+                  Transferir de funil
+                </button>
                 <button
                   type="button"
                   className="btn primary block"

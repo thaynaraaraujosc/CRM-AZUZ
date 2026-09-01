@@ -7,6 +7,8 @@ import { useContatos } from "@/lib/contatos-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { BolhaMensagem } from "./BolhaMensagem";
 import { IconClose, IconConfiguracoes, IconDoc, IconImage, IconLocalizacao } from "@/components/icons";
+import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
+import { useFunis } from "@/lib/funis-context";
 
 /**
  * Painel de conversa completo, em popup — a janela que abre ao clicar num card do Funil.
@@ -48,6 +50,7 @@ export function PainelConversa({
 
   const [texto, setTexto] = useState("");
   const [maisAberto, setMaisAberto] = useState(false);
+  const [transferindo, setTransferindo] = useState(false);
   /**
    * Arquivo escolhido, ainda não enviado.
    *
@@ -72,6 +75,13 @@ export function PainelConversa({
   const mensagens = mensagensExtraPorContato[contatoNome] ?? [];
   const ultima = mensagens[mensagens.length - 1];
   const contato = contatos.find((c) => c.nome === contatoNome);
+
+  // O negócio deste contato, em qualquer funil — é ele que a transferência move. Buscar pelo nome
+  // é o mesmo critério que o resto do módulo já usa pra ligar conversa e card.
+  const { funis } = useFunis();
+  const cardDoContato = funis
+    .flatMap((f) => f.colunas.flatMap((c) => c.cards))
+    .find((c) => c.nome === contatoNome);
 
   // Busca só quando a aba Histórico está aberta: a linha do tempo cresce com o tempo e não faz
   // sentido pagar essa consulta em toda conversa aberta, sendo que a maioria nunca abre essa aba.
@@ -225,6 +235,15 @@ export function PainelConversa({
 
   return (
     <div className="painel-conversa-fundo" onClick={aoFechar}>
+      {/* Mesmo componente do menu do card e das conversas: um caminho só até o banco. */}
+      {transferindo && cardDoContato ? (
+        <TransferirNegocio
+          cardId={cardDoContato.id}
+          nomeDoNegocio={cardDoContato.nome}
+          responsavelAtual={cardDoContato.responsavel}
+          aoFechar={() => setTransferindo(false)}
+        />
+      ) : null}
       <div className="painel-conversa" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`Conversa com ${contatoNome}`}>
         <header className="painel-conversa-topo">
           <div className="name-cell">
@@ -509,9 +528,12 @@ export function PainelConversa({
                     )}
                   </div>
                 </div>
-                <p className="hint" style={{ margin: 0 }}>
-                  Pra mover de etapa, arraste o card no funil atrás desta janela — assim a mudança
-                  passa pelas automações de entrada da etapa, como qualquer outro movimento.
+                <button type="button" className="btn ghost block" onClick={() => setTransferindo(true)}>
+                  Transferir de funil
+                </button>
+                <p className="hint" style={{ margin: "8px 0 0" }}>
+                  Arrastar o card no funil atrás desta janela também move — e nesse caminho a
+                  mudança passa pelas automações de entrada da etapa.
                 </p>
               </>
             ) : null}

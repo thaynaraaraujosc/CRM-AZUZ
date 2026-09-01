@@ -273,6 +273,21 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         return { ...f, colunas };
       });
     });
+
+    // Card que JÁ existe é movido na hora, pela mesma rota do arrastar e da janela de transferir.
+    // Sem isto, este caminho (usado pelas Conversas) dependia do sync do funil inteiro — o mesmo
+    // que falhava em silêncio — e o lead voltava pra etapa antiga no F5. Os três caminhos precisam
+    // terminar no mesmo lugar do banco.
+    //
+    // Card NOVO continua nascendo pelo sync geral: ele ainda não existe pra ser movido.
+    if (contato.id) {
+      const etapaDestino = funis
+        .find((f) => f.id === funilId)
+        ?.colunas.find((c) => c.titulo === etapaTitulo);
+      if (etapaDestino) {
+        void moverNegocio({ cardId: contato.id, etapaId: etapaDestino.id });
+      }
+    }
   }
 
   function excluirFunil(funilId: string) {
