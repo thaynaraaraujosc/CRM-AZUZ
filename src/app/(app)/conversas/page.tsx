@@ -24,6 +24,7 @@ import {
 import { ehLinkDeMidia } from "@/lib/conversas/midia-mensagem";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
+import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
 import { StatusMensagemIcone } from "@/components/conversas/StatusMensagem";
 import { EnviarTemplateWhatsApp } from "@/components/conversas/EnviarTemplateWhatsApp";
 import { useAutomacoes } from "@/lib/automacoes-context";
@@ -4220,373 +4221,51 @@ function ConversasPageInner() {
                   </div>
                 );
               }
-              const bolha = msg.localizacao ? (
-                <div
-                  key={chave} data-msg-chave={chave}
-                  className={`bubble ${msg.tipo} bubble-localizacao`}
-                >
-                  {botaoMenuMensagem(chave)}
-                  {estrelaFavorita(chave)}
-                  {reacaoNaMensagem(msg, chave)}
-                  <a
-                    className="bubble-localizacao-link-area"
-                    href={`https://www.google.com/maps?q=${msg.localizacao.lat},${msg.localizacao.lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      className="bubble-localizacao-mapa"
-                      src={`https://staticmap.openstreetmap.de/staticmap.php?center=${msg.localizacao.lat},${msg.localizacao.lng}&zoom=15&size=280x140&maptype=mapnik&markers=${msg.localizacao.lat},${msg.localizacao.lng},red-pushpin`}
-                      alt="Mapa com a localização compartilhada"
-                    />
-                    <div className="bubble-localizacao-info">
-                      <span className="bubble-localizacao-titulo" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        <IconLocalizacao width={12} height={12} /> Localização compartilhada
-                      </span>
-                      {msg.localizacao.endereco ? (
-                        <span className="bubble-localizacao-endereco">{msg.localizacao.endereco}</span>
-                      ) : (
-                        <span className="bubble-localizacao-endereco">
-                          {msg.localizacao.lat.toFixed(5)}, {msg.localizacao.lng.toFixed(5)}
-                        </span>
-                      )}
-                      <span className="bubble-localizacao-link">Abrir no mapa →</span>
-                    </div>
-                  </a>
-                  <span className="tm">
-                    {msg.hora}
-                    {msg.tipo === "out" ? (
-                      <StatusMensagemIcone
-                        status={msg.status}
-                        onTentarNovamente={
-                          msg.status === "erro" && msg.id
-                            ? () => tentarNovamenteMensagem(msg.id!)
-                            : undefined
-                        }
-                      />
-                    ) : null}
-                  </span>
-                </div>
-              ) : msg.contatoCompartilhado ? (
-                <div className={`bubble ${msg.tipo} bubble-contato`} key={chave} data-msg-chave={chave}>
-                  {botaoMenuMensagem(chave)}
-                  {estrelaFavorita(chave)}
-                  {reacaoNaMensagem(msg, chave)}
-                  <button
-                    type="button"
-                    className="bubble-contato-area"
-                    onClick={() => {
-                      setContatoDetalhePos(null);
-                      setContatoDetalheAberto(msg.contatoCompartilhado!);
-                    }}
-                  >
-                    <span className="avatar">{msg.contatoCompartilhado.initials}</span>
-                    <div className="bubble-contato-info">
-                      <span className="bubble-contato-nome">{msg.contatoCompartilhado.nome}</span>
-                      {msg.contatoCompartilhado.whatsapp ? (
-                        <span className="bubble-contato-numero">{msg.contatoCompartilhado.whatsapp}</span>
-                      ) : null}
-                    </div>
-                  </button>
-                  <span className="tm">
-                    {msg.hora}
-                    {msg.tipo === "out" ? (
-                      <StatusMensagemIcone
-                        status={msg.status}
-                        onTentarNovamente={
-                          msg.status === "erro" && msg.id
-                            ? () => tentarNovamenteMensagem(msg.id!)
-                            : undefined
-                        }
-                      />
-                    ) : null}
-                  </span>
-                </div>
-              ) : msg.imagens && msg.imagens.length > 0 ? (
-                <div
-                  className={`bubble ${msg.tipo} bubble-midia`}
-                  key={chave} data-msg-chave={chave}
-                >
-                  {botaoMenuMensagem(chave)}
-                  {estrelaFavorita(chave)}
-                  {reacaoNaMensagem(msg, chave)}
-                  {/* Mesma etiqueta do painel do funil (STORY, REEL, PUBLICAÇÃO): sem ela, a
-                      mesma mensagem se apresentava de dois jeitos conforme a tela. */}
-                  {msg.tipoConteudo || msg.compartilhadoPor ? (
-                    <span className="bubble-share-topo">
-                      {msg.tipoConteudo ? <em className="bubble-tipo-conteudo">{msg.tipoConteudo}</em> : null}
-                      {msg.compartilhadoPor ?? null}
-                    </span>
-                  ) : null}
-                  {midiaLiberada("imagem", msg.id, msg.imagens?.[0]?.url) ? (
-                    <div
-                      className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}
-                    >
-                      {msg.imagens.map((img, ix) =>
-                        // Post, reel ou story compartilhado: a miniatura é a porta pra publicação,
-                        // não uma foto pra ampliar. Abrir o visualizador aqui daria uma imagem
-                        // pequena e sem contexto, quando o que se quer é ver o conteúdo no
-                        // Instagram — inclusive o carrossel inteiro, que o Direct só entrega como
-                        // uma prévia.
-                        msg.linkExterno ? (
-                          <a
-                            key={`${msg.id}-img-${ix}`}
-                            className="bubble-imagem-btn"
-                            href={msg.linkExterno}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Abrir a publicação no Instagram"
-                          >
-                            <img src={img.url} alt={img.nome} loading="lazy" />
-                          </a>
-                        ) : (
-                          <button
-                            type="button"
-                            key={`${msg.id}-img-${ix}`}
-                            className="bubble-imagem-btn"
-                            onClick={() =>
-                              abrirLightbox(
-                                msg.imagens!.map((im) => im.url),
-                                ix,
-                              )
-                            }
-                          >
-                            <img src={img.url} alt={img.nome} loading="lazy" />
-                          </button>
-                        ),
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className="bubble-midia-bloqueada"
-                      onClick={() => liberarMidia(msg.id)}
-                    >
-                      <IconImage width={18} height={18} />
-                      Baixar {msg.imagens.length > 1 ? "imagens" : "imagem"}
-                    </button>
-                  )}
-                  {msg.legenda ? (
-                    <p className="bubble-legenda">{msg.legenda}</p>
-                  ) : null}
-                  <span className="tm">
-                    {msg.hora}
-                    {msg.tipo === "out" ? (
-                      <StatusMensagemIcone
-                        status={msg.status}
-                        onTentarNovamente={
-                          msg.status === "erro" && msg.id
-                            ? () => tentarNovamenteMensagem(msg.id!)
-                            : undefined
-                        }
-                      />
-                    ) : null}
-                  </span>
-                </div>
-              ) : msg.video ? (
-                <div
-                  className={`bubble ${msg.tipo} bubble-midia`}
-                  key={chave} data-msg-chave={chave}
-                >
-                  {botaoMenuMensagem(chave)}
-                  {estrelaFavorita(chave)}
-                  {reacaoNaMensagem(msg, chave)}
-                  {msg.linkExterno ? (
-                    // Vídeo que vive no Instagram (reel, publicação, carrossel). O CRM não guarda
-                    // cópia — assistir é lá. "Baixar vídeo" aqui era uma promessa falsa: não há o
-                    // que baixar, e clicar não levava a lugar nenhum. Vira um cartão que abre a
-                    // publicação numa aba nova.
-                    <a
-                      className="bubble-midia-externa"
-                      href={msg.linkExterno}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <IconVideoCam width={18} height={18} />
-                      {msg.linkEhConversa ? "Abrir conversa no Instagram" : "Ver publicação no Instagram"}
-                    </a>
-                  ) : midiaLiberada("video", msg.id, msg.video?.url) ? (
-                    <video
-                      className="bubble-video"
-                      src={msg.video.url}
-                      controls
-                      preload="metadata"
-                      muted={!msg.video.comAudio}
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      className="bubble-midia-bloqueada"
-                      onClick={() => liberarMidia(msg.id)}
-                    >
-                      <IconVideoCam width={18} height={18} />
-                      Baixar vídeo
-                    </button>
-                  )}
-                  {msg.legendaPublicacao ? (
-                    <p className="bubble-share-legenda">{msg.legendaPublicacao}</p>
-                  ) : null}
-                  {msg.legenda ? (
-                    <p className="bubble-legenda">{msg.legenda}</p>
-                  ) : null}
-                  {/* Botão explícito embaixo da prévia: clicar na imagem funciona, mas ninguém
-                      adivinha que funciona — e conteúdo do Instagram não é uma foto pra ampliar, é
-                      uma publicação pra abrir. */}
-                  {msg.linkExterno ? (
-                    <a
-                      className="bubble-acao-externa"
-                      href={msg.linkExterno}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {msg.linkEhConversa ? "Abrir conversa no Instagram ↗" : "Ver publicação no Instagram ↗"}
-                    </a>
-                  ) : null}
-                  <span className="tm">
-                    {msg.hora}
-                    {msg.tipo === "out" ? (
-                      <StatusMensagemIcone
-                        status={msg.status}
-                        onTentarNovamente={
-                          msg.status === "erro" && msg.id
-                            ? () => tentarNovamenteMensagem(msg.id!)
-                            : undefined
-                        }
-                      />
-                    ) : null}
-                  </span>
-                </div>
-              ) : msg.documento ? (
-                <div
-                  className={`bubble ${msg.tipo} bubble-documento`}
-                  key={chave} data-msg-chave={chave}
-                >
-                  {botaoMenuMensagem(chave)}
-                  {estrelaFavorita(chave)}
-                  {reacaoNaMensagem(msg, chave)}
-                  <a
-                    className="bubble-documento-cartao"
-                    href={msg.documento.url}
-                    download={msg.documento.nome}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <span className="bubble-documento-icone">
-                      <IconDoc width={20} height={20} />
-                    </span>
-                    <span className="bubble-documento-info">
-                      <span className="bubble-documento-nome">{msg.documento.nome}</span>
-                      <span className="bubble-documento-meta">
-                        {msg.documento.formato} · {formatarTamanho(msg.documento.tamanho)}
-                      </span>
-                    </span>
-                  </a>
-                  {msg.legenda ? (
-                    <p className="bubble-legenda">{msg.legenda}</p>
-                  ) : null}
-                  <span className="tm">
-                    {msg.hora}
-                    {msg.tipo === "out" ? (
-                      <StatusMensagemIcone
-                        status={msg.status}
-                        onTentarNovamente={
-                          msg.status === "erro" && msg.id
-                            ? () => tentarNovamenteMensagem(msg.id!)
-                            : undefined
-                        }
-                      />
-                    ) : null}
-                  </span>
-                </div>
-              ) : msg.midiaPendente?.tipo === "audio" ? (
-                <div className={`bubble ${msg.tipo}`} key={chave} data-msg-chave={chave}>
-                  {botaoMenuMensagem(chave)}
-                  {estrelaFavorita(chave)}
-                  {reacaoNaMensagem(msg, chave)}
-                  <span className="wa-carregar-midia">
-                    <span className="wa-participante-foto-carregando" /> 🎤 Carregando áudio…
-                  </span>
-                  <span className="tm">{msg.hora}</span>
-                </div>
-              ) : msg.midiaPendente?.tipo === "imagem" ? (
-                <div className={`bubble ${msg.tipo}`} key={chave} data-msg-chave={chave}>
-                  {botaoMenuMensagem(chave)}
-                  {estrelaFavorita(chave)}
-                  {reacaoNaMensagem(msg, chave)}
-                  <span className="wa-carregar-midia">
-                    <span className="wa-participante-foto-carregando" /> 📷 Carregando imagem…
-                  </span>
-                  <span className="tm">{msg.hora}</span>
-                </div>
-              ) : msg.audio ? (
-                <div
-                  className={`bubble ${msg.tipo} bubble-audio`}
-                  key={chave} data-msg-chave={chave}
-                >
-                  {botaoMenuMensagem(chave)}
-                  {estrelaFavorita(chave)}
-                  {reacaoNaMensagem(msg, chave)}
-                  <AudioBubblePlayer
-                    audio={msg.audio}
-                    tipo={msg.tipo === "in" ? "in" : "out"}
-                    velocidadeInicial={config.velocidadeAudioPadrao}
-                  />
-                  <span className="tm">
-                    {msg.hora}
-                    {msg.tipo === "out" ? (
-                      <StatusMensagemIcone
-                        status={msg.status}
-                        onTentarNovamente={
-                          msg.status === "erro" && msg.id
-                            ? () => tentarNovamenteMensagem(msg.id!)
-                            : undefined
-                        }
-                      />
-                    ) : null}
-                  </span>
-                </div>
-              ) : (
-                <div className={`bubble ${msg.tipo}`} key={chave} data-msg-chave={chave}>
-                  {botaoMenuMensagem(chave)}
-                  {estrelaFavorita(chave)}
-                  {reacaoNaMensagem(msg, chave)}
-                  {aberta.ehGrupo && msg.tipo === "in" && msg.remetenteNome ? (
-                    <span className="wa-remetente-grupo">{msg.remetenteNome}</span>
-                  ) : null}
-                  {msg.respondendoA ? (
-                    <span className="wa-citacao">
-                      <span className="wa-citacao-autor">{msg.respondendoA.autor}</span>
-                      <span className="wa-citacao-texto">{msg.respondendoA.texto}</span>
-                    </span>
-                  ) : null}
-                  {msg.texto.length > 500 && !mensagensExpandidas.has(chave) ? (
+              // UMA implementação de bolha em todo o CRM (`BolhaMensagem`). O desenho vive lá; o
+              // que é interação DESTA tela — menu, estrela, reação, bloqueio de mídia pesada,
+              // visualizador, ficha do contato, "Ler mais" — entra por props. Antes eram duas
+              // implementações da mesma coisa, e a mesma mensagem aparecia diferente aqui e no
+              // painel do Funil.
+              const bolha = (
+                <BolhaMensagem
+                  msg={msg}
+                  chaveDom={chave}
+                  chrome={
                     <>
-                      {renderizarTextoComLinks(msg.texto.slice(0, 500))}…{" "}
-                      <button
-                        type="button"
-                        className="wa-ler-mais"
-                        onClick={() => setMensagensExpandidas((prev) => new Set(prev).add(chave))}
-                      >
-                        Ler mais
-                      </button>
+                      {botaoMenuMensagem(chave)}
+                      {estrelaFavorita(chave)}
+                      {reacaoNaMensagem(msg, chave)}
                     </>
-                  ) : (
-                    renderizarTextoComLinks(msg.texto)
-                  )}
-                  <span className="tm">
-                    {msg.hora}
-                    {msg.tipo === "out" ? (
-                      <StatusMensagemIcone
-                        status={msg.status}
-                        onTentarNovamente={
-                          msg.status === "erro" && msg.id
-                            ? () => tentarNovamenteMensagem(msg.id!)
-                            : undefined
-                        }
-                      />
-                    ) : null}
-                  </span>
-                </div>
+                  }
+                  velocidadeAudio={config.velocidadeAudioPadrao}
+                  mostrarRemetenteGrupo={aberta.ehGrupo}
+                  midiaLiberada={midiaLiberada}
+                  aoLiberarMidia={liberarMidia}
+                  aoAbrirImagem={abrirLightbox}
+                  aoAbrirContato={(contatoCompartilhado) => {
+                    setContatoDetalhePos(null);
+                    setContatoDetalheAberto(contatoCompartilhado);
+                  }}
+                  onTentarNovamente={
+                    msg.status === "erro" && msg.id ? () => tentarNovamenteMensagem(msg.id!) : undefined
+                  }
+                  renderizarTexto={(texto) =>
+                    texto.length > 500 && !mensagensExpandidas.has(chave) ? (
+                      <>
+                        {renderizarTextoComLinks(texto.slice(0, 500))}…{" "}
+                        <button
+                          type="button"
+                          className="wa-ler-mais"
+                          onClick={() => setMensagensExpandidas((prev) => new Set(prev).add(chave))}
+                        >
+                          Ler mais
+                        </button>
+                      </>
+                    ) : (
+                      renderizarTextoComLinks(texto)
+                    )
+                  }
+                />
               );
 
               // Separador de dia entre as bolhas — sem ele a conversa é um rolo contínuo e não dá

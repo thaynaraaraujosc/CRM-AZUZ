@@ -1,31 +1,68 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import type { ConvMensagem } from "@/lib/data";
 import { AudioBubblePlayer } from "@/components/audio-player";
-import { IconLocalizacao } from "@/components/icons";
+import { IconDoc, IconImage, IconLocalizacao, IconVideoCam } from "@/components/icons";
 import { StatusMensagemIcone } from "./StatusMensagem";
 
 /**
- * Desenha UMA mensagem — texto, imagem, vídeo, documento, áudio ou localização.
+ * Desenha UMA mensagem — em qualquer tela do CRM.
  *
- * Primeiro passo da extração do painel de conversa em componentes reaproveitáveis. Hoje a tela de
- * Conversas desenha as bolhas inline, com dez variantes espalhadas no meio de 7 mil linhas, e o
- * popup do Funil desenhava só `msg.texto` — então uma foto, um PDF ou um áudio apareciam como
- * bolha vazia pra quem respondia pelo Funil, que é justamente onde o vendedor mais responde.
+ * Este é o único lugar que decide como uma mensagem se parece. Antes existiam duas
+ * implementações: a tela de Conversas desenhava as bolhas inline (mais de 300 linhas, com dez
+ * variantes no meio de sete mil) e o painel do Funil usava este componente. A mesma mensagem
+ * aparecia diferente conforme a tela, e toda correção precisava ser feita duas vezes — quando
+ * alguém lembrava da segunda.
  *
- * Aqui mora só o DESENHO. Menu de ações, curtida, favorito e seleção continuam na tela de
- * Conversas: são interações daquela tela, não da mensagem em si — misturar as duas coisas foi o
- * que tornou aquele trecho impossível de reaproveitar.
+ * O que é DESENHO mora aqui. O que é INTERAÇÃO DAQUELA TELA entra por props opcionais, com padrões
+ * seguros: sem elas o componente funciona sozinho (é o caso do Funil), com elas ele ganha os
+ * comportamentos da tela de Conversas (bloqueio de mídia pesada, visualizador de imagem, ficha do
+ * contato, "Ler mais"). Misturar as duas coisas foi o que tornou o código antigo impossível de
+ * reaproveitar.
  */
 export function BolhaMensagem({
   msg,
   onTentarNovamente,
+  chrome,
+  chaveDom,
+  velocidadeAudio,
+  mostrarRemetenteGrupo = true,
+  midiaLiberada,
+  aoLiberarMidia,
+  aoAbrirImagem,
+  aoAbrirContato,
+  renderizarTexto,
 }: {
   msg: ConvMensagem;
   onTentarNovamente?: () => void;
+  /** Menu, estrela e reação da tela de Conversas — desenhados dentro da bolha, antes do conteúdo. */
+  chrome?: ReactNode;
+  /** Valor de `data-msg-chave`, usado pela tela de Conversas pra localizar a bolha no DOM. */
+  chaveDom?: string;
+  velocidadeAudio?: 1 | 1.5 | 2;
+  mostrarRemetenteGrupo?: boolean;
+  /** `false` esconde a mídia atrás de um botão — economia de banda em conversa pesada. Padrão: mostra. */
+  midiaLiberada?: (tipo: "imagem" | "video" | "documento", id?: string, url?: string) => boolean;
+  aoLiberarMidia?: (id?: string) => void;
+  /** Abre o visualizador de imagens. Sem isso, a imagem é só imagem. */
+  aoAbrirImagem?: (urls: string[], indice: number) => void;
+  aoAbrirContato?: (contato: NonNullable<ConvMensagem["contatoCompartilhado"]>) => void;
+  /** Transforma o texto (links clicáveis, "Ler mais"). Padrão: texto puro. */
+  renderizarTexto?: (texto: string) => ReactNode;
 }) {
+  const liberada = (tipo: "imagem" | "video" | "documento") =>
+    midiaLiberada ? midiaLiberada(tipo, msg.id, msg.imagens?.[0]?.url ?? msg.video?.url) : true;
+
+  const texto = renderizarTexto ? renderizarTexto(msg.texto) : msg.texto;
+
   if (msg.tipo === "system") {
-    return <div className="bubble sistema">{msg.texto}</div>;
+    return (
+      <div className="bubble sistema" data-msg-chave={chaveDom}>
+        {msg.texto}
+      </div>
+    );
   }
 
   /** Hora + tiquinhos, o rodapé que toda bolha tem. */
@@ -36,7 +73,7 @@ export function BolhaMensagem({
     </span>
   );
 
-  /** Trecho citado quando a mensagem responde outra — mesmo desenho da tela de Conversas. */
+  /** Trecho citado quando a mensagem responde outra. */
   const citacao = msg.respondendoA ? (
     <span className="wa-citacao">
       <span className="wa-citacao-autor">{msg.respondendoA.autor}</span>
@@ -44,22 +81,33 @@ export function BolhaMensagem({
     </span>
   ) : null;
 
-  /** A reação que a pessoa (ou você) deixou, grudada na bolha. */
-  const reacao =
-    msg.reacaoContato || msg.reacaoMinha ? (
-      <span className="wa-msg-reacao">
-        {msg.reacaoContato ?? msg.reacaoMinha}
-        {msg.reacaoContato && msg.reacaoMinha ? <span className="wa-msg-reacao-2">❤️</span> : null}
+  /** Cabeçalho do conteúdo compartilhado: tipo (STORY/REEL) e autor da publicação. */
+  const topoDoShare =
+    msg.tipoConteudo || msg.compartilhadoPor ? (
+      <span className="bubble-share-topo">
+        {msg.tipoConteudo ? <em className="bubble-tipo-conteudo">{msg.tipoConteudo}</em> : null}
+        {msg.compartilhadoPor ?? null}
       </span>
     ) : null;
 
-  // Localização: cartão com prévia do mapa, e não uma linha de texto com um emoji. O mapa estático
-  // vem do OpenStreetMap — sem chave de API, sem custo, sem dependência nova.
+  /** Botão que abre a publicação (ou a conversa) no Instagram. */
+  const botaoExterno = msg.linkExterno ? (
+    <a className="bubble-acao-externa" href={msg.linkExterno} target="_blank" rel="noopener noreferrer">
+      {msg.linkEhConversa ? "Abrir conversa no Instagram ↗" : "Ver publicação no Instagram ↗"}
+    </a>
+  ) : null;
+
+  const abrir = (classe: string) => ({
+    className: `bubble ${msg.tipo} ${classe}`.trim(),
+    "data-msg-chave": chaveDom,
+  });
+
+  // ----------------------------------------------------------------- localização
   if (msg.localizacao) {
     const { lat, lng, endereco } = msg.localizacao;
     return (
-      <div className={`bubble ${msg.tipo} bubble-localizacao`}>
-        {reacao}
+      <div {...abrir("bubble-localizacao")}>
+        {chrome}
         {citacao}
         <a
           className="bubble-localizacao-link-area"
@@ -67,14 +115,18 @@ export function BolhaMensagem({
           target="_blank"
           rel="noopener noreferrer"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- mapa estático externo, sem otimização do Next */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- mapa estático externo */}
           <img
             className="bubble-localizacao-mapa"
             src={`https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=15&size=280x140&maptype=mapnik&markers=${lat},${lng},red-pushpin`}
             alt="Mapa com a localização compartilhada"
+            loading="lazy"
           />
           <div className="bubble-localizacao-info">
-            <span className="bubble-localizacao-titulo" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <span
+              className="bubble-localizacao-titulo"
+              style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+            >
               <IconLocalizacao width={12} height={12} /> Localização compartilhada
             </span>
             <span className="bubble-localizacao-endereco">
@@ -88,142 +140,202 @@ export function BolhaMensagem({
     );
   }
 
-  // Contato compartilhado — cartão com iniciais e número, igual à tela de Conversas.
+  // ------------------------------------------------------------ contato compartilhado
   if (msg.contatoCompartilhado) {
-    return (
-      <div className={`bubble ${msg.tipo} bubble-contato`}>
-        {reacao}
-        {citacao}
-        <span className="bubble-contato-area" style={{ cursor: "default" }}>
-          <span className="avatar">{msg.contatoCompartilhado.initials}</span>
-          <span className="bubble-contato-info">
-            <span className="bubble-contato-nome">{msg.contatoCompartilhado.nome}</span>
-            {msg.contatoCompartilhado.whatsapp ? (
-              <span className="bubble-contato-numero">{msg.contatoCompartilhado.whatsapp}</span>
-            ) : null}
-          </span>
+    const ficha = (
+      <>
+        <span className="avatar">{msg.contatoCompartilhado.initials}</span>
+        <span className="bubble-contato-info">
+          <span className="bubble-contato-nome">{msg.contatoCompartilhado.nome}</span>
+          {msg.contatoCompartilhado.whatsapp ? (
+            <span className="bubble-contato-numero">{msg.contatoCompartilhado.whatsapp}</span>
+          ) : null}
         </span>
-        {rodape}
-      </div>
+      </>
     );
-  }
-
-  const legenda = msg.legenda ?? (msg.texto || undefined);
-
-  if (msg.imagens?.length) {
-    // Conteúdo que vive no Instagram (post, reel, story): a miniatura é a porta pra publicação.
-    // Sem isso a prévia era decorativa — dava contexto e não levava a lugar nenhum.
-    const imagens = msg.imagens.map((img, i) => {
-      // eslint-disable-next-line @next/next/no-img-element
-      // `lazy` porque uma conversa antiga pode ter dezenas de fotos: sem isso, abrir a conversa
-      // dispara o download de todas de uma vez, mesmo as que estão muito acima da rolagem.
-      const figura = (
-        <img
-          key={i}
-          src={img.url}
-          alt={img.nome ?? "imagem"}
-          className="bubble-imagem"
-          loading="lazy"
-          decoding="async"
-        />
-      );
-      return msg.linkExterno ? (
-        <a key={i} href={msg.linkExterno} target="_blank" rel="noopener noreferrer" title="Abrir no Instagram">
-          {figura}
-        </a>
-      ) : (
-        figura
-      );
-    });
     return (
-      <div className={`bubble ${msg.tipo} bubble-midia`}>
-        {/* Cabeçalho do cartão de publicação, no formato que o Instagram usa: quem compartilhou em
-            cima, a prévia no meio, o texto embaixo. Sem ele, uma imagem solta no meio da conversa
-            não diz se é uma foto da pessoa ou uma publicação que ela encaminhou. */}
-        {msg.tipoConteudo || msg.compartilhadoPor ? (
-          <span className="bubble-share-topo">
-            {msg.tipoConteudo ? <em className="bubble-tipo-conteudo">{msg.tipoConteudo}</em> : null}
-            {msg.compartilhadoPor ?? null}
+      <div {...abrir("bubble-contato")}>
+        {chrome}
+        {citacao}
+        {aoAbrirContato ? (
+          <button type="button" className="bubble-contato-area" onClick={() => aoAbrirContato(msg.contatoCompartilhado!)}>
+            {ficha}
+          </button>
+        ) : (
+          // Sem o manipulador (Funil), o cartão é só leitura — não um botão que não faz nada.
+          <span className="bubble-contato-area" style={{ cursor: "default" }}>
+            {ficha}
           </span>
-        ) : null}
-        <span className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}>{imagens}</span>
-        {msg.legendaPublicacao ? (
-          <span className="bubble-share-legenda">{msg.legendaPublicacao}</span>
-        ) : null}
-        {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
-        {msg.linkExterno ? (
-          <a className="bubble-acao-externa" href={msg.linkExterno} target="_blank" rel="noopener noreferrer">
-            {msg.linkEhConversa ? "Abrir conversa no Instagram ↗" : "Ver publicação no Instagram ↗"}
-          </a>
-        ) : null}
+        )}
         {rodape}
       </div>
     );
   }
 
+  // ----------------------------------------------------------------- imagens
+  if (msg.imagens?.length) {
+    return (
+      <div {...abrir("bubble-midia")}>
+        {chrome}
+        {topoDoShare}
+        {liberada("imagem") ? (
+          <div className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}>
+            {msg.imagens.map((img, ix) =>
+              // Publicação compartilhada: a miniatura é a porta pro Instagram, não uma foto pra
+              // ampliar — o conteúdo (inclusive o carrossel inteiro) está lá, não aqui.
+              msg.linkExterno ? (
+                <a
+                  key={`${msg.id}-img-${ix}`}
+                  href={msg.linkExterno}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Abrir a publicação no Instagram"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- anexo servido pelo próprio CRM */}
+                  <img src={img.url} alt={img.nome ?? "imagem"} className="bubble-imagem" loading="lazy" decoding="async" />
+                </a>
+              ) : aoAbrirImagem ? (
+                <button
+                  type="button"
+                  key={`${msg.id}-img-${ix}`}
+                  className="bubble-imagem-btn"
+                  onClick={() => aoAbrirImagem(msg.imagens!.map((im) => im.url), ix)}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- anexo servido pelo próprio CRM */}
+                  <img src={img.url} alt={img.nome ?? "imagem"} className="bubble-imagem" loading="lazy" decoding="async" />
+                </button>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element -- anexo servido pelo próprio CRM
+                <img
+                  key={`${msg.id}-img-${ix}`}
+                  src={img.url}
+                  alt={img.nome ?? "imagem"}
+                  className="bubble-imagem"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ),
+            )}
+          </div>
+        ) : (
+          <button type="button" className="bubble-midia-bloqueada" onClick={() => aoLiberarMidia?.(msg.id)}>
+            <IconImage width={18} height={18} />
+            Baixar {msg.imagens.length > 1 ? "imagens" : "imagem"}
+          </button>
+        )}
+        {msg.legendaPublicacao ? <p className="bubble-share-legenda">{msg.legendaPublicacao}</p> : null}
+        {msg.legenda ? <p className="bubble-legenda">{msg.legenda}</p> : null}
+        {botaoExterno}
+        {rodape}
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------------------- vídeo
   if (msg.video) {
-    // Vídeo que vive no Instagram: o CRM não guarda cópia, então o que existe é a porta pra lá.
-    if (msg.linkExterno) {
-      return (
-        <div className={`bubble ${msg.tipo} bubble-midia`}>
+    return (
+      <div {...abrir("bubble-midia")}>
+        {chrome}
+        {topoDoShare}
+        {msg.linkExterno ? (
+          // Vídeo que vive no Instagram: o CRM não guarda cópia, então o que existe é a porta pra
+          // lá. "Baixar vídeo" aqui seria uma promessa falsa — não há o que baixar.
           <a className="bubble-midia-externa" href={msg.linkExterno} target="_blank" rel="noopener noreferrer">
-            ▶ {msg.linkEhConversa ? "Abrir conversa no Instagram" : "Ver publicação no Instagram"}
+            <IconVideoCam width={18} height={18} />
+            {msg.linkEhConversa ? "Abrir conversa no Instagram" : "Ver publicação no Instagram"}
           </a>
-          {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
-          {rodape}
-        </div>
-      );
-    }
-    return (
-      <div className={`bubble ${msg.tipo} bubble-midia`}>
-        <video className="bubble-video" src={msg.video.url} controls preload="metadata" />
-        {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
+        ) : liberada("video") ? (
+          <video className="bubble-video" src={msg.video.url} controls preload="metadata" muted={!msg.video.comAudio} />
+        ) : (
+          <button type="button" className="bubble-midia-bloqueada" onClick={() => aoLiberarMidia?.(msg.id)}>
+            <IconVideoCam width={18} height={18} />
+            Baixar vídeo
+          </button>
+        )}
+        {msg.legendaPublicacao ? <p className="bubble-share-legenda">{msg.legendaPublicacao}</p> : null}
+        {msg.legenda ? <p className="bubble-legenda">{msg.legenda}</p> : null}
+        {botaoExterno}
         {rodape}
       </div>
     );
   }
 
-  if (msg.audio) {
-    return (
-      <div className={`bubble ${msg.tipo} bubble-audio`}>
-        {/* Mesmo player da tela de Conversas, com as variantes de recebido/enviado. Antes aqui
-            entrava o player nativo do navegador — que muda de desenho a cada sistema, ignora o
-            tema do CRM e não mostra forma de onda nem velocidade. Um componente só, duas telas. */}
-        <AudioBubblePlayer audio={msg.audio} tipo={msg.tipo === "in" ? "in" : "out"} />
-        {rodape}
-      </div>
-    );
-  }
-
+  // ----------------------------------------------------------------- documento
   if (msg.documento) {
     return (
-      <div className={`bubble ${msg.tipo} bubble-documento`}>
+      <div {...abrir("bubble-documento")}>
+        {chrome}
         <a
+          className="bubble-documento-cartao"
           href={msg.documento.url}
+          download={msg.documento.nome}
           target="_blank"
           rel="noopener noreferrer"
-          download={msg.documento.nome}
-          className="bubble-doc-link"
         >
-          <span className="bubble-doc-nome">{msg.documento.nome}</span>
-          <span className="bubble-doc-meta">{msg.documento.formato}</span>
+          <span className="bubble-documento-icone">
+            <IconDoc width={20} height={20} />
+          </span>
+          <span className="bubble-documento-info">
+            <span className="bubble-documento-nome">{msg.documento.nome}</span>
+            <span className="bubble-documento-meta">
+              {msg.documento.formato} · {formatarTamanho(msg.documento.tamanho)}
+            </span>
+          </span>
         </a>
-        {legenda ? <span className="bubble-legenda">{legenda}</span> : null}
+        {msg.legenda ? <p className="bubble-legenda">{msg.legenda}</p> : null}
         {rodape}
       </div>
     );
   }
 
+  // ------------------------------------------------- mídia ainda sendo buscada
+  if (msg.midiaPendente?.tipo === "audio" || msg.midiaPendente?.tipo === "imagem") {
+    const ehAudio = msg.midiaPendente.tipo === "audio";
+    return (
+      <div {...abrir("")}>
+        {chrome}
+        <span className="wa-carregar-midia">
+          <span className="wa-participante-foto-carregando" />
+          {ehAudio ? "Carregando áudio…" : "Carregando imagem…"}
+        </span>
+        <span className="tm">{msg.hora}</span>
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------------------- áudio
+  if (msg.audio) {
+    return (
+      <div {...abrir("bubble-audio")}>
+        {chrome}
+        <AudioBubblePlayer
+          audio={msg.audio}
+          tipo={msg.tipo === "in" ? "in" : "out"}
+          velocidadeInicial={velocidadeAudio}
+        />
+        {rodape}
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------------------- texto
   return (
-    <div className={`bubble ${msg.tipo}`}>
-      {reacao}
-      {citacao}
-      {/* Nome de quem escreveu DENTRO de um grupo — sem isso não dá pra distinguir os balões. */}
-      {msg.tipo === "in" && msg.remetenteNome ? (
+    <div {...abrir("")}>
+      {chrome}
+      {mostrarRemetenteGrupo && msg.tipo === "in" && msg.remetenteNome ? (
         <span className="wa-remetente-grupo">{msg.remetenteNome}</span>
       ) : null}
-      {msg.texto}
+      {citacao}
+      {texto}
+      {botaoExterno}
       {rodape}
     </div>
   );
+}
+
+/** Tamanho legível de arquivo. */
+function formatarTamanho(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
