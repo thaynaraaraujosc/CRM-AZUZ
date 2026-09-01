@@ -4310,8 +4310,13 @@ function ConversasPageInner() {
                   {botaoMenuMensagem(chave)}
                   {estrelaFavorita(chave)}
                   {reacaoNaMensagem(msg, chave)}
-                  {msg.compartilhadoPor ? (
-                    <span className="bubble-share-topo">{msg.compartilhadoPor}</span>
+                  {/* Mesma etiqueta do painel do funil (STORY, REEL, PUBLICAÇÃO): sem ela, a
+                      mesma mensagem se apresentava de dois jeitos conforme a tela. */}
+                  {msg.tipoConteudo || msg.compartilhadoPor ? (
+                    <span className="bubble-share-topo">
+                      {msg.tipoConteudo ? <em className="bubble-tipo-conteudo">{msg.tipoConteudo}</em> : null}
+                      {msg.compartilhadoPor ?? null}
+                    </span>
                   ) : null}
                   {midiaLiberada("imagem", msg.id, msg.imagens?.[0]?.url) ? (
                     <div
@@ -4398,7 +4403,7 @@ function ConversasPageInner() {
                       rel="noopener noreferrer"
                     >
                       <IconVideoCam width={18} height={18} />
-                      {msg.linkEhConversa ? "Ver no Instagram" : "Ver publicação no Instagram"}
+                      {msg.linkEhConversa ? "Abrir conversa no Instagram" : "Ver publicação no Instagram"}
                     </a>
                   ) : midiaLiberada("video", msg.id, msg.video?.url) ? (
                     <video
@@ -4434,7 +4439,7 @@ function ConversasPageInner() {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {msg.linkEhConversa ? "Ver no Instagram ↗" : "Ver publicação no Instagram ↗"}
+                      {msg.linkEhConversa ? "Abrir conversa no Instagram ↗" : "Ver publicação no Instagram ↗"}
                     </a>
                   ) : null}
                   <span className="tm">

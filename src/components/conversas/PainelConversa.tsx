@@ -262,8 +262,11 @@ export function PainelConversa({
               {/* Canal + identificador + responsável numa linha só: é o que o atendente precisa
                   saber antes de escrever, e ocupa o espaço de uma linha em vez de três. */}
               <p className="s">
+                {/* `filter(Boolean)` não bastava: um responsável vazio chega como "—" e virava um
+                    traço solto no fim ("Instagram · fulano · —"). Some o que não tem conteúdo. */}
                 {[canal ?? "Conversa", contato?.instagram ?? contato?.whatsapp, contato?.responsavel]
-                  .filter(Boolean)
+                  .map((parte) => parte?.trim())
+                  .filter((parte) => parte && parte !== "—")
                   .join(" · ")}
               </p>
             </div>

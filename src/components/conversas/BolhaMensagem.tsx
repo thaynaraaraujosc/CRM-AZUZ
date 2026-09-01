@@ -1,6 +1,7 @@
 "use client";
 
 import type { ConvMensagem } from "@/lib/data";
+import { AudioBubblePlayer } from "@/components/audio-player";
 import { IconLocalizacao } from "@/components/icons";
 import { StatusMensagemIcone } from "./StatusMensagem";
 
@@ -185,7 +186,10 @@ export function BolhaMensagem({
   if (msg.audio) {
     return (
       <div className={`bubble ${msg.tipo} bubble-audio`}>
-        <audio src={msg.audio.url} controls preload="metadata" style={{ maxWidth: "100%" }} />
+        {/* Mesmo player da tela de Conversas, com as variantes de recebido/enviado. Antes aqui
+            entrava o player nativo do navegador — que muda de desenho a cada sistema, ignora o
+            tema do CRM e não mostra forma de onda nem velocidade. Um componente só, duas telas. */}
+        <AudioBubblePlayer audio={msg.audio} tipo={msg.tipo === "in" ? "in" : "out"} />
         {rodape}
       </div>
     );

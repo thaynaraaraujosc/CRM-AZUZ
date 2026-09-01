@@ -13035,8 +13035,18 @@ button.camp-row:hover {
   padding: 10px 2px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  /* NÃO usar `justify-content: flex-end` aqui.
+     Num container rolável, ele quebra a rolagem: o navegador não consegue rolar acima do início da
+     linha flex, então as mensagens mais antigas ficam cortadas e inalcançáveis — era a "faixa
+     branca" que engolia as mensagens antes de elas chegarem ao topo.
+     O `margin-top: auto` no primeiro filho faz o mesmo efeito visual (conversa curta encostada
+     embaixo) sem tirar nada do alcance da rolagem. */
+  justify-content: flex-start;
   gap: 6px;
+}
+
+.painel-conversa-mensagens > *:first-child {
+  margin-top: auto;
 }
 
 /* Ficha do contato: janela IRMÃ da conversa, encostada nela — não uma coluna espremida lá dentro.
@@ -13587,4 +13597,41 @@ button.camp-row:hover {
   line-height: 1;
   cursor: pointer;
   color: inherit;
+}
+
+/* Áudio: container externo + player interno, nas duas direções ------------- */
+
+/* A ideia é a mesma do painel do funil, agora valendo nas duas telas (o componente já é um só):
+   um container que diz de quem é a mensagem, e dentro dele um player com contraste próprio — o
+   play e a linha do tempo precisam se destacar do fundo, não se dissolver nele. */
+.bubble-audio .audio-player {
+  border-radius: 12px;
+  padding: 8px 10px;
+  transition: background var(--transition-fast, 120ms ease);
+}
+
+/* Recebido: fora claro, dentro grafite. */
+.bubble.in.bubble-audio .audio-player {
+  background: rgba(17, 24, 39, 0.06);
+}
+
+.bubble.in.bubble-audio .audio-player:hover {
+  background: rgba(17, 24, 39, 0.09);
+}
+
+/* Enviado: fora azul, dentro um azul mais fundo — a leitura de "fui eu que mandei" acontece antes
+   de a pessoa reparar em qual lado a bolha está. */
+.bubble.out.bubble-audio .audio-player {
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.bubble.out.bubble-audio .audio-player:hover {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+/* A hora e os tiquinhos ficam FORA do player, colados no canto do container — dentro, competiam
+   com a linha do tempo por atenção. */
+.bubble-audio .tm {
+  padding-top: 4px;
+  align-self: flex-end;
 }
