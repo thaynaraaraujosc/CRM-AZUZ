@@ -13253,3 +13253,107 @@ button.camp-row:hover {
   opacity: 0.6;
   cursor: default;
 }
+
+/* Configuração do gatilho de comentário do Instagram ---------------------- */
+
+.ig-palavras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.ig-palavra-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--azul, #2563eb);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ig-palavra-chip button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Grade de publicações: a escolha é visual porque ninguém reconhece um post por id numérico. */
+.ig-publicacoes {
+  display: grid;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ig-publicacao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ig-publicacao.escolhida {
+  border-color: var(--azul, #2563eb);
+  box-shadow: 0 0 0 1px var(--azul, #2563eb) inset;
+}
+
+.ig-publicacao img,
+.ig-publicacao-sem-capa {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.ig-publicacao-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.ig-publicacao-info strong {
+  font-size: 12px;
+}
+
+.ig-publicacao-info em {
+  font-style: normal;
+  color: #777;
+  font-size: 11px;
+}
+
+.ig-publicacao-info span {
+  color: #555;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ig-publicacao-todas {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 12px 6px;
+}

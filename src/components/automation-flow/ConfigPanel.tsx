@@ -31,6 +31,7 @@ import { AguardarForm } from "./forms/AguardarForm";
 import { AtualizarStatusForm } from "./forms/AtualizarStatusForm";
 import { AtualizarValorForm } from "./forms/AtualizarValorForm";
 import { CancelarAgendamentoForm } from "./forms/CancelarAgendamentoForm";
+import { ComentarioInstagramForm } from "./forms/ComentarioInstagramForm";
 import { CondicaoForm } from "./forms/CondicaoForm";
 import { ConfiguracoesGeraisForm } from "./forms/ConfiguracoesGeraisForm";
 import { CriarTarefaForm } from "./forms/CriarTarefaForm";
@@ -60,6 +61,15 @@ function FormularioDoNode({
   onUpdateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
   onRemoverOpcaoAresta: (nodeId: string, opcaoId: string) => void;
 }) {
+  // Gatilhos de comentário do Instagram: palavras, modo de comparação e escolha da publicação.
+  if (node.type === "comentario_instagram" || node.type === "instagram_resposta_comentario") {
+    return (
+      <ComentarioInstagramForm
+        data={node.data as Parameters<typeof ComentarioInstagramForm>[0]["data"]}
+        onChange={(d) => onUpdateNodeData(node.id, d)}
+      />
+    );
+  }
   if (node.type === "condicao_grupo") {
     const data = node.data as CondicaoGrupoData;
     return <CondicaoForm grupo={data.grupo} onChange={(grupo) => onUpdateNodeData(node.id, { grupo })} />;
