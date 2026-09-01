@@ -170,6 +170,8 @@ export type Contato = {
   melhorHorario?: string;
   /** @ do Instagram (sem arroba) — preenchido sozinho quando a pessoa chega pelo Direct. */
   instagram?: string;
+  /** Foto de perfil já baixada — a mesma pessoa usa a mesma foto em conversas, funil e contatos. */
+  fotoUrl?: string;
   etiquetas?: string[];
   favorito?: boolean;
 };

@@ -273,6 +273,14 @@ export async function processarMensagemRecebida(
     : (contatoExistente ??
       (await criarContatoPeloWhatsAppSeNaoExistir({ workspaceId, nome: chaveContato, whatsapp: waId })));
 
+  // A foto também vai pro contato: é a mesma pessoa no funil, na lista de contatos e no painel do
+  // funil. Guardada só na conversa, o funil mostrava iniciais enquanto a conversa mostrava o rosto.
+  if (contato?.id && fotoUrl) {
+    await prisma.contato
+      .update({ where: { id: contato.id }, data: { fotoUrl } })
+      .catch((erro) => console.error("[evolution] falha ao guardar a foto no contato:", erro));
+  }
+
   // Só entra como lead novo no funil quando ALGUÉM DE FORA escreveu primeiro pra um contato que
   // ainda não existia — mensagem que a própria pessoa manda do celular pra alguém (ex.: um
   // contato pessoal) não deve virar negócio no funil sozinha.

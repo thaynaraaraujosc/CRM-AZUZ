@@ -49,6 +49,15 @@ model Contato {
   // resolve o username na primeira mensagem. É o equivalente do `whatsapp` pro outro canal: sem
   // ele, um lead vindo do Direct virava contato sem nenhuma forma de reencontrar a pessoa.
   instagram String?
+  /// Foto de perfil da pessoa, já baixada e guardada.
+  ///
+  /// Mora no CONTATO, não só na conversa, porque é a mesma pessoa em todo lugar: lista de
+  /// conversas, funil, painel do funil, tela de contatos. Com a foto presa à conversa, o funil
+  /// mostrava iniciais enquanto a conversa mostrava o rosto — o vendedor não reconhecia que era o
+  /// mesmo lead.
+  ///
+  /// Guardada (não um link do CDN da Meta, que expira em horas) pelo mesmo motivo das miniaturas.
+  fotoUrl   String? @db.Text
 
   // MySQL não tem array nativo — etiquetas vira JSON (lista de strings) pra não inflar o
   // escopo do piloto com uma tabela relacionada agora.

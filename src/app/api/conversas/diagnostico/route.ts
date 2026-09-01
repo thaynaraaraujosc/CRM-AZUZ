@@ -96,10 +96,29 @@ export async function POST() {
 
   const aindaOrfas = await prisma.mensagemExtra.count({ where: { workspaceId, contaCanal: null } });
 
+  // Aproveita a passada pra copiar as fotos que já existem nas conversas para os contatos. É o que
+  // faz a mesma pessoa aparecer com o mesmo rosto no funil e na lista de contatos, sem esperar ela
+  // mandar mensagem de novo.
+  const comFoto = await prisma.conversa.findMany({
+    where: { workspaceId, fotoUrl: { not: null }, contatoId: { not: null } },
+    select: { contatoId: true, fotoUrl: true },
+  });
+  let fotosCopiadas = 0;
+  for (const conversa of comFoto) {
+    const { count } = await prisma.contato.updateMany({
+      // Só preenche quem está sem foto: uma foto escolhida à mão no contato não pode ser
+      // sobrescrita pela do canal.
+      where: { id: conversa.contatoId!, workspaceId, fotoUrl: null },
+      data: { fotoUrl: conversa.fotoUrl },
+    });
+    fotosCopiadas += count;
+  }
+
   return NextResponse.json(
     {
       adotadas,
       aindaOrfas,
+      fotosCopiadas,
       observacao:
         "As que sobraram pertencem a conversas sem conexão dona — histórico antigo do WhatsApp por QR Code. " +
         "Elas voltam sozinhas quando aquela conexão for reconectada.",

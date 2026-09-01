@@ -229,7 +229,14 @@ export function PainelConversa({
         <header className="painel-conversa-topo">
           <div className="name-cell">
             <div className="avatar">
-              {fotoUrl ? <img src={fotoUrl} alt="" className="wa-avatar-foto" /> : initials}
+              {/* A conversa manda a foto quando tem; senão vale a do contato — é a mesma pessoa, e
+                  no funil nem sempre existe conversa carregada pra fornecer a imagem. */}
+              {fotoUrl ?? contato?.fotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- imagem já baixada e servida pelo CRM
+                <img src={fotoUrl ?? contato?.fotoUrl} alt="" className="wa-avatar-foto" />
+              ) : (
+                initials
+              )}
             </div>
             <div>
               <p className="n">{nomeEdit}</p>

@@ -507,6 +507,15 @@ export async function POST(request: Request) {
           }));
         contatoId = contato?.id;
 
+        // A foto vai TAMBÉM pro contato — é a mesma pessoa no funil, na lista de contatos e no
+        // painel do funil. Presa só à conversa, o funil mostrava iniciais enquanto a conversa
+        // mostrava o rosto, e o vendedor não reconhecia que era o mesmo lead.
+        if (contato?.id && fotoUrl) {
+          await prisma.contato
+            .update({ where: { id: contato.id }, data: { fotoUrl } })
+            .catch((erro) => console.error("[instagram] falha ao guardar a foto no contato:", erro));
+        }
+
         // Mesma regra do WhatsApp: só quem ACABOU de ser criado entra no funil. Contato que já
         // existia mandar mensagem de novo não pode mexer na etapa em que o vendedor o deixou.
         if (!contatoExistente) {

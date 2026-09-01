@@ -36,7 +36,7 @@ export function MensagensOcultas() {
     setResultado(null);
     try {
       const resposta = await fetch("/api/conversas/diagnostico", { method: "POST" });
-      const dados = (await resposta.json()) as { adotadas: number; aindaOrfas: number };
+      const dados = (await resposta.json()) as { adotadas: number; aindaOrfas: number; fotosCopiadas: number };
       setOcultas(dados.aindaOrfas);
       setResultado(
         dados.adotadas > 0
@@ -46,6 +46,11 @@ export function MensagensOcultas() {
                 : "")
           : "Nada a recuperar: as que restam são de um canal desconectado e voltam sozinhas ao reconectar.",
       );
+      if (dados.fotosCopiadas > 0) {
+        setResultado(
+          (atual) => `${atual ?? ""} ${dados.fotosCopiadas} fotos de perfil também foram levadas pros contatos.`,
+        );
+      }
     } catch {
       setResultado("Não deu pra recuperar agora. Tente de novo em instantes.");
     } finally {
