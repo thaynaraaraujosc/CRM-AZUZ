@@ -97,7 +97,12 @@ type PayloadInstagram = {
         /** Resposta a um story: vem FORA de `attachments`, num campo próprio. Sem tratar isto, a
          * mensagem chegava só com o texto — sem a miniatura do story que a pessoa respondeu, que é
          * justamente o que dá contexto ("ela respondeu ao story de qual post?"). */
-        reply_to?: { story?: { url?: string; id?: string } };
+        reply_to?: {
+          story?: { url?: string; id?: string };
+          /** Resposta a uma MENSAGEM (não a um story): o id da mensagem citada. É o mesmo `mid`
+           * com que a mensagem original foi gravada, então dá pra buscar o que foi dito. */
+          mid?: string;
+        };
         /** `true` quando a mensagem foi enviada PELA conta conectada — inclusive de fora do CRM,
          * respondendo pelo app do Instagram. É o que permite o histórico ficar completo. */
         is_echo?: boolean;
@@ -123,7 +128,11 @@ const ROTULO_POR_ANEXO: Record<string, string> = {
   video: "[Vídeo]",
   audio: "[Áudio]",
   file: "[Arquivo]",
-  share: "[Publicação compartilhada]",
+  // Frases, não jargão entre colchetes: quem atende precisa saber O QUE aconteceu sem decifrar
+  // nome de campo da API. Vale pra todos os eventos que não são "mandou um arquivo".
+  share: "Compartilhou uma publicação",
+  ig_reel: "Compartilhou um reel",
+  story_reply: "Respondeu ao seu story",
   // Frase inteira, não rótulo entre colchetes: quem atende precisa entender o que aconteceu
   // sem traduzir jargão. "[Menção em story]" não diz que a pessoa apareceu no story de alguém.
   story_mention: "Você foi marcado em um story",
@@ -184,22 +193,34 @@ async function extrasDeAnexoInstagram(
 
     const bytes = Buffer.from(await resposta.arrayBuffer());
     if (bytes.length > TAMANHO_MAX_ANEXO) return {};
-    const dataUrl = `data:${mimeType};base64,${bytes.toString("base64")}`;
-    const formato = mimeType.split("/")[1] ?? "arquivo";
+
+    // Nota de voz do Instagram chega dentro de um contêiner MP4, e o CDN devolve `video/mp4` nela
+    // igual devolveria num vídeo comum. Decidindo só pelo arquivo, o áudio virava vídeo: um
+    // retângulo preto na conversa, com a voz tocando dentro e nada pra ver.
+    //
+    // O que separa os dois é o tipo que a Meta declara no anexo (`audio`), que aqui é mais
+    // confiável que o contêiner — um MP4 pode não ter faixa de vídeo nenhuma, e o content-type não
+    // conta isso. O tipo também é reescrito pra `audio/mp4`: é o que o arquivo é de fato, e é
+    // assim que ele vai ser guardado e servido daqui pra frente.
+    const declaradoAudio = anexo.type === "audio";
+    const mimeEfetivo = declaradoAudio && mimeType.startsWith("video/") ? "audio/mp4" : mimeType;
+
+    const dataUrl = `data:${mimeEfetivo};base64,${bytes.toString("base64")}`;
+    const formato = mimeEfetivo.split("/")[1] ?? "arquivo";
 
     // Decide pelo CONTEÚDO, não pelo nome do tipo que a Meta declara. Os nomes variam mais do que
     // a documentação sugere (`share`, `ig_reel`, `story_mention`, `template`...), e um tipo
     // desconhecido caía no ramo genérico e virava card de download — foi assim que um reel com
     // prévia em JPEG apareceu como "jpeg · 617 KB" em vez de miniatura. O mimeType do arquivo
     // baixado não tem essa ambiguidade.
-    if (mimeType.startsWith("image/")) {
+    if (mimeEfetivo.startsWith("image/")) {
       return { imagens: [{ url: dataUrl, nome: `imagem.${formato}`, tamanho: bytes.length }] };
     }
-    if (mimeType.startsWith("video/")) {
+    if (mimeEfetivo.startsWith("video/")) {
       if (somenteImagem) return {};
       return { video: { url: dataUrl, nome: `video.${formato}`, tamanho: bytes.length, comAudio: true } };
     }
-    if (mimeType.startsWith("audio/")) {
+    if (mimeEfetivo.startsWith("audio/")) {
       if (somenteImagem) return {};
       return { audio: { url: dataUrl, duracao: 0, waveform: [] } };
     }
@@ -478,6 +499,27 @@ export async function POST(request: Request) {
           temToken: Boolean(tokenDaConta),
         });
       }
+      // Resposta a uma mensagem: traz o trecho citado, igual o Instagram mostra em cima da
+      // resposta. Sem isso chegava só a resposta solta, e quem lia o atendimento depois não tinha
+      // como saber a que ela se referia.
+      const midCitado = mensagem.reply_to?.mid;
+      const citada = midCitado
+        ? await prisma.mensagemExtra.findUnique({
+            where: { id: midCitado },
+            select: { texto: true, tipo: true, workspaceId: true },
+          })
+        : null;
+      // Confere o workspace antes de usar: o `mid` vem de fora, e uma mensagem de outra empresa
+      // nunca pode ser citada aqui.
+      const respondendoA =
+        citada && citada.workspaceId === integracaoDaConta.workspaceId
+          ? {
+              autor: citada.tipo === "out" ? "Você" : chaveContato,
+              texto: citada.texto.slice(0, 140),
+              mid: midCitado,
+            }
+          : undefined;
+
       const rotuloPadrao = story && !anexo
         ? "Respondeu ao seu story"
         : anexo
@@ -548,15 +590,24 @@ export async function POST(request: Request) {
 
       const extrasComLegenda = {
         ...extras,
+        ...(respondendoA ? { respondendoA } : {}),
         ...(legenda ? { legenda } : {}),
         ...(linkExternoDaMensagem ? { linkExterno: linkExternoDaMensagem } : {}),
         ...(linkExternoDaMensagem && !linkDoConteudo ? { linkEhConversa: true } : {}),
-        ...(ehConteudoDoInstagram || autorPublicacao
+        // O @ no topo do cartão é do AUTOR da publicação, e só aparece quando a Meta diz quem é.
+        //
+        // Antes, sem esse dado, entrava o @ da conversa — e o cartão passava a afirmar que a
+        // publicação era de quem estava do outro lado do Direct. Compartilhando um post do fulano
+        // com o ciclano, o CRM creditava o post ao ciclano. Preencher com o que se tem à mão vira
+        // informação falsa: melhor cartão sem autor do que cartão com o autor errado.
+        ...(autorPublicacao
           ? {
-              compartilhadoPor: autorPublicacao ? `@${autorPublicacao.replace(/^@/, "")}` : chaveContato,
+              compartilhadoPor: `@${autorPublicacao.replace(/^@/, "")}`,
               ...(legendaPublicacao ? { legendaPublicacao } : {}),
             }
-          : {}),
+          : legendaPublicacao
+            ? { legendaPublicacao }
+            : {}),
       };
 
       await prisma.mensagemExtra.create({
