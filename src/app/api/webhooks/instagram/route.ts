@@ -360,8 +360,15 @@ export async function POST(request: Request) {
         })
         .catch(() => {});
 
-      const receberMensagens = (integracaoDaConta.metadados as { receberMensagens?: boolean } | null)?.receberMensagens ?? true;
-      if (!receberMensagens) continue;
+      // O switch "Mostrar mensagens do Instagram nas Conversas" NÃO é mais tratado aqui.
+      //
+      // Antes, desligado, a mensagem era descartada neste ponto — e descartar é irreversível: ela
+      // nunca chegava ao banco, então religar não trazia de volta nada do período desligado. Um
+      // botão de exibição apagando histórico é o oposto do que ele promete.
+      //
+      // Agora a mensagem é sempre gravada, e a EXIBIÇÃO é filtrada na leitura (ver
+      // `contasCanalVisiveis` em `conta-canal.ts`). Desligar esconde; religar mostra tudo, inclusive
+      // o que chegou no meio.
 
       // Curtida numa mensagem que já está na tela. Não vira bolha nova: atualiza a mensagem
       // reagida, do mesmo jeito que o Instagram mostra o coração grudado no balão. Guardamos em
@@ -634,7 +641,13 @@ export async function POST(request: Request) {
       // precisa aparecer JUNTO da miniatura — não só como texto solto numa bolha separada, que era
       // o que acontecia: chegava "Você foi marcado em um story" numa bolha e a imagem noutra, sem
       // ligação visível entre as duas.
-      const texto = [mensagem.text ?? rotuloPadrao, linkDoConteudo].filter(Boolean).join("\n") || "";
+      // O LINK NÃO ENTRA NO TEXTO.
+      //
+      // Ele entrava, e o resultado era um endereço enorme aparecendo como linha de texto crua
+      // embaixo da miniatura — além do botão, que leva ao mesmo lugar. Endereço técnico é camada
+      // técnica: pertence aos `extras` (onde vira o botão "Ver publicação"), não ao corpo da
+      // mensagem, que é o que a pessoa lê e o que aparece na prévia da lista de conversas.
+      const texto = mensagem.text ?? rotuloPadrao ?? "";
 
       // Bolha que não diz nada: anexo de um tipo que o CRM não conhece, sem arquivo baixado e sem
       // texto nenhum. É o que acontece quando alguém manda um número pelo Instagram — o app envia o

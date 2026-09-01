@@ -54,6 +54,11 @@ export async function contasCanalVisiveis(workspaceId: string): Promise<(string 
       // Histórico anterior a esta coluna — ver comentário acima.
       contas.push(null);
     } else if (integracao.provedor === "meta_instagram") {
+      // "Mostrar mensagens do Instagram nas Conversas", desligado: a conexão deixa de reivindicar
+      // as conversas dela, e elas somem da caixa de entrada — do mesmo jeito que um número
+      // desconectado some. Nada é apagado, e religar traz tudo de volta, inclusive o que chegou
+      // enquanto estava desligado.
+      if (metadados.receberMensagens === false) continue;
       contas.push(contaCanalDaConexao(CANAL_INSTAGRAM, metadados.instagramContaId as string | undefined));
     } else {
       contas.push(contaCanalDaConexao(CANAL_OFICIAL, metadados.phoneNumberId as string | undefined));
@@ -85,8 +90,12 @@ export function filtroContaCanal(contas: (string | null)[]) {
     OR: [
       ...(valores.length ? [{ contaCanal: { in: valores } }] : []),
       ...(incluiNulo ? [{ contaCanal: null }] : []),
-      // Escape pros canais que não são WhatsApp — ver o comentário acima.
-      { contaCanal: { startsWith: `${CANAL_INSTAGRAM}:` } },
+      // Escape pros canais que não são WhatsApp — ver o comentário acima. Só vale quando o
+      // Instagram está entre as contas visíveis: sem esta condição, o escape reintroduzia as
+      // conversas do Direct mesmo com o switch de exibição desligado, e o botão não fazia nada.
+      ...(contas.some((c) => c?.startsWith(`${CANAL_INSTAGRAM}:`))
+        ? [{ contaCanal: { startsWith: `${CANAL_INSTAGRAM}:` } }]
+        : []),
     ],
   };
 }
@@ -103,9 +112,19 @@ export async function provedoresConectados(workspaceId: string): Promise<string[
       status: "conectado",
       provedor: { in: [CANAL_NAO_OFICIAL, CANAL_OFICIAL, CANAL_INSTAGRAM] },
     },
-    select: { provedor: true },
+    select: { provedor: true, metadados: true },
   });
-  return integracoes.map((i) => i.provedor);
+  return integracoes
+    .filter((i) => {
+      // "Levar as conversas do Instagram para o funil", desligado: os cards de origem Instagram
+      // somem do funil enquanto estiver assim. Some da TELA — o negócio continua no banco, com
+      // histórico, valor e etapa, e volta inteiro ao religar. É a mesma regra que já vale pra um
+      // número de WhatsApp desconectado.
+      if (i.provedor !== CANAL_INSTAGRAM) return true;
+      const metadados = (i.metadados as Record<string, unknown> | null) ?? {};
+      return metadados.entrarNoFunil !== false;
+    })
+    .map((i) => i.provedor);
 }
 
 /**
