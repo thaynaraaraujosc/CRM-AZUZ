@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
 import { ConexaoQrCode } from "./ConexaoQrCode";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
+import { MensagensOcultas } from "./MensagensOcultas";
 import { ConexaoInstagram, ConexaoMetaAds } from "./ConexoesOAuth";
 import { DadosWebhook } from "./DadosWebhook";
 import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
@@ -118,6 +119,8 @@ export function IntegracoesSecao() {
   return (
     <div className="config-secao">
       <CabecalhoCategoria titulo="Integrações e aplicativos" descricao="Conexões que já funcionam de verdade e uma prévia do que vem por aí." />
+
+      <MensagensOcultas />
 
       <div className="int-group">
         <p className="int-group-h">Prontas pra usar</p>
