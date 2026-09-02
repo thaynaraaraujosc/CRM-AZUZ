@@ -53,12 +53,23 @@
   --text-muted: rgba(9, 9, 11, 0.64);
   --text-faint: rgba(9, 9, 11, 0.54);
 
-  /* Área interna em Arial. Poppins/Montserrat seguem carregadas e a landing continua com elas
-     (os tokens são revertidos dentro de `.lp-root`, em page.tsx) — só o app logado muda.
-     Arial é fonte de sistema: não há download, então a interface aparece já na primeira pintura,
-     sem o piscar de texto que uma fonte baixada causa. */
-  --display: Arial, Helvetica, sans-serif;
-  --body: Arial, Helvetica, sans-serif;
+  /* Área interna com a fonte do SISTEMA. No Mac e no iPhone isso entrega a San Francisco de
+     verdade — a mesma do iOS e do site da Apple —, sem baixar nada e sem esbarrar na licença: a
+     Apple libera a SF Pro só pra quem desenha pras plataformas dela, então hospedar o arquivo no
+     nosso domínio não seria permitido. Pedir a fonte do sistema é o caminho que ela mesma indica.
+
+     `-apple-system` e `BlinkMacSystemFont` cobrem Safari e Chrome no Mac/iOS; `Segoe UI` pega o
+     Windows; `Inter` é o degrau seguinte pra Linux e Android, porque foi desenhada com as mesmas
+     proporções de uma fonte de interface. Cada pessoa vê a fonte nativa do aparelho dela, que é o
+     que faz o app parecer parte do sistema em vez de um site.
+
+     Poppins/Montserrat seguem carregadas e a landing continua com elas (os tokens são revertidos
+     dentro de `.lp-root`, em page.tsx) — só o app logado muda. */
+  --pilha-sistema: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --body: var(--pilha-sistema);
 
   /* -------- Tokens (Etapa 2, item 44) — raio, sombra, espaçamento, transição, cor semântica.
      Aditivo: nada existente referenciava esses nomes antes, então introduzir aqui não muda o visual
@@ -125,24 +136,22 @@
 
   /* Peso + altura de linha — hierarquia deve vir de tamanho+peso+espaçamento juntos, não só do
      tamanho (`--fs-*` abaixo). `--lh-tight` pra títulos/números grandes, `--lh-base` pro resto. */
-  /* Arial tem dois pesos reais: regular e bold. Os cinco nomes continuam existindo — o CSS inteiro
-     já os referencia —, mas todos caem num dos dois. Pedir 300 ou 600 de uma fonte que não os tem
-     faz o navegador ESTICAR ou ENGORDAR o desenho da letra, e o resultado é um texto de forma
-     ligeiramente errada, diferente em cada sistema. Com dois pesos de verdade, a hierarquia passa a
-     vir de tamanho, cor e espaçamento — que é como se compõe com Arial. */
+  /* A escada de pesos reabre: San Francisco, Segoe UI e Inter têm os pesos intermediários de
+     verdade, então 500 e 600 saem desenhados em vez de engordados pelo navegador. Não uso 300:
+     nem toda a pilha tem light real, e onde não tem o navegador afina a letra artificialmente. */
   --fw-light: 400;
   --fw-regular: 400;
-  --fw-medium: 400;
-  --fw-semibold: 700;
+  --fw-medium: 500;
+  --fw-semibold: 600;
   --fw-bold: 700;
   --lh-tight: 1.15;
   --lh-base: 1.55;
 
   /* Tracking: título grande em grotesca precisa fechar, senão as letras "boiam". Texto pequeno
      precisa do contrário. */
-  --track-tight: -0.012em;
-  --track-snug: -0.005em;
-  --track-wide: 0.05em;
+  --track-tight: -0.021em;
+  --track-snug: -0.011em;
+  --track-wide: 0.045em;
 
   /* Cores semânticas (item 55) — mesmo vocabulário já usado informalmente em Automações/Central do
      Dia/Configurações (verde=sucesso/oportunidade, âmbar=atenção, vermelho=erro, azul=informação,
