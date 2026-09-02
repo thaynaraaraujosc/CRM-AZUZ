@@ -33,6 +33,8 @@ const CSP = [
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
+  // Pra onde o navegador manda o que teria sido bloqueado. Sem isto o modo relato é cego.
+  "report-uri /api/seguranca/csp",
 ].join("; ");
 
 const nextConfig: NextConfig = {
