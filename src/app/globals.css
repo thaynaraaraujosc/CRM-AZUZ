@@ -1,33 +1,39 @@
 /* ==========================================================================
    CRM AZUZ — design system
-   Marinho #0B1533 · Azul Vibrante #2E6BFF · Poppins + Montserrat
+   Base preto/branco/cinza · Azul AZUZ #2E6BFF como accent · Poppins + Montserrat
    Sem cores quentes, por regra da marca.
    ========================================================================== */
 
 :root {
   --navy: #ffffff;
-  --navy-raised: #f5f7fb;
-  --navy-raised-2: #eaeefa;
+  --navy-raised: #fafafa;
+  --navy-raised-2: #f4f4f5;
   --navy-deep: #ffffff;
-  /* "Piso" atrás dos painéis flutuantes (sidebar + área principal) — o marinho da marca (#0B1533,
-     mesmo tom do fundo das telas de login/cadastro), não azul vibrante sólido nem cinza neutro. Só
-     esse fundo muda de cor — os painéis (`--navy`/`--navy-raised`) continuam brancos por cima. */
-  --canvas: #0b1533;
+  /* "Piso" atrás dos painéis flutuantes (sidebar + área principal). Era o marinho da marca — o que
+     dava ao app logado a cara de dashboard colorido, com dezenas de cartões brancos recortados
+     sobre um fundo forte. Agora é off-white: os painéis brancos quase se fundem ao piso e a página
+     lê como uma superfície contínua, com a separação vindo da borda, não do contraste de cor. */
+  --canvas: #f4f4f5;
 
+  /* Azul da marca — daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
+     foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
   --blue: #2e6bff;
-  --blue-soft: rgba(46, 107, 255, 0.14);
-  --blue-soft-2: rgba(46, 107, 255, 0.08);
+  --blue-soft: rgba(46, 107, 255, 0.12);
+  --blue-soft-2: rgba(46, 107, 255, 0.06);
   /* Azul mais escuro que --blue — usado onde o azul vibrante padrão fica claro demais pra servir
      de "ligado"/confirmação (ex.: toggle ativo). */
   --blue-strong: #1d4fd1;
 
-  --line: rgba(11, 21, 51, 0.1);
-  --line-soft: rgba(11, 21, 51, 0.06);
+  /* Bordas organizam, não são protagonistas: cinza quase imperceptível, nunca traço escuro. */
+  --line: rgba(9, 9, 11, 0.08);
+  --line-soft: rgba(9, 9, 11, 0.05);
 
-  --ink: #0b1533;
+  /* Preto neutro no lugar do marinho: o texto parava de ser preto e puxava azul, o que somado ao
+     piso marinho fazia a interface inteira ter temperatura de marca em vez de neutralidade. */
+  --ink: #09090b;
   --white: #ffffff;
-  --text-muted: rgba(11, 21, 51, 0.64);
-  --text-faint: rgba(11, 21, 51, 0.44);
+  --text-muted: rgba(9, 9, 11, 0.58);
+  --text-faint: rgba(9, 9, 11, 0.46);
 
   --display: var(--font-display), Poppins, sans-serif;
   --body: var(--font-body), Montserrat, sans-serif;
@@ -35,18 +41,20 @@
   /* -------- Tokens (Etapa 2, item 44) — raio, sombra, espaçamento, transição, cor semântica.
      Aditivo: nada existente referenciava esses nomes antes, então introduzir aqui não muda o visual
      de quem já usa valores fixos — só dá um vocabulário comum pro que for tocado daqui pra frente. */
+  /* Escala de raio: sm = input/badge · md = botão/controle · lg = card · xl = modal/painel. */
   --radius-sm: 6px;
-  --radius-md: 9px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
-  --shadow-xs: 0 1px 1px rgba(11, 21, 51, 0.04);
-  --shadow-sm: 0 1px 2px rgba(11, 21, 51, 0.06);
-  --shadow-md: 0 4px 16px rgba(11, 21, 51, 0.08);
-  --shadow-lg: 0 16px 40px rgba(11, 21, 51, 0.14);
-  /* Elevação sutil ao passar o mouse (cards clicáveis) — sempre combinada com um leve
-     `transform: translateY(-1px)`, nunca sozinha, senão o "voo" fica só na sombra. */
-  --shadow-hover: 0 8px 24px rgba(11, 21, 51, 0.1);
+  /* Sombras quase apagadas de propósito: profundidade agora vem de superfície + borda + contraste.
+     Card não pode parecer flutuando trinta pixels acima da página. `--shadow-lg` continua forte o
+     bastante só onde há sobreposição real (modal, popover) — ali a sombra informa camada. */
+  --shadow-xs: 0 1px 1px rgba(9, 9, 11, 0.03);
+  --shadow-sm: 0 1px 2px rgba(9, 9, 11, 0.04);
+  --shadow-md: 0 1px 3px rgba(9, 9, 11, 0.05);
+  --shadow-lg: 0 8px 28px rgba(9, 9, 11, 0.1);
+  --shadow-hover: 0 2px 8px rgba(9, 9, 11, 0.06);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -63,19 +71,19 @@
      degraus que faltavam) — pra qualquer superfície/borda/texto secundário parar de inventar
      opacidade solta. `--surface-hover`/`--surface-active` são o fundo padrão de qualquer linha/
      item interativo (linha de tabela, opção de dropdown, item de menu) nos estados hover/pressed. */
-  --gray-50: rgba(11, 21, 51, 0.03);
-  --gray-100: rgba(11, 21, 51, 0.05);
-  --gray-200: rgba(11, 21, 51, 0.08);
-  --gray-300: rgba(11, 21, 51, 0.12);
-  --gray-400: rgba(11, 21, 51, 0.18);
-  --gray-500: rgba(11, 21, 51, 0.28);
-  --gray-600: rgba(11, 21, 51, 0.44);
-  --gray-700: rgba(11, 21, 51, 0.64);
-  --gray-800: rgba(11, 21, 51, 0.82);
-  --gray-900: #0b1533;
+  --gray-50: rgba(9, 9, 11, 0.025);
+  --gray-100: rgba(9, 9, 11, 0.04);
+  --gray-200: rgba(9, 9, 11, 0.07);
+  --gray-300: rgba(9, 9, 11, 0.11);
+  --gray-400: rgba(9, 9, 11, 0.17);
+  --gray-500: rgba(9, 9, 11, 0.28);
+  --gray-600: rgba(9, 9, 11, 0.42);
+  --gray-700: rgba(9, 9, 11, 0.58);
+  --gray-800: rgba(9, 9, 11, 0.78);
+  --gray-900: #09090b;
 
-  --surface-hover: rgba(11, 21, 51, 0.04);
-  --surface-active: rgba(11, 21, 51, 0.07);
+  --surface-hover: rgba(9, 9, 11, 0.035);
+  --surface-active: rgba(9, 9, 11, 0.06);
 
   /* Peso + altura de linha — hierarquia deve vir de tamanho+peso+espaçamento juntos, não só do
      tamanho (`--fs-*` abaixo). `--lh-tight` pra títulos/números grandes, `--lh-base` pro resto. */
@@ -100,13 +108,17 @@
   --ia: #8a3ffc;
   --ia-soft: rgba(138, 63, 252, 0.12);
 
-  /* Reestruturação visual (redesign) — accent secundário (ciano) e tokens de glow, usados com
-     moderação em estados ativos/seleção (item ativo da sidebar, indicador "ao vivo") pra reforçar
-     a sensação tecnológica sem virar neon — no light mode o glow fica quase imperceptível de
-     propósito, só ganha presença real no dark mode (ver bloco `[data-theme="dark"]` abaixo). */
-  --cyan: #0ea5b7;
-  --cyan-soft: rgba(14, 165, 183, 0.12);
-  --glow-accent: 0 0 0 rgba(46, 107, 255, 0);
+  /* Havia um segundo accent (ciano) e um token de glow. Dois accents disputando atenção é o que
+     faz uma interface parecer template, e glow é exatamente a "sensação tecnológica barata" que o
+     produto não quer. O ciano passa a apontar pro azul da marca (accent único) e o glow vira
+     `none` — quem já referencia esses nomes continua funcionando, só deixa de brilhar. */
+  --cyan: #2e6bff;
+  --cyan-soft: rgba(46, 107, 255, 0.1);
+  --glow-accent: none;
+
+  /* Textura do piso (quadriculado de fundo do shell). Precisa de token porque a linha é escura no
+     tema claro e clara no escuro — antes era branca fixa, o que sumia sobre fundo claro. */
+  --grid-line: rgba(9, 9, 11, 0.032);
 
   /* Escala tipográfica (item 45) — nomeia os tamanhos que já estavam em uso espalhados (`.topbar h2`
      19px, `.panel-h h4` 13px, `.hint` 11px…) e preenche as lacunas (card, indicador). Contraste entre
@@ -129,48 +141,53 @@
    `.auth-page` mais abaixo neste arquivo) — mas SEM repetir o gradiente/grade fixos delas, que são
    um tratamento de página cheia (marketing/pré-login); aqui é só paleta de superfície+cor, aplicada
    dentro do shell normal do app (sidebar + header + conteúdo). */
+/* O escuro não é o claro invertido: ele tem a própria escada de superfícies. Piso (`--canvas`) é
+   o mais escuro; painel, elevado e destacado sobem em luminosidade em degraus pequenos, e a borda
+   é uma diferença de luz — não um traço. Era marinho; agora é preto neutro, pela mesma razão do
+   tema claro: a cor da marca vive no accent, não na superfície. */
 :root[data-theme="dark"] {
-  --navy: #0d1730;
-  --navy-raised: #131f42;
-  --navy-raised-2: #1a2a54;
-  --navy-deep: #060a17;
-  /* Mesmo "piso" fixo da landing/telas de auth (`--lp-bg`/`.auth-page`) — o app logado agora usa a
-     mesma base por trás dos painéis flutuantes, reforçando que é o mesmo produto. */
-  --canvas: #05070f;
+  --navy: #131315;
+  --navy-raised: #17171a;
+  --navy-raised-2: #202024;
+  --navy-deep: #09090b;
+  --canvas: #08080a;
 
-  --blue: #6a9bff;
-  --blue-soft: rgba(106, 155, 255, 0.2);
-  --blue-soft-2: rgba(106, 155, 255, 0.1);
+  --blue: #5b8cff;
+  --blue-soft: rgba(91, 140, 255, 0.18);
+  --blue-soft-2: rgba(91, 140, 255, 0.09);
 
-  --cyan: #35d0e0;
-  --cyan-soft: rgba(53, 208, 224, 0.16);
-  --glow-accent: 0 0 16px rgba(106, 155, 255, 0.35);
+  --cyan: #5b8cff;
+  --cyan-soft: rgba(91, 140, 255, 0.14);
+  --glow-accent: none;
 
-  --line: rgba(255, 255, 255, 0.12);
-  --line-soft: rgba(255, 255, 255, 0.07);
+  --grid-line: rgba(255, 255, 255, 0.03);
 
-  --ink: #f3f5fb;
-  --text-muted: rgba(243, 245, 251, 0.68);
-  --text-faint: rgba(243, 245, 251, 0.46);
+  --line: rgba(255, 255, 255, 0.09);
+  --line-soft: rgba(255, 255, 255, 0.055);
 
-  --gray-50: rgba(243, 245, 251, 0.03);
-  --gray-100: rgba(243, 245, 251, 0.05);
-  --gray-200: rgba(243, 245, 251, 0.08);
-  --gray-300: rgba(243, 245, 251, 0.12);
-  --gray-400: rgba(243, 245, 251, 0.18);
-  --gray-500: rgba(243, 245, 251, 0.3);
-  --gray-600: rgba(243, 245, 251, 0.46);
-  --gray-700: rgba(243, 245, 251, 0.68);
-  --gray-800: rgba(243, 245, 251, 0.84);
-  --gray-900: #f3f5fb;
+  --ink: #fafafa;
+  --text-muted: rgba(250, 250, 250, 0.64);
+  --text-faint: rgba(250, 250, 250, 0.5);
 
-  --surface-hover: rgba(243, 245, 251, 0.06);
-  --surface-active: rgba(243, 245, 251, 0.1);
+  --gray-50: rgba(250, 250, 250, 0.03);
+  --gray-100: rgba(250, 250, 250, 0.05);
+  --gray-200: rgba(250, 250, 250, 0.08);
+  --gray-300: rgba(250, 250, 250, 0.12);
+  --gray-400: rgba(250, 250, 250, 0.18);
+  --gray-500: rgba(250, 250, 250, 0.3);
+  --gray-600: rgba(250, 250, 250, 0.46);
+  --gray-700: rgba(250, 250, 250, 0.64);
+  --gray-800: rgba(250, 250, 250, 0.84);
+  --gray-900: #fafafa;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.32);
-  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.44);
-  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.36);
+  --surface-hover: rgba(250, 250, 250, 0.05);
+  --surface-active: rgba(250, 250, 250, 0.09);
+
+  --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.36);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.42);
 }
 
 *,
@@ -263,8 +280,8 @@ table {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 0;
@@ -967,7 +984,10 @@ table {
 }
 
 .card {
-  background: var(--navy-raised);
+  /* Branco sobre o piso off-white: a separação vem da borda, não de mais um tom de cinza. Com o
+     card cinza, piso, corpo e campo eram três cinzas quase idênticos empilhados — a origem da
+     sensação de caixa dentro de caixa. */
+  background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
@@ -1128,7 +1148,7 @@ table {
 .card-link:hover {
   transform: translateY(-3px);
   border-color: rgba(46, 107, 255, 0.5);
-  box-shadow: 0 12px 28px rgba(11, 21, 51, 0.16);
+  box-shadow: var(--shadow-md);
 }
 
 .card-link:hover .link {
@@ -1407,10 +1427,10 @@ table {
 .field label {
   display: block;
   font-size: 10px;
-  font-weight: 700;
-  color: var(--text-faint);
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   margin-bottom: 7px;
 }
 
@@ -1537,7 +1557,7 @@ table {
 
 .trafego-view .kpi:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(11, 21, 51, 0.12);
+  box-shadow: var(--shadow-md);
   border-color: var(--blue);
 }
 
@@ -2792,7 +2812,7 @@ table.tbl tbody tr:hover td {
   border-radius: 10px;
   max-height: 220px;
   overflow-y: auto;
-  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.18);
+  box-shadow: var(--shadow-lg);
   z-index: 50;
 }
 
@@ -3200,7 +3220,7 @@ table.tbl tbody tr:hover td {
   background: var(--navy);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
+  box-shadow: var(--shadow-lg);
   /* Reestruturação de design (fase 1) — mesma entrada suave do `.modal` genérico, pra esse modal
      bespoke não destoar dos demais. */
   animation: modal-scale-in var(--transition-base);
@@ -3226,7 +3246,7 @@ table.tbl tbody tr:hover td {
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Popup pequena no rodapé (usada pela resposta rápida do Funil) — mesmo estilo visual do
@@ -4043,7 +4063,7 @@ button.camp-row:hover {
   border-radius: 10px;
   padding: 8px 12px;
   font-size: 11.5px;
-  box-shadow: 0 12px 28px rgba(11, 21, 51, 0.18);
+  box-shadow: var(--shadow-md);
   pointer-events: none;
   white-space: nowrap;
   z-index: 5;
@@ -4059,7 +4079,7 @@ button.camp-row:hover {
   font-size: 11.5px;
   pointer-events: none;
   z-index: 200;
-  box-shadow: 0 12px 28px rgba(11, 21, 51, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .pie-legenda {
@@ -4602,7 +4622,7 @@ button.camp-row:hover {
 .hint {
   padding: 12px 17px 0;
   font-size: var(--fs-secondary);
-  color: var(--text-faint);
+  color: var(--text-muted);
   line-height: 1.55;
 }
 
@@ -4787,7 +4807,7 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: 12px;
-  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.18);
+  box-shadow: var(--shadow-lg);
   z-index: 60;
   /* Reestruturação de design (fase 0): desliza/aparece suavemente em vez de surgir de forma
      brusca — mesma faixa de tempo do modal. */
@@ -4812,7 +4832,7 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: 12px;
-  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.24);
+  box-shadow: var(--shadow-lg);
   z-index: 200;
   padding-bottom: 4px;
 }
@@ -4832,7 +4852,7 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: 10px;
-  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.2);
+  box-shadow: var(--shadow-lg);
   z-index: 20;
 }
 
@@ -4987,7 +5007,7 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: 12px;
-  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.18);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
   z-index: 60;
 }
@@ -5700,7 +5720,7 @@ button.camp-row:hover {
   color: #1a1a1a;
   border-radius: 2px;
   padding: 72px;
-  box-shadow: 0 10px 40px rgba(11, 21, 51, 0.25);
+  box-shadow: var(--shadow-md);
   font-family: "Times New Roman", Georgia, serif;
 }
 
@@ -6344,7 +6364,7 @@ button.camp-row:hover {
   justify-content: center;
   gap: 8px;
   padding: 8px;
-  background: rgba(11, 21, 51, 0.55);
+  background: rgba(9, 9, 11, 0.45);
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -6357,7 +6377,7 @@ button.camp-row:hover {
 @media (hover: none) {
   .doc-modelo-thumb-acoes {
     opacity: 1;
-    background: rgba(11, 21, 51, 0.35);
+    background: rgba(9, 9, 11, 0.45);
   }
 }
 
@@ -6990,7 +7010,7 @@ button.camp-row:hover {
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 8px 24px rgba(11, 21, 51, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .form-campo-card {
@@ -7061,7 +7081,7 @@ button.camp-row:hover {
   background: #1f2430;
   border-radius: 8px;
   padding: 3px;
-  box-shadow: 0 6px 16px rgba(11, 21, 51, 0.25);
+  box-shadow: var(--shadow-sm);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
@@ -7177,7 +7197,7 @@ button.camp-row:hover {
   margin: 0 auto;
   border-radius: 14px;
   padding: 24px;
-  box-shadow: 0 8px 24px rgba(11, 21, 51, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 /* Campo de resposta em si — no construtor, na prévia e na página pública. */
@@ -7452,8 +7472,8 @@ button.camp-row:hover {
   max-width: 560px;
   border-radius: 16px;
   padding: 32px;
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.16);
-  color: #0b1533;
+  box-shadow: var(--shadow-lg);
+  color: var(--ink);
 }
 
 .form-public-card.tema-escuro {
@@ -7501,8 +7521,8 @@ button.camp-row:hover {
   border-radius: 16px;
   padding: 48px 32px;
   text-align: center;
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.16);
-  color: #0b1533;
+  box-shadow: var(--shadow-lg);
+  color: var(--ink);
 }
 
 .form-public-obrigado.tema-escuro {
@@ -8469,7 +8489,7 @@ button.camp-row:hover {
 }
 
 .flow-canvas .react-flow__controls {
-  box-shadow: 0 4px 16px rgba(11, 21, 51, 0.16);
+  box-shadow: var(--shadow-sm);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -8721,7 +8741,7 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1.5px solid var(--line);
   border-left: 4px solid var(--flow-cor-categoria, var(--line));
-  box-shadow: 0 2px 10px rgba(11, 21, 51, 0.1);
+  box-shadow: var(--shadow-sm);
   font-size: 13px;
   overflow: visible;
   transition: box-shadow var(--transition-base);
@@ -8767,7 +8787,7 @@ button.camp-row:hover {
   align-items: center;
   justify-content: center;
   z-index: 4;
-  box-shadow: 0 2px 6px rgba(11, 21, 51, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 .flow-node-explicacao {
@@ -9061,7 +9081,7 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(11, 21, 51, 0.18);
+  box-shadow: var(--shadow-md);
   z-index: 10;
   font-size: 11.5px;
 }
@@ -9075,7 +9095,7 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: 10px;
-  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.24);
+  box-shadow: var(--shadow-lg);
   padding: 4px;
 }
 
@@ -9309,7 +9329,7 @@ button.camp-row:hover {
   border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  box-shadow: -16px 0 40px rgba(11, 21, 51, 0.2);
+  box-shadow: -16px 0 40px rgba(9, 9, 11, 0.12);
 }
 
 .flow-side-body {
@@ -9334,7 +9354,7 @@ button.camp-row:hover {
   border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  box-shadow: -16px 0 40px rgba(11, 21, 51, 0.2);
+  box-shadow: -16px 0 40px rgba(9, 9, 11, 0.12);
 }
 
 .flow-preview-summary {
@@ -9413,7 +9433,7 @@ button.camp-row:hover {
     position: absolute;
     z-index: 20;
     height: 100%;
-    box-shadow: 8px 0 24px rgba(11, 21, 51, 0.16);
+    box-shadow: 8px 0 24px rgba(9, 9, 11, 0.12);
   }
 
   .flow-config {
@@ -9421,7 +9441,7 @@ button.camp-row:hover {
     right: 0;
     z-index: 20;
     height: 100%;
-    box-shadow: -8px 0 24px rgba(11, 21, 51, 0.16);
+    box-shadow: -8px 0 24px rgba(9, 9, 11, 0.12);
   }
 }
 
@@ -9659,7 +9679,7 @@ button.camp-row:hover {
 .wizard-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(11, 21, 51, 0.5);
+  background: rgba(9, 9, 11, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9673,7 +9693,7 @@ button.camp-row:hover {
   background: var(--navy);
   border-radius: 16px;
   border: 1px solid var(--line);
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -10205,7 +10225,7 @@ button.camp-row:hover {
   max-height: 90vh;
   background: var(--navy);
   border-radius: 16px;
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.3);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
   animation: modal-scale-in var(--transition-base);
 }
@@ -11100,7 +11120,7 @@ button.camp-row:hover {
   height: 22px;
   border-radius: 50%;
   border: none;
-  background: rgba(11, 21, 51, 0.55);
+  background: rgba(9, 9, 11, 0.45);
   color: #fff;
   display: flex;
   align-items: center;
@@ -11557,7 +11577,7 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: 12px;
-  box-shadow: 0 16px 40px rgba(11, 21, 51, 0.18);
+  box-shadow: var(--shadow-lg);
   z-index: 60;
 }
 
@@ -11620,7 +11640,7 @@ button.camp-row:hover {
     width: 100%;
     max-height: 80vh;
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -16px 40px rgba(11, 21, 51, 0.24);
+    box-shadow: 0 -16px 40px rgba(9, 9, 11, 0.12);
   }
 
   .automacoes-search {
@@ -12883,7 +12903,7 @@ button.camp-row:hover {
   border-radius: 10px;
   border: 1px solid var(--line);
   background: var(--navy-raised);
-  box-shadow: 0 -4px 16px rgba(11, 21, 51, 0.12);
+  box-shadow: 0 -4px 16px rgba(9, 9, 11, 0.12);
 }
 .config-salvar-bar-acoes {
   display: flex;
@@ -13002,7 +13022,7 @@ button.camp-row:hover {
      aparecia por trás do texto, impossível de ler. */
   background: var(--navy);
   border: 1px solid var(--line);
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.32);
+  box-shadow: var(--shadow-lg);
   animation: modal-scale-in var(--transition-base);
 }
 
@@ -13067,7 +13087,7 @@ button.camp-row:hover {
   border-radius: 16px;
   background: var(--navy);
   border: 1px solid var(--line);
-  box-shadow: 0 24px 60px rgba(11, 21, 51, 0.32);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -13592,7 +13612,7 @@ button.camp-row:hover {
   background: #fff5f5;
   color: #9b2c2c;
   font-size: 13px;
-  box-shadow: 0 10px 30px rgba(11, 21, 51, 0.18);
+  box-shadow: var(--shadow-md);
 }
 
 .funil-erro-sync button {
@@ -13656,14 +13676,14 @@ button.camp-row:hover {
 .bubble {
   /* Sombra quase imperceptível: separa a bolha do fundo sem desenhar uma caixa. Uma borda dura
      faria a conversa parecer uma tabela. */
-  box-shadow: 0 1px 2px rgba(11, 21, 51, 0.06);
+  box-shadow: var(--shadow-sm);
   transition:
     box-shadow var(--transition-fast, 0.12s ease),
     transform var(--transition-fast, 0.12s ease);
 }
 
 .bubble:hover {
-  box-shadow: 0 2px 8px rgba(11, 21, 51, 0.09);
+  box-shadow: var(--shadow-hover);
 }
 
 /* Cantos: o lado de quem falou fica com o canto "mordido", como em qualquer aplicativo de
