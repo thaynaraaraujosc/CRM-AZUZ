@@ -99,6 +99,7 @@ import {
   IconVolume,
 } from "@/components/icons";
 import { FloatingDropdown, RadioList, Toggle, Topbar } from "@/components/ui";
+import { SeletorDeData } from "@/components/seletor-de-data";
 
 const FILTROS_CONVERSA = [
   { valor: "tudo", label: "Tudo" },
@@ -7880,13 +7881,7 @@ function ConversasPageInner() {
             </div>
             <div className="field" style={{ padding: "0 0 10px" }}>
               <label>Nova data prevista</label>
-              <input
-                className="input"
-                style={{ width: "100%" }}
-                type="date"
-                value={adiadaData}
-                onChange={(e) => setAdiadaData(e.target.value)}
-              />
+              <SeletorDeData valor={adiadaData} onChange={setAdiadaData} className="seletor-data-largo" />
             </div>
             <div className="field" style={{ padding: "0 0 10px" }}>
               <label>Observação</label>

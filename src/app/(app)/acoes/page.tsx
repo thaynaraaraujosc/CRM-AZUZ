@@ -8,6 +8,7 @@ import { classeOrigem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { IconDoc, IconImage, IconMic, IconSearch } from "@/components/icons";
 import { FloatingDropdown, MediaPicker, SegmentChips, Topbar } from "@/components/ui";
+import { SeletorDeData } from "@/components/seletor-de-data";
 
 const iconePorMidia = {
   imagem: <IconImage />,
@@ -445,23 +446,11 @@ export default function AcoesPage() {
                               >
                                 <div className="field" style={{ padding: 0 }}>
                                   <label>De</label>
-                                  <input
-                                    type="date"
-                                    className="input"
-                                    style={{ width: "100%" }}
-                                    value={periodoDe}
-                                    onChange={(e) => setPeriodoDe(e.target.value)}
-                                  />
+                                  <SeletorDeData valor={periodoDe} onChange={setPeriodoDe} curto className="seletor-data-largo" />
                                 </div>
                                 <div className="field" style={{ padding: 0 }}>
                                   <label>Até</label>
-                                  <input
-                                    type="date"
-                                    className="input"
-                                    style={{ width: "100%" }}
-                                    value={periodoAte}
-                                    onChange={(e) => setPeriodoAte(e.target.value)}
-                                  />
+                                  <SeletorDeData valor={periodoAte} onChange={setPeriodoAte} curto className="seletor-data-largo" />
                                 </div>
                               </div>
                               <button
@@ -764,13 +753,7 @@ export default function AcoesPage() {
                   <div style={{ padding: "10px 14px" }}>
                     <div className="field" style={{ padding: 0, marginBottom: 10 }}>
                       <label>Qual dia enviar</label>
-                      <input
-                        type="date"
-                        className="input"
-                        style={{ width: "100%" }}
-                        value={envioData}
-                        onChange={(e) => setEnvioData(e.target.value)}
-                      />
+                      <SeletorDeData valor={envioData} onChange={setEnvioData} className="seletor-data-largo" />
                     </div>
                     <div className="field" style={{ padding: 0, marginBottom: 10 }}>
                       <label>Que horas</label>

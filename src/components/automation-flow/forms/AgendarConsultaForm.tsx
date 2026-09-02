@@ -2,6 +2,7 @@
 
 import { useEquipe } from "@/lib/equipe-context";
 import type { AgendarConsultaData } from "@/lib/automation-flow/types";
+import { SeletorDeData } from "@/components/seletor-de-data";
 
 /** Ação "Agendar consulta" — data, horário, profissional e tipo de serviço da consulta. */
 export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaData; onChange: (novo: AgendarConsultaData) => void }) {
@@ -11,12 +12,11 @@ export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaD
       <div className="field">
         <label>Data e horário</label>
         <div style={{ display: "flex", gap: 6 }}>
-          <input
-            className="input"
-            type="date"
-            style={{ flex: 1 }}
-            value={data.data ?? ""}
-            onChange={(e) => onChange({ ...data, data: e.target.value })}
+          <SeletorDeData
+            valor={data.data ?? ""}
+            onChange={(iso) => onChange({ ...data, data: iso })}
+            curto
+            className="seletor-data-flex"
           />
           <input
             className="input"

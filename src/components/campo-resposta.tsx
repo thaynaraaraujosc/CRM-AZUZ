@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 
 import { aplicarMascara, type PerguntaFormulario } from "@/lib/formularios-context";
 import { IconAnexo, IconClose, IconDoc, IconImage, IconMic, IconStar, IconVideoCam } from "@/components/icons";
+import { SeletorDeData } from "@/components/seletor-de-data";
 
 function lerComoDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -259,7 +260,12 @@ export function CampoResposta({
       );
     case "data":
       return (
-        <input className="input form-resposta-campo" style={{ width: "100%" }} type="date" disabled={disabled} {...props} />
+        <SeletorDeData
+          valor={interativo ? valor : ""}
+          onChange={aoMudar}
+          disabled={disabled}
+          className="seletor-data-largo"
+        />
       );
     case "hora":
       return (
@@ -279,23 +285,19 @@ export function CampoResposta({
       const [de, ate] = valor ? valor.split("|") : ["", ""];
       return (
         <div className="filters-row" style={{ margin: 0 }}>
-          <input
-            className="input form-resposta-campo"
-            style={{ flex: 1 }}
-            type="date"
-            aria-label="De"
+          <SeletorDeData
+            valor={interativo ? de : ""}
+            onChange={(iso) => onMudarValor?.(`${iso}|${ate}`)}
             disabled={disabled}
-            value={interativo ? de : undefined}
-            onChange={(e) => onMudarValor?.(`${e.target.value}|${ate}`)}
+            curto
+            className="seletor-data-flex"
           />
-          <input
-            className="input form-resposta-campo"
-            style={{ flex: 1 }}
-            type="date"
-            aria-label="Até"
+          <SeletorDeData
+            valor={interativo ? ate : ""}
+            onChange={(iso) => onMudarValor?.(`${de}|${iso}`)}
             disabled={disabled}
-            value={interativo ? ate : undefined}
-            onChange={(e) => onMudarValor?.(`${de}|${e.target.value}`)}
+            curto
+            className="seletor-data-flex"
           />
         </div>
       );

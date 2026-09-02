@@ -10,6 +10,7 @@ import type {
 } from "@/lib/automation-flow/types";
 import { CATEGORIAS_TAREFA } from "./TarefaEventoForm";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
+import { SeletorDeData } from "@/components/seletor-de-data";
 
 const PRIORIDADES: { valor: PrioridadeTarefa; label: string }[] = [
   { valor: "baixa", label: "Baixa" },
@@ -141,12 +142,11 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
         <div className="field">
           <label>Data e horário</label>
           <div style={{ display: "flex", gap: 6 }}>
-            <input
-              className="input"
-              type="date"
-              style={{ flex: 1 }}
-              value={data.data ?? ""}
-              onChange={(e) => onChange({ ...data, data: e.target.value })}
+            <SeletorDeData
+              valor={data.data ?? ""}
+              onChange={(iso) => onChange({ ...data, data: iso })}
+              curto
+              className="seletor-data-flex"
             />
             <input
               className="input"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { IconCalendar } from "@/components/icons";
 
@@ -15,9 +16,10 @@ import { IconCalendar } from "@/components/icons";
  * Este é. Sem dependência nova: o cálculo de dias é aritmética de `Date`, e a aparência sai dos
  * mesmos tokens do resto do sistema.
  *
- * O `<input type="date">` continua existindo por baixo, escondido, por dois motivos: o formulário
- * continua funcionando igual (mesmo `value`, mesmo `onChange`), e quem usa leitor de tela ou
- * teclado mantém o controle nativo, que é mais acessível que qualquer grade desenhada à mão.
+ * O painel sai por portal em `document.body`, com `position: fixed` a partir do retângulo do
+ * botão — mesma técnica do `FloatingDropdown`. Sem isso ele seria cortado nos lugares onde o
+ * calendário vive dentro de um contêiner que rola (`.dropdown-pop` tem `overflow-y: auto` e
+ * altura máxima), que é justamente onde ficam o menu de adiar e o seletor de período.
  */
 
 const DIAS_DA_SEMANA = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -66,6 +68,7 @@ export function SeletorDeData({
   id,
   disabled,
   className,
+  curto,
 }: {
   /** `YYYY-MM-DD`, o mesmo formato do `<input type="date">` que este componente substitui. */
   valor?: string;
@@ -73,11 +76,16 @@ export function SeletorDeData({
   id?: string;
   disabled?: boolean;
   className?: string;
+  /** Data por extenso não cabe em campos estreitos lado a lado (De/Até): mostra 30/09/2026. */
+  curto?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
   const selecionada = daIso(valor);
   const [mesVisivel, setMesVisivel] = useState(() => selecionada ?? new Date());
   const caixaRef = useRef<HTMLDivElement>(null);
+  const botaoRef = useRef<HTMLButtonElement>(null);
+  const painelRef = useRef<HTMLDivElement>(null);
+  const [retangulo, setRetangulo] = useState<DOMRect | null>(null);
 
   // Reabrir com uma data nova precisa mostrar o mês dela, não o último que ficou aberto.
   useEffect(() => {
@@ -88,7 +96,10 @@ export function SeletorDeData({
   useEffect(() => {
     if (!aberto) return;
     function aoClicarFora(evento: MouseEvent) {
-      if (!caixaRef.current?.contains(evento.target as Node)) setAberto(false);
+      const alvo = evento.target as Node;
+      // O painel mora fora da árvore do componente (portal), então precisa ser checado à parte.
+      if (caixaRef.current?.contains(alvo) || painelRef.current?.contains(alvo)) return;
+      setAberto(false);
     }
     function aoTeclar(evento: KeyboardEvent) {
       if (evento.key === "Escape") setAberto(false);
@@ -108,6 +119,32 @@ export function SeletorDeData({
     setMesVisivel((atual) => new Date(atual.getFullYear(), atual.getMonth() + passo, 1));
   }
 
+  function alternar() {
+    if (aberto) {
+      setAberto(false);
+      return;
+    }
+    setRetangulo(botaoRef.current?.getBoundingClientRect() ?? null);
+    setAberto(true);
+  }
+
+  /** Posição fixa a partir do botão: vira pra cima quando não cabe embaixo e nunca sai da tela. */
+  function posicaoDoPainel(): React.CSSProperties {
+    const margem = 12;
+    const altura = 340;
+    const largura = 272;
+    if (!retangulo) return { position: "fixed", top: margem, left: margem, width: largura };
+    const cabeAbaixo = window.innerHeight - retangulo.bottom > altura + margem;
+    const maxEsquerda = Math.max(margem, window.innerWidth - largura - margem);
+    return {
+      position: "fixed",
+      width: largura,
+      left: Math.min(Math.max(retangulo.left, margem), maxEsquerda),
+      top: cabeAbaixo ? retangulo.bottom + 6 : "auto",
+      bottom: cabeAbaixo ? "auto" : window.innerHeight - retangulo.top + 6,
+    };
+  }
+
   return (
     <div className={`seletor-data${className ? ` ${className}` : ""}`} ref={caixaRef}>
       <button
@@ -115,20 +152,32 @@ export function SeletorDeData({
         id={id}
         className="input seletor-data-campo"
         disabled={disabled}
-        onClick={() => setAberto((v) => !v)}
+        ref={botaoRef}
+        onClick={alternar}
         aria-haspopup="dialog"
         aria-expanded={aberto}
       >
         <span className={selecionada ? "" : "seletor-data-vazio"}>
           {selecionada
-            ? selecionada.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
-            : "Escolher data"}
+            ? curto
+              ? selecionada.toLocaleDateString("pt-BR")
+              : selecionada.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
+            : curto
+              ? "dd/mm/aaaa"
+              : "Escolher data"}
         </span>
         <IconCalendar width={14} height={14} />
       </button>
 
-      {aberto ? (
-        <div className="seletor-data-painel" role="dialog" aria-label="Escolher data">
+      {aberto && typeof document !== "undefined"
+        ? createPortal(
+        <div
+          className="seletor-data-painel"
+          role="dialog"
+          aria-label="Escolher data"
+          ref={painelRef}
+          style={posicaoDoPainel()}
+        >
           <div className="seletor-data-topo">
             <button type="button" onClick={() => irParaMes(-1)} aria-label="Mês anterior">
               ‹
@@ -183,8 +232,10 @@ export function SeletorDeData({
               </button>
             ) : null}
           </div>
-        </div>
-      ) : null}
+        </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

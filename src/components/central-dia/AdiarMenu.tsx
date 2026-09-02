@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import { FloatingDropdown } from "@/components/ui";
+import { SeletorDeData } from "@/components/seletor-de-data";
 import type { PeriodoAdiamento } from "@/lib/central-dia-context";
 
 const OPCOES: { periodo: PeriodoAdiamento; label: string }[] = [
@@ -61,7 +62,7 @@ export function AdiarMenu({ onAdiar }: { onAdiar: (periodo: PeriodoAdiamento, da
             <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
               <div className="field">
                 <label>Data</label>
-                <input className="input" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+                <SeletorDeData valor={data} onChange={setData} />
               </div>
               <div className="field">
                 <label>Horário</label>

@@ -13809,12 +13809,12 @@ button.camp-row:hover {
   color: var(--text-faint);
 }
 
+/* Posição (top/left/width) vem inline do componente, porque o painel é montado por portal em
+   `document.body` e se posiciona a partir do retângulo do botão. O z-index precisa ficar acima do
+   fundo do `FloatingDropdown` (190) — senão o calendário abriria atrás do menu que o chamou. */
 .seletor-data-painel {
-  position: absolute;
-  z-index: 60;
-  top: calc(100% + 6px);
-  left: 0;
-  min-width: 268px;
+  z-index: 240;
+  max-height: 340px;
   padding: var(--space-3);
   background: var(--navy);
   border: 1px solid var(--line);
@@ -13935,4 +13935,15 @@ button.camp-row:hover {
 
 .seletor-data-rodape button:hover {
   color: var(--blue);
+}
+
+/* Variantes de largura do seletor de data — o gatilho é um `<button>`, então não herda o
+   `width: 100%` que um `<input>` levava por style inline no lugar de cada campo trocado. */
+.seletor-data-largo {
+  width: 100%;
+}
+
+.seletor-data-flex {
+  flex: 1;
+  min-width: 0;
 }

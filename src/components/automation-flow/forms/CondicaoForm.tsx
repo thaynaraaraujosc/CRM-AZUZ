@@ -10,6 +10,7 @@ import type {
 } from "@/lib/automation-flow/types";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 import { useEtiquetasDisponiveis } from "./EtiquetaSelect";
+import { SeletorDeData } from "@/components/seletor-de-data";
 
 type CategoriaCampo = "Conversa" | "Funil / Negócio" | "Contato" | "Atividade";
 
@@ -213,7 +214,7 @@ export function CondicaoForm({
       return <input className="input" type="time" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor" />;
     }
     if (regra.campo === "data_ultima_conversa") {
-      return <input className="input" type="date" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor" />;
+      return <SeletorDeData valor={regra.valor ?? ""} onChange={onChangeValor} curto />;
     }
     return <input className="input" placeholder="Valor" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor" />;
   }

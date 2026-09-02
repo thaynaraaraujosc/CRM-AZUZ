@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 
 import { IconCheck, IconClose, IconStar } from "./icons";
+import { SeletorDeData } from "./seletor-de-data";
 
 /**
  * Drawer lateral genérico — mesmo padrão CSS (`.flow-side-overlay`/`.flow-side-panel`) já usado
@@ -269,22 +270,8 @@ export function PeriodoPicker({
         <div style={{ padding: "8px 12px 12px", borderTop: "1px solid var(--line)" }}>
           <p className="hint" style={{ margin: "6px 0" }}>Ou personalize no calendário:</p>
           <div style={{ display: "flex", gap: 6 }}>
-            <input
-              type="date"
-              className="input"
-              style={{ width: "100%" }}
-              value={de}
-              onChange={(e) => setDe(e.target.value)}
-              aria-label="De"
-            />
-            <input
-              type="date"
-              className="input"
-              style={{ width: "100%" }}
-              value={ate}
-              onChange={(e) => setAte(e.target.value)}
-              aria-label="Até"
-            />
+            <SeletorDeData valor={de} onChange={setDe} curto className="seletor-data-largo" />
+            <SeletorDeData valor={ate} onChange={setAte} curto className="seletor-data-largo" />
           </div>
           <button
             type="button"

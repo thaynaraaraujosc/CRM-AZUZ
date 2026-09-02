@@ -3,6 +3,7 @@
 import { DIAS_SEMANA, type DiaSemana } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
 import type { ConfiguracoesFluxo, FluxoAutomacao } from "@/lib/automation-flow/types";
+import { SeletorDeData } from "@/components/seletor-de-data";
 
 const LIMITES: { valor: NonNullable<ConfiguracoesFluxo["limiteExecucao"]>; label: string }[] = [
   { valor: "sempre", label: "Sempre que o gatilho acontecer" },
@@ -146,11 +147,11 @@ export function ConfiguracoesGeraisForm({
 
       <div className="field">
         <label>Data de início</label>
-        <input className="input" type="date" value={cfg.dataInicio ?? ""} onChange={(e) => onChangeConfiguracoes({ dataInicio: e.target.value })} />
+        <SeletorDeData valor={cfg.dataInicio ?? ""} onChange={(iso) => onChangeConfiguracoes({ dataInicio: iso })} />
       </div>
       <div className="field">
         <label>Data de fim</label>
-        <input className="input" type="date" value={cfg.dataFim ?? ""} onChange={(e) => onChangeConfiguracoes({ dataFim: e.target.value })} />
+        <SeletorDeData valor={cfg.dataFim ?? ""} onChange={(iso) => onChangeConfiguracoes({ dataFim: iso })} />
       </div>
 
       <div className="field">
