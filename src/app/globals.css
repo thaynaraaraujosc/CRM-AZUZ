@@ -53,22 +53,17 @@
   --text-muted: rgba(9, 9, 11, 0.64);
   --text-faint: rgba(9, 9, 11, 0.54);
 
-  /* Área interna com a fonte do SISTEMA. No Mac e no iPhone isso entrega a San Francisco de
-     verdade — a mesma do iOS e do site da Apple —, sem baixar nada e sem esbarrar na licença: a
-     Apple libera a SF Pro só pra quem desenha pras plataformas dela, então hospedar o arquivo no
-     nosso domínio não seria permitido. Pedir a fonte do sistema é o caminho que ela mesma indica.
-
-     `-apple-system` e `BlinkMacSystemFont` cobrem Safari e Chrome no Mac/iOS; `Segoe UI` pega o
-     Windows; `Inter` é o degrau seguinte pra Linux e Android, porque foi desenhada com as mesmas
-     proporções de uma fonte de interface. Cada pessoa vê a fonte nativa do aparelho dela, que é o
-     que faz o app parecer parte do sistema em vez de um site.
+  /* Área interna em Helvetica Neue.
+     Ela vem instalada no Mac e no iPhone, então lá aparece a fonte de verdade, sem download. Fora
+     do mundo Apple ela não existe: a pilha cai em Helvetica e depois em Arial, que são desenhos da
+     mesma família e têm as MESMAS medidas — a linha quebra no mesmo ponto e o texto não muda de
+     tamanho, só de acabamento. É o mais próximo de "a mesma cara em todo lugar" sem hospedar
+     arquivo de fonte.
 
      Poppins/Montserrat seguem carregadas e a landing continua com elas (os tokens são revertidos
      dentro de `.lp-root`, em page.tsx) — só o app logado muda. */
-  --pilha-sistema: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  --pilha-sistema: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --display: var(--pilha-sistema);
   --body: var(--pilha-sistema);
 
   /* -------- Tokens (Etapa 2, item 44) — raio, sombra, espaçamento, transição, cor semântica.
@@ -144,22 +139,24 @@
 
   /* Peso + altura de linha — hierarquia deve vir de tamanho+peso+espaçamento juntos, não só do
      tamanho (`--fs-*` abaixo). `--lh-tight` pra títulos/números grandes, `--lh-base` pro resto. */
-  /* A escada de pesos reabre: San Francisco, Segoe UI e Inter têm os pesos intermediários de
-     verdade, então 500 e 600 saem desenhados em vez de engordados pelo navegador. Não uso 300:
-     nem toda a pilha tem light real, e onde não tem o navegador afina a letra artificialmente. */
+  /* Dois pesos, como pedido: Helvetica Neue Regular e Bold. Os cinco nomes continuam existindo
+     porque o CSS inteiro os referencia, mas todos caem num dos dois. Pedir 500 ou 600 de uma pilha
+     que na prática tem só regular e bold faz o navegador ENGORDAR o desenho da letra por conta
+     própria, e o resultado sai diferente em cada sistema. Com dois pesos reais, a hierarquia vem
+     de tamanho, cor e espaçamento. */
   --fw-light: 400;
   --fw-regular: 400;
-  --fw-medium: 500;
-  --fw-semibold: 600;
+  --fw-medium: 400;
+  --fw-semibold: 700;
   --fw-bold: 700;
   --lh-tight: 1.15;
   --lh-base: 1.55;
 
   /* Tracking: título grande em grotesca precisa fechar, senão as letras "boiam". Texto pequeno
      precisa do contrário. */
-  --track-tight: -0.021em;
-  --track-snug: -0.011em;
-  --track-wide: 0.045em;
+  --track-tight: -0.015em;
+  --track-snug: -0.006em;
+  --track-wide: 0.05em;
 
   /* Cores semânticas (item 55) — mesmo vocabulário já usado informalmente em Automações/Central do
      Dia/Configurações (verde=sucesso/oportunidade, âmbar=atenção, vermelho=erro, azul=informação,
