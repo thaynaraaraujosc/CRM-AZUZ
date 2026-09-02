@@ -53,16 +53,13 @@
   --text-muted: rgba(9, 9, 11, 0.64);
   --text-faint: rgba(9, 9, 11, 0.54);
 
-  /* Área interna em Helvetica Neue.
-     Ela vem instalada no Mac e no iPhone, então lá aparece a fonte de verdade, sem download. Fora
-     do mundo Apple ela não existe: a pilha cai em Helvetica e depois em Arial, que são desenhos da
-     mesma família e têm as MESMAS medidas — a linha quebra no mesmo ponto e o texto não muda de
-     tamanho, só de acabamento. É o mais próximo de "a mesma cara em todo lugar" sem hospedar
-     arquivo de fonte.
-
-     Poppins/Montserrat seguem carregadas e a landing continua com elas (os tokens são revertidos
-     dentro de `.lp-root`, em page.tsx) — só o app logado muda. */
-  --pilha-sistema: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* Arial no produto INTEIRO — landing, telas de entrada e app.
+     Ela é a única fonte que está instalada em Mac, Windows, Android e Linux ao mesmo tempo, então é
+     a que mais se aproxima de "todo mundo vê exatamente a mesma coisa" sem hospedar arquivo. As
+     outras que testamos dependiam do aparelho: San Francisco só existe na Apple, Helvetica Neue
+     também. Quando a fonte muda de aparelho pra aparelho, o produto tem caras diferentes conforme
+     quem abre — que é justamente o que não se quer. */
+  --pilha-sistema: Arial, Helvetica, sans-serif;
   --display: var(--pilha-sistema);
   --body: var(--pilha-sistema);
 

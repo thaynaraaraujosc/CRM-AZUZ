@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Montserrat, Poppins } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
@@ -14,20 +13,10 @@ const SCRIPT_TEMA_INICIAL = `
 })();
 `;
 
-const poppins = Poppins({
-  variable: "--font-display",
-  weight: ["700"],
-  subsets: ["latin"],
-});
 
-const montserrat = Montserrat({
-  variable: "--font-body",
-  weight: ["400", "600", "700"],
-  subsets: ["latin"],
-});
-
-/* A área interna usa Arial (fonte de sistema, sem download) — ver `--display`/`--body` no
-   globals.css. Poppins e Montserrat continuam aqui porque a landing page ainda as usa. */
+/* Não há mais fonte baixada: o produto inteiro usa Arial, que é fonte de sistema (ver
+   `--pilha-sistema` no globals.css). Poppins e Montserrat saíram daqui porque ninguém mais as
+   referencia — mantê-las carregadas seria baixar duas famílias de fonte que nenhuma tela usa. */
 
 export const metadata: Metadata = {
   title: "CRM AZUZ — Painel web",
@@ -46,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${poppins.variable} ${montserrat.variable}`}>
+    <html lang="pt-BR">
       <body>
         <Script id="tema-inicial" strategy="beforeInteractive">
           {SCRIPT_TEMA_INICIAL}

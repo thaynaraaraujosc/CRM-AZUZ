@@ -76,11 +76,6 @@ export default function LandingPage() {
              usuário. Mas a paleta agora é a mesma do produto: preto neutro, cinzas e o azul da
              marca como accent. Antes ela era marinho com roxo — quem via a landing e entrava no
              CRM via dois produtos diferentes. */
-          /* A landing segue com Poppins/Montserrat: a troca de tipografia foi só da área interna.
-             Sem isto ela herdaria a grotesca do app e mudaria sem ter sido pedido. */
-          --display: var(--font-display), Poppins, sans-serif;
-          --body: var(--font-body), Montserrat, sans-serif;
-
           --lp-bg: #08080a;
           --lp-bg-2: #0f0f11;
           --lp-ink: #fafafa;
