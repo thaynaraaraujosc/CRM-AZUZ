@@ -9,15 +9,19 @@
      card e a área interna ficavam dentro de 2% de luminosidade um do outro — tecnicamente
      diferentes, visualmente o mesmo plano. */
   --navy: #ffffff;
-  --navy-raised: #f7f7f9;
-  --navy-raised-2: #f0f0f3;
+  --navy-raised: #f5f6f8;
+  --navy-raised-2: #eceef2;
   --navy-deep: #ffffff;
+  /* Superfície que se destaca por ficar ACIMA das outras — card sobre coluna, popover sobre
+     página. É branca como `--navy`, mas o nome diz a intenção: quem usa este token está dizendo
+     "isto flutua", e por isso vem acompanhado de sombra. */
+  --surface-elevated: #ffffff;
   /* "Piso" atrás dos painéis flutuantes (sidebar + área principal). Era o marinho da marca — o que
      dava ao app logado a cara de dashboard colorido, com dezenas de cartões brancos recortados
      sobre um fundo forte. Agora é off-white: os painéis brancos quase se fundem ao piso e a página
      lê como uma superfície contínua, com a separação vindo da borda, não do contraste de cor. */
   /* Descido um degrau: com off-white claro demais, o painel branco não se descolava do piso. */
-  --canvas: #eaeaee;
+  --canvas: #e2e4e9;
 
   /* Azul da marca — daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
@@ -31,9 +35,9 @@
   /* Bordas organizam, não são protagonistas — mas precisam ser vistas. A 8% ela sumia sobre branco
      e o card ficava sem começo nem fim. `--line-strong` é pro que precisa de recorte de verdade:
      card dentro de card, cabeçalho de tabela, item destacado. */
-  --line: rgba(9, 9, 11, 0.13);
-  --line-soft: rgba(9, 9, 11, 0.08);
-  --line-strong: rgba(9, 9, 11, 0.2);
+  --line: rgba(9, 9, 11, 0.1);
+  --line-soft: rgba(9, 9, 11, 0.06);
+  --line-strong: rgba(9, 9, 11, 0.18);
 
   /* Preto neutro no lugar do marinho: o texto parava de ser preto e puxava azul, o que somado ao
      piso marinho fazia a interface inteira ter temperatura de marca em vez de neutralidade. */
@@ -80,6 +84,9 @@
      formas apontam pro mesmo valor, então não há como um lado divergir do outro. */
   --background: var(--canvas);
   --surface: var(--navy);
+  --primary: var(--blue);
+  --primary-hover: var(--blue-strong);
+  --primary-active: #1a44b8;
   --surface-secondary: var(--navy-raised);
   --surface-tertiary: var(--navy-raised-2);
   --border: var(--line);
@@ -168,9 +175,10 @@
    é uma diferença de luz — não um traço. Era marinho; agora é preto neutro, pela mesma razão do
    tema claro: a cor da marca vive no accent, não na superfície. */
 :root[data-theme="dark"] {
-  --navy: #141416;
-  --navy-raised: #1c1c1f;
-  --navy-raised-2: #252529;
+  --navy: #17171a;
+  --navy-raised: #121214;
+  --navy-raised-2: #202024;
+  --surface-elevated: #1e1e22;
   --navy-deep: #09090b;
   --canvas: #08080a;
 
@@ -184,9 +192,11 @@
 
   --grid-line: rgba(255, 255, 255, 0.03);
 
-  --line: rgba(255, 255, 255, 0.13);
-  --line-soft: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.22);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-soft: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --primary-hover: #7ba4ff;
+  --primary-active: #9db8ff;
 
   --ink: #fafafa;
   --text-muted: rgba(250, 250, 250, 0.7);
@@ -890,30 +900,64 @@ table {
 
 /* Ação principal — o lugar mais legítimo do azul. Uma por tela, de preferência. */
 .btn.primary {
-  background: var(--blue);
-  border-color: var(--blue);
+  background: var(--primary);
+  border-color: var(--primary);
   color: var(--white);
-  box-shadow: none;
+  box-shadow: var(--shadow-xs);
 }
 
 .btn.primary:hover {
-  background: var(--blue-strong);
-  border-color: var(--blue-strong);
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
-/* Secundário: neutro, com borda. O fundo era `--navy-raised`, que sobre card branco ficava
-   praticamente invisível. `.secondary` é o mesmo botão sob o nome do design system. */
+/* Pressão: afunda um pixel e escurece mais um passo. Sem isso o clique não tem retorno nenhum
+   entre o hover e a ação acontecer. */
+.btn.primary:active {
+  background: var(--primary-active);
+  border-color: var(--primary-active);
+  box-shadow: none;
+}
+
+/* Secundário: branco sobre a superfície cinza da página, com borda e uma sombra mínima. É essa
+   sombra que faz ele parecer um objeto pousado sobre a página em vez de um retângulo desenhado
+   nela — a diferença entre botão e contorno de botão. `.secondary` é o mesmo botão sob o nome do
+   design system. */
 .btn.ghost,
 .btn.secondary {
-  background: var(--navy);
-  border-color: var(--line);
+  background: var(--surface-elevated);
+  border-color: var(--line-strong);
   color: var(--ink);
+  box-shadow: var(--shadow-xs);
 }
 
 .btn.ghost:hover,
 .btn.secondary:hover {
+  background: var(--navy-raised);
+  border-color: var(--gray-400);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn.ghost:active,
+.btn.secondary:active {
+  background: var(--navy-raised-2);
+  box-shadow: none;
+}
+
+/* Terciário — ação de apoio que não deve competir com nada: sem fundo, sem borda, sem sombra.
+   Ganha superfície só ao passar o mouse. É o nível que faltava: antes tudo que não era principal
+   virava contorno branco, e a tela ficava cheia de caixas de mesmo peso. */
+.btn.terciario {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
+.btn.terciario:hover {
   background: var(--surface-hover);
-  border-color: var(--gray-300);
+  border-color: transparent;
+  color: var(--ink);
 }
 
 .btn.ghost.active,
@@ -976,8 +1020,9 @@ table {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-md);
-  background: var(--navy);
-  border: 1px solid var(--line);
+  background: var(--surface-elevated);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -988,8 +1033,12 @@ table {
     color var(--transition-fast);
 }
 .icon-btn:hover {
-  background: var(--surface-hover);
-  border-color: var(--gray-300);
+  background: var(--navy-raised);
+  border-color: var(--gray-400);
+  box-shadow: var(--shadow-sm);
+}
+.icon-btn:active {
+  box-shadow: none;
 }
 .icon-btn:focus-visible {
   outline: 2px solid var(--blue);
@@ -1060,10 +1109,10 @@ table {
   /* Branco sobre o piso off-white: a separação vem da borda, não de mais um tom de cinza. Com o
      card cinza, piso, corpo e campo eram três cinzas quase idênticos empilhados — a origem da
      sensação de caixa dentro de caixa. */
-  background: var(--navy);
+  background: var(--surface-elevated);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
 }
 
 /* Multi-tenancy Fase 1 — telas de /login e /cadastro, fora do shell (sidebar/header) do app.
@@ -1446,8 +1495,10 @@ table {
   border-color: transparent;
 }
 
+/* No escuro o azul padrão sobre o azul-suave dá 4:1 nos 9,5px da etiqueta. Um passo mais claro
+   resolve sem mudar a leitura da cor. */
 :root[data-theme="dark"] .pill.on {
-  color: var(--blue);
+  color: #93b4ff;
 }
 
 .toggle {
@@ -1523,7 +1574,7 @@ table {
 /* Base de `.input` promovida de `.field .input` pra cá (item 51) — algumas telas usam o input fora
    de um `.field` (busca, filtro solto) e ficavam sem nenhum estilo, só a borda nativa do navegador. */
 .input {
-  background: var(--navy);
+  background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: 9px 12px;
@@ -1534,9 +1585,12 @@ table {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
+/* Em foco o campo "acende": vira branco e ganha o anel azul. A troca de superfície faz o campo
+   ativo saltar mesmo num formulário com dez deles. */
 .input:focus-visible,
 .input:focus {
   outline: none;
+  background: var(--surface-elevated);
   border-color: var(--blue);
   box-shadow: 0 0 0 3px var(--blue-soft-2);
 }
@@ -2041,10 +2095,11 @@ table.tbl {
 table.tbl th {
   text-align: left;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--text-muted);
+  background: var(--navy-raised);
   padding: 11px 14px;
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
@@ -2164,14 +2219,19 @@ table.tbl tbody tr:hover td {
 .kanban {
   display: flex;
   gap: 13px;
-  align-items: stretch;
+  align-items: flex-start;
   overflow-x: auto;
   padding-bottom: 4px;
 }
 
+/* Camada 2: a coluna. Superfície um degrau abaixo da página, sem borda — é o fundo que a define,
+   não uma caixa em volta. Com borda, cinco colunas lado a lado virariam cinco caixas pesadas. */
 .kanban > div {
   flex: 1 0 240px;
   min-width: 240px;
+  background: var(--navy-raised-2);
+  border-radius: var(--radius-lg);
+  padding: 12px 10px;
 }
 
 .kcol-h {
@@ -2202,8 +2262,10 @@ table.tbl tbody tr:hover td {
 }
 
 .kcol-h .t {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 12.5px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  letter-spacing: -0.005em;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -2219,32 +2281,36 @@ table.tbl tbody tr:hover td {
 
 .kcol-h .c {
   font-size: 10.5px;
-  color: var(--text-faint);
+  color: var(--text-muted);
   font-weight: var(--fw-semibold);
-  background: var(--gray-100);
+  background: var(--gray-200);
   padding: 2px 7px;
-  border-radius: var(--radius-md);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
 }
 
+/* Ação contextual da etapa. Tinha fundo azul cheio e chamava mais atenção que a ação principal da
+   página — o azul aqui fica só no texto, e a superfície só aparece no hover. */
 .kcol-auto-link {
   display: flex;
   align-items: center;
   gap: 5px;
   font-size: 10.5px;
-  font-weight: 700;
-  color: var(--blue);
-  background: var(--blue-soft);
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+  background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   padding: 4px 8px;
   margin-bottom: 10px;
   width: fit-content;
   text-decoration: none;
-  transition: border-color 0.15s ease;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .kcol-auto-link:hover {
-  border-color: var(--blue);
+  background: var(--blue-soft-2);
+  color: var(--blue);
 }
 
 .toast-stack {
@@ -2279,26 +2345,37 @@ table.tbl tbody tr:hover td {
   box-shadow: var(--shadow-md);
 }
 
+/* Camada 3: o card. Branco sobre a coluna cinza — a diferença de superfície já o separa, e a
+   sombra mínima diz que ele está por cima (e que dá pra arrastar). Era cinza sobre transparente:
+   card e coluna eram o mesmo plano. */
 .lead-card,
 .conv-card,
 .task-card {
   display: block;
   width: 100%;
   text-align: left;
-  background: var(--navy-raised);
+  background: var(--surface-elevated);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
   padding: 12px 13px;
   margin-bottom: 9px;
-  transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
+  cursor: grab;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 
-/* Elevação sutil no hover — dá profundidade real ao card em vez de só trocar a cor da borda. */
+.lead-card:active,
+.task-card:active {
+  cursor: grabbing;
+}
+
+/* Elevação sutil no hover — profundidade de verdade, não só troca de cor da borda. */
 .lead-card:hover,
 .conv-card:hover,
 .task-card:hover {
-  border-color: var(--blue-soft);
-  box-shadow: var(--shadow-hover);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
@@ -2311,8 +2388,10 @@ table.tbl tbody tr:hover td {
 }
 
 .lead-card .lname {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: var(--fw-semibold);
+  color: var(--ink);
+  line-height: var(--lh-tight);
 }
 
 .lead-card .lval {
@@ -2354,9 +2433,10 @@ table.tbl tbody tr:hover td {
 
 .lead-card-telefone {
   display: block;
-  margin: -2px 0 6px;
+  margin: -1px 0 7px;
   font-size: 11px;
-  color: var(--text-faint);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .lead-card-menu-btn {
@@ -4944,7 +5024,7 @@ button.camp-row:hover {
   width: 280px;
   max-height: 360px;
   overflow-y: auto;
-  background: var(--navy);
+  background: var(--surface-elevated);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -6566,7 +6646,7 @@ button.camp-row:hover {
 }
 
 .modal {
-  background: var(--navy);
+  background: var(--surface-elevated);
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   width: min(720px, 100%);

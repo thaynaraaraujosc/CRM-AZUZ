@@ -458,9 +458,10 @@ function FunilPageInner() {
         sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} ${totalVisivel === 1 ? "negócio" : "negócios"} ${filtroAtivo ? (totalVisivel === 1 ? "encontrado" : "encontrados") : "no funil"}`}
         actions={
           <>
+            {/* Ação de apoio — usada de vez em quando, não deve competir com criar funil/etapa. */}
             <button
               type="button"
-              className="btn ghost"
+              className="btn terciario"
               disabled={importando}
               title="Cria um negócio para cada conversa que ainda não tem um"
               onClick={() => void importarConversas()}
@@ -474,16 +475,17 @@ function FunilPageInner() {
             >
               {novaEtapaAberta ? "Cancelar" : "+ Criar nova etapa"}
             </button>
+            {/* Ação principal da página. */}
             <button
               type="button"
-              className="btn ghost"
+              className="btn primary"
               onClick={() => setNovoFunilAberto((v) => !v)}
             >
               {novoFunilAberto ? "Cancelar" : "+ Novo funil"}
             </button>
             <button
               type="button"
-              className={`btn ${filtroAberto || filtroAtivo ? "primary" : "ghost"}`}
+              className={`btn ghost${filtroAberto || filtroAtivo ? " active" : ""}`}
               onClick={() => setFiltroAberto((v) => !v)}
             >
               {filtroAberto ? "Fechar filtro" : "+ Filtrar"}
