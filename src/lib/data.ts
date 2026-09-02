@@ -560,7 +560,15 @@ export type ConvMensagem = {
   /** Presente quando o usuário respondeu a uma mensagem específica — mostra a citação em cima do
    * texto. `mid` é o id da mensagem citada no canal de origem: é ele que faz a citação aparecer
    * também do lado da pessoa (hoje usado no Direct do Instagram, via `reply_to`). */
-  respondendoA?: { autor: string; texto: string; mid?: string };
+  /** Referência da mensagem citada. `miniatura`/`tipoConteudo` existem quando o que foi respondido
+   * era mídia — sem eles, responder a uma foto mostrava uma citação vazia. */
+  respondendoA?: {
+    autor: string;
+    texto: string;
+    mid?: string;
+    miniatura?: string;
+    tipoConteudo?: string;
+  };
   /** Id que a Meta gerou pra esta mensagem enviada (`wamid`) — é a chave que casa os webhooks de
    * entrega/leitura com ela. Sem isso, os ticks nunca passavam de "enviado". */
   wamid?: string;

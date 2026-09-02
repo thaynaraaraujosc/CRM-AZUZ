@@ -10,9 +10,11 @@ export type PlanoId = "completo";
 export const PLANOS: Record<PlanoId, { nome: string; valor: number; recursos: string[] }> = {
   completo: {
     nome: "Completo",
-    // TODO: valor de teste — voltar pra 249.9 antes de divulgar o cadastro (ver commit que
-    // baixou isso pra R$ 5 só pra testar o pagamento de ponta a ponta na Asaas produção).
-    valor: 5,
+    // Valor oficial de venda. Estava em R$ 5 — valor de teste, deixado pra validar o pagamento de
+    // ponta a ponta na Asaas de produção. Este número é o que a Asaas cobra de verdade: a mesma
+    // constante alimenta a tela e a rota que cria a assinatura, justamente pra nunca cobrar
+    // diferente do que foi mostrado. Só mensal por enquanto.
+    valor: 197,
     recursos: ["Funis ilimitados", "WhatsApp/Instagram/TikTok", "Automações", "Azuz IA", "Usuários ilimitados"],
   },
 };

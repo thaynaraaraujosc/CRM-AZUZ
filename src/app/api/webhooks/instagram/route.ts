@@ -640,22 +640,43 @@ export async function POST(request: Request) {
       const citada = midCitado
         ? await prisma.mensagemExtra.findUnique({
             where: { id: midCitado },
-            select: { texto: true, tipo: true, workspaceId: true },
+            select: { texto: true, tipo: true, workspaceId: true, extras: true },
           })
         : null;
       // Confere o workspace antes de usar: o `mid` vem de fora, e uma mensagem de outra empresa
       // nunca pode ser citada aqui.
-      const respondendoA =
-        citada && citada.workspaceId === integracaoDaConta.workspaceId
-          ? {
-              autor: citada.tipo === "out" ? "Você" : chaveContato,
-              texto: citada.texto.slice(0, 140),
-              mid: midCitado,
-            }
-          : undefined;
+      let respondendoA:
+        | { autor: string; texto: string; mid?: string; miniatura?: string; tipoConteudo?: string }
+        | undefined;
+      if (citada && citada.workspaceId === integracaoDaConta.workspaceId) {
+        // A citação trazia só autor e texto. Respondendo a uma FOTO, a um story ou a um reel, o
+        // texto da mensagem original é vazio ou é só o rótulo — e a citação aparecia praticamente
+        // em branco, sem dizer a que a resposta se referia. A miniatura já está guardada na
+        // mensagem citada; era só não jogá-la fora ao montar a referência.
+        const extrasCitada = (citada.extras ?? {}) as {
+          imagens?: { url?: string }[];
+          tipoConteudo?: string;
+        };
+        const miniatura = extrasCitada.imagens?.[0]?.url;
+        respondendoA = {
+          autor: citada.tipo === "out" ? "Você" : chaveContato,
+          texto: citada.texto.slice(0, 140),
+          mid: midCitado,
+          ...(miniatura ? { miniatura } : {}),
+          ...(extrasCitada.tipoConteudo ? { tipoConteudo: extrasCitada.tipoConteudo } : {}),
+        };
+      }
 
+      // "Respondeu ao seu story" não dizia a QUAL conta o story pertence. Quem atende com mais de
+      // uma conta conectada não tinha como saber. Resposta a story só acontece com story da própria
+      // conta, então o @ é o dela — e ele já está guardado desde a conexão, em `instagramUsername`.
+      const arrobaDaConta = (
+        integracaoDaConta.metadados as { instagramUsername?: string } | null
+      )?.instagramUsername;
       const rotuloPadrao = story && !anexo
-        ? "Respondeu ao seu story"
+        ? arrobaDaConta
+          ? `Respondeu ao story de @${arrobaDaConta.replace(/^@/, "")}`
+          : "Respondeu ao seu story"
         : anexo
           ? (ROTULO_POR_ANEXO[anexo.type ?? ""] ?? "")
           : "";

@@ -73,11 +73,23 @@ export function BolhaMensagem({
     </span>
   );
 
-  /** Trecho citado quando a mensagem responde outra. */
+  /**
+   * Trecho citado quando a mensagem responde outra. Quando o que foi respondido era mídia — foto,
+   * story, reel —, a miniatura entra ao lado do texto: sem ela a citação de uma foto aparecia
+   * praticamente vazia, porque aquela mensagem não tinha texto nenhum pra citar.
+   */
   const citacao = msg.respondendoA ? (
     <span className="wa-citacao">
-      <span className="wa-citacao-autor">{msg.respondendoA.autor}</span>
-      <span className="wa-citacao-texto">{msg.respondendoA.texto}</span>
+      {msg.respondendoA.miniatura ? (
+        // eslint-disable-next-line @next/next/no-img-element -- miniatura já baixada e servida pelo CRM
+        <img src={msg.respondendoA.miniatura} alt="" className="wa-citacao-thumb" />
+      ) : null}
+      <span className="wa-citacao-corpo">
+        <span className="wa-citacao-autor">{msg.respondendoA.autor}</span>
+        <span className="wa-citacao-texto">
+          {msg.respondendoA.texto || msg.respondendoA.tipoConteudo || "Mídia"}
+        </span>
+      </span>
     </span>
   ) : null;
 

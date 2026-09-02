@@ -11098,20 +11098,38 @@ button.camp-row:hover {
   font-size: 11.5px;
 }
 
+/* Citação no formato do Direct: faixa clara com barra na lateral, miniatura à esquerda quando o
+   que foi respondido tinha imagem, e o texto ao lado. */
 .wa-citacao {
-  display: block;
-  margin-bottom: 4px;
-  padding: 5px 8px;
-  border-left: 3px solid var(--blue);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+  padding: 6px 9px;
+  border-left: 3px solid var(--ink-nome);
   border-radius: var(--radius-sm);
-  background: var(--blue-soft-2);
+  background: var(--gray-100);
+}
+
+.wa-citacao-corpo {
+  display: block;
+  min-width: 0;
+  flex: 1;
+}
+
+.wa-citacao-thumb {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  object-fit: cover;
 }
 
 .wa-citacao-autor {
   display: block;
   font-size: 10.5px;
-  font-weight: 700;
-  color: var(--blue);
+  font-weight: var(--fw-semibold);
+  color: var(--ink-nome);
 }
 
 .wa-citacao-texto {
