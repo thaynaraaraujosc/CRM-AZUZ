@@ -72,20 +72,23 @@ export default function LandingPage() {
     <div className="lp-root">
       <style>{`
         .lp-root {
-          --lp-bg: #05070f;
-          --lp-bg-2: #070a17;
-          --lp-ink: #eef1fb;
-          --lp-muted: rgba(238, 241, 251, 0.66);
-          --lp-faint: rgba(238, 241, 251, 0.4);
+          /* A landing tem tokens próprios porque é pré-login e não segue o tema escolhido pelo
+             usuário. Mas a paleta agora é a mesma do produto: preto neutro, cinzas e o azul da
+             marca como accent. Antes ela era marinho com roxo — quem via a landing e entrava no
+             CRM via dois produtos diferentes. */
+          --lp-bg: #08080a;
+          --lp-bg-2: #0f0f11;
+          --lp-ink: #fafafa;
+          --lp-muted: rgba(250, 250, 250, 0.64);
+          --lp-faint: rgba(250, 250, 250, 0.44);
           --lp-line: rgba(255, 255, 255, 0.09);
-          --lp-blue: #4c86ff;
+          --lp-blue: #5b8cff;
           --lp-blue-2: #8ab4ff;
-          --lp-glow: rgba(76, 134, 255, 0.5);
           min-height: 100vh;
+          /* Um brilho só, atrás do título, em vez de três manchas (duas azuis e uma roxa) puxando
+             o olho pra cantos diferentes. */
           background:
-            radial-gradient(900px 480px at 12% -8%, rgba(76, 134, 255, 0.22), transparent 60%),
-            radial-gradient(760px 460px at 92% 8%, rgba(138, 63, 252, 0.16), transparent 55%),
-            radial-gradient(900px 560px at 50% 105%, rgba(76, 134, 255, 0.14), transparent 60%),
+            radial-gradient(1100px 520px at 50% -12%, rgba(91, 140, 255, 0.14), transparent 62%),
             var(--lp-bg);
           color: var(--lp-ink);
           font-family: var(--body);
@@ -111,10 +114,9 @@ export default function LandingPage() {
         .lp-logo { display: flex; align-items: center; gap: 10px; }
         .lp-mark {
           width: 32px; height: 32px; border-radius: 9px;
-          background: linear-gradient(135deg, var(--lp-blue), #8a3ffc);
-          color: #fff; display: flex; align-items: center; justify-content: center;
-          font-family: var(--display); font-weight: 700; font-size: 15px;
-          box-shadow: 0 0 22px var(--lp-glow);
+          background: var(--lp-blue);
+          color: #0a0a0b; display: flex; align-items: center; justify-content: center;
+          font-family: var(--display); font-weight: 600; font-size: 15px;
         }
         .lp-brand { font-family: var(--display); font-weight: 700; font-size: 16px; letter-spacing: 0.01em; }
         .lp-nav-actions { display: flex; gap: 10px; align-items: center; }
@@ -126,17 +128,16 @@ export default function LandingPage() {
         .lp-btn-ghost { color: var(--lp-ink); border-color: var(--lp-line); background: rgba(255, 255, 255, 0.03); }
         .lp-btn-ghost:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.18); }
         .lp-btn-primary {
-          color: #fff; background: linear-gradient(135deg, var(--lp-blue), #3f5fe0);
-          box-shadow: 0 0 0 1px rgba(76, 134, 255, 0.4), 0 8px 24px rgba(76, 134, 255, 0.35);
+          color: #0a0a0b; background: var(--lp-blue);
         }
-        .lp-btn-primary:hover { box-shadow: 0 0 0 1px rgba(76, 134, 255, 0.6), 0 10px 30px rgba(76, 134, 255, 0.5); transform: translateY(-1px); }
+        .lp-btn-primary:hover { background: #7ba4ff; }
         .lp-badge {
           display: inline-flex; align-items: center; gap: 8px; margin: 0 auto 22px;
           padding: 7px 14px 7px 10px; border-radius: 999px; border: 1px solid rgba(76, 134, 255, 0.35);
           background: rgba(76, 134, 255, 0.08); font-size: 12px; font-weight: 600; color: var(--lp-blue-2);
           letter-spacing: 0.02em; text-transform: uppercase;
         }
-        .lp-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lp-blue-2); box-shadow: 0 0 8px var(--lp-blue-2); animation: lp-pulse 1.8s ease-in-out infinite; }
+        .lp-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lp-blue-2); animation: lp-pulse 1.8s ease-in-out infinite; }
         @keyframes lp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
         .lp-hero { text-align: center; padding: 64px 0 8px; }
         .lp-h1 {
@@ -145,8 +146,9 @@ export default function LandingPage() {
           letter-spacing: -0.01em;
         }
         .lp-h1 span {
-          background: linear-gradient(120deg, #fff 20%, var(--lp-blue-2) 55%, #b98bff 85%);
-          -webkit-background-clip: text; background-clip: text; color: transparent;
+          /* Era um gradiente de branco a roxo. Uma cor chapada diz a mesma coisa e não introduz
+             um segundo accent no primeiro contato de quem vai comprar. */
+          color: var(--lp-blue-2);
         }
         .lp-sub { font-size: 16.5px; color: var(--lp-muted); max-width: 580px; margin: 0 auto 32px; line-height: 1.55; }
         .lp-cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
@@ -158,7 +160,7 @@ export default function LandingPage() {
           max-width: 900px; margin: 0 auto; border-radius: 16px; overflow: hidden;
           background: linear-gradient(180deg, #0c1226, #070b18);
           border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 0 0 0 1px rgba(76, 134, 255, 0.12), 0 30px 90px rgba(0, 0, 0, 0.55), 0 0 120px rgba(76, 134, 255, 0.15);
+          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
           transform: rotateX(3deg);
           animation: lp-float 6s ease-in-out infinite;
         }
@@ -195,7 +197,7 @@ export default function LandingPage() {
           border-radius: 10px; padding: 12px; display: flex; align-items: flex-end; gap: 5px; height: 84px;
         }
         .lp-bar { flex: 1; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, var(--lp-blue-2), rgba(76, 134, 255, 0.25)); }
-        .lp-bar.now { background: linear-gradient(180deg, #b98bff, rgba(138, 63, 252, 0.3)); }
+        .lp-bar.now { background: linear-gradient(180deg, var(--lp-blue-2), rgba(91, 140, 255, 0.25)); }
 
         .lp-funil { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .lp-funil-col { border: 1px solid var(--lp-line); border-radius: 10px; padding: 8px; background: rgba(255, 255, 255, 0.02); }
@@ -249,7 +251,7 @@ export default function LandingPage() {
           border-radius: 18px; position: relative; overflow: hidden;
           border: 1px solid rgba(76, 134, 255, 0.35);
           background: linear-gradient(180deg, rgba(76, 134, 255, 0.09), rgba(255, 255, 255, 0.02));
-          box-shadow: 0 0 90px rgba(76, 134, 255, 0.14);
+          box-shadow: var(--shadow-lg);
         }
         .lp-pricing-tag {
           font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
