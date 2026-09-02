@@ -359,16 +359,15 @@ table {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #4c86ff, #8a3ffc);
+  background: var(--blue);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--display);
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
   font-size: 14px;
-  color: #fff;
+  color: var(--white);
   flex: 0 0 auto;
-  box-shadow: 0 0 14px rgba(76, 134, 255, 0.4);
 }
 
 .sb-brand .wordmark {
@@ -648,15 +647,15 @@ table {
   background: transparent;
   border-bottom-color: transparent;
 }
-/* A busca (`.search`) tem fundo/borda próprios (`var(--navy-raised)`/`var(--line)`) que não somem
-   só com o `.app-header` ficando transparente — precisa da própria transparência aqui. */
+/* A busca precisa se apoiar no piso sem virar uma faixa branca. Era branco translúcido — desenhado
+   pro piso marinho —, o que sobre off-white ficava invisível. */
 .app-header-transparente .search {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.55);
+  background: var(--navy);
+  border-color: var(--line);
+  color: var(--text-muted);
 }
 .app-header-transparente .search input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-faint);
 }
 
 .app-header-right {
@@ -11894,11 +11893,7 @@ button.camp-row:hover {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  background: var(--navy-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-2) var(--space-1) var(--space-3);
 }
 .inicio-topbar-card h2 {
   margin: 0;
@@ -11931,8 +11926,11 @@ button.camp-row:hover {
   flex-direction: column;
   gap: var(--space-4);
 }
+/* Os três cartões do funil eram esticados pra preencher a coluna. Com o piso marinho isso fazia
+   sentido — vão vazio virava um bloco de quadriculado escuro. Agora o piso é claro e o vazio lê
+   como respiro; esticados, os cartões ficavam com um buraco no meio entre o número e a observação. */
 .inicio-col-lateral > * {
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 .inicio-pendencias-box {
@@ -12001,9 +11999,10 @@ button.camp-row:hover {
   font-size: var(--fs-section-title);
   font-weight: var(--fw-semibold);
   font-family: var(--display);
-  /* Fica solto direto no fundo marinho de `.main-inicio` (não dentro de uma caixa branca) — cor
-     clara fixa, não `var(--ink)` (escuro no modo claro, ficaria ilegível aqui). */
-  color: #eef1fb;
+  /* Fica solto direto sobre o piso, não dentro de uma caixa. Era cor clara fixa (`#eef1fb`) porque
+     o piso era marinho; com o piso off-white virava branco sobre branco. Token resolve nos dois
+     temas. */
+  color: var(--ink);
 }
 .inicio-diario-grade {
   display: flex;
@@ -12017,18 +12016,17 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  background: var(--navy-raised);
+  background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   padding: var(--space-5) var(--space-4);
   text-decoration: none;
-  transition: box-shadow var(--transition-base), border-color var(--transition-base), transform var(--transition-fast);
+  transition: background var(--transition-base), border-color var(--transition-base);
 }
 .inicio-stat-mini:hover {
-  box-shadow: var(--shadow-hover);
   border-color: var(--gray-300);
-  transform: translateY(-1px);
+  background: var(--navy-raised);
 }
 .inicio-stat-mini .n {
   font-size: var(--fs-indicator);
@@ -12052,8 +12050,8 @@ button.camp-row:hover {
 }
 
 .inicio-stat-mini-obs {
-  margin-top: auto;
-  padding-top: var(--space-3);
+  margin-top: 2px;
+  padding-top: 0;
   font-size: var(--fs-secondary);
   font-weight: var(--fw-medium);
   color: var(--text-muted);
@@ -12061,11 +12059,10 @@ button.camp-row:hover {
   letter-spacing: normal;
 }
 
-/* Versão maior — usada nos 3 quadrados da coluna do funil (Oportunidades/Vendas perdidas/Vendas
-   realizadas), que ficam esticados (`.inicio-col-lateral > * { flex: 1 }`) pra ocupar o espaço
-   vazio ao lado de Pendências+Diário, em vez de sobrar fundo em branco. */
+/* Versão maior — os 3 quadrados da coluna do funil (Oportunidades / Vendas perdidas / Vendas
+   realizadas). */
 .inicio-stat-grande {
-  justify-content: center;
+  gap: 4px;
 }
 .inicio-stat-grande .n {
   font-size: 34px;
