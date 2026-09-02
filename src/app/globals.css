@@ -20,8 +20,9 @@
      dava ao app logado a cara de dashboard colorido, com dezenas de cartões brancos recortados
      sobre um fundo forte. Agora é off-white: os painéis brancos quase se fundem ao piso e a página
      lê como uma superfície contínua, com a separação vindo da borda, não do contraste de cor. */
-  /* Descido um degrau: com off-white claro demais, o painel branco não se descolava do piso. */
-  --canvas: #e2e4e9;
+  /* Piso branco. O cinza deixa de cobrir área e passa a ser recurso de peso: menu, botão, campo,
+     coluna do kanban. Numa tela grande, cinza claro em toda a superfície ainda lê como cinza. */
+  --canvas: #ffffff;
 
   /* Azul da marca — daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
@@ -48,10 +49,12 @@
   --text-muted: rgba(9, 9, 11, 0.64);
   --text-faint: rgba(9, 9, 11, 0.54);
 
-  /* Área interna: grotesca neutra, tracking fechado. Poppins/Montserrat seguem carregadas e a
-     landing continua com elas (ver `.lp-root` mais abaixo) — só o app logado muda. */
-  --display: var(--font-ui-display), "Inter Tight", system-ui, sans-serif;
-  --body: var(--font-ui), Inter, system-ui, sans-serif;
+  /* Área interna em Arial. Poppins/Montserrat seguem carregadas e a landing continua com elas
+     (os tokens são revertidos dentro de `.lp-root`, em page.tsx) — só o app logado muda.
+     Arial é fonte de sistema: não há download, então a interface aparece já na primeira pintura,
+     sem o piscar de texto que uma fonte baixada causa. */
+  --display: Arial, Helvetica, sans-serif;
+  --body: Arial, Helvetica, sans-serif;
 
   /* -------- Tokens (Etapa 2, item 44) — raio, sombra, espaçamento, transição, cor semântica.
      Aditivo: nada existente referenciava esses nomes antes, então introduzir aqui não muda o visual
@@ -118,22 +121,24 @@
 
   /* Peso + altura de linha — hierarquia deve vir de tamanho+peso+espaçamento juntos, não só do
      tamanho (`--fs-*` abaixo). `--lh-tight` pra títulos/números grandes, `--lh-base` pro resto. */
-  /* A escada agora vai de 300 a 700. Antes começava em 400 e terminava em 600: com três pesos
-     quase vizinhos, a diferença entre título e apoio tinha que vir toda do tamanho, e por isso
-     tudo parecia do mesmo nível. Light (300) é o degrau que faltava pro texto de apoio recuar. */
-  --fw-light: 300;
+  /* Arial tem dois pesos reais: regular e bold. Os cinco nomes continuam existindo — o CSS inteiro
+     já os referencia —, mas todos caem num dos dois. Pedir 300 ou 600 de uma fonte que não os tem
+     faz o navegador ESTICAR ou ENGORDAR o desenho da letra, e o resultado é um texto de forma
+     ligeiramente errada, diferente em cada sistema. Com dois pesos de verdade, a hierarquia passa a
+     vir de tamanho, cor e espaçamento — que é como se compõe com Arial. */
+  --fw-light: 400;
   --fw-regular: 400;
-  --fw-medium: 500;
-  --fw-semibold: 600;
+  --fw-medium: 400;
+  --fw-semibold: 700;
   --fw-bold: 700;
   --lh-tight: 1.15;
   --lh-base: 1.55;
 
   /* Tracking: título grande em grotesca precisa fechar, senão as letras "boiam". Texto pequeno
      precisa do contrário. */
-  --track-tight: -0.02em;
-  --track-snug: -0.01em;
-  --track-wide: 0.04em;
+  --track-tight: -0.012em;
+  --track-snug: -0.005em;
+  --track-wide: 0.05em;
 
   /* Cores semânticas (item 55) — mesmo vocabulário já usado informalmente em Automações/Central do
      Dia/Configurações (verde=sucesso/oportunidade, âmbar=atenção, vermelho=erro, azul=informação,
@@ -160,7 +165,7 @@
 
   /* Textura do piso (quadriculado de fundo do shell). Precisa de token porque a linha é escura no
      tema claro e clara no escuro — antes era branca fixa, o que sumia sobre fundo claro. */
-  --grid-line: rgba(9, 9, 11, 0.032);
+  --grid-line: transparent;
 
   /* Escala tipográfica (item 45) — nomeia os tamanhos que já estavam em uso espalhados (`.topbar h2`
      19px, `.panel-h h4` 13px, `.hint` 11px…) e preenche as lacunas (card, indicador). Contraste entre
@@ -359,7 +364,7 @@ table {
 .sidebar {
   width: 216px;
   flex: 0 0 auto;
-  background: var(--navy);
+  background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
@@ -546,7 +551,7 @@ table {
 }
 
 .nav-item:hover {
-  background: var(--surface-hover);
+  background: var(--surface-active);
   color: var(--ink);
 }
 
@@ -554,9 +559,10 @@ table {
    normal — a distância entre os dois é de tinta e de peso, não só de fundo. É por isso que dá pra
    achar o item ativo de relance numa lista de doze. */
 .nav-item.active {
-  background: var(--navy-raised-2);
+  background: var(--surface-elevated);
   color: var(--ink);
   font-weight: var(--fw-semibold);
+  box-shadow: var(--shadow-xs);
 }
 
 .nav-item.active svg {
@@ -844,7 +850,7 @@ table {
   flex: 1;
   overflow: auto;
   padding: 22px 26px 32px;
-  background: var(--navy-raised);
+  background: var(--navy);
 }
 
 /* ---------------- Primitivos ---------------- */
@@ -2085,7 +2091,7 @@ a.timeline-conteudo:hover {
    junto com o card/painel que já envolve a barra de filtros inteira. */
 .fchip {
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: var(--fw-medium);
   padding: 8px 13px;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
@@ -2101,9 +2107,9 @@ a.timeline-conteudo:hover {
 }
 
 .fchip.active {
-  background: var(--blue);
-  color: var(--white);
-  border-color: var(--blue);
+  background: var(--ink);
+  color: var(--navy);
+  border-color: var(--ink);
 }
 
 .nova-pasta-inline {
@@ -2134,10 +2140,10 @@ a.timeline-conteudo:hover {
    `-x`) pra cortar o cabeçalho/corpo nos cantos arredondados do wrapper. */
 .table-wrap {
   overflow-x: auto;
-  background: var(--navy-raised);
-  border: 1px solid var(--line);
+  background: transparent;
+  border: none;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 /* Algumas telas já colocam a tabela dentro de um `.card` (ex.: com um `.panel-h` de título antes
@@ -2152,39 +2158,50 @@ a.timeline-conteudo:hover {
 table.tbl {
   width: 100%;
   font-size: 12.5px;
+  border-collapse: separate;
+  border-spacing: 0 6px;
 }
 
+/* Cabeçalho vira só rótulo: sem fundo e sem linha, porque as faixas abaixo já organizam a leitura
+   sozinhas. Com fundo e divisória, ele competia com as próprias linhas. */
 table.tbl th {
   text-align: left;
   font-size: 10px;
-  font-weight: var(--fw-semibold);
-  letter-spacing: 0.04em;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--track-wide);
   text-transform: uppercase;
-  color: var(--text-muted);
-  background: var(--navy-raised);
-  padding: 11px 14px;
-  border-bottom: 1px solid var(--line);
+  color: var(--text-faint);
+  padding: 4px 16px 6px;
   white-space: nowrap;
 }
 
+/* Cada linha é uma faixa: fundo cinza claro, cantos arredondados nas pontas, e nada de divisória —
+   o espaço entre elas (`border-spacing`) faz a separação. */
 table.tbl td {
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--line-soft);
+  padding: 14px 16px;
+  background: var(--navy-raised);
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
   vertical-align: middle;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-table.tbl tbody tr:last-child td {
-  border-bottom: none;
+table.tbl tbody tr td:first-child {
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  border-left: 1px solid transparent;
 }
 
-table.tbl tbody tr td {
-  transition: background var(--transition-fast);
+table.tbl tbody tr td:last-child {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border-right: 1px solid transparent;
 }
 
-/* Hover neutro (não azul) — azul fica reservado pra ação/seleção real, não pra "estou passando o
-   mouse aqui" (regra de cor da reestruturação de design, fase 1). */
+/* Ao passar o mouse a faixa fica branca e ganha contorno e sombra — sobe pra frente em vez de só
+   escurecer. É o mesmo gesto do card do funil. */
 table.tbl tbody tr:hover td {
-  background: var(--surface-hover);
+  background: var(--surface-elevated);
+  border-color: var(--line);
+  box-shadow: var(--shadow-sm);
 }
 
 .name-cell {
@@ -14503,4 +14520,26 @@ button.camp-row:hover {
 [aria-disabled="true"] {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+
+/* ==========================================================================
+   Nome na linha da tabela — mesma hierarquia da lista de Conversas e do card do funil: o nome é a
+   informação que se procura, o resto é apoio.
+   ========================================================================== */
+
+table.tbl .name-cell .name,
+table.tbl .name-cell .n {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-snug);
+  color: var(--ink);
+}
+
+table.tbl .name-cell .meta,
+table.tbl .name-cell .r {
+  font-size: 11px;
+  font-weight: var(--fw-light);
+  color: var(--text-muted);
 }

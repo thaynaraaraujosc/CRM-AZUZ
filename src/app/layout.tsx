@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Inter_Tight, Montserrat, Poppins } from "next/font/google";
+import { Montserrat, Poppins } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
@@ -26,24 +26,8 @@ const montserrat = Montserrat({
   subsets: ["latin"],
 });
 
-/**
- * Tipografia da área interna. Poppins e Montserrat continuam existindo, mas só pra landing page e
- * telas de pré-login (ver `.lp-root` no globals.css) — o app logado passa a usar uma grotesca
- * neutra, que é o que dá a leitura editorial da referência: Poppins é geométrica e arredondada
- * demais pra texto de trabalho, e Montserrat é larga, o que come espaço numa tela densa.
- *
- * Fontes variáveis (sem `weight` fixo): a hierarquia aqui depende de usar 300 a 700 no mesmo
- * texto, e carregar peso a peso seria uma requisição por peso.
- */
-const interTight = Inter_Tight({
-  variable: "--font-ui-display",
-  subsets: ["latin"],
-});
-
-const inter = Inter({
-  variable: "--font-ui",
-  subsets: ["latin"],
-});
+/* A área interna usa Arial (fonte de sistema, sem download) — ver `--display`/`--body` no
+   globals.css. Poppins e Montserrat continuam aqui porque a landing page ainda as usa. */
 
 export const metadata: Metadata = {
   title: "CRM AZUZ — Painel web",
@@ -62,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${poppins.variable} ${montserrat.variable} ${interTight.variable} ${inter.variable}`}>
+    <html lang="pt-BR" className={`${poppins.variable} ${montserrat.variable}`}>
       <body>
         <Script id="tema-inicial" strategy="beforeInteractive">
           {SCRIPT_TEMA_INICIAL}
