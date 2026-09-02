@@ -43,6 +43,10 @@
   /* Preto neutro no lugar do marinho: o texto parava de ser preto e puxava azul, o que somado ao
      piso marinho fazia a interface inteira ter temperatura de marca em vez de neutralidade. */
   --ink: #09090b;
+  /* Tinta de nome próprio: grafite, não preto. Numa lista longa, preto puro repetido em toda linha
+     pesa — cada nome vira um bloco escuro e o olho não descansa. Um passo abaixo mantém o nome
+     dominante sem transformar a lista num paredão. Título de página segue em `--ink`. */
+  --ink-nome: #2f2f36;
   --white: #ffffff;
   /* Secundário sobe de 58% pra 64%; terciário, de 46% pra 54%. Cinza claro fica reservado pra
      informação de fato acessória — data, contador, rodapé —, não pra conteúdo que se lê. */
@@ -217,6 +221,7 @@
   --primary-active: #9db8ff;
 
   --ink: #fafafa;
+  --ink-nome: #e6e6ea;
   --text-muted: rgba(250, 250, 250, 0.7);
   --text-faint: rgba(250, 250, 250, 0.56);
 
@@ -570,11 +575,11 @@ table {
 }
 
 .nav-item-whatsapp:hover {
-  background: rgba(37, 211, 102, 0.08);
+  background: var(--surface-active);
 }
 
 .nav-item-whatsapp.active {
-  background: rgba(37, 211, 102, 0.14);
+  background: var(--surface-elevated);
 }
 
 .nav-item-crmlive {
@@ -2472,7 +2477,7 @@ table.tbl tbody tr:hover td {
   font-size: 13.5px;
   font-weight: var(--fw-bold);
   letter-spacing: var(--track-snug);
-  color: var(--ink);
+  color: var(--ink-nome);
   line-height: var(--lh-tight);
 }
 
@@ -2928,31 +2933,24 @@ table.tbl tbody tr:hover td {
   padding: 0 12px 8px;
 }
 
-/* Tela do WhatsApp usa a identidade verde oficial do app, só aqui. */
+/* A tela de Conversas atende todos os canais — Instagram, TikTok, e-mail, WhatsApp. Ela usava o
+   verde do WhatsApp como tema, o que pintava de verde conversas que não são do WhatsApp e trazia
+   pra dentro do produto a cor de outra marca. Passa a usar o azul da identidade. */
 .wa-whatsapp .open-conv-h {
-  background: rgba(37, 211, 102, 0.12);
+  background: var(--blue-soft-2);
 }
 
-/* Cor real da bolha enviada do WhatsApp (não o verde do logo, #25d366 — esse é só o accent, a
-   bolha em si é um verde bem mais claro/pálido, texto escuro) — familiaridade de verdade com quem
-   já usa o app, não só "alguma coisa verde". */
-.wa-whatsapp .bubble.out {
-  background: #d9fdd3;
-  color: #111b21;
-}
-:root[data-theme="dark"] .wa-whatsapp .bubble.out {
-  background: #005c4b;
-  color: #e9edef;
-}
+/* A bolha enviada era o verde-claro do WhatsApp. Como a mesma tela mostra conversa de Instagram,
+   TikTok e e-mail, a bolha verde aparecia em canal que não é WhatsApp — e, mesmo no WhatsApp, é a
+   cor de outra marca dentro do produto. Sem regra própria, ela usa a bolha padrão do CRM. */
 
 .wa-whatsapp .wa-row.active {
-  background: rgba(37, 211, 102, 0.1);
-  border-left-color: #25d366;
+  border-left-color: var(--blue);
 }
 
 .wa-whatsapp .wa-main-gear.active {
-  color: #25d366;
-  background: rgba(37, 211, 102, 0.14);
+  color: var(--blue);
+  background: var(--blue-soft);
 }
 
 .bubble.system {
@@ -3141,6 +3139,7 @@ table.tbl tbody tr:hover td {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  padding: 8px 10px 10px;
 }
 
 .wa-list-head {
@@ -3221,8 +3220,8 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-whatsapp .wa-filter-chip.active {
-  background: #25d366;
-  color: #fff;
+  background: var(--ink);
+  color: var(--navy);
 }
 
 .wa-fav-star {
@@ -3254,21 +3253,27 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-whatsapp .wa-unread-badge {
-  background: #25d366;
+  background: var(--blue);
 }
 
-/* Sem linha entre conversas: com o nome em negrito e o respiro maior, a divisória virava ruído —
-   uma pauta cinza atrás da lista. A separação passa a ser o espaço. */
+/* Cada conversa é um cartão branco sobre o cinza da lista. Antes eram blocos transparentes
+   encostados uns nos outros: vinte e duas conversas viravam uma coluna contínua, e achar onde uma
+   termina e a outra começa dependia de ler o texto. A barra da esquerda continua existindo pro
+   estado selecionado, agora dentro do próprio cartão. */
 .wa-row {
   display: block;
   position: relative;
   width: 100%;
   text-align: left;
-  padding: 13px 16px;
-  border-bottom: 1px solid transparent;
-  border-left: 2px solid transparent;
-  background: transparent;
+  padding: 12px 14px;
+  margin-bottom: 7px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
   cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .wa-row:focus-visible {
@@ -3314,12 +3319,16 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-row:hover {
-  background: var(--navy-raised-2);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-sm);
 }
 
+/* Selecionada: barra preta na lateral e contorno firme. Fundo colorido apagaria o cartão branco,
+   que é justamente o que separa uma conversa da outra. */
 .wa-row.active {
-  background: var(--blue-soft-2);
-  border-left-color: var(--blue);
+  border-color: var(--line-strong);
+  border-left-color: var(--ink-nome);
+  box-shadow: var(--shadow-sm);
 }
 
 .wa-row .cr1 {
@@ -3341,7 +3350,7 @@ table.tbl tbody tr:hover td {
   font-size: 13.5px;
   font-weight: var(--fw-bold);
   letter-spacing: var(--track-snug);
-  color: var(--ink);
+  color: var(--ink-nome);
   line-height: var(--lh-tight);
   overflow: hidden;
   white-space: nowrap;
@@ -3383,7 +3392,7 @@ table.tbl tbody tr:hover td {
 /* Conversa não lida: o nome fica em preto cheio e a prévia ganha peso. Sem isso, a única marca de
    não lida era o contador no canto — fácil de não ver numa lista longa. */
 .wa-row.nao-lida .cname {
-  font-weight: var(--fw-semibold);
+  color: var(--ink);
 }
 
 .wa-row.nao-lida .cmsg-texto {
@@ -3688,7 +3697,7 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-whatsapp .wa-email-lido {
-  color: #25d366;
+  color: var(--success);
 }
 
 .wa-historico {
@@ -14479,17 +14488,9 @@ button.camp-row:hover {
    bloco do arquivo, mas usa seletores de mesma especificidade).
    ========================================================================== */
 
-.wa-row:hover {
-  background: var(--surface-hover);
-}
-
-/* Selecionada: barra azul à esquerda mais o fundo. A conversa aberta precisa ser óbvia mesmo com a
-   lista rolando. */
-.wa-row.active {
-  background: var(--blue-soft-2);
-  border-left-color: var(--blue);
-}
-
+/* O bloco de estados interativos define hover e selecionado pra lista inteira; para `.wa-row` quem
+   manda é a regra do próprio componente (borda + sombra), porque ali o fundo branco do cartão é o
+   que separa uma conversa da outra. */
 .wa-row.active .cname {
   color: var(--ink);
 }
@@ -14534,7 +14535,7 @@ table.tbl .name-cell .n {
   font-size: 13px;
   font-weight: var(--fw-bold);
   letter-spacing: var(--track-snug);
-  color: var(--ink);
+  color: var(--ink-nome);
 }
 
 table.tbl .name-cell .meta,

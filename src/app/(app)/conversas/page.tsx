@@ -3703,7 +3703,7 @@ function ConversasPageInner() {
         />
       ) : null}
       <Topbar
-        title="WhatsApp"
+        title="Conversas"
         sub="WhatsApp, Instagram e TikTok — todas as conversas num só lugar"
         actions={
           <>

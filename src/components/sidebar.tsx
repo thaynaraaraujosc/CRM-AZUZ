@@ -28,8 +28,8 @@ import {
   IconRelatorios,
   IconSparkle,
   IconTarefas,
+  IconConversas,
   IconTrafego,
-  IconWhatsApp,
 } from "@/components/icons";
 
 type NavEntry = {
@@ -58,7 +58,9 @@ const gestaoAtividadeHrefs = new Set(gestaoAtividadeItens.map((i) => i.href));
 
 export const navEntries: NavEntry[] = [
   { href: "/inicio", label: "Início", Icon: IconInicio },
-  { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
+  // A tela atende WhatsApp, Instagram, TikTok e e-mail — chamar de "WhatsApp" no menu descrevia
+  // um canal só e escondia os outros três de quem procurava por eles.
+  { href: "/conversas", label: "Conversas", Icon: IconConversas },
   { href: "/funil", label: "Funil", Icon: IconPipeline },
   { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
   { href: "/formularios", label: "Formulário", Icon: IconDoc },
