@@ -14779,3 +14779,14 @@ table.tbl .name-cell .r {
   background: var(--gray-100);
   color: var(--ink);
 }
+
+/* Aviso que ocupa o lugar de um item que falhou ao renderizar (ver `limite-de-erro.tsx`). Discreto
+   de propósito: ele marca onde houve problema sem transformar a falha no assunto da tela. */
+.limite-de-erro-aviso {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  background: var(--navy-raised);
+  border-radius: var(--radius-md);
+}

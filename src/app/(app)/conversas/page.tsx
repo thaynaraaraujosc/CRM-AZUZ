@@ -25,6 +25,7 @@ import { ehLinkDeMidia } from "@/lib/conversas/midia-mensagem";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
+import { LimiteDeErro } from "@/components/limite-de-erro";
 import { StatusMensagemIcone } from "@/components/conversas/StatusMensagem";
 import { EnviarTemplateWhatsApp } from "@/components/conversas/EnviarTemplateWhatsApp";
 import { useAutomacoes } from "@/lib/automacoes-context";
@@ -3932,8 +3933,10 @@ function ConversasPageInner() {
                 ultimaExtra?.texto ||
                 (ultimaExtra?.legenda ?? (iconeTipo ? "Anexo" : "Sem mensagens ainda"));
               return (
+                // Mesma barreira da bolha, agora por conversa: uma linha com dado estranho não pode
+                // apagar a lista inteira e deixar a tela sem por onde começar.
+                <LimiteDeErro key={c.id} rotulo={`conversa ${c.id}`}>
                 <div
-                  key={c.id}
                   role="button"
                   tabIndex={0}
                   // `nao-lida` deixa o nome e a prévia em preto cheio: antes a única marca de não
@@ -4107,6 +4110,7 @@ function ConversasPageInner() {
                     </FloatingDropdown>
                   ) : null}
                 </div>
+                </LimiteDeErro>
               );
             })
           )}
@@ -4257,7 +4261,12 @@ function ConversasPageInner() {
               // visualizador, ficha do contato, "Ler mais" — entra por props. Antes eram duas
               // implementações da mesma coisa, e a mesma mensagem aparecia diferente aqui e no
               // painel do Funil.
+              // Barreira por mensagem: uma mensagem com dado estranho — anexo de tipo novo, campo
+              // que mudou de forma, extra vindo de um webhook antigo — derrubava a TELA INTEIRA,
+              // porque o erro subia até a barreira da rota. Agora o estrago fica do tamanho do
+              // problema: aquela bolha vira um aviso e o atendimento continua utilizável.
               const bolha = (
+                <LimiteDeErro rotulo={`mensagem ${chave}`}>
                 <BolhaMensagem
                   msg={msg}
                   chaveDom={chave}
@@ -4297,6 +4306,7 @@ function ConversasPageInner() {
                     )
                   }
                 />
+                </LimiteDeErro>
               );
 
               // Separador de dia entre as bolhas — sem ele a conversa é um rolo contínuo e não dá
