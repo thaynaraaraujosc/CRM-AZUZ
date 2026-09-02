@@ -1434,10 +1434,13 @@ function ConversasPageInner() {
   const [midiasLiberadas, setMidiasLiberadas] = useState<Set<string>>(() => new Set());
 
   function midiaLiberada(tipo: "imagem" | "video" | "documento", id?: string, url?: string) {
-    // Mídia já embutida na mensagem (`data:`) não tem o que baixar — o arquivo veio junto. A trava
-    // existe pra mídia que mora no servidor e só é buscada sob demanda; aqui ela só escondia o que
-    // já estava em mãos, e a pessoa via "Baixar vídeo" no lugar da miniatura.
-    if (url?.startsWith("data:")) return true;
+    // Mídia que o CRM JÁ TEM não fica atrás de botão — não há o que baixar, o arquivo existe.
+    //
+    // Isto cobria só o formato antigo (`data:`, arquivo embutido na mensagem). Desde que os anexos
+    // passaram a morar no R2, eles chegam como um link nosso — e a exceção deixou de casar, então
+    // foto e vídeo já guardados voltaram a aparecer como "Baixar vídeo". A trava existe pra mídia
+    // que ainda precisa ser buscada, não pra esconder o que está em mãos.
+    if (url?.startsWith("data:") || ehLinkDeMidia(url)) return true;
     if (config.downloadAutomatico && config.tiposDownloadAutomatico.includes(tipo)) {
       return true;
     }

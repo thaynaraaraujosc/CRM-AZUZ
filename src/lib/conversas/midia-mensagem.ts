@@ -13,8 +13,6 @@
  *
  * O formato guardado no banco NÃO muda: continua data URL. A troca acontece só na saída.
  */
-import { ehMidiaGuardada } from "@/lib/armazenamento/midia";
-
 export const ROTA_MIDIA = "/api/mensagens-extra/midia";
 
 /** Um valor que já é um link nosso (e não o conteúdo de verdade). */
@@ -24,6 +22,17 @@ export function ehLinkDeMidia(valor: unknown): valor is string {
 
 /**
  * Um campo que guarda um anexo — nos dois formatos que convivem no banco.
+ *
+ * A checagem é definida AQUI, e não importada de `armazenamento/midia`, de propósito: este arquivo
+ * roda também no navegador, e aquele módulo importa o Prisma. Importar de lá arrastava o driver do
+ * banco inteiro pro pacote do cliente — o build quebrava tentando resolver `fs` dentro do
+ * `mariadb`. Predicado puro não deve depender de módulo de servidor.
+ */
+function ehMidiaGuardada(valor: unknown): valor is string {
+  return typeof valor === "string" && (valor.startsWith("data:") || valor.startsWith("r2:"));
+}
+
+/**
  *
  * O formato antigo é a data URL (conteúdo embutido); o novo é a referência `r2:<chave>`, que
  * aponta pro arquivo no Cloudflare R2 (ver `armazenamento/midia.ts`). Tudo aqui trata os dois

@@ -724,9 +724,21 @@ export async function POST(request: Request) {
       // Então: com permalink, o clique abre a publicação exata. Sem ele, abre a conversa no
       // Instagram, onde o conteúdo está logo ali. O rótulo do botão muda junto, pra não prometer
       // uma publicação que o CRM não sabe qual é.
+      // Sem mídia é justamente quando o botão MAIS importa.
+      //
+      // Antes ele só aparecia quando havia miniatura baixada. Só que a bolha sem miniatura é o
+      // beco sem saída: "Compartilhou um reel" ou "Você foi marcado em um story" e nada pra
+      // clicar — nem no CRM, nem pra ir ver no Instagram. A pessoa ficava sabendo que existe um
+      // conteúdo e sem nenhum caminho até ele.
+      //
+      // Agora, sempre que o CRM sabe que aquilo é conteúdo do Instagram, existe uma saída: o
+      // permalink quando a Meta o entrega, e a conversa da pessoa quando não entrega.
+      const ehConteudoQueViveNoInstagram = ehConteudoDoInstagram || temMidiaBaixada;
       const linkExternoDaMensagem =
         linkDoConteudo ??
-        (temMidiaBaixada && !ehEco && arrobaDeQuemMandou ? `https://ig.me/m/${arrobaDeQuemMandou}` : undefined);
+        (ehConteudoQueViveNoInstagram && !ehEco && arrobaDeQuemMandou
+          ? `https://ig.me/m/${arrobaDeQuemMandou}`
+          : undefined);
 
       // Etiqueta do que é o conteúdo — Reel, publicação, story, carrossel. O CRM sabe disso pelo
       // tipo que a Meta declara no anexo; sem mostrar, uma prévia de reel e uma foto qualquer ficam
