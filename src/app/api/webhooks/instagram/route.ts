@@ -532,7 +532,16 @@ export async function POST(request: Request) {
 
       // Anexo vira mídia de verdade; se o download falhar, sobra o rótulo em texto — melhor uma
       // bolha escrita "[Vídeo]" do que uma bolha em branco, que foi o que acontecia antes.
-      const anexo = mensagem.attachments?.[0];
+      // Preferimos um anexo de IMAGEM quando a mensagem traz mais de um.
+      //
+      // Só líamos `attachments[0]`. Num reel compartilhado a Meta manda o vídeo — que é grande e a
+      // política aqui não guarda — e, quando manda também uma imagem de prévia, ela vinha DEPOIS e
+      // era ignorada. Resultado: a bolha ficava só com a frase "Compartilhou um reel", que é
+      // exatamente o que está acontecendo.
+      //
+      // Escolher a imagem quando ela existe não muda nada nos casos de um anexo só.
+      const anexos = mensagem.attachments ?? [];
+      const anexo = anexos.find((a) => a.type === "image") ?? anexos[0];
       const story = mensagem.reply_to?.story;
 
       // Story respondido chega fora de `attachments`, num campo próprio — mesma busca de mídia.
@@ -842,6 +851,10 @@ export async function POST(request: Request) {
           // sem miniatura: sem ela, "não apareceu" é indistinguível de "a Meta não mandou nada",
           // "mandou e o download falhou" e "mandou vídeo e a política recusou".
           camposDoAnexo: anexo?.payload ? Object.keys(anexo.payload) : [],
+          // Quantos anexos vieram e de que tipos — é o que revela se existe uma prévia junto do
+          // vídeo, e se estamos escolhendo o anexo certo entre eles.
+          quantidadeDeAnexos: anexos.length,
+          tiposDosAnexos: anexos.map((a) => a.type ?? "?"),
           temUrlNoAnexo: Boolean(anexo?.payload?.url),
           temIdDaMidia: Boolean(idDaMidiaDoConteudo),
           temPermalink: Boolean(linkDoConteudo),
