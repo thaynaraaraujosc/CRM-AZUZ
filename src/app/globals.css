@@ -48,8 +48,10 @@
   --text-muted: rgba(9, 9, 11, 0.64);
   --text-faint: rgba(9, 9, 11, 0.54);
 
-  --display: var(--font-display), Poppins, sans-serif;
-  --body: var(--font-body), Montserrat, sans-serif;
+  /* Área interna: grotesca neutra, tracking fechado. Poppins/Montserrat seguem carregadas e a
+     landing continua com elas (ver `.lp-root` mais abaixo) — só o app logado muda. */
+  --display: var(--font-ui-display), "Inter Tight", system-ui, sans-serif;
+  --body: var(--font-ui), Inter, system-ui, sans-serif;
 
   /* -------- Tokens (Etapa 2, item 44) — raio, sombra, espaçamento, transição, cor semântica.
      Aditivo: nada existente referenciava esses nomes antes, então introduzir aqui não muda o visual
@@ -116,11 +118,22 @@
 
   /* Peso + altura de linha — hierarquia deve vir de tamanho+peso+espaçamento juntos, não só do
      tamanho (`--fs-*` abaixo). `--lh-tight` pra títulos/números grandes, `--lh-base` pro resto. */
+  /* A escada agora vai de 300 a 700. Antes começava em 400 e terminava em 600: com três pesos
+     quase vizinhos, a diferença entre título e apoio tinha que vir toda do tamanho, e por isso
+     tudo parecia do mesmo nível. Light (300) é o degrau que faltava pro texto de apoio recuar. */
+  --fw-light: 300;
   --fw-regular: 400;
   --fw-medium: 500;
   --fw-semibold: 600;
-  --lh-tight: 1.2;
-  --lh-base: 1.5;
+  --fw-bold: 700;
+  --lh-tight: 1.15;
+  --lh-base: 1.55;
+
+  /* Tracking: título grande em grotesca precisa fechar, senão as letras "boiam". Texto pequeno
+     precisa do contrário. */
+  --track-tight: -0.02em;
+  --track-snug: -0.01em;
+  --track-wide: 0.04em;
 
   /* Cores semânticas (item 55) — mesmo vocabulário já usado informalmente em Automações/Central do
      Dia/Configurações (verde=sucesso/oportunidade, âmbar=atenção, vermelho=erro, azul=informação,
@@ -153,13 +166,13 @@
      19px, `.panel-h h4` 13px, `.hint` 11px…) e preenche as lacunas (card, indicador). Contraste entre
      informação principal e auxiliar já existia via `--ink`/`--text-muted`/`--text-faint`; aqui só
      organiza tamanho+peso. */
-  --fs-page-title: 19px;
-  --fs-section-title: 14px;
-  --fs-card-title: 13px;
+  --fs-page-title: 23px;
+  --fs-section-title: 15px;
+  --fs-card-title: 13.5px;
   --fs-body: 12.5px;
   --fs-secondary: 11.5px;
   --fs-caption: 10.5px;
-  --fs-indicator: 20px;
+  --fs-indicator: 28px;
   --fs-button: 12px;
   --fs-table: 12px;
 }
@@ -470,11 +483,12 @@ table {
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 9px 10px;
+  padding: 9px 11px;
   border-radius: var(--radius-md);
   color: var(--text-muted);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: var(--fw-medium);
+  letter-spacing: var(--track-snug);
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
@@ -516,6 +530,7 @@ table {
   width: 17px;
   height: 17px;
   color: var(--text-faint);
+  transition: color var(--transition-fast);
   flex: 0 0 auto;
 }
 
@@ -535,17 +550,17 @@ table {
   color: var(--ink);
 }
 
-/* Selecionado tem que ser achado de relance: fundo mais firme que o hover, texto em preto cheio e
-   peso maior — os três juntos, mais a barra azul. Com só um deles, o item ativo some numa lista de
-   doze. O hover fica um degrau abaixo, senão passar o mouse parece selecionar. */
+/* Selecionado: preto cheio sobre superfície cinza, com peso maior. O inativo é cinza médio em peso
+   normal — a distância entre os dois é de tinta e de peso, não só de fundo. É por isso que dá pra
+   achar o item ativo de relance numa lista de doze. */
 .nav-item.active {
-  background: var(--surface-active);
+  background: var(--navy-raised-2);
   color: var(--ink);
   font-weight: var(--fw-semibold);
 }
 
 .nav-item.active svg {
-  color: var(--blue);
+  color: var(--ink);
 }
 
 .nav-item-whatsapp:hover {
@@ -770,15 +785,18 @@ table {
 
 .topbar h2 {
   font-family: var(--display);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-bold);
   font-size: var(--fs-page-title);
   line-height: var(--lh-tight);
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
 }
 
 .topbar .sub {
   font-size: var(--fs-body);
-  color: var(--text-faint);
-  margin-top: 2px;
+  font-weight: var(--fw-light);
+  color: var(--text-muted);
+  margin-top: 3px;
 }
 
 .top-actions {
@@ -840,7 +858,8 @@ table {
   /* 700 era peso de título num controle: deixava a tela cheia de texto gritando ao mesmo tempo. */
   font-weight: var(--fw-semibold);
   font-size: var(--fs-button);
-  padding: 9px 15px;
+  letter-spacing: var(--track-snug);
+  padding: 10px 17px;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
@@ -898,31 +917,47 @@ table {
   color: var(--ink);
 }
 
-/* Ação principal — o lugar mais legítimo do azul. Uma por tela, de preferência. */
+/* Ação principal: preto cheio. O azul sai do botão e passa a viver onde ele informa — seleção,
+   link, indicador, foco. Num painel de trabalho o preto é mais forte que qualquer cor: não compete
+   com os estados coloridos (verde de ganho, vermelho de perda) e não vira decoração. */
 .btn.primary {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--white);
-  box-shadow: var(--shadow-xs);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--navy);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn.primary:hover {
-  background: var(--primary-hover);
-  border-color: var(--primary-hover);
+  background: var(--gray-800);
+  border-color: var(--gray-800);
+  box-shadow: var(--shadow-md);
 }
 
-/* Pressão: afunda um pixel e escurece mais um passo. Sem isso o clique não tem retorno nenhum
-   entre o hover e a ação acontecer. */
+/* Pressão: afunda um pixel e perde a sombra. Sem isso o clique não tem retorno nenhum entre o
+   hover e a ação acontecer. */
 .btn.primary:active {
-  background: var(--primary-active);
-  border-color: var(--primary-active);
+  background: var(--gray-800);
   box-shadow: none;
 }
 
-/* Secundário: branco sobre a superfície cinza da página, com borda e uma sombra mínima. É essa
-   sombra que faz ele parecer um objeto pousado sobre a página em vez de um retângulo desenhado
-   nela — a diferença entre botão e contorno de botão. `.secondary` é o mesmo botão sob o nome do
-   design system. */
+/* Quando a ação principal é a identidade — "Conectar", "Assinar" —, o azul continua disponível. */
+.btn.azul {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+.btn.azul:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+.btn.azul:active {
+  background: var(--primary-active);
+  box-shadow: none;
+}
+
+/* Segundo nível: branco com borda e sombra mínima. É a sombra que faz ele parecer um objeto
+   pousado sobre a página em vez de um retângulo desenhado nela. */
 .btn.ghost,
 .btn.secondary {
   background: var(--surface-elevated);
@@ -944,19 +979,35 @@ table {
   box-shadow: none;
 }
 
-/* Terciário — ação de apoio que não deve competir com nada: sem fundo, sem borda, sem sombra.
-   Ganha superfície só ao passar o mouse. É o nível que faltava: antes tudo que não era principal
-   virava contorno branco, e a tela ficava cheia de caixas de mesmo peso. */
+/* Terceiro nível: cinza claro preenchido, sem borda. Tem corpo — parece botão — mas não disputa
+   com o preto. É o nível que faltava: antes tudo que não era principal virava contorno branco, e
+   a barra ficava com quatro caixas de peso idêntico. */
 .btn.terciario {
+  background: var(--navy-raised-2);
+  border-color: transparent;
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.btn.terciario:hover {
+  background: var(--gray-200);
+  border-color: transparent;
+  color: var(--ink);
+}
+
+.btn.terciario:active {
+  background: var(--gray-300);
+}
+
+/* Sem corpo nenhum — só texto. Pra ação que não deve nem parecer botão. */
+.btn.plano {
   background: transparent;
   border-color: transparent;
   color: var(--text-muted);
   box-shadow: none;
 }
-
-.btn.terciario:hover {
+.btn.plano:hover {
   background: var(--surface-hover);
-  border-color: transparent;
   color: var(--ink);
 }
 
@@ -1113,6 +1164,14 @@ table {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xs);
+}
+
+/* Cabeçalho de painel sem a linha embaixo: quando cada seção tem título, contorno e divisória, a
+   tela vira uma grade de traços. O espaço abaixo do título já separa — e o peso do título já diz
+   que ali começa outra coisa. */
+.card > .panel-h {
+  border-bottom: none;
+  padding-bottom: 4px;
 }
 
 /* Multi-tenancy Fase 1 — telas de /login e /cadastro, fora do shell (sidebar/header) do app.
@@ -1453,17 +1512,17 @@ table {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 15px 17px;
+  padding: 16px 18px 14px;
   border-bottom: 1px solid var(--line);
 }
 
 /* Título de painel: um degrau acima do corpo em tamanho e peso, e sempre em tinta cheia. */
 .panel-h h4 {
   font-size: var(--fs-section-title);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-bold);
   font-family: var(--display);
   color: var(--ink);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--track-tight);
 }
 
 .panel-h .link {
@@ -1692,22 +1751,25 @@ table {
 }
 
 .kpi {
-  padding: 16px 17px;
+  padding: 18px 19px 20px;
 }
 
 .kpi .l {
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--track-wide);
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .kpi .n {
   font-family: var(--display);
-  font-weight: 700;
-  font-size: 24px;
-  margin-top: 6px;
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-indicator);
+  letter-spacing: var(--track-tight);
+  line-height: var(--lh-tight);
+  font-variant-numeric: tabular-nums;
+  margin-top: 8px;
 }
 
 .trafego-view .kpi {
@@ -2262,10 +2324,11 @@ table.tbl tbody tr:hover td {
 }
 
 .kcol-h .t {
-  font-size: 12.5px;
-  font-weight: var(--fw-semibold);
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: var(--fw-bold);
   color: var(--ink);
-  letter-spacing: -0.005em;
+  letter-spacing: var(--track-tight);
   display: flex;
   align-items: center;
   gap: 7px;
@@ -2358,8 +2421,8 @@ table.tbl tbody tr:hover td {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xs);
-  padding: 12px 13px;
-  margin-bottom: 9px;
+  padding: 14px 15px;
+  margin-bottom: 8px;
   cursor: grab;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
     transform var(--transition-fast);
@@ -2388,17 +2451,21 @@ table.tbl tbody tr:hover td {
 }
 
 .lead-card .lname {
-  font-size: 12.5px;
-  font-weight: var(--fw-semibold);
+  font-family: var(--display);
+  font-size: 13.5px;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-snug);
   color: var(--ink);
   line-height: var(--lh-tight);
 }
 
 .lead-card .lval {
   font-family: var(--display);
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
   font-size: 12px;
-  color: var(--blue);
+  letter-spacing: var(--track-snug);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
 }
 
 .lead-card .lr2 {
@@ -2433,8 +2500,9 @@ table.tbl tbody tr:hover td {
 
 .lead-card-telefone {
   display: block;
-  margin: -1px 0 7px;
+  margin: 1px 0 9px;
   font-size: 11px;
+  font-weight: var(--fw-light);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -3172,13 +3240,15 @@ table.tbl tbody tr:hover td {
   background: #25d366;
 }
 
+/* Sem linha entre conversas: com o nome em negrito e o respiro maior, a divisória virava ruído —
+   uma pauta cinza atrás da lista. A separação passa a ser o espaço. */
 .wa-row {
   display: block;
   position: relative;
   width: 100%;
   text-align: left;
-  padding: 12px 17px;
-  border-bottom: 1px solid var(--line);
+  padding: 13px 16px;
+  border-bottom: 1px solid transparent;
   border-left: 2px solid transparent;
   background: transparent;
   cursor: pointer;
@@ -3250,8 +3320,10 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
-  font-weight: var(--fw-semibold);
+  font-family: var(--display);
+  font-size: 13.5px;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-snug);
   color: var(--ink);
   line-height: var(--lh-tight);
   overflow: hidden;
@@ -3283,6 +3355,7 @@ table.tbl tbody tr:hover td {
   flex: 1 1 auto;
   min-width: 0;
   font-size: 11.5px;
+  font-weight: var(--fw-light);
   color: var(--text-muted);
   line-height: 1.45;
   overflow: hidden;
@@ -4842,8 +4915,9 @@ button.camp-row:hover {
 .hint {
   padding: 12px 17px 0;
   font-size: var(--fs-secondary);
+  font-weight: var(--fw-light);
   color: var(--text-muted);
-  line-height: 1.55;
+  line-height: var(--lh-base);
 }
 
 /* ---------------- Login / convite ---------------- */
