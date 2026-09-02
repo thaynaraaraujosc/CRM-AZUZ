@@ -3,9 +3,20 @@ import { createHash } from "node:crypto";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
+import {
+  POLITICAS,
+  contarChamada,
+  ipDeQuemChamou,
+  respostaDeLimiteExcedido,
+} from "@/lib/seguranca/limite-de-uso";
 
 /** POST — valida o token (existe, não expirou, não foi usado) e troca a senha do Membro dono dele. */
 export async function POST(request: Request) {
+  // O token de redefinição é longo e aleatório, mas sem limite dá pra tentar adivinhar em laço.
+  const ipRedefinicao = await ipDeQuemChamou();
+  const limiteRedefinicao = contarChamada(`redefinir-senha:${ipRedefinicao}`, POLITICAS.recuperacaoDeSenha);
+  if (!limiteRedefinicao.permitido) return respostaDeLimiteExcedido(limiteRedefinicao.esperarSegundos);
+
   const dados = await request.json().catch(() => null);
   const token = typeof dados?.token === "string" ? dados.token : "";
   const novaSenha = typeof dados?.novaSenha === "string" ? dados.novaSenha : "";

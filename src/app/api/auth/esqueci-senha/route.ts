@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 import { prisma } from "@/lib/prisma";
+import {
+  POLITICAS,
+  contarChamada,
+  ipDeQuemChamou,
+  respostaDeLimiteExcedido,
+} from "@/lib/seguranca/limite-de-uso";
 import { enviarEmail, templateRedefinicaoSenha } from "@/lib/email";
 
 /**
@@ -18,6 +24,13 @@ export async function POST(request: Request) {
   });
 
   if (!email) return RESPOSTA_GENERICA;
+
+  // Cada chamada aqui dispara um e-mail. Sem limite, isso é um canhão de spam apontado pra caixa
+  // de entrada de qualquer pessoa, e também uma forma de descobrir quais e-mails têm conta pelo
+  // tempo de resposta. A resposta continua sendo a mesma frase genérica em todos os casos.
+  const ip = await ipDeQuemChamou();
+  const limite = contarChamada(`esqueci-senha:${ip}`, POLITICAS.recuperacaoDeSenha);
+  if (!limite.permitido) return respostaDeLimiteExcedido(limite.esperarSegundos);
 
   const membro = await prisma.membro.findFirst({ where: { email, ativo: true } });
   if (!membro) return RESPOSTA_GENERICA;

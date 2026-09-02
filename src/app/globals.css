@@ -13731,3 +13731,43 @@ button.camp-row:hover {
 .bubble-acao-externa:hover {
   border-color: var(--blue);
 }
+
+/* Páginas de erro e "não encontrado" — com a identidade do CRM, não a do framework. */
+.pagina-erro {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  text-align: center;
+}
+
+.pagina-erro-marca {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--blue);
+}
+
+.pagina-erro h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.pagina-erro-texto {
+  margin: 0;
+  max-width: 420px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.pagina-erro-codigo {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--navy-raised-2);
+  padding: 3px 8px;
+  border-radius: 6px;
+}

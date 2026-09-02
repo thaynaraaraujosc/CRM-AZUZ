@@ -33,7 +33,25 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/formularios
   const { id } = await ctx.params;
   const linha = await prisma.formulario.findUnique({ where: { id } });
   if (!linha) return NextResponse.json({ erro: "Formulário não encontrado" }, { status: 404 });
-  return NextResponse.json(paraFormulario(linha));
+
+  // Rota PÚBLICA devolve só o que a tela pública precisa pra desenhar o formulário.
+  //
+  // Antes ela devolvia a linha inteira do banco — inclusive `integracoes`, que guarda a
+  // configuração de para onde as respostas são enviadas, e `versoes`, com o histórico de edições.
+  // Nada disso é necessário pra preencher um formulário, e tudo isso estava acessível a qualquer
+  // pessoa com o id em mãos. Endpoint aberto devolve o mínimo, não o registro completo.
+  const publico = paraFormulario(linha);
+  return NextResponse.json({
+    id: publico.id,
+    nome: publico.nome,
+    descricao: publico.descricao,
+    status: publico.status,
+    paginas: publico.paginas,
+    paginaFinal: publico.paginaFinal,
+    tema: publico.tema,
+    // Necessário pra tela pública resolver as demais rotas públicas a partir daqui.
+    workspaceId: linha.workspaceId,
+  });
 }
 
 /** Atualização por id — usada pelo helper `tocar()` do Context, que centraliza todo mutador que

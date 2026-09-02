@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
+import {
+  POLITICAS,
+  contarChamada,
+  ipDeQuemChamou,
+  respostaDeLimiteExcedido,
+} from "@/lib/seguranca/limite-de-uso";
 import { slugId } from "@/lib/ids";
 import { PLANOS } from "@/lib/assinatura/planos";
 
@@ -11,6 +17,12 @@ import { PLANOS } from "@/lib/assinatura/planos";
  * slugId já usado em Contato/Membro), com sufixo numérico se já existir.
  */
 export async function POST(request: Request) {
+  // Criação de conta em massa: sem limite, dá pra encher o banco de workspaces vazios e queimar
+  // o envio de e-mail do produto. Por IP, que é o que existe antes de haver usuário.
+  const ipDeCadastro = await ipDeQuemChamou();
+  const limiteCadastro = contarChamada(`cadastro:${ipDeCadastro}`, POLITICAS.cadastro);
+  if (!limiteCadastro.permitido) return respostaDeLimiteExcedido(limiteCadastro.esperarSegundos);
+
   const dados = (await request.json()) as {
     empresa?: string;
     nome?: string;

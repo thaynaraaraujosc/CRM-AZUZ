@@ -2,6 +2,8 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
+import { POLITICAS, contarChamada, ipDeQuemChamou } from "@/lib/seguranca/limite-de-uso";
+
 import { prisma } from "@/lib/prisma";
 import { verificarTokenImpersonar } from "@/lib/admin/impersonar";
 
@@ -28,6 +30,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // frase. Isso é proposital pra fora (dizer "esse e-mail não existe" entrega quem tem conta),
         // mas sem registro nenhum ficava impossível diagnosticar de dentro. O log fica no servidor,
         // com o e-mail e o motivo, nunca a senha.
+        // Trava de força bruta, ANTES de tocar no banco.
+        //
+        // A chave combina IP e e-mail de propósito. Só por IP, um escritório inteiro atrás do mesmo
+        // endereço é punido junto. Só por e-mail, qualquer pessoa consegue trancar a conta de outra
+        // — vira um jeito fácil de derrubar um cliente, que é o oposto de segurança. Combinando os
+        // dois, o ataque precisa variar as duas pontas, e um usuário legítimo nunca esbarra.
+        const ip = await ipDeQuemChamou();
+        const limite = contarChamada(`login:${ip}:${email}`, POLITICAS.login);
+        if (!limite.permitido) {
+          // O log registra o e-mail e o motivo — nunca a senha tentada.
+          console.warn(`[login] bloqueado por excesso de tentativas: ${email}`);
+          return null;
+        }
+
         let membro;
         try {
           membro = await prisma.membro.findUnique({ where: { email }, include: { workspace: true } });

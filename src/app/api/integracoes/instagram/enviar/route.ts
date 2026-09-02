@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { POLITICAS, contarChamada, respostaDeLimiteExcedido } from "@/lib/seguranca/limite-de-uso";
 import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { enviarDirectInstagram } from "@/lib/integracoes/instagram-login";
@@ -18,6 +19,12 @@ import { enviarDirectInstagram } from "@/lib/integracoes/instagram-login";
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+
+  // Limite por WORKSPACE, não por pessoa: o custo e o risco de spam são da empresa, e várias
+  // pessoas do mesmo cliente compartilham o mesmo número. Contar por usuário deixaria o teto real
+  // ser multiplicado pelo tamanho da equipe.
+  const limiteDeUso = contarChamada(`envio-instagram:${sessao.user.workspaceId}`, POLITICAS.envioDeMensagem);
+  if (!limiteDeUso.permitido) return respostaDeLimiteExcedido(limiteDeUso.esperarSegundos);
 
   const { destinatario, texto, respondendoMid } = (await request.json()) as {
     destinatario?: string;
