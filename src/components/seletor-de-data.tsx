@@ -87,12 +87,6 @@ export function SeletorDeData({
   const painelRef = useRef<HTMLDivElement>(null);
   const [retangulo, setRetangulo] = useState<DOMRect | null>(null);
 
-  // Reabrir com uma data nova precisa mostrar o mês dela, não o último que ficou aberto.
-  useEffect(() => {
-    if (aberto && selecionada) setMesVisivel(selecionada);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- só ao abrir; mudar de mês não deve reverter
-  }, [aberto]);
-
   useEffect(() => {
     if (!aberto) return;
     function aoClicarFora(evento: MouseEvent) {
@@ -125,6 +119,9 @@ export function SeletorDeData({
       return;
     }
     setRetangulo(botaoRef.current?.getBoundingClientRect() ?? null);
+    // Abrir mostra o mês da data escolhida, não o último mês que ficou navegado. Fica no gesto de
+    // abrir, e não num efeito: dentro de efeito isso vira um segundo render em cascata.
+    if (selecionada) setMesVisivel(selecionada);
     setAberto(true);
   }
 

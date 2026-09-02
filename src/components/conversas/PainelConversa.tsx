@@ -6,7 +6,7 @@ import type { ConvMensagem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { BolhaMensagem } from "./BolhaMensagem";
-import { IconClose, IconConfiguracoes, IconDoc, IconImage, IconLocalizacao } from "@/components/icons";
+import { IconClose, IconConfiguracoes, IconDoc, IconImage, IconLocalizacao, IconUpload } from "@/components/icons";
 import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
 import { useFunis } from "@/lib/funis-context";
 
@@ -50,6 +50,7 @@ export function PainelConversa({
 
   const [texto, setTexto] = useState("");
   const [maisAberto, setMaisAberto] = useState(false);
+  const [arrastandoArquivo, setArrastandoArquivo] = useState(false);
   const [transferindo, setTransferindo] = useState(false);
   /**
    * Arquivo escolhido, ainda não enviado.
@@ -167,7 +168,11 @@ export function PainelConversa({
     }
   }
 
-  /** Escolheu o arquivo: mostra a prévia. O envio só acontece quando a pessoa confirma. */
+  /**
+   * Arrastar o arquivo pra cima da conversa vale como anexar. O clipe continua onde estava — numa
+   * janela de conversa a caixa tracejada fixa roubaria o espaço das mensagens —, mas quem arrasta
+   * um arquivo pra dentro agora vê pra onde soltar em vez de nada acontecer.
+   */
   async function prepararArquivo(arquivo: File, tipo: "image" | "file") {
     setErro(null);
     setMaisAberto(false);
@@ -234,7 +239,28 @@ export function PainelConversa({
   }
 
   return (
-    <div className="painel-conversa-fundo" onClick={aoFechar}>
+    <div
+      className="painel-conversa-fundo"
+      onClick={aoFechar}
+      onDragOver={(e) => {
+        // Só reage a arquivo vindo de fora — arrastar texto selecionado não é anexar.
+        if (!e.dataTransfer.types.includes("Files")) return;
+        e.preventDefault();
+        setArrastandoArquivo(true);
+      }}
+      onDragLeave={(e) => {
+        // `dragleave` dispara ao passar por cima de cada filho; só some quando sai do painel todo.
+        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+        setArrastandoArquivo(false);
+      }}
+      onDrop={(e) => {
+        if (!e.dataTransfer.types.includes("Files")) return;
+        e.preventDefault();
+        setArrastandoArquivo(false);
+        const arquivo = e.dataTransfer.files?.[0];
+        if (arquivo) void prepararArquivo(arquivo, arquivo.type.startsWith("image/") ? "image" : "file");
+      }}
+    >
       {/* Mesmo componente do menu do card e das conversas: um caminho só até o banco. */}
       {transferindo && cardDoContato ? (
         <TransferirNegocio
@@ -245,6 +271,14 @@ export function PainelConversa({
         />
       ) : null}
       <div className="painel-conversa" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`Conversa com ${contatoNome}`}>
+        {arrastandoArquivo ? (
+          <div className="upload-soltar-aqui" aria-hidden="true">
+            <span className="upload-area-icone">
+              <IconUpload width={18} height={18} />
+            </span>
+            <strong>Solte o arquivo para anexar</strong>
+          </div>
+        ) : null}
         <header className="painel-conversa-topo">
           <div className="name-cell">
             <div className="avatar">

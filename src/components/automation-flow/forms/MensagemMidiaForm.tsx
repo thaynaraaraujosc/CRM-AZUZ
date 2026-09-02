@@ -12,6 +12,7 @@ import {
 import type { CanalMensagem, FlowNodeType, MensagemMidiaData } from "@/lib/automation-flow/types";
 import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";
+import { AreaDeUpload } from "@/components/area-de-upload";
 
 const CANAIS: { valor: CanalMensagem; label: string }[] = [
   { valor: "whatsapp", label: "WhatsApp" },
@@ -39,6 +40,13 @@ const ACCEPT_POR_TIPO: Record<TipoMidiaArquivo, string> = {
   imagem: "image/*",
   video: "video/*",
   audio: "audio/*",
+};
+
+const ROTULO_POR_TIPO: Record<TipoMidiaArquivo, string> = {
+  documento: "um documento",
+  imagem: "uma imagem",
+  video: "um vídeo",
+  audio: "um áudio",
 };
 
 const EXTENSOES_ACEITAS_DOCUMENTO = ["PDF", "DOC", "DOCX", "XLS", "XLSX", "PPT", "PPTX", "TXT"];
@@ -94,7 +102,6 @@ export function MensagemMidiaForm({
   const [enviando, setEnviando] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const legendaRef = useRef<HTMLTextAreaElement>(null);
-  const [arrastando, setArrastando] = useState(false);
 
   function set(patch: Partial<MensagemMidiaData>) {
     onChange({ ...data, ...patch });
@@ -201,29 +208,18 @@ export function MensagemMidiaForm({
         />
 
         {!temArquivo ? (
-          <div
-            className={`flow-midia-dropzone${arrastando ? " arrastando" : ""}`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setArrastando(true);
-            }}
-            onDragLeave={() => setArrastando(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setArrastando(false);
-              const file = e.dataTransfer.files?.[0];
-              if (file) processarUpload(file);
-            }}
-          >
-            <p>Arraste um arquivo aqui</p>
-            <p className="hint">ou</p>
-            <button type="button" className="btn ghost" onClick={() => fileInputRef.current?.click()}>
-              Selecionar arquivo
-            </button>
+          <>
+            <AreaDeUpload
+              accept={ACCEPT_POR_TIPO[tipoMidia]}
+              titulo={enviando ? "Enviando…" : `Enviar ${ROTULO_POR_TIPO[tipoMidia]}`}
+              limiteMb={16}
+              disabled={enviando}
+              aoEscolher={(file) => void processarUpload(file)}
+            />
             {tipoMidia === "documento" ? (
               <p className="hint mt8">Formatos aceitos: {EXTENSOES_ACEITAS_DOCUMENTO.join(", ")}</p>
             ) : null}
-          </div>
+          </>
         ) : null}
       </div>
 

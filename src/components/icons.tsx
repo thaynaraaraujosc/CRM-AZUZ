@@ -348,6 +348,17 @@ export function IconImportar(props: Props) {
   );
 }
 
+/** Seta pra cima — enviar arquivo. `IconImportar` é a seta pra baixo (baixar), não serve aqui. */
+export function IconUpload(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 20V8" />
+      <path d="M7 13l5-5 5 5" />
+      <path d="M4 4h16" />
+    </svg>
+  );
+}
+
 /** Plano e cobrança. */
 export function IconCartao(props: Props) {
   return (

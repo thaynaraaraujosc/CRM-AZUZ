@@ -9,6 +9,7 @@ import { useContatos } from "@/lib/contatos-context";
 import { IconDoc, IconImage, IconMic, IconSearch } from "@/components/icons";
 import { FloatingDropdown, MediaPicker, SegmentChips, Topbar } from "@/components/ui";
 import { SeletorDeData } from "@/components/seletor-de-data";
+import { AreaDeUpload } from "@/components/area-de-upload";
 
 const iconePorMidia = {
   imagem: <IconImage />,
@@ -607,48 +608,32 @@ export default function AcoesPage() {
               {midia === "Imagem" ? (
                 <div className="field">
                   <label>Imagem</label>
-                  <input
-                    type="file"
+                  <AreaDeUpload
                     accept="image/*"
-                    className="input"
-                    style={{ width: "100%", padding: 8 }}
-                    onChange={(e) => setArquivoImagem(e.target.files?.[0] ?? null)}
+                    titulo="Enviar uma imagem"
+                    limiteMb={5}
+                    aoEscolher={setArquivoImagem}
+                    nomeDoArquivo={arquivoImagem?.name}
+                    aoRemover={() => setArquivoImagem(null)}
                   />
-                  {arquivoImagem ? (
-                    <div className="attach-chip mt14">
-                      <IconImage />
-                      <span className="fn">{arquivoImagem.name}</span>
-                      <span className="fs">
-                        {(arquivoImagem.size / 1024).toFixed(0)} KB
-                      </span>
-                    </div>
-                  ) : null}
                 </div>
               ) : null}
 
               {midia === "Áudio" ? (
                 <div className="field">
                   <label>Áudio</label>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      id="upload-audio"
-                      style={{ display: "none" }}
-                      onChange={(e) => {
-                        setArquivoAudio(e.target.files?.[0] ?? null);
-                        setAudioGravadoUrl(null);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      onClick={() =>
-                        document.getElementById("upload-audio")?.click()
-                      }
-                    >
-                      + Enviar áudio
-                    </button>
+                  <AreaDeUpload
+                    accept="audio/*"
+                    titulo="Enviar um áudio"
+                    limiteMb={16}
+                    aoEscolher={(arquivo) => {
+                      setArquivoAudio(arquivo);
+                      setAudioGravadoUrl(null);
+                    }}
+                    nomeDoArquivo={arquivoAudio?.name}
+                    aoRemover={() => setArquivoAudio(null)}
+                  />
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
                     {!gravando ? (
                       <button
                         type="button"
@@ -672,15 +657,6 @@ export default function AcoesPage() {
                       {erroGravacao}
                     </p>
                   ) : null}
-                  {arquivoAudio ? (
-                    <div className="attach-chip mt14">
-                      <IconMic />
-                      <span className="fn">{arquivoAudio.name}</span>
-                      <span className="fs">
-                        {(arquivoAudio.size / 1024).toFixed(0)} KB
-                      </span>
-                    </div>
-                  ) : null}
                   {audioGravadoUrl ? (
                     <div className="mt14">
                       <p className="hint" style={{ marginBottom: 6 }}>
@@ -695,21 +671,13 @@ export default function AcoesPage() {
               {midia === "Arquivo" ? (
                 <div className="field">
                   <label>Arquivo (PDF, documento etc.)</label>
-                  <input
-                    type="file"
-                    className="input"
-                    style={{ width: "100%", padding: 8 }}
-                    onChange={(e) => setArquivoGenerico(e.target.files?.[0] ?? null)}
+                  <AreaDeUpload
+                    titulo="Enviar um arquivo"
+                    limiteMb={16}
+                    aoEscolher={setArquivoGenerico}
+                    nomeDoArquivo={arquivoGenerico?.name}
+                    aoRemover={() => setArquivoGenerico(null)}
                   />
-                  {arquivoGenerico ? (
-                    <div className="attach-chip mt14">
-                      <IconDoc />
-                      <span className="fn">{arquivoGenerico.name}</span>
-                      <span className="fs">
-                        {(arquivoGenerico.size / 1024).toFixed(0)} KB
-                      </span>
-                    </div>
-                  ) : null}
                 </div>
               ) : null}
 

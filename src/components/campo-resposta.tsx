@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { aplicarMascara, type PerguntaFormulario } from "@/lib/formularios-context";
 import { IconAnexo, IconClose, IconDoc, IconImage, IconMic, IconStar, IconVideoCam } from "@/components/icons";
 import { SeletorDeData } from "@/components/seletor-de-data";
+import { AreaDeUpload } from "@/components/area-de-upload";
 
 function lerComoDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -317,28 +318,18 @@ export function CampoResposta({
       // mas ele nunca chegava no CRM). Mesmo delimitador "|" já usado no campo de intervalo de datas.
       const nomeExibicao = valor?.split("|")[0];
       return interativo ? (
-        <label className="form-upload-preview" style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-          {nomeExibicao ? (
-            <>
-              <IconAnexo width={13} height={13} /> {nomeExibicao}
-            </>
-          ) : (
-            <>
-              <IconRotuloVazio width={13} height={13} /> {textoRotuloVazio}
-            </>
-          )}
-          <input
-            type="file"
-            accept={accept}
-            style={{ display: "none" }}
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const url = await lerComoDataUrl(file);
-              onMudarValor?.(`${file.name}|${url}`);
-            }}
-          />
-        </label>
+        <AreaDeUpload
+          accept={accept}
+          titulo={textoRotuloVazio}
+          limiteMb={10}
+          disabled={disabled}
+          nomeDoArquivo={nomeExibicao}
+          aoRemover={() => onMudarValor?.("")}
+          aoEscolher={async (file) => {
+            const url = await lerComoDataUrl(file);
+            onMudarValor?.(`${file.name}|${url}`);
+          }}
+        />
       ) : (
         <div className="form-upload-preview" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <IconRotuloVazio width={13} height={13} /> {textoRotuloVazio}
