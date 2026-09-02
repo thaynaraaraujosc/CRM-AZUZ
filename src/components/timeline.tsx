@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import { EVENTO_CATEGORIA, type CategoriaEvento, type Evento } from "@/lib/timeline";
-import { classeOrigem } from "@/lib/data";
 import {
   IconAperto,
   IconAutomacoes,
@@ -92,38 +91,41 @@ export function Timeline({ eventos }: { eventos: Evento[] }) {
   );
 }
 
+/**
+ * Um evento da linha do tempo.
+ *
+ * Era um card por evento — a lista virava uma pilha de caixas e a cronologia, que é o assunto da
+ * tela, ficava escondida atrás delas. Agora o que estrutura é a própria linha: marcador com o
+ * ícone da categoria, fio fino descendo, e o texto solto ao lado. Sem borda, sem fundo, sem
+ * sombra. Quem tem link continua clicável — o realce vira fundo sutil, não card levantando.
+ */
 function TimelineItem({ evento }: { evento: Evento }) {
   const categoria = EVENTO_CATEGORIA[evento.tipo];
   const IconeCategoria = ICONE_CATEGORIA[categoria];
+
+  // Responsável · quando · origem numa linha só de metadado. `filter` porque evento sem
+  // responsável ou sem origem deixaria um separador solto no fim.
+  const meta = [evento.responsavel, evento.quando, evento.origem].filter(Boolean);
+
   const conteudo = (
     <>
-      <div className="timeline-card-top">
-        <span className="timeline-card-titulo">
-          <span aria-hidden="true" style={{ display: "inline-flex" }}><IconeCategoria width={13} height={13} /></span> {evento.titulo}
-        </span>
-        <span className="timeline-card-quando">{evento.quando}</span>
-      </div>
-      {evento.descricao ? <p className="timeline-card-desc">{evento.descricao}</p> : null}
-      {evento.origem || evento.responsavel ? (
-        <div className="timeline-card-meta">
-          {evento.origem ? (
-            <span className={`origin-tag ${classeOrigem(evento.origem)}`}>{evento.origem}</span>
-          ) : null}
-          {evento.responsavel ? <span>Responsável: {evento.responsavel}</span> : null}
-        </div>
-      ) : null}
+      <span className="timeline-titulo">{evento.titulo}</span>
+      {evento.descricao ? <span className="timeline-desc">{evento.descricao}</span> : null}
+      {meta.length > 0 ? <span className="timeline-meta">{meta.join(" · ")}</span> : null}
     </>
   );
 
   return (
     <div className="timeline-item">
-      <span className="timeline-dot" />
+      <span className="timeline-marcador" aria-hidden="true">
+        <IconeCategoria width={13} height={13} />
+      </span>
       {evento.link ? (
-        <Link href={evento.link.href} className="timeline-card">
+        <Link href={evento.link.href} className="timeline-conteudo">
           {conteudo}
         </Link>
       ) : (
-        <div className="timeline-card">{conteudo}</div>
+        <div className="timeline-conteudo">{conteudo}</div>
       )}
     </div>
   );

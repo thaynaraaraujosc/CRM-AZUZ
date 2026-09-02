@@ -1644,6 +1644,8 @@ table {
   position: relative;
 }
 
+/* Linha do tempo contínua: o fio e o marcador estruturam, não o card. Cada evento era uma caixa
+   com borda e fundo — a pilha de caixas escondia justamente a cronologia, que é o assunto da tela. */
 .timeline-item {
   position: relative;
   display: flex;
@@ -1655,82 +1657,72 @@ table {
   padding-bottom: 0;
 }
 
-.timeline-dot {
+.timeline-marcador {
   position: relative;
   flex: none;
-  width: 10px;
-  height: 10px;
-  margin-top: 5px;
-  border-radius: 50%;
-  background: var(--blue);
-  box-shadow: 0 0 0 3px rgba(46, 107, 255, 0.16);
-}
-
-.timeline-item:not(:last-child) .timeline-dot::after {
-  content: "";
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  width: 1px;
-  height: calc(100% + var(--space-5) - 6px);
-  background: var(--line);
-  transform: translateX(-50%);
-}
-
-.timeline-card {
-  flex: 1;
-  display: block;
-  min-width: 0;
-  background: var(--navy-raised);
-  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
-  color: inherit;
-  text-decoration: none;
-  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
-}
-
-a.timeline-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-  border-color: rgba(46, 107, 255, 0.5);
-}
-
-.timeline-card-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.timeline-card-titulo {
-  font-size: var(--fs-body, 14px);
-  font-weight: 600;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.timeline-card-quando {
-  flex: none;
-  font-size: var(--fs-caption, 11.5px);
-  color: var(--text-faint);
-  white-space: nowrap;
-}
-
-.timeline-card-desc {
-  margin: var(--space-1) 0 0;
-  font-size: var(--fs-secondary, 13px);
+  border: 1px solid var(--line);
+  background: var(--navy);
   color: var(--text-muted);
 }
 
-.timeline-card-meta {
-  margin-top: var(--space-2);
+/* O fio nasce embaixo do marcador e desce até o próximo. Some no último evento, senão a linha fica
+   apontando pra um vazio.
+
+   Ancorada no item, não no marcador: assim ela não depende da altura do marcador nem do
+   espaçamento entre eventos pra saber onde terminar — vai do fim de um marcador até o começo do
+   próximo. A posição é aritmética simples: metade da largura do marcador (28px / 2), menos meio
+   pixel da própria linha. */
+.timeline-item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 30px;
+  bottom: 2px;
+  left: 13.5px;
+  width: 1px;
+  background: var(--line);
+}
+
+.timeline-conteudo {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--fs-caption, 11.5px);
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 8px 4px 2px;
+  margin: -4px 0 0 -2px;
+  border-radius: var(--radius-md);
+  color: inherit;
+  text-decoration: none;
+  transition: background var(--transition-fast);
+}
+
+/* Evento clicável: realce é fundo sutil. Antes o card subia dois pixels e ganhava sombra, o que
+   fazia a linha inteira "pular" ao passar o mouse. */
+a.timeline-conteudo:hover {
+  background: var(--surface-hover);
+}
+
+.timeline-titulo {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  line-height: var(--lh-tight);
+}
+
+.timeline-desc {
+  font-size: var(--fs-secondary);
+  color: var(--text-muted);
+  line-height: var(--lh-base);
+}
+
+.timeline-meta {
+  margin-top: 2px;
+  font-size: var(--fs-caption);
   color: var(--text-faint);
 }
 
