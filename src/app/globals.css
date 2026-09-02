@@ -13771,3 +13771,168 @@ button.camp-row:hover {
   padding: 3px 8px;
   border-radius: 6px;
 }
+
+/* ==========================================================================
+   Seletor de data (src/components/seletor-de-data.tsx)
+   O calendário nosso, que substitui o calendário nativo do navegador nos campos onde ele aparecia.
+   Estética de referência: dia selecionado como pastilha azul sólida, dias de fora do mês apagados,
+   hoje marcado só por um anel — sem glow, sem gradiente, sem arredondamento exagerado.
+   ========================================================================== */
+
+.seletor-data {
+  position: relative;
+}
+
+/* O gatilho é um `<button>` com a classe `.input`, então herda altura, borda e foco dos outros
+   campos do formulário — o alinhamento com um `<input>` ao lado continua exato. */
+.seletor-data-campo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.seletor-data-campo:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.seletor-data-campo svg {
+  flex: none;
+  color: var(--text-faint);
+}
+
+.seletor-data-vazio {
+  color: var(--text-faint);
+}
+
+.seletor-data-painel {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 268px;
+  padding: var(--space-3);
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.seletor-data-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.seletor-data-topo strong {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.seletor-data-topo button {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.seletor-data-topo button:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.seletor-data-grade {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.seletor-data-dow {
+  display: grid;
+  place-items: center;
+  height: 26px;
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.seletor-data-dia {
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.seletor-data-dia:hover {
+  background: var(--surface-hover);
+}
+
+/* Dias das pontas dos meses vizinhos: continuam clicáveis, só ficam apagados pra a grade do mês
+   atual ser lida primeiro. */
+.seletor-data-dia.fora {
+  color: var(--text-faint);
+}
+
+/* "Hoje" é só um anel — se fosse fundo, competiria com a seleção. */
+.seletor-data-dia.hoje {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.seletor-data-dia.escolhido,
+.seletor-data-dia.escolhido:hover {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #ffffff;
+  font-weight: var(--fw-semibold);
+}
+
+.seletor-data-rodape {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line-soft);
+}
+
+.seletor-data-rodape button {
+  font-family: var(--body);
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.seletor-data-rodape button:hover {
+  color: var(--blue);
+}

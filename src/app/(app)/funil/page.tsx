@@ -22,6 +22,7 @@ import { IconConfiguracoes } from "@/components/icons";
 import { ChipFilters, FloatingDropdown, Topbar } from "@/components/ui";
 import { IconCheck, IconClose, IconErro } from "@/components/icons";
 import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
+import { SeletorDeData } from "@/components/seletor-de-data";
 
 const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Instagram",
@@ -755,23 +756,11 @@ function FunilPageInner() {
             >
               <div className="field" style={{ padding: 0, flex: "1 1 160px" }}>
                 <label>De</label>
-                <input
-                  className="input"
-                  style={{ width: "100%" }}
-                  type="date"
-                  value={dataDe}
-                  onChange={(e) => setDataDe(e.target.value)}
-                />
+                <SeletorDeData valor={dataDe} onChange={setDataDe} />
               </div>
               <div className="field" style={{ padding: 0, flex: "1 1 160px" }}>
                 <label>Até</label>
-                <input
-                  className="input"
-                  style={{ width: "100%" }}
-                  type="date"
-                  value={dataAte}
-                  onChange={(e) => setDataAte(e.target.value)}
-                />
+                <SeletorDeData valor={dataAte} onChange={setDataAte} />
               </div>
               {filtroAtivo ? (
                 <button

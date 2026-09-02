@@ -21,6 +21,7 @@ import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { Topbar, Drawer } from "@/components/ui";
 import { IconAlerta } from "@/components/icons";
+import { SeletorDeData } from "@/components/seletor-de-data";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -710,11 +711,9 @@ export default function AgendaPage() {
         </div>
         <div className="field">
           <label>Data</label>
-          <input
-            className="input"
-            type="date"
-            value={form.dataIso}
-            onChange={(e) => setForm((f) => ({ ...f, dataIso: e.target.value }))}
+          <SeletorDeData
+            valor={form.dataIso}
+            onChange={(iso) => setForm((f) => ({ ...f, dataIso: iso }))}
           />
         </div>
         <div className="filters-row">
@@ -894,11 +893,9 @@ export default function AgendaPage() {
                   <div className="card" style={{ padding: 12, marginTop: 8 }}>
                     <div className="field">
                       <label>Nova data</label>
-                      <input
-                        className="input"
-                        type="date"
-                        value={reagendarData.dataIso}
-                        onChange={(e) => setReagendarData((r) => ({ ...r, dataIso: e.target.value }))}
+                      <SeletorDeData
+                        valor={reagendarData.dataIso}
+                        onChange={(iso) => setReagendarData((r) => ({ ...r, dataIso: iso }))}
                       />
                     </div>
                     <div className="filters-row">
