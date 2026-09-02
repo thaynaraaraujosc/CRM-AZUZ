@@ -2825,7 +2825,7 @@ table.tbl tbody tr:hover td {
 }
 
 .bubble.out .wa-link-mensagem {
-  color: #d6e4ff;
+  color: #cfd6e6;
 }
 
 /* Botão "Carregar áudio" — mídia recebida sem conteúdo embutido no webhook, buscada sob demanda. */
@@ -2847,11 +2847,15 @@ table.tbl tbody tr:hover td {
   cursor: default;
 }
 
+/* Recebida: superfície cinza clara, sem contorno. Era branca com borda — sobre o fundo branco da
+   conversa, a bolha só existia por causa do traço, e uma conversa longa virava uma pilha de
+   retângulos vazados. */
 .bubble.in {
-  background: var(--navy);
-  border: 1px solid var(--line);
+  background: var(--navy-raised);
+  border: 1px solid transparent;
+  color: var(--ink);
   align-self: flex-start;
-  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 5px;
   position: relative;
 }
 
@@ -2931,11 +2935,13 @@ table.tbl tbody tr:hover td {
   }
 }
 
+/* Enviada: superfície de contraste na identidade nova. Era azul — a única área grande de cor
+   sólida que sobrava no produto, e ela reaparecia dezenas de vezes numa conversa só. */
 .bubble.out {
-  background: var(--blue);
-  color: #fff;
+  background: linear-gradient(180deg, #2b2b31 0%, #17171b 100%);
+  color: var(--white);
   align-self: flex-end;
-  border-bottom-right-radius: 4px;
+  border-bottom-right-radius: 5px;
   /* Igual ao `.bubble.in`: o coração da curtida e o botão "⋮" são posicionados em relação ao
      balão, então ele precisa ser a referência dos dois lados da conversa. */
   position: relative;
@@ -14613,4 +14619,163 @@ table.tbl .name-cell .r {
   font-size: 11px;
   font-weight: var(--fw-light);
   color: var(--text-muted);
+}
+
+
+/* ==========================================================================
+   Conversa no formato do Direct
+   ========================================================================== */
+
+/* A citação dentro da bolha ENVIADA precisa do contraste invertido: a faixa cinza clara e a tinta
+   escura desaparecem sobre o fundo preto da bolha. */
+.bubble.out .wa-citacao {
+  background: rgba(255, 255, 255, 0.12);
+  border-left-color: rgba(255, 255, 255, 0.5);
+}
+
+.bubble.out .wa-citacao-autor {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.bubble.out .wa-citacao-texto {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Área de mensagens com superfície própria: separa a conversa do cabeçalho e do campo de escrever,
+   e é o que faz a bolha cinza da mensagem recebida ter de onde se destacar. */
+.painel-conversa-mensagens {
+  background: var(--navy);
+  border-radius: var(--radius-lg);
+  padding: 14px 12px;
+}
+
+/* Cabeçalho no formato do Direct: foto maior, nome forte, canal em linha leve embaixo. */
+.painel-conversa-topo .avatar {
+  width: 42px;
+  height: 42px;
+}
+
+.painel-conversa-topo .name-cell .n {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-snug);
+  color: var(--ink);
+  margin: 0;
+}
+
+.painel-conversa-topo .name-cell .s {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+/* Sem a linha embaixo do cabeçalho: a área de mensagens logo abaixo já tem superfície própria, e
+   as duas coisas juntas viravam duas separações para o mesmo corte. */
+.painel-conversa-topo {
+  border-bottom: none;
+  padding-bottom: 10px;
+}
+
+/* ==========================================================================
+   Card do plano (Configurações → Plano e cobrança)
+   Estética das referências de preço: preço grande antes de qualquer lista, ação preta ocupando a
+   largura, recursos com marca de conferido embaixo. Um plano só — os três níveis da referência
+   existem lá porque lá há três planos.
+   ========================================================================== */
+
+.preco-card {
+  max-width: 380px;
+  padding: 26px 26px 24px;
+  border-radius: var(--radius-xl);
+  background: var(--surface-elevated);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-md);
+}
+
+.preco-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.preco-nome {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+.preco-desc {
+  margin: 7px 0 0;
+  font-size: 12.5px;
+  line-height: var(--lh-base);
+  color: var(--text-muted);
+}
+
+/* O preço é a primeira coisa que se lê: grande, preto e com o período em corpo normal ao lado —
+   o par forte+leve das referências. */
+.preco-valor {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 20px 0 18px;
+  font-family: var(--display);
+  font-size: 40px;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.preco-periodo {
+  font-size: 13px;
+  font-weight: var(--fw-regular);
+  letter-spacing: normal;
+  color: var(--text-muted);
+}
+
+.preco-recursos {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.preco-recursos-titulo {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.preco-recursos ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preco-recursos li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+/* A marca de conferido num círculo, como na referência — sem ela a lista lê como texto corrido. */
+.preco-recursos li svg {
+  flex: none;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  color: var(--ink);
 }

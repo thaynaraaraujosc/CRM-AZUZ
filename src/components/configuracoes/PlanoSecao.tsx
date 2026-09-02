@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useEquipe } from "@/lib/equipe-context";
 import { PLANOS, type PlanoId } from "@/lib/assinatura/planos";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
+import { IconCheck } from "@/components/icons";
 
 type Assinatura = {
   plano: string;
@@ -294,26 +295,37 @@ export function PlanoSecao() {
         ) : null}
       </div>
 
+      {/* Card do plano na linguagem das referências de preço: preço grande primeiro, recursos com
+          marca de conferido, ação preta ocupando a largura. Um plano só — não invento os três
+          níveis da referência, porque só existe um de verdade. */}
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Plano</p>
-        <div className="config-canais-grid">
-          <div className="config-canal-card">
-            <div className="config-canal-card-h">
-              <span className="n">{PLANOS.completo.nome}</span>
-              {assinatura?.status === "ativa" ? <span className="pill on">Atual</span> : null}
-            </div>
-            <p className="plano-valor" style={{ fontSize: 20 }}>
-              {formatarMoeda(PLANOS.completo.valor)}
-              <span style={{ fontSize: 11 }}>/mês</span>
-            </p>
-            <ul style={{ margin: "6px 0 10px", paddingLeft: 18, fontSize: 11.5, color: "var(--text-muted)" }}>
+        <div className="preco-card">
+          <div className="preco-topo">
+            <span className="preco-nome">AZUZ CRM {PLANOS.completo.nome}</span>
+            {assinatura?.status === "ativa" ? <span className="pill on">Plano atual</span> : null}
+          </div>
+          <p className="preco-desc">Tudo que o CRM faz, sem limite de funil e sem cobrar por usuário.</p>
+          <p className="preco-valor">
+            {formatarMoeda(PLANOS.completo.valor)}
+            <span className="preco-periodo">/mês</span>
+          </p>
+          <button
+            type="button"
+            className="btn primary block"
+            onClick={() => { setPlanoEmEdicao("completo"); setErroEnvio(null); }}
+          >
+            {assinatura?.status === "ativa" ? "Atualizar forma de pagamento" : "Assinar plano"}
+          </button>
+          <div className="preco-recursos">
+            <span className="preco-recursos-titulo">O que está incluído</span>
+            <ul>
               {PLANOS.completo.recursos.map((r) => (
-                <li key={r}>{r}</li>
+                <li key={r}>
+                  <IconCheck width={13} height={13} aria-hidden="true" />
+                  {r}
+                </li>
               ))}
             </ul>
-            <button type="button" className="btn ghost" onClick={() => { setPlanoEmEdicao("completo"); setErroEnvio(null); }}>
-              {assinatura?.status === "ativa" ? "Atualizar forma de pagamento" : "Assinar agora"}
-            </button>
           </div>
         </div>
       </div>
