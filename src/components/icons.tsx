@@ -348,6 +348,29 @@ export function IconImportar(props: Props) {
   );
 }
 
+/** Entrar — seta apontando pra dentro de uma porta. Selo do cartão de login. */
+export function IconEntrar(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+      <path d="M10 17l5-5-5-5" />
+      <path d="M15 12H3" />
+    </svg>
+  );
+}
+
+/** Criar conta — pessoa com um mais. Selo do cartão de cadastro. */
+export function IconNovaConta(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M15 20v-1a5 5 0 0 0-5-5H7a5 5 0 0 0-5 5v1" />
+      <circle cx="8.5" cy="7" r="4" />
+      <path d="M19 8v6" />
+      <path d="M22 11h-6" />
+    </svg>
+  );
+}
+
 /** Expandir para tela cheia — editor de automações. */
 export function IconExpandir(props: Props) {
   return (

@@ -5,6 +5,8 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+import { IconEntrar } from "@/components/icons";
+
 export default function LoginPage() {
   return (
     <Suspense fallback={null}>
@@ -70,14 +72,21 @@ function LoginForm() {
         <span className="auth-brand-name">azuz crm</span>
       </Link>
       <form className="auth-card card" onSubmit={handleSubmit}>
-        <h1 className="auth-title">Entrar no CRM AZUZ</h1>
+        <span className="auth-selo" aria-hidden="true">
+          <IconEntrar width={20} height={20} />
+        </span>
+        <h1 className="auth-title">Acesse sua conta</h1>
+        <p className="auth-sub">Entre para continuar de onde parou no seu CRM.</p>
 
+        {/* O rótulo continua no HTML, escondido por CSS — o campo precisa dele pra leitor de tela,
+            mesmo com o placeholder dizendo a mesma coisa visualmente. */}
         <div className="field">
           <label htmlFor="email">E-mail</label>
           <input
             id="email"
             type="email"
             className="input"
+            placeholder="E-mail"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -91,6 +100,7 @@ function LoginForm() {
             id="senha"
             type="password"
             className="input"
+            placeholder="Senha"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             required
@@ -109,7 +119,7 @@ function LoginForm() {
         </button>
 
         <p className="auth-rodape">
-          Ainda não tem conta? <Link href="/cadastro">Cadastre sua empresa</Link>
+          Não possui conta? <Link href="/cadastro">Criar conta</Link>
         </p>
       </form>
     </div>

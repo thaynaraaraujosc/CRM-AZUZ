@@ -5,6 +5,8 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+import { IconNovaConta } from "@/components/icons";
+
 export default function CadastroPage() {
   const router = useRouter();
   const [empresa, setEmpresa] = useState("");
@@ -55,7 +57,11 @@ export default function CadastroPage() {
         <span className="auth-brand-name">azuz crm</span>
       </Link>
       <form className="auth-card card" onSubmit={handleSubmit}>
-        <h1 className="auth-title">Cadastre sua empresa</h1>
+        <span className="auth-selo" aria-hidden="true">
+          <IconNovaConta width={20} height={20} />
+        </span>
+        <h1 className="auth-title">Crie sua conta</h1>
+        <p className="auth-sub">Cadastre sua empresa e comece a usar o CRM hoje.</p>
 
         <div className="field">
           <label htmlFor="empresa">Nome da empresa</label>
@@ -63,6 +69,7 @@ export default function CadastroPage() {
             id="empresa"
             type="text"
             className="input"
+            placeholder="Nome da empresa"
             value={empresa}
             onChange={(e) => setEmpresa(e.target.value)}
             required
@@ -75,6 +82,7 @@ export default function CadastroPage() {
             id="nome"
             type="text"
             className="input"
+            placeholder="Seu nome"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             required
@@ -87,6 +95,7 @@ export default function CadastroPage() {
             id="email"
             type="email"
             className="input"
+            placeholder="E-mail"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -100,6 +109,7 @@ export default function CadastroPage() {
             id="senha"
             type="password"
             className="input"
+            placeholder="Senha"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             required
@@ -115,7 +125,7 @@ export default function CadastroPage() {
         </button>
 
         <p className="auth-rodape">
-          Já tem conta? <Link href="/login">Entrar</Link>
+          Já possui conta? <Link href="/login">Entrar</Link>
         </p>
       </form>
     </div>

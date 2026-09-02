@@ -74,20 +74,28 @@
   /* -------- Tokens (Etapa 2, item 44) — raio, sombra, espaçamento, transição, cor semântica.
      Aditivo: nada existente referenciava esses nomes antes, então introduzir aqui não muda o visual
      de quem já usa valores fixos — só dá um vocabulário comum pro que for tocado daqui pra frente. */
-  /* Escala de raio: sm = input/badge · md = botão/controle · lg = card · xl = modal/painel. */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  /* Escala de raio: sm = etiqueta · md = input/botão · lg = card · xl = modal/painel.
+     Subiu um degrau inteiro: nas referências o raio é parte do acabamento — canto muito fechado
+     dá aparência de tabela de sistema, não de produto. */
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
 
   /* Sombras quase apagadas de propósito: profundidade agora vem de superfície + borda + contraste.
      Card não pode parecer flutuando trinta pixels acima da página. `--shadow-lg` continua forte o
      bastante só onde há sobreposição real (modal, popover) — ali a sombra informa camada. */
-  --shadow-xs: 0 1px 1px rgba(9, 9, 11, 0.03);
-  --shadow-sm: 0 1px 2px rgba(9, 9, 11, 0.04);
-  --shadow-md: 0 1px 3px rgba(9, 9, 11, 0.05);
-  --shadow-lg: 0 8px 28px rgba(9, 9, 11, 0.1);
-  --shadow-hover: 0 2px 8px rgba(9, 9, 11, 0.06);
+  /* Duas camadas em cada sombra: um contato curto e escuro logo abaixo do elemento, e um halo
+     largo e quase transparente. É essa combinação que faz a peça parecer pousada numa superfície —
+     uma sombra só, difusa, faz o elemento parecer que está boiando. */
+  --shadow-xs: 0 1px 2px rgba(9, 9, 11, 0.05);
+  --shadow-sm: 0 1px 2px rgba(9, 9, 11, 0.06), 0 2px 6px rgba(9, 9, 11, 0.04);
+  --shadow-md: 0 1px 3px rgba(9, 9, 11, 0.07), 0 6px 16px rgba(9, 9, 11, 0.05);
+  --shadow-lg: 0 2px 6px rgba(9, 9, 11, 0.06), 0 24px 56px rgba(9, 9, 11, 0.12);
+  --shadow-hover: 0 2px 4px rgba(9, 9, 11, 0.07), 0 10px 24px rgba(9, 9, 11, 0.07);
+  /* Sombra do botão preto: precisa nascer da própria cor dele, senão vira um borrão cinza embaixo
+     de uma peça escura. */
+  --shadow-preto: 0 1px 2px rgba(9, 9, 11, 0.28), 0 6px 16px rgba(9, 9, 11, 0.2);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -1180,10 +1188,12 @@ table {
   /* Branco sobre o piso off-white: a separação vem da borda, não de mais um tom de cinza. Com o
      card cinza, piso, corpo e campo eram três cinzas quase idênticos empilhados — a origem da
      sensação de caixa dentro de caixa. */
+/* O card se separa por SOMBRA, não por traço: a borda vira um fio quase transparente, só pra dar
+     o corte exato onde a sombra sozinha ficaria vaga. */
   background: var(--surface-elevated);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Cabeçalho de painel sem a linha embaixo: quando cada seção tem título, contorno e divisória, a
@@ -1202,29 +1212,24 @@ table {
    nenhuma mudança de marcação) herdam o visual escuro automaticamente, sem precisar de uma cópia
    paralela de cada estilo. */
 .auth-page {
-  /* Mesma paleta da landing (`--lp-*` em page.tsx) e do tema escuro do app: preto neutro, cinzas
-     e o azul da marca. Era marinho — o que fazia a ponte entre a landing e o app passar por uma
-     terceira cor. */
-  --navy: #131315;
-  --navy-raised: rgba(23, 23, 26, 0.8);
-  --navy-raised-2: rgba(32, 32, 36, 0.9);
-  --navy-deep: #08080a;
+  /* Entrar e cadastrar são a primeira tela de quem vira cliente, e a última antes do app. Eram
+     escuras — a pessoa saía de uma landing escura, passava por um cartão escuro e caía num CRM
+     branco. Agora seguem a mesma linguagem do produto: fundo claro, cartão branco, tinta preta e
+     ação preta. */
+  --navy: #ffffff;
+  --navy-raised: #f5f6f8;
+  --navy-raised-2: #eceef2;
+  --navy-deep: #ffffff;
+  --surface-elevated: #ffffff;
 
-  --blue: #5b8cff;
-  --blue-soft: rgba(91, 140, 255, 0.18);
-  --blue-soft-2: rgba(91, 140, 255, 0.1);
-  --blue-strong: #8ab4ff;
+  --line: rgba(9, 9, 11, 0.1);
+  --line-soft: rgba(9, 9, 11, 0.06);
+  --line-strong: rgba(9, 9, 11, 0.18);
 
-  --line: rgba(255, 255, 255, 0.1);
-  --line-soft: rgba(255, 255, 255, 0.06);
-
-  --ink: #fafafa;
-  --text-muted: rgba(250, 250, 250, 0.64);
-  --text-faint: rgba(250, 250, 250, 0.46);
-
-  --danger: #f87171;
-  --success: #34d399;
-  --grid-line: rgba(255, 255, 255, 0.035);
+  --ink: #09090b;
+  --ink-nome: #2f2f36;
+  --text-muted: rgba(9, 9, 11, 0.64);
+  --text-faint: rgba(9, 9, 11, 0.54);
 
   min-height: 100vh;
   display: flex;
@@ -1235,23 +1240,11 @@ table {
   padding: 24px;
   position: relative;
   overflow: hidden;
-  /* Um brilho só, atrás do cartão — mesma decisão da landing. */
+  /* Um respiro de cinza atrás do cartão, pra ele não ficar branco sobre branco. */
   background:
-    radial-gradient(1000px 520px at 50% -10%, rgba(91, 140, 255, 0.12), transparent 62%),
-    var(--navy-deep);
+    radial-gradient(900px 520px at 50% 0%, #f4f5f7, transparent 70%),
+    #fbfbfc;
   color: var(--ink);
-}
-
-.auth-page::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 45%, transparent 100%);
-  pointer-events: none;
 }
 
 .auth-brand {
@@ -1264,19 +1257,20 @@ table {
   color: var(--ink);
 }
 
+/* Brasão: era o gradiente azul-roxo com brilho da paleta antiga — sobrou nas telas de entrada
+   depois que o app e a sidebar já tinham sido convertidos. Preto sólido, como a ação principal. */
 .auth-mark {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #4c86ff, #8a3ffc);
-  color: #fff;
+  background: var(--ink);
+  color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--display);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   font-size: 15px;
-  box-shadow: 0 0 22px rgba(76, 134, 255, 0.5);
 }
 
 .auth-brand-name {
@@ -1290,21 +1284,48 @@ table {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 380px;
-  padding: 28px 26px;
+  max-width: 400px;
+  padding: 34px 32px 30px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  gap: 0;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
 }
 
+/* Selo no topo do cartão: dá um ponto de entrada pro olho e evita que a tela comece direto num
+   título solto no meio do branco. */
+.auth-selo {
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 18px;
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+}
 
 .auth-title {
   font-family: var(--display);
-  font-size: 19px;
-  margin: 0 0 18px;
+  font-size: 21px;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-tight);
+  text-align: center;
+  margin: 0 0 6px;
   color: var(--ink);
+}
+
+/* Linha de apoio sob o título: é ela que faz o par forte+leve da referência. */
+.auth-sub {
+  margin: 0 0 22px;
+  text-align: center;
+  font-size: 13px;
+  line-height: var(--lh-base);
+  color: var(--text-muted);
 }
 
 .auth-card .field {
@@ -1337,10 +1358,30 @@ table {
 }
 
 .auth-rodape {
-  margin: 16px 0 0;
+  margin: 18px 0 0;
   font-size: 12.5px;
-  color: var(--text-faint);
+  color: var(--text-muted);
   text-align: center;
+}
+
+.auth-rodape a {
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+}
+
+.auth-rodape a:hover {
+  text-decoration: underline;
+}
+
+/* Rótulo dos campos some: com placeholder dentro do campo preenchido, o rótulo em caixa alta acima
+   dobrava a informação e quebrava o ritmo do cartão. */
+.auth-card .field label {
+  display: none;
+}
+
+.auth-card .input {
+  width: 100%;
 }
 
 .card-link {
@@ -1652,11 +1693,13 @@ table {
 
 /* Base de `.input` promovida de `.field .input` pra cá (item 51) — algumas telas usam o input fora
    de um `.field` (busca, filtro solto) e ficavam sem nenhum estilo, só a borda nativa do navegador. */
+/* Campo preenchido, com a borda quase invisível: quem define o campo é a superfície, não o
+   contorno. Uma tela com dez contornos cinza parados é a definição de wireframe. */
 .input {
   background: var(--navy-raised);
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  padding: 9px 12px;
+  padding: 11px 13px;
   font-size: 12.5px;
   font-family: inherit;
   color: var(--ink);
@@ -1670,8 +1713,8 @@ table {
 .input:focus {
   outline: none;
   background: var(--surface-elevated);
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px var(--blue-soft-2);
+  border-color: var(--gray-400);
+  box-shadow: 0 0 0 3px var(--gray-100), var(--shadow-xs);
 }
 
 .input:disabled {
