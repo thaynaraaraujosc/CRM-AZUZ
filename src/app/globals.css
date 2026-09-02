@@ -5,35 +5,44 @@
    ========================================================================== */
 
 :root {
+  /* Quatro níveis, com degraus grandes o bastante pra serem percebidos. Antes o piso, o corpo do
+     card e a área interna ficavam dentro de 2% de luminosidade um do outro — tecnicamente
+     diferentes, visualmente o mesmo plano. */
   --navy: #ffffff;
-  --navy-raised: #fafafa;
-  --navy-raised-2: #f4f4f5;
+  --navy-raised: #f7f7f9;
+  --navy-raised-2: #f0f0f3;
   --navy-deep: #ffffff;
   /* "Piso" atrás dos painéis flutuantes (sidebar + área principal). Era o marinho da marca — o que
      dava ao app logado a cara de dashboard colorido, com dezenas de cartões brancos recortados
      sobre um fundo forte. Agora é off-white: os painéis brancos quase se fundem ao piso e a página
      lê como uma superfície contínua, com a separação vindo da borda, não do contraste de cor. */
-  --canvas: #f4f4f5;
+  /* Descido um degrau: com off-white claro demais, o painel branco não se descolava do piso. */
+  --canvas: #eaeaee;
 
   /* Azul da marca — daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
   --blue: #2e6bff;
-  --blue-soft: var(--blue-soft-2);
-  --blue-soft-2: rgba(46, 107, 255, 0.06);
+  --blue-soft: rgba(46, 107, 255, 0.14);
+  --blue-soft-2: rgba(46, 107, 255, 0.07);
   /* Azul mais escuro que --blue — usado onde o azul vibrante padrão fica claro demais pra servir
      de "ligado"/confirmação (ex.: toggle ativo). */
   --blue-strong: #1d4fd1;
 
-  /* Bordas organizam, não são protagonistas: cinza quase imperceptível, nunca traço escuro. */
-  --line: rgba(9, 9, 11, 0.08);
-  --line-soft: rgba(9, 9, 11, 0.05);
+  /* Bordas organizam, não são protagonistas — mas precisam ser vistas. A 8% ela sumia sobre branco
+     e o card ficava sem começo nem fim. `--line-strong` é pro que precisa de recorte de verdade:
+     card dentro de card, cabeçalho de tabela, item destacado. */
+  --line: rgba(9, 9, 11, 0.13);
+  --line-soft: rgba(9, 9, 11, 0.08);
+  --line-strong: rgba(9, 9, 11, 0.2);
 
   /* Preto neutro no lugar do marinho: o texto parava de ser preto e puxava azul, o que somado ao
      piso marinho fazia a interface inteira ter temperatura de marca em vez de neutralidade. */
   --ink: #09090b;
   --white: #ffffff;
-  --text-muted: rgba(9, 9, 11, 0.58);
-  --text-faint: rgba(9, 9, 11, 0.46);
+  /* Secundário sobe de 58% pra 64%; terciário, de 46% pra 54%. Cinza claro fica reservado pra
+     informação de fato acessória — data, contador, rodapé —, não pra conteúdo que se lê. */
+  --text-muted: rgba(9, 9, 11, 0.64);
+  --text-faint: rgba(9, 9, 11, 0.54);
 
   --display: var(--font-display), Poppins, sans-serif;
   --body: var(--font-body), Montserrat, sans-serif;
@@ -65,6 +74,19 @@
 
   --transition-fast: 0.12s ease;
   --transition-base: 0.18s ease;
+
+  /* Nomes do design system apontando pros tokens que o CSS já usa. Servem pra escrever componente
+     novo com vocabulário claro sem renomear as 1500 referências existentes de uma vez — as duas
+     formas apontam pro mesmo valor, então não há como um lado divergir do outro. */
+  --background: var(--canvas);
+  --surface: var(--navy);
+  --surface-secondary: var(--navy-raised);
+  --surface-tertiary: var(--navy-raised-2);
+  --border: var(--line);
+  --border-strong: var(--line-strong);
+  --text-primary: var(--ink);
+  --text-secondary: var(--text-muted);
+  --accent: var(--blue);
 
   /* Reestruturação de design (fase 0) — escala de cinzas nomeada, derivada de `--ink` com opacidade
      crescente (mesmo princípio já usado em `--text-muted`/`--text-faint`, só preenchendo os
@@ -146,9 +168,9 @@
    é uma diferença de luz — não um traço. Era marinho; agora é preto neutro, pela mesma razão do
    tema claro: a cor da marca vive no accent, não na superfície. */
 :root[data-theme="dark"] {
-  --navy: #131315;
-  --navy-raised: #17171a;
-  --navy-raised-2: #202024;
+  --navy: #141416;
+  --navy-raised: #1c1c1f;
+  --navy-raised-2: #252529;
   --navy-deep: #09090b;
   --canvas: #08080a;
 
@@ -162,12 +184,13 @@
 
   --grid-line: rgba(255, 255, 255, 0.03);
 
-  --line: rgba(255, 255, 255, 0.09);
-  --line-soft: rgba(255, 255, 255, 0.055);
+  --line: rgba(255, 255, 255, 0.13);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.22);
 
   --ink: #fafafa;
-  --text-muted: rgba(250, 250, 250, 0.64);
-  --text-faint: rgba(250, 250, 250, 0.5);
+  --text-muted: rgba(250, 250, 250, 0.7);
+  --text-faint: rgba(250, 250, 250, 0.56);
 
   --gray-50: rgba(250, 250, 250, 0.03);
   --gray-100: rgba(250, 250, 250, 0.05);
@@ -441,8 +464,8 @@ table {
   border-radius: var(--radius-md);
   color: var(--text-muted);
   font-size: 12.5px;
-  font-weight: 600;
-  transition: background var(--transition-base), color var(--transition-base), box-shadow var(--transition-base);
+  font-weight: var(--fw-medium);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 /* Barra de destaque do item ativo — mesmo princípio de "accent bar" usado em produtos SaaS
@@ -482,6 +505,7 @@ table {
 .nav-item svg {
   width: 17px;
   height: 17px;
+  color: var(--text-faint);
   flex: 0 0 auto;
 }
 
@@ -501,9 +525,13 @@ table {
   color: var(--ink);
 }
 
+/* Selecionado tem que ser achado de relance: fundo mais firme que o hover, texto em preto cheio e
+   peso maior — os três juntos, mais a barra azul. Com só um deles, o item ativo some numa lista de
+   doze. O hover fica um degrau abaixo, senão passar o mouse parece selecionar. */
 .nav-item.active {
   background: var(--surface-active);
   color: var(--ink);
+  font-weight: var(--fw-semibold);
 }
 
 .nav-item.active svg {
@@ -788,6 +816,7 @@ table {
   flex: 1;
   overflow: auto;
   padding: 22px 26px 32px;
+  background: var(--navy-raised);
 }
 
 /* ---------------- Primitivos ---------------- */
@@ -1379,10 +1408,13 @@ table {
   border-bottom: 1px solid var(--line);
 }
 
+/* Título de painel: um degrau acima do corpo em tamanho e peso, e sempre em tinta cheia. */
 .panel-h h4 {
-  font-size: var(--fs-card-title);
-  font-weight: 700;
-  font-family: var(--body);
+  font-size: var(--fs-section-title);
+  font-weight: var(--fw-semibold);
+  font-family: var(--display);
+  color: var(--ink);
+  letter-spacing: -0.01em;
 }
 
 .panel-h .link {
@@ -2355,10 +2387,12 @@ table.tbl tbody tr:hover td {
   box-shadow: 0 0 0 2px var(--success-soft);
 }
 
+/* Etiqueta de status/origem: metadado, o degrau mais discreto da linha da conversa — mas legível.
+   Estava em 9px, tamanho em que caixa alta com espaçamento vira ruído cinza. */
 .tag {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-size: 9.5px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-faint);
 }
@@ -2409,8 +2443,9 @@ table.tbl tbody tr:hover td {
 }
 
 .conv-card .cname {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
   flex: 1;
   min-width: 0;
 }
@@ -3044,10 +3079,10 @@ table.tbl tbody tr:hover td {
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--text-faint);
-  color: #fff;
+  background: var(--blue);
+  color: var(--white);
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3124,7 +3159,32 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   gap: 9px;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
+}
+
+/* Ordem de leitura da linha: 1) nome, 2) estado, 3) mensagem, 4) horário. Cada degrau muda peso,
+   tamanho E cor ao mesmo tempo — só uma das três não abre distância suficiente. */
+.wa-row .cname {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  line-height: var(--lh-tight);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.wa-row .ctime {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: var(--fw-regular);
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
 }
 
 .wa-row .avatar {
@@ -3142,9 +3202,23 @@ table.tbl tbody tr:hover td {
 .wa-row .cmsg-texto {
   flex: 1 1 auto;
   min-width: 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/* Conversa não lida: o nome fica em preto cheio e a prévia ganha peso. Sem isso, a única marca de
+   não lida era o contador no canto — fácil de não ver numa lista longa. */
+.wa-row.nao-lida .cname {
+  font-weight: var(--fw-semibold);
+}
+
+.wa-row.nao-lida .cmsg-texto {
+  color: var(--ink);
+  font-weight: var(--fw-medium);
 }
 
 .wa-row .cr3 {
@@ -12055,19 +12129,24 @@ button.camp-row:hover {
   border-color: var(--gray-300);
   background: var(--navy-raised);
 }
+/* Três degraus bem separados: número grande e preto, rótulo pequeno em caixa alta, descrição em
+   corpo normal. Antes o número era 20px e o rótulo 10,5px — perto demais pra um dizer "olhe aqui
+   primeiro". */
 .inicio-stat-mini .n {
-  font-size: var(--fs-indicator);
-  font-weight: var(--fw-semibold);
+  font-size: 26px;
+  font-weight: 700;
   line-height: var(--lh-tight);
   color: var(--ink);
   font-family: var(--display);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 .inicio-stat-mini .r {
   font-size: var(--fs-caption);
-  font-weight: var(--fw-medium);
-  letter-spacing: 0.02em;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 .inicio-stat-mini.is-perdido .n {
   color: var(--danger);
@@ -12077,11 +12156,11 @@ button.camp-row:hover {
 }
 
 .inicio-stat-mini-obs {
-  margin-top: 2px;
+  margin-top: 3px;
   padding-top: 0;
   font-size: var(--fs-secondary);
-  font-weight: var(--fw-medium);
-  color: var(--text-muted);
+  font-weight: var(--fw-regular);
+  color: var(--text-faint);
   text-transform: none;
   letter-spacing: normal;
 }
@@ -12092,7 +12171,7 @@ button.camp-row:hover {
   gap: 4px;
 }
 .inicio-stat-grande .n {
-  font-size: 34px;
+  font-size: 38px;
 }
 .inicio-stat-grande .r {
   font-size: var(--fs-body);
@@ -12117,6 +12196,9 @@ button.camp-row:hover {
 
 /* ------------------------------- Card padrão de item do dia ------------------------------- */
 
+/* Cada pendência é uma unidade fechada: fundo branco recortado da área interna cinza da seção,
+   borda perceptível e a faixa de urgência à esquerda. Antes era cinza sobre cinza com borda a 8% —
+   o conjunto lia como um bloco só, não como itens separáveis. */
 .central-dia-card {
   display: flex;
   gap: var(--space-3);
@@ -12124,15 +12206,17 @@ button.camp-row:hover {
   padding: var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
-  background: var(--navy-raised-2);
-  border-left: 3px solid var(--line);
+  background: var(--navy);
+  border-left: 3px solid var(--line-strong);
   text-decoration: none;
   color: inherit;
-  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+  transition: background var(--transition-base), border-color var(--transition-base),
+    box-shadow var(--transition-base);
 }
 .central-dia-card:hover {
-  box-shadow: var(--shadow-xs);
-  border-color: var(--gray-300);
+  background: var(--navy-raised);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-sm);
 }
 .central-dia-card.is-urgente {
   border-left-color: var(--danger);
@@ -12178,14 +12262,20 @@ button.camp-row:hover {
   color: var(--text-faint);
 }
 
+/* Etiqueta de estado: caixa alta e espaçamento de letra fazem ela ser lida como marcador, não como
+   mais uma palavra da frase. */
 .central-dia-badge {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: var(--fw-semibold);
-  padding: 2px 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
   border-radius: 999px;
+  border: 1px solid transparent;
 }
 .central-dia-badge.is-urgente {
   background: var(--danger-soft);
+  border-color: var(--danger-soft);
   color: var(--danger);
 }
 .central-dia-badge.is-atencao {
@@ -12215,9 +12305,9 @@ button.camp-row:hover {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-  font-size: var(--fs-secondary);
+  font-size: var(--fs-caption);
   color: var(--text-faint);
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .central-dia-destaque {
@@ -14206,4 +14296,57 @@ button.camp-row:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+
+/* ==========================================================================
+   Estados interativos — item 9 do refinamento
+   Alguns elementos não davam retorno nenhum ao mouse ou ao teclado: pareciam estáticos mesmo sendo
+   clicáveis. Aqui ficam as regras que faltavam, sempre no mesmo vocabulário: hover = fundo um
+   degrau acima; selecionado = fundo firme + borda/accent; foco = anel azul; desabilitado = opacidade
+   e cursor. Cada componente que já resolvia isso por conta própria continua mandando (é o último
+   bloco do arquivo, mas usa seletores de mesma especificidade).
+   ========================================================================== */
+
+.wa-row:hover {
+  background: var(--surface-hover);
+}
+
+/* Selecionada: barra azul à esquerda mais o fundo. A conversa aberta precisa ser óbvia mesmo com a
+   lista rolando. */
+.wa-row.active {
+  background: var(--blue-soft-2);
+  border-left-color: var(--blue);
+}
+
+.wa-row.active .cname {
+  color: var(--ink);
+}
+
+.activity-row-link:hover {
+  background: var(--surface-hover);
+}
+
+/* Linha de tabela e item de lista: mesmo realce de qualquer outra linha clicável do sistema. */
+.table-row-clicavel:hover,
+.dropdown-item:hover,
+.fchip:hover:not(.active) {
+  background: var(--surface-hover);
+}
+
+/* Anel de foco único pra tudo que recebe teclado e ainda não definia o seu. */
+.fchip:focus-visible,
+.dropdown-item:focus-visible,
+.upload-area:focus-visible,
+.seletor-data-campo:focus-visible,
+.central-dia-card:focus-visible,
+.inicio-stat-mini:focus-visible,
+.timeline-conteudo:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
 }

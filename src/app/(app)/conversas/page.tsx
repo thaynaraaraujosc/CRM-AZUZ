@@ -3936,7 +3936,11 @@ function ConversasPageInner() {
                   key={c.id}
                   role="button"
                   tabIndex={0}
-                  className={`wa-row${active ? " active" : ""}`}
+                  // `nao-lida` deixa o nome e a prévia em preto cheio: antes a única marca de não
+                  // lida era o contador no canto, fácil de perder numa lista longa.
+                  className={`wa-row${active ? " active" : ""}${
+                    c.naoLidas && !lidas.has(c.id) ? " nao-lida" : ""
+                  }`}
                   aria-pressed={active}
                   onClick={() => {
                     setSelectedId(c.id);
