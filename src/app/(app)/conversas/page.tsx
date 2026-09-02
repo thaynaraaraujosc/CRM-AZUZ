@@ -1433,6 +1433,29 @@ function ConversasPageInner() {
   // Mídias liberadas manualmente quando o download automático está desligado pra esse tipo.
   const [midiasLiberadas, setMidiasLiberadas] = useState<Set<string>>(() => new Set());
 
+  /**
+   * Abre a conversa já na última mensagem, e acompanha as que chegam depois.
+   *
+   * Sem isto a conversa abria no começo do histórico: pra ver o que acabou de chegar era preciso
+   * rolar até o fim toda vez — e numa conversa com meses de atendimento isso é muito rolar. É o
+   * comportamento que qualquer aplicativo de mensagem tem, e que o painel do Funil já tinha.
+   *
+   * `instant` na troca de conversa (aparecer no lugar certo de cara, sem animação de rolagem) e
+   * suave quando chega mensagem nova durante a leitura.
+   */
+  const fimDasMensagensRef = useRef<HTMLDivElement>(null);
+  const conversaAnteriorRef = useRef<string | null>(null);
+  const quantidadeDeMensagens = (mensagensExtraPorContato[aberta.nome] ?? []).length;
+
+  useEffect(() => {
+    const trocouDeConversa = conversaAnteriorRef.current !== aberta.id;
+    conversaAnteriorRef.current = aberta.id;
+    fimDasMensagensRef.current?.scrollIntoView({
+      block: "end",
+      behavior: trocouDeConversa ? "instant" : "smooth",
+    });
+  }, [aberta.id, aberta.nome, quantidadeDeMensagens]);
+
   function midiaLiberada(tipo: "imagem" | "video" | "documento", id?: string, url?: string) {
     // Mídia que o CRM JÁ TEM não fica atrás de botão — não há o que baixar, o arquivo existe.
     //
@@ -4285,6 +4308,10 @@ function ConversasPageInner() {
                 </Fragment>
               );
             })}
+            {/* Âncora do fim da conversa. Rolar até ela é mais confiável do que empurrar
+                `scrollTop` na mão: funciona mesmo com imagem ainda carregando, que muda a altura
+                do conteúdo depois que o cálculo já foi feito. */}
+            <div ref={fimDasMensagensRef} />
           </div>
           <div className="chat-input">
             <button
