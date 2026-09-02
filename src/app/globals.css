@@ -296,7 +296,7 @@ table {
 .sidebar {
   width: 216px;
   flex: 0 0 auto;
-  background: var(--navy-raised);
+  background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
@@ -458,8 +458,8 @@ table {
   letter-spacing: 0.03em;
   padding: 2px 6px;
   border-radius: 999px;
-  background: var(--brand-soft, rgba(37, 99, 235, 0.14));
-  color: var(--brand, #2563eb);
+  background: var(--gray-100);
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -481,14 +481,13 @@ table {
 }
 
 .nav-item:hover {
-  background: var(--blue-soft-2);
+  background: var(--surface-hover);
   color: var(--ink);
 }
 
 .nav-item.active {
-  background: var(--blue-soft);
+  background: var(--surface-active);
   color: var(--ink);
-  box-shadow: var(--glow-accent);
 }
 
 .nav-item.active svg {
@@ -783,17 +782,25 @@ table {
   justify-content: center;
   gap: 6px;
   font-family: var(--body);
-  font-weight: 700;
+  /* 700 era peso de título num controle: deixava a tela cheia de texto gritando ao mesmo tempo. */
+  font-weight: var(--fw-semibold);
   font-size: var(--fs-button);
   padding: 9px 15px;
   border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink);
   white-space: nowrap;
   cursor: pointer;
-  transition: filter var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), transform var(--transition-fast);
 }
 
+/* O hover era `brightness(1.14)`, que só funciona em cor forte: num botão claro ele clareava o que
+   já era quase branco (nada acontecia) e no tema escuro clareava o fundo escuro na direção errada.
+   Agora cada variante diz o próprio hover. */
 .btn:hover {
-  filter: brightness(1.14);
+  background: var(--surface-hover);
 }
 
 .btn:active {
@@ -836,33 +843,52 @@ table {
   color: var(--ink);
 }
 
+/* Ação principal — o lugar mais legítimo do azul. Uma por tela, de preferência. */
 .btn.primary {
   background: var(--blue);
+  border-color: var(--blue);
   color: var(--white);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
-.btn.ghost {
-  background: var(--navy-raised);
-  border: 1px solid var(--line);
+.btn.primary:hover {
+  background: var(--blue-strong);
+  border-color: var(--blue-strong);
+}
+
+/* Secundário: neutro, com borda. O fundo era `--navy-raised`, que sobre card branco ficava
+   praticamente invisível. `.secondary` é o mesmo botão sob o nome do design system. */
+.btn.ghost,
+.btn.secondary {
+  background: var(--navy);
+  border-color: var(--line);
   color: var(--ink);
 }
 
-.btn.ghost.active {
+.btn.ghost:hover,
+.btn.secondary:hover {
+  background: var(--surface-hover);
+  border-color: var(--gray-300);
+}
+
+.btn.ghost.active,
+.btn.secondary.active {
   background: var(--blue-soft-2);
   border-color: var(--blue);
   color: var(--blue);
 }
 
 /* Variações novas (item 50) — "discreto" já existe como `.btn.ghost`; faltavam perigo e link. */
-.btn.danger {
+.btn.danger,
+.btn.destructive {
   background: var(--danger-soft);
-  border: 1px solid transparent;
+  border-color: transparent;
   color: var(--danger);
 }
-.btn.danger:hover {
-  filter: none;
+.btn.danger:hover,
+.btn.destructive:hover {
   background: var(--danger);
+  border-color: var(--danger);
   color: var(--white);
 }
 
@@ -871,11 +897,11 @@ table {
   border: none;
   padding: 0;
   color: var(--blue);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   text-decoration: none;
 }
 .btn.link:hover {
-  filter: none;
+  background: none;
   text-decoration: underline;
 }
 
@@ -905,7 +931,7 @@ table {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-md);
-  background: var(--navy-raised);
+  background: var(--navy);
   border: 1px solid var(--line);
   display: flex;
   align-items: center;
@@ -913,10 +939,12 @@ table {
   position: relative;
   flex: 0 0 auto;
   cursor: pointer;
-  transition: filter var(--transition-fast);
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 .icon-btn:hover {
-  filter: brightness(1.1);
+  background: var(--surface-hover);
+  border-color: var(--gray-300);
 }
 .icon-btn:focus-visible {
   outline: 2px solid var(--blue);
@@ -1458,6 +1486,26 @@ table {
 .input:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+  background: var(--gray-50);
+}
+
+/* Erro e sucesso faltavam: o campo inválido não tinha como se anunciar sozinho, e a mensagem de
+   erro ao lado era o único sinal. `aria-invalid` cobre quem já marca o campo pra leitor de tela. */
+.input.erro,
+.input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.input.erro:focus,
+.input[aria-invalid="true"]:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-soft);
+}
+.input.sucesso {
+  border-color: var(--success);
+}
+.input.sucesso:focus {
+  border-color: var(--success);
+  box-shadow: 0 0 0 3px var(--success-soft);
 }
 
 /* `<input type="file" className="input">` (Ações) mostrava o botão nativo do navegador
