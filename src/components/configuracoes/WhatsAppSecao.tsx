@@ -8,6 +8,7 @@ import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { useIntegracaoNaoOficial, type HistoricoSync } from "./useIntegracaoNaoOficial";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
+import { IconAlerta } from "@/components/icons";
 
 /** Semáforo de qualidade que a Meta atribui ao número — cai pra amarelo/vermelho quando as pessoas
  * bloqueiam/denunciam, e vermelho por tempo demais leva a restrição de envio. */
@@ -25,12 +26,12 @@ function SaudeConexaoOficial({ metadados }: { metadados: Record<string, unknown>
     <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
       {banimento ? (
         <p className="hint" style={{ color: "var(--danger)", margin: 0 }}>
-          ⚠ A Meta restringiu esta conta ({banimento}). Resolva pelo WhatsApp Manager.
+          <IconAlerta width={12} height={12} aria-hidden="true" /> A Meta restringiu esta conta ({banimento}). Resolva pelo WhatsApp Manager.
         </p>
       ) : null}
       {pinPendente ? (
         <p className="hint" style={{ color: "var(--danger)", margin: 0 }}>
-          ⚠ Este número já tinha sido registrado antes com outro PIN — informe o PIN antigo pra
+          <IconAlerta width={12} height={12} aria-hidden="true" /> Este número já tinha sido registrado antes com outro PIN — informe o PIN antigo pra
           concluir o registro na Cloud API.
         </p>
       ) : null}
@@ -66,7 +67,7 @@ function SincronizacaoHistoricoStatus({
   if (historico.status === "erro") {
     return (
       <p className="hint" style={{ color: "var(--danger)", marginTop: 10 }}>
-        ⚠ Não consegui terminar de trazer o histórico de conversas ({historico.erro ?? "erro desconhecido"}).
+        <IconAlerta width={12} height={12} aria-hidden="true" /> Não consegui terminar de trazer o histórico de conversas ({historico.erro ?? "erro desconhecido"}).
         As mensagens novas continuam chegando normal.
       </p>
     );
@@ -120,7 +121,7 @@ export function WhatsAppSecao() {
       <div className="config-bloco">
         {erroDoRedirect ? (
           <p className="hint" style={{ color: "var(--danger)", marginBottom: 10 }}>
-            ⚠ Não foi possível conectar: {erroDoRedirect}
+            <IconAlerta width={12} height={12} aria-hidden="true" /> Não foi possível conectar: {erroDoRedirect}
           </p>
         ) : null}
 
@@ -209,7 +210,7 @@ export function WhatsAppSecao() {
               {painelNaoOficialAberto ? (
                 naoOficial.erro || naoOficial.estado?.status === "erro" ? (
                   <p className="hint" style={{ color: "var(--danger)", marginTop: 10 }}>
-                    ⚠ {naoOficial.erro ?? naoOficial.estado?.erroMensagem}
+                    <IconAlerta width={12} height={12} aria-hidden="true" /> {naoOficial.erro ?? naoOficial.estado?.erroMensagem}
                   </p>
                 ) : naoOficial.estado?.status === "aguardando_qr" && naoOficial.estado.metadados?.qrDataUrl ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 14 }}>

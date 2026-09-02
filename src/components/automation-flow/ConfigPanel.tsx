@@ -47,6 +47,7 @@ import { MensagemMidiaForm } from "./forms/MensagemMidiaForm";
 import { MensagemModeloForm } from "./forms/MensagemModeloForm";
 import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
 import { TarefaEventoForm } from "./forms/TarefaEventoForm";
+import { IconAlerta, IconErro } from "@/components/icons";
 
 const TIPOS_OPCOES = new Set(["mensagem_botoes", "mensagem_lista"]);
 const TIPOS_MIDIA = new Set(["mensagem_imagem", "mensagem_video", "mensagem_audio", "mensagem_documento"]);
@@ -184,7 +185,9 @@ export function ConfigPanel({
                   onClick={() => p.nodeId && onSelecionarNode(p.nodeId)}
                   disabled={!p.nodeId}
                 >
-                  <span className="flow-problema-sev">{p.severidade === "erro" ? "⛔" : "⚠️"}</span>
+                  <span className="flow-problema-sev">
+                    {p.severidade === "erro" ? <IconErro width={13} height={13} /> : <IconAlerta width={13} height={13} />}
+                  </span>
                   <span>{p.mensagem}</span>
                 </button>
               ))

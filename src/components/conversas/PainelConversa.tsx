@@ -6,7 +6,7 @@ import type { ConvMensagem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { BolhaMensagem } from "./BolhaMensagem";
-import { IconClose, IconConfiguracoes, IconDoc, IconImage, IconLocalizacao, IconUpload } from "@/components/icons";
+import { IconClose, IconConfiguracoes, IconDoc, IconEnviar, IconImage, IconLocalizacao, IconUpload } from "@/components/icons";
 import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
 import { useFunis } from "@/lib/funis-context";
 
@@ -455,7 +455,7 @@ export function PainelConversa({
               disabled={enviando || !texto.trim()}
               onClick={() => void enviarTexto()}
             >
-              ➤
+              <IconEnviar width={13} height={13} />
             </button>
           </div>
         </div>

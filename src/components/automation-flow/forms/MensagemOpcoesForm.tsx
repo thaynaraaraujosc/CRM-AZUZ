@@ -5,6 +5,7 @@ import { useRef } from "react";
 import type { CanalMensagem, FormatoResposta, MensagemBotoesData, OpcaoBotaoLista } from "@/lib/automation-flow/types";
 import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";
+import { IconClose } from "@/components/icons";
 
 const CANAIS: { valor: CanalMensagem; label: string }[] = [
   { valor: "whatsapp", label: "WhatsApp" },
@@ -183,7 +184,7 @@ export function MensagemOpcoesForm({
                 ↓
               </button>
               <button type="button" className="remove-chip" aria-label="Remover opção" onClick={() => removerOpcao(opcao.id)}>
-                ✕
+                <IconClose width={13} height={13} />
               </button>
             </div>
             {formatoAtual === "menu_numerado" ? (

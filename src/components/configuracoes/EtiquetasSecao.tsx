@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useConfiguracoes } from "@/lib/configuracoes-context";
 import { contatos, funis } from "@/lib/data";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
+import { IconClose } from "@/components/icons";
 
 const CORES = ["#2e6bff", "#0f9d63", "#d8a400", "#d64545", "#8a3ffc", "#0891b2"];
 
@@ -43,7 +44,7 @@ export function EtiquetasSecao() {
               <span className="r">{contagemReal.get(e.nome) ?? 0} contatos</span>
               {!e.real ? (
                 <button type="button" className="remove-chip" aria-label={`Remover ${e.nome}`} onClick={() => removerEtiqueta(e.id)}>
-                  ✕
+                  <IconClose width={13} height={13} />
                 </button>
               ) : (
                 <span className="hint">usada nos dados</span>

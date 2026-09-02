@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconAlerta } from "@/components/icons";
 
 /**
  * Limpeza avulsa do que um WhatsApp já desconectado deixou para trás — conversas, contatos criados
@@ -109,7 +110,7 @@ export function LimparDadosWhatsApp({ aoLimpar }: { aoLimpar?: () => void }) {
         pra não se misturarem com o próximo número que você conectar.
       </p>
       {erro ? (
-        <p className="hint" style={{ color: "var(--danger)", marginTop: 6 }}>⚠ {erro}</p>
+        <p className="hint" style={{ color: "var(--danger)", marginTop: 6 }}><IconAlerta width={12} height={12} aria-hidden="true" /> {erro}</p>
       ) : null}
     </div>
   );

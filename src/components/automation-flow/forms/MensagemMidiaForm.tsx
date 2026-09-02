@@ -13,6 +13,7 @@ import type { CanalMensagem, FlowNodeType, MensagemMidiaData } from "@/lib/autom
 import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";
 import { AreaDeUpload } from "@/components/area-de-upload";
+import { IconClose, IconDoc, IconFolder, IconImage, IconMic, IconVideoCam } from "@/components/icons";
 
 const CANAIS: { valor: CanalMensagem; label: string }[] = [
   { valor: "whatsapp", label: "WhatsApp" },
@@ -71,9 +72,11 @@ function lerComoDataUrl(file: File): Promise<string> {
   });
 }
 
+/** Ícone do tipo de mídia. Eram emojis; agora vêm da biblioteca do CRM, com o mesmo traço do resto
+ * da interface e herdando a cor do tema. */
 function GlyphArquivo({ tipo }: { tipo: TipoMidiaArquivo }) {
-  const glyph = { documento: "📄", imagem: "🖼️", video: "🎬", audio: "🎵" }[tipo];
-  return <span aria-hidden="true">{glyph}</span>;
+  const Icone = { documento: IconDoc, imagem: IconImage, video: IconVideoCam, audio: IconMic }[tipo];
+  return <Icone width={15} height={15} aria-hidden="true" />;
 }
 
 /**
@@ -184,7 +187,7 @@ export function MensagemMidiaForm({
             className="flow-midia-origem-btn"
             onClick={() => setModalAberto(true)}
           >
-            📁 Escolher da biblioteca
+            <IconFolder width={13} height={13} aria-hidden="true" /> Escolher da biblioteca
           </button>
           <button
             type="button"
@@ -192,7 +195,7 @@ export function MensagemMidiaForm({
             onClick={() => fileInputRef.current?.click()}
             disabled={enviando}
           >
-            {enviando ? "Enviando…" : "⬆ Enviar novo arquivo"}
+            {enviando ? "Enviando…" : "Enviar novo arquivo"}
           </button>
         </div>
         <input
@@ -289,7 +292,7 @@ export function MensagemMidiaForm({
             <div className="panel-h">
               <h4>Selecionar arquivo da biblioteca</h4>
               <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setModalAberto(false)}>
-                ✕
+                <IconClose width={12} height={12} />
               </button>
             </div>
             <input

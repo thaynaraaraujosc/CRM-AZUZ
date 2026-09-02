@@ -15,6 +15,7 @@ import {
 import { avaliarGatilho, executarFluxo, type ContextoExecucao, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
+import { IconCadeado } from "@/components/icons";
 
 type OpcaoNome = { id: string; nome: string };
 
@@ -332,7 +333,9 @@ function FormularioPreviewContent() {
     return (
       <div className="form-public-page">
         <div className="form-public-card" style={{ background: "#ffffff" }}>
-          <h2>🔒 Este link precisa de uma senha</h2>
+          <h2>
+            <IconCadeado width={16} height={16} aria-hidden="true" /> Este link precisa de uma senha
+          </h2>
           <p className="hint">Peça o link completo (com a chave de acesso) pra quem te enviou.</p>
         </div>
       </div>

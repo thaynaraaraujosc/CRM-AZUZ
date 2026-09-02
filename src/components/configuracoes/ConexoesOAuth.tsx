@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Toggle } from "@/components/ui";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
+import { IconAlerta } from "@/components/icons";
 
 /**
  * Conexão do Instagram e do Meta Ads como painel — mesmo motivo de `ConexaoQrCode` e
@@ -103,7 +104,7 @@ function ToggleDaIntegracao({
       <p className="hint" style={{ margin: "4px 0 0" }}>{descricao}</p>
       {erro ? (
         <p className="hint" style={{ color: "var(--danger)", margin: "4px 0 0" }}>
-          ⚠ Não foi possível salvar essa preferência. Tente de novo.
+          <IconAlerta width={12} height={12} aria-hidden="true" /> Não foi possível salvar essa preferência. Tente de novo.
         </p>
       ) : null}
     </div>
@@ -190,7 +191,7 @@ export function ConexaoInstagram() {
         <div style={{ marginTop: 8 }}>
           {erroAssinatura ? (
             <p className="hint" style={{ color: "var(--danger)", margin: "0 0 6px" }}>
-              ⚠ A conta conectou, mas o CRM não conseguiu assinar o recebimento de mensagens:{" "}
+              <IconAlerta width={12} height={12} aria-hidden="true" /> A conta conectou, mas o CRM não conseguiu assinar o recebimento de mensagens:{" "}
               {erroAssinatura} — as mensagens do Direct não vão chegar até isso ser resolvido.
             </p>
           ) : null}

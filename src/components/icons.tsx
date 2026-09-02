@@ -348,6 +348,106 @@ export function IconImportar(props: Props) {
   );
 }
 
+/** Expandir para tela cheia — editor de automações. */
+export function IconExpandir(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 3H3v6" />
+      <path d="M15 21h6v-6" />
+      <path d="M3 3l7 7" />
+      <path d="M21 21l-7-7" />
+    </svg>
+  );
+}
+
+/** Ramificação — bloco de condição das automações (o caminho se divide em dois). */
+export function IconRamificacao(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 3v6a3 3 0 0 0 3 3h9" />
+      <path d="M6 12v9" />
+      <path d="M15 9l3 3-3 3" />
+    </svg>
+  );
+}
+
+/** Tomada — bloco de integração das automações. */
+export function IconPlug(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 2v6" />
+      <path d="M15 2v6" />
+      <path d="M6 8h12v3a6 6 0 0 1-12 0V8Z" />
+      <path d="M12 17v5" />
+    </svg>
+  );
+}
+
+/** Bandeira — bloco de fim das automações. */
+export function IconBandeira(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 21V4" />
+      <path d="M5 4h11l-2 4 2 4H5" />
+    </svg>
+  );
+}
+
+/** Lâmpada — explicação/dica ao lado de um bloco. */
+export function IconLampada(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 18h6" />
+      <path d="M10 21h4" />
+      <path d="M12 3a6 6 0 0 0-3.5 10.9c.3.3.5.7.5 1.1h6c0-.4.2-.8.5-1.1A6 6 0 0 0 12 3Z" />
+    </svg>
+  );
+}
+
+/** Frasco — modo de teste do simulador de automações. */
+export function IconFrasco(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 3h6" />
+      <path d="M10 3v6L5 19a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 19l-5-10V3" />
+      <path d="M7.5 15h9" />
+    </svg>
+  );
+}
+
+/** Círculo com barra — bloco pulado/bloqueado no simulador. */
+export function IconBloqueado(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M5.6 5.6l12.8 12.8" />
+    </svg>
+  );
+}
+
+/** Avançar — bloco pulado (segue adiante) no simulador. */
+export function IconPular(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 5l8 7-8 7Z" />
+      <path d="M18 5v14" />
+    </svg>
+  );
+}
+
+/** Troféu — pódio do CRM ao vivo. */
+export function IconTrofeu(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+      <path d="M7 6H4v1a3 3 0 0 0 3 3" />
+      <path d="M17 6h3v1a3 3 0 0 1-3 3" />
+      <path d="M12 14v4" />
+      <path d="M8 21h8" />
+    </svg>
+  );
+}
+
 /** Seta pra cima — enviar arquivo. `IconImportar` é a seta pra baixo (baixar), não serve aqui. */
 export function IconUpload(props: Props) {
   return (

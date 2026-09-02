@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useFunis } from "@/lib/funis-context";
 import type { ColunaFunil } from "@/lib/data";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
+import { IconClose } from "@/components/icons";
 
 /** Funis e etapas (item 24) — reaproveita `useFunis()` de verdade (mesmo dado usado em /funil), com
  * renomear/duplicar/arquivar de funil e reordenar etapas por drag-and-drop. */
@@ -145,7 +146,7 @@ export function FunisSecao() {
                 />
                 <span className="r">{etapa.cards.length} negócios</span>
                 <button type="button" className="remove-chip" aria-label="Excluir etapa" onClick={() => excluirEtapa(funilAberto.id, etapa.id)}>
-                  ✕
+                  <IconClose width={13} height={13} />
                 </button>
               </div>
             ))}

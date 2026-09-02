@@ -10,13 +10,16 @@ import type {
   PassoExecucao,
   RegistroExecucao,
 } from "@/lib/automation-flow/types";
+import { IconBloqueado, IconCheck, IconClose, IconErro, IconFrasco, IconPause, IconPular } from "@/components/icons";
 
-const ICONE_STATUS: Record<PassoExecucao["status"], string> = {
-  ok: "✅",
-  condicao_falsa: "🚫",
-  aguardando: "⏸️",
-  erro: "❌",
-  pulado: "⏭️",
+/** Situação de cada passo simulado. Eram emojis — família tipográfica diferente da interface e
+ * cor fixa que não acompanha o tema. */
+const ICONE_STATUS: Record<PassoExecucao["status"], typeof IconCheck> = {
+  ok: IconCheck,
+  condicao_falsa: IconBloqueado,
+  aguardando: IconPause,
+  erro: IconErro,
+  pulado: IconPular,
 };
 
 const LABEL_SITUACAO: Record<RegistroExecucao["situacao"], string> = {
@@ -172,12 +175,12 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
         <div className="panel-h">
           <h4>Testar automação</h4>
           <button type="button" className="icon-btn subtle" aria-label="Fechar simulador" onClick={onFechar}>
-            ✕
+            <IconClose width={13} height={13} />
           </button>
         </div>
         <div className="flow-side-body">
           <p className="flow-sim-banner">
-            🧪 Modo de teste — nenhuma ação real será executada.
+            <IconFrasco width={13} height={13} aria-hidden="true" /> Modo de teste — nenhuma ação real será executada.
           </p>
           <p className="hint">
             Simulação local — não envia mensagem real, não move card de verdade e não grava nada no CRM. Gatilho:{" "}
@@ -224,7 +227,12 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
               <ul className="flow-sim-passos">
                 {passos.map((passo, i) => (
                   <li key={`${passo.nodeId}-${i}`}>
-                    <span aria-hidden="true">{ICONE_STATUS[passo.status]}</span>
+                    <span aria-hidden="true" style={{ display: "inline-flex" }}>
+                      {(() => {
+                        const IconeStatus = ICONE_STATUS[passo.status];
+                        return <IconeStatus width={13} height={13} />;
+                      })()}
+                    </span>
                     <div>
                       <p className="n">{passo.label}</p>
                       {passo.detalhe ? <p className="r">{passo.detalhe}</p> : null}

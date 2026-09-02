@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { classeOrigem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
 import { IconDoc, IconImage, IconMic, IconSearch } from "@/components/icons";
+import { IconCalendar } from "@/components/icons";
 import { FloatingDropdown, MediaPicker, SegmentChips, Topbar } from "@/components/ui";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import { AreaDeUpload } from "@/components/area-de-upload";
@@ -708,7 +709,7 @@ export default function AcoesPage() {
                     setEnvioAberto((v) => !v);
                   }}
                 >
-                  📅 {formatarDataEnvio(envioData)} às {envioHora} ·{" "}
+                  <IconCalendar width={12} height={12} aria-hidden="true" /> {formatarDataEnvio(envioData)} às {envioHora} ·{" "}
                   {canaisEnvio.length > 0
                     ? canaisEnvio.join(" e ")
                     : "escolha pelo menos um canal"}

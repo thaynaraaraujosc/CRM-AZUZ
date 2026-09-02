@@ -1,6 +1,7 @@
 "use client";
 
 import type { DestinatarioEmailModo, MensagemEmailData, SeSemEmailModo } from "@/lib/automation-flow/types";
+import { IconAlerta } from "@/components/icons";
 
 // Mocado — contas de e-mail configuradas no workspace, sem conexão real.
 const CONTAS_EMAIL: string[] = [];
@@ -57,7 +58,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
       <div className="field">
         <label>Conta de envio (remetente)</label>
         {CONTAS_EMAIL.length === 0 ? (
-          <p className="hint">⚠ Configure uma conta de e-mail antes de utilizar este bloco.</p>
+          <p className="hint"><IconAlerta width={12} height={12} aria-hidden="true" /> Configure uma conta de e-mail antes de utilizar este bloco.</p>
         ) : (
           <select className="input" value={data.remetente ?? ""} onChange={(e) => onChange({ ...data, remetente: e.target.value })}>
             <option value="">Selecione…</option>

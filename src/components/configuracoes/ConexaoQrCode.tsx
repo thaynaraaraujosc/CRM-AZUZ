@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { useIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
+import { IconAlerta } from "@/components/icons";
 
 /**
  * Fluxo de conexão por QR Code, isolado do resto da tela de Configurações.
@@ -56,7 +57,7 @@ export function ConexaoQrCode({ aoConectar }: { aoConectar?: () => void }) {
   if (naoOficial.erro || naoOficial.estado?.status === "erro") {
     return (
       <p className="hint" style={{ color: "var(--danger)", margin: 0 }}>
-        ⚠ {naoOficial.erro ?? naoOficial.estado?.erroMensagem}
+        <IconAlerta width={12} height={12} aria-hidden="true" /> {naoOficial.erro ?? naoOficial.estado?.erroMensagem}
       </p>
     );
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IconAlerta } from "@/components/icons";
 
 /**
  * Mostra o que copiar pro painel da Meta ao cadastrar um webhook — URL e token de verificação.
@@ -102,7 +103,7 @@ export function DadosWebhook() {
       .catch(() => setErro("Não foi possível carregar os dados do webhook."));
   }, []);
 
-  if (erro) return <p className="hint" style={{ color: "var(--danger)" }}>⚠ {erro}</p>;
+  if (erro) return <p className="hint" style={{ color: "var(--danger)" }}><IconAlerta width={12} height={12} aria-hidden="true" /> {erro}</p>;
   if (!dados) return <p className="hint">Carregando…</p>;
 
   return (
@@ -123,7 +124,7 @@ export function DadosWebhook() {
         <LinhaCopiavel rotulo="Token de verificação (os dois usam o mesmo)" valor={dados.tokenVerificacao} />
       ) : (
         <p className="hint" style={{ color: "var(--danger)", margin: "10px 0 0" }}>
-          ⚠ Este servidor está sem o token de verificação configurado (`META_WEBHOOK_VERIFY_TOKEN`).
+          <IconAlerta width={12} height={12} aria-hidden="true" /> Este servidor está sem o token de verificação configurado (`META_WEBHOOK_VERIFY_TOKEN`).
           Enquanto ele não existir, a Meta não consegue cadastrar webhook nenhum.
         </p>
       )}

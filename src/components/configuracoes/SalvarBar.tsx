@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconCheck } from "@/components/icons";
 
 /**
  * Barra de "alterações não salvas" — aparece fixa no rodapé do painel sempre que o rascunho local
@@ -46,7 +47,7 @@ export function SalvarBar({
           </div>
         </>
       ) : (
-        <span className="config-salvar-bar-ok">✓ {mensagemSalvo}</span>
+        <span className="config-salvar-bar-ok"><IconCheck width={12} height={12} aria-hidden="true" /> {mensagemSalvo}</span>
       )}
     </div>
   );

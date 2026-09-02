@@ -19,6 +19,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
+import { IconClose } from "@/components/icons";
 import {
   OPERADORES_LOGICA,
   labelTipoCampo,
@@ -60,7 +61,7 @@ function CondicaoNode({ data }: NodeProps<CondicaoRFNode>) {
   return (
     <div className="flow-node form-logica-node">
       <button type="button" className="form-logica-node-excluir" title="Excluir condição" onClick={onExcluir}>
-        ✕
+        <IconClose width={13} height={13} />
       </button>
       <div className="flow-node-header">
         <span className="flow-node-categoria">SE</span>

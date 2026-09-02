@@ -18,6 +18,7 @@ import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { Simulador } from "./Simulador";
 import { nodeTypes } from "./nodes";
 import { CORES_CATEGORIA, autoLayout, domainEdgesToRF, domainNodesToRF } from "./utils";
+import { IconClose } from "@/components/icons";
 
 /**
  * Lista "funcionalidades utilizadas" — derivada AO VIVO dos nós reais do
@@ -104,7 +105,7 @@ export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; on
             {fluxo.descricao ? <p className="r" style={{ marginTop: 2 }}>{fluxo.descricao}</p> : null}
           </div>
           <button type="button" className="icon-btn subtle" aria-label="Fechar pré-visualização" onClick={onFechar}>
-            ✕
+            <IconClose width={13} height={13} />
           </button>
         </div>
 

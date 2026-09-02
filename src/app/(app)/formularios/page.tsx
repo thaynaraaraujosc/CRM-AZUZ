@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { useEquipe } from "@/lib/equipe-context";
-import { IconAnexo, IconCadeado, IconClose, IconGlobo, IconOlho, IconOlhoFechado } from "@/components/icons";
+import { IconAnexo, IconCadeado, IconClose, IconEdit, IconGlobo, IconOlho, IconOlhoFechado } from "@/components/icons";
 import {
   CAMPOS_CRM_MAPEAVEIS,
   CATEGORIAS_CAMPO,
@@ -647,7 +647,7 @@ export default function FormulariosPage() {
                                     setCampoSelecionadoId(pergunta.id);
                                   }}
                                 >
-                                  ✎
+                                  <IconEdit width={13} height={13} />
                                 </button>
                                 <button
                                   type="button"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { IconAlerta } from "@/components/icons";
 
 /**
  * Embedded Signup v4 da Meta — popup hospedado por eles, aberto de dentro do CRM, que cria a conta
@@ -174,7 +175,7 @@ export function EmbeddedSignupWhatsApp({
   if (!appId || !configId) {
     return (
       <p className="hint" style={{ color: "var(--danger)", marginTop: 10 }}>
-        ⚠ Conexão com a API oficial ainda não configurada no servidor (falta NEXT_PUBLIC_META_APP_ID
+        <IconAlerta width={12} height={12} aria-hidden="true" /> Conexão com a API oficial ainda não configurada no servidor (falta NEXT_PUBLIC_META_APP_ID
         e/ou NEXT_PUBLIC_META_CONFIG_ID).
       </p>
     );
@@ -201,7 +202,7 @@ export function EmbeddedSignupWhatsApp({
       {erro ? (
         <>
           <p className="hint" style={{ color: "var(--danger)", marginTop: 8 }}>
-            ⚠ {erro}
+            <IconAlerta width={12} height={12} aria-hidden="true" /> {erro}
           </p>
           {/* O erro mais comum aqui ("Falha ao iniciar sessão", mostrado dentro do popup da Meta) é
               a configuração de login pertencer a um App diferente do App ID que o site usa. Mostrar

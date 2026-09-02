@@ -3,6 +3,7 @@
 import { Toggle } from "@/components/ui";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
+import { IconAlerta } from "@/components/icons";
 
 /**
  * Instagram e Facebook (Configurações > Integrações) — só conecta o Instagram e controla o que
@@ -48,11 +49,11 @@ export function InstagramSecao() {
 
       {erroDoRedirect ? (
         <p className="hint" style={{ color: "var(--danger)", marginBottom: 10 }}>
-          ⚠ Não foi possível conectar: {erroDoRedirect}
+          <IconAlerta width={12} height={12} aria-hidden="true" /> Não foi possível conectar: {erroDoRedirect}
         </p>
       ) : integracao?.status === "erro" ? (
         <p className="hint" style={{ color: "var(--danger)", marginBottom: 10 }}>
-          ⚠ Erro na última tentativa: {integracao.erroMensagem}
+          <IconAlerta width={12} height={12} aria-hidden="true" /> Erro na última tentativa: {integracao.erroMensagem}
         </p>
       ) : null}
 

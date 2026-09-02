@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconAlerta } from "@/components/icons";
 
 /**
  * Conexão direta de uma conta do WhatsApp Business que JÁ existe no Business Manager da pessoa.
@@ -165,7 +166,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
 
       {erro ? (
         <div>
-          <p className="hint" style={{ color: "var(--danger)", margin: 0 }}>⚠ {erro}</p>
+          <p className="hint" style={{ color: "var(--danger)", margin: 0 }}><IconAlerta width={12} height={12} aria-hidden="true" /> {erro}</p>
           {dica ? <p className="hint" style={{ margin: "4px 0 0" }}>{dica}</p> : null}
         </div>
       ) : null}

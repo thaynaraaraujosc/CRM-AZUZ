@@ -7,17 +7,31 @@ import { resumoIndicaIncompleto, resumoNo, saidasDoNo, temEntrada } from "@/lib/
 import type { FlowNodeCategory } from "@/lib/automation-flow/types";
 import { useFunis } from "@/lib/funis-context";
 import type { FlowRFNode } from "../utils";
+import {
+  IconAlerta,
+  IconAutomacoes,
+  IconBandeira,
+  IconConfiguracoes,
+  IconConversas,
+  IconEquipe,
+  IconLampada,
+  IconPlug,
+  IconRamificacao,
+  IconRelogio,
+} from "@/components/icons";
 
-/** lucide-react não está instalado nesse projeto — glyph curto por categoria no lugar de ícone de verdade. */
-const GLYPH_CATEGORIA: Record<FlowNodeCategory, string> = {
-  gatilho: "⚡",
-  condicao: "🔀",
-  mensagem: "💬",
-  espera: "⏱",
-  acao: "⚙️",
-  humano: "🧑‍💼",
-  integracao: "🔌",
-  fim: "🏁",
+/** Ícone por categoria de bloco. Eram emojis — cada um com desenho, peso e cor de uma fonte
+ * diferente, e o conjunto nunca ia parecer uma família só. Agora saem todos da mesma biblioteca
+ * do CRM: mesmo traço, mesma proporção, e herdam a cor do tema. */
+const ICONE_CATEGORIA: Record<FlowNodeCategory, typeof IconAutomacoes> = {
+  gatilho: IconAutomacoes,
+  condicao: IconRamificacao,
+  mensagem: IconConversas,
+  espera: IconRelogio,
+  acao: IconConfiguracoes,
+  humano: IconEquipe,
+  integracao: IconPlug,
+  fim: IconBandeira,
 };
 
 /** Nome da categoria mostrado em cima do título — a leitura do tipo de bloco precisa funcionar sem abrir o nó. */
@@ -75,7 +89,10 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
 
       <div className="flow-node-header">
         <span className="flow-node-icon" aria-hidden="true">
-          {GLYPH_CATEGORIA[flowNode.category]}
+          {(() => {
+            const IconeCategoria = ICONE_CATEGORIA[flowNode.category];
+            return <IconeCategoria width={14} height={14} />;
+          })()}
         </span>
         <span className="flow-node-textos">
           <span className="flow-node-categoria">{NOME_CATEGORIA[flowNode.category]}</span>
@@ -88,7 +105,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             title={problemas.map((p) => p.mensagem).join(" · ")}
             aria-label={`Problema: ${problemas[0]?.mensagem ?? ""}`}
           >
-            {temErro ? "⛔" : "⚠️"}
+            <IconAlerta width={13} height={13} />
           </span>
         ) : null}
       </div>
@@ -98,13 +115,21 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         const incompleto = resumoIndicaIncompleto(resumo);
         return (
           <div className={`flow-node-body${incompleto ? " flow-node-body-incompleto" : ""}`}>
-            {incompleto ? <span aria-hidden="true">⚠ </span> : null}
+            {incompleto ? (
+              <span aria-hidden="true" style={{ display: "inline-flex", verticalAlign: "-2px", marginRight: 4 }}>
+                <IconAlerta width={12} height={12} />
+              </span>
+            ) : null}
             {resumo}
           </div>
         );
       })()}
 
-      {explicacao ? <div className="flow-node-explicacao">💡 {explicacao}</div> : null}
+      {explicacao ? (
+        <div className="flow-node-explicacao">
+          <IconLampada width={12} height={12} aria-hidden="true" /> {explicacao}
+        </div>
+      ) : null}
 
       {saidas.length > 1 ? (
         <div className="flow-node-handles">

@@ -1,6 +1,7 @@
 "use client";
 
 import type { VersaoFluxo } from "@/lib/automation-flow/types";
+import { IconClose } from "@/components/icons";
 
 function formatarData(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
@@ -25,7 +26,7 @@ export function HistoricoVersoes({
         <div className="panel-h">
           <h4>Histórico de versões</h4>
           <button type="button" className="icon-btn subtle" aria-label="Fechar histórico" onClick={onFechar}>
-            ✕
+            <IconClose width={13} height={13} />
           </button>
         </div>
         <div className="flow-side-body">

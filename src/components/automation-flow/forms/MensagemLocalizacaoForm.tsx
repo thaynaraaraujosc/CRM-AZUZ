@@ -1,6 +1,7 @@
 "use client";
 
 import type { MensagemLocalizacaoData, OrigemLocalizacao } from "@/lib/automation-flow/types";
+import { IconLocalizacao } from "@/components/icons";
 
 // Mocado — localizações salvas do workspace, sem integração real com mapa.
 const LOCALIZACOES_SALVAS = [
@@ -114,7 +115,9 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
         <div className="field">
           <label>Pré-visualização</label>
           <div className="hint" style={{ border: "1px solid var(--line-soft)", borderRadius: 8, padding: 10 }}>
-            <strong>📍 {preview.nome}</strong>
+            <strong>
+            <IconLocalizacao width={13} height={13} aria-hidden="true" /> {preview.nome}
+          </strong>
             {preview.endereco ? <div>{preview.endereco}</div> : null}
             {preview.cidadeEstado ? <div>{preview.cidadeEstado}</div> : null}
           </div>

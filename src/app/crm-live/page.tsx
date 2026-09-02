@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import type { ColunaTarefas, Funil, Membro, NegocioCard } from "@/lib/data";
+import { IconTrofeu } from "@/components/icons";
 import {
   calcularDistribuicaoMotivosPerda,
   calcularPorResponsavel,
@@ -129,19 +130,19 @@ export default function CrmLivePage() {
         <div className="crm-live-body">
           <div className="crm-live-vencedores">
             <div className="crm-live-vencedor-card">
-              <span className="crm-live-trofeu">🏆</span>
+              <span className="crm-live-trofeu"><IconTrofeu width={16} height={16} aria-hidden="true" /></span>
               <p className="crm-live-vencedor-titulo">Quem mais criou oportunidades</p>
               <p className="crm-live-vencedor-nome">{maisOportunidades?.[0] ?? "—"}</p>
               <p className="crm-live-vencedor-valor">{maisOportunidades ? String(maisOportunidades[1]) : "—"}</p>
             </div>
             <div className="crm-live-vencedor-card">
-              <span className="crm-live-trofeu">🏆</span>
+              <span className="crm-live-trofeu"><IconTrofeu width={16} height={16} aria-hidden="true" /></span>
               <p className="crm-live-vencedor-titulo">Quem mais vendeu (un)</p>
               <p className="crm-live-vencedor-nome">{maisVendasUnidade && maisVendasUnidade.vendidas > 0 ? maisVendasUnidade.nome : "—"}</p>
               <p className="crm-live-vencedor-valor">{maisVendasUnidade && maisVendasUnidade.vendidas > 0 ? String(maisVendasUnidade.vendidas) : "—"}</p>
             </div>
             <div className="crm-live-vencedor-card">
-              <span className="crm-live-trofeu">🏆</span>
+              <span className="crm-live-trofeu"><IconTrofeu width={16} height={16} aria-hidden="true" /></span>
               <p className="crm-live-vencedor-titulo">Quem mais vendeu (R$)</p>
               <p className="crm-live-vencedor-nome">{maisVendasValor && maisVendasValor.receita > 0 ? maisVendasValor.nome : "—"}</p>
               <p className="crm-live-vencedor-valor">{maisVendasValor && maisVendasValor.receita > 0 ? formatarMoeda(maisVendasValor.receita) : "—"}</p>

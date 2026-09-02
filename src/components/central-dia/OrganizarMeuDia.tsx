@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Drawer } from "@/components/ui";
 import { useCentralDia } from "@/lib/central-dia-context";
 import type { ItemDia } from "@/lib/central-dia/tipos";
+import { IconClose } from "@/components/icons";
 
 const MODULO_LABEL: Record<ItemDia["modulo"], string> = {
   conversa: "Conversas",
@@ -166,7 +167,7 @@ export function OrganizarMeuDia({
                       ↓
                     </button>
                     <button type="button" className="remove-chip" aria-label="Remover etapa" onClick={() => remover(item.id)}>
-                      ✕
+                      <IconClose width={13} height={13} />
                     </button>
                   </div>
                 ) : null}

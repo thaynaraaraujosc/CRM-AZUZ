@@ -254,7 +254,7 @@ table {
 :focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 /* ---------------- App shell ---------------- */
@@ -338,7 +338,7 @@ table {
   height: 22px;
   flex: 0 0 auto;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--navy);
   color: var(--text-faint);
   cursor: pointer;
@@ -358,7 +358,7 @@ table {
 .brand-mark {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--blue);
   display: flex;
   align-items: center;
@@ -382,7 +382,7 @@ table {
   text-align: left;
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 9px 10px;
   margin-bottom: 18px;
   cursor: pointer;
@@ -528,7 +528,7 @@ table {
 .nav-subitem {
   display: block;
   padding: 6px 8px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   color: var(--text-faint);
   font-size: 11.5px;
   font-weight: 600;
@@ -568,7 +568,7 @@ table {
   border: none;
   padding: 0;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .sb-foot-info:hover .who {
@@ -957,7 +957,7 @@ table {
 .icon-btn.subtle {
   width: 26px;
   height: 26px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: transparent;
   border-color: transparent;
   color: var(--text-faint);
@@ -999,14 +999,14 @@ table {
 .avatar.sm {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 10.5px;
 }
 
 .avatar.xs {
   width: 24px;
   height: 24px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   font-size: 9.5px;
 }
 
@@ -1089,7 +1089,7 @@ table {
 .auth-mark {
   width: 32px;
   height: 32px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: linear-gradient(135deg, #4c86ff, #8a3ffc);
   color: #fff;
   display: flex;
@@ -1760,7 +1760,7 @@ a.timeline-conteudo:hover {
   width: 100%;
   text-align: left;
   padding: 11px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised);
   border: 1px solid var(--line);
   font-size: 12.5px;
@@ -1838,14 +1838,14 @@ a.timeline-conteudo:hover {
 .funnel-track {
   flex: 1;
   height: 8px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: var(--line-soft);
   overflow: hidden;
 }
 
 .funnel-fill {
   height: 100%;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: var(--blue);
 }
 
@@ -1942,7 +1942,7 @@ a.timeline-conteudo:hover {
   font-weight: 700;
   padding: 8px 13px;
   width: 160px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--blue);
   color: var(--ink);
   background: var(--navy-raised);
@@ -2176,7 +2176,7 @@ table.tbl tbody tr:hover td {
   color: var(--blue);
   background: var(--blue-soft);
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 4px 8px;
   margin-bottom: 10px;
   width: fit-content;
@@ -2212,12 +2212,12 @@ table.tbl tbody tr:hover td {
   gap: 8px;
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 10px 14px;
   font-size: 12px;
   font-weight: 600;
   color: var(--ink);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-md);
 }
 
 .lead-card,
@@ -2285,7 +2285,7 @@ table.tbl tbody tr:hover td {
   display: inline-flex;
   align-items: center;
   padding: 1px 5px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: var(--blue-soft);
   color: var(--blue);
   font-size: 9.5px;
@@ -2306,7 +2306,7 @@ table.tbl tbody tr:hover td {
   justify-content: center;
   width: 18px;
   height: 18px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   color: var(--text-faint);
   cursor: pointer;
   flex: 0 0 auto;
@@ -2368,7 +2368,7 @@ table.tbl tbody tr:hover td {
   right: -3px;
   width: 15px;
   height: 15px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: var(--navy-raised);
   display: flex;
   align-items: center;
@@ -2511,7 +2511,7 @@ table.tbl tbody tr:hover td {
 .bubble {
   max-width: 78%;
   padding: 9px 12px;
-  border-radius: 13px;
+  border-radius: var(--radius-lg);
   font-size: 12px;
   line-height: 1.4;
   /* Sem isso, quebra de linha da mensagem original (`\n`) colapsava — um aviso de várias linhas
@@ -2588,7 +2588,7 @@ table.tbl tbody tr:hover td {
   line-height: 1;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 /* No balão enviado o "⋮" fica à esquerda, então o coração vai pro lado oposto — assim um nunca
@@ -2757,7 +2757,7 @@ table.tbl tbody tr:hover td {
   min-width: 0;
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 15px 16px;
   font-size: 13px;
   color: var(--text-faint);
@@ -2848,7 +2848,7 @@ table.tbl tbody tr:hover td {
   right: 0;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   max-height: 220px;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
@@ -2880,7 +2880,7 @@ table.tbl tbody tr:hover td {
   background: none;
   border: none;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 5px;
   line-height: 1;
 }
@@ -2906,7 +2906,7 @@ table.tbl tbody tr:hover td {
   flex-direction: column;
   margin: 12px 10px 12px 12px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   background: var(--navy-raised);
 }
 
@@ -2961,7 +2961,7 @@ table.tbl tbody tr:hover td {
 
 .wa-search {
   width: 100%;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: var(--navy-raised-2);
 }
 
@@ -3064,7 +3064,7 @@ table.tbl tbody tr:hover td {
   right: 10px;
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: none;
   background: none;
   color: var(--text-faint);
@@ -3167,7 +3167,7 @@ table.tbl tbody tr:hover td {
   flex-direction: column;
   margin: 12px 10px 12px 0;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   background: var(--navy-raised);
   overflow: hidden;
 }
@@ -3196,7 +3196,7 @@ table.tbl tbody tr:hover td {
   overflow: hidden;
   margin: 12px 12px 12px 0;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   background: var(--navy-raised);
   font-family: var(--display);
 }
@@ -3211,7 +3211,7 @@ table.tbl tbody tr:hover td {
   flex: 0 0 auto;
   width: 10px;
   margin: 12px 0;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   cursor: col-resize;
   background: transparent;
 }
@@ -3222,7 +3222,7 @@ table.tbl tbody tr:hover td {
   width: 3px;
   height: 100%;
   margin: 0 auto;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: var(--line);
 }
 
@@ -3257,7 +3257,7 @@ table.tbl tbody tr:hover td {
   max-height: 90vh;
   overflow-y: auto;
   background: var(--navy);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 20px;
   box-shadow: var(--shadow-lg);
   /* Reestruturação de design (fase 1) — mesma entrada suave do `.modal` genérico, pra esse modal
@@ -3283,7 +3283,7 @@ table.tbl tbody tr:hover td {
   overflow-y: auto;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 20px;
   box-shadow: var(--shadow-lg);
 }
@@ -3380,7 +3380,7 @@ table.tbl tbody tr:hover td {
   height: 180px;
   margin: 0 auto;
   border: 1px dashed var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--navy-raised);
   display: flex;
   align-items: center;
@@ -3429,7 +3429,7 @@ table.tbl tbody tr:hover td {
 
 .wa-historico-item {
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised);
   border-left: 2px solid var(--line);
 }
@@ -3467,7 +3467,7 @@ table.tbl tbody tr:hover td {
 .wa-resultado-badge {
   margin: 0;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-size: 12.5px;
   font-weight: 700;
 }
@@ -3486,7 +3486,7 @@ table.tbl tbody tr:hover td {
   margin-top: 10px;
   padding: 8px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised);
 }
 
@@ -3522,7 +3522,7 @@ table.tbl tbody tr:hover td {
   font-size: 15px;
   padding: 12px 26px;
   border-radius: 999px;
-  box-shadow: 0 12px 30px rgba(15, 157, 99, 0.4);
+  box-shadow: var(--shadow-md);
   z-index: 50;
   animation: crm-live-flash-in 0.3s ease-out;
 }
@@ -3567,7 +3567,7 @@ table.tbl tbody tr:hover td {
 }
 
 .crm-live-tab.active {
-  background: #3557f6;
+  background: var(--blue);
   color: #fff;
 }
 
@@ -3595,7 +3595,7 @@ table.tbl tbody tr:hover td {
 .crm-live-vencedor-card {
   background: linear-gradient(160deg, rgba(53, 87, 246, 0.22), rgba(255, 255, 255, 0.04));
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   padding: 22px;
   text-align: center;
 }
@@ -3637,7 +3637,7 @@ table.tbl tbody tr:hover td {
 .crm-live-kpi {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 18px 20px;
 }
 
@@ -3675,7 +3675,7 @@ table.tbl tbody tr:hover td {
 .crm-live-motivos {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   padding: 22px;
 }
 
@@ -3729,7 +3729,7 @@ table.tbl tbody tr:hover td {
 .crm-live-feed {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 18px 20px;
   grid-column: span 2;
   min-width: 260px;
@@ -3777,7 +3777,7 @@ table.tbl tbody tr:hover td {
 .crm-live-etapa {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 18px;
   text-align: center;
 }
@@ -3807,14 +3807,14 @@ table.tbl tbody tr:hover td {
   right: 28px;
   bottom: 28px;
   border: none;
-  background: #3557f6;
+  background: var(--blue);
   color: #fff;
   font-weight: 700;
   font-size: 13px;
   padding: 13px 22px;
   border-radius: 999px;
   cursor: pointer;
-  box-shadow: 0 12px 26px rgba(53, 87, 246, 0.4);
+  box-shadow: var(--shadow-md);
 }
 
 .crm-live-dots {
@@ -3876,7 +3876,7 @@ table.tbl tbody tr:hover td {
 .vendor-row.boxed {
   padding: 10px;
   border: 1px solid var(--blue);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--blue-soft-2);
   margin-bottom: 0;
   align-items: flex-start;
@@ -3888,7 +3888,7 @@ table.tbl tbody tr:hover td {
   gap: 9px;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   padding: 9px 12px;
 }
 
@@ -3992,7 +3992,7 @@ table.tbl tbody tr:hover td {
   font-size: 11.5px;
   font-weight: 700;
   padding: 8px 13px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   color: var(--text-muted);
@@ -4025,7 +4025,7 @@ button.camp-row:hover {
 .camp-icon {
   width: 32px;
   height: 32px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised-2);
   display: flex;
   align-items: center;
@@ -4054,7 +4054,7 @@ button.camp-row:hover {
 
 .camp-track {
   height: 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--line-soft);
   margin-top: 6px;
   overflow: hidden;
@@ -4064,7 +4064,7 @@ button.camp-row:hover {
 .camp-fill {
   height: 100%;
   background: var(--blue);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .camp-num {
@@ -4099,7 +4099,7 @@ button.camp-row:hover {
   transform: translateX(-50%);
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 8px 12px;
   font-size: 11.5px;
   box-shadow: var(--shadow-md);
@@ -4113,7 +4113,7 @@ button.camp-row:hover {
   transform: translate(14px, 14px);
   background: var(--ink);
   color: var(--paper, #fff);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 7px 11px;
   font-size: 11.5px;
   pointer-events: none;
@@ -4150,7 +4150,7 @@ button.camp-row:hover {
   gap: 10px;
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 10px 14px;
   margin-bottom: 14px;
   font-size: 12.5px;
@@ -4169,7 +4169,7 @@ button.camp-row:hover {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 3px 9px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   white-space: nowrap;
 }
 
@@ -4257,7 +4257,7 @@ button.camp-row:hover {
 .auto-acao-row {
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 12px;
   margin-bottom: 10px;
 }
@@ -4295,7 +4295,7 @@ button.camp-row:hover {
   text-align: left;
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 12px;
   margin-bottom: 10px;
   cursor: pointer;
@@ -4348,7 +4348,7 @@ button.camp-row:hover {
   font-size: 11.5px;
   font-weight: 700;
   padding: 8px 13px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy);
   color: var(--text-muted);
@@ -4392,7 +4392,7 @@ button.camp-row:hover {
 .media-opt {
   flex: 1;
   border: 1px dashed var(--line);
-  border-radius: 11px;
+  border-radius: var(--radius-lg);
   padding: 16px 10px;
   text-align: center;
   cursor: pointer;
@@ -4435,7 +4435,7 @@ button.camp-row:hover {
 .broadcast-icon {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--blue-soft);
   display: flex;
   align-items: center;
@@ -4469,7 +4469,7 @@ button.camp-row:hover {
   font-size: 10px;
   font-weight: 700;
   padding: 4px 9px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   white-space: nowrap;
 }
 
@@ -4508,7 +4508,7 @@ button.camp-row:hover {
   padding: 16px 18px;
   background: var(--blue-soft);
   border: 1px solid rgba(46, 107, 255, 0.25);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
 }
 
 .plano-nome {
@@ -4544,7 +4544,7 @@ button.camp-row:hover {
   padding: 14px 16px;
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .cartao-salvo-numero {
@@ -4570,7 +4570,7 @@ button.camp-row:hover {
   color: #d64545;
   background: rgba(214, 69, 69, 0.12);
   padding: 2px 8px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   vertical-align: middle;
 }
 
@@ -4590,7 +4590,7 @@ button.camp-row:hover {
 .int-logo {
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised-2);
   display: flex;
   align-items: center;
@@ -4621,7 +4621,7 @@ button.camp-row:hover {
   font-size: 10.5px;
   font-weight: 700;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   flex: 0 0 auto;
   white-space: nowrap;
 }
@@ -4650,7 +4650,7 @@ button.camp-row:hover {
   min-width: 220px;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   padding: 10px 13px;
   font-family: var(--display);
   font-size: 12px;
@@ -4693,7 +4693,7 @@ button.camp-row:hover {
 .login-brand .mark {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--blue-soft);
   display: flex;
   align-items: center;
@@ -4735,7 +4735,7 @@ button.camp-row:hover {
 .lfield .input {
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 12px 14px;
   font-size: 13px;
   width: 100%;
@@ -4778,7 +4778,7 @@ button.camp-row:hover {
 .chk {
   width: 15px;
   height: 15px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1.5px solid var(--line);
   flex: 0 0 auto;
   display: flex;
@@ -4810,7 +4810,7 @@ button.camp-row:hover {
   font-weight: 700;
   font-size: 13px;
   padding: 13px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .login-btn:hover {
@@ -4845,7 +4845,7 @@ button.camp-row:hover {
   overflow-y: auto;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   z-index: 60;
   /* Reestruturação de design (fase 0): desliza/aparece suavemente em vez de surgir de forma
@@ -4870,7 +4870,7 @@ button.camp-row:hover {
   overflow-y: auto;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   z-index: 200;
   padding-bottom: 4px;
@@ -4890,7 +4890,7 @@ button.camp-row:hover {
   overflow-y: auto;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   z-index: 20;
 }
@@ -4914,7 +4914,7 @@ button.camp-row:hover {
   padding: 10px 12px;
   background: var(--blue-soft-2);
   border: 1px solid var(--blue);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .wa-contato-selecionado-info {
@@ -5045,7 +5045,7 @@ button.camp-row:hover {
   right: 8px;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   z-index: 60;
@@ -5293,7 +5293,7 @@ button.camp-row:hover {
   align-items: center;
   gap: 7px;
   padding: 8px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
@@ -5333,7 +5333,7 @@ button.camp-row:hover {
   font-weight: 700;
   color: var(--blue);
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .doc-page-add:hover {
@@ -5345,7 +5345,7 @@ button.camp-row:hover {
   min-width: 0;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -5372,7 +5372,7 @@ button.camp-row:hover {
   align-items: center;
   justify-content: center;
   height: 120px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised);
   border: 1px dashed var(--line);
   margin-bottom: 18px;
@@ -5439,7 +5439,7 @@ button.camp-row:hover {
 .doc-toolbar-select {
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   padding: 6px 8px;
   font-size: 12px;
   color: var(--ink);
@@ -5449,7 +5449,7 @@ button.camp-row:hover {
 .doc-toolbar-btn {
   width: 30px;
   height: 30px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   color: var(--ink);
@@ -5548,7 +5548,7 @@ button.camp-row:hover {
   margin-bottom: 10px;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: visible;
 }
 
@@ -5679,7 +5679,7 @@ button.camp-row:hover {
   flex: 0 0 20px;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: visible;
 }
 
@@ -5757,7 +5757,7 @@ button.camp-row:hover {
   min-height: 1000px;
   background: #ffffff;
   color: #1a1a1a;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   padding: 72px;
   box-shadow: var(--shadow-md);
   font-family: "Times New Roman", Georgia, serif;
@@ -5989,7 +5989,7 @@ button.camp-row:hover {
 .doc-voltar-btn {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: none;
   background: none;
   color: var(--text-muted);
@@ -6010,7 +6010,7 @@ button.camp-row:hover {
   font-weight: 700;
   color: var(--ink);
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   min-width: 80px;
   max-width: 320px;
 }
@@ -6087,7 +6087,7 @@ button.camp-row:hover {
   color: var(--text-muted);
   font-weight: 600;
   padding: 6px 10px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
@@ -6249,7 +6249,7 @@ button.camp-row:hover {
 .doc-cor-swatch {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   cursor: pointer;
 }
@@ -6269,7 +6269,7 @@ button.camp-row:hover {
 .doc-lista-card {
   position: relative;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--navy);
   padding: 4px;
 }
@@ -6302,7 +6302,7 @@ button.camp-row:hover {
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--blue-soft-2);
   color: var(--blue);
   margin-bottom: 4px;
@@ -6334,7 +6334,7 @@ button.camp-row:hover {
   align-items: flex-start;
   gap: 4px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--navy);
   padding: 14px;
   text-align: left;
@@ -6426,7 +6426,7 @@ button.camp-row:hover {
   right: 6px;
   border: none;
   background: rgba(255, 255, 255, 0.9);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   width: 26px;
   height: 26px;
   cursor: pointer;
@@ -6467,12 +6467,12 @@ button.camp-row:hover {
 .modal {
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: min(720px, 100%);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 70px rgba(6, 11, 28, 0.5);
+  box-shadow: var(--shadow-lg);
   animation: modal-scale-in var(--transition-base);
 }
 
@@ -6483,7 +6483,7 @@ button.camp-row:hover {
   margin: 0 14px 14px;
   padding: 16px;
   border: 1px solid var(--line-soft);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--navy-raised);
 }
 
@@ -6559,8 +6559,8 @@ button.camp-row:hover {
   max-width: 620px;
   margin: 0 auto;
   padding: 48px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  border-radius: 2px;
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-sm);
 }
 
 .panel-f {
@@ -6649,7 +6649,7 @@ button.camp-row:hover {
   border: 2px solid #fff;
   border-radius: 50%;
   pointer-events: auto;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-sm);
 }
 
 .doc-img-handle-nw { left: -5px; top: -5px; }
@@ -6668,8 +6668,8 @@ button.camp-row:hover {
   min-width: 200px;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   padding: 6px;
   display: flex;
   flex-direction: column;
@@ -6681,7 +6681,7 @@ button.camp-row:hover {
   background: none;
   text-align: left;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 12.5px;
   color: var(--ink);
   cursor: pointer;
@@ -6722,8 +6722,8 @@ button.camp-row:hover {
   gap: 4px;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   padding: 5px 6px;
   pointer-events: auto;
 }
@@ -6733,7 +6733,7 @@ button.camp-row:hover {
   background: none;
   width: 24px;
   height: 24px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   color: var(--ink);
   cursor: pointer;
@@ -6754,7 +6754,7 @@ button.camp-row:hover {
 
 .doc-img-resize-alca {
   border: 1px dashed var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 8px;
   text-align: center;
   font-size: 11.5px;
@@ -6829,7 +6829,7 @@ button.camp-row:hover {
   width: 100%;
   text-align: left;
   padding: 18px 20px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1.5px dashed var(--line-soft);
   background: var(--navy-raised);
   cursor: pointer;
@@ -6847,7 +6847,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--blue-soft);
   color: var(--blue);
   font-size: 18px;
@@ -6870,7 +6870,7 @@ button.camp-row:hover {
 
 .form-link-box {
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--navy-raised);
   margin-bottom: 12px;
 }
@@ -6904,7 +6904,7 @@ button.camp-row:hover {
   font-size: 15px;
   color: var(--ink);
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   min-width: 120px;
   max-width: 320px;
 }
@@ -6934,7 +6934,7 @@ button.camp-row:hover {
   gap: 0;
   min-height: 60vh;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--navy);
 }
@@ -6950,7 +6950,7 @@ button.camp-row:hover {
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   margin: 2px 6px;
   transition: opacity 0.15s ease;
 }
@@ -6978,7 +6978,7 @@ button.camp-row:hover {
   background: none;
   text-align: left;
   padding: 9px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 12.5px;
   font-weight: 600;
   color: var(--text-muted);
@@ -7023,7 +7023,7 @@ button.camp-row:hover {
   cursor: pointer;
   font-size: 12px;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .form-pagina-acao-btn:hover {
@@ -7047,7 +7047,7 @@ button.camp-row:hover {
   margin: 0 auto;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 20px;
   box-shadow: var(--shadow-md);
 }
@@ -7118,7 +7118,7 @@ button.camp-row:hover {
   display: flex;
   gap: 2px;
   background: #1f2430;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 3px;
   box-shadow: var(--shadow-sm);
   opacity: 0;
@@ -7138,7 +7138,7 @@ button.camp-row:hover {
   color: #fff;
   font-size: 11px;
   padding: 5px 7px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
@@ -7173,7 +7173,7 @@ button.camp-row:hover {
 .form-logica-canvas-shell {
   height: 280px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   position: relative;
   background: var(--navy-raised);
@@ -7212,7 +7212,7 @@ button.camp-row:hover {
   cursor: pointer;
   font-size: 10.5px;
   padding: 3px 5px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
 }
 
 .form-logica-node-excluir:hover {
@@ -7234,7 +7234,7 @@ button.camp-row:hover {
 
 .form-preview-viewport {
   margin: 0 auto;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow-md);
 }
@@ -7243,7 +7243,7 @@ button.camp-row:hover {
 .form-resposta-campo {
   background: var(--navy-raised, #fff);
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   padding: 10px 13px;
   font-size: 12.5px;
   line-height: 1.5;
@@ -7291,7 +7291,7 @@ button.camp-row:hover {
   align-items: center;
   padding: 6px 8px;
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised, #fff);
   min-height: 36px;
 }
@@ -7301,7 +7301,7 @@ button.camp-row:hover {
   align-items: center;
   gap: 5px;
   padding: 3px 8px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: var(--blue-soft);
   color: var(--blue);
   font-size: 11.5px;
@@ -7334,7 +7334,7 @@ button.camp-row:hover {
 
 .form-assinatura-canvas {
   border: 1px dashed var(--line-soft);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: #ffffff;
   cursor: crosshair;
   touch-action: none;
@@ -7348,7 +7348,7 @@ button.camp-row:hover {
 .form-assinatura-preview {
   max-width: 280px;
   border: 1px solid var(--line-soft);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: #ffffff;
   display: block;
 }
@@ -7371,7 +7371,7 @@ button.camp-row:hover {
 .form-nota-btn {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   font-size: 11.5px;
@@ -7412,7 +7412,7 @@ button.camp-row:hover {
 
 .form-bloco-imagem {
   max-width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: block;
 }
 
@@ -7420,7 +7420,7 @@ button.camp-row:hover {
   padding: 20px;
   text-align: center;
   border: 1px dashed var(--line-soft);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--text-faint);
   font-size: 12px;
 }
@@ -7430,7 +7430,7 @@ button.camp-row:hover {
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px dashed var(--line-soft);
   font-size: 12px;
   color: var(--text-faint);
@@ -7509,7 +7509,7 @@ button.camp-row:hover {
 .form-public-card {
   width: 100%;
   max-width: 560px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 32px;
   box-shadow: var(--shadow-lg);
   color: var(--ink);
@@ -7532,7 +7532,7 @@ button.camp-row:hover {
 
 .form-public-banner {
   width: 100%;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   margin-bottom: 14px;
   display: block;
 }
@@ -7557,7 +7557,7 @@ button.camp-row:hover {
 .form-public-obrigado {
   width: 100%;
   max-width: 480px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 48px 32px;
   text-align: center;
   box-shadow: var(--shadow-lg);
@@ -7605,7 +7605,7 @@ button.camp-row:hover {
   align-items: flex-start;
   gap: 8px;
   padding: 10px 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: none;
   text-align: left;
@@ -7667,7 +7667,7 @@ button.camp-row:hover {
 .wa-anexo-erro {
   margin: 8px 4px 2px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: rgba(214, 69, 69, 0.12);
   border: 1px solid rgba(214, 69, 69, 0.3);
   color: #d64545;
@@ -7718,7 +7718,7 @@ button.camp-row:hover {
   max-height: 90vh;
   overflow-y: auto;
   background: var(--navy);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 18px;
 }
 
@@ -7730,7 +7730,7 @@ button.camp-row:hover {
   min-height: 220px;
   max-height: 46vh;
   background: var(--navy-deep);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -7780,7 +7780,7 @@ button.camp-row:hover {
   flex-shrink: 0;
   width: 52px;
   height: 52px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 2px solid transparent;
 }
@@ -7857,7 +7857,7 @@ button.camp-row:hover {
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--navy-raised-2);
   text-align: left;
   cursor: pointer;
@@ -7888,7 +7888,7 @@ button.camp-row:hover {
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .wa-biblioteca-item:hover {
@@ -7905,7 +7905,7 @@ button.camp-row:hover {
   max-width: 720px;
   height: 88vh;
   background: var(--navy);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 18px;
   display: flex;
   flex-direction: column;
@@ -7915,7 +7915,7 @@ button.camp-row:hover {
   flex: 1;
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: white;
 }
 
@@ -7930,7 +7930,7 @@ button.camp-row:hover {
 
 .bubble-imagens {
   display: flex;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -7954,7 +7954,7 @@ button.camp-row:hover {
   max-height: 260px;
   object-fit: cover;
   display: block;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
 }
 
 .bubble-imagens.grade .bubble-imagem-btn img {
@@ -7970,7 +7970,7 @@ button.camp-row:hover {
 .bubble-video {
   width: 100%;
   max-height: 280px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   display: block;
   background: black;
 }
@@ -7986,7 +7986,7 @@ button.camp-row:hover {
   padding: 8px;
   text-decoration: none;
   color: inherit;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
 }
 
 .bubble-documento-cartao:hover {
@@ -7996,7 +7996,7 @@ button.camp-row:hover {
 .bubble-documento-icone {
   width: 34px;
   height: 34px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: #c9660a;
   color: white;
   display: flex;
@@ -8195,7 +8195,7 @@ button.camp-row:hover {
   color: var(--ink);
   cursor: pointer;
   padding: 4px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .flow-toolbar-nome:hover {
@@ -8219,7 +8219,7 @@ button.camp-row:hover {
   align-items: center;
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 2px;
   margin-right: 4px;
 }
@@ -8231,7 +8231,7 @@ button.camp-row:hover {
   font-size: 12.5px;
   font-weight: 600;
   padding: 5px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
@@ -8272,7 +8272,7 @@ button.camp-row:hover {
   position: absolute;
   inset: 6px;
   border: 2px dashed var(--blue);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(46, 107, 255, 0.04);
   pointer-events: none;
   z-index: 4;
@@ -8338,7 +8338,7 @@ button.camp-row:hover {
   gap: 2px;
   text-align: left;
   padding: 10px 12px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: none;
   cursor: pointer;
@@ -8371,7 +8371,7 @@ button.camp-row:hover {
 .flow-midia-origem-btn {
   flex: 1;
   padding: 8px 10px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   color: var(--text-muted);
@@ -8389,7 +8389,7 @@ button.camp-row:hover {
 
 .flow-midia-dropzone {
   border: 2px dashed var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 22px 14px;
   text-align: center;
   color: var(--text-muted);
@@ -8410,7 +8410,7 @@ button.camp-row:hover {
   gap: 10px;
   align-items: flex-start;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
 }
@@ -8423,7 +8423,7 @@ button.camp-row:hover {
 .flow-midia-preview-img {
   width: 44px;
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -8485,7 +8485,7 @@ button.camp-row:hover {
   align-items: flex-start;
   text-align: left;
   padding: 9px 10px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: none;
   cursor: pointer;
@@ -8504,7 +8504,7 @@ button.camp-row:hover {
 .flow-biblioteca-item-thumb {
   width: 36px;
   height: 36px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -8529,7 +8529,7 @@ button.camp-row:hover {
 
 .flow-canvas .react-flow__controls {
   box-shadow: var(--shadow-sm);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -8583,7 +8583,7 @@ button.camp-row:hover {
 .flow-lib-recolhida-cat {
   width: 26px;
   height: 26px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   display: flex;
@@ -8678,7 +8678,7 @@ button.camp-row:hover {
   flex: 0 0 auto;
   width: 26px;
   height: 26px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -8702,7 +8702,7 @@ button.camp-row:hover {
 .flow-lib-destaque {
   background: var(--blue-soft-2);
   color: var(--blue);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   padding: 0 1px;
 }
 
@@ -8776,7 +8776,7 @@ button.camp-row:hover {
   position: relative;
   min-width: 240px;
   max-width: 280px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--navy);
   border: 1.5px solid var(--line);
   border-left: 4px solid var(--flow-cor-categoria, var(--line));
@@ -8802,7 +8802,7 @@ button.camp-row:hover {
   font-size: 9.5px;
   font-weight: 700;
   padding: 3px 8px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
   color: var(--text-muted);
@@ -8832,7 +8832,7 @@ button.camp-row:hover {
 .flow-node-explicacao {
   margin: 0 12px 10px;
   padding: 7px 9px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--blue-soft-2);
   color: var(--blue);
   font-size: 11px;
@@ -8889,7 +8889,7 @@ button.camp-row:hover {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   padding: 2px 6px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: var(--navy-raised-2);
   color: var(--text-faint);
   align-self: center;
@@ -9005,7 +9005,7 @@ button.camp-row:hover {
   font-size: 11.5px;
   color: var(--text-muted);
   border: 1px solid var(--line-soft);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--navy-raised-2);
 }
 
@@ -9119,7 +9119,7 @@ button.camp-row:hover {
   padding: 8px 12px;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   z-index: 10;
   font-size: 11.5px;
@@ -9133,7 +9133,7 @@ button.camp-row:hover {
   min-width: 180px;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   padding: 4px;
 }
@@ -9198,7 +9198,7 @@ button.camp-row:hover {
   width: 100%;
   text-align: left;
   padding: 9px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised-2);
   font-size: 11.5px;
@@ -9222,7 +9222,7 @@ button.camp-row:hover {
 
 .flow-cond-grupo {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 10px;
   margin-bottom: 8px;
   background: var(--navy-raised-2);
@@ -9294,7 +9294,7 @@ button.camp-row:hover {
   gap: 2px;
   text-align: left;
   padding: 9px 11px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   cursor: pointer;
@@ -9340,7 +9340,7 @@ button.camp-row:hover {
 .flow-menu-numerado-previa {
   margin: 0;
   padding: 10px 12px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   color: var(--text-muted);
@@ -9425,7 +9425,7 @@ button.camp-row:hover {
 .flow-sim-banner {
   padding: 8px 12px;
   margin-bottom: 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--warning-soft);
   color: var(--warning);
   font-size: 12px;
@@ -9435,7 +9435,7 @@ button.camp-row:hover {
 .flow-sim-continuar {
   margin-top: 14px;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
 }
@@ -9450,7 +9450,7 @@ button.camp-row:hover {
 .flow-sim-log {
   margin-top: 14px;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
   font-size: 11px;
@@ -9534,7 +9534,7 @@ button.camp-row:hover {
   font-size: 11px;
   font-weight: 600;
   padding: 5px 10px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   color: var(--text-muted);
@@ -9626,7 +9626,7 @@ button.camp-row:hover {
 .kpi-personalizar-ordem button {
   background: none;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   width: 22px;
   height: 22px;
   cursor: pointer;
@@ -9706,7 +9706,7 @@ button.camp-row:hover {
   gap: 10px;
   padding: 16px;
   border: 1px dashed var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--text-faint);
   font-size: 12.5px;
 }
@@ -9730,7 +9730,7 @@ button.camp-row:hover {
   width: min(760px, 100%);
   max-height: 90vh;
   background: var(--navy);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-lg);
   display: flex;
@@ -9796,7 +9796,7 @@ button.camp-row:hover {
   gap: 10px;
   padding: 9px 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   margin-bottom: 6px;
 }
 
@@ -9807,7 +9807,7 @@ button.camp-row:hover {
 
 .wizard-preview-secao {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 12px 14px;
   margin-bottom: 10px;
 }
@@ -9947,7 +9947,7 @@ button.camp-row:hover {
   align-items: center;
   gap: 6px;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised-2);
   color: var(--ink);
@@ -10083,7 +10083,7 @@ button.camp-row:hover {
   justify-content: space-between;
   gap: 8px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 10px;
 }
 
@@ -10263,7 +10263,7 @@ button.camp-row:hover {
   max-width: 760px;
   max-height: 90vh;
   background: var(--navy);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   animation: modal-scale-in var(--transition-base);
@@ -10282,7 +10282,7 @@ button.camp-row:hover {
   flex: 0 0 auto;
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--blue-soft-2);
   color: var(--blue);
   display: flex;
@@ -10355,7 +10355,7 @@ button.camp-row:hover {
   flex-direction: column;
   gap: 8px;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   min-height: 120px;
   justify-content: center;
@@ -10377,7 +10377,7 @@ button.camp-row:hover {
   flex-direction: column;
   gap: 2px;
   padding: 10px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   color: var(--ink);
@@ -10402,7 +10402,7 @@ button.camp-row:hover {
   justify-content: center;
   height: 56px;
   margin-bottom: 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   font-size: 20px;
   font-weight: 500;
@@ -10618,7 +10618,7 @@ button.camp-row:hover {
   flex: 1 1 auto;
   min-width: 2px;
   max-width: 3px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--blue);
   opacity: 0.75;
 }
@@ -10654,7 +10654,7 @@ button.camp-row:hover {
 .chat-audio-btn-enviar {
   width: auto;
   padding: 0 12px;
-  border-radius: 15px;
+  border-radius: var(--radius-xl);
   background: var(--blue);
   color: #fff;
   font-size: 12px;
@@ -10687,7 +10687,7 @@ button.camp-row:hover {
   gap: 10px;
   padding: 8px 12px;
   margin-bottom: 6px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(214, 69, 69, 0.12);
   color: #d64545;
   font-size: 12px;
@@ -10743,7 +10743,7 @@ button.camp-row:hover {
   gap: 8px;
   padding: 10px 12px;
   border: 1px dashed var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised-2);
   color: var(--text-muted);
   font-size: 12px;
@@ -10770,7 +10770,7 @@ button.camp-row:hover {
   margin-bottom: 4px;
   padding: 5px 8px;
   border-left: 3px solid var(--blue);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: rgba(46, 107, 255, 0.08);
 }
 
@@ -10897,7 +10897,7 @@ button.camp-row:hover {
   margin-top: 16px;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: none;
   cursor: pointer;
   font: inherit;
@@ -10949,7 +10949,7 @@ button.camp-row:hover {
   gap: 8px;
   padding: 6px 8px;
   margin-bottom: 4px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised);
 }
 
@@ -10957,7 +10957,7 @@ button.camp-row:hover {
   flex: none;
   width: 3px;
   align-self: stretch;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--blue);
 }
 
@@ -11022,7 +11022,7 @@ button.camp-row:hover {
 .audio-waveform-barra {
   flex: 1 1 auto;
   min-width: 2px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--line);
 }
 
@@ -11091,7 +11091,7 @@ button.camp-row:hover {
 .audio-player-velocidade {
   flex: 0 0 auto;
   padding: 3px 7px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: transparent;
   color: var(--text-muted);
@@ -11259,7 +11259,7 @@ button.camp-row:hover {
   color: var(--ink);
   text-align: left;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .wa-encaminhar-item:hover {
@@ -11277,7 +11277,7 @@ button.camp-row:hover {
 .wa-contato-picker-tray {
   margin: 10px 0;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--blue-soft-2);
   border: 1px solid var(--blue-soft);
 }
@@ -11303,7 +11303,7 @@ button.camp-row:hover {
   align-items: center;
   gap: 6px;
   padding: 4px 8px 4px 4px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: var(--navy);
   font-size: 11.5px;
   font-weight: 600;
@@ -11336,7 +11336,7 @@ button.camp-row:hover {
   align-items: flex-start;
   gap: 10px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   cursor: pointer;
@@ -11408,7 +11408,7 @@ button.camp-row:hover {
   align-items: flex-start;
   gap: 10px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--navy-raised);
 }
@@ -11451,7 +11451,7 @@ button.camp-row:hover {
   gap: 7px;
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   padding: 8px 10px;
   font-size: 12px;
   color: var(--text-faint);
@@ -11503,7 +11503,7 @@ button.camp-row:hover {
   font-size: 11.5px;
   font-weight: 700;
   padding: 8px 13px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   color: var(--text-muted);
   background: var(--navy-raised);
@@ -11524,7 +11524,7 @@ button.camp-row:hover {
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: var(--white);
   color: var(--blue);
   font-size: 9.5px;
@@ -11536,7 +11536,7 @@ button.camp-row:hover {
   align-items: center;
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   padding: 0 4px 0 12px;
   cursor: pointer;
 }
@@ -11590,7 +11590,7 @@ button.camp-row:hover {
   font-size: 11px;
   font-weight: 600;
   padding: 5px 10px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   color: var(--text-muted);
@@ -11615,7 +11615,7 @@ button.camp-row:hover {
   overflow-y: auto;
   background: var(--navy);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   z-index: 60;
 }
@@ -12317,7 +12317,7 @@ button.camp-row:hover {
   justify-content: space-between;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line-soft);
 }
 .central-dia-concluido-row .n {
@@ -12345,7 +12345,7 @@ button.camp-row:hover {
   align-items: center;
   gap: 10px;
   padding: 10px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
 }
 .central-dia-organizar-item.is-atual {
@@ -12513,7 +12513,7 @@ button.camp-row:hover {
 
 .config-bloco {
   padding: 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--navy-raised);
 }
@@ -12568,7 +12568,7 @@ button.camp-row:hover {
   width: 100%;
   text-align: left;
   padding: 10px 12px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
@@ -12640,7 +12640,7 @@ button.camp-row:hover {
   gap: 4px;
   text-align: left;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy);
   cursor: pointer;
@@ -12675,14 +12675,14 @@ button.camp-row:hover {
 .config-identidade-preview {
   margin-top: 12px;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   gap: 12px;
 }
 .config-identidade-chip {
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: #fff;
   font-weight: 700;
   font-size: 12px;
@@ -12697,7 +12697,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 .config-aparencia-preview-linha {
@@ -12721,7 +12721,7 @@ button.camp-row:hover {
 }
 .config-permissoes-modulo {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 10px 12px;
 }
 .config-permissoes-modulo-h {
@@ -12759,7 +12759,7 @@ button.camp-row:hover {
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy);
 }
@@ -12782,7 +12782,7 @@ button.camp-row:hover {
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 .config-etiqueta-row:hover {
   background: var(--navy-raised-2);
@@ -12812,7 +12812,7 @@ button.camp-row:hover {
 }
 .config-canal-card {
   padding: 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy);
 }
@@ -12851,7 +12851,7 @@ button.camp-row:hover {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
 }
 .config-formato-compat {
@@ -12870,7 +12870,7 @@ button.camp-row:hover {
 .config-email-preview {
   margin-top: 10px;
   padding: 12px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
 }
@@ -12885,7 +12885,7 @@ button.camp-row:hover {
 .config-exemplo-visual {
   margin-top: 12px;
   padding: 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--blue-soft-2);
   color: var(--ink);
   font-size: 12.5px;
@@ -12937,7 +12937,7 @@ button.camp-row:hover {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   box-shadow: 0 -4px 16px rgba(9, 9, 11, 0.12);
@@ -13024,7 +13024,7 @@ button.camp-row:hover {
   width: auto;
   height: auto;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .wa-respostas-modal.rodape-chat .bubble {
@@ -13054,7 +13054,7 @@ button.camp-row:hover {
   width: min(760px, calc(100vw - 48px));
   height: min(660px, calc(100vh - 120px));
   padding: 16px 18px 14px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   /* Fundo SÓLIDO — com uma variável inexistente aqui o painel ficava translúcido e o funil
      aparecia por trás do texto, impossível de ler. */
   background: var(--navy);
@@ -13121,7 +13121,7 @@ button.camp-row:hover {
   width: 320px;
   height: min(660px, 100vh - 120px);
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   background: var(--navy);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-lg);
@@ -13187,7 +13187,7 @@ button.camp-row:hover {
   width: auto;
   height: auto;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 /* Numa tela estreita a ficha do contato espremeria as duas coisas — melhor virar tela cheia e
@@ -13213,7 +13213,7 @@ button.camp-row:hover {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--surface-hover);
   color: inherit;
@@ -13231,7 +13231,7 @@ button.camp-row:hover {
   display: block;
   margin-top: 6px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--surface-hover);
   color: inherit;
@@ -13373,7 +13373,7 @@ button.camp-row:hover {
   width: 100%;
   padding: 6px;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: #fff;
   cursor: pointer;
   text-align: left;
@@ -13388,7 +13388,7 @@ button.camp-row:hover {
 .ig-publicacao-sem-capa {
   width: 44px;
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   object-fit: cover;
   flex-shrink: 0;
   background: rgba(0, 0, 0, 0.06);
@@ -13436,7 +13436,7 @@ button.camp-row:hover {
   display: inline-block;
   margin-right: 6px;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.08);
   font-style: normal;
   font-size: 10px;
@@ -13461,7 +13461,7 @@ button.camp-row:hover {
   gap: 2px;
   padding: 9px 11px;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: #fff;
   text-align: left;
   cursor: pointer;
@@ -13500,7 +13500,7 @@ button.camp-row:hover {
 .modelo-previa {
   margin-top: 10px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.04);
 }
 
@@ -13535,7 +13535,7 @@ button.camp-row:hover {
   width: 100%;
   padding: 7px 9px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: none;
   text-align: left;
   cursor: pointer;
@@ -13558,7 +13558,7 @@ button.camp-row:hover {
   padding: 10px;
   margin-bottom: 8px;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: rgba(0, 0, 0, 0.03);
 }
 
@@ -13566,7 +13566,7 @@ button.camp-row:hover {
   max-height: 180px;
   width: auto;
   align-self: center;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   object-fit: contain;
 }
 
@@ -13590,7 +13590,7 @@ button.camp-row:hover {
 .painel-conversa-erro {
   margin: 0 0 8px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(214, 69, 69, 0.28);
   background: rgba(214, 69, 69, 0.08);
   color: var(--danger, #d64545);
@@ -13644,7 +13644,7 @@ button.camp-row:hover {
   gap: 12px;
   max-width: min(560px, calc(100vw - 32px));
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(214, 69, 69, 0.35);
   background: #fff5f5;
   color: #9b2c2c;
@@ -13667,7 +13667,7 @@ button.camp-row:hover {
    um container que diz de quem é a mensagem, e dentro dele um player com contraste próprio — o
    play e a linha do tempo precisam se destacar do fundo, não se dissolver nele. */
 .bubble-audio .audio-player {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 8px 10px;
   transition: background var(--transition-fast, 120ms ease);
 }
@@ -13743,7 +13743,7 @@ button.camp-row:hover {
 
 /* Mídia com cantos alinhados à bolha, sem o degrau que aparecia entre a foto e a borda. */
 .bubble-video {
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   display: block;
 }
 
@@ -13755,7 +13755,7 @@ button.camp-row:hover {
   width: 100%;
   max-height: 260px;
   object-fit: cover;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   display: block;
 }
 
@@ -13831,7 +13831,7 @@ button.camp-row:hover {
   color: var(--text-muted);
   background: var(--navy-raised-2);
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 /* ==========================================================================
@@ -14148,4 +14148,32 @@ button.camp-row:hover {
   font-family: var(--display);
   font-size: 14px;
   color: var(--ink);
+}
+
+/* ==========================================================================
+   Ícones inline dentro de texto
+   Os avisos, confirmações e explicações usavam glifo/emoji digitado no meio da frase (⚠ ✓ 💡), que
+   assentava na linha de base sozinho. Trocados por SVG, precisam ser puxados um pouco pra baixo pra
+   ficarem no eixo óptico do texto — senão flutuam acima da linha.
+   ========================================================================== */
+
+.hint svg,
+.flow-node-body svg,
+.flow-node-explicacao svg,
+.flow-problema-sev svg,
+.config-salvar-bar-ok svg,
+.config-aviso svg,
+.wa-campo-erro svg {
+  vertical-align: -0.15em;
+  flex: none;
+}
+
+/* Os ícones de categoria dos blocos de automação eram emoji dimensionado por `font-size`; como SVG
+   quem manda é o atributo width/height, e o contêiner só precisa centralizar. */
+.flow-node-icon,
+.crm-live-trofeu,
+.flow-problema-sev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { IconCheck } from "@/components/icons";
 
 export function Toolbar({
   nome,
@@ -112,7 +113,13 @@ export function Toolbar({
           title="Numera os blocos na ordem em que acontecem e mostra uma explicação curta de cada um"
           onClick={onAlternarEntenderFluxo}
         >
-          {entenderFluxoAtivo ? "✓ Entender fluxo" : "Entender fluxo"}
+          {entenderFluxoAtivo ? (
+            <>
+              <IconCheck width={12} height={12} aria-hidden="true" /> Entender fluxo
+            </>
+          ) : (
+            "Entender fluxo"
+          )}
         </button>
         <button type="button" className="btn ghost" onClick={onAbrirHistorico}>
           Histórico de versões

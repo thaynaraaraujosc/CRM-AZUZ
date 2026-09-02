@@ -41,6 +41,7 @@ import { HistoricoVersoes } from "./HistoricoVersoes";
 import { Simulador } from "./Simulador";
 import { Toolbar } from "./Toolbar";
 import { nodeTypes } from "./nodes";
+import { IconClose, IconExpandir } from "@/components/icons";
 import {
   CORES_CATEGORIA,
   autoLayout,
@@ -703,7 +704,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 −
               </ControlButton>
               <ControlButton title="Centralizar fluxo" aria-label="Centralizar fluxo" onClick={() => fitView({ duration: 300, padding: 0.2 })}>
-                ⛶
+                <IconExpandir width={13} height={13} />
               </ControlButton>
             </Controls>
             {minimapaVisivel ? (
@@ -772,7 +773,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                     aria-label="Fechar"
                     onClick={() => setEscolherGatilhoAberto(false)}
                   >
-                    ✕
+                    <IconClose width={13} height={13} />
                   </button>
                 </div>
                 <div className="flow-escolher-gatilho-lista">
@@ -820,7 +821,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                     aria-label="Fechar"
                     onClick={() => setAcaoRapida(null)}
                   >
-                    ✕
+                    <IconClose width={13} height={13} />
                   </button>
                 </div>
                 <div className="flow-escolher-gatilho-lista">

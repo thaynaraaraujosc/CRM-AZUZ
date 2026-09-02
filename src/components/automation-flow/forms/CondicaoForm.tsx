@@ -11,6 +11,7 @@ import type {
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 import { useEtiquetasDisponiveis } from "./EtiquetaSelect";
 import { SeletorDeData } from "@/components/seletor-de-data";
+import { IconClose } from "@/components/icons";
 
 type CategoriaCampo = "Conversa" | "Funil / Negócio" | "Contato" | "Atividade";
 
@@ -292,7 +293,7 @@ export function CondicaoForm({
             aria-label="Remover regra"
             onClick={() => removerRegra(regra.id)}
           >
-            ✕
+            <IconClose width={13} height={13} />
           </button>
         </div>
       ))}
