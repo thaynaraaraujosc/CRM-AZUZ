@@ -18,7 +18,7 @@
   /* Azul da marca — daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
   --blue: #2e6bff;
-  --blue-soft: rgba(46, 107, 255, 0.12);
+  --blue-soft: var(--blue-soft-2);
   --blue-soft-2: rgba(46, 107, 255, 0.06);
   /* Azul mais escuro que --blue — usado onde o azul vibrante padrão fica claro demais pra servir
      de "ligado"/confirmação (ex.: toggle ativo). */
@@ -96,11 +96,11 @@
   /* Cores semânticas (item 55) — mesmo vocabulário já usado informalmente em Automações/Central do
      Dia/Configurações (verde=sucesso/oportunidade, âmbar=atenção, vermelho=erro, azul=informação,
      roxo=IA), agora nomeado — não substitui `--blue` (identidade da marca), só complementa. */
-  --success: #0f9d63;
+  --success: #0a7a4d;
   --success-soft: rgba(15, 157, 99, 0.12);
-  --warning: #d8a400;
-  --warning-soft: rgba(216, 164, 0, 0.12);
-  --danger: #d64545;
+  --warning: #8a6600;
+  --warning-soft: rgba(216, 164, 0, 0.14);
+  --danger: #c2352f;
   --danger-soft: rgba(214, 69, 69, 0.12);
   --info: #2e6bff;
   --info-soft: rgba(46, 107, 255, 0.1);
@@ -183,11 +183,28 @@
   --surface-hover: rgba(250, 250, 250, 0.05);
   --surface-active: rgba(250, 250, 250, 0.09);
 
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.16);
+  --warning: #e3b341;
+  --warning-soft: rgba(227, 179, 65, 0.16);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.16);
+  --info: #5b8cff;
+  --info-soft: rgba(91, 140, 255, 0.14);
+
   --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.36);
   --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
   --shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.42);
+}
+
+/* Sobre o azul claro do tema escuro, texto branco fica em 3,2:1. Tinta escura resolve e ainda
+   reforça o azul como accent — o botão principal fica mais evidente, não menos. */
+:root[data-theme="dark"] .btn.primary,
+:root[data-theme="dark"] .fchip.active,
+:root[data-theme="dark"] .wa-filter-chip.active {
+  color: #0a0a0b;
 }
 
 *,
@@ -390,7 +407,7 @@ table {
 }
 
 .sb-workspace:hover {
-  border-color: rgba(46, 107, 255, 0.5);
+  border-color: var(--blue);
   background: var(--blue-soft-2);
 }
 
@@ -510,7 +527,7 @@ table {
   font-size: 9.5px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: #3557f6;
+  color: var(--blue);
   background: var(--blue-soft-2);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
@@ -1174,7 +1191,7 @@ table {
 
 .card-link:hover {
   transform: translateY(-3px);
-  border-color: rgba(46, 107, 255, 0.5);
+  border-color: var(--blue);
   box-shadow: var(--shadow-md);
 }
 
@@ -1385,10 +1402,16 @@ table {
   white-space: nowrap;
 }
 
+/* Etiqueta de estado é texto de 9,5px: no azul padrão sobre o azul-suave dava 4,17:1, abaixo do
+   mínimo. O azul escuro da marca resolve sem trocar a cor da etiqueta. */
 .pill.on {
   background: var(--blue-soft);
-  color: var(--blue);
+  color: var(--blue-strong);
   border-color: transparent;
+}
+
+:root[data-theme="dark"] .pill.on {
+  color: var(--blue);
 }
 
 .toggle {
@@ -2341,8 +2364,8 @@ table.tbl tbody tr:hover td {
 .wa-etapa-funil-tag {
   padding: 2px 6px;
   border-radius: 999px;
-  background: rgba(139, 92, 246, 0.14);
-  color: #8b5cf6;
+  background: var(--blue-soft-2);
+  color: var(--blue);
 }
 
 .days {
@@ -3153,7 +3176,7 @@ table.tbl tbody tr:hover td {
 }
 
 .origem-formulario {
-  color: #2e6bff;
+  color: var(--blue);
 }
 
 .origem-outro {
@@ -4507,7 +4530,7 @@ button.camp-row:hover {
   margin: 17px;
   padding: 16px 18px;
   background: var(--blue-soft);
-  border: 1px solid rgba(46, 107, 255, 0.25);
+  border: 1px solid var(--blue);
   border-radius: var(--radius-lg);
 }
 
@@ -4673,7 +4696,7 @@ button.camp-row:hover {
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  background: radial-gradient(circle at 30% 20%, rgba(46, 107, 255, 0.14), transparent 55%),
+  background: radial-gradient(circle at 30% 20%, var(--blue-soft-2), transparent 55%),
     var(--navy);
 }
 
@@ -6581,7 +6604,7 @@ button.camp-row:hover {
 
 /* Contorno de seleção + alça de redimensionamento visíveis na própria imagem quando selecionada. */
 .doc-img-selecionada {
-  outline: 2px solid var(--blue, #2563eb);
+  outline: 2px solid var(--blue);
   outline-offset: 2px;
   cursor: grab;
 }
@@ -6645,7 +6668,7 @@ button.camp-row:hover {
   position: absolute;
   width: 10px;
   height: 10px;
-  background: var(--blue, #2563eb);
+  background: var(--blue);
   border: 2px solid #fff;
   border-radius: 50%;
   pointer-events: auto;
@@ -7631,11 +7654,11 @@ button.camp-row:hover {
 }
 
 .wa-anexo-icone-imagem {
-  background: #2e6bff;
+  background: var(--blue);
 }
 
 .wa-anexo-icone-video {
-  background: #8a3ffc;
+  background: var(--ia);
 }
 
 .wa-anexo-icone-documento {
@@ -7748,7 +7771,7 @@ button.camp-row:hover {
 .wa-corte-rect {
   position: absolute;
   border: 2px dashed var(--blue);
-  background: rgba(46, 107, 255, 0.12);
+  background: var(--blue-soft-2);
   pointer-events: none;
 }
 
@@ -8273,7 +8296,7 @@ button.camp-row:hover {
   inset: 6px;
   border: 2px dashed var(--blue);
   border-radius: var(--radius-md);
-  background: rgba(46, 107, 255, 0.04);
+  background: var(--blue-soft-2);
   pointer-events: none;
   z-index: 4;
 }
@@ -8724,13 +8747,13 @@ button.camp-row:hover {
 
 .flow-cat-gatilho,
 .flow-cat-dot.flow-cat-gatilho {
-  background: #2e6bff;
+  background: var(--blue);
   color: white;
 }
 
 .flow-cat-condicao,
 .flow-cat-dot.flow-cat-condicao {
-  background: #8a3ffc;
+  background: var(--ia);
   color: white;
 }
 
@@ -9029,9 +9052,9 @@ button.camp-row:hover {
 }
 
 .flow-node-handle-row.is-opcao-pergunta {
-  border-color: #2e6bff55;
-  background: #2e6bff14;
-  color: #2e6bff;
+  border-color: var(--blue);
+  background: var(--blue-soft-2);
+  color: var(--blue);
   font-weight: 600;
 }
 
@@ -10771,7 +10794,7 @@ button.camp-row:hover {
   padding: 5px 8px;
   border-left: 3px solid var(--blue);
   border-radius: var(--radius-sm);
-  background: rgba(46, 107, 255, 0.08);
+  background: var(--blue-soft-2);
 }
 
 .wa-citacao-autor {
@@ -12075,9 +12098,12 @@ button.camp-row:hover {
   .inicio-grid-principal {
     grid-template-columns: 1fr;
   }
+  /* Em tela estreita a coluna do funil vira faixa horizontal. `align-items: start` importa: sem
+     ele os três cartões esticam pra altura do mais alto e ficam com um vão no meio. */
   .inicio-col-lateral {
     flex-direction: row;
     flex-wrap: wrap;
+    align-items: start;
   }
   .inicio-col-lateral > * {
     flex: 1;
@@ -12254,7 +12280,7 @@ button.camp-row:hover {
   color: #d64545;
 }
 .central-dia-status-pill.is-concluido {
-  background: #2e6bff22;
+  background: var(--blue-soft);
   color: var(--blue);
 }
 
@@ -13297,7 +13323,7 @@ button.camp-row:hover {
 .armazenamento-barra-preenchida {
   height: 100%;
   border-radius: 999px;
-  background: var(--azul, #2563eb);
+  background: var(--blue);
   transition: width 0.3s ease;
 }
 
@@ -13316,7 +13342,7 @@ button.camp-row:hover {
   border: 0;
   padding: 0;
   font: inherit;
-  color: var(--azul, #2563eb);
+  color: var(--blue);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -13342,7 +13368,7 @@ button.camp-row:hover {
   padding: 3px 8px;
   border-radius: 999px;
   background: rgba(37, 99, 235, 0.1);
-  color: var(--azul, #2563eb);
+  color: var(--blue);
   font-size: 12px;
   font-weight: 600;
 }
@@ -13380,8 +13406,8 @@ button.camp-row:hover {
 }
 
 .ig-publicacao.escolhida {
-  border-color: var(--azul, #2563eb);
-  box-shadow: 0 0 0 1px var(--azul, #2563eb) inset;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 1px var(--blue) inset;
 }
 
 .ig-publicacao img,
@@ -13469,8 +13495,8 @@ button.camp-row:hover {
 
 .modelo-item.escolhida,
 .modelo-item.escolhido {
-  border-color: var(--azul, #2563eb);
-  box-shadow: 0 0 0 1px var(--azul, #2563eb) inset;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 1px var(--blue) inset;
 }
 
 .modelo-item strong {
