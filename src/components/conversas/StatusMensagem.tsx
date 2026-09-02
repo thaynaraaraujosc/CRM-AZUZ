@@ -51,7 +51,17 @@ export function StatusMensagemIcone({
     reproduzido: { icone: <IconMic width={12} height={12} />, titulo: "Áudio reproduzido pelo lead", classe: "reproduzido" },
   };
 
+  // `status` é digitado como união fechada, mas em runtime ele vem do BANCO — e ali é só texto.
+  // Um valor fora do mapa (status gravado por uma versão antiga, ou o nome cru que a Meta manda em
+  // inglês) fazia `mapa[status]` ser `undefined`, e ler `.classe` disso derrubava a renderização
+  // inteira: o erro subia até a barreira da rota e a tela de Conversas virava "Algo deu errado".
+  // Sem tiquinho é uma mensagem sem confirmação; com o acesso solto, era o atendimento inteiro fora.
   const info = mapa[status];
+  if (!info) {
+    console.warn("[status-mensagem] status desconhecido, ignorado:", status);
+    return null;
+  }
+
   return (
     <span className={`msg-status-icone ${info.classe}`} title={info.titulo} aria-label={info.titulo} role="img">
       {info.icone}

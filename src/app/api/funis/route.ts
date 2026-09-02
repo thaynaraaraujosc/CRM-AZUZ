@@ -79,76 +79,95 @@ export async function PUT(request: Request) {
   const idsEtapas = funis.flatMap((f) => f.colunas.map((c) => c.id));
   const idsCards = funis.flatMap((f) => f.colunas.flatMap((c) => c.cards.map((card) => card.id)));
 
-  await prisma.$transaction([
-    prisma.negocioCard.deleteMany({
-      where: {
-        workspaceId,
-        ...filtroConexaoDeNegocio(provedores),
-        id: { notIn: idsCards.length ? idsCards : ["__nenhum__"] },
-      },
-    }),
-    prisma.funilEtapa.deleteMany({
-      where: { workspaceId, id: { notIn: idsEtapas.length ? idsEtapas : ["__nenhum__"] } },
-    }),
-    prisma.funil.deleteMany({
-      where: { workspaceId, id: { notIn: idsFunis.length ? idsFunis : ["__nenhum__"] } },
-    }),
-    ...funis.map((f) =>
-      prisma.funil.upsert({
-        where: { id: f.id },
-        create: { id: f.id, workspaceId, nome: f.nome, responsavel: f.responsavel },
-        update: { nome: f.nome, responsavel: f.responsavel },
+  // A transação inteira estava sem tratamento de erro: qualquer falha do banco virava um 500 mudo,
+  // e a tela só conseguia dizer "Funis não foram salvos: 500" — sem nada que apontasse a causa, nem
+  // no navegador nem pra quem fosse investigar. O erro real fica no log do servidor, com quantos
+  // funis/etapas/cards estavam no payload, que é o que separa "dado inválido num card" de
+  // "transação grande demais e estourou o tempo".
+  try {
+    await prisma.$transaction([
+      prisma.negocioCard.deleteMany({
+        where: {
+          workspaceId,
+          ...filtroConexaoDeNegocio(provedores),
+          id: { notIn: idsCards.length ? idsCards : ["__nenhum__"] },
+        },
       }),
-    ),
-    ...funis.flatMap((f) =>
-      f.colunas.map((c, ordemEtapa) =>
-        prisma.funilEtapa.upsert({
-          where: { id: c.id },
-          create: { id: c.id, workspaceId, funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
-          update: { funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
+      prisma.funilEtapa.deleteMany({
+        where: { workspaceId, id: { notIn: idsEtapas.length ? idsEtapas : ["__nenhum__"] } },
+      }),
+      prisma.funil.deleteMany({
+        where: { workspaceId, id: { notIn: idsFunis.length ? idsFunis : ["__nenhum__"] } },
+      }),
+      ...funis.map((f) =>
+        prisma.funil.upsert({
+          where: { id: f.id },
+          create: { id: f.id, workspaceId, nome: f.nome, responsavel: f.responsavel },
+          update: { nome: f.nome, responsavel: f.responsavel },
         }),
       ),
-    ),
-    ...funis.flatMap((f) =>
-      f.colunas.flatMap((c) =>
-        c.cards.map((card, ordemCard) =>
-          prisma.negocioCard.upsert({
-            where: { id: card.id },
-            create: {
-              id: card.id,
-              workspaceId,
-              etapaId: c.id,
-              ordem: ordemCard,
-              nome: card.nome,
-              valor: card.valor,
-              origem: card.origem,
-              dias: card.dias,
-              data: card.data,
-              etiquetas: card.etiquetas ?? undefined,
-              responsavel: card.responsavel,
-              statusFechamento: card.statusFechamento ?? undefined,
-              motivoPerda: card.motivoPerda ?? undefined,
-              dataFechamento: card.dataFechamento ? new Date(card.dataFechamento) : undefined,
-            },
-            update: {
-              etapaId: c.id,
-              ordem: ordemCard,
-              nome: card.nome,
-              valor: card.valor,
-              origem: card.origem,
-              dias: card.dias,
-              data: card.data,
-              etiquetas: card.etiquetas ?? undefined,
-              responsavel: card.responsavel,
-              statusFechamento: card.statusFechamento ?? null,
-              motivoPerda: card.motivoPerda ?? null,
-              dataFechamento: card.dataFechamento ? new Date(card.dataFechamento) : null,
-            },
+      ...funis.flatMap((f) =>
+        f.colunas.map((c, ordemEtapa) =>
+          prisma.funilEtapa.upsert({
+            where: { id: c.id },
+            create: { id: c.id, workspaceId, funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
+            update: { funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
           }),
         ),
       ),
-    ),
-  ]);
+      ...funis.flatMap((f) =>
+        f.colunas.flatMap((c) =>
+          c.cards.map((card, ordemCard) =>
+            prisma.negocioCard.upsert({
+              where: { id: card.id },
+              create: {
+                id: card.id,
+                workspaceId,
+                etapaId: c.id,
+                ordem: ordemCard,
+                nome: card.nome,
+                valor: card.valor,
+                origem: card.origem,
+                dias: card.dias,
+                data: card.data,
+                etiquetas: card.etiquetas ?? undefined,
+                responsavel: card.responsavel,
+                statusFechamento: card.statusFechamento ?? undefined,
+                motivoPerda: card.motivoPerda ?? undefined,
+                dataFechamento: card.dataFechamento ? new Date(card.dataFechamento) : undefined,
+              },
+              update: {
+                etapaId: c.id,
+                ordem: ordemCard,
+                nome: card.nome,
+                valor: card.valor,
+                origem: card.origem,
+                dias: card.dias,
+                data: card.data,
+                etiquetas: card.etiquetas ?? undefined,
+                responsavel: card.responsavel,
+                statusFechamento: card.statusFechamento ?? null,
+                motivoPerda: card.motivoPerda ?? null,
+                dataFechamento: card.dataFechamento ? new Date(card.dataFechamento) : null,
+              },
+            }),
+          ),
+        ),
+      ),
+    ]);
+  } catch (erro) {
+    console.error("[api/funis] falha ao salvar:", {
+      workspaceId,
+      funis: funis.length,
+      etapas: idsEtapas.length,
+      cards: idsCards.length,
+      mensagem: erro instanceof Error ? erro.message : String(erro),
+    });
+    return NextResponse.json(
+      { erro: "Não foi possível salvar o funil agora." },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ ok: true });
 }

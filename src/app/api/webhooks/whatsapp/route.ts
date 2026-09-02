@@ -12,6 +12,27 @@ import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disp
 import type { ConvMensagem } from "@/lib/data";
 
 /**
+ * Status da Meta -> vocabulário do CRM.
+ *
+ * A Meta manda "sent" / "delivered" / "read" / "failed"; a tela desenha o tiquinho a partir de
+ * "enviado" / "entregue" / "lido" / "erro". O valor vinha sendo gravado CRU, então o banco acumulou
+ * status que a interface não reconhece — e ela quebrava por inteiro ao tentar desenhar um deles.
+ *
+ * Status fora desta tabela vira `undefined` de propósito: não atualiza a coluna. É melhor a
+ * mensagem ficar sem tiquinho do que guardar um valor que ninguém sabe ler.
+ */
+const TRADUCAO_STATUS: Record<string, "enviado" | "entregue" | "lido" | "erro" | undefined> = {
+  sent: "enviado",
+  delivered: "entregue",
+  read: "lido",
+  failed: "erro",
+  // A Meta também usa estes em alguns fluxos; mapeados pro equivalente mais próximo.
+  deleted: "erro",
+  warning: undefined,
+};
+
+
+/**
  * GET — handshake de verificação que a Meta faz uma vez, ao cadastrar a URL do webhook no painel
  * do App. Compara o `hub.verify_token` (valor escolhido por você, cadastrado nos dois lados) e
  * devolve o `hub.challenge` de volta, sem isso a Meta recusa salvar o webhook.
@@ -210,6 +231,11 @@ export async function POST(request: Request) {
         const integracao = await integracaoDoNumero(phoneNumberId);
         if (!integracao) continue;
         for (const s of valor.statuses) {
+          // A Meta manda o status EM INGLÊS ("sent", "delivered", "read", "failed"); o CRM guarda e
+          // exibe em português. Isso estava sendo gravado cru, então o banco ficou com valores que
+          // a tela não conhece — e a tela de Conversas quebrava inteira ao tentar desenhar o
+          // tiquinho de um status fora do vocabulário dela.
+          const statusTraduzido = TRADUCAO_STATUS[s.status ?? ""] ?? undefined;
           // Casa pelo `wamid` — o id que a Meta gerou no envio e que o CRM passou a guardar. O
           // `id` interno entra como segunda tentativa por dois motivos: mensagem RECEBIDA é
           // gravada com o próprio wamid como id, e mensagens enviadas antes desta correção não têm
@@ -220,7 +246,7 @@ export async function POST(request: Request) {
           const atualizadas = await prisma.mensagemExtra
             .updateMany({
               where: { wamid: s.id, workspaceId: integracao.workspaceId },
-              data: { status: s.status ?? undefined },
+              data: { status: statusTraduzido },
             })
             .catch((erro) => {
               console.error("[webhook whatsapp] falha ao atualizar status:", erro);
@@ -230,13 +256,14 @@ export async function POST(request: Request) {
             await prisma.mensagemExtra
               .updateMany({
                 where: { id: s.id, workspaceId: integracao.workspaceId },
-                data: { status: s.status ?? undefined },
+                data: { status: statusTraduzido },
               })
               .catch((erro) => console.error("[webhook whatsapp] falha ao atualizar status:", erro));
           }
           console.log("[webhook whatsapp] status recebido:", {
             wamid: s.id,
             status: s.status,
+            statusTraduzido,
             casouPeloWamid: atualizadas.count > 0,
           });
           if (s.status === "failed" && s.errors?.length) {
