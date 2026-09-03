@@ -84,9 +84,7 @@ export default function AcoesPage() {
   const [buscaContato, setBuscaContato] = useState("");
   const [corpo, setCorpo] = useState("");
   const [assunto, setAssunto] = useState("");
-  const [canaisEnvio, setCanaisEnvio] = useState(
-    () => CANAIS_ENVIO.filter((c) => c.ativo).map((c) => c.label),
-  );
+  const [canaisEnvio, setCanaisEnvio] = useState<string[]>(["WhatsApp"]);
   const [historicoAcoes, setHistoricoAcoes] = useState<Campanha[]>([]);
   const [carregandoHistorico, setCarregandoHistorico] = useState(true);
   const [toastAcao, setToastAcao] = useState<string | null>(null);
