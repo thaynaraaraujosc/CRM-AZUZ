@@ -217,7 +217,11 @@ export default function AcoesPage() {
   async function agendarEnvio() {
     if (selecionados.size === 0 || canaisEnvio.length === 0 || enviando) return;
 
-    const canal = canaisEnvio[0].toLowerCase() === "whatsapp" ? "whatsapp_oficial" : "email";
+    console.log("📋 DEBUG - canaisEnvio array:", canaisEnvio);
+    console.log("📋 DEBUG - canaisEnvio[0]:", canaisEnvio[0]);
+    console.log("📋 DEBUG - canaisEnvio[0].toLowerCase():", canaisEnvio[0]?.toLowerCase());
+
+    const canal = canaisEnvio[0]?.toLowerCase() === "whatsapp" ? "whatsapp_oficial" : "email";
     console.log("🔍 Canal selecionado:", { canaisEnvio: canaisEnvio[0], canal });
     if (canal === "email" && !assunto.trim()) {
       setToastAcao("E-mail precisa de assunto.");
