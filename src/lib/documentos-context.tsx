@@ -294,7 +294,7 @@ ${CAPA("#8a3ffc", "#ffffff", "Planejamento de projeto", "[TÍTULO DO PROJETO]")}
   <h3>Experiência</h3>
   <p><b>[CARGO] | [EMPRESA]</b> · [DATA]<br>Descrição das responsabilidades e resultados.</p>
   <h3>Formação</h3>
-  <p><b>[CURSO]</b> — [INSTITUIÇÃO] · [DATA]</p>
+  <p><b>[CURSO]</b> | [INSTITUIÇÃO] · [DATA]</p>
   <h3>Certificações</h3><p></p>
 </td>
 </tr>
@@ -314,7 +314,7 @@ ${CAPA("#c9660a", "#ffffff", "Orçamento", "Nº [NÚMERO] · Emitido em [DATA]")
   <tr style="background:#fff4e5;"><td style="padding:8px;font-weight:700;">Item</td><td style="padding:8px;font-weight:700;">Qtd.</td><td style="padding:8px;font-weight:700;">Valor unitário</td><td style="padding:8px;font-weight:700;">Total</td></tr>
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
-  <tr><td colspan="3" style="padding:8px;border-top:2px solid #c9660a;font-weight:700;text-align:right;">Total</td><td style="padding:8px;border-top:2px solid #c9660a;font-weight:700;">R$ —</td></tr>
+  <tr><td colspan="3" style="padding:8px;border-top:2px solid #c9660a;font-weight:700;text-align:right;">Total</td><td style="padding:8px;border-top:2px solid #c9660a;font-weight:700;">R$ </td></tr>
 </table>
 <h3>Condições de pagamento</h3><p></p>
 <h3>Observações</h3><p></p>
@@ -451,9 +451,9 @@ ${CAPA("#8a3ffc", "#ffffff", "Calendário editorial", "[MÊS/ANO]")}
   <tr style="background:#0b1533;color:#fff;"><td style="padding:8px;font-weight:700;">Descrição</td><td style="padding:8px;font-weight:700;">Qtd.</td><td style="padding:8px;font-weight:700;">Valor unit.</td><td style="padding:8px;font-weight:700;">Total</td></tr>
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
-  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">Subtotal</td><td style="padding:8px;border-top:1px solid #ddd;">R$ —</td></tr>
-  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;">Impostos</td><td style="padding:8px;">R$ —</td></tr>
-  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;border-top:2px solid #0b1533;font-weight:700;">Total</td><td style="padding:8px;border-top:2px solid #0b1533;font-weight:700;">R$ —</td></tr>
+  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">Subtotal</td><td style="padding:8px;border-top:1px solid #ddd;">R$ </td></tr>
+  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;">Impostos</td><td style="padding:8px;">R$ </td></tr>
+  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;border-top:2px solid #0b1533;font-weight:700;">Total</td><td style="padding:8px;border-top:2px solid #0b1533;font-weight:700;">R$ </td></tr>
 </table>
 <h3>Forma de pagamento</h3><p></p>
 <h3>Observações</h3><p></p>
@@ -468,10 +468,10 @@ ${CAPA("#8a3ffc", "#ffffff", "Calendário editorial", "[MÊS/ANO]")}
 ${CAPA("#0e7c86", "#ffffff", "Relatório de atendimento", "[NOME DO CLIENTE] · Período: [DATA]")}
 <table style="width:100%;border-collapse:separate;border-spacing:8px 0;margin:16px 0;">
   <tr>
-    <td style="background:#e6f5f6;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#0e7c86;margin:0 0 4px;text-transform:uppercase;">Atendimentos</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
-    <td style="background:#eaf1ff;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#2e6bff;margin:0 0 4px;text-transform:uppercase;">Tempo médio</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
-    <td style="background:#e8f6ee;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#0f9d63;margin:0 0 4px;text-transform:uppercase;">Satisfação</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
-    <td style="background:#fff4e5;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#c9660a;margin:0 0 4px;text-transform:uppercase;">Pendentes</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
+    <td style="background:#e6f5f6;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#0e7c86;margin:0 0 4px;text-transform:uppercase;">Atendimentos</p><p style="font-size:20px;font-weight:700;margin:0;"></p></td>
+    <td style="background:#eaf1ff;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#2e6bff;margin:0 0 4px;text-transform:uppercase;">Tempo médio</p><p style="font-size:20px;font-weight:700;margin:0;"></p></td>
+    <td style="background:#e8f6ee;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#0f9d63;margin:0 0 4px;text-transform:uppercase;">Satisfação</p><p style="font-size:20px;font-weight:700;margin:0;"></p></td>
+    <td style="background:#fff4e5;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#c9660a;margin:0 0 4px;text-transform:uppercase;">Pendentes</p><p style="font-size:20px;font-weight:700;margin:0;"></p></td>
   </tr>
 </table>
 <h3>Histórico de interações</h3>
