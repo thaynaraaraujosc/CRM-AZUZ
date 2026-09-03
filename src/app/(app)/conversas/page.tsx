@@ -859,8 +859,6 @@ function ConversasPageInner() {
   const [canalTopRect, setCanalTopRect] = useState<DOMRect | null>(null);
   const [canalTopFiltro, setCanalTopFiltro] = useState("Todos");
 
-  const [fotoPerfilAberta, setFotoPerfilAberta] = useState(false);
-
   // Movido pra antes de `conversasFiltradas` (que chama `conversaUsaWhatsappNaoOficial`, definida
   // mais abaixo mas que fecha sobre esta variável) — como é `const`, ficava numa "zona morta
   // temporal" até esta linha rodar; `conversasFiltradas` é calculado direto no corpo do
@@ -3794,15 +3792,6 @@ function ConversasPageInner() {
                 </button>
               ))}
             </FloatingDropdown>
-            {contatoDaConversa?.fotoUrl ? (
-              <button
-                type="button"
-                className="btn secondary"
-                onClick={() => setFotoPerfilAberta(true)}
-              >
-                Ver foto do perfil
-              </button>
-            ) : null}
             {/* Conectar um número é a primeira coisa que se quer fazer numa tela de atendimento
                 vazia — antes era preciso sair daqui e ir até Configurações → WhatsApp. */}
             <BotoesConectarWhatsApp />
@@ -8444,64 +8433,6 @@ function ConversasPageInner() {
               ))}
             </div>
           )}
-        </div>
-      ) : null}
-
-      {fotoPerfilAberta && contatoDaConversa?.fotoUrl ? (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-          }}
-          onClick={() => setFotoPerfilAberta(false)}
-        >
-          <div
-            style={{
-              backgroundColor: "var(--bg)",
-              borderRadius: 12,
-              padding: 12,
-              maxWidth: "90vh",
-              maxHeight: "90vh",
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <p className="n" style={{ margin: 0 }}>
-                {contatoDaConversa.nome}
-              </p>
-              <button
-                type="button"
-                onClick={() => setFotoPerfilAberta(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 4,
-                  fontSize: 20,
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            <img
-              src={contatoDaConversa.fotoUrl}
-              alt={`Foto de perfil de ${contatoDaConversa.nome}`}
-              style={{
-                maxWidth: "500px",
-                maxHeight: "500px",
-                borderRadius: 8,
-                objectFit: "contain",
-              }}
-            />
-          </div>
         </div>
       ) : null}
 

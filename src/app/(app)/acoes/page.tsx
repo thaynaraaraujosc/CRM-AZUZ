@@ -77,20 +77,82 @@ export default function AcoesPage() {
   const { contatos } = useContatos();
   const origensDisponiveis = Array.from(new Set(contatos.map((c) => c.origem)));
 
+  // Carrega do localStorage quando disponível
   const [selecionados, setSelecionados] = useState(
-    () => new Set(contatos.map((c) => c.nome)),
+    () => {
+      try {
+        const salvo = localStorage.getItem("campanhas_selecionados");
+        if (salvo) return new Set(JSON.parse(salvo) as string[]);
+      } catch (e) {
+        console.error("Erro ao carregar selecionados do localStorage:", e);
+      }
+      return new Set(contatos.map((c) => c.nome));
+    },
   );
   const [listaAberta, setListaAberta] = useState(false);
   const [buscaContato, setBuscaContato] = useState("");
-  const [corpo, setCorpo] = useState("");
-  const [assunto, setAssunto] = useState("");
-  const [canaisEnvio, setCanaisEnvio] = useState<string[]>(["WhatsApp"]);
+  const [corpo, setCorpo] = useState(() => {
+    try {
+      return localStorage.getItem("campanhas_corpo") || "";
+    } catch {
+      return "";
+    }
+  });
+  const [assunto, setAssunto] = useState(() => {
+    try {
+      return localStorage.getItem("campanhas_assunto") || "";
+    } catch {
+      return "";
+    }
+  });
+  const [canaisEnvio, setCanaisEnvio] = useState<string[]>(() => {
+    try {
+      const salvo = localStorage.getItem("campanhas_canais");
+      if (salvo) return JSON.parse(salvo) as string[];
+    } catch (e) {
+      console.error("Erro ao carregar canais do localStorage:", e);
+    }
+    return ["whatsapp"];
+  });
   const [historicoAcoes, setHistoricoAcoes] = useState<Campanha[]>([]);
   const [carregandoHistorico, setCarregandoHistorico] = useState(true);
   const [toastAcao, setToastAcao] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [preverDuracao, setPreverDuracao] = useState<{ min: number; max: number } | null>(null);
   const [contatosSemDestino, setContatosSemDestino] = useState<string[]>([]);
+
+  // Salva dados no localStorage quando mudam
+  useEffect(() => {
+    try {
+      localStorage.setItem("campanhas_corpo", corpo);
+    } catch (e) {
+      console.error("Erro ao salvar corpo no localStorage:", e);
+    }
+  }, [corpo]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("campanhas_assunto", assunto);
+    } catch (e) {
+      console.error("Erro ao salvar assunto no localStorage:", e);
+    }
+  }, [assunto]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("campanhas_selecionados", JSON.stringify(Array.from(selecionados)));
+    } catch (e) {
+      console.error("Erro ao salvar selecionados no localStorage:", e);
+    }
+  }, [selecionados]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("campanhas_canais", JSON.stringify(canaisEnvio));
+    } catch (e) {
+      console.error("Erro ao salvar canais no localStorage:", e);
+    }
+  }, [canaisEnvio]);
 
   useEffect(() => {
     fetch("/api/campanhas")
@@ -217,12 +279,9 @@ export default function AcoesPage() {
   async function agendarEnvio() {
     if (selecionados.size === 0 || canaisEnvio.length === 0 || enviando) return;
 
-    console.log("📋 DEBUG - canaisEnvio array:", canaisEnvio);
-    console.log("📋 DEBUG - canaisEnvio[0]:", canaisEnvio[0]);
-    console.log("📋 DEBUG - canaisEnvio[0].toLowerCase():", canaisEnvio[0]?.toLowerCase());
-
-    const canal = canaisEnvio[0]?.toLowerCase() === "whatsapp" ? "whatsapp_oficial" : "email";
-    console.log("🔍 Canal selecionado:", { canaisEnvio: canaisEnvio[0], canal });
+    const canalSelecionado = canaisEnvio[0]?.toLowerCase() || "whatsapp";
+    const canal = canalSelecionado === "whatsapp" ? "whatsapp_oficial" : "email";
+    console.log("🔍 Canal:", { selecionado: canalSelecionado, final: canal });
     if (canal === "email" && !assunto.trim()) {
       setToastAcao("E-mail precisa de assunto.");
       setTimeout(() => setToastAcao(null), 4000);
