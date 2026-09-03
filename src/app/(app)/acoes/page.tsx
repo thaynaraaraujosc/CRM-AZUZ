@@ -112,7 +112,7 @@ export default function AcoesPage() {
     } catch (e) {
       console.error("Erro ao carregar canais do localStorage:", e);
     }
-    return ["whatsapp"];
+    return ["WhatsApp"];
   });
   const [historicoAcoes, setHistoricoAcoes] = useState<Campanha[]>([]);
   const [carregandoHistorico, setCarregandoHistorico] = useState(true);
@@ -279,9 +279,10 @@ export default function AcoesPage() {
   async function agendarEnvio() {
     if (selecionados.size === 0 || canaisEnvio.length === 0 || enviando) return;
 
-    const canalSelecionado = canaisEnvio[0]?.toLowerCase() || "whatsapp";
-    const canal = canalSelecionado === "whatsapp" ? "whatsapp_oficial" : "email";
-    console.log("🔍 Canal:", { selecionado: canalSelecionado, final: canal });
+    const canalRaw = canaisEnvio[0] || "WhatsApp";
+    const isWhatsApp = canalRaw.toLowerCase().startsWith("whatsapp");
+    const canal = isWhatsApp ? "whatsapp_oficial" : "email";
+    console.log("🔍 Canal Debug:", { raw: canalRaw, isWhatsApp, final: canal });
     if (canal === "email" && !assunto.trim()) {
       setToastAcao("E-mail precisa de assunto.");
       setTimeout(() => setToastAcao(null), 4000);
