@@ -806,6 +806,7 @@ function ConversasPageInner() {
     email?: string;
     empresa?: string;
     cargo?: string;
+    fotoUrl?: string;
   } | null>(null);
   const [infoWidth, setInfoWidth] = useState(320);
   const [sincronizando, setSincronizando] = useState(false);
@@ -6305,7 +6306,7 @@ function ConversasPageInner() {
                               <div className="wa-contato-picker-tray-lista">
                                 {contatosSelecionadosPicker.map((c) => (
                                   <span className="wa-contato-picker-tray-item" key={c.id}>
-                                    <span className="avatar">{c.initials}</span>
+                                    <span className="avatar">{c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : c.initials}</span>
                                     {c.nome}
                                     <button
                                       type="button"
@@ -6343,7 +6344,7 @@ function ConversasPageInner() {
                                       }
                                     }}
                                   >
-                                    <span className="avatar">{c.initials}</span>
+                                    <span className="avatar">{c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : c.initials}</span>
                                     <span className="wa-contato-picker-card-info">
                                       <span className="wa-contato-picker-card-nome">
                                         {c.nome}
@@ -6518,7 +6519,7 @@ function ConversasPageInner() {
                       <div className="wa-contato-previa-lista">
                         {contatosSelecionadosPicker.map((c) => (
                           <div className="wa-contato-previa-card" key={c.id}>
-                            <span className="avatar">{c.initials}</span>
+                            <span className="avatar">{c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : c.initials}</span>
                             <span className="wa-contato-previa-info">
                               <span className="n" style={{ display: "block" }}>
                                 {c.nome}
@@ -6733,7 +6734,7 @@ function ConversasPageInner() {
                       className="wa-encaminhar-item"
                       onClick={() => encaminharPara(c.nome, encaminharAberto.msg)}
                     >
-                      <span className="avatar">{c.initials}</span>
+                      <span className="avatar">{c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : c.initials}</span>
                       <span>{c.nome}</span>
                     </button>
                   ))}
@@ -6957,7 +6958,7 @@ function ConversasPageInner() {
                 </button>
               </div>
               <div className="wa-contato-detalhe-corpo">
-                <span className="avatar wa-contato-detalhe-avatar">{contatoDetalheAberto.initials}</span>
+                <span className="avatar wa-contato-detalhe-avatar">{contatoDetalheAberto.fotoUrl ? <img src={contatoDetalheAberto.fotoUrl} alt="" className="wa-avatar-foto" /> : contatoDetalheAberto.initials}</span>
                 <p className="n">{contatoDetalheAberto.nome}</p>
                 {contatoDetalheAberto.empresa || contatoDetalheAberto.cargo ? (
                   <p className="hint">
@@ -7071,7 +7072,7 @@ function ConversasPageInner() {
           {abaInfo === "resumo" ? (
             <>
               <div className="wa-resumo-card">
-                <span className="avatar wa-resumo-avatar">{iniciaisExibidas(aberta.nome, aberta.initials)}</span>
+                <span className="avatar wa-resumo-avatar">{aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : iniciaisExibidas(aberta.nome, aberta.initials)}</span>
                 <p className="wa-resumo-nome">{nomeExibido(aberta.nome)}</p>
                 {empresaContato ? <p className="wa-resumo-empresa">{empresaContato}</p> : null}
                 <div className="wa-resumo-grid">
