@@ -441,7 +441,7 @@ function historicoInicialDoContato(
     id: `hist-inicio-${contato.id}`,
     tipo: "sistema",
     texto: `Primeira conversa registrada${primeiraHora ? ` · ${primeiraHora}` : ""}`,
-    quando: primeiraHora ?? "—",
+    quando: primeiraHora ?? "",
   });
 
   if (localizacao) {
@@ -455,7 +455,7 @@ function historicoInicialDoContato(
       texto: `Entrou na etapa "${localizacao.etapa}" do funil ${funil?.nome ?? ""}${
         card ? ` · há ${card.dias}` : ""
       }`,
-      quando: card?.data ?? "—",
+      quando: card?.data ?? "",
     });
 
     if (localizacao.etapa.toLowerCase().includes("fechado")) {
@@ -463,7 +463,7 @@ function historicoInicialDoContato(
         id: `hist-fechou-${contato.id}`,
         tipo: "sistema",
         texto: `Fechou negócio${card ? ` · valor ${card.valor}` : ""}`,
-        quando: card?.data ?? "—",
+        quando: card?.data ?? "",
       });
     }
   } else {
@@ -471,7 +471,7 @@ function historicoInicialDoContato(
       id: `hist-sem-funil-${contato.id}`,
       tipo: "sistema",
       texto: "Ainda não entrou em nenhum funil",
-      quando: "—",
+      quando: "",
     });
   }
 
@@ -1023,7 +1023,7 @@ function ConversasPageInner() {
   const tarefa = {
     data: "",
     oQueFazer: "",
-    valor: "—",
+    valor: "",
     responsavel: "",
     anexo: null as { arquivo: string; detalhe: string } | null,
   };
@@ -1739,7 +1739,7 @@ function ConversasPageInner() {
       } else if (!viaBaileys) {
         adicionarMensagem({
           tipo: "system",
-          texto: "⚠️ Envio de áudio pela API oficial (Meta) ainda não é suportado — só pelo WhatsApp via QR Code.",
+          texto: "⚠️ Envio de áudio pela API oficial (Meta) ainda não é suportado. Só pelo WhatsApp via QR Code.",
           hora: horaAgora(),
         });
       }
@@ -1845,7 +1845,7 @@ function ConversasPageInner() {
         tipo: "sistema",
         titulo: `E-mail · ${email.assunto}`,
         descricao: email.aberto ? `Lido às ${email.abertoEm}` : "Enviado, ainda não lido",
-        quando: "—",
+        quando: "",
         minutosAtras: 0,
       }),
     ),
@@ -1920,8 +1920,8 @@ function ConversasPageInner() {
           atualizarMensagem(contatoNome, msg.id!, {
             texto:
               tipo === "audio"
-                ? "⚠️ Não consegui carregar esse áudio — ouça no celular conectado."
-                : "⚠️ Não consegui carregar essa imagem — veja no celular conectado.",
+                ? "⚠️ Não consegui carregar esse áudio. Ouça no celular conectado."
+                : "⚠️ Não consegui carregar essa imagem. Veja no celular conectado.",
             midiaPendente: undefined,
           });
         }
@@ -1930,8 +1930,8 @@ function ConversasPageInner() {
         atualizarMensagem(contatoNome, msg.id!, {
           texto:
             tipo === "audio"
-              ? "⚠️ Não consegui carregar esse áudio — ouça no celular conectado."
-              : "⚠️ Não consegui carregar essa imagem — veja no celular conectado.",
+              ? "⚠️ Não consegui carregar esse áudio. Ouça no celular conectado."
+              : "⚠️ Não consegui carregar essa imagem. Veja no celular conectado.",
           midiaPendente: undefined,
         });
       })
@@ -7082,10 +7082,10 @@ function ConversasPageInner() {
                   <span className="wa-resumo-label">E-mail</span>
                   <span className="wa-resumo-valor">{emailContato || "—"}</span>
                   <span className="wa-resumo-label">Responsável</span>
-                  <span className="wa-resumo-valor">{aberta.atendenteSelecionado ?? "—"}</span>
+                  <span className="wa-resumo-valor">{aberta.atendenteSelecionado ?? ""}</span>
                   <span className="wa-resumo-label">Funil · Etapa</span>
                   <span className="wa-resumo-valor">
-                    {funilSelecionado ? `${funilSelecionado.nome} · ${etapaSelecionada}` : "—"}
+                    {funilSelecionado ? `${funilSelecionado.nome} · ${etapaSelecionada}` : ""}
                   </span>
                   <span className="wa-resumo-label">Origem</span>
                   <span className="wa-resumo-valor">{aberta.origem}</span>

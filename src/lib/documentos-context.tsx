@@ -303,7 +303,7 @@ ${CAPA("#8a3ffc", "#ffffff", "Planejamento de projeto", "[TÍTULO DO PROJETO]")}
   {
     id: "orcamento",
     nome: "Orçamento",
-    descricao: "Tabela de itens, totais e condições — visual de nota comercial",
+    descricao: "Tabela de itens, totais e condições. Visual de nota comercial",
     categoria: "Financeiro",
     conteudoHtml: `
 ${CAPA("#c9660a", "#ffffff", "Orçamento", "Nº [NÚMERO] · Emitido em [DATA]")}
@@ -508,7 +508,7 @@ ${CAPA("#2f9e8f", "#ffffff", "Plano de acompanhamento de saúde", "[NOME DO CLIE
   <tr style="background:#e6f5f2;"><td style="padding:8px;font-weight:700;">Data</td><td style="padding:8px;font-weight:700;">Indicador</td><td style="padding:8px;font-weight:700;">Valor</td><td style="padding:8px;font-weight:700;">Observação</td></tr>
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
 </table>
-<p style="background:#fff3cd;border-left:3px solid #c9660a;padding:10px 14px;font-size:12px;margin-top:16px;">⚠️ Este modelo é organizacional — não substitui orientação profissional de saúde.</p>`,
+<p style="background:#fff3cd;border-left:3px solid #c9660a;padding:10px 14px;font-size:12px;margin-top:16px;">⚠️ Este modelo é organizacional. Não substitui orientação profissional de saúde.</p>`,
   },
   {
     id: "ebook",
@@ -522,9 +522,9 @@ ${CAPA("#2f9e8f", "#ffffff", "Plano de acompanhamento de saúde", "[NOME DO CLIE
   <p style="font-size:15px;opacity:.9;margin:0;">[DESCREVA O OBJETIVO deste material em uma frase.]</p>
 </div>
 <h3>Sumário</h3>
-<p>1. Introdução<br>2. Capítulo 1 — [TÍTULO]<br>3. Capítulo 2 — [TÍTULO]<br>4. Conclusão</p>
+<p>1. Introdução<br>2. Capítulo 1. [TÍTULO]<br>3. Capítulo 2. [TÍTULO]<br>4. Conclusão</p>
 <h3>Introdução</h3><p></p>
-<h3>Capítulo 1 — [TÍTULO]</h3><p></p>
+<h3>Capítulo 1. [TÍTULO]</h3><p></p>
 <blockquote style="border-left:3px solid #8a3ffc;margin:16px 0;padding:8px 16px;font-style:italic;color:#555;background:#f8f6ff;">"Destaque uma citação ou dado importante aqui."</blockquote>
 <svg width="100%" height="160" viewBox="0 0 400 160" style="background:#f1e9ff;border-radius:8px;">
   <rect x="140" y="45" width="120" height="80" rx="6" fill="#fff" stroke="#8a3ffc" stroke-width="2"/>
@@ -537,12 +537,12 @@ ${CAPA("#2f9e8f", "#ffffff", "Plano de acompanhamento de saúde", "[NOME DO CLIE
   <circle cx="200" cy="12" r="4" fill="#8a3ffc"/>
   <line x1="230" y1="12" x2="400" y2="12" stroke="#ddd"/>
 </svg>
-<h3>Capítulo 2 — [TÍTULO]</h3><p></p>
+<h3>Capítulo 2. [TÍTULO]</h3><p></p>
 <div style="background:#eaf1ff;border-radius:8px;padding:16px;margin:16px 0;"><p style="margin:0;"><b>💡 Dica:</b> destaque um insight prático pro leitor aqui.</p></div>
 <h3>Conclusão</h3><p></p>
 <div style="background:#0b1533;color:#fff;border-radius:8px;padding:24px;text-align:center;margin-top:24px;">
   <p style="margin:0 0 8px;font-size:16px;font-weight:700;">Gostou do conteúdo?</p>
-  <p style="margin:0;font-size:13px;opacity:.85;">[DESCREVA A CHAMADA PARA AÇÃO — fale com a gente, acesse o site, etc.]</p>
+  <p style="margin:0;font-size:13px;opacity:.85;">[DESCREVA A CHAMADA PARA AÇÃO. Fale com a gente, acesse o site, etc.]</p>
 </div>`,
   },
   {

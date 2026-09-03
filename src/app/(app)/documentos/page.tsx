@@ -348,7 +348,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
     <>
       <Topbar
         title="Documentos"
-        sub="Crie, edite e organize documentos de texto — com páginas, formatação e histórico"
+        sub="Crie, edite e organize documentos de texto. Com páginas, formatação e histórico"
       />
       <div className="content">
         <div className="filters-row mb14">
@@ -411,9 +411,9 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
             ) : modelosFiltrados.length === 0 ? (
               <p className="hint" style={{ padding: "0 16px 16px" }}>
                 {abaModelos === "meus"
-                  ? "Você ainda não salvou nenhum modelo — abra um documento e use Arquivo → Salvar como modelo."
+                  ? "Você ainda não salvou nenhum modelo. Abra um documento e use Arquivo → Salvar como modelo."
                   : abaModelos === "favoritos"
-                  ? "Nenhum modelo favoritado ainda — passe o mouse num modelo e clique na estrela pra favoritar."
+                  ? "Nenhum modelo favoritado ainda. Passe o mouse num modelo e clique na estrela pra favoritar."
                   : "Nenhum modelo encontrado com esse filtro."}
               </p>
             ) : (
@@ -503,7 +503,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                 {modeloEmPreview.conteudoHtml ? (
                   <div className="doc-modelo-preview-folha" dangerouslySetInnerHTML={{ __html: modeloEmPreview.conteudoHtml }} />
                 ) : (
-                  <p className="hint">Documento em branco — página limpa em A4.</p>
+                  <p className="hint">Documento em branco. Página limpa em A4.</p>
                 )}
               </div>
               <div className="panel-f" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>

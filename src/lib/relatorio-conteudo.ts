@@ -174,9 +174,9 @@ function secaoConclusoes(ctx: ContextoRelatorio): SecaoRelatorio {
   const texto =
     `A operação fechou o período com ${receita.label} em receita (${percentualMeta}% da meta de ${formatarMoeda(META_PADRAO)}) ` +
     `e taxa de conversão de ${taxa.label}.` +
-    (principal.motivo !== "—"
+    (principal.motivo !== ""
       ? ` O principal motivo de perda foi "${principal.motivo}", responsável por ${principal.valor.toFixed(0)}% ` +
-        `das negociações perdidas — vale priorizar ação sobre esse ponto no próximo período.`
+        `das negociações perdidas. Vale priorizar ação sobre esse ponto no próximo período.`
       : "");
   return { titulo: "Conclusões", observacao: texto };
 }
@@ -186,7 +186,7 @@ function secaoTrafego(ctx: ContextoRelatorio): SecaoRelatorio {
   if (campanhas.length === 0) {
     return {
       titulo: "Tráfego",
-      observacao: "Dados não conectados — conecte o Meta Ads em Configurações para ver investimento e leads de tráfego pago aqui.",
+      observacao: "Dados não conectados. Conecte o Meta Ads em Configurações para ver investimento e leads de tráfego pago aqui.",
     };
   }
   const investido = calcularInvestimentoTrafego(campanhas);
@@ -223,7 +223,7 @@ function secaoCampanhas(ctx: ContextoRelatorio): SecaoRelatorio {
   if (campanhas.length === 0) {
     return {
       titulo: "Campanhas",
-      observacao: "Dados não conectados — conecte o Meta Ads em Configurações para ver as campanhas aqui.",
+      observacao: "Dados não conectados. Conecte o Meta Ads em Configurações para ver as campanhas aqui.",
     };
   }
   return {
@@ -281,7 +281,7 @@ function secaoProdutos(): SecaoRelatorio {
   return {
     titulo: "Produtos ou serviços",
     observacao:
-      "Dados não conectados — cadastre produtos/serviços nas negociações pra ver a receita por item aqui.",
+      "Dados não conectados. Cadastre produtos/serviços nas negociações pra ver a receita por item aqui.",
   };
 }
 
@@ -326,7 +326,7 @@ function secaoAtendimento(ctx: ContextoRelatorio): SecaoRelatorio {
       { label: "Leads recebidos", value: String(conversas.length) },
       { label: "Leads aguardando atendimento", value: aguardando.label },
     ],
-    observacao: "Tempo médio de primeira resposta: dados não conectados — o CRM ainda não rastreia qual responsável atendeu cada mensagem.",
+    observacao: "Tempo médio de primeira resposta: dados não conectados. O CRM ainda não rastreia qual responsável atendeu cada mensagem.",
   };
 }
 
@@ -353,7 +353,7 @@ function secaoInteracoes(ctx: ContextoRelatorio): SecaoRelatorio {
       { label: "Mensagens enviadas", value: String(enviadas) },
       { label: "Mensagens recebidas", value: String(recebidas) },
     ],
-    observacao: "Ligações: dados não conectados — o CRM ainda não tem telefonia integrada.",
+    observacao: "Ligações: dados não conectados. O CRM ainda não tem telefonia integrada.",
   };
 }
 
@@ -375,12 +375,12 @@ function secaoDadosCliente(ctx: ContextoRelatorio): SecaoRelatorio {
     titulo: "Dados do contato",
     linhas: [
       { label: "Nome", value: contato.nome },
-      { label: "Empresa", value: contato.empresa ?? "—" },
+      { label: "Empresa", value: contato.empresa ?? "" },
       { label: "Origem", value: contato.origem },
       { label: "Etapa atual", value: contato.etapa },
       { label: "Responsável", value: contato.responsavel },
-      { label: "E-mail", value: contato.email ?? "—" },
-      { label: "WhatsApp", value: contato.whatsapp ?? "—" },
+      { label: "E-mail", value: contato.email ?? "" },
+      { label: "WhatsApp", value: contato.whatsapp ?? "" },
     ],
   };
 }
@@ -537,7 +537,7 @@ SECOES_POR_TIPO.personalizado = Array.from(
 );
 
 export function nomeArquivoRelatorio(nomeRelatorio: string, periodoLabel: string): string {
-  return `${nomeRelatorio} — ${periodoLabel}.pdf`;
+  return `${nomeRelatorio} - ${periodoLabel}.pdf`;
 }
 
 export { secaoMotivosDetalhado };
