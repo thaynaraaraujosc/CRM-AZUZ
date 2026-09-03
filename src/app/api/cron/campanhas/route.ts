@@ -15,15 +15,17 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(request: Request) {
-  // A rota é pública por natureza (o cron não faz login), então a defesa é o segredo compartilhado.
-  // Sem ele, qualquer um na internet poderia acelerar as campanhas de todos os clientes chamando
-  // esta URL em laço.
+  // Esta rota não passa pela checagem de sessão do `proxy.ts` — não pode, o cron não faz login —
+  // então o segredo compartilhado é a ÚNICA defesa dela. Por isso ele é obrigatório: antes a
+  // verificação só valia `if (segredo)`, e sem a variável configurada a rota ficava aberta pra
+  // qualquer um na internet acelerar as campanhas de todos os clientes chamando a URL em laço.
+  // Recusar quando falta configuração é o lado seguro do erro.
   const segredo = process.env.CRON_SECRET;
-  if (segredo) {
-    const autorizacao = request.headers.get("authorization");
-    if (autorizacao !== `Bearer ${segredo}`) {
-      return NextResponse.json({ erro: "Não autorizado" }, { status: 401 });
-    }
+  if (!segredo) {
+    return NextResponse.json({ erro: "CRON_SECRET não configurado no servidor." }, { status: 500 });
+  }
+  if (request.headers.get("authorization") !== `Bearer ${segredo}`) {
+    return NextResponse.json({ erro: "Não autorizado" }, { status: 401 });
   }
 
   const resultado = await rodarRodadaDeCampanhas();

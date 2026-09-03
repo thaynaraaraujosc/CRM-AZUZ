@@ -3,17 +3,7 @@ import type { NextRequest } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-const ROTAS_PUBLICAS = [
-  "/login",
-  "/cadastro",
-  "/esqueci-senha",
-  "/redefinir-senha",
-  "/convite",
-  "/formulario-preview",
-  "/acesso-bloqueado",
-  "/politica-de-privacidade",
-];
+import { ehRotaPublica } from "@/lib/rotas-publicas";
 
 /** Módulo do CRM que cada rota pertence, pro bloqueio de permissão (item 4 do pedido: "se eu
  * restringir Formulários/Automações/Configurações, o membro realmente não pode mexer"). Checa só
@@ -42,32 +32,8 @@ const ROTA_PERMISSAO: Record<string, string> = {
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (
-    // Landing page pública — raiz do domínio, sem sessão nenhuma. Comparação exata (não prefixo,
-    // ao contrário de `ROTAS_PUBLICAS`) porque "/" é prefixo de tudo.
-    pathname === "/" ||
-    ROTAS_PUBLICAS.some((rota) => pathname === rota || pathname.startsWith(`${rota}/`)) ||
-    pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/api/formularios") ||
-    pathname.startsWith("/api/convite") ||
-    pathname === "/api/cadastro" ||
-    // Chamado direto pela Meta (verificação de webhook + mensagens recebidas), sem sessão de
-    // navegador nenhuma — a validação de assinatura HMAC dentro da rota é que garante que é a
-    // Meta chamando, não o proxy.
-    pathname === "/api/webhooks/whatsapp" ||
-    pathname === "/api/webhooks/instagram" ||
-    // Chamado direto pela Evolution API (serviço separado, sessão via QR Code), validado por
-    // segredo fixo dentro da própria rota — mesmo padrão dos outros webhooks acima. A rota já foi
-    // renomeada de `whatsapp-baileys` pra `evolution`, mas essa exceção não tinha acompanhado —
-    // toda chamada da Evolution caía no redirect pro /login (sem sessão de navegador nenhuma) e
-    // nunca chegava na rota de verdade, então nenhuma mensagem nunca espelhava no CRM.
-    pathname === "/api/webhooks/evolution" ||
-    // Chamado direto pela Asaas (eventos de cobrança da assinatura do CRM), validado pelo token
-    // `asaas-access-token` dentro da própria rota — mesmo padrão dos outros webhooks acima.
-    pathname === "/api/webhooks/asaas"
-  ) {
-    return NextResponse.next();
-  }
+  // A lista mora em `rotas-publicas.ts`, com teste — ver o porquê lá.
+  if (ehRotaPublica(pathname)) return NextResponse.next();
 
   const sessao = await auth();
   if (!sessao) {
