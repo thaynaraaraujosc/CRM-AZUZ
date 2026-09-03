@@ -30,7 +30,7 @@ type Campanha = {
   titulo: string;
   corpo: string;
   assunto: string | null;
-  canal: "whatsapp" | "email";
+  canal: "whatsapp_oficial" | "whatsapp_nao_oficial" | "email";
   agendadoPara: string;
   status: "agendada" | "enviando" | "enviada";
   criadoEm: string;
@@ -217,7 +217,7 @@ export default function AcoesPage() {
   async function agendarEnvio() {
     if (selecionados.size === 0 || canaisEnvio.length === 0 || enviando) return;
 
-    const canal = canaisEnvio[0].toLowerCase() === "whatsapp" ? "whatsapp" : "email";
+    const canal = canaisEnvio[0].toLowerCase() === "whatsapp" ? "whatsapp_oficial" : "email";
     if (canal === "email" && !assunto.trim()) {
       setToastAcao("E-mail precisa de assunto.");
       setTimeout(() => setToastAcao(null), 4000);
@@ -727,7 +727,7 @@ export default function AcoesPage() {
                 const expandida = acaoExpandida === campanha.id;
                 const jaPassou = new Date(campanha.agendadoPara).getTime() <= agora;
                 const contatoCount = campanha.contatos?.length ?? 0;
-                const canalLabel = campanha.canal === "whatsapp" ? "WhatsApp" : "E-mail";
+                const canalLabel = campanha.canal.startsWith("whatsapp") ? "WhatsApp" : "E-mail";
                 const meta = `${contatoCount} contatos · ${canalLabel}`;
                 const statusLabel = `${jaPassou ? "Enviado" : "Agendado"} · ${formatarDataHora(campanha.agendadoPara)}`;
                 return (
