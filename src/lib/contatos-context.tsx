@@ -95,9 +95,9 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
             nome,
             origem: "Indicação",
             etapa: "Novo",
-            responsavel: "—",
+            responsavel: "",
             ultima: "Agora",
-            valor: "—",
+            valor: "",
             ...dados,
           },
         ];
@@ -121,7 +121,7 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
             etapa: "Novo" as const,
             responsavel: atendente,
             ultima: "Agora",
-            valor: "—",
+            valor: "",
           },
         ];
       }
@@ -138,9 +138,9 @@ export function ContatosProvider({ children }: { children: ReactNode }) {
       initials: iniciais(dados.nome),
       origem: "Indicação",
       etapa: "Novo",
-      responsavel: "—",
+      responsavel: "",
       ultima: "Agora",
-      valor: "—",
+      valor: "",
       ...dados,
     };
     setContatos((prev) => [...prev, novo]);
