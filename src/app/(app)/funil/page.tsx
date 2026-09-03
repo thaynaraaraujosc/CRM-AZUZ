@@ -76,7 +76,7 @@ function FunilPageInner() {
   const { automacoesDaEtapa, automacoesDeEntradaAtivas, excluirAutomacoesDaEtapa, excluirAutomacoesDoFunil } =
     useAutomacoes();
   const { dispararEvento } = useAutomationFlows();
-  const { salvarDadosContato, atribuirAtendente } = useContatos();
+  const { salvarDadosContato, atribuirAtendente, contatos } = useContatos();
   const { conversas } = useConversas();
   const { membros: equipe } = useEquipe();
   const motivosPerda = useMotivosPerda();
@@ -917,8 +917,29 @@ function FunilPageInner() {
                             abrirRespostaRapida(card.nome);
                           }}
                         >
-                          {temMensagemNova ? <span className="msg-dot" aria-label="Mensagem nova" /> : null}
-                          {card.nome}
+          {temMensagemNova ? <span className="msg-dot" aria-label="Mensagem nova" /> : null}
+                          {(() => {
+                            const contato = contatos.find((c) => c.nome === card.nome);
+                            return contato?.fotoUrl ? (
+                              <>
+                                <img
+                                  src={contato.fotoUrl}
+                                  alt=""
+                                  style={{
+                                    width: 20,
+                                    height: 20,
+                                    borderRadius: "50%",
+                                    marginRight: 6,
+                                    objectFit: "cover",
+                                    verticalAlign: "middle",
+                                  }}
+                                />
+                                {card.nome}
+                              </>
+                            ) : (
+                              card.nome
+                            );
+                          })()}
                           {veioDeAnuncio ? (
                             <span className="lead-card-ad-badge" title={card.origem}>
                               AD
