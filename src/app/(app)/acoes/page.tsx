@@ -279,10 +279,14 @@ export default function AcoesPage() {
   async function agendarEnvio() {
     if (selecionados.size === 0 || canaisEnvio.length === 0 || enviando) return;
 
+    console.log("📋 canaisEnvio state:", { array: canaisEnvio, length: canaisEnvio.length, first: canaisEnvio[0] });
     const canalRaw = canaisEnvio[0] || "WhatsApp";
-    const isWhatsApp = canalRaw.toLowerCase().startsWith("whatsapp");
+    console.log("📝 canalRaw value:", { raw: canalRaw, type: typeof canalRaw, length: canalRaw.length });
+    const lowercased = canalRaw.toLowerCase();
+    console.log("🔤 After toLowerCase:", { lowercased, startsWith: lowercased.startsWith("whatsapp") });
+    const isWhatsApp = lowercased.startsWith("whatsapp");
     const canal = isWhatsApp ? "whatsapp_oficial" : "email";
-    console.log("🔍 Canal Debug:", { raw: canalRaw, isWhatsApp, final: canal });
+    console.log("✅ Final canal mapping:", { isWhatsApp, final: canal, willSend: canal });
     if (canal === "email" && !assunto.trim()) {
       setToastAcao("E-mail precisa de assunto.");
       setTimeout(() => setToastAcao(null), 4000);

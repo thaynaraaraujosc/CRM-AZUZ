@@ -162,9 +162,9 @@ ${CAPA("#0f9d63", "#ffffff", "Relatório executivo", "Período: [DATA]")}
 <p>[DESCREVA O OBJETIVO deste relatório em duas ou três frases.]</p>
 <table style="width:100%;border-collapse:separate;border-spacing:8px 0;margin:16px 0;">
   <tr>
-    <td style="background:#e8f6ee;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#0f9d63;margin:0 0 4px;text-transform:uppercase;">Indicador 1</p><p style="font-size:22px;font-weight:700;margin:0;">—</p></td>
-    <td style="background:#eaf1ff;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#2e6bff;margin:0 0 4px;text-transform:uppercase;">Indicador 2</p><p style="font-size:22px;font-weight:700;margin:0;">—</p></td>
-    <td style="background:#fff4e5;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#c9660a;margin:0 0 4px;text-transform:uppercase;">Indicador 3</p><p style="font-size:22px;font-weight:700;margin:0;">—</p></td>
+    <td style="background:#e8f6ee;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#0f9d63;margin:0 0 4px;text-transform:uppercase;">Indicador 1</p><p style="font-size:22px;font-weight:700;margin:0;"></p></td>
+    <td style="background:#eaf1ff;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#2e6bff;margin:0 0 4px;text-transform:uppercase;">Indicador 2</p><p style="font-size:22px;font-weight:700;margin:0;"></p></td>
+    <td style="background:#fff4e5;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#c9660a;margin:0 0 4px;text-transform:uppercase;">Indicador 3</p><p style="font-size:22px;font-weight:700;margin:0;"></p></td>
   </tr>
 </table>
 <h3>Tabela de resultados</h3>
@@ -231,19 +231,19 @@ ${CAPA("#2e6bff", "#ffffff", "Proposta comercial", "Preparado para [NOME DO CLIE
     conteudoHtml: `
 <h1 style="text-align:center;font-size:20px;">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</h1>
 <p style="background:#fff3cd;border-left:3px solid #c9660a;padding:10px 14px;font-size:12px;">
-  ⚠️ Este é um modelo — revise com um profissional jurídico antes de usar.
+  ⚠️ Este é um modelo. Revise com um profissional jurídico antes de usar.
 </p>
 <p><b>CONTRATANTE:</b> [NOME DO CLIENTE]</p>
 <p><b>CONTRATADO:</b> [NOME DA EMPRESA]</p>
 <p>As partes acima identificadas celebram o presente contrato, mediante as cláusulas a seguir:</p>
-<p><b>Cláusula 1ª — Do objeto.</b> [DESCREVA O OBJETIVO do contrato.]</p>
-<p><b>Cláusula 2ª — Das obrigações.</b> </p>
-<p><b>Cláusula 3ª — Dos valores e pagamentos.</b> </p>
-<p><b>Cláusula 4ª — Da vigência.</b> Este contrato vigora a partir de [DATA].</p>
-<p><b>Cláusula 5ª — Da confidencialidade.</b> </p>
-<p><b>Cláusula 6ª — Da rescisão.</b> </p>
-<p><b>Cláusula 7ª — Disposições gerais.</b> </p>
-<p><b>Cláusula 8ª — Do foro.</b> Fica eleito o foro da comarca de [CIDADE].</p>
+<p><b>Cláusula 1ª. Do objeto.</b> [DESCREVA O OBJETIVO do contrato.]</p>
+<p><b>Cláusula 2ª. Das obrigações.</b> </p>
+<p><b>Cláusula 3ª. Dos valores e pagamentos.</b> </p>
+<p><b>Cláusula 4ª. Da vigência.</b> Este contrato vigora a partir de [DATA].</p>
+<p><b>Cláusula 5ª. Da confidencialidade.</b> </p>
+<p><b>Cláusula 6ª. Da rescisão.</b> </p>
+<p><b>Cláusula 7ª. Disposições gerais.</b> </p>
+<p><b>Cláusula 8ª. Do foro.</b> Fica eleito o foro da comarca de [CIDADE].</p>
 <p>[LOCAL], [DATA].</p>
 <table style="width:100%;margin-top:40px;"><tr>
   <td style="text-align:center;">_______________________________<br>Contratante</td>
@@ -285,14 +285,14 @@ ${CAPA("#8a3ffc", "#ffffff", "Planejamento de projeto", "[TÍTULO DO PROJETO]")}
   <p style="font-size:11px;letter-spacing:1px;opacity:.7;text-transform:uppercase;margin:0 0 4px;">Competências</p>
   <p style="font-size:12px;margin:0 0 16px;">Competência 1<br>Competência 2<br>Competência 3</p>
   <p style="font-size:11px;letter-spacing:1px;opacity:.7;text-transform:uppercase;margin:0 0 4px;">Idiomas</p>
-  <p style="font-size:12px;margin:0;">Português — nativo<br>Inglês — intermediário</p>
+  <p style="font-size:12px;margin:0;">Português (nativo)<br>Inglês (intermediário)</p>
 </td>
 <td style="padding:24px;vertical-align:top;">
   <h1 style="margin:0 0 2px;font-size:24px;">[NOME COMPLETO]</h1>
   <p style="color:#2e6bff;font-weight:700;margin:0 0 16px;">[CARGO DESEJADO]</p>
   <h3>Resumo profissional</h3><p>[DESCREVA O OBJETIVO profissional em 2-3 frases.]</p>
   <h3>Experiência</h3>
-  <p><b>[CARGO] — [EMPRESA]</b> · [DATA]<br>Descrição das responsabilidades e resultados.</p>
+  <p><b>[CARGO] | [EMPRESA]</b> · [DATA]<br>Descrição das responsabilidades e resultados.</p>
   <h3>Formação</h3>
   <p><b>[CURSO]</b> — [INSTITUIÇÃO] · [DATA]</p>
   <h3>Certificações</h3><p></p>

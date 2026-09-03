@@ -352,7 +352,7 @@ table {
   display: flex;
   height: 100vh;
   overflow: hidden;
-  gap: 14px;
+  gap: var(--space-4);
   padding: 14px;
   background: var(--canvas);
 }
@@ -403,7 +403,7 @@ table {
 .sb-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 4px 8px 22px;
 }
 
@@ -495,7 +495,7 @@ table {
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   flex: 1;
 }
 
@@ -503,7 +503,7 @@ table {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: var(--space-2);
   padding: 9px 11px;
   border-radius: var(--radius-md);
   color: var(--text-muted);
@@ -611,7 +611,7 @@ table {
 .nav-sublist {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--space-1);
   margin: 2px 0 4px 30px;
   border-left: 1px solid var(--line);
   padding-left: 10px;
@@ -643,7 +643,7 @@ table {
 .sb-foot {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   padding: 10px 8px 2px;
   border-top: 1px solid var(--line);
   margin-top: 10px;
@@ -652,7 +652,7 @@ table {
 .sb-foot-info {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   flex: 1;
   min-width: 0;
   text-align: left;
@@ -670,7 +670,7 @@ table {
 .sb-foot .who {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
@@ -725,7 +725,7 @@ table {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
   padding: 10px 26px;
   border-bottom: 1px solid var(--line);
   background: var(--navy-raised);
@@ -753,7 +753,7 @@ table {
 .app-header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex: 0 0 auto;
 }
 
@@ -761,7 +761,7 @@ table {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
   padding: 16px 26px;
   border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
@@ -770,13 +770,13 @@ table {
 .topbar-title-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
 .topbar-tabs {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   padding: 3px;
   border-radius: 999px;
   background: var(--navy-raised);
@@ -824,7 +824,7 @@ table {
 .top-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -832,7 +832,7 @@ table {
 .search {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -875,7 +875,7 @@ table {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-family: var(--body);
   /* 700 era peso de título num controle: deixava a tela cheia de texto gritando ao mesmo tempo. */
   font-weight: var(--fw-semibold);
@@ -1230,7 +1230,7 @@ table {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 26px;
+  gap: var(--space-6);
   padding: 24px;
   position: relative;
   overflow: hidden;
@@ -1246,7 +1246,7 @@ table {
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   text-decoration: none;
   color: var(--ink);
 }
@@ -1448,7 +1448,7 @@ table {
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: var(--fs-caption);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.02em;
@@ -1559,14 +1559,14 @@ table {
 
 .grid {
   display: grid;
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .panel-h {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 16px 18px 14px;
   border-bottom: 1px solid var(--line);
 }
@@ -1779,7 +1779,7 @@ table {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: var(--space-4);
   padding: 13px 17px;
   border-top: 1px solid var(--line-soft);
 }
@@ -1792,7 +1792,7 @@ table {
 .section-foot {
   padding: 15px 17px 17px;
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
 }
 
 /* ---------------- Início ---------------- */
@@ -1923,7 +1923,7 @@ table {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
   padding: 4px 8px 4px 2px;
   margin: -4px 0 0 -2px;
   border-radius: var(--radius-md);
@@ -1977,14 +1977,14 @@ a.timeline-conteudo:hover {
 .settings-layout {
   display: grid;
   grid-template-columns: 220px 1fr;
-  gap: 18px;
+  gap: var(--space-5);
   align-items: start;
 }
 
 .settings-menu {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .settings-menu-btn {
@@ -2016,7 +2016,7 @@ a.timeline-conteudo:hover {
 .bars {
   display: flex;
   align-items: flex-end;
-  gap: 9px;
+  gap: var(--space-2);
   padding: 20px 17px 16px;
   height: 150px;
 }
@@ -2026,7 +2026,7 @@ a.timeline-conteudo:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 100%;
   justify-content: flex-end;
 }
@@ -2050,14 +2050,14 @@ a.timeline-conteudo:hover {
 .funnel-mini {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: var(--space-2);
   padding: 16px 17px;
 }
 
 .funnel-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .funnel-row .fl {
@@ -2092,7 +2092,7 @@ a.timeline-conteudo:hover {
 .activity-row {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: var(--space-2);
   padding: 11px 17px;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -2132,7 +2132,7 @@ a.timeline-conteudo:hover {
 
 .filters-row {
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
   margin-bottom: 14px;
   flex-wrap: wrap;
 }
@@ -2166,7 +2166,7 @@ a.timeline-conteudo:hover {
 .nova-pasta-inline {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .nova-pasta-input {
@@ -2258,7 +2258,7 @@ table.tbl tbody tr:hover td {
 .name-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 /* Reestruturação visual (redesign) — o pedido anterior ("linhas como botões separados", cada uma
@@ -2348,7 +2348,7 @@ table.tbl tbody tr:hover td {
 
 .kanban {
   display: flex;
-  gap: 13px;
+  gap: var(--space-3);
   align-items: flex-start;
   overflow-x: auto;
   padding-bottom: 4px;
@@ -2399,7 +2399,7 @@ table.tbl tbody tr:hover td {
   letter-spacing: var(--track-tight);
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
 }
 
 .kcol-h .dot {
@@ -2425,7 +2425,7 @@ table.tbl tbody tr:hover td {
 .kcol-auto-link {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   font-size: 10.5px;
   font-weight: var(--fw-semibold);
   color: var(--text-muted);
@@ -2451,7 +2451,7 @@ table.tbl tbody tr:hover td {
   z-index: 80;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   max-width: 320px;
 }
 
@@ -2465,7 +2465,7 @@ table.tbl tbody tr:hover td {
 .toast {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -2514,7 +2514,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 6px;
 }
 
@@ -2540,7 +2540,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* Bolinha verde de "mensagem nova" — usada no card do kanban (Funil), mesmo espírito do selo de não
@@ -2548,7 +2548,7 @@ table.tbl tbody tr:hover td {
 .lname-com-msg {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   cursor: pointer;
 }
 
@@ -2630,7 +2630,7 @@ table.tbl tbody tr:hover td {
 .conv-card .cr1 {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   margin-bottom: 8px;
 }
 
@@ -2688,7 +2688,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .conv-card.open,
@@ -2739,7 +2739,7 @@ table.tbl tbody tr:hover td {
 .open-conv-h {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: var(--space-2);
   padding: 14px 17px;
   background: var(--gray-50);
   border-bottom: 1px solid var(--line);
@@ -2781,7 +2781,7 @@ table.tbl tbody tr:hover td {
   padding: 16px 17px;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: var(--space-2);
   max-height: 300px;
   overflow-y: auto;
 }
@@ -2826,7 +2826,7 @@ table.tbl tbody tr:hover td {
 .wa-carregar-midia {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   padding: 6px 4px;
   border: none;
   background: none;
@@ -2862,7 +2862,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: var(--space-1);
   min-width: 20px;
   height: 20px;
   padding: 0 4px;
@@ -2960,7 +2960,7 @@ table.tbl tbody tr:hover td {
 .bubble-localizacao-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   padding: 9px 12px;
 }
 
@@ -3026,7 +3026,7 @@ table.tbl tbody tr:hover td {
   padding: 10px 17px 17px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .chat-input .box {
@@ -3148,7 +3148,7 @@ table.tbl tbody tr:hover td {
 .chat-emoji-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: var(--space-1);
   padding: 4px 6px;
 }
 
@@ -3246,7 +3246,7 @@ table.tbl tbody tr:hover td {
 .wa-list-filters {
   flex: 0 0 auto;
   display: flex;
-  gap: 7px;
+  gap: var(--space-2);
   padding: 0 12px 10px;
   overflow-x: auto;
 }
@@ -3286,7 +3286,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .wa-unread-badge {
@@ -3386,7 +3386,7 @@ table.tbl tbody tr:hover td {
 .wa-row .cr1 {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   margin-bottom: 5px;
 }
 
@@ -3397,7 +3397,7 @@ table.tbl tbody tr:hover td {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-family: var(--display);
   font-size: 13.5px;
   font-weight: var(--fw-bold);
@@ -3456,7 +3456,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .origem-meta {
@@ -3571,7 +3571,7 @@ table.tbl tbody tr:hover td {
 .wa-conv-titulo-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   background: transparent;
   border: none;
   padding: 0;
@@ -3661,14 +3661,14 @@ table.tbl tbody tr:hover td {
 .wa-respostas-modal.rodape-chat .chat-input {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .wa-email-drag {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 0 0 14px;
   cursor: move;
   user-select: none;
@@ -3723,7 +3723,7 @@ table.tbl tbody tr:hover td {
 .wa-email-toolbar {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 8px;
 }
 
@@ -3756,7 +3756,7 @@ table.tbl tbody tr:hover td {
   padding: 0 17px 17px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .wa-historico-item {
@@ -3875,13 +3875,13 @@ table.tbl tbody tr:hover td {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--space-4);
   margin-bottom: 26px;
 }
 
 .crm-live-tabs {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   background: rgba(255, 255, 255, 0.06);
   padding: 5px;
   border-radius: 999px;
@@ -3905,7 +3905,7 @@ table.tbl tbody tr:hover td {
 
 .crm-live-filtros {
   display: flex;
-  gap: 18px;
+  gap: var(--space-5);
   flex-wrap: wrap;
   font-size: 12px;
   color: #a7adda;
@@ -3915,13 +3915,13 @@ table.tbl tbody tr:hover td {
 .crm-live-body {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: var(--space-5);
 }
 
 .crm-live-vencedores {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .crm-live-vencedor-card {
@@ -3963,7 +3963,7 @@ table.tbl tbody tr:hover td {
 .crm-live-kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .crm-live-kpi {
@@ -4020,7 +4020,7 @@ table.tbl tbody tr:hover td {
 .crm-live-motivos-body {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: var(--space-6);
   flex-wrap: wrap;
 }
 
@@ -4034,7 +4034,7 @@ table.tbl tbody tr:hover td {
 .crm-live-motivos-legenda {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   font-size: 13px;
   color: #d5d8f4;
 }
@@ -4042,7 +4042,7 @@ table.tbl tbody tr:hover td {
 .crm-live-motivo-item {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
 }
 
 .crm-live-motivo-dot {
@@ -4055,7 +4055,7 @@ table.tbl tbody tr:hover td {
 .crm-live-andamento-topo {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .crm-live-feed {
@@ -4080,7 +4080,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 8px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   font-size: 12.5px;
@@ -4103,7 +4103,7 @@ table.tbl tbody tr:hover td {
 .crm-live-etapas {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .crm-live-etapa {
@@ -4155,7 +4155,7 @@ table.tbl tbody tr:hover td {
   bottom: 24px;
   transform: translateX(-50%);
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .crm-live-dots span {
@@ -4172,7 +4172,7 @@ table.tbl tbody tr:hover td {
 .vendor-row {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: var(--space-2);
   padding: 11px 17px;
   border-bottom: 1px solid var(--line-soft);
   width: 100%;
@@ -4217,7 +4217,7 @@ table.tbl tbody tr:hover td {
 .attach-chip {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -4250,7 +4250,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 6px;
 }
 
@@ -4283,7 +4283,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .tc-val {
@@ -4304,7 +4304,7 @@ table.tbl tbody tr:hover td {
 .task-who {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   font-size: 11px;
   color: var(--text-muted);
   font-weight: 600;
@@ -4315,7 +4315,7 @@ table.tbl tbody tr:hover td {
 
 .filter-strip {
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
@@ -4330,14 +4330,14 @@ table.tbl tbody tr:hover td {
   color: var(--text-muted);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   white-space: nowrap;
 }
 
 .camp-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 11px 17px;
   border-bottom: 1px solid var(--line-soft);
   transition: background var(--transition-fast);
@@ -4422,7 +4422,7 @@ button.camp-row:hover {
 
 .rel-pizzas {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .chart-tooltip {
@@ -4464,7 +4464,7 @@ button.camp-row:hover {
 .pie-legenda-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11.5px;
   color: var(--text-muted);
 }
@@ -4479,7 +4479,7 @@ button.camp-row:hover {
 .date-picker {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -4520,7 +4520,7 @@ button.camp-row:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 11px 17px;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -4565,7 +4565,7 @@ button.camp-row:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 12px 0;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -4590,14 +4590,14 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 12px;
+  padding: var(--space-3);
   margin-bottom: 10px;
 }
 
 .auto-acao-row-h {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 8px;
 }
 
@@ -4628,7 +4628,7 @@ button.camp-row:hover {
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 12px;
+  padding: var(--space-3);
   margin-bottom: 10px;
   cursor: pointer;
 }
@@ -4636,7 +4636,7 @@ button.camp-row:hover {
 .auto-kanban-card-h {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
 }
 
 .auto-kanban-card-h .titulo {
@@ -4655,7 +4655,7 @@ button.camp-row:hover {
 
 .auto-kanban-card-acoes {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   margin-top: 8px;
   font-size: 13px;
 }
@@ -4672,7 +4672,7 @@ button.camp-row:hover {
 .seg-picker {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 16px 17px;
 }
 
@@ -4697,7 +4697,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 15px 17px;
   border-top: 1px solid var(--line-soft);
   border-bottom: 1px solid var(--line-soft);
@@ -4717,7 +4717,7 @@ button.camp-row:hover {
 
 .media-picker {
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
   padding: 16px 17px;
 }
 
@@ -4755,7 +4755,7 @@ button.camp-row:hover {
 .broadcast-row {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: var(--space-3);
   padding: 13px 17px;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -4835,7 +4835,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: var(--space-4);
   margin: 17px;
   padding: 16px 18px;
   background: var(--blue-soft);
@@ -4909,7 +4909,7 @@ button.camp-row:hover {
 .int-row {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: var(--space-5);
   padding: 14px 17px;
   border-bottom: 1px solid var(--line-soft);
   flex-wrap: wrap;
@@ -4972,7 +4972,7 @@ button.camp-row:hover {
 .key-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 14px 17px;
   flex-wrap: wrap;
 }
@@ -5019,7 +5019,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   margin-bottom: 26px;
 }
 
@@ -5089,7 +5089,7 @@ button.camp-row:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   margin: 2px 0 20px;
 }
 
@@ -5102,7 +5102,7 @@ button.camp-row:hover {
 .login-row .rem {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   font-size: 11.5px;
   color: var(--text-muted);
   cursor: pointer;
@@ -5231,7 +5231,7 @@ button.camp-row:hover {
 .wa-contato-picker-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .wa-contato-picker-numero {
@@ -5243,7 +5243,7 @@ button.camp-row:hover {
 .wa-contato-selecionado {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 10px 12px;
   background: var(--blue-soft-2);
   border: 1px solid var(--blue);
@@ -5258,7 +5258,7 @@ button.camp-row:hover {
 .wa-contato-modal-rodape {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--line);
@@ -5268,7 +5268,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 0 18px;
   text-align: center;
 }
@@ -5283,7 +5283,7 @@ button.camp-row:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 10px 12px;
   border: none;
   font: inherit;
@@ -5333,7 +5333,7 @@ button.camp-row:hover {
 .dropdown-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   padding: 10px 14px;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -5440,7 +5440,7 @@ button.camp-row:hover {
   .nav {
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: var(--space-2);
   }
 
   .sb-foot {
@@ -5474,7 +5474,7 @@ button.camp-row:hover {
 .agenda-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  gap: var(--space-2);
   padding: 14px 17px 17px;
 }
 
@@ -5497,7 +5497,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
+  gap: var(--space-1);
   text-align: left;
   cursor: pointer;
   overflow: hidden;
@@ -5576,14 +5576,14 @@ button.camp-row:hover {
 .view-switch-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
 .view-switch-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   white-space: nowrap;
 }
 
@@ -5600,7 +5600,7 @@ button.camp-row:hover {
 
 .doc-view {
   display: flex;
-  gap: 18px;
+  gap: var(--space-5);
   align-items: flex-start;
 }
 
@@ -5609,7 +5609,7 @@ button.camp-row:hover {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .doc-sidebar-h {
@@ -5624,7 +5624,7 @@ button.camp-row:hover {
 .doc-page-item {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   padding: 8px 8px;
   border-radius: var(--radius-md);
   font-size: 12px;
@@ -5685,7 +5685,7 @@ button.camp-row:hover {
 .doc-toolbar {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 14px;
   border-bottom: 1px solid var(--line);
 }
@@ -5830,7 +5830,7 @@ button.camp-row:hover {
 .doc-toolbar-grupo-conteudo {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 10px 12px;
 }
 
@@ -6000,7 +6000,7 @@ button.camp-row:hover {
 /* Linha com a régua vertical ao lado da folha — mesma lógica da régua horizontal, só que no eixo Y. */
 .doc-page-linha {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: flex-start;
 }
 
@@ -6062,7 +6062,7 @@ button.camp-row:hover {
 .doc-margens-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .doc-cabecalho-rodape-editor {
@@ -6074,7 +6074,7 @@ button.camp-row:hover {
 .doc-margem-campo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: 12px;
   color: var(--muted, #666);
 }
@@ -6209,7 +6209,7 @@ button.camp-row:hover {
 .doc-page-fim {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 14px 0 4px;
   opacity: 0;
   transition: opacity 0.15s ease;
@@ -6314,7 +6314,7 @@ button.camp-row:hover {
 .doc-editor-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 10px 20px;
   flex: 0 0 auto;
 }
@@ -6377,7 +6377,7 @@ button.camp-row:hover {
 .doc-header-acoes {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin-left: auto;
   flex: 0 1 auto;
   flex-wrap: wrap;
@@ -6399,7 +6399,7 @@ button.camp-row:hover {
 .doc-menu-bar {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
   padding: 4px 16px;
   flex: 0 0 auto;
   font-size: 12.5px;
@@ -6439,7 +6439,7 @@ button.camp-row:hover {
   flex-direction: row !important;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .doc-menu-atalho {
@@ -6450,7 +6450,7 @@ button.camp-row:hover {
 
 .doc-modo-switch {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   margin-left: auto;
 }
 
@@ -6464,7 +6464,7 @@ button.camp-row:hover {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -6490,7 +6490,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: var(--space-6);
   flex: 1;
 }
 
@@ -6544,7 +6544,7 @@ button.camp-row:hover {
 
 .doc-comentario-acoes {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .doc-localizar-modal,
@@ -6567,7 +6567,7 @@ button.camp-row:hover {
   padding-left: 18px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 12.5px;
   color: var(--muted, #666);
 }
@@ -6575,7 +6575,7 @@ button.camp-row:hover {
 .doc-cores-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  gap: var(--space-2);
   padding: 4px;
 }
 
@@ -6596,7 +6596,7 @@ button.camp-row:hover {
 .doc-lista-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .doc-lista-card {
@@ -6615,7 +6615,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
   width: 100%;
   border: none;
   background: none;
@@ -6658,14 +6658,14 @@ button.camp-row:hover {
 .doc-modelos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .doc-modelo-card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: var(--space-1);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--navy);
@@ -6734,7 +6734,7 @@ button.camp-row:hover {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 8px;
   background: rgba(9, 9, 11, 0.45);
   opacity: 0;
@@ -6828,7 +6828,7 @@ button.camp-row:hover {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 22px 26px 0;
 }
 
@@ -6858,7 +6858,7 @@ button.camp-row:hover {
 /* Separa visualmente o bloco de ações do formulário acima. */
 .modal-acoes {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 20px;
   padding-top: 18px;
   border-top: 1px solid var(--line-soft);
@@ -6940,7 +6940,7 @@ button.camp-row:hover {
 
 .doc-painel-tabs {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   margin: 4px 0 14px;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -7006,7 +7006,7 @@ button.camp-row:hover {
   padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .doc-context-menu button {
@@ -7036,7 +7036,7 @@ button.camp-row:hover {
 
 .doc-context-menu-linha {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .doc-context-menu-linha button {
@@ -7052,7 +7052,7 @@ button.camp-row:hover {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -7133,7 +7133,7 @@ button.camp-row:hover {
 .cor-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .cor-chip {
@@ -7158,7 +7158,7 @@ button.camp-row:hover {
 .form-scratch-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-4);
   width: 100%;
   text-align: left;
   padding: 18px 20px;
@@ -7223,7 +7223,7 @@ button.camp-row:hover {
 .form-builder-topbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   padding: 12px 24px;
   border-bottom: 1px solid var(--line);
@@ -7255,7 +7255,7 @@ button.camp-row:hover {
 .form-builder-topbar-acoes {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin-left: auto;
   flex-wrap: wrap;
 }
@@ -7281,7 +7281,7 @@ button.camp-row:hover {
 .form-pagina-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   padding: 2px 8px;
   border-radius: var(--radius-md);
   margin: 2px 6px;
@@ -7306,7 +7306,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: var(--space-2);
   border: none;
   background: none;
   text-align: left;
@@ -7340,7 +7340,7 @@ button.camp-row:hover {
 .form-pagina-acoes {
   flex: 0 0 auto;
   display: flex;
-  gap: 2px;
+  gap: var(--space-1);
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -7389,7 +7389,7 @@ button.camp-row:hover {
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 12px 12px 12px 6px;
   margin-bottom: 6px;
   border-radius: var(--radius-md);
@@ -7449,7 +7449,7 @@ button.camp-row:hover {
   top: -12px;
   right: 10px;
   display: flex;
-  gap: 2px;
+  gap: var(--space-1);
   background: #1f2430;
   border-radius: var(--radius-md);
   padding: 3px;
@@ -7524,7 +7524,7 @@ button.camp-row:hover {
 .form-logica-node-corpo {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
 }
 
 .form-logica-node-corpo select,
@@ -7561,7 +7561,7 @@ button.camp-row:hover {
 .form-builder-design {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-4);
   max-width: 640px;
 }
 
@@ -7602,7 +7602,7 @@ button.camp-row:hover {
 .form-campo-prefixado {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .form-campo-prefixado > span {
@@ -7620,7 +7620,7 @@ button.camp-row:hover {
 .form-tags-lista {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   align-items: center;
   padding: 6px 8px;
   border: 1px solid var(--line);
@@ -7632,7 +7632,7 @@ button.camp-row:hover {
 .form-tag-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   padding: 3px 8px;
   border-radius: var(--radius-xl);
   background: var(--blue-soft);
@@ -7697,7 +7697,7 @@ button.camp-row:hover {
 
 .form-nota-linha {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   flex-wrap: wrap;
 }
 
@@ -7761,7 +7761,7 @@ button.camp-row:hover {
 .form-upload-preview {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   padding: 8px 14px;
   border-radius: var(--radius-md);
   border: 1px dashed var(--line-soft);
@@ -7929,14 +7929,14 @@ button.camp-row:hover {
 .wa-anexo-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .wa-anexo-item {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 10px 12px;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
@@ -8089,20 +8089,20 @@ button.camp-row:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 12px;
 }
 
 .wa-edicao-toolbar .hint {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 10.5px;
 }
 
 .wa-midia-miniaturas {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   overflow-x: auto;
   margin-top: 12px;
   padding-bottom: 2px;
@@ -8170,7 +8170,7 @@ button.camp-row:hover {
 .wa-video-trim-sliders {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   margin-top: 6px;
 }
 
@@ -8181,14 +8181,14 @@ button.camp-row:hover {
 .wa-doc-origem-opcoes {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .wa-doc-origem-opcao {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--navy-raised-2);
@@ -8213,13 +8213,13 @@ button.camp-row:hover {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .wa-biblioteca-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 8px 10px;
   border-radius: var(--radius-md);
 }
@@ -8270,7 +8270,7 @@ button.camp-row:hover {
 .bubble-imagens.grade {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .bubble-imagem-btn {
@@ -8315,7 +8315,7 @@ button.camp-row:hover {
 .bubble-documento-cartao {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 8px;
   text-decoration: none;
   color: inherit;
@@ -8342,7 +8342,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .bubble-documento-nome {
@@ -8361,7 +8361,7 @@ button.camp-row:hover {
 .msg-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .msg-status-icone {
@@ -8456,7 +8456,7 @@ button.camp-row:hover {
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 @media (max-width: 720px) {
@@ -8505,7 +8505,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 10px 17px;
   border-bottom: 1px solid var(--line);
   background: var(--navy);
@@ -8515,7 +8515,7 @@ button.camp-row:hover {
 .flow-toolbar-dir {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -8576,7 +8576,7 @@ button.camp-row:hover {
 .flow-toolbar-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 0 6px;
   border-left: 1px solid var(--line-soft);
   border-right: 1px solid var(--line-soft);
@@ -8624,7 +8624,7 @@ button.camp-row:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--space-3);
   pointer-events: none;
   text-align: center;
   padding: 24px;
@@ -8662,13 +8662,13 @@ button.camp-row:hover {
   padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .flow-escolher-gatilho-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   text-align: left;
   padding: 10px 12px;
   border-radius: var(--radius-md);
@@ -8697,7 +8697,7 @@ button.camp-row:hover {
 
 .flow-midia-origem {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 8px;
 }
 
@@ -8740,7 +8740,7 @@ button.camp-row:hover {
 
 .flow-midia-preview {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: flex-start;
   padding: 10px;
   border-radius: var(--radius-md);
@@ -8764,7 +8764,7 @@ button.camp-row:hover {
 .flow-midia-preview-info {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -8788,7 +8788,7 @@ button.camp-row:hover {
 
 .flow-midia-preview-acoes {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   margin-top: 8px;
   flex-wrap: wrap;
 }
@@ -8808,13 +8808,13 @@ button.camp-row:hover {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   margin-top: 6px;
 }
 
 .flow-biblioteca-item {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: flex-start;
   text-align: left;
   padding: 9px 10px;
@@ -8845,7 +8845,7 @@ button.camp-row:hover {
 .flow-biblioteca-item-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -8903,13 +8903,13 @@ button.camp-row:hover {
   border-right: 1px solid var(--line);
   background: var(--navy);
   padding-bottom: 10px;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .flow-lib-recolhida-cats {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
 }
 
@@ -8938,8 +8938,8 @@ button.camp-row:hover {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 12px;
+  gap: var(--space-2);
+  padding: var(--space-3);
   border-bottom: 1px solid var(--line);
 }
 
@@ -8957,7 +8957,7 @@ button.camp-row:hover {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 12px;
   border: none;
   background: none;
@@ -8990,7 +8990,7 @@ button.camp-row:hover {
 .flow-lib-bloco {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 8px 12px;
   cursor: grab;
 }
@@ -9265,7 +9265,7 @@ button.camp-row:hover {
 .flow-node-header {
   display: flex;
   align-items: flex-start;
-  gap: 7px;
+  gap: var(--space-2);
   padding: 10px 12px;
   border-bottom: 1px solid var(--line-soft);
   border-radius: 0 12px 0 0;
@@ -9326,7 +9326,7 @@ button.camp-row:hover {
   padding: 0 10px 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .flow-node-handle-row {
@@ -9448,7 +9448,7 @@ button.camp-row:hover {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 8px 12px;
   background: var(--navy);
   border: 1px solid var(--line);
@@ -9514,20 +9514,20 @@ button.camp-row:hover {
 .flow-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .flow-form-label-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .flow-problema {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   text-align: left;
   padding: 9px 10px;
@@ -9578,20 +9578,20 @@ button.camp-row:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   padding: 6px 0;
 }
 
 .flow-cond-acoes {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   margin-top: 6px;
 }
 
 .flow-opcao-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 6px;
 }
 
@@ -9618,13 +9618,13 @@ button.camp-row:hover {
 .flow-formato-resposta-lista {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .flow-formato-resposta-opcao {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   text-align: left;
   padding: 9px 11px;
   border-radius: var(--radius-md);
@@ -9713,7 +9713,7 @@ button.camp-row:hover {
 .flow-sim-passos {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* Painel de pré-visualização do fluxo (VisualizarFluxo.tsx) usava `.flow-preview-panel` em vez de
@@ -9734,14 +9734,14 @@ button.camp-row:hover {
   border-bottom: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .flow-preview-tags {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .flow-preview-canvas {
@@ -9767,7 +9767,7 @@ button.camp-row:hover {
 
 .flow-sim-continuar {
   margin-top: 14px;
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
@@ -9776,7 +9776,7 @@ button.camp-row:hover {
 .flow-sim-opcoes {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 8px;
 }
 
@@ -9795,7 +9795,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 10px 0;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -9846,7 +9846,7 @@ button.camp-row:hover {
 .filterbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin-bottom: 12px;
 }
@@ -9854,7 +9854,7 @@ button.camp-row:hover {
 .filterbar-chips {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   width: 100%;
   margin-top: -2px;
@@ -9863,7 +9863,7 @@ button.camp-row:hover {
 .filterbar-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11px;
   font-weight: 600;
   padding: 5px 10px;
@@ -9888,13 +9888,13 @@ button.camp-row:hover {
   padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .filterbar-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .filterbar-field label {
@@ -9909,14 +9909,14 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   padding-top: 10px;
   border-top: 1px solid var(--line-soft);
 }
 
 .filterbar-salvar {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   padding-top: 10px;
   border-top: 1px solid var(--line-soft);
 }
@@ -9942,7 +9942,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 8px 12px;
 }
 
@@ -9953,7 +9953,7 @@ button.camp-row:hover {
 
 .kpi-personalizar-ordem {
   display: flex;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .kpi-personalizar-ordem button {
@@ -9980,7 +9980,7 @@ button.camp-row:hover {
 .funnel-steps {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .funnel-step-bar-wrap {
@@ -9997,7 +9997,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 4px;
 }
 
@@ -10036,7 +10036,7 @@ button.camp-row:hover {
 .dados-nao-conectados {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 16px;
   border: 1px dashed var(--line);
   border-radius: var(--radius-lg);
@@ -10075,14 +10075,14 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 16px 20px;
   border-bottom: 1px solid var(--line);
 }
 
 .wizard-steps {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   padding: 12px 20px;
   border-bottom: 1px solid var(--line-soft);
   flex-wrap: wrap;
@@ -10117,7 +10117,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 14px 20px;
   border-top: 1px solid var(--line);
 }
@@ -10126,7 +10126,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 9px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -10156,7 +10156,7 @@ button.camp-row:hover {
 .report-type-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   text-align: left;
   cursor: pointer;
 }
@@ -10167,7 +10167,7 @@ button.camp-row:hover {
 
 .report-type-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 4px;
 }
 
@@ -10264,21 +10264,21 @@ button.camp-row:hover {
 .wa-resumo-etiquetas {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   margin-top: 12px;
 }
 
 .wa-acoes-rapidas {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 14px 17px;
 }
 
 .wa-acao-rapida {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   padding: 10px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
@@ -10309,14 +10309,14 @@ button.camp-row:hover {
 .wa-etiquetas-lista {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 4px;
 }
 
 .wa-etiqueta-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   padding: 4px 8px;
   border-radius: 999px;
   background: var(--blue-soft-2);
@@ -10371,7 +10371,7 @@ button.camp-row:hover {
 .jornada-busca-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   margin-bottom: 10px;
 }
 
@@ -10406,7 +10406,7 @@ button.camp-row:hover {
 .jornada-recentes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
+  gap: var(--space-3);
   padding: 14px 17px;
 }
 
@@ -10414,7 +10414,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   padding: 10px;
@@ -10423,7 +10423,7 @@ button.camp-row:hover {
 .jornada-recente-abrir {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   background: none;
   border: 0;
   cursor: pointer;
@@ -10441,7 +10441,7 @@ button.camp-row:hover {
 .jornada-recente-acoes {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .jornada-recente-acoes button {
@@ -10473,7 +10473,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 12px 17px;
   flex-wrap: wrap;
   border-top: 1px solid var(--line-soft);
@@ -10482,7 +10482,7 @@ button.camp-row:hover {
 .jornada-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-  gap: 14px;
+  gap: var(--space-4);
   align-items: start;
 }
 
@@ -10495,7 +10495,7 @@ button.camp-row:hover {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 17px;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -10503,7 +10503,7 @@ button.camp-row:hover {
 .jornada-painel-acoes {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 12px 17px;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -10513,14 +10513,14 @@ button.camp-row:hover {
   border-bottom: 1px solid var(--line-soft);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: flex-end;
 }
 
 .jornada-resumo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
   padding: 17px;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -10605,7 +10605,7 @@ button.camp-row:hover {
 .wa-modal-header {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 20px 22px 16px;
   border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
@@ -10643,7 +10643,7 @@ button.camp-row:hover {
 
 .wa-config-tabs {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   padding: 10px 22px 0;
   border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
@@ -10686,7 +10686,7 @@ button.camp-row:hover {
 .wa-config-fundo-preview {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 16px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
@@ -10700,7 +10700,7 @@ button.camp-row:hover {
 .wa-fundo-opcoes {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-  gap: 10px;
+  gap: var(--space-3);
   margin-bottom: 14px;
 }
 
@@ -10708,7 +10708,7 @@ button.camp-row:hover {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   padding: 10px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
@@ -10788,7 +10788,7 @@ button.camp-row:hover {
 .wa-config-radio-lista {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 10px;
 }
 
@@ -10796,7 +10796,7 @@ button.camp-row:hover {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: var(--space-4);
   padding: 12px 0;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -10808,7 +10808,7 @@ button.camp-row:hover {
 .wa-config-notif-textos {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -10827,7 +10827,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 14px 22px;
   border-top: 1px solid var(--line);
   flex: 0 0 auto;
@@ -10840,7 +10840,7 @@ button.camp-row:hover {
 .wa-config-confirmar-fechar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 14px 22px;
   border-top: 1px solid var(--line);
   background: var(--navy-raised);
@@ -10897,7 +10897,7 @@ button.camp-row:hover {
 .chat-audio-previa {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .chat-audio-rec-dot {
@@ -10943,7 +10943,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
   height: 22px;
 }
 
@@ -11010,14 +11010,14 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .chat-audio-erro {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 8px 12px;
   margin-bottom: 6px;
   border-radius: var(--radius-md);
@@ -11032,7 +11032,7 @@ button.camp-row:hover {
 .wa-list-head-acoes {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .wa-list-config {
@@ -11058,7 +11058,7 @@ button.camp-row:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 0;
   border: none;
   background: none;
@@ -11073,7 +11073,7 @@ button.camp-row:hover {
 .bubble-midia-bloqueada {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 12px;
   border: 1px dashed var(--line);
   border-radius: var(--radius-md);
@@ -11103,7 +11103,7 @@ button.camp-row:hover {
 .wa-citacao {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 5px;
   padding: 6px 9px;
   border-left: 3px solid var(--ink-nome);
@@ -11170,7 +11170,7 @@ button.camp-row:hover {
 .wa-participante-linha {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 7px 4px;
   border-bottom: 1px solid var(--border);
   width: 100%;
@@ -11258,7 +11258,7 @@ button.camp-row:hover {
 .wa-dados-grupo-membros-btn span:first-child {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-weight: 600;
   font-size: 13px;
 }
@@ -11291,13 +11291,13 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .chat-respondendo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 6px 8px;
   margin-bottom: 4px;
   border-radius: var(--radius-md);
@@ -11317,7 +11317,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--space-1);
 }
 
 .chat-respondendo-autor {
@@ -11365,7 +11365,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
   height: 26px;
   cursor: pointer;
 }
@@ -11393,7 +11393,7 @@ button.camp-row:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 220px;
 }
 
@@ -11426,7 +11426,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .audio-player-duracao {
@@ -11566,14 +11566,14 @@ button.camp-row:hover {
 .wa-msg-detalhes-lista {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .wa-msg-detalhes-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 9px 0;
   border-bottom: 1px solid var(--line-soft);
   font-size: 12.5px;
@@ -11602,7 +11602,7 @@ button.camp-row:hover {
 .wa-encaminhar-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
   padding: 8px 10px;
   border: none;
@@ -11646,13 +11646,13 @@ button.camp-row:hover {
 .wa-contato-picker-tray-lista {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .wa-contato-picker-tray-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   padding: 4px 8px 4px 4px;
   border-radius: var(--radius-xl);
   background: var(--navy);
@@ -11678,15 +11678,15 @@ button.camp-row:hover {
 .wa-contato-picker-lista {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 10px;
 }
 
 .wa-contato-picker-card {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -11707,7 +11707,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .wa-contato-picker-card-nome {
@@ -11724,7 +11724,7 @@ button.camp-row:hover {
 .wa-contato-picker-card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
   margin-top: 4px;
 }
 
@@ -11751,14 +11751,14 @@ button.camp-row:hover {
 .wa-contato-previa-lista {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .wa-contato-previa-card {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -11767,7 +11767,7 @@ button.camp-row:hover {
 .wa-contato-previa-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   font-size: 11.5px;
   color: var(--text-muted);
 }
@@ -11783,7 +11783,7 @@ button.camp-row:hover {
 .automacoes-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin-bottom: 10px;
 }
@@ -11791,7 +11791,7 @@ button.camp-row:hover {
 .automacoes-bar-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   flex: 1 1 auto;
 }
@@ -11799,7 +11799,7 @@ button.camp-row:hover {
 .automacoes-search {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -11850,7 +11850,7 @@ button.camp-row:hover {
 .automacoes-chip-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11.5px;
   font-weight: 700;
   padding: 8px 13px;
@@ -11923,7 +11923,7 @@ button.camp-row:hover {
 
 .automacoes-chips-row {
   display: flex;
-  gap: 7px;
+  gap: var(--space-2);
   overflow-x: auto;
   padding-bottom: 4px;
   margin-bottom: 10px;
@@ -11937,7 +11937,7 @@ button.camp-row:hover {
 .automacoes-remchip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   font-size: 11px;
   font-weight: 600;
   padding: 5px 10px;
@@ -12006,7 +12006,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 16px;
   flex-wrap: wrap;
 }
@@ -12014,7 +12014,7 @@ button.camp-row:hover {
 .flow-filtros-toggle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11px;
   color: var(--text-faint);
   cursor: pointer;
@@ -12070,7 +12070,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
+  gap: var(--space-1);
   padding: var(--space-2) var(--space-4);
   border-right: 1px solid var(--line-soft);
   min-width: 88px;
@@ -12116,7 +12116,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin-bottom: 16px;
 }
@@ -12124,7 +12124,7 @@ button.camp-row:hover {
 .central-dia-filtros-dir {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -12305,7 +12305,7 @@ button.camp-row:hover {
 .inicio-pendencias-resumo-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 .inicio-pendencias-resumo-item .n {
   font-size: var(--fs-card-title);
@@ -12366,7 +12366,7 @@ button.camp-row:hover {
 .inicio-stat-mini {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -12418,7 +12418,7 @@ button.camp-row:hover {
 /* Versão maior — os 3 quadrados da coluna do funil (Oportunidades / Vendas perdidas / Vendas
    realizadas). */
 .inicio-stat-grande {
-  gap: 4px;
+  gap: var(--space-1);
 }
 .inicio-stat-grande .n {
   font-size: 38px;
@@ -12495,7 +12495,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
 }
 
 .central-dia-card-topo {
@@ -12570,7 +12570,7 @@ button.camp-row:hover {
 .central-dia-card-acoes {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   flex-shrink: 0;
 }
@@ -12641,7 +12641,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   padding: 12px 4px;
   border-bottom: 1px solid var(--line-soft);
@@ -12675,7 +12675,7 @@ button.camp-row:hover {
 
 .central-dia-recomendacao-acoes {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -12685,7 +12685,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 10px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line-soft);
@@ -12707,13 +12707,13 @@ button.camp-row:hover {
 .central-dia-organizar-lista {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .central-dia-organizar-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 10px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
@@ -12755,7 +12755,7 @@ button.camp-row:hover {
 
 .central-dia-organizar-acoes {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   flex-shrink: 0;
 }
 
@@ -12792,14 +12792,14 @@ button.camp-row:hover {
 .config-layout {
   display: grid;
   grid-template-columns: 240px 1fr;
-  gap: 20px;
+  gap: var(--space-5);
   align-items: start;
 }
 
 .config-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   position: sticky;
   top: 0;
 }
@@ -12825,7 +12825,7 @@ button.camp-row:hover {
 .config-nav-item {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   width: 100%;
   text-align: left;
   padding: 8px 10px;
@@ -12858,7 +12858,7 @@ button.camp-row:hover {
 .config-secao {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   padding-bottom: 40px;
 }
 
@@ -12866,7 +12866,7 @@ button.camp-row:hover {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .config-cabecalho h3 {
@@ -12877,7 +12877,7 @@ button.camp-row:hover {
 }
 .config-cabecalho-acoes {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -12898,12 +12898,12 @@ button.camp-row:hover {
 .config-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .config-abas {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
 }
@@ -12925,7 +12925,7 @@ button.camp-row:hover {
 .config-lista-linhas {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 /* Reestruturação visual (redesign) — sem caixa própria por padrão (o `.config-bloco` que envolve
@@ -12934,7 +12934,7 @@ button.camp-row:hover {
 .config-linha-clicavel {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
   text-align: left;
   padding: 10px 12px;
@@ -13002,14 +13002,14 @@ button.camp-row:hover {
 .config-modelos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
+  gap: var(--space-3);
 }
 .config-modelo-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   text-align: left;
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy);
@@ -13030,7 +13030,7 @@ button.camp-row:hover {
 .config-modelo-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 10px;
   color: var(--text-faint);
   margin-top: 4px;
@@ -13048,7 +13048,7 @@ button.camp-row:hover {
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .config-identidade-chip {
   padding: 6px 12px;
@@ -13083,11 +13083,11 @@ button.camp-row:hover {
 .config-permissoes {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .config-permissoes-acoes {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .config-permissoes-modulo {
   border: 1px solid var(--line);
@@ -13097,7 +13097,7 @@ button.camp-row:hover {
 .config-permissoes-modulo-h {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 12.5px;
   color: var(--ink);
   cursor: pointer;
@@ -13112,7 +13112,7 @@ button.camp-row:hover {
 .config-permissoes-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11.5px;
   color: var(--text-muted);
   cursor: pointer;
@@ -13122,12 +13122,12 @@ button.camp-row:hover {
 .config-etapas-lista {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .config-etapa-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 8px 10px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
@@ -13145,12 +13145,12 @@ button.camp-row:hover {
 .config-etiquetas-lista {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .config-etiqueta-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 8px 10px;
   border-radius: var(--radius-md);
 }
@@ -13178,7 +13178,7 @@ button.camp-row:hover {
 .config-canais-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
 }
 .config-canal-card {
   padding: 14px;
@@ -13189,7 +13189,7 @@ button.camp-row:hover {
 .config-canal-card-h {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 6px;
 }
 .config-canal-card-h .n {
@@ -13205,7 +13205,7 @@ button.camp-row:hover {
 }
 .config-canal-card-acoes {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin-top: 8px;
 }
@@ -13214,7 +13214,7 @@ button.camp-row:hover {
 .config-compat-lista {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .config-compat-item {
   display: flex;
@@ -13239,7 +13239,7 @@ button.camp-row:hover {
 
 .config-email-preview {
   margin-top: 10px;
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
@@ -13265,14 +13265,14 @@ button.camp-row:hover {
 /* Importação — passos */
 .config-passos {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin: 12px 0;
 }
 .config-passo {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11px;
   color: var(--text-faint);
   padding: 6px 10px;
@@ -13305,7 +13305,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 12px 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
@@ -13314,7 +13314,7 @@ button.camp-row:hover {
 }
 .config-salvar-bar-acoes {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .config-salvar-bar-ok {
   color: #0f9d63;
@@ -13353,12 +13353,12 @@ button.camp-row:hover {
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .wa-telefone-acoes {
   display: inline-flex;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .wa-telefone-acao {
@@ -13437,7 +13437,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
 }
@@ -13445,14 +13445,14 @@ button.camp-row:hover {
 .painel-conversa-acoes {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 /* Mensagens e ficha do contato lado a lado — a ficha só existe quando a engrenagem está ligada,
    então a conversa usa a largura inteira no uso normal. */
 .painel-conversa-corpo {
   display: flex;
-  gap: 14px;
+  gap: var(--space-4);
   flex: 1;
   min-height: 0;
 }
@@ -13474,7 +13474,7 @@ button.camp-row:hover {
      O `margin-top: auto` no primeiro filho faz o mesmo efeito visual (conversa curta encostada
      embaixo) sem tirar nada do alcance da rolagem. */
   justify-content: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .painel-conversa-mensagens > *:first-child {
@@ -13497,7 +13497,7 @@ button.camp-row:hover {
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   animation: modal-scale-in var(--transition-base);
 }
 
@@ -13507,7 +13507,7 @@ button.camp-row:hover {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   padding-top: 4px;
 }
 
@@ -13517,7 +13517,7 @@ button.camp-row:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 12px;
 }
 
@@ -13538,7 +13538,7 @@ button.camp-row:hover {
 .painel-conversa-mais {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 0 0 10px;
 }
 
@@ -13581,7 +13581,7 @@ button.camp-row:hover {
 .bubble-midia-externa {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
@@ -13701,14 +13701,14 @@ button.camp-row:hover {
 .ig-palavras {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 6px;
 }
 
 .ig-palavra-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   padding: 3px 8px;
   border-radius: 999px;
   background: rgba(37, 99, 235, 0.1);
@@ -13730,7 +13730,7 @@ button.camp-row:hover {
 /* Grade de publicações: a escolha é visual porque ninguém reconhece um post por id numérico. */
 .ig-publicacoes {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   max-height: 320px;
   overflow-y: auto;
   padding-right: 4px;
@@ -13739,7 +13739,7 @@ button.camp-row:hover {
 .ig-publicacao {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
   padding: 6px;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -13772,7 +13772,7 @@ button.camp-row:hover {
 .ig-publicacao-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--space-1);
   font-size: 12px;
   min-width: 0;
 }
@@ -13819,7 +13819,7 @@ button.camp-row:hover {
 
 .modelo-lista {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   max-height: 260px;
   overflow-y: auto;
   margin: 10px 0;
@@ -13828,7 +13828,7 @@ button.camp-row:hover {
 .modelo-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   padding: 9px 11px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-md);
@@ -13862,7 +13862,7 @@ button.camp-row:hover {
 
 .modelo-variaveis {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 10px 0;
 }
 
@@ -13901,7 +13901,7 @@ button.camp-row:hover {
 .conversa-contato-novo {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--space-1);
   width: 100%;
   padding: 7px 9px;
   border: 0;
@@ -13924,7 +13924,7 @@ button.camp-row:hover {
 .painel-previa {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px;
   margin-bottom: 8px;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -13943,7 +13943,7 @@ button.camp-row:hover {
 .painel-previa-doc {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 13px;
   padding: 6px 2px;
 }
@@ -13951,7 +13951,7 @@ button.camp-row:hover {
 .painel-previa-acoes {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* Painel do funil — passada de acabamento -------------------------------- */
@@ -13970,7 +13970,7 @@ button.camp-row:hover {
 .painel-etiquetas {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: var(--space-1);
 }
 
 .painel-etiqueta {
@@ -14011,7 +14011,7 @@ button.camp-row:hover {
   z-index: 300;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   max-width: min(560px, calc(100vw - 32px));
   padding: 10px 14px;
   border-radius: var(--radius-md);
@@ -14147,7 +14147,7 @@ button.camp-row:hover {
 .bubble-share-topo {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 6px;
   font-size: 11px;
   font-weight: 600;
@@ -14171,7 +14171,7 @@ button.camp-row:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 32px;
   text-align: center;
 }
@@ -14292,7 +14292,7 @@ button.camp-row:hover {
 .seletor-data-grade {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .seletor-data-dow {
@@ -14461,7 +14461,7 @@ button.camp-row:hover {
 .upload-area-arquivo {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   min-width: 0;
   font-size: 12px;
   color: var(--ink);
@@ -14714,7 +14714,7 @@ table.tbl .name-cell .r {
 .preco-valor {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 20px 0 18px;
   font-family: var(--display);
   font-size: 40px;
@@ -14754,13 +14754,13 @@ table.tbl .name-cell .r {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .preco-recursos li {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   font-size: 12.5px;
   color: var(--ink);
 }
