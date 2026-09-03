@@ -218,6 +218,7 @@ export default function AcoesPage() {
     if (selecionados.size === 0 || canaisEnvio.length === 0 || enviando) return;
 
     const canal = canaisEnvio[0].toLowerCase() === "whatsapp" ? "whatsapp_oficial" : "email";
+    console.log("🔍 Canal selecionado:", { canaisEnvio: canaisEnvio[0], canal });
     if (canal === "email" && !assunto.trim()) {
       setToastAcao("E-mail precisa de assunto.");
       setTimeout(() => setToastAcao(null), 4000);
@@ -232,17 +233,19 @@ export default function AcoesPage() {
     setPreverDuracao(null);
     setContatosSemDestino([]);
     try {
+      const payload = {
+        titulo,
+        corpo: corpo.trim(),
+        assunto: canal === "email" ? assunto.trim() : undefined,
+        canal,
+        agendadaPara: agendadoPara,
+        contatos: Array.from(selecionados),
+      };
+      console.log("📤 Enviando payload:", payload);
       const resposta = await fetch("/api/campanhas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          titulo,
-          corpo: corpo.trim(),
-          assunto: canal === "email" ? assunto.trim() : undefined,
-          canal,
-          agendadaPara: agendadoPara,
-          contatos: Array.from(selecionados),
-        }),
+        body: JSON.stringify(payload),
       });
       if (!resposta.ok) {
         const erro = await resposta.json();
