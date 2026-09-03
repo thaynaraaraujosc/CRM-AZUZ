@@ -305,14 +305,18 @@ export default function AcoesPage() {
         agendadaPara: agendadoPara,
         contatos: Array.from(selecionados),
       };
-      console.log("📤 Enviando payload:", payload);
+      console.log("📤 Enviando payload:", JSON.stringify(payload, null, 2));
+      console.log("🔐 Canal sendo enviado:", { canal, tipo: typeof canal });
       const resposta = await fetch("/api/campanhas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      const statusText = resposta.statusText;
+      console.log(`📡 Resposta: ${resposta.status} ${statusText}`);
       if (!resposta.ok) {
         const erro = await resposta.json();
+        console.error("❌ Erro retornado:", erro);
         throw new Error(erro.erro || "Falha ao agendar campanha");
       }
       const resultado = await resposta.json();
