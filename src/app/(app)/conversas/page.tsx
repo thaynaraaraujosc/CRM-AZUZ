@@ -806,6 +806,7 @@ function ConversasPageInner() {
     email?: string;
     empresa?: string;
     cargo?: string;
+    fotoUrl?: string;
   } | null>(null);
   const [infoWidth, setInfoWidth] = useState(320);
   const [sincronizando, setSincronizando] = useState(false);
@@ -857,6 +858,8 @@ function ConversasPageInner() {
   const [canalTopAberto, setCanalTopAberto] = useState(false);
   const [canalTopRect, setCanalTopRect] = useState<DOMRect | null>(null);
   const [canalTopFiltro, setCanalTopFiltro] = useState("Todos");
+
+  const [fotoPerfilAberta, setFotoPerfilAberta] = useState(false);
 
   // Movido pra antes de `conversasFiltradas` (que chama `conversaUsaWhatsappNaoOficial`, definida
   // mais abaixo mas que fecha sobre esta variável) — como é `const`, ficava numa "zona morta
@@ -3791,6 +3794,15 @@ function ConversasPageInner() {
                 </button>
               ))}
             </FloatingDropdown>
+            {contatoDaConversa?.fotoUrl ? (
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={() => setFotoPerfilAberta(true)}
+              >
+                Ver foto do perfil
+              </button>
+            ) : null}
             {/* Conectar um número é a primeira coisa que se quer fazer numa tela de atendimento
                 vazia — antes era preciso sair daqui e ir até Configurações → WhatsApp. */}
             <BotoesConectarWhatsApp />
@@ -6294,7 +6306,7 @@ function ConversasPageInner() {
                               <div className="wa-contato-picker-tray-lista">
                                 {contatosSelecionadosPicker.map((c) => (
                                   <span className="wa-contato-picker-tray-item" key={c.id}>
-                                    <span className="avatar">{c.initials}</span>
+                                    <span className="avatar">{c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : c.initials}</span>
                                     {c.nome}
                                     <button
                                       type="button"
@@ -6332,7 +6344,7 @@ function ConversasPageInner() {
                                       }
                                     }}
                                   >
-                                    <span className="avatar">{c.initials}</span>
+                                    <span className="avatar">{c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : c.initials}</span>
                                     <span className="wa-contato-picker-card-info">
                                       <span className="wa-contato-picker-card-nome">
                                         {c.nome}
@@ -6507,7 +6519,7 @@ function ConversasPageInner() {
                       <div className="wa-contato-previa-lista">
                         {contatosSelecionadosPicker.map((c) => (
                           <div className="wa-contato-previa-card" key={c.id}>
-                            <span className="avatar">{c.initials}</span>
+                            <span className="avatar">{c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : c.initials}</span>
                             <span className="wa-contato-previa-info">
                               <span className="n" style={{ display: "block" }}>
                                 {c.nome}
@@ -6722,7 +6734,7 @@ function ConversasPageInner() {
                       className="wa-encaminhar-item"
                       onClick={() => encaminharPara(c.nome, encaminharAberto.msg)}
                     >
-                      <span className="avatar">{c.initials}</span>
+                      <span className="avatar">{c.fotoUrl ? <img src={c.fotoUrl} alt="" className="wa-avatar-foto" /> : c.initials}</span>
                       <span>{c.nome}</span>
                     </button>
                   ))}
@@ -6946,7 +6958,7 @@ function ConversasPageInner() {
                 </button>
               </div>
               <div className="wa-contato-detalhe-corpo">
-                <span className="avatar wa-contato-detalhe-avatar">{contatoDetalheAberto.initials}</span>
+                <span className="avatar wa-contato-detalhe-avatar">{contatoDetalheAberto.fotoUrl ? <img src={contatoDetalheAberto.fotoUrl} alt="" className="wa-avatar-foto" /> : contatoDetalheAberto.initials}</span>
                 <p className="n">{contatoDetalheAberto.nome}</p>
                 {contatoDetalheAberto.empresa || contatoDetalheAberto.cargo ? (
                   <p className="hint">
@@ -7060,7 +7072,7 @@ function ConversasPageInner() {
           {abaInfo === "resumo" ? (
             <>
               <div className="wa-resumo-card">
-                <span className="avatar wa-resumo-avatar">{iniciaisExibidas(aberta.nome, aberta.initials)}</span>
+                <span className="avatar wa-resumo-avatar">{aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : iniciaisExibidas(aberta.nome, aberta.initials)}</span>
                 <p className="wa-resumo-nome">{nomeExibido(aberta.nome)}</p>
                 {empresaContato ? <p className="wa-resumo-empresa">{empresaContato}</p> : null}
                 <div className="wa-resumo-grid">
@@ -8432,6 +8444,64 @@ function ConversasPageInner() {
               ))}
             </div>
           )}
+        </div>
+      ) : null}
+
+      {fotoPerfilAberta && contatoDaConversa?.fotoUrl ? (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+          onClick={() => setFotoPerfilAberta(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "var(--bg)",
+              borderRadius: 12,
+              padding: 12,
+              maxWidth: "90vh",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p className="n" style={{ margin: 0 }}>
+                {contatoDaConversa.nome}
+              </p>
+              <button
+                type="button"
+                onClick={() => setFotoPerfilAberta(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 4,
+                  fontSize: 20,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <img
+              src={contatoDaConversa.fotoUrl}
+              alt={`Foto de perfil de ${contatoDaConversa.nome}`}
+              style={{
+                maxWidth: "500px",
+                maxHeight: "500px",
+                borderRadius: 8,
+                objectFit: "contain",
+              }}
+            />
+          </div>
         </div>
       ) : null}
 
