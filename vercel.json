@@ -8,6 +8,10 @@
     {
       "path": "/api/integracoes/meta/whatsapp/saude",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/campanhas",
+      "schedule": "* * * * *"
     }
   ]
 }

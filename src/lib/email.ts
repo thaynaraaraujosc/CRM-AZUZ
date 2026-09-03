@@ -22,6 +22,31 @@ export async function enviarEmail({ to, subject, html }: { to: string; subject: 
   if (error) console.error("Falha ao enviar e-mail via Resend:", error);
 }
 
+/**
+ * Manda um e-mail e ESTOURA se falhar.
+ *
+ * `enviarEmail` acima engole o erro de propósito: ela nasceu pros e-mails de sistema (redefinir
+ * senha, convite), onde derrubar o fluxo por causa de um e-mail seria pior que registrar a falha.
+ *
+ * Campanha é o caso oposto: se a mensagem não saiu, aquele destinatário precisa ficar marcado como
+ * falhou, com o motivo — senão o relatório diz "enviado" para gente que nunca recebeu nada, que é a
+ * pior coisa que um sistema de disparo pode fazer.
+ */
+export async function enviarEmailOuFalhar({
+  to,
+  subject,
+  html,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<void> {
+  if (!resend) throw new Error("Envio de e-mail não está configurado no servidor (RESEND_API_KEY).");
+  const remetente = process.env.EMAIL_FROM || "CRM AZUZ <onboarding@resend.dev>";
+  const { error } = await resend.emails.send({ from: remetente, to, subject, html });
+  if (error) throw new Error(error.message || "Falha ao enviar e-mail.");
+}
+
 export function templateRedefinicaoSenha(nome: string, link: string): string {
   const primeiroNome = nome.split(" ")[0];
   return `

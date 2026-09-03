@@ -257,6 +257,7 @@ model Workspace {
   instagramEventos      InstagramEvento[]
   automacaoExecucaos    AutomacaoExecucao[]
   eventoDoLeads         EventoDoLead[]
+  campanhas Campanha[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -893,4 +894,100 @@ model EventoDoLead {
   criadoEm DateTime @default(now())
 
   @@index([workspaceId, contatoNome, criadoEm])
+}
+
+// ============================================================================
+// Campanhas (Ações / listas de transmissão)
+//
+// `AcaoEnvio` acima guarda só o registro da ação e nunca enviou nada — a tela dizia "Envio
+// agendado" e a mensagem não saía. Estes dois modelos são o disparo de verdade.
+//
+// Duas tabelas, e a separação é o que sustenta tudo o mais: a campanha é a intenção, o
+// destinatário é o trabalho. Cada pessoa vira UMA linha gravada ANTES de qualquer envio, com
+// estado próprio. É isso que dá, sem truque nenhum:
+//   - idempotência — clicar duas vezes não cria destinatário duas vezes (`@@unique`);
+//   - retomada — worker que morreu no meio recomeça de onde parou, porque o estado está no banco;
+//   - rastreio individual — dá pra dizer o que aconteceu com CADA contato, e por quê;
+//   - ritmo — o worker pega só o que cabe na janela, em vez de despejar tudo de uma vez.
+// ============================================================================
+
+model Campanha {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  titulo  String
+  /// Texto da mensagem. Em e-mail é o corpo; no WhatsApp é a mensagem em si.
+  corpo   String  @db.Text
+  /// Assunto — só e-mail usa.
+  assunto String?
+
+  /// "whatsapp_oficial" | "whatsapp_nao_oficial" | "email". Um canal por campanha, de propósito:
+  /// cada um tem ritmo, limite e regra de conteúdo diferentes, e misturar os três numa campanha só
+  /// faria o relatório dizer "80% entregue" sobre coisas que nem são comparáveis.
+  canal String
+
+  /// Modelo aprovado da Meta, obrigatório no WhatsApp oficial quando a janela de 24h está fechada.
+  templateNome   String?
+  templateIdioma String?
+
+  /// agendada | enviando | pausada | concluida | concluida_com_erros | cancelada
+  status String @default("agendada")
+
+  /// Quando começar. Agora = data no passado; agendamento = data futura. Quem decide é o worker,
+  /// então fechar o navegador não muda nada.
+  agendadaPara DateTime
+
+  iniciadaEm  DateTime?
+  concluidaEm DateTime?
+
+  /// Erro que interrompeu a campanha inteira (canal desconectado, token morto). Falha de UM
+  /// destinatário não vem pra cá — fica na linha dele.
+  erroMensagem String? @db.Text
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  destinatarios CampanhaDestinatario[]
+
+  @@index([workspaceId, criadoEm])
+  /// O worker varre por aqui: só campanhas de um status, prontas pra rodar.
+  @@index([status, agendadaPara])
+}
+
+model CampanhaDestinatario {
+  id         String   @id
+  campanhaId String
+  campanha   Campanha @relation(fields: [campanhaId], references: [id], onDelete: Cascade)
+
+  /// Repetido aqui de propósito: o worker filtra e conta por workspace sem precisar entrar na
+  /// campanha, e é o que permite limitar concorrência por cliente.
+  workspaceId String
+
+  /// Nome do contato no CRM — a mesma chave usada em `Conversa.nome` e `MensagemExtra.contato`.
+  contatoNome String
+  /// Para onde vai de verdade, resolvido NA CRIAÇÃO da campanha e congelado aqui. Não pode ser
+  /// buscado na hora do envio: o contato pode ser editado ou apagado no meio de uma campanha de
+  /// vários dias, e aí a mensagem iria pro lugar errado — ou pra lugar nenhum.
+  destino String
+
+  /// pendente | enviando | enviado | entregue | lido | falhou | cancelado
+  status String @default("pendente")
+
+  /// Id que o provedor devolve (`wamid` no WhatsApp oficial, id do Resend no e-mail). É por ele
+  /// que o webhook de status encontra esta linha depois.
+  idExterno String? @db.VarChar(191)
+
+  tentativas   Int       @default(0)
+  erroMensagem String?   @db.Text
+  enviadoEm    DateTime?
+
+  criadoEm DateTime @default(now())
+
+  /// Idempotência de verdade: a mesma pessoa não entra duas vezes na mesma campanha, nem que o
+  /// botão seja clicado dez vezes ou que a criação seja repetida por timeout.
+  @@unique([campanhaId, contatoNome])
+  /// A varredura do worker: próximos pendentes de uma campanha, na ordem de criação.
+  @@index([campanhaId, status])
+  @@index([workspaceId, status])
 }
