@@ -132,7 +132,7 @@ export function WhatsAppSecao() {
                 <p className="int-title" style={{ margin: 0 }}>
                   {metaConectada ? "WhatsApp Business (API oficial da Meta)" : "WhatsApp (API não oficial, QR Code)"}
                 </p>
-                <p className="int-sub" style={{ margin: "4px 0 0" }}>Conectado — {numeroConectado}</p>
+                <p className="int-sub" style={{ margin: "4px 0 0" }}>Conectado • {numeroConectado}</p>
               </div>
               <button
                 type="button"
