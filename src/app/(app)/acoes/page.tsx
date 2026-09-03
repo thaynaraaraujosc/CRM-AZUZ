@@ -6,23 +6,14 @@ import { useEffect, useRef, useState } from "react";
 
 import { classeOrigem } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
-import { IconDoc, IconImage, IconMic, IconSearch } from "@/components/icons";
+import { IconDoc, IconMic, IconSearch } from "@/components/icons";
 import { IconCalendar } from "@/components/icons";
-import { FloatingDropdown, MediaPicker, SegmentChips, Topbar } from "@/components/ui";
+import { FloatingDropdown, Topbar } from "@/components/ui";
 import { SeletorDeData } from "@/components/seletor-de-data";
-import { AreaDeUpload } from "@/components/area-de-upload";
-
-const iconePorMidia = {
-  imagem: <IconImage />,
-  audio: <IconMic />,
-  texto: <IconDoc />,
-};
 
 const CANAIS_ENVIO = [
   { label: "WhatsApp", ativo: true },
-  { label: "Instagram", ativo: true },
-  { label: "E-mail", ativo: false },
-  { label: "SMS", ativo: false },
+  { label: "E-mail", ativo: true },
 ];
 
 const PERIODOS = [
@@ -34,15 +25,16 @@ const PERIODOS = [
 type PeriodoValor = (typeof PERIODOS)[number]["valor"] | "personalizado";
 type ModoAudiencia = "periodo" | "origem" | "manual";
 
-type AcaoEnvio = {
+type Campanha = {
   id: string;
   titulo: string;
-  legenda: string | null;
-  midiaTipo: "imagem" | "audio" | "texto";
-  canais: string[];
+  corpo: string;
+  assunto: string | null;
+  canal: "whatsapp" | "email";
   agendadoPara: string;
-  contatos: string[];
+  status: "agendada" | "enviando" | "enviada";
   criadoEm: string;
+  contatos?: string[];
 };
 
 function formatarDataHora(iso: string) {
@@ -90,21 +82,23 @@ export default function AcoesPage() {
   );
   const [listaAberta, setListaAberta] = useState(false);
   const [buscaContato, setBuscaContato] = useState("");
-  const [midia, setMidia] = useState("Imagem");
-  const [legenda, setLegenda] = useState("");
+  const [corpo, setCorpo] = useState("");
+  const [assunto, setAssunto] = useState("");
   const [canaisEnvio, setCanaisEnvio] = useState(
     () => CANAIS_ENVIO.filter((c) => c.ativo).map((c) => c.label),
   );
-  const [historicoAcoes, setHistoricoAcoes] = useState<AcaoEnvio[]>([]);
+  const [historicoAcoes, setHistoricoAcoes] = useState<Campanha[]>([]);
   const [carregandoHistorico, setCarregandoHistorico] = useState(true);
   const [toastAcao, setToastAcao] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [preverDuracao, setPreverDuracao] = useState<{ min: number; max: number } | null>(null);
+  const [contatosSemDestino, setContatosSemDestino] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch("/api/acoes")
+    fetch("/api/campanhas")
       .then((r) => r.json())
       .then(setHistoricoAcoes)
-      .catch((erro) => console.error("Falha ao carregar ações:", erro))
+      .catch((erro) => console.error("Falha ao carregar campanhas:", erro))
       .finally(() => setCarregandoHistorico(false));
   }, []);
 
@@ -213,15 +207,6 @@ export default function AcoesPage() {
       )
     : contatos;
 
-  const [arquivoImagem, setArquivoImagem] = useState<File | null>(null);
-  const [arquivoAudio, setArquivoAudio] = useState<File | null>(null);
-  const [arquivoGenerico, setArquivoGenerico] = useState<File | null>(null);
-  const [gravando, setGravando] = useState(false);
-  const [audioGravadoUrl, setAudioGravadoUrl] = useState<string | null>(null);
-  const [erroGravacao, setErroGravacao] = useState<string | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<BlobPart[]>([]);
-
   function toggleContato(nome: string) {
     setSelecionados((prev) => {
       const next = new Set(prev);
@@ -231,62 +216,71 @@ export default function AcoesPage() {
     });
   }
 
-  async function iniciarGravacao() {
-    setErroGravacao(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      chunksRef.current = [];
-      recorder.ondataavailable = (e) => chunksRef.current.push(e.data);
-      recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        setAudioGravadoUrl(URL.createObjectURL(blob));
-        stream.getTracks().forEach((t) => t.stop());
-      };
-      recorder.start();
-      mediaRecorderRef.current = recorder;
-      setGravando(true);
-    } catch {
-      setErroGravacao(
-        "Não consegui acessar o microfone. Verifique a permissão do navegador.",
-      );
-    }
-  }
-
-  function pararGravacao() {
-    mediaRecorderRef.current?.stop();
-    setGravando(false);
-  }
-
   async function agendarEnvio() {
     if (selecionados.size === 0 || canaisEnvio.length === 0 || enviando) return;
-    const midiaChave = midia === "Imagem" ? "imagem" : midia === "Áudio" ? "audio" : "texto";
-    const tituloBase = legenda.trim() || `Ação · ${midia.toLowerCase()}`;
+
+    const canal = canaisEnvio[0].toLowerCase() === "whatsapp" ? "whatsapp" : "email";
+    if (canal === "email" && !assunto.trim()) {
+      setToastAcao("E-mail precisa de assunto.");
+      setTimeout(() => setToastAcao(null), 4000);
+      return;
+    }
+
+    const tituloBase = corpo.trim().split("\n")[0] || `Campanha · ${canal}`;
     const titulo = tituloBase.length > 60 ? `${tituloBase.slice(0, 57)}…` : tituloBase;
     const agendadoPara = new Date(`${envioData}T${envioHora}:00`).toISOString();
 
     setEnviando(true);
+    setPreverDuracao(null);
+    setContatosSemDestino([]);
     try {
-      const resposta = await fetch("/api/acoes", {
+      const resposta = await fetch("/api/campanhas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           titulo,
-          legenda: legenda.trim() || undefined,
-          midiaTipo: midiaChave,
-          canais: canaisEnvio,
-          agendadoPara,
+          corpo: corpo.trim(),
+          assunto: canal === "email" ? assunto.trim() : undefined,
+          canal,
+          agendadaPara: agendadoPara,
           contatos: Array.from(selecionados),
         }),
       });
-      if (!resposta.ok) throw new Error("Falha ao agendar ação");
-      const acao: AcaoEnvio = await resposta.json();
-      setHistoricoAcoes((prev) => [acao, ...prev]);
-      setToastAcao(`Envio agendado para ${selecionados.size} contatos.`);
-      setTimeout(() => setToastAcao(null), 4000);
+      if (!resposta.ok) {
+        const erro = await resposta.json();
+        throw new Error(erro.erro || "Falha ao agendar campanha");
+      }
+      const resultado = await resposta.json();
+      setPreverDuracao(resultado.previsao);
+      if (resultado.semDestino?.length > 0) {
+        setContatosSemDestino(resultado.semDestino);
+      }
+
+      const campanha: Campanha = {
+        id: resultado.id,
+        titulo,
+        corpo: corpo.trim(),
+        assunto: canal === "email" ? assunto.trim() : null,
+        canal,
+        agendadoPara,
+        status: "agendada",
+        criadoEm: new Date().toISOString(),
+        contatos: Array.from(selecionados),
+      };
+      setHistoricoAcoes((prev) => [campanha, ...prev]);
+
+      let mensagem = `Campanha agendada para ${resultado.destinatarios} contatos`;
+      if (resultado.semDestino?.length > 0) {
+        mensagem += ` (${resultado.semDestino.length} sem ${canal === "email" ? "e-mail" : "WhatsApp"})`;
+      }
+      setToastAcao(mensagem);
+      setTimeout(() => setToastAcao(null), 5000);
+
+      setCorpo("");
+      setAssunto("");
     } catch (erro) {
-      console.error("Falha ao agendar ação:", erro);
-      setToastAcao("Não foi possível agendar o envio. Tente novamente.");
+      console.error("Falha ao agendar campanha:", erro);
+      setToastAcao(erro instanceof Error ? erro.message : "Não foi possível agendar a campanha. Tente novamente.");
       setTimeout(() => setToastAcao(null), 4000);
     } finally {
       setEnviando(false);
@@ -296,13 +290,8 @@ export default function AcoesPage() {
   return (
     <>
       <Topbar
-        title="Ações"
-        sub="Listas de transmissão segmentadas por período e tipo de contato"
-        actions={
-          <button type="button" className="btn primary">
-            + Nova ação
-          </button>
-        }
+        title="Campanhas"
+        sub="Envios de mensagens em massa por WhatsApp ou E-mail"
       />
 
       <div className="content">
@@ -597,106 +586,45 @@ export default function AcoesPage() {
               <div className="panel-h">
                 <h4>2. O que vai enviar</h4>
               </div>
-              <MediaPicker
-                options={[
-                  { label: "Imagem", icon: <IconImage /> },
-                  { label: "Áudio", icon: <IconMic /> },
-                  { label: "Arquivo", icon: <IconDoc /> },
-                ]}
-                onChange={(label) => setMidia(label)}
-              />
-
-              {midia === "Imagem" ? (
-                <div className="field">
-                  <label>Imagem</label>
-                  <AreaDeUpload
-                    accept="image/*"
-                    titulo="Enviar uma imagem"
-                    limiteMb={5}
-                    aoEscolher={setArquivoImagem}
-                    nomeDoArquivo={arquivoImagem?.name}
-                    aoRemover={() => setArquivoImagem(null)}
-                  />
-                </div>
-              ) : null}
-
-              {midia === "Áudio" ? (
-                <div className="field">
-                  <label>Áudio</label>
-                  <AreaDeUpload
-                    accept="audio/*"
-                    titulo="Enviar um áudio"
-                    limiteMb={16}
-                    aoEscolher={(arquivo) => {
-                      setArquivoAudio(arquivo);
-                      setAudioGravadoUrl(null);
-                    }}
-                    nomeDoArquivo={arquivoAudio?.name}
-                    aoRemover={() => setArquivoAudio(null)}
-                  />
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-                    {!gravando ? (
-                      <button
-                        type="button"
-                        className="btn ghost"
-                        onClick={iniciarGravacao}
-                      >
-                        ● Gravar áudio
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn primary"
-                        onClick={pararGravacao}
-                      >
-                        ■ Parar gravação
-                      </button>
-                    )}
-                  </div>
-                  {erroGravacao ? (
-                    <p className="hint" style={{ color: "var(--blue)", marginTop: 8 }}>
-                      {erroGravacao}
-                    </p>
-                  ) : null}
-                  {audioGravadoUrl ? (
-                    <div className="mt14">
-                      <p className="hint" style={{ marginBottom: 6 }}>
-                        Áudio gravado — reservado pra essa ação
-                      </p>
-                      <audio controls src={audioGravadoUrl} style={{ width: "100%" }} />
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {midia === "Arquivo" ? (
-                <div className="field">
-                  <label>Arquivo (PDF, documento etc.)</label>
-                  <AreaDeUpload
-                    titulo="Enviar um arquivo"
-                    limiteMb={16}
-                    aoEscolher={setArquivoGenerico}
-                    nomeDoArquivo={arquivoGenerico?.name}
-                    aoRemover={() => setArquivoGenerico(null)}
-                  />
-                </div>
-              ) : null}
-
               <div className="field">
-                <label>Legenda / mensagem</label>
+                <label>Mensagem</label>
                 <textarea
                   className="input"
-                  style={{ minHeight: 54, width: "100%" }}
-                  value={legenda}
-                  onChange={(e) => setLegenda(e.target.value)}
+                  style={{ minHeight: 80, width: "100%" }}
+                  placeholder="Escreva a mensagem que vai sair para os contatos…"
+                  value={corpo}
+                  onChange={(e) => setCorpo(e.target.value)}
                 />
               </div>
+
+              {canaisEnvio[0]?.toLowerCase() === "e-mail" ? (
+                <div className="field">
+                  <label>Assunto do e-mail</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Assunto…"
+                    value={assunto}
+                    onChange={(e) => setAssunto(e.target.value)}
+                  />
+                </div>
+              ) : null}
               <div className="field">
-                <label>Canal de envio — pode escolher mais de um</label>
-                <SegmentChips
-                  options={CANAIS_ENVIO}
-                  onChange={(labels) => setCanaisEnvio(labels)}
-                />
+                <label>Canal de envio</label>
+                <div style={{ display: "flex", gap: 12 }}>
+                  {CANAIS_ENVIO.map((canal) => (
+                    <label key={canal.label} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                      <input
+                        type="radio"
+                        name="canal"
+                        value={canal.label}
+                        checked={canaisEnvio.includes(canal.label)}
+                        onChange={() => setCanaisEnvio([canal.label])}
+                      />
+                      <span>{canal.label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="field">
                 <label>Enviar</label>
@@ -744,6 +672,33 @@ export default function AcoesPage() {
                   </div>
                 </FloatingDropdown>
               </div>
+
+              {preverDuracao ? (
+                <div style={{ padding: "12px 14px", backgroundColor: "var(--blue-soft)", borderRadius: 6, marginBottom: 12, border: "1px solid var(--blue-line)" }}>
+                  <p className="n" style={{ margin: 0 }}>
+                    ⏱️ Tempo estimado: {preverDuracao.min}-{preverDuracao.max} minutos
+                  </p>
+                  <p className="hint" style={{ margin: "4px 0 0" }}>
+                    Os envios sairão em ritmo controlado para não sobrecarregar.
+                  </p>
+                </div>
+              ) : null}
+
+              {contatosSemDestino.length > 0 ? (
+                <div style={{ padding: "12px 14px", backgroundColor: "var(--amber-soft)", borderRadius: 6, marginBottom: 12, border: "1px solid var(--amber-line)" }}>
+                  <p className="n" style={{ margin: "0 0 8px" }}>
+                    ⚠️ {contatosSemDestino.length} contato{contatosSemDestino.length !== 1 ? "s" : ""} sem {canaisEnvio[0]?.toLowerCase() === "e-mail" ? "e-mail" : "WhatsApp"}
+                  </p>
+                  <div style={{ maxHeight: 150, overflowY: "auto" }}>
+                    {contatosSemDestino.map((nome) => (
+                      <p key={nome} className="hint" style={{ margin: "2px 0" }}>
+                        • {nome}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               <div className="section-foot">
                 <button
                   type="button"
@@ -759,49 +714,53 @@ export default function AcoesPage() {
 
           <div className="card">
             <div className="panel-h">
-              <h4>Ações anteriores</h4>
+              <h4>Campanhas anteriores</h4>
             </div>
             {carregandoHistorico ? (
               <p className="hint" style={{ padding: "14px 17px" }}>
-                Carregando ações…
+                Carregando campanhas…
               </p>
             ) : historicoAcoes.length === 0 ? (
               <p className="hint" style={{ padding: "14px 17px" }}>
-                Nenhuma ação agendada ainda. Configure ao lado e agende o primeiro envio.
+                Nenhuma campanha agendada ainda. Configure ao lado e agende o primeiro envio.
               </p>
             ) : (
-              historicoAcoes.map((acao) => {
-                const expandida = acaoExpandida === acao.id;
-                const jaPassou = new Date(acao.agendadoPara).getTime() <= agora;
-                const meta = `${acao.contatos.length} contatos · ${acao.midiaTipo} · ${acao.canais.join(" e ")}`;
-                const statusLabel = `${jaPassou ? "Enviado" : "Agendado"} · ${formatarDataHora(acao.agendadoPara)}`;
+              historicoAcoes.map((campanha) => {
+                const expandida = acaoExpandida === campanha.id;
+                const jaPassou = new Date(campanha.agendadoPara).getTime() <= agora;
+                const contatoCount = campanha.contatos?.length ?? 0;
+                const canalLabel = campanha.canal === "whatsapp" ? "WhatsApp" : "E-mail";
+                const meta = `${contatoCount} contatos · ${canalLabel}`;
+                const statusLabel = `${jaPassou ? "Enviado" : "Agendado"} · ${formatarDataHora(campanha.agendadoPara)}`;
                 return (
-                  <div key={acao.id}>
+                  <div key={campanha.id}>
                     <button
                       type="button"
                       className="broadcast-row"
                       style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
                       aria-expanded={expandida}
                       onClick={() =>
-                        setAcaoExpandida((atual) => (atual === acao.id ? null : acao.id))
+                        setAcaoExpandida((atual) => (atual === campanha.id ? null : campanha.id))
                       }
                     >
-                      <div className="broadcast-icon">{iconePorMidia[acao.midiaTipo]}</div>
+                      <div className="broadcast-icon">
+                        {campanha.canal === "email" ? <IconDoc /> : <IconMic />}
+                      </div>
                       <div className="broadcast-body">
-                        <p className="broadcast-title">{acao.titulo}</p>
+                        <p className="broadcast-title">{campanha.titulo}</p>
                         <p className="broadcast-meta">{meta}</p>
                       </div>
                       <span className={`broadcast-status ${jaPassou ? "sent" : "scheduled"}`}>
                         {statusLabel}
                       </span>
                     </button>
-                    {expandida ? (
+                    {expandida && campanha.contatos ? (
                       <div style={{ padding: "0 17px 14px", borderBottom: "1px solid var(--line-soft)" }}>
                         <p className="hint" style={{ margin: "0 0 8px" }}>
                           Contatos que vão receber — clique num contato pra ir direto na conversa
                         </p>
                         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                          {acao.contatos.map((nome) => (
+                          {campanha.contatos.map((nome) => (
                             <Link
                               key={nome}
                               href={`/conversas?contato=${encodeURIComponent(nome)}`}
