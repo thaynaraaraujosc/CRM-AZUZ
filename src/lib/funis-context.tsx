@@ -64,6 +64,16 @@ export function FunisProvider({ children }: { children: ReactNode }) {
   /** Último erro de gravação — a tela mostra pra ninguém achar que salvou quando não salvou. */
   const [erroSincronizacao, setErroSincronizacao] = useState<string | null>(null);
   const carregadoRef = useRef(false);
+  /**
+   * Marca que o próximo `funis` novo veio do BANCO, não de uma edição — então não deve ser
+   * gravado de volta.
+   *
+   * Sem isto havia um laço fechado: o PUT falhava, o `.then` recarregava do banco, o
+   * `setFunis` da recarga disparava o efeito de sincronização, que mandava outro PUT, que
+   * falhava de novo. O console enchia com o mesmo 500 repetido pra sempre e cada volta
+   * segurava mais uma das 3 conexões do pool — o erro se alimentava sozinho e ia piorando.
+   */
+  const vindoDoServidorRef = useRef(false);
 
   useEffect(() => {
     fetch("/api/funis")
@@ -112,12 +122,20 @@ export function FunisProvider({ children }: { children: ReactNode }) {
    * imediata, pra tela e banco contarem a mesma história. */
   async function recarregar() {
     const dados = (await fetch("/api/funis").then((r) => r.json())) as Funil[];
+    vindoDoServidorRef.current = true;
     setFunis(dados);
     return dados;
   }
 
   useEffect(() => {
     if (!carregadoRef.current) return;
+    // Estado que acabou de ser lido do banco não precisa voltar pra ele — e devolvê-lo depois de
+    // uma gravação recusada era o que criava o laço infinito de PUTs (ver `vindoDoServidorRef`).
+    if (vindoDoServidorRef.current) {
+      vindoDoServidorRef.current = false;
+      pendenteRef.current = null;
+      return;
+    }
     pendenteRef.current = funis;
     const temporizador = setTimeout(() => persistirFunis(funis), 500);
     return () => clearTimeout(temporizador);

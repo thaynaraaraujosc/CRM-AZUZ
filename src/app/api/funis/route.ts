@@ -85,86 +85,110 @@ export async function PUT(request: Request) {
   // funis/etapas/cards estavam no payload, que é o que separa "dado inválido num card" de
   // "transação grande demais e estourou o tempo".
   try {
-    await prisma.$transaction([
-      prisma.negocioCard.deleteMany({
-        where: {
-          workspaceId,
-          ...filtroConexaoDeNegocio(provedores),
-          id: { notIn: idsCards.length ? idsCards : ["__nenhum__"] },
-        },
-      }),
-      prisma.funilEtapa.deleteMany({
-        where: { workspaceId, id: { notIn: idsEtapas.length ? idsEtapas : ["__nenhum__"] } },
-      }),
-      prisma.funil.deleteMany({
-        where: { workspaceId, id: { notIn: idsFunis.length ? idsFunis : ["__nenhum__"] } },
-      }),
-      ...funis.map((f) =>
-        prisma.funil.upsert({
-          where: { id: f.id },
-          create: { id: f.id, workspaceId, nome: f.nome, responsavel: f.responsavel },
-          update: { nome: f.nome, responsavel: f.responsavel },
+    await prisma.$transaction(
+      [
+        prisma.negocioCard.deleteMany({
+          where: {
+            workspaceId,
+            ...filtroConexaoDeNegocio(provedores),
+            id: { notIn: idsCards.length ? idsCards : ["__nenhum__"] },
+          },
         }),
-      ),
-      ...funis.flatMap((f) =>
-        f.colunas.map((c, ordemEtapa) =>
-          prisma.funilEtapa.upsert({
-            where: { id: c.id },
-            create: { id: c.id, workspaceId, funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
-            update: { funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
+        prisma.funilEtapa.deleteMany({
+          where: { workspaceId, id: { notIn: idsEtapas.length ? idsEtapas : ["__nenhum__"] } },
+        }),
+        prisma.funil.deleteMany({
+          where: { workspaceId, id: { notIn: idsFunis.length ? idsFunis : ["__nenhum__"] } },
+        }),
+        ...funis.map((f) =>
+          prisma.funil.upsert({
+            where: { id: f.id },
+            create: { id: f.id, workspaceId, nome: f.nome, responsavel: f.responsavel },
+            update: { nome: f.nome, responsavel: f.responsavel },
           }),
         ),
-      ),
-      ...funis.flatMap((f) =>
-        f.colunas.flatMap((c) =>
-          c.cards.map((card, ordemCard) =>
-            prisma.negocioCard.upsert({
-              where: { id: card.id },
-              create: {
-                id: card.id,
-                workspaceId,
-                etapaId: c.id,
-                ordem: ordemCard,
-                nome: card.nome,
-                valor: card.valor,
-                origem: card.origem,
-                dias: card.dias,
-                data: card.data,
-                etiquetas: card.etiquetas ?? undefined,
-                responsavel: card.responsavel,
-                statusFechamento: card.statusFechamento ?? undefined,
-                motivoPerda: card.motivoPerda ?? undefined,
-                dataFechamento: card.dataFechamento ? new Date(card.dataFechamento) : undefined,
-              },
-              update: {
-                etapaId: c.id,
-                ordem: ordemCard,
-                nome: card.nome,
-                valor: card.valor,
-                origem: card.origem,
-                dias: card.dias,
-                data: card.data,
-                etiquetas: card.etiquetas ?? undefined,
-                responsavel: card.responsavel,
-                statusFechamento: card.statusFechamento ?? null,
-                motivoPerda: card.motivoPerda ?? null,
-                dataFechamento: card.dataFechamento ? new Date(card.dataFechamento) : null,
-              },
+        ...funis.flatMap((f) =>
+          f.colunas.map((c, ordemEtapa) =>
+            prisma.funilEtapa.upsert({
+              where: { id: c.id },
+              create: { id: c.id, workspaceId, funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
+              update: { funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
             }),
           ),
         ),
-      ),
-    ]);
+        ...funis.flatMap((f) =>
+          f.colunas.flatMap((c) =>
+            c.cards.map((card, ordemCard) =>
+              prisma.negocioCard.upsert({
+                where: { id: card.id },
+                create: {
+                  id: card.id,
+                  workspaceId,
+                  etapaId: c.id,
+                  ordem: ordemCard,
+                  nome: card.nome,
+                  valor: card.valor,
+                  origem: card.origem,
+                  dias: card.dias,
+                  data: card.data,
+                  etiquetas: card.etiquetas ?? undefined,
+                  responsavel: card.responsavel,
+                  statusFechamento: card.statusFechamento ?? undefined,
+                  motivoPerda: card.motivoPerda ?? undefined,
+                  dataFechamento: card.dataFechamento ? new Date(card.dataFechamento) : undefined,
+                },
+                update: {
+                  etapaId: c.id,
+                  ordem: ordemCard,
+                  nome: card.nome,
+                  valor: card.valor,
+                  origem: card.origem,
+                  dias: card.dias,
+                  data: card.data,
+                  etiquetas: card.etiquetas ?? undefined,
+                  responsavel: card.responsavel,
+                  statusFechamento: card.statusFechamento ?? null,
+                  motivoPerda: card.motivoPerda ?? null,
+                  dataFechamento: card.dataFechamento ? new Date(card.dataFechamento) : null,
+                },
+              }),
+            ),
+          ),
+        ),
+      ],
+      // O padrão do Prisma para transação em lote é 5s de execução e 2s de espera por conexão.
+      // Aqui isso é pouco: a reconciliação manda uma instrução por funil, por etapa e por CARD, e
+      // cada uma é uma ida e volta até o banco no Railway. Com algumas dezenas de negócios o
+      // tempo somado passa dos 5s e a transação inteira é abortada por prazo — o funil não salva,
+      // e a mensagem que chega na tela ("Não foi possível salvar") não diz que o motivo foi tempo.
+      // O `maxWait` sobe pelo mesmo motivo: o pool tem só 3 conexões, e sob salvamentos seguidos a
+      // espera por uma conexão livre estourava antes mesmo de a transação começar.
+      { timeout: 20_000, maxWait: 15_000 },
+    );
   } catch (erro) {
+    const mensagem = erro instanceof Error ? erro.message : String(erro);
+    // O código do Prisma (P2028 = prazo da transação, P2002 = id repetido, P2003 = chave
+    // estrangeira) é o que separa "demorou demais" de "dado inválido". Sem ele, todo problema
+    // diferente chegava na tela com o mesmo texto e não dava pra investigar sem o log do servidor.
+    const codigo = (erro as { code?: string })?.code;
     console.error("[api/funis] falha ao salvar:", {
       workspaceId,
       funis: funis.length,
       etapas: idsEtapas.length,
       cards: idsCards.length,
-      mensagem: erro instanceof Error ? erro.message : String(erro),
+      codigo,
+      mensagem,
     });
     return NextResponse.json(
-      { erro: "Não foi possível salvar o funil agora." },
+      {
+        erro:
+          codigo === "P2028"
+            ? "O funil é grande demais para salvar de uma vez. Tente de novo."
+            : "Não foi possível salvar o funil agora.",
+        // Só o código, nunca a mensagem crua do banco: ela carrega nome de tabela, coluna e às
+        // vezes o próprio valor do registro, e isso não pode chegar ao navegador.
+        codigo,
+      },
       { status: 500 },
     );
   }

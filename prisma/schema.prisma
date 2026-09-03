@@ -257,7 +257,7 @@ model Workspace {
   instagramEventos      InstagramEvento[]
   automacaoExecucaos    AutomacaoExecucao[]
   eventoDoLeads         EventoDoLead[]
-  campanhas Campanha[]
+  campanhas             Campanha[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -969,7 +969,7 @@ model CampanhaDestinatario {
   /// Para onde vai de verdade, resolvido NA CRIAÇÃO da campanha e congelado aqui. Não pode ser
   /// buscado na hora do envio: o contato pode ser editado ou apagado no meio de uma campanha de
   /// vários dias, e aí a mensagem iria pro lugar errado — ou pra lugar nenhum.
-  destino String
+  destino     String
 
   /// pendente | enviando | enviado | entregue | lido | falhou | cancelado
   status String @default("pendente")
