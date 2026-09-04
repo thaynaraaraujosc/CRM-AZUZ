@@ -20,7 +20,7 @@ import {
   todosOsCards,
 } from "@/lib/metrics";
 
-type ColunaOrdenavel = "nome" | "investido" | "leads" | "cpl" | "roas";
+type ColunaOrdenavel = "nome" | "investido" | "leads" | "vendas" | "cpl" | "roas";
 
 /**
  * Visão completa da aquisição — do investimento até a receita. Campos que o
@@ -78,7 +78,7 @@ export default function TrafegoPage() {
       const { leads, investido } = parseSubCampanha(c.sub);
       const roasNum = Number(c.roas.replace(",", ".").replace("x", "")) || 0;
       const cpl = leads > 0 ? investido / leads : 0;
-      return { ...c, leads, investido, cpl, roasNum };
+      return { ...c, leads, investido, cpl, roasNum, vendas: c.vendas ?? 0 };
     });
     const chave = (l: (typeof linhas)[number]) =>
       ordenarPor === "nome" ? l.nome : ordenarPor === "roas" ? l.roasNum : l[ordenarPor];
@@ -263,6 +263,9 @@ export default function TrafegoPage() {
                   <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("leads")}>
                     Leads {ordenarPor === "leads" ? (ordemDesc ? "↓" : "↑") : ""}
                   </th>
+                  <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("vendas")}>
+                    Vendas {ordenarPor === "vendas" ? (ordemDesc ? "↓" : "↑") : ""}
+                  </th>
                   <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("cpl")}>
                     CPL {ordenarPor === "cpl" ? (ordemDesc ? "↓" : "↑") : ""}
                   </th>
@@ -274,7 +277,7 @@ export default function TrafegoPage() {
               <tbody>
                 {linhasCampanha.length === 0 ? (
                   <tr>
-                    <td colSpan={7}>
+                    <td colSpan={8}>
                       <p className="hint" style={{ padding: 17 }}>Nenhuma campanha com esses filtros.</p>
                     </td>
                   </tr>
@@ -298,9 +301,11 @@ export default function TrafegoPage() {
                       >
                         {c.nome}
                       </button>
+                      {c.pausada ? <span className="tag" style={{ marginLeft: 8 }}>pausada</span> : null}
                     </td>
                     <td>{formatarMoeda(c.investido)}</td>
                     <td>{c.leads}</td>
+                    <td>{c.vendas}</td>
                     <td>{formatarMoeda(c.cpl)}</td>
                     <td>{c.roas}</td>
                   </tr>
@@ -309,8 +314,8 @@ export default function TrafegoPage() {
             </table>
           </div>
           <p className="hint" style={{ padding: "0 17px 14px" }}>
-            Leads qualificados, vendas, receita por campanha e custo por venda entram aqui quando a
-            negociação puder ser ligada à campanha de origem no back-end.
+            Vendas e ROAS vêm das conversões atribuídas pelo Meta Ads. Leads qualificados e custo por
+            venda entram aqui quando a negociação puder ser ligada à campanha de origem no back-end.
           </p>
         </div>
 
@@ -336,8 +341,16 @@ export default function TrafegoPage() {
                 <span className="sv">{parseSubCampanha(campanhaDetalhe.sub).leads}</span>
               </div>
               <div className="stat-row">
+                <span className="sl">Vendas</span>
+                <span className="sv">{campanhaDetalhe.vendas ?? 0}</span>
+              </div>
+              <div className="stat-row">
                 <span className="sl">ROAS</span>
                 <span className="sv">{campanhaDetalhe.roas}</span>
+              </div>
+              <div className="stat-row">
+                <span className="sl">Status</span>
+                <span className="sv">{campanhaDetalhe.pausada ? "Pausada" : "Ativa"}</span>
               </div>
               <Link
                 href={`/contatos`}

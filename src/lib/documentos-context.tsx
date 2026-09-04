@@ -162,9 +162,9 @@ ${CAPA("#0f9d63", "#ffffff", "Relatório executivo", "Período: [DATA]")}
 <p>[DESCREVA O OBJETIVO deste relatório em duas ou três frases.]</p>
 <table style="width:100%;border-collapse:separate;border-spacing:8px 0;margin:16px 0;">
   <tr>
-    <td style="background:#e8f6ee;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#0f9d63;margin:0 0 4px;text-transform:uppercase;">Indicador 1</p><p style="font-size:22px;font-weight:700;margin:0;">—</p></td>
-    <td style="background:#eaf1ff;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#2e6bff;margin:0 0 4px;text-transform:uppercase;">Indicador 2</p><p style="font-size:22px;font-weight:700;margin:0;">—</p></td>
-    <td style="background:#fff4e5;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#c9660a;margin:0 0 4px;text-transform:uppercase;">Indicador 3</p><p style="font-size:22px;font-weight:700;margin:0;">—</p></td>
+    <td style="background:#e8f6ee;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#0f9d63;margin:0 0 4px;text-transform:uppercase;">Indicador 1</p><p style="font-size:22px;font-weight:700;margin:0;"></p></td>
+    <td style="background:#eaf1ff;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#2e6bff;margin:0 0 4px;text-transform:uppercase;">Indicador 2</p><p style="font-size:22px;font-weight:700;margin:0;"></p></td>
+    <td style="background:#fff4e5;border-radius:8px;padding:14px;width:33%;"><p style="font-size:11px;color:#c9660a;margin:0 0 4px;text-transform:uppercase;">Indicador 3</p><p style="font-size:22px;font-weight:700;margin:0;"></p></td>
   </tr>
 </table>
 <h3>Tabela de resultados</h3>
@@ -231,19 +231,19 @@ ${CAPA("#2e6bff", "#ffffff", "Proposta comercial", "Preparado para [NOME DO CLIE
     conteudoHtml: `
 <h1 style="text-align:center;font-size:20px;">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</h1>
 <p style="background:#fff3cd;border-left:3px solid #c9660a;padding:10px 14px;font-size:12px;">
-  ⚠️ Este é um modelo — revise com um profissional jurídico antes de usar.
+  ⚠️ Este é um modelo. Revise com um profissional jurídico antes de usar.
 </p>
 <p><b>CONTRATANTE:</b> [NOME DO CLIENTE]</p>
 <p><b>CONTRATADO:</b> [NOME DA EMPRESA]</p>
 <p>As partes acima identificadas celebram o presente contrato, mediante as cláusulas a seguir:</p>
-<p><b>Cláusula 1ª — Do objeto.</b> [DESCREVA O OBJETIVO do contrato.]</p>
-<p><b>Cláusula 2ª — Das obrigações.</b> </p>
-<p><b>Cláusula 3ª — Dos valores e pagamentos.</b> </p>
-<p><b>Cláusula 4ª — Da vigência.</b> Este contrato vigora a partir de [DATA].</p>
-<p><b>Cláusula 5ª — Da confidencialidade.</b> </p>
-<p><b>Cláusula 6ª — Da rescisão.</b> </p>
-<p><b>Cláusula 7ª — Disposições gerais.</b> </p>
-<p><b>Cláusula 8ª — Do foro.</b> Fica eleito o foro da comarca de [CIDADE].</p>
+<p><b>Cláusula 1ª. Do objeto.</b> [DESCREVA O OBJETIVO do contrato.]</p>
+<p><b>Cláusula 2ª. Das obrigações.</b> </p>
+<p><b>Cláusula 3ª. Dos valores e pagamentos.</b> </p>
+<p><b>Cláusula 4ª. Da vigência.</b> Este contrato vigora a partir de [DATA].</p>
+<p><b>Cláusula 5ª. Da confidencialidade.</b> </p>
+<p><b>Cláusula 6ª. Da rescisão.</b> </p>
+<p><b>Cláusula 7ª. Disposições gerais.</b> </p>
+<p><b>Cláusula 8ª. Do foro.</b> Fica eleito o foro da comarca de [CIDADE].</p>
 <p>[LOCAL], [DATA].</p>
 <table style="width:100%;margin-top:40px;"><tr>
   <td style="text-align:center;">_______________________________<br>Contratante</td>
@@ -285,16 +285,16 @@ ${CAPA("#8a3ffc", "#ffffff", "Planejamento de projeto", "[TÍTULO DO PROJETO]")}
   <p style="font-size:11px;letter-spacing:1px;opacity:.7;text-transform:uppercase;margin:0 0 4px;">Competências</p>
   <p style="font-size:12px;margin:0 0 16px;">Competência 1<br>Competência 2<br>Competência 3</p>
   <p style="font-size:11px;letter-spacing:1px;opacity:.7;text-transform:uppercase;margin:0 0 4px;">Idiomas</p>
-  <p style="font-size:12px;margin:0;">Português — nativo<br>Inglês — intermediário</p>
+  <p style="font-size:12px;margin:0;">Português (nativo)<br>Inglês (intermediário)</p>
 </td>
 <td style="padding:24px;vertical-align:top;">
   <h1 style="margin:0 0 2px;font-size:24px;">[NOME COMPLETO]</h1>
   <p style="color:#2e6bff;font-weight:700;margin:0 0 16px;">[CARGO DESEJADO]</p>
   <h3>Resumo profissional</h3><p>[DESCREVA O OBJETIVO profissional em 2-3 frases.]</p>
   <h3>Experiência</h3>
-  <p><b>[CARGO] — [EMPRESA]</b> · [DATA]<br>Descrição das responsabilidades e resultados.</p>
+  <p><b>[CARGO] | [EMPRESA]</b> · [DATA]<br>Descrição das responsabilidades e resultados.</p>
   <h3>Formação</h3>
-  <p><b>[CURSO]</b> — [INSTITUIÇÃO] · [DATA]</p>
+  <p><b>[CURSO]</b> | [INSTITUIÇÃO] · [DATA]</p>
   <h3>Certificações</h3><p></p>
 </td>
 </tr>
@@ -303,7 +303,7 @@ ${CAPA("#8a3ffc", "#ffffff", "Planejamento de projeto", "[TÍTULO DO PROJETO]")}
   {
     id: "orcamento",
     nome: "Orçamento",
-    descricao: "Tabela de itens, totais e condições — visual de nota comercial",
+    descricao: "Tabela de itens, totais e condições. Visual de nota comercial",
     categoria: "Financeiro",
     conteudoHtml: `
 ${CAPA("#c9660a", "#ffffff", "Orçamento", "Nº [NÚMERO] · Emitido em [DATA]")}
@@ -314,7 +314,7 @@ ${CAPA("#c9660a", "#ffffff", "Orçamento", "Nº [NÚMERO] · Emitido em [DATA]")
   <tr style="background:#fff4e5;"><td style="padding:8px;font-weight:700;">Item</td><td style="padding:8px;font-weight:700;">Qtd.</td><td style="padding:8px;font-weight:700;">Valor unitário</td><td style="padding:8px;font-weight:700;">Total</td></tr>
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
-  <tr><td colspan="3" style="padding:8px;border-top:2px solid #c9660a;font-weight:700;text-align:right;">Total</td><td style="padding:8px;border-top:2px solid #c9660a;font-weight:700;">R$ —</td></tr>
+  <tr><td colspan="3" style="padding:8px;border-top:2px solid #c9660a;font-weight:700;text-align:right;">Total</td><td style="padding:8px;border-top:2px solid #c9660a;font-weight:700;">R$ </td></tr>
 </table>
 <h3>Condições de pagamento</h3><p></p>
 <h3>Observações</h3><p></p>
@@ -451,9 +451,9 @@ ${CAPA("#8a3ffc", "#ffffff", "Calendário editorial", "[MÊS/ANO]")}
   <tr style="background:#0b1533;color:#fff;"><td style="padding:8px;font-weight:700;">Descrição</td><td style="padding:8px;font-weight:700;">Qtd.</td><td style="padding:8px;font-weight:700;">Valor unit.</td><td style="padding:8px;font-weight:700;">Total</td></tr>
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
-  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">Subtotal</td><td style="padding:8px;border-top:1px solid #ddd;">R$ —</td></tr>
-  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;">Impostos</td><td style="padding:8px;">R$ —</td></tr>
-  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;border-top:2px solid #0b1533;font-weight:700;">Total</td><td style="padding:8px;border-top:2px solid #0b1533;font-weight:700;">R$ —</td></tr>
+  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">Subtotal</td><td style="padding:8px;border-top:1px solid #ddd;">R$ </td></tr>
+  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;">Impostos</td><td style="padding:8px;">R$ </td></tr>
+  <tr><td colspan="2" style="padding:8px;">&nbsp;</td><td style="padding:8px;border-top:2px solid #0b1533;font-weight:700;">Total</td><td style="padding:8px;border-top:2px solid #0b1533;font-weight:700;">R$ </td></tr>
 </table>
 <h3>Forma de pagamento</h3><p></p>
 <h3>Observações</h3><p></p>
@@ -468,10 +468,10 @@ ${CAPA("#8a3ffc", "#ffffff", "Calendário editorial", "[MÊS/ANO]")}
 ${CAPA("#0e7c86", "#ffffff", "Relatório de atendimento", "[NOME DO CLIENTE] · Período: [DATA]")}
 <table style="width:100%;border-collapse:separate;border-spacing:8px 0;margin:16px 0;">
   <tr>
-    <td style="background:#e6f5f6;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#0e7c86;margin:0 0 4px;text-transform:uppercase;">Atendimentos</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
-    <td style="background:#eaf1ff;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#2e6bff;margin:0 0 4px;text-transform:uppercase;">Tempo médio</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
-    <td style="background:#e8f6ee;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#0f9d63;margin:0 0 4px;text-transform:uppercase;">Satisfação</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
-    <td style="background:#fff4e5;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#c9660a;margin:0 0 4px;text-transform:uppercase;">Pendentes</p><p style="font-size:20px;font-weight:700;margin:0;">—</p></td>
+    <td style="background:#e6f5f6;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#0e7c86;margin:0 0 4px;text-transform:uppercase;">Atendimentos</p><p style="font-size:20px;font-weight:700;margin:0;"></p></td>
+    <td style="background:#eaf1ff;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#2e6bff;margin:0 0 4px;text-transform:uppercase;">Tempo médio</p><p style="font-size:20px;font-weight:700;margin:0;"></p></td>
+    <td style="background:#e8f6ee;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#0f9d63;margin:0 0 4px;text-transform:uppercase;">Satisfação</p><p style="font-size:20px;font-weight:700;margin:0;"></p></td>
+    <td style="background:#fff4e5;border-radius:8px;padding:14px;width:25%;"><p style="font-size:11px;color:#c9660a;margin:0 0 4px;text-transform:uppercase;">Pendentes</p><p style="font-size:20px;font-weight:700;margin:0;"></p></td>
   </tr>
 </table>
 <h3>Histórico de interações</h3>
@@ -508,7 +508,7 @@ ${CAPA("#2f9e8f", "#ffffff", "Plano de acompanhamento de saúde", "[NOME DO CLIE
   <tr style="background:#e6f5f2;"><td style="padding:8px;font-weight:700;">Data</td><td style="padding:8px;font-weight:700;">Indicador</td><td style="padding:8px;font-weight:700;">Valor</td><td style="padding:8px;font-weight:700;">Observação</td></tr>
   <tr><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td><td style="padding:8px;border-top:1px solid #ddd;">&nbsp;</td></tr>
 </table>
-<p style="background:#fff3cd;border-left:3px solid #c9660a;padding:10px 14px;font-size:12px;margin-top:16px;">⚠️ Este modelo é organizacional — não substitui orientação profissional de saúde.</p>`,
+<p style="background:#fff3cd;border-left:3px solid #c9660a;padding:10px 14px;font-size:12px;margin-top:16px;">⚠️ Este modelo é organizacional. Não substitui orientação profissional de saúde.</p>`,
   },
   {
     id: "ebook",
@@ -522,9 +522,9 @@ ${CAPA("#2f9e8f", "#ffffff", "Plano de acompanhamento de saúde", "[NOME DO CLIE
   <p style="font-size:15px;opacity:.9;margin:0;">[DESCREVA O OBJETIVO deste material em uma frase.]</p>
 </div>
 <h3>Sumário</h3>
-<p>1. Introdução<br>2. Capítulo 1 — [TÍTULO]<br>3. Capítulo 2 — [TÍTULO]<br>4. Conclusão</p>
+<p>1. Introdução<br>2. Capítulo 1. [TÍTULO]<br>3. Capítulo 2. [TÍTULO]<br>4. Conclusão</p>
 <h3>Introdução</h3><p></p>
-<h3>Capítulo 1 — [TÍTULO]</h3><p></p>
+<h3>Capítulo 1. [TÍTULO]</h3><p></p>
 <blockquote style="border-left:3px solid #8a3ffc;margin:16px 0;padding:8px 16px;font-style:italic;color:#555;background:#f8f6ff;">"Destaque uma citação ou dado importante aqui."</blockquote>
 <svg width="100%" height="160" viewBox="0 0 400 160" style="background:#f1e9ff;border-radius:8px;">
   <rect x="140" y="45" width="120" height="80" rx="6" fill="#fff" stroke="#8a3ffc" stroke-width="2"/>
@@ -537,12 +537,12 @@ ${CAPA("#2f9e8f", "#ffffff", "Plano de acompanhamento de saúde", "[NOME DO CLIE
   <circle cx="200" cy="12" r="4" fill="#8a3ffc"/>
   <line x1="230" y1="12" x2="400" y2="12" stroke="#ddd"/>
 </svg>
-<h3>Capítulo 2 — [TÍTULO]</h3><p></p>
+<h3>Capítulo 2. [TÍTULO]</h3><p></p>
 <div style="background:#eaf1ff;border-radius:8px;padding:16px;margin:16px 0;"><p style="margin:0;"><b>💡 Dica:</b> destaque um insight prático pro leitor aqui.</p></div>
 <h3>Conclusão</h3><p></p>
 <div style="background:#0b1533;color:#fff;border-radius:8px;padding:24px;text-align:center;margin-top:24px;">
   <p style="margin:0 0 8px;font-size:16px;font-weight:700;">Gostou do conteúdo?</p>
-  <p style="margin:0;font-size:13px;opacity:.85;">[DESCREVA A CHAMADA PARA AÇÃO — fale com a gente, acesse o site, etc.]</p>
+  <p style="margin:0;font-size:13px;opacity:.85;">[DESCREVA A CHAMADA PARA AÇÃO. Fale com a gente, acesse o site, etc.]</p>
 </div>`,
   },
   {

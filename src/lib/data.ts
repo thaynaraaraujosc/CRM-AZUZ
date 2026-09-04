@@ -219,7 +219,7 @@ export const contatos: Contato[] = [
     etapa: "Novo",
     responsavel: "Ana Ferreira",
     ultima: "Há 14 min",
-    valor: "—",
+    valor: "",
     etiquetas: ["Novo lead"],
     favorito: true,
   },
@@ -231,7 +231,7 @@ export const contatos: Contato[] = [
     etapa: "Novo",
     responsavel: "Ana Ferreira",
     ultima: "Há 6 min",
-    valor: "—",
+    valor: "",
   },
   {
     id: "julia-prado",
@@ -269,9 +269,9 @@ export const contatos: Contato[] = [
     nome: "Lorena Bastos",
     origem: "TikTok",
     etapa: "Novo",
-    responsavel: "—",
+    responsavel: "",
     ultima: "Há 31 min",
-    valor: "—",
+    valor: "",
   },
 ];
 
@@ -347,7 +347,7 @@ export const funis: Funil[] = [
           {
             id: "camila-duarte",
             nome: "Camila Duarte",
-            valor: "—",
+            valor: "",
             origem: "Instagram",
             dias: "Hoje",
             data: "2026-07-30",
@@ -355,7 +355,7 @@ export const funis: Funil[] = [
           {
             id: "lorena-bastos",
             nome: "Lorena Bastos",
-            valor: "—",
+            valor: "",
             origem: "TikTok",
             dias: "Hoje",
             data: "2026-07-30",
@@ -363,7 +363,7 @@ export const funis: Funil[] = [
           {
             id: "fernando-lima",
             nome: "Fernando Lima",
-            valor: "—",
+            valor: "",
             origem: "Meta Ads",
             dias: "1 dia",
             data: "2026-07-29",
@@ -713,7 +713,7 @@ export const conversas: Conversa[] = [
     tarefa: {
       data: "30 jul",
       oQueFazer: "Responder valor da consulta particular",
-      valor: "—",
+      valor: "",
       responsavel: "Ana Ferreira",
       anexo: null,
     },
@@ -740,7 +740,7 @@ export const conversas: Conversa[] = [
     tarefa: {
       data: "30 jul",
       oQueFazer: "Fazer primeiro contato",
-      valor: "—",
+      valor: "",
       responsavel: "Ana Ferreira",
       anexo: null,
     },
@@ -766,7 +766,7 @@ export const conversas: Conversa[] = [
     tarefa: {
       data: "31 jul",
       oQueFazer: "Confirmar presença de quinta",
-      valor: "—",
+      valor: "",
       responsavel: "Ana Ferreira",
       anexo: null,
     },
@@ -1188,6 +1188,9 @@ export type Campanha = {
   sub: string;
   roas: string;
   barra: number;
+  /** Só vêm da rota real do Meta Ads; o mock não tem esses campos. */
+  vendas?: number;
+  pausada?: boolean;
 };
 
 export const campanhas: Campanha[] = [

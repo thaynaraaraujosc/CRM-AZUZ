@@ -183,8 +183,8 @@ export function ConexaoInstagram() {
       <PainelOAuth
         provedor="meta_instagram"
         href="/api/integracoes/instagram/conectar"
-        descricao="Autoriza o CRM a acessar sua conta profissional do Instagram e receber as mensagens do Direct — sem copiar token nenhum."
-        rotuloConectado={usuario ? `Conectado — @${usuario}` : "Conta conectada"}
+        descricao="Autoriza o CRM a acessar sua conta profissional do Instagram e receber as mensagens do Direct. Sem copiar token nenhum."
+        rotuloConectado={usuario ? `Conectado • @${usuario}` : "Conta conectada"}
         rotuloDesconectar="Desconectar Instagram"
       />
       {conectado ? (
@@ -269,8 +269,8 @@ export function ConexaoMetaAds() {
     <PainelOAuth
       provedor="meta_ads"
       href="/api/integracoes/meta/conectar?provedor=meta_ads"
-      descricao="Autoriza o CRM a ler suas campanhas — é o que faz a origem dos leads aparecer no painel de Tráfego."
-      rotuloConectado={conta ? `Conectado — ${conta}` : "Conta de anúncios conectada"}
+      descricao="Autoriza o CRM a ler suas campanhas. É o que faz a origem dos leads aparecer no painel de Tráfego."
+      rotuloConectado={conta ? `Conectado • ${conta}` : "Conta de anúncios conectada"}
       rotuloDesconectar="Desconectar Meta Ads"
     />
   );

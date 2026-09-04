@@ -441,7 +441,7 @@ function historicoInicialDoContato(
     id: `hist-inicio-${contato.id}`,
     tipo: "sistema",
     texto: `Primeira conversa registrada${primeiraHora ? ` · ${primeiraHora}` : ""}`,
-    quando: primeiraHora ?? "—",
+    quando: primeiraHora ?? "",
   });
 
   if (localizacao) {
@@ -455,7 +455,7 @@ function historicoInicialDoContato(
       texto: `Entrou na etapa "${localizacao.etapa}" do funil ${funil?.nome ?? ""}${
         card ? ` · há ${card.dias}` : ""
       }`,
-      quando: card?.data ?? "—",
+      quando: card?.data ?? "",
     });
 
     if (localizacao.etapa.toLowerCase().includes("fechado")) {
@@ -463,7 +463,7 @@ function historicoInicialDoContato(
         id: `hist-fechou-${contato.id}`,
         tipo: "sistema",
         texto: `Fechou negócio${card ? ` · valor ${card.valor}` : ""}`,
-        quando: card?.data ?? "—",
+        quando: card?.data ?? "",
       });
     }
   } else {
@@ -471,7 +471,7 @@ function historicoInicialDoContato(
       id: `hist-sem-funil-${contato.id}`,
       tipo: "sistema",
       texto: "Ainda não entrou em nenhum funil",
-      quando: "—",
+      quando: "",
     });
   }
 
@@ -859,8 +859,6 @@ function ConversasPageInner() {
   const [canalTopRect, setCanalTopRect] = useState<DOMRect | null>(null);
   const [canalTopFiltro, setCanalTopFiltro] = useState("Todos");
 
-  const [fotoPerfilAberta, setFotoPerfilAberta] = useState(false);
-
   // Movido pra antes de `conversasFiltradas` (que chama `conversaUsaWhatsappNaoOficial`, definida
   // mais abaixo mas que fecha sobre esta variável) — como é `const`, ficava numa "zona morta
   // temporal" até esta linha rodar; `conversasFiltradas` é calculado direto no corpo do
@@ -1025,7 +1023,7 @@ function ConversasPageInner() {
   const tarefa = {
     data: "",
     oQueFazer: "",
-    valor: "—",
+    valor: "",
     responsavel: "",
     anexo: null as { arquivo: string; detalhe: string } | null,
   };
@@ -1741,7 +1739,7 @@ function ConversasPageInner() {
       } else if (!viaBaileys) {
         adicionarMensagem({
           tipo: "system",
-          texto: "⚠️ Envio de áudio pela API oficial (Meta) ainda não é suportado — só pelo WhatsApp via QR Code.",
+          texto: "⚠️ Envio de áudio pela API oficial (Meta) ainda não é suportado. Só pelo WhatsApp via QR Code.",
           hora: horaAgora(),
         });
       }
@@ -1847,7 +1845,7 @@ function ConversasPageInner() {
         tipo: "sistema",
         titulo: `E-mail · ${email.assunto}`,
         descricao: email.aberto ? `Lido às ${email.abertoEm}` : "Enviado, ainda não lido",
-        quando: "—",
+        quando: "",
         minutosAtras: 0,
       }),
     ),
@@ -1922,8 +1920,8 @@ function ConversasPageInner() {
           atualizarMensagem(contatoNome, msg.id!, {
             texto:
               tipo === "audio"
-                ? "⚠️ Não consegui carregar esse áudio — ouça no celular conectado."
-                : "⚠️ Não consegui carregar essa imagem — veja no celular conectado.",
+                ? "⚠️ Não consegui carregar esse áudio. Ouça no celular conectado."
+                : "⚠️ Não consegui carregar essa imagem. Veja no celular conectado.",
             midiaPendente: undefined,
           });
         }
@@ -1932,8 +1930,8 @@ function ConversasPageInner() {
         atualizarMensagem(contatoNome, msg.id!, {
           texto:
             tipo === "audio"
-              ? "⚠️ Não consegui carregar esse áudio — ouça no celular conectado."
-              : "⚠️ Não consegui carregar essa imagem — veja no celular conectado.",
+              ? "⚠️ Não consegui carregar esse áudio. Ouça no celular conectado."
+              : "⚠️ Não consegui carregar essa imagem. Veja no celular conectado.",
           midiaPendente: undefined,
         });
       })
@@ -3794,15 +3792,6 @@ function ConversasPageInner() {
                 </button>
               ))}
             </FloatingDropdown>
-            {contatoDaConversa?.fotoUrl ? (
-              <button
-                type="button"
-                className="btn secondary"
-                onClick={() => setFotoPerfilAberta(true)}
-              >
-                Ver foto do perfil
-              </button>
-            ) : null}
             {/* Conectar um número é a primeira coisa que se quer fazer numa tela de atendimento
                 vazia — antes era preciso sair daqui e ir até Configurações → WhatsApp. */}
             <BotoesConectarWhatsApp />
@@ -7093,10 +7082,10 @@ function ConversasPageInner() {
                   <span className="wa-resumo-label">E-mail</span>
                   <span className="wa-resumo-valor">{emailContato || "—"}</span>
                   <span className="wa-resumo-label">Responsável</span>
-                  <span className="wa-resumo-valor">{aberta.atendenteSelecionado ?? "—"}</span>
+                  <span className="wa-resumo-valor">{aberta.atendenteSelecionado ?? ""}</span>
                   <span className="wa-resumo-label">Funil · Etapa</span>
                   <span className="wa-resumo-valor">
-                    {funilSelecionado ? `${funilSelecionado.nome} · ${etapaSelecionada}` : "—"}
+                    {funilSelecionado ? `${funilSelecionado.nome} · ${etapaSelecionada}` : ""}
                   </span>
                   <span className="wa-resumo-label">Origem</span>
                   <span className="wa-resumo-valor">{aberta.origem}</span>
@@ -8444,64 +8433,6 @@ function ConversasPageInner() {
               ))}
             </div>
           )}
-        </div>
-      ) : null}
-
-      {fotoPerfilAberta && contatoDaConversa?.fotoUrl ? (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-          }}
-          onClick={() => setFotoPerfilAberta(false)}
-        >
-          <div
-            style={{
-              backgroundColor: "var(--bg)",
-              borderRadius: 12,
-              padding: 12,
-              maxWidth: "90vh",
-              maxHeight: "90vh",
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <p className="n" style={{ margin: 0 }}>
-                {contatoDaConversa.nome}
-              </p>
-              <button
-                type="button"
-                onClick={() => setFotoPerfilAberta(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 4,
-                  fontSize: 20,
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            <img
-              src={contatoDaConversa.fotoUrl}
-              alt={`Foto de perfil de ${contatoDaConversa.nome}`}
-              style={{
-                maxWidth: "500px",
-                maxHeight: "500px",
-                borderRadius: 8,
-                objectFit: "contain",
-              }}
-            />
-          </div>
         </div>
       ) : null}
 

@@ -352,8 +352,8 @@ table {
   display: flex;
   height: 100vh;
   overflow: hidden;
-  gap: 14px;
-  padding: 14px;
+  gap: var(--space-4);
+  padding: var(--space-4);
   background: var(--canvas);
 }
 
@@ -384,7 +384,7 @@ table {
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
-  padding: 20px 14px;
+  padding: var(--space-5) var(--space-4);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -403,8 +403,8 @@ table {
 .sb-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 8px 22px;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-2) var(--space-5);
 }
 
 .sidebar.recolhida .sb-brand {
@@ -467,7 +467,7 @@ table {
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 9px 10px;
+  padding: var(--space-2) var(--space-3);
   margin-bottom: 18px;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -495,7 +495,7 @@ table {
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   flex: 1;
 }
 
@@ -503,8 +503,8 @@ table {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 9px 11px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2);
   border-radius: var(--radius-md);
   color: var(--text-muted);
   font-size: 13px;
@@ -540,7 +540,7 @@ table {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.03em;
-  padding: 2px 6px;
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   background: var(--gray-100);
   color: var(--text-muted);
@@ -563,7 +563,7 @@ table {
 .sidebar.recolhida .sb-workspace {
   display: flex;
   justify-content: center;
-  padding: 6px;
+  padding: var(--space-2);
 }
 
 .nav-item:hover {
@@ -604,22 +604,22 @@ table {
   letter-spacing: 0.04em;
   color: var(--blue);
   background: var(--blue-soft-2);
-  padding: 2px 6px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
 }
 
 .nav-sublist {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  margin: 2px 0 4px 30px;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 var(--space-1) var(--space-6);
   border-left: 1px solid var(--line);
   padding-left: 10px;
 }
 
 .nav-subitem {
   display: block;
-  padding: 6px 8px;
+  padding: var(--space-2) var(--space-2);
   border-radius: var(--radius-sm);
   color: var(--text-faint);
   font-size: 11.5px;
@@ -643,8 +643,8 @@ table {
 .sb-foot {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 10px 8px 2px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2) var(--space-1);
   border-top: 1px solid var(--line);
   margin-top: 10px;
 }
@@ -652,7 +652,7 @@ table {
 .sb-foot-info {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   flex: 1;
   min-width: 0;
   text-align: left;
@@ -670,7 +670,7 @@ table {
 .sb-foot .who {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
@@ -725,8 +725,8 @@ table {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 10px 26px;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-6);
   border-bottom: 1px solid var(--line);
   background: var(--navy-raised);
   flex: 0 0 auto;
@@ -753,7 +753,7 @@ table {
 .app-header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex: 0 0 auto;
 }
 
@@ -761,8 +761,8 @@ table {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 16px 26px;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
   border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
 }
@@ -770,14 +770,14 @@ table {
 .topbar-title-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
 .topbar-tabs {
   display: flex;
-  gap: 4px;
-  padding: 3px;
+  gap: var(--space-1);
+  padding: var(--space-1);
   border-radius: 999px;
   background: var(--navy-raised);
 }
@@ -785,7 +785,7 @@ table {
 .topbar-tab {
   border: none;
   background: none;
-  padding: 6px 13px;
+  padding: var(--space-2) var(--space-3);
   border-radius: 999px;
   font-size: 11.5px;
   font-weight: var(--fw-semibold);
@@ -824,7 +824,7 @@ table {
 .top-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -832,11 +832,11 @@ table {
 .search {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-size: 12px;
   color: var(--text-faint);
   width: 200px;
@@ -865,7 +865,7 @@ table {
 .content {
   flex: 1;
   overflow: auto;
-  padding: 22px 26px 32px;
+  padding: var(--space-5) var(--space-6) var(--space-6);
   background: var(--navy);
 }
 
@@ -875,13 +875,13 @@ table {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-family: var(--body);
   /* 700 era peso de título num controle: deixava a tela cheia de texto gritando ao mesmo tempo. */
   font-weight: var(--fw-semibold);
   font-size: var(--fs-button);
   letter-spacing: var(--track-snug);
-  padding: 10px 17px;
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
@@ -1230,8 +1230,8 @@ table {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 26px;
-  padding: 24px;
+  gap: var(--space-6);
+  padding: var(--space-6);
   position: relative;
   overflow: hidden;
   /* Um respiro de cinza atrás do cartão, pra ele não ficar branco sobre branco. */
@@ -1246,7 +1246,7 @@ table {
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   text-decoration: none;
   color: var(--ink);
 }
@@ -1279,7 +1279,7 @@ table {
   z-index: 1;
   width: 100%;
   max-width: 400px;
-  padding: 34px 32px 30px;
+  padding: var(--space-6) var(--space-6) var(--space-6);
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -1309,13 +1309,13 @@ table {
   font-weight: var(--fw-bold);
   letter-spacing: var(--track-tight);
   text-align: center;
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
   color: var(--ink);
 }
 
 /* Linha de apoio sob o título: é ela que faz o par forte+leve da referência. */
 .auth-sub {
-  margin: 0 0 22px;
+  margin: 0 0 var(--space-5);
   text-align: center;
   font-size: 13px;
   line-height: var(--lh-base);
@@ -1323,7 +1323,7 @@ table {
 }
 
 .auth-card .field {
-  padding: 0 0 14px;
+  padding: 0 0 var(--space-4);
   border-bottom: none;
 }
 
@@ -1332,27 +1332,27 @@ table {
 }
 
 .auth-erro {
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
   font-size: 12.5px;
   color: var(--danger);
 }
 
 .auth-sucesso {
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
   font-size: 13px;
   line-height: 1.5;
   color: var(--ink);
 }
 
 .auth-descricao {
-  margin: 0 0 16px;
+  margin: 0 0 var(--space-4);
   font-size: 13px;
   line-height: 1.5;
   color: var(--text-faint);
 }
 
 .auth-rodape {
-  margin: 18px 0 0;
+  margin: var(--space-5) 0 0;
   font-size: 12.5px;
   color: var(--text-muted);
   text-align: center;
@@ -1448,11 +1448,11 @@ table {
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: var(--fs-caption);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.02em;
-  padding: 3px 9px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-xl);
   white-space: nowrap;
   line-height: var(--lh-tight);
@@ -1541,7 +1541,7 @@ table {
   font-size: var(--fs-caption);
   font-weight: var(--fw-medium);
   white-space: nowrap;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   pointer-events: none;
   opacity: 0;
@@ -1559,15 +1559,15 @@ table {
 
 .grid {
   display: grid;
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .panel-h {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 16px 18px 14px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5) var(--space-4);
   border-bottom: 1px solid var(--line);
 }
 
@@ -1594,7 +1594,7 @@ table {
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  padding: 4px 9px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-xl);
   border: 1px solid var(--line);
   color: var(--text-muted);
@@ -1667,7 +1667,7 @@ table {
 }
 
 .field {
-  padding: 14px 17px;
+  padding: var(--space-4) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -1693,7 +1693,7 @@ table {
   background: var(--navy-raised);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  padding: 11px 13px;
+  padding: var(--space-2) var(--space-3);
   font-size: 12.5px;
   font-family: inherit;
   color: var(--ink);
@@ -1740,11 +1740,11 @@ table {
    ("Choose File"/"Escolher arquivo") sem estilo nenhum, já que estilos de input comuns não
    afetam o botão embutido do file picker — precisa do pseudo-elemento próprio. */
 .input[type="file"] {
-  padding: 6px;
+  padding: var(--space-2);
 }
 .input[type="file"]::file-selector-button {
   margin-right: 10px;
-  padding: 7px 12px;
+  padding: var(--space-2) var(--space-3);
   border: none;
   border-radius: var(--radius-sm);
   background: var(--blue-soft-2);
@@ -1779,8 +1779,8 @@ table {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 13px 17px;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--line-soft);
 }
 
@@ -1790,9 +1790,9 @@ table {
 }
 
 .section-foot {
-  padding: 15px 17px 17px;
+  padding: var(--space-4) var(--space-4) var(--space-4);
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
 }
 
 /* ---------------- Início ---------------- */
@@ -1808,7 +1808,7 @@ table {
 }
 
 .kpi {
-  padding: 18px 19px 20px;
+  padding: var(--space-5) var(--space-5) var(--space-5);
 }
 
 .kpi .l {
@@ -1923,8 +1923,8 @@ table {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 4px 8px 4px 2px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
   margin: -4px 0 0 -2px;
   border-radius: var(--radius-md);
   color: inherit;
@@ -1977,21 +1977,21 @@ a.timeline-conteudo:hover {
 .settings-layout {
   display: grid;
   grid-template-columns: 220px 1fr;
-  gap: 18px;
+  gap: var(--space-5);
   align-items: start;
 }
 
 .settings-menu {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .settings-menu-btn {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 11px 14px;
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--navy-raised);
   border: 1px solid var(--line);
@@ -2016,8 +2016,8 @@ a.timeline-conteudo:hover {
 .bars {
   display: flex;
   align-items: flex-end;
-  gap: 9px;
-  padding: 20px 17px 16px;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-4) var(--space-4);
   height: 150px;
 }
 
@@ -2026,7 +2026,7 @@ a.timeline-conteudo:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 100%;
   justify-content: flex-end;
 }
@@ -2050,14 +2050,14 @@ a.timeline-conteudo:hover {
 .funnel-mini {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  padding: 16px 17px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4);
 }
 
 .funnel-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .funnel-row .fl {
@@ -2092,8 +2092,8 @@ a.timeline-conteudo:hover {
 .activity-row {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 11px 17px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -2132,7 +2132,7 @@ a.timeline-conteudo:hover {
 
 .filters-row {
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
   margin-bottom: 14px;
   flex-wrap: wrap;
 }
@@ -2143,7 +2143,7 @@ a.timeline-conteudo:hover {
 .fchip {
   font-size: 11.5px;
   font-weight: var(--fw-medium);
-  padding: 8px 13px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   color: var(--text-muted);
@@ -2166,13 +2166,13 @@ a.timeline-conteudo:hover {
 .nova-pasta-inline {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .nova-pasta-input {
   font-size: 11.5px;
   font-weight: 700;
-  padding: 8px 13px;
+  padding: var(--space-2) var(--space-3);
   width: 160px;
   border-radius: var(--radius-md);
   border: 1px solid var(--blue);
@@ -2222,14 +2222,14 @@ table.tbl th {
   letter-spacing: var(--track-wide);
   text-transform: uppercase;
   color: var(--text-faint);
-  padding: 4px 16px 6px;
+  padding: var(--space-1) var(--space-4) var(--space-2);
   white-space: nowrap;
 }
 
 /* Cada linha é uma faixa: fundo cinza claro, cantos arredondados nas pontas, e nada de divisória —
    o espaço entre elas (`border-spacing`) faz a separação. */
 table.tbl td {
-  padding: 14px 16px;
+  padding: var(--space-4) var(--space-4);
   background: var(--navy-raised);
   border-top: 1px solid transparent;
   border-bottom: 1px solid transparent;
@@ -2258,7 +2258,7 @@ table.tbl tbody tr:hover td {
 .name-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 /* Reestruturação visual (redesign) — o pedido anterior ("linhas como botões separados", cada uma
@@ -2276,7 +2276,7 @@ table.tbl tbody tr:hover td {
 .stage-tag {
   font-size: 10.5px;
   font-weight: var(--fw-semibold);
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-xl);
   background: var(--gray-100);
   color: var(--text-muted);
@@ -2297,7 +2297,7 @@ table.tbl tbody tr:hover td {
 .role-tag {
   font-size: 10px;
   font-weight: var(--fw-semibold);
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-xl);
   background: var(--gray-100);
   color: var(--text-muted);
@@ -2331,7 +2331,7 @@ table.tbl tbody tr:hover td {
   color: var(--ink);
   background: var(--navy);
   border: 1px solid var(--line);
-  padding: 3px 10px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
 }
 
@@ -2348,7 +2348,7 @@ table.tbl tbody tr:hover td {
 
 .kanban {
   display: flex;
-  gap: 13px;
+  gap: var(--space-3);
   align-items: flex-start;
   overflow-x: auto;
   padding-bottom: 4px;
@@ -2361,7 +2361,7 @@ table.tbl tbody tr:hover td {
   min-width: 240px;
   background: var(--navy-raised-2);
   border-radius: var(--radius-lg);
-  padding: 12px 10px;
+  padding: var(--space-3) var(--space-3);
 }
 
 .kcol-h {
@@ -2369,7 +2369,7 @@ table.tbl tbody tr:hover td {
   align-items: center;
   justify-content: flex-start;
   margin-bottom: 10px;
-  padding: 0 2px;
+  padding: 0 var(--space-1);
 }
 
 .kcol-h .t {
@@ -2399,7 +2399,7 @@ table.tbl tbody tr:hover td {
   letter-spacing: var(--track-tight);
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
 }
 
 .kcol-h .dot {
@@ -2415,7 +2415,7 @@ table.tbl tbody tr:hover td {
   color: var(--text-muted);
   font-weight: var(--fw-semibold);
   background: var(--gray-200);
-  padding: 2px 7px;
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   font-variant-numeric: tabular-nums;
 }
@@ -2425,14 +2425,14 @@ table.tbl tbody tr:hover td {
 .kcol-auto-link {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   font-size: 10.5px;
   font-weight: var(--fw-semibold);
   color: var(--text-muted);
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   margin-bottom: 10px;
   width: fit-content;
   text-decoration: none;
@@ -2451,7 +2451,7 @@ table.tbl tbody tr:hover td {
   z-index: 80;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   max-width: 320px;
 }
 
@@ -2465,11 +2465,11 @@ table.tbl tbody tr:hover td {
 .toast {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 10px 14px;
+  padding: var(--space-3) var(--space-4);
   font-size: 12px;
   font-weight: 600;
   color: var(--ink);
@@ -2489,7 +2489,7 @@ table.tbl tbody tr:hover td {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xs);
-  padding: 14px 15px;
+  padding: var(--space-4) var(--space-4);
   margin-bottom: 8px;
   cursor: grab;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
@@ -2514,7 +2514,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 6px;
 }
 
@@ -2540,7 +2540,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* Bolinha verde de "mensagem nova" — usada no card do kanban (Funil), mesmo espírito do selo de não
@@ -2548,7 +2548,7 @@ table.tbl tbody tr:hover td {
 .lname-com-msg {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   cursor: pointer;
 }
 
@@ -2557,7 +2557,7 @@ table.tbl tbody tr:hover td {
 .lead-card-ad-badge {
   display: inline-flex;
   align-items: center;
-  padding: 1px 5px;
+  padding: var(--space-1) var(--space-1);
   border-radius: var(--radius-sm);
   background: var(--blue-soft);
   color: var(--blue);
@@ -2568,7 +2568,7 @@ table.tbl tbody tr:hover td {
 
 .lead-card-telefone {
   display: block;
-  margin: 1px 0 9px;
+  margin: var(--space-1) 0 var(--space-2);
   font-size: 11px;
   font-weight: var(--fw-light);
   color: var(--text-muted);
@@ -2616,7 +2616,7 @@ table.tbl tbody tr:hover td {
 /* Etapa atual no funil, mostrada na lista de Conversas — cor própria (roxo) pra não confundir com
    a tag de status/origem ao lado. */
 .wa-etapa-funil-tag {
-  padding: 2px 6px;
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   background: var(--blue-soft-2);
   color: var(--blue);
@@ -2630,7 +2630,7 @@ table.tbl tbody tr:hover td {
 .conv-card .cr1 {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   margin-bottom: 8px;
 }
 
@@ -2688,7 +2688,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .conv-card.open,
@@ -2739,8 +2739,8 @@ table.tbl tbody tr:hover td {
 .open-conv-h {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 14px 17px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4);
   background: var(--gray-50);
   border-bottom: 1px solid var(--line);
 }
@@ -2778,17 +2778,17 @@ table.tbl tbody tr:hover td {
 }
 
 .chat-body {
-  padding: 16px 17px;
+  padding: var(--space-4) var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: var(--space-2);
   max-height: 300px;
   overflow-y: auto;
 }
 
 .bubble {
   max-width: 78%;
-  padding: 9px 12px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-lg);
   font-size: 12px;
   line-height: 1.4;
@@ -2826,8 +2826,8 @@ table.tbl tbody tr:hover td {
 .wa-carregar-midia {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 4px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1);
   border: none;
   background: none;
   color: inherit;
@@ -2862,10 +2862,10 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: var(--space-1);
   min-width: 20px;
   height: 20px;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   font-size: 12px;
   line-height: 1;
   background: var(--navy);
@@ -2960,8 +2960,8 @@ table.tbl tbody tr:hover td {
 .bubble-localizacao-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 9px 12px;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
 }
 
 .bubble-localizacao-titulo {
@@ -2982,7 +2982,7 @@ table.tbl tbody tr:hover td {
 }
 
 .bubble-localizacao .tm {
-  padding: 0 12px 8px;
+  padding: 0 var(--space-3) var(--space-2);
 }
 
 /* A tela de Conversas atende todos os canais — Instagram, TikTok, e-mail, WhatsApp. Ela usava o
@@ -3023,10 +3023,10 @@ table.tbl tbody tr:hover td {
 }
 
 .chat-input {
-  padding: 10px 17px 17px;
+  padding: var(--space-3) var(--space-4) var(--space-4);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .chat-input .box {
@@ -3035,7 +3035,7 @@ table.tbl tbody tr:hover td {
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 15px 16px;
+  padding: var(--space-4) var(--space-4);
   font-size: 13px;
   color: var(--text-faint);
 }
@@ -3133,7 +3133,7 @@ table.tbl tbody tr:hover td {
 }
 
 .chat-emoji-picker {
-  padding: 6px 4px;
+  padding: var(--space-2) var(--space-1);
 }
 
 .chat-emoji-categoria {
@@ -3142,14 +3142,14 @@ table.tbl tbody tr:hover td {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--text-faint);
-  padding: 8px 10px 2px;
+  padding: var(--space-2) var(--space-3) var(--space-1);
 }
 
 .chat-emoji-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  padding: 4px 6px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
 }
 
 .chat-emoji-opcao {
@@ -3158,7 +3158,7 @@ table.tbl tbody tr:hover td {
   border: none;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  padding: 5px;
+  padding: var(--space-1);
   line-height: 1;
 }
 
@@ -3181,7 +3181,7 @@ table.tbl tbody tr:hover td {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  margin: 12px 10px 12px 12px;
+  margin: var(--space-3) var(--space-3) var(--space-3) var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   background: var(--navy-raised);
@@ -3191,7 +3191,7 @@ table.tbl tbody tr:hover td {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 10px 10px;
+  padding: var(--space-2) var(--space-3) var(--space-3);
 }
 
 .wa-list-head {
@@ -3199,7 +3199,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px 4px;
+  padding: var(--space-4) var(--space-4) var(--space-1);
   font-size: 13px;
   font-weight: 700;
 }
@@ -3234,7 +3234,7 @@ table.tbl tbody tr:hover td {
 
 .wa-list-search {
   flex: 0 0 auto;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
 }
 
 .wa-search {
@@ -3246,8 +3246,8 @@ table.tbl tbody tr:hover td {
 .wa-list-filters {
   flex: 0 0 auto;
   display: flex;
-  gap: 7px;
-  padding: 0 12px 10px;
+  gap: var(--space-2);
+  padding: 0 var(--space-3) var(--space-3);
   overflow-x: auto;
 }
 
@@ -3258,7 +3258,7 @@ table.tbl tbody tr:hover td {
   color: var(--text-muted);
   font-size: 11.5px;
   font-weight: 600;
-  padding: 6px 12px;
+  padding: var(--space-2) var(--space-3);
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
@@ -3286,14 +3286,14 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .wa-unread-badge {
   flex: 0 0 auto;
   min-width: 18px;
   height: 18px;
-  padding: 0 5px;
+  padding: 0 var(--space-1);
   border-radius: 999px;
   background: var(--blue);
   color: var(--white);
@@ -3317,7 +3317,7 @@ table.tbl tbody tr:hover td {
   position: relative;
   width: 100%;
   text-align: left;
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-4);
   margin-bottom: 7px;
   background: var(--surface-elevated);
   border: 1px solid var(--line);
@@ -3386,7 +3386,7 @@ table.tbl tbody tr:hover td {
 .wa-row .cr1 {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   margin-bottom: 5px;
 }
 
@@ -3397,7 +3397,7 @@ table.tbl tbody tr:hover td {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-family: var(--display);
   font-size: 13.5px;
   font-weight: var(--fw-bold);
@@ -3456,7 +3456,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .origem-meta {
@@ -3497,7 +3497,7 @@ table.tbl tbody tr:hover td {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  margin: 12px 10px 12px 0;
+  margin: var(--space-3) var(--space-3) var(--space-3) 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   background: var(--navy-raised);
@@ -3526,7 +3526,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin: 12px 12px 12px 0;
+  margin: var(--space-3) var(--space-3) var(--space-3) 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   background: var(--navy-raised);
@@ -3542,7 +3542,7 @@ table.tbl tbody tr:hover td {
 .wa-resizer {
   flex: 0 0 auto;
   width: 10px;
-  margin: 12px 0;
+  margin: var(--space-3) 0;
   border-radius: var(--radius-sm);
   cursor: col-resize;
   background: transparent;
@@ -3571,7 +3571,7 @@ table.tbl tbody tr:hover td {
 .wa-conv-titulo-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   background: transparent;
   border: none;
   padding: 0;
@@ -3590,7 +3590,7 @@ table.tbl tbody tr:hover td {
   overflow-y: auto;
   background: var(--navy);
   border-radius: var(--radius-xl);
-  padding: 20px;
+  padding: var(--space-5);
   box-shadow: var(--shadow-lg);
   /* Reestruturação de design (fase 1) — mesma entrada suave do `.modal` genérico, pra esse modal
      bespoke não destoar dos demais. */
@@ -3616,7 +3616,7 @@ table.tbl tbody tr:hover td {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
-  padding: 20px;
+  padding: var(--space-5);
   box-shadow: var(--shadow-lg);
 }
 
@@ -3645,7 +3645,7 @@ table.tbl tbody tr:hover td {
 .wa-respostas-modal.rodape-chat {
   width: 400px;
   max-height: 72vh;
-  padding: 16px 16px 14px;
+  padding: var(--space-4) var(--space-4) var(--space-4);
 }
 
 .wa-respostas-modal.rodape-chat .wa-email-drag {
@@ -3655,21 +3655,21 @@ table.tbl tbody tr:hover td {
 .wa-respostas-modal.rodape-chat .chat-body {
   min-height: 220px;
   max-height: 360px;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
 }
 
 .wa-respostas-modal.rodape-chat .chat-input {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .wa-email-drag {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
-  padding: 0 0 14px;
+  gap: var(--space-3);
+  padding: 0 0 var(--space-4);
   cursor: move;
   user-select: none;
 }
@@ -3683,7 +3683,7 @@ table.tbl tbody tr:hover td {
 .wa-email-drag .s {
   font-size: 11px;
   color: var(--text-faint);
-  margin: 2px 0 0;
+  margin: var(--space-1) 0 0;
 }
 
 .modal-close-btn {
@@ -3723,19 +3723,19 @@ table.tbl tbody tr:hover td {
 .wa-email-toolbar {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 8px;
 }
 
 .wa-email-toolbar .btn {
-  padding: 6px 11px;
+  padding: var(--space-2) var(--space-2);
   min-width: 30px;
 }
 
 .wa-email-corpo {
   width: 100%;
   min-height: 160px;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   line-height: 1.6;
   overflow-y: auto;
 }
@@ -3753,14 +3753,14 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-historico {
-  padding: 0 17px 17px;
+  padding: 0 var(--space-4) var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .wa-historico-item {
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   background: var(--navy-raised);
   border-left: 2px solid var(--line);
@@ -3787,7 +3787,7 @@ table.tbl tbody tr:hover td {
 .wa-historico-texto {
   font-size: 12px;
   color: var(--ink);
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
   white-space: pre-wrap;
 }
 
@@ -3798,7 +3798,7 @@ table.tbl tbody tr:hover td {
 
 .wa-resultado-badge {
   margin: 0;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   font-size: 12.5px;
   font-weight: 700;
@@ -3816,7 +3816,7 @@ table.tbl tbody tr:hover td {
 
 .wa-motivo-picker {
   margin-top: 10px;
-  padding: 8px;
+  padding: var(--space-2);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--navy-raised);
@@ -3838,7 +3838,7 @@ table.tbl tbody tr:hover td {
   min-height: 100vh;
   background: #0b1128;
   color: #eef1ff;
-  padding: 28px 40px 90px;
+  padding: var(--space-6) var(--space-6) var(--space-6);
   font-family: var(--body, inherit);
   position: relative;
 }
@@ -3852,7 +3852,7 @@ table.tbl tbody tr:hover td {
   color: #fff;
   font-weight: 700;
   font-size: 15px;
-  padding: 12px 26px;
+  padding: var(--space-3) var(--space-6);
   border-radius: 999px;
   box-shadow: var(--shadow-md);
   z-index: 50;
@@ -3875,15 +3875,15 @@ table.tbl tbody tr:hover td {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--space-4);
   margin-bottom: 26px;
 }
 
 .crm-live-tabs {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   background: rgba(255, 255, 255, 0.06);
-  padding: 5px;
+  padding: var(--space-1);
   border-radius: 999px;
 }
 
@@ -3893,7 +3893,7 @@ table.tbl tbody tr:hover td {
   color: #a7adda;
   font-weight: 700;
   font-size: 13px;
-  padding: 9px 20px;
+  padding: var(--space-2) var(--space-5);
   border-radius: 999px;
   cursor: pointer;
 }
@@ -3905,7 +3905,7 @@ table.tbl tbody tr:hover td {
 
 .crm-live-filtros {
   display: flex;
-  gap: 18px;
+  gap: var(--space-5);
   flex-wrap: wrap;
   font-size: 12px;
   color: #a7adda;
@@ -3915,20 +3915,20 @@ table.tbl tbody tr:hover td {
 .crm-live-body {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: var(--space-5);
 }
 
 .crm-live-vencedores {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .crm-live-vencedor-card {
   background: linear-gradient(160deg, rgba(53, 87, 246, 0.22), rgba(255, 255, 255, 0.04));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-xl);
-  padding: 22px;
+  padding: var(--space-5);
   text-align: center;
 }
 
@@ -3944,13 +3944,13 @@ table.tbl tbody tr:hover td {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 700;
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
 }
 
 .crm-live-vencedor-nome {
   font-size: 19px;
   font-weight: 700;
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
 }
 
 .crm-live-vencedor-valor {
@@ -3963,14 +3963,14 @@ table.tbl tbody tr:hover td {
 .crm-live-kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .crm-live-kpi {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
-  padding: 18px 20px;
+  padding: var(--space-5) var(--space-5);
 }
 
 .crm-live-kpi-destaque {
@@ -3984,7 +3984,7 @@ table.tbl tbody tr:hover td {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 700;
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
 }
 
 .crm-live-kpi-n {
@@ -4001,26 +4001,26 @@ table.tbl tbody tr:hover td {
 .crm-live-kpi-sub {
   font-size: 11.5px;
   color: #a7adda;
-  margin: 6px 0 0;
+  margin: var(--space-2) 0 0;
 }
 
 .crm-live-motivos {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
-  padding: 22px;
+  padding: var(--space-5);
 }
 
 .crm-live-motivos-titulo {
   font-size: 15px;
   font-weight: 700;
-  margin: 0 0 18px;
+  margin: 0 0 var(--space-5);
 }
 
 .crm-live-motivos-body {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: var(--space-6);
   flex-wrap: wrap;
 }
 
@@ -4034,7 +4034,7 @@ table.tbl tbody tr:hover td {
 .crm-live-motivos-legenda {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   font-size: 13px;
   color: #d5d8f4;
 }
@@ -4042,7 +4042,7 @@ table.tbl tbody tr:hover td {
 .crm-live-motivo-item {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
 }
 
 .crm-live-motivo-dot {
@@ -4055,14 +4055,14 @@ table.tbl tbody tr:hover td {
 .crm-live-andamento-topo {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .crm-live-feed {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
-  padding: 18px 20px;
+  padding: var(--space-5) var(--space-5);
   grid-column: span 2;
   min-width: 260px;
 }
@@ -4073,15 +4073,15 @@ table.tbl tbody tr:hover td {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 700;
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
 }
 
 .crm-live-feed-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 8px 0;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   font-size: 12.5px;
 }
@@ -4103,28 +4103,28 @@ table.tbl tbody tr:hover td {
 .crm-live-etapas {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .crm-live-etapa {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
-  padding: 18px;
+  padding: var(--space-5);
   text-align: center;
 }
 
 .crm-live-etapa-n {
   font-size: 30px;
   font-weight: 800;
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
   font-family: var(--display, inherit);
 }
 
 .crm-live-etapa-nome {
   font-size: 12px;
   color: #d5d8f4;
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
 }
 
 .crm-live-etapa-valor {
@@ -4143,7 +4143,7 @@ table.tbl tbody tr:hover td {
   color: #fff;
   font-weight: 700;
   font-size: 13px;
-  padding: 13px 22px;
+  padding: var(--space-3) var(--space-5);
   border-radius: 999px;
   cursor: pointer;
   box-shadow: var(--shadow-md);
@@ -4155,7 +4155,7 @@ table.tbl tbody tr:hover td {
   bottom: 24px;
   transform: translateX(-50%);
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .crm-live-dots span {
@@ -4172,8 +4172,8 @@ table.tbl tbody tr:hover td {
 .vendor-row {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 11px 17px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
   width: 100%;
   text-align: left;
@@ -4206,7 +4206,7 @@ table.tbl tbody tr:hover td {
 }
 
 .vendor-row.boxed {
-  padding: 10px;
+  padding: var(--space-3);
   border: 1px solid var(--blue);
   border-radius: var(--radius-md);
   background: var(--blue-soft-2);
@@ -4217,11 +4217,11 @@ table.tbl tbody tr:hover td {
 .attach-chip {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 9px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 
 .attach-chip svg {
@@ -4250,7 +4250,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 6px;
 }
 
@@ -4283,7 +4283,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .tc-val {
@@ -4304,7 +4304,7 @@ table.tbl tbody tr:hover td {
 .task-who {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   font-size: 11px;
   color: var(--text-muted);
   font-weight: 600;
@@ -4315,7 +4315,7 @@ table.tbl tbody tr:hover td {
 
 .filter-strip {
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
@@ -4323,22 +4323,22 @@ table.tbl tbody tr:hover td {
 .fsel {
   font-size: 11.5px;
   font-weight: 700;
-  padding: 8px 13px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
   color: var(--text-muted);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   white-space: nowrap;
 }
 
 .camp-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 17px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
   transition: background var(--transition-fast);
 }
@@ -4422,7 +4422,7 @@ button.camp-row:hover {
 
 .rel-pizzas {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .chart-tooltip {
@@ -4432,7 +4432,7 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-size: 11.5px;
   box-shadow: var(--shadow-md);
   pointer-events: none;
@@ -4446,7 +4446,7 @@ button.camp-row:hover {
   background: var(--ink);
   color: var(--paper, #fff);
   border-radius: var(--radius-md);
-  padding: 7px 11px;
+  padding: var(--space-2) var(--space-2);
   font-size: 11.5px;
   pointer-events: none;
   z-index: 200;
@@ -4456,7 +4456,7 @@ button.camp-row:hover {
 .pie-legenda {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 14px;
+  gap: var(--space-2) var(--space-4);
   justify-content: center;
   margin-top: 12px;
 }
@@ -4464,7 +4464,7 @@ button.camp-row:hover {
 .pie-legenda-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11.5px;
   color: var(--text-muted);
 }
@@ -4479,11 +4479,11 @@ button.camp-row:hover {
 .date-picker {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 10px 14px;
+  padding: var(--space-3) var(--space-4);
   margin-bottom: 14px;
   font-size: 12.5px;
   font-weight: 700;
@@ -4500,7 +4500,7 @@ button.camp-row:hover {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 3px 9px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-xl);
   white-space: nowrap;
 }
@@ -4520,8 +4520,8 @@ button.camp-row:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 11px 17px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -4558,15 +4558,15 @@ button.camp-row:hover {
 .prev-list {
   display: flex;
   flex-direction: column;
-  padding: 6px 17px;
+  padding: var(--space-2) var(--space-4);
 }
 
 .prev-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -4590,14 +4590,14 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 12px;
+  padding: var(--space-3);
   margin-bottom: 10px;
 }
 
 .auto-acao-row-h {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 8px;
 }
 
@@ -4628,7 +4628,7 @@ button.camp-row:hover {
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 12px;
+  padding: var(--space-3);
   margin-bottom: 10px;
   cursor: pointer;
 }
@@ -4636,7 +4636,7 @@ button.camp-row:hover {
 .auto-kanban-card-h {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
 }
 
 .auto-kanban-card-h .titulo {
@@ -4655,7 +4655,7 @@ button.camp-row:hover {
 
 .auto-kanban-card-acoes {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   margin-top: 8px;
   font-size: 13px;
 }
@@ -4672,14 +4672,14 @@ button.camp-row:hover {
 .seg-picker {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 16px 17px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4);
 }
 
 .seg-chip {
   font-size: 11.5px;
   font-weight: 700;
-  padding: 8px 13px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy);
@@ -4697,8 +4697,8 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 15px 17px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4);
   border-top: 1px solid var(--line-soft);
   border-bottom: 1px solid var(--line-soft);
 }
@@ -4717,15 +4717,15 @@ button.camp-row:hover {
 
 .media-picker {
   display: flex;
-  gap: 9px;
-  padding: 16px 17px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4);
 }
 
 .media-opt {
   flex: 1;
   border: 1px dashed var(--line);
   border-radius: var(--radius-lg);
-  padding: 16px 10px;
+  padding: var(--space-4) var(--space-3);
   text-align: center;
   cursor: pointer;
 }
@@ -4755,8 +4755,8 @@ button.camp-row:hover {
 .broadcast-row {
   display: flex;
   align-items: center;
-  gap: 13px;
-  padding: 13px 17px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -4800,7 +4800,7 @@ button.camp-row:hover {
 .broadcast-status {
   font-size: 10px;
   font-weight: 700;
-  padding: 4px 9px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-xl);
   white-space: nowrap;
 }
@@ -4828,16 +4828,16 @@ button.camp-row:hover {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-faint);
-  margin: 0 0 10px 2px;
+  margin: 0 0 var(--space-3) var(--space-1);
 }
 
 .plano-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  margin: 17px;
-  padding: 16px 18px;
+  gap: var(--space-4);
+  margin: var(--space-4);
+  padding: var(--space-4) var(--space-5);
   background: var(--blue-soft);
   border: 1px solid var(--blue);
   border-radius: var(--radius-lg);
@@ -4872,8 +4872,8 @@ button.camp-row:hover {
 }
 
 .cartao-salvo-card {
-  margin: 0 17px 14px;
-  padding: 14px 16px;
+  margin: 0 var(--space-4) var(--space-4);
+  padding: var(--space-4) var(--space-4);
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -4901,7 +4901,7 @@ button.camp-row:hover {
   text-transform: uppercase;
   color: #d64545;
   background: rgba(214, 69, 69, 0.12);
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-xl);
   vertical-align: middle;
 }
@@ -4909,8 +4909,8 @@ button.camp-row:hover {
 .int-row {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 14px 17px;
+  gap: var(--space-5);
+  padding: var(--space-4) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
   flex-wrap: wrap;
 }
@@ -4952,7 +4952,7 @@ button.camp-row:hover {
 .int-status {
   font-size: 10.5px;
   font-weight: 700;
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-xl);
   flex: 0 0 auto;
   white-space: nowrap;
@@ -4972,8 +4972,8 @@ button.camp-row:hover {
 .key-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 17px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4);
   flex-wrap: wrap;
 }
 
@@ -4983,7 +4983,7 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 10px 13px;
+  padding: var(--space-3) var(--space-3);
   font-family: var(--display);
   font-size: 12px;
   color: var(--text-muted);
@@ -4991,7 +4991,7 @@ button.camp-row:hover {
 }
 
 .hint {
-  padding: 12px 17px 0;
+  padding: var(--space-3) var(--space-4) 0;
   font-size: var(--fs-secondary);
   font-weight: var(--fw-light);
   color: var(--text-muted);
@@ -5005,7 +5005,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: var(--space-6) var(--space-5);
   background: radial-gradient(circle at 30% 20%, var(--blue-soft-2), transparent 55%),
     var(--navy);
 }
@@ -5019,7 +5019,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   margin-bottom: 26px;
 }
 
@@ -5069,7 +5069,7 @@ button.camp-row:hover {
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-4);
   font-size: 13px;
   width: 100%;
   color: var(--ink);
@@ -5089,8 +5089,8 @@ button.camp-row:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin: 2px 0 20px;
+  gap: var(--space-3);
+  margin: var(--space-1) 0 var(--space-5);
 }
 
 .login-row a {
@@ -5102,7 +5102,7 @@ button.camp-row:hover {
 .login-row .rem {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   font-size: 11.5px;
   color: var(--text-muted);
   cursor: pointer;
@@ -5142,7 +5142,7 @@ button.camp-row:hover {
   font-family: var(--body);
   font-weight: 700;
   font-size: 13px;
-  padding: 13px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
 }
 
@@ -5231,7 +5231,7 @@ button.camp-row:hover {
 .wa-contato-picker-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .wa-contato-picker-numero {
@@ -5243,8 +5243,8 @@ button.camp-row:hover {
 .wa-contato-selecionado {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
   background: var(--blue-soft-2);
   border: 1px solid var(--blue);
   border-radius: var(--radius-md);
@@ -5258,7 +5258,7 @@ button.camp-row:hover {
 .wa-contato-modal-rodape {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--line);
@@ -5268,8 +5268,8 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 10px 0 18px;
+  gap: var(--space-2);
+  padding: var(--space-3) 0 var(--space-5);
   text-align: center;
 }
 
@@ -5283,8 +5283,8 @@ button.camp-row:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
   border: none;
   font: inherit;
   color: inherit;
@@ -5316,7 +5316,7 @@ button.camp-row:hover {
 
 .wa-anexo-drag {
   text-align: center;
-  padding: 5px 0 3px;
+  padding: var(--space-1) 0 var(--space-1);
   color: var(--text-faint);
   font-size: 10px;
   letter-spacing: 0.15em;
@@ -5333,8 +5333,8 @@ button.camp-row:hover {
 .dropdown-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 10px 14px;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -5364,7 +5364,7 @@ button.camp-row:hover {
 .dropdown-sep {
   height: 1px;
   background: var(--line);
-  margin: 4px 0;
+  margin: var(--space-1) 0;
 }
 
 .sb-foot {
@@ -5440,7 +5440,7 @@ button.camp-row:hover {
   .nav {
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: var(--space-2);
   }
 
   .sb-foot {
@@ -5449,13 +5449,13 @@ button.camp-row:hover {
 
   .content {
     overflow: visible;
-    padding: 18px 16px 32px;
+    padding: var(--space-5) var(--space-4) var(--space-6);
   }
 
   .topbar {
     flex-direction: column;
     align-items: flex-start;
-    padding: 14px 16px;
+    padding: var(--space-4) var(--space-4);
   }
 
   .top-actions {
@@ -5474,8 +5474,8 @@ button.camp-row:hover {
 .agenda-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-  padding: 14px 17px 17px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) var(--space-4);
 }
 
 .agenda-dow {
@@ -5493,11 +5493,11 @@ button.camp-row:hover {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--navy);
-  padding: 6px;
+  padding: var(--space-2);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
+  gap: var(--space-1);
   text-align: left;
   cursor: pointer;
   overflow: hidden;
@@ -5537,7 +5537,7 @@ button.camp-row:hover {
   color: var(--blue);
   background: var(--blue-soft);
   border-radius: var(--radius-sm);
-  padding: 1px 5px;
+  padding: var(--space-1) var(--space-1);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5576,14 +5576,14 @@ button.camp-row:hover {
 .view-switch-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
 .view-switch-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   white-space: nowrap;
 }
 
@@ -5600,7 +5600,7 @@ button.camp-row:hover {
 
 .doc-view {
   display: flex;
-  gap: 18px;
+  gap: var(--space-5);
   align-items: flex-start;
 }
 
@@ -5609,7 +5609,7 @@ button.camp-row:hover {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .doc-sidebar-h {
@@ -5624,8 +5624,8 @@ button.camp-row:hover {
 .doc-page-item {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 8px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2);
   border-radius: var(--radius-md);
   font-size: 12px;
   font-weight: 600;
@@ -5658,7 +5658,7 @@ button.camp-row:hover {
 
 .doc-page-add {
   margin-top: 6px;
-  padding: 8px;
+  padding: var(--space-2);
   border: none;
   background: none;
   text-align: left;
@@ -5685,15 +5685,15 @@ button.camp-row:hover {
 .doc-toolbar {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--line);
 }
 
 .doc-page-content {
   max-width: 720px;
   margin: 0 auto;
-  padding: 28px 32px 60px;
+  padding: var(--space-6) var(--space-6) var(--space-6);
 }
 
 .doc-page-content.full {
@@ -5773,7 +5773,7 @@ button.camp-row:hover {
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 6px 8px;
+  padding: var(--space-2) var(--space-2);
   font-size: 12px;
   color: var(--ink);
   cursor: pointer;
@@ -5830,8 +5830,8 @@ button.camp-row:hover {
 .doc-toolbar-grupo-conteudo {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
 }
 
 .doc-menu-categoria {
@@ -5840,7 +5840,7 @@ button.camp-row:hover {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-faint);
-  margin: 14px 0 4px;
+  margin: var(--space-4) 0 var(--space-1);
   padding-top: 10px;
   border-top: 1px solid var(--line-soft);
 }
@@ -5860,7 +5860,7 @@ button.camp-row:hover {
 /* Fundo neutro atrás da folha, pra página parecer mesmo uma folha A4 solta — igual Word/Docs. */
 .doc-canvas {
   background: var(--navy-deep);
-  padding: 32px 24px 60px;
+  padding: var(--space-6) var(--space-6) var(--space-6);
   display: flex;
   justify-content: center;
   overflow-y: auto;
@@ -5891,7 +5891,7 @@ button.camp-row:hover {
   font-size: 8.5px;
   color: var(--text-faint);
   text-align: right;
-  padding: 2px 3px 0 0;
+  padding: var(--space-1) var(--space-1) 0 0;
   overflow: hidden;
 }
 
@@ -6000,7 +6000,7 @@ button.camp-row:hover {
 /* Linha com a régua vertical ao lado da folha — mesma lógica da régua horizontal, só que no eixo Y. */
 .doc-page-linha {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: flex-start;
 }
 
@@ -6062,7 +6062,7 @@ button.camp-row:hover {
 .doc-margens-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .doc-cabecalho-rodape-editor {
@@ -6074,7 +6074,7 @@ button.camp-row:hover {
 .doc-margem-campo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: 12px;
   color: var(--muted, #666);
 }
@@ -6091,7 +6091,7 @@ button.camp-row:hover {
   background: #ffffff;
   color: #1a1a1a;
   border-radius: var(--radius-sm);
-  padding: 72px;
+  padding: var(--space-6);
   box-shadow: var(--shadow-md);
   font-family: "Times New Roman", Georgia, serif;
 }
@@ -6209,8 +6209,8 @@ button.camp-row:hover {
 .doc-page-fim {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  padding: 14px 0 4px;
+  gap: var(--space-3);
+  padding: var(--space-4) 0 var(--space-1);
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -6225,7 +6225,7 @@ button.camp-row:hover {
   color: var(--text-muted);
   font-size: 11.5px;
   font-weight: 600;
-  padding: 7px 14px;
+  padding: var(--space-2) var(--space-4);
   border-radius: 999px;
   cursor: pointer;
 }
@@ -6314,8 +6314,8 @@ button.camp-row:hover {
 .doc-editor-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
   flex: 0 0 auto;
 }
 
@@ -6342,7 +6342,7 @@ button.camp-row:hover {
   font-size: 15px;
   font-weight: 700;
   color: var(--ink);
-  padding: 6px 8px;
+  padding: var(--space-2) var(--space-2);
   border-radius: var(--radius-sm);
   min-width: 80px;
   max-width: 320px;
@@ -6377,7 +6377,7 @@ button.camp-row:hover {
 .doc-header-acoes {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin-left: auto;
   flex: 0 1 auto;
   flex-wrap: wrap;
@@ -6399,8 +6399,8 @@ button.camp-row:hover {
 .doc-menu-bar {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 4px 16px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-4);
   flex: 0 0 auto;
   font-size: 12.5px;
   overflow-x: auto;
@@ -6419,7 +6419,7 @@ button.camp-row:hover {
   background: none;
   color: var(--text-muted);
   font-weight: 600;
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
@@ -6439,7 +6439,7 @@ button.camp-row:hover {
   flex-direction: row !important;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .doc-menu-atalho {
@@ -6450,12 +6450,12 @@ button.camp-row:hover {
 
 .doc-modo-switch {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   margin-left: auto;
 }
 
 .doc-aviso-modo {
-  padding: 8px 20px;
+  padding: var(--space-2) var(--space-5);
   font-size: 12px;
   font-weight: 600;
   color: #8a5a00;
@@ -6464,7 +6464,7 @@ button.camp-row:hover {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -6490,7 +6490,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: var(--space-6);
   flex: 1;
 }
 
@@ -6505,15 +6505,15 @@ button.camp-row:hover {
   border-left: 1px solid var(--line);
   background: var(--navy);
   overflow-y: auto;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
 }
 
 .doc-comentarios-painel .panel-h {
-  padding: 14px 16px;
+  padding: var(--space-4) var(--space-4);
 }
 
 .doc-comentario-item {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -6527,13 +6527,13 @@ button.camp-row:hover {
   color: var(--text-faint);
   border-left: 2px solid var(--blue-soft);
   padding-left: 8px;
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
 }
 
 .doc-comentario-texto {
   font-size: 12.5px;
   color: var(--ink);
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
 }
 
 .doc-comentario-resposta {
@@ -6544,7 +6544,7 @@ button.camp-row:hover {
 
 .doc-comentario-acoes {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .doc-localizar-modal,
@@ -6559,15 +6559,15 @@ button.camp-row:hover {
 .doc-ajuda-conteudo {
   max-height: 60vh;
   overflow-y: auto;
-  padding: 4px 2px;
+  padding: var(--space-1) var(--space-1);
 }
 
 .doc-ajuda-lista {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   padding-left: 18px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 12.5px;
   color: var(--muted, #666);
 }
@@ -6575,8 +6575,8 @@ button.camp-row:hover {
 .doc-cores-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  padding: 4px;
+  gap: var(--space-2);
+  padding: var(--space-1);
 }
 
 .doc-cor-swatch {
@@ -6596,7 +6596,7 @@ button.camp-row:hover {
 .doc-lista-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .doc-lista-card {
@@ -6604,7 +6604,7 @@ button.camp-row:hover {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--navy);
-  padding: 4px;
+  padding: var(--space-1);
 }
 
 .doc-lista-card:hover {
@@ -6615,11 +6615,11 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
   width: 100%;
   border: none;
   background: none;
-  padding: 14px 16px;
+  padding: var(--space-4) var(--space-4);
   text-align: left;
   cursor: pointer;
 }
@@ -6658,18 +6658,18 @@ button.camp-row:hover {
 .doc-modelos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .doc-modelo-card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: var(--space-1);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--navy);
-  padding: 14px;
+  padding: var(--space-4);
   text-align: left;
   cursor: pointer;
 }
@@ -6703,7 +6703,7 @@ button.camp-row:hover {
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--blue);
-  padding: 8px 12px 0;
+  padding: var(--space-2) var(--space-3) 0;
 }
 
 .doc-modelo-thumb {
@@ -6734,8 +6734,8 @@ button.camp-row:hover {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px;
+  gap: var(--space-2);
+  padding: var(--space-2);
   background: rgba(9, 9, 11, 0.45);
   opacity: 0;
   transition: opacity 0.15s ease;
@@ -6793,7 +6793,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--space-6);
   animation: modal-fade-in var(--transition-base);
 }
 
@@ -6814,7 +6814,7 @@ button.camp-row:hover {
    pertence à linha de cima e não é uma linha nova da lista. */
 .int-painel {
   margin: 0 14px 14px;
-  padding: 16px;
+  padding: var(--space-4);
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-lg);
   background: var(--navy-raised);
@@ -6828,8 +6828,8 @@ button.camp-row:hover {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 22px 26px 0;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6) 0;
 }
 
 .modal-cabecalho .int-title {
@@ -6837,7 +6837,7 @@ button.camp-row:hover {
 }
 
 .modal-corpo {
-  padding: 14px 26px 26px;
+  padding: var(--space-4) var(--space-6) var(--space-6);
   overflow-y: auto;
 }
 
@@ -6858,7 +6858,7 @@ button.camp-row:hover {
 /* Separa visualmente o bloco de ações do formulário acima. */
 .modal-acoes {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 20px;
   padding-top: 18px;
   border-top: 1px solid var(--line-soft);
@@ -6875,13 +6875,13 @@ button.camp-row:hover {
 }
 
 .doc-modelo-preview-modal .panel-h {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
 }
 
 .doc-modelo-preview-corpo {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: var(--space-5);
   background: #d8dbe6;
 }
 
@@ -6891,13 +6891,13 @@ button.camp-row:hover {
   font-family: "Times New Roman", Georgia, serif;
   max-width: 620px;
   margin: 0 auto;
-  padding: 48px;
+  padding: var(--space-6);
   box-shadow: var(--shadow-sm);
   border-radius: var(--radius-sm);
 }
 
 .panel-f {
-  padding: 14px 20px;
+  padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--line);
 }
 
@@ -6935,13 +6935,13 @@ button.camp-row:hover {
   border-left: 1px solid var(--line);
   background: var(--navy);
   overflow-y: auto;
-  padding: 4px 16px 16px;
+  padding: var(--space-1) var(--space-4) var(--space-4);
 }
 
 .doc-painel-tabs {
   display: flex;
-  gap: 4px;
-  margin: 4px 0 14px;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -6949,7 +6949,7 @@ button.camp-row:hover {
   flex: 1;
   border: none;
   background: none;
-  padding: 8px 4px;
+  padding: var(--space-2) var(--space-1);
   font-size: 12.5px;
   font-weight: 600;
   color: var(--text-muted);
@@ -7003,17 +7003,17 @@ button.camp-row:hover {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
-  padding: 6px;
+  padding: var(--space-2);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .doc-context-menu button {
   border: none;
   background: none;
   text-align: left;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
   font-size: 12.5px;
   color: var(--ink);
@@ -7031,12 +7031,12 @@ button.camp-row:hover {
 .doc-context-menu-sep {
   height: 1px;
   background: var(--line-soft);
-  margin: 4px 0;
+  margin: var(--space-1) 0;
 }
 
 .doc-context-menu-linha {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .doc-context-menu-linha button {
@@ -7052,12 +7052,12 @@ button.camp-row:hover {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
-  padding: 5px 6px;
+  padding: var(--space-1) var(--space-2);
   pointer-events: auto;
 }
 
@@ -7088,7 +7088,7 @@ button.camp-row:hover {
 .doc-img-resize-alca {
   border: 1px dashed var(--line);
   border-radius: var(--radius-md);
-  padding: 8px;
+  padding: var(--space-2);
   text-align: center;
   font-size: 11.5px;
   color: var(--text-muted);
@@ -7108,7 +7108,7 @@ button.camp-row:hover {
   border-right: 1px solid var(--line);
   background: var(--navy);
   overflow-y: auto;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
 }
 
 .doc-estrutura-item {
@@ -7117,7 +7117,7 @@ button.camp-row:hover {
   border: none;
   background: none;
   text-align: left;
-  padding: 8px 14px;
+  padding: var(--space-2) var(--space-4);
   font-size: 12.5px;
   color: var(--ink);
   cursor: pointer;
@@ -7133,7 +7133,7 @@ button.camp-row:hover {
 .cor-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .cor-chip {
@@ -7158,10 +7158,10 @@ button.camp-row:hover {
 .form-scratch-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-4);
   width: 100%;
   text-align: left;
-  padding: 18px 20px;
+  padding: var(--space-5) var(--space-5);
   border-radius: var(--radius-lg);
   border: 1.5px dashed var(--line-soft);
   background: var(--navy-raised);
@@ -7202,7 +7202,7 @@ button.camp-row:hover {
 }
 
 .form-link-box {
-  padding: 14px;
+  padding: var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--navy-raised);
   margin-bottom: 12px;
@@ -7216,16 +7216,16 @@ button.camp-row:hover {
   font-size: 12.5px;
   font-weight: 700;
   color: var(--ink);
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
 }
 
 /* Barra superior do construtor: voltar, nome editável, status, abas Editar/Design/Respostas, ações. */
 .form-builder-topbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  padding: 12px 24px;
+  padding: var(--space-3) var(--space-6);
   border-bottom: 1px solid var(--line);
 }
 
@@ -7236,7 +7236,7 @@ button.camp-row:hover {
   font-weight: 700;
   font-size: 15px;
   color: var(--ink);
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   min-width: 120px;
   max-width: 320px;
@@ -7255,7 +7255,7 @@ button.camp-row:hover {
 .form-builder-topbar-acoes {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin-left: auto;
   flex-wrap: wrap;
 }
@@ -7281,10 +7281,10 @@ button.camp-row:hover {
 .form-pagina-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-md);
-  margin: 2px 6px;
+  margin: var(--space-1) var(--space-2);
   transition: opacity 0.15s ease;
 }
 
@@ -7297,7 +7297,7 @@ button.camp-row:hover {
   color: var(--text-faint);
   font-size: 12px;
   cursor: grab;
-  padding: 4px 2px;
+  padding: var(--space-1) var(--space-1);
 }
 
 .form-pagina-btn {
@@ -7306,11 +7306,11 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: var(--space-2);
   border: none;
   background: none;
   text-align: left;
-  padding: 9px 8px;
+  padding: var(--space-2) var(--space-2);
   border-radius: var(--radius-md);
   font-size: 12.5px;
   font-weight: 600;
@@ -7340,7 +7340,7 @@ button.camp-row:hover {
 .form-pagina-acoes {
   flex: 0 0 auto;
   display: flex;
-  gap: 2px;
+  gap: var(--space-1);
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -7355,7 +7355,7 @@ button.camp-row:hover {
   color: var(--text-faint);
   cursor: pointer;
   font-size: 12px;
-  padding: 4px;
+  padding: var(--space-1);
   border-radius: var(--radius-sm);
 }
 
@@ -7371,7 +7371,7 @@ button.camp-row:hover {
 
 .form-builder-canvas {
   overflow-y: auto;
-  padding: 24px;
+  padding: var(--space-6);
   background: var(--navy-deep);
 }
 
@@ -7381,7 +7381,7 @@ button.camp-row:hover {
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: var(--space-5);
   box-shadow: var(--shadow-md);
 }
 
@@ -7389,8 +7389,8 @@ button.camp-row:hover {
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 12px 12px 12px 6px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-2);
   margin-bottom: 6px;
   border-radius: var(--radius-md);
   border: 1.5px solid transparent;
@@ -7449,10 +7449,10 @@ button.camp-row:hover {
   top: -12px;
   right: 10px;
   display: flex;
-  gap: 2px;
+  gap: var(--space-1);
   background: #1f2430;
   border-radius: var(--radius-md);
-  padding: 3px;
+  padding: var(--space-1);
   box-shadow: var(--shadow-sm);
   opacity: 0;
   pointer-events: none;
@@ -7470,7 +7470,7 @@ button.camp-row:hover {
   background: none;
   color: #fff;
   font-size: 11px;
-  padding: 5px 7px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
@@ -7486,7 +7486,7 @@ button.camp-row:hover {
 }
 
 .form-painel-secao {
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -7496,7 +7496,7 @@ button.camp-row:hover {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-faint);
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
 }
 
 /* Construtor visual de lógica condicional (LogicaCanvas.tsx) — mini React Flow embutido na seção
@@ -7524,13 +7524,13 @@ button.camp-row:hover {
 .form-logica-node-corpo {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
 }
 
 .form-logica-node-corpo select,
 .form-logica-node-corpo input {
   font-size: 11px;
-  padding: 5px 7px;
+  padding: var(--space-1) var(--space-2);
   width: 100%;
 }
 
@@ -7544,7 +7544,7 @@ button.camp-row:hover {
   color: var(--text-faint);
   cursor: pointer;
   font-size: 10.5px;
-  padding: 3px 5px;
+  padding: var(--space-1) var(--space-1);
   border-radius: var(--radius-sm);
 }
 
@@ -7555,20 +7555,20 @@ button.camp-row:hover {
 
 .form-logica-add-btn {
   font-size: 11.5px;
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-3);
 }
 
 .form-builder-design {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-4);
   max-width: 640px;
 }
 
 .form-preview-viewport {
   margin: 0 auto;
   border-radius: var(--radius-lg);
-  padding: 24px;
+  padding: var(--space-6);
   box-shadow: var(--shadow-md);
 }
 
@@ -7577,7 +7577,7 @@ button.camp-row:hover {
   background: var(--navy-raised, #fff);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 10px 13px;
+  padding: var(--space-3) var(--space-3);
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--ink);
@@ -7602,7 +7602,7 @@ button.camp-row:hover {
 .form-campo-prefixado {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .form-campo-prefixado > span {
@@ -7620,9 +7620,9 @@ button.camp-row:hover {
 .form-tags-lista {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   align-items: center;
-  padding: 6px 8px;
+  padding: var(--space-2) var(--space-2);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--navy-raised, #fff);
@@ -7632,8 +7632,8 @@ button.camp-row:hover {
 .form-tag-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-xl);
   background: var(--blue-soft);
   color: var(--blue);
@@ -7658,7 +7658,7 @@ button.camp-row:hover {
   background: none;
   font-size: 12.5px;
   color: var(--ink);
-  padding: 4px 0;
+  padding: var(--space-1) 0;
 }
 
 .form-tags-input:focus {
@@ -7697,7 +7697,7 @@ button.camp-row:hover {
 
 .form-nota-linha {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   flex-wrap: wrap;
 }
 
@@ -7724,7 +7724,7 @@ button.camp-row:hover {
   font-size: 17px;
   font-weight: 700;
   color: var(--ink);
-  margin: 6px 0 0;
+  margin: var(--space-2) 0 0;
 }
 
 .form-bloco-texto {
@@ -7736,7 +7736,7 @@ button.camp-row:hover {
 .form-bloco-divisor {
   border: none;
   border-top: 1px solid var(--line);
-  margin: 4px 0;
+  margin: var(--space-1) 0;
 }
 
 .form-bloco-espacamento {
@@ -7750,7 +7750,7 @@ button.camp-row:hover {
 }
 
 .form-bloco-imagem-vazia {
-  padding: 20px;
+  padding: var(--space-5);
   text-align: center;
   border: 1px dashed var(--line-soft);
   border-radius: var(--radius-md);
@@ -7761,8 +7761,8 @@ button.camp-row:hover {
 .form-upload-preview {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
   border: 1px dashed var(--line-soft);
   font-size: 12px;
@@ -7777,7 +7777,7 @@ button.camp-row:hover {
   font-size: 13px;
   font-weight: 700;
   color: var(--ink);
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
 }
 
 .form-pergunta-asterisco {
@@ -7787,20 +7787,20 @@ button.camp-row:hover {
 .form-pergunta-dica {
   font-size: 11.5px;
   color: var(--text-faint);
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
 }
 
 .form-pergunta-ajuda {
   font-size: 11px;
   color: var(--text-faint);
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
 }
 
 .form-pergunta-erro {
   font-size: 11px;
   font-weight: 600;
   color: #d64545;
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
 }
 
 @media (max-width: 1100px) {
@@ -7819,7 +7819,7 @@ button.camp-row:hover {
 
 @media (max-width: 640px) {
   .form-builder-topbar {
-    padding: 12px 14px;
+    padding: var(--space-3) var(--space-4);
   }
 
   .form-builder-topbar-acoes {
@@ -7835,7 +7835,7 @@ button.camp-row:hover {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 48px 24px;
+  padding: var(--space-6) var(--space-6);
   background: var(--navy-raised);
 }
 
@@ -7843,7 +7843,7 @@ button.camp-row:hover {
   width: 100%;
   max-width: 560px;
   border-radius: var(--radius-xl);
-  padding: 32px;
+  padding: var(--space-6);
   box-shadow: var(--shadow-lg);
   color: var(--ink);
 }
@@ -7873,25 +7873,25 @@ button.camp-row:hover {
 .form-public-campos {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
+  gap: var(--space-1) var(--space-4);
 }
 
 .form-campo-total {
   flex: 1 1 100%;
-  padding: 10px 0;
+  padding: var(--space-3) 0;
 }
 
 .form-campo-metade {
   flex: 1 1 calc(50% - 8px);
   min-width: 200px;
-  padding: 10px 0;
+  padding: var(--space-3) 0;
 }
 
 .form-public-obrigado {
   width: 100%;
   max-width: 480px;
   border-radius: var(--radius-xl);
-  padding: 48px 32px;
+  padding: var(--space-6) var(--space-6);
   text-align: center;
   box-shadow: var(--shadow-lg);
   color: var(--ink);
@@ -7904,12 +7904,12 @@ button.camp-row:hover {
 
 @media (max-width: 640px) {
   .form-public-page {
-    padding: 20px 12px;
+    padding: var(--space-5) var(--space-3);
   }
 
   .form-public-card,
   .form-public-obrigado {
-    padding: 20px;
+    padding: var(--space-5);
   }
 
   .form-campo-metade {
@@ -7923,21 +7923,21 @@ button.camp-row:hover {
 
 .wa-anexo-menu-grid {
   width: 288px;
-  padding: 4px 10px 10px;
+  padding: var(--space-1) var(--space-3) var(--space-3);
 }
 
 .wa-anexo-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .wa-anexo-item {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
-  padding: 10px 10px 12px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: none;
@@ -7998,8 +7998,8 @@ button.camp-row:hover {
 }
 
 .wa-anexo-erro {
-  margin: 8px 4px 2px;
-  padding: 8px 10px;
+  margin: var(--space-2) var(--space-1) var(--space-1);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   background: rgba(214, 69, 69, 0.12);
   border: 1px solid rgba(214, 69, 69, 0.3);
@@ -8030,7 +8030,7 @@ button.camp-row:hover {
   z-index: 5;
   margin: 0 auto 8px;
   width: fit-content;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border: 1px dashed var(--blue);
   border-radius: var(--radius-lg);
   background: var(--blue-soft);
@@ -8052,7 +8052,7 @@ button.camp-row:hover {
   overflow-y: auto;
   background: var(--navy);
   border-radius: var(--radius-xl);
-  padding: 18px;
+  padding: var(--space-5);
 }
 
 .wa-midia-preview-palco {
@@ -8089,20 +8089,20 @@ button.camp-row:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 12px;
 }
 
 .wa-edicao-toolbar .hint {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 10.5px;
 }
 
 .wa-midia-miniaturas {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   overflow-x: auto;
   margin-top: 12px;
   padding-bottom: 2px;
@@ -8170,7 +8170,7 @@ button.camp-row:hover {
 .wa-video-trim-sliders {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   margin-top: 6px;
 }
 
@@ -8181,14 +8181,14 @@ button.camp-row:hover {
 .wa-doc-origem-opcoes {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .wa-doc-origem-opcao {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--navy-raised-2);
@@ -8213,14 +8213,14 @@ button.camp-row:hover {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .wa-biblioteca-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
 }
 
@@ -8239,7 +8239,7 @@ button.camp-row:hover {
   height: 88vh;
   background: var(--navy);
   border-radius: var(--radius-xl);
-  padding: 18px;
+  padding: var(--space-5);
   display: flex;
   flex-direction: column;
 }
@@ -8257,7 +8257,7 @@ button.camp-row:hover {
 /* -------------------------------------------------------------------------- */
 
 .bubble-midia {
-  padding: 4px;
+  padding: var(--space-1);
   max-width: 60%;
 }
 
@@ -8270,7 +8270,7 @@ button.camp-row:hover {
 .bubble-imagens.grade {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .bubble-imagem-btn {
@@ -8297,7 +8297,7 @@ button.camp-row:hover {
 
 .bubble-legenda {
   font-size: 12px;
-  padding: 6px 6px 0;
+  padding: var(--space-2) var(--space-2) 0;
 }
 
 .bubble-video {
@@ -8315,8 +8315,8 @@ button.camp-row:hover {
 .bubble-documento-cartao {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px;
+  gap: var(--space-3);
+  padding: var(--space-2);
   text-decoration: none;
   color: inherit;
   border-radius: var(--radius-md);
@@ -8342,7 +8342,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .bubble-documento-nome {
@@ -8361,7 +8361,7 @@ button.camp-row:hover {
 .msg-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .msg-status-icone {
@@ -8456,7 +8456,7 @@ button.camp-row:hover {
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 @media (max-width: 720px) {
@@ -8505,8 +8505,8 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 10px 17px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--line);
   background: var(--navy);
 }
@@ -8515,7 +8515,7 @@ button.camp-row:hover {
 .flow-toolbar-dir {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -8527,7 +8527,7 @@ button.camp-row:hover {
   font-size: 14px;
   color: var(--ink);
   cursor: pointer;
-  padding: 4px 6px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
 }
 
@@ -8553,7 +8553,7 @@ button.camp-row:hover {
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 2px;
+  padding: var(--space-1);
   margin-right: 4px;
 }
 
@@ -8563,7 +8563,7 @@ button.camp-row:hover {
   color: var(--text-faint);
   font-size: 12.5px;
   font-weight: 600;
-  padding: 5px 10px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
@@ -8576,7 +8576,7 @@ button.camp-row:hover {
 .flow-toolbar-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 0 6px;
   border-left: 1px solid var(--line-soft);
   border-right: 1px solid var(--line-soft);
@@ -8624,10 +8624,10 @@ button.camp-row:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--space-3);
   pointer-events: none;
   text-align: center;
-  padding: 24px;
+  padding: var(--space-6);
 }
 
 .flow-inicio-vazio > * {
@@ -8644,7 +8644,7 @@ button.camp-row:hover {
 .flow-inicio-vazio-sub {
   font-size: 12.5px;
   color: var(--text-faint);
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
 }
 
 .flow-escolher-gatilho {
@@ -8659,18 +8659,18 @@ button.camp-row:hover {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .flow-escolher-gatilho-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   text-align: left;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: none;
@@ -8697,13 +8697,13 @@ button.camp-row:hover {
 
 .flow-midia-origem {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 8px;
 }
 
 .flow-midia-origem-btn {
   flex: 1;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -8723,7 +8723,7 @@ button.camp-row:hover {
 .flow-midia-dropzone {
   border: 2px dashed var(--line);
   border-radius: var(--radius-md);
-  padding: 22px 14px;
+  padding: var(--space-5) var(--space-4);
   text-align: center;
   color: var(--text-muted);
 }
@@ -8734,15 +8734,15 @@ button.camp-row:hover {
 }
 
 .flow-midia-dropzone p {
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
   font-size: 12.5px;
 }
 
 .flow-midia-preview {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: flex-start;
-  padding: 10px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -8764,7 +8764,7 @@ button.camp-row:hover {
 .flow-midia-preview-info {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -8788,7 +8788,7 @@ button.camp-row:hover {
 
 .flow-midia-preview-acoes {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   margin-top: 8px;
   flex-wrap: wrap;
 }
@@ -8798,7 +8798,7 @@ button.camp-row:hover {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  padding: 14px;
+  padding: var(--space-4);
   gap: 0;
 }
 
@@ -8808,16 +8808,16 @@ button.camp-row:hover {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   margin-top: 6px;
 }
 
 .flow-biblioteca-item {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: flex-start;
   text-align: left;
-  padding: 9px 10px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: none;
@@ -8845,7 +8845,7 @@ button.camp-row:hover {
 .flow-biblioteca-item-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -8890,7 +8890,7 @@ button.camp-row:hover {
 .flow-lib-reabrir {
   flex: 0 0 auto;
   align-self: flex-start;
-  margin: 12px;
+  margin: var(--space-3);
 }
 
 /* Estado recolhido — só a seta de reabrir + uma pastilha por categoria, pra liberar espaço pro
@@ -8903,13 +8903,13 @@ button.camp-row:hover {
   border-right: 1px solid var(--line);
   background: var(--navy);
   padding-bottom: 10px;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .flow-lib-recolhida-cats {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
 }
 
@@ -8938,15 +8938,15 @@ button.camp-row:hover {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 12px;
+  gap: var(--space-2);
+  padding: var(--space-3);
   border-bottom: 1px solid var(--line);
 }
 
 .flow-lib-lista {
   flex: 1;
   overflow-y: auto;
-  padding: 6px 0 16px;
+  padding: var(--space-2) 0 var(--space-4);
 }
 
 .flow-lib-cat {
@@ -8957,8 +8957,8 @@ button.camp-row:hover {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3);
   border: none;
   background: none;
   text-align: left;
@@ -8980,7 +8980,7 @@ button.camp-row:hover {
 }
 
 .flow-lib-secao-titulo {
-  padding: 6px 12px;
+  padding: var(--space-2) var(--space-3);
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -8990,8 +8990,8 @@ button.camp-row:hover {
 .flow-lib-bloco {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   cursor: grab;
 }
 
@@ -9134,7 +9134,7 @@ button.camp-row:hover {
   white-space: nowrap;
   font-size: 9.5px;
   font-weight: 700;
-  padding: 3px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-xl);
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
@@ -9164,7 +9164,7 @@ button.camp-row:hover {
 
 .flow-node-explicacao {
   margin: 0 12px 10px;
-  padding: 7px 9px;
+  padding: var(--space-2) var(--space-2);
   border-radius: var(--radius-md);
   background: var(--blue-soft-2);
   color: var(--blue);
@@ -9221,7 +9221,7 @@ button.camp-row:hover {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  padding: 2px 6px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-xl);
   background: var(--navy-raised-2);
   color: var(--text-faint);
@@ -9265,8 +9265,8 @@ button.camp-row:hover {
 .flow-node-header {
   display: flex;
   align-items: flex-start;
-  gap: 7px;
-  padding: 10px 12px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3);
   border-bottom: 1px solid var(--line-soft);
   border-radius: 0 12px 0 0;
   background: color-mix(in srgb, var(--flow-cor-categoria, var(--line)) 10%, transparent);
@@ -9309,7 +9309,7 @@ button.camp-row:hover {
 }
 
 .flow-node-body {
-  padding: 8px 12px 11px;
+  padding: var(--space-2) var(--space-3) var(--space-2);
   color: var(--text-muted);
   font-size: 12px;
   line-height: 1.45;
@@ -9326,7 +9326,7 @@ button.camp-row:hover {
   padding: 0 10px 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .flow-node-handle-row {
@@ -9334,7 +9334,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 4px 14px 4px 8px;
+  padding: var(--space-1) var(--space-4) var(--space-1) var(--space-2);
   font-size: 11.5px;
   color: var(--text-muted);
   border: 1px solid var(--line-soft);
@@ -9448,8 +9448,8 @@ button.camp-row:hover {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -9468,7 +9468,7 @@ button.camp-row:hover {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  padding: 4px;
+  padding: var(--space-1);
 }
 
 /* ---------------- Painel de configuração (direita) ---------------- */
@@ -9490,7 +9490,7 @@ button.camp-row:hover {
 
 .flow-tab {
   flex: 1;
-  padding: 11px 8px;
+  padding: var(--space-2) var(--space-2);
   border: none;
   background: none;
   border-bottom: 2px solid transparent;
@@ -9508,29 +9508,29 @@ button.camp-row:hover {
 .flow-config-body {
   flex: 1;
   overflow-y: auto;
-  padding: 14px;
+  padding: var(--space-4);
 }
 
 .flow-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .flow-form-label-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .flow-problema {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   text-align: left;
-  padding: 9px 10px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised-2);
@@ -9556,7 +9556,7 @@ button.camp-row:hover {
 .flow-cond-grupo {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 10px;
+  padding: var(--space-3);
   margin-bottom: 8px;
   background: var(--navy-raised-2);
 }
@@ -9578,20 +9578,20 @@ button.camp-row:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  padding: 6px 0;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
 }
 
 .flow-cond-acoes {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   margin-top: 6px;
 }
 
 .flow-opcao-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 6px;
 }
 
@@ -9618,15 +9618,15 @@ button.camp-row:hover {
 .flow-formato-resposta-lista {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .flow-formato-resposta-opcao {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   text-align: left;
-  padding: 9px 11px;
+  padding: var(--space-2) var(--space-2);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -9660,7 +9660,7 @@ button.camp-row:hover {
   margin-top: 4px;
   font-size: 10px;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   background: #d8a40022;
   color: #d8a400;
@@ -9672,7 +9672,7 @@ button.camp-row:hover {
 
 .flow-menu-numerado-previa {
   margin: 0;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -9707,13 +9707,13 @@ button.camp-row:hover {
 .flow-side-body {
   flex: 1;
   overflow-y: auto;
-  padding: 14px 17px;
+  padding: var(--space-4) var(--space-4);
 }
 
 .flow-sim-passos {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* Painel de pré-visualização do fluxo (VisualizarFluxo.tsx) usava `.flow-preview-panel` em vez de
@@ -9730,18 +9730,18 @@ button.camp-row:hover {
 }
 
 .flow-preview-summary {
-  padding: 14px 17px;
+  padding: var(--space-4) var(--space-4);
   border-bottom: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .flow-preview-tags {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .flow-preview-canvas {
@@ -9756,7 +9756,7 @@ button.camp-row:hover {
 }
 
 .flow-sim-banner {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   margin-bottom: 10px;
   border-radius: var(--radius-md);
   background: var(--warning-soft);
@@ -9767,7 +9767,7 @@ button.camp-row:hover {
 
 .flow-sim-continuar {
   margin-top: 14px;
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
@@ -9776,13 +9776,13 @@ button.camp-row:hover {
 .flow-sim-opcoes {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 8px;
 }
 
 .flow-sim-log {
   margin-top: 14px;
-  padding: 10px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
@@ -9795,8 +9795,8 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 10px 0;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -9831,7 +9831,7 @@ button.camp-row:hover {
 
   .doc-editor-header {
     flex-wrap: wrap;
-    padding: 8px 12px;
+    padding: var(--space-2) var(--space-3);
   }
 
   .doc-titulo-header-input {
@@ -9846,7 +9846,7 @@ button.camp-row:hover {
 .filterbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin-bottom: 12px;
 }
@@ -9854,7 +9854,7 @@ button.camp-row:hover {
 .filterbar-chips {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   width: 100%;
   margin-top: -2px;
@@ -9863,10 +9863,10 @@ button.camp-row:hover {
 .filterbar-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11px;
   font-weight: 600;
-  padding: 5px 10px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-xl);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -9885,16 +9885,16 @@ button.camp-row:hover {
 }
 
 .filterbar-panel {
-  padding: 14px;
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .filterbar-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .filterbar-field label {
@@ -9909,14 +9909,14 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   padding-top: 10px;
   border-top: 1px solid var(--line-soft);
 }
 
 .filterbar-salvar {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   padding-top: 10px;
   border-top: 1px solid var(--line-soft);
 }
@@ -9942,8 +9942,8 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
 }
 
 .kpi-personalizar-item .n {
@@ -9953,7 +9953,7 @@ button.camp-row:hover {
 
 .kpi-personalizar-ordem {
   display: flex;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .kpi-personalizar-ordem button {
@@ -9980,7 +9980,7 @@ button.camp-row:hover {
 .funnel-steps {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .funnel-step-bar-wrap {
@@ -9997,7 +9997,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 4px;
 }
 
@@ -10029,15 +10029,15 @@ button.camp-row:hover {
 .funnel-step-perda {
   font-size: 11px;
   color: var(--text-faint);
-  margin: 3px 0 0;
+  margin: var(--space-1) 0 0;
   padding-left: 2px;
 }
 
 .dados-nao-conectados {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 16px;
+  gap: var(--space-3);
+  padding: var(--space-4);
   border: 1px dashed var(--line);
   border-radius: var(--radius-lg);
   color: var(--text-faint);
@@ -10056,7 +10056,7 @@ button.camp-row:hover {
   align-items: center;
   justify-content: center;
   z-index: 300;
-  padding: 20px;
+  padding: var(--space-5);
 }
 
 .wizard-panel {
@@ -10075,15 +10075,15 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 16px 20px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--line);
 }
 
 .wizard-steps {
   display: flex;
-  gap: 6px;
-  padding: 12px 20px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
   border-bottom: 1px solid var(--line-soft);
   flex-wrap: wrap;
 }
@@ -10091,7 +10091,7 @@ button.camp-row:hover {
 .wizard-step-pill {
   font-size: 11px;
   font-weight: 700;
-  padding: 5px 11px;
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   background: var(--navy-raised);
   color: var(--text-faint);
@@ -10108,7 +10108,7 @@ button.camp-row:hover {
 }
 
 .wizard-body {
-  padding: 20px;
+  padding: var(--space-5);
   overflow-y: auto;
   flex: 1;
 }
@@ -10117,8 +10117,8 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 14px 20px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--line);
 }
 
@@ -10126,8 +10126,8 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 9px 12px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   margin-bottom: 6px;
@@ -10141,7 +10141,7 @@ button.camp-row:hover {
 .wizard-preview-secao {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-4);
   margin-bottom: 10px;
 }
 
@@ -10149,14 +10149,14 @@ button.camp-row:hover {
   font-family: var(--display);
   font-size: 12.5px;
   font-weight: 700;
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
   color: var(--blue);
 }
 
 .report-type-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   text-align: left;
   cursor: pointer;
 }
@@ -10167,7 +10167,7 @@ button.camp-row:hover {
 
 .report-type-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 4px;
 }
 
@@ -10196,7 +10196,7 @@ button.camp-row:hover {
 .wa-info-tab {
   flex: 1 1 auto;
   white-space: nowrap;
-  padding: 12px 10px;
+  padding: var(--space-3) var(--space-3);
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -10216,7 +10216,7 @@ button.camp-row:hover {
 }
 
 .wa-resumo-card {
-  padding: 17px;
+  padding: var(--space-4);
   text-align: center;
   border-bottom: 1px solid var(--line);
 }
@@ -10236,7 +10236,7 @@ button.camp-row:hover {
 }
 
 .wa-resumo-empresa {
-  margin: 2px 0 0;
+  margin: var(--space-1) 0 0;
   font-size: 12px;
   color: var(--text-faint);
 }
@@ -10244,7 +10244,7 @@ button.camp-row:hover {
 .wa-resumo-grid {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 6px 10px;
+  gap: var(--space-2) var(--space-3);
   margin-top: 14px;
   text-align: left;
 }
@@ -10264,22 +10264,22 @@ button.camp-row:hover {
 .wa-resumo-etiquetas {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   margin-top: 12px;
 }
 
 .wa-acoes-rapidas {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 14px 17px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4);
 }
 
 .wa-acao-rapida {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px;
+  gap: var(--space-2);
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised-2);
@@ -10309,15 +10309,15 @@ button.camp-row:hover {
 .wa-etiquetas-lista {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 4px;
 }
 
 .wa-etiqueta-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   background: var(--blue-soft-2);
   color: var(--blue);
@@ -10336,7 +10336,7 @@ button.camp-row:hover {
 }
 
 .wa-status-inline {
-  margin: 8px 17px 14px;
+  margin: var(--space-2) var(--space-4) var(--space-4);
   font-size: 12px;
   font-weight: 600;
 }
@@ -10371,14 +10371,14 @@ button.camp-row:hover {
 .jornada-busca-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   margin-bottom: 10px;
 }
 
 .jornada-search {
   flex: 1;
   width: auto;
-  padding: 11px 14px;
+  padding: var(--space-2) var(--space-4);
 }
 
 .jornada-search input {
@@ -10396,34 +10396,34 @@ button.camp-row:hover {
   color: var(--text-faint);
   cursor: pointer;
   font-size: 12px;
-  padding: 2px;
+  padding: var(--space-1);
 }
 
 .jornada-recentes-vazio {
-  padding: 14px 17px;
+  padding: var(--space-4) var(--space-4);
 }
 
 .jornada-recentes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
-  padding: 14px 17px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4);
 }
 
 .jornada-recente-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 10px;
+  padding: var(--space-3);
 }
 
 .jornada-recente-abrir {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   background: none;
   border: 0;
   cursor: pointer;
@@ -10441,7 +10441,7 @@ button.camp-row:hover {
 .jornada-recente-acoes {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .jornada-recente-acoes button {
@@ -10473,8 +10473,8 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 12px 17px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   flex-wrap: wrap;
   border-top: 1px solid var(--line-soft);
 }
@@ -10482,12 +10482,12 @@ button.camp-row:hover {
 .jornada-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-  gap: 14px;
+  gap: var(--space-4);
   align-items: start;
 }
 
 .jornada-painel-vazio {
-  padding: 40px 20px;
+  padding: var(--space-6) var(--space-5);
   text-align: center;
 }
 
@@ -10495,33 +10495,33 @@ button.camp-row:hover {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
-  padding: 17px;
+  gap: var(--space-3);
+  padding: var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
 
 .jornada-painel-acoes {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px 17px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
 
 .jornada-nota {
-  padding: 12px 17px;
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--line-soft);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: flex-end;
 }
 
 .jornada-resumo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
-  padding: 17px;
+  gap: var(--space-3);
+  padding: var(--space-4);
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -10605,8 +10605,8 @@ button.camp-row:hover {
 .wa-modal-header {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 20px 22px 16px;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5) var(--space-4);
   border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
 }
@@ -10636,22 +10636,22 @@ button.camp-row:hover {
 }
 
 .wa-modal-header-desc {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   font-size: 12.5px;
   color: var(--text-faint);
 }
 
 .wa-config-tabs {
   display: flex;
-  gap: 4px;
-  padding: 10px 22px 0;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-5) 0;
   border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
   overflow-x: auto;
 }
 
 .wa-config-tab {
-  padding: 10px 14px;
+  padding: var(--space-3) var(--space-4);
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -10675,7 +10675,7 @@ button.camp-row:hover {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 20px 22px;
+  padding: var(--space-5) var(--space-5);
 }
 
 .wa-config-secao {
@@ -10686,8 +10686,8 @@ button.camp-row:hover {
 .wa-config-fundo-preview {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 16px;
+  gap: var(--space-2);
+  padding: var(--space-4);
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   min-height: 120px;
@@ -10700,7 +10700,7 @@ button.camp-row:hover {
 .wa-fundo-opcoes {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-  gap: 10px;
+  gap: var(--space-3);
   margin-bottom: 14px;
 }
 
@@ -10708,8 +10708,8 @@ button.camp-row:hover {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 10px;
+  gap: var(--space-1);
+  padding: var(--space-3);
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -10788,7 +10788,7 @@ button.camp-row:hover {
 .wa-config-radio-lista {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 10px;
 }
 
@@ -10796,8 +10796,8 @@ button.camp-row:hover {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
-  padding: 12px 0;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -10808,7 +10808,7 @@ button.camp-row:hover {
 .wa-config-notif-textos {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -10827,8 +10827,8 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 14px 22px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--line);
   flex: 0 0 auto;
 }
@@ -10840,8 +10840,8 @@ button.camp-row:hover {
 .wa-config-confirmar-fechar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 22px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--line);
   background: var(--navy-raised);
   flex: 0 0 auto;
@@ -10871,7 +10871,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--space-6);
   animation: modal-fade-in var(--transition-base);
 }
 
@@ -10897,7 +10897,7 @@ button.camp-row:hover {
 .chat-audio-previa {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .chat-audio-rec-dot {
@@ -10943,7 +10943,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
   height: 22px;
 }
 
@@ -11010,15 +11010,15 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .chat-audio-erro {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   margin-bottom: 6px;
   border-radius: var(--radius-md);
   background: rgba(214, 69, 69, 0.12);
@@ -11032,7 +11032,7 @@ button.camp-row:hover {
 .wa-list-head-acoes {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .wa-list-config {
@@ -11058,7 +11058,7 @@ button.camp-row:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 0;
   border: none;
   background: none;
@@ -11073,8 +11073,8 @@ button.camp-row:hover {
 .bubble-midia-bloqueada {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3);
   border: 1px dashed var(--line);
   border-radius: var(--radius-md);
   background: var(--navy-raised-2);
@@ -11103,9 +11103,9 @@ button.camp-row:hover {
 .wa-citacao {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 5px;
-  padding: 6px 9px;
+  padding: var(--space-2) var(--space-2);
   border-left: 3px solid var(--ink-nome);
   border-radius: var(--radius-sm);
   background: var(--gray-100);
@@ -11164,14 +11164,14 @@ button.camp-row:hover {
 .wa-participantes-lista {
   max-height: 340px;
   overflow-y: auto;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
 }
 
 .wa-participante-linha {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 4px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-1);
   border-bottom: 1px solid var(--border);
   width: 100%;
   background: none;
@@ -11204,7 +11204,7 @@ button.camp-row:hover {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 16px 14px;
+  padding: var(--space-4) var(--space-4);
 }
 
 .wa-dados-grupo-avatar {
@@ -11246,7 +11246,7 @@ button.camp-row:hover {
   justify-content: space-between;
   width: 100%;
   margin-top: 16px;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: none;
@@ -11258,7 +11258,7 @@ button.camp-row:hover {
 .wa-dados-grupo-membros-btn span:first-child {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-weight: 600;
   font-size: 13px;
 }
@@ -11291,14 +11291,14 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .chat-respondendo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2);
   margin-bottom: 4px;
   border-radius: var(--radius-md);
   background: var(--navy-raised);
@@ -11317,7 +11317,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--space-1);
 }
 
 .chat-respondendo-autor {
@@ -11365,7 +11365,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
   height: 26px;
   cursor: pointer;
 }
@@ -11393,7 +11393,7 @@ button.camp-row:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 220px;
 }
 
@@ -11426,7 +11426,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .audio-player-duracao {
@@ -11441,7 +11441,7 @@ button.camp-row:hover {
 
 .audio-player-velocidade {
   flex: 0 0 auto;
-  padding: 3px 7px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: transparent;
@@ -11566,15 +11566,15 @@ button.camp-row:hover {
 .wa-msg-detalhes-lista {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .wa-msg-detalhes-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 9px 0;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--line-soft);
   font-size: 12.5px;
 }
@@ -11602,9 +11602,9 @@ button.camp-row:hover {
 .wa-encaminhar-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   border: none;
   background: transparent;
   color: var(--ink);
@@ -11626,8 +11626,8 @@ button.camp-row:hover {
 }
 
 .wa-contato-picker-tray {
-  margin: 10px 0;
-  padding: 10px 12px;
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   background: var(--blue-soft-2);
   border: 1px solid var(--blue-soft);
@@ -11646,14 +11646,14 @@ button.camp-row:hover {
 .wa-contato-picker-tray-lista {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .wa-contato-picker-tray-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px 4px 4px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
   border-radius: var(--radius-xl);
   background: var(--navy);
   font-size: 11.5px;
@@ -11678,15 +11678,15 @@ button.camp-row:hover {
 .wa-contato-picker-lista {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 10px;
 }
 
 .wa-contato-picker-card {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -11707,7 +11707,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .wa-contato-picker-card-nome {
@@ -11724,7 +11724,7 @@ button.camp-row:hover {
 .wa-contato-picker-card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
   margin-top: 4px;
 }
 
@@ -11751,14 +11751,14 @@ button.camp-row:hover {
 .wa-contato-previa-lista {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .wa-contato-previa-card {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -11767,7 +11767,7 @@ button.camp-row:hover {
 .wa-contato-previa-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   font-size: 11.5px;
   color: var(--text-muted);
 }
@@ -11783,7 +11783,7 @@ button.camp-row:hover {
 .automacoes-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin-bottom: 10px;
 }
@@ -11791,7 +11791,7 @@ button.camp-row:hover {
 .automacoes-bar-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   flex: 1 1 auto;
 }
@@ -11799,11 +11799,11 @@ button.camp-row:hover {
 .automacoes-search {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   background: var(--navy-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   font-size: 12px;
   color: var(--text-faint);
   width: 100%;
@@ -11839,7 +11839,7 @@ button.camp-row:hover {
   cursor: pointer;
   font-size: 12px;
   line-height: 1;
-  padding: 2px;
+  padding: var(--space-1);
   flex: 0 0 auto;
 }
 
@@ -11850,10 +11850,10 @@ button.camp-row:hover {
 .automacoes-chip-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11.5px;
   font-weight: 700;
-  padding: 8px 13px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   color: var(--text-muted);
@@ -11874,7 +11874,7 @@ button.camp-row:hover {
   justify-content: center;
   min-width: 16px;
   height: 16px;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   border-radius: var(--radius-xl);
   background: var(--white);
   color: var(--blue);
@@ -11895,7 +11895,7 @@ button.camp-row:hover {
 .automacoes-ordenar select {
   background: none;
   border: 0;
-  padding: 8px 6px;
+  padding: var(--space-2) var(--space-2);
   font-size: 11.5px;
   font-weight: 700;
   color: var(--text-muted);
@@ -11917,13 +11917,13 @@ button.camp-row:hover {
   font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
-  padding: 4px 2px;
+  padding: var(--space-1) var(--space-1);
   white-space: nowrap;
 }
 
 .automacoes-chips-row {
   display: flex;
-  gap: 7px;
+  gap: var(--space-2);
   overflow-x: auto;
   padding-bottom: 4px;
   margin-bottom: 10px;
@@ -11937,10 +11937,10 @@ button.camp-row:hover {
 .automacoes-remchip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   font-size: 11px;
   font-weight: 600;
-  padding: 5px 10px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-xl);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -11972,7 +11972,7 @@ button.camp-row:hover {
 }
 
 .flow-filtros-secao {
-  padding: 13px 16px;
+  padding: var(--space-3) var(--space-4);
   border: none;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -11995,7 +11995,7 @@ button.camp-row:hover {
   font-size: 10.5px;
   font-weight: 700;
   color: var(--text-faint);
-  margin: 8px 0 5px;
+  margin: var(--space-2) 0 var(--space-1);
 }
 
 .flow-filtros-sub:first-child {
@@ -12006,15 +12006,15 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   flex-wrap: wrap;
 }
 
 .flow-filtros-toggle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11px;
   color: var(--text-faint);
   cursor: pointer;
@@ -12070,7 +12070,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
+  gap: var(--space-1);
   padding: var(--space-2) var(--space-4);
   border-right: 1px solid var(--line-soft);
   min-width: 88px;
@@ -12116,7 +12116,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin-bottom: 16px;
 }
@@ -12124,7 +12124,7 @@ button.camp-row:hover {
 .central-dia-filtros-dir {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -12158,7 +12158,7 @@ button.camp-row:hover {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
 }
 .central-dia-secao-toggle h3 {
   margin: 0;
@@ -12184,7 +12184,7 @@ button.camp-row:hover {
   color: var(--text-faint);
   background: var(--gray-100);
   border-radius: 999px;
-  padding: 1px 8px;
+  padding: var(--space-1) var(--space-2);
 }
 
 .central-dia-secao-lista {
@@ -12201,7 +12201,7 @@ button.camp-row:hover {
 }
 
 .central-dia-vazio-geral {
-  padding: 36px 20px;
+  padding: var(--space-6) var(--space-5);
   text-align: center;
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
@@ -12213,7 +12213,7 @@ button.camp-row:hover {
   font-weight: var(--fw-semibold);
   font-family: var(--display);
   color: var(--ink);
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
 }
 .central-dia-vazio-geral .r {
   font-size: var(--fs-body);
@@ -12235,7 +12235,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  padding: 22px 26px 32px;
+  padding: var(--space-5) var(--space-6) var(--space-6);
   overflow: auto;
 }
 
@@ -12250,7 +12250,7 @@ button.camp-row:hover {
   margin: 0;
 }
 .inicio-topbar-card .sub {
-  margin: 2px 0 0;
+  margin: var(--space-1) 0 0;
 }
 
 .inicio-grid-principal {
@@ -12305,7 +12305,7 @@ button.camp-row:hover {
 .inicio-pendencias-resumo-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 .inicio-pendencias-resumo-item .n {
   font-size: var(--fs-card-title);
@@ -12366,7 +12366,7 @@ button.camp-row:hover {
 .inicio-stat-mini {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
   background: var(--navy);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -12418,7 +12418,7 @@ button.camp-row:hover {
 /* Versão maior — os 3 quadrados da coluna do funil (Oportunidades / Vendas perdidas / Vendas
    realizadas). */
 .inicio-stat-grande {
-  gap: 4px;
+  gap: var(--space-1);
 }
 .inicio-stat-grande .n {
   font-size: 38px;
@@ -12495,7 +12495,7 @@ button.camp-row:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
 }
 
 .central-dia-card-topo {
@@ -12519,7 +12519,7 @@ button.camp-row:hover {
   font-weight: var(--fw-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 3px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   border: 1px solid transparent;
 }
@@ -12564,13 +12564,13 @@ button.camp-row:hover {
   font-size: var(--fs-secondary);
   font-weight: var(--fw-semibold);
   color: var(--warning);
-  margin: 2px 0 0;
+  margin: var(--space-1) 0 0;
 }
 
 .central-dia-card-acoes {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   flex-shrink: 0;
 }
@@ -12605,7 +12605,7 @@ button.camp-row:hover {
 .central-dia-status-pill {
   font-size: 10px;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   background: var(--navy-raised-2);
   color: var(--text-faint);
@@ -12641,9 +12641,9 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  padding: 12px 4px;
+  padding: var(--space-3) var(--space-1);
   border-bottom: 1px solid var(--line-soft);
 }
 .central-dia-recomendacoes .central-dia-recomendacao:last-child {
@@ -12675,7 +12675,7 @@ button.camp-row:hover {
 
 .central-dia-recomendacao-acoes {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -12685,8 +12685,8 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line-soft);
 }
@@ -12707,14 +12707,14 @@ button.camp-row:hover {
 .central-dia-organizar-lista {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .central-dia-organizar-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
 }
@@ -12755,7 +12755,7 @@ button.camp-row:hover {
 
 .central-dia-organizar-acoes {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   flex-shrink: 0;
 }
 
@@ -12792,14 +12792,14 @@ button.camp-row:hover {
 .config-layout {
   display: grid;
   grid-template-columns: 240px 1fr;
-  gap: 20px;
+  gap: var(--space-5);
   align-items: start;
 }
 
 .config-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   position: sticky;
   top: 0;
 }
@@ -12819,16 +12819,16 @@ button.camp-row:hover {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--text-faint);
-  padding: 6px 10px 4px;
+  padding: var(--space-2) var(--space-3) var(--space-1);
 }
 
 .config-nav-item {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   width: 100%;
   text-align: left;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   background: none;
   border: 1px solid transparent;
@@ -12858,7 +12858,7 @@ button.camp-row:hover {
 .config-secao {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   padding-bottom: 40px;
 }
 
@@ -12866,7 +12866,7 @@ button.camp-row:hover {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .config-cabecalho h3 {
@@ -12877,12 +12877,12 @@ button.camp-row:hover {
 }
 .config-cabecalho-acoes {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
 .config-bloco {
-  padding: 16px;
+  padding: var(--space-4);
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -12898,17 +12898,17 @@ button.camp-row:hover {
 .config-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .config-abas {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
 }
 .config-abas button {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -12925,7 +12925,7 @@ button.camp-row:hover {
 .config-lista-linhas {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 /* Reestruturação visual (redesign) — sem caixa própria por padrão (o `.config-bloco` que envolve
@@ -12934,10 +12934,10 @@ button.camp-row:hover {
 .config-linha-clicavel {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
   text-align: left;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
@@ -12976,7 +12976,7 @@ button.camp-row:hover {
 }
 .config-tabela-notif th {
   text-align: left;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -12985,7 +12985,7 @@ button.camp-row:hover {
   white-space: nowrap;
 }
 .config-tabela-notif td {
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--line-soft);
   color: var(--text-muted);
   white-space: nowrap;
@@ -13002,14 +13002,14 @@ button.camp-row:hover {
 .config-modelos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
+  gap: var(--space-3);
 }
 .config-modelo-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   text-align: left;
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy);
@@ -13030,7 +13030,7 @@ button.camp-row:hover {
 .config-modelo-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 10px;
   color: var(--text-faint);
   margin-top: 4px;
@@ -13038,20 +13038,20 @@ button.camp-row:hover {
 .config-modelo-meta span {
   background: var(--navy-raised-2);
   border-radius: 999px;
-  padding: 2px 7px;
+  padding: var(--space-1) var(--space-2);
 }
 
 /* Identidade do workspace */
 .config-identidade-preview {
   margin-top: 12px;
-  padding: 20px;
+  padding: var(--space-5);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .config-identidade-chip {
-  padding: 6px 12px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   color: #fff;
   font-weight: 700;
@@ -13083,21 +13083,21 @@ button.camp-row:hover {
 .config-permissoes {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .config-permissoes-acoes {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .config-permissoes-modulo {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
 }
 .config-permissoes-modulo-h {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 12.5px;
   color: var(--ink);
   cursor: pointer;
@@ -13106,13 +13106,13 @@ button.camp-row:hover {
 .config-permissoes-itens {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 4px 10px;
+  gap: var(--space-1) var(--space-3);
   padding-left: 22px;
 }
 .config-permissoes-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11.5px;
   color: var(--text-muted);
   cursor: pointer;
@@ -13122,13 +13122,13 @@ button.camp-row:hover {
 .config-etapas-lista {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .config-etapa-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy);
@@ -13145,13 +13145,13 @@ button.camp-row:hover {
 .config-etiquetas-lista {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .config-etiqueta-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
 }
 .config-etiqueta-row:hover {
@@ -13178,10 +13178,10 @@ button.camp-row:hover {
 .config-canais-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
 }
 .config-canal-card {
-  padding: 14px;
+  padding: var(--space-4);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy);
@@ -13189,7 +13189,7 @@ button.camp-row:hover {
 .config-canal-card-h {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 6px;
 }
 .config-canal-card-h .n {
@@ -13201,11 +13201,11 @@ button.camp-row:hover {
 .config-canal-card .r {
   font-size: 11px;
   color: var(--text-faint);
-  margin: 2px 0;
+  margin: var(--space-1) 0;
 }
 .config-canal-card-acoes {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin-top: 8px;
 }
@@ -13214,20 +13214,20 @@ button.camp-row:hover {
 .config-compat-lista {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .config-compat-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
 }
 .config-formato-compat {
   font-size: 10px;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   background: #d8a40022;
   color: #d8a400;
@@ -13239,13 +13239,13 @@ button.camp-row:hover {
 
 .config-email-preview {
   margin-top: 10px;
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   background: var(--navy-raised-2);
   border: 1px solid var(--line);
 }
 .config-email-preview pre {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   white-space: pre-wrap;
   font-family: var(--body);
   font-size: 12px;
@@ -13254,7 +13254,7 @@ button.camp-row:hover {
 
 .config-exemplo-visual {
   margin-top: 12px;
-  padding: 14px;
+  padding: var(--space-4);
   border-radius: var(--radius-md);
   background: var(--blue-soft-2);
   color: var(--ink);
@@ -13265,17 +13265,17 @@ button.camp-row:hover {
 /* Importação — passos */
 .config-passos {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
-  margin: 12px 0;
+  margin: var(--space-3) 0;
 }
 .config-passo {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: 11px;
   color: var(--text-faint);
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-3);
   border-radius: 999px;
   border: 1px solid var(--line);
 }
@@ -13305,8 +13305,8 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
@@ -13314,7 +13314,7 @@ button.camp-row:hover {
 }
 .config-salvar-bar-acoes {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .config-salvar-bar-ok {
   color: #0f9d63;
@@ -13353,16 +13353,16 @@ button.camp-row:hover {
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .wa-telefone-acoes {
   display: inline-flex;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .wa-telefone-acao {
-  padding: 1px 7px;
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.14);
@@ -13423,7 +13423,7 @@ button.camp-row:hover {
   flex-direction: column;
   width: min(760px, calc(100vw - 48px));
   height: min(660px, calc(100vh - 120px));
-  padding: 16px 18px 14px;
+  padding: var(--space-4) var(--space-5) var(--space-4);
   border-radius: var(--radius-xl);
   /* Fundo SÓLIDO — com uma variável inexistente aqui o painel ficava translúcido e o funil
      aparecia por trás do texto, impossível de ler. */
@@ -13437,7 +13437,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
 }
@@ -13445,14 +13445,14 @@ button.camp-row:hover {
 .painel-conversa-acoes {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 /* Mensagens e ficha do contato lado a lado — a ficha só existe quando a engrenagem está ligada,
    então a conversa usa a largura inteira no uso normal. */
 .painel-conversa-corpo {
   display: flex;
-  gap: 14px;
+  gap: var(--space-4);
   flex: 1;
   min-height: 0;
 }
@@ -13464,7 +13464,7 @@ button.camp-row:hover {
   flex: 1;
   min-width: 0;
   overflow-y: auto;
-  padding: 10px 2px;
+  padding: var(--space-3) var(--space-1);
   display: flex;
   flex-direction: column;
   /* NÃO usar `justify-content: flex-end` aqui.
@@ -13474,7 +13474,7 @@ button.camp-row:hover {
      O `margin-top: auto` no primeiro filho faz o mesmo efeito visual (conversa curta encostada
      embaixo) sem tirar nada do alcance da rolagem. */
   justify-content: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .painel-conversa-mensagens > *:first-child {
@@ -13490,14 +13490,14 @@ button.camp-row:hover {
   bottom: 24px;
   width: 320px;
   height: min(660px, 100vh - 120px);
-  padding: 14px 16px;
+  padding: var(--space-4) var(--space-4);
   border-radius: var(--radius-xl);
   background: var(--navy);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   animation: modal-scale-in var(--transition-base);
 }
 
@@ -13507,7 +13507,7 @@ button.camp-row:hover {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   padding-top: 4px;
 }
 
@@ -13517,7 +13517,7 @@ button.camp-row:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 12px;
 }
 
@@ -13538,7 +13538,7 @@ button.camp-row:hover {
 .painel-conversa-mais {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 0 0 10px;
 }
 
@@ -13581,8 +13581,8 @@ button.camp-row:hover {
 .bubble-midia-externa {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--surface-hover);
@@ -13600,7 +13600,7 @@ button.camp-row:hover {
 .bubble-acao-externa {
   display: block;
   margin-top: 6px;
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--surface-hover);
@@ -13631,7 +13631,7 @@ button.camp-row:hover {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin: 6px 0 0;
+  margin: var(--space-2) 0 0;
   font-size: 11px;
   line-height: 1.4;
   opacity: 0.85;
@@ -13641,8 +13641,8 @@ button.camp-row:hover {
    como em qualquer aplicativo de mensagem: serve pra orientar, não pra competir com as bolhas. */
 .wa-separador-dia {
   align-self: center;
-  margin: 10px 0 4px;
-  padding: 3px 12px;
+  margin: var(--space-3) 0 var(--space-1);
+  padding: var(--space-1) var(--space-3);
   border-radius: 999px;
   background: var(--surface-active);
   border: 1px solid var(--line);
@@ -13661,7 +13661,7 @@ button.camp-row:hover {
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  margin: 6px 0;
+  margin: var(--space-2) 0;
 }
 
 .armazenamento-barra-preenchida {
@@ -13701,15 +13701,15 @@ button.camp-row:hover {
 .ig-palavras {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 6px;
 }
 
 .ig-palavra-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   background: rgba(37, 99, 235, 0.1);
   color: var(--blue);
@@ -13730,7 +13730,7 @@ button.camp-row:hover {
 /* Grade de publicações: a escolha é visual porque ninguém reconhece um post por id numérico. */
 .ig-publicacoes {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   max-height: 320px;
   overflow-y: auto;
   padding-right: 4px;
@@ -13739,9 +13739,9 @@ button.camp-row:hover {
 .ig-publicacao {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
-  padding: 6px;
+  padding: var(--space-2);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-md);
   background: #fff;
@@ -13772,7 +13772,7 @@ button.camp-row:hover {
 .ig-publicacao-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--space-1);
   font-size: 12px;
   min-width: 0;
 }
@@ -13797,7 +13797,7 @@ button.camp-row:hover {
 .ig-publicacao-todas {
   font-size: 13px;
   font-weight: 600;
-  padding: 12px 6px;
+  padding: var(--space-3) var(--space-2);
 }
 
 /* Etiqueta do tipo de conteúdo no cartão de publicação (Reel, Story, Carrossel). Discreta de
@@ -13805,7 +13805,7 @@ button.camp-row:hover {
 .bubble-tipo-conteudo {
   display: inline-block;
   margin-right: 6px;
-  padding: 1px 6px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.08);
   font-style: normal;
@@ -13819,17 +13819,17 @@ button.camp-row:hover {
 
 .modelo-lista {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   max-height: 260px;
   overflow-y: auto;
-  margin: 10px 0;
+  margin: var(--space-3) 0;
 }
 
 .modelo-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 9px 11px;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-2);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-md);
   background: #fff;
@@ -13862,20 +13862,20 @@ button.camp-row:hover {
 
 .modelo-variaveis {
   display: grid;
-  gap: 8px;
-  margin: 10px 0;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
 }
 
 /* Prévia do texto já preenchido: é o que a pessoa vai receber de verdade, não o molde com {{1}}. */
 .modelo-previa {
   margin-top: 10px;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.04);
 }
 
 .modelo-previa p {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   font-size: 13px;
   white-space: pre-wrap;
 }
@@ -13887,12 +13887,12 @@ button.camp-row:hover {
 
 /* Contatos sugeridos na busca de conversas — o caminho pra falar com quem ainda não escreveu. */
 .conversa-contatos-novos {
-  padding: 8px 12px 10px;
+  padding: var(--space-2) var(--space-3) var(--space-3);
   border-bottom: 1px solid rgba(0, 0, 0, 0.07);
 }
 
 .conversa-contatos-novos > .hint {
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -13901,9 +13901,9 @@ button.camp-row:hover {
 .conversa-contato-novo {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--space-1);
   width: 100%;
-  padding: 7px 9px;
+  padding: var(--space-2) var(--space-2);
   border: 0;
   border-radius: var(--radius-md);
   background: none;
@@ -13924,8 +13924,8 @@ button.camp-row:hover {
 .painel-previa {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px;
+  gap: var(--space-2);
+  padding: var(--space-3);
   margin-bottom: 8px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-lg);
@@ -13943,23 +13943,23 @@ button.camp-row:hover {
 .painel-previa-doc {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 13px;
-  padding: 6px 2px;
+  padding: var(--space-2) var(--space-1);
 }
 
 .painel-previa-acoes {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* Painel do funil — passada de acabamento -------------------------------- */
 
 /* Erro do envio: uma faixa discreta acima do composer, não um parágrafo com símbolo colado. */
 .painel-conversa-erro {
-  margin: 0 0 8px;
-  padding: 8px 10px;
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid rgba(214, 69, 69, 0.28);
   background: rgba(214, 69, 69, 0.08);
@@ -13970,11 +13970,11 @@ button.camp-row:hover {
 .painel-etiquetas {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: var(--space-1);
 }
 
 .painel-etiqueta {
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   background: var(--navy-raised-2, rgba(255, 255, 255, 0.08));
   font-size: 11px;
@@ -14011,9 +14011,9 @@ button.camp-row:hover {
   z-index: 300;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   max-width: min(560px, calc(100vw - 32px));
-  padding: 10px 14px;
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   border: 1px solid rgba(214, 69, 69, 0.35);
   background: #fff5f5;
@@ -14038,7 +14038,7 @@ button.camp-row:hover {
    play e a linha do tempo precisam se destacar do fundo, não se dissolver nele. */
 .bubble-audio .audio-player {
   border-radius: var(--radius-lg);
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   transition: background var(--transition-fast, 120ms ease);
 }
 
@@ -14147,7 +14147,7 @@ button.camp-row:hover {
 .bubble-share-topo {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin-bottom: 6px;
   font-size: 11px;
   font-weight: 600;
@@ -14171,8 +14171,8 @@ button.camp-row:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 32px;
+  gap: var(--space-3);
+  padding: var(--space-6);
   text-align: center;
 }
 
@@ -14200,7 +14200,7 @@ button.camp-row:hover {
   font-size: 11px;
   color: var(--text-muted);
   background: var(--navy-raised-2);
-  padding: 3px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
 }
 
@@ -14292,7 +14292,7 @@ button.camp-row:hover {
 .seletor-data-grade {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .seletor-data-dow {
@@ -14359,7 +14359,7 @@ button.camp-row:hover {
   color: var(--text-muted);
   background: transparent;
   border: none;
-  padding: 2px 4px;
+  padding: var(--space-1) var(--space-1);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: color var(--transition-fast);
@@ -14461,7 +14461,7 @@ button.camp-row:hover {
 .upload-area-arquivo {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   min-width: 0;
   font-size: 12px;
   color: var(--ink);
@@ -14490,7 +14490,7 @@ button.camp-row:hover {
 }
 
 .upload-area-erro {
-  margin: 6px 0 0;
+  margin: var(--space-2) 0 0;
   font-size: 11px;
   color: var(--danger);
 }
@@ -14640,7 +14640,7 @@ table.tbl .name-cell .r {
 .painel-conversa-mensagens {
   background: var(--navy);
   border-radius: var(--radius-lg);
-  padding: 14px 12px;
+  padding: var(--space-4) var(--space-3);
 }
 
 /* Cabeçalho no formato do Direct: foto maior, nome forte, canal em linha leve embaixo. */
@@ -14661,7 +14661,7 @@ table.tbl .name-cell .r {
 .painel-conversa-topo .name-cell .s {
   font-size: 11.5px;
   color: var(--text-muted);
-  margin: 2px 0 0;
+  margin: var(--space-1) 0 0;
 }
 
 /* Sem a linha embaixo do cabeçalho: a área de mensagens logo abaixo já tem superfície própria, e
@@ -14680,7 +14680,7 @@ table.tbl .name-cell .r {
 
 .preco-card {
   max-width: 380px;
-  padding: 26px 26px 24px;
+  padding: var(--space-6) var(--space-6) var(--space-6);
   border-radius: var(--radius-xl);
   background: var(--surface-elevated);
   border: 1px solid var(--line-soft);
@@ -14703,7 +14703,7 @@ table.tbl .name-cell .r {
 }
 
 .preco-desc {
-  margin: 7px 0 0;
+  margin: var(--space-2) 0 0;
   font-size: 12.5px;
   line-height: var(--lh-base);
   color: var(--text-muted);
@@ -14714,8 +14714,8 @@ table.tbl .name-cell .r {
 .preco-valor {
   display: flex;
   align-items: baseline;
-  gap: 6px;
-  margin: 20px 0 18px;
+  gap: var(--space-2);
+  margin: var(--space-5) 0 var(--space-5);
   font-family: var(--display);
   font-size: 40px;
   font-weight: var(--fw-bold);
@@ -14754,13 +14754,13 @@ table.tbl .name-cell .r {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .preco-recursos li {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   font-size: 12.5px;
   color: var(--ink);
 }
@@ -14768,7 +14768,7 @@ table.tbl .name-cell .r {
 /* A marca de conferido num círculo, como na referência — sem ela a lista lê como texto corrido. */
 .preco-recursos li svg {
   flex: none;
-  padding: 3px;
+  padding: var(--space-1);
   border-radius: 50%;
   background: var(--gray-100);
   color: var(--ink);
@@ -14778,7 +14778,7 @@ table.tbl .name-cell .r {
    de propósito: ele marca onde houve problema sem transformar a falha no assunto da tela. */
 .limite-de-erro-aviso {
   margin: 0;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-size: 11.5px;
   color: var(--text-faint);
   background: var(--navy-raised);
