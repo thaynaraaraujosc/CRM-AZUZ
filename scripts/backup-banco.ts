@@ -72,15 +72,21 @@ const TABELAS = [
 async function main() {
   const inicio = Date.now();
   const conteudo: Record<string, unknown[]> = {};
+  const faltando: string[] = [];
   let totalLinhas = 0;
 
   for (const tabela of TABELAS) {
     const modelo = prisma[tabela as keyof typeof prisma] as unknown as {
       findMany: (args?: unknown) => Promise<unknown[]>;
     };
+    // Tabela ausente ANOTA e segue, em vez de abortar. A primeira versão disto saía na hora — e o
+    // resultado foi ler 31 tabelas, esbarrar na 32ª e não gravar arquivo nenhum. Backup pela
+    // metade é melhor que backup nenhum; o que não pode é a falta passar despercebida, e por isso
+    // ela é gritada no fim e o processo termina com erro mesmo tendo gravado.
     if (typeof modelo?.findMany !== "function") {
-      console.error(`✗ Tabela "${tabela}" não existe no client do Prisma — o schema mudou?`);
-      process.exit(1);
+      faltando.push(tabela);
+      console.warn(`  ${"AUSENTE".padStart(7)} × ${tabela}`);
+      continue;
     }
     const linhas = await modelo.findMany();
     conteudo[tabela] = linhas;
@@ -98,7 +104,7 @@ async function main() {
   // reconstruir) mas BigInt LANÇA erro e derrubaria o backup inteiro no fim do processo, depois de
   // toda a leitura. Converter aqui é o que garante que o arquivo sempre seja escrito.
   const json = JSON.stringify(
-    { geradoEm: agora.toISOString(), totalLinhas, tabelas: conteudo },
+    { geradoEm: agora.toISOString(), totalLinhas, tabelasAusentes: faltando, tabelas: conteudo },
     (_chave, valor) => (typeof valor === "bigint" ? valor.toString() : valor),
     2,
   );
@@ -110,6 +116,13 @@ async function main() {
   console.log(`  ${totalLinhas} linhas, ${TABELAS.length} tabelas, ${mb} MB, ${segundos}s`);
   console.log(`\n  Copie esse arquivo pra fora do computador AGORA (Drive, pen drive, e-mail).`);
   console.log(`  Backup que mora num lugar só não é backup.`);
+
+  if (faltando.length) {
+    console.error(`\n⚠ BACKUP INCOMPLETO — ${faltando.length} tabela(s) de fora: ${faltando.join(", ")}`);
+    console.error(`  Quase sempre é o client do Prisma desatualizado nesta máquina (ele não vem no`);
+    console.error(`  repositório, é gerado aqui). Rode "npx prisma generate" e repita o backup.`);
+    process.exit(1);
+  }
 }
 
 main()
