@@ -3,13 +3,14 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { contasCanalVisiveis, filtroContaCanal, provedoresConectados } from "@/lib/integracoes/conta-canal";
+import { cabecalhosComEtag, clienteJaTem, montarEtag, naoModificado } from "@/lib/conversas/assinatura";
 
 /**
  * GET lista as conversas do workspace de quem está logado, mais recentes primeiro — só as da(s)
  * conexão(ões) de WhatsApp conectada(s) agora (ver `conta-canal.ts`). Nada é apagado ao
  * desconectar: a conversa continua no banco e reaparece inteira se aquele número voltar.
  */
-export async function GET() {
+export async function GET(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
@@ -25,6 +26,29 @@ export async function GET() {
   const where = provedores.includes("meta_instagram")
     ? { workspaceId: sessao.user.workspaceId, OR: [...filtro.OR ?? [{ contaCanal: filtro.contaCanal }], { canal: "Instagram" }] }
     : { workspaceId: sessao.user.workspaceId, ...filtro };
+
+  // Igual à rota de mensagens: a pergunta barata antes da cara. Esta tela também é batida a cada
+  // 5 segundos, e responder `304` aqui evita ler a lista inteira de conversas por nada.
+  // O contato entra na assinatura porque a foto dele é usada como reserva mais abaixo — ela pode
+  // mudar sem que a conversa mude, e a tela ficaria com as iniciais até alguém recarregar.
+  const [resumoConversas, resumoContatos] = await Promise.all([
+    prisma.conversa.aggregate({ where, _count: { _all: true }, _max: { atualizadoEm: true } }),
+    prisma.contato.aggregate({
+      where: { workspaceId: sessao.user.workspaceId },
+      _count: { _all: true },
+      _max: { atualizadoEm: true },
+    }),
+  ]);
+  const etag = montarEtag([
+    sessao.user.workspaceId,
+    contas.join(","),
+    provedores.join(","),
+    resumoConversas._count._all,
+    resumoConversas._max.atualizadoEm,
+    resumoContatos._count._all,
+    resumoContatos._max.atualizadoEm,
+  ]);
+  if (clienteJaTem(request, etag)) return naoModificado(etag);
 
   const linhas = await prisma.conversa.findMany({
     where,
@@ -56,7 +80,7 @@ export async function GET() {
     for (const c of comFoto) if (!c.fotoUrl) c.fotoUrl = porNome.get(c.nome) ?? null;
   }
 
-  return NextResponse.json(comFoto);
+  return NextResponse.json(comFoto, { headers: cabecalhosComEtag(etag) });
 }
 
 /**

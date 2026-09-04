@@ -42,3 +42,7 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+
+# Backups do banco (podem ter dado de cliente — nunca vão pro repositório)
+/backups
