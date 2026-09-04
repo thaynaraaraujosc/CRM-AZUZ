@@ -64,20 +64,10 @@ export async function POST(request: Request) {
 
   const corpo = (await request.json()) as CorpoCriar;
 
-  console.log("📨 POST /api/campanhas - Recebido:", {
-    titulo: corpo.titulo?.slice(0, 20),
-    canal: corpo.canal,
-    canalType: typeof corpo.canal,
-    contatosCount: corpo.contatos?.length,
-    canaisDisp: Object.keys(RITMO)
-  });
-
   if (!corpo.titulo?.trim() || !corpo.corpo?.trim() || !corpo.canal || !corpo.contatos?.length) {
-    console.error("❌ Validação básica falhou");
     return NextResponse.json({ erro: "Título, mensagem, canal e contatos são obrigatórios." }, { status: 400 });
   }
   if (!RITMO[corpo.canal]) {
-    console.error("❌ Canal inválido:", { canal: corpo.canal, ritmoKeys: Object.keys(RITMO) });
     return NextResponse.json({ erro: "Canal inválido." }, { status: 400 });
   }
   if (corpo.canal === "email" && !corpo.assunto?.trim()) {

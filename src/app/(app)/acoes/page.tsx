@@ -279,14 +279,8 @@ export default function AcoesPage() {
   async function agendarEnvio() {
     if (selecionados.size === 0 || canaisEnvio.length === 0 || enviando) return;
 
-    console.log("📋 canaisEnvio state:", { array: canaisEnvio, length: canaisEnvio.length, first: canaisEnvio[0] });
     const canalRaw = canaisEnvio[0] || "WhatsApp";
-    console.log("📝 canalRaw value:", { raw: canalRaw, type: typeof canalRaw, length: canalRaw.length });
-    const lowercased = canalRaw.toLowerCase();
-    console.log("🔤 After toLowerCase:", { lowercased, startsWith: lowercased.startsWith("whatsapp") });
-    const isWhatsApp = lowercased.startsWith("whatsapp");
-    const canal = isWhatsApp ? "whatsapp_oficial" : "email";
-    console.log("✅ Final canal mapping:", { isWhatsApp, final: canal, willSend: canal });
+    const canal = canalRaw.toLowerCase().startsWith("whatsapp") ? "whatsapp_oficial" : "email";
     if (canal === "email" && !assunto.trim()) {
       setToastAcao("E-mail precisa de assunto.");
       setTimeout(() => setToastAcao(null), 4000);
@@ -309,18 +303,13 @@ export default function AcoesPage() {
         agendadaPara: agendadoPara,
         contatos: Array.from(selecionados),
       };
-      console.log("📤 Enviando payload:", JSON.stringify(payload, null, 2));
-      console.log("🔐 Canal sendo enviado:", { canal, tipo: typeof canal });
       const resposta = await fetch("/api/campanhas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const statusText = resposta.statusText;
-      console.log(`📡 Resposta: ${resposta.status} ${statusText}`);
       if (!resposta.ok) {
         const erro = await resposta.json();
-        console.error("❌ Erro retornado:", erro);
         throw new Error(erro.erro || "Falha ao agendar campanha");
       }
       const resultado = await resposta.json();

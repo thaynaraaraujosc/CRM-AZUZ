@@ -45,20 +45,24 @@ export async function GET() {
     const accessToken = decriptar(integracao.accessTokenCriptografado);
 
     const campanhas = await graphGet<{ data: Campanha[] }>(
-      `/${adAccountId}/campaigns?fields=id,name,status&effective_status=["ACTIVE"]&access_token=${accessToken}`,
+      `/${adAccountId}/campaigns?fields=id,name,status&effective_status=["ACTIVE","PAUSED"]&access_token=${accessToken}`,
     );
     const insights = await graphGet<{ data: Insight[] }>(
       `/${adAccountId}/insights?level=campaign&fields=campaign_id,spend,actions,action_values&date_preset=last_30d&access_token=${accessToken}`,
     );
 
-    const investimentos = campanhas.data.map((c) => {
-      const insight = insights.data.find((i) => i.campaign_id === c.id);
-      const spend = Number(insight?.spend ?? 0);
-      const leads = Number(insight?.actions?.find((a) => TIPOS_LEAD.includes(a.action_type))?.value ?? 0);
-      const receita = Number(insight?.action_values?.find((a) => TIPOS_COMPRA.includes(a.action_type))?.value ?? 0);
-      const roas = spend > 0 ? receita / spend : 0;
-      return { nome: c.name, spend, leads, roas };
-    });
+    const investimentos = campanhas.data
+      .map((c) => {
+        const insight = insights.data.find((i) => i.campaign_id === c.id);
+        const spend = Number(insight?.spend ?? 0);
+        const leads = Number(insight?.actions?.find((a) => TIPOS_LEAD.includes(a.action_type))?.value ?? 0);
+        const vendas = Number(insight?.actions?.find((a) => TIPOS_COMPRA.includes(a.action_type))?.value ?? 0);
+        const receita = Number(insight?.action_values?.find((a) => TIPOS_COMPRA.includes(a.action_type))?.value ?? 0);
+        const roas = spend > 0 ? receita / spend : 0;
+        return { nome: c.name, spend, leads, vendas, roas, pausada: c.status !== "ACTIVE" };
+      })
+      // Campanha pausada só aparece se gastou algo no período — pausada e sem gasto é ruído.
+      .filter((i) => !i.pausada || i.spend > 0);
 
     const maiorSpend = Math.max(1, ...investimentos.map((i) => i.spend));
 
@@ -68,6 +72,8 @@ export async function GET() {
       sub: `${i.leads} leads · R$ ${i.spend.toLocaleString("pt-BR")} investidos`,
       roas: `${i.roas.toFixed(1).replace(".", ",")}x`,
       barra: Math.round((i.spend / maiorSpend) * 100),
+      vendas: i.vendas,
+      pausada: i.pausada,
     }));
 
     return NextResponse.json(resultado);

@@ -1188,6 +1188,9 @@ export type Campanha = {
   sub: string;
   roas: string;
   barra: number;
+  /** Só vêm da rota real do Meta Ads; o mock não tem esses campos. */
+  vendas?: number;
+  pausada?: boolean;
 };
 
 export const campanhas: Campanha[] = [
