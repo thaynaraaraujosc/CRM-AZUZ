@@ -70,6 +70,7 @@ function FunilPageInner() {
     moverNegocio,
     criarFunilPersistido,
     criarEtapaPersistida,
+    recarregar: recarregarFunis,
     erroSincronizacao,
     limparErroSincronizacao,
   } = useFunis();
@@ -116,9 +117,9 @@ function FunilPageInner() {
           : "Todas as conversas já estão no funil.",
       );
       // Recarrega do servidor — os cards novos foram criados lá, não aqui; sem isso a tela só
-      // mostraria a mudança no próximo F5.
-      const atualizados = await fetch("/api/funis").then((r) => r.json());
-      setFunis(atualizados);
+      // mostraria a mudança no próximo F5. Por `recarregar` (e não `setFunis`) pra tela não
+      // devolver num PUT o funil inteiro que o servidor acabou de escrever.
+      await recarregarFunis();
     } catch (erro) {
       avisarAutomacao(erro instanceof Error ? erro.message : "Não foi possível trazer as conversas.");
     } finally {
@@ -143,8 +144,7 @@ function FunilPageInner() {
           ? `${dados.reordenados} ${dados.reordenados === 1 ? "card reordenado" : "cards reordenados"} — quem falou por último ficou no topo.`
           : "As colunas já estavam na ordem das mensagens mais recentes.",
       );
-      const atualizados = await fetch("/api/funis").then((r) => r.json());
-      setFunis(atualizados);
+      await recarregarFunis();
     } catch (erro) {
       avisarAutomacao(erro instanceof Error ? erro.message : "Não foi possível reordenar.");
     } finally {

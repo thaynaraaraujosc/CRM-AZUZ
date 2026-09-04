@@ -41,6 +41,13 @@ type FunisContextValue = {
     etapaId: string;
     responsavel?: string | null;
   }) => Promise<{ ok: boolean; erro?: string }>;
+  /**
+   * Relê os funis do banco e marca o resultado como "veio do servidor" — assim a tela NÃO devolve
+   * num PUT o que o servidor acabou de escrever. Use depois de qualquer rota que mexe no funil do
+   * lado do banco (trazer conversas, reordenar): com `setFunis` cru, o efeito de sincronização
+   * mandaria o funil inteiro de volta, que é exatamente a transação gigante que estourava o prazo.
+   */
+  recarregar: () => Promise<Funil[]>;
   /** Cria um funil gravando no banco antes de aparecer na tela. */
   criarFunilPersistido: (funil: Funil) => Promise<{ ok: boolean; erro?: string }>;
   /** Cria uma etapa gravando no banco antes de aparecer na tela. */
@@ -331,6 +338,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         moverNegocio,
         criarFunilPersistido,
         criarEtapaPersistida,
+        recarregar,
         erroSincronizacao,
         limparErroSincronizacao: () => setErroSincronizacao(null),
       }}

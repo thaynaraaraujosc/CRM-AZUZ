@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import type { Prisma } from "@/generated/prisma/client";
 import type { Funil } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -79,6 +80,176 @@ export async function PUT(request: Request) {
   const idsEtapas = funis.flatMap((f) => f.colunas.map((c) => c.id));
   const idsCards = funis.flatMap((f) => f.colunas.flatMap((c) => c.cards.map((card) => card.id)));
 
+  // Estado ATUAL do banco, lido antes de escrever qualquer coisa.
+  //
+  // Sem isto, a reconciliação mandava um `upsert` por funil, por etapa e por CARD a cada
+  // salvamento — dezenas de idas e voltas até o banco no Railway dentro de UMA transação, com um
+  // pool de 3 conexões. Passando dos 20s a transação inteira era abortada por prazo (P2028) e o
+  // funil não salvava: era o "O funil é grande demais para salvar de uma vez".
+  //
+  // O que muda num salvamento real é quase sempre UM card (arrastar, fechar, editar). Comparando
+  // com o que já está gravado, a transação passa a levar só o que de fato mudou — de ~50
+  // instruções para 1 ou 2 no caso comum.
+  const [funisAtuais, etapasAtuais, cardsAtuais] = await Promise.all([
+    prisma.funil.findMany({ where: { workspaceId }, select: { id: true, nome: true, responsavel: true } }),
+    prisma.funilEtapa.findMany({
+      where: { workspaceId },
+      select: { id: true, funilId: true, titulo: true, ordem: true },
+    }),
+    prisma.negocioCard.findMany({
+      where: { workspaceId },
+      select: {
+        id: true,
+        etapaId: true,
+        ordem: true,
+        nome: true,
+        valor: true,
+        origem: true,
+        dias: true,
+        data: true,
+        etiquetas: true,
+        responsavel: true,
+        statusFechamento: true,
+        motivoPerda: true,
+        dataFechamento: true,
+      },
+    }),
+  ]);
+
+  const funilPorId = new Map(funisAtuais.map((f) => [f.id, f]));
+  const etapaPorId = new Map(etapasAtuais.map((e) => [e.id, e]));
+  const cardPorId = new Map(cardsAtuais.map((c) => [c.id, c]));
+
+  /** Data de fechamento normalizada pra "AAAA-MM-DD" (ou null) dos dois lados da comparação — o
+   * banco devolve `Date` e o front manda string; comparar direto marcaria tudo como alterado. */
+  function dataFechamentoIso(valor: Date | string | null | undefined): string | null {
+    if (!valor) return null;
+    return valor instanceof Date ? valor.toISOString().slice(0, 10) : valor.slice(0, 10);
+  }
+
+  const operacoes: Prisma.PrismaPromise<unknown>[] = [];
+
+  // Os `deleteMany` continuam sempre: são 3 instruções, e é o que apaga o que sumiu do payload.
+  operacoes.push(
+    prisma.negocioCard.deleteMany({
+      where: {
+        workspaceId,
+        ...filtroConexaoDeNegocio(provedores),
+        id: { notIn: idsCards.length ? idsCards : ["__nenhum__"] },
+      },
+    }),
+    prisma.funilEtapa.deleteMany({
+      where: { workspaceId, id: { notIn: idsEtapas.length ? idsEtapas : ["__nenhum__"] } },
+    }),
+    prisma.funil.deleteMany({
+      where: { workspaceId, id: { notIn: idsFunis.length ? idsFunis : ["__nenhum__"] } },
+    }),
+  );
+
+  for (const f of funis) {
+    const atual = funilPorId.get(f.id);
+    if (!atual) {
+      operacoes.push(
+        prisma.funil.create({ data: { id: f.id, workspaceId, nome: f.nome, responsavel: f.responsavel } }),
+      );
+    } else if (atual.nome !== f.nome || (atual.responsavel ?? undefined) !== f.responsavel) {
+      operacoes.push(
+        prisma.funil.update({ where: { id: f.id }, data: { nome: f.nome, responsavel: f.responsavel } }),
+      );
+    }
+  }
+
+  for (const f of funis) {
+    f.colunas.forEach((c, ordemEtapa) => {
+      const atual = etapaPorId.get(c.id);
+      if (!atual) {
+        operacoes.push(
+          prisma.funilEtapa.create({
+            data: { id: c.id, workspaceId, funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
+          }),
+        );
+      } else if (atual.funilId !== f.id || atual.titulo !== c.titulo || atual.ordem !== ordemEtapa) {
+        operacoes.push(
+          prisma.funilEtapa.update({
+            where: { id: c.id },
+            data: { funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
+          }),
+        );
+      }
+    });
+  }
+
+  // Cards novos vão todos numa instrução só (`createMany`), em vez de uma por card — é o caso do
+  // "Trazer conversas", que pode criar dezenas de uma vez.
+  const cardsParaCriar: Prisma.NegocioCardCreateManyInput[] = [];
+
+  for (const f of funis) {
+    for (const c of f.colunas) {
+      c.cards.forEach((card, ordemCard) => {
+        const dataFechamento = card.dataFechamento ? new Date(card.dataFechamento) : null;
+        const atual = cardPorId.get(card.id);
+        if (!atual) {
+          cardsParaCriar.push({
+            id: card.id,
+            workspaceId,
+            etapaId: c.id,
+            ordem: ordemCard,
+            nome: card.nome,
+            valor: card.valor,
+            origem: card.origem,
+            dias: card.dias,
+            data: card.data,
+            etiquetas: card.etiquetas ?? undefined,
+            responsavel: card.responsavel,
+            statusFechamento: card.statusFechamento ?? undefined,
+            motivoPerda: card.motivoPerda ?? undefined,
+            dataFechamento: dataFechamento ?? undefined,
+          });
+          return;
+        }
+
+        const mudou =
+          atual.etapaId !== c.id ||
+          atual.ordem !== ordemCard ||
+          atual.nome !== card.nome ||
+          atual.valor !== card.valor ||
+          atual.origem !== card.origem ||
+          atual.dias !== card.dias ||
+          atual.data !== card.data ||
+          JSON.stringify(atual.etiquetas ?? null) !== JSON.stringify(card.etiquetas ?? null) ||
+          (atual.responsavel ?? undefined) !== card.responsavel ||
+          (atual.statusFechamento ?? null) !== (card.statusFechamento ?? null) ||
+          (atual.motivoPerda ?? null) !== (card.motivoPerda ?? null) ||
+          dataFechamentoIso(atual.dataFechamento) !== dataFechamentoIso(card.dataFechamento);
+        if (!mudou) return;
+
+        operacoes.push(
+          prisma.negocioCard.update({
+            where: { id: card.id },
+            data: {
+              etapaId: c.id,
+              ordem: ordemCard,
+              nome: card.nome,
+              valor: card.valor,
+              origem: card.origem,
+              dias: card.dias,
+              data: card.data,
+              etiquetas: card.etiquetas ?? undefined,
+              responsavel: card.responsavel,
+              statusFechamento: card.statusFechamento ?? null,
+              motivoPerda: card.motivoPerda ?? null,
+              dataFechamento,
+            },
+          }),
+        );
+      });
+    }
+  }
+
+  if (cardsParaCriar.length) {
+    operacoes.push(prisma.negocioCard.createMany({ data: cardsParaCriar }));
+  }
+
   // A transação inteira estava sem tratamento de erro: qualquer falha do banco virava um 500 mudo,
   // e a tela só conseguia dizer "Funis não foram salvos: 500" — sem nada que apontasse a causa, nem
   // no navegador nem pra quem fosse investigar. O erro real fica no log do servidor, com quantos
@@ -86,82 +257,11 @@ export async function PUT(request: Request) {
   // "transação grande demais e estourou o tempo".
   try {
     await prisma.$transaction(
-      [
-        prisma.negocioCard.deleteMany({
-          where: {
-            workspaceId,
-            ...filtroConexaoDeNegocio(provedores),
-            id: { notIn: idsCards.length ? idsCards : ["__nenhum__"] },
-          },
-        }),
-        prisma.funilEtapa.deleteMany({
-          where: { workspaceId, id: { notIn: idsEtapas.length ? idsEtapas : ["__nenhum__"] } },
-        }),
-        prisma.funil.deleteMany({
-          where: { workspaceId, id: { notIn: idsFunis.length ? idsFunis : ["__nenhum__"] } },
-        }),
-        ...funis.map((f) =>
-          prisma.funil.upsert({
-            where: { id: f.id },
-            create: { id: f.id, workspaceId, nome: f.nome, responsavel: f.responsavel },
-            update: { nome: f.nome, responsavel: f.responsavel },
-          }),
-        ),
-        ...funis.flatMap((f) =>
-          f.colunas.map((c, ordemEtapa) =>
-            prisma.funilEtapa.upsert({
-              where: { id: c.id },
-              create: { id: c.id, workspaceId, funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
-              update: { funilId: f.id, titulo: c.titulo, ordem: ordemEtapa },
-            }),
-          ),
-        ),
-        ...funis.flatMap((f) =>
-          f.colunas.flatMap((c) =>
-            c.cards.map((card, ordemCard) =>
-              prisma.negocioCard.upsert({
-                where: { id: card.id },
-                create: {
-                  id: card.id,
-                  workspaceId,
-                  etapaId: c.id,
-                  ordem: ordemCard,
-                  nome: card.nome,
-                  valor: card.valor,
-                  origem: card.origem,
-                  dias: card.dias,
-                  data: card.data,
-                  etiquetas: card.etiquetas ?? undefined,
-                  responsavel: card.responsavel,
-                  statusFechamento: card.statusFechamento ?? undefined,
-                  motivoPerda: card.motivoPerda ?? undefined,
-                  dataFechamento: card.dataFechamento ? new Date(card.dataFechamento) : undefined,
-                },
-                update: {
-                  etapaId: c.id,
-                  ordem: ordemCard,
-                  nome: card.nome,
-                  valor: card.valor,
-                  origem: card.origem,
-                  dias: card.dias,
-                  data: card.data,
-                  etiquetas: card.etiquetas ?? undefined,
-                  responsavel: card.responsavel,
-                  statusFechamento: card.statusFechamento ?? null,
-                  motivoPerda: card.motivoPerda ?? null,
-                  dataFechamento: card.dataFechamento ? new Date(card.dataFechamento) : null,
-                },
-              }),
-            ),
-          ),
-        ),
-      ],
+      operacoes,
       // O padrão do Prisma para transação em lote é 5s de execução e 2s de espera por conexão.
-      // Aqui isso é pouco: a reconciliação manda uma instrução por funil, por etapa e por CARD, e
-      // cada uma é uma ida e volta até o banco no Railway. Com algumas dezenas de negócios o
-      // tempo somado passa dos 5s e a transação inteira é abortada por prazo — o funil não salva,
-      // e a mensagem que chega na tela ("Não foi possível salvar") não diz que o motivo foi tempo.
-      // O `maxWait` sobe pelo mesmo motivo: o pool tem só 3 conexões, e sob salvamentos seguidos a
+      // Aqui isso é pouco: mesmo mandando só o que mudou, um "Trazer conversas" com a caixa cheia
+      // ainda é um lote grande, e cada instrução é uma ida e volta até o banco no Railway. O
+      // `maxWait` sobe pelo mesmo motivo: o pool tem só 3 conexões, e sob salvamentos seguidos a
       // espera por uma conexão livre estourava antes mesmo de a transação começar.
       { timeout: 20_000, maxWait: 15_000 },
     );
@@ -176,6 +276,10 @@ export async function PUT(request: Request) {
       funis: funis.length,
       etapas: idsEtapas.length,
       cards: idsCards.length,
+      // Quantas instruções a transação realmente levou — com a comparação contra o banco isto é
+      // quase sempre um número pequeno, e um número grande aqui é o sinal de que algo está
+      // marcando tudo como alterado a cada salvamento.
+      operacoes: operacoes.length,
       codigo,
       mensagem,
     });
