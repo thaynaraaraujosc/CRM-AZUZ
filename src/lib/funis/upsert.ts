@@ -54,13 +54,21 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   const primeiraEtapa = funil?.etapas[0];
   if (!primeiraEtapa) return null;
 
-  const maiorOrdem = primeiraEtapa.cards.reduce((max, c) => Math.max(max, c.ordem), -1);
+  // Lead novo entra no TOPO da coluna, não no fim. Como a listagem ordena por `ordem` crescente,
+  // isso é uma ordem MENOR que a de todo mundo. Entrando no fim, quem acabou de mandar mensagem
+  // caía embaixo de dezenas de cards antigos e a pessoa que atende só via o lead novo rolando a
+  // coluna inteira — mensagem nova é justamente o que precisa ser visto primeiro.
+  //
+  // Fica negativo, e é de propósito: assim nenhum card existente precisa ser renumerado (o que
+  // brigaria com a ordem que a pessoa arrumou na mão). O PUT de `/api/funis` normaliza tudo pra
+  // 0..n na próxima vez que a tela salvar, mantendo a posição.
+  const menorOrdem = primeiraEtapa.cards.reduce((min, c) => Math.min(min, c.ordem), 0);
 
   return prisma.negocioCard.create({
     data: {
       id: `${workspaceId}-${slugId(contatoNome)}-${Date.now()}`,
       etapaId: primeiraEtapa.id,
-      ordem: maiorOrdem + 1,
+      ordem: menorOrdem - 1,
       workspaceId,
       nome: contatoNome,
       valor: "—",

@@ -38,6 +38,7 @@ export async function POST() {
   const contas = await contasCanalVisiveis(workspaceId);
   const conversas = await prisma.conversa.findMany({
     where: { workspaceId, ehGrupo: false, arquivada: false, ...filtroContaCanal(contas) },
+    orderBy: { atualizadoEm: "desc" },
   });
 
   const jaTemCard = new Set(
@@ -47,11 +48,14 @@ export async function POST() {
   const novos = conversas.filter((c) => !jaTemCard.has(c.nome));
   if (!novos.length) return NextResponse.json({ criados: 0 });
 
-  const maiorOrdem = await prisma.negocioCard.aggregate({
+  // Mesma regra do lead que chega sozinho (ver `src/lib/funis/upsert.ts`): entra ACIMA do que já
+  // está na coluna, e dentro do lote a conversa mais recente vem primeiro. `novos` já chega
+  // ordenado da mais recente pra mais antiga, então basta ir subindo a partir da menor ordem.
+  const menorOrdem = await prisma.negocioCard.aggregate({
     where: { etapaId: primeiraEtapa.id },
-    _max: { ordem: true },
+    _min: { ordem: true },
   });
-  let ordem = (maiorOrdem._max.ordem ?? -1) + 1;
+  let ordem = Math.min(menorOrdem._min.ordem ?? 0, 0) - novos.length;
 
   await prisma.negocioCard.createMany({
     data: novos.map((conversa) => ({
