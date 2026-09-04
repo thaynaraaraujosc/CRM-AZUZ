@@ -79,3 +79,39 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
     },
   });
 }
+
+/**
+ * Sobe o card de um contato pro TOPO da coluna em que ele está, quando chega mensagem nova dele.
+ *
+ * Não muda de ETAPA — isso continua sendo decisão de quem atende. Muda só a posição DENTRO da
+ * coluna, pra a coluna funcionar como caixa de entrada: quem falou por último aparece primeiro, em
+ * vez de ficar perdido no meio de dezenas de cards parados.
+ *
+ * Igual ao lead novo (ver acima), a ordem nova é MENOR que a de todo mundo da etapa — negativa se
+ * precisar. Nenhum outro card é renumerado, e o PUT de `/api/funis` normaliza pra 0..n no próximo
+ * salvamento da tela.
+ *
+ * Falha em silêncio de propósito: isto é um detalhe de apresentação do funil, e uma mensagem nunca
+ * pode deixar de ser gravada porque a reordenação não deu certo.
+ */
+export async function subirCardParaOTopo(workspaceId: string, contatoNome: string) {
+  try {
+    const card = await prisma.negocioCard.findFirst({
+      where: { workspaceId, nome: contatoNome },
+      select: { id: true, etapaId: true, ordem: true },
+    });
+    if (!card) return;
+
+    const menor = await prisma.negocioCard.aggregate({
+      where: { etapaId: card.etapaId },
+      _min: { ordem: true },
+    });
+    const menorOrdem = menor._min.ordem ?? 0;
+    // Já está no topo: não escreve à toa (o webhook roda a cada mensagem recebida).
+    if (card.ordem <= menorOrdem) return;
+
+    await prisma.negocioCard.update({ where: { id: card.id }, data: { ordem: menorOrdem - 1 } });
+  } catch (erro) {
+    console.error("[funil] falha ao subir o card pro topo:", erro);
+  }
+}

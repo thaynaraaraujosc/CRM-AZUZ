@@ -94,6 +94,7 @@ function FunilPageInner() {
   const [respostaRapidaContato, setRespostaRapidaContato] = useState<string | null>(null);
 
   const [importando, setImportando] = useState(false);
+  const [reordenando, setReordenando] = useState(false);
 
   /**
    * Traz pro funil as conversas que ainda não viraram negócio.
@@ -122,6 +123,32 @@ function FunilPageInner() {
       avisarAutomacao(erro instanceof Error ? erro.message : "Não foi possível trazer as conversas.");
     } finally {
       setImportando(false);
+    }
+  }
+
+  /**
+   * Correção de uma vez pro acúmulo antigo: até a mudança que passou a colocar lead novo no topo,
+   * todo card entrava pelo FIM da coluna — então quem chegou primeiro ficava em cima e o lead
+   * recente ficava enterrado. Daqui pra frente o funil já nasce certo; este botão arruma o que
+   * ficou pra trás, sem mudar card de etapa.
+   */
+  async function reordenarPorAtividade() {
+    setReordenando(true);
+    try {
+      const resposta = await fetch("/api/funis/reordenar-por-atividade", { method: "POST" });
+      const dados = (await resposta.json()) as { reordenados?: number; erro?: string };
+      if (!resposta.ok) throw new Error(dados.erro ?? "Não foi possível reordenar.");
+      avisarAutomacao(
+        dados.reordenados
+          ? `${dados.reordenados} ${dados.reordenados === 1 ? "card reordenado" : "cards reordenados"} — quem falou por último ficou no topo.`
+          : "As colunas já estavam na ordem das mensagens mais recentes.",
+      );
+      const atualizados = await fetch("/api/funis").then((r) => r.json());
+      setFunis(atualizados);
+    } catch (erro) {
+      avisarAutomacao(erro instanceof Error ? erro.message : "Não foi possível reordenar.");
+    } finally {
+      setReordenando(false);
     }
   }
 
@@ -467,6 +494,15 @@ function FunilPageInner() {
               onClick={() => void importarConversas()}
             >
               {importando ? "Trazendo…" : "+ Trazer conversas"}
+            </button>
+            <button
+              type="button"
+              className="btn terciario"
+              disabled={reordenando}
+              title="Coloca quem mandou mensagem mais recentemente no topo de cada coluna, sem mudar ninguém de etapa"
+              onClick={() => void reordenarPorAtividade()}
+            >
+              {reordenando ? "Reordenando…" : "↑ Mensagens recentes no topo"}
             </button>
             <button
               type="button"

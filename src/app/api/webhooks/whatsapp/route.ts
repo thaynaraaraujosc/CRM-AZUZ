@@ -7,7 +7,7 @@ import { META_GRAPH_URL, normalizarNumeroBrasileiro, validarAssinaturaWebhook } 
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
-import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
+import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
 import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
 import type { ConvMensagem } from "@/lib/data";
 
@@ -351,6 +351,10 @@ export async function POST(request: Request) {
             origem: "WhatsApp",
             contaCanal: contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
           });
+        } else {
+          // Contato que já tinha card: a ETAPA não se mexe, mas o card sobe pro topo da coluna —
+          // quem acabou de falar precisa estar visível sem rolar a coluna inteira.
+          await subirCardParaOTopo(integracao.workspaceId, chaveContato);
         }
 
         const midia = mensagem.image ?? mensagem.sticker ?? mensagem.audio ?? mensagem.video ?? mensagem.document;

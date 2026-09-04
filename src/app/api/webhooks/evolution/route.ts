@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado, buscarInfoGrupo, buscarFotoPerfil } from "@/lib/integracoes/evolution";
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
-import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
+import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
 import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { CANAL_NAO_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
@@ -292,6 +292,10 @@ export async function processarMensagemRecebida(
       origem: "WhatsApp",
       contaCanal,
     });
+  } else if (!ehGrupo && !fromMe) {
+    // Contato que já tinha card: a ETAPA não se mexe, mas o card sobe pro topo da coluna — quem
+    // acabou de falar precisa estar visível sem rolar a coluna inteira.
+    await subirCardParaOTopo(workspaceId, chaveContato);
   }
 
   await prisma.mensagemExtra.create({
