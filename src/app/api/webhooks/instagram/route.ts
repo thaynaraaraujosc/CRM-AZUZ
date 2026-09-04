@@ -16,7 +16,7 @@ import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { renomearConversa } from "@/lib/conversas/renomear";
 import { nomeAindaEhIdCru } from "@/lib/conversas/exibicao";
 import { criarContatoPeloInstagramSeNaoExistir, encontrarContatoPorInstagram } from "@/lib/contatos/upsert";
-import { entrarNaPrimeiraEtapaComoNovoLead } from "@/lib/funis/upsert";
+import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
 import {
   dispararAutomacoesDeEventoInstagram,
   dispararAutomacoesDeMensagemRecebida,
@@ -525,6 +525,11 @@ export async function POST(request: Request) {
             origem: "Instagram",
             contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
           });
+        } else if (!ehEco) {
+          // Contato que já tinha card: a ETAPA não se mexe (é decisão do vendedor), mas o card sobe
+          // pro topo da coluna dele — quem acabou de falar precisa estar visível sem rolar a coluna.
+          // Eco não conta: mensagem que a própria conta mandou não é novidade pra quem atende.
+          await subirCardParaOTopo(integracaoDaConta.workspaceId, chaveContato);
         }
       }
 
