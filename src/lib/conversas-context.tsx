@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 export type ConversaReal = {
   id: string;
@@ -78,11 +78,29 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
   const [conversas, setConversas] = useState<ConversaReal[]>([]);
   const [carregando, setCarregando] = useState(true);
 
+  /** Mesma ideia da rota de mensagens: manda de volta a versão que o servidor já confirmou e
+   * recebe `304` quando nada mudou, sem o servidor ler a lista inteira. */
+  const etagRef = useRef<string | null>(null);
+
   function recarregar() {
-    return fetch("/api/conversas")
-      .then((r) => r.json())
-      .then((dados: ConversaReal[]) => setConversas((prev) => mesclarConversas(prev, dados)))
+    return fetch("/api/conversas", {
+      cache: "no-store",
+      headers: etagRef.current ? { "if-none-match": etagRef.current } : undefined,
+    })
+      .then(async (r) => {
+        if (r.status === 304) return;
+        const etag = r.headers.get("etag");
+        if (etag) etagRef.current = etag;
+        const dados = (await r.json()) as ConversaReal[];
+        setConversas((prev) => mesclarConversas(prev, dados));
+      })
       .catch((erro) => console.error("Falha ao carregar conversas da API:", erro));
+  }
+
+  /** Toda escrita (PATCH de favorita, lida, foto…) deixa a versão guardada velha — descartar aqui
+   * garante que a próxima batida traga o estado real em vez de um `304` enganoso. */
+  function esquecerVersao() {
+    etagRef.current = null;
   }
 
   useEffect(() => {
@@ -99,21 +117,25 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
 
   function marcarComoLida(id: string) {
     setConversas((prev) => prev.map((c) => (c.id === id ? { ...c, naoLidas: 0 } : c)));
+    esquecerVersao();
     atualizarRemoto(id, { naoLidas: 0 });
   }
 
   function alternarFavorita(id: string, favorita: boolean) {
     setConversas((prev) => prev.map((c) => (c.id === id ? { ...c, favorita } : c)));
+    esquecerVersao();
     atualizarRemoto(id, { favorita });
   }
 
   function alternarArquivada(id: string, arquivada: boolean) {
     setConversas((prev) => prev.map((c) => (c.id === id ? { ...c, arquivada } : c)));
+    esquecerVersao();
     atualizarRemoto(id, { arquivada });
   }
 
   function atualizarStatus(id: string, status: string) {
     setConversas((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
+    esquecerVersao();
     atualizarRemoto(id, { status });
   }
 
@@ -121,6 +143,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
     setConversas((prev) =>
       prev.map((c) => (c.id === id ? { ...c, atendenteSelecionado: atendente } : c)),
     );
+    esquecerVersao();
     atualizarRemoto(id, { atendenteSelecionado: atendente });
   }
 
@@ -129,6 +152,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
   // só "guardar o que a Evolution devolveu" pra não ter que buscar de novo na próxima vez.
   function atualizarFoto(id: string, fotoUrl: string) {
     setConversas((prev) => prev.map((c) => (c.id === id ? { ...c, fotoUrl } : c)));
+    esquecerVersao();
     atualizarRemoto(id, { fotoUrl });
   }
 
@@ -140,6 +164,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
     contato: string,
     canal = "WhatsApp",
   ): Promise<ConversaReal> {
+    esquecerVersao();
     const resposta = await fetch("/api/conversas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -151,6 +176,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
   }
 
   function excluirConversa(id: string) {
+    esquecerVersao();
     setConversas((prev) => prev.filter((c) => c.id !== id));
     fetch(`/api/conversas/${id}`, { method: "DELETE" }).catch((erro) =>
       console.error("Falha ao excluir conversa na API:", erro),

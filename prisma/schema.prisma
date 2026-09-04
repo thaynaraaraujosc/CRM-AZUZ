@@ -460,8 +460,16 @@ model MensagemExtra {
   ///
   /// Nulo em mensagem recebida (ali o próprio id JÁ é o wamid) e em canal que não devolve id.
   wamid      String?   @db.VarChar(191)
+  /// Carimbo da última escrita nesta linha. Existe pra a tela poder perguntar "mudou alguma coisa?"
+  /// com uma consulta barata (um MAX indexado) em vez de baixar o histórico inteiro a cada 5s.
+  ///
+  /// `criadoEm` sozinho não serve: mudança de status (enviado → entregue → lido) reescreve a linha
+  /// sem criar linha nova, e a tela ficaria sem ver o visto azul. Nulo nas linhas anteriores a esta
+  /// coluna — por isso a assinatura combina os dois carimbos e a contagem.
+  atualizadoEm DateTime? @updatedAt
 
   @@index([workspaceId, criadoEm])
+  @@index([workspaceId, atualizadoEm])
   @@index([workspaceId, contato])
   @@index([workspaceId, contaCanal])
   @@index([wamid])

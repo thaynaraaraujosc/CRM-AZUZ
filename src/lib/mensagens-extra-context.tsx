@@ -143,10 +143,27 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
   // próximo PUT. Atualizado depois de todo GET/PUT bem-sucedido, nunca durante o merge otimista.
   const ultimoSincronizadoRef = useRef<Record<string, ConvMensagem[]>>({});
 
+  /**
+   * Versão que o servidor já confirmou — mandada de volta em `If-None-Match` na próxima batida.
+   * Quando nada mudou, a resposta é um `304` sem corpo: o servidor nem chega a consultar as
+   * mensagens. Ver `src/lib/conversas/assinatura.ts`; era esta chamada, repetida a cada 5s por aba
+   * aberta, que sozinha puxava ~1,9 TB do banco por mês.
+   */
+  const etagRef = useRef<string | null>(null);
+
   function recarregar() {
-    return fetch("/api/mensagens-extra")
-      .then((r) => r.json())
-      .then((dados: Record<string, ConvMensagem[]>) => {
+    return fetch("/api/mensagens-extra", {
+      // O cache do navegador faria a revalidação sozinho, mas de um jeito que o código não enxerga
+      // (ele entrega um 200 vindo do cache). Fazendo à mão dá pra SABER que nada mudou e não mexer
+      // no estado — o que evita re-render inútil da tela de Conversas a cada 5 segundos.
+      cache: "no-store",
+      headers: etagRef.current ? { "if-none-match": etagRef.current } : undefined,
+    })
+      .then(async (r) => {
+        if (r.status === 304) return;
+        const etag = r.headers.get("etag");
+        if (etag) etagRef.current = etag;
+        const dados = (await r.json()) as Record<string, ConvMensagem[]>;
         ultimoSincronizadoRef.current = dados;
         setMensagensExtraPorContato((prev) => fundirMensagensPorContato(prev, dados));
       })
@@ -172,6 +189,10 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
       const { upserts, deletarIds } = calcularDelta(ultimoSincronizadoRef.current, mensagensExtraPorContato);
       if (!upserts.length && !deletarIds.length) return;
       ultimoSincronizadoRef.current = mensagensExtraPorContato;
+      // Gravar muda o servidor, então a versão guardada acabou de ficar velha. Sem descartá-la, a
+      // próxima batida mandaria um ETag antigo, e um `304` faria a tela ignorar o que ela mesma
+      // acabou de gravar.
+      etagRef.current = null;
       fetch("/api/mensagens-extra", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },

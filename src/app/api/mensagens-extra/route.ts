@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { contasCanalVisiveis, filtroContaCanal } from "@/lib/integracoes/conta-canal";
 import { preservarMidiaGuardada, trocarMidiaPorLink } from "@/lib/conversas/midia-mensagem";
 import { guardarMidiasDosExtras } from "@/lib/armazenamento/midia";
+import { cabecalhosComEtag, clienteJaTem, montarEtag, naoModificado } from "@/lib/conversas/assinatura";
 
 type LinhaMensagem = {
   id: string;
@@ -49,16 +50,40 @@ function paraMensagem(linha: LinhaMensagem): ConvMensagem {
 }
 
 /** GET devolve `Record<contato, ConvMensagem[]>` do workspace de quem está logado, limitado às
- * `LIMITE_MENSAGENS` mais recentes. */
-export async function GET() {
+ * `LIMITE_MENSAGENS` mais recentes.
+ *
+ * Responde `304 Not Modified` quando nada mudou desde a última vez que ESTA tela perguntou — e aí
+ * a consulta pesada abaixo nem chega a rodar. Ver `src/lib/conversas/assinatura.ts` pro porquê:
+ * esta rota, batida a cada 5s por aba aberta, era sozinha responsável por ~1,9 TB saindo do banco
+ * num mês. */
+export async function GET(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
   // Mesmo filtro por conexão das conversas — mensagem de um número desconectado some da tela sem
   // sair do banco (ver `conta-canal.ts`).
   const contas = await contasCanalVisiveis(sessao.user.workspaceId);
+  const where = { workspaceId: sessao.user.workspaceId, ...filtroContaCanal(contas) };
+
+  // A pergunta barata, ANTES da cara: dois MAX e um COUNT sobre índice, resposta em bytes.
+  const resumo = await prisma.mensagemExtra.aggregate({
+    where,
+    _count: { _all: true },
+    _max: { criadoEm: true, atualizadoEm: true },
+  });
+  const etag = montarEtag([
+    sessao.user.workspaceId,
+    // O recorte entra na assinatura: conectar/desconectar um canal muda o que a tela deve ver sem
+    // mexer em mensagem nenhuma, e sem isto a tela continuaria com a lista antiga.
+    contas.join(","),
+    resumo._count._all,
+    resumo._max.criadoEm,
+    resumo._max.atualizadoEm,
+  ]);
+  if (clienteJaTem(request, etag)) return naoModificado(etag);
+
   const linhas = await prisma.mensagemExtra.findMany({
-    where: { workspaceId: sessao.user.workspaceId, ...filtroContaCanal(contas) },
+    where,
     orderBy: { criadoEm: "desc" },
     take: LIMITE_MENSAGENS,
   });
@@ -68,7 +93,7 @@ export async function GET() {
   for (const linha of linhas) {
     (porContato[linha.contato] ??= []).push(paraMensagem(linha));
   }
-  return NextResponse.json(porContato);
+  return NextResponse.json(porContato, { headers: cabecalhosComEtag(etag) });
 }
 
 type ItemUpsert = { contato: string; idFinal: string; mensagem: ConvMensagem };
