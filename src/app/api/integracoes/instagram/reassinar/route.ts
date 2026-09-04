@@ -56,14 +56,25 @@ export async function POST() {
   // funciona e as automações de comentário ficam mudas — falha silenciosa, a pior de todas. Não é
   // erro fatal (o Direct segue), só um aviso honesto de que metade não vai funcionar.
   const semComentarios = campos ? !campos.includes("comments") : false;
+  // Mesmo raciocínio pro eco: sem `message_echoes`, o que ela responde pelo APP do Instagram não
+  // chega no CRM e a thread aqui fica só com o lado da cliente. Também não é fatal, mas explica
+  // sozinho o "não aparece em tempo real" — que de outra forma parece bug da tela.
+  const semEco = campos ? !campos.includes("message_echoes") : false;
+  const avisos = [
+    semComentarios
+      ? "Os COMENTÁRIOS não vão chegar: a conta não está assinando \"comments\"."
+      : null,
+    semEco
+      ? "O que você responder pelo APP do Instagram não vai aparecer aqui: a conta não está assinando \"message_echoes\"."
+      : null,
+  ].filter(Boolean);
+
   return NextResponse.json({
     ok: true,
     campos,
-    ...(semComentarios
+    ...(avisos.length
       ? {
-          aviso:
-            "As mensagens do Direct vão chegar, mas os COMENTÁRIOS não: a conta não está assinando \"comments\". " +
-            "Desconecte e conecte o Instagram de novo, aceitando o acesso a comentários.",
+          aviso: `${avisos.join(" ")} Desconecte e conecte o Instagram de novo, aceitando todos os acessos pedidos.`,
         }
       : {}),
   });

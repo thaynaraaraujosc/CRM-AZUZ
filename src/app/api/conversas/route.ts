@@ -29,8 +29,34 @@ export async function GET() {
   const linhas = await prisma.conversa.findMany({
     where,
     orderBy: { atualizadoEm: "desc" },
+    // A foto do contato ligado entra como reserva da foto da conversa — ver abaixo.
+    include: { contatoVinculado: { select: { fotoUrl: true } } },
   });
-  return NextResponse.json(linhas);
+
+  // Conversa sem foto herda a do contato. As duas colunas são preenchidas pelo mesmo webhook, mas
+  // saem de sincronia sozinhas: quem já tinha conversa antes da foto passar a ser buscada ficou com
+  // `Conversa.fotoUrl` nulo pra sempre, enquanto o contato ganhou a foto depois, por outro caminho.
+  // O sintoma era o rosto aparecer no funil e a mesma pessoa continuar como iniciais em Conversas.
+  const comFoto = linhas.map(({ contatoVinculado, ...c }) => ({
+    ...c,
+    fotoUrl: c.fotoUrl ?? contatoVinculado?.fotoUrl ?? null,
+  }));
+
+  // Segunda via, por NOME: nem toda conversa tem a FK preenchida (as criadas antes da coluna
+  // existir, e as do Instagram quando "levar para o funil" está desligado, não têm contatoId).
+  // Nesses casos o contato existe e tem a foto, só não está ligado — e é o mesmo nome dos dois
+  // lados, porque quem cria os dois é o mesmo webhook.
+  const semFoto = comFoto.filter((c) => !c.fotoUrl).map((c) => c.nome);
+  if (semFoto.length) {
+    const contatos = await prisma.contato.findMany({
+      where: { workspaceId: sessao.user.workspaceId, nome: { in: semFoto }, fotoUrl: { not: null } },
+      select: { nome: true, fotoUrl: true },
+    });
+    const porNome = new Map(contatos.map((c) => [c.nome, c.fotoUrl]));
+    for (const c of comFoto) if (!c.fotoUrl) c.fotoUrl = porNome.get(c.nome) ?? null;
+  }
+
+  return NextResponse.json(comFoto);
 }
 
 /**
