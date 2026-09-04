@@ -175,24 +175,44 @@ export async function baixarFotoPerfil(url: string): Promise<string | null> {
  * a Meta REJEITA A CHAMADA INTEIRA — não só aquele campo. O resultado é a conta ficar "Conectada"
  * sem assinatura nenhuma, e NENHUMA mensagem chegar. Já aconteceu.
  */
+/**
+ * `comments` é o que faz comentário em publicação e resposta a comentário chegarem no webhook. Sem
+ * ele o CRM recebia só Direct — e o gatilho "Comentário no Instagram", que já existia no construtor
+ * de automações, nunca disparava.
+ *
+ * `message_echoes` é o que faz a mensagem que a PRÓPRIA conta manda pelo APP do Instagram chegar
+ * aqui. O webhook já sabia tratar eco (`is_echo`) desde sempre, mas o campo nunca foi assinado —
+ * então responder pelo celular não aparecia em Conversas, e a thread no CRM ficava só com o lado da
+ * cliente. Este era o "não chega em tempo real" relatado.
+ */
+const CAMPOS_WEBHOOK = ["messages", "message_echoes", "message_reactions", "comments"];
+
+async function postSubscribedApps(accessToken: string, campos: string[]): Promise<string | null> {
+  const resposta = await fetch(
+    `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/subscribed_apps?subscribed_fields=${campos.join(",")}`,
+    { method: "POST", headers: { authorization: `Bearer ${accessToken}` } },
+  );
+  const dados = (await resposta.json()) as { success?: boolean } & ErroGraph;
+  if (!resposta.ok || dados.success === false) {
+    return dados.error_message ?? dados.error?.message ?? `HTTP ${resposta.status}`;
+  }
+  return null;
+}
+
 export async function inscreverAppNoInstagram(accessToken: string): Promise<string | null> {
   try {
-    const resposta = await fetch(
-      // `comments` é o que faz comentário em publicação e resposta a comentário chegarem no webhook.
-      // Sem ele o CRM recebia só Direct — e o gatilho "Comentário no Instagram", que já existia no
-      // construtor de automações, nunca disparava: a pessoa montava o fluxo e nada acontecia.
-      //
-      // Os nomes têm que estar exatos: a Meta recusa a chamada INTEIRA se um campo estiver errado,
-      // e a conta fica "conectada" sem assinatura nenhuma, sem receber mensagem alguma. Foi o que
-      // aconteceu com `messaging_reactions` (o certo é `message_reactions`).
-      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/subscribed_apps?subscribed_fields=messages,message_reactions,comments`,
-      { method: "POST", headers: { authorization: `Bearer ${accessToken}` } },
-    );
-    const dados = (await resposta.json()) as { success?: boolean } & ErroGraph;
-    if (!resposta.ok || dados.success === false) {
-      const mensagem = dados.error_message ?? dados.error?.message ?? `HTTP ${resposta.status}`;
-      console.error("[instagram] Falha ao inscrever o app nos webhooks da conta:", mensagem);
-      return mensagem;
+    const erro = await postSubscribedApps(accessToken, CAMPOS_WEBHOOK);
+    if (!erro) return null;
+
+    // Um campo recusado derruba a chamada INTEIRA e a conta fica sem assinatura nenhuma — pior do
+    // que ficar sem um campo. Então, se a lista completa falhar, reassina só com o conjunto que já
+    // se sabe aceito: melhor perder o eco do que perder a caixa de entrada toda.
+    console.error("[instagram] Assinatura completa recusada, tentando sem `message_echoes`:", erro);
+    const semEco = CAMPOS_WEBHOOK.filter((c) => c !== "message_echoes");
+    const erroReserva = await postSubscribedApps(accessToken, semEco);
+    if (erroReserva) {
+      console.error("[instagram] Falha ao inscrever o app nos webhooks da conta:", erroReserva);
+      return erroReserva;
     }
     return null;
   } catch (erro) {
