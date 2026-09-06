@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { guardarMidiasDosExtras } from "@/lib/armazenamento/midia";
+import { contarMensagensComAnexoNoBanco, guardarMidiasDosExtras, listarIdsComAnexoNoBanco } from "@/lib/armazenamento/midia";
 import { r2Configurado } from "@/lib/armazenamento/r2";
 
 /**
@@ -30,12 +30,14 @@ export async function POST() {
 
   const workspaceId = sessao.user.workspaceId;
 
-  // `string_contains` procura o texto dentro do JSON gravado. É uma varredura, não um índice — por
-  // isso vem limitada ao lote e filtrada por workspace antes de tudo.
+  // A busca é por `JSON_SEARCH` no banco (ver `listarIdsComAnexoNoBanco`), e não pelo filtro
+  // `string_contains` do Prisma: em produção esse filtro devolvia ZERO com 59 mensagens (84 MB)
+  // pendentes, e o botão de mover nunca aparecia. É uma varredura, não índice — por isso limitada
+  // ao lote e filtrada por workspace antes de tudo.
+  const ids = await listarIdsComAnexoNoBanco(workspaceId, TAMANHO_DO_LOTE);
   const pendentes = await prisma.mensagemExtra.findMany({
-    where: { workspaceId, extras: { string_contains: "data:" } },
+    where: { id: { in: ids } },
     select: { id: true, extras: true },
-    take: TAMANHO_DO_LOTE,
   });
 
   let migradas = 0;
@@ -61,9 +63,7 @@ export async function POST() {
     }
   }
 
-  const restantes = await prisma.mensagemExtra.count({
-    where: { workspaceId, extras: { string_contains: "data:" } },
-  });
+  const restantes = await contarMensagensComAnexoNoBanco(workspaceId);
 
   return NextResponse.json({ migradas, falhas, restantes }, { headers: { "cache-control": "no-store" } });
 }
