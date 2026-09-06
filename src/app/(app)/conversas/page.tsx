@@ -788,7 +788,15 @@ function ConversasPageInner() {
         .catch(() => setStatusMetaCarregado(true));
     }
     verificarMeta();
-    const intervalo = setInterval(verificarMeta, 5000);
+    // 30 segundos, e não 5. Isto aqui só responde "o WhatsApp oficial está conectado?" — uma
+    // resposta que muda quando alguém conecta ou desconecta um canal, o que acontece algumas vezes
+    // por ANO. A 5 segundos, uma aba aberta o dia inteiro fazia 17.280 consultas por dia pra ouvir
+    // a mesma coisa, e cada uma atravessa a internet até o banco no Railway, que cobra por byte que
+    // sai. A checagem de visibilidade evita gastar com a aba em segundo plano, que é como o CRM
+    // passa a maior parte do tempo.
+    const intervalo = setInterval(() => {
+      if (document.visibilityState === "visible") verificarMeta();
+    }, 30000);
     return () => clearInterval(intervalo);
   }, []);
   // Só passa a filtrar depois que os dois status (Meta e Baileys) já responderam pelo menos uma
