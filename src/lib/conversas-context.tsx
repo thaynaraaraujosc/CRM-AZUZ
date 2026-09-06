@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { INTERVALO_POLLING_MS } from "@/lib/conversas/polling";
 
 export type ConversaReal = {
   id: string;
@@ -111,7 +112,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
     // aba está visível, pra não gastar requisição à toa com o CRM aberto em segundo plano.
     const intervalo = setInterval(() => {
       if (document.visibilityState === "visible") recarregar();
-    }, 5000);
+    }, INTERVALO_POLLING_MS);
     return () => clearInterval(intervalo);
   }, []);
 
