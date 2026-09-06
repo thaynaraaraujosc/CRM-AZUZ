@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import type { ConvMensagem } from "@/lib/data";
+import { INTERVALO_POLLING_MS } from "@/lib/conversas/polling";
 
 /**
  * Mensagens extras (enviadas/recebidas depois do "seed" de cada conversa) — compartilhado entre
@@ -179,7 +180,7 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
     // depender de recarregar a página, igual todo app de mensagem de verdade.
     const intervalo = setInterval(() => {
       if (document.visibilityState === "visible") recarregar();
-    }, 5000);
+    }, INTERVALO_POLLING_MS);
     return () => clearInterval(intervalo);
   }, []);
 

@@ -84,3 +84,4 @@ export function clienteJaTem(request: Request, etag: string): boolean {
     return limpo === "*" || limpo === alvo;
   });
 }
+

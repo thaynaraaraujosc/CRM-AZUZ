@@ -26,6 +26,13 @@ function criarPrismaClient() {
   // de verdade ("Too many connections", derrubando o site inteiro) só de reiniciar algumas vezes
   // seguidas. Um teto baixo aqui é o suficiente pro tráfego de um workspace só.
   url += url.includes("?") ? "&connectionLimit=3" : "?connectionLimit=3";
+  // `compress=true`: o servidor comprime (zlib) tudo que manda pra cá. O banco mora na Railway e a
+  // aplicação na Vercel, e a Railway cobra por gigabyte que SAI do banco — foi a linha de $101 na
+  // fatura de setembro. Texto e JSON (que é o grosso do que trafega: mensagens, contatos, cards)
+  // encolhem de 3 a 5 vezes comprimidos. Custa CPU, que é a linha mais barata da conta (centavos),
+  // pra economizar tráfego, que é a mais cara. O driver `mariadb` e o MySQL 8+ falam esse
+  // protocolo sem configurar mais nada do lado do servidor.
+  url += "&compress=true";
   const adapter = new PrismaMariaDb(url);
   return new PrismaClient({ adapter });
 }
