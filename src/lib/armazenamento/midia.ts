@@ -149,3 +149,33 @@ export async function espacoUsado(workspaceId: string): Promise<number> {
   });
   return total._sum.bytes ?? 0;
 }
+
+/**
+ * Mensagens que ainda guardam anexo em base64 dentro de `extras`, por workspace.
+ *
+ * `JSON_SEARCH` com padrão `data:%` acha qualquer string do JSON que comece com `data:` — em
+ * qualquer profundidade, sem precisar enumerar os campos. Não é o filtro `string_contains` do
+ * Prisma de propósito: em produção ele devolvia zero com dezenas de mensagens pendentes, e a
+ * tela escondia o botão de mover achando que não havia o que mover.
+ *
+ * Sem `ORDER BY`: ordenar obriga o MySQL a passar as linhas (com o JSON gigante) pelo buffer de
+ * ordenação, que é pequeno, e ele responde `1038 Out of sort memory`.
+ */
+export async function listarIdsComAnexoNoBanco(workspaceId: string, limite: number): Promise<string[]> {
+  const linhas = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT id FROM MensagemExtra
+     WHERE workspaceId = ${workspaceId}
+       AND extras IS NOT NULL
+       AND JSON_SEARCH(extras, 'one', 'data:%') IS NOT NULL
+     LIMIT ${limite}`;
+  return linhas.map((l) => l.id);
+}
+
+export async function contarMensagensComAnexoNoBanco(workspaceId: string): Promise<number> {
+  const [linha] = await prisma.$queryRaw<{ total: bigint | number }[]>`
+    SELECT COUNT(*) AS total FROM MensagemExtra
+     WHERE workspaceId = ${workspaceId}
+       AND extras IS NOT NULL
+       AND JSON_SEARCH(extras, 'one', 'data:%') IS NOT NULL`;
+  return Number(linha?.total ?? 0);
+}

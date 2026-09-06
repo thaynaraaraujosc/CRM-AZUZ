@@ -56,13 +56,13 @@ const prisma = new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABAS
  * dentro) pelo buffer de ordenação, que é pequeno — e ele responde `1038 Out of sort memory`.
  * A ordem não importa pra migrar.
  */
-async function listarPendentes(): Promise<{ id: string; bytes: number }[]> {
-  return prisma.$queryRawUnsafe<{ id: string; bytes: number }[]>(
-    `SELECT id, LENGTH(extras) AS bytes
+async function listarPendentes(): Promise<{ id: string; workspaceId: string; bytes: number }[]> {
+  return prisma.$queryRawUnsafe<{ id: string; workspaceId: string; bytes: number }[]>(
+    `SELECT id, workspaceId, LENGTH(extras) AS bytes
        FROM MensagemExtra
       WHERE extras IS NOT NULL
         AND JSON_SEARCH(extras, 'one', 'data:%') IS NOT NULL`,
-  ).then((linhas) => linhas.map((l) => ({ id: l.id, bytes: Number(l.bytes) })));
+  ).then((linhas) => linhas.map((l) => ({ id: l.id, workspaceId: l.workspaceId, bytes: Number(l.bytes) })));
 }
 
 function mb(bytes: number): string {
@@ -74,7 +74,19 @@ async function main() {
   const totalBytes = pendentes.reduce((soma, p) => soma + p.bytes, 0);
 
   console.log(`Destino: ${process.env.DATABASE_URL!.replace(/:[^:@]+@/, ":***@")}`);
-  console.log(`${pendentes.length} mensagem(ns) com anexo embutido, ${mb(totalBytes)} MB dentro do banco.\n`);
+  console.log(`${pendentes.length} mensagem(ns) com anexo embutido, ${mb(totalBytes)} MB dentro do banco.`);
+  // Por workspace: o botão "Mover para a nuvem" em Configurações → Plano só enxerga o workspace
+  // de quem está logado. Saber ONDE as mensagens estão diz em qual conta apertar o botão.
+  const porWorkspace = new Map<string, { n: number; bytes: number }>();
+  for (const p of pendentes) {
+    const atual = porWorkspace.get(p.workspaceId) ?? { n: 0, bytes: 0 };
+    porWorkspace.set(p.workspaceId, { n: atual.n + 1, bytes: atual.bytes + p.bytes });
+  }
+  for (const [workspaceId, w] of porWorkspace) {
+    const ws = await prisma.workspace.findUnique({ where: { id: workspaceId }, select: { nome: true } });
+    console.log(`  ${String(w.n).padStart(5)} × workspace "${ws?.nome ?? workspaceId}"  (${mb(w.bytes)} MB)`);
+  }
+  console.log("");
 
   if (!pendentes.length) {
     console.log("✓ Nada a migrar. Todos os anexos já estão fora do banco.");
