@@ -57,7 +57,30 @@ export function cabecalhosComEtag(etag: string): Record<string, string> {
   return { etag, "cache-control": "private, no-cache" };
 }
 
-/** `true` quando o cliente já tem exatamente esta versão. */
+/**
+ * `true` quando o cliente já tem esta versão.
+ *
+ * A comparação NÃO pode ser de string crua, e essa foi a razão de a correção não ter surtido o
+ * efeito esperado em produção. Duas coisas acontecem no caminho entre o servidor e o navegador:
+ *
+ * 1. Quando a resposta é comprimida (gzip/brotli, que é o padrão), a camada de borda transforma o
+ *    ETag forte `"abc"` no ETag FRACO `W/"abc"` — porque o corpo entregue não é byte a byte o que
+ *    saiu daqui. O navegador devolve `W/"abc"`, a comparação crua falhava, e TODA batida de 5
+ *    segundos voltava a ser um `200` com a consulta pesada inteira. O silêncio é o pior desse bug:
+ *    tudo continua funcionando, só que caro.
+ *
+ * 2. O `If-None-Match` pode trazer VÁRIOS valores separados por vírgula (o padrão HTTP permite).
+ *
+ * Então: separa a lista, tira o prefixo `W/` dos dois lados e compara. `*` significa "qualquer
+ * versão serve", conforme o padrão.
+ */
 export function clienteJaTem(request: Request, etag: string): boolean {
-  return request.headers.get("if-none-match") === etag;
+  const cabecalho = request.headers.get("if-none-match");
+  if (!cabecalho) return false;
+  const semPeso = (v: string) => v.trim().replace(/^W\//, "");
+  const alvo = semPeso(etag);
+  return cabecalho.split(",").some((v) => {
+    const limpo = semPeso(v);
+    return limpo === "*" || limpo === alvo;
+  });
 }
