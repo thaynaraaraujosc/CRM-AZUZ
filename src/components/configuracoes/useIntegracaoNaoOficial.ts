@@ -33,14 +33,51 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
       .catch((erro) => console.error("Falha ao carregar status do WhatsApp não oficial:", erro));
   }
 
+  /**
+   * Ritmo do polling, decidido a cada batida.
+   *
+   * Os 4 segundos existem por causa do QR Code: ele expira rápido, e quem está com o celular na mão
+   * apontando pra tela precisa ver "conectado" quase na hora. Mas esse é um momento de dois minutos
+   * — o resto do tempo a conexão está estabelecida e não muda por dias.
+   *
+   * Cobrando os 4 segundos o tempo todo, uma aba de Conversas aberta o dia inteiro batia no banco
+   * 21.600 vezes por dia só pra ouvir "continua conectado". Cada uma dessas idas atravessa a
+   * internet até o Railway e volta, e o Railway cobra por byte que sai do banco.
+   *
+   * Então: rápido quando está acontecendo alguma coisa (esperando o QR, sincronizando histórico),
+   * devagar quando está só conectado. A experiência de quem lê o QR não muda em nada.
+   */
+  const RITMO_ATIVO = 4000;
+  const RITMO_PARADO = 30000;
+  // Espelho do estado pro agendador ler sem ser recriado a cada mudança. Escrito num efeito, e não
+  // no corpo do componente: mexer em ref durante a renderização quebra a garantia do React de que
+  // renderizar não tem efeito colateral (e o lint pega).
+  const estadoRef = useRef(estado);
+  useEffect(() => {
+    estadoRef.current = estado;
+  }, [estado]);
+
   useEffect(() => {
     carregar();
-    // Só busca com a aba à frente — com o CRM aberto em segundo plano (o normal, é uma aba que
-    // fica o dia inteiro) isso era requisição a cada 4s sem ninguém olhando.
-    const intervalo = setInterval(() => {
-      if (document.visibilityState === "visible") carregar();
-    }, intervaloMs);
-    return () => clearInterval(intervalo);
+
+    // `setTimeout` que se reagenda, e não `setInterval`: o intervalo precisa ser recalculado a cada
+    // batida (o estado muda no meio), e `setInterval` congela o valor de quando foi criado.
+    let temporizador: ReturnType<typeof setTimeout>;
+    function agendar() {
+      const atual = estadoRef.current;
+      const ativo =
+        atual === null ||
+        atual.status === "aguardando_qr" ||
+        atual.metadados?.historico?.status === "em_andamento";
+      temporizador = setTimeout(() => {
+        // Só busca com a aba à frente — com o CRM aberto em segundo plano (o normal, é uma aba que
+        // fica o dia inteiro) isso era requisição sem ninguém olhando.
+        if (document.visibilityState === "visible") carregar();
+        agendar();
+      }, ativo ? Math.min(intervaloMs, RITMO_ATIVO) : RITMO_PARADO);
+    }
+    agendar();
+    return () => clearTimeout(temporizador);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intervaloMs é constante na prática, não precisa reiniciar o polling se mudar
   }, []);
 
