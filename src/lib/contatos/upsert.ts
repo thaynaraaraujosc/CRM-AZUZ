@@ -63,12 +63,18 @@ export async function encontrarContatoPorTelefone(workspaceId: string, telefone:
   const normalizado = normalizarTelefoneParaComparacao(telefone);
   if (!normalizado) return null;
 
+  // Só `id` e `whatsapp` na varredura, e a linha inteira APENAS do contato que bateu. A versão
+  // anterior trazia todos os contatos do workspace inteiros — inclusive `fotoUrl`, que guarda a
+  // foto em base64 — a cada mensagem recebida pelo WhatsApp. Com algumas centenas de contatos
+  // isso eram megabytes saindo do banco por mensagem, pagos por gigabyte na Railway, pra achar
+  // um telefone. Era a maior fonte de egress que sobrava depois do `304` nas telas.
   const candidatos = await prisma.contato.findMany({
     where: { workspaceId, whatsapp: { not: null } },
+    select: { id: true, whatsapp: true },
   });
-  return (
-    candidatos.find((c) => c.whatsapp && normalizarTelefoneParaComparacao(c.whatsapp) === normalizado) ?? null
-  );
+  const achado = candidatos.find((c) => c.whatsapp && normalizarTelefoneParaComparacao(c.whatsapp) === normalizado);
+  if (!achado) return null;
+  return prisma.contato.findUnique({ where: { id: achado.id } });
 }
 
 /** Identificador de grupo do WhatsApp (`<id>@g.us`, ou só os dígitos dele). Telefone brasileiro
@@ -140,6 +146,12 @@ export async function encontrarContatoPorInstagram(workspaceId: string, arroba: 
   const alvo = arroba.replace(/^@/, "").trim().toLowerCase();
   if (!alvo) return null;
 
-  const candidatos = await prisma.contato.findMany({ where: { workspaceId, instagram: { not: null } } });
-  return candidatos.find((c) => c.instagram?.replace(/^@/, "").trim().toLowerCase() === alvo) ?? null;
+  // Mesma regra de `encontrarContatoPorTelefone`: varre leve, carrega inteiro só o que bateu.
+  const candidatos = await prisma.contato.findMany({
+    where: { workspaceId, instagram: { not: null } },
+    select: { id: true, instagram: true },
+  });
+  const achado = candidatos.find((c) => c.instagram?.replace(/^@/, "").trim().toLowerCase() === alvo);
+  if (!achado) return null;
+  return prisma.contato.findUnique({ where: { id: achado.id } });
 }
