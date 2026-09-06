@@ -51,14 +51,17 @@ const prisma = new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABAS
  * A busca é feita pelo BANCO, com `JSON_SEARCH`, e traz só o id e o tamanho. Trazer `extras` de
  * todas as mensagens pra decidir aqui quais têm data URL seria justamente o tráfego que este
  * script existe pra eliminar — e faria a migração custar, sozinha, mais uma carga inteira.
+ *
+ * Sem `ORDER BY` de propósito: ordenar obriga o MySQL a passar as linhas (com o JSON gigante
+ * dentro) pelo buffer de ordenação, que é pequeno — e ele responde `1038 Out of sort memory`.
+ * A ordem não importa pra migrar.
  */
 async function listarPendentes(): Promise<{ id: string; bytes: number }[]> {
   return prisma.$queryRawUnsafe<{ id: string; bytes: number }[]>(
     `SELECT id, LENGTH(extras) AS bytes
        FROM MensagemExtra
       WHERE extras IS NOT NULL
-        AND JSON_SEARCH(extras, 'one', 'data:%') IS NOT NULL
-      ORDER BY criadoEm ASC`,
+        AND JSON_SEARCH(extras, 'one', 'data:%') IS NOT NULL`,
   ).then((linhas) => linhas.map((l) => ({ id: l.id, bytes: Number(l.bytes) })));
 }
 
