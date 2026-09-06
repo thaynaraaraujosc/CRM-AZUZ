@@ -82,8 +82,23 @@ export async function GET(request: Request) {
   ]);
   if (clienteJaTem(request, etag)) return naoModificado(etag);
 
+  // Sincronização INCREMENTAL. Sem isto, toda vez que UMA mensagem chegava (ou mudava de status),
+  // a tela baixava as 3.000 mais recentes de novo — o custo de cada mensagem nova era proporcional
+  // ao tamanho do histórico, e com muitos clientes cada um com milhares de mensagens isso não
+  // escala. Com `desde`, a tela diz até que instante ela já está em dia e recebe só o que foi
+  // criado ou alterado depois disso: o custo de uma mensagem nova passa a ser o dela.
+  //
+  // `>=` e não `>`: a marca é o maior instante que o servidor já viu, e uma linha gravada no MESMO
+  // milissegundo da marca poderia ficar de fora com `>`. Re-mandar a linha da borda custa nada.
+  //
+  // Apagamento não aparece num delta. Por isso a resposta leva a contagem TOTAL: a tela compara
+  // com o que ela conhece e, se não bater, pede a lista inteira (ver `mensagens-extra-context`).
+  const desdeMs = Number(new URL(request.url).searchParams.get("desde"));
+  const parcial = Number.isFinite(desdeMs) && desdeMs > 0;
+  const desde = parcial ? new Date(desdeMs) : null;
+
   const linhas = await prisma.mensagemExtra.findMany({
-    where,
+    where: desde ? { ...where, OR: [{ criadoEm: { gte: desde } }, { atualizadoEm: { gte: desde } }] } : where,
     orderBy: { criadoEm: "desc" },
     take: LIMITE_MENSAGENS,
   });
@@ -93,7 +108,15 @@ export async function GET(request: Request) {
   for (const linha of linhas) {
     (porContato[linha.contato] ??= []).push(paraMensagem(linha));
   }
-  return NextResponse.json(porContato, { headers: cabecalhosComEtag(etag) });
+  const marca = Math.max(resumo._max.criadoEm?.getTime() ?? 0, resumo._max.atualizadoEm?.getTime() ?? 0);
+  return NextResponse.json(porContato, {
+    headers: {
+      ...cabecalhosComEtag(etag),
+      "x-mensagens-total": String(resumo._count._all),
+      "x-mensagens-marca": String(marca),
+      "x-mensagens-parcial": parcial ? "1" : "0",
+    },
+  });
 }
 
 type ItemUpsert = { contato: string; idFinal: string; mensagem: ConvMensagem };
