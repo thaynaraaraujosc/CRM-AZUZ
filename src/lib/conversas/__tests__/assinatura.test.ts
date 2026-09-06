@@ -54,3 +54,28 @@ describe("assinatura das rotas de conversa", () => {
     expect(cabecalhosComEtag('"x"')["cache-control"]).toContain("private");
   });
 });
+
+describe("comparação do If-None-Match", () => {
+  const etag = montarEtag(["ws1", "", 1, null, null]);
+  const req = (valor: string) => new Request("http://x", { headers: { "if-none-match": valor } });
+
+  it("aceita o etag fraco que a borda devolve quando comprime a resposta", () => {
+    expect(clienteJaTem(req(`W/${etag}`), etag)).toBe(true);
+  });
+
+  it("aceita quando o servidor mandou fraco e o cliente devolve forte", () => {
+    expect(clienteJaTem(req(etag), `W/${etag}`)).toBe(true);
+  });
+
+  it("aceita uma lista com vários valores", () => {
+    expect(clienteJaTem(req(`"outro", W/${etag}`), etag)).toBe(true);
+  });
+
+  it("aceita o coringa", () => {
+    expect(clienteJaTem(req("*"), etag)).toBe(true);
+  });
+
+  it("continua recusando um etag de outra versão", () => {
+    expect(clienteJaTem(req('W/"versao-antiga"'), etag)).toBe(false);
+  });
+});
