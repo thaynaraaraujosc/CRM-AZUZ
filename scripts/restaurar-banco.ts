@@ -77,6 +77,8 @@ async function main() {
   let inseridas = 0;
   let puladas = 0;
   const problemas: string[] = [];
+  /** Uma linha de erro por tabela é o suficiente pra diagnosticar; 800 linhas iguais só escondem. */
+  const tabelasJaRelatadas = new Set<string>();
 
   await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
   try {
@@ -109,7 +111,15 @@ async function main() {
               const r = await modelo.createMany({ data: [linha], skipDuplicates: true });
               contador += r.count;
             } catch (erroLinha) {
-              const msg = erroLinha instanceof Error ? erroLinha.message.split("\n")[0] : String(erroLinha);
+              const msg = erroLinha instanceof Error ? erroLinha.message.trim().split("\n").slice(0, 3).join(" ") : String(erroLinha);
+              // Imprime o PRIMEIRO erro de cada tabela na hora. A versão anterior só mostrava tudo
+              // no relatório final — e quando a execução morria antes do fim (foi o que aconteceu:
+              // a conexão caiu na última instrução), a informação que explicava a falha ia junto.
+              // Diagnóstico que só aparece se tudo der certo não serve pra nada.
+              if (!tabelasJaRelatadas.has(tabela)) {
+                tabelasJaRelatadas.add(tabela);
+                console.error(`      ↳ erro em ${tabela}: ${msg}`);
+              }
               problemas.push(`${tabela}: ${msg}`);
             }
           }
@@ -123,7 +133,21 @@ async function main() {
   } finally {
     // No `finally`: sair com a checagem desligada deixaria o banco aceitando dado inconsistente
     // depois, e ninguém iria perceber.
-    await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+    //
+    // Mas com try/catch PRÓPRIO: esta é a última instrução da restauração, e a conexão pelo
+    // endereço público do Railway às vezes já caiu quando ela roda (`pool timeout`). Sem a
+    // proteção, essa falha de encerramento derrubava o processo ANTES do relatório — a restauração
+    // inteira tinha funcionado e a saída dizia "NÃO foi concluída", sem nenhum dos erros por tabela.
+    //
+    // A checagem é por conexão, não global: uma conexão nova (o app em produção, por exemplo) já
+    // nasce com ela ligada. Falhar aqui não deixa o banco permissivo pra ninguém além deste script,
+    // que está terminando.
+    try {
+      await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+    } catch {
+      console.warn("\n⚠ Não deu pra religar a checagem de chave estrangeira (a conexão caiu no fim).");
+      console.warn("  Sem consequência: ela vale só por conexão, e esta está sendo encerrada.");
+    }
   }
 
   console.log(`\n✓ ${inseridas} linhas inseridas, ${puladas} puladas (já existiam ou falharam).`);
