@@ -70,6 +70,7 @@ model Contato {
   criadoVia String @default("manual")
 
   conversas Conversa[]
+  execucoesAutomacao ExecucaoAutomacao[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -256,6 +257,8 @@ model Workspace {
   arquivosArmazenados   ArquivoArmazenado[]
   instagramEventos      InstagramEvento[]
   automacaoExecucaos    AutomacaoExecucao[]
+  versoesAutomacao      VersaoAutomacao[]
+  execucoesAutomacao    ExecucaoAutomacao[]
   eventoDoLeads         EventoDoLead[]
   campanhas             Campanha[]
   templates             Template[]
@@ -566,6 +569,12 @@ model FluxoAutomacao {
   objetivo           String?   @db.Text
   criadoEm           DateTime  @default(now())
   atualizadoEm       DateTime  @updatedAt
+
+  /// Publicações e execuções — ver `VersaoAutomacao` e `ExecucaoAutomacao`. `historicoVersoes`
+  /// (Json acima) continua existindo enquanto a migração roda; a fonte da verdade passa a ser a
+  /// tabela.
+  versoes   VersaoAutomacao[]
+  execucoesEmAndamento ExecucaoAutomacao[]
 }
 
 // Editor de documentos (rich-text) — mesmo raciocínio: páginas/comentários/versões/acessos/config
@@ -884,6 +893,133 @@ model AutomacaoExecucao {
 /// Serve a duas coisas: o atendente entender o contexto sem reconstruir a história na cabeça, e a
 /// Inteligência Comercial / IA receberem esse contexto já estruturado, em vez de terem que inferir
 /// a partir de mensagens soltas.
+/// Uma PUBLICAÇÃO de uma automação. Hoje as versões vivem dentro de `FluxoAutomacao.historicoVersoes`
+/// (um Json que cresce sem limite e não dá pra consultar); aqui cada publicação é uma linha, e é o
+/// que uma execução aponta.
+///
+/// POR QUE ISTO IMPORTA: hoje o servidor executa `FluxoAutomacao.nodes`, que é o RASCUNHO. Quem
+/// está editando o fluxo no navegador muda, sem querer, o que está rodando pros leads naquele
+/// instante. Com a versão numa linha própria, o que roda é o que foi publicado, e um lead que
+/// começou na v3 termina na v3 mesmo que a v4 seja publicada no meio.
+model VersaoAutomacao {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  fluxoId String
+  fluxo   FluxoAutomacao @relation(fields: [fluxoId], references: [id], onDelete: Cascade)
+
+  versao        Int
+  nodes         Json
+  edges         Json
+  configuracoes Json
+
+  publicadoEm  DateTime @default(now())
+  publicadoPor String?
+
+  execucoes ExecucaoAutomacao[]
+
+  /// A mesma versão nunca é publicada duas vezes pro mesmo fluxo.
+  @@unique([fluxoId, versao])
+  @@index([workspaceId, fluxoId])
+}
+
+/// Uma automação RODANDO para UM contato. É a peça que hoje não existe: o motor atual roda o fluxo
+/// inteiro numa chamada e joga fora o resultado, então "aguardar 2 horas" simplesmente descarta a
+/// execução. Com esta linha, o estado vive no banco: qual nó é o próximo, o que já se sabe do
+/// contato, e o que a execução está esperando.
+///
+/// Como a execução volta a andar, os dois únicos caminhos:
+/// - TEMPO: `aguardandoAte` no passado e o cron pega (mesmo padrão do disparo em massa).
+/// - EVENTO: o webhook de mensagem procura execução `aguardando_evento` daquele contato ANTES de
+///   avaliar gatilhos novos — é isso que faz "clicou em Sim" continuar o fluxo em vez de começar
+///   outro.
+model ExecucaoAutomacao {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  fluxoId String
+  fluxo   FluxoAutomacao @relation(fields: [fluxoId], references: [id], onDelete: Cascade)
+
+  /// A versão publicada que esta execução está rodando — congelada no início.
+  versaoId String?
+  versao   VersaoAutomacao? @relation(fields: [versaoId], references: [id])
+
+  /// Quem está no fluxo. `contatoId` é a identidade de verdade; `contatoNome` fica junto porque é
+  /// a chave que Conversa/MensagemExtra ainda usam, e o motor precisa das duas até a migração
+  /// terminar.
+  contatoId   String?
+  contato     Contato? @relation(fields: [contatoId], references: [id], onDelete: SetNull)
+  contatoNome String
+
+  /// O que começou tudo: "mensagem_recebida", "lead_entrou_etapa"…
+  gatilho String
+
+  /// em_andamento | aguardando_tempo | aguardando_evento | concluida | cancelada | erro
+  situacao String @default("em_andamento")
+
+  /// Próximo nó a executar. Nulo quando terminou.
+  noAtualId String?
+
+  /// O que o motor sabe do contato e do que já aconteceu (respostas, valores lidos). É o "contexto"
+  /// que hoje só existe em memória durante a chamada.
+  contexto Json?
+
+  /// Quando o cron deve retomar (espera por tempo).
+  aguardandoAte DateTime?
+  /// O que retoma esta execução: "resposta", "clique", "formulario"… com o nó que espera.
+  aguardandoEvento String?
+  aguardandoNoId   String?
+
+  /// Última mensagem de erro legível, quando `situacao = erro`.
+  erroMensagem String? @db.Text
+
+  iniciadaEm   DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  finalizadaEm DateTime?
+
+  passos PassoAutomacao[]
+
+  /// A varredura do cron: o que está esperando tempo e já venceu.
+  @@index([situacao, aguardandoAte])
+  /// A correlação por evento: execução aguardando daquele contato, a mais recente primeiro.
+  @@index([workspaceId, contatoNome, situacao])
+  @@index([workspaceId, fluxoId, iniciadaEm])
+}
+
+/// O log de UM nó dentro de uma execução — é o "Histórico de execuções" que hoje não existe (o
+/// motor só imprime `console.log` com a contagem de passos).
+///
+/// Guarda o erro em duas camadas de propósito: `detalhe` é o que a pessoa lê na tela ("Template não
+/// aprovado"), `erroTecnico` é o que serve pra investigar (código da Meta, corpo do erro). Nunca
+/// credencial: o que entra aqui é mensagem de erro, não token.
+model PassoAutomacao {
+  id          String            @id
+  execucaoId  String
+  execucao    ExecucaoAutomacao @relation(fields: [execucaoId], references: [id], onDelete: Cascade)
+
+  /// Repetido aqui pra consultar log por workspace sem entrar na execução.
+  workspaceId String
+
+  noId   String
+  noTipo String
+  titulo String?
+
+  /// ok | condicao_falsa | aguardando | erro | pulado
+  resultado String
+  detalhe   String? @db.Text
+  erroTecnico String? @db.Text
+
+  /// Quantas vezes este nó já foi tentado nesta execução (retry).
+  tentativa Int @default(1)
+
+  criadoEm DateTime @default(now())
+
+  @@index([execucaoId, criadoEm])
+  @@index([workspaceId, criadoEm])
+}
+
 model EventoDoLead {
   id String @id
 

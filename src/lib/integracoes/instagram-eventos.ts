@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { prisma } from "@/lib/prisma";
+import { primeiraVezPara } from "@/lib/automacoes/idempotencia";
 
 /**
  * Eventos do Instagram, normalizados — a fronteira entre o formato da Meta e o resto do CRM.
@@ -108,22 +109,10 @@ export async function marcarExecucaoDeAutomacao(params: {
   chaveEvento: string;
   instagramUserId?: string;
 }): Promise<boolean> {
-  try {
-    await prisma.automacaoExecucao.create({
-      data: {
-        id: randomUUID(),
-        workspaceId: params.workspaceId,
-        fluxoId: params.fluxoId,
-        chaveEvento: params.chaveEvento,
-        instagramUserId: params.instagramUserId ?? null,
-      },
-    });
-    return true;
-  } catch (erro) {
-    if ((erro as { code?: string }).code === "P2002") return false;
-    console.error("[instagram-eventos] Falha ao registrar execução de automação:", erro);
-    return true;
-  }
+  // A trava mora em `src/lib/automacoes/idempotencia.ts` — o problema não é só do Instagram (a
+  // Meta reenvia webhook em todo canal, e o mesmo card pode ser movido em duas abas), então a
+  // regra é uma só. Esta função continua existindo como o nome que o Instagram já usa.
+  return primeiraVezPara(params);
 }
 
 /**
