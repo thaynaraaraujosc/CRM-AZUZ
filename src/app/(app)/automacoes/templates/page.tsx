@@ -41,7 +41,8 @@ export default function TemplatesPage() {
   }, []);
 
   useEffect(() => {
-    recarregar().catch((e) => console.error("Falha ao carregar templates:", e));
+    // Referência, não chamada: o setState fica dentro do `then`, fora do corpo do efeito.
+    Promise.resolve().then(recarregar).catch((e) => console.error("Falha ao carregar templates:", e));
   }, [recarregar]);
 
   function avisar(texto: string) {
