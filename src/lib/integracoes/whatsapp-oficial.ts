@@ -64,6 +64,50 @@ export async function tratarErroEnvio(erro: unknown, integracaoId: string): Prom
   return erro instanceof Error ? erro.message : "Falha ao enviar mensagem.";
 }
 
+/**
+ * Quantas PESSOAS DIFERENTES a conta pode iniciar conversa em 24h, lido da própria Meta.
+ *
+ * A Meta chama de `messaging_limit_tier` e o valor sobe sozinho com o histórico de qualidade
+ * (250 → 1.000 → 10.000 → 100.000 → ilimitado). É o número que decide quantos dias um disparo
+ * leva — chutar aqui seria segurar uma conta que já podia mais ou passar do que ela pode e ver a
+ * Meta recusar. `null` = não deu pra ler (conta sem o campo, token sem permissão, Graph fora);
+ * quem chama decide o que fazer sem o número.
+ */
+const CONVERSAS_POR_TIER: Record<string, number | null> = {
+  TIER_50: 50,
+  TIER_250: 250,
+  TIER_1K: 1_000,
+  TIER_10K: 10_000,
+  TIER_100K: 100_000,
+  TIER_UNLIMITED: null,
+};
+
+export async function limiteDiarioDaConta(conta: ContaWhatsappOficial): Promise<{ conhecido: boolean; porDia: number | null }> {
+  try {
+    const numero = await chamarGraph<{ messaging_limit_tier?: string }>(
+      `/${conta.phoneNumberId}?fields=messaging_limit_tier`,
+      conta.accessToken,
+    );
+    const tier = numero.messaging_limit_tier;
+    if (!tier || !(tier in CONVERSAS_POR_TIER)) return { conhecido: false, porDia: null };
+    // Guarda no metadados pra tela mostrar sem nova chamada — e pra sobreviver a uma Graph fora.
+    await prisma.integracao
+      .update({
+        where: { id: conta.integracaoId },
+        data: { metadados: { ...(await metadadosAtuais(conta.integracaoId)), limiteDiarioTier: tier } as never },
+      })
+      .catch(() => {});
+    return { conhecido: true, porDia: CONVERSAS_POR_TIER[tier] };
+  } catch {
+    return { conhecido: false, porDia: null };
+  }
+}
+
+async function metadadosAtuais(integracaoId: string): Promise<Record<string, unknown>> {
+  const atual = await prisma.integracao.findUnique({ where: { id: integracaoId }, select: { metadados: true } });
+  return (atual?.metadados as Record<string, unknown> | null) ?? {};
+}
+
 type RespostaEnvio = { messages?: { id?: string }[] };
 
 /**

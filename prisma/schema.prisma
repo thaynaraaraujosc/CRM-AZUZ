@@ -258,6 +258,7 @@ model Workspace {
   automacaoExecucaos    AutomacaoExecucao[]
   eventoDoLeads         EventoDoLead[]
   campanhas             Campanha[]
+  templates             Template[]
 }
 
 // Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
@@ -670,6 +671,10 @@ model Assinatura {
 // o registro da ação em si — o disparo de verdade pros contatos (via WhatsApp/Instagram/SMS) ainda
 // não existe (precisaria de um agendador/fila rodando fora do request, fora do escopo agora); por
 // enquanto fica marcado como "Agendado" e é isso.
+/// OBSOLETO. Era o registro de "Ações" antes de existir o disparo de verdade (`Campanha`); a tela
+/// e a rota que usavam isto foram removidas. O modelo fica só pra tabela não ser derrubada num
+/// deploy sem alguém confirmar que está vazia (`db push` sem `--accept-data-loss` recusaria e
+/// travaria a publicação). Passo seguinte: confirmar zero linhas em produção e apagar daqui.
 model AcaoEnvio {
   id          String    @id
   workspaceId String
@@ -905,7 +910,7 @@ model EventoDoLead {
 }
 
 // ============================================================================
-// Campanhas (Ações / listas de transmissão)
+// Campanhas (Disparo em massa)
 //
 // `AcaoEnvio` acima guarda só o registro da ação e nunca enviou nada — a tela dizia "Envio
 // agendado" e a mensagem não saía. Estes dois modelos são o disparo de verdade.
@@ -938,6 +943,16 @@ model Campanha {
   /// Modelo aprovado da Meta, obrigatório no WhatsApp oficial quando a janela de 24h está fechada.
   templateNome   String?
   templateIdioma String?
+  /// Template do CRM (tabela `Template`) de onde a mensagem saiu, quando saiu de um. Guardado por
+  /// id pra tela de acompanhamento mostrar "Template: Retomar atendimento" mesmo que o texto mude.
+  templateId String?
+  /// Como cada variável da mensagem é preenchida: `[{ chave: "nome", indice: 1, origem: "contato.nome" }]`.
+  /// O valor por destinatário é resolvido NA CRIAÇÃO e congelado em `CampanhaDestinatario.parametros`,
+  /// pelo mesmo motivo do `destino`. Ver `src/lib/campanhas/variaveis.ts`.
+  variaveis Json?
+  /// Como o público foi escolhido (`{ modo: "etiqueta", valor: "vip" }`…), só pra reexibir na tela
+  /// de acompanhamento. Quem recebe de verdade está em `destinatarios`.
+  audiencia Json?
 
   /// agendada | enviando | pausada | concluida | concluida_com_erros | cancelada
   status String @default("agendada")
@@ -961,6 +976,47 @@ model Campanha {
   @@index([workspaceId, criadoEm])
   /// O worker varre por aqui: só campanhas de um status, prontas pra rodar.
   @@index([status, agendadaPara])
+}
+
+/// Mensagem reutilizável do CRM — o que o Disparo em massa e, depois, o construtor de automações
+/// escolhem. NÃO substitui `WhatsappTemplate`: aquele é o espelho do que existe na Meta; este é o
+/// que a pessoa escreve aqui, em qualquer canal. No WhatsApp oficial os dois se ligam por
+/// `whatsappTemplateId` quando o template é enviado pra análise.
+///
+/// Variáveis são NOMEADAS (`{{nome}}`), porque é assim que uma pessoa escreve. A Meta exige
+/// numeradas (`{{1}}`); a conversão acontece na hora de enviar pra análise, e `variaveis` guarda
+/// o índice de cada uma pra manter o vínculo (ver `src/lib/campanhas/variaveis.ts`).
+model Template {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  nome  String
+  /// "whatsapp_oficial" | "whatsapp_nao_oficial" | "email"
+  canal String
+  /// Só o WhatsApp oficial exige: MARKETING | UTILITY | AUTHENTICATION.
+  categoria String?
+  idioma    String  @default("pt_BR")
+  /// Só e-mail usa.
+  assunto String?
+  corpo   String  @db.Text
+  /// `[{ chave: "nome", indice: 1, origem: "contato.nome" }]` — o mapeamento padrão de cada variável.
+  variaveis Json?
+  /// `[{ texto: "Sim, quero continuar" }]` — botões de resposta rápida, com o limite do canal
+  /// aplicado na gravação (ver `limitesDoCanal`).
+  botoes Json?
+
+  /// rascunho | em_analise | aprovado | rejeitado. Canal sem análise (QR, e-mail) vai direto pra
+  /// "aprovado" ao salvar: o status existe pra tela ser uma só, não pra fingir um processo.
+  status         String  @default("rascunho")
+  motivoRejeicao String? @db.Text
+  /// Espelho na Meta (`WhatsappTemplate.id`), preenchido quando enviado pra análise.
+  whatsappTemplateId String?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([workspaceId, canal])
 }
 
 model CampanhaDestinatario {
@@ -989,6 +1045,14 @@ model CampanhaDestinatario {
   tentativas   Int       @default(0)
   erroMensagem String?   @db.Text
   enviadoEm    DateTime?
+  /// Marcos que o webhook de status do WhatsApp oficial preenche casando pelo `idExterno`
+  /// (`wamid`). `respondidoEm` é preenchido quando a pessoa manda qualquer mensagem depois do envio.
+  entregueEm   DateTime?
+  lidoEm       DateTime?
+  respondidoEm DateTime?
+  /// Valores das variáveis PARA ESTA PESSOA (`{ nome: "Maria", produto: "Plano X" }`), resolvidos na
+  /// criação da campanha. O worker só substitui; nunca consulta o contato na hora do envio.
+  parametros Json?
 
   criadoEm DateTime @default(now())
 

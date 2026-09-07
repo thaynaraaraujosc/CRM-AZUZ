@@ -16,7 +16,6 @@ import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import {
-  IconAcoes,
   IconAutomacoes,
   IconCalendar,
   IconConfiguracoes,
@@ -65,7 +64,6 @@ export const navEntries: NavEntry[] = [
   { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
   { href: "/formularios", label: "Formulário", Icon: IconDoc },
   { href: "/agenda", label: "Agenda", Icon: IconCalendar },
-  { href: "/acoes", label: "Ações", Icon: IconAcoes },
   { href: "/equipe", label: "Equipe", Icon: IconEquipe },
   { href: "/contatos", label: "Contatos", Icon: IconContatos },
   ...gestaoAtividadeItens,

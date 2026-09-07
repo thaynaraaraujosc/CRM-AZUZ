@@ -311,7 +311,7 @@ export type MensagemBotoesData = {
   formatoResposta?: FormatoResposta;
 };
 export type MensagemListaData = MensagemBotoesData;
-export type MensagemModeloWhatsappData = { templateId: string; variaveis?: Record<string, string> };
+export type MensagemModeloWhatsappData = { templateId: string; templateNome?: string; variaveis?: Record<string, string> };
 
 export type DestinatarioEmailModo = "contato_email" | "outro_campo" | "especifico" | "responsavel" | "campo_personalizado";
 export type SeSemEmailModo = "continuar" | "encerrar" | "criar_tarefa" | "caminho_alternativo";
