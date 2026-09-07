@@ -4,6 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { publicarVersao } from "@/lib/automacoes/versoes";
 
 function paraFluxo(linha: {
   nodes: unknown;
@@ -50,6 +51,24 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/automacoes
   if (count === 0) return NextResponse.json({ erro: "Fluxo não encontrado" }, { status: 404 });
 
   const linha = await prisma.fluxoAutomacao.findUniqueOrThrow({ where: { id } });
+
+  // Publicação também vira uma linha em `VersaoAutomacao` — é ela que o motor executa, em vez do
+  // rascunho. Enquanto a migração acontece os dois formatos convivem: o Json continua sendo escrito
+  // (o editor lê dele) e a tabela passa a ser a fonte da verdade da execução. Ver
+  // `src/lib/automacoes/versoes.ts`. Falhar aqui não pode derrubar o salvamento do fluxo.
+  if (dados.status === "publicado" && typeof dados.versaoAtual === "number") {
+    await publicarVersao({
+      workspaceId: sessao.user.workspaceId,
+      fluxoId: id,
+      versao: dados.versaoAtual,
+      nodes: (linha.nodes ?? []) as FluxoAutomacao["nodes"],
+      edges: (linha.edges ?? []) as FluxoAutomacao["edges"],
+      configuracoes: (linha.configuracoes ?? {}) as FluxoAutomacao["configuracoes"],
+      publicadoPor: dados.publicadoPor ?? null,
+      publicadoEm: dados.publicadoEm ? new Date(dados.publicadoEm) : undefined,
+    }).catch((erro) => console.error("[automacao] falha ao gravar a versão publicada:", erro));
+  }
+
   return NextResponse.json(paraFluxo(linha));
 }
 
