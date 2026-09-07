@@ -671,6 +671,10 @@ model Assinatura {
 // o registro da ação em si — o disparo de verdade pros contatos (via WhatsApp/Instagram/SMS) ainda
 // não existe (precisaria de um agendador/fila rodando fora do request, fora do escopo agora); por
 // enquanto fica marcado como "Agendado" e é isso.
+/// OBSOLETO. Era o registro de "Ações" antes de existir o disparo de verdade (`Campanha`); a tela
+/// e a rota que usavam isto foram removidas. O modelo fica só pra tabela não ser derrubada num
+/// deploy sem alguém confirmar que está vazia (`db push` sem `--accept-data-loss` recusaria e
+/// travaria a publicação). Passo seguinte: confirmar zero linhas em produção e apagar daqui.
 model AcaoEnvio {
   id          String    @id
   workspaceId String
@@ -906,7 +910,7 @@ model EventoDoLead {
 }
 
 // ============================================================================
-// Campanhas (Ações / listas de transmissão)
+// Campanhas (Disparo em massa)
 //
 // `AcaoEnvio` acima guarda só o registro da ação e nunca enviou nada — a tela dizia "Envio
 // agendado" e a mensagem não saía. Estes dois modelos são o disparo de verdade.
