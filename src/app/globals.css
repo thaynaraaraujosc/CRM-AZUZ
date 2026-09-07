@@ -14784,3 +14784,14 @@ table.tbl .name-cell .r {
   background: var(--navy-raised);
   border-radius: var(--radius-md);
 }
+
+/* Abas do módulo de Automações (Automações · Templates · Disparo em massa). Ficam logo abaixo da
+   Topbar, alinhadas ao conteúdo. Link em vez de botão (são rotas), por isso o reset de texto. */
+.automacoes-abas {
+  padding: 0 var(--space-6);
+  background: var(--navy);
+}
+.automacoes-abas .tab {
+  text-decoration: none;
+  display: inline-block;
+}
