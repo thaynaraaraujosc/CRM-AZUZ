@@ -14795,3 +14795,236 @@ table.tbl .name-cell .r {
   text-decoration: none;
   display: inline-block;
 }
+
+/* ---------------------------------------------------------------- Templates e Disparo em massa
+   Preto, branco e cinzas dos tokens. A única cor é o status (badge), que já existe. A "bolha" da
+   prévia é cinza, não verde: é uma mensagem genérica, não uma imitação do WhatsApp. */
+.tpl-filtros {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+.tpl-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+.tpl-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+.tpl-card-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.tpl-card-cabecalho strong {
+  display: block;
+  font-size: 14px;
+}
+.tpl-card-cabecalho .hint {
+  display: block;
+  margin-top: 2px;
+}
+.tpl-card-acoes {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line-soft);
+}
+.tpl-card-acoes .btn {
+  padding: var(--space-1) var(--space-2);
+  font-size: 12px;
+}
+.tpl-excluir {
+  margin-left: auto;
+  color: var(--danger);
+}
+.tpl-rejeicao {
+  font-size: 12px;
+  color: var(--danger);
+  margin: 0;
+}
+.tpl-vazio {
+  padding: var(--space-6);
+  text-align: center;
+}
+.tpl-vazio strong {
+  display: block;
+  margin-bottom: var(--space-2);
+}
+.tpl-toast {
+  position: fixed;
+  bottom: var(--space-5);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--surface-elevated);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  z-index: 300;
+  box-shadow: var(--shadow-sm);
+}
+.tpl-aviso {
+  background: var(--navy-raised);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: 12.5px;
+  margin: 0 0 var(--space-3);
+}
+
+/* Editor: formulário à esquerda, prévia à direita. Em tela estreita, empilha. */
+.tpl-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-5);
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .tpl-editor {
+    grid-template-columns: 1fr;
+  }
+}
+.tpl-editor-form .field {
+  padding-left: 0;
+  padding-right: 0;
+}
+.tpl-linha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.tpl-linha .field {
+  border-bottom: none;
+}
+.tpl-corpo {
+  width: 100%;
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+}
+.tpl-inserir {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+.tpl-contagem {
+  margin-left: auto;
+}
+.tpl-canais {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+.tpl-canal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--ink);
+}
+.tpl-canal strong {
+  font-size: 12.5px;
+}
+.tpl-canal span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.tpl-canal.on {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink) inset;
+}
+.tpl-canal:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tpl-variaveis,
+.tpl-botoes {
+  display: grid;
+  gap: var(--space-2);
+}
+.tpl-variavel,
+.tpl-botao {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+}
+.tpl-botao {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.tpl-variavel code {
+  font-size: 12px;
+  background: var(--navy-raised);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+.tpl-problemas {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  font-size: 12px;
+  color: var(--danger);
+}
+
+/* Prévia: bolha cinza com o texto preenchido e os botões embaixo. */
+.tpl-previa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tpl-previa-titulo {
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.tpl-previa-titulo:empty {
+  display: none;
+}
+.tpl-bolha {
+  background: var(--navy-raised);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tpl-bolha p {
+  margin: 0;
+}
+.tpl-bolha-assunto {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+.tpl-bolha-botoes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.tpl-bolha-botoes span {
+  text-align: center;
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+  font-weight: var(--fw-medium);
+  background: var(--surface-elevated);
+}

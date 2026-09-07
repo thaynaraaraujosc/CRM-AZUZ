@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { chamarGraph } from "@/lib/integracoes/meta";
 import { contaConectada, tratarErroEnvio } from "@/lib/integracoes/whatsapp-oficial";
+import { sincronizarTemplatesMeta } from "@/lib/templates/sincronizar-meta";
 
 /**
  * Modelos de mensagem (templates) do WhatsApp Business — cada WABA tem os próprios, não existe
@@ -12,56 +13,15 @@ import { contaConectada, tratarErroEnvio } from "@/lib/integracoes/whatsapp-ofic
  * O status inicial é sempre PENDING; a aprovação/rejeição chega pelo webhook
  * `message_template_status_update` e atualiza o registro local (sem polling).
  */
-type TemplateGraph = {
-  id: string;
-  name: string;
-  language: string;
-  category: string;
-  status: string;
-  components?: unknown;
-};
-
 /** GET sincroniza a lista da Graph API com o espelho local e devolve o espelho — assim a tela
- * funciona mesmo se a Graph estiver fora do ar no momento. */
+ * funciona mesmo se a Graph estiver fora do ar no momento. A sincronização mora em
+ * `src/lib/templates/sincronizar-meta.ts`, compartilhada com `/api/templates`. */
 export async function GET() {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
   const workspaceId = sessao.user.workspaceId;
 
-  const conta = await contaConectada(workspaceId);
-  if (conta?.wabaId) {
-    try {
-      const resposta = await chamarGraph<{ data?: TemplateGraph[] }>(
-        `/${conta.wabaId}/message_templates?fields=id,name,language,category,status,components&limit=100`,
-        conta.accessToken,
-      );
-      for (const t of resposta.data ?? []) {
-        await prisma.whatsappTemplate.upsert({
-          where: { workspaceId_metaId: { workspaceId, metaId: t.id } },
-          create: {
-            id: `template-${workspaceId}-${t.id}`,
-            workspaceId,
-            metaId: t.id,
-            wabaId: conta.wabaId,
-            nome: t.name,
-            idioma: t.language,
-            categoria: t.category,
-            status: t.status,
-            componentes: (t.components ?? []) as never,
-          },
-          update: {
-            nome: t.name,
-            idioma: t.language,
-            categoria: t.category,
-            status: t.status,
-            componentes: (t.components ?? []) as never,
-          },
-        });
-      }
-    } catch (erro) {
-      console.error("[templates whatsapp] falha ao sincronizar com a Graph:", erro);
-    }
-  }
+  await sincronizarTemplatesMeta(workspaceId);
 
   const templates = await prisma.whatsappTemplate.findMany({
     where: { workspaceId },
