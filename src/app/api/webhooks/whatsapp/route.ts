@@ -70,6 +70,14 @@ type PayloadWhatsApp = {
           timestamp: string;
           type: string;
           text?: { body?: string };
+          /** Clique num botão de TEMPLATE (resposta rápida): a Meta manda o texto do botão aqui. */
+          button?: { text?: string; payload?: string };
+          /** Clique num botão ou item de lista de mensagem INTERATIVA (dentro da janela de 24h). */
+          interactive?: {
+            type?: string;
+            button_reply?: { id?: string; title?: string };
+            list_reply?: { id?: string; title?: string };
+          };
           image?: MidiaWhatsApp;
           sticker?: MidiaWhatsApp;
           audio?: MidiaWhatsApp;
@@ -404,7 +412,13 @@ export async function POST(request: Request) {
         const temMidiaBaixada = Object.keys(extras).length > 0;
         // Rótulo em texto sempre existe (aparece na lista de conversas e como legenda/fallback),
         // mesmo quando a mídia baixou certinho.
-        const texto = mensagem.text?.body ?? midia?.caption ?? RÓTULO_POR_TIPO[mensagem.type] ?? "[Mensagem não suportada]";
+        // Clique em botão chega como tipo `button` (template) ou `interactive` (mensagem dentro da
+        // janela). O texto do botão vira a mensagem da pessoa: aparece na conversa, conta como
+        // resposta ao disparo e dispara automação por palavra-chave — é assim que "clicou em Sim"
+        // continua o fluxo.
+        const textoDoBotao =
+          mensagem.button?.text ?? mensagem.interactive?.button_reply?.title ?? mensagem.interactive?.list_reply?.title;
+        const texto = mensagem.text?.body ?? textoDoBotao ?? midia?.caption ?? RÓTULO_POR_TIPO[mensagem.type] ?? "[Mensagem não suportada]";
         if (midia && !temMidiaBaixada) {
           console.error(`Falha ao baixar mídia (${mensagem.type}) da mensagem ${mensagem.id} — caiu no rótulo em texto.`);
         }

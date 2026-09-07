@@ -4,6 +4,7 @@ import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 import { contaConectada, enviarPelaCloudApi, limiteDiarioDaConta, tratarErroEnvio } from "@/lib/integracoes/whatsapp-oficial";
 import { RITMO, intervaloEntreEnvios, type CanalCampanha } from "./ritmo";
 import { componentesParaMeta, preencherVariaveis, type MapeamentoVariavel } from "./variaveis";
+import { registrarEnvioNaConversa } from "./registrar-envio";
 
 /**
  * O motor das campanhas.
@@ -153,10 +154,26 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
   // rodada (não por mensagem: é uma chamada de rede). Se a Meta não responder, segue sem teto — a
   // própria Meta recusa quando estourar, e o destinatário fica "falhou" com o motivo dela.
   let porDia = ritmo.porDia;
+  let identificadorConexao: string | null = null;
   if (canal === "whatsapp_oficial") {
     const conta = await contaConectada(campanha.workspaceId);
-    if (conta) porDia = (await limiteDiarioDaConta(conta)).porDia;
+    if (conta) {
+      porDia = (await limiteDiarioDaConta(conta)).porDia;
+      identificadorConexao = conta.phoneNumberId;
+    }
+  } else if (canal === "whatsapp_nao_oficial") {
+    const integracao = await prisma.integracao.findUnique({
+      where: { workspaceId_provedor: { workspaceId: campanha.workspaceId, provedor: "whatsapp_nao_oficial" } },
+      select: { metadados: true },
+    });
+    identificadorConexao = (integracao?.metadados as { numero?: string } | null)?.numero ?? null;
   }
+  // Botões do template (só pra bolha na tela de Conversas mostrar o que a pessoa recebeu).
+  const botoes = campanha.templateId
+    ? ((await prisma.template.findUnique({ where: { id: campanha.templateId }, select: { botoes: true } }))?.botoes as
+        | { texto: string }[]
+        | null) ?? null
+    : null;
 
   while (Date.now() < prazoFinal) {
     // Teto diário: conferido a cada mensagem, não uma vez no começo — a rodada pode atravessar a
@@ -214,6 +231,20 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
       await prisma.campanhaDestinatario.update({
         where: { id: proximo.id },
         data: { status: "enviado", idExterno, enviadoEm: new Date(), erroMensagem: null },
+      });
+      // A mensagem entra na tela de Conversas, como qualquer outra que o CRM mandou.
+      const parametros = (proximo.parametros && typeof proximo.parametros === "object" ? proximo.parametros : {}) as Record<string, string>;
+      await registrarEnvioNaConversa({
+        workspaceId: campanha.workspaceId,
+        canal,
+        contatoNome: proximo.contatoNome,
+        destino: proximo.destino,
+        texto: preencherVariaveis(campanha.corpo, parametros),
+        botoes,
+        wamid: idExterno,
+        destinatarioId: proximo.id,
+        campanhaId,
+        identificadorConexao,
       });
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : "Falha ao enviar.";
