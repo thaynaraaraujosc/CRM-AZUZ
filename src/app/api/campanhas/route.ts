@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { RITMO, preverDuracao, type CanalCampanha } from "@/lib/campanhas/ritmo";
+import { resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
+import { contaConectada, limiteDiarioDaConta } from "@/lib/integracoes/whatsapp-oficial";
 
 /** GET lista as campanhas do workspace com a contagem de cada situação, mais recentes primeiro. */
 export async function GET() {
@@ -41,6 +43,12 @@ type CorpoCriar = {
   canal: CanalCampanha;
   templateNome?: string;
   templateIdioma?: string;
+  /** Template do CRM de onde a mensagem saiu (só pra exibir depois). */
+  templateId?: string;
+  /** Como cada `{{variável}}` é preenchida. Ver `src/lib/campanhas/variaveis.ts`. */
+  variaveis?: MapeamentoVariavel[];
+  /** Como o público foi escolhido (só pra exibir depois). */
+  audiencia?: unknown;
   agendadaPara?: string;
   /** Nomes dos contatos, como aparecem na tela. */
   contatos: string[];
@@ -76,18 +84,34 @@ export async function POST(request: Request) {
 
   // Resolve nome -> destino. Quem não tem o dado do canal escolhido fica de fora e é DEVOLVIDO na
   // resposta: campanha que ignora em silêncio faz a pessoa achar que mandou pra lista inteira.
+  // Só os campos que o destino e as variáveis precisam — nunca a linha inteira (`fotoUrl` guarda
+  // imagem em base64, e um público de mil contatos viraria dezenas de MB saindo do banco à toa).
   const contatos = await prisma.contato.findMany({
     where: { workspaceId, nome: { in: corpo.contatos } },
-    select: { nome: true, whatsapp: true, email: true },
+    select: {
+      nome: true,
+      whatsapp: true,
+      email: true,
+      sobrenome: true,
+      empresa: true,
+      cargo: true,
+      cidade: true,
+      responsavel: true,
+    },
   });
+  const variaveis = Array.isArray(corpo.variaveis) ? corpo.variaveis : [];
 
-  const destinos: { contatoNome: string; destino: string }[] = [];
+  const destinos: { contatoNome: string; destino: string; parametros: Record<string, string> }[] = [];
   const semDestino: string[] = [];
   for (const nome of corpo.contatos) {
     const c = contatos.find((x) => x.nome === nome);
     const destino = corpo.canal === "email" ? c?.email : c?.whatsapp;
-    if (destino?.trim()) destinos.push({ contatoNome: nome, destino: destino.trim() });
-    else semDestino.push(nome);
+    if (destino?.trim()) {
+      // Valores das variáveis DESTA pessoa, congelados agora — pelo mesmo motivo do destino.
+      destinos.push({ contatoNome: nome, destino: destino.trim(), parametros: resolverParametros(variaveis, c ?? null) });
+    } else {
+      semDestino.push(nome);
+    }
   }
 
   if (!destinos.length) {
@@ -116,6 +140,9 @@ export async function POST(request: Request) {
         canal: corpo.canal,
         templateNome: corpo.templateNome || null,
         templateIdioma: corpo.templateIdioma || null,
+        templateId: corpo.templateId || null,
+        variaveis: variaveis as never,
+        audiencia: (corpo.audiencia ?? null) as never,
         agendadaPara,
         status: "agendada",
       },
@@ -127,11 +154,18 @@ export async function POST(request: Request) {
         workspaceId,
         contatoNome: d.contatoNome,
         destino: d.destino,
+        parametros: d.parametros as never,
       })),
     }),
   ]);
 
-  const previsao = preverDuracao(corpo.canal, destinos.length);
+  // Previsão com a cota REAL da conta no WhatsApp oficial (lida da Meta), não um chute.
+  let limiteDiario: number | null | undefined;
+  if (corpo.canal === "whatsapp_oficial") {
+    const conta = await contaConectada(workspaceId);
+    if (conta) limiteDiario = (await limiteDiarioDaConta(conta)).porDia;
+  }
+  const previsao = preverDuracao(corpo.canal, destinos.length, limiteDiario);
 
   return NextResponse.json(
     {

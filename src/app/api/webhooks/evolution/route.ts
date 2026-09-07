@@ -6,6 +6,7 @@ import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } fro
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
 import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
+import { registrarRespostaDeCampanha } from "@/lib/campanhas/resposta";
 import { CANAL_NAO_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { iniciarHistoricoSeNecessario } from "@/lib/integracoes/historico-whatsapp";
 
@@ -326,6 +327,10 @@ export async function processarMensagemRecebida(
       },
     },
   });
+
+  // Mensagem da pessoa (não eco do próprio celular) logo depois de um disparo em massa conta como
+  // resposta a ele — é a métrica "Respondidas" da tela de acompanhamento.
+  if (!fromMe && !ehGrupo) await registrarRespostaDeCampanha(workspaceId, chaveContato);
 
   await upsertConversaAoReceberMensagem({
     workspaceId,
