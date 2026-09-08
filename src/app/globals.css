@@ -22,7 +22,13 @@
      lê como uma superfície contínua, com a separação vindo da borda, não do contraste de cor. */
   /* Piso branco. O cinza deixa de cobrir área e passa a ser recurso de peso: menu, botão, campo,
      coluna do kanban. Numa tela grande, cinza claro em toda a superfície ainda lê como cinza. */
-  --canvas: #ffffff;
+  /* TESTE — a camada de trás de tudo.
+     É o "chão" onde o menu e o painel de conteúdo flutuam: aparece nas margens da página e na
+     folga entre os dois. Era branco, o que fazia tudo parecer uma folha só. Em marinho, o menu
+     deixa de ser um bloco de cor solto e vira parte de uma moldura — e os painéis brancos ganham
+     recorte.
+     Pra voltar ao branco é só esta linha: `--canvas: #ffffff`. */
+  --canvas: #0b1533;
 
   /* Azul da marca — daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
@@ -331,7 +337,9 @@ body {
 body {
   margin: 0;
   background: var(--canvas);
-  color: var(--ink);
+  /* Texto solto direto sobre o chão (raro — quase tudo vive dentro de um painel) acompanha o
+     fundo, senão ficaria marinho sobre marinho enquanto o teste durar. */
+  color: var(--acao-texto);
   font-family: var(--body);
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
