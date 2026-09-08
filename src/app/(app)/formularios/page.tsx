@@ -1349,6 +1349,9 @@ function CampoImagem({
 }) {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
+  /* Um endereço gravado que não desenha vira o ícone de imagem quebrada do navegador, que não diz
+     nada a quem está usando. Aqui vira uma frase. */
+  const [naoCarregou, setNaoCarregou] = useState(false);
 
   async function enviar(arquivo: File) {
     setErro("");
@@ -1372,6 +1375,7 @@ function CampoImagem({
       });
       const dados = (await resposta.json()) as { url?: string; arquivo?: string; erro?: string };
       if (!resposta.ok) throw new Error(dados.erro ?? "Não deu pra enviar a imagem.");
+      setNaoCarregou(false);
       onMudar(dados.url, dados.arquivo);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não deu pra enviar a imagem.");
@@ -1384,11 +1388,11 @@ function CampoImagem({
     <div className="field">
       <label>{rotulo}</label>
       <div className="form-design-logo">
-        {url ? (
+        {url && !naoCarregou ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt="" className="form-design-logo-previa" />
+          <img src={url} alt="" className="form-design-logo-previa" onError={() => setNaoCarregou(true)} />
         ) : (
-          <span className="form-design-logo-vazia">Sem imagem</span>
+          <span className="form-design-logo-vazia">{url ? "Não carregou" : "Sem imagem"}</span>
         )}
         <div className="form-design-logo-acoes">
           <label className="btn ghost" style={{ cursor: enviando ? "wait" : "pointer" }}>
@@ -1417,6 +1421,12 @@ function CampoImagem({
       {erro ? (
         <p className="hint" style={{ color: "var(--danger)" }}>
           {erro}
+        </p>
+      ) : null}
+      {!erro && naoCarregou ? (
+        <p className="hint" style={{ color: "var(--danger)" }}>
+          A imagem foi enviada mas não está sendo entregue. Envie de novo; se repetir, o problema é
+          no armazenamento.
         </p>
       ) : null}
       <p className="hint">PNG, JPG, WEBP ou GIF, até 2 MB.</p>

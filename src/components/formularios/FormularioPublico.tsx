@@ -13,7 +13,7 @@ import {
   type TemaFormulario,
 } from "@/lib/formularios-context";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
-import { IconCadeado } from "@/components/icons";
+import { IconCadeado, IconCheck } from "@/components/icons";
 
 type OpcaoNome = { id: string; nome: string };
 
@@ -347,11 +347,18 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
 
   if (enviado) {
     return (
-      <div className="form-public-page" style={estiloPagina}>
-        <div className={`form-public-obrigado${tema.temaEscuro ? " tema-escuro" : ""}`} style={{ background: tema.corPrincipal }}>
+      /* A tela de agradecimento não segue o tema do formulário de propósito: ela é o fecho, e o
+         fecho é da marca. Marinho cheio, centralizado na tela, com o selo de confirmação. Antes
+         era um cartãozinho encostado no topo de uma página vazia, que lia como se algo tivesse
+         faltado carregar em vez de "pronto, deu certo". */
+      <div className="form-public-page form-public-final">
+        <div className="form-public-obrigado">
+          <span className="form-obrigado-selo" aria-hidden="true">
+            <IconCheck width={26} height={26} />
+          </span>
           <h2>{formulario.paginaFinal.mensagem || MENSAGEM_FINAL_PADRAO}</h2>
           {formulario.paginaFinal.urlRedirecionamento ? (
-            <a className="btn primary" href={formulario.paginaFinal.urlRedirecionamento} style={{ marginTop: 14, display: "inline-block" }}>
+            <a className="btn form-obrigado-botao" href={formulario.paginaFinal.urlRedirecionamento}>
               Continuar
             </a>
           ) : null}
