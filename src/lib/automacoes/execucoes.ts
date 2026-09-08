@@ -146,6 +146,33 @@ export async function aguardarEvento(params: {
   });
 }
 
+/**
+ * Guarda a execução pra continuar na rodada seguinte, sem ter executado o nó atual.
+ *
+ * A diferença pro `aguardarTempo` está no `aguardandoNoId`, e ela é o que evita repetir um passo:
+ * quando `aguardandoNoId` tem valor, o nó parado JÁ rodou (é uma espera) e quem retoma segue pela
+ * saída dele; quando é `null`, o nó ainda não rodou e quem retoma executa ele mesmo. É o caso do
+ * teto de nós por rodada — a automação é longa e avança em fatias.
+ */
+export async function reagendarRodada(params: {
+  execucaoId: string;
+  noId: string;
+  contexto: ContextoExecucaoPersistido;
+  ate: Date;
+}): Promise<void> {
+  await prisma.execucaoAutomacao.update({
+    where: { id: params.execucaoId },
+    data: {
+      situacao: "aguardando_tempo",
+      noAtualId: params.noId,
+      aguardandoNoId: null,
+      aguardandoEvento: null,
+      aguardandoAte: params.ate,
+      contexto: params.contexto as never,
+    },
+  });
+}
+
 export async function encerrarExecucao(params: {
   execucaoId: string;
   situacao: Extract<SituacaoExecucao, "concluida" | "cancelada" | "erro">;

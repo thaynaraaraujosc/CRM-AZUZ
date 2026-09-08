@@ -3,6 +3,7 @@ import { avaliarGatilho, executarFluxo, type EventoAutomacao, type Ligacoes } fr
 import { anotarNaLinhaDoTempo, marcarExecucaoDeAutomacao } from "@/lib/integracoes/instagram-eventos";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
+import { continuarComResposta, iniciarFluxoComEstado, motorNovoAtivo } from "@/lib/automacoes/iniciar";
 
 /**
  * Dispara as automações quando chega uma mensagem — do lado do SERVIDOR, a partir do webhook.
@@ -69,6 +70,17 @@ async function dispararAutomacoes(params: {
 }): Promise<void> {
   const { workspaceId, contatoNome, canal, textoRecebido } = params;
 
+  // Antes de avaliar gatilho nenhum: alguma automação está ESPERANDO a resposta desta pessoa?
+  // Se está, esta mensagem é a continuação dela — não o começo de outra. Sem esta checagem,
+  // responder "1" a uma pergunta receberia o fluxo inteiro de novo por cima.
+  if (params.tipoGatilho === "mensagem_recebida") {
+    const continuou = await continuarComResposta({ workspaceId, contatoNome, texto: textoRecebido }).catch((erro) => {
+      console.error("[automacao] falha ao continuar execução em espera:", erro);
+      return false;
+    });
+    if (continuou) return;
+  }
+
   const linhas = await prisma.fluxoAutomacao.findMany({
     where: { workspaceId, status: "publicado", ativa: true, arquivada: false },
   });
@@ -120,6 +132,41 @@ async function dispararAutomacoes(params: {
         instagramUserId: params.instagramUserId,
       });
       if (!primeiraVez) continue;
+    }
+
+    // Fluxos com a chave ligada rodam no motor com estado: ele grava a posição a cada bloco e
+    // sabe esperar (por tempo ou por resposta), que é justamente o que o motor abaixo não sabe.
+    // Sem a chave, nada muda — o caminho antigo segue igual.
+    if (motorNovoAtivo(linha.configuracoes)) {
+      const fim = await iniciarFluxoComEstado({
+        workspaceId,
+        fluxoId: linha.id,
+        gatilho: params.tipoGatilho,
+        contatoNome,
+        contatoId: contatoNoBanco?.id ?? null,
+        contato,
+        responderComentario: params.responderComentario,
+      }).catch((erro) => {
+        console.error(`[automacao] fluxo ${linha.id} falhou no motor com estado:`, erro);
+        return null;
+      });
+      // `null` = fluxo sem versão publicada ou sem nada ligado no gatilho. Cair no motor antigo
+      // aqui seria rodar o RASCUNHO — melhor não executar e deixar isso visível.
+      if (!fim) {
+        console.warn(`[automacao] fluxo ${linha.id} tem o motor novo ligado mas nenhuma versão publicada pra rodar`);
+        continue;
+      }
+      await anotarNaLinhaDoTempo({
+        workspaceId,
+        contatoNome,
+        canal,
+        tipo: "automacao_iniciou",
+        descricao: `automação "${linha.nome}" começou`,
+        dados: { fluxoId: linha.id },
+      });
+      await prisma.fluxoAutomacao.update({ where: { id: linha.id }, data: { execucoes: { increment: 1 } } }).catch(() => {});
+      console.log(`[automacao] fluxo "${linha.nome}" no motor com estado`, fim);
+      continue;
     }
 
     const mensagensParaEnviar: { canal: string; conteudo: string }[] = [];

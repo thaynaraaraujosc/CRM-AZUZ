@@ -440,7 +440,8 @@ export type FlowNode<T = Record<string, unknown>> = {
   observacao?: string;
   /** Bloco pausado — continua no fluxo (não perde a posição/conexões) mas fica marcado como "não
    * roda por enquanto"; útil pra desligar temporariamente uma etapa sem ter que desconectar e
-   * excluir. Puramente visual/de estado nesta fase (front-end apenas). */
+   * excluir. O motor com estado respeita este marcador (registra "pulado" e segue); o motor
+   * antigo ainda não. */
   desativado?: boolean;
   data: T;
 };
@@ -482,6 +483,14 @@ export type ConfiguracoesFluxo = {
     | "uma_vez_por_mes";
   naoIniciarSeJaNoFluxo?: boolean;
   cancelarExecucaoAnterior?: boolean;
+  /**
+   * Liga o motor com estado (`src/lib/automacoes/motor-estado.ts`) para ESTE fluxo.
+   *
+   * A chave é por fluxo de propósito: o motor novo é o único que sabe esperar (retomar por tempo
+   * ou por resposta), mas trocar todos os fluxos de uma vez arriscaria os que já funcionam. Com a
+   * chave desligada, nada muda — o fluxo continua no motor antigo.
+   */
+  motorNovo?: boolean;
 };
 
 export type VersaoFluxo = {
