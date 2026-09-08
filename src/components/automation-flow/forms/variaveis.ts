@@ -1,19 +1,33 @@
-/** Variáveis disponíveis pra interpolar em mensagens. Spec seção 4. */
+/**
+ * As variáveis que dá pra usar numa mensagem de automação.
+ *
+ * A lista antiga tinha 14 itens e a maioria não saía de lugar nenhum: "clínica", "data da
+ * consulta", "profissional", "unidade" e "link de agendamento" não existem no contato nem em
+ * nenhum outro registro que o motor enxergue na hora de enviar. Escolher uma delas no menu
+ * produzia um buraco na mensagem que chegava ao cliente, sem aviso nenhum.
+ *
+ * Ficaram só as que o motor sabe resolver de verdade (ver `valorDoContato` em
+ * `src/lib/automacoes/motor-estado.ts`). Campo personalizado do contato também funciona: é só
+ * escrever o nome dele entre chaves, mesmo não estando nesta lista.
+ *
+ * O formato é de chave SIMPLES. O motor aceita simples e dupla, mas o menu escreve uma só, pra
+ * ninguém precisar decidir qual usar.
+ */
 export const VARIAVEIS_MENSAGEM: { token: string; label: string }[] = [
   { token: "{primeiro_nome}", label: "Primeiro nome" },
   { token: "{nome_completo}", label: "Nome completo" },
-  { token: "{empresa}", label: "Empresa" },
   { token: "{telefone}", label: "Telefone" },
-  { token: "{atendente}", label: "Atendente" },
-  { token: "{clinica}", label: "Clínica" },
-  { token: "{data}", label: "Data" },
-  { token: "{horario}", label: "Horário" },
-  { token: "{data_consulta}", label: "Data da consulta" },
-  { token: "{profissional}", label: "Profissional" },
-  { token: "{unidade}", label: "Unidade" },
-  { token: "{link_agendamento}", label: "Link de agendamento" },
-  { token: "{valor_negocio}", label: "Valor do negócio" },
+  { token: "{email}", label: "E-mail" },
+  { token: "{empresa}", label: "Empresa" },
+  { token: "{cargo}", label: "Cargo" },
+  { token: "{cidade}", label: "Cidade" },
+  { token: "{estado}", label: "Estado" },
+  { token: "{atendente}", label: "Atendente responsável" },
   { token: "{etapa_funil}", label: "Etapa do funil" },
+  { token: "{valor_negocio}", label: "Valor do negócio" },
+  { token: "{origem}", label: "Origem do lead" },
+  { token: "{data}", label: "Data de hoje" },
+  { token: "{horario}", label: "Horário do envio" },
 ];
 
 /** Insere o token na posição do cursor (ou no fim, se não houver seleção) e devolve o texto novo. */

@@ -132,6 +132,39 @@ describe("variáveis no texto", () => {
     expect(preencher("Oi {{ nome }}", contato)).toBe("Oi Maria Clara Souza");
   });
 
+  it("aceita CHAVE SIMPLES, que é o que o botão da tela escreve", () => {
+    // O bug que chegou no WhatsApp de um contato real: o botão "Inserir variável" escreve
+    // `{primeiro_nome}` e esta função só trocava `{{primeiro_nome}}`, então o token ia cru.
+    expect(preencher("Olá {primeiro_nome} , tudo bem?", contato)).toBe("Olá Maria , tudo bem?");
+    expect(preencher("Oi { nome }", contato)).toBe("Oi Maria Clara Souza");
+  });
+
+  it("traduz os nomes que a tela usa pros campos que o contato tem", () => {
+    // A lista de variáveis fala como quem lê ("atendente"), o contato guarda como quem programou
+    // ("responsavel"). Sem a tradução, metade do menu virava buraco na mensagem.
+    const completo = {
+      nome: "Maria Clara Souza",
+      responsavel: "Ana",
+      whatsapp: "+5562999999999",
+      valor: "R$ 1.200",
+      etapa: "Proposta",
+    };
+    expect(preencher("{nome_completo}", completo)).toBe("Maria Clara Souza");
+    expect(preencher("{atendente}", completo)).toBe("Ana");
+    expect(preencher("{telefone}", completo)).toBe("+5562999999999");
+    expect(preencher("{valor_negocio}", completo)).toBe("R$ 1.200");
+    expect(preencher("{etapa_funil}", completo)).toBe("Proposta");
+  });
+
+  it("data e horário são os do ENVIO, não os de quando o fluxo foi montado", () => {
+    const quando = new Date(2026, 2, 15, 9, 5);
+    expect(preencher("{data} às {horario}", contato, quando)).toBe("15/03/2026 às 09:05");
+  });
+
+  it("telefone cai no fixo quando não há WhatsApp", () => {
+    expect(preencher("{telefone}", { nome: "X", whatsapp: "", telefoneFixo: "6233334444" })).toBe("6233334444");
+  });
+
   it("variável sem valor vira vazio. Melhor um buraco do que {{chave}} na cara do cliente", () => {
     expect(preencher("Oi {{apelido}}, tudo bem?", contato)).toBe("Oi , tudo bem?");
   });
