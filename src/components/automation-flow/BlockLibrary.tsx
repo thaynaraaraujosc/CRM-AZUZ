@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { BLOCOS_DISPONIVEIS, CATEGORIAS_BLOCOS, buscarBlocos, type BlocoDefinicao } from "@/lib/automation-flow/blocos";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
@@ -33,12 +33,39 @@ export function BlockLibrary({
 }) {
   const [busca, setBusca] = useState("");
   const [categoriasFechadas, setCategoriasFechadas] = useState<Set<string>>(new Set());
+  const [iaDisponivel, setIaDisponivel] = useState(false);
 
-  const resultados = useMemo(() => buscarBlocos(busca), [busca]);
+  // Sem IA configurada no servidor, os blocos de IA não aparecem. Deixá-los na biblioteca faria
+  // alguém montar um fluxo inteiro em volta de um bloco que, na hora de rodar, não manda nada.
+  // Assim que a chave existir, eles aparecem sozinhos — não precisa mexer em código.
+  useEffect(() => {
+    let cancelado = false;
+    fetch("/api/recursos", { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<{ ia: boolean }>) : null))
+      .then((dados) => {
+        if (!cancelado && dados) setIaDisponivel(dados.ia);
+      })
+      .catch(() => {
+        /* falha aqui só mantém os blocos de IA escondidos, que é o lado seguro do erro */
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  const disponiveis = useMemo(
+    () => (iaDisponivel ? BLOCOS_DISPONIVEIS : BLOCOS_DISPONIVEIS.filter((b) => !b.tipo.startsWith("ia_"))),
+    [iaDisponivel],
+  );
+
+  const resultados = useMemo(
+    () => buscarBlocos(busca).filter((b) => iaDisponivel || !b.tipo.startsWith("ia_")),
+    [busca, iaDisponivel],
+  );
   const buscando = busca.trim().length > 0;
   const maisUsados = useMemo(
-    () => MAIS_USADOS.map((tipo) => BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo)).filter((b): b is BlocoDefinicao => !!b),
-    [],
+    () => MAIS_USADOS.map((tipo) => disponiveis.find((b) => b.tipo === tipo)).filter((b): b is BlocoDefinicao => !!b),
+    [disponiveis],
   );
 
   function alternarCategoria(id: string) {
@@ -115,7 +142,7 @@ export function BlockLibrary({
           <>
             <BlocoSecao titulo="Mais usados" blocos={maisUsados} onAdicionarBloco={onAdicionarBloco} />
             {CATEGORIAS_BLOCOS.map((cat) => {
-              const blocos = BLOCOS_DISPONIVEIS.filter((b) => b.categoria === cat.id);
+              const blocos = disponiveis.filter((b) => b.categoria === cat.id);
               const fechada = categoriasFechadas.has(cat.id);
               return (
                 <div className="flow-lib-cat" key={cat.id} data-flow-lib-cat={cat.id}>
