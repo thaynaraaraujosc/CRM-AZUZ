@@ -218,6 +218,15 @@ export const MENSAGEM_FINAL_PADRAO = "Obrigado por você ter respondido o nosso 
 export type TemaFormulario = {
   corPrincipal: string;
   corBotao: string;
+  /**
+   * Cor do texto dentro do cartão: título, rótulos das perguntas e textos de ajuda.
+   *
+   * Existe porque fundo e texto eram decididos separados, e nada garantia que combinassem: com um
+   * fundo escuro e o tema claro ligado, ficava preto sobre preto e não havia como corrigir. Quando
+   * está vazia, o texto segue o tema (escuro no claro, claro no escuro), que é o padrão bom pra
+   * quem não quer decidir.
+   */
+  corTexto?: string;
   temaEscuro: boolean;
   /** Endereço que a tela usa pra desenhar a logo. Quando a logo foi ENVIADA como arquivo, aponta
    *  pra `/api/formularios/<id>/logo`. Quando foi colada como link, é o endereço externo. */
@@ -227,7 +236,11 @@ export type TemaFormulario = {
    *  pra devolver os bytes. Nunca sai do servidor: a tela pública recebe só a `logoUrl`. */
   logoArquivo?: string;
   bannerUrl?: string;
+  /** Referência interna do banner enviado. Mesmo papel do `logoArquivo`. */
+  bannerArquivo?: string;
   imagemFundoUrl?: string;
+  /** Referência interna da imagem de fundo enviada. Mesmo papel do `logoArquivo`. */
+  fundoArquivo?: string;
   layout: "coluna-unica" | "duas-colunas";
   larguraFixa: boolean;
 };

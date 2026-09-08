@@ -10,11 +10,46 @@ import {
   type Formulario,
   type PaginaFormulario,
   type PerguntaFormulario,
+  type TemaFormulario,
 } from "@/lib/formularios-context";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
 import { IconCadeado } from "@/components/icons";
 
 type OpcaoNome = { id: string; nome: string };
+
+/**
+ * As classes e o estilo do cartão, a partir do tema.
+ *
+ * Fica aqui, exportado, porque a prévia da aba Design desenha o MESMO cartão. Duplicar essa
+ * montagem faria as duas divergirem no primeiro ajuste, e a prévia existe justamente pra não
+ * mentir.
+ */
+export function classesDoCartao(tema: TemaFormulario): string {
+  return [
+    "form-public-card",
+    tema.temaEscuro ? "tema-escuro" : "",
+    tema.layout === "duas-colunas" ? "duas-colunas" : "",
+    !tema.larguraFixa ? "tela-cheia" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+export function estiloDoCartao(tema: TemaFormulario): React.CSSProperties {
+  const estilo: Record<string, string> = { background: tema.corPrincipal };
+  if (tema.corTexto) {
+    // Entram como TOKENS, não como `color`: os rótulos e as dicas dentro do cartão leem
+    // `--ink`/`--text-muted`, então mudar só `color` deixaria tudo isso na cor da raiz. As versões
+    // esmaecidas saem da mesma cor com transparência, pra hierarquia continuar existindo em vez de
+    // virar um bloco chapado de uma cor só.
+    estilo["--ink"] = tema.corTexto;
+    estilo["--ink-nome"] = tema.corTexto;
+    estilo["--text-muted"] = `color-mix(in srgb, ${tema.corTexto} 78%, transparent)`;
+    estilo["--text-faint"] = `color-mix(in srgb, ${tema.corTexto} 58%, transparent)`;
+    estilo.color = tema.corTexto;
+  }
+  return estilo as React.CSSProperties;
+}
 
 /**
  * Formulário/contatos-sugeridos/equipe-sugerida/fluxos-automacao vêm de rotas públicas dedicadas
@@ -327,10 +362,7 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
 
   return (
     <div className="form-public-page" style={estiloPagina}>
-      <div
-        className={`form-public-card${tema.temaEscuro ? " tema-escuro" : ""}${tema.layout === "duas-colunas" ? " duas-colunas" : ""}${!tema.larguraFixa ? " tela-cheia" : ""}`}
-        style={{ background: tema.corPrincipal }}
-      >
+      <div className={classesDoCartao(tema)} style={estiloDoCartao(tema)}>
         {tema.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- URL livre informada pelo usuário
           <img src={tema.logoUrl} alt="Logo" className="form-public-logo" />
@@ -350,6 +382,15 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
         {pagina?.titulo ? <h4 style={{ margin: "6px 0 10px" }}>{pagina.titulo}</h4> : null}
         {pagina?.descricao ? <p className="hint" style={{ marginBottom: 10 }}>{pagina.descricao}</p> : null}
 
+        {/* Formulário publicado sem nenhuma pergunta visível mostrava título e botão "Enviar", e
+            mais nada: parecia quebrado, e responder criaria um contato vazio no CRM. Com aviso, a
+            pessoa entende que não é ela que está fazendo algo errado, e ninguém envia em branco. */}
+        {camposDaPagina.length === 0 ? (
+          <p className="hint" style={{ margin: "10px 0" }}>
+            Este formulário ainda não tem perguntas. Avise quem te mandou o link.
+          </p>
+        ) : null}
+
         <div className="form-public-campos">
           {camposDaPagina.map((pergunta) => (
             <div key={pergunta.id} className={pergunta.largura === "metade" ? "form-campo-metade" : "form-campo-total"}>
@@ -367,16 +408,18 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
           ))}
         </div>
 
-        <div className="filters-row" style={{ marginTop: 14 }}>
-          {paginaIndice > 0 ? (
-            <button type="button" className="btn ghost" onClick={voltar}>
-              Voltar
+        {camposDaPagina.length > 0 ? (
+          <div className="filters-row" style={{ marginTop: 14 }}>
+            {paginaIndice > 0 ? (
+              <button type="button" className="btn ghost" onClick={voltar}>
+                Voltar
+              </button>
+            ) : null}
+            <button type="button" className="btn block" style={{ background: tema.corBotao, color: "#fff" }} onClick={avancar}>
+              {ehUltimaPagina ? "Enviar" : "Próxima"}
             </button>
-          ) : null}
-          <button type="button" className="btn block" style={{ background: tema.corBotao, color: "#fff" }} onClick={avancar}>
-            {ehUltimaPagina ? "Enviar" : "Próxima"}
-          </button>
-        </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
