@@ -10,11 +10,46 @@ import {
   type Formulario,
   type PaginaFormulario,
   type PerguntaFormulario,
+  type TemaFormulario,
 } from "@/lib/formularios-context";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
 import { IconCadeado } from "@/components/icons";
 
 type OpcaoNome = { id: string; nome: string };
+
+/**
+ * As classes e o estilo do cartão, a partir do tema.
+ *
+ * Fica aqui, exportado, porque a prévia da aba Design desenha o MESMO cartão. Duplicar essa
+ * montagem faria as duas divergirem no primeiro ajuste, e a prévia existe justamente pra não
+ * mentir.
+ */
+export function classesDoCartao(tema: TemaFormulario): string {
+  return [
+    "form-public-card",
+    tema.temaEscuro ? "tema-escuro" : "",
+    tema.layout === "duas-colunas" ? "duas-colunas" : "",
+    !tema.larguraFixa ? "tela-cheia" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+export function estiloDoCartao(tema: TemaFormulario): React.CSSProperties {
+  const estilo: Record<string, string> = { background: tema.corPrincipal };
+  if (tema.corTexto) {
+    // Entram como TOKENS, não como `color`: os rótulos e as dicas dentro do cartão leem
+    // `--ink`/`--text-muted`, então mudar só `color` deixaria tudo isso na cor da raiz. As versões
+    // esmaecidas saem da mesma cor com transparência, pra hierarquia continuar existindo em vez de
+    // virar um bloco chapado de uma cor só.
+    estilo["--ink"] = tema.corTexto;
+    estilo["--ink-nome"] = tema.corTexto;
+    estilo["--text-muted"] = `color-mix(in srgb, ${tema.corTexto} 78%, transparent)`;
+    estilo["--text-faint"] = `color-mix(in srgb, ${tema.corTexto} 58%, transparent)`;
+    estilo.color = tema.corTexto;
+  }
+  return estilo as React.CSSProperties;
+}
 
 /**
  * Formulário/contatos-sugeridos/equipe-sugerida/fluxos-automacao vêm de rotas públicas dedicadas
@@ -327,10 +362,7 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
 
   return (
     <div className="form-public-page" style={estiloPagina}>
-      <div
-        className={`form-public-card${tema.temaEscuro ? " tema-escuro" : ""}${tema.layout === "duas-colunas" ? " duas-colunas" : ""}${!tema.larguraFixa ? " tela-cheia" : ""}`}
-        style={{ background: tema.corPrincipal }}
-      >
+      <div className={classesDoCartao(tema)} style={estiloDoCartao(tema)}>
         {tema.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- URL livre informada pelo usuário
           <img src={tema.logoUrl} alt="Logo" className="form-public-logo" />

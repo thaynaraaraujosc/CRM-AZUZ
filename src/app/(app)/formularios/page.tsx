@@ -3,7 +3,6 @@
 import { useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
-import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { IconAnexo, IconCadeado, IconClose, IconEdit, IconGlobo, IconOlho, IconOlhoFechado } from "@/components/icons";
@@ -27,6 +26,7 @@ import {
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { Modal, Topbar } from "@/components/ui";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
+import { classesDoCartao, estiloDoCartao } from "@/components/formularios/FormularioPublico";
 import { LogicaCanvas } from "@/components/formularios/LogicaCanvas";
 
 type AbaBuilder = "editar" | "design" | "respostas";
@@ -38,56 +38,6 @@ const LARGURAS_DISPOSITIVO: Record<Dispositivo, number> = {
   celular: 360,
 };
 
-/** Um valor de exemplo plausível por tipo de campo, pra simular uma resposta sem digitar tudo. */
-function valorSimulado(pergunta: PerguntaFormulario): string {
-  switch (pergunta.tipo) {
-    case "texto_curto":
-      return pergunta.rotulo.toLowerCase().includes("nome") ? "Fernanda Costa" : "Resposta de exemplo";
-    case "texto_longo":
-      return "Resposta longa de exemplo, preenchida pra simular o envio.";
-    case "numero":
-      return "250";
-    case "moeda":
-      return "1500,00";
-    case "data":
-      return "2026-08-15";
-    case "hora":
-      return "14:30";
-    case "data_hora":
-      return "2026-08-15T14:30";
-    case "lista_suspensa":
-    case "opcao_unica":
-      return pergunta.opcoes?.[0] ?? "";
-    case "multipla_escolha":
-      return (pergunta.opcoes ?? []).slice(0, 2).join(",");
-    case "checkbox":
-      return "sim";
-    case "sim_nao":
-      return "Sim";
-    case "avaliacao":
-      return "5";
-    case "nota":
-      return "9";
-    case "arquivo":
-    case "imagem":
-      return "arquivo-exemplo.pdf";
-    case "email":
-      return "fernanda.costa@exemplo.com";
-    case "telefone":
-      return "+55 62 98888-1234";
-    case "cpf":
-      return "123.456.789-00";
-    case "cnpj":
-      return "12.345.678/0001-90";
-    case "url":
-      return "instagram.com/fernanda.costa";
-    case "contato":
-    case "responsavel":
-      return "";
-    default:
-      return "";
-  }
-}
 
 /** Todas as perguntas do formulário, na ordem, com um número de exibição. Blocos de layout não contam. */
 function perguntasNumeradas(formulario: Formulario): { pergunta: PerguntaFormulario; numero: number }[] {
@@ -121,7 +71,6 @@ function SecaoPainel({ titulo, children }: { titulo: string; children: React.Rea
 }
 
 export default function FormulariosPage() {
-  const { criarContato } = useContatos();
   const {
     formularios,
     criarFormulario,
@@ -140,7 +89,6 @@ export default function FormulariosPage() {
     atualizarPergunta,
     removerPergunta,
     reordenarPergunta,
-    registrarResposta,
     respostasDoFormulario,
   } = useFormularios();
 
@@ -267,29 +215,6 @@ export default function FormulariosPage() {
     navigator.clipboard?.writeText(linkDoFormulario(false));
     setLinkPublicoCopiado(true);
     setTimeout(() => setLinkPublicoCopiado(false), 2000);
-  }
-
-  function simularResposta() {
-    if (!formularioAberto) return;
-    const todasPerguntas = formularioAberto.paginas.flatMap((p) => p.perguntas).filter((p) => !TIPOS_LAYOUT.includes(p.tipo));
-    if (todasPerguntas.length === 0) return;
-    const valores: Record<string, string> = {};
-    const dadosContato: Record<string, string> = {};
-    todasPerguntas.forEach((pergunta) => {
-      const valor = valorSimulado(pergunta);
-      valores[pergunta.id] = valor;
-      if (pergunta.mapeamentoCrm && valor) dadosContato[pergunta.mapeamentoCrm] = valor;
-    });
-    registrarResposta(formularioAberto.id, valores);
-    criarContato({
-      nome: dadosContato.nome || `Resposta: ${formularioAberto.nome}`,
-      email: dadosContato.email,
-      whatsapp: dadosContato.whatsapp,
-      empresa: dadosContato.empresa,
-      cidade: dadosContato.cidade,
-      estado: dadosContato.estado,
-    });
-    avisar("Resposta simulada: contato criado em Contatos.");
   }
 
   const respostas = formularioAberto ? respostasDoFormulario(formularioAberto.id) : [];
@@ -425,8 +350,11 @@ export default function FormulariosPage() {
               <button
                 type="button"
                 className="btn ghost"
-                onClick={() => {
-                  setMenuCompartilharRect((document.activeElement as HTMLElement)?.getBoundingClientRect() ?? null);
+                onClick={(e) => {
+                  // O ancoradouro é o PRÓPRIO botão. Estava em `document.activeElement`, que é
+                  // quem tem o foco no momento do clique: bastava o foco estar noutro lugar pra
+                  // janela abrir presa a um elemento qualquer, longe do botão que a chamou.
+                  setMenuCompartilharRect(e.currentTarget.getBoundingClientRect());
                   setMenuCompartilharAberto((v) => !v);
                 }}
               >
@@ -455,7 +383,7 @@ export default function FormulariosPage() {
                   <div
                     ref={menuCompartilharRef}
                     className="dropdown-pop"
-                    style={{ position: "fixed", top: menuCompartilharPos.top, left: menuCompartilharPos.left, zIndex: 200, width: 300, padding: 14 }}
+                    style={{ position: "fixed", top: menuCompartilharPos.top, left: menuCompartilharPos.left, zIndex: 200, width: 420, padding: 17 }}
                   >
                     {formularioAberto.status !== "publicado" ? (
                       <p className="hint">Publique o formulário pra habilitar o link de compartilhamento.</p>
@@ -470,8 +398,16 @@ export default function FormulariosPage() {
                               style={{ width: "100%" }}
                               value={formularioAberto.senha ?? ""}
                               onChange={(e) => atualizarFormulario(formularioAberto.id, { senha: e.target.value })}
-                              placeholder="Ex.: vitta2026"
+                              placeholder="Escolha uma senha, ex.: vitta2026"
                             />
+                            {/* Sem senha os dois links são o mesmo endereço, e o de cima não tranca
+                                nada. Dizer isso aqui evita a pessoa mandar um "link privado" que
+                                qualquer um abre. */}
+                            <p className="hint" style={{ marginTop: 6 }}>
+                              {formularioAberto.senha
+                                ? "A senha já vai dentro do link: quem receber abre direto, quem não tem o link não entra."
+                                : "Digite uma senha aqui pra criar o link privado. Sem ela, este link é igual ao público."}
+                            </p>
                           </div>
                           <div className="key-row" style={{ padding: 0 }}>
                             <div className="key-box">
@@ -538,7 +474,7 @@ export default function FormulariosPage() {
                 <div className="card">
                   {respostas.length === 0 ? (
                     <p className="hint" style={{ padding: 24, textAlign: "center" }}>
-                      Nenhuma resposta ainda: publique o formulário e compartilhe o link, ou use &quot;Simular resposta&quot; na aba Editar.
+                      Nenhuma resposta ainda. Publique o formulário e compartilhe o link: as respostas caem aqui.
                     </p>
                   ) : (
                     respostas.map((r) => (
@@ -777,14 +713,6 @@ export default function FormulariosPage() {
               </div>
             )}
 
-            {abaBuilder === "editar" ? (
-              <div className="card mt14" style={{ padding: 17 }}>
-                <p className="hint mb14">Sem API pública ainda: use este botão pra simular alguém respondendo (vira contato em Contatos).</p>
-                <button type="button" className="btn ghost block" onClick={simularResposta}>
-                  Simular resposta
-                </button>
-              </div>
-            ) : null}
           </div>
         </>
       )}
@@ -916,10 +844,14 @@ function PainelPagina({
           />
         </div>
       </SecaoPainel>
-      <SecaoPainel titulo="Condição de exibir">
-        {camposAnteriores.length === 0 ? (
-          <p className="hint">Só é possível condicionar uma página à resposta de um campo de uma página anterior.</p>
-        ) : (
+      {/* Some quando não há campo anterior nenhum pra condicionar, que é sempre o caso da primeira
+          página. Antes ela aparecia mesmo assim, com uma frase explicando por que não dava pra
+          usar: uma seção que só existe pra dizer que não serve. Em formulário de página única ela
+          nunca serve, e é o formato da maioria. Quem tiver duas páginas continua vendo, na
+          segunda, que é onde ela faz sentido: "mostrar esta página só se a resposta lá atrás
+          foi tal". */}
+      {camposAnteriores.length === 0 ? null : (
+        <SecaoPainel titulo="Condição de exibir">
           <>
             <div className="field">
               <label>Mostrar esta página só se</label>
@@ -966,8 +898,8 @@ function PainelPagina({
               </div>
             ) : null}
           </>
-        )}
-      </SecaoPainel>
+        </SecaoPainel>
+      )}
     </>
   );
 }
@@ -1314,6 +1246,184 @@ function PainelCampo({
  * propósito, pra trocar de tema poder levar a escolha junto (branco vira quase-preto, o azulzinho
  * vira azul-noite, e assim por diante) em vez de jogar tudo fora.
  */
+/**
+ * Escolha de cor: os tons oferecidos, o seletor do sistema e o código digitado.
+ *
+ * O campo de digitar existe porque marca tem cor exata. Quem chega com "#0B1533 é o nosso azul" não
+ * quer procurar o tom mais parecido no seletor, quer escrever o código. Ele aceita o texto enquanto
+ * está sendo digitado e só grava quando vira um hexadecimal completo, senão apagar um caractere pra
+ * corrigir mandaria uma cor quebrada pro tema a cada tecla.
+ */
+function SeletorDeCor({
+  valor,
+  opcoes,
+  onMudar,
+  padraoQuandoVazio,
+}: {
+  valor: string | undefined;
+  opcoes: string[];
+  onMudar: (cor: string | undefined) => void;
+  /** Quando existe, aparece a opção "Automático", que devolve `undefined` (segue o tema). */
+  padraoQuandoVazio?: string;
+}) {
+  const [digitado, setDigitado] = useState<string | null>(null);
+  const HEX_COMPLETO = /^#[0-9a-fA-F]{6}$/;
+
+  return (
+    <div className="form-cor-linha">
+      <div className="cor-chips">
+        {padraoQuandoVazio ? (
+          <button
+            type="button"
+            className={`cor-chip cor-chip-auto${!valor ? " active" : ""}`}
+            title="Automático: segue o tema claro/escuro"
+            onClick={() => {
+              setDigitado(null);
+              onMudar(undefined);
+            }}
+          >
+            A
+          </button>
+        ) : null}
+        {opcoes.map((c) => (
+          <button
+            key={c}
+            type="button"
+            className={`cor-chip${valor === c ? " active" : ""}`}
+            style={{ background: c }}
+            onClick={() => {
+              setDigitado(null);
+              onMudar(c);
+            }}
+          />
+        ))}
+      </div>
+      <input
+        type="color"
+        value={valor ?? padraoQuandoVazio ?? "#000000"}
+        onChange={(e) => {
+          setDigitado(null);
+          onMudar(e.target.value);
+        }}
+        title="Cor personalizada"
+      />
+      <input
+        className="input form-cor-codigo"
+        value={digitado ?? valor ?? ""}
+        placeholder={padraoQuandoVazio ?? "#000000"}
+        spellCheck={false}
+        onChange={(e) => {
+          const texto = e.target.value.trim();
+          setDigitado(texto);
+          if (HEX_COMPLETO.test(texto)) onMudar(texto);
+          else if (texto === "" && padraoQuandoVazio) onMudar(undefined);
+        }}
+        onBlur={() => setDigitado(null)}
+      />
+    </div>
+  );
+}
+
+/**
+ * Um campo de imagem do formulário: logo, banner ou fundo.
+ *
+ * As três eram caixas de endereço. Quem tem a imagem no computador não tem endereço público pra
+ * colar, e o campo ficava vazio. Agora o caminho principal é enviar o arquivo; colar link continua
+ * valendo pra quem já tem a marca num CDN, mas deixou de ser a única porta.
+ *
+ * Um componente pras três porque a única diferença entre elas é o `tipo` que vai pra rota e o
+ * campo do tema que recebe o resultado.
+ */
+function CampoImagem({
+  rotulo,
+  tipo,
+  formularioId,
+  url,
+  onMudar,
+}: {
+  rotulo: string;
+  tipo: "logo" | "banner" | "fundo";
+  formularioId: string;
+  url: string | undefined;
+  onMudar: (url: string | undefined, arquivo: string | undefined) => void;
+}) {
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function enviar(arquivo: File) {
+    setErro("");
+    if (arquivo.size > 2 * 1024 * 1024) {
+      setErro(`A imagem tem ${(arquivo.size / 1024 / 1024).toFixed(1)} MB. O limite é 2 MB.`);
+      return;
+    }
+    setEnviando(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const leitor = new FileReader();
+        leitor.onload = () => resolve(String(leitor.result));
+        leitor.onerror = () => reject(new Error("Não deu pra ler o arquivo."));
+        leitor.readAsDataURL(arquivo);
+      });
+
+      const resposta = await fetch(`/api/formularios/${formularioId}/imagem/${tipo}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dataUrl }),
+      });
+      const dados = (await resposta.json()) as { url?: string; arquivo?: string; erro?: string };
+      if (!resposta.ok) throw new Error(dados.erro ?? "Não deu pra enviar a imagem.");
+      onMudar(dados.url, dados.arquivo);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não deu pra enviar a imagem.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="field">
+      <label>{rotulo}</label>
+      <div className="form-design-logo">
+        {url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt="" className="form-design-logo-previa" />
+        ) : (
+          <span className="form-design-logo-vazia">Sem imagem</span>
+        )}
+        <div className="form-design-logo-acoes">
+          <label className="btn ghost" style={{ cursor: enviando ? "wait" : "pointer" }}>
+            {enviando ? "Enviando…" : url ? "Trocar arquivo" : "Enviar arquivo"}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              hidden
+              disabled={enviando}
+              onChange={(e) => {
+                const arquivo = e.target.files?.[0];
+                // O input é limpo na hora: sem isto, escolher o MESMO arquivo de novo (depois de
+                // um erro, por exemplo) não dispara `change` e a tela parece travada.
+                e.target.value = "";
+                if (arquivo) void enviar(arquivo);
+              }}
+            />
+          </label>
+          {url ? (
+            <button type="button" className="btn ghost" onClick={() => onMudar(undefined, undefined)}>
+              Remover
+            </button>
+          ) : null}
+        </div>
+      </div>
+      {erro ? (
+        <p className="hint" style={{ color: "var(--danger)" }}>
+          {erro}
+        </p>
+      ) : null}
+      <p className="hint">PNG, JPG, WEBP ou GIF, até 2 MB.</p>
+    </div>
+  );
+}
+
 const FUNDOS_CLAROS = ["#ffffff", "#eef2ff", "#e6f7ee", "#fff8e1", "#fdeaea", "#f3e8ff"];
 const FUNDOS_ESCUROS = ["#14182a", "#111a33", "#0f2019", "#231c0e", "#2a1416", "#1e1430"];
 
@@ -1328,10 +1438,7 @@ function PreviaDesign({ formulario }: { formulario: Formulario }) {
       {/* A moldura repete o `.form-public-page` da tela real: o cartão flutua sobre o fundo da
           página, e é esse contraste que dá a leitura de "página", não de "caixa". */}
       <div className="form-design-previa-moldura">
-        <div
-          className={`form-public-card${tema.temaEscuro ? " tema-escuro" : ""}${tema.layout === "duas-colunas" ? " duas-colunas" : ""}`}
-          style={{ background: tema.corPrincipal }}
-        >
+        <div className={classesDoCartao(tema)} style={estiloDoCartao(tema)}>
           {tema.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={tema.logoUrl} alt="" className="form-public-logo" />
@@ -1414,11 +1521,12 @@ function PainelDesign({
   const { funis } = useFunis();
   const { membros } = useEquipe();
 
-  const [enviandoLogo, setEnviandoLogo] = useState(false);
-  const [erroLogo, setErroLogo] = useState("");
-
   function atualizarTema(patch: Partial<Formulario["tema"]>) {
     onAtualizar({ tema: { ...formulario.tema, ...patch } });
+  }
+
+  function atualizarIntegracoes(patch: Partial<NonNullable<Formulario["integracoes"]>>) {
+    onAtualizar({ integracoes: { ...formulario.integracoes, ...patch } });
   }
 
   /**
@@ -1438,48 +1546,6 @@ function PainelDesign({
       temaEscuro: escuro,
       ...(posicao >= 0 ? { corPrincipal: depois[posicao] } : {}),
     });
-  }
-
-  /**
-   * Manda a logo pro servidor e guarda a referência no tema.
-   *
-   * O arquivo vira data URL aqui no navegador e sobe como JSON, no mesmo formato que o resto das
-   * mídias do CRM já usa. O servidor é quem confere tipo e tamanho de novo: a checagem daqui é
-   * conforto pra quem está usando (erro na hora, sem ida e volta), nunca a defesa.
-   */
-  async function enviarLogo(arquivo: File) {
-    setErroLogo("");
-    if (arquivo.size > 2 * 1024 * 1024) {
-      setErroLogo(`A logo tem ${(arquivo.size / 1024 / 1024).toFixed(1)} MB. O limite é 2 MB.`);
-      return;
-    }
-    setEnviandoLogo(true);
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const leitor = new FileReader();
-        leitor.onload = () => resolve(String(leitor.result));
-        leitor.onerror = () => reject(new Error("Não deu pra ler o arquivo."));
-        leitor.readAsDataURL(arquivo);
-      });
-
-      const resposta = await fetch(`/api/formularios/${formulario.id}/logo`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ dataUrl }),
-      });
-      const dados = (await resposta.json()) as { logoUrl?: string; logoArquivo?: string; erro?: string };
-      if (!resposta.ok) throw new Error(dados.erro ?? "Não deu pra enviar a logo.");
-
-      atualizarTema({ logoUrl: dados.logoUrl, logoArquivo: dados.logoArquivo });
-    } catch (erro) {
-      setErroLogo(erro instanceof Error ? erro.message : "Não deu pra enviar a logo.");
-    } finally {
-      setEnviandoLogo(false);
-    }
-  }
-
-  function atualizarIntegracoes(patch: Partial<NonNullable<Formulario["integracoes"]>>) {
-    onAtualizar({ integracoes: { ...formulario.integracoes, ...patch } });
   }
 
   const funilSelecionado = funis.find((f) => f.id === formulario.integracoes?.funilId);
@@ -1549,99 +1615,54 @@ function PainelDesign({
         </div>
         <div className="field">
           <label>Cor principal (fundo)</label>
-          <div className="filters-row" style={{ margin: 0, alignItems: "center" }}>
-            <div className="cor-chips">
-              {(formulario.tema.temaEscuro ? FUNDOS_ESCUROS : FUNDOS_CLAROS).map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`cor-chip${formulario.tema.corPrincipal === c ? " active" : ""}`}
-                  style={{ background: c }}
-                  onClick={() => atualizarTema({ corPrincipal: c })}
-                />
-              ))}
-            </div>
-            <input type="color" value={formulario.tema.corPrincipal} onChange={(e) => atualizarTema({ corPrincipal: e.target.value })} title="Cor personalizada" />
-          </div>
+          <SeletorDeCor
+            valor={formulario.tema.corPrincipal}
+            opcoes={formulario.tema.temaEscuro ? FUNDOS_ESCUROS : FUNDOS_CLAROS}
+            onMudar={(c) => atualizarTema({ corPrincipal: c ?? "#ffffff" })}
+          />
         </div>
         <div className="field">
           <label>Cor do botão</label>
-          <div className="filters-row" style={{ margin: 0, alignItems: "center" }}>
-            <div className="cor-chips">
-              {CORES_TEMA_FORMULARIO.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`cor-chip${formulario.tema.corBotao === c ? " active" : ""}`}
-                  style={{ background: c }}
-                  onClick={() => atualizarTema({ corBotao: c })}
-                />
-              ))}
-            </div>
-            <input type="color" value={formulario.tema.corBotao} onChange={(e) => atualizarTema({ corBotao: e.target.value })} title="Cor personalizada" />
-          </div>
-        </div>
-        <div className="field">
-          <label>Logo</label>
-          <div className="form-design-logo">
-            {formulario.tema.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={formulario.tema.logoUrl} alt="" className="form-design-logo-previa" />
-            ) : (
-              <span className="form-design-logo-vazia">Sem logo</span>
-            )}
-            <div className="form-design-logo-acoes">
-              <label className="btn ghost" style={{ cursor: enviandoLogo ? "wait" : "pointer" }}>
-                {enviandoLogo ? "Enviando…" : formulario.tema.logoUrl ? "Trocar arquivo" : "Enviar arquivo"}
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
-                  hidden
-                  disabled={enviandoLogo}
-                  onChange={(e) => {
-                    const arquivo = e.target.files?.[0];
-                    // O input é limpo na hora: sem isto, escolher o MESMO arquivo de novo (depois
-                    // de um erro, por exemplo) não dispara `change` e a tela parece travada.
-                    e.target.value = "";
-                    if (arquivo) void enviarLogo(arquivo);
-                  }}
-                />
-              </label>
-              {formulario.tema.logoUrl ? (
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={() => atualizarTema({ logoUrl: undefined, logoArquivo: undefined })}
-                >
-                  Remover
-                </button>
-              ) : null}
-            </div>
-          </div>
-          {erroLogo ? <p className="hint" style={{ color: "var(--danger)" }}>{erroLogo}</p> : null}
-          <p className="hint">PNG, JPG, WEBP ou GIF, até 2 MB. Também dá pra colar um endereço:</p>
-          <input
-            className="input"
-            style={{ width: "100%" }}
-            value={formulario.tema.logoUrl ?? ""}
-            onChange={(e) => atualizarTema({ logoUrl: e.target.value, logoArquivo: undefined })}
-            placeholder="https://…"
+          <SeletorDeCor
+            valor={formulario.tema.corBotao}
+            opcoes={CORES_TEMA_FORMULARIO}
+            onMudar={(c) => atualizarTema({ corBotao: c ?? "#2e6bff" })}
           />
         </div>
         <div className="field">
-          <label>Banner (URL)</label>
-          <input className="input" style={{ width: "100%" }} value={formulario.tema.bannerUrl ?? ""} onChange={(e) => atualizarTema({ bannerUrl: e.target.value })} placeholder="https://…" />
-        </div>
-        <div className="field">
-          <label>Imagem de fundo (URL)</label>
-          <input
-            className="input"
-            style={{ width: "100%" }}
-            value={formulario.tema.imagemFundoUrl ?? ""}
-            onChange={(e) => atualizarTema({ imagemFundoUrl: e.target.value })}
-            placeholder="https://…"
+          <label>Cor do texto</label>
+          <SeletorDeCor
+            valor={formulario.tema.corTexto}
+            opcoes={["#0b1533", "#3f4658", "#6b7280", "#ffffff", "#e7e9f2", "#a4adc4"]}
+            padraoQuandoVazio={formulario.tema.temaEscuro ? "#eef1fb" : "#0b1533"}
+            onMudar={(c) => atualizarTema({ corTexto: c })}
           />
+          <p className="hint" style={{ marginTop: 6 }}>
+            Em &quot;A&quot; (automático) o texto segue o tema. Escolha uma cor quando o fundo pedir:
+            fundo escuro com tema claro deixava texto preto sobre preto, sem jeito de corrigir.
+          </p>
         </div>
+        <CampoImagem
+          rotulo="Logo"
+          tipo="logo"
+          formularioId={formulario.id}
+          url={formulario.tema.logoUrl}
+          onMudar={(url, arquivo) => atualizarTema({ logoUrl: url, logoArquivo: arquivo })}
+        />
+        <CampoImagem
+          rotulo="Banner"
+          tipo="banner"
+          formularioId={formulario.id}
+          url={formulario.tema.bannerUrl}
+          onMudar={(url, arquivo) => atualizarTema({ bannerUrl: url, bannerArquivo: arquivo })}
+        />
+        <CampoImagem
+          rotulo="Imagem de fundo"
+          tipo="fundo"
+          formularioId={formulario.id}
+          url={formulario.tema.imagemFundoUrl}
+          onMudar={(url, arquivo) => atualizarTema({ imagemFundoUrl: url, fundoArquivo: arquivo })}
+        />
         <div className="field">
           <label>Layout</label>
           <div className="filters-row" style={{ margin: 0 }}>

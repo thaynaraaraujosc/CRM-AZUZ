@@ -16235,3 +16235,103 @@ table.tbl .name-cell .r {
   gap: var(--space-2);
   flex-wrap: wrap;
 }
+
+/* ---- Seletores do painel de Design do formulário --------------------------------------------
+   Eram `<select>` nativos com a classe genérica de campo: altura de caixa de texto, seta desenhada
+   pelo sistema operacional (diferente em cada máquina) e nenhum respiro entre um e outro. Ganham
+   altura própria, uma seta desenhada aqui (igual em todo lugar) e espaço entre os blocos.
+   O escopo é o painel de Design de propósito: `.input` é a classe de campo do CRM inteiro, e mexer
+   nela mudaria a densidade de todas as telas de trabalho de uma vez. */
+.form-builder-design select.input {
+  appearance: none;
+  padding: var(--space-3) var(--space-6) var(--space-3) var(--space-3);
+  background-color: var(--navy-raised);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  border-color: var(--line);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.form-builder-design select.input:hover {
+  border-color: var(--line-strong);
+}
+
+.form-builder-design select.input:focus-visible {
+  border-color: var(--acao);
+  outline: none;
+}
+
+:root[data-theme="dark"] .form-builder-design select.input {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%23a4adc4' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* Respiro entre os campos do painel. Encostados, os dois seletores de Integrações liam como uma
+   coisa só, e o rótulo de baixo parecia legenda do de cima. */
+.form-builder-design .field + .field {
+  margin-top: var(--space-4);
+}
+
+/**
+ * Layout em duas colunas.
+ *
+ * A opção existia na tela e NÃO FAZIA NADA: `.form-public-card.duas-colunas` não tinha uma linha
+ * de CSS, então escolher "Duas colunas" mudava o valor gravado e mais nada. Era por isso que não
+ * dava pra ver diferença nenhuma.
+ *
+ * Agora os campos passam a ocupar meia largura e a andar dois por linha. Um campo marcado como
+ * "metade" na configuração dele já ficava assim; o que muda aqui é o padrão.
+ */
+.form-public-card.duas-colunas .form-campo-total {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 200px;
+}
+
+/* Em tela estreita duas colunas não cabem, e forçar deixaria os campos com largura de botão. A
+   regra de 640px já devolve tudo pra largura cheia; esta só garante que ela vença. */
+@media (max-width: 640px) {
+  .form-public-card.duas-colunas .form-campo-total {
+    flex: 1 1 100%;
+  }
+}
+
+/* Na prévia, "Tela cheia" precisa aparecer como tela cheia: sem isto o cartão continuava preso aos
+   560px da largura fixa e as duas opções desenhavam igual. */
+.form-design-previa .form-public-card.tela-cheia {
+  max-width: 100%;
+}
+
+/* Linha de escolha de cor: tons prontos, seletor do sistema e o código digitado. */
+.form-cor-linha {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.form-cor-codigo {
+  width: 104px;
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+  text-transform: lowercase;
+}
+
+/* "Automático": o quadradinho que devolve a decisão pro tema. Sem cor de fundo própria, porque
+   ele não representa uma cor, representa a ausência de escolha. */
+.cor-chip-auto {
+  background: transparent;
+  border: 1px dashed var(--line-strong);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cor-chip-auto.active {
+  border-style: solid;
+  border-color: var(--acao);
+  color: var(--ink);
+}
