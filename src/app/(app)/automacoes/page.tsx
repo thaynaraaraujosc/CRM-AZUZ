@@ -18,6 +18,7 @@ import type {
 import type { Funil } from "@/lib/data";
 import { IconAutomacoes, IconClose, IconSearch } from "@/components/icons";
 import { FloatingDropdown, Toggle, Topbar } from "@/components/ui";
+import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { VisualizarFluxo } from "@/components/automation-flow/VisualizarFluxo";
 
 /* -------------------------------------------------------------------------- */
@@ -690,6 +691,7 @@ function AutomacoesPageInner() {
         }
       />
 
+      <AbasAutomacoes />
       <div className="content">
         {/* -------------------------- Barra compacta -------------------------- */}
         <div className="automacoes-bar">

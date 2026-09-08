@@ -15,7 +15,6 @@ import type {
   GrupoCondicoes,
   MensagemBotoesData,
 } from "./types";
-import { TEMPLATES_WHATSAPP } from "./templates-whatsapp";
 
 function nomeFunil(funis: Funil[] | undefined, funilId: unknown): string | undefined {
   if (typeof funilId !== "string" || !funilId) return undefined;
@@ -317,7 +316,8 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
       return `${nome}${legenda}`;
     }
     case "mensagem_modelo_whatsapp": {
-      const nomeTemplate = TEMPLATES_WHATSAPP.find((t) => t.id === d.templateId)?.nome;
+      // O nome vem gravado no bloco (escolhido na tela de Templates do CRM), não de uma lista fixa.
+      const nomeTemplate = (d.templateNome as string | undefined) || (d.templateId as string | undefined);
       return nomeTemplate ? `Modelo: ${nomeTemplate}` : "Sem modelo escolhido";
     }
     case "enviar_formulario": {

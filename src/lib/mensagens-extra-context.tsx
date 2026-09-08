@@ -151,21 +151,56 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
    * aberta, que sozinha puxava ~1,9 TB do banco por mês.
    */
   const etagRef = useRef<string | null>(null);
+  /**
+   * Sincronização incremental (ver `GET /api/mensagens-extra`). `marca` é o instante até o qual
+   * esta tela está em dia; a próxima batida pede só o que mudou depois dele. `total` é quantas
+   * mensagens o servidor disse ter na última resposta: apagamento não aparece num delta, então é
+   * comparando o total que se descobre que algo sumiu — e aí se pede a lista inteira uma vez.
+   *
+   * O que isto muda na conta: antes, cada mensagem nova fazia a tela baixar as 3.000 mais recentes
+   * de novo. O custo de UMA mensagem era proporcional ao tamanho do histórico inteiro, o que não
+   * escala com muitos clientes. Agora o custo de uma mensagem nova é o dela.
+   */
+  const marcaRef = useRef<number | null>(null);
+  const totalRef = useRef<number | null>(null);
 
-  function recarregar() {
-    return fetch("/api/mensagens-extra", {
+  function recarregar(completo = false): Promise<void> {
+    const incremental = !completo && marcaRef.current !== null;
+    const url = incremental ? `/api/mensagens-extra?desde=${marcaRef.current}` : "/api/mensagens-extra";
+    return fetch(url, {
       // O cache do navegador faria a revalidação sozinho, mas de um jeito que o código não enxerga
       // (ele entrega um 200 vindo do cache). Fazendo à mão dá pra SABER que nada mudou e não mexer
-      // no estado — o que evita re-render inútil da tela de Conversas a cada 5 segundos.
+      // no estado — o que evita re-render inútil da tela de Conversas a cada batida.
       cache: "no-store",
       headers: etagRef.current ? { "if-none-match": etagRef.current } : undefined,
     })
       .then(async (r) => {
         if (r.status === 304) return;
         const etag = r.headers.get("etag");
-        if (etag) etagRef.current = etag;
+        const parcial = r.headers.get("x-mensagens-parcial") === "1";
+        const total = Number(r.headers.get("x-mensagens-total"));
+        const marca = Number(r.headers.get("x-mensagens-marca"));
         const dados = (await r.json()) as Record<string, ConvMensagem[]>;
-        ultimoSincronizadoRef.current = dados;
+
+        if (parcial) {
+          // Quantas das que vieram a tela ainda não conhecia. Se o total do servidor for diferente
+          // de "o que eu tinha + as novas", alguma foi apagada (por outra aba, outra pessoa, ou
+          // uma limpeza) — e um delta não tem como contar isso. Lista inteira, uma vez.
+          const conhecidas = new Set<string>();
+          for (const msgs of Object.values(ultimoSincronizadoRef.current)) for (const m of msgs) if (m.id) conhecidas.add(m.id);
+          let novas = 0;
+          for (const msgs of Object.values(dados)) for (const m of msgs) if (m.id && !conhecidas.has(m.id)) novas++;
+          if (totalRef.current !== null && Number.isFinite(total) && total !== totalRef.current + novas) {
+            return recarregar(true);
+          }
+          ultimoSincronizadoRef.current = fundirMensagensPorContato(ultimoSincronizadoRef.current, dados);
+        } else {
+          ultimoSincronizadoRef.current = dados;
+        }
+
+        if (etag) etagRef.current = etag;
+        if (Number.isFinite(total)) totalRef.current = total;
+        if (Number.isFinite(marca) && marca > 0) marcaRef.current = marca;
         setMensagensExtraPorContato((prev) => fundirMensagensPorContato(prev, dados));
       })
       .catch((erro) => console.error("Falha ao carregar mensagens extras da API:", erro));
@@ -192,8 +227,12 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
       ultimoSincronizadoRef.current = mensagensExtraPorContato;
       // Gravar muda o servidor, então a versão guardada acabou de ficar velha. Sem descartá-la, a
       // próxima batida mandaria um ETag antigo, e um `304` faria a tela ignorar o que ela mesma
-      // acabou de gravar.
+      // acabou de gravar. O total também fica desconhecido: esta gravação pode ter criado ou
+      // apagado mensagens, e a checagem de apagamento da próxima batida compararia com um número
+      // velho e pediria a lista inteira à toa. A `marca` fica: o delta seguinte traz de volta as
+      // linhas que esta gravação mexeu, já com o status do servidor.
       etagRef.current = null;
+      totalRef.current = null;
       fetch("/api/mensagens-extra", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },

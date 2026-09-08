@@ -9,6 +9,7 @@ import { CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-cana
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
 import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
+import { registrarRespostaDeCampanha } from "@/lib/campanhas/resposta";
 import type { ConvMensagem } from "@/lib/data";
 
 /**
@@ -69,6 +70,14 @@ type PayloadWhatsApp = {
           timestamp: string;
           type: string;
           text?: { body?: string };
+          /** Clique num botão de TEMPLATE (resposta rápida): a Meta manda o texto do botão aqui. */
+          button?: { text?: string; payload?: string };
+          /** Clique num botão ou item de lista de mensagem INTERATIVA (dentro da janela de 24h). */
+          interactive?: {
+            type?: string;
+            button_reply?: { id?: string; title?: string };
+            list_reply?: { id?: string; title?: string };
+          };
           image?: MidiaWhatsApp;
           sticker?: MidiaWhatsApp;
           audio?: MidiaWhatsApp;
@@ -167,6 +176,37 @@ async function extrasDeMidia(
 /** Acha a integração DAQUELE número (não do workspace da sessão — aqui não tem sessão nenhuma, quem
  * chama é a Meta). `metadados` é Json, então não dá pra filtrar `phoneNumberId` no `where` de forma
  * portável: filtra em memória, o custo é desprezível pro número de integrações ativas. */
+/** Reflete um status da Meta no destinatário de disparo que tem aquele `wamid`. */
+async function atualizarDestinatarioDeCampanha(
+  workspaceId: string,
+  wamid: string | undefined,
+  status: string | undefined,
+  tituloErro: string | undefined,
+): Promise<void> {
+  if (!wamid || !status) return;
+  const agora = new Date();
+  try {
+    if (status === "delivered") {
+      await prisma.campanhaDestinatario.updateMany({
+        where: { workspaceId, idExterno: wamid, status: "enviado" },
+        data: { status: "entregue", entregueEm: agora },
+      });
+    } else if (status === "read") {
+      await prisma.campanhaDestinatario.updateMany({
+        where: { workspaceId, idExterno: wamid, status: { in: ["enviado", "entregue"] } },
+        data: { status: "lido", lidoEm: agora },
+      });
+    } else if (status === "failed") {
+      await prisma.campanhaDestinatario.updateMany({
+        where: { workspaceId, idExterno: wamid, status: { in: ["enviado", "entregue"] } },
+        data: { status: "falhou", erroMensagem: tituloErro ?? "A Meta recusou a entrega." },
+      });
+    }
+  } catch (erro) {
+    console.error("[webhook whatsapp] falha ao atualizar destinatário de campanha:", erro);
+  }
+}
+
 async function integracaoDoNumero(phoneNumberId: string) {
   const conectadas = await prisma.integracao.findMany({
     where: { provedor: "meta_whatsapp", status: "conectado" },
@@ -260,6 +300,11 @@ export async function POST(request: Request) {
               })
               .catch((erro) => console.error("[webhook whatsapp] falha ao atualizar status:", erro));
           }
+          // O mesmo `wamid` também identifica o destinatário de um disparo em massa. Sem isto o
+          // acompanhamento parava em "enviado" pra sempre: o worker gravava o id, mas ninguém
+          // casava o status de volta. Só sobe de nível (enviado → entregue → lido): a Meta pode
+          // mandar "delivered" DEPOIS de "read", e rebaixar seria mentir.
+          await atualizarDestinatarioDeCampanha(integracao.workspaceId, s.id, s.status, s.errors?.[0]?.title);
           console.log("[webhook whatsapp] status recebido:", {
             wamid: s.id,
             status: s.status,
@@ -356,6 +401,8 @@ export async function POST(request: Request) {
           // quem acabou de falar precisa estar visível sem rolar a coluna inteira.
           await subirCardParaOTopo(integracao.workspaceId, chaveContato);
         }
+        // Se esta pessoa recebeu um disparo em massa há pouco, esta mensagem é a resposta dele.
+        await registrarRespostaDeCampanha(integracao.workspaceId, chaveContato);
 
         const midia = mensagem.image ?? mensagem.sticker ?? mensagem.audio ?? mensagem.video ?? mensagem.document;
         const extras =
@@ -365,7 +412,13 @@ export async function POST(request: Request) {
         const temMidiaBaixada = Object.keys(extras).length > 0;
         // Rótulo em texto sempre existe (aparece na lista de conversas e como legenda/fallback),
         // mesmo quando a mídia baixou certinho.
-        const texto = mensagem.text?.body ?? midia?.caption ?? RÓTULO_POR_TIPO[mensagem.type] ?? "[Mensagem não suportada]";
+        // Clique em botão chega como tipo `button` (template) ou `interactive` (mensagem dentro da
+        // janela). O texto do botão vira a mensagem da pessoa: aparece na conversa, conta como
+        // resposta ao disparo e dispara automação por palavra-chave — é assim que "clicou em Sim"
+        // continua o fluxo.
+        const textoDoBotao =
+          mensagem.button?.text ?? mensagem.interactive?.button_reply?.title ?? mensagem.interactive?.list_reply?.title;
+        const texto = mensagem.text?.body ?? textoDoBotao ?? midia?.caption ?? RÓTULO_POR_TIPO[mensagem.type] ?? "[Mensagem não suportada]";
         if (midia && !temMidiaBaixada) {
           console.error(`Falha ao baixar mídia (${mensagem.type}) da mensagem ${mensagem.id} — caiu no rótulo em texto.`);
         }

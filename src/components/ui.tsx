@@ -386,45 +386,6 @@ export function ChipFilters({
   );
 }
 
-/** Chips de segmento com seleção múltipla (tela de Ações). */
-export function SegmentChips({
-  options,
-  onChange,
-}: {
-  options: { label: string; ativo: boolean }[];
-  onChange?: (selected: string[]) => void;
-}) {
-  const [selected, setSelected] = useState(
-    () => new Set(options.filter((o) => o.ativo).map((o) => o.label)),
-  );
-
-  function toggle(label: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(label)) next.delete(label);
-      else next.add(label);
-      onChange?.([...next]);
-      return next;
-    });
-  }
-
-  return (
-    <div className="seg-picker">
-      {options.map(({ label }) => (
-        <button
-          type="button"
-          key={label}
-          className={`seg-chip${selected.has(label) ? " on" : ""}`}
-          aria-pressed={selected.has(label)}
-          onClick={() => toggle(label)}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /** Lista de rádios (atribuir atendente, escolher papel). */
 export function RadioList({
   options,
@@ -474,40 +435,6 @@ export function RadioList({
         );
       })}
     </>
-  );
-}
-
-/** Seletor de mídia da tela de Ações. */
-export function MediaPicker({
-  options,
-  initial = 0,
-  onChange,
-}: {
-  options: { label: string; icon: ReactNode }[];
-  initial?: number;
-  onChange?: (label: string, index: number) => void;
-}) {
-  const [selected, setSelected] = useState(initial);
-  return (
-    <div className="media-picker">
-      {options.map(({ label, icon }, i) => (
-        <button
-          type="button"
-          key={label}
-          className={`media-opt${i === selected ? " on" : ""}`}
-          aria-pressed={i === selected}
-          onClick={() => {
-            setSelected(i);
-            onChange?.(label, i);
-          }}
-        >
-          {icon}
-          <span className="l" style={{ display: "block" }}>
-            {label}
-          </span>
-        </button>
-      ))}
-    </div>
   );
 }
 

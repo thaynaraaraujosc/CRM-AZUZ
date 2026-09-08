@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { RITMO, preverDuracao, type CanalCampanha } from "@/lib/campanhas/ritmo";
+import { resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
+import { destinoDoContato, resolverAudiencia, type Audiencia } from "@/lib/campanhas/audiencia";
+import { contaConectada, limiteDiarioDaConta } from "@/lib/integracoes/whatsapp-oficial";
 
 /** GET lista as campanhas do workspace com a contagem de cada situação, mais recentes primeiro. */
 export async function GET() {
@@ -22,15 +25,29 @@ export async function GET() {
     _count: { _all: true },
   });
 
+  // "Respondidas" não é um status (a pessoa respondeu DEPOIS de lido/entregue), é uma marca à
+  // parte — por isso a segunda contagem.
+  const respostas = await prisma.campanhaDestinatario.groupBy({
+    by: ["campanhaId"],
+    where: { campanhaId: { in: campanhas.map((c) => c.id) }, respondidoEm: { not: null } },
+    _count: { _all: true },
+  });
+
   const porCampanha = new Map<string, Record<string, number>>();
   for (const linha of contagens) {
     const atual = porCampanha.get(linha.campanhaId) ?? {};
     atual[linha.status] = linha._count._all;
     porCampanha.set(linha.campanhaId, atual);
   }
+  for (const linha of respostas) {
+    const atual = porCampanha.get(linha.campanhaId) ?? {};
+    atual.respondido = linha._count._all;
+    porCampanha.set(linha.campanhaId, atual);
+  }
 
   return NextResponse.json(
     campanhas.map((c) => ({ ...c, contagem: porCampanha.get(c.id) ?? {} })),
+    { headers: { "cache-control": "private, no-store" } },
   );
 }
 
@@ -41,9 +58,15 @@ type CorpoCriar = {
   canal: CanalCampanha;
   templateNome?: string;
   templateIdioma?: string;
+  /** Template do CRM de onde a mensagem saiu (só pra exibir depois). */
+  templateId?: string;
+  /** Como cada `{{variável}}` é preenchida. Ver `src/lib/campanhas/variaveis.ts`. */
+  variaveis?: MapeamentoVariavel[];
+  /** Como o público foi escolhido. Quando vem, o servidor resolve a lista (ver `audiencia.ts`). */
+  audiencia?: Audiencia;
   agendadaPara?: string;
-  /** Nomes dos contatos, como aparecem na tela. */
-  contatos: string[];
+  /** Nomes dos contatos, como aparecem na tela — alternativa a `audiencia` (compatibilidade). */
+  contatos?: string[];
 };
 
 /**
@@ -64,30 +87,71 @@ export async function POST(request: Request) {
 
   const corpo = (await request.json()) as CorpoCriar;
 
-  if (!corpo.titulo?.trim() || !corpo.corpo?.trim() || !corpo.canal || !corpo.contatos?.length) {
-    return NextResponse.json({ erro: "Título, mensagem, canal e contatos são obrigatórios." }, { status: 400 });
-  }
-  if (!RITMO[corpo.canal]) {
+  if (!corpo.canal || !RITMO[corpo.canal]) {
     return NextResponse.json({ erro: "Canal inválido." }, { status: 400 });
   }
-  if (corpo.canal === "email" && !corpo.assunto?.trim()) {
-    return NextResponse.json({ erro: "E-mail precisa de assunto." }, { status: 400 });
+
+  // Template do CRM: quando vem, é ELE a fonte do texto, do assunto e do modelo da Meta. A tela
+  // não manda o corpo de um template — mandar deixaria a pessoa (ou um bug) enviar um texto
+  // diferente do que a Meta aprovou.
+  let variaveis = Array.isArray(corpo.variaveis) ? corpo.variaveis : [];
+  let texto = (corpo.corpo ?? "").trim();
+  let assunto = corpo.assunto?.trim() || null;
+  let templateNome = corpo.templateNome || null;
+  let templateIdioma = corpo.templateIdioma || null;
+  if (corpo.templateId) {
+    const template = await prisma.template.findFirst({ where: { id: corpo.templateId, workspaceId } });
+    if (!template) return NextResponse.json({ erro: "Template não encontrado." }, { status: 404 });
+    if (template.canal !== corpo.canal) return NextResponse.json({ erro: "Este template é de outro canal." }, { status: 400 });
+    if (template.status !== "aprovado") return NextResponse.json({ erro: "Só template aprovado pode ser disparado." }, { status: 400 });
+    texto = template.corpo;
+    assunto = template.assunto;
+    // Origem/valor de cada variável pode ter sido ajustada na tela do disparo; chave e índice não.
+    const doTemplate = (Array.isArray(template.variaveis) ? template.variaveis : []) as MapeamentoVariavel[];
+    const ajustes = new Map(variaveis.map((v) => [v.chave, v]));
+    variaveis = doTemplate.map((v) => {
+      const ajuste = ajustes.get(v.chave);
+      return ajuste ? { ...v, origem: ajuste.origem, valor: ajuste.valor } : v;
+    });
+    if (template.whatsappTemplateId) {
+      const espelho = await prisma.whatsappTemplate.findFirst({ where: { id: template.whatsappTemplateId, workspaceId } });
+      if (!espelho) return NextResponse.json({ erro: "O modelo deste template não foi encontrado na Meta." }, { status: 409 });
+      templateNome = espelho.nome;
+      templateIdioma = espelho.idioma;
+    }
   }
 
-  // Resolve nome -> destino. Quem não tem o dado do canal escolhido fica de fora e é DEVOLVIDO na
-  // resposta: campanha que ignora em silêncio faz a pessoa achar que mandou pra lista inteira.
-  const contatos = await prisma.contato.findMany({
-    where: { workspaceId, nome: { in: corpo.contatos } },
-    select: { nome: true, whatsapp: true, email: true },
-  });
+  // WhatsApp oficial fala com quem não escreveu primeiro: fora da janela de 24h a Meta só aceita
+  // modelo aprovado. Recusar aqui evita uma campanha inteira de "falhou" com o código 131047.
+  if (corpo.canal === "whatsapp_oficial" && !templateNome) {
+    return NextResponse.json({ erro: "No WhatsApp API Oficial o disparo precisa de um template aprovado pela Meta." }, { status: 400 });
+  }
+  if (!texto) return NextResponse.json({ erro: "Escreva a mensagem ou escolha um template." }, { status: 400 });
+  if (corpo.canal === "email" && !assunto) {
+    return NextResponse.json({ erro: "E-mail precisa de assunto." }, { status: 400 });
+  }
+  const titulo = (corpo.titulo ?? "").trim() || texto.split("\n")[0].slice(0, 60);
 
-  const destinos: { contatoNome: string; destino: string }[] = [];
+  // Público: resolvido no servidor a partir da descrição (ou da lista de nomes, no caminho antigo).
+  // É a mesma resolução da prévia — o que a tela mostrou é o que vai receber.
+  const audiencia: Audiencia | null = corpo.audiencia?.modo
+    ? corpo.audiencia
+    : corpo.contatos?.length
+      ? { modo: "selecionados", nomes: corpo.contatos }
+      : null;
+  if (!audiencia) return NextResponse.json({ erro: "Escolha o público." }, { status: 400 });
+  const contatos = await resolverAudiencia(workspaceId, audiencia);
+
+  const destinos: { contatoNome: string; destino: string; parametros: Record<string, string> }[] = [];
   const semDestino: string[] = [];
-  for (const nome of corpo.contatos) {
-    const c = contatos.find((x) => x.nome === nome);
-    const destino = corpo.canal === "email" ? c?.email : c?.whatsapp;
-    if (destino?.trim()) destinos.push({ contatoNome: nome, destino: destino.trim() });
-    else semDestino.push(nome);
+  for (const c of contatos) {
+    const destino = destinoDoContato(c, corpo.canal);
+    if (destino) {
+      // Valores das variáveis DESTA pessoa, congelados agora — pelo mesmo motivo do destino.
+      destinos.push({ contatoNome: c.nome, destino, parametros: resolverParametros(variaveis, c) });
+    } else {
+      semDestino.push(c.nome);
+    }
   }
 
   if (!destinos.length) {
@@ -110,12 +174,15 @@ export async function POST(request: Request) {
       data: {
         id,
         workspaceId,
-        titulo: corpo.titulo.trim(),
-        corpo: corpo.corpo,
-        assunto: corpo.assunto?.trim() || null,
+        titulo,
+        corpo: texto,
+        assunto,
         canal: corpo.canal,
-        templateNome: corpo.templateNome || null,
-        templateIdioma: corpo.templateIdioma || null,
+        templateNome,
+        templateIdioma,
+        templateId: corpo.templateId || null,
+        variaveis: variaveis as never,
+        audiencia: audiencia as never,
         agendadaPara,
         status: "agendada",
       },
@@ -127,11 +194,18 @@ export async function POST(request: Request) {
         workspaceId,
         contatoNome: d.contatoNome,
         destino: d.destino,
+        parametros: d.parametros as never,
       })),
     }),
   ]);
 
-  const previsao = preverDuracao(corpo.canal, destinos.length);
+  // Previsão com a cota REAL da conta no WhatsApp oficial (lida da Meta), não um chute.
+  let limiteDiario: number | null | undefined;
+  if (corpo.canal === "whatsapp_oficial") {
+    const conta = await contaConectada(workspaceId);
+    if (conta) limiteDiario = (await limiteDiarioDaConta(conta)).porDia;
+  }
+  const previsao = preverDuracao(corpo.canal, destinos.length, limiteDiario);
 
   return NextResponse.json(
     {

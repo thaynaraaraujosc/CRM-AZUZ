@@ -14784,3 +14784,491 @@ table.tbl .name-cell .r {
   background: var(--navy-raised);
   border-radius: var(--radius-md);
 }
+
+/* Abas do módulo de Automações (Automações · Templates · Disparo em massa). Ficam logo abaixo da
+   Topbar, alinhadas ao conteúdo. Link em vez de botão (são rotas), por isso o reset de texto. */
+.automacoes-abas {
+  padding: 0 var(--space-6);
+  background: var(--navy);
+}
+.automacoes-abas .tab {
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* ---------------------------------------------------------------- Templates e Disparo em massa
+   Preto, branco e cinzas dos tokens. A única cor é o status (badge), que já existe. A "bolha" da
+   prévia é cinza, não verde: é uma mensagem genérica, não uma imitação do WhatsApp. */
+.tpl-filtros {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+.tpl-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+.tpl-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+.tpl-card-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.tpl-card-cabecalho strong {
+  display: block;
+  font-size: 14px;
+}
+.tpl-card-cabecalho .hint {
+  display: block;
+  margin-top: 2px;
+}
+.tpl-card-acoes {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line-soft);
+}
+.tpl-card-acoes .btn {
+  padding: var(--space-1) var(--space-2);
+  font-size: 12px;
+}
+.tpl-excluir {
+  margin-left: auto;
+  color: var(--danger);
+}
+.tpl-rejeicao {
+  font-size: 12px;
+  color: var(--danger);
+  margin: 0;
+}
+.tpl-vazio {
+  padding: var(--space-6);
+  text-align: center;
+}
+.tpl-vazio strong {
+  display: block;
+  margin-bottom: var(--space-2);
+}
+.tpl-toast {
+  position: fixed;
+  bottom: var(--space-5);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--surface-elevated);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  z-index: 300;
+  box-shadow: var(--shadow-sm);
+}
+.tpl-aviso {
+  background: var(--navy-raised);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: 12.5px;
+  margin: 0 0 var(--space-3);
+}
+
+/* Editor: formulário à esquerda, prévia à direita. Em tela estreita, empilha. */
+.tpl-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-5);
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .tpl-editor {
+    grid-template-columns: 1fr;
+  }
+}
+.tpl-editor-form .field {
+  padding-left: 0;
+  padding-right: 0;
+}
+.tpl-linha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.tpl-linha .field {
+  border-bottom: none;
+}
+.tpl-corpo {
+  width: 100%;
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+}
+.tpl-inserir {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+.tpl-contagem {
+  margin-left: auto;
+}
+.tpl-canais {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+.tpl-canal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--ink);
+}
+.tpl-canal strong {
+  font-size: 12.5px;
+}
+.tpl-canal span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.tpl-canal.on {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink) inset;
+}
+.tpl-canal:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tpl-variaveis,
+.tpl-botoes {
+  display: grid;
+  gap: var(--space-2);
+}
+.tpl-variavel,
+.tpl-botao {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+}
+.tpl-botao {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.tpl-variavel code {
+  font-size: 12px;
+  background: var(--navy-raised);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+.tpl-problemas {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  font-size: 12px;
+  color: var(--danger);
+}
+
+/* Prévia: bolha cinza com o texto preenchido e os botões embaixo. */
+.tpl-previa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tpl-previa-titulo {
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.tpl-previa-titulo:empty {
+  display: none;
+}
+.tpl-bolha {
+  background: var(--navy-raised);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tpl-bolha p {
+  margin: 0;
+}
+.tpl-bolha-assunto {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+.tpl-bolha-botoes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.tpl-bolha-botoes span {
+  text-align: center;
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+  font-weight: var(--fw-medium);
+  background: var(--surface-elevated);
+}
+
+/* ---------------------------------------------------------------- Disparo em massa */
+.disp-passos {
+  display: flex;
+  gap: var(--space-4);
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+.disp-passos li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  font-size: 12px;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+}
+.disp-passos li span {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  border: 1px solid var(--line);
+}
+.disp-passos li.atual {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+.disp-passos li.atual span,
+.disp-passos li.feito span {
+  background: var(--ink);
+  color: var(--surface-elevated);
+  border-color: var(--ink);
+}
+.disp-passo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.disp-passo .field {
+  padding-left: 0;
+  padding-right: 0;
+}
+.disp-duas-colunas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--space-5);
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .disp-duas-colunas {
+    grid-template-columns: 1fr;
+  }
+}
+.disp-canais {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+}
+.disp-canal-indisponivel {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.disp-modos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.disp-lista-contatos {
+  max-height: 260px;
+  overflow-y: auto;
+  margin-top: var(--space-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+}
+.disp-contato {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.disp-contato:last-child {
+  border-bottom: none;
+}
+.disp-contato em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.disp-resumo-publico {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+.disp-numero {
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.disp-nomes {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  width: 100%;
+}
+.disp-templates {
+  max-height: 220px;
+}
+.disp-templates .badge {
+  margin-left: var(--space-2);
+  vertical-align: middle;
+}
+.disp-alerta {
+  color: var(--danger);
+}
+.disp-revisao {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  font-size: 13px;
+}
+.disp-revisao dt {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 3px;
+}
+.disp-revisao dd {
+  margin: 0;
+}
+
+/* Lista e detalhe */
+.disp-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.disp-item {
+  display: block;
+  padding: var(--space-4);
+  text-decoration: none;
+  color: inherit;
+}
+.disp-item:hover {
+  border-color: var(--line);
+}
+.disp-item-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.disp-item-cabecalho strong {
+  display: block;
+  font-size: 14px;
+}
+.disp-item-cabecalho .hint {
+  display: block;
+  margin-top: 2px;
+}
+.disp-metricas {
+  display: flex;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+.disp-metrica {
+  display: flex;
+  flex-direction: column;
+}
+.disp-metrica strong {
+  font-size: 18px;
+  line-height: 1.1;
+}
+.disp-metrica span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.disp-metrica.destaque strong {
+  color: var(--danger);
+}
+.disp-controles {
+  display: flex;
+  gap: var(--space-2);
+}
+.disp-detalhe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.disp-detalhe-resumo {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.disp-destinatarios {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  overflow-x: auto;
+}
+.disp-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.disp-tabela th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+.disp-tabela td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: top;
+}
+.disp-tabela tr.falhou td {
+  background: var(--danger-soft);
+}
+.disp-tabela a {
+  color: inherit;
+}

@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { enviarEmailOuFalhar } from "@/lib/email";
 import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
-import { contaConectada, enviarPelaCloudApi, tratarErroEnvio } from "@/lib/integracoes/whatsapp-oficial";
+import { contaConectada, enviarPelaCloudApi, limiteDiarioDaConta, tratarErroEnvio } from "@/lib/integracoes/whatsapp-oficial";
 import { RITMO, intervaloEntreEnvios, type CanalCampanha } from "./ritmo";
+import { componentesParaMeta, preencherVariaveis, type MapeamentoVariavel } from "./variaveis";
+import { registrarEnvioNaConversa } from "./registrar-envio";
 
 /**
  * O motor das campanhas.
@@ -36,6 +38,8 @@ type Destinatario = {
   contatoNome: string;
   destino: string;
   tentativas: number;
+  /** Valores das variáveis desta pessoa, resolvidos na criação (ver `variaveis.ts`). */
+  parametros: unknown;
 };
 
 /** Quantas mensagens desta campanha já saíram nas últimas 24h — pra respeitar o teto diário. */
@@ -65,16 +69,26 @@ async function enviarUm(
   corpo: string,
   assunto: string | null,
   template: { nome: string; idioma: string } | null,
+  variaveis: MapeamentoVariavel[],
+  parametros: Record<string, string>,
 ): Promise<string | undefined> {
+  // Texto livre (QR e e-mail): as variáveis são trocadas AQUI, com os valores congelados desta
+  // pessoa. O corpo da campanha continua sendo o molde — é ele que a tela de acompanhamento mostra.
+  const corpoDestaPessoa = preencherVariaveis(corpo, parametros);
+
   if (canal === "email") {
     // Versão que ESTOURA: a que engole o erro serve pros e-mails de sistema, não pra campanha —
     // aqui um envio que falhou precisa marcar o destinatário como falhou, com o motivo.
-    await enviarEmailOuFalhar({ to: destino, subject: assunto ?? "", html: corpo });
+    await enviarEmailOuFalhar({
+      to: destino,
+      subject: preencherVariaveis(assunto ?? "", parametros),
+      html: corpoDestaPessoa,
+    });
     return undefined;
   }
 
   if (canal === "whatsapp_nao_oficial") {
-    await enviarMensagemWhatsAppNaoOficial(workspaceId, destino.replace(/\D/g, ""), corpo);
+    await enviarMensagemWhatsAppNaoOficial(workspaceId, destino.replace(/\D/g, ""), corpoDestaPessoa);
     return undefined;
   }
 
@@ -86,12 +100,20 @@ async function enviarUm(
   const conta = await contaConectada(workspaceId);
   if (!conta) throw new Error("WhatsApp oficial não está conectado.");
 
+  // Template COM os parâmetros na ordem que a Meta espera. Sem eles a Meta recusa qualquer modelo
+  // que tenha variável — e a versão anterior mandava só nome e idioma, então todo modelo com
+  // {{1}} falhava em silêncio, um destinatário por vez, gastando a cota do dia.
+  const componentes = componentesParaMeta(variaveis, parametros);
   const corpoMensagem = template
     ? {
         type: "template" as const,
-        template: { name: template.nome, language: { code: template.idioma } },
+        template: {
+          name: template.nome,
+          language: { code: template.idioma },
+          ...(componentes ? { components: componentes } : {}),
+        },
       }
-    : { type: "text" as const, text: { body: corpo, preview_url: true } };
+    : { type: "text" as const, text: { body: corpoDestaPessoa, preview_url: true } };
 
   try {
     return (await enviarPelaCloudApi(conta, destino, corpoMensagem)) ?? undefined;
@@ -126,13 +148,39 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
     campanha.templateNome && campanha.templateIdioma
       ? { nome: campanha.templateNome, idioma: campanha.templateIdioma }
       : null;
+  const variaveis = (Array.isArray(campanha.variaveis) ? campanha.variaveis : []) as MapeamentoVariavel[];
+
+  // Teto diário do canal. No WhatsApp oficial ele é da CONTA e vem da Meta, lido uma vez por
+  // rodada (não por mensagem: é uma chamada de rede). Se a Meta não responder, segue sem teto — a
+  // própria Meta recusa quando estourar, e o destinatário fica "falhou" com o motivo dela.
+  let porDia = ritmo.porDia;
+  let identificadorConexao: string | null = null;
+  if (canal === "whatsapp_oficial") {
+    const conta = await contaConectada(campanha.workspaceId);
+    if (conta) {
+      porDia = (await limiteDiarioDaConta(conta)).porDia;
+      identificadorConexao = conta.phoneNumberId;
+    }
+  } else if (canal === "whatsapp_nao_oficial") {
+    const integracao = await prisma.integracao.findUnique({
+      where: { workspaceId_provedor: { workspaceId: campanha.workspaceId, provedor: "whatsapp_nao_oficial" } },
+      select: { metadados: true },
+    });
+    identificadorConexao = (integracao?.metadados as { numero?: string } | null)?.numero ?? null;
+  }
+  // Botões do template (só pra bolha na tela de Conversas mostrar o que a pessoa recebeu).
+  const botoes = campanha.templateId
+    ? ((await prisma.template.findUnique({ where: { id: campanha.templateId }, select: { botoes: true } }))?.botoes as
+        | { texto: string }[]
+        | null) ?? null
+    : null;
 
   while (Date.now() < prazoFinal) {
     // Teto diário: conferido a cada mensagem, não uma vez no começo — a rodada pode atravessar a
     // virada da janela de 24h, e outra campanha do mesmo workspace pode estar consumindo a cota.
-    if (ritmo.porDia !== null) {
+    if (porDia !== null) {
       const jaEnviados = await enviadosNasUltimas24h(campanha.workspaceId, canal);
-      if (jaEnviados >= ritmo.porDia) return; // Volta amanhã: a campanha continua "enviando".
+      if (jaEnviados >= porDia) return; // Volta amanhã: a campanha continua "enviando".
     }
 
     // Pega UM por vez. Marcar como "enviando" antes de sair daqui é o que impede dois workers
@@ -140,7 +188,7 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
     const proximo = (await prisma.campanhaDestinatario.findFirst({
       where: { campanhaId, status: "pendente" },
       orderBy: { criadoEm: "asc" },
-      select: { id: true, contatoNome: true, destino: true, tentativas: true },
+      select: { id: true, contatoNome: true, destino: true, tentativas: true, parametros: true },
     })) as Destinatario | null;
 
     if (!proximo) {
@@ -177,10 +225,26 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
         campanha.corpo,
         campanha.assunto,
         template,
+        variaveis,
+        (proximo.parametros && typeof proximo.parametros === "object" ? proximo.parametros : {}) as Record<string, string>,
       );
       await prisma.campanhaDestinatario.update({
         where: { id: proximo.id },
         data: { status: "enviado", idExterno, enviadoEm: new Date(), erroMensagem: null },
+      });
+      // A mensagem entra na tela de Conversas, como qualquer outra que o CRM mandou.
+      const parametros = (proximo.parametros && typeof proximo.parametros === "object" ? proximo.parametros : {}) as Record<string, string>;
+      await registrarEnvioNaConversa({
+        workspaceId: campanha.workspaceId,
+        canal,
+        contatoNome: proximo.contatoNome,
+        destino: proximo.destino,
+        texto: preencherVariaveis(campanha.corpo, parametros),
+        botoes,
+        wamid: idExterno,
+        destinatarioId: proximo.id,
+        campanhaId,
+        identificadorConexao,
       });
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : "Falha ao enviar.";
