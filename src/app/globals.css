@@ -1615,47 +1615,6 @@ table {
   border-bottom-color: var(--blue);
   font-weight: var(--fw-semibold);
 }
-
-/* As abas de Automações eram texto com um traço embaixo, do mesmo tamanho do corpo: liam-se como
-   continuação da frase acima, não como três destinos. Viram três botões de verdade, cada um com
-   superfície e contorno próprios, e a seção em que você está é a única marinho cheia. Escopo na
-   `.automacoes-abas` de propósito: `.tabs`/`.tab` são genéricos e usados em outras telas. */
-.automacoes-abas {
-  gap: var(--space-2);
-  border-bottom: none;
-  flex-wrap: wrap;
-}
-
-.automacoes-abas .tab {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface-elevated);
-  padding: var(--space-3) var(--space-4);
-  font-size: 13.5px;
-  font-weight: var(--fw-semibold);
-  color: var(--ink);
-  text-decoration: none;
-  transition: background var(--transition-fast), border-color var(--transition-fast),
-    color var(--transition-fast);
-}
-
-.automacoes-abas .tab:hover {
-  background: var(--surface-hover);
-  border-color: var(--acao);
-  color: var(--ink);
-}
-
-.automacoes-abas .tab.active {
-  background: var(--acao);
-  border-color: var(--acao);
-  color: var(--acao-texto);
-}
-
-.automacoes-abas .tab.active:hover {
-  background: var(--acao-hover);
-  border-color: var(--acao-hover);
-}
-
 /* Tooltip mínimo, CSS-only: `<button data-tooltip="Texto">` já ganha o comportamento, sem lib
    nova e sem depender do `title` nativo do browser (que é lento pra abrir e não segue o tema). Só
    aparece depois de `--transition-base`, pra não piscar em passagens rápidas do mouse. */
@@ -15167,14 +15126,50 @@ table.tbl .name-cell .r {
 }
 
 /* Abas do módulo de Automações (Automações · Templates · Disparo em massa). Ficam logo abaixo da
-   Topbar, alinhadas ao conteúdo. Link em vez de botão (são rotas), por isso o reset de texto. */
+   Topbar, alinhadas ao conteúdo. Link em vez de botão (são rotas), por isso o reset de texto.
+   Eram texto com um traço embaixo, do mesmo tamanho do corpo: liam-se como continuação da frase
+   acima, não como três destinos. Viram três botões com superfície e contorno próprios, e a seção
+   em que você está é a única marinho cheia. O escopo é a `.automacoes-abas` de propósito, porque
+   `.tabs` e `.tab` são genéricos e usados em outras telas. */
 .automacoes-abas {
-  padding: 0 var(--space-6);
+  gap: var(--space-2);
+  border-bottom: none;
+  flex-wrap: wrap;
+  /* O padding de topo tira os botões de cima da régua da Topbar. Com zero, o primeiro botão
+     encostava na linha e os dois viravam um elemento só. */
+  padding: var(--space-4) var(--space-6) var(--space-1);
   background: var(--navy);
 }
+
 .automacoes-abas .tab {
   text-decoration: none;
   display: inline-block;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  padding: var(--space-3) var(--space-4);
+  font-size: 13.5px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.automacoes-abas .tab:hover {
+  background: var(--surface-hover);
+  border-color: var(--acao);
+  color: var(--ink);
+}
+
+.automacoes-abas .tab.active {
+  background: var(--acao);
+  border-color: var(--acao);
+  color: var(--acao-texto);
+}
+
+.automacoes-abas .tab.active:hover {
+  background: var(--acao-hover);
+  border-color: var(--acao-hover);
 }
 
 /* ---------------------------------------------------------------- Templates e Disparo em massa

@@ -152,8 +152,17 @@ export type Contato = {
   origem: Origem;
   etapa: Etapa;
   responsavel: string;
+  /**
+   * @deprecated String congelada no momento em que o contato nasce ("Agora") e nunca mais tocada,
+   * herdada da fase de protótipo. Toda a base ficava dizendo "Agora" pra sempre. A tela calcula o
+   * rótulo na hora com `rotuloDeAtividade`, a partir da última mensagem real da conversa. O campo
+   * continua no banco porque registros antigos o têm e nada deve quebrar ao lê-los.
+   */
   ultima: string;
   valor: string;
+  /** Quando o contato entrou no CRM. Serve de piso pra "última interação" de quem ainda não trocou
+   * nenhuma mensagem: sem isso, contato recém-criado ficaria sem rótulo nenhum. */
+  criadoEm?: string;
   email?: string;
   whatsapp?: string;
   nascimento?: string;

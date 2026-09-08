@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
@@ -15,6 +15,8 @@ import { IconClose, IconSearch, IconWhatsApp } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
 import { Timeline } from "@/components/timeline";
 import { gerarLinhaDoTempo } from "@/lib/timeline";
+import { rotuloDeAtividade } from "@/lib/funis/atividade";
+import { VAZIO, ehVazio } from "@/lib/vazio";
 
 const CANAIS_PREFERIDOS = ["WhatsApp", "Instagram", "TikTok"] as const;
 
@@ -127,6 +129,15 @@ function ContatosPageInner() {
   const nomeUsuario = sessao?.user?.name ?? "";
   const { contatos, criarContato, atualizarContato, excluirContato } = useContatos();
   const { conversas } = useConversas();
+  /* "Última interação" era o campo `ultima`, uma string gravada como "Agora" quando o contato
+     nasce e nunca mais atualizada: a lista inteira dizia "Agora", inclusive contato de semanas
+     atrás. Mesmo defeito que o funil tinha na coluna de dias, e mesma correção: calcular na hora
+     a partir da última mensagem real. `ultimaMensagemEm` e não `atualizadoEm`, porque o segundo
+     sobe a cada escrita na conversa e uma importação deixaria todo mundo com cara de recente. */
+  const atividadePorNome = useMemo(
+    () => new Map(conversas.map((c) => [c.nome, c.ultimaMensagemEm ?? null])),
+    [conversas],
+  );
   const { mensagensExtraPorContato } = useMensagensExtra();
   const { funis } = useFunis();
   const { colunas: tarefas } = useTarefas();
@@ -432,9 +443,9 @@ function ContatosPageInner() {
                         {c.etapa}
                       </span>
                     </td>
-                    <td>{c.responsavel}</td>
-                    <td>{c.ultima}</td>
-                    <td>{c.valor}</td>
+                    <td>{ehVazio(c.responsavel) ? VAZIO : c.responsavel}</td>
+                    <td>{rotuloDeAtividade(atividadePorNome.get(c.nome) ?? c.criadoEm)}</td>
+                    <td>{ehVazio(c.valor) ? VAZIO : c.valor}</td>
                   </tr>
                 ))}
               </tbody>
@@ -449,7 +460,8 @@ function ContatosPageInner() {
               <div>
                 <p className="n">{contato.nome}</p>
                 <p className="s">
-                  {contato.origem} · última interação {contato.ultima.toLowerCase()}
+                  {contato.origem} · última interação{" "}
+                  {rotuloDeAtividade(atividadePorNome.get(contato.nome) ?? contato.criadoEm).toLowerCase()}
                 </p>
               </div>
               <div className="filters-row" style={{ margin: "0 0 0 auto" }}>
