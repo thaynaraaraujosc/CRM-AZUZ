@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 import { useContatos } from "@/lib/contatos-context";
@@ -223,18 +223,48 @@ export default function FormulariosPage() {
     }
   }
 
+  /**
+   * O endereço do formulário, montado a partir de ONDE O CRM ESTÁ SENDO ACESSADO.
+   *
+   * Estava escrito à mão como `azuzcrm.com/f/...`, sem o `.br` e sem o `https://`. Quem recebia o
+   * link caía num erro de servidor não encontrado, porque esse domínio não existe: o CRM responde
+   * em `azuzcrm.com.br`. E, mesmo corrigindo a letra, um domínio fixo no código quebra de novo em
+   * qualquer outro endereço (a pré-visualização da Vercel, um domínio próprio de cliente,
+   * `localhost` no desenvolvimento). `window.location.origin` sempre devolve o endereço certo,
+   * seja ele qual for.
+   */
+  function linkDoFormulario(comChave: boolean): string {
+    if (!formularioAberto) return "";
+    const base = `${origemDoSite || window.location.origin}/f/${formularioAberto.id}`;
+    if (!comChave || !formularioAberto.senha) return base;
+    return `${base}?chave=${encodeURIComponent(formularioAberto.senha)}`;
+  }
+
+  /**
+   * O endereço em que o CRM está aberto (`https://azuzcrm.com.br`, a prévia da Vercel, localhost).
+   *
+   * `useSyncExternalStore` em vez de `useState` + `useEffect`: no servidor não existe `window`, e
+   * ler ali faria o HTML do servidor divergir do primeiro HTML do cliente. Com o snapshot do
+   * servidor devolvendo vazio, o React já sabe conciliar os dois sem aviso de hidratação, e sem
+   * chamar `setState` dentro de efeito (que dispara uma segunda renderização em cascata).
+   * A inscrição é vazia de propósito: o endereço da página não muda enquanto ela está aberta.
+   */
+  const origemDoSite = useSyncExternalStore(
+    () => () => {},
+    () => window.location.origin,
+    () => "",
+  );
+
   function copiarLinkPrivado() {
     if (!formularioAberto) return;
-    const link = `azuzcrm.com/f/${formularioAberto.id}?chave=${formularioAberto.senha || "sem-senha"}`;
-    navigator.clipboard?.writeText(link);
+    navigator.clipboard?.writeText(linkDoFormulario(true));
     setLinkPrivadoCopiado(true);
     setTimeout(() => setLinkPrivadoCopiado(false), 2000);
   }
 
   function copiarLinkPublico() {
     if (!formularioAberto) return;
-    const link = `azuzcrm.com/f/${formularioAberto.id}`;
-    navigator.clipboard?.writeText(link);
+    navigator.clipboard?.writeText(linkDoFormulario(false));
     setLinkPublicoCopiado(true);
     setTimeout(() => setLinkPublicoCopiado(false), 2000);
   }
@@ -445,7 +475,7 @@ export default function FormulariosPage() {
                           </div>
                           <div className="key-row" style={{ padding: 0 }}>
                             <div className="key-box">
-                              azuzcrm.com/f/{formularioAberto.id}?chave={formularioAberto.senha || "•••"}
+                              {origemDoSite}/f/{formularioAberto.id}?chave={formularioAberto.senha || "•••"}
                             </div>
                             <button type="button" className="btn ghost" onClick={copiarLinkPrivado}>
                               {linkPrivadoCopiado ? "Copiado!" : "Copiar"}
@@ -455,7 +485,9 @@ export default function FormulariosPage() {
                         <div className="form-link-box">
                           <p className="form-link-h" style={{ display: "flex", alignItems: "center", gap: 6 }}><IconGlobo width={13} height={13} /> Link público</p>
                           <div className="key-row" style={{ padding: 0 }}>
-                            <div className="key-box">azuzcrm.com/f/{formularioAberto.id}</div>
+                            <div className="key-box">
+                              {origemDoSite}/f/{formularioAberto.id}
+                            </div>
                             <button type="button" className="btn ghost" onClick={copiarLinkPublico}>
                               {linkPublicoCopiado ? "Copiado!" : "Copiar"}
                             </button>
@@ -589,18 +621,22 @@ export default function FormulariosPage() {
                       </span>
                     </div>
                   ))}
-                  <button
-                    type="button"
-                    className="btn ghost block"
-                    style={{ margin: "8px 12px" }}
-                    onClick={() => {
-                      const novaId = adicionarPagina(formularioAberto.id);
-                      setPaginaAtivaId(novaId);
-                      setCampoSelecionadoId(null);
-                    }}
-                  >
-                    + Adicionar página
-                  </button>
+                  {/* O respiro é padding do container, não margem do botão. Com `width: 100%` mais
+                      margem lateral de 12px, o botão media 244px numa coluna de 220px e os 24px
+                      que sobravam eram cortados pelo `overflow: hidden` do quadro. */}
+                  <div className="form-builder-paginas-add">
+                    <button
+                      type="button"
+                      className="btn ghost block"
+                      onClick={() => {
+                        const novaId = adicionarPagina(formularioAberto.id);
+                        setPaginaAtivaId(novaId);
+                        setCampoSelecionadoId(null);
+                      }}
+                    >
+                      + Adicionar página
+                    </button>
+                  </div>
                 </div>
 
                 <div className="form-builder-canvas" onClick={() => setCampoSelecionadoId(null)}>
@@ -1255,6 +1291,71 @@ function PainelCampo({
   );
 }
 
+/**
+ * O formulário como ele vai aparecer, ao lado dos controles que o desenham.
+ *
+ * A aba Design ocupava uma coluna só e deixava metade da tela vazia. Trocar uma cor exigia
+ * publicar e abrir o link pra descobrir o resultado, o que na prática quer dizer que ninguém
+ * personaliza: o custo de ver é maior que o de desistir.
+ *
+ * Lê o formulário EM MEMÓRIA, não o que está salvo, então acompanha cada tecla. Usa as mesmas
+ * classes (`form-public-card`) e o mesmo renderizador de pergunta (`PerguntaVisualizacao`) da tela
+ * real: uma prévia desenhada por outro caminho passa a mentir na primeira divergência entre os
+ * dois códigos, e aí ela é pior que não ter prévia.
+ *
+ * Mostra a primeira página. Quem tem mais de uma vê o aviso de que existem outras: o que se
+ * confere aqui é aparência, e a aparência é a mesma em todas.
+ */
+function PreviaDesign({ formulario }: { formulario: Formulario }) {
+  const tema = formulario.tema;
+  const primeira = formulario.paginas[0];
+  const perguntas = primeira?.perguntas ?? [];
+
+  return (
+    <aside className="form-design-previa" aria-label="Prévia do formulário">
+      <p className="form-painel-secao-h">Prévia</p>
+      <div className="form-design-previa-moldura">
+        <div
+          className={`form-public-card${tema.temaEscuro ? " tema-escuro" : ""}`}
+          style={{ background: tema.corPrincipal }}
+        >
+          {tema.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={tema.logoUrl} alt="" className="form-public-logo" />
+          ) : null}
+          <h1 className="form-public-titulo">{formulario.nome || "Formulário sem título"}</h1>
+          {formulario.descricao ? <p className="form-public-desc">{formulario.descricao}</p> : null}
+
+          {perguntas.length === 0 ? (
+            <p className="hint">Nenhuma pergunta ainda. Adicione uma na aba Editar pra ver aqui.</p>
+          ) : (
+            perguntas.map((pergunta, i) => (
+              <PerguntaVisualizacao
+                key={pergunta.id}
+                pergunta={pergunta}
+                /* A numeração pula os blocos de layout (título, texto, divisória): eles aparecem
+                   no formulário mas não são perguntas, e contá-los faria a prévia numerar
+                   diferente da tela real. */
+                indice={perguntas.slice(0, i).filter((q) => !TIPOS_LAYOUT.includes(q.tipo)).length + 1}
+                interativo={false}
+              />
+            ))
+          )}
+
+          <button type="button" className="btn block" style={{ background: tema.corBotao, color: "#fff" }} disabled>
+            {formulario.paginas.length > 1 ? "Continuar" : "Enviar"}
+          </button>
+        </div>
+      </div>
+      {formulario.paginas.length > 1 ? (
+        <p className="hint form-design-previa-nota">
+          Mostrando a primeira de {formulario.paginas.length} páginas. A aparência é a mesma em todas.
+        </p>
+      ) : null}
+    </aside>
+  );
+}
+
 function PainelDesign({
   formulario,
   onAtualizar,
@@ -1267,8 +1368,49 @@ function PainelDesign({
   const { funis } = useFunis();
   const { membros } = useEquipe();
 
+  const [enviandoLogo, setEnviandoLogo] = useState(false);
+  const [erroLogo, setErroLogo] = useState("");
+
   function atualizarTema(patch: Partial<Formulario["tema"]>) {
     onAtualizar({ tema: { ...formulario.tema, ...patch } });
+  }
+
+  /**
+   * Manda a logo pro servidor e guarda a referência no tema.
+   *
+   * O arquivo vira data URL aqui no navegador e sobe como JSON, no mesmo formato que o resto das
+   * mídias do CRM já usa. O servidor é quem confere tipo e tamanho de novo: a checagem daqui é
+   * conforto pra quem está usando (erro na hora, sem ida e volta), nunca a defesa.
+   */
+  async function enviarLogo(arquivo: File) {
+    setErroLogo("");
+    if (arquivo.size > 2 * 1024 * 1024) {
+      setErroLogo(`A logo tem ${(arquivo.size / 1024 / 1024).toFixed(1)} MB. O limite é 2 MB.`);
+      return;
+    }
+    setEnviandoLogo(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const leitor = new FileReader();
+        leitor.onload = () => resolve(String(leitor.result));
+        leitor.onerror = () => reject(new Error("Não deu pra ler o arquivo."));
+        leitor.readAsDataURL(arquivo);
+      });
+
+      const resposta = await fetch(`/api/formularios/${formulario.id}/logo`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dataUrl }),
+      });
+      const dados = (await resposta.json()) as { logoUrl?: string; logoArquivo?: string; erro?: string };
+      if (!resposta.ok) throw new Error(dados.erro ?? "Não deu pra enviar a logo.");
+
+      atualizarTema({ logoUrl: dados.logoUrl, logoArquivo: dados.logoArquivo });
+    } catch (erro) {
+      setErroLogo(erro instanceof Error ? erro.message : "Não deu pra enviar a logo.");
+    } finally {
+      setEnviandoLogo(false);
+    }
   }
 
   function atualizarIntegracoes(patch: Partial<NonNullable<Formulario["integracoes"]>>) {
@@ -1278,7 +1420,8 @@ function PainelDesign({
   const funilSelecionado = funis.find((f) => f.id === formulario.integracoes?.funilId);
 
   return (
-    <div className="form-builder-design">
+    <div className="form-design-colunas">
+      <div className="form-builder-design">
       <div className="card" style={{ padding: 17 }}>
         <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
           <h4>Configurações do formulário</h4>
@@ -1374,8 +1517,51 @@ function PainelDesign({
           </div>
         </div>
         <div className="field">
-          <label>Logo (URL)</label>
-          <input className="input" style={{ width: "100%" }} value={formulario.tema.logoUrl ?? ""} onChange={(e) => atualizarTema({ logoUrl: e.target.value })} placeholder="https://…" />
+          <label>Logo</label>
+          <div className="form-design-logo">
+            {formulario.tema.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={formulario.tema.logoUrl} alt="" className="form-design-logo-previa" />
+            ) : (
+              <span className="form-design-logo-vazia">Sem logo</span>
+            )}
+            <div className="form-design-logo-acoes">
+              <label className="btn ghost" style={{ cursor: enviandoLogo ? "wait" : "pointer" }}>
+                {enviandoLogo ? "Enviando…" : formulario.tema.logoUrl ? "Trocar arquivo" : "Enviar arquivo"}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  hidden
+                  disabled={enviandoLogo}
+                  onChange={(e) => {
+                    const arquivo = e.target.files?.[0];
+                    // O input é limpo na hora: sem isto, escolher o MESMO arquivo de novo (depois
+                    // de um erro, por exemplo) não dispara `change` e a tela parece travada.
+                    e.target.value = "";
+                    if (arquivo) void enviarLogo(arquivo);
+                  }}
+                />
+              </label>
+              {formulario.tema.logoUrl ? (
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => atualizarTema({ logoUrl: undefined, logoArquivo: undefined })}
+                >
+                  Remover
+                </button>
+              ) : null}
+            </div>
+          </div>
+          {erroLogo ? <p className="hint" style={{ color: "var(--danger)" }}>{erroLogo}</p> : null}
+          <p className="hint">PNG, JPG, WEBP ou GIF, até 2 MB. Também dá pra colar um endereço:</p>
+          <input
+            className="input"
+            style={{ width: "100%" }}
+            value={formulario.tema.logoUrl ?? ""}
+            onChange={(e) => atualizarTema({ logoUrl: e.target.value, logoArquivo: undefined })}
+            placeholder="https://…"
+          />
         </div>
         <div className="field">
           <label>Banner (URL)</label>
@@ -1514,6 +1700,9 @@ function PainelDesign({
           </div>
         )}
       </div>
+      </div>
+
+      <PreviaDesign formulario={formulario} />
     </div>
   );
 }

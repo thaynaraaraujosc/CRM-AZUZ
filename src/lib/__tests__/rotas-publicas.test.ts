@@ -57,11 +57,22 @@ describe("rotas que dispensam sessão", () => {
     }
   });
 
+  it("abre a tela pública do formulário, que é aberta por um lead sem login", () => {
+    // O link compartilhado leva pra cá. Se esta rota exigisse sessão, o proxy devolveria 307 pro
+    // /login e o formulário nunca seria respondido: foi assim que a tela pública ficou inacessível
+    // até ela existir de fato.
+    expect(ehRotaPublica("/f/form-1786749623297-oy4a1")).toBe(true);
+    expect(ehRotaPublica("/f")).toBe(true);
+  });
+
   it("não deixa um nome parecido passar por outra rota", () => {
     // `startsWith` cru abriria `/loginfalso` junto com `/login`, e `/api/cron-secreto` junto com
     // `/api/cron/`. A comparação tem que respeitar a fronteira do caminho.
     expect(ehRotaPublica("/loginfalso")).toBe(false);
     expect(ehRotaPublica("/api/cron-secreto")).toBe(false);
     expect(ehRotaPublica("/api/webhooks/whatsapp-falso")).toBe(false);
+    // `/f` é curto e perigoso: sem a fronteira, abriria /funil, /formularios e /faturas.
+    expect(ehRotaPublica("/funil")).toBe(false);
+    expect(ehRotaPublica("/formularios")).toBe(false);
   });
 });
