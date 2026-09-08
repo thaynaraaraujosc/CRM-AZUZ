@@ -879,12 +879,16 @@ function FunilPageInner() {
                   <Link
                     href={`/automacoes?funil=${funilAtivo.id}&etapa=${coluna.id}${automacoesEtapa.length === 0 ? "&criar=1" : ""}`}
                     className="kcol-auto-link"
-                    title="Ver/criar automações dessa etapa"
+                    title={
+                      automacoesEtapa.length > 0
+                        ? "Ver as automações que rodam quando o lead entra nesta etapa"
+                        : "Criar uma automação que roda quando o lead entrar nesta etapa"
+                    }
                   >
                     <IconAutomacoes width={12} height={12} />
                     {automacoesEtapa.length > 0
                       ? `${automacoesEtapa.length} ${automacoesEtapa.length > 1 ? "automações" : "automação"}`
-                      : "+ Automação"}
+                      : "+ Quando entrar aqui…"}
                   </Link>
                 ) : null}
                 {cardsVisiveis.map(({ card, cardIndex }) => {

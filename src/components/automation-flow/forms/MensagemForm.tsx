@@ -4,6 +4,8 @@ import { useRef } from "react";
 
 import type { CanalMensagem, FlowNode } from "@/lib/automation-flow/types";
 import { VariavelDropdown } from "./VariavelDropdown";
+import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
+import { mapearVariaveis } from "@/lib/campanhas/variaveis";
 import { inserirTokenNoTexto } from "./variaveis";
 
 const CANAIS: { valor: CanalMensagem; label: string }[] = [
@@ -44,6 +46,10 @@ export function MensagemForm({ node, onChange }: { node: FlowNode; onChange: (da
   const temTemplateId = "templateId" in d;
   const temParaEquipe = "paraEquipe" in d;
   const temFormularioOrigem = "formularioOrigem" in d;
+
+  /** Qual chave guarda o texto neste bloco — os campos mudam de nome conforme o tipo. */
+  const chaveDoTexto = temCorpo ? "corpo" : temLegenda ? "legenda" : temMensagem ? "mensagem" : "texto";
+  const textoDaMensagem = String(d[chaveDoTexto] ?? "");
 
   return (
     <div className="flow-form">
@@ -140,18 +146,28 @@ export function MensagemForm({ node, onChange }: { node: FlowNode; onChange: (da
             <label style={{ marginBottom: 0 }}>
               {temCorpo ? "Corpo do e-mail" : temLegenda ? "Legenda" : temMensagem ? "Mensagem" : "Texto"}
             </label>
-            <VariavelDropdown onEscolher={(t) => inserirVariavel(temCorpo ? "corpo" : temLegenda ? "legenda" : temMensagem ? "mensagem" : "texto", t)} />
+            <VariavelDropdown onEscolher={(t) => inserirVariavel(chaveDoTexto, t)} />
           </div>
           <textarea
             ref={textareaRef}
             className="input"
             style={{ width: "100%", minHeight: 90, resize: "vertical" }}
-            value={String(d[temCorpo ? "corpo" : temLegenda ? "legenda" : temMensagem ? "mensagem" : "texto"] ?? "")}
-            onChange={(e) =>
-              set({ [temCorpo ? "corpo" : temLegenda ? "legenda" : temMensagem ? "mensagem" : "texto"]: e.target.value })
-            }
+            value={textoDaMensagem}
+            onChange={(e) => set({ [chaveDoTexto]: e.target.value })}
           />
         </div>
+      ) : null}
+
+      {textoDaMensagem.trim() ? (
+        // A mesma prévia do editor de modelos e do resumo do disparo. Quem escreve a mensagem e
+        // quem confirma o envio precisam olhar pra mesma coisa — inclusive pra ver a variável
+        // trocada pelo valor, que é onde o erro aparece ("Oi {{nome}}" indo literal pro cliente).
+        <PreviaMensagem
+          corpo={textoDaMensagem}
+          variaveis={mapearVariaveis(textoDaMensagem)}
+          assunto={temAssunto ? String(d.assunto ?? "") : null}
+          titulo="Como vai chegar"
+        />
       ) : null}
     </div>
   );
