@@ -12846,10 +12846,30 @@ button.camp-row:hover {
   min-height: 0;
 }
 
+/**
+ * A coluna de indicadores.
+ *
+ * Era uma pilha flex, então cada cartão tinha a altura do próprio conteúdo: "Sucesso" ocupa uma
+ * linha, "Clientes que desistiram ou não compraram" ocupa duas, e os dois de baixo não tinham
+ * linha de apoio nenhuma. Cinco cartões de cinco alturas diferentes, com o espaçamento sobrando
+ * embaixo.
+ *
+ * Vira um grid de linhas IGUAIS ocupando a altura da coluna: os cinco ficam do mesmo tamanho, com
+ * a mesma distância entre eles, e a coluna termina exatamente onde as Pendências terminam, o que é
+ * o que faz o cartão grande parecer centrado em vez de pendurado.
+ */
 .inicio-col-lateral {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-auto-rows: 1fr;
   gap: var(--space-4);
+  height: 100%;
+  min-height: 0;
+}
+
+/* Com altura igual pra todos, o conteúdo se distribui dentro do cartão em vez de se amontoar em
+   cima e deixar um vão embaixo. */
+.inicio-col-lateral .inicio-stat-mini {
+  justify-content: center;
 }
 /* Os três cartões do funil eram esticados pra preencher a coluna. Com o piso marinho isso fazia
    sentido: vão vazio virava um bloco de quadriculado escuro. Agora o piso é claro e o vazio lê
@@ -12914,28 +12934,6 @@ button.camp-row:hover {
   overflow-y: auto;
 }
 
-.inicio-diario-secao {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.inicio-diario-titulo {
-  margin: 0;
-  font-size: var(--fs-section-title);
-  font-weight: var(--fw-semibold);
-  font-family: var(--display);
-  /* Fica solto direto sobre o piso, não dentro de uma caixa. Era cor clara fixa (`#eef1fb`) porque
-     o piso era marinho; com o piso off-white virava branco sobre branco. Token resolve nos dois
-     temas. */
-  color: var(--ink);
-}
-/* Os dois números do Diário viraram o rodapé da coluna de indicadores, então empilham como os
-   cartões acima em vez de dividir a largura em dois. */
-.inicio-diario-grade {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
 .inicio-diario-grade .inicio-stat-mini {
   flex: 1;
 }
