@@ -12,6 +12,7 @@ const LIMITES: { valor: NonNullable<ConfiguracoesFluxo["limiteExecucao"]>; label
   { valor: "uma_vez_por_dia", label: "Uma vez por dia" },
   { valor: "uma_vez_por_semana", label: "Uma vez por semana" },
   { valor: "uma_vez_por_mes", label: "Uma vez por mês" },
+  { valor: "no_maximo", label: "No máximo X vezes por contato" },
 ];
 
 export function ConfiguracoesGeraisForm({
@@ -134,15 +135,23 @@ export function ConfiguracoesGeraisForm({
         />
       </div>
       <div className="field">
-        <label>Fora da janela ativa</label>
+        <label>Quando o gatilho acontecer fora desse horário</label>
         <select
           className="input"
-          value={cfg.foraDaJanela ?? "aguardar"}
+          value={cfg.foraDaJanela === "ignorar" ? "encerrar" : (cfg.foraDaJanela ?? "aguardar")}
           onChange={(e) => onChangeConfiguracoes({ foraDaJanela: e.target.value as ConfiguracoesFluxo["foraDaJanela"] })}
         >
-          <option value="aguardar">Aguardar a próxima janela</option>
-          <option value="ignorar">Ignorar o disparo</option>
+          <option value="aguardar">Aguardar e continuar quando abrir</option>
+          <option value="continuar">Continuar mesmo assim</option>
+          <option value="encerrar">Encerrar a execução</option>
         </select>
+        <p className="hint">
+          {cfg.foraDaJanela === "continuar"
+            ? "A mensagem sai na hora, mesmo de madrugada."
+            : cfg.foraDaJanela === "encerrar" || cfg.foraDaJanela === "ignorar"
+              ? "O lead não entra na automação e nada é enviado depois."
+              : "O lead entra na automação e ela fica parada até o próximo dia/horário ativo. Só vale com as esperas de verdade ligadas."}
+        </p>
       </div>
 
       <div className="field">
@@ -176,7 +185,23 @@ export function ConfiguracoesGeraisForm({
             </option>
           ))}
         </select>
+        <p className="hint">
+          A contagem usa o histórico de execuções, que só existe com as esperas de verdade ligadas.
+        </p>
       </div>
+
+      {cfg.limiteExecucao === "no_maximo" ? (
+        <div className="field">
+          <label>Quantas vezes no máximo</label>
+          <input
+            className="input"
+            type="number"
+            min={1}
+            value={cfg.maximoExecucoes ?? 1}
+            onChange={(e) => onChangeConfiguracoes({ maximoExecucoes: Math.max(1, Number(e.target.value) || 1) })}
+          />
+        </div>
+      ) : null}
 
       <div className="toggle-row">
         <span className="tl">Não iniciar se já estiver nesse fluxo</span>

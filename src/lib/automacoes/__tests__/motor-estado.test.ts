@@ -175,3 +175,28 @@ describe("conversa em texto pra IA", () => {
     expect(conversaEmTexto(muitas, 3)).toContain("msg 29");
   });
 });
+
+describe("espera em dias úteis", () => {
+  // 2026-03-13 é uma sexta-feira.
+  const sexta = new Date("2026-03-13T10:00:00.000Z");
+
+  it("dois dias corridos a partir de sexta caem no domingo", () => {
+    const r = calcularEspera({ modo: "dias", valor: 2 } as AguardarData, sexta);
+    expect(r?.getDay()).toBe(0);
+  });
+
+  it("dois dias ÚTEIS a partir de sexta caem na terça — não é o mesmo que empurrar o domingo", () => {
+    const r = calcularEspera({ modo: "dias", valor: 2, apenasDiasUteis: true } as AguardarData, sexta);
+    expect(r?.getDay()).toBe(2);
+  });
+
+  it("com 'não cair em fim de semana', o domingo vira segunda", () => {
+    const r = calcularEspera({ modo: "dias", valor: 2, pularFinaisDeSemana: true } as AguardarData, sexta);
+    expect(r?.getDay()).toBe(1);
+  });
+
+  it("hora e minuto não são afetados pelo fim de semana", () => {
+    const r = calcularEspera({ modo: "horas", valor: 3 } as AguardarData, sexta);
+    expect(r?.toISOString()).toBe("2026-03-13T13:00:00.000Z");
+  });
+});

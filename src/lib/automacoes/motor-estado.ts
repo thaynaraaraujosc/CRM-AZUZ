@@ -225,10 +225,41 @@ function atualizarContato(contexto: ContextoExecucaoPersistido, mudanca: Record<
 /** Momento em que uma espera termina, a partir da configuração do bloco. */
 export function calcularEspera(data: AguardarData, agora: Date): Date | null {
   const valor = data.valor ?? 0;
-  if (data.modo === "minutos") return new Date(agora.getTime() + valor * 60_000);
-  if (data.modo === "horas") return new Date(agora.getTime() + valor * 3_600_000);
-  if (data.modo === "dias") return new Date(agora.getTime() + valor * 86_400_000);
-  return null;
+  let quando: Date | null = null;
+  if (data.modo === "minutos") quando = new Date(agora.getTime() + valor * 60_000);
+  if (data.modo === "horas") quando = new Date(agora.getTime() + valor * 3_600_000);
+  if (data.modo === "dias") {
+    // Contar em dias ÚTEIS é diferente de contar em dias e depois empurrar: "2 dias úteis" a
+    // partir de uma sexta é terça, não domingo empurrado pra segunda.
+    quando = data.apenasDiasUteis ? somarDiasUteis(agora, valor) : new Date(agora.getTime() + valor * 86_400_000);
+  }
+  if (!quando) return null;
+
+  // Empurra pra segunda quando cai no fim de semana. Uma cobrança que chega sábado de manhã tem
+  // menos chance de resposta e mais chance de irritar — era a razão de a opção existir na tela.
+  if (data.pularFinaisDeSemana) quando = proximoDiaUtil(quando);
+  return quando;
+}
+
+function ehFimDeSemana(data: Date): boolean {
+  const dia = data.getDay();
+  return dia === 0 || dia === 6;
+}
+
+function proximoDiaUtil(data: Date): Date {
+  const resultado = new Date(data);
+  while (ehFimDeSemana(resultado)) resultado.setDate(resultado.getDate() + 1);
+  return resultado;
+}
+
+function somarDiasUteis(inicio: Date, dias: number): Date {
+  const resultado = new Date(inicio);
+  let restantes = Math.max(0, Math.round(dias));
+  while (restantes > 0) {
+    resultado.setDate(resultado.getDate() + 1);
+    if (!ehFimDeSemana(resultado)) restantes--;
+  }
+  return resultado;
 }
 
 /** Prazo máximo de uma espera por resposta ("resposta OU 2 horas"). */

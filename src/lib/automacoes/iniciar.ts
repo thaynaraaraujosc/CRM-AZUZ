@@ -8,10 +8,12 @@ import {
   encerrarExecucao,
   execucaoAguardandoDoContato,
   execucoesComEsperaVencida,
+  gravadorNoBanco,
   registrarPasso,
   type ContextoExecucaoPersistido,
   type ExecucaoAtiva,
 } from "./execucoes";
+import { comportamentoForaDaJanela, dentroDaJanela, proximaAbertura } from "./janela";
 import { podeIniciar } from "./limites";
 import { proximaAresta, rodarExecucao, saidaDaResposta, type FimDaRodada } from "./motor-estado";
 import { versaoAtualPublicada, versaoPorId, type VersaoPublicada } from "./versoes";
@@ -74,6 +76,18 @@ export async function iniciarFluxoComEstado(params: {
   });
   if (!veredito.pode) return { situacao: "cancelada", passos: 0, detalhe: `Não iniciou: ${veredito.motivo}.` };
 
+  const configuracoes = params.configuracoes ?? versao.configuracoes;
+  const agora = new Date();
+  const fora = !dentroDaJanela(configuracoes, agora);
+  const comportamento = comportamentoForaDaJanela(configuracoes);
+
+  // Fora do horário de funcionamento. "encerrar" nem começa; "aguardar" começa e ESTACIONA até a
+  // janela abrir — o que a opção sempre prometeu e nunca fez, porque sem estado não havia onde
+  // guardar uma execução parada.
+  if (fora && comportamento === "encerrar") {
+    return { situacao: "cancelada", passos: 0, detalhe: "Fora do horário de funcionamento da automação." };
+  }
+
   const execucao = await criarExecucao({
     workspaceId: params.workspaceId,
     fluxoId: params.fluxoId,
@@ -84,6 +98,23 @@ export async function iniciarFluxoComEstado(params: {
     noInicialId: inicio.alvoId,
     contexto: { contato: params.contato },
   });
+
+  if (fora && comportamento === "aguardar") {
+    const abertura = proximaAbertura(configuracoes, agora);
+    if (!abertura) {
+      return { situacao: "cancelada", passos: 0, detalhe: "A automação não tem nenhum dia ativo — não há quando retomar." };
+    }
+    await gravadorNoBanco.reagendarRodada({ execucaoId: execucao.id, noId: inicio.alvoId, contexto: execucao.contexto, ate: abertura });
+    await gravadorNoBanco.registrarPasso({
+      execucaoId: execucao.id,
+      workspaceId: params.workspaceId,
+      noId: inicio.alvoId,
+      noTipo: "aguardar",
+      resultado: "aguardando",
+      detalhe: `Fora do horário — continua em ${abertura.toLocaleString("pt-BR")}.`,
+    });
+    return { situacao: "aguardando_tempo", passos: 0, detalhe: "Esperando a próxima janela de funcionamento." };
+  }
 
   return rodarExecucao({
     execucao,

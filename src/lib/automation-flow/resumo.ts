@@ -93,9 +93,13 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
   if (node.type === "aguardar") {
     const data = node.data as AguardarData;
     if (data.tempoMaximo) {
+      // Numa espera por resposta os dois caminhos têm nome de gente: é "respondeu" ou "não
+      // respondeu", não "ok" e "timeout". Os `handleId` continuam os mesmos pra não desligar as
+      // arestas de fluxos que já existem.
+      const esperandoResposta = data.modo === "ate_resposta";
       return [
-        { handleId: "ok", label: "✓ OK" },
-        { handleId: "timeout", label: "⏱ Tempo esgotado" },
+        { handleId: "ok", label: esperandoResposta ? "✓ Respondeu" : "✓ OK" },
+        { handleId: "timeout", label: esperandoResposta ? "⏱ Não respondeu" : "⏱ Tempo esgotado" },
       ];
     }
   }
