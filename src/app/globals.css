@@ -33,6 +33,17 @@
      de "ligado"/confirmação (ex.: toggle ativo). */
   --blue-strong: #1d4fd1;
 
+  /* AZUL MARINHO — a cor da ação principal: botão "Salvar", chip de filtro ligado, passo atual do
+     assistente, aviso. Antes esses elementos eram quase-pretos (`--ink`), e o resultado é que a
+     identidade azul do CRM sumia justamente onde a pessoa mais olha.
+     É um token PRÓPRIO, e não `--ink` repintado, porque `--ink` também é a cor do texto: mudar ele
+     deixaria toda palavra da tela azul-marinho, que não é a intenção.
+     Branco sobre #0b1533 fica em 18:1 — muito acima do mínimo de 4,5:1. */
+  --acao: #0b1533;
+  --acao-hover: #16224a;
+  --acao-active: #060c1f;
+  --acao-texto: #ffffff;
+
   /* Bordas organizam, não são protagonistas — mas precisam ser vistas. A 8% ela sumia sobre branco
      e o card ficava sem começo nem fim. `--line-strong` é pro que precisa de recorte de verdade:
      card dentro de card, cabeçalho de tabela, item destacado. */
@@ -264,14 +275,24 @@
   --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
   --shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.42);
+
+  /* O marinho do tema claro não serve aqui: #0b1533 sobre um fundo #08080a é quase o mesmo tom, e
+     o botão principal desapareceria. Este é o mesmo azul, clareado até se destacar da superfície
+     mantendo texto branco em 10:1. A cor continua sendo marinho, não o azul vivo do accent —
+     senão o botão competiria com link e item selecionado, que já usam --blue. */
+  --acao: #1c3f7a;
+  --acao-hover: #25539e;
+  --acao-active: #16325f;
+  --acao-texto: #ffffff;
 }
 
-/* Sobre o azul claro do tema escuro, texto branco fica em 3,2:1. Tinta escura resolve e ainda
-   reforça o azul como accent — o botão principal fica mais evidente, não menos. */
+/* Estes três passaram a ter FUNDO marinho (`--acao`) nos dois temas, então o texto é branco nos
+   dois. Antes o fundo era claro no tema escuro e precisava de tinta escura por cima — a regra
+   continua aqui, agora dizendo o contrário, porque a cor do texto acompanha o fundo. */
 :root[data-theme="dark"] .btn.primary,
 :root[data-theme="dark"] .fchip.active,
 :root[data-theme="dark"] .wa-filter-chip.active {
-  color: #0a0a0b;
+  color: var(--acao-texto);
 }
 
 *,
@@ -943,22 +964,22 @@ table {
    link, indicador, foco. Num painel de trabalho o preto é mais forte que qualquer cor: não compete
    com os estados coloridos (verde de ganho, vermelho de perda) e não vira decoração. */
 .btn.primary {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--navy);
+  background: var(--acao);
+  border-color: var(--acao);
+  color: var(--acao-texto);
   box-shadow: var(--shadow-sm);
 }
 
 .btn.primary:hover {
-  background: var(--gray-800);
-  border-color: var(--gray-800);
+  background: var(--acao-hover);
+  border-color: var(--acao-hover);
   box-shadow: var(--shadow-md);
 }
 
 /* Pressão: afunda um pixel e perde a sombra. Sem isso o clique não tem retorno nenhum entre o
    hover e a ação acontecer. */
 .btn.primary:active {
-  background: var(--gray-800);
+  background: var(--acao-active);
   box-shadow: none;
 }
 
@@ -1251,14 +1272,15 @@ table {
   color: var(--ink);
 }
 
-/* Brasão: era o gradiente azul-roxo com brilho da paleta antiga — sobrou nas telas de entrada
-   depois que o app e a sidebar já tinham sido convertidos. Preto sólido, como a ação principal. */
+/* Brasão das telas de entrada. Segue a ação principal, como sempre seguiu — só que a ação
+   principal agora é o azul marinho da identidade, não mais o preto. É a primeira coisa que alguém
+   vê ao abrir o CRM, então é justamente onde a cor da marca precisa aparecer. */
 .auth-mark {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-md);
-  background: var(--ink);
-  color: var(--white);
+  background: var(--acao);
+  color: var(--acao-texto);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2158,9 +2180,9 @@ a.timeline-conteudo:hover {
 }
 
 .fchip.active {
-  background: var(--ink);
-  color: var(--navy);
-  border-color: var(--ink);
+  background: var(--acao);
+  color: var(--acao-texto);
+  border-color: var(--acao);
 }
 
 .nova-pasta-inline {
@@ -3272,8 +3294,8 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-whatsapp .wa-filter-chip.active {
-  background: var(--ink);
-  color: var(--navy);
+  background: var(--acao);
+  color: var(--acao-texto);
 }
 
 .wa-fav-star {
@@ -4443,8 +4465,8 @@ button.camp-row:hover {
 .pie-tooltip {
   position: fixed;
   transform: translate(14px, 14px);
-  background: var(--ink);
-  color: var(--paper, #fff);
+  background: var(--acao);
+  color: var(--acao-texto);
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-2);
   font-size: 11.5px;
@@ -14864,8 +14886,8 @@ table.tbl .name-cell .r {
   bottom: var(--space-5);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--ink);
-  color: var(--surface-elevated);
+  background: var(--acao);
+  color: var(--acao-texto);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
   font-size: 13px;
@@ -14946,9 +14968,11 @@ table.tbl .name-cell .r {
   font-size: 11px;
   color: var(--text-muted);
 }
+/* Canal escolhido no editor de modelos: o contorno acompanha a ação principal, senão o cartão
+   selecionado ficava com um recorte preto no meio de uma tela que virou azul. */
 .tpl-canal.on {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 1px var(--ink) inset;
+  border-color: var(--acao);
+  box-shadow: 0 0 0 1px var(--acao) inset;
 }
 .tpl-canal:disabled {
   opacity: 0.5;
@@ -15064,9 +15088,9 @@ table.tbl .name-cell .r {
 }
 .disp-passos li.atual span,
 .disp-passos li.feito span {
-  background: var(--ink);
-  color: var(--surface-elevated);
-  border-color: var(--ink);
+  background: var(--acao);
+  color: var(--acao-texto);
+  border-color: var(--acao);
 }
 .disp-passo {
   display: flex;
