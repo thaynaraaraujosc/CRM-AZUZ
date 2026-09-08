@@ -1314,35 +1314,65 @@ function PreviaDesign({ formulario }: { formulario: Formulario }) {
   return (
     <aside className="form-design-previa" aria-label="Prévia do formulário">
       <p className="form-painel-secao-h">Prévia</p>
+      {/* A moldura repete o `.form-public-page` da tela real: o cartão flutua sobre o fundo da
+          página, e é esse contraste que dá a leitura de "página", não de "caixa". */}
       <div className="form-design-previa-moldura">
         <div
-          className={`form-public-card${tema.temaEscuro ? " tema-escuro" : ""}`}
+          className={`form-public-card${tema.temaEscuro ? " tema-escuro" : ""}${tema.layout === "duas-colunas" ? " duas-colunas" : ""}`}
           style={{ background: tema.corPrincipal }}
         >
           {tema.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={tema.logoUrl} alt="" className="form-public-logo" />
           ) : null}
-          <h1 className="form-public-titulo">{formulario.nome || "Formulário sem título"}</h1>
-          {formulario.descricao ? <p className="form-public-desc">{formulario.descricao}</p> : null}
+          {tema.bannerUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={tema.bannerUrl} alt="" className="form-public-banner" />
+          ) : null}
+          <h2>{formulario.nome || "Formulário sem título"}</h2>
+          {formulario.descricao ? (
+            <p className="hint" style={{ marginBottom: 6 }}>
+              {formulario.descricao}
+            </p>
+          ) : null}
+          {primeira?.titulo ? <h4 style={{ margin: "6px 0 10px" }}>{primeira.titulo}</h4> : null}
+          {primeira?.descricao ? (
+            <p className="hint" style={{ marginBottom: 10 }}>
+              {primeira.descricao}
+            </p>
+          ) : null}
 
           {perguntas.length === 0 ? (
             <p className="hint">Nenhuma pergunta ainda. Adicione uma na aba Editar pra ver aqui.</p>
           ) : (
-            perguntas.map((pergunta, i) => (
-              <PerguntaVisualizacao
-                key={pergunta.id}
-                pergunta={pergunta}
-                /* A numeração pula os blocos de layout (título, texto, divisória): eles aparecem
-                   no formulário mas não são perguntas, e contá-los faria a prévia numerar
-                   diferente da tela real. */
-                indice={perguntas.slice(0, i).filter((q) => !TIPOS_LAYOUT.includes(q.tipo)).length + 1}
-                interativo={false}
-              />
-            ))
+            // O container e as classes de largura são os mesmos da tela real: sem eles os campos
+            // empilham soltos e o "metade" some, que é onde a prévia deixava de parecer o
+            // formulário e passava a parecer uma lista.
+            <div className="form-public-campos">
+              {perguntas.map((pergunta, i) => (
+                <div
+                  key={pergunta.id}
+                  className={pergunta.largura === "metade" ? "form-campo-metade" : "form-campo-total"}
+                >
+                  <PerguntaVisualizacao
+                    pergunta={pergunta}
+                    /* A numeração pula os blocos de layout (título, texto, divisória): eles
+                       aparecem no formulário mas não são perguntas, e contá-los faria a prévia
+                       numerar diferente da tela real. */
+                    indice={perguntas.slice(0, i).filter((q) => !TIPOS_LAYOUT.includes(q.tipo)).length + 1}
+                    interativo={false}
+                  />
+                </div>
+              ))}
+            </div>
           )}
 
-          <button type="button" className="btn block" style={{ background: tema.corBotao, color: "#fff" }} disabled>
+          <button
+            type="button"
+            className="btn block"
+            style={{ background: tema.corBotao, color: "#fff", marginTop: 14 }}
+            disabled
+          >
             {formulario.paginas.length > 1 ? "Continuar" : "Enviar"}
           </button>
         </div>
