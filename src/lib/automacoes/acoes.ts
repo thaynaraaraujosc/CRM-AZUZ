@@ -12,6 +12,7 @@ import { enviarMidiaPeloCanal, type TipoMidia } from "@/lib/conversas/enviar-mid
 import { componentesParaMeta, resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarEmailOuFalhar } from "@/lib/email";
+import { encerrarExecucao, execucoesVivasDoContato } from "./execucoes";
 import { categoriaEscolhida, conversaEmTexto, provedorDeIA } from "./ia";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
 
@@ -70,6 +71,8 @@ export type AcoesDoMotor = {
   /** Classifica a última mensagem numa das categorias. A escolhida volta no `detalhe`; `ok: false`
    * com detalhe vazio quer dizer "não encaixou em nenhuma". */
   classificarComIA: (params: { contatoNome: string; instrucao?: string; categorias: string[] }) => Promise<ResultadoAcao>;
+  /** Pausa ou cancela as OUTRAS automações vivas deste contato. */
+  pararOutrasAutomacoes: (params: { contatoNome: string; fluxoAtualId: string; modo: "pausar" | "cancelar" }) => Promise<ResultadoAcao>;
   /** Escolhe quem assume o atendimento. O nome escolhido volta no `detalhe`. */
   escolherAtendente: (params: { equipe?: string; metodo?: string }) => Promise<ResultadoAcao>;
   /** Chama um endereço externo, com repetição em caso de falha temporária. */
@@ -395,6 +398,29 @@ export function acoesReais(params: {
       }
     },
 
+    async pararOutrasAutomacoes({ contatoNome, fluxoAtualId, modo }) {
+      try {
+        const vivas = await execucoesVivasDoContato(workspaceId, contatoNome);
+        const outras = vivas.filter((e) => e.fluxoId !== fluxoAtualId);
+        if (!outras.length) return ok("Nenhuma outra automação estava rodando pra este contato.");
+
+        for (const execucao of outras) {
+          await encerrarExecucao({
+            execucaoId: execucao.id,
+            situacao: "cancelada",
+            erroMensagem: modo === "pausar" ? "Pausada por outra automação." : "Cancelada por outra automação.",
+          });
+        }
+        // Pausar e cancelar terminam do mesmo jeito hoje: encerram a execução. A diferença seria
+        // poder RETOMAR depois, e pra isso faltaria guardar de onde retomar e quem manda retomar —
+        // duas coisas que não existem. O histórico diz qual das duas a pessoa pediu, pra o dia em
+        // que a retomada existir não haver dúvida sobre a intenção de quem montou o fluxo.
+        return ok(`${outras.length} ${outras.length === 1 ? "automação encerrada" : "automações encerradas"} (${modo}).`);
+      } catch (erro) {
+        return falha("Falha ao parar as outras automações.", mensagemDoErro(erro));
+      }
+    },
+
     async escolherAtendente({ metodo }) {
       try {
         const equipe = await prisma.membro.findMany({
@@ -579,6 +605,9 @@ export function acoesSecas(): AcoesDoMotor & { intencoes: string[] } {
       if (!primeira) return falha("O bloco de classificação está sem categorias.");
       intencoes.push(`Classificaria a conversa (no teste, assume "${primeira}")`);
       return ok(primeira);
+    },
+    async pararOutrasAutomacoes({ modo }) {
+      return registrar(`${modo === "pausar" ? "Pausaria" : "Cancelaria"} as outras automações deste contato`);
     },
     async escolherAtendente({ equipe }) {
       return registrar(`Escolheria um atendente${equipe ? ` da equipe ${equipe}` : ""}`);

@@ -15,9 +15,9 @@ import type {
   EncaminharHumanoData,
   FlowEdge,
   FlowNode,
+  EnviarFormularioData,
   IaClassificarData,
   IaResponderData,
-  EnviarFormularioData,
   MensagemBotoesData,
   MensagemContatoData,
   MensagemEmailData,
@@ -146,7 +146,7 @@ export async function rodarExecucao(params: {
     if (no.desativado) {
       resultado = { tipo: "seguir", detalhe: "Bloco desativado — pulado." };
     } else {
-      resultado = await executarNo({ no, contexto, acoes, agora });
+      resultado = await executarNo({ no, contexto, acoes, agora, fluxoId: execucao.fluxoId });
     }
 
     await gravador.registrarPasso({
@@ -281,11 +281,13 @@ function fatorDaUnidade(unidade: string): number {
 
 async function executarNo(params: {
   no: FlowNode;
+  /** Qual fluxo está rodando — o bloco de parar automações precisa poupar a si mesmo. */
+  fluxoId: string;
   contexto: ContextoExecucaoPersistido;
   acoes: AcoesDoMotor;
   agora: Date;
 }): Promise<ResultadoDoNo> {
-  const { no, contexto, acoes, agora } = params;
+  const { no, contexto, acoes, agora, fluxoId } = params;
   const contato = contatoDoContexto(contexto);
   const nome = contato.nome;
 
@@ -420,6 +422,18 @@ async function executarNo(params: {
         return { tipo: "seguir", saida: "nao_classificado", detalhe: "A IA não encaixou a conversa em nenhuma categoria." };
       }
       return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "pausar_automacoes":
+    case "cancelar_automacoes": {
+      const r = await acoes.pararOutrasAutomacoes({
+        contatoNome: nome,
+        // O próprio fluxo nunca se encerra: um bloco que matasse a execução que o está executando
+        // pararia o fluxo no meio, e não é isso que "pausar as automações do contato" quer dizer.
+        fluxoAtualId: fluxoId,
+        modo: no.type === "pausar_automacoes" ? "pausar" : "cancelar",
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
     }
 
     case "criar_tarefa": {
