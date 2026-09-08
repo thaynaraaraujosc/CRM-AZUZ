@@ -96,6 +96,21 @@ function corDaCategoria(categoria: FlowNodeCategory): string {
   return CATEGORIAS_BLOCOS.find((c) => c.id === categoria)?.corClasse ?? "bg-gray-100 text-gray-700";
 }
 
+/**
+ * FORA DA BIBLIOTECA, de propósito — gatilhos sem nenhuma fonte que os acione hoje:
+ *
+ * - `pagamento_aprovado`, `pagamento_pendente`, `pagamento_vencido`: a integração com a Asaas que
+ *   existe é da MENSALIDADE DO CRM (o cliente pagando pelo sistema), não dos pagamentos que ele
+ *   recebe dos clientes dele. São coisas diferentes, e ligar uma na outra faria a automação
+ *   disparar no momento errado.
+ * - `comentario_tiktok`: não há integração com o TikTok.
+ * - `lead_anuncio`: não há webhook de formulário de anúncio da Meta.
+ * - `webhook_recebido`, `integracao_externa`: não existe endereço público que receba esses eventos.
+ *
+ * O `FlowNodeType` de cada um continua existindo, então fluxo já salvo com eles não quebra — eles
+ * só deixam de ser oferecíveis. Um bloco que nunca dispara é pior que bloco nenhum: a pessoa monta
+ * a automação inteira em volta dele e fica esperando, sem nenhum erro na tela.
+ */
 export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   // -------------------------------------------------------------- gatilho --
   {
@@ -133,7 +148,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     categoria: "gatilho",
     grupo: "gatilhos",
     label: "Lead parado na etapa",
-    descricao: "Dispara quando o lead fica parado numa etapa por um tempo.",
+    descricao: "Dispara quando o lead passa um tempo na etapa sem trocar mensagem.",
     icone: "Clock",
     corClasse: corDaCategoria("gatilho"),
     dataPadrao: () => ({ funilId: "", etapaId: "", tempoValor: 2, tempoUnidade: "dias" }),
@@ -299,64 +314,34 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     dataPadrao: () => ({}),
   },
   {
-    tipo: "pagamento_aprovado",
-    categoria: "gatilho",
-    grupo: "gatilhos",
-    label: "Pagamento aprovado",
-    descricao: "Dispara quando um pagamento do lead é aprovado.",
-    icone: "CircleDollarSign",
-    corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({}),
-  },
-  {
-    tipo: "pagamento_pendente",
-    categoria: "gatilho",
-    grupo: "gatilhos",
-    label: "Pagamento pendente",
-    descricao: "Dispara quando um pagamento fica pendente.",
-    icone: "Hourglass",
-    corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({}),
-  },
-  {
-    tipo: "pagamento_vencido",
-    categoria: "gatilho",
-    grupo: "gatilhos",
-    label: "Pagamento vencido",
-    descricao: "Dispara quando um pagamento pendente vence.",
-    icone: "CircleAlert",
-    corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({}),
-  },
-  {
     tipo: "aniversario",
     categoria: "gatilho",
     grupo: "gatilhos",
     label: "Aniversário do contato",
-    descricao: "Dispara na data de nascimento do contato.",
+    descricao: "Dispara na data de nascimento do contato, no horário escolhido.",
     icone: "Cake",
     corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({}),
+    dataPadrao: () => ({ horario: "09:00" }),
   },
   {
     tipo: "data_personalizada",
     categoria: "gatilho",
     grupo: "gatilhos",
     label: "Data personalizada",
-    descricao: "Dispara numa data específica.",
+    descricao: "Dispara uma vez, numa data marcada, pra quem estiver na etapa escolhida.",
     icone: "CalendarClock",
     corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({}),
+    dataPadrao: () => ({ data: "", horario: "09:00", funilId: "", etapaId: "" }),
   },
   {
     tipo: "horario_programado",
     categoria: "gatilho",
     grupo: "gatilhos",
     label: "Horário programado",
-    descricao: "Dispara recorrentemente num horário fixo.",
+    descricao: "Dispara todo dia (ou nos dias escolhidos) num horário fixo, pra quem estiver na etapa.",
     icone: "Timer",
     corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({ recorrente: true }),
+    dataPadrao: () => ({ horario: "09:00", funilId: "", etapaId: "" }),
   },
   {
     tipo: "comentario_instagram",
@@ -446,46 +431,6 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     icone: "Instagram",
     corClasse: corDaCategoria("gatilho"),
     dataPadrao: () => ({ canal: "Instagram" }),
-  },
-  {
-    tipo: "comentario_tiktok",
-    categoria: "gatilho",
-    grupo: "gatilhos",
-    label: "Comentário no TikTok",
-    descricao: "Dispara quando alguém comenta um vídeo no TikTok.",
-    icone: "Music2",
-    corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({ canal: "TikTok", palavraChave: "" }),
-  },
-  {
-    tipo: "lead_anuncio",
-    categoria: "gatilho",
-    grupo: "gatilhos",
-    label: "Lead de anúncio",
-    descricao: "Dispara quando um lead chega via Meta/Google/TikTok Ads.",
-    icone: "Megaphone",
-    corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({}),
-  },
-  {
-    tipo: "webhook_recebido",
-    categoria: "gatilho",
-    grupo: "integracoes",
-    label: "Webhook recebido",
-    descricao: "Dispara quando um webhook externo chega.",
-    icone: "Webhook",
-    corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({}),
-  },
-  {
-    tipo: "integracao_externa",
-    categoria: "gatilho",
-    grupo: "integracoes",
-    label: "Evento de integração externa",
-    descricao: "Dispara quando uma integração conectada emite um evento.",
-    icone: "Plug",
-    corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({}),
   },
 
   // ------------------------------------------------------------- condicao --

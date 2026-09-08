@@ -110,3 +110,58 @@ export function aoSairDaEtapa(params: {
 function chave(prefixo: string, alvo: string, valor: string): string {
   return `${prefixo}:${alvo}:${valor}:${new Date().toISOString().slice(0, 16)}`;
 }
+
+
+/** Tarefa criada pra um contato. */
+export function aoCriarTarefa(params: { workspaceId: string; contatoNome: string; tarefaId: string }): void {
+  if (!params.contatoNome?.trim()) return;
+  disparar({
+    workspaceId: params.workspaceId,
+    contatoNome: params.contatoNome,
+    tipoGatilho: "tarefa_criada",
+    chaveEvento: `tarefa+:${params.tarefaId}`,
+  });
+}
+
+/** Tarefa marcada como concluída. Só na virada: marcar uma tarefa já concluída não é acontecimento. */
+export function aoConcluirTarefa(params: {
+  workspaceId: string;
+  contatoNome: string;
+  tarefaId: string;
+  estavaConcluida: boolean;
+  agoraConcluida: boolean;
+}): void {
+  if (!params.contatoNome?.trim()) return;
+  if (params.estavaConcluida || !params.agoraConcluida) return;
+  disparar({
+    workspaceId: params.workspaceId,
+    contatoNome: params.contatoNome,
+    tipoGatilho: "tarefa_concluida",
+    chaveEvento: `tarefa-ok:${params.tarefaId}`,
+  });
+}
+
+/** Compromisso da agenda — agendado, confirmado, cancelado, ou o cliente não apareceu. */
+export function aoMudarCompromisso(params: {
+  workspaceId: string;
+  contatoNome: string;
+  compromissoId: string;
+  situacao: string;
+}): void {
+  if (!params.contatoNome?.trim()) return;
+  const porSituacao: Record<string, string> = {
+    agendado: "consulta_agendada",
+    confirmado: "consulta_confirmada",
+    cancelado: "consulta_cancelada",
+    faltou: "cliente_nao_compareceu",
+    nao_compareceu: "cliente_nao_compareceu",
+  };
+  const tipoGatilho = porSituacao[params.situacao?.toLowerCase()];
+  if (!tipoGatilho) return;
+  disparar({
+    workspaceId: params.workspaceId,
+    contatoNome: params.contatoNome,
+    tipoGatilho,
+    chaveEvento: `agenda:${params.compromissoId}:${tipoGatilho}`,
+  });
+}

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { ColunaTarefas, TaskCard } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { aoCriarTarefa } from "@/lib/automacoes/gatilhos-crm";
 
 type LinhaCard = {
   id: string;
@@ -112,5 +113,6 @@ export async function POST(request: Request) {
     },
   });
 
+  aoCriarTarefa({ workspaceId, contatoNome: linha.contato, tarefaId: linha.id });
   return NextResponse.json(paraCard(linha), { status: 201 });
 }
