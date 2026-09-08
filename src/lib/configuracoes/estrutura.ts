@@ -4,7 +4,6 @@ import {
   IconCartao,
   IconEscudo,
   IconErro,
-  IconHistorico,
   IconImage,
   IconImportar,
   IconInstagram,
@@ -12,7 +11,6 @@ import {
   IconSwitch,
   IconWhatsApp,
   IconBell,
-  IconDoc,
 } from "@/components/icons";
 
 export type CategoriaId =
@@ -21,11 +19,9 @@ export type CategoriaId =
   | "seguranca"
   | "etiquetas"
   | "importacao"
-  | "auditoria"
   | "azuz-ia"
   | "whatsapp"
   | "instagram"
-  | "email"
   | "integracoes"
   | "plano";
 
@@ -61,7 +57,15 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
       { id: "seguranca", label: "Segurança", descricao: "Autenticação, sessões e políticas de acesso.", Icon: IconEscudo },
       { id: "etiquetas", label: "Etiquetas", descricao: "Marcações usadas em contatos e automações.", Icon: IconErro },
       { id: "importacao", label: "Importação e exportação", descricao: "Trazer ou tirar dados do CRM.", Icon: IconImportar, emBreve: true },
-      { id: "auditoria", label: "Auditoria e atividades", descricao: "Histórico do que aconteceu no workspace.", Icon: IconHistorico },
+      /* "Auditoria e atividades" saiu daqui. A tela mostrava quatro linhas escritas à mão, com
+         nomes de pessoas que não existem em workspace nenhum, e os filtros filtravam esse array.
+         Nada era lido do banco.
+         Pra existir de verdade ela precisa de uma tabela gravando QUEM fez O QUÊ, e de escrita em
+         cada ponto de ação (mover card, editar contato, publicar automação, convidar membro,
+         excluir). O `EventoDoLead`, que é o que chega mais perto hoje, guarda evento por LEAD e não
+         tem usuário: não responde a única pergunta que uma auditoria existe pra responder.
+         Detalhe que decide QUANDO fazer: auditoria não é retroativa. Ela precisa estar gravando
+         antes do primeiro cliente com equipe, senão o histórico daquele período não existe. */
     ],
   },
   {
@@ -73,7 +77,16 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
   {
     titulo: "Integrações",
     categorias: [
-      { id: "email", label: "E-mail", descricao: "Contas, assinaturas e modelos de e-mail.", Icon: IconDoc },
+      /* "E-mail" saiu daqui. A tela prometia conectar a caixa de entrada da empresa pra receber e
+         responder e-mail dentro do CRM: "Conectar conta" não conectava nada, e tudo era estado
+         local que sumia no F5.
+         O que o CRM faz de e-mail continua funcionando e não foi tocado: recuperação de senha,
+         aviso de e-mail alterado, convite de equipe e o bloco "Enviar e-mail" das automações, todos
+         pelo Resend (ver src/lib/email.ts). O que saiu foi só a promessa de caixa de entrada.
+         Decisão da Thaynara depois do levantamento: o diferencial do produto é WhatsApp e
+         Instagram, caixa de e-mail competiria com o Gmail que o cliente já tem aberto, e enviar em
+         nome do domínio de cada cliente exige SPF/DKIM/DMARC por cliente. Errar isso manda o
+         e-mail dele pro spam, e a culpa cai no CRM. */
       { id: "integracoes", label: "Outras integrações", descricao: "Conexões com outras ferramentas.", Icon: IconSwitch },
     ],
   },

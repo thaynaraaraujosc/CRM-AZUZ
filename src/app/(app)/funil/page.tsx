@@ -364,7 +364,9 @@ function FunilPageInner() {
         const [card] = colunas[colunaOrigem].cards.splice(indiceCard, 1);
         if (!card) return f;
         colunas[colunaOrigem].total = Math.max(0, colunas[colunaOrigem].total - 1);
-        colunas[colunaDestino].cards.push(card);
+        // No TOPO, não no fim: espelha o que o servidor grava (ver /api/funis/mover). Sem isso a
+        // tela mostraria o card embaixo até o próximo carregamento, e ele saltaria de lugar sozinho.
+        colunas[colunaDestino].cards.unshift(card);
         colunas[colunaDestino].total += 1;
         return { ...f, colunas };
       }),
@@ -943,116 +945,122 @@ function FunilPageInner() {
                     </Link>
                   ) : null}
                 </div>
-                {cardsVisiveis.map(({ card, cardIndex }) => {
-                  const conversaDoCard = conversas.find((c) => c.nome === card.nome);
-                  const temMensagemNova = (conversaDoCard?.naoLidas ?? 0) > 0;
-                  // "AD": lead veio de anúncio (Meta/Google Ads), não de contato direto/indicação.
-                  const veioDeAnuncio = card.origem === "Meta Ads" || card.origem === "Google Ads";
-                  return (
-                    <button
-                      type="button"
-                      className="lead-card"
-                      key={card.id}
-                      draggable
-                      onDragStart={(e) => {
-                        setArrastando({ coluna: colIndex, card: cardIndex });
-                        e.dataTransfer.setData("text/plain", card.id);
-                        e.dataTransfer.effectAllowed = "move";
-                      }}
-                      onDragEnd={() => setArrastando(null)}
-                      onDoubleClick={() =>
-                        router.push(
-                          `/conversas?contato=${encodeURIComponent(card.nome)}`,
-                        )
-                      }
-                      title="Clique duas vezes pra abrir a conversa no WhatsApp"
-                      style={{ cursor: "grab" }}
-                    >
-                      <span className="lr1">
-                        <span
-                          className="lname lname-com-msg"
-                          title="Clique pra responder rapidinho"
-                          draggable={false}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            abrirRespostaRapida(card.nome);
-                          }}
-                        >
-          {temMensagemNova ? <span className="msg-dot" aria-label="Mensagem nova" /> : null}
-                          {(() => {
-                            const contato = contatos.find((c) => c.nome === card.nome);
-                            return contato?.fotoUrl ? (
-                              <>
-                                <img
-                                  src={contato.fotoUrl}
-                                  alt=""
-                                  style={{
-                                    width: 20,
-                                    height: 20,
-                                    borderRadius: "50%",
-                                    marginRight: 6,
-                                    objectFit: "cover",
-                                    verticalAlign: "middle",
-                                  }}
-                                />
-                                {card.nome}
-                              </>
-                            ) : (
-                              card.nome
-                            );
-                          })()}
-                          {veioDeAnuncio ? (
-                            <span className="lead-card-ad-badge" title={card.origem}>
-                              AD
+                {/* Área de rolagem própria da etapa. Sem ela, uma etapa com 30 negócios
+                    esticava a coluna e a PÁGINA inteira crescia junto: pra ver o topo da etapa
+                    do lado era preciso subir a tela toda. Agora cada etapa rola por dentro e o
+                    cabeçalho fica onde está. */}
+                <div className="kcol-cards">
+                  {cardsVisiveis.map(({ card, cardIndex }) => {
+                    const conversaDoCard = conversas.find((c) => c.nome === card.nome);
+                    const temMensagemNova = (conversaDoCard?.naoLidas ?? 0) > 0;
+                    // "AD": lead veio de anúncio (Meta/Google Ads), não de contato direto/indicação.
+                    const veioDeAnuncio = card.origem === "Meta Ads" || card.origem === "Google Ads";
+                    return (
+                      <button
+                        type="button"
+                        className="lead-card"
+                        key={card.id}
+                        draggable
+                        onDragStart={(e) => {
+                          setArrastando({ coluna: colIndex, card: cardIndex });
+                          e.dataTransfer.setData("text/plain", card.id);
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
+                        onDragEnd={() => setArrastando(null)}
+                        onDoubleClick={() =>
+                          router.push(
+                            `/conversas?contato=${encodeURIComponent(card.nome)}`,
+                          )
+                        }
+                        title="Clique duas vezes pra abrir a conversa no WhatsApp"
+                        style={{ cursor: "grab" }}
+                      >
+                        <span className="lr1">
+                          <span
+                            className="lname lname-com-msg"
+                            title="Clique pra responder rapidinho"
+                            draggable={false}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              abrirRespostaRapida(card.nome);
+                            }}
+                          >
+            {temMensagemNova ? <span className="msg-dot" aria-label="Mensagem nova" /> : null}
+                            {(() => {
+                              const contato = contatos.find((c) => c.nome === card.nome);
+                              return contato?.fotoUrl ? (
+                                <>
+                                  <img
+                                    src={contato.fotoUrl}
+                                    alt=""
+                                    style={{
+                                      width: 20,
+                                      height: 20,
+                                      borderRadius: "50%",
+                                      marginRight: 6,
+                                      objectFit: "cover",
+                                      verticalAlign: "middle",
+                                    }}
+                                  />
+                                  {card.nome}
+                                </>
+                              ) : (
+                                card.nome
+                              );
+                            })()}
+                            {veioDeAnuncio ? (
+                              <span className="lead-card-ad-badge" title={card.origem}>
+                                AD
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="lval">{ehVazio(card.valor) ? VAZIO : card.valor}</span>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Marcar desfecho do negócio"
+                            title="Marcar como ganho/perdido"
+                            className="lead-card-menu-btn"
+                            draggable={false}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMotivoEscolhido("");
+                              setDesfechoMenu({
+                                coluna: colIndex,
+                                card: cardIndex,
+                                rect: e.currentTarget.getBoundingClientRect(),
+                              });
+                            }}
+                          >
+                            ⋮
+                          </span>
+                        </span>
+                        {formatarTelefoneExibicao(conversaDoCard?.contato) ? (
+                          <span className="lead-card-telefone">
+                            {formatarTelefoneExibicao(conversaDoCard?.contato)}
+                          </span>
+                        ) : null}
+                        <span className="lr2">
+                          <span className={`tag ${classeOrigem(card.origem)}`}>
+                            {card.origem}
+                          </span>
+                          <span className="days" title="Última movimentação deste negócio">
+                            {rotuloDeAtividade(atividadePorNome.get(card.nome) ?? card.data)}
+                          </span>
+                          {card.statusFechamento === "ganho" ? (
+                            <span className="stage-tag won" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><IconCheck width={11} height={11} /> Ganho</span>
+                          ) : card.statusFechamento === "perdido" ? (
+                            <span className="stage-tag" title={card.motivoPerda ?? undefined} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                              <IconErro width={11} height={11} /> Perdido
                             </span>
                           ) : null}
                         </span>
-                        <span className="lval">{ehVazio(card.valor) ? VAZIO : card.valor}</span>
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          aria-label="Marcar desfecho do negócio"
-                          title="Marcar como ganho/perdido"
-                          className="lead-card-menu-btn"
-                          draggable={false}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMotivoEscolhido("");
-                            setDesfechoMenu({
-                              coluna: colIndex,
-                              card: cardIndex,
-                              rect: e.currentTarget.getBoundingClientRect(),
-                            });
-                          }}
-                        >
-                          ⋮
-                        </span>
-                      </span>
-                      {formatarTelefoneExibicao(conversaDoCard?.contato) ? (
-                        <span className="lead-card-telefone">
-                          {formatarTelefoneExibicao(conversaDoCard?.contato)}
-                        </span>
-                      ) : null}
-                      <span className="lr2">
-                        <span className={`tag ${classeOrigem(card.origem)}`}>
-                          {card.origem}
-                        </span>
-                        <span className="days" title="Última movimentação deste negócio">
-                          {rotuloDeAtividade(atividadePorNome.get(card.nome) ?? card.data)}
-                        </span>
-                        {card.statusFechamento === "ganho" ? (
-                          <span className="stage-tag won" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><IconCheck width={11} height={11} /> Ganho</span>
-                        ) : card.statusFechamento === "perdido" ? (
-                          <span className="stage-tag" title={card.motivoPerda ?? undefined} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                            <IconErro width={11} height={11} /> Perdido
-                          </span>
-                        ) : null}
-                      </span>
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}

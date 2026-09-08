@@ -2493,6 +2493,29 @@ table.tbl tbody tr:hover td {
 /* Faixa de identidade da etapa: nome, contador e a ação de automação. Antes eram três elementos
    soltos na mesma superfície da coluna, sem nada marcando onde a etapa termina e os cards
    começam. A régua marinho fecha esse bloco e dá à coluna um cabeçalho de verdade. */
+/**
+ * A lista de negócios de uma etapa, com rolagem própria.
+ *
+ * Antes a coluna crescia com o conteúdo e a PÁGINA crescia junto: uma etapa com 30 negócios
+ * empurrava tudo pra baixo, e pra ver o topo da etapa vizinha era preciso subir a tela inteira.
+ *
+ * O teto é a altura que sobra na janela, e não um número fixo de cartões. O pedido foi "quinze",
+ * mas quinze cartões dão cerca de 1300px de altura: mais que a tela de qualquer notebook, então um
+ * limite em 15 continuaria empurrando a página em vez de resolver. Amarrando na janela, o que cabe
+ * cabe (em tela cheia dá justamente uns 12 a 15) e o que passa disso rola por dentro, que é o
+ * resultado que se pediu. Em tela pequena o teto encolhe junto, sozinho.
+ */
+.kcol-cards {
+  max-height: calc(100vh - 330px);
+  min-height: 120px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Espaço pra barra de rolagem não cobrir a borda direita dos cartões. */
+  padding-right: 2px;
+  /* A rolagem para na lista em vez de continuar na página quando chega ao fim. */
+  overscroll-behavior: contain;
+}
+
 .kcol-topo {
   border-bottom: 2px solid var(--acao);
   padding-bottom: var(--space-2);

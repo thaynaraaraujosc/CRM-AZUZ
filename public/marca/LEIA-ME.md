@@ -23,3 +23,15 @@ sozinha (483x540) e recompô-la centrada num quadrado do azul da marca, ocupando
 Pra refazer depois de trocar a logo, é o mesmo caminho: recortar o fundo chapado, medir e recompor
 centrado. O que não funciona é redimensionar o arquivo original direto, porque o centro do arquivo
 não é o centro da marca.
+
+## O favicon.ico
+
+`src/app/favicon.ico` também vem de `logo-azuz.jpg`, pelo mesmo processo, em 64x64.
+
+Ele existe porque `icon.png` sozinho não basta: navegadores antigos e alguns leitores de link pedem
+`/favicon.ico` direto no domínio, sem ler o HTML. Sem o arquivo, esse pedido dá 404 e cada um
+resolve do seu jeito, geralmente mostrando o ícone que tinham guardado antes.
+
+O arquivo é um ICO com um PNG embutido (formato aceito desde o Windows Vista): 6 bytes de
+cabeçalho, 16 de descrição da imagem e o PNG em seguida. Foi montado à mão porque as bibliotecas de
+imagem do projeto não escrevem ICO. O código está no histórico deste commit.

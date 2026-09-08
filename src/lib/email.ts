@@ -1,10 +1,13 @@
 import { Resend } from "resend";
 
 /**
- * E-mail transacional da plataforma (recuperação de senha, e futuramente reenvio de convite).
- * Não confundir com `EmailSecao.tsx` (Configurações → E-mail), que é a conta de e-mail do
- * workspace pra falar com os leads. Esse aqui é da própria AZUZ, uma chave só, configurada por
+ * E-mail transacional da plataforma: recuperação de senha, aviso de e-mail alterado, convite de
+ * equipe e o bloco "Enviar e-mail" das automações. Uma chave só, da própria AZUZ, configurada por
  * variável de ambiente.
+ *
+ * Existia uma tela em Configurações que prometia conectar a caixa de entrada de cada workspace
+ * pra receber e responder e-mail de lead dentro do CRM. Ela não conectava nada, e saiu: receber
+ * e-mail não faz parte do produto. ENVIAR faz, e é isto aqui, que continua valendo.
  */
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 

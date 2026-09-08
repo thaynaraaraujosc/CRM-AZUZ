@@ -56,11 +56,37 @@ export async function POST(request: Request) {
     }
   }
 
+  /**
+   * Card que muda de etapa entra no TOPO da etapa nova.
+   *
+   * A lista de cada etapa é lida ordenada por `ordem`, e mover só trocava a etapa: o card levava
+   * junto o número que tinha na etapa antiga, e ia parar em qualquer lugar da nova. Na prática caía
+   * no fim, porque etapa cheia tem números maiores. Quem acabou de responder aparecia embaixo de
+   * gente de cinco dias atrás, o que inverte exatamente a leitura que um funil precisa ter.
+   *
+   * A conta é o menor `ordem` do destino menos um, e não renumerar a etapa inteira: renumerar
+   * seriam N escritas a cada arraste, e a mesma coisa acontece com uma subtração. Número negativo
+   * não incomoda ninguém, porque o que importa aqui é a ordem relativa.
+   *
+   * Fica no SERVIDOR porque é ele que guarda a verdade: o navegador que arrastou não sabe o que as
+   * outras abas fizeram com a etapa de destino desde que carregou a tela.
+   */
+  const ordemFinal = await (async () => {
+    if (ordem !== undefined) return ordem;
+    if (!etapaId || etapaId === card.etapaId) return undefined;
+    const primeiro = await prisma.negocioCard.findFirst({
+      where: { etapaId, workspaceId },
+      orderBy: { ordem: "asc" },
+      select: { ordem: true },
+    });
+    return primeiro ? primeiro.ordem - 1 : 0;
+  })();
+
   const atualizado = await prisma.negocioCard.update({
     where: { id: cardId },
     data: {
       ...(etapaId ? { etapaId } : {}),
-      ...(ordem !== undefined ? { ordem } : {}),
+      ...(ordemFinal !== undefined ? { ordem: ordemFinal } : {}),
       // `undefined` mantém o valor atual; `null` limpa. Sem essa distinção, mudar só o funil
       // apagaria o responsável sem ninguém pedir.
       ...(responsavel !== undefined ? { responsavel } : {}),

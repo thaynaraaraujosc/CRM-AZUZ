@@ -10,11 +10,9 @@ import { CategoriasNav } from "@/components/configuracoes/CategoriasNav";
 import { AparenciaSecao } from "@/components/configuracoes/AparenciaSecao";
 import { NotificacoesSecao } from "@/components/configuracoes/NotificacoesSecao";
 import { SegurancaSecao } from "@/components/configuracoes/SegurancaSecao";
-import { AuditoriaSecao } from "@/components/configuracoes/AuditoriaSecao";
 import { EtiquetasSecao } from "@/components/configuracoes/EtiquetasSecao";
 import { WhatsAppSecao } from "@/components/configuracoes/WhatsAppSecao";
 import { InstagramSecao } from "@/components/configuracoes/InstagramSecao";
-import { EmailSecao } from "@/components/configuracoes/EmailSecao";
 import { AzuzIaSecao } from "@/components/configuracoes/AzuzIaSecao";
 import { IntegracoesSecao } from "@/components/configuracoes/IntegracoesSecao";
 import { ImportacaoSecao } from "@/components/configuracoes/ImportacaoSecao";
@@ -76,11 +74,9 @@ function ConfiguracoesConteudo() {
             {categoriaAtiva === "aparencia" ? <AparenciaSecao /> : null}
             {categoriaAtiva === "notificacoes" ? <NotificacoesSecao /> : null}
             {categoriaAtiva === "seguranca" ? <SegurancaSecao /> : null}
-            {categoriaAtiva === "auditoria" ? <AuditoriaSecao /> : null}
             {categoriaAtiva === "etiquetas" ? <EtiquetasSecao /> : null}
             {categoriaAtiva === "whatsapp" ? <WhatsAppSecao /> : null}
             {categoriaAtiva === "instagram" ? <InstagramSecao /> : null}
-            {categoriaAtiva === "email" ? <EmailSecao /> : null}
             {categoriaAtiva === "azuz-ia" ? <AzuzIaSecao /> : null}
             {categoriaAtiva === "integracoes" ? <IntegracoesSecao /> : null}
             {categoriaAtiva === "importacao" ? <ImportacaoSecao /> : null}
