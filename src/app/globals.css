@@ -7894,7 +7894,10 @@ button.camp-row:hover {
    esquerda e o formulário desenhado à direita, que acompanha cada tecla. */
 .form-design-colunas {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+  /* Metade e metade. Espremida numa faixa de 440px a prévia mostrava o cartão mais estreito do que
+     ele é de verdade, e um formulário estreito parece outro formulário: os campos quebram em
+     lugares diferentes e a proporção do título muda. Metade da tela é o que faz a prévia valer. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--space-5);
   align-items: start;
 }
@@ -7903,7 +7906,6 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  max-width: 640px;
   min-width: 0;
 }
 
@@ -7918,22 +7920,26 @@ button.camp-row:hover {
   min-width: 0;
 }
 
+/* Repete o `.form-public-page`: o cartão flutua sobre o fundo, centralizado, com respiro em volta.
+   É esse contraste que faz ler como página, e não como uma caixa dentro de um painel. */
 .form-design-previa-moldura {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--navy-raised);
-  padding: var(--space-4);
-  max-height: 66vh;
+  padding: var(--space-5);
+  max-height: 74vh;
   overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
-/* Dentro da moldura o cartão é o conteúdo, não a página: perde a sombra e a largura fixa que ele
-   tem quando ocupa a tela inteira do lead. */
+/* O cartão mantém a sombra e o limite de largura que tem na tela real. Tirar os dois fazia a
+   prévia mostrar um formulário que não existe em lugar nenhum. */
 .form-design-previa .form-public-card {
   width: 100%;
-  max-width: none;
+  max-width: 560px;
   margin: 0;
-  box-shadow: none;
 }
 
 .form-design-previa-nota {
@@ -7941,7 +7947,7 @@ button.camp-row:hover {
 }
 
 /* Numa tela estreita a prévia vai pra baixo dos controles, em vez de espremer as duas. */
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
   .form-design-colunas {
     grid-template-columns: minmax(0, 1fr);
   }
