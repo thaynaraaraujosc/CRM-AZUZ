@@ -14,6 +14,8 @@ import type {
   EncaminharHumanoData,
   FlowEdge,
   FlowNode,
+  IaClassificarData,
+  IaResponderData,
   MensagemBotoesData,
   MensagemEmailData,
   MensagemMidiaData,
@@ -336,6 +338,33 @@ async function executarNo(params: {
       // "Sem e-mail" é uma situação prevista no próprio bloco, não uma falha do fluxo.
       if (data.seSemEmail === "encerrar") return { tipo: "encerrar", situacao: "concluida", detalhe: r.detalhe };
       if (data.seSemEmail === "caminho_alternativo") return { tipo: "seguir", saida: "sem_email", detalhe: r.detalhe };
+      return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "ia_responder": {
+      const data = no.data as IaResponderData;
+      const r = await acoes.responderComIA({
+        contatoNome: nome,
+        instrucao: preencher(data.instrucao ?? "", contato),
+        contexto: data.contexto,
+        maximoCaracteres: data.maximoCaracteres,
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "ia_classificar": {
+      const data = no.data as IaClassificarData;
+      const r = await acoes.classificarComIA({
+        contatoNome: nome,
+        instrucao: data.instrucao,
+        categorias: data.categorias ?? [],
+      });
+      if (r.ok) return { tipo: "seguir", saida: r.detalhe, detalhe: `Classificado como "${r.detalhe}".` };
+      // Detalhe vazio é o caso previsto: a IA respondeu, mas nada encaixou. O fluxo segue pelo
+      // caminho de "não classificado" em vez de escolher um ramo no chute.
+      if (!r.detalhe) {
+        return { tipo: "seguir", saida: "nao_classificado", detalhe: "A IA não encaixou a conversa em nenhuma categoria." };
+      }
       return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
     }
 

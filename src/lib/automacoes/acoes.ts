@@ -5,6 +5,7 @@ import { enviarMidiaPeloCanal, type TipoMidia } from "@/lib/conversas/enviar-mid
 import { componentesParaMeta, resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarEmailOuFalhar } from "@/lib/email";
+import { categoriaEscolhida, conversaEmTexto, provedorDeIA } from "./ia";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
 
 /**
@@ -46,6 +47,11 @@ export type AcoesDoMotor = {
   enviarEmail: (params: { contatoNome: string; para?: string; assunto: string; corpo: string }) => Promise<ResultadoAcao>;
   /** Cria uma tarefa no quadro. */
   criarTarefa: (params: { contatoNome: string; titulo: string; descricao?: string; responsavel?: string; prazo?: Date; prioridade?: string }) => Promise<ResultadoAcao>;
+  /** Responde o contato com IA, seguindo a instrução do bloco. */
+  responderComIA: (params: { contatoNome: string; instrucao: string; contexto?: string; maximoCaracteres?: number }) => Promise<ResultadoAcao>;
+  /** Classifica a última mensagem numa das categorias. A escolhida volta no `detalhe`; `ok: false`
+   * com detalhe vazio quer dizer "não encaixou em nenhuma". */
+  classificarComIA: (params: { contatoNome: string; instrucao?: string; categorias: string[] }) => Promise<ResultadoAcao>;
   /** Escolhe quem assume o atendimento. O nome escolhido volta no `detalhe`. */
   escolherAtendente: (params: { equipe?: string; metodo?: string }) => Promise<ResultadoAcao>;
   /** Chama um endereço externo, com repetição em caso de falha temporária. */
@@ -180,6 +186,71 @@ export function acoesReais(params: {
         return ok(`Tarefa criada: "${resumir(titulo)}".`);
       } catch (erro) {
         return falha("Falha ao criar a tarefa.", mensagemDoErro(erro));
+      }
+    },
+
+    async responderComIA({ contatoNome, instrucao, contexto, maximoCaracteres }) {
+      const ia = provedorDeIA();
+      // Sem IA configurada o bloco NÃO inventa resposta: uma frase genérica saindo em nome da
+      // empresa é pior do que nenhuma, e quem montou o fluxo precisa saber que falta a chave.
+      if (!ia) return falha("IA não configurada no servidor — nada foi respondido.");
+      if (!instrucao.trim()) return falha("O bloco de IA está sem instrução.");
+
+      try {
+        const historico = await ultimasMensagens(workspaceId, contatoNome);
+        if (!historico.length) return falha("Sem conversa pra a IA ler.");
+
+        const limite = maximoCaracteres ?? 400;
+        const texto = await ia.responder({
+          sistema: [
+            "Você responde clientes pelo WhatsApp/Instagram em nome de uma empresa brasileira.",
+            `Instrução de quem montou o atendimento: ${instrucao}`,
+            contexto?.trim() ? `Informações da empresa: ${contexto}` : "",
+            `Responda em português do Brasil, em no máximo ${limite} caracteres.`,
+            "Não invente preço, prazo ou política que não estejam nas informações acima — se não souber, diga que vai confirmar.",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+          pergunta: `Conversa até agora:\n${conversaEmTexto(historico)}\n\nEscreva a próxima mensagem nossa.`,
+        });
+
+        const resposta = texto.trim().slice(0, limite);
+        if (!resposta) return falha("A IA não devolveu texto.");
+        const envio = await enviarTextoPeloCanal({ workspaceId, conversaNome: contatoNome, texto: resposta });
+        return envio.enviado
+          ? ok(`Respondido pela IA (${ia.nome}): "${resumir(resposta)}"`)
+          : falha(`A IA escreveu, mas não foi possível enviar: ${envio.motivo ?? "motivo desconhecido"}`);
+      } catch (erro) {
+        return falha("Falha ao responder com IA.", mensagemDoErro(erro));
+      }
+    },
+
+    async classificarComIA({ contatoNome, instrucao, categorias }) {
+      const ia = provedorDeIA();
+      if (!ia) return falha("IA não configurada no servidor.");
+      const opcoes = categorias.filter((c) => c.trim());
+      if (!opcoes.length) return falha("O bloco de classificação está sem categorias.");
+
+      try {
+        const historico = await ultimasMensagens(workspaceId, contatoNome);
+        if (!historico.length) return falha("Sem conversa pra classificar.");
+
+        const texto = await ia.responder({
+          sistema: [
+            "Você classifica mensagens de clientes numa única categoria.",
+            instrucao?.trim() ? `Critério: ${instrucao}` : "",
+            `Categorias possíveis: ${opcoes.join(", ")}.`,
+            "Responda APENAS com o nome exato de uma das categorias, sem explicação. Se nenhuma servir, responda: nenhuma.",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+          pergunta: `Conversa:\n${conversaEmTexto(historico, 6)}\n\nQual categoria?`,
+        });
+
+        const escolhida = categoriaEscolhida(texto, opcoes);
+        return escolhida ? ok(escolhida) : falha("");
+      } catch (erro) {
+        return falha("Falha ao classificar com IA.", mensagemDoErro(erro));
       }
     },
 
@@ -342,6 +413,17 @@ export function acoesSecas(): AcoesDoMotor & { intencoes: string[] } {
     async criarTarefa({ contatoNome, titulo }) {
       return registrar(`Criaria a tarefa "${resumir(titulo)}" para ${contatoNome}`);
     },
+    async responderComIA({ contatoNome }) {
+      // Modo seco não chama a IA: além do custo por chamada, uma simulação que gasta crédito toda
+      // vez que alguém clica em "Testar" vira uma conta que ninguém entende no fim do mês.
+      return registrar(`Responderia ${contatoNome} com IA`);
+    },
+    async classificarComIA({ categorias }) {
+      const primeira = categorias.find((c) => c.trim());
+      if (!primeira) return falha("O bloco de classificação está sem categorias.");
+      intencoes.push(`Classificaria a conversa (no teste, assume "${primeira}")`);
+      return ok(primeira);
+    },
     async escolherAtendente({ equipe }) {
       return registrar(`Escolheria um atendente${equipe ? ` da equipe ${equipe}` : ""}`);
     },
@@ -369,6 +451,17 @@ const NOME_DO_FORMATO = {
   respostas_rapidas: "respostas rápidas",
   numerado: "menu numerado",
 } as const;
+
+/** As últimas mensagens da conversa, em ordem — o contexto que a IA lê. */
+async function ultimasMensagens(workspaceId: string, contatoNome: string) {
+  const linhas = await prisma.mensagemExtra.findMany({
+    where: { workspaceId, contato: contatoNome },
+    orderBy: { criadoEm: "desc" },
+    take: 20,
+    select: { tipo: true, texto: true },
+  });
+  return linhas.reverse();
+}
 
 function esperar(ms: number): Promise<void> {
   return new Promise((resolver) => setTimeout(resolver, ms));

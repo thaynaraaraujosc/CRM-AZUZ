@@ -100,6 +100,9 @@ export type FlowNodeType =
   | "cancelar_automacoes"
   | "chamar_webhook"
   | "executar_integracao"
+  // IA
+  | "ia_responder"
+  | "ia_classificar"
   // humano
   | "encaminhar_humano"
   // fim
@@ -410,6 +413,33 @@ export type EnviarNotificacaoData = { paraEquipe?: string; mensagem: string };
 export type PausarAutomacoesData = Record<string, never>;
 export type CancelarAutomacoesData = Record<string, never>;
 export type ChamarWebhookData = { url: string; payload?: string };
+
+/**
+ * Responde o contato com IA, seguindo uma instrução e o contexto do negócio.
+ *
+ * Sem IA configurada no servidor, o bloco não inventa resposta: ele diz isso no histórico e o fluxo
+ * segue. Uma resposta genérica saindo em nome da empresa é pior que nenhuma.
+ */
+export type IaResponderData = {
+  /** O que a IA deve fazer ("responda a dúvida sobre preço em até 3 frases, com tom cordial"). */
+  instrucao: string;
+  /** Informações do negócio que ela pode usar (horário, preços, política de troca). */
+  contexto?: string;
+  /** Teto de caracteres da resposta — mensagem de atendimento curta é lida, longa não. */
+  maximoCaracteres?: number;
+};
+
+/**
+ * Classifica a última mensagem do contato em uma das categorias e segue por ela.
+ *
+ * Cada categoria vira uma saída do bloco; quando a IA não encaixa em nenhuma, o fluxo segue pela
+ * saída "nao_classificado" em vez de escolher um caminho no chute.
+ */
+export type IaClassificarData = {
+  instrucao?: string;
+  /** As saídas possíveis, na ordem. O `sourceHandle` da aresta é a própria categoria. */
+  categorias: string[];
+};
 export type ExecutarIntegracaoData = { integracaoId?: string; acao?: string };
 export type ModoDestinoAtendimento = "atendente" | "equipe" | "distribuicao" | "manter";
 export type MetodoDistribuicaoAtendimento = "disponibilidade" | "rodizio" | "menos_atendimentos" | "prioridade";

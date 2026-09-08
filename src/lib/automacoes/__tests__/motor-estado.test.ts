@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { AguardarData, FlowEdge, MensagemBotoesData } from "@/lib/automation-flow/types";
 import { rotuloCurto, textoNumerado } from "@/lib/conversas/enviar-pergunta";
+import { categoriaEscolhida, conversaEmTexto } from "../ia";
 import { calcularEspera, calcularTempoMaximo, preencher, proximaAresta, saidaDaResposta } from "../motor-estado";
 
 const aresta = (id: string, source: string, target: string, sourceHandle?: string): FlowEdge =>
@@ -137,5 +138,40 @@ describe("variáveis no texto", () => {
 
   it("texto sem variável passa intacto", () => {
     expect(preencher("Bom dia!", contato)).toBe("Bom dia!");
+  });
+});
+
+describe("categoria escolhida pela IA", () => {
+  const categorias = ["dúvida", "orçamento", "reclamação"];
+
+  it("aceita a resposta exata", () => {
+    expect(categoriaEscolhida("orçamento", categorias)).toBe("orçamento");
+    expect(categoriaEscolhida("  Reclamação \n", categorias)).toBe("reclamação");
+  });
+
+  it("aceita a categoria dentro de uma frase — modelo nem sempre responde só a palavra", () => {
+    expect(categoriaEscolhida("Parece ser uma dúvida sobre o produto", categorias)).toBe("dúvida");
+  });
+
+  it("devolve nada quando não encaixa — o fluxo segue por 'não classificado' em vez de chutar", () => {
+    expect(categoriaEscolhida("nenhuma", categorias)).toBeNull();
+    expect(categoriaEscolhida("", categorias)).toBeNull();
+  });
+});
+
+describe("conversa em texto pra IA", () => {
+  it("marca quem falou o quê", () => {
+    expect(
+      conversaEmTexto([
+        { tipo: "in", texto: "Quanto custa?" },
+        { tipo: "out", texto: "Depende do modelo." },
+      ]),
+    ).toBe("Cliente: Quanto custa?\nNós: Depende do modelo.");
+  });
+
+  it("corta nas últimas trocas — histórico demais só aumenta o custo por mensagem", () => {
+    const muitas = Array.from({ length: 30 }, (_, i) => ({ tipo: "in", texto: `msg ${i}` }));
+    expect(conversaEmTexto(muitas, 3).split("\n")).toHaveLength(3);
+    expect(conversaEmTexto(muitas, 3)).toContain("msg 29");
   });
 });

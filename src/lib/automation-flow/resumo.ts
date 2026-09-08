@@ -10,6 +10,7 @@ import type { Funil } from "@/lib/data";
 import type {
   AguardarData,
   CondicaoGrupoData,
+  IaClassificarData,
   FlowNode,
   FlowNodeCategory,
   GrupoCondicoes,
@@ -62,6 +63,18 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
       ...opcoes,
       { handleId: "outra_resposta", label: "Outra resposta" },
       { handleId: "nao_respondeu", label: "Não respondeu" },
+    ];
+  }
+
+  if (node.type === "ia_classificar") {
+    const data = node.data as IaClassificarData;
+    const categorias = (data.categorias ?? []).filter((c) => c.trim());
+    return [
+      // O handle é a própria categoria: é o que a IA devolve, e é o que o motor compara.
+      ...categorias.map((c) => ({ handleId: c, label: c })),
+      // Modelo nenhum garante responder uma das opções. Este caminho existe pra o fluxo não
+      // escolher um ramo no chute quando a resposta não encaixa em nada.
+      { handleId: "nao_classificado", label: "Não classificado" },
     ];
   }
 
@@ -252,6 +265,14 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     }
     case "mensagem_texto": {
       return `"${truncar(String(d.texto ?? ""))}" · Canal: ${d.canal ?? "whatsapp"}`;
+    }
+    case "ia_responder": {
+      const instrucao = String(d.instrucao ?? "").trim();
+      return instrucao ? `IA responde: "${truncar(instrucao)}"` : "Sem instrução pra IA";
+    }
+    case "ia_classificar": {
+      const categorias = (d.categorias as string[] | undefined)?.filter((c) => c.trim()) ?? [];
+      return categorias.length ? `IA escolhe entre: ${categorias.join(", ")}` : "Sem categorias definidas";
     }
     case "mensagem_email": {
       if (!d.assunto) return "Sem assunto/destinatário definidos";

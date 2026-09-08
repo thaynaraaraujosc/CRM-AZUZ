@@ -17,7 +17,7 @@ const CHAVES_ETAPA_TITULO = new Set(["etapaTitulo"]);
 const CHAVES_ETAPA_ID = new Set(["etapaId"]);
 const CHAVES_ATENDENTE = new Set(["atendenteNome", "responsavel"]);
 const CHAVES_UNIDADE_TEMPO = new Set(["tempoUnidade", "prazoUnidade"]);
-const CHAVES_TEXTAREA = new Set(["payload", "observacao", "motivo"]);
+const CHAVES_TEXTAREA = new Set(["payload", "observacao", "motivo", "instrucao", "contexto"]);
 const CHAVES_OCULTAS = new Set(["variaveis", "candidatos", "anexos", "variaveisUsadas"]);
 
 /**
