@@ -298,13 +298,15 @@ export default function FormulariosPage() {
             <p className="int-group-h" style={{ marginTop: 22 }}>
               Seus formulários
             </p>
-            <div className="card">
-              {formularios.length === 0 ? (
+            {formularios.length === 0 ? (
+              <div className="card">
                 <p className="hint" style={{ padding: 24, textAlign: "center" }}>
                   Nenhum formulário ainda: clique em &quot;Criar formulário do zero&quot; acima pra criar o primeiro.
                 </p>
-              ) : (
-                formularios.map((f) => {
+              </div>
+            ) : (
+              <div className="lista-cartoes">
+                {formularios.map((f) => {
                   const totalPerguntas = f.paginas.reduce(
                     (soma, p) => soma + p.perguntas.filter((q) => !TIPOS_LAYOUT.includes(q.tipo)).length,
                     0,
@@ -345,9 +347,9 @@ export default function FormulariosPage() {
                       </span>
                     </div>
                   );
-                })
-              )}
-            </div>
+                })}
+              </div>
+            )}
           </div>
         </>
       ) : (

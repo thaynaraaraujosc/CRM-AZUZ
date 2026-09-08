@@ -318,6 +318,7 @@
 :root[data-theme="dark"] .btn.primary,
 :root[data-theme="dark"] .sidebar,
 :root[data-theme="dark"] .open-conv-h,
+:root[data-theme="dark"] .agenda-cell.hoje,
 :root[data-theme="dark"] .wa-row.active {
   border-color: rgba(255, 255, 255, 0.16);
 }
@@ -1613,6 +1614,46 @@ table {
   color: var(--blue);
   border-bottom-color: var(--blue);
   font-weight: var(--fw-semibold);
+}
+
+/* As abas de Automações eram texto com um traço embaixo, do mesmo tamanho do corpo: liam-se como
+   continuação da frase acima, não como três destinos. Viram três botões de verdade, cada um com
+   superfície e contorno próprios, e a seção em que você está é a única marinho cheia. Escopo na
+   `.automacoes-abas` de propósito: `.tabs`/`.tab` são genéricos e usados em outras telas. */
+.automacoes-abas {
+  gap: var(--space-2);
+  border-bottom: none;
+  flex-wrap: wrap;
+}
+
+.automacoes-abas .tab {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  padding: var(--space-3) var(--space-4);
+  font-size: 13.5px;
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.automacoes-abas .tab:hover {
+  background: var(--surface-hover);
+  border-color: var(--acao);
+  color: var(--ink);
+}
+
+.automacoes-abas .tab.active {
+  background: var(--acao);
+  border-color: var(--acao);
+  color: var(--acao-texto);
+}
+
+.automacoes-abas .tab.active:hover {
+  background: var(--acao-hover);
+  border-color: var(--acao-hover);
 }
 
 /* Tooltip mínimo, CSS-only: `<button data-tooltip="Texto">` já ganha o comportamento, sem lib
@@ -5143,6 +5184,42 @@ button.camp-row:hover {
   border-bottom: none;
 }
 
+/* Lista em que cada item é um alvo de clique por conta própria. Antes as linhas ficavam
+   empilhadas dentro de um cartão único, separadas só por um filete: lia-se como um bloco
+   contínuo, e nada indicava que cada linha abre alguma coisa. Cada uma passa a ter superfície,
+   contorno e respiro seus. */
+.lista-cartoes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.lista-cartoes .int-row {
+  background: var(--surface-elevated);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* O contorno marinho é o que confirma "isto é clicável". Sem sombra maior nem deslocamento, que
+   numa lista dessa densidade viram inquietação visual. */
+.lista-cartoes .int-row:hover {
+  border-color: var(--acao);
+}
+
+/* Variante pra quando o item precisa se separar do fundo da página por COR, não só por contorno.
+   Foi o caso das automações: cartão branco sobre página branca com um filete de 6% entre os dois,
+   que na prática é uma superfície só. */
+.lista-cartoes.azul .int-row {
+  background: var(--blue-soft-2);
+  border-color: var(--blue-soft);
+}
+
+.lista-cartoes.azul .int-row:hover {
+  background: var(--blue-soft);
+  border-color: var(--acao);
+}
+
 .int-logo {
   width: 38px;
   height: 38px;
@@ -5743,8 +5820,26 @@ button.camp-row:hover {
   min-height: 76px;
 }
 
+/* Hoje era marcado só por um contorno azul, e num grid de 35 células que já têm borda o contorno
+   não se destaca de nada. Passa a ser marinho cheio: é a única célula pintada do mês, então
+   acha-se sem procurar. Os tokens são invertidos pra dentro, como na barra lateral e no topo da
+   conversa, senão as etiquetas de evento (azul sobre azul claro) sumiriam sobre o marinho. */
 .agenda-cell.hoje {
-  border-color: var(--blue);
+  background: var(--acao);
+  border-color: var(--acao);
+
+  --ink: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.78);
+  --text-faint: rgba(255, 255, 255, 0.62);
+  --line-soft: rgba(255, 255, 255, 0.16);
+  --blue: #9db8ff;
+  --blue-soft: rgba(157, 184, 255, 0.22);
+  color: #ffffff;
+}
+
+.agenda-cell.hoje:hover {
+  background: var(--acao-hover);
+  border-color: var(--acao-hover);
 }
 
 .agenda-cell.selecionada {
@@ -5752,10 +5847,24 @@ button.camp-row:hover {
   border-color: var(--blue);
 }
 
+/* Hoje e o dia selecionado costumam ser a mesma célula: a tela abre assim. O marinho prevalece, e
+   a seleção se mostra por um anel em volta, não por uma segunda cor de fundo disputando. */
+.agenda-cell.hoje.selecionada {
+  background: var(--acao);
+  border-color: var(--acao);
+  box-shadow: 0 0 0 2px var(--blue);
+}
+
 .agenda-daynum {
   font-family: var(--display);
   font-weight: 700;
   font-size: 12px;
+}
+
+/* O número de hoje é o que a pessoa procura ao abrir o mês. Maior que os outros, e branco. */
+.agenda-cell.hoje .agenda-daynum {
+  font-size: 15px;
+  color: #ffffff;
 }
 
 .agenda-evento {
