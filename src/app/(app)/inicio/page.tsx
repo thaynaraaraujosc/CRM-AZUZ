@@ -251,19 +251,6 @@ export default function InicioPage() {
               )}
             </section>
 
-            <div className="inicio-diario-secao">
-              <h3 className="inicio-diario-titulo">Diário</h3>
-              <div className="inicio-diario-grade">
-                <div className="inicio-stat-mini">
-                  <span className="n">{leadsHoje.trafego}</span>
-                  <span className="r">Tráfego/Anúncios</span>
-                </div>
-                <div className="inicio-stat-mini">
-                  <span className="n">{leadsHoje.outros}</span>
-                  <span className="r">Outros</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div className="inicio-col-lateral">
@@ -282,6 +269,24 @@ export default function InicioPage() {
               <span className="r">Vendas realizadas</span>
               <span className="inicio-stat-mini-obs">Sucesso</span>
             </Link>
+
+            {/* O Diário morava embaixo das Pendências, atravessado na largura toda: dois números
+                pequenos ocupando uma faixa inteira da tela e empurrando o cartão principal pra
+                cima. Junto aos outros indicadores, ele vira o rodapé natural da coluna de
+                números, e a coluna da esquerda fica só com as Pendências. */}
+            <div className="inicio-diario-secao">
+              <h3 className="inicio-diario-titulo">Diário</h3>
+              <div className="inicio-diario-grade">
+                <div className="inicio-stat-mini">
+                  <span className="n">{leadsHoje.trafego}</span>
+                  <span className="r">Tráfego/Anúncios</span>
+                </div>
+                <div className="inicio-stat-mini">
+                  <span className="n">{leadsHoje.outros}</span>
+                  <span className="r">Outros</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -16,6 +16,7 @@ import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 
+/** O que aparece em "Em breve". Zapier, Make, Stripe e Mercado Pago saíram: não estão no plano. */
 type AppFuturo = { nome: string; descricao: string; categoria: string };
 const APPS_EM_BREVE: AppFuturo[] = [
   { nome: "Google Ads", descricao: "Traga essa origem pro painel de Tráfego.", categoria: "Marketing" },
@@ -24,13 +25,12 @@ const APPS_EM_BREVE: AppFuturo[] = [
   { nome: "Google Agenda", descricao: "Sincronize compromissos com sua agenda pessoal.", categoria: "Agenda" },
   { nome: "Gmail", descricao: "Envie e receba e-mails direto do CRM.", categoria: "Comunicação" },
   { nome: "Outlook", descricao: "Sincronize sua caixa de entrada corporativa.", categoria: "Comunicação" },
-  { nome: "Zapier", descricao: "Conecte o CRM a milhares de outros apps.", categoria: "Produtividade" },
-  { nome: "Make", descricao: "Automatize fluxos entre o CRM e outros sistemas.", categoria: "Produtividade" },
-  { nome: "Stripe", descricao: "Cobranças e assinaturas internacionais.", categoria: "Pagamentos" },
-  { nome: "Mercado Pago", descricao: "Cobranças via Pix, boleto e cartão.", categoria: "Pagamentos" },
   { nome: "Google Sheets", descricao: "Exporte relatórios direto pra uma planilha.", categoria: "Dados" },
 ];
-const CATEGORIAS = ["Todas", "Comunicação", "Marketing", "Produtividade", "Pagamentos", "Agenda", "Dados"];
+/* Derivada da lista, não escrita à mão. Com a lista fixa, tirar os apps de Pagamentos e
+   Produtividade deixaria dois filtros que não mostram nada quando clicados: um beco sem saída que
+   ninguém lembraria de limpar. Assim o filtro acompanha a lista sozinho, nos dois sentidos. */
+const CATEGORIAS = ["Todas", ...Array.from(new Set(APPS_EM_BREVE.map((a) => a.categoria)))];
 
 /**
  * Uma integração da lista "Prontas pra usar".
