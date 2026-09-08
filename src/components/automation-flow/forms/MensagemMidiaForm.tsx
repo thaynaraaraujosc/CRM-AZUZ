@@ -151,7 +151,13 @@ export function MensagemMidiaForm({
     } catch {
       // Nada é escrito no bloco: um bloco sem arquivo mostra o erro no editor, um bloco com
       // arquivo quebrado só falha na frente do cliente.
-      setErroUpload("Não deu pra guardar o arquivo na biblioteca. Tente enviar de novo.");
+      // Acima de ~4 MB o arquivo não passa no envio pro servidor, e o erro genérico faria a pessoa
+      // tentar de novo pra sempre com o mesmo arquivo.
+      setErroUpload(
+        file.size > 3.5 * 1024 * 1024
+          ? "Arquivo grande demais pra guardar na biblioteca (o limite é cerca de 4 MB). Use uma versão mais leve."
+          : "Não deu pra guardar o arquivo na biblioteca. Tente enviar de novo.",
+      );
     } finally {
       setEnviando(false);
     }

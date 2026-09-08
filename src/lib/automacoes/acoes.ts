@@ -249,11 +249,18 @@ export function acoesReais(params: {
       }
       if (!formularioId) return falha("O bloco não tem formulário escolhido.");
       try {
-        const formulario = await prisma.formulario.findFirst({ where: { id: formularioId, workspaceId }, select: { id: true } });
+        const formulario = await prisma.formulario.findFirst({
+          where: { id: formularioId, workspaceId },
+          select: { id: true, senha: true },
+        });
         if (!formulario) return falha("Esse formulário não existe mais.");
         const base = (process.env.APP_URL ?? "").replace(/\/+$/, "");
         if (!base) return falha("APP_URL não está configurado no servidor. Sem ele não dá pra montar o link do formulário.");
-        return ok(`${base}/formulario-preview?id=${formulario.id}`);
+        // A rota PÚBLICA, a mesma que o botão "Compartilhar" copia. Antes ia o endereço da
+        // pré-visualização interna, que exige estar logado no CRM: quem recebia caía na tela de
+        // entrar em vez do formulário.
+        const publico = `${base}/f/${formulario.id}`;
+        return ok(formulario.senha ? `${publico}?chave=${encodeURIComponent(formulario.senha)}` : publico);
       } catch (erro) {
         return falha("Falha ao montar o link do formulário.", mensagemDoErro(erro));
       }

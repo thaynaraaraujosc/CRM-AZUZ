@@ -15,6 +15,7 @@ import type {
   DistribuirDisponibilidadeData,
   EncaminharEquipeData,
   EncaminharHumanoData,
+  EnviarFormularioData,
   EtiquetaEventoData,
   FlowEdge,
   FlowNode,
@@ -189,6 +190,23 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         id: proximoIdProblema(),
         severidade: "erro",
         mensagem: `Bloco "${n.titulo ?? n.type}": o arquivo "${data.arquivoNome}" não ficou guardado na biblioteca. Escolha o arquivo de novo.`,
+        nodeId: n.id,
+      });
+    }
+  });
+
+  // 4c. Enviar formulário sem formulário escolhido (ou sem endereço, quando é link externo).
+  nodes.forEach((n) => {
+    if (n.type !== "enviar_formulario") return;
+    const data = n.data as EnviarFormularioData;
+    const externo = data.formularioOrigem === "externo";
+    if (externo ? ehTextoVazio(data.formularioUrlExterna) : ehTextoVazio(data.formularioId)) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: externo
+          ? `Bloco "${n.titulo ?? n.type}" está sem o endereço do formulário externo.`
+          : `Bloco "${n.titulo ?? n.type}" está sem formulário escolhido.`,
         nodeId: n.id,
       });
     }

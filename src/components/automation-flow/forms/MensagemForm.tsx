@@ -7,6 +7,7 @@ import { VariavelDropdown } from "./VariavelDropdown";
 import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
 import { mapearVariaveis } from "@/lib/campanhas/variaveis";
 import { inserirTokenNoTexto } from "./variaveis";
+import { useFormularios } from "@/lib/formularios-context";
 
 const CANAIS: { valor: CanalMensagem; label: string }[] = [
   { valor: "whatsapp", label: "WhatsApp" },
@@ -85,11 +86,9 @@ export function MensagemForm({ node, onChange }: { node: FlowNode; onChange: (da
               onChange={(e) => set({ formularioUrlExterna: e.target.value })}
             />
           ) : (
-            <input
-              className="input mt8"
-              placeholder="ID do formulário interno"
-              value={String(d.formularioId ?? "")}
-              onChange={(e) => set({ formularioId: e.target.value })}
+            <EscolherFormulario
+              formularioId={String(d.formularioId ?? "")}
+              onEscolher={(id) => set({ formularioId: id })}
             />
           )}
         </div>
@@ -170,5 +169,46 @@ export function MensagemForm({ node, onChange }: { node: FlowNode; onChange: (da
         />
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Escolha do formulário interno.
+ *
+ * Era um campo de texto pedindo "ID do formulário interno". Ninguém sabe o id de um formulário de
+ * cabeça, então o campo ficava vazio e o bloco não enviava nada. Agora é a lista dos formulários
+ * do workspace, com o rascunho marcado: um formulário em rascunho abre pra quem recebe, mas é bom
+ * a pessoa saber antes de mandar pro cliente.
+ */
+function EscolherFormulario({
+  formularioId,
+  onEscolher,
+}: {
+  formularioId: string;
+  onEscolher: (id: string) => void;
+}) {
+  const { formularios } = useFormularios();
+  // O formulário escolhido pode ter sido apagado depois. Some da lista, e o bloco apontaria pra um
+  // id invisível: melhor mostrar que ele sumiu do que parecer que nada foi escolhido.
+  const sumiu = formularioId && !formularios.some((f) => f.id === formularioId);
+
+  return (
+    <>
+      <select className="input mt8" value={formularioId} onChange={(e) => onEscolher(e.target.value)}>
+        <option value="">Escolha um formulário</option>
+        {sumiu ? <option value={formularioId}>Formulário apagado ({formularioId})</option> : null}
+        {formularios.map((f) => (
+          <option key={f.id} value={f.id}>
+            {f.nome}
+            {f.status === "publicado" ? "" : " (rascunho)"}
+          </option>
+        ))}
+      </select>
+      <p className="hint mt8">
+        {formularios.length
+          ? "O contato recebe o link público do formulário, o mesmo do botão Compartilhar."
+          : "Nenhum formulário criado ainda. Crie um em Formulários e volte aqui."}
+      </p>
+    </>
   );
 }
