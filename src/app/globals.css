@@ -470,6 +470,10 @@ table {
   --blue: #7ea2ff;
   --blue-soft: rgba(126, 162, 255, 0.2);
   --blue-soft-2: rgba(126, 162, 255, 0.12);
+  /* Redefinir `--ink` não basta: a cor do texto é herdada do `body`, onde `--ink` já resolveu pra
+     marinho. Sem declarar `color` aqui, tudo que não tem cor própria (o nome do workspace, o nome
+     de quem está logado no rodapé) ficava marinho sobre marinho, ou seja, invisível. */
+  color: var(--ink);
   padding: var(--space-5) var(--space-4);
   display: flex;
   flex-direction: column;
@@ -2879,6 +2883,12 @@ table.tbl tbody tr:hover td {
   --line: rgba(255, 255, 255, 0.16);
   --line-strong: rgba(255, 255, 255, 0.28);
   --surface-active: rgba(255, 255, 255, 0.12);
+  /* Estes três faltavam, e é por isso que a engrenagem virava uma bolinha branca: `.gear-btn` usa
+     `background: var(--navy)`, que sem redefinição aqui resolve pro branco opaco da raiz, com o
+     ícone branco por cima. A barra lateral já invertia esses tokens; esta barra não. */
+  --navy: rgba(255, 255, 255, 0.14);
+  --navy-raised: rgba(255, 255, 255, 0.1);
+  --surface-elevated: rgba(255, 255, 255, 0.16);
   --navy-raised-2: rgba(255, 255, 255, 0.14);
   --gray-100: rgba(255, 255, 255, 0.12);
   --blue: #9db8ff;
@@ -3575,6 +3585,9 @@ table.tbl tbody tr:hover td {
   --gray-200: rgba(255, 255, 255, 0.16);
   --blue: #9db8ff;
   --blue-soft: rgba(157, 184, 255, 0.22);
+  /* Mesmo motivo da barra lateral: sem declarar `color`, o texto sem cor própria herda o marinho
+     já resolvido no `body` e some sobre o cartão marinho. */
+  color: var(--ink);
 }
 
 /* Hover não altera o cartão aberto: ele já está no estado mais forte que existe, e clarear no
@@ -3740,6 +3753,16 @@ table.tbl tbody tr:hover td {
 
 .wa-main-gear {
   margin-left: auto;
+}
+
+/* Na barra marinho o ícone precisa ser branco de verdade: `--text-faint` ali é branco a 62%, que
+   sobre o círculo claro do botão quase desaparecia. */
+.open-conv-h .wa-main-gear {
+  color: #ffffff;
+}
+
+.open-conv-h .wa-main-gear:hover {
+  background: rgba(255, 255, 255, 0.24);
 }
 
 .wa-info {
@@ -12695,8 +12718,11 @@ button.camp-row:hover {
      temas. */
   color: var(--ink);
 }
+/* Os dois números do Diário viraram o rodapé da coluna de indicadores, então empilham como os
+   cartões acima em vez de dividir a largura em dois. */
 .inicio-diario-grade {
   display: flex;
+  flex-direction: column;
   gap: var(--space-3);
 }
 .inicio-diario-grade .inicio-stat-mini {
