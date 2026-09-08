@@ -16387,3 +16387,28 @@ table.tbl .name-cell .r {
   border-color: var(--acao);
   color: var(--ink);
 }
+
+/**
+ * Os campos dentro das caixas de link do Compartilhar.
+ *
+ * O campo de senha existia e ninguém achava, e o motivo é literal: `.input` tem fundo
+ * `--navy-raised` e borda transparente, e a `.form-link-box` em volta dele tem o MESMO
+ * `--navy-raised`. Campo da cor exata do fundo, sem contorno, é campo invisível: só o texto de
+ * exemplo aparecia, e texto cinza solto lê como legenda, não como lugar de digitar.
+ *
+ * Passa a se desenhar como a caixa do link ao lado, que sempre foi visível pelo mesmo motivo
+ * inverso: superfície branca sobre o cinza, com contorno.
+ */
+.form-link-box .input {
+  background: var(--navy);
+  border-color: var(--line);
+}
+
+.form-link-box .input::placeholder {
+  color: var(--text-faint);
+}
+
+.form-link-box .input:focus-visible {
+  border-color: var(--acao);
+  outline: none;
+}
