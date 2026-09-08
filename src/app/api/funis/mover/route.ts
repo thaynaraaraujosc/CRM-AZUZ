@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
+import { aoSairDaEtapa } from "@/lib/automacoes/gatilhos-crm";
 
 /**
  * Move UM negócio: de etapa, de funil e/ou de responsável — numa chamada só, gravada na hora.
@@ -71,9 +72,20 @@ export async function POST(request: Request) {
   // Antes ele só valia pra quem estava com a tela aberta, e o mesmo movimento vindo de outro
   // caminho (importação, webhook, outra aba) não disparava nada.
   if (etapaId && etapaId !== card.etapaId) {
-    const etapa = await prisma.funilEtapa.findFirst({
-      where: { id: etapaId, workspaceId },
-      select: { titulo: true, funilId: true },
+    const [etapa, etapaAnterior] = await Promise.all([
+      prisma.funilEtapa.findFirst({ where: { id: etapaId, workspaceId }, select: { titulo: true, funilId: true } }),
+      prisma.funilEtapa.findFirst({ where: { id: card.etapaId, workspaceId }, select: { titulo: true, funilId: true } }),
+    ]);
+
+    // "Saiu" antes de "entrou": é a ordem em que as duas coisas acontecem, e um fluxo de despedida
+    // que rodasse depois do de boas-vindas contaria a história ao contrário.
+    aoSairDaEtapa({
+      workspaceId,
+      contatoNome: card.nome,
+      funilId: etapaAnterior?.funilId,
+      etapaId: card.etapaId,
+      etapaTitulo: etapaAnterior?.titulo,
+      cardId,
     });
     await dispararAutomacoesDoCrm({
       workspaceId,

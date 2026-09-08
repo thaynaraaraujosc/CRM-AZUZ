@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { Contato } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { aoAtualizarContato } from "@/lib/automacoes/gatilhos-crm";
 
 function paraContato(linha: { etiquetas: unknown; [k: string]: unknown }): Contato {
   return {
@@ -21,6 +22,10 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/contatos/[
   const { id } = await ctx.params;
   const dados = (await request.json()) as Partial<Contato> & Record<string, unknown>;
 
+  // Foto do "antes" pra saber O QUE mudou — é disso que os gatilhos de etiqueta, responsável e
+  // campo alterado dependem. Sem a comparação eles não teriam como existir.
+  const antes = await prisma.contato.findFirst({ where: { id, workspaceId: sessao.user.workspaceId } });
+
   const { count } = await prisma.contato.updateMany({
     where: { id, workspaceId: sessao.user.workspaceId },
     data: { ...dados, etiquetas: dados.etiquetas ?? undefined },
@@ -28,6 +33,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/contatos/[
   if (count === 0) return NextResponse.json({ erro: "Contato não encontrado" }, { status: 404 });
 
   const linha = await prisma.contato.findUniqueOrThrow({ where: { id } });
+  aoAtualizarContato({ workspaceId: sessao.user.workspaceId, contatoNome: linha.nome, antes, depois: linha });
   return NextResponse.json(paraContato(linha));
 }
 

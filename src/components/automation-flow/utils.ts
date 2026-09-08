@@ -1,6 +1,8 @@
 "use client";
 
 import dagre from "dagre";
+
+import { saidasDoNo } from "@/lib/automation-flow/resumo";
 import { MarkerType, type Edge, type Node } from "@xyflow/react";
 
 import type {
@@ -91,15 +93,33 @@ export const CORES_CATEGORIA: Record<string, string> = {
 // Precisa bater aproximadamente com o tamanho real do node em .flow-node (globals.css) — usado só
 // pra estimar espaço no auto-layout (dagre), não define o tamanho de verdade renderizado.
 const LARGURA_NO = 280;
+/** Altura de um bloco sem ramificação — título, resumo e uma saída. */
 const ALTURA_NO = 120;
+/** Cada saída extra desenha uma linha dentro do bloco (ver `.flow-node-handle-row`). */
+const ALTURA_POR_SAIDA = 30;
+
+/**
+ * Altura REAL do bloco, contando as saídas.
+ *
+ * O layout automático media todo bloco por uma altura fixa. Um bloco de decisão com cinco caminhos
+ * ocupa mais que o dobro disso — então o algoritmo reservava espaço a menos e os blocos de baixo
+ * subiam por cima dele. Quanto mais ramificada a automação, pior ficava: exatamente o caso em que
+ * organizar automaticamente é mais necessário.
+ */
+function alturaDoNo(node: FlowRFNode): number {
+  const saidas = saidasDoNo(node.data.flowNode).length;
+  return saidas > 1 ? ALTURA_NO + saidas * ALTURA_POR_SAIDA : ALTURA_NO;
+}
 
 /** Recalcula a posição de todo mundo em camadas (dagre, topo→baixo) — usado pelo botão "organizar automaticamente". */
 export function autoLayout(nodes: FlowRFNode[], edges: FlowRFEdge[]): FlowRFNode[] {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: "TB", nodesep: 70, ranksep: 120, marginx: 40, marginy: 40 });
+  // `nodesep` sobe junto: com blocos altos lado a lado, 70px de folga lateral fazia dois ramos
+  // vizinhos parecerem colados mesmo sem se sobrepor.
+  g.setGraph({ rankdir: "TB", nodesep: 90, ranksep: 140, marginx: 40, marginy: 40 });
   g.setDefaultEdgeLabel(() => ({}));
 
-  nodes.forEach((n) => g.setNode(n.id, { width: LARGURA_NO, height: ALTURA_NO }));
+  nodes.forEach((n) => g.setNode(n.id, { width: LARGURA_NO, height: alturaDoNo(n) }));
   edges.forEach((e) => {
     if (nodes.some((n) => n.id === e.source) && nodes.some((n) => n.id === e.target)) {
       g.setEdge(e.source, e.target);
@@ -111,6 +131,8 @@ export function autoLayout(nodes: FlowRFNode[], edges: FlowRFEdge[]): FlowRFNode
   return nodes.map((n) => {
     const posicionado = g.node(n.id);
     if (!posicionado) return n;
-    return { ...n, position: { x: posicionado.x - LARGURA_NO / 2, y: posicionado.y - ALTURA_NO / 2 } };
+    // O dagre devolve o CENTRO do bloco; o canvas posiciona pelo canto. Descontar a altura real (e
+    // não a fixa) é o que mantém o bloco alinhado com o espaço que foi reservado pra ele.
+    return { ...n, position: { x: posicionado.x - LARGURA_NO / 2, y: posicionado.y - alturaDoNo(n) / 2 } };
   });
 }

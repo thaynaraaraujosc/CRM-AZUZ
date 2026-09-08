@@ -3,24 +3,36 @@ import { rotuloCurto } from "@/lib/conversas/enviar-pergunta";
 import type {
   AdicionarEtiquetaData,
   AguardarData,
+  AgendarConsultaData,
   AlterarEtapaData,
+  AlterarFunilData,
   AlterarResponsavelData,
   AtualizarCampoData,
   AtualizarStatusData,
   AtualizarValorData,
+  CancelarAgendamentoData,
   ChamarWebhookData,
   CondicaoGrupoData,
+  CriarLembreteData,
+  CriarNegocioData,
   CriarTarefaData,
   DecisaoMultiplaData,
+  DistribuirDisponibilidadeData,
+  EncaminharEquipeData,
   EncaminharHumanoData,
+  EnviarNotificacaoData,
   FlowEdge,
   FlowNode,
+  EnviarFormularioData,
   IaClassificarData,
   IaResponderData,
   MensagemBotoesData,
+  MensagemContatoData,
   MensagemEmailData,
+  MensagemLocalizacaoData,
   MensagemMidiaData,
   MensagemModeloWhatsappData,
+  NotificacaoInternaData,
   RemoverEtiquetaData,
 } from "@/lib/automation-flow/types";
 import type { AcoesDoMotor } from "./acoes";
@@ -142,7 +154,7 @@ export async function rodarExecucao(params: {
     if (no.desativado) {
       resultado = { tipo: "seguir", detalhe: "Bloco desativado — pulado." };
     } else {
-      resultado = await executarNo({ no, contexto, acoes, agora });
+      resultado = await executarNo({ no, contexto, acoes, agora, fluxoId: execucao.fluxoId });
     }
 
     await gravador.registrarPasso({
@@ -277,11 +289,13 @@ function fatorDaUnidade(unidade: string): number {
 
 async function executarNo(params: {
   no: FlowNode;
+  /** Qual fluxo está rodando — o bloco de parar automações precisa poupar a si mesmo. */
+  fluxoId: string;
   contexto: ContextoExecucaoPersistido;
   acoes: AcoesDoMotor;
   agora: Date;
 }): Promise<ResultadoDoNo> {
-  const { no, contexto, acoes, agora } = params;
+  const { no, contexto, acoes, agora, fluxoId } = params;
   const contato = contatoDoContexto(contexto);
   const nome = contato.nome;
 
@@ -418,6 +432,110 @@ async function executarNo(params: {
       return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
     }
 
+    case "pausar_automacoes":
+    case "cancelar_automacoes": {
+      const r = await acoes.pararOutrasAutomacoes({
+        contatoNome: nome,
+        // O próprio fluxo nunca se encerra: um bloco que matasse a execução que o está executando
+        // pararia o fluxo no meio, e não é isso que "pausar as automações do contato" quer dizer.
+        fluxoAtualId: fluxoId,
+        modo: no.type === "pausar_automacoes" ? "pausar" : "cancelar",
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "alterar_funil": {
+      const data = no.data as AlterarFunilData;
+      if (!data.funilId) return { tipo: "erro", detalhe: "O bloco não tem funil escolhido." };
+      // Sem etapa escolhida vai pra primeira do funil — mover pra um funil sem dizer onde é o que
+      // a pessoa quer dizer com "mandar pro começo dele".
+      const r = await acoes.moverEtapa({ contatoNome: nome, funilId: data.funilId, etapaTitulo: data.etapaTitulo ?? "" });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "encaminhar_equipe":
+    case "distribuir_disponibilidade": {
+      const data = no.data as EncaminharEquipeData & DistribuirDisponibilidadeData;
+      const escolhido = await acoes.escolherAtendente({
+        equipe: data.equipeNome,
+        metodo: data.modo === "menos_ocupado" ? "menos_atendimentos" : "rodizio",
+      });
+      if (!escolhido.ok) return { tipo: "erro", detalhe: escolhido.detalhe, erroTecnico: escolhido.erroTecnico };
+      const r = await acoes.salvarContato({ contatoNome: nome, dados: { responsavel: escolhido.detalhe } });
+      return r.ok
+        ? { tipo: "seguir", detalhe: `Atendimento com ${escolhido.detalhe}.` }
+        : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "criar_lembrete": {
+      const data = no.data as CriarLembreteData;
+      const titulo = preencher(data.titulo ?? "", contato);
+      if (!titulo.trim()) return { tipo: "erro", detalhe: "Lembrete sem título." };
+      const quando = data.tempoValor
+        ? new Date(agora.getTime() + data.tempoValor * fatorDaUnidade(data.tempoUnidade ?? "dias"))
+        : agora;
+      // Lembrete é uma tarefa com prazo — mesmo quadro, mesma tela. Um segundo lugar pra "coisas
+      // pra fazer" só faria a pessoa procurar em dois lugares.
+      const r = await acoes.criarTarefa({ contatoNome: nome, titulo, prazo: quando, prioridade: "normal" });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "criar_negocio": {
+      const data = no.data as CriarNegocioData;
+      if (!data.funilId || !data.etapaTitulo) return { tipo: "erro", detalhe: "O bloco não tem funil e etapa escolhidos." };
+      const r = await acoes.criarNegocio({
+        contatoNome: nome,
+        nome: preencher(data.nome ?? "", contato) || nome,
+        funilId: data.funilId,
+        etapaTitulo: data.etapaTitulo,
+        valor: data.valor,
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "agendar_consulta": {
+      const data = no.data as AgendarConsultaData;
+      if (!data.data || !data.horario) {
+        return { tipo: "erro", detalhe: "O bloco de agendamento precisa de data e horário." };
+      }
+      const r = await acoes.agendarConsulta({
+        contatoNome: nome,
+        dataIso: data.data,
+        hora: data.horario,
+        responsavel: data.profissional,
+        tipo: data.tipoServico,
+        observacao: data.observacao,
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "cancelar_agendamento": {
+      const data = no.data as CancelarAgendamentoData;
+      const r = await acoes.cancelarAgendamento({ contatoNome: nome, motivo: data.mensagem });
+      if (!r.ok) return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+      // O aviso ao contato é opcional e sai depois do cancelamento: avisar antes e falhar o
+      // cancelamento deixaria a pessoa achando que perdeu a consulta sem ter perdido.
+      if (data.enviarMensagem && data.mensagem?.trim()) {
+        await acoes.enviarTexto({ contatoNome: nome, texto: preencher(data.mensagem, contato) });
+      }
+      return { tipo: "seguir", detalhe: r.detalhe };
+    }
+
+    case "enviar_notificacao": {
+      const data = no.data as EnviarNotificacaoData;
+      const r = await acoes.avisarEquipe({
+        contatoNome: nome,
+        equipe: data.paraEquipe,
+        mensagem: preencher(data.mensagem ?? "", contato),
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "ocultar_comentario_instagram": {
+      const r = await acoes.ocultarComentario();
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
     case "criar_tarefa": {
       const data = no.data as CriarTarefaData;
       const titulo = preencher(data.titulo ?? "", contato);
@@ -451,17 +569,61 @@ async function executarNo(params: {
       return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
     }
 
-    // Contato, localização, formulário e notificação interna continuam sem envio real. Mandar só o
-    // texto do bloco entregaria coisa errada e ainda registraria "enviado" — o histórico diz o que
-    // faltou, e o fluxo segue.
-    case "mensagem_contato":
-    case "mensagem_localizacao":
-    case "enviar_formulario":
-    case "notificacao_interna":
-      return {
-        tipo: "seguir",
-        detalhe: `"${no.titulo ?? no.type}" ainda não é enviado pelo motor — nada saiu, e o fluxo seguiu.`,
-      };
+    case "mensagem_localizacao": {
+      const data = no.data as MensagemLocalizacaoData;
+      const latitude = Number(data.latitude);
+      const longitude = Number(data.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        // Endereço escrito por extenso não vira coordenada sozinho: isso precisaria de um serviço
+        // de geocodificação, que o CRM não tem. Dizer isso é melhor que mandar um mapa no lugar
+        // errado.
+        return { tipo: "erro", detalhe: "O bloco de localização precisa de latitude e longitude — endereço por extenso ainda não é convertido." };
+      }
+      const enderecoCompleto = [data.endereco, data.numero, data.bairro, data.cidade, data.estado].filter(Boolean).join(", ");
+      const r = await acoes.enviarLocalizacao({
+        contatoNome: nome,
+        latitude,
+        longitude,
+        nome: data.nomeLocal,
+        endereco: enderecoCompleto || undefined,
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "mensagem_contato": {
+      const data = no.data as MensagemContatoData;
+      const escolhido = data.contatoSelecionadoNome?.trim();
+      if (!escolhido) return { tipo: "erro", detalhe: "O bloco não tem contato escolhido." };
+      const dados = await acoes.buscarContato(escolhido);
+      if (!dados.ok) return { tipo: "erro", detalhe: dados.detalhe, erroTecnico: dados.erroTecnico };
+      const r = await acoes.enviarContato({ contatoNome: nome, ...JSON.parse(dados.detalhe) });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "enviar_formulario": {
+      const data = no.data as EnviarFormularioData;
+      const link = await acoes.linkDoFormulario({
+        origem: data.formularioOrigem ?? "interno",
+        formularioId: data.formularioId,
+        urlExterna: data.formularioUrlExterna,
+      });
+      if (!link.ok) return { tipo: "erro", detalhe: link.detalhe, erroTecnico: link.erroTecnico };
+      const texto = [preencher(data.mensagem ?? "", contato).trim(), link.detalhe].filter(Boolean).join("\n\n");
+      const envio = await acoes.enviarTexto({ contatoNome: nome, texto });
+      return envio.ok
+        ? { tipo: "seguir", detalhe: `Formulário enviado: ${link.detalhe}` }
+        : { tipo: "erro", detalhe: envio.detalhe, erroTecnico: envio.erroTecnico };
+    }
+
+    case "notificacao_interna": {
+      const data = no.data as NotificacaoInternaData;
+      const r = await acoes.avisarEquipe({
+        contatoNome: nome,
+        equipe: data.paraEquipe,
+        mensagem: preencher(data.mensagem ?? "", contato),
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
 
     case "adicionar_etiqueta": {
       const data = no.data as AdicionarEtiquetaData;

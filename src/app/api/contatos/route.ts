@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { Contato } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { aoAtualizarContato } from "@/lib/automacoes/gatilhos-crm";
 import { encontrarContatoPorTelefone, upsertContato } from "@/lib/contatos/upsert";
 
 /** Linha do banco -> `Contato` do front — só o formato de `etiquetas` (JSON no banco) muda. */
@@ -61,9 +62,15 @@ export async function POST(request: Request) {
       where: { id: duplicataPorTelefone.id },
       data: { ...dados, etiquetas: dados.etiquetas ?? undefined },
     });
+    // Este caminho escreve direto, sem passar por `upsertContato` — então o disparo precisa estar
+    // aqui também, senão uma edição que cai na mesclagem por telefone não acionaria nada.
+    aoAtualizarContato({ workspaceId, contatoNome: linha.nome, antes: duplicataPorTelefone, depois: linha });
     return NextResponse.json({ ...paraContato(linha), mesclado: true });
   }
 
+  // Os gatilhos ("lead criado", "etiqueta adicionada"…) são disparados DENTRO de `upsertContato`,
+  // não aqui: é por lá que passa também o contato criado pelo webhook, e ter o disparo nos dois
+  // lugares faria a automação rodar duas vezes pra quem vem por esta rota.
   const linha = await upsertContato({ workspaceId, nome, dados, origemPadrao });
   return NextResponse.json(paraContato(linha), { status: jaExistePorNome ? 200 : 201 });
 }

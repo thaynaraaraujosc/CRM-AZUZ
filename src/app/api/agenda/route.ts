@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { Compromisso } from "@/lib/agenda-context";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { aoMudarCompromisso } from "@/lib/automacoes/gatilhos-crm";
 
 /** GET lista os compromissos manuais do workspace de quem está logado. */
 export async function GET() {
@@ -45,5 +46,11 @@ export async function POST(request: Request) {
     },
   });
 
+  aoMudarCompromisso({
+    workspaceId: sessao.user.workspaceId,
+    contatoNome: linha.contato,
+    compromissoId: linha.id,
+    situacao: linha.status,
+  });
   return NextResponse.json(linha as Compromisso, { status: 201 });
 }

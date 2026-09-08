@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { TaskCard } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { aoConcluirTarefa } from "@/lib/automacoes/gatilhos-crm";
 
 /**
  * Atualização direta por id — usada por `editarTarefa`/`concluirTarefa`. Aceita tanto os campos
@@ -18,6 +19,10 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/tarefas/[i
     etapaId?: string;
     ordem?: number;
   };
+
+  // Estado antes: "concluída" só é acontecimento na VIRADA. Salvar de novo uma tarefa que já
+  // estava concluída não pode disparar o fluxo outra vez.
+  const antes = await prisma.tarefaCard.findFirst({ where: { id, workspaceId: sessao.user.workspaceId } });
 
   const { responsavel, anexo, contatoId, urgencia, ...resto } = body;
   const { count } = await prisma.tarefaCard.updateMany({
@@ -37,6 +42,13 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/tarefas/[i
   if (count === 0) return NextResponse.json({ erro: "Tarefa não encontrada" }, { status: 404 });
 
   const linha = await prisma.tarefaCard.findUniqueOrThrow({ where: { id } });
+  aoConcluirTarefa({
+    workspaceId: sessao.user.workspaceId,
+    contatoNome: linha.contato,
+    tarefaId: linha.id,
+    estavaConcluida: !!antes?.concluida,
+    agoraConcluida: linha.concluida,
+  });
   return NextResponse.json(linha);
 }
 

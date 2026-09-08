@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { rodarRodadaDeCampanhas } from "@/lib/campanhas/worker";
 import { retomarEsperasVencidas } from "@/lib/automacoes/iniciar";
+import { rodarGatilhosDeTempo } from "@/lib/automacoes/gatilhos-tempo";
 
 /**
  * Batida do relógio das campanhas.
@@ -40,5 +41,13 @@ export async function GET(request: Request) {
     console.error("[cron] falha ao retomar automações:", erro);
     return { retomadas: 0, erros: 1 };
   });
-  return NextResponse.json({ ok: true, ...resultado, automacoes });
+
+  // Gatilhos de relógio (aniversário, lead parado, horário programado). Sai barato quando ninguém
+  // usa: a varredura procura FLUXOS primeiro e só toca em contato/card se existir um fluxo desses.
+  const porTempo = await rodarGatilhosDeTempo().catch((erro) => {
+    console.error("[cron] falha nos gatilhos de tempo:", erro);
+    return { disparados: 0 };
+  });
+
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo });
 }

@@ -67,8 +67,9 @@ export async function iniciarFluxoComEstado(params: {
   contatoId?: string | null;
   /** O que as condições do fluxo enxergam: campos do contato, canal, mensagem recebida. */
   contato: Record<string, unknown>;
-  /** Só existe quando o disparo veio de um comentário do Instagram. */
+  /** Só existem quando o disparo veio de um comentário do Instagram. */
   responderComentario?: (texto: string) => Promise<void>;
+  ocultarComentario?: () => Promise<void>;
 }): Promise<FimDaRodada | null> {
   let versao = await versaoAtualPublicada(params.workspaceId, params.fluxoId);
 
@@ -146,7 +147,11 @@ export async function iniciarFluxoComEstado(params: {
     execucao,
     nodes: versao.nodes,
     edges: versao.edges,
-    acoes: acoesReais({ workspaceId: params.workspaceId, responderComentario: params.responderComentario }),
+    acoes: acoesReais({
+      workspaceId: params.workspaceId,
+      responderComentario: params.responderComentario,
+      ocultarComentario: params.ocultarComentario,
+    }),
   });
 }
 
