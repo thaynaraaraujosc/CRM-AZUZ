@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
 import { ImageResponse } from "next/og";
 
 /**
@@ -14,7 +17,16 @@ export const alt = "CRM AZUZ";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function Image() {
+export default async function Image() {
+  /**
+   * A marca entra como data URI porque o gerador de imagem não busca arquivo por endereço: ele
+   * monta a imagem no servidor, antes de existir requisição, então um `/marca/logo.jpg` não
+   * resolveria nada. `process.cwd()` é a raiz do projeto.
+   */
+  const marca = await readFile(join(process.cwd(), "src/app/icon.png"))
+    .then((b) => `data:image/png;base64,${b.toString("base64")}`)
+    .catch(() => null);
+
   return new ImageResponse(
     (
       <div
@@ -29,8 +41,12 @@ export default function Image() {
           padding: 88,
         }}
       >
-        <div style={{ display: "flex", width: 96, height: 6, background: "#2e6bff", borderRadius: 999 }} />
-        <div style={{ display: "flex", fontSize: 108, fontWeight: 700, letterSpacing: "-0.03em", marginTop: 40 }}>
+        {marca ? (
+          <img src={marca} alt="" width={104} height={104} style={{ borderRadius: 26 }} />
+        ) : (
+          <div style={{ display: "flex", width: 96, height: 6, background: "#2e6bff", borderRadius: 999 }} />
+        )}
+        <div style={{ display: "flex", fontSize: 100, fontWeight: 700, letterSpacing: "-0.03em", marginTop: 34 }}>
           CRM AZUZ
         </div>
         <div style={{ display: "flex", fontSize: 38, color: "rgba(255,255,255,0.72)", marginTop: 18 }}>

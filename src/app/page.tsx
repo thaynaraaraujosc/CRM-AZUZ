@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -178,13 +179,12 @@ export default function LandingPage() {
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 34px -12px rgba(0, 0, 0, 0.6);
         }
         .lp-logo { display: flex; align-items: center; gap: 9px; }
+        /* O arquivo da marca está em retrato, com sobra de azul em cima e embaixo. O object-fit
+           cover mostra o miolo, que é onde o desenho está, em vez de encolher a folha inteira e
+           deixar o "a" minúsculo dentro de um retângulo azul. */
         .lp-mark {
           width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
-          /* Volta a ser o azul da marca. Num fundo marinho o preto sumiria, e este é o único
-             lugar do header onde a cor tem função: é a identidade. */
-          background: var(--lp-oceano); color: #fff;
-          display: flex; align-items: center; justify-content: center;
-          font-family: var(--display); font-weight: 700; font-size: 13px;
+          object-fit: cover;
         }
         .lp-brand { font-family: var(--display); font-weight: 700; font-size: 15.5px; letter-spacing: -0.01em; white-space: nowrap; }
         .lp-nav-actions { display: flex; gap: 6px; align-items: center; }
@@ -274,7 +274,7 @@ export default function LandingPage() {
           font-size: 12px; color: var(--lp-faint); padding: 8px 11px; border-radius: 8px;
           display: flex; align-items: center; gap: 9px;
         }
-        .lp-crm-side-item.active { color: var(--lp-ink); background: var(--lp-superficie); font-weight: 600; }
+        .lp-crm-side-item.active { color: var(--lp-ink); background: var(--lp-superficie-2); font-weight: 600; }
         .lp-crm-side-item svg { width: 14px; height: 14px; opacity: 0.75; }
         .lp-crm-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
         .lp-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
@@ -325,14 +325,22 @@ export default function LandingPage() {
         .lp-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(266px, 1fr)); gap: 14px; }
         .lp-feature {
           border: 1px solid var(--lp-line); border-radius: 16px; padding: 26px 24px 28px;
-          background: #fff;
-          transition: border-color 0.18s ease, box-shadow 0.18s ease;
+          background: var(--lp-superficie);
+          transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease,
+            background 0.18s ease;
         }
-        .lp-feature:hover { border-color: var(--lp-line-forte); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 28px -16px rgba(0, 0, 0, 0.18); }
+        /* No hover o cartão sobe 2px e a borda pega o azul. Deslocamento pequeno e uma cor só: é o
+           bastante pra dizer "isto responde", que é a leitura que se quer num produto de software. */
+        .lp-feature:hover {
+          border-color: rgba(46, 107, 255, 0.55);
+          background: var(--lp-superficie-2);
+          transform: translateY(-2px);
+          box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.9);
+        }
         .lp-feature-icon {
           width: 38px; height: 38px; border-radius: 11px; margin-bottom: 18px;
-          background: var(--lp-superficie); border: 1px solid var(--lp-line);
-          color: var(--lp-ink); display: flex; align-items: center; justify-content: center;
+          background: rgba(46, 107, 255, 0.16); border: 1px solid rgba(46, 107, 255, 0.34);
+          color: var(--lp-oceano-claro); display: flex; align-items: center; justify-content: center;
         }
         .lp-feature-icon svg { width: 17px; height: 17px; }
         .lp-feature h3 { font-family: var(--display); font-size: 15.5px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.015em; }
@@ -341,9 +349,12 @@ export default function LandingPage() {
         .lp-pricing {
           max-width: 460px; margin: 132px auto 0; text-align: center; padding: 44px 36px 38px;
           border-radius: 20px; position: relative;
-          border: 1px solid var(--lp-line-forte);
-          background: #fff;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 22px 50px -22px rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(46, 107, 255, 0.34);
+          background: var(--lp-bg-2);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            0 30px 70px -30px rgba(0, 0, 0, 0.9),
+            0 0 60px -20px rgba(46, 107, 255, 0.4);
         }
         .lp-pricing-tag {
           font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;
@@ -354,7 +365,7 @@ export default function LandingPage() {
         .lp-pricing-sub { font-size: 14px; color: var(--lp-muted); margin-bottom: 28px; line-height: 1.55; }
         .lp-checklist { display: flex; flex-direction: column; gap: 12px; text-align: left; margin-bottom: 30px; }
         .lp-checklist div { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--lp-ink); }
-        .lp-checklist svg { width: 15px; height: 15px; color: var(--lp-ink); flex-shrink: 0; }
+        .lp-checklist svg { width: 15px; height: 15px; color: var(--lp-oceano-claro); flex-shrink: 0; }
 
         .lp-footer { text-align: center; margin-top: 132px; padding: 28px 0 44px; font-size: 12px; color: var(--lp-faint); border-top: 1px solid var(--lp-line); }
 
@@ -369,7 +380,7 @@ export default function LandingPage() {
           /* Sem isto a marca quebra em duas linhas e a faixa do header cresce: em 390px de largura
              o nome, "Entrar" e "Criar conta" não cabem com o respiro do desktop. */
           .lp-header-inner { padding: 8px 8px 8px 14px; }
-          .lp-mark { width: 22px; height: 22px; border-radius: 7px; font-size: 11.5px; }
+          .lp-mark { width: 22px; height: 22px; border-radius: 7px; }
           .lp-brand { font-size: 14px; }
           .lp-nav-actions .lp-btn { padding: 9px 13px; font-size: 12.5px; }
         }
@@ -385,7 +396,16 @@ export default function LandingPage() {
         }
         /* Quem pediu menos movimento no sistema não vê o pulso do ponto. */
         @media (prefers-reduced-motion: reduce) {
-          .lp-dot { animation: none; }
+          .lp-dot,
+          .lp-aurora,
+          .lp-badge, .lp-h1, .lp-sub, .lp-cta-row, .lp-microcopy, .lp-frame-wrap {
+            animation: none;
+          }
+          .lp-badge, .lp-h1, .lp-sub, .lp-cta-row, .lp-microcopy, .lp-frame-wrap {
+            opacity: 1;
+            transform: none;
+          }
+          .lp-feature:hover { transform: none; }
         }
       `}</style>
 
@@ -396,7 +416,15 @@ export default function LandingPage() {
         <header className="lp-header">
           <div className="lp-header-inner">
             <div className="lp-logo">
-              <div className="lp-mark">a</div>
+              {/* A marca de verdade, no lugar da letra desenhada por CSS. */}
+              <Image
+                src="/marca/logo-azuz.jpg"
+                alt="AZUZ"
+                width={26}
+                height={26}
+                className="lp-mark"
+                priority
+              />
               <span className="lp-brand">azuz crm</span>
             </div>
             <div className="lp-nav-actions">

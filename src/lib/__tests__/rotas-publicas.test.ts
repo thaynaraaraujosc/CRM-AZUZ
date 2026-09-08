@@ -68,9 +68,26 @@ describe("rotas que dispensam sessão", () => {
   it("abre o ícone e a imagem de compartilhamento", () => {
     // Quem busca é o navegador montando a aba e o servidor do WhatsApp montando a prévia do link:
     // nenhum tem sessão, e um 307 pro /login dá no mesmo que não existir imagem.
-    for (const rota of ["/icon", "/apple-icon", "/opengraph-image", "/favicon.ico"]) {
+    // As DUAS formas: gerado por código responde em `/icon`, arquivo de imagem em `/icon.png`.
+    // Foi essa diferença que já derrubou a liberação duas vezes.
+    for (const rota of [
+      "/icon",
+      "/icon.png",
+      "/apple-icon",
+      "/apple-icon.png",
+      "/opengraph-image",
+      "/opengraph-image.png",
+      "/favicon.ico",
+    ]) {
       expect(ehRotaPublica(rota), `${rota} precisa abrir sem sessão`).toBe(true);
     }
+  });
+
+  it("a regra dos arquivos de marca não abre rota de verdade parecida", () => {
+    // `iconografia` ou `favicon-interno` não podem entrar de carona na regra.
+    expect(ehRotaPublica("/iconografia")).toBe(false);
+    expect(ehRotaPublica("/icon/secreto")).toBe(false);
+    expect(ehRotaPublica("/opengraph-image/lista")).toBe(false);
   });
 
   it("não deixa um nome parecido passar por outra rota", () => {

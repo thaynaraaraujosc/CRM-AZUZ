@@ -54,21 +54,26 @@ const EXATOS_PUBLICOS = [
   // Verificação diária das conexões oficiais, chamada pelo cron: mesma regra dos `/api/cron/`,
   // só que esta rota nasceu antes dessa pasta existir.
   "/api/integracoes/meta/whatsapp/saude",
-  // Ícone e imagem de compartilhamento, geradas pelo Next a partir de `icon.tsx`,
-  // `apple-icon.tsx` e `opengraph-image.tsx`.
-  //
-  // Quem busca estes endereços é o navegador montando a aba, o iPhone salvando o atalho e o
-  // servidor do WhatsApp montando a prévia do link: nenhum deles tem sessão. Sem a liberação o
-  // proxy respondia 307 pro /login, e imagem que responde redirecionamento é o mesmo que imagem
-  // nenhuma. Não vaza nada: são desenhos fixos com o nome do produto.
-  "/icon",
-  "/apple-icon",
-  "/opengraph-image",
-  "/twitter-image",
-  "/favicon.ico",
 ];
 
+/**
+ * Os arquivos de identidade que o Next serve na raiz: ícone da aba, ícone do iPhone e imagem de
+ * compartilhamento.
+ *
+ * Regra e não lista fixa porque o ENDEREÇO MUDA conforme a forma do arquivo: gerado por código
+ * (`icon.tsx`) ele responde em `/icon`; sendo uma imagem (`icon.png`) ele responde em `/icon.png`.
+ * Já aconteceu duas vezes de a liberação cobrir só uma das formas e o proxy devolver 307 pro
+ * /login: imagem que responde redirecionamento é o mesmo que imagem nenhuma, e o build não acusa,
+ * porque a rota compila certo dos dois jeitos.
+ *
+ * Quem busca estes endereços é o navegador montando a aba, o iPhone salvando o atalho e o servidor
+ * do WhatsApp montando a prévia do link. Nenhum deles tem sessão, e não há o que vazar: é a marca
+ * do produto, publicada de propósito.
+ */
+const ARQUIVOS_DE_MARCA = /^\/(icon|apple-icon|opengraph-image|twitter-image|favicon)(-\w+)?(\.\w+)?$/;
+
 export function ehRotaPublica(pathname: string): boolean {
+  if (ARQUIVOS_DE_MARCA.test(pathname)) return true;
   if (EXATOS_PUBLICOS.includes(pathname)) return true;
   return PREFIXOS_PUBLICOS.some(
     (rota) => pathname === rota || pathname.startsWith(rota.endsWith("/") ? rota : `${rota}/`),
