@@ -110,6 +110,33 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         nodeId: n.id,
       });
     }
+    // O que o canal ENTREGA de verdade, não o que o editor desenha. Aviso, não erro: o envio não
+    // falha — ele cai num formato menos bonito, e é isso que a pessoa precisa saber antes.
+    if (opcoes.length > 3 && opcoes.length <= 10) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "aviso",
+        mensagem: `Bloco "${n.titulo ?? n.type}" tem ${opcoes.length} opções — o WhatsApp oficial só entrega 3 como botões, então vai como lista.`,
+        nodeId: n.id,
+      });
+    } else if (opcoes.length > 10) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "aviso",
+        mensagem: `Bloco "${n.titulo ?? n.type}" tem ${opcoes.length} opções — acima de 10 nenhum canal tem formato interativo, e a pergunta sai como menu numerado.`,
+        nodeId: n.id,
+      });
+    }
+    const longas = opcoes.filter((o) => (o.rotulo ?? "").trim().length > 20);
+    if (longas.length) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "aviso",
+        mensagem: `Bloco "${n.titulo ?? n.type}": ${longas.length === 1 ? "uma opção passa" : `${longas.length} opções passam`} de 20 caracteres e ${longas.length === 1 ? "vai" : "vão"} aparecer cortada${longas.length === 1 ? "" : "s"} no botão.`,
+        nodeId: n.id,
+      });
+    }
+
     opcoes.forEach((opcao) => {
       if (ehTextoVazio(opcao.rotulo)) {
         problemas.push({

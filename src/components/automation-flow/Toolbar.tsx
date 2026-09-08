@@ -17,6 +17,7 @@ export function Toolbar({
   onUndo,
   onRedo,
   onTestar,
+  onAbrirExecucoes,
   onSalvarRascunho,
   onPublicar,
   onAbrirHistorico,
@@ -38,6 +39,8 @@ export function Toolbar({
   onUndo: () => void;
   onRedo: () => void;
   onTestar: () => void;
+  /** Abre o histórico do que a automação já fez, por contato. */
+  onAbrirExecucoes: () => void;
   onSalvarRascunho: () => void;
   onPublicar: () => void;
   onAbrirHistorico: () => void;
@@ -123,6 +126,9 @@ export function Toolbar({
         </button>
         <button type="button" className="btn ghost" onClick={onAbrirHistorico}>
           Histórico de versões
+        </button>
+        <button type="button" className="btn ghost" onClick={onAbrirExecucoes}>
+          Execuções
         </button>
         <button type="button" className="btn ghost" onClick={onTestar}>
           Testar
