@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /** GET devolve o status da integração de WhatsApp não oficial (Baileys) do workspace de quem está
- * logado — inclui o QR code (`metadados.qrDataUrl`) enquanto aguarda leitura. */
+ * logado: inclui o QR code (`metadados.qrDataUrl`) enquanto aguarda leitura. */
 export async function GET() {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

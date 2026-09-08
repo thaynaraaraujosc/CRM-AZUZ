@@ -9,12 +9,12 @@ type Diagnostico = {
 /**
  * Recupera mensagens que estão gravadas mas não aparecem na tela.
  *
- * Toda mensagem carrega de qual conexão ela é — é isso que faz a caixa de entrada esvaziar ao
+ * Toda mensagem carrega de qual conexão ela é. É isso que faz a caixa de entrada esvaziar ao
  * desconectar um número e voltar inteira ao reconectar. As mensagens que o CRM enviava nasciam sem
  * essa marca (o navegador não sabe por qual número a conversa fala), então ficavam invisíveis. O
  * defeito já está corrigido para as novas; este botão conserta as que ficaram para trás.
  *
- * Só aparece quando há algo a recuperar — some sozinho depois, pra ninguém encontrar um botão de
+ * Só aparece quando há algo a recuperar. Some sozinho depois, pra ninguém encontrar um botão de
  * manutenção sem função.
  */
 export function MensagensOcultas() {
@@ -65,7 +65,7 @@ export function MensagensOcultas() {
       <p className="int-group-h">Mensagens ocultas</p>
       <p className="hint" style={{ padding: "0 4px 8px" }}>
         {ocultas} mensagens estão guardadas mas não aparecem nas conversas. Isso acontecia com as
-        mensagens enviadas pelo CRM antes de uma correção recente — elas não foram perdidas.
+        mensagens enviadas pelo CRM antes de uma correção recente. Elas não foram perdidas.
       </p>
       <button type="button" className="btn ghost" disabled={rodando} onClick={() => void recuperar()}>
         {rodando ? "Recuperando…" : "Recuperar mensagens"}

@@ -1,4 +1,4 @@
-/** Dados mockados usados pelas telas de Configurações — nada aqui liga em API real (item 20, 27 etc). */
+/** Dados mockados usados pelas telas de Configurações. Nada aqui liga em API real (item 20, 27 etc). */
 
 export type ModeloSegmento = {
   id: string;
@@ -115,7 +115,7 @@ export const MODELOS_SEGMENTO: ModeloSegmento[] = [
   {
     id: "personalizado",
     nome: "Configuração personalizada",
-    descricao: "Começa do zero — sem funis, automações ou campos pré-configurados.",
+    descricao: "Começa do zero: sem funis, automações ou campos pré-configurados.",
     funis: [],
     automacoes: 0,
     camposPersonalizados: 0,

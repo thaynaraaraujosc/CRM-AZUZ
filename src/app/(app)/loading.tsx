@@ -2,7 +2,7 @@
  * O que aparece ENTRE o clique e a tela nova.
  *
  * Sem este arquivo o Next segura a tela antiga inteira, congelada, até a próxima terminar de
- * carregar. Numa tela pesada como Conversas isso são segundos em que nada responde — e a leitura
+ * carregar. Numa tela pesada como Conversas isso são segundos em que nada responde. E a leitura
  * de quem está usando não é "está carregando", é "não funcionou, vou clicar de novo".
  *
  * Não é uma barra de progresso nem um spinner girando no meio do vazio: é o CONTORNO da tela que

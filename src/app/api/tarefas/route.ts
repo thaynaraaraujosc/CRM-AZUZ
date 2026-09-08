@@ -22,7 +22,7 @@ type LinhaCard = {
   modelo: string | null;
 };
 
-/** Linha do banco -> `TaskCard` do front — reconstrói os dois objetos aninhados
+/** Linha do banco -> `TaskCard` do front. Reconstrói os dois objetos aninhados
  * (`responsavel`, `anexo`) que a tabela guarda em colunas separadas. */
 function paraCard(linha: LinhaCard): TaskCard {
   return {
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
       etapaId: etapa.id,
       ordem: (ultimoCard?.ordem ?? -1) + 1,
       titulo: body.titulo,
-      contato: body.contato ?? "—",
+      contato: body.contato ?? "-",
       contatoId: body.contatoId,
       data: body.data || "Sem data",
       responsavelNome: body.responsavel.nome,

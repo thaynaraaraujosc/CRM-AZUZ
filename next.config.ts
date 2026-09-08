@@ -3,14 +3,14 @@ import type { NextConfig } from "next";
 /**
  * Cabeçalhos de segurança.
  *
- * Não havia nenhum. São defesas que o navegador aplica sozinho — custo zero em runtime e cobrem
+ * Não havia nenhum. São defesas que o navegador aplica sozinho. Custo zero em runtime e cobrem
  * classes inteiras de ataque que nenhuma validação de servidor alcança (clickjacking, sniffing de
  * tipo, vazamento de endereço interno pelo `Referer`).
  *
  * A Content-Security-Policy foi montada a partir do que o CRM REALMENTE usa hoje, não de um modelo
  * pronto: imagem e mídia vêm do CDN da Meta e do R2; a Meta injeta script no fluxo do Embedded
  * Signup; o mapa da localização vem do OpenStreetMap. Uma CSP copiada de outro projeto quebraria
- * essas integrações em silêncio — e um recurso bloqueado por CSP não gera erro visível, só some.
+ * essas integrações em silêncio: e um recurso bloqueado por CSP não gera erro visível, só some.
  *
  * Por isso ela vai em modo RELATO primeiro (`Report-Only`): o navegador registra o que teria sido
  * bloqueado sem bloquear nada. Depois de conferir que nenhuma integração aparece nos relatos, é
@@ -28,7 +28,7 @@ const CSP = [
   "font-src 'self' data:",
   "connect-src 'self' https://graph.facebook.com https://graph.instagram.com",
   "frame-src 'self' https://www.facebook.com https://web.facebook.com",
-  // Ninguém pode embutir o CRM num iframe — é o que impede clickjacking (uma página falsa por cima
+  // Ninguém pode embutir o CRM num iframe. É o que impede clickjacking (uma página falsa por cima
   // capturando cliques reais).
   "frame-ancestors 'none'",
   "base-uri 'self'",

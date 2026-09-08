@@ -23,7 +23,7 @@ type LinhaMensagem = {
 };
 
 /**
- * Teto de linhas trazidas por `GET` — sem isso, um workspace com uso contínuo (não precisa nem
+ * Teto de linhas trazidas por `GET`. Sem isso, um workspace com uso contínuo (não precisa nem
  * ser flood) acumula histórico o suficiente pra transformar essa busca num table scan gigante a
  * cada abertura de tela e a cada poll de 5s, travando `/conversas` (bug real já visto em produção).
  * Pega as mais recentes primeiro e devolve em ordem cronológica.
@@ -33,7 +33,7 @@ const LIMITE_MENSAGENS = 3000;
 function paraMensagem(linha: LinhaMensagem): ConvMensagem {
   // O anexo sai daqui como LINK, não embutido: este GET traz o histórico inteiro do workspace de
   // uma vez (e repete a cada 5s no polling), então mandar foto/áudio/vídeo dentro do JSON obrigava
-  // o navegador a baixar tudo antes de desenhar a primeira bolha — a demora que aparecia ao
+  // o navegador a baixar tudo antes de desenhar a primeira bolha. A demora que aparecia ao
   // atualizar a página. Ver `midia-mensagem.ts`.
   const extras = (linha.extras ? trocarMidiaPorLink(linha.extras, linha.id) : {}) as Partial<ConvMensagem>;
   return {
@@ -52,7 +52,7 @@ function paraMensagem(linha: LinhaMensagem): ConvMensagem {
 /** GET devolve `Record<contato, ConvMensagem[]>` do workspace de quem está logado, limitado às
  * `LIMITE_MENSAGENS` mais recentes.
  *
- * Responde `304 Not Modified` quando nada mudou desde a última vez que ESTA tela perguntou — e aí
+ * Responde `304 Not Modified` quando nada mudou desde a última vez que ESTA tela perguntou. E aí
  * a consulta pesada abaixo nem chega a rodar. Ver `src/lib/conversas/assinatura.ts` pro porquê:
  * esta rota, batida a cada 5s por aba aberta, era sozinha responsável por ~1,9 TB saindo do banco
  * num mês. */
@@ -60,7 +60,7 @@ export async function GET(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
-  // Mesmo filtro por conexão das conversas — mensagem de um número desconectado some da tela sem
+  // Mesmo filtro por conexão das conversas. Mensagem de um número desconectado some da tela sem
   // sair do banco (ver `conta-canal.ts`).
   const contas = await contasCanalVisiveis(sessao.user.workspaceId);
   const where = { workspaceId: sessao.user.workspaceId, ...filtroContaCanal(contas) };
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
   if (clienteJaTem(request, etag)) return naoModificado(etag);
 
   // Sincronização INCREMENTAL. Sem isto, toda vez que UMA mensagem chegava (ou mudava de status),
-  // a tela baixava as 3.000 mais recentes de novo — o custo de cada mensagem nova era proporcional
+  // a tela baixava as 3.000 mais recentes de novo. O custo de cada mensagem nova era proporcional
   // ao tamanho do histórico, e com muitos clientes cada um com milhares de mensagens isso não
   // escala. Com `desde`, a tela diz até que instante ela já está em dia e recebe só o que foi
   // criado ou alterado depois disso: o custo de uma mensagem nova passa a ser o dela.
@@ -123,7 +123,7 @@ type ItemUpsert = { contato: string; idFinal: string; mensagem: ConvMensagem };
 
 /**
  * PUT recebe só a DIFERENÇA (mensagens novas/alteradas + ids apagados) calculada no cliente
- * (`mensagens-extra-context.tsx`) — nunca mais o `Record` inteiro. A versão antiga reconciliava a
+ * (`mensagens-extra-context.tsx`): nunca mais o `Record` inteiro. A versão antiga reconciliava a
  * tabela inteira do workspace a cada mudança (um upsert por mensagem existente + delete em massa),
  * o que virava uma transação gigante disparada a cada 5s pelo polling; era a mesma causa raiz do
  * flood de WhatsApp que já tinha derrubado essa tela antes, só que estrutural em vez de pontual.
@@ -149,10 +149,10 @@ export async function PUT(request: Request) {
   const extrasGuardados = new Map(guardadas.map((m) => [m.id, m.extras]));
 
   // Os anexos sobem pro R2 ANTES da transação: subir arquivo é uma chamada de rede que pode levar
-  // segundos, e uma transação aberta esse tempo todo segura conexão do banco à toa — foi assim que
+  // segundos, e uma transação aberta esse tempo todo segura conexão do banco à toa. Foi assim que
   // essa mesma rota já travou `/conversas` antes. Aqui a transação só grava texto e referência.
-  // De qual conexão é cada conversa. As mensagens que a tela envia chegam aqui SEM `contaCanal` —
-  // o navegador não sabe (nem deve saber) por qual número a conversa fala. Sem preencher isso, a
+  // De qual conexão é cada conversa. As mensagens que a tela envia chegam aqui SEM `contaCanal`.
+  // O navegador não sabe (nem deve saber) por qual número a conversa fala. Sem preencher isso, a
   // mensagem enviada nascia com a marca vazia e sumia da tela na primeira recarga em que o QR Code
   // não estivesse conectado: o filtro por conexão não a reivindicava, e ela ficava gravada e
   // invisível, do mesmo jeito que já aconteceu antes com o Instagram.

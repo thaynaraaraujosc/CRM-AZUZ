@@ -1,6 +1,6 @@
 /**
- * Registro de todos os blocos disponíveis pra paleta do construtor visual —
- * um item por `FlowNodeType`. `dataPadrao()` é o `data` inicial de um nó recém
+ * Registro de todos os blocos disponíveis pra paleta do construtor visual.
+ * Um item por `FlowNodeType`. `dataPadrao()` é o `data` inicial de um nó recém
  * arrastado pro canvas (sempre chamada de novo, nunca compartilha objeto entre
  * dois nós soltos na mesma sessão).
  */
@@ -8,12 +8,12 @@
 import type { FlowNodeCategory, FlowNodeType } from "./types";
 
 /**
- * Onde o bloco aparece NA BIBLIOTECA — separado de `categoria`, que é a natureza do bloco pro
+ * Onde o bloco aparece NA BIBLIOTECA. Separado de `categoria`, que é a natureza do bloco pro
  * motor e pra cor do nó no canvas.
  *
  * São duas perguntas diferentes e por isso dois campos. `categoria` responde "que tipo de coisa é
  * isto?" (mensagem, ação, espera) e governa cor e comportamento. `grupo` responde "onde a pessoa
- * vai procurar isto?" — e a resposta muda: quem quer responder um comentário do Instagram procura
+ * vai procurar isto?": e a resposta muda: quem quer responder um comentário do Instagram procura
  * em INSTAGRAM, não em "Ações"; quem quer um lembrete de consulta procura em AGENDA, não em
  * "Gatilhos" e "Ações" separados. Com um campo só, a biblioteca ficava organizada pela lógica do
  * programa em vez da lógica de quem usa.
@@ -48,7 +48,7 @@ export type BlocoDefinicao = {
 /**
  * Os grupos da biblioteca, na ordem em que aparecem.
  *
- * A ordem não é alfabética nem por quantidade: segue a frase que a pessoa está montando —
+ * A ordem não é alfabética nem por quantidade: segue a frase que a pessoa está montando.
  * QUANDO (gatilhos) → FAÇA (mensagens) → AGUARDE → SE (decisões) → e daí os canais e o resto.
  * Quem está construindo lê de cima pra baixo e encontra o próximo passo onde espera encontrar.
  */
@@ -56,7 +56,7 @@ export const GRUPOS_BIBLIOTECA: {
   id: GrupoBiblioteca;
   label: string;
   ajuda: string;
-  /** Qual cor de categoria representa o grupo — a bolinha do cabeçalho e da barra recolhida. */
+  /** Qual cor de categoria representa o grupo. A bolinha do cabeçalho e da barra recolhida. */
   cor: FlowNodeCategory;
 }[] = [
   { id: "gatilhos", label: "Gatilhos", ajuda: "Quando a automação começa", cor: "gatilho" },
@@ -75,7 +75,7 @@ export const GRUPOS_BIBLIOTECA: {
   { id: "encerramento", label: "Encerramento", ajuda: "Terminar o fluxo", cor: "fim" },
 ];
 
-/** Cor por categoria — usada tanto na paleta quanto no nó desenhado no canvas. */
+/** Cor por categoria: usada tanto na paleta quanto no nó desenhado no canvas. */
 export const CATEGORIAS_BLOCOS: {
   id: FlowNodeCategory;
   label: string;
@@ -97,7 +97,7 @@ function corDaCategoria(categoria: FlowNodeCategory): string {
 }
 
 /**
- * FORA DA BIBLIOTECA, de propósito — gatilhos sem nenhuma fonte que os acione hoje:
+ * FORA DA BIBLIOTECA, de propósito: gatilhos sem nenhuma fonte que os acione hoje:
  *
  * - `pagamento_aprovado`, `pagamento_pendente`, `pagamento_vencido`: a integração com a Asaas que
  *   existe é da MENSALIDADE DO CRM (o cliente pagando pelo sistema), não dos pagamentos que ele
@@ -109,7 +109,7 @@ function corDaCategoria(categoria: FlowNodeCategory): string {
  * - `executar_integracao`: não existe um catálogo de integrações com ações executáveis. "Chamar
  *   webhook" cobre o caso real de falar com um sistema de fora, e esse funciona.
  *
- * O `FlowNodeType` de cada um continua existindo, então fluxo já salvo com eles não quebra — eles
+ * O `FlowNodeType` de cada um continua existindo, então fluxo já salvo com eles não quebra. Eles
  * só deixam de ser oferecíveis. Um bloco que nunca dispara é pior que bloco nenhum: a pessoa monta
  * a automação inteira em volta dele e fica esperando, sem nenhum erro na tela.
  */
@@ -442,7 +442,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     grupo: "decisoes",
     // "Condição atendida / não atendida" é linguagem de programa. Quem monta a automação está
     // decidindo um caminho, e o nome do bloco passa a dizer isso.
-    label: "Decisão — sim ou não",
+    label: "Decisão: sim ou não",
     descricao: "Verifica uma informação do lead e separa em dois caminhos: sim e não.",
     icone: "GitBranch",
     corClasse: corDaCategoria("condicao"),
@@ -452,12 +452,12 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     tipo: "decisao_multipla",
     categoria: "condicao",
     grupo: "decisoes",
-    label: "Decisão — vários caminhos",
+    label: "Decisão: vários caminhos",
     descricao: "Uma pergunta, quantas respostas você precisar. Cada resposta vira uma saída do bloco.",
     icone: "GitBranch",
     corClasse: corDaCategoria("condicao"),
     dataPadrao: () => ({
-      // Nasce com a decisão mais comum já montada — responder um menu numerado. Bloco novo em
+      // Nasce com a decisão mais comum já montada. Responder um menu numerado. Bloco novo em
       // branco obriga a pessoa a adivinhar o formato antes de conseguir experimentar.
       campo: "mensagem",
       operador: "igual",
@@ -548,7 +548,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     categoria: "mensagem",
     grupo: "whatsapp",
     label: "Mensagem com botões",
-    descricao: "Envia texto com opções de resposta em botões — ramifica o fluxo.",
+    descricao: "Envia texto com opções de resposta em botões. Ramifica o fluxo.",
     icone: "ListTodo",
     corClasse: corDaCategoria("mensagem"),
     dataPadrao: () => ({ canal: "whatsapp", texto: "", opcoes: [] }),
@@ -558,7 +558,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     categoria: "mensagem",
     grupo: "whatsapp",
     label: "Mensagem com lista",
-    descricao: "Envia texto com opções de resposta em lista — ramifica o fluxo.",
+    descricao: "Envia texto com opções de resposta em lista. Ramifica o fluxo.",
     icone: "List",
     corClasse: corDaCategoria("mensagem"),
     dataPadrao: () => ({ canal: "whatsapp", texto: "", opcoes: [] }),
@@ -872,7 +872,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     categoria: "acao",
     grupo: "instagram",
     label: "Ocultar comentário (Instagram)",
-    descricao: "Esconde o comentário da publicação — útil pra spam.",
+    descricao: "Esconde o comentário da publicação. Útil pra spam.",
     icone: "EyeOff",
     corClasse: corDaCategoria("acao"),
     dataPadrao: () => ({}),

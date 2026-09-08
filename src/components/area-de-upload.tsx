@@ -5,14 +5,14 @@ import { useRef, useState } from "react";
 import { IconAnexo, IconClose, IconUpload } from "@/components/icons";
 
 /**
- * Área de envio de arquivo — a caixa tracejada com o ícone no círculo.
+ * Área de envio de arquivo. A caixa tracejada com o ícone no círculo.
  *
  * Substitui o `<input type="file">` cru e o rótulo miudinho "Anexar arquivo", que não deixavam
  * claro onde clicar nem que dá pra arrastar o arquivo pra dentro. Aqui a área inteira é o alvo:
  * clicar abre o seletor, arrastar por cima destaca a borda, soltar envia.
  *
  * O limite de tamanho é conferido ANTES de ler o arquivo. Sem isso, um arquivo grande demais só
- * falharia lá no fim do envio, depois de o usuário esperar — e a mensagem de erro chegaria sem
+ * falharia lá no fim do envio, depois de o usuário esperar. E a mensagem de erro chegaria sem
  * relação visível com o que ele fez.
  */
 export function AreaDeUpload({
@@ -43,7 +43,7 @@ export function AreaDeUpload({
   function receber(arquivo: File | undefined) {
     if (!arquivo) return;
     if (arquivo.size > limiteMb * 1024 * 1024) {
-      setErro(`O arquivo tem ${(arquivo.size / 1024 / 1024).toFixed(1)} MB — o limite é ${limiteMb} MB.`);
+      setErro(`O arquivo tem ${(arquivo.size / 1024 / 1024).toFixed(1)} MB. O limite é ${limiteMb} MB.`);
       return;
     }
     setErro("");

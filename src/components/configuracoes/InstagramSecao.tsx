@@ -6,14 +6,14 @@ import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { IconAlerta } from "@/components/icons";
 
 /**
- * Instagram e Facebook (Configurações > Integrações) — só conecta o Instagram e controla o que
+ * Instagram e Facebook (Configurações > Integrações). Só conecta o Instagram e controla o que
  * entra no CRM a partir dessa conexão. Regras de automação (criar contato ao comentar, responder
  * story etc.) saíram daqui de propósito: pertencem ao módulo Automação, que ainda vai consumir os
- * eventos dessa integração — aqui é só "conectar e disponibilizar o canal", não "o que fazer quando
+ * eventos dessa integração: aqui é só "conectar e disponibilizar o canal", não "o que fazer quando
  * algo acontecer".
  *
  * O Instagram conecta pelo produto "Login do Instagram" (`/api/integracoes/instagram/conectar`,
- * ver src/lib/integracoes/instagram-login.ts) — separado do Login do Facebook usado por Anúncios
+ * ver src/lib/integracoes/instagram-login.ts): separado do Login do Facebook usado por Anúncios
  * (mesmo `provedor: "meta_instagram"` de sempre em `Integracao`, só muda QUEM autentica). Por isso
  * não tem mais uma "Página do Facebook" junto: esse fluxo não passa por Página nenhuma.
  */
@@ -69,7 +69,7 @@ export function InstagramSecao() {
             <div>
               <p className="int-title" style={{ margin: 0 }}>Conectar Instagram</p>
               <p className="hint" style={{ margin: "4px 0 0" }}>
-                Autoriza o CRM a acessar sua conta profissional do Instagram — sem precisar copiar
+                Autoriza o CRM a acessar sua conta profissional do Instagram. Sem precisar copiar
                 token nenhum.
               </p>
             </div>
@@ -118,7 +118,7 @@ export function InstagramSecao() {
           <p className="hint">
             {receberMensagens
               ? "Mensagens recebidas pelo Instagram são encaminhadas para o módulo de Conversas, identificadas como Instagram, pra sua equipe acompanhar e responder por lá."
-              : "Mensagens do Instagram não são encaminhadas para o módulo de Conversas — a conta continua conectada, só o recebimento fica pausado."}
+              : "Mensagens do Instagram não são encaminhadas para o módulo de Conversas. A conta continua conectada, só o recebimento fica pausado."}
           </p>
 
           <div className="toggle-row" style={{ padding: "10px 0" }}>

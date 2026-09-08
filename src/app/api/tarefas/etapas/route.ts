@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-/** POST cria uma etapa nova, sempre no final — mesma semântica de `criarEtapa` no Context. */
+/** POST cria uma etapa nova, sempre no final: mesma semântica de `criarEtapa` no Context. */
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

@@ -12,18 +12,18 @@ import type {
   ProblemaValidacao,
 } from "@/lib/automation-flow/types";
 
-/** `data` do nó React Flow — embrulha o `FlowNode` de domínio + os problemas de validação vigentes desse nó (mesclados na hora de renderizar, nunca guardados em estado). */
+/** `data` do nó React Flow. Embrulha o `FlowNode` de domínio + os problemas de validação vigentes desse nó (mesclados na hora de renderizar, nunca guardados em estado). */
 export type FlowRFNodeData = {
   flowNode: FlowNode;
   problemas: ProblemaValidacao[];
-  /** Chaves (handleId, ou "__default__" pra saída única sem nome) que já têm uma aresta saindo — usado pra saber onde mostrar o botão "+" de adicionar o próximo passo. */
+  /** Chaves (handleId, ou "__default__" pra saída única sem nome) que já têm uma aresta saindo. Usado pra saber onde mostrar o botão "+" de adicionar o próximo passo. */
   saidasConectadas?: Set<string>;
-  /** Quantos caminhos diferentes chegam nesse node — >1 indica que branches diferentes se reencontram aqui (item 31). */
+  /** Quantos caminhos diferentes chegam nesse node. >1 indica que branches diferentes se reencontram aqui (item 31). */
   caminhosConvergindo?: number;
-  /** Número de sequência (1, 2, 3...) e frase narrativa do modo "Entender fluxo" (item 24) — os dois só vêm preenchidos quando o modo está ativo. */
+  /** Número de sequência (1, 2, 3...) e frase narrativa do modo "Entender fluxo" (item 24). Os dois só vêm preenchidos quando o modo está ativo. */
   ordemNarrativa?: number;
   explicacao?: string;
-  /** Fechado sobre o id do nó lá no FlowEditor — abre o seletor rápido "O que acontece agora?" pra essa saída específica. */
+  /** Fechado sobre o id do nó lá no FlowEditor. Abre o seletor rápido "O que acontece agora?" pra essa saída específica. */
   onAdicionarApos?: (handleId: string | undefined) => void;
 };
 
@@ -76,7 +76,7 @@ export function novoIdAresta(): string {
   return `aresta-${Date.now()}-${contadorId}`;
 }
 
-/** Cor de identificação por categoria — usada no minimapa (FlowEditor/VisualizarFluxo) e espelhada em
+/** Cor de identificação por categoria. Usada no minimapa (FlowEditor/VisualizarFluxo) e espelhada em
  * CSS (".flow-cat-*", globals.css) pra colorir a barra lateral de cada nó. Um lugar só, pra não
  * divergir entre os dois usos. */
 export const CORES_CATEGORIA: Record<string, string> = {
@@ -90,10 +90,10 @@ export const CORES_CATEGORIA: Record<string, string> = {
   fim: "#d64545",
 };
 
-// Precisa bater aproximadamente com o tamanho real do node em .flow-node (globals.css) — usado só
+// Precisa bater aproximadamente com o tamanho real do node em .flow-node (globals.css): usado só
 // pra estimar espaço no auto-layout (dagre), não define o tamanho de verdade renderizado.
 const LARGURA_NO = 280;
-/** Altura de um bloco sem ramificação — título, resumo e uma saída. */
+/** Altura de um bloco sem ramificação. Título, resumo e uma saída. */
 const ALTURA_NO = 120;
 /** Cada saída extra desenha uma linha dentro do bloco (ver `.flow-node-handle-row`). */
 const ALTURA_POR_SAIDA = 30;
@@ -102,7 +102,7 @@ const ALTURA_POR_SAIDA = 30;
  * Altura REAL do bloco, contando as saídas.
  *
  * O layout automático media todo bloco por uma altura fixa. Um bloco de decisão com cinco caminhos
- * ocupa mais que o dobro disso — então o algoritmo reservava espaço a menos e os blocos de baixo
+ * ocupa mais que o dobro disso. Então o algoritmo reservava espaço a menos e os blocos de baixo
  * subiam por cima dele. Quanto mais ramificada a automação, pior ficava: exatamente o caso em que
  * organizar automaticamente é mais necessário.
  */
@@ -111,7 +111,7 @@ function alturaDoNo(node: FlowRFNode): number {
   return saidas > 1 ? ALTURA_NO + saidas * ALTURA_POR_SAIDA : ALTURA_NO;
 }
 
-/** Recalcula a posição de todo mundo em camadas (dagre, topo→baixo) — usado pelo botão "organizar automaticamente". */
+/** Recalcula a posição de todo mundo em camadas (dagre, topo→baixo): usado pelo botão "organizar automaticamente". */
 export function autoLayout(nodes: FlowRFNode[], edges: FlowRFEdge[]): FlowRFNode[] {
   const g = new dagre.graphlib.Graph();
   // `nodesep` sobe junto: com blocos altos lado a lado, 70px de folga lateral fazia dois ramos

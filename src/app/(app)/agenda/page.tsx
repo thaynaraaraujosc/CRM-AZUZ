@@ -22,6 +22,7 @@ import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-positio
 import { Topbar, Drawer } from "@/components/ui";
 import { IconAlerta } from "@/components/icons";
 import { SeletorDeData } from "@/components/seletor-de-data";
+import { ehVazio } from "@/lib/vazio";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -48,7 +49,7 @@ function formatarDataCurta(dataIso: string) {
   return `${d} de ${MESES[m - 1]}`;
 }
 
-/** Formato "d mmm" (ex.: "28 jul") — mesma heurística de `TaskCard.data` usada por
+/** Formato "d mmm" (ex.: "28 jul"): mesma heurística de `TaskCard.data` usada por
  * `compromissosDeTarefas`, pra uma tarefa criada aqui continuar aparecendo na Agenda depois. */
 function formatarDataTarefa(dataIso: string) {
   const [, m, d] = dataIso.split("-").map(Number);
@@ -204,9 +205,9 @@ export default function AgendaPage() {
     setForm({
       categoria: c.categoria ?? "outro",
       titulo: c.tipo,
-      contatoBusca: c.contato && c.contato !== "—" ? c.contato : "",
+      contatoBusca: !ehVazio(c.contato) ? c.contato : "",
       contatoId: c.contatoId,
-      contatoNome: c.contato && c.contato !== "—" ? c.contato : "",
+      contatoNome: !ehVazio(c.contato) ? c.contato : "",
       responsavel: c.responsavel,
       dataIso: c.dataIso,
       hora: c.hora,
@@ -239,7 +240,7 @@ export default function AgendaPage() {
     }
 
     const dados = {
-      contato: form.contatoNome || "—",
+      contato: form.contatoNome || "-",
       contatoId: form.contatoId,
       responsavel: form.responsavel,
       dataIso: form.dataIso,
@@ -287,7 +288,7 @@ export default function AgendaPage() {
   }
 
   /** Conversa "pertence" ao canal WhatsApp via QR Code (Baileys) quando a última mensagem recebida
-   * chegou por ele — mesmo critério de `contatoUsaWhatsappBaileys()` em conversas/page.tsx, decide
+   * chegou por ele: mesmo critério de `contatoUsaWhatsappBaileys()` em conversas/page.tsx, decide
    * pra onde o aviso de cancelamento deve sair de verdade. */
   function contatoUsaWhatsappBaileys(nomeContato: string): boolean {
     const extras = mensagensExtraPorContato[nomeContato] ?? [];
@@ -310,7 +311,7 @@ export default function AgendaPage() {
     const contato = contatos.find((c) => c.id === compromissoDetalhe.contatoId);
     const numero = contato?.whatsapp;
     if (!numero) {
-      avisar("Compromisso cancelado — esse contato não tem WhatsApp cadastrado pra avisar.");
+      avisar("Compromisso cancelado: esse contato não tem WhatsApp cadastrado pra avisar.");
       setDetalheId(null);
       return;
     }
@@ -323,7 +324,7 @@ export default function AgendaPage() {
       ? "/api/integracoes/whatsapp-baileys/enviar"
       : "/api/integracoes/meta/whatsapp/enviar";
 
-    avisar("Compromisso cancelado — enviando aviso pelo WhatsApp…");
+    avisar("Compromisso cancelado: enviando aviso pelo WhatsApp…");
     fetch(rota, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -342,7 +343,7 @@ export default function AgendaPage() {
     if (!compromissoDetalhe) return;
     criarTarefa({
       titulo: compromissoDetalhe.tipo,
-      contato: compromissoDetalhe.contato !== "—" ? compromissoDetalhe.contato : undefined,
+      contato: !ehVazio(compromissoDetalhe.contato) ? compromissoDetalhe.contato : undefined,
       contatoId: compromissoDetalhe.contatoId,
       data: formatarDataTarefa(compromissoDetalhe.dataIso),
       responsavel: {
@@ -382,7 +383,7 @@ export default function AgendaPage() {
     <>
       <Topbar
         title="Agenda"
-        sub="Agenda operacional — compromissos manuais e tarefas com data em um só lugar"
+        sub="Agenda operacional: compromissos manuais e tarefas com data em um só lugar"
         actions={
           <>
             <button type="button" className="btn ghost" onClick={irParaHoje}>
@@ -526,11 +527,11 @@ export default function AgendaPage() {
                       style={{ cursor: e.origem === "tarefa" ? "default" : "pointer" }}
                       onClick={() => abrirDetalhe(e)}
                     >
-                      <div className="avatar">{e.hora || "—"}</div>
+                      <div className="avatar">{e.hora || "-"}</div>
                       <div className="body">
                         <p className="name">{e.origem === "tarefa" ? e.descricao ?? e.tipo : e.tipo}</p>
                         <p className="meta">
-                          {e.contato !== "—" ? `${e.contato} · ` : ""}
+                          {!ehVazio(e.contato) ? `${e.contato} · ` : ""}
                           {e.responsavel}
                           {e.local ? ` · ${e.local}` : ""}
                         </p>
@@ -567,11 +568,11 @@ export default function AgendaPage() {
                   style={{ cursor: e.origem === "tarefa" ? "default" : "pointer" }}
                   onClick={() => abrirDetalhe(e)}
                 >
-                  <div className="avatar">{e.hora || "—"}</div>
+                  <div className="avatar">{e.hora || "-"}</div>
                   <div className="body">
                     <p className="name">{e.origem === "tarefa" ? e.descricao ?? e.tipo : e.tipo}</p>
                     <p className="meta">
-                      {e.contato !== "—" ? `${e.contato} · ` : ""}
+                      {!ehVazio(e.contato) ? `${e.contato} · ` : ""}
                       {e.responsavel}
                       {e.local ? ` · ${e.local}` : ""}
                     </p>
@@ -610,7 +611,7 @@ export default function AgendaPage() {
                     }}
                   >
                     <span className="n">
-                      {e.hora ? `${e.hora} — ` : ""}
+                      {e.hora ? `${e.hora}: ` : ""}
                       {e.origem === "tarefa" ? e.descricao ?? e.tipo : e.tipo}
                     </span>
                     <span className="r">{e.responsavel}</span>
@@ -768,7 +769,7 @@ export default function AgendaPage() {
             {conflitos.map((c) => (
               <p key={c.id} className="hint" style={{ fontWeight: 600 }}>
                 {c.hora}
-                {c.horaFim ? `–${c.horaFim}` : ""} — {c.tipo}
+                {c.horaFim ? `-${c.horaFim}` : ""}: {c.tipo}
               </p>
             ))}
             <div className="section-foot" style={{ paddingLeft: 0, paddingRight: 0 }}>
@@ -805,13 +806,13 @@ export default function AgendaPage() {
             <div className="field">
               <label>Quando</label>
               <p className="hint">
-                {formatarDataCurta(compromissoDetalhe.dataIso)} às {compromissoDetalhe.hora || "—"}
+                {formatarDataCurta(compromissoDetalhe.dataIso)} às {compromissoDetalhe.hora || "-"}
                 {compromissoDetalhe.horaFim ? ` até ${compromissoDetalhe.horaFim}` : ""}
               </p>
             </div>
             <div className="field">
               <label>Contato</label>
-              <p className="hint">{compromissoDetalhe.contato !== "—" ? compromissoDetalhe.contato : "Nenhum vinculado"}</p>
+              <p className="hint">{!ehVazio(compromissoDetalhe.contato) ? compromissoDetalhe.contato : "Nenhum vinculado"}</p>
             </div>
             <div className="field">
               <label>Responsável</label>
@@ -835,7 +836,7 @@ export default function AgendaPage() {
                 {compromissoDetalhe.status === "concluido"
                   ? "Concluído"
                   : compromissoDetalhe.status === "cancelado"
-                  ? `Cancelado${compromissoDetalhe.motivoCancelamento ? ` — ${compromissoDetalhe.motivoCancelamento}` : ""}`
+                  ? `Cancelado${compromissoDetalhe.motivoCancelamento ? `: ${compromissoDetalhe.motivoCancelamento}` : ""}`
                   : "Agendado"}
               </p>
             </div>

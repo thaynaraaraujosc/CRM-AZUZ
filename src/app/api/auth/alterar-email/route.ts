@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { enviarEmail, templateEmailAlterado } from "@/lib/email";
 
 /**
- * POST — troca o e-mail de acesso (login) da própria conta. Exige a senha atual (não dá pra
+ * POST: troca o e-mail de acesso (login) da própria conta. Exige a senha atual (não dá pra
  * simplesmente digitar um e-mail novo e pronto: é a senha que prova que é o dono da conta pedindo)
  * e avisa o e-mail antigo depois da troca, pra quem realmente é dono perceber se não foi ele.
  * Sem isso, trocar o e-mail seria a porta mais fácil pra sequestrar uma conta (muda o e-mail, pede
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
   await enviarEmail({
     to: emailAntigo,
-    subject: "Seu e-mail de acesso foi alterado — CRM AZUZ",
+    subject: "Seu e-mail de acesso foi alterado - CRM AZUZ",
     html: templateEmailAlterado(membro.nome, novoEmail),
   });
 

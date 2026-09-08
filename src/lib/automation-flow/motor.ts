@@ -1,10 +1,10 @@
 /**
- * Motor de execução — o único lugar que de fato MUTA estado real do CRM
+ * Motor de execução: o único lugar que de fato MUTA estado real do CRM
  * (funis/contatos) a partir de um fluxo. Não existe backend/cron aqui: tudo
  * roda síncrono, na hora que `executarFluxo`/`dispararEvento` é chamado.
  *
  * Mensagens, webhooks e integrações NUNCA fazem uma chamada de rede de verdade
- * — são só registradas via `Ligacoes.registrarMensagemSimulada`/`registrarWebhookSimulado`,
+ *. São só registradas via `Ligacoes.registrarMensagemSimulada`/`registrarWebhookSimulado`,
  * se o chamador passar esses hooks (pra mostrar num toast/log de conversa, por exemplo).
  */
 
@@ -49,23 +49,23 @@ export type ContextoExecucao = {
     ultimaRespostaEm?: string;
     [k: string]: unknown;
   };
-  /** Timestamp ISO que substitui `new Date()` — usado pelo simulador ao "avançar o relógio". */
+  /** Timestamp ISO que substitui `new Date()`. Usado pelo simulador ao "avançar o relógio". */
   agora?: string;
 };
 
 export type Ligacoes = {
   /** Envolve `useFunis().atribuirContatoAoFunil`. */
   moverEtapa: (funilId: string, etapaTitulo: string, contato: { nome: string; [k: string]: unknown }) => void;
-  /** Envolve `useContatos().salvarDadosContato` — usado pra etiquetas/campos/responsável. */
+  /** Envolve `useContatos().salvarDadosContato`: usado pra etiquetas/campos/responsável. */
   salvarContato: (nome: string, dados: Record<string, unknown>) => void;
   /** Envolve `useContatos().atribuirAtendente`. */
   atribuirAtendente: (nome: string, atendente: string) => void;
-  /** Hook opcional pra empurrar um toast/log de conversa — nunca é um envio real. */
+  /** Hook opcional pra empurrar um toast/log de conversa. Nunca é um envio real. */
   registrarMensagemSimulada?: (info: { canal: string; conteudo: string }) => void;
   /** Hook opcional pra registrar uma chamada de webhook simulada. */
   registrarWebhookSimulado?: (info: { url: string; payload: unknown }) => void;
   /** Responde ao comentário do Instagram que disparou o fluxo. Só existe quando foi um comentário
-   * que disparou — nos demais gatilhos não há comentário a que responder. */
+   * que disparou: nos demais gatilhos não há comentário a que responder. */
   responderComentario?: (texto: string) => void;
 };
 
@@ -85,7 +85,7 @@ function saidasDoNo(edges: FlowEdge[], nodeId: string): FlowEdge[] {
   return edges.filter((e) => e.source === nodeId);
 }
 
-/** Lê um "campo" de condição a partir do contato do contexto — melhor esforço, nem todo campo tem um valor real disponível na simulação. */
+/** Lê um "campo" de condição a partir do contato do contexto. Melhor esforço, nem todo campo tem um valor real disponível na simulação. */
 function valorDoCampo(campo: string, contato: ContextoExecucao["contato"]): string | undefined {
   switch (campo) {
     case "origem":
@@ -191,7 +191,7 @@ export type ConfiguracaoDePalavras = {
   /** Lista configurada. `palavraChave` (campo antigo, uma só) continua valendo. */
   palavras?: string[];
   palavraChave?: string;
-  /** "contem" (padrão), "exata" ou "qualquer" — qualquer uma das palavras, como palavra inteira. */
+  /** "contem" (padrão), "exata" ou "qualquer": qualquer uma das palavras, como palavra inteira. */
   modoPalavra?: "contem" | "exata" | "qualquer";
   ignorarAcentos?: boolean;
 };
@@ -199,7 +199,7 @@ export type ConfiguracaoDePalavras = {
 /**
  * Se o texto recebido casa com as palavras configuradas no gatilho.
  *
- * Sem palavra configurada, casa com tudo — é o comportamento de "qualquer comentário dispara", que
+ * Sem palavra configurada, casa com tudo: é o comportamento de "qualquer comentário dispara", que
  * é o que a pessoa espera ao deixar o campo vazio.
  *
  * "qualquer" compara PALAVRA INTEIRA de propósito: com "contém", uma automação de "quero" também
@@ -222,7 +222,7 @@ export function textoCasaComPalavras(texto: string, config: ConfiguracaoDePalavr
     if (modo === "exata") return alvo === p;
     if (modo === "qualquer") {
       // `\b` não funciona com acentos em JS; a fronteira é conferida na mão pelo que cerca a
-      // ocorrência — só conta se não houver letra ou número colado dos dois lados.
+      // ocorrência: só conta se não houver letra ou número colado dos dois lados.
       const posicao = alvo.indexOf(p);
       if (posicao < 0) return false;
       const antes = alvo[posicao - 1];
@@ -258,7 +258,7 @@ export function avaliarGatilho(fluxo: FluxoAutomacao, evento: EventoAutomacao): 
   if (!dentroDaJanela(fluxo, agora)) return false;
 
   // Se o nó logo depois do gatilho for uma condição, ela também precisa bater
-  // — best-effort, porque aqui a gente ainda não tem o contato completo (só o evento).
+  //. Best-effort, porque aqui a gente ainda não tem o contato completo (só o evento).
   const primeiraAresta = saidasDoNo(fluxo.edges, noGatilho.id)[0];
   if (primeiraAresta) {
     const proximoNo = fluxo.nodes.find((n) => n.id === primeiraAresta.target);
@@ -315,7 +315,7 @@ export function executarFluxo(
     gatilho: fluxo.nodes.find((n) => n.category === "gatilho")?.type ?? "desconhecido",
   };
 
-  // Cópia mutável do contato — mutações de etiqueta/campo dentro do próprio fluxo
+  // Cópia mutável do contato: mutações de etiqueta/campo dentro do próprio fluxo
   // precisam refletir nos passos seguintes, mesmo antes do `ligacoes.salvarContato`
   // "de verdade" (que é assíncrono do ponto de vista do estado do React).
   const contato = { ...contexto.contato, etiquetas: [...contexto.contato.etiquetas] };
@@ -334,8 +334,8 @@ export function executarFluxo(
     }
 
     if (visitados.has(node.id)) {
-      // Já passamos por aqui nessa execução — evita loop infinito de verdade.
-      passos.push(novoPasso(node, "pulado", "Bloco já executado nessa mesma rodada — parado pra evitar loop.", agora));
+      // Já passamos por aqui nessa execução. Evita loop infinito de verdade.
+      passos.push(novoPasso(node, "pulado", "Bloco já executado nessa mesma rodada. Parado pra evitar loop.", agora));
       break;
     }
     visitados.add(node.id);
@@ -352,7 +352,7 @@ export function executarFluxo(
     const saidas = saidasDoNo(fluxo.edges, node.id);
     const proxima = escolherProximaAresta(node, saidas, contato);
     if (!proxima) {
-      // Sem saída: só é "normal" se o bloco for de fim — senão, encerra por segurança.
+      // Sem saída: só é "normal" se o bloco for de fim. Senão, encerra por segurança.
       if (node.category !== "fim") {
         registro.situacao = "erro";
         registro.erro = `Bloco "${labelDoNo(node)}" não tem caminho de saída definido.`;
@@ -383,7 +383,7 @@ function escolherProximaAresta(node: FlowNode, saidas: FlowEdge[], contato: Cont
 
   // Botões/lista/aguardar com múltiplas saídas: sem uma resposta real do lead
   // (não existe backend pra "esperar a resposta chegar"), a execução já parou
-  // antes de chegar aqui (ver `executarNo`) — isso é só um fallback defensivo.
+  // antes de chegar aqui (ver `executarNo`). Isso é só um fallback defensivo.
   return saidas[0];
 }
 
@@ -405,7 +405,7 @@ function executarNo(
 
     case "mensagem_botoes":
     case "mensagem_lista": {
-      // Não existe canal de resposta real aqui — registra a mensagem (se o
+      // Não existe canal de resposta real aqui. Registra a mensagem (se o
       // chamador quiser mostrar em algum log) e pausa a execução esperando
       // uma resposta que só chegaria via um evento futuro (integração/próxima fase).
       const data = node.data as MensagemBotoesData;
@@ -421,12 +421,12 @@ function executarNo(
       const data = node.data as AguardarData;
       const ehEsperaCurta = data.modo === "minutos" && (data.valor ?? 0) <= LIMITE_MINUTOS_ESPERA_SINCRONA;
       if (ehEsperaCurta) {
-        // Espera trivial — como não tem cron/backend, seguimos direto (é só uma
+        // Espera trivial: como não tem cron/backend, seguimos direto (é só uma
         // simplificação pragmática pra demo/simulador, documentada aqui mesmo).
-        return { passo: novoPasso(node, "ok", "Espera curta — seguiu direto (sem backend pra agendar retomada).", agora), parar: false };
+        return { passo: novoPasso(node, "ok", "Espera curta: seguiu direto (sem backend pra agendar retomada).", agora), parar: false };
       }
       return {
-        passo: novoPasso(node, "aguardando", "Fluxo pausado — sem cron/backend pra retomar automaticamente depois desse tempo.", agora),
+        passo: novoPasso(node, "aguardando", "Fluxo pausado: sem cron/backend pra retomar automaticamente depois desse tempo.", agora),
         parar: true,
         situacaoFinal: "aguardando",
       };
@@ -512,7 +512,7 @@ function executarNo(
       const data = node.data as { canal?: string; texto?: string; mensagem?: string; assunto?: string };
       const conteudo = data.texto ?? data.mensagem ?? data.assunto ?? "";
       ligacoes.registrarMensagemSimulada?.({ canal: data.canal ?? "whatsapp", conteudo });
-      return { passo: novoPasso(node, "ok", "Envio simulado — sem canal de mensagens real conectado.", agora), parar: false };
+      return { passo: novoPasso(node, "ok", "Envio simulado: sem canal de mensagens real conectado.", agora), parar: false };
     }
 
     case "responder_comentario_instagram": {
@@ -525,7 +525,7 @@ function executarNo(
         // Não é erro do fluxo: é o mesmo fluxo sendo disparado por outro gatilho, onde não existe
         // comentário a que responder. Segue adiante em vez de derrubar o resto das ações.
         return {
-          passo: novoPasso(node, "ok", "Ignorado — este disparo não veio de um comentário.", agora),
+          passo: novoPasso(node, "ok", "Ignorado: este disparo não veio de um comentário.", agora),
           parar: false,
         };
       }
@@ -535,7 +535,7 @@ function executarNo(
 
     case "ocultar_comentario_instagram": {
       return {
-        passo: novoPasso(node, "ok", "Ocultar comentário — aplicado no envio real.", agora),
+        passo: novoPasso(node, "ok", "Ocultar comentário: aplicado no envio real.", agora),
         parar: false,
       };
     }
@@ -543,16 +543,16 @@ function executarNo(
     case "chamar_webhook": {
       const data = node.data as ChamarWebhookData;
       ligacoes.registrarWebhookSimulado?.({ url: data.url, payload: data.payload });
-      return { passo: novoPasso(node, "ok", "Chamada de webhook simulada — nenhuma requisição real foi feita.", agora), parar: false };
+      return { passo: novoPasso(node, "ok", "Chamada de webhook simulada: nenhuma requisição real foi feita.", agora), parar: false };
     }
 
     case "executar_integracao": {
       ligacoes.registrarWebhookSimulado?.({ url: "integracao://simulada", payload: node.data });
-      return { passo: novoPasso(node, "ok", "Integração simulada — nenhuma chamada real foi feita.", agora), parar: false };
+      return { passo: novoPasso(node, "ok", "Integração simulada: nenhuma chamada real foi feita.", agora), parar: false };
     }
 
     case "encaminhar_humano": {
-      return { passo: novoPasso(node, "ok", "Encaminhado pra atendimento humano — fluxo automático encerra aqui.", agora), parar: true, situacaoFinal: "pausada" };
+      return { passo: novoPasso(node, "ok", "Encaminhado pra atendimento humano: fluxo automático encerra aqui.", agora), parar: true, situacaoFinal: "pausada" };
     }
 
     case "enviar_notificacao": {
@@ -563,7 +563,7 @@ function executarNo(
 
     case "pausar_automacoes":
     case "cancelar_automacoes": {
-      return { passo: novoPasso(node, "ok", "Sinalizado — cabe ao contexto de automações interpretar esse sinal.", agora), parar: false };
+      return { passo: novoPasso(node, "ok", "Sinalizado: cabe ao contexto de automações interpretar esse sinal.", agora), parar: false };
     }
 
     case "encerrar_fluxo": {
@@ -572,7 +572,7 @@ function executarNo(
 
     default: {
       // Gatilhos e demais tipos "de evento" não deveriam ser executados diretamente
-      // (a execução começa DEPOIS do gatilho) — se cair aqui, só registra e segue.
+      // (a execução começa DEPOIS do gatilho). Se cair aqui, só registra e segue.
       void fluxo;
       return { passo: novoPasso(node, "ok", "Bloco sem efeito colateral definido nessa versão do motor.", agora), parar: false };
     }

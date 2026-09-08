@@ -11,13 +11,13 @@ type Registro = { id: string; data: string; usuario: string; acao: string; modul
 const REGISTROS_MOCK: Registro[] = [
   { id: "a1", data: "30/07 14:12", usuario: "Ana Ferreira", acao: "Editou", modulo: "Automações", item: "Boas-vindas pro lead novo", dispositivo: "Chrome · Windows", detalhes: "Alterou o texto da mensagem de boas-vindas." },
   { id: "a2", data: "30/07 11:03", usuario: "Bruno Salles", acao: "Moveu negócio", modulo: "Funil", item: "Julia Prado", dispositivo: "App · iPhone", detalhes: 'Moveu de "Qualificado" pra "Proposta".' },
-  { id: "a3", data: "29/07 18:40", usuario: "Ana Ferreira", acao: "Criou", modulo: "Usuários", item: "Convite — Carla Mendes", dispositivo: "Chrome · Windows", detalhes: "Convite enviado com função Vendedor." },
+  { id: "a3", data: "29/07 18:40", usuario: "Ana Ferreira", acao: "Criou", modulo: "Usuários", item: "Convite: Carla Mendes", dispositivo: "Chrome · Windows", detalhes: "Convite enviado com função Vendedor." },
   { id: "a4", data: "29/07 09:22", usuario: "Dr. Hélio Marinho", acao: "Excluiu", modulo: "Tarefas", item: "Ligar pra confirmar retorno", dispositivo: "Chrome · Windows", detalhes: "Tarefa marcada como concluída e removida." },
 ];
 
 const MODULOS = ["Todos", "Automações", "Funil", "Usuários", "Tarefas"];
 
-/** Auditoria e atividades (item 38) — histórico mockado, com filtros e detalhe por linha. */
+/** Auditoria e atividades (item 38). Histórico mockado, com filtros e detalhe por linha. */
 export function AuditoriaSecao() {
   const { membros: equipe } = useEquipe();
   const [usuarioFiltro, setUsuarioFiltro] = useState("Todos");

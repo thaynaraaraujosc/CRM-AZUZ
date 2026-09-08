@@ -1,8 +1,8 @@
 /**
  * Deriva os "itens do dia" a partir de dados que já existem em outros módulos do CRM (conversas,
- * tarefas, funis, fluxos de automação) — a Central do Dia nunca guarda o próprio estado de negócio,
+ * tarefas, funis, fluxos de automação): a Central do Dia nunca guarda o próprio estado de negócio,
  * só agrega e prioriza. As únicas exceções são "Agenda de hoje" (o CRM ainda não tem um módulo de
- * compromissos com hora/local/modalidade — só derivava datas de tarefas) e "Recomendações", que são
+ * compromissos com hora/local/modalidade: só derivava datas de tarefas) e "Recomendações", que são
  * regras locais mockadas (não é IA de verdade), ambas comentadas como tal.
  */
 
@@ -14,7 +14,7 @@ import { validarFluxo } from "@/lib/automation-flow/validacao";
 import { formatarTempoRelativoReal } from "@/lib/datas";
 import type { AcaoItemDia, CompromissoDia, ItemDia, RecomendacaoDia, StatusCompromisso } from "./tipos";
 
-/** Converte "9 min" / "1h" / "4 dias" em minutos — só pra comparar/ordenar, nunca mostrado direto. */
+/** Converte "9 min" / "1h" / "4 dias" em minutos. Só pra comparar/ordenar, nunca mostrado direto. */
 export function tempoParaMinutos(tempo: string): number {
   const m = tempo.match(/(\d+)\s*min/);
   if (m) return Number(m[1]);
@@ -29,11 +29,11 @@ function acaoAbrirConversa(nome: string): AcaoItemDia {
   return { label: "Abrir conversa", href: `/conversas?contato=${encodeURIComponent(nome)}` };
 }
 
-/** Conversas em que a última mensagem foi do contato (tipo "in") — é a nossa vez de responder,
+/** Conversas em que a última mensagem foi do contato (tipo "in"). É a nossa vez de responder,
  * independente do rótulo de status (que descreve o estado geral do atendimento, não "de quem é a vez").
- * `mensagensPorContato` vem de `useMensagensExtra()` — mensagens de verdade, indexadas pelo `nome`
+ * `mensagensPorContato` vem de `useMensagensExtra()`: mensagens de verdade, indexadas pelo `nome`
  * da conversa (mesmo padrão usado em `conversas/page.tsx`). Conversa sem nenhuma mensagem extra
- * ainda (seed sem webhook processado) não entra — não tem "última mensagem" pra checar o tipo. */
+ * ainda (seed sem webhook processado) não entra. Não tem "última mensagem" pra checar o tipo. */
 export function itensDeConversas(
   conversas: ConversaReal[],
   mensagensPorContato: Record<string, ConvMensagem[]>,
@@ -71,7 +71,7 @@ export function itensDeConversas(
     });
 }
 
-/** Tarefas atrasadas (coluna "Atrasadas") e as de hoje/próximas — mesma fonte usada em Tarefas/Agenda. */
+/** Tarefas atrasadas (coluna "Atrasadas") e as de hoje/próximas. Mesma fonte usada em Tarefas/Agenda. */
 export function itensDeTarefas(colunas: ColunaTarefas[]): ItemDia[] {
   const itens: ItemDia[] = [];
   colunas.forEach((coluna) => {
@@ -102,7 +102,7 @@ export function itensDeTarefas(colunas: ColunaTarefas[]): ItemDia[] {
   return itens;
 }
 
-/** Negócios parados (dias ≥ 3) e sem etiqueta/etapa recente — reaproveita o mesmo regex de "dias" já
+/** Negócios parados (dias ≥ 3) e sem etiqueta/etapa recente. Reaproveita o mesmo regex de "dias" já
  * usado antes em Início pra achar negociações paradas. */
 export function itensDeLeads(funis: Funil[]): ItemDia[] {
   const itens: ItemDia[] = [];
@@ -140,8 +140,8 @@ export function itensDeLeads(funis: Funil[]): ItemDia[] {
   return itens;
 }
 
-/** Só fluxos com pendência de verdade (reaproveita o mesmo `validarFluxo` usado no construtor —
- * não inventa uma segunda lista de problemas em paralelo) ou pausados/rascunho há mais tempo. */
+/** Só fluxos com pendência de verdade (reaproveita o mesmo `validarFluxo` usado no construtor.
+ * Não inventa uma segunda lista de problemas em paralelo) ou pausados/rascunho há mais tempo. */
 export function itensDeAutomacoes(fluxos: FluxoAutomacao[]): ItemDia[] {
   const itens: ItemDia[] = [];
   fluxos
@@ -164,7 +164,7 @@ export function itensDeAutomacoes(fluxos: FluxoAutomacao[]): ItemDia[] {
         // Não usa `fluxo.atualizadoEm` como horário de exibição: fluxos migrados do sistema legado
         // guardam esse campo como `new Date().toISOString()` computado em tempo de migração, que
         // diverge entre a renderização no servidor e a hidratação no cliente (bug pré-existente,
-        // fora do escopo desta tela) — mostrar isso aqui causaria erro de hidratação toda vez.
+        // fora do escopo desta tela). Mostrar isso aqui causaria erro de hidratação toda vez.
         prioridade: erros.length > 0 ? "urgente" : "atencao",
         motivo: problema,
         acaoPrincipal: { label: "Corrigir agora", href: `/automacoes/editor/${fluxo.id}` },
@@ -186,7 +186,7 @@ const STATUS_POR_ORIGEM: Record<Compromisso["status"], StatusCompromisso> = {
 };
 
 /**
- * Compromissos de um dia específico, no formato que a seção "Agenda de hoje" espera — deriva do
+ * Compromissos de um dia específico, no formato que a seção "Agenda de hoje" espera. Deriva do
  * `AgendaContext` (agendamentos manuais + os que vêm de tarefas com data, via `compromissosDeTarefas`)
  * em vez do mock hardcoded que existia antes (`COMPROMISSOS_HOJE_MOCK`). Front-end apenas: os status
  * mapeados são só uma aproximação (o CRM ainda não tem confirmação de presença de verdade).
@@ -196,7 +196,7 @@ export function compromissosDoDia(compromissos: Compromisso[], dataIso: string):
     .filter((c) => c.dataIso === dataIso && c.status !== "cancelado")
     .map((c) => ({
       id: c.id,
-      horario: c.hora || "—",
+      horario: c.hora || "-",
       contato: c.contato,
       tipo: c.tipo,
       responsavel: c.responsavel,
@@ -205,7 +205,7 @@ export function compromissosDoDia(compromissos: Compromisso[], dataIso: string):
     }));
 }
 
-/** Recomendações — regras locais mockadas (nunca IA real), derivadas de contagens simples sobre os
+/** Recomendações: regras locais mockadas (nunca IA real), derivadas de contagens simples sobre os
  * mesmos itens já calculados acima. */
 export function gerarRecomendacoes(itens: ItemDia[], compromissosHoje: CompromissoDia[] = []): RecomendacaoDia[] {
   const leadsParados = itens.filter((i) => i.modulo === "lead" && i.prioridade !== "oportunidade").length;

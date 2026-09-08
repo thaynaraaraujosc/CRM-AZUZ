@@ -10,7 +10,7 @@ import { lerArquivo } from "@/lib/armazenamento/midia";
  *
  * O anexo continua guardado embutido na mensagem (data URL, ver `midia-mensagem.ts`); o que muda é
  * a entrega. Antes ele viajava dentro do JSON de `GET /api/mensagens-extra`, que traz o histórico
- * inteiro do workspace de uma vez — o navegador precisava baixar todos os anexos antes de desenhar
+ * inteiro do workspace de uma vez. O navegador precisava baixar todos os anexos antes de desenhar
  * a primeira bolha. Aqui cada `<img>`/`<audio>` busca o seu, sob demanda e em paralelo.
  */
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   if (!id || !campo) return NextResponse.json({ erro: "id e campo são obrigatórios" }, { status: 400 });
 
   const mensagem = await prisma.mensagemExtra.findUnique({ where: { id } });
-  // Mensagem de outro workspace responde igual a mensagem inexistente — um id adivinhado não pode
+  // Mensagem de outro workspace responde igual a mensagem inexistente. Um id adivinhado não pode
   // virar um jeito de ler anexo de outra empresa, nem de descobrir que ele existe.
   if (!mensagem || mensagem.workspaceId !== sessao.user.workspaceId) {
     return NextResponse.json({ erro: "Anexo não encontrado" }, { status: 404 });
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
   const guardado = lerMidiaNoCaminho(mensagem.extras, campo);
   if (!guardado) return NextResponse.json({ erro: "Anexo não encontrado" }, { status: 404 });
 
-  // O arquivo pode estar no R2 ou embutido na própria mensagem (formato antigo) — quem chama esta
+  // O arquivo pode estar no R2 ou embutido na própria mensagem (formato antigo). Quem chama esta
   // rota não precisa saber a diferença. Ver `armazenamento/midia.ts`.
   const arquivo = await lerArquivo(guardado);
   if (!arquivo) return NextResponse.json({ erro: "Anexo não encontrado" }, { status: 404 });
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
       "content-type": arquivo.mimeType,
       "content-length": String(bytes.length),
       // O conteúdo de uma mensagem já enviada nunca muda, então o navegador pode guardar pra
-      // sempre — é o que faz a segunda visita à conversa não baixar nada de novo. `private` porque
+      // sempre: é o que faz a segunda visita à conversa não baixar nada de novo. `private` porque
       // é conteúdo de um workspace só: nenhum cache compartilhado pode reter isso.
       "cache-control": "private, max-age=31536000, immutable",
     },

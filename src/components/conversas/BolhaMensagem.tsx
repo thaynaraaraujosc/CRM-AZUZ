@@ -8,12 +8,12 @@ import { IconDoc, IconImage, IconLocalizacao, IconVideoCam } from "@/components/
 import { StatusMensagemIcone } from "./StatusMensagem";
 
 /**
- * Desenha UMA mensagem — em qualquer tela do CRM.
+ * Desenha UMA mensagem: em qualquer tela do CRM.
  *
  * Este é o único lugar que decide como uma mensagem se parece. Antes existiam duas
  * implementações: a tela de Conversas desenhava as bolhas inline (mais de 300 linhas, com dez
  * variantes no meio de sete mil) e o painel do Funil usava este componente. A mesma mensagem
- * aparecia diferente conforme a tela, e toda correção precisava ser feita duas vezes — quando
+ * aparecia diferente conforme a tela, e toda correção precisava ser feita duas vezes. Quando
  * alguém lembrava da segunda.
  *
  * O que é DESENHO mora aqui. O que é INTERAÇÃO DAQUELA TELA entra por props opcionais, com padrões
@@ -37,13 +37,13 @@ export function BolhaMensagem({
 }: {
   msg: ConvMensagem;
   onTentarNovamente?: () => void;
-  /** Menu, estrela e reação da tela de Conversas — desenhados dentro da bolha, antes do conteúdo. */
+  /** Menu, estrela e reação da tela de Conversas. Desenhados dentro da bolha, antes do conteúdo. */
   chrome?: ReactNode;
   /** Valor de `data-msg-chave`, usado pela tela de Conversas pra localizar a bolha no DOM. */
   chaveDom?: string;
   velocidadeAudio?: 1 | 1.5 | 2;
   mostrarRemetenteGrupo?: boolean;
-  /** `false` esconde a mídia atrás de um botão — economia de banda em conversa pesada. Padrão: mostra. */
+  /** `false` esconde a mídia atrás de um botão. Economia de banda em conversa pesada. Padrão: mostra. */
   midiaLiberada?: (tipo: "imagem" | "video" | "documento", id?: string, url?: string) => boolean;
   aoLiberarMidia?: (id?: string) => void;
   /** Abre o visualizador de imagens. Sem isso, a imagem é só imagem. */
@@ -69,7 +69,7 @@ export function BolhaMensagem({
    * As opções que foram junto da mensagem, desenhadas como o contato as viu.
    *
    * Não são clicáveis de propósito: quem escolhe é o contato, no aparelho dele. Aqui é registro do
-   * que saiu — clicar não faria nada e só geraria a expectativa de que faria.
+   * que saiu: clicar não faria nada e só geraria a expectativa de que faria.
    */
   const opcoesEnviadas = msg.botoes?.length ? (
     <div className="wa-bolha-opcoes" aria-label="Opções enviadas com esta mensagem">
@@ -90,8 +90,8 @@ export function BolhaMensagem({
   );
 
   /**
-   * Trecho citado quando a mensagem responde outra. Quando o que foi respondido era mídia — foto,
-   * story, reel —, a miniatura entra ao lado do texto: sem ela a citação de uma foto aparecia
+   * Trecho citado quando a mensagem responde outra. Quando o que foi respondido era mídia. Foto,
+   * story, reel), a miniatura entra ao lado do texto: sem ela a citação de uma foto aparecia
    * praticamente vazia, porque aquela mensagem não tinha texto nenhum pra citar.
    */
   const citacao = msg.respondendoA ? (
@@ -190,7 +190,7 @@ export function BolhaMensagem({
             {ficha}
           </button>
         ) : (
-          // Sem o manipulador (Funil), o cartão é só leitura — não um botão que não faz nada.
+          // Sem o manipulador (Funil), o cartão é só leitura. Não um botão que não faz nada.
           <span className="bubble-contato-area" style={{ cursor: "default" }}>
             {ficha}
           </span>
@@ -210,7 +210,7 @@ export function BolhaMensagem({
           <div className={`bubble-imagens${msg.imagens.length > 1 ? " grade" : ""}`}>
             {msg.imagens.map((img, ix) =>
               // Publicação compartilhada: a miniatura é a porta pro Instagram, não uma foto pra
-              // ampliar — o conteúdo (inclusive o carrossel inteiro) está lá, não aqui.
+              // ampliar: o conteúdo (inclusive o carrossel inteiro) está lá, não aqui.
               msg.linkExterno ? (
                 <a
                   key={`${msg.id}-img-${ix}`}
@@ -266,7 +266,7 @@ export function BolhaMensagem({
         {topoDoShare}
         {msg.linkExterno ? (
           // Vídeo que vive no Instagram: o CRM não guarda cópia, então o que existe é a porta pra
-          // lá. "Baixar vídeo" aqui seria uma promessa falsa — não há o que baixar.
+          // lá. "Baixar vídeo" aqui seria uma promessa falsa. Não há o que baixar.
           <a className="bubble-midia-externa" href={msg.linkExterno} target="_blank" rel="noopener noreferrer">
             <IconVideoCam width={18} height={18} />
             {msg.linkEhConversa ? "Abrir conversa no Instagram" : "Ver publicação no Instagram"}

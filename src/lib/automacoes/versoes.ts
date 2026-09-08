@@ -5,12 +5,12 @@ import type { ConfiguracoesFluxo, FlowEdge, FlowNode, VersaoFluxo } from "@/lib/
  * Versões publicadas de uma automação.
  *
  * A regra que este arquivo existe pra sustentar: **o que roda é o que foi publicado**, não o que
- * está aberto no editor. Hoje o servidor executa `FluxoAutomacao.nodes`, que é o rascunho — quem
+ * está aberto no editor. Hoje o servidor executa `FluxoAutomacao.nodes`, que é o rascunho: quem
  * está mexendo no fluxo altera, sem querer, o comportamento dos leads naquele instante. Com a
  * versão numa linha própria, publicar é um ato, e uma execução aponta pra versão que ela começou.
  *
  * `FluxoAutomacao.historicoVersoes` (Json) continua sendo escrito pelo editor enquanto a migração
- * acontece — só que deixa de ser a fonte da verdade. Ver `scripts/migrar-versoes-automacao.ts`.
+ * acontece: só que deixa de ser a fonte da verdade. Ver `scripts/migrar-versoes-automacao.ts`.
  */
 export type VersaoPublicada = {
   id: string;
@@ -46,8 +46,8 @@ function paraVersao(linha: {
 }
 
 /**
- * Grava uma publicação. Idempotente por (fluxo, versão): publicar duas vezes o mesmo número — dois
- * cliques, um retry de rede — atualiza a linha em vez de criar outra ou estourar.
+ * Grava uma publicação. Idempotente por (fluxo, versão): publicar duas vezes o mesmo número. Dois
+ * cliques, um retry de rede: atualiza a linha em vez de criar outra ou estourar.
  */
 export async function publicarVersao(params: {
   workspaceId: string;
@@ -80,7 +80,7 @@ export async function publicarVersao(params: {
   return paraVersao(linha);
 }
 
-/** A versão publicada mais recente — é a que um lead novo começa a rodar. `null` quando o fluxo
+/** A versão publicada mais recente. É a que um lead novo começa a rodar. `null` quando o fluxo
  * nunca foi publicado (só rascunho): nesse caso ele não deve executar nada. */
 export async function versaoAtualPublicada(workspaceId: string, fluxoId: string): Promise<VersaoPublicada | null> {
   const linha = await prisma.versaoAutomacao.findFirst({
@@ -90,7 +90,7 @@ export async function versaoAtualPublicada(workspaceId: string, fluxoId: string)
   return linha ? paraVersao(linha) : null;
 }
 
-/** Uma versão específica — é o que uma execução em andamento carrega, pra terminar do jeito que
+/** Uma versão específica: é o que uma execução em andamento carrega, pra terminar do jeito que
  * começou mesmo se o fluxo for republicado no meio. */
 export async function versaoPorId(workspaceId: string, versaoId: string): Promise<VersaoPublicada | null> {
   const linha = await prisma.versaoAutomacao.findFirst({ where: { id: versaoId, workspaceId } });

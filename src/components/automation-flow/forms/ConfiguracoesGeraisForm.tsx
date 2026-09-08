@@ -246,7 +246,7 @@ export function ConfiguracoesGeraisForm({
       <p className="hint">
         Ligado (o normal), o fluxo guarda onde parou: a espera continua depois de horas ou dias, a
         resposta do contato retoma a conversa, e a pergunta sai com as opções. Desligado, ele roda
-        do jeito antigo — a pergunta vai só com o texto, sem as opções, e qualquer espera encerra o
+        do jeito antigo: a pergunta vai só com o texto, sem as opções, e qualquer espera encerra o
         fluxo. O que roda é sempre a <strong>última versão publicada</strong>, não o rascunho aberto
         aqui: depois de mexer, publique de novo.
       </p>

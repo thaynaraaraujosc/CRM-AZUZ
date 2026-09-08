@@ -5,7 +5,7 @@ import { urlAutorizacao, assinarStateInstagram } from "@/lib/integracoes/instagr
 
 /**
  * GET redireciona pro diálogo de "Login do Instagram" (produto separado do Login do Facebook, ver
- * src/lib/integracoes/instagram-login.ts) — o botão "Conectar" do Instagram em Configurações linka
+ * src/lib/integracoes/instagram-login.ts): o botão "Conectar" do Instagram em Configurações linka
  * direto pra cá.
  */
 export async function GET(request: Request) {

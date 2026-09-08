@@ -3,7 +3,7 @@
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 
-/** Aparência — só o tema (claro/escuro, real, liga em `ThemeToggle`). Densidade/tamanho/menu
+/** Aparência: só o tema (claro/escuro, real, liga em `ThemeToggle`). Densidade/tamanho/menu
  * lateral/prévia saíram: eram só decorativos, sem nenhuma aplicação de fato no resto do CRM. */
 export function AparenciaSecao() {
   return (

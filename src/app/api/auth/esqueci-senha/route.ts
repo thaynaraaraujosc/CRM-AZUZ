@@ -11,8 +11,8 @@ import {
 import { enviarEmail, templateRedefinicaoSenha } from "@/lib/email";
 
 /**
- * POST — gera um link de redefinição de senha e manda por e-mail (Resend). Sempre responde
- * com a mesma mensagem genérica, exista ou não conta com esse e-mail — não dá pra usar essa rota
+ * POST: gera um link de redefinição de senha e manda por e-mail (Resend). Sempre responde
+ * com a mesma mensagem genérica, exista ou não conta com esse e-mail. Não dá pra usar essa rota
  * pra descobrir quais e-mails têm cadastro no CRM.
  */
 export async function POST(request: Request) {
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   const link = `${process.env.APP_URL ?? "https://azuzcrm.com.br"}/redefinir-senha/${token}`;
   await enviarEmail({
     to: membro.email,
-    subject: "Redefinir sua senha — CRM AZUZ",
+    subject: "Redefinir sua senha - CRM AZUZ",
     html: templateRedefinicaoSenha(membro.nome, link),
   });
 

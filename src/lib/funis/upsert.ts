@@ -2,12 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
 
 /**
- * Coloca um lead recém-criado na primeira etapa (menor `ordem`, não pelo nome — o workspace pode
+ * Coloca um lead recém-criado na primeira etapa (menor `ordem`, não pelo nome: o workspace pode
  * ter chamado a primeira etapa de "Novo", "Entrada", "Lead recebido" etc.) do primeiro funil do
  * workspace. Regra de negócio: TODO novo lead entra no funil, sempre pela primeira etapa.
  *
  * Só chame isso quando o contato ACABOU de ser criado nesta mesma chamada (nunca pra um contato
- * que já existia) — mover um contato existente de etapa é decisão do usuário, jamais automática só
+ * que já existia): mover um contato existente de etapa é decisão do usuário, jamais automática só
  * porque chegou mais uma mensagem dele. Idempotente por natureza: se por algum motivo o contato já
  * tiver um card em qualquer funil (reprocessamento do mesmo evento, corrida entre dois webhooks),
  * não duplica.
@@ -15,10 +15,10 @@ import { slugId } from "@/lib/ids";
 export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   workspaceId: string;
   contatoNome: string;
-  /** Conversa de grupo — grupo não entra no funil nem em automação (ver dentro da função). */
+  /** Conversa de grupo: grupo não entra no funil nem em automação (ver dentro da função). */
   ehGrupo?: boolean;
   origem: string;
-  /** Conexão que originou o negócio — é o que faz o card sumir do funil quando aquele canal é
+  /** Conexão que originou o negócio. É o que faz o card sumir do funil quando aquele canal é
    * desconectado, e voltar quando ele reconecta (ver o campo no schema). */
   contaCanal?: string | null;
 }) {
@@ -31,7 +31,7 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   if (ehGrupo) return null;
 
   // Conversa arquivada também não vira negócio. Arquivar é o gesto de "isso aqui não está em
-  // atendimento" — se gerasse card, o funil voltaria a encher exatamente com o que a pessoa acabou
+  // atendimento": se gerasse card, o funil voltaria a encher exatamente com o que a pessoa acabou
   // de tirar da caixa de entrada. Quando ela voltar a mandar mensagem a conversa desarquiva sozinha
   // (ver `upsertConversaAoReceberMensagem`), e aí sim entra no funil pelo caminho normal.
   const conversa = await prisma.conversa.findUnique({
@@ -43,10 +43,10 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   const jaTemCard = await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome } });
   if (jaTemCard) return jaTemCard;
 
-  // "Primeiro funil do workspace" — mesma convenção já usada em outras telas (trafego/page.tsx,
+  // "Primeiro funil do workspace": mesma convenção já usada em outras telas (trafego/page.tsx,
   // funilAtivoId inicial em funis-context.tsx): o primeiro da lista, não um campo "principal"
   // dedicado (que não existe no schema). Workspace sem nenhum funil/etapa ainda: não há onde
-  // colocar o lead — fica só como Contato, sem quebrar o recebimento da mensagem.
+  // colocar o lead: fica só como Contato, sem quebrar o recebimento da mensagem.
   const funil = await prisma.funil.findFirst({
     where: { workspaceId },
     include: { etapas: { orderBy: { ordem: "asc" }, take: 1, include: { cards: { select: { ordem: true } } } } },
@@ -57,7 +57,7 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   // Lead novo entra no TOPO da coluna, não no fim. Como a listagem ordena por `ordem` crescente,
   // isso é uma ordem MENOR que a de todo mundo. Entrando no fim, quem acabou de mandar mensagem
   // caía embaixo de dezenas de cards antigos e a pessoa que atende só via o lead novo rolando a
-  // coluna inteira — mensagem nova é justamente o que precisa ser visto primeiro.
+  // coluna inteira: mensagem nova é justamente o que precisa ser visto primeiro.
   //
   // Fica negativo, e é de propósito: assim nenhum card existente precisa ser renumerado (o que
   // brigaria com a ordem que a pessoa arrumou na mão). O PUT de `/api/funis` normaliza tudo pra
@@ -71,7 +71,7 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
       ordem: menorOrdem - 1,
       workspaceId,
       nome: contatoNome,
-      valor: "—",
+      valor: "-",
       origem,
       contaCanal,
       dias: "Hoje",
@@ -83,11 +83,11 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
 /**
  * Sobe o card de um contato pro TOPO da coluna em que ele está, quando chega mensagem nova dele.
  *
- * Não muda de ETAPA — isso continua sendo decisão de quem atende. Muda só a posição DENTRO da
+ * Não muda de ETAPA: isso continua sendo decisão de quem atende. Muda só a posição DENTRO da
  * coluna, pra a coluna funcionar como caixa de entrada: quem falou por último aparece primeiro, em
  * vez de ficar perdido no meio de dezenas de cards parados.
  *
- * Igual ao lead novo (ver acima), a ordem nova é MENOR que a de todo mundo da etapa — negativa se
+ * Igual ao lead novo (ver acima), a ordem nova é MENOR que a de todo mundo da etapa. Negativa se
  * precisar. Nenhum outro card é renumerado, e o PUT de `/api/funis` normaliza pra 0..n no próximo
  * salvamento da tela.
  *

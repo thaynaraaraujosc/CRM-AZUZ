@@ -11,10 +11,10 @@ import makeWASocket, {
 } from "@whiskeysockets/baileys";
 
 /**
- * Serviço separado (processo sempre ligado) que espelha UM número de WhatsApp via Baileys —
- * conecta direto no protocolo multi-device, sem navegador. Não roda dentro do Next.js/Vercel
+ * Serviço separado (processo sempre ligado) que espelha UM número de WhatsApp via Baileys.
+ * Conecta direto no protocolo multi-device, sem navegador. Não roda dentro do Next.js/Vercel
  * (serverless não sustenta o WebSocket vivo), por isso é um processo próprio hospedado à parte
- * (Railway, junto com o banco — ver README.md).
+ * (Railway, junto com o banco: ver README.md).
  *
  * Escopo desta primeira versão: um serviço = uma sessão = um WORKSPACE_ID (um número de WhatsApp
  * por empresa). Multi-sessão (várias empresas num serviço só) fica pra depois, se precisar.
@@ -28,7 +28,7 @@ const PASTA_SESSAO = process.env.PASTA_SESSAO ?? "./sessao";
 
 for (const [nome, valor] of Object.entries({ WORKSPACE_ID, CRM_WEBHOOK_URL, SERVICO_SEGREDO })) {
   if (!valor) {
-    console.error(`Faltou configurar a variável de ambiente ${nome} — ver .env.example.`);
+    console.error(`Faltou configurar a variável de ambiente ${nome}. Ver .env.example.`);
     process.exit(1);
   }
 }
@@ -39,8 +39,8 @@ let socket: WASocket | null = null;
 let ultimoQrDataUrl: string | null = null;
 let statusAtual: "aguardando_qr" | "conectado" | "desconectado" = "desconectado";
 
-/** Avisa o CRM (rota /api/webhooks/whatsapp-nao-oficial) sobre status ou mensagem recebida —
- * autenticado por segredo compartilhado (mesmo espírito do HMAC do webhook da Meta, só que mais
+/** Avisa o CRM (rota /api/webhooks/whatsapp-nao-oficial) sobre status ou mensagem recebida.
+ * Autenticado por segredo compartilhado (mesmo espírito do HMAC do webhook da Meta, só que mais
  * simples porque os dois lados são serviços nossos, não a Meta). */
 async function avisarCrm(corpo: Record<string, unknown>) {
   try {
@@ -77,7 +77,7 @@ async function iniciarSessao() {
     if (qr) {
       ultimoQrDataUrl = await QRCode.toDataURL(qr);
       statusAtual = "aguardando_qr";
-      log.info("Novo QR code gerado — aguardando leitura no app do WhatsApp");
+      log.info("Novo QR code gerado: aguardando leitura no app do WhatsApp");
       await avisarCrm({ tipo: "status", status: "aguardando_qr", qrDataUrl: ultimoQrDataUrl });
     }
 
@@ -98,7 +98,7 @@ async function iniciarSessao() {
       await avisarCrm({
         tipo: "status",
         status: "desconectado",
-        erro: deveReconectar ? "Conexão caiu — reconectando." : "Sessão encerrada (logout).",
+        erro: deveReconectar ? "Conexão caiu: reconectando." : "Sessão encerrada (logout).",
       });
       if (deveReconectar) {
         setTimeout(iniciarSessao, 3000);
@@ -114,7 +114,7 @@ async function iniciarSessao() {
   });
 }
 
-/** Repassa só mensagens de texto recebidas (não enviadas por nós mesmos) — mídia/áudio/figurinha
+/** Repassa só mensagens de texto recebidas (não enviadas por nós mesmos). Mídia/áudio/figurinha
  * ficam de fora desta primeira versão, mesmo escopo inicial que a integração oficial (Meta) teve. */
 async function repassarMensagem(mensagem: WAMessage) {
   if (mensagem.key.fromMe) return;
@@ -150,7 +150,7 @@ app.get("/status", autenticarChamadaDoCrm, (_req, res) => {
   res.json({ status: statusAtual, qrDataUrl: ultimoQrDataUrl });
 });
 
-/** POST /enviar — chamado pelo CRM quando o atendente manda mensagem pela tela de Conversas. */
+/** POST /enviar: chamado pelo CRM quando o atendente manda mensagem pela tela de Conversas. */
 app.post("/enviar", autenticarChamadaDoCrm, async (req, res) => {
   const { waId, texto } = req.body as { waId?: string; texto?: string };
   const socketAtivo = socket;
@@ -166,7 +166,7 @@ app.post("/enviar", autenticarChamadaDoCrm, async (req, res) => {
   res.json({ ok: true });
 });
 
-/** POST /desconectar — encerra a sessão e apaga as credenciais salvas, pra próxima conexão pedir
+/** POST /desconectar: encerra a sessão e apaga as credenciais salvas, pra próxima conexão pedir
  * um QR code novo (mesmo efeito de "sair" no WhatsApp Web). */
 app.post("/desconectar", autenticarChamadaDoCrm, async (_req, res) => {
   await socket?.logout().catch(() => {});

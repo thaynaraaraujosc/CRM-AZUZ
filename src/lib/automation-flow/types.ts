@@ -1,7 +1,7 @@
 /**
  * Modelo de dados do construtor de automação em grafo (nós + arestas).
  * Substitui o formato "linear" de `Automacao`/`AcaoAutomacao` (automacoes-context.tsx)
- * — a migração de um pro outro vive em `migracao.ts`, não aqui.
+ *. A migração de um pro outro vive em `migracao.ts`, não aqui.
  */
 
 import type { CanalComentario, DiaSemana } from "@/lib/data";
@@ -21,7 +21,7 @@ export type FlowNodeCategory =
   | "fim";
 
 export type FlowNodeType =
-  // gatilho — Instagram (categoria própria: o canal tem eventos que nenhum outro tem)
+  // gatilho: Instagram (categoria própria: o canal tem eventos que nenhum outro tem)
   | "instagram_midia_recebida"
   | "instagram_publicacao_compartilhada"
   | "instagram_story_respondido"
@@ -76,7 +76,7 @@ export type FlowNodeType =
   | "mensagem_modelo_whatsapp"
   | "mensagem_email"
   | "notificacao_interna"
-  /** Pragmático: "enviar_formulario" do formato antigo vira esse tipo de mensagem — ver comentário em migracao.ts. */
+  /** Pragmático: "enviar_formulario" do formato antigo vira esse tipo de mensagem. Ver comentário em migracao.ts. */
   | "enviar_formulario"
   // espera
   | "aguardar"
@@ -111,12 +111,12 @@ export type FlowNodeType =
   | "ocultar_comentario_instagram"
   | "encerrar_fluxo";
 
-/** Metadado estático de cada tipo de nó — categoria, rótulo, cor e ícone pra paleta/palette e canvas. */
+/** Metadado estático de cada tipo de nó. Categoria, rótulo, cor e ícone pra paleta/palette e canvas. */
 export type FlowNodeMeta = {
   tipo: FlowNodeType;
   categoria: FlowNodeCategory;
   label: string;
-  /** Classes Tailwind (bg/text) — ver `CATEGORIAS_BLOCOS` em blocos.ts pra cor por categoria. */
+  /** Classes Tailwind (bg/text): ver `CATEGORIAS_BLOCOS` em blocos.ts pra cor por categoria. */
   corClasse: string;
   /** Nome de ícone lucide-react se a lib estiver disponível, senão um glyph curto/emoji. */
   icone: string;
@@ -182,7 +182,7 @@ export type RegraCondicao = {
   campoPersonalizadoNome?: string;
 };
 
-/** Grupo recursivo — permite montar árvores tipo "(A E B) OU (NÃO C)". */
+/** Grupo recursivo: permite montar árvores tipo "(A E B) OU (NÃO C)". */
 export type GrupoCondicoes = {
   id: string;
   tipo: "E" | "OU" | "NAO";
@@ -220,7 +220,7 @@ export type IntegracaoExternaData = { integracaoId?: string; evento?: string };
 export type ConsultaEventoData = { motivo?: string };
 export type FormularioPreenchidoData = { formularioId?: string };
 
-/** "Qual tarefa" dispara o gatilho — ver item 10/11 do pedido: nunca "criar uma tarefa", sempre um
+/** "Qual tarefa" dispara o gatilho. Ver item 10/11 do pedido: nunca "criar uma tarefa", sempre um
  * filtro sobre tarefas que já existem/serão criadas por outro caminho. */
 export type FiltroTarefaModo = "qualquer" | "categoria" | "titulo" | "responsavel" | "equipe" | "funil";
 export type TarefaEventoData = {
@@ -235,7 +235,7 @@ export type TarefaEventoData = {
 export type CondicaoGrupoData = { grupo: GrupoCondicoes };
 
 /**
- * Decisão com quantos caminhos forem necessários — não só sim/não.
+ * Decisão com quantos caminhos forem necessários. Não só sim/não.
  *
  * O bloco de condição responde uma pergunta fechada, e por isso toda automação de atendimento
  * acabava virando uma escada de "sim/não" encadeados pra tratar três opções de menu. Aqui a
@@ -272,20 +272,20 @@ export type OrigemArquivoMidia = "biblioteca" | "upload";
 
 export type MensagemMidiaData = {
   canal: CanalMensagem;
-  /** De onde veio o arquivo escolhido — biblioteca reutilizável do CRM ou upload avulso nesse bloco. */
+  /** De onde veio o arquivo escolhido. Biblioteca reutilizável do CRM ou upload avulso nesse bloco. */
   origemArquivo?: OrigemArquivoMidia;
-  /** Id em `DocumentoBiblioteca` — um upload avulso nesse bloco também entra de verdade na
+  /** Id em `DocumentoBiblioteca`: um upload avulso nesse bloco também entra de verdade na
    * biblioteca (base64 real), então acaba sempre preenchido, venha o arquivo de onde vier. */
   arquivoId?: string;
   /** Nome real do arquivo (o que a biblioteca guarda, ou o nome do arquivo enviado nesse bloco). */
   arquivoNome?: string;
-  /** Nome de exibição opcional — o que aparece pro contato, pode ser mais curto/amigável que o nome real. */
+  /** Nome de exibição opcional: o que aparece pro contato, pode ser mais curto/amigável que o nome real. */
   arquivoNomeExibicao?: string;
   /** Extensão/categoria pro ícone e validação de tipo (PDF, DOC, XLS…). */
   arquivoTipo?: string;
   /** Tamanho real, calculado do arquivo (ex.: "4,2 MB"). */
   arquivoTamanho?: string;
-  /** Legado — não é mais escrito (upload avulso agora entra na biblioteca com base64 real, ver
+  /** Legado: não é mais escrito (upload avulso agora entra na biblioteca com base64 real, ver
    * `MensagemMidiaForm.tsx`); mantido opcional só pra não quebrar fluxo salvo antes dessa mudança. */
   arquivoUrlTemporaria?: string;
   legenda?: string;
@@ -325,14 +325,14 @@ export type OpcaoBotaoLista = {
   id: string;
   rotulo: string;
   /**
-   * Só usadas no formato "menu numerado" — outras formas de responder que também devem contar como
+   * Só usadas no formato "menu numerado". Outras formas de responder que também devem contar como
    * essa opção na simulação (ex.: pra opção "1", aceitar também "número 1", "opcao 1", "orçamento").
    * O número da posição (1, 2, 3…) sempre é aceito automaticamente, não precisa listar aqui.
    */
   respostasAlternativas?: string[];
 };
 /**
- * "Formato de resposta" é só front-end/visual nesta fase — nenhum dos quatro formatos liga em envio
+ * "Formato de resposta" é só front-end/visual nesta fase. Nenhum dos quatro formatos liga em envio
  * real de mensagem ainda. Existe pra o CRM não parecer dependente de conexão com API oficial: menu
  * numerado e texto livre funcionam em texto puro (qualquer conexão), botões/lista dependem do que o
  * provedor conectado suporta.
@@ -460,7 +460,7 @@ export type IaResponderData = {
   instrucao: string;
   /** Informações do negócio que ela pode usar (horário, preços, política de troca). */
   contexto?: string;
-  /** Teto de caracteres da resposta — mensagem de atendimento curta é lida, longa não. */
+  /** Teto de caracteres da resposta. Mensagem de atendimento curta é lida, longa não. */
   maximoCaracteres?: number;
 };
 
@@ -503,7 +503,7 @@ export type FlowNode<T = Record<string, unknown>> = {
   position: { x: number; y: number };
   titulo?: string;
   observacao?: string;
-  /** Bloco pausado — continua no fluxo (não perde a posição/conexões) mas fica marcado como "não
+  /** Bloco pausado: continua no fluxo (não perde a posição/conexões) mas fica marcado como "não
    * roda por enquanto"; útil pra desligar temporariamente uma etapa sem ter que desconectar e
    * excluir. O motor com estado respeita este marcador (registra "pulado" e segue); o motor
    * antigo ainda não. */
@@ -538,7 +538,7 @@ export type ConfiguracoesFluxo = {
   /**
    * O que fazer quando o gatilho acontece fora dos dias/horário ativos.
    *
-   * "aguardar" estaciona a execução e retoma na abertura seguinte — o motor com estado é o que
+   * "aguardar" estaciona a execução e retoma na abertura seguinte. O motor com estado é o que
    * tornou isso possível; antes tinha exatamente o mesmo efeito de "continuar". "ignorar" é o nome
    * antigo de "encerrar", mantido pra não invalidar fluxo já salvo.
    */
@@ -553,7 +553,7 @@ export type ConfiguracoesFluxo = {
     | "uma_vez_por_dia"
     | "uma_vez_por_semana"
     | "uma_vez_por_mes"
-    /** Teto explícito por contato — o número vem de `maximoExecucoes`. */
+    /** Teto explícito por contato: o número vem de `maximoExecucoes`. */
     | "no_maximo";
   /** Quantas vezes no máximo, quando `limiteExecucao === "no_maximo"`. */
   maximoExecucoes?: number;
@@ -564,7 +564,7 @@ export type ConfiguracoesFluxo = {
    *
    * A chave é por fluxo de propósito: o motor novo é o único que sabe esperar (retomar por tempo
    * ou por resposta), mas trocar todos os fluxos de uma vez arriscaria os que já funcionam. Com a
-   * chave desligada, nada muda — o fluxo continua no motor antigo.
+   * chave desligada, nada muda: o fluxo continua no motor antigo.
    */
   motorNovo?: boolean;
 };
@@ -587,9 +587,9 @@ export type FluxoAutomacao = {
   categoria?: string;
   status: "rascunho" | "publicado";
   ativa: boolean;
-  /** Arquivamento é um estado próprio, distinto de "pausada" — ver `arquivarFluxo`/`desarquivarFluxo` em automation-flow-context.tsx. Opcional pra não quebrar fluxos já existentes/seeds. */
+  /** Arquivamento é um estado próprio, distinto de "pausada": ver `arquivarFluxo`/`desarquivarFluxo` em automation-flow-context.tsx. Opcional pra não quebrar fluxos já existentes/seeds. */
   arquivada?: boolean;
-  /** Estado de edição atual (draft) — só vira uma `VersaoFluxo` quando publicado. */
+  /** Estado de edição atual (draft). Só vira uma `VersaoFluxo` quando publicado. */
   nodes: FlowNode[];
   edges: FlowEdge[];
   versaoAtual: number;
@@ -600,9 +600,9 @@ export type FluxoAutomacao = {
   configuracoes: ConfiguracoesFluxo;
   execucoes: number;
   historicoVersoes: VersaoFluxo[];
-  /** Marca um fluxo seed pronto pra uso como ponto de partida ("Usar um modelo") — nunca criado pelo usuário. Aditivo, não quebra fluxos existentes. */
+  /** Marca um fluxo seed pronto pra uso como ponto de partida ("Usar um modelo"). Nunca criado pelo usuário. Aditivo, não quebra fluxos existentes. */
   modeloDemonstracao?: boolean;
-  /** Frase um pouco mais longa que `descricao`, só usada na pré-visualização (Task 4) — opcional, aditivo. */
+  /** Frase um pouco mais longa que `descricao`, só usada na pré-visualização (Task 4). Opcional, aditivo. */
   objetivo?: string;
 };
 

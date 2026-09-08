@@ -4,7 +4,7 @@ import { useState } from "react";
 import { IconAlerta } from "@/components/icons";
 
 /**
- * Limpeza avulsa do que um WhatsApp já desconectado deixou para trás — conversas, contatos criados
+ * Limpeza avulsa do que um WhatsApp já desconectado deixou para trás. Conversas, contatos criados
  * sozinhos e cards de funil daqueles leads.
  *
  * Só aparece com nenhum canal conectado: com um canal ativo, o caminho é o próprio "Desconectar"
@@ -21,7 +21,7 @@ export function LimparDadosWhatsApp({ aoLimpar }: { aoLimpar?: () => void }) {
   const [limpandoGrupos, setLimpandoGrupos] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Grupos que viraram contato/card por um bug antigo — é entulho em qualquer cenário, não apaga
+  // Grupos que viraram contato/card por um bug antigo. É entulho em qualquer cenário, não apaga
   // conversa nenhuma e não depende de canal conectado, então não precisa do aviso pesado abaixo.
   async function limparGrupos() {
     setLimpandoGrupos(true);
@@ -74,7 +74,7 @@ export function LimparDadosWhatsApp({ aoLimpar }: { aoLimpar?: () => void }) {
   if (resumo) {
     return (
       <p className="hint" style={{ margin: "10px 0 0" }}>
-        Limpeza concluída — {resumo.conversas} conversas, {resumo.mensagens} mensagens,{" "}
+        Limpeza concluída: {resumo.conversas} conversas, {resumo.mensagens} mensagens,{" "}
         {resumo.contatos} contatos e {resumo.cards} cards removidos.
       </p>
     );

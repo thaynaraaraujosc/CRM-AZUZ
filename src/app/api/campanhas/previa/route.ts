@@ -15,8 +15,8 @@ export async function GET() {
 
 /**
  * POST: prévia do disparo, sem criar nada. "327 contatos receberão esta mensagem", quem fica de
- * fora por não ter WhatsApp/e-mail, quem ficaria com variável vazia, e quanto tempo vai levar —
- * tudo calculado pela MESMA lógica que o disparo de verdade usa.
+ * fora por não ter WhatsApp/e-mail, quem ficaria com variável vazia, e quanto tempo vai levar.
+ * Tudo calculado pela MESMA lógica que o disparo de verdade usa.
  */
 export async function POST(request: Request) {
   const sessao = await auth();

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { IconBloqueado, IconCheck, IconClose, IconErro, IconPause, IconPular } from "@/components/icons";
 
 /**
- * "Rodou? Parou onde?" — a pergunta mais comum sobre automação, que até aqui não tinha resposta.
+ * "Rodou? Parou onde?": a pergunta mais comum sobre automação, que até aqui não tinha resposta.
  *
  * O motor antigo não guardava nada: quando uma automação não respondia um cliente, ninguém tinha
  * como saber se ela chegou a disparar, em que bloco parou, ou por quê. Agora cada execução deixa
@@ -94,7 +94,7 @@ export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onF
           {execucoes && execucoes.length === 0 ? (
             <p className="hint">
               Esse fluxo ainda não rodou pra ninguém. O histórico só existe para os fluxos com as
-              esperas de verdade ligadas — nas Configurações gerais.
+              esperas de verdade ligadas, nas Configurações gerais.
             </p>
           ) : null}
 
@@ -124,7 +124,7 @@ export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onF
                       <p className="hint">Continua em {quando(execucao.aguardandoAte)}.</p>
                     ) : null}
                     {execucao.aguardandoEvento && !execucao.aguardandoAte ? (
-                      <p className="hint">Esperando o contato responder — sem prazo.</p>
+                      <p className="hint">Esperando o contato responder: sem prazo.</p>
                     ) : null}
 
                     <ul className="flow-sim-passos">

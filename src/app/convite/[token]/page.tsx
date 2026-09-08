@@ -7,7 +7,7 @@ import { AceitarConviteForm } from "@/components/equipe/AceitarConviteForm";
 export const metadata: Metadata = { title: "Seu convite · CRM AZUZ" };
 
 /**
- * O que a pessoa convidada vê — busca o convite real (`Membro.convitePendente`) direto no banco,
+ * O que a pessoa convidada vê. Busca o convite real (`Membro.convitePendente`) direto no banco,
  * server-side, sem sessão nenhuma (quem está aqui ainda não tem login). `token` é o id do Membro
  * pendente, o mesmo usado no link mandado por e-mail em `POST /api/equipe`.
  */

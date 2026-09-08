@@ -1,4 +1,4 @@
-// Script de uso único — troca a senha de uma conta específica direto no banco, pra recuperar
+// Script de uso único: troca a senha de uma conta específica direto no banco, pra recuperar
 // acesso quando o e-mail de redefinição não está chegando (ex.: Resend não configurado em
 // produção). Rode com: npx tsx scripts/resetar-senha-temp.ts <email> <nova-senha>
 // Depois de logar, troque essa senha em Configurações > Segurança > Redefinir senha.
@@ -11,7 +11,7 @@ import bcrypt from "bcryptjs";
 setDefaultResultOrder("ipv4first");
 
 if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL não encontrada — confira se o arquivo .env existe na raiz do projeto.");
+  console.error("DATABASE_URL não encontrada: confira se o arquivo .env existe na raiz do projeto.");
   process.exit(1);
 }
 
@@ -22,7 +22,7 @@ if (!email || !novaSenha) {
 }
 
 async function main() {
-  // O driver @prisma/adapter-mariadb só aceita o prefixo mariadb:// — mesma conversão de
+  // O driver @prisma/adapter-mariadb só aceita o prefixo mariadb://: mesma conversão de
   // src/lib/prisma.ts, pro .env poder usar mysql:// (formato que o CLI do Prisma exige) sem
   // precisar manter duas variáveis diferentes.
   const url = process.env.DATABASE_URL!.replace(/^mysql:\/\//, "mariadb://");

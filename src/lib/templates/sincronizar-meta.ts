@@ -10,7 +10,7 @@ import { statusDaMeta, type BotaoTemplate } from "./regras";
  * Duas coisas acontecem aqui, e as duas existem por causa de gente que cria modelo direto no
  * WhatsApp Manager (fora do CRM):
  *
- * 1. Puxa a lista da Graph e atualiza o espelho `WhatsappTemplate` — é o que já existia.
+ * 1. Puxa a lista da Graph e atualiza o espelho `WhatsappTemplate`. É o que já existia.
  * 2. Todo espelho que ainda não tem um `Template` do CRM ganha um, com o corpo convertido pra
  *    variáveis nomeadas (`{{1}}` → `{{var1}}`) e os botões lidos dos `components`. Sem isto, um
  *    modelo aprovado no Manager não apareceria na tela de Templates nem no Disparo em massa, e a

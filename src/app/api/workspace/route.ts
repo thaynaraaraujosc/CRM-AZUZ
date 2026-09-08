@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /**
- * GET devolve as colunas reais do `Workspace` (`nome`/`segmento`) — fonte única de verdade pra
+ * GET devolve as colunas reais do `Workspace` (`nome`/`segmento`). Fonte única de verdade pra
  * Configurações > Workspace, em vez do blob genérico de preferências (que só guarda o resto dos
  * campos descritivos: país, cidade, fuso, idioma, moeda, formatos). Sem isso, o formulário
  * carregava o nome/segmento do blob (que podia nascer vazio ou dessincronizar da coluna real usada
@@ -24,10 +24,10 @@ export async function GET() {
 }
 
 /**
- * PATCH atualiza colunas reais do `Workspace` (`nome`/`segmento`) — `nome` precisa ser coluna de
+ * PATCH atualiza colunas reais do `Workspace` (`nome`/`segmento`). `nome` precisa ser coluna de
  * verdade porque é lido em vários lugares fora desse formulário (sidebar via sessão, e-mail de
- * convite, PDF de relatório, painel de super-admin); `segmento` virou coluna pelo mesmo motivo —
- * um dado que "pertence à conta" não pode viver só num blob que pode nascer vazio ou dessincronizar.
+ * convite, PDF de relatório, painel de super-admin); `segmento` virou coluna pelo mesmo motivo.
+ * Um dado que "pertence à conta" não pode viver só num blob que pode nascer vazio ou dessincronizar.
  */
 export async function PATCH(request: Request) {
   const sessao = await auth();

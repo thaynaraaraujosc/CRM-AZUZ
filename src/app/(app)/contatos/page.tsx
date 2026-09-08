@@ -26,7 +26,7 @@ export default function ContatosPage() {
   );
 }
 
-/** Campos de texto/select simples cadastrados na ficha do contato — mesmo conjunto usado no
+/** Campos de texto/select simples cadastrados na ficha do contato. Mesmo conjunto usado no
  * painel de detalhes da conversa (`conversas/page.tsx`), agora também editável direto por aqui em
  * vez de só dentro de uma conversa aberta. */
 type CamposExtras = {
@@ -513,7 +513,7 @@ function ContatosPageInner() {
             </div>
             <div className="field">
               <label>Etapa no funil</label>
-              <div className="input">{noFunil ? noFunil.etapa : "—"}</div>
+              <div className="input">{noFunil ? noFunil.etapa : "-"}</div>
             </div>
             <div className="field">
               <label>Origem</label>
@@ -583,56 +583,56 @@ function ContatosPageInner() {
               <>
                 <div className="field">
                   <label>E-mail</label>
-                  <div className="input">{contato.email || "—"}</div>
+                  <div className="input">{contato.email || "-"}</div>
                 </div>
                 <div className="field">
                   <label>Número do WhatsApp</label>
-                  <div className="input">{contato.whatsapp || "—"}</div>
+                  <div className="input">{contato.whatsapp || "-"}</div>
                 </div>
                 <div className="field">
                   <label>Data de aniversário</label>
-                  <div className="input">{contato.nascimento || "—"}</div>
+                  <div className="input">{contato.nascimento || "-"}</div>
                 </div>
                 <div className="field">
                   <label>Endereço</label>
-                  <div className="input">{contato.endereco || "—"}</div>
+                  <div className="input">{contato.endereco || "-"}</div>
                 </div>
                 <div className="config-grid-2">
                   <div className="field">
                     <label>Sobrenome</label>
-                    <div className="input">{contato.sobrenome || "—"}</div>
+                    <div className="input">{contato.sobrenome || "-"}</div>
                   </div>
                   <div className="field">
                     <label>Empresa</label>
-                    <div className="input">{contato.empresa || "—"}</div>
+                    <div className="input">{contato.empresa || "-"}</div>
                   </div>
                   <div className="field">
                     <label>Cargo</label>
-                    <div className="input">{contato.cargo || "—"}</div>
+                    <div className="input">{contato.cargo || "-"}</div>
                   </div>
                   <div className="field">
                     <label>Telefone fixo</label>
-                    <div className="input">{contato.telefoneFixo || "—"}</div>
+                    <div className="input">{contato.telefoneFixo || "-"}</div>
                   </div>
                   <div className="field">
                     <label>Cidade</label>
-                    <div className="input">{contato.cidade || "—"}</div>
+                    <div className="input">{contato.cidade || "-"}</div>
                   </div>
                   <div className="field">
                     <label>Estado</label>
-                    <div className="input">{contato.estado || "—"}</div>
+                    <div className="input">{contato.estado || "-"}</div>
                   </div>
                   <div className="field">
                     <label>País</label>
-                    <div className="input">{contato.pais || "—"}</div>
+                    <div className="input">{contato.pais || "-"}</div>
                   </div>
                   <div className="field">
                     <label>Canal preferido</label>
-                    <div className="input">{contato.canalPreferido || "—"}</div>
+                    <div className="input">{contato.canalPreferido || "-"}</div>
                   </div>
                   <div className="field">
                     <label>Melhor horário pra contato</label>
-                    <div className="input">{contato.melhorHorario || "—"}</div>
+                    <div className="input">{contato.melhorHorario || "-"}</div>
                   </div>
                 </div>
               </>

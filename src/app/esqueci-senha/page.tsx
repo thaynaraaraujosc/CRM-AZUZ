@@ -50,7 +50,7 @@ export default function EsqueciSenhaPage() {
         ) : (
           <form onSubmit={handleSubmit}>
             <p className="auth-descricao">
-              Digite o e-mail da sua conta — vamos mandar um link pra você criar uma senha nova.
+              Digite o e-mail da sua conta. Vamos mandar um link pra você criar uma senha nova.
             </p>
 
             <div className="field">

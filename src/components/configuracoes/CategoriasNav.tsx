@@ -5,7 +5,7 @@ import { useState } from "react";
 import { GRUPOS_CONFIGURACOES, type CategoriaId } from "@/lib/configuracoes/estrutura";
 
 /** Coluna esquerda: busca + categorias agrupadas (itens 18/42). A busca filtra por nome/descrição da
- * categoria — resultado simples, mas real (não é só um placeholder decorativo). */
+ * categoria: resultado simples, mas real (não é só um placeholder decorativo). */
 export function CategoriasNav({
   ativa,
   onSelecionar,

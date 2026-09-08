@@ -1,14 +1,14 @@
 /**
- * Linha do tempo unificada de um contato — deriva eventos reais a partir dos
+ * Linha do tempo unificada de um contato. Deriva eventos reais a partir dos
  * dados que já existem em cada módulo (conversas, tarefas, funil), em vez de
  * manter uma lista de eventos separada e hardcoded.
  *
  * Conversas/mensagens (`fontes.conversas`/`fontes.mensagensPorContato`) já vêm do banco de
- * verdade (`useConversas()`/`useMensagensExtra()`) — `MensagemExtra.criadoEm` é timestamp real,
+ * verdade (`useConversas()`/`useMensagensExtra()`). `MensagemExtra.criadoEm` é timestamp real,
  * então essa parte da timeline ordena por relógio de verdade, não heurística. Tarefas/funil ainda
  * só têm strings de exibição de data (`estimarMinutosAtras()` segue fazendo o parse melhor-esforço
  * pra essas). Negociação ganha/perdida vem de `NegocioCard.statusFechamento` de verdade (grava no
- * Funil quando alguém marca "Marcar como ganho/perdido" — ver `src/app/(app)/funil/page.tsx`).
+ * Funil quando alguém marca "Marcar como ganho/perdido". Ver `src/app/(app)/funil/page.tsx`).
  */
 
 import {
@@ -21,6 +21,7 @@ import {
 } from "@/lib/data";
 import type { ConversaReal } from "@/lib/conversas-context";
 import { estimarMinutosAtras } from "@/lib/datas";
+import { ehVazio } from "./vazio";
 
 export { estimarMinutosAtras };
 
@@ -100,16 +101,16 @@ export type Evento = {
   descricao?: string;
   /** Texto original tal como registrado no módulo de origem. */
   quando: string;
-  /** Chave de ordenação — ver nota de limitação no topo do arquivo. */
+  /** Chave de ordenação: ver nota de limitação no topo do arquivo. */
   minutosAtras: number;
-  /** String livre — `Conversa.origem` real (`"Direto"`, `"WhatsApp"` etc) não é o mesmo conjunto
+  /** String livre: `Conversa.origem` real (`"Direto"`, `"WhatsApp"` etc) não é o mesmo conjunto
    * fechado que `Contato.origem` (`Origem`, usado nos filtros de Contatos/Funil). */
   origem?: string;
   responsavel?: string;
   link?: { modulo: "conversa" | "tarefa" | "funil" | "perdas"; href: string };
 };
 
-/** Sentinela usado quando não dá pra estimar — cai no fim da timeline. */
+/** Sentinela usado quando não dá pra estimar. Cai no fim da timeline. */
 const SEM_DATA = 10 ** 8;
 
 export type EstadoCicloDeVida =
@@ -120,7 +121,7 @@ export type EstadoCicloDeVida =
   | "Perdido";
 
 /**
- * Estado do ciclo de vida do contato — derivado da etapa atual dele no funil
+ * Estado do ciclo de vida do contato. Derivado da etapa atual dele no funil
  * e de eventuais negociações perdidas registradas, nunca de um campo
  * separado que possa dessincronizar. Ver seção 5 do escopo: os estados são
  * transições, não um campo solto editado à mão.
@@ -149,16 +150,16 @@ type FontesTimeline = {
 
 /**
  * Gera a linha do tempo de um contato cruzando conversas, tarefas, funil e
- * negociações perdidas — todas ligadas pelo mesmo `id`/nome, sem duplicar
+ * negociações perdidas: todas ligadas pelo mesmo `id`/nome, sem duplicar
  * dado nenhum: cada evento é derivado, nunca copiado. `fontes` é sempre
- * explícito (sem default) — cada chamador já tem os providers reais
+ * explícito (sem default): cada chamador já tem os providers reais
  * (`useContatos`/`useConversas`/`useMensagensExtra`/`useFunis`/`useTarefas`) disponíveis.
  */
 export function gerarLinhaDoTempo(
   contatoId: string,
   fontes: FontesTimeline,
   /**
-   * Eventos extras que não têm uma fonte derivável ainda — hoje anotações manuais e resultados de
+   * Eventos extras que não têm uma fonte derivável ainda. Hoje anotações manuais e resultados de
    * negociação registrados direto na conversa (venda/perda/adiada/cancelada). Entram no mesmo
    * merge/ordenação dos eventos derivados; quando essas ações ganharem persistência própria, viram
    * só mais uma fonte em `FontesTimeline` e esse parâmetro some.
@@ -170,14 +171,14 @@ export function gerarLinhaDoTempo(
 
   const eventos: Evento[] = [...extras];
 
-  // Casamento por `nome` (não por id) — é a chave real que liga Contato/Conversa/MensagemExtra em
+  // Casamento por `nome` (não por id). É a chave real que liga Contato/Conversa/MensagemExtra em
   // todo o resto do app (ver `upsertConversaAoReceberMensagem`); tentar casar por id aqui nunca
   // bateria com dado real (`Contato.id` leva o prefixo do workspace, `Conversa.id` é outro slug).
   const conversa = fontes.conversas.find((c) => c.nome === contato.nome);
   const mensagens = fontes.mensagensPorContato[contato.nome] ?? [];
   let jaTeveMensagemRecebida = false;
   mensagens.forEach((msg, i) => {
-    // `criadoEm` é timestamp real (ms) quando a mensagem já passou pelo backend — mensagem antiga
+    // `criadoEm` é timestamp real (ms) quando a mensagem já passou pelo backend. Mensagem antiga
     // sem esse campo (raríssimo, só dado de seed) cai num fallback aproximado, mais antiga quanto
     // mais cedo no array.
     const minutosAtras = msg.criadoEm
@@ -262,7 +263,7 @@ export function gerarLinhaDoTempo(
         id: `${funil.id}-${coluna.id}-${card.id}`,
         contatoId,
         tipo: "entrou_etapa",
-        titulo: `Entrou na etapa "${coluna.titulo}" — ${funil.nome}`,
+        titulo: `Entrou na etapa "${coluna.titulo}". ${funil.nome}`,
         quando: card.dias,
         minutosAtras,
         origem: card.origem,
@@ -274,7 +275,7 @@ export function gerarLinhaDoTempo(
           id: `${funil.id}-${coluna.id}-${card.id}-venda`,
           contatoId,
           tipo: "negociacao_fechada",
-          titulo: `Negociação fechada — ${card.valor}`,
+          titulo: `Negociação fechada: ${card.valor}`,
           descricao: `Funil: ${funil.nome}`,
           quando: quandoFechou,
           minutosAtras: estimarMinutosAtras(quandoFechou) - 0.1,
@@ -287,7 +288,7 @@ export function gerarLinhaDoTempo(
           id: `${funil.id}-${coluna.id}-${card.id}-perda`,
           contatoId,
           tipo: "negociacao_perdida",
-          titulo: `Negociação perdida${card.motivoPerda ? ` — ${card.motivoPerda}` : ""}`,
+          titulo: `Negociação perdida${card.motivoPerda ? `: ${card.motivoPerda}` : ""}`,
           descricao: `Etapa: ${coluna.titulo} · Valor: ${card.valor} · Funil: ${funil.nome}`,
           quando: quandoPerdeu,
           minutosAtras: estimarMinutosAtras(quandoPerdeu) - 0.1,
@@ -301,7 +302,7 @@ export function gerarLinhaDoTempo(
 
   eventos.sort((a, b) => a.minutosAtras - b.minutosAtras);
 
-  // Primeiro registro do contato — sempre o evento mais antigo da timeline,
+  // Primeiro registro do contato: sempre o evento mais antigo da timeline,
   // já que não existe (ainda) um timestamp real de criação no modelo de dados.
   eventos.push({
     id: `${contatoId}-criado`,
@@ -309,7 +310,7 @@ export function gerarLinhaDoTempo(
     tipo: "contato_criado",
     titulo: "Contato registrado no CRM",
     descricao: `Origem: ${contato.origem}`,
-    quando: "—",
+    quando: "-",
     minutosAtras: SEM_DATA + 1,
     origem: contato.origem,
   });
@@ -318,7 +319,7 @@ export function gerarLinhaDoTempo(
 }
 
 function parseValorMoeda(raw: string): number | null {
-  if (!raw || raw === "—") return null;
+  if (!raw || ehVazio(raw)) return null;
   const limpo = raw.replace(/[^\d,]/g, "").replace(",", ".");
   const n = Number(limpo);
   return Number.isFinite(n) && limpo !== "" ? n : null;
@@ -343,11 +344,11 @@ export type ResumoJornada = {
 };
 
 /**
- * Resumo executivo da jornada de um contato — usado tanto no painel lateral
+ * Resumo executivo da jornada de um contato. Usado tanto no painel lateral
  * quanto no relatório individual (mesma fonte, sem duplicar cálculo). Campos
  * que o modelo de dados atual não consegue derivar (ex.: tempo até
  * qualificação, porque o funil só guarda a etapa atual, não o histórico de
- * cada transição) voltam como `null` — a tela decide como mostrar isso
+ * cada transição) voltam como `null`. A tela decide como mostrar isso
  * ("Não disponível" ou "Ainda não ocorreu", nunca um zero silencioso).
  */
 export function calcularResumoJornada(

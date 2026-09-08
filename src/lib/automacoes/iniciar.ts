@@ -23,12 +23,12 @@ import { publicarVersao, versaoAtualPublicada, versaoPorId, type VersaoPublicada
  * resposta, e retomar as que esperavam o relógio.
  *
  * Enquanto a migração acontece, este caminho só vale pros fluxos com a chave `motorNovo` ligada.
- * Todo o resto continua no motor antigo, intocado — é a diferença entre "o novo motor está no ar"
+ * Todo o resto continua no motor antigo, intocado: é a diferença entre "o novo motor está no ar"
  * e "os fluxos que já funcionavam pararam de funcionar".
  */
 
 /**
- * A chave por fluxo — agora LIGADA por padrão.
+ * A chave por fluxo: agora LIGADA por padrão.
  *
  * Ela nasceu desligada pra não mexer no que já rodava. O primeiro teste real mostrou que isso
  * estava errado: com o motor antigo, um bloco de pergunta manda só o texto e engole as opções, e
@@ -41,7 +41,7 @@ export function motorNovoAtivo(configuracoes: unknown): boolean {
   return (configuracoes as ConfiguracoesFluxo | null | undefined)?.motorNovo !== false;
 }
 
-/** O bloco de gatilho e a primeira aresta que sai dele — onde a execução realmente começa. */
+/** O bloco de gatilho e a primeira aresta que sai dele. Onde a execução realmente começa. */
 function primeiroNoDepoisDoGatilho(versao: VersaoPublicada): { gatilho: FlowNode; alvoId: string } | null {
   const gatilho = versao.nodes.find((n) => n.category === "gatilho");
   if (!gatilho) return null;
@@ -52,14 +52,14 @@ function primeiroNoDepoisDoGatilho(versao: VersaoPublicada): { gatilho: FlowNode
 /**
  * Começa uma execução a partir da VERSÃO PUBLICADA do fluxo.
  *
- * Devolve `null` quando não há o que rodar — fluxo nunca publicado, ou publicado sem nada ligado
+ * Devolve `null` quando não há o que rodar. Fluxo nunca publicado, ou publicado sem nada ligado
  * no gatilho. Nesse caso quem chamou decide (hoje: deixa o motor antigo tentar).
  */
 export async function iniciarFluxoComEstado(params: {
   workspaceId: string;
   fluxoId: string;
   gatilho: string;
-  /** Configurações do fluxo — dizem se ele pode rodar de novo pra este contato. */
+  /** Configurações do fluxo: dizem se ele pode rodar de novo pra este contato. */
   configuracoes?: ConfiguracoesFluxo | null;
   /** Estado atual do fluxo, pra publicar uma versão quando ele ainda não tem nenhuma. */
   publicarSeFaltar?: { versao: number; nodes: FlowNode[]; edges: FlowEdge[]; configuracoes: ConfiguracoesFluxo };
@@ -74,7 +74,7 @@ export async function iniciarFluxoComEstado(params: {
   let versao = await versaoAtualPublicada(params.workspaceId, params.fluxoId);
 
   // Fluxo publicado antes de as versões existirem não tem linha em VersaoAutomacao. Em vez de
-  // simplesmente não rodar — que é como um fluxo que funcionava ontem pararia hoje —, publica uma
+  // simplesmente não rodar: que é como um fluxo que funcionava ontem pararia hoje., publica uma
   // versão a partir do estado atual e segue. É o mesmo que o script de migração faz.
   if (!versao && params.publicarSeFaltar) {
     versao = await publicarVersao({
@@ -94,7 +94,7 @@ export async function iniciarFluxoComEstado(params: {
 
   // As regras de "uma vez por contato", "não iniciar se já está no fluxo" e "cancelar a execução
   // anterior" vêm das Configurações do fluxo. Elas existiam na tela e não eram consultadas por
-  // ninguém — a partir daqui, valem.
+  // ninguém: a partir daqui, valem.
   const veredito = await podeIniciar({
     workspaceId: params.workspaceId,
     fluxoId: params.fluxoId,
@@ -109,7 +109,7 @@ export async function iniciarFluxoComEstado(params: {
   const comportamento = comportamentoForaDaJanela(configuracoes);
 
   // Fora do horário de funcionamento. "encerrar" nem começa; "aguardar" começa e ESTACIONA até a
-  // janela abrir — o que a opção sempre prometeu e nunca fez, porque sem estado não havia onde
+  // janela abrir: o que a opção sempre prometeu e nunca fez, porque sem estado não havia onde
   // guardar uma execução parada.
   if (fora && comportamento === "encerrar") {
     return { situacao: "cancelada", passos: 0, detalhe: "Fora do horário de funcionamento da automação." };
@@ -129,7 +129,7 @@ export async function iniciarFluxoComEstado(params: {
   if (fora && comportamento === "aguardar") {
     const abertura = proximaAbertura(configuracoes, agora);
     if (!abertura) {
-      return { situacao: "cancelada", passos: 0, detalhe: "A automação não tem nenhum dia ativo — não há quando retomar." };
+      return { situacao: "cancelada", passos: 0, detalhe: "A automação não tem nenhum dia ativo. Não há quando retomar." };
     }
     await gravadorNoBanco.reagendarRodada({ execucaoId: execucao.id, noId: inicio.alvoId, contexto: execucao.contexto, ate: abertura });
     await gravadorNoBanco.registrarPasso({
@@ -138,7 +138,7 @@ export async function iniciarFluxoComEstado(params: {
       noId: inicio.alvoId,
       noTipo: "aguardar",
       resultado: "aguardando",
-      detalhe: `Fora do horário — continua em ${abertura.toLocaleString("pt-BR")}.`,
+      detalhe: `Fora do horário: continua em ${abertura.toLocaleString("pt-BR")}.`,
     });
     return { situacao: "aguardando_tempo", passos: 0, detalhe: "Esperando a próxima janela de funcionamento." };
   }
@@ -159,7 +159,7 @@ export async function iniciarFluxoComEstado(params: {
  * A resposta do contato continua a execução que esperava por ela.
  *
  * É o passo que faltava pro fluxo ter conversa: hoje toda mensagem recebida só consegue COMEÇAR
- * uma automação. Devolve `true` quando a mensagem foi consumida por uma execução em espera — e
+ * uma automação. Devolve `true` quando a mensagem foi consumida por uma execução em espera. E
  * nesse caso ela não deve também disparar fluxos novos, senão a pessoa responde "1" e recebe o
  * fluxo inteiro de novo por cima.
  */
@@ -220,7 +220,7 @@ export async function continuarComResposta(params: {
       saida = "outra_resposta";
     } else {
       // Nem opção nem caminho pra "qualquer outra resposta": continua esperando em vez de escolher
-      // um ramo no chute. A mensagem ainda conta como consumida — quem estava no meio de uma
+      // um ramo no chute. A mensagem ainda conta como consumida. Quem estava no meio de uma
       // pergunta não deve disparar um fluxo novo por ter respondido errado.
       await registrarPasso({
         execucaoId: execucao.id,
@@ -229,7 +229,7 @@ export async function continuarComResposta(params: {
         noTipo: no.type,
         titulo: no.titulo,
         resultado: "aguardando",
-        detalhe: `"${params.texto.slice(0, 80)}" não bate com nenhuma opção — continua esperando.`,
+        detalhe: `"${params.texto.slice(0, 80)}" não bate com nenhuma opção. Continua esperando.`,
       });
       return true;
     }
@@ -319,7 +319,7 @@ async function continuarDeDepoisDe(params: {
 }
 
 function acoesDaExecucao(execucao: ExecucaoAtiva): AcoesDoMotor {
-  // Retomada pelo cron não tem comentário de origem — responder a um comentário só é possível na
+  // Retomada pelo cron não tem comentário de origem. Responder a um comentário só é possível na
   // mesma chamada que o recebeu.
   return acoesReais({ workspaceId: execucao.workspaceId });
 }

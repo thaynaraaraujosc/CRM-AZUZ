@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Política de Privacidade · Azuz CRM" };
 
 /**
- * Página pública exigida pela Meta pra publicar o App (WhatsApp Business, Instagram etc.) — sem
+ * Página pública exigida pela Meta pra publicar o App (WhatsApp Business, Instagram etc.): sem
  * isso o app fica preso em "modo de desenvolvimento" pra sempre e nunca recebe webhook de mensagem
  * real, só eventos de teste manual do painel deles. Texto genérico de ponto de partida; revise com
  * um advogado se quiser algo mais específico do negócio antes de divulgar amplamente.
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Política de Privacidade · Azuz CRM
 export default function PoliticaDePrivacidadePage() {
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "48px 24px 80px", color: "#0b1533", fontFamily: "sans-serif", lineHeight: 1.65 }}>
-      <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Política de Privacidade — Azuz CRM</h1>
+      <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Política de Privacidade do Azuz CRM</h1>
       <p style={{ color: "#5b6478", fontSize: 13, marginBottom: 32 }}>Última atualização: 14 de agosto de 2026</p>
 
       <p style={{ marginBottom: 20 }}>

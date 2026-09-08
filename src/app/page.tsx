@@ -14,7 +14,7 @@ import {
 import { PLANOS } from "@/lib/assinatura/planos";
 
 export const metadata: Metadata = {
-  title: "CRM AZUZ — WhatsApp, funil e automação num só lugar",
+  title: "CRM AZUZ: WhatsApp, funil e automação num só lugar",
   description:
     "O CRM que centraliza WhatsApp, Instagram, funil de vendas, automações e IA num painel só. Experimente o CRM AZUZ.",
 };
@@ -48,7 +48,7 @@ const RECURSOS = [
   {
     icon: <IconRelatorios />,
     titulo: "Relatórios de verdade",
-    descricao: "CPL, ROAS, atribuição e performance de vendas — sem planilha manual.",
+    descricao: "CPL, ROAS, atribuição e performance de vendas. Sem planilha manual.",
   },
 ];
 
@@ -60,7 +60,7 @@ const FUNIL_ETAPAS = [
 ];
 
 /**
- * Landing page pública (item 6 do pedido) — antes o domínio raiz redirecionava direto pra
+ * Landing page pública (item 6 do pedido). Antes o domínio raiz redirecionava direto pra
  * `/login`. Tema fixo, independente do claro/escuro do app: é página de marketing e não herda a
  * preferência salva do usuário.
  *
@@ -70,7 +70,7 @@ const FUNIL_ETAPAS = [
  * elemento disputando atenção com o texto que vende.
  *
  * As telas de produto abaixo do hero são recriações fiéis das UIs internas (mesma estrutura de
- * Início, Funil e Conversas) — não são screenshots reais porque esse ambiente não alcança o banco
+ * Início, Funil e Conversas): não são screenshots reais porque esse ambiente não alcança o banco
  * de produção pra logar e capturar; troque por prints/gravação real quando possível.
  */
 export default function LandingPage() {
@@ -79,7 +79,7 @@ export default function LandingPage() {
       <style>{`
         .lp-root {
           /* Paleta da landing: preto, branco e cinzas. Ela tem tokens próprios porque é pré-login
-             e não segue o tema claro/escuro escolhido pelo usuário — antes isso servia pra fixar
+             e não segue o tema claro/escuro escolhido pelo usuário. Antes isso servia pra fixar
              o fundo escuro, agora fixa o claro. O azul da marca sai do primeiro contato de
              propósito: a página vende com tipografia, espaço e proporção, não com cor. */
           --lp-bg: #ffffff;
@@ -100,7 +100,7 @@ export default function LandingPage() {
              os controles nativos (barra de rolagem, autofill) como se a página fosse escura. */
           color-scheme: light;
         }
-        /* Malha quase invisível atrás do topo — dá o traço "tecnológico" sem virar mais um
+        /* Malha quase invisível atrás do topo. Dá o traço "tecnológico" sem virar mais um
            elemento na tela. Some antes do primeiro bloco de conteúdo. */
         .lp-grid {
           position: absolute;
@@ -164,7 +164,7 @@ export default function LandingPage() {
         .lp-hero { text-align: center; padding: 104px 0 0; }
         .lp-h1 {
           font-family: var(--display); font-weight: 700;
-          /* Título grande de verdade, com entrelinha fechada e tracking negativo — é daí que vem
+          /* Título grande de verdade, com entrelinha fechada e tracking negativo. É daí que vem
              a presença da referência, não de cor nem de efeito. */
           font-size: clamp(38px, 6.6vw, 76px); line-height: 1.03; letter-spacing: -0.035em;
           max-width: 940px; margin: 0 auto 22px;
@@ -356,7 +356,7 @@ export default function LandingPage() {
               O CRM que roda <span>o comercial</span> da sua empresa do início ao fim
             </h1>
             <p className="lp-sub">
-              WhatsApp, Instagram, funil de vendas, automações e IA num painel só — sem
+              WhatsApp, Instagram, funil de vendas, automações e IA num painel só. Sem
               planilha, sem app espalhado.
             </p>
             <div className="lp-cta-row">
@@ -466,7 +466,7 @@ export default function LandingPage() {
               </div>
               <div className="lp-tabs-caption">
                 <span>
-                  <b>02</b> Funil visual — arraste negócios entre etapas
+                  <b>02</b> Funil visual: arraste negócios entre etapas
                 </span>
               </div>
             </div>

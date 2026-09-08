@@ -3,12 +3,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 /**
- * POST público (sem `auth()`) — equivalente de `atribuirContatoAoFunilPublico` (que antes lia e
+ * POST público (sem `auth()`). Equivalente de `atribuirContatoAoFunilPublico` (que antes lia e
  * regravava `/api/funis` inteiro): move (ou cria) o card desse contato pra etapa escolhida, tirando
- * de onde estivesse antes em qualquer funil — mas só dentro do workspace do formulário, resolvido
+ * de onde estivesse antes em qualquer funil. Mas só dentro do workspace do formulário, resolvido
  * aqui. Diferente do `PUT /api/funis` (que reconcilia a tabela inteira a partir de um array
  * arbitrário do cliente), essa rota só aceita `{funilId, etapaTitulo, card}` e faz a movimentação
- * ela mesma no servidor — não dá pra um público mandar um payload reconciliando funis inteiros.
+ * ela mesma no servidor: não dá pra um público mandar um payload reconciliando funis inteiros.
  */
 export async function POST(request: Request, ctx: RouteContext<"/api/formularios/[id]/funil">) {
   const { id } = await ctx.params;

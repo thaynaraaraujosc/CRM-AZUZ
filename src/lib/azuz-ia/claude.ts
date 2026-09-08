@@ -1,7 +1,7 @@
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 
-/** Modelo configurável por env var — se o alias padrão não estiver disponível na conta do
+/** Modelo configurável por env var. Se o alias padrão não estiver disponível na conta do
  * usuário, dá pra trocar sem precisar mexer em código. */
 function modelo(): string {
   return process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-5";
@@ -16,7 +16,7 @@ type RespostaClaude = {
 
 /**
  * Chama a API da Anthropic direto via `fetch` (mesmo estilo já usado pra Graph API da Meta em
- * `src/app/api/integracoes/meta/callback/route.ts` — sem SDK nova, um padrão só de "chamar API
+ * `src/app/api/integracoes/meta/callback/route.ts`: sem SDK nova, um padrão só de "chamar API
  * externa" no projeto todo). Sem streaming nesta fase: o chat espera a resposta completa.
  */
 export async function perguntarClaude(params: { systemPrompt: string; mensagens: MensagemClaude[] }): Promise<string> {

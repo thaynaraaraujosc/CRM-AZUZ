@@ -20,7 +20,7 @@ type OpcaoNome = { id: string; nome: string };
 /**
  * Formulário/contatos-sugeridos/equipe-sugerida/fluxos-automacao vêm de rotas públicas dedicadas
  * (ver src/app/api/formularios/[id]/), cada uma resolvendo o workspace a partir do `id` do
- * formulário na URL — nunca da lista inteira de `/api/contatos`, `/api/equipe`, `/api/funis`,
+ * formulário na URL: nunca da lista inteira de `/api/contatos`, `/api/equipe`, `/api/funis`,
  * `/api/automacoes-fluxos` (essas exigem sessão desde a Fase 2 do multi-tenancy, e listar tudo
  * pra um público não logado vazaria dado de qualquer empresa cadastrada, não só a dona do link).
  */
@@ -54,9 +54,9 @@ async function carregarEquipeSugerida(id: string): Promise<OpcaoNome[]> {
   }
 }
 
-/** Equivalente em runtime puro de `useFunis().atribuirContatoAoFunil` — move (ou cria) o card desse
+/** Equivalente em runtime puro de `useFunis().atribuirContatoAoFunil`. Move (ou cria) o card desse
  * contato pra etapa escolhida, tirando de onde estivesse antes em qualquer funil do workspace do
- * formulário. Ver src/app/api/formularios/[id]/funil/ — a movimentação acontece toda no servidor,
+ * formulário. Ver src/app/api/formularios/[id]/funil/: a movimentação acontece toda no servidor,
  * a rota não aceita reconciliar funis inteiros vindos do cliente. Fire-and-forget: `Ligacoes.moverEtapa`
  * é `void`, não espera essa chamada terminar. */
 function atribuirContatoAoFunilPublico(
@@ -75,7 +75,7 @@ function atribuirContatoAoFunilPublico(
 /**
  * Grava a resposta via API real (ver src/app/api/formularios/[id]/respostas/).
  *
- * É esta chamada que dispara o gatilho "formulário preenchido" — do lado do SERVIDOR, com as ações
+ * É esta chamada que dispara o gatilho "formulário preenchido". Do lado do SERVIDOR, com as ações
  * de verdade. Antes o disparo acontecia aqui no navegador: a automação só rodava enquanto a aba do
  * lead estivesse aberta, e as mensagens dela nunca saíam.
  *
@@ -90,7 +90,7 @@ function registrarRespostaPublica(formularioId: string, valores: Record<string, 
   }).catch((erro) => console.error("Falha ao registrar resposta pública:", erro));
 }
 
-/** Equivalente em runtime puro de `useContatos().salvarDadosContato` — cria o contato (se ainda não
+/** Equivalente em runtime puro de `useContatos().salvarDadosContato`. Cria o contato (se ainda não
  * existir, com origem "Formulário") ou funde os dados informados num já existente, no workspace do
  * formulário (ver src/app/api/formularios/[id]/contatos/). Usado tanto pelo submit do formulário
  * quanto pelas `Ligacoes` (`salvarContato`/`atribuirAtendente`) do motor de automações. */
@@ -103,7 +103,7 @@ function salvarDadosContatoPublico(formularioId: string, nome: string, dados: Re
   }).catch((erro) => console.error("Falha ao salvar contato público:", erro));
 }
 
-/** Cria ou atualiza o contato de verdade a partir das perguntas mapeadas pro CRM — mesmo efeito de
+/** Cria ou atualiza o contato de verdade a partir das perguntas mapeadas pro CRM. Mesmo efeito de
  * `useContatos().criarContato`, mas em runtime puro (sem Provider), via API real. */
 function salvarContatoPublico(formularioId: string, dadosMapeados: Record<string, string>) {
   const nome = dadosMapeados.nome;
@@ -142,7 +142,7 @@ function FormularioPreviewContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
   const chave = searchParams.get("chave");
-  // Carregados só depois de montar (não no initializer do useState) — essa página é pré-renderizada
+  // Carregados só depois de montar (não no initializer do useState). Essa página é pré-renderizada
   // no servidor sem `id` disponível; ler direto no initializer faria o HTML da primeira renderização
   // no cliente divergir do HTML do servidor (hydration mismatch).
   const [formulario, setFormulario] = useState<Formulario | null>(null);
@@ -197,7 +197,7 @@ function FormularioPreviewContent() {
             proximosErros[pergunta.id] = "Formato inválido.";
           }
         } catch {
-          // regex configurada errada no builder — não trava o envio do cliente por causa disso.
+          // regex configurada errada no builder. Não trava o envio do cliente por causa disso.
         }
       }
     }
@@ -236,7 +236,7 @@ function FormularioPreviewContent() {
     if (integracoes?.funilId && integracoes.etapaTitulo) {
       await atribuirContatoAoFunilPublico(formulario.id, integracoes.funilId, integracoes.etapaTitulo, {
         nome: nomeContato,
-        valor: "—",
+        valor: "-",
         origem: "Formulário",
         dias: "0",
         data: new Date().toISOString().slice(0, 10),
@@ -274,7 +274,7 @@ function FormularioPreviewContent() {
       <div className="form-public-page">
         <div className="form-public-card" style={{ background: "#ffffff" }}>
           <h2>Formulário indisponível</h2>
-          <p className="hint">Este formulário ainda está em rascunho — publique-o no CRM pra receber respostas.</p>
+          <p className="hint">Este formulário ainda está em rascunho. Publique-o no CRM pra receber respostas.</p>
         </div>
       </div>
     );

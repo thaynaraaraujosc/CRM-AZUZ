@@ -5,7 +5,7 @@ import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 
 /**
- * Fluxo de conexão da API oficial (Meta), isolado do resto da tela de Configurações — mesmo motivo
+ * Fluxo de conexão da API oficial (Meta), isolado do resto da tela de Configurações. Mesmo motivo
  * de `ConexaoQrCode`: assim ele roda embaixo do botão que a pessoa clicou, em qualquer tela, em vez
  * de mandar ela pra outra página escolher de novo entre os dois canais.
  *
@@ -23,7 +23,7 @@ export function ConexaoWhatsAppOficial() {
         <p className="int-sub" style={{ margin: 0 }}>
           Conectado
           {(integracao?.metadados?.numeroExibicao as string | undefined)
-            ? ` — ${integracao?.metadados?.numeroExibicao as string}`
+            ? `: ${integracao?.metadados?.numeroExibicao as string}`
             : ""}
         </p>
         <button

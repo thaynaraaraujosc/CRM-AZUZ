@@ -11,9 +11,9 @@ function formatarData(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
-/** Segurança — só senha (redefinição por e-mail, sem 2FA/política de senha/expiração/bloqueio por
+/** Segurança: só senha (redefinição por e-mail, sem 2FA/política de senha/expiração/bloqueio por
  * tentativa, que nunca chegaram a ser aplicados de verdade) e sessões ativas reais (`SessaoAtiva`,
- * criada no login em `src/lib/auth.ts` — dispositivo/navegador parseados do User-Agent real). */
+ * criada no login em `src/lib/auth.ts`. Dispositivo/navegador parseados do User-Agent real). */
 export function SegurancaSecao() {
   const { data: sessao } = useSession();
   const emailAtual = sessao?.user?.email ?? "";
@@ -85,7 +85,7 @@ export function SegurancaSecao() {
         <p className="config-bloco-titulo">Senha</p>
         <div className="toggle-row" style={{ padding: "6px 0" }}>
           <span className="tl">
-            Redefinir por e-mail — enviamos um link pra <strong>{emailAtual || "seu e-mail cadastrado"}</strong>, sem precisar digitar a senha atual.
+            Redefinir por e-mail: enviamos um link pra <strong>{emailAtual || "seu e-mail cadastrado"}</strong>, sem precisar digitar a senha atual.
           </span>
           <button type="button" className="btn ghost" onClick={pedirRedefinicaoSenha} disabled={enviandoReset || resetEnviado}>
             {resetEnviado ? "Link enviado" : enviandoReset ? "Enviando…" : "Redefinir senha"}

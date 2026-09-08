@@ -12,7 +12,7 @@ function paraContato(linha: { etiquetas: unknown; [k: string]: unknown }): Conta
   } as Contato;
 }
 
-/** Atualização direta por id — usada por `adicionarEtiqueta`/`removerEtiqueta`/`alternarFavorito`,
+/** Atualização direta por id: usada por `adicionarEtiqueta`/`removerEtiqueta`/`alternarFavorito`,
  * que hoje calculam o próximo valor no cliente e mandam o campo já pronto pra gravar. Só mexe em
  * contato do mesmo workspace de quem está logado. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/contatos/[id]">) {
@@ -22,7 +22,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/contatos/[
   const { id } = await ctx.params;
   const dados = (await request.json()) as Partial<Contato> & Record<string, unknown>;
 
-  // Foto do "antes" pra saber O QUE mudou — é disso que os gatilhos de etiqueta, responsável e
+  // Foto do "antes" pra saber O QUE mudou. É disso que os gatilhos de etiqueta, responsável e
   // campo alterado dependem. Sem a comparação eles não teriam como existir.
   const antes = await prisma.contato.findFirst({ where: { id, workspaceId: sessao.user.workspaceId } });
 

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 
 /**
- * O estado de uma automação rodando para um contato — a peça que faltava.
+ * O estado de uma automação rodando para um contato. A peça que faltava.
  *
  * Hoje o motor roda o fluxo inteiro numa chamada e joga o resultado fora. Um bloco "aguardar 2
  * horas" simplesmente descarta a execução: nada retoma, e a automação nunca continua. Aqui o
@@ -11,7 +11,7 @@ import { prisma } from "@/lib/prisma";
  *
  * - **por tempo**: `aguardandoAte` vence e o cron pega (mesmo padrão do disparo em massa);
  * - **por evento**: o webhook procura a execução que espera aquele contato ANTES de avaliar
- *   gatilhos novos — é isso que faz "clicou em Sim" continuar o fluxo em vez de começar outro.
+ *   gatilhos novos: é isso que faz "clicou em Sim" continuar o fluxo em vez de começar outro.
  *
  * Este arquivo é só a camada de acesso: criar, avançar, parar, retomar, registrar passo. Quem
  * decide o que executar é o motor (fase seguinte).
@@ -64,7 +64,7 @@ function paraExecucao(linha: {
   };
 }
 
-/** Situações em que a execução ainda pode andar — o oposto de terminada. */
+/** Situações em que a execução ainda pode andar. O oposto de terminada. */
 export const SITUACOES_VIVAS = ["em_andamento", "aguardando_tempo", "aguardando_evento"] as const;
 
 export async function criarExecucao(params: {
@@ -130,7 +130,7 @@ export async function aguardarEvento(params: {
   noId: string;
   evento: string;
   contexto: ContextoExecucaoPersistido;
-  /** Prazo máximo, quando houver — a espera vira "evento OU tempo". */
+  /** Prazo máximo, quando houver: a espera vira "evento OU tempo". */
   ate?: Date | null;
 }): Promise<void> {
   await prisma.execucaoAutomacao.update({
@@ -152,7 +152,7 @@ export async function aguardarEvento(params: {
  * A diferença pro `aguardarTempo` está no `aguardandoNoId`, e ela é o que evita repetir um passo:
  * quando `aguardandoNoId` tem valor, o nó parado JÁ rodou (é uma espera) e quem retoma segue pela
  * saída dele; quando é `null`, o nó ainda não rodou e quem retoma executa ele mesmo. É o caso do
- * teto de nós por rodada — a automação é longa e avança em fatias.
+ * teto de nós por rodada. A automação é longa e avança em fatias.
  */
 export async function reagendarRodada(params: {
   execucaoId: string;
@@ -195,7 +195,7 @@ export async function encerrarExecucao(params: {
 /**
  * A execução que está esperando um evento deste contato, a mais recente primeiro.
  *
- * É a correlação que responde "a pessoa respondeu — que fluxo continua?". Sem isto, toda mensagem
+ * É a correlação que responde "a pessoa respondeu. Que fluxo continua?". Sem isto, toda mensagem
  * recebida só consegue COMEÇAR um fluxo, nunca continuar um.
  */
 export async function execucaoAguardandoDoContato(params: {
@@ -217,7 +217,7 @@ export async function execucaoAguardandoDoContato(params: {
 }
 
 /**
- * Execuções cuja espera por tempo venceu — a varredura do cron.
+ * Execuções cuja espera por tempo venceu. A varredura do cron.
  *
  * Não filtra por workspace de propósito: quem chama é o cron do sistema, não uma sessão. O limite
  * existe pra uma rodada não tentar retomar dez mil execuções de uma vez.
@@ -231,7 +231,7 @@ export async function execucoesComEsperaVencida(limite = 50): Promise<ExecucaoAt
   return linhas.map(paraExecucao);
 }
 
-/** Execuções vivas de um contato — usado pelas regras de concorrência ("pausar as outras"). */
+/** Execuções vivas de um contato. Usado pelas regras de concorrência ("pausar as outras"). */
 export async function execucoesVivasDoContato(workspaceId: string, contatoNome: string): Promise<ExecucaoAtiva[]> {
   const linhas = await prisma.execucaoAutomacao.findMany({
     where: { workspaceId, contatoNome, situacao: { in: [...SITUACOES_VIVAS] } },
@@ -241,7 +241,7 @@ export async function execucoesVivasDoContato(workspaceId: string, contatoNome: 
 }
 
 /**
- * Registra o que aconteceu num nó. É o "Histórico de execuções" que hoje não existe — o motor atual
+ * Registra o que aconteceu num nó. É o "Histórico de execuções" que hoje não existe. O motor atual
  * só imprime a contagem de passos no log do servidor.
  *
  * Nunca derruba a execução: log que quebra o fluxo é pior do que log faltando.
@@ -278,7 +278,7 @@ export async function registrarPasso(params: {
   }
 }
 
-/** Os passos de uma execução, em ordem — a tela de histórico. */
+/** Os passos de uma execução, em ordem: a tela de histórico. */
 export async function passosDaExecucao(workspaceId: string, execucaoId: string) {
   return prisma.passoAutomacao.findMany({
     where: { execucaoId, workspaceId },
@@ -290,7 +290,7 @@ export async function passosDaExecucao(workspaceId: string, execucaoId: string) 
  * As gravações que o motor faz, atrás de uma interface.
  *
  * Serve pro modo seco: o botão "Testar" roda o MESMO motor, com as mesmas decisões, sem criar
- * linha nenhuma no banco. Antes o simulador era código escrito à parte — e por isso divergia do
+ * linha nenhuma no banco. Antes o simulador era código escrito à parte. E por isso divergia do
  * que acontecia de verdade, que é o pior defeito possível num simulador.
  */
 export type GravadorDeExecucao = {
@@ -302,7 +302,7 @@ export type GravadorDeExecucao = {
   registrarPasso: typeof registrarPasso;
 };
 
-/** O gravador de verdade — grava no banco. É o padrão do motor. */
+/** O gravador de verdade: grava no banco. É o padrão do motor. */
 export const gravadorNoBanco: GravadorDeExecucao = {
   avancarPara,
   aguardarTempo,

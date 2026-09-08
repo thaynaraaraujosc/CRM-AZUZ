@@ -166,13 +166,13 @@ function NotificationsBell() {
   );
 }
 
-/** Menu horizontal fixo no topo do CRM — busca global e notificações. */
+/** Menu horizontal fixo no topo do CRM. Busca global e notificações. */
 export function AppHeader() {
   const { toasts } = useNotificacoes();
   const { toasts: toastsCentralDia } = useCentralDia();
   const pathname = usePathname();
   // O Início troca o `.main` branco padrão pelo mesmo fundo marinho quadriculado do login
-  // (`.main-inicio`, ver globals.css) — a busca acompanha, ficando transparente em cima desse
+  // (`.main-inicio`, ver globals.css): a busca acompanha, ficando transparente em cima desse
   // fundo em vez de manter a faixa branca com linha embaixo.
   const naTelaInicio = pathname === "/inicio";
 

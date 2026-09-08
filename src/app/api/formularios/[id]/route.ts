@@ -23,7 +23,7 @@ function paraFormulario(linha: {
 }
 
 /**
- * GET busca um formulário único — sem autenticação (rota pública, dentro do prefixo
+ * GET busca um formulário único. Sem autenticação (rota pública, dentro do prefixo
  * `/api/formularios` já liberado no proxy). Usada por `/formulario-preview`, que precisa desse
  * único formulário (pra saber a que workspace ele pertence e resolver as rotas públicas
  * `contatos-sugeridos`/`equipe-sugerida`/`fluxos-automacao`/etc. a partir daí), nunca a lista
@@ -36,7 +36,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/formularios
 
   // Rota PÚBLICA devolve só o que a tela pública precisa pra desenhar o formulário.
   //
-  // Antes ela devolvia a linha inteira do banco — inclusive `integracoes`, que guarda a
+  // Antes ela devolvia a linha inteira do banco. Inclusive `integracoes`, que guarda a
   // configuração de para onde as respostas são enviadas, e `versoes`, com o histórico de edições.
   // Nada disso é necessário pra preencher um formulário, e tudo isso estava acessível a qualquer
   // pessoa com o id em mãos. Endpoint aberto devolve o mínimo, não o registro completo.
@@ -54,7 +54,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/formularios
   });
 }
 
-/** Atualização por id — usada pelo helper `tocar()` do Context, que centraliza todo mutador que
+/** Atualização por id: usada pelo helper `tocar()` do Context, que centraliza todo mutador que
  * edita um formulário existente (páginas, perguntas, publicação, versões...). Só mexe em formulário
  * do mesmo workspace de quem está logado. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/formularios/[id]">) {
@@ -63,7 +63,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/formulario
 
   const { id } = await ctx.params;
   const body = (await request.json()) as Partial<Formulario>;
-  // id/criadoEm/atualizadoEm são geridos pelo banco (PK e @updatedAt) — nunca vêm do front.
+  // id/criadoEm/atualizadoEm são geridos pelo banco (PK e @updatedAt). Nunca vêm do front.
   const dados: Partial<Formulario> = { ...body };
   delete dados.id;
   delete dados.criadoEm;
@@ -82,7 +82,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/formulario
   return NextResponse.json(paraFormulario(linha));
 }
 
-/** DELETE também apaga as respostas desse formulário — mesma regra que `excluirFormulario` já tinha
+/** DELETE também apaga as respostas desse formulário. Mesma regra que `excluirFormulario` já tinha
  * (RespostaFormulario não tem FK real pro Formulario no schema, então o cascade é manual). Só mexe
  * em formulário do mesmo workspace de quem está logado. */
 export async function DELETE(_request: Request, ctx: RouteContext<"/api/formularios/[id]">) {

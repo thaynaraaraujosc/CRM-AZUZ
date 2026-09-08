@@ -9,11 +9,11 @@ import { contasCanalVisiveis } from "@/lib/integracoes/conta-canal";
  *
  * Uma conversa só mostra as mensagens da CONEXÃO ativa (ver `conta-canal.ts`). Quando o
  * identificador gravado na mensagem diverge por um fio do que está nos metadados da integração, a
- * mensagem é gravada e nunca aparece — e o sintoma ("conversa na lista, vazia por dentro", ou
+ * mensagem é gravada e nunca aparece. E o sintoma ("conversa na lista, vazia por dentro", ou
  * "some ao atualizar a página") não aponta pra causa. Já aconteceu duas vezes com o Instagram.
  *
  * Esta rota põe os dois lados lado a lado: o que as mensagens dizem e o que as conexões dizem.
- * Nenhum dado sensível sai daqui — só identificadores de número e contagens.
+ * Nenhum dado sensível sai daqui. Só identificadores de número e contagens.
  */
 export const dynamic = "force-dynamic";
 
@@ -72,7 +72,7 @@ export async function GET() {
  * conserta as que ficaram para trás.
  *
  * Só toca em mensagem cuja CONVERSA já tem dono. Conversa sem marca é histórico antigo do QR Code,
- * que deve mesmo continuar escondido enquanto aquela conexão não voltar — adotar essas seria
+ * que deve mesmo continuar escondido enquanto aquela conexão não voltar. Adotar essas seria
  * ressuscitar na tela mensagens de um número desconectado.
  */
 export async function POST() {
@@ -120,7 +120,7 @@ export async function POST() {
       aindaOrfas,
       fotosCopiadas,
       observacao:
-        "As que sobraram pertencem a conversas sem conexão dona — histórico antigo do WhatsApp por QR Code. " +
+        "As que sobraram pertencem a conversas sem conexão dona. Histórico antigo do WhatsApp por QR Code. " +
         "Elas voltam sozinhas quando aquela conexão for reconectada.",
     },
     { headers: { "cache-control": "no-store" } },

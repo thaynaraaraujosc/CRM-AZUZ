@@ -28,9 +28,9 @@ const CORES_MOTIVO: Record<string, string> = {
 type PerdaComEtapa = NegocioCard & { etapa: string; funil: string };
 
 /**
- * Única página com a análise completa de motivos de perda — Performance mostra só um resumo com
+ * Única página com a análise completa de motivos de perda. Performance mostra só um resumo com
  * link pra cá. Tudo derivado de `NegocioCard.statusFechamento === "perdido"` real (marcado no
- * Funil) — sem dado fictício, workspace sem nenhuma perda registrada mostra vazio.
+ * Funil): sem dado fictício, workspace sem nenhuma perda registrada mostra vazio.
  */
 export default function MotivosPerdaPage() {
   const { funis } = useFunis();
@@ -95,7 +95,7 @@ export default function MotivosPerdaPage() {
           <div className="topbar-title-row">
             <h2>Motivos de perda</h2>
           </div>
-          <p className="sub">Análise completa — a única página com o detalhamento inteiro de perdas</p>
+          <p className="sub">Análise completa: a única página com o detalhamento inteiro de perdas</p>
         </div>
       </div>
 
@@ -121,7 +121,7 @@ export default function MotivosPerdaPage() {
         {totalPerdas === 0 ? (
           <div className="card mb14">
             <div className="dados-nao-conectados" style={{ padding: 17 }}>
-              Você ainda não possui dados suficientes para gerar este indicador — marque negócios
+              Você ainda não possui dados suficientes para gerar este indicador. Marque negócios
               como &quot;perdido&quot; no Funil (com motivo) pra ver a análise aqui.
             </div>
           </div>
@@ -143,7 +143,7 @@ export default function MotivosPerdaPage() {
           />
           <KpiCard
             label="Etapa mais afetada"
-            value={etapaMaisAfetada?.etapa ?? "—"}
+            value={etapaMaisAfetada?.etapa ?? "-"}
             sub={etapaMaisAfetada ? `${etapaMaisAfetada.total} perdas` : undefined}
             href="/funil"
           />
@@ -210,7 +210,7 @@ export default function MotivosPerdaPage() {
           </ChartCard>
           <ChartCard title="Produtos ou serviços mais afetados">
             <div className="dados-nao-conectados">
-              Dados não conectados — cadastre produtos/serviços nas negociações pra ver essa análise aqui.
+              Dados não conectados: cadastre produtos/serviços nas negociações pra ver essa análise aqui.
             </div>
           </ChartCard>
         </div>
@@ -252,12 +252,12 @@ export default function MotivosPerdaPage() {
                       {o.nome}
                     </Link>
                   </td>
-                  <td>{o.responsavel ?? "—"}</td>
-                  <td>{o.motivoPerda ?? "—"}</td>
+                  <td>{o.responsavel ?? "-"}</td>
+                  <td>{o.motivoPerda ?? "-"}</td>
                   <td>{o.etapa}</td>
                   <td>{o.origem}</td>
                   <td>{o.valor}</td>
-                  <td>{o.dataFechamento ?? "—"}</td>
+                  <td>{o.dataFechamento ?? "-"}</td>
                 </tr>
               ))}
             </tbody>

@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /** GET devolve o status da integração da Meta (`?provedor=`, default `meta_whatsapp`) do workspace
- * de quem está logado — nunca o token, só o que a UI precisa mostrar (status, dados, erro). */
+ * de quem está logado: nunca o token, só o que a UI precisa mostrar (status, dados, erro). */
 export async function GET(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   );
 }
 
-/** PATCH atualiza só um pedaço de `metadados` de uma integração já conectada — faz merge com o que
+/** PATCH atualiza só um pedaço de `metadados` de uma integração já conectada. Faz merge com o que
  * já existe em vez de sobrescrever (ao contrário do callback OAuth, que substitui `metadados`
  * inteiro a cada reconexão). Usado hoje pelo toggle "Receber mensagens do Instagram no CRM", que
  * precisa sobreviver a uma reconexão sem voltar ao padrão sozinho. */

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
 import { enviarEmail, templateConvite } from "@/lib/email";
 
-/** Linha do banco -> `Membro` do front — formato de `permissoes` (JSON) e `ultimoAcesso` (Date ->
+/** Linha do banco -> `Membro` do front. Formato de `permissoes` (JSON) e `ultimoAcesso` (Date ->
  * ISO string) mudam. */
 function paraMembro(linha: { permissoes: unknown; ultimoAcesso?: Date | null; [k: string]: unknown }): Membro {
   return {
@@ -29,7 +29,7 @@ export async function GET() {
 }
 
 /**
- * POST cria um convite de membro novo — mesma semântica que `convidarMembro` já tinha no Context
+ * POST cria um convite de membro novo. Mesma semântica que `convidarMembro` já tinha no Context
  * (ver equipe-context.tsx): entra sem senha, inativo, com `convitePendente`, associado ao workspace
  * de quem está convidando. Se o id (slug do nome) já existir, retorna o membro existente em vez de
  * duplicar.
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       papel: dados.papel,
       papelTipo: dados.papelTipo,
       papelNota: dados.papelNota,
-      leads: "—",
+      leads: "-",
       enxerga: dados.enxerga,
       permissoes: dados.permissoes,
       ativo: false,

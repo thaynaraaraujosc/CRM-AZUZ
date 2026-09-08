@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-/** POST reordena todas as etapas de uma vez — usado só por `reordenarEtapa`. */
+/** POST reordena todas as etapas de uma vez. Usado só por `reordenarEtapa`. */
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

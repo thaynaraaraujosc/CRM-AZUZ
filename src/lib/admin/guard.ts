@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
 /**
- * Toda rota `/api/admin/*` chama isso primeiro — o proxy já bloqueia quem não é super-admin antes
+ * Toda rota `/api/admin/*` chama isso primeiro. O proxy já bloqueia quem não é super-admin antes
  * de chegar aqui, mas a rota confere de novo (defesa em profundidade: se algum dia o matcher do
  * proxy mudar e passar a ignorar esse caminho por engano, a rota continua fechada sozinha).
  */

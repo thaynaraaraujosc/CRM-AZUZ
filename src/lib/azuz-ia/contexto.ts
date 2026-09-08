@@ -4,13 +4,13 @@ const LIMITE_REGISTROS = 30;
 
 /**
  * Monta um recorte limitado e recente dos dados do workspace, só pras categorias marcadas em
- * "Dados permitidos" (Configurações → Azuz IA) — nunca o banco inteiro, pra manter o prompt (e o
+ * "Dados permitidos" (Configurações → Azuz IA). Nunca o banco inteiro, pra manter o prompt (e o
  * custo da chamada à IA) sob controle. Cada categoria vira um bloco de texto compacto, não JSON
  * cru, pra facilitar o modelo ler.
  *
  * Limitação conhecida: "relatórios", "campanhas" e "documentos" (as outras 3 opções que já
  * existem na UI de "Dados permitidos") ainda não têm uma tabela 1:1 que dê pra virar contexto de
- * prompt de forma direta — ficam de fora por enquanto, sem efeito quando marcadas.
+ * prompt de forma direta: ficam de fora por enquanto, sem efeito quando marcadas.
  */
 export async function montarContextoWorkspace(workspaceId: string, dadosPermitidos: string[]): Promise<string> {
   const blocos: string[] = [];

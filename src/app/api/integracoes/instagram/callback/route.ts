@@ -15,7 +15,7 @@ function comoJson(valor: Record<string, unknown>): Prisma.InputJsonValue {
 }
 
 /**
- * GET recebe a volta do diálogo de "Login do Instagram" — mesmo padrão do callback da Meta
+ * GET recebe a volta do diálogo de "Login do Instagram". Mesmo padrão do callback da Meta
  * principal (src/app/api/integracoes/meta/callback/route.ts), mas nesse fluxo o `state` só carrega
  * o workspaceId (o provedor é sempre `meta_instagram`, não tem outro provedor possível aqui).
  */
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
     const { accessToken, instagramContaId, expiraEm } = await trocarCodePorTokenInstagram(code, redirectUri);
     const perfil = await buscarPerfilInstagram(accessToken);
 
-    // Assinatura dos eventos da conta — autorizar no OAuth dá acesso, não assina webhook. Sem este
+    // Assinatura dos eventos da conta. Autorizar no OAuth dá acesso, não assina webhook. Sem este
     // passo a conta fica "Conectada" e nenhuma mensagem do Direct chega (ver o comentário da
     // função). O erro, se houver, fica guardado pra tela poder avisar em vez de mentir "conectado".
     const erroAssinatura = await inscreverAppNoInstagram(accessToken);
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     };
 
     // Preserva o que não vem dessa troca (ex.: o toggle "Receber mensagens do Instagram no CRM",
-    // e um eventual `pageNome`/`pageId` de uma conexão antiga via Página do Facebook) — mesma
+    // e um eventual `pageNome`/`pageId` de uma conexão antiga via Página do Facebook). Mesma
     // lógica de merge do callback principal, pelo mesmo motivo: reconectar não pode apagar
     // preferência salva.
     const existente = await prisma.integracao.findUnique({

@@ -11,7 +11,7 @@ import { enviarDirectInstagram } from "@/lib/integracoes/instagram-login";
  *
  * Receber Direct já funcionava, responder não: a tela de Conversas só tinha caminho de envio pros
  * dois canais de WhatsApp, e uma conversa do Instagram caía no "essa conversa não tem um número de
- * WhatsApp associado" — o CRM recebia a mensagem e não deixava responder.
+ * WhatsApp associado": o CRM recebia a mensagem e não deixava responder.
  *
  * `destinatario` é o id interno de quem mandou (guardado em `Conversa.contato`), não o @: é ele que
  * a API do Instagram aceita, e ele não muda se a pessoa trocar de nome de usuário.

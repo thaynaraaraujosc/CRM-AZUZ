@@ -3,7 +3,7 @@ import Link from "next/link";
 /**
  * Página não encontrada, com a cara do produto.
  *
- * Sem este arquivo, o Next mostra a tela padrão dele — fundo branco, tipografia do framework e
+ * Sem este arquivo, o Next mostra a tela padrão dele. Fundo branco, tipografia do framework e
  * nenhuma menção ao CRM. Pra quem está avaliando o produto, isso lê como "aplicação genérica", e
  * pra quem já é cliente lê como "quebrou".
  */

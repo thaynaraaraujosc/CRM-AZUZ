@@ -12,8 +12,8 @@ import { decriptar } from "@/lib/integracoes/crypto";
  * uma página de erro. Sem este intermediário, a única forma de exibir era baixar o arquivo e
  * guardá-lo embutido na mensagem.
  *
- * É o que permite ver a miniatura do story respondido — indispensável pra saber A QUAL story a
- * pessoa está respondendo quando há dezenas no ar — sem guardar cópia de nada: o arquivo continua
+ * É o que permite ver a miniatura do story respondido. Indispensável pra saber A QUAL story a
+ * pessoa está respondendo quando há dezenas no ar. Sem guardar cópia de nada: o arquivo continua
  * no Instagram, e o CRM só serve de ponte na hora de mostrar.
  *
  * O link do CDN expira em algumas horas. Depois disso a miniatura para de carregar, o que é o
@@ -52,11 +52,11 @@ export async function GET(request: Request) {
     headers: { authorization: `Bearer ${decriptar(integracao.accessTokenCriptografado)}` },
   });
   if (!resposta.ok || !resposta.body) {
-    return NextResponse.json({ erro: "Mídia indisponível — o link do Instagram pode ter expirado." }, { status: 404 });
+    return NextResponse.json({ erro: "Mídia indisponível: o link do Instagram pode ter expirado." }, { status: 404 });
   }
 
   const tipo = resposta.headers.get("content-type") ?? "application/octet-stream";
-  // Página HTML aqui significa que o CDN recusou (token inválido/expirado) — devolver isso como se
+  // Página HTML aqui significa que o CDN recusou (token inválido/expirado). Devolver isso como se
   // fosse imagem deixaria a tela com um quadro quebrado sem explicação.
   if (!/^(image|video|audio)\//.test(tipo)) {
     return NextResponse.json({ erro: "O Instagram não devolveu mídia para esse endereço." }, { status: 404 });

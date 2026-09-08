@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 /**
  * Fundo da conversa: branco (`padrao`), uma imagem do computador ou uma cor sólida escolhida.
  *
- * Os fundos "prontos" (pontilhado, ondas, folhas, geométrico) foram removidos — eram texturas
+ * Os fundos "prontos" (pontilhado, ondas, folhas, geométrico) foram removidos: eram texturas
  * escuras que destoavam do resto do produto e ninguém escolheria pra uma tela de trabalho. Quem
  * tiver um deles salvo cai no branco sozinho, sem migração: `estiloFundoConversa` (conversas/page)
  * devolve estilo vazio pra qualquer tipo que não reconheça.
@@ -36,7 +36,7 @@ export type ConfigConversas = {
   mostrarUltimaAtividade: boolean;
   ocultarPreviaNotificacao: boolean;
 
-  // Notificações — sons/alertas ficam aqui; "notificacoesAtivas" do
+  // Notificações: sons/alertas ficam aqui; "notificacoesAtivas" do
   // NotificacoesContext continua sendo o interruptor mestre.
   somNovaMensagem: boolean;
   notificacaoNavegador: boolean;
@@ -101,14 +101,14 @@ export const CONFIG_PADRAO: ConfigConversas = {
   manterPainelContatoAberto: false,
 };
 
-/** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
+/** Preferências (banco real, ver src/app/api/preferencias/): chave desse blob na tabela `Preferencia`. */
 const CHAVE_PREFERENCIA = "conversas-config";
 
 type ConfigConversasContextValue = {
   config: ConfigConversas;
   atualizarConfig: (patch: Partial<ConfigConversas>) => void;
   restaurarPadrao: () => void;
-  /** Aplica um fundo — "todas" grava no padrão global, "atual" só nessa conversa. */
+  /** Aplica um fundo: "todas" grava no padrão global, "atual" só nessa conversa. */
   definirFundo: (
     fundo: FundoConversa,
     escopo: "todas" | "atual",

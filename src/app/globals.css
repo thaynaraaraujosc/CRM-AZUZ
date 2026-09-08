@@ -1,45 +1,45 @@
 /* ==========================================================================
-   CRM AZUZ — design system
+   CRM AZUZ: design system
    Base preto/branco/cinza · Azul AZUZ #2E6BFF como accent · Poppins + Montserrat
    Sem cores quentes, por regra da marca.
    ========================================================================== */
 
 :root {
   /* Quatro níveis, com degraus grandes o bastante pra serem percebidos. Antes o piso, o corpo do
-     card e a área interna ficavam dentro de 2% de luminosidade um do outro — tecnicamente
+     card e a área interna ficavam dentro de 2% de luminosidade um do outro. Tecnicamente
      diferentes, visualmente o mesmo plano. */
   --navy: #ffffff;
   --navy-raised: #f5f6f8;
   --navy-raised-2: #eceef2;
   --navy-deep: #ffffff;
-  /* Superfície que se destaca por ficar ACIMA das outras — card sobre coluna, popover sobre
+  /* Superfície que se destaca por ficar ACIMA das outras. Card sobre coluna, popover sobre
      página. É branca como `--navy`, mas o nome diz a intenção: quem usa este token está dizendo
      "isto flutua", e por isso vem acompanhado de sombra. */
   --surface-elevated: #ffffff;
-  /* "Piso" atrás dos painéis flutuantes (sidebar + área principal). Era o marinho da marca — o que
+  /* "Piso" atrás dos painéis flutuantes (sidebar + área principal). Era o marinho da marca. O que
      dava ao app logado a cara de dashboard colorido, com dezenas de cartões brancos recortados
      sobre um fundo forte. Agora é off-white: os painéis brancos quase se fundem ao piso e a página
      lê como uma superfície contínua, com a separação vindo da borda, não do contraste de cor. */
   /* Piso branco. O cinza deixa de cobrir área e passa a ser recurso de peso: menu, botão, campo,
      coluna do kanban. Numa tela grande, cinza claro em toda a superfície ainda lê como cinza. */
-  /* TESTE — a camada de trás de tudo.
+  /* TESTE: a camada de trás de tudo.
      É o "chão" onde o menu e o painel de conteúdo flutuam: aparece nas margens da página e na
      folga entre os dois. Era branco, o que fazia tudo parecer uma folha só. Em marinho, o menu
-     deixa de ser um bloco de cor solto e vira parte de uma moldura — e os painéis brancos ganham
+     deixa de ser um bloco de cor solto e vira parte de uma moldura. E os painéis brancos ganham
      recorte.
      Pra voltar ao branco é só esta linha: `--canvas: #ffffff`. */
   --canvas: #0b1533;
 
-  /* Azul da marca — daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
+  /* Azul da marca: daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
   --blue: #2e6bff;
   --blue-soft: rgba(46, 107, 255, 0.14);
   --blue-soft-2: rgba(46, 107, 255, 0.07);
-  /* Azul mais escuro que --blue — usado onde o azul vibrante padrão fica claro demais pra servir
+  /* Azul mais escuro que --blue. Usado onde o azul vibrante padrão fica claro demais pra servir
      de "ligado"/confirmação (ex.: toggle ativo). */
   --blue-strong: #1d4fd1;
 
-  /* AZUL MARINHO — a cor da ação principal: botão "Salvar", chip de filtro ligado, passo atual do
+  /* AZUL MARINHO: a cor da ação principal: botão "Salvar", chip de filtro ligado, passo atual do
      assistente, aviso. Antes esses elementos eram quase-pretos (`--ink`), e o resultado é que a
      identidade azul do CRM sumia justamente onde a pessoa mais olha.
      É um token PRÓPRIO, e não `--ink` repintado, porque `--ink` também é a cor do texto: mudar ele
@@ -47,7 +47,7 @@
 
      Houve uma versão intermediária em #1a3d8f, escolhida quando só os BOTÕES eram marinho: naquele
      contexto o tom oficial se confundia com preto, porque não havia mais nada azul por perto pra
-     dar referência ao olho. Com a interface inteira em marinho — menu, tinta, conversa aberta — a
+     dar referência ao olho. Com a interface inteira em marinho. Menu, tinta, conversa aberta: a
      referência existe, e o tom oficial da marca é o certo.
      Branco sobre #0b1533 fica em 18:1, muito acima do mínimo de 4,5:1. */
   --acao: #0b1533;
@@ -55,7 +55,7 @@
   --acao-active: #060c1f;
   --acao-texto: #ffffff;
 
-  /* Bordas organizam, não são protagonistas — mas precisam ser vistas. A 8% ela sumia sobre branco
+  /* Bordas organizam, não são protagonistas: mas precisam ser vistas. A 8% ela sumia sobre branco
      e o card ficava sem começo nem fim. `--line-strong` é pro que precisa de recorte de verdade:
      card dentro de card, cabeçalho de tabela, item destacado. */
   --line: rgba(11, 21, 51, 0.1);
@@ -64,38 +64,38 @@
 
   /* Preto neutro no lugar do marinho: o texto parava de ser preto e puxava azul, o que somado ao
      piso marinho fazia a interface inteira ter temperatura de marca em vez de neutralidade. */
-  /* A TINTA ESTRUTURAL DO CRM — texto, ícone e todo elemento que antes era preto.
+  /* A TINTA ESTRUTURAL DO CRM. Texto, ícone e todo elemento que antes era preto.
      Era #09090b (preto neutro). Passa a ser o azul marinho da marca: sobre branco fica em 18:1 de
      contraste, bem acima do mínimo, e a interface inteira ganha a temperatura da identidade sem
      precisar pintar área grande de cor. */
   --ink: #0b1533;
   /* Tinta de nome próprio: grafite, não preto. Numa lista longa, preto puro repetido em toda linha
-     pesa — cada nome vira um bloco escuro e o olho não descansa. Um passo abaixo mantém o nome
+     pesa: cada nome vira um bloco escuro e o olho não descansa. Um passo abaixo mantém o nome
      dominante sem transformar a lista num paredão. Título de página segue em `--ink`. */
   /* Nome de pessoa: um degrau mais claro que a tinta principal, pra o nome não competir com o
      título da tela. Segue a mesma família marinho. */
   --ink-nome: #253052;
   --white: #ffffff;
   /* Secundário sobe de 58% pra 64%; terciário, de 46% pra 54%. Cinza claro fica reservado pra
-     informação de fato acessória — data, contador, rodapé —, não pra conteúdo que se lê. */
+     informação de fato acessória (data, contador, rodapé), não pra conteúdo que se lê. */
   --text-muted: rgba(11, 21, 51, 0.64);
   --text-faint: rgba(11, 21, 51, 0.54);
 
-  /* Arial no produto INTEIRO — landing, telas de entrada e app.
+  /* Arial no produto INTEIRO: landing, telas de entrada e app.
      Ela é a única fonte que está instalada em Mac, Windows, Android e Linux ao mesmo tempo, então é
      a que mais se aproxima de "todo mundo vê exatamente a mesma coisa" sem hospedar arquivo. As
      outras que testamos dependiam do aparelho: San Francisco só existe na Apple, Helvetica Neue
      também. Quando a fonte muda de aparelho pra aparelho, o produto tem caras diferentes conforme
-     quem abre — que é justamente o que não se quer. */
+     quem abre: que é justamente o que não se quer. */
   --pilha-sistema: Arial, Helvetica, sans-serif;
   --display: var(--pilha-sistema);
   --body: var(--pilha-sistema);
 
-  /* -------- Tokens (Etapa 2, item 44) — raio, sombra, espaçamento, transição, cor semântica.
+  /* -------- Tokens (Etapa 2, item 44): raio, sombra, espaçamento, transição, cor semântica.
      Aditivo: nada existente referenciava esses nomes antes, então introduzir aqui não muda o visual
-     de quem já usa valores fixos — só dá um vocabulário comum pro que for tocado daqui pra frente. */
+     de quem já usa valores fixos. Só dá um vocabulário comum pro que for tocado daqui pra frente. */
   /* Escala de raio: sm = etiqueta · md = input/botão · lg = card · xl = modal/painel.
-     Subiu um degrau inteiro: nas referências o raio é parte do acabamento — canto muito fechado
+     Subiu um degrau inteiro: nas referências o raio é parte do acabamento. Canto muito fechado
      dá aparência de tabela de sistema, não de produto. */
   --radius-sm: 8px;
   --radius-md: 11px;
@@ -104,9 +104,9 @@
 
   /* Sombras quase apagadas de propósito: profundidade agora vem de superfície + borda + contraste.
      Card não pode parecer flutuando trinta pixels acima da página. `--shadow-lg` continua forte o
-     bastante só onde há sobreposição real (modal, popover) — ali a sombra informa camada. */
+     bastante só onde há sobreposição real (modal, popover): ali a sombra informa camada. */
   /* Duas camadas em cada sombra: um contato curto e escuro logo abaixo do elemento, e um halo
-     largo e quase transparente. É essa combinação que faz a peça parecer pousada numa superfície —
+     largo e quase transparente. É essa combinação que faz a peça parecer pousada numa superfície.
      uma sombra só, difusa, faz o elemento parecer que está boiando. */
   --shadow-xs: 0 1px 2px rgba(11, 21, 51, 0.05);
   --shadow-sm: 0 1px 2px rgba(11, 21, 51, 0.06), 0 2px 6px rgba(11, 21, 51, 0.04);
@@ -128,7 +128,7 @@
   --transition-base: 0.18s ease;
 
   /* Nomes do design system apontando pros tokens que o CSS já usa. Servem pra escrever componente
-     novo com vocabulário claro sem renomear as 1500 referências existentes de uma vez — as duas
+     novo com vocabulário claro sem renomear as 1500 referências existentes de uma vez. As duas
      formas apontam pro mesmo valor, então não há como um lado divergir do outro. */
   --background: var(--canvas);
   --surface: var(--navy);
@@ -143,9 +143,9 @@
   --text-secondary: var(--text-muted);
   --accent: var(--blue);
 
-  /* Reestruturação de design (fase 0) — escala de cinzas nomeada, derivada de `--ink` com opacidade
+  /* Reestruturação de design (fase 0). Escala de cinzas nomeada, derivada de `--ink` com opacidade
      crescente (mesmo princípio já usado em `--text-muted`/`--text-faint`, só preenchendo os
-     degraus que faltavam) — pra qualquer superfície/borda/texto secundário parar de inventar
+     degraus que faltavam): pra qualquer superfície/borda/texto secundário parar de inventar
      opacidade solta. `--surface-hover`/`--surface-active` são o fundo padrão de qualquer linha/
      item interativo (linha de tabela, opção de dropdown, item de menu) nos estados hover/pressed. */
   --gray-50: rgba(11, 21, 51, 0.025);
@@ -162,7 +162,7 @@
   --surface-hover: rgba(11, 21, 51, 0.035);
   --surface-active: rgba(11, 21, 51, 0.06);
 
-  /* Peso + altura de linha — hierarquia deve vir de tamanho+peso+espaçamento juntos, não só do
+  /* Peso + altura de linha. Hierarquia deve vir de tamanho+peso+espaçamento juntos, não só do
      tamanho (`--fs-*` abaixo). `--lh-tight` pra títulos/números grandes, `--lh-base` pro resto. */
   /* Dois pesos, como pedido: Helvetica Neue Regular e Bold. Os cinco nomes continuam existindo
      porque o CSS inteiro os referencia, mas todos caem num dos dois. Pedir 500 ou 600 de uma pilha
@@ -183,9 +183,9 @@
   --track-snug: -0.006em;
   --track-wide: 0.05em;
 
-  /* Cores semânticas (item 55) — mesmo vocabulário já usado informalmente em Automações/Central do
+  /* Cores semânticas (item 55): mesmo vocabulário já usado informalmente em Automações/Central do
      Dia/Configurações (verde=sucesso/oportunidade, âmbar=atenção, vermelho=erro, azul=informação,
-     roxo=IA), agora nomeado — não substitui `--blue` (identidade da marca), só complementa. */
+     roxo=IA), agora nomeado: não substitui `--blue` (identidade da marca), só complementa. */
   --success: #0a7a4d;
   --success-soft: rgba(15, 157, 99, 0.12);
   --warning: #8a6600;
@@ -201,16 +201,16 @@
   /* Havia um segundo accent (ciano) e um token de glow. Dois accents disputando atenção é o que
      faz uma interface parecer template, e glow é exatamente a "sensação tecnológica barata" que o
      produto não quer. O ciano passa a apontar pro azul da marca (accent único) e o glow vira
-     `none` — quem já referencia esses nomes continua funcionando, só deixa de brilhar. */
+     `none`: quem já referencia esses nomes continua funcionando, só deixa de brilhar. */
   --cyan: #2e6bff;
   --cyan-soft: rgba(46, 107, 255, 0.1);
   --glow-accent: none;
 
   /* Textura do piso (quadriculado de fundo do shell). Precisa de token porque a linha é escura no
-     tema claro e clara no escuro — antes era branca fixa, o que sumia sobre fundo claro. */
+     tema claro e clara no escuro. Antes era branca fixa, o que sumia sobre fundo claro. */
   --grid-line: transparent;
 
-  /* Escala tipográfica (item 45) — nomeia os tamanhos que já estavam em uso espalhados (`.topbar h2`
+  /* Escala tipográfica (item 45): nomeia os tamanhos que já estavam em uso espalhados (`.topbar h2`
      19px, `.panel-h h4` 13px, `.hint` 11px…) e preenche as lacunas (card, indicador). Contraste entre
      informação principal e auxiliar já existia via `--ink`/`--text-muted`/`--text-faint`; aqui só
      organiza tamanho+peso. */
@@ -225,15 +225,15 @@
   --fs-table: 12px;
 }
 
-/* Tela escura — escolhida em Configurações > Tela, guardada em localStorage.
+/* Tela escura: escolhida em Configurações > Tela, guardada em localStorage.
    Redesign: paleta mais profunda (azul-marinho quase preto, não cinza-azulado) + ciano como
    segundo accent, na mesma linguagem visual da landing page/telas de auth (`--lp-*` em page.tsx,
-   `.auth-page` mais abaixo neste arquivo) — mas SEM repetir o gradiente/grade fixos delas, que são
+   `.auth-page` mais abaixo neste arquivo). Mas SEM repetir o gradiente/grade fixos delas, que são
    um tratamento de página cheia (marketing/pré-login); aqui é só paleta de superfície+cor, aplicada
    dentro do shell normal do app (sidebar + header + conteúdo). */
 /* O escuro não é o claro invertido: ele tem a própria escada de superfícies. Piso (`--canvas`) é
    o mais escuro; painel, elevado e destacado sobem em luminosidade em degraus pequenos, e a borda
-   é uma diferença de luz — não um traço. Era marinho; agora é preto neutro, pela mesma razão do
+   é uma diferença de luz. Não um traço. Era marinho; agora é preto neutro, pela mesma razão do
    tema claro: a cor da marca vive no accent, não na superfície. */
 :root[data-theme="dark"] {
   --navy: #17171a;
@@ -295,7 +295,7 @@
 
   /* O MESMO marinho do tema claro. Cheguei a clarear pra ele se destacar do fundo quase preto, e
      estava errado: o tom da marca é um só, e mudar de tom entre os temas faz o CRM parecer dois
-     produtos. O que separa o marinho do fundo aqui não é a luminosidade — é a BORDA clara que as
+     produtos. O que separa o marinho do fundo aqui não é a luminosidade. É a BORDA clara que as
      superfícies de ação ganham no escuro (ver `:root[data-theme="dark"] .btn.primary` abaixo). */
   --acao: #0b1533;
   --acao-hover: #16224a;
@@ -304,7 +304,7 @@
 }
 
 /* Estes três passaram a ter FUNDO marinho (`--acao`) nos dois temas, então o texto é branco nos
-   dois. Antes o fundo era claro no tema escuro e precisava de tinta escura por cima — a regra
+   dois. Antes o fundo era claro no tema escuro e precisava de tinta escura por cima. A regra
    continua aqui, agora dizendo o contrário, porque a cor do texto acompanha o fundo. */
 :root[data-theme="dark"] .btn.primary,
 :root[data-theme="dark"] .fchip.active,
@@ -312,7 +312,7 @@
   color: var(--acao-texto);
 }
 
-/* No tema escuro o marinho e o fundo têm luminosidade parecida, e é a BORDA que separa os dois —
+/* No tema escuro o marinho e o fundo têm luminosidade parecida, e é a BORDA que separa os dois.
    não uma cor diferente. Assim o tom da marca é o mesmo nos dois temas e o botão continua tendo
    contorno visível. */
 :root[data-theme="dark"] .btn.primary,
@@ -337,7 +337,7 @@ body {
   margin: 0;
   background: var(--canvas);
   /* A tinta do corpo continua sendo a estrutural, MESMO com o chão marinho.
-     Cheguei a deixar branco aqui, achando que era coerente com o fundo — e quebrou o menu
+     Cheguei a deixar branco aqui, achando que era coerente com o fundo. E quebrou o menu
      "Inteligência comercial": popover renderizado com `createPortal(..., document.body)` fica fora
      de qualquer painel e herda a cor daqui. Sobre o fundo claro do próprio popover, o texto branco
      sumia: era uma caixa vazia. Quase todo texto vive dentro de um painel branco, então a tinta
@@ -348,7 +348,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Navegadores aplicam fonte monoespaçada em <textarea> por padrão — sem isso, ela
+/* Navegadores aplicam fonte monoespaçada em <textarea> por padrão. Sem isso, ela
    sempre destoa do resto dos campos, em qualquer canto do CRM. */
 textarea {
   font-family: inherit;
@@ -384,7 +384,7 @@ table {
   background: var(--blue-soft);
 }
 
-/* Foco visível universal (item 60) — cobre todo elemento focável por teclado que não tenha uma regra
+/* Foco visível universal (item 60). Cobre todo elemento focável por teclado que não tenha uma regra
    `:focus-visible` mais específica (a maioria dos chips/links/linhas de tabela/itens de nav não
    tinham nenhuma). Uma regra de baixa especificidade só pra garantir que nada fique "mudo" no
    teclado; onde já existe um `:focus-visible` mais específico (`.btn`, `.input`), esse continua
@@ -397,7 +397,7 @@ table {
 
 /* ---------------- App shell ---------------- */
 
-/* Reestruturação visual (redesign) — "painéis flutuantes" com respiro entre si sobre o `--canvas`,
+/* Reestruturação visual (redesign): "painéis flutuantes" com respiro entre si sobre o `--canvas`,
    em vez do layout anterior (sidebar e área principal grudadas, só separadas por uma borda de 1px).
    `gap`+`padding` no `.shell` cria o respiro; sidebar e `.main` viram cartões com cantos
    arredondados e sombra próprios, cada um a sua própria "caixinha". */
@@ -411,7 +411,7 @@ table {
   background: var(--canvas);
 }
 
-/* Mesmo quadriculado sutil do fundo das telas de login/cadastro (`.auth-page::before`) — textura,
+/* Mesmo quadriculado sutil do fundo das telas de login/cadastro (`.auth-page::before`). Textura,
    não decoração pesada: fica atrás dos painéis (`z-index: 0`), nunca por cima do conteúdo. */
 .shell::before {
   content: "";
@@ -435,12 +435,12 @@ table {
  * MENU LATERAL EM MARINHO.
  *
  * É a única área grande de cor da interface, e é de propósito: o menu é a moldura fixa, está
- * sempre na tela e não compete com conteúdo nenhum. O resto do CRM segue branco e claro — encher
+ * sempre na tela e não compete com conteúdo nenhum. O resto do CRM segue branco e claro. Encher
  * o corpo de cor é o que deixa um painel de trabalho pesado.
  *
  * Tudo dentro dele inverte: os tokens de texto e linha são calculados sobre branco e ficariam
  * invisíveis aqui. As regras abaixo redefinem os tokens PARA DENTRO do menu, em vez de sobrescrever
- * cada componente um por um — assim qualquer coisa nova que entre no menu já nasce legível.
+ * cada componente um por um. Assim qualquer coisa nova que entre no menu já nasce legível.
  */
 .sidebar {
   width: 216px;
@@ -465,7 +465,7 @@ table {
   --navy-raised-2: rgba(255, 255, 255, 0.12);
   --gray-100: rgba(255, 255, 255, 0.1);
   /* O azul do accent também clareia: #2e6bff sobre marinho fica escuro demais pra servir de
-     destaque — some justamente onde deveria chamar atenção. */
+     destaque: some justamente onde deveria chamar atenção. */
   --blue: #7ea2ff;
   --blue-soft: rgba(126, 162, 255, 0.2);
   --blue-soft-2: rgba(126, 162, 255, 0.12);
@@ -477,7 +477,7 @@ table {
   transition: width var(--transition-base);
 }
 
-/* Recolhida — só os ícones, largura fixa pequena; abre por padrão pra quem entra, guardado por
+/* Recolhida: só os ícones, largura fixa pequena; abre por padrão pra quem entra, guardado por
    navegador (`localStorage`, ver `sidebar.tsx`), não é preferência de conta. */
 .sidebar.recolhida {
   width: 68px;
@@ -522,7 +522,7 @@ table {
 }
 
 /* Marca com o mesmo tratamento (gradiente azul→roxo + glow) já usado na landing page e nas telas
-   de auth (`.auth-mark`) — reforça que é o mesmo produto em todas as superfícies, dentro e fora
+   de auth (`.auth-mark`). Reforça que é o mesmo produto em todas as superfícies, dentro e fora
    do app logado. */
 .brand-mark {
   width: 28px;
@@ -598,11 +598,11 @@ table {
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-/* Barra de destaque do item ativo — mesmo princípio de "accent bar" usado em produtos SaaS
+/* Barra de destaque do item ativo. Mesmo princípio de "accent bar" usado em produtos SaaS
    (Linear, Vercel…), mais legível de relance que só uma mudança de fundo. `scaleY` em vez de
    `height` pra poder animar sem gerar reflow. `left: 0` (inset, não protuberante) porque
    `.sidebar` tem `overflow-y: auto`, que em alguns navegadores força `overflow-x` a cortar
-   também — a barra fica encostada na borda interna do item, sem vazar pro padding do `.sidebar`. */
+   também: a barra fica encostada na borda interna do item, sem vazar pro padding do `.sidebar`. */
 .nav-item::before {
   content: "";
   position: absolute;
@@ -657,7 +657,7 @@ table {
 }
 
 /* Selecionado sobre o marinho: branco cheio, peso maior e um véu claro por baixo. A distância pro
-   inativo é de tinta E de peso, não só de fundo — é o que permite achar o item ativo de relance
+   inativo é de tinta E de peso, não só de fundo: é o que permite achar o item ativo de relance
    numa lista de doze. A barra azul da esquerda (`::before`) continua sendo a marca principal. */
 .nav-item.active {
   background: var(--surface-elevated);
@@ -791,12 +791,12 @@ table {
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
-  /* Corta `.app-header`/`.content` nos cantos arredondados do painel — nenhum dos dois rola sozinho
+  /* Corta `.app-header`/`.content` nos cantos arredondados do painel. Nenhum dos dois rola sozinho
      (quem rola é o `.content` por dentro, via `overflow: auto` próprio), então não afeta scroll. */
   overflow: hidden;
 }
 
-/* Início não tem fundo/moldura própria — nada de caixa escura (nem clara) por baixo dos cartões:
+/* Início não tem fundo/moldura própria. Nada de caixa escura (nem clara) por baixo dos cartões:
    o `.main` fica totalmente transparente e o quadriculado que aparece é o mesmo `.shell::before`
    (mesmo fundo da sidebar/vão entre painéis), sem uma segunda textura por cima. */
 .main-inicio {
@@ -818,14 +818,14 @@ table {
   position: relative;
   z-index: 1;
 }
-/* Início troca o `.main` branco pelo mesmo fundo marinho do login (`.main-inicio`) — a busca some
+/* Início troca o `.main` branco pelo mesmo fundo marinho do login (`.main-inicio`). A busca some
    nele em vez de ficar com a faixa branca e a linha embaixo. */
 .app-header-transparente {
   background: transparent;
   border-bottom-color: transparent;
 }
-/* A busca precisa se apoiar no piso sem virar uma faixa branca. Era branco translúcido — desenhado
-   pro piso marinho —, o que sobre off-white ficava invisível. */
+/* A busca precisa se apoiar no piso sem virar uma faixa branca. Era branco translúcido: desenhado
+   pro piso marinho, o que sobre off-white ficava invisível. */
 .app-header-transparente .search {
   background: var(--navy);
   border-color: var(--line);
@@ -1000,7 +1000,7 @@ table {
   transform: none;
 }
 
-/* Padrão de "carregando" pro botão (item 59) — opt-in (`className="btn primary loading"`), texto some
+/* Padrão de "carregando" pro botão (item 59). Opt-in (`className="btn primary loading"`), texto some
    e um spinner ocupa o lugar; usa o mesmo `@keyframes spin` já usado no botão "Atualizar" da Central
    do Dia, pra não ter uma segunda animação de loading com timing diferente. */
 .btn.loading {
@@ -1024,7 +1024,7 @@ table {
   color: var(--ink);
 }
 
-/* Ação principal: preto cheio. O azul sai do botão e passa a viver onde ele informa — seleção,
+/* Ação principal: preto cheio. O azul sai do botão e passa a viver onde ele informa. Seleção,
    link, indicador, foco. Num painel de trabalho o preto é mais forte que qualquer cor: não compete
    com os estados coloridos (verde de ganho, vermelho de perda) e não vira decoração. */
 .btn.primary {
@@ -1047,7 +1047,7 @@ table {
   box-shadow: none;
 }
 
-/* Quando a ação principal é a identidade — "Conectar", "Assinar" —, o azul continua disponível. */
+/* Quando a ação principal é a identidade ("Conectar", "Assinar"), o azul continua disponível. */
 .btn.azul {
   background: var(--primary);
   border-color: var(--primary);
@@ -1086,7 +1086,7 @@ table {
   box-shadow: none;
 }
 
-/* Terceiro nível: cinza claro preenchido, sem borda. Tem corpo — parece botão — mas não disputa
+/* Terceiro nível: cinza claro preenchido, sem borda. Tem corpo: parece botão: mas não disputa
    com o preto. É o nível que faltava: antes tudo que não era principal virava contorno branco, e
    a barra ficava com quatro caixas de peso idêntico. */
 .btn.terciario {
@@ -1106,7 +1106,7 @@ table {
   background: var(--gray-300);
 }
 
-/* Sem corpo nenhum — só texto. Pra ação que não deve nem parecer botão. */
+/* Sem corpo nenhum: só texto. Pra ação que não deve nem parecer botão. */
 .btn.plano {
   background: transparent;
   border-color: transparent;
@@ -1125,7 +1125,7 @@ table {
   color: var(--blue);
 }
 
-/* Variações novas (item 50) — "discreto" já existe como `.btn.ghost`; faltavam perigo e link. */
+/* Variações novas (item 50): "discreto" já existe como `.btn.ghost`; faltavam perigo e link. */
 .btn.danger,
 .btn.destructive {
   background: var(--danger-soft);
@@ -1153,7 +1153,7 @@ table {
 }
 
 /* `className="link"` sozinho (sem `.btn`) é usado em ~30 lugares (ui.tsx, trafego, contatos,
-   conversas, relatórios, etc.) mas nunca teve nenhuma regra própria — caía no estilo padrão do
+   conversas, relatórios, etc.) mas nunca teve nenhuma regra própria. Caía no estilo padrão do
    navegador pra `<button>`/`<a>`. */
 .link {
   background: none;
@@ -1265,7 +1265,7 @@ table {
 
 .card {
   /* Branco sobre o piso off-white: a separação vem da borda, não de mais um tom de cinza. Com o
-     card cinza, piso, corpo e campo eram três cinzas quase idênticos empilhados — a origem da
+     card cinza, piso, corpo e campo eram três cinzas quase idênticos empilhados. A origem da
      sensação de caixa dentro de caixa. */
 /* O card se separa por SOMBRA, não por traço: a borda vira um fio quase transparente, só pra dar
      o corte exato onde a sombra sozinha ficaria vaga. */
@@ -1276,23 +1276,23 @@ table {
 }
 
 /* Cabeçalho de painel sem a linha embaixo: quando cada seção tem título, contorno e divisória, a
-   tela vira uma grade de traços. O espaço abaixo do título já separa — e o peso do título já diz
+   tela vira uma grade de traços. O espaço abaixo do título já separa. E o peso do título já diz
    que ali começa outra coisa. */
 .card > .panel-h {
   border-bottom: none;
   padding-bottom: 4px;
 }
 
-/* Multi-tenancy Fase 1 — telas de /login e /cadastro, fora do shell (sidebar/header) do app.
-   Reestruturação de design — visual futurista fixo (gradientes radiais + grade), igual à landing
+/* Multi-tenancy Fase 1: telas de /login e /cadastro, fora do shell (sidebar/header) do app.
+   Reestruturação de design: visual futurista fixo (gradientes radiais + grade), igual à landing
    page pública (`src/app/page.tsx`), independente do tema claro/escuro salvo pelo usuário (essas
    telas são pré-login, não fazem parte do app "temável"). Sobrescreve os tokens globais (--navy,
-   --ink, --line…) só dentro de `.auth-page` — assim `.card`/`.input`/`.btn`/`.field` (usados sem
+   --ink, --line…) só dentro de `.auth-page`. Assim `.card`/`.input`/`.btn`/`.field` (usados sem
    nenhuma mudança de marcação) herdam o visual escuro automaticamente, sem precisar de uma cópia
    paralela de cada estilo. */
 .auth-page {
   /* Entrar e cadastrar são a primeira tela de quem vira cliente, e a última antes do app. Eram
-     escuras — a pessoa saía de uma landing escura, passava por um cartão escuro e caía num CRM
+     escuras: a pessoa saía de uma landing escura, passava por um cartão escuro e caía num CRM
      branco. Agora seguem a mesma linguagem do produto: fundo claro, cartão branco, tinta preta e
      ação preta. */
   --navy: #ffffff;
@@ -1305,7 +1305,7 @@ table {
   --line-soft: rgba(11, 21, 51, 0.06);
   --line-strong: rgba(11, 21, 51, 0.18);
 
-  /* A TINTA ESTRUTURAL DO CRM — texto, ícone e todo elemento que antes era preto.
+  /* A TINTA ESTRUTURAL DO CRM. Texto, ícone e todo elemento que antes era preto.
      Era #09090b (preto neutro). Passa a ser o azul marinho da marca: sobre branco fica em 18:1 de
      contraste, bem acima do mínimo, e a interface inteira ganha a temperatura da identidade sem
      precisar pintar área grande de cor. */
@@ -1342,7 +1342,7 @@ table {
   color: var(--ink);
 }
 
-/* Brasão das telas de entrada. Segue a ação principal, como sempre seguiu — só que a ação
+/* Brasão das telas de entrada. Segue a ação principal, como sempre seguiu: só que a ação
    principal agora é o azul marinho da identidade, não mais o preto. É a primeira coisa que alguém
    vê ao abrir o CRM, então é justamente onde a cor da marca precisa aparecer. */
 .auth-mark {
@@ -1487,11 +1487,11 @@ table {
   text-decoration: underline;
 }
 
-/* Reestruturação de design (fase 0) — níveis de card, cada um com peso visual e comportamento
+/* Reestruturação de design (fase 0). Níveis de card, cada um com peso visual e comportamento
    próprios em vez de tudo cair na mesma `.card`. Combinam com `.card-link` (já existente acima)
-   quando o card inteiro precisa ser clicável — não duplica esse comportamento de hover. */
+   quando o card inteiro precisa ser clicável. Não duplica esse comportamento de hover. */
 
-/* Contorno mais discreto que `.card` — sem sombra própria — pra agrupar conteúdo sem competir
+/* Contorno mais discreto que `.card`. Sem sombra própria: pra agrupar conteúdo sem competir
    visualmente com o card principal da tela (ex.: um bloco dentro de outro card). */
 .card-secondary {
   background: transparent;
@@ -1499,14 +1499,14 @@ table {
   border-radius: var(--radius-md);
 }
 
-/* Fundo levemente destacado, sem borda nem sombra — pra estatística/contexto (número + legenda),
+/* Fundo levemente destacado, sem borda nem sombra: pra estatística/contexto (número + legenda),
    nunca pra conteúdo interativo. */
 .card-info {
   background: var(--gray-50);
   border-radius: var(--radius-md);
 }
 
-/* Card elevando sutilmente ao passar o mouse — usar quando o card inteiro é clicável mas não é um
+/* Card elevando sutilmente ao passar o mouse. Usar quando o card inteiro é clicável mas não é um
    link de página inteira (ex.: abrir um modal, selecionar um item). `--shadow-hover` só aparece
    com o transform junto, senão o "voo" fica só na sombra. */
 .card-action {
@@ -1532,10 +1532,10 @@ table {
   padding: var(--space-2) var(--space-3);
 }
 
-/* Reestruturação de design (fase 0) — badge/tag com API única: `.badge` + uma variante semântica
+/* Reestruturação de design (fase 0). Badge/tag com API única: `.badge` + uma variante semântica
    (`.badge-success/.badge-warning/.badge-danger/.badge-info/.badge-ia/.badge-neutral`). Não
    substitui badges já existentes com nome próprio (`.badge-auto`/`.badge-manual`, `.origem-*`,
-   etiquetas coloridas por usuário) — esses continuam existindo; essa é a classe a usar em telas
+   etiquetas coloridas por usuário): esses continuam existindo; essa é a classe a usar em telas
    novas ou ao migrar uma tela por vez. */
 .badge {
   display: inline-flex;
@@ -1580,9 +1580,9 @@ table {
   color: var(--ia);
 }
 
-/* Abas — mesmo comportamento em qualquer módulo que hoje estiliza suas próprias (Formulários,
+/* Abas: mesmo comportamento em qualquer módulo que hoje estiliza suas próprias (Formulários,
    Configurações, Documentos…). `.tabs` é o container (flex + linha inferior contínua),
-   `.tab`/`.tab.active` é cada aba — troca de aba já é responsabilidade do React de cada tela, aqui
+   `.tab`/`.tab.active` é cada aba. Troca de aba já é responsabilidade do React de cada tela, aqui
    só o visual + a transição da aba ativa. */
 .tabs {
   display: flex;
@@ -1615,7 +1615,7 @@ table {
   font-weight: var(--fw-semibold);
 }
 
-/* Tooltip mínimo, CSS-only — `<button data-tooltip="Texto">` já ganha o comportamento, sem lib
+/* Tooltip mínimo, CSS-only: `<button data-tooltip="Texto">` já ganha o comportamento, sem lib
    nova e sem depender do `title` nativo do browser (que é lento pra abrir e não segue o tema). Só
    aparece depois de `--transition-base`, pra não piscar em passagens rápidas do mouse. */
 [data-tooltip] {
@@ -1777,7 +1777,7 @@ table {
   margin-bottom: 7px;
 }
 
-/* Base de `.input` promovida de `.field .input` pra cá (item 51) — algumas telas usam o input fora
+/* Base de `.input` promovida de `.field .input` pra cá (item 51). Algumas telas usam o input fora
    de um `.field` (busca, filtro solto) e ficavam sem nenhum estilo, só a borda nativa do navegador. */
 /* Campo preenchido, com a borda quase invisível: quem define o campo é a superfície, não o
    contorno. Uma tela com dez contornos cinza parados é a definição de wireframe. */
@@ -1830,7 +1830,7 @@ table {
 
 /* `<input type="file" className="input">` (Ações) mostrava o botão nativo do navegador
    ("Choose File"/"Escolher arquivo") sem estilo nenhum, já que estilos de input comuns não
-   afetam o botão embutido do file picker — precisa do pseudo-elemento próprio. */
+   afetam o botão embutido do file picker. Precisa do pseudo-elemento próprio. */
 .input[type="file"] {
   padding: var(--space-2);
 }
@@ -1933,7 +1933,7 @@ table {
 }
 
 /* `.kpi-clickable` (marcado pelo componente `KpiCard` sempre que recebe `href`) nunca tinha regra
-   nenhuma — os KPIs clicáveis de Tráfego/Performance/Atividades/Jornada do cliente/Motivos de perda/
+   nenhuma: os KPIs clicáveis de Tráfego/Performance/Atividades/Jornada do cliente/Motivos de perda/
    Relatórios ficavam sem nenhum feedback de hover, mesmo sendo um link de verdade. Mesmo idioma
    visual do `.card-link:hover` já usado em outros cards clicáveis do app. */
 .kpi-clickable {
@@ -1946,7 +1946,7 @@ table {
 }
 
 /* `Timeline`/`TimelineItem` (src/components/timeline.tsx, usado em Conversas/Contatos/Jornada do
-   cliente) não tinha nenhuma regra para `.timeline*` — a lista de eventos renderizava como texto
+   cliente) não tinha nenhuma regra para `.timeline*`. A lista de eventos renderizava como texto
    corrido sem linha do tempo nenhuma. */
 .timeline-empty {
   color: var(--text-faint);
@@ -1968,7 +1968,7 @@ table {
 }
 
 /* Linha do tempo contínua: o fio e o marcador estruturam, não o card. Cada evento era uma caixa
-   com borda e fundo — a pilha de caixas escondia justamente a cronologia, que é o assunto da tela. */
+   com borda e fundo: a pilha de caixas escondia justamente a cronologia, que é o assunto da tela. */
 .timeline-item {
   position: relative;
   display: flex;
@@ -1997,7 +1997,7 @@ table {
    apontando pra um vazio.
 
    Ancorada no item, não no marcador: assim ela não depende da altura do marcador nem do
-   espaçamento entre eventos pra saber onde terminar — vai do fim de um marcador até o começo do
+   espaçamento entre eventos pra saber onde terminar. Vai do fim de um marcador até o começo do
    próximo. A posição é aritmética simples: metade da largura do marcador (28px / 2), menos meio
    pixel da própria linha. */
 .timeline-item:not(:last-child)::before {
@@ -2229,7 +2229,7 @@ a.timeline-conteudo:hover {
   flex-wrap: wrap;
 }
 
-/* Reestruturação visual (redesign) — chip "flat": sem caixa (fundo/borda) parada na tela, só texto;
+/* Reestruturação visual (redesign): chip "flat": sem caixa (fundo/borda) parada na tela, só texto;
    ganha fundo (`--surface-hover`) só ao passar o mouse, pra não empilhar caixinha atrás de caixinha
    junto com o card/painel que já envolve a barra de filtros inteira. */
 .fchip {
@@ -2278,7 +2278,7 @@ a.timeline-conteudo:hover {
   box-shadow: 0 0 0 3px var(--blue-soft-2);
 }
 
-/* Reestruturação visual (redesign) — a TABELA inteira é a caixinha (fundo/borda/raio/sombra), não
+/* Reestruturação visual (redesign): a TABELA inteira é a caixinha (fundo/borda/raio/sombra), não
    cada linha dela; mesmo princípio já aplicado em `.central-dia-secao`. `overflow: hidden` (não só
    `-x`) pra cortar o cabeçalho/corpo nos cantos arredondados do wrapper. */
 .table-wrap {
@@ -2290,7 +2290,7 @@ a.timeline-conteudo:hover {
 }
 
 /* Algumas telas já colocam a tabela dentro de um `.card` (ex.: com um `.panel-h` de título antes
-   dela) — sem isso, ficaria caixa dentro de caixa. Aqui o `.card` de fora é que vale. */
+   dela): sem isso, ficaria caixa dentro de caixa. Aqui o `.card` de fora é que vale. */
 .card .table-wrap {
   background: none;
   border: none;
@@ -2318,7 +2318,7 @@ table.tbl th {
   white-space: nowrap;
 }
 
-/* Cada linha é uma faixa: fundo cinza claro, cantos arredondados nas pontas, e nada de divisória —
+/* Cada linha é uma faixa: fundo cinza claro, cantos arredondados nas pontas, e nada de divisória:
    o espaço entre elas (`border-spacing`) faz a separação. */
 table.tbl td {
   padding: var(--space-4) var(--space-4);
@@ -2339,7 +2339,7 @@ table.tbl tbody tr td:last-child {
   border-right: 1px solid transparent;
 }
 
-/* Ao passar o mouse a faixa fica branca e ganha contorno e sombra — sobe pra frente em vez de só
+/* Ao passar o mouse a faixa fica branca e ganha contorno e sombra. Sobe pra frente em vez de só
    escurecer. É o mesmo gesto do card do funil. */
 table.tbl tbody tr:hover td {
   background: var(--surface-elevated);
@@ -2353,10 +2353,10 @@ table.tbl tbody tr:hover td {
   gap: var(--space-3);
 }
 
-/* Reestruturação visual (redesign) — o pedido anterior ("linhas como botões separados", cada uma
+/* Reestruturação visual (redesign): o pedido anterior ("linhas como botões separados", cada uma
    com fundo/borda própria) virou exatamente o padrão "empilhado de caixinhas" que o redesign tira
    de propósito (mesmo motivo do ajuste em `.central-dia-card`): `.table-wrap` já é a caixinha
-   agora, então a tabela de Contatos volta a se comportar como `table.tbl` padrão — linhas flat,
+   agora, então a tabela de Contatos volta a se comportar como `table.tbl` padrão. Linhas flat,
    só separadas por uma linha fina. */
 
 .name-cell .n {
@@ -2396,7 +2396,7 @@ table.tbl tbody tr:hover td {
   white-space: nowrap;
 }
 
-/* Papéis usam a mesma família azul da marca — só a intensidade muda,
+/* Papéis usam a mesma família azul da marca. Só a intensidade muda,
    pra hierarquia ficar clara sem virar um arco-íris. */
 .role-tag-admin {
   background: var(--blue);
@@ -2446,7 +2446,7 @@ table.tbl tbody tr:hover td {
   padding-bottom: 4px;
 }
 
-/* Camada 2: a coluna. Superfície um degrau abaixo da página, sem borda — é o fundo que a define,
+/* Camada 2: a coluna. Superfície um degrau abaixo da página, sem borda: é o fundo que a define,
    não uma caixa em volta. Com borda, cinco colunas lado a lado virariam cinco caixas pesadas. */
 .kanban > div {
   flex: 1 0 240px;
@@ -2513,7 +2513,7 @@ table.tbl tbody tr:hover td {
 }
 
 /* Ação contextual da etapa. Tinha fundo azul cheio e chamava mais atenção que a ação principal da
-   página — o azul aqui fica só no texto, e a superfície só aparece no hover. */
+   página: o azul aqui fica só no texto, e a superfície só aparece no hover. */
 .kcol-auto-link {
   display: flex;
   align-items: center;
@@ -2547,7 +2547,7 @@ table.tbl tbody tr:hover td {
   max-width: 320px;
 }
 
-/* Sinal de notificação (sino do cabeçalho) fica no canto de cima — nunca em
+/* Sinal de notificação (sino do cabeçalho) fica no canto de cima. Nunca em
    cima dos avisos de automação, que já usam o canto de baixo. */
 .toast-stack-top {
   top: 20px;
@@ -2568,7 +2568,7 @@ table.tbl tbody tr:hover td {
   box-shadow: var(--shadow-md);
 }
 
-/* Camada 3: o card. Branco sobre a coluna cinza — a diferença de superfície já o separa, e a
+/* Camada 3: o card. Branco sobre a coluna cinza. A diferença de superfície já o separa, e a
    sombra mínima diz que ele está por cima (e que dá pra arrastar). Era cinza sobre transparente:
    card e coluna eram o mesmo plano. */
 .lead-card,
@@ -2593,7 +2593,7 @@ table.tbl tbody tr:hover td {
   cursor: grabbing;
 }
 
-/* Elevação sutil no hover — profundidade de verdade, não só troca de cor da borda. */
+/* Elevação sutil no hover: profundidade de verdade, não só troca de cor da borda. */
 .lead-card:hover,
 .conv-card:hover,
 .task-card:hover {
@@ -2635,7 +2635,7 @@ table.tbl tbody tr:hover td {
   gap: var(--space-2);
 }
 
-/* Bolinha verde de "mensagem nova" — usada no card do kanban (Funil), mesmo espírito do selo de não
+/* Bolinha verde de "mensagem nova". Usada no card do kanban (Funil), mesmo espírito do selo de não
    lidas do WhatsApp, só que como indicador simples (sem contagem) pra caber num card estreito. */
 .lname-com-msg {
   display: inline-flex;
@@ -2644,7 +2644,7 @@ table.tbl tbody tr:hover td {
   cursor: pointer;
 }
 
-/* "AD" — lead que veio de um anúncio (Meta/Google Ads), pra distinguir de contato direto/indicação
+/* "AD": lead que veio de um anúncio (Meta/Google Ads), pra distinguir de contato direto/indicação
    de relance, sem precisar abrir o card. */
 .lead-card-ad-badge {
   display: inline-flex;
@@ -2695,7 +2695,7 @@ table.tbl tbody tr:hover td {
   box-shadow: 0 0 0 2px var(--success-soft);
 }
 
-/* Etiqueta de status/origem: metadado, o degrau mais discreto da linha da conversa — mas legível.
+/* Etiqueta de status/origem: metadado, o degrau mais discreto da linha da conversa. Mas legível.
    Estava em 9px, tamanho em que caixa alta com espaçamento vira ruído cinza. */
 .tag {
   font-size: 9.5px;
@@ -2705,7 +2705,7 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
-/* Etapa atual no funil, mostrada na lista de Conversas — cor própria (roxo) pra não confundir com
+/* Etapa atual no funil, mostrada na lista de Conversas. Cor própria (roxo) pra não confundir com
    a tag de status/origem ao lado. */
 .wa-etapa-funil-tag {
   padding: var(--space-1) var(--space-2);
@@ -2818,7 +2818,7 @@ table.tbl tbody tr:hover td {
 
 /* ---------------- Painel que abre embaixo do kanban ---------------- */
 
-/* Painel de detalhe (contato/negócio selecionado) — contorno neutro + elevação, não azul: o painel
+/* Painel de detalhe (contato/negócio selecionado). Contorno neutro + elevação, não azul: o painel
    estar aberto não é uma "ação" (regra de cor da reestruturação de design, fase 1). */
 .open-conv {
   margin-top: 18px;
@@ -2829,7 +2829,7 @@ table.tbl tbody tr:hover td {
 }
 
 /*
- * BARRA DO TOPO DA CONVERSA — marinho escuro.
+ * BARRA DO TOPO DA CONVERSA. Marinho escuro.
  *
  * Ela diz com quem você está falando, e é a primeira coisa que o olho procura ao trocar de
  * conversa. Em cinza claro ela se misturava com o corpo da tela; em marinho, o cabeçalho e o
@@ -2915,7 +2915,7 @@ table.tbl tbody tr:hover td {
   border-radius: var(--radius-lg);
   font-size: 12px;
   line-height: 1.4;
-  /* Sem isso, quebra de linha da mensagem original (`\n`) colapsava — um aviso de várias linhas
+  /* Sem isso, quebra de linha da mensagem original (`\n`) colapsava. Um aviso de várias linhas
      virava um parágrafo único gigante, exatamente o "texto enorme sem sentido" que a tela mostrava
      em mensagem de grupo mais longa. */
   white-space: pre-wrap;
@@ -2933,7 +2933,7 @@ table.tbl tbody tr:hover td {
   cursor: pointer;
 }
 
-/* Link dentro de mensagem (`renderizarTextoComLinks`) — azul visível pra reconhecer que é
+/* Link dentro de mensagem (`renderizarTextoComLinks`). Azul visível pra reconhecer que é
    clicável. No balão `.out` o fundo já é azul, então usamos um azul claro pra manter contraste. */
 .wa-link-mensagem {
   color: var(--blue);
@@ -2942,7 +2942,7 @@ table.tbl tbody tr:hover td {
 }
 
 /* Link dentro da bolha azul: quase branco, sublinhado. Um azul mais claro sobre azul não se lê
-   como link — a diferença de cor some, e o que sobra é o sublinhado. */
+   como link: a diferença de cor some, e o que sobra é o sublinhado. */
 .bubble.out .wa-link-mensagem {
   color: #ffffff;
   text-decoration: underline;
@@ -2954,7 +2954,7 @@ table.tbl tbody tr:hover td {
   opacity: 0.85;
 }
 
-/* Botão "Carregar áudio" — mídia recebida sem conteúdo embutido no webhook, buscada sob demanda. */
+/* Botão "Carregar áudio": mídia recebida sem conteúdo embutido no webhook, buscada sob demanda. */
 .wa-carregar-midia {
   display: flex;
   align-items: center;
@@ -2973,7 +2973,7 @@ table.tbl tbody tr:hover td {
   cursor: default;
 }
 
-/* Recebida: superfície cinza clara, sem contorno. Era branca com borda — sobre o fundo branco da
+/* Recebida: superfície cinza clara, sem contorno. Era branca com borda: sobre o fundo branco da
    conversa, a bolha só existia por causa do traço, e uma conversa longa virava uma pilha de
    retângulos vazados. */
 .bubble.in {
@@ -2985,7 +2985,7 @@ table.tbl tbody tr:hover td {
   position: relative;
 }
 
-/* Coração da curtida, grudado na borda de baixo do balão — mesma posição que o Instagram usa, pra
+/* Coração da curtida, grudado na borda de baixo do balão. Mesma posição que o Instagram usa, pra
    quem vem de lá reconhecer sem precisar aprender nada. */
 .wa-msg-reacao {
   position: absolute;
@@ -3005,7 +3005,7 @@ table.tbl tbody tr:hover td {
   border-radius: var(--radius-md);
 }
 
-/* No balão enviado o "⋮" fica à esquerda, então o coração vai pro lado oposto — assim um nunca
+/* No balão enviado o "⋮" fica à esquerda, então o coração vai pro lado oposto. Assim um nunca
    cobre o outro. */
 .bubble.out .wa-msg-reacao {
   right: auto;
@@ -3061,16 +3061,16 @@ table.tbl tbody tr:hover td {
   }
 }
 
-/* Enviada: superfície de contraste na identidade nova. Era azul — a única área grande de cor
+/* Enviada: superfície de contraste na identidade nova. Era azul: a única área grande de cor
    sólida que sobrava no produto, e ela reaparecia dezenas de vezes numa conversa só. */
 /*
  * Bolha do que NÓS mandamos: o AZUL DA MARCA, não o marinho.
  *
  * A separação é proposital e tem uma lógica: o marinho é a ESTRUTURA (menu, cabeçalho, cartão
- * selecionado) — coisas que emolduram a tela e ficam paradas. A bolha é CONTEÚDO, e conteúdo nosso:
+ * selecionado): coisas que emolduram a tela e ficam paradas. A bolha é CONTEÚDO, e conteúdo nosso:
  * o azul vivo faz a nossa voz saltar dentro da conversa em vez de se confundir com a moldura.
  *
- * Contraste: branco sobre #2e6bff dá 4,5:1 — passa no mínimo, mas com folga curta. Por isso o
+ * Contraste: branco sobre #2e6bff dá 4,5:1: passa no mínimo, mas com folga curta. Por isso o
  * horário e os tiquinhos sobem de opacidade aqui dentro (`.tm` a 0,6 cairia abaixo do legível), e
  * por isso o texto é branco puro e não translúcido.
  */
@@ -3128,7 +3128,7 @@ table.tbl tbody tr:hover td {
   padding: 0 var(--space-3) var(--space-2);
 }
 
-/* A tela de Conversas atende todos os canais — Instagram, TikTok, e-mail, WhatsApp. Ela usava o
+/* A tela de Conversas atende todos os canais. Instagram, TikTok, e-mail, WhatsApp. Ela usava o
    verde do WhatsApp como tema, o que pintava de verde conversas que não são do WhatsApp e trazia
    pra dentro do produto a cor de outra marca. Passa a usar o azul da identidade. */
 .wa-whatsapp .open-conv-h {
@@ -3136,10 +3136,10 @@ table.tbl tbody tr:hover td {
 }
 
 /* A bolha enviada era o verde-claro do WhatsApp. Como a mesma tela mostra conversa de Instagram,
-   TikTok e e-mail, a bolha verde aparecia em canal que não é WhatsApp — e, mesmo no WhatsApp, é a
+   TikTok e e-mail, a bolha verde aparecia em canal que não é WhatsApp. E, mesmo no WhatsApp, é a
    cor de outra marca dentro do produto. Sem regra própria, ela usa a bolha padrão do CRM. */
 
-/* No tema WhatsApp o cartão aberto também é marinho cheio — a barra azul da lateral era a marca
+/* No tema WhatsApp o cartão aberto também é marinho cheio. A barra azul da lateral era a marca
    antiga de seleção e agora seria um segundo sinal dizendo a mesma coisa. */
 .wa-whatsapp .wa-row.active {
   border-left-color: var(--acao);
@@ -3409,7 +3409,7 @@ table.tbl tbody tr:hover td {
   white-space: nowrap;
 }
 
-/* Canal anunciado mas ainda sem recebimento (TikTok) — visível de propósito, pra não parecer que
+/* Canal anunciado mas ainda sem recebimento (TikTok). Visível de propósito, pra não parecer que
    não existe, mas claramente indisponível. */
 .wa-filter-chip:disabled {
   opacity: 0.5;
@@ -3524,7 +3524,7 @@ table.tbl tbody tr:hover td {
  * CONVERSA ABERTA: cartão marinho cheio.
  *
  * Antes era só uma barrinha na lateral, e num scroll longo era fácil perder de vista qual conversa
- * estava aberta. Fundo cheio resolve isso de relance — e some a dúvida de "estou respondendo quem?",
+ * estava aberta. Fundo cheio resolve isso de relance. E some a dúvida de "estou respondendo quem?",
  * que é o erro mais caro que se pode cometer numa caixa de entrada com trinta conversas.
  *
  * Mesma técnica do menu: os tokens são redefinidos PARA DENTRO do cartão. Nome, prévia, horário,
@@ -3565,7 +3565,7 @@ table.tbl tbody tr:hover td {
 }
 
 /* Etiquetas de estado (NOVO, QUALIFICADO, FECHADO…) dentro do cartão aberto: fundo claro
-   translúcido e texto branco, em vez das cores próprias de cada uma — sobre marinho elas ficariam
+   translúcido e texto branco, em vez das cores próprias de cada uma. Sobre marinho elas ficariam
    ilegíveis, e o que importa ali é ler a palavra, não a cor dela. */
 .wa-row.active .pill,
 .wa-row.active .tag,
@@ -3575,7 +3575,7 @@ table.tbl tbody tr:hover td {
   color: #ffffff;
 }
 
-/* Foco pelo teclado sobre o cartão marinho — o azul do contorno padrão sumiria. */
+/* Foco pelo teclado sobre o cartão marinho. O azul do contorno padrão sumiria. */
 .wa-row.active:focus-visible {
   outline-color: #ffffff;
 }
@@ -3588,7 +3588,7 @@ table.tbl tbody tr:hover td {
 }
 
 /* Ordem de leitura da linha: 1) nome, 2) estado, 3) mensagem, 4) horário. Cada degrau muda peso,
-   tamanho E cor ao mesmo tempo — só uma das três não abre distância suficiente. */
+   tamanho E cor ao mesmo tempo. Só uma das três não abre distância suficiente. */
 .wa-row .cname {
   flex: 1;
   min-width: 0;
@@ -3623,7 +3623,7 @@ table.tbl tbody tr:hover td {
   margin-bottom: 8px;
 }
 
-/* Prévia da última mensagem no menu lateral — sempre uma linha só, tamanho proporcional às
+/* Prévia da última mensagem no menu lateral. Sempre uma linha só, tamanho proporcional às
    outras conversas, independente de quão longa a mensagem original seja (texto inteiro só
    aparece depois de abrir a conversa). */
 .wa-row .cmsg-texto {
@@ -3639,7 +3639,7 @@ table.tbl tbody tr:hover td {
 }
 
 /* Conversa não lida: o nome fica na tinta cheia e a prévia ganha peso. Sem isso, a única marca de
-   não lida era o contador no canto — fácil de não ver numa lista longa. */
+   não lida era o contador no canto. Fácil de não ver numa lista longa. */
 .wa-row.nao-lida .cname {
   color: var(--ink);
 }
@@ -3672,7 +3672,7 @@ table.tbl tbody tr:hover td {
   color: #000000;
 }
 
-/* Preto do TikTok fica ilegível no fundo escuro — segue a cor de texto do tema aí. */
+/* Preto do TikTok fica ilegível no fundo escuro. Segue a cor de texto do tema aí. */
 :root[data-theme="dark"] .origem-tiktok {
   color: var(--ink);
 }
@@ -3703,8 +3703,8 @@ table.tbl tbody tr:hover td {
 
 /* Fundo da área de mensagens: cor SÓLIDA, sem textura.
    Havia aqui um padrão de pontinhos, na ideia de lembrar o fundo texturizado do WhatsApp. Na
-   prática ele aparecia por cima de qualquer fundo escolhido nas configurações da conversa — cor
-   sólida ou imagem — e sujava o resultado. Fundo é escolha de quem usa; o CRM não impõe textura. */
+   prática ele aparecia por cima de qualquer fundo escolhido nas configurações da conversa. Cor
+   sólida ou imagem: e sujava o resultado. Fundo é escolha de quem usa; o CRM não impõe textura. */
 .wa-main .chat-body {
   flex: 1;
   max-height: none;
@@ -3789,7 +3789,7 @@ table.tbl tbody tr:hover td {
   border-radius: var(--radius-xl);
   padding: var(--space-5);
   box-shadow: var(--shadow-lg);
-  /* Reestruturação de design (fase 1) — mesma entrada suave do `.modal` genérico, pra esse modal
+  /* Reestruturação de design (fase 1). Mesma entrada suave do `.modal` genérico, pra esse modal
      bespoke não destoar dos demais. */
   animation: modal-scale-in var(--transition-base);
 }
@@ -3817,7 +3817,7 @@ table.tbl tbody tr:hover td {
   box-shadow: var(--shadow-lg);
 }
 
-/* Popup pequena no rodapé (usada pela resposta rápida do Funil) — mesmo estilo visual do
+/* Popup pequena no rodapé (usada pela resposta rápida do Funil). Mesmo estilo visual do
    `.wa-respostas-modal` do WhatsApp, só que ancorada embaixo à direita em vez de no topo. */
 .wa-respostas-modal.rodape {
   top: auto;
@@ -3836,7 +3836,7 @@ table.tbl tbody tr:hover td {
   max-height: 260px;
 }
 
-/* Popup de resposta rápida do Funil — mesma "cara" da janela de conversa real do WhatsApp
+/* Popup de resposta rápida do Funil. Mesma "cara" da janela de conversa real do WhatsApp
    (avatar + nome no topo, bolhas de mensagem, barra de digitar em pílula com botão de enviar
    redondo), só que compacta e ancorada no rodapé. */
 .wa-respostas-modal.rodape-chat {
@@ -4029,7 +4029,7 @@ table.tbl tbody tr:hover td {
   }
 }
 
-/* ---------------- CRM Live — telão pra projetar no escritório ---------------- */
+/* ---------------- CRM Live: telão pra projetar no escritório ---------------- */
 
 .crm-live {
   min-height: 100vh;
@@ -4545,7 +4545,7 @@ table.tbl tbody tr:hover td {
 }
 
 /* Linhas clicáveis (legenda de gráfico com `onClick`, ver `charts.tsx`) não tinham feedback nenhum de
-   hover — `button.camp-row` só pega essa regra quando o wrapper vira `<button>` (item `onClick`
+   hover: `button.camp-row` só pega essa regra quando o wrapper vira `<button>` (item `onClick`
    presente), então uma `<div>` de legenda estática continua sem hover, como deveria. */
 button.camp-row:hover {
   background: var(--navy-raised-2);
@@ -4739,7 +4739,7 @@ button.camp-row:hover {
   white-space: nowrap;
 }
 
-/* `.stat-row-link` (linhas de stat que são `<Link>`, ex: Atividades de vendas) não tinha regra —
+/* `.stat-row-link` (linhas de stat que são `<Link>`, ex: Atividades de vendas) não tinha regra.
    herdava o azul sublinhado padrão de link em vez de seguir o visual de `.stat-row`. */
 .stat-row-link {
   color: inherit;
@@ -5382,7 +5382,7 @@ button.camp-row:hover {
   box-shadow: var(--shadow-lg);
   z-index: 60;
   /* Reestruturação de design (fase 0): desliza/aparece suavemente em vez de surgir de forma
-     brusca — mesma faixa de tempo do modal. */
+     brusca: mesma faixa de tempo do modal. */
   animation: dropdown-slide-in var(--transition-base);
   transform-origin: top;
 }
@@ -6012,7 +6012,7 @@ button.camp-row:hover {
   margin: 0 4px;
 }
 
-/* Botão de grupo da toolbar ("Inserir ▾", "Parágrafo ▾"...) — mesma base do ícone quadrado, só que
+/* Botão de grupo da toolbar ("Inserir ▾", "Parágrafo ▾"...): mesma base do ícone quadrado, só que
    com texto e largura livre, pra caber o rótulo do grupo. */
 .doc-toolbar-btn-grupo {
   width: auto;
@@ -6057,7 +6057,7 @@ button.camp-row:hover {
   letter-spacing: normal;
 }
 
-/* Fundo neutro atrás da folha, pra página parecer mesmo uma folha A4 solta — igual Word/Docs. */
+/* Fundo neutro atrás da folha, pra página parecer mesmo uma folha A4 solta. Igual Word/Docs. */
 .doc-canvas {
   background: var(--navy-deep);
   padding: var(--space-6) var(--space-6) var(--space-6);
@@ -6073,7 +6073,7 @@ button.camp-row:hover {
   flex: 0 0 auto;
 }
 
-/* Régua igual Word/Docs — os marcadores de margem são arrastáveis de verdade (ver ReguaDocumento). */
+/* Régua igual Word/Docs: os marcadores de margem são arrastáveis de verdade (ver ReguaDocumento). */
 .doc-regua {
   position: relative;
   display: flex;
@@ -6127,7 +6127,7 @@ button.camp-row:hover {
   border-top-color: var(--ink);
 }
 
-/* Marcador de tabulação — pequeno triângulo apontando pra baixo, na base da régua. */
+/* Marcador de tabulação: pequeno triângulo apontando pra baixo, na base da régua. */
 .doc-regua-tabulacao {
   position: absolute;
   bottom: 1px;
@@ -6155,7 +6155,7 @@ button.camp-row:hover {
   border-bottom-color: var(--blue);
 }
 
-/* Marcadores de recuo do parágrafo — triângulos no topo da régua, cor diferente da margem/tabulação
+/* Marcadores de recuo do parágrafo. Triângulos no topo da régua, cor diferente da margem/tabulação
    pra ficar claro que são um controle distinto (recuo do texto, não da página). */
 .doc-regua-recuo {
   position: absolute;
@@ -6197,7 +6197,7 @@ button.camp-row:hover {
   filter: brightness(1.3);
 }
 
-/* Linha com a régua vertical ao lado da folha — mesma lógica da régua horizontal, só que no eixo Y. */
+/* Linha com a régua vertical ao lado da folha. Mesma lógica da régua horizontal, só que no eixo Y. */
 .doc-page-linha {
   display: flex;
   gap: var(--space-3);
@@ -6283,7 +6283,7 @@ button.camp-row:hover {
   position: relative;
   /* Isola o empilhamento (z-index) dos elementos de dentro da página. Sem isso, uma imagem "atrás do
      texto" (z-index: -1, aplicado pelo painel de imagem) escapa pra trás do CONTÊINER RAIZ do app
-     inteiro — atrás da barra lateral, do topo etc. — em vez de ficar só atrás do fundo branco desta
+     inteiro: atrás da barra lateral, do topo etc., em vez de ficar só atrás do fundo branco desta
      página, então acaba completamente invisível. */
   isolation: isolate;
   width: 100%;
@@ -6296,7 +6296,7 @@ button.camp-row:hover {
   font-family: "Times New Roman", Georgia, serif;
 }
 
-/* Linhas guia de alinhamento (snap) ao arrastar uma imagem em posição fixa — ver iniciarArrasteLivreImagem. */
+/* Linhas guia de alinhamento (snap) ao arrastar uma imagem em posição fixa. Ver iniciarArrasteLivreImagem. */
 .doc-guia-alinhamento {
   position: absolute;
   display: none;
@@ -6334,7 +6334,7 @@ button.camp-row:hover {
 }
 
 /*
- * Hierarquia tipográfica dos títulos — sem isso, H1/H2/H3/H4 (aplicados pelo seletor "Estilo do
+ * Hierarquia tipográfica dos títulos: sem isso, H1/H2/H3/H4 (aplicados pelo seletor "Estilo do
  * parágrafo" da toolbar) caem no estilo cru padrão do navegador: tamanhos inconsistentes entre
  * navegadores, sem relação de peso/espaçamento entre si. Mesma escala é repetida no HTML da janela de
  * impressão (documentos-export.ts) pra não divergir do que aparece aqui no editor.
@@ -6360,7 +6360,7 @@ button.camp-row:hover {
   margin: 0.6em 0 0.25em;
 }
 
-/* "Subtítulo" no seletor de estilo — menor que Título 3 e sem negrito total, pra marcar uma
+/* "Subtítulo" no seletor de estilo. Menor que Título 3 e sem negrito total, pra marcar uma
    hierarquia clara abaixo dos três níveis de título. */
 .doc-body-rich h4 {
   font-size: 14.5px;
@@ -6379,7 +6379,7 @@ button.camp-row:hover {
   margin-top: 0;
 }
 
-/* Cabeçalho/rodapé reais — o mesmo conteúdo se repete em toda página, dentro da área impressa/exportada. */
+/* Cabeçalho/rodapé reais: o mesmo conteúdo se repete em toda página, dentro da área impressa/exportada. */
 .doc-cabecalho-repetido {
   font-size: 11px;
   color: #666;
@@ -6396,7 +6396,7 @@ button.camp-row:hover {
   border-top: 1px solid #e2e2e2;
 }
 
-/* Só indicador de UI no editor — de propósito FORA de .doc-page-sheet/.doc-print-area, pra nunca ir
+/* Só indicador de UI no editor. De propósito FORA de .doc-page-sheet/.doc-print-area, pra nunca ir
    parar na impressão ou no PDF (só cabeçalho/rodapé/números inseridos pelo usuário podem aparecer lá). */
 .doc-page-numero-ui {
   text-align: center;
@@ -6405,7 +6405,7 @@ button.camp-row:hover {
   padding-top: 6px;
 }
 
-/* Barra que aparece embaixo da folha, ao rolar — adicionar/apagar página sem precisar ir na barra lateral. */
+/* Barra que aparece embaixo da folha, ao rolar: adicionar/apagar página sem precisar ir na barra lateral. */
 .doc-page-fim {
   display: flex;
   justify-content: center;
@@ -6449,13 +6449,13 @@ button.camp-row:hover {
 
 /*
  * Fallback só pra quando a impressão é disparada por fora do app (menu "Arquivo > Imprimir" do
- * navegador, botão de impressão da barra do navegador) — o app já intercepta Ctrl+P e o próprio
+ * navegador, botão de impressão da barra do navegador). O app já intercepta Ctrl+P e o próprio
  * botão de imprimir pra abrir uma janela dedicada (abrirPreviaImpressaoLimpa, em documentos-export.ts)
  * com o tamanho de papel/margens corretos; esse caminho aqui não tem acesso a isso via CSS puro, então
  * o tamanho de página real é injetado dinamicamente num <style id="doc-print-page-size"> (ver
- * EditorDocumento em documentos/page.tsx) — o @page abaixo é só o valor padrão antes disso carregar.
+ * EditorDocumento em documentos/page.tsx): o @page abaixo é só o valor padrão antes disso carregar.
  *
- * O posicionamento vai no CONTÊINER (.doc-paginas-coluna), não em cada página — cada
+ * O posicionamento vai no CONTÊINER (.doc-paginas-coluna), não em cada página: cada
  * `.doc-print-area` continua no fluxo normal do documento (uma por página, com quebra de página
  * entre elas). Posicionar cada página individualmente em position:absolute;top:0;left:0 (como era
  * antes) empilhava todas as páginas de um documento de várias páginas exatamente uma sobre a outra.
@@ -6608,7 +6608,7 @@ button.camp-row:hover {
 }
 
 /* Só desenha a linha aqui quando a toolbar de formatação está escondida (vira a última barra do
-   grupo) — evita 3 bordas empilhadas (cabeçalho + menu + toolbar) quando as três estão visíveis;
+   grupo): evita 3 bordas empilhadas (cabeçalho + menu + toolbar) quando as três estão visíveis;
    ver .doc-toolbar-rich, que já fecha o grupo com a própria borda quando está visível. */
 .doc-menu-bar-fim {
   border-bottom: 1px solid var(--line);
@@ -6681,7 +6681,7 @@ button.camp-row:hover {
   align-items: flex-start;
   justify-content: center;
   gap: 0;
-  /* A folha tem largura física fixa (mm) — em telas estreitas ela pode não caber; rola só aqui dentro
+  /* A folha tem largura física fixa (mm). Em telas estreitas ela pode não caber; rola só aqui dentro
      em vez de estourar a largura da página inteira (o que quebrava o layout no celular/tablet). */
   overflow-x: auto;
 }
@@ -6884,7 +6884,7 @@ button.camp-row:hover {
   margin-bottom: 4px;
 }
 
-/* Galeria de modelos reformulada — miniatura real (o próprio HTML do modelo, escalado), categoria e ações no hover. */
+/* Galeria de modelos reformulada: miniatura real (o próprio HTML do modelo, escalado), categoria e ações no hover. */
 .doc-modelo-card-rica {
   padding: 0;
   overflow: hidden;
@@ -6979,14 +6979,14 @@ button.camp-row:hover {
   100% { background-position: -200% 0; }
 }
 
-/* Modal centralizado — usado pelo componente `Modal` de `src/components/ui.tsx` e por telas que
+/* Modal centralizado: usado pelo componente `Modal` de `src/components/ui.tsx` e por telas que
    ainda montam o overlay à mão com essas mesmas classes. Reestruturação de design (fase 0):
    entrada suave (fade + leve escala), nada deve surgir de forma brusca. */
 .modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 300;
-  /* Desfoque no fundo — separa o modal do que está atrás sem precisar escurecer tanto a ponto de
+  /* Desfoque no fundo: separa o modal do que está atrás sem precisar escurecer tanto a ponto de
      esconder o contexto de onde a pessoa veio. */
   background: rgba(6, 11, 28, 0.62);
   backdrop-filter: blur(4px);
@@ -7021,7 +7021,7 @@ button.camp-row:hover {
 }
 
 /* Cabeçalho e corpo de modal que é FORMULÁRIO (conectar canal, etc.), não painel de listagem.
-   `.field` nasceu pra linha de painel — recuo lateral próprio e borda embaixo — e dentro de um
+   `.field` nasceu pra linha de painel. Recuo lateral próprio e borda embaixo. E dentro de um
    modal isso vira uma lista densa, com o conteúdo colado nas bordas. Aqui ele volta a ser um campo
    de formulário normal: sem borda, respiro entre um e outro e input ocupando a largura toda. */
 .modal-cabecalho {
@@ -7101,13 +7101,13 @@ button.camp-row:hover {
   border-top: 1px solid var(--line);
 }
 
-/* Colunas de texto (Formatar → Colunas) — CSS multi-coluna nativo, sem tabela. */
+/* Colunas de texto (Formatar → Colunas). CSS multi-coluna nativo, sem tabela. */
 .doc-body-rich-colunas img,
 .doc-body-rich-colunas table {
   break-inside: avoid;
 }
 
-/* Imagens dentro do documento — indicam que são clicáveis/selecionáveis pro painel de edição. */
+/* Imagens dentro do documento: indicam que são clicáveis/selecionáveis pro painel de edição. */
 .doc-body-rich img {
   cursor: pointer;
 }
@@ -7127,7 +7127,7 @@ button.camp-row:hover {
   margin-top: 4px;
 }
 
-/* Painel de imagem docked (aside fixo à direita do canvas, não mais flutuante/arrastável) — mesmo
+/* Painel de imagem docked (aside fixo à direita do canvas, não mais flutuante/arrastável): mesmo
    padrão visual de .doc-comentarios-painel/.doc-estrutura-painel. */
 .doc-lateral-painel {
   width: 300px;
@@ -7166,7 +7166,7 @@ button.camp-row:hover {
   width: 260px;
 }
 
-/* Alças de redimensionar sobrepostas na imagem selecionada — position:fixed porque a imagem é DOM
+/* Alças de redimensionar sobrepostas na imagem selecionada. Position:fixed porque a imagem é DOM
    cru fora do React; as coordenadas vêm de getBoundingClientRect() (já em espaço de viewport). */
 .doc-img-handles {
   position: fixed;
@@ -7194,7 +7194,7 @@ button.camp-row:hover {
 .doc-img-handle-s { left: 50%; bottom: -5px; transform: translateX(-50%); }
 .doc-img-handle-se { right: -5px; bottom: -5px; }
 
-/* Menu de botão direito na imagem — reposicionado em JS (useLayoutEffect) se abriria fora da viewport. */
+/* Menu de botão direito na imagem. Reposicionado em JS (useLayoutEffect) se abriria fora da viewport. */
 .doc-context-menu {
   position: fixed;
   z-index: 70;
@@ -7244,7 +7244,7 @@ button.camp-row:hover {
   text-align: center;
 }
 
-/* Toolbar mini flutuante acima da seleção de texto (Prioridade 4) — só as ações mais rápidas;
+/* Toolbar mini flutuante acima da seleção de texto (Prioridade 4). Só as ações mais rápidas;
    o painel lateral (aba Texto) continua com o conjunto completo de opções. */
 .doc-toolbar-flutuante {
   position: fixed;
@@ -7328,7 +7328,7 @@ button.camp-row:hover {
   color: var(--blue);
 }
 
-/* ---------------- Formulários — construtor profissional ---------------- */
+/* ---------------- Formulários: construtor profissional ---------------- */
 
 .cor-chips {
   display: flex;
@@ -7634,7 +7634,7 @@ button.camp-row:hover {
   min-width: 0;
 }
 
-/* Os campos de resposta aqui dentro só existem pra pré-visualizar (disabled) — sem isso, clicar em
+/* Os campos de resposta aqui dentro só existem pra pré-visualizar (disabled). Sem isso, clicar em
    cima do input/select/radio pra selecionar o card não funciona: elemento de formulário desabilitado
    não deixa o evento de clique borbulhar até o card, então o clique nunca chega no onClick do card. */
 .form-campo-corpo input:disabled,
@@ -7699,7 +7699,7 @@ button.camp-row:hover {
   margin: 0 0 var(--space-2);
 }
 
-/* Construtor visual de lógica condicional (LogicaCanvas.tsx) — mini React Flow embutido na seção
+/* Construtor visual de lógica condicional (LogicaCanvas.tsx): mini React Flow embutido na seção
    "Lógica" do painel do campo. Reaproveita as classes `.flow-node`/`.flow-handle` do editor de
    automações (mesma linguagem visual do resto do CRM) num contêiner de altura fixa, já que aqui é só
    um trecho da lateral, não uma página inteira de canvas. */
@@ -7772,7 +7772,7 @@ button.camp-row:hover {
   box-shadow: var(--shadow-md);
 }
 
-/* Campo de resposta em si — no construtor, na prévia e na página pública. */
+/* Campo de resposta em si. No construtor, na prévia e na página pública. */
 .form-resposta-campo {
   background: var(--navy-raised, #fff);
   border: 1px solid var(--line);
@@ -7812,7 +7812,7 @@ button.camp-row:hover {
   color: var(--text-faint);
 }
 
-/* Sufixo (ex.: "%") em vez de prefixo — mesma estrutura de .form-campo-prefixado, input primeiro. */
+/* Sufixo (ex.: "%") em vez de prefixo. Mesma estrutura de .form-campo-prefixado, input primeiro. */
 .form-campo-sufixado {
   flex-direction: row;
 }
@@ -8028,7 +8028,7 @@ button.camp-row:hover {
   }
 }
 
-/* ---------------- Formulário — página pública ---------------- */
+/* ---------------- Formulário: página pública ---------------- */
 
 .form-public-page {
   min-height: 100vh;
@@ -8118,7 +8118,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* WhatsApp — menu de anexos em grade                                         */
+/* WhatsApp: menu de anexos em grade                                         */
 /* -------------------------------------------------------------------------- */
 
 .wa-anexo-menu-grid {
@@ -8208,7 +8208,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* WhatsApp — arrastar e soltar arquivos na conversa                          */
+/* WhatsApp: arrastar e soltar arquivos na conversa                          */
 /* -------------------------------------------------------------------------- */
 
 .chat-body {
@@ -8242,7 +8242,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* WhatsApp — pré-visualização e edição de mídia (imagem/vídeo)               */
+/* WhatsApp: pré-visualização e edição de mídia (imagem/vídeo)               */
 /* -------------------------------------------------------------------------- */
 
 .wa-midia-preview {
@@ -8375,7 +8375,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* WhatsApp — documentos (origem, biblioteca do CRM, visualizador)            */
+/* WhatsApp: documentos (origem, biblioteca do CRM, visualizador)            */
 /* -------------------------------------------------------------------------- */
 
 .wa-doc-origem-opcoes {
@@ -8453,7 +8453,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* WhatsApp — balões de mídia (imagem/vídeo/documento) e status               */
+/* WhatsApp: balões de mídia (imagem/vídeo/documento) e status               */
 /* -------------------------------------------------------------------------- */
 
 .bubble-midia {
@@ -8593,7 +8593,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* WhatsApp — lightbox de imagens                                             */
+/* WhatsApp: lightbox de imagens                                             */
 /* -------------------------------------------------------------------------- */
 
 .wa-lightbox-overlay {
@@ -8798,7 +8798,7 @@ button.camp-row:hover {
   background: var(--navy-raised);
 }
 
-/* Item 14 — feedback visual claro de que soltar aqui vai criar um bloco novo (arrastando da
+/* Item 14: feedback visual claro de que soltar aqui vai criar um bloco novo (arrastando da
    biblioteca), em vez de simplesmente aceitar o drop sem indicar nada. */
 .flow-canvas-recebendo::after {
   content: "";
@@ -8815,7 +8815,7 @@ button.camp-row:hover {
   display: none;
 }
 
-/* Prompt central quando a automação ainda não tem nenhum nó — pointer-events desligado no wrapper (o
+/* Prompt central quando a automação ainda não tem nenhum nó. Pointer-events desligado no wrapper (o
    canvas embaixo continua pan/zoomável) e ligado de volta só na própria caixa. */
 .flow-inicio-vazio {
   position: absolute;
@@ -8893,7 +8893,7 @@ button.camp-row:hover {
   color: var(--text-faint);
 }
 
-/* ---------------- Bloco "enviar mídia" — biblioteca de arquivos (itens 3-9) ---------------- */
+/* ---------------- Bloco "enviar mídia": biblioteca de arquivos (itens 3-9) ---------------- */
 
 .flow-midia-origem {
   display: flex;
@@ -9093,7 +9093,7 @@ button.camp-row:hover {
   margin: var(--space-3);
 }
 
-/* Estado recolhido — só a seta de reabrir + uma pastilha por categoria, pra liberar espaço pro
+/* Estado recolhido: só a seta de reabrir + uma pastilha por categoria, pra liberar espaço pro
    canvas sem perder o acesso rápido a "que tipo de bloco eu quero adicionar". */
 .flow-lib-recolhida {
   flex: 0 0 44px;
@@ -9169,11 +9169,11 @@ button.camp-row:hover {
 }
 
 /* Uma linha dizendo pra que serve o grupo. Nome de categoria sozinho não explica: "Decisões" e
-   "Aguardar" só ficam óbvios depois que a pessoa já sabe montar automação — e ela está aqui
+   "Aguardar" só ficam óbvios depois que a pessoa já sabe montar automação. E ela está aqui
    justamente porque ainda não sabe. */
 /* Opções que foram junto da mensagem (botões do WhatsApp, respostas rápidas do Instagram).
    Desenhadas como o contato viu: empilhadas, separadas por linha, dentro da bolha. Não são
-   clicáveis — quem escolhe é o contato, no aparelho dele. */
+   clicáveis: quem escolhe é o contato, no aparelho dele. */
 .wa-bolha-opcoes {
   display: flex;
   flex-direction: column;
@@ -9292,7 +9292,7 @@ button.camp-row:hover {
   white-space: nowrap;
 }
 
-/* Cor por categoria — reaproveitada na paleta, no nó do canvas e nos handles. */
+/* Cor por categoria: reaproveitada na paleta, no nó do canvas e nos handles. */
 .flow-cat-dot {
   width: 8px;
   height: 8px;
@@ -9364,12 +9364,12 @@ button.camp-row:hover {
   transition: box-shadow var(--transition-base);
 }
 
-/* Afordância de hover que faltava — nenhum feedback visual existia antes de clicar num node. */
+/* Afordância de hover que faltava. Nenhum feedback visual existia antes de clicar num node. */
 .flow-node:hover:not(.is-selected) {
   box-shadow: var(--shadow-hover);
 }
 
-/* Item 31 — quando branches diferentes voltam pro mesmo node, deixa isso óbvio em vez de parecer só
+/* Item 31: quando branches diferentes voltam pro mesmo node, deixa isso óbvio em vez de parecer só
    mais uma seta chegando (fácil de perder em fluxos com muitas conexões cruzando a tela). */
 .flow-node-convergencia {
   position: absolute;
@@ -9387,7 +9387,7 @@ button.camp-row:hover {
   z-index: 3;
 }
 
-/* Modo "Entender fluxo" (item 24) — número de sequência (canto superior esquerdo, sobrepondo a
+/* Modo "Entender fluxo" (item 24). Número de sequência (canto superior esquerdo, sobrepondo a
    borda do node) + explicação narrativa curta logo abaixo do resumo normal. */
 .flow-node-ordem {
   position: absolute;
@@ -9424,7 +9424,7 @@ button.camp-row:hover {
   box-shadow: 0 0 0 3px var(--blue-soft);
 }
 
-/* Ao selecionar um node, o resto do fluxo (fora dele + vizinhos diretos) apaga levemente — ajuda a
+/* Ao selecionar um node, o resto do fluxo (fora dele + vizinhos diretos) apaga levemente. Ajuda a
    acompanhar o caminho em fluxos com muitos nós/conexões cruzando a tela. */
 .react-flow__node.flow-node-apagado {
   opacity: 0.35;
@@ -9444,7 +9444,7 @@ button.camp-row:hover {
   border-color: #d64545;
 }
 
-/* Bloco pausado (item 19, "Desativar") — continua no fluxo (posição/conexões intactas), só marcado
+/* Bloco pausado (item 19, "Desativar"): continua no fluxo (posição/conexões intactas), só marcado
    visualmente como "não roda por enquanto". Puramente de estado/visual nesta fase. */
 .flow-node.is-desativado {
   opacity: 0.55;
@@ -9473,7 +9473,7 @@ button.camp-row:hover {
   align-self: center;
 }
 
-/* Cor de identificação por categoria — só a barra lateral esquerda + o realce leve do cabeçalho,
+/* Cor de identificação por categoria. Só a barra lateral esquerda + o realce leve do cabeçalho,
    nunca o node inteiro pintado (pra manter a leitura limpa mesmo com muitos nodes na tela). */
 .flow-node.flow-cat-gatilho {
   --flow-cor-categoria: #2e6bff;
@@ -9560,7 +9560,7 @@ button.camp-row:hover {
   line-height: 1.45;
 }
 
-/* Estado incompleto (item 33) — o problema fica evidente direto no corpo do node, não só num
+/* Estado incompleto (item 33): o problema fica evidente direto no corpo do node, não só num
    ícone de aviso escondido no cabeçalho. */
 .flow-node-body-incompleto {
   color: #d8a400;
@@ -9592,7 +9592,7 @@ button.camp-row:hover {
 }
 
 /* Item 8: bifurcação Sim/Não de uma condição binária precisa ler como um garfo de dois caminhos,
-   não como mais uma linha genérica — cor reforça o sentido sem precisar ler o texto. */
+   não como mais uma linha genérica. Cor reforça o sentido sem precisar ler o texto. */
 .flow-node-handle-row.is-bifurcacao-sim {
   border-color: #0f9d6355;
   background: #0f9d6314;
@@ -9626,7 +9626,7 @@ button.camp-row:hover {
   top: 50%;
 }
 
-/* Botão "+" logo abaixo de um node com saída única ainda sem próximo passo — "o que acontece
+/* Botão "+" logo abaixo de um node com saída única ainda sem próximo passo. "o que acontece
    agora?". Fica na mesma linha do ponto de conexão, meio flutuando embaixo do node (o node tem
    overflow:visible pra isso não cortar). */
 .flow-node-saida-unica {
@@ -9859,7 +9859,7 @@ button.camp-row:hover {
   margin-bottom: 4px;
 }
 
-/* Seletor de "formato de resposta" (item 10) — mesmo visual do seletor de gatilho/ação rápida. */
+/* Seletor de "formato de resposta" (item 10). Mesmo visual do seletor de gatilho/ação rápida. */
 .flow-formato-resposta-lista {
   display: flex;
   flex-direction: column;
@@ -9898,7 +9898,7 @@ button.camp-row:hover {
   color: var(--text-faint);
 }
 
-/* Selo de compatibilidade (item 2) — reforça visualmente que menu numerado/texto livre funcionam em
+/* Selo de compatibilidade (item 2). Reforça visualmente que menu numerado/texto livre funcionam em
    qualquer conexão, enquanto botões/lista dependem do provedor. */
 .flow-formato-compat {
   align-self: flex-start;
@@ -9962,7 +9962,7 @@ button.camp-row:hover {
 }
 
 /* Painel de pré-visualização do fluxo (VisualizarFluxo.tsx) usava `.flow-preview-panel` em vez de
-   `.flow-side-panel` — sem nenhuma regra, o painel abria sem largura/fundo/layout nenhum. Aqui uma
+   `.flow-side-panel`: sem nenhuma regra, o painel abria sem largura/fundo/layout nenhum. Aqui uma
    variante mais larga, já que hospeda o canvas do fluxo. */
 .flow-preview-panel {
   width: min(760px, 100vw);
@@ -10062,7 +10062,7 @@ button.camp-row:hover {
   }
 }
 
-/* Documentos — celular/tablet estreito: réguas ocupam espaço e não são práticas de arrastar no toque,
+/* Documentos: celular/tablet estreito: réguas ocupam espaço e não são práticas de arrastar no toque,
    então somem aqui (o zoom/scroll horizontal do .doc-canvas continuam dando acesso à página inteira). */
 @media (max-width: 600px) {
   .doc-regua,
@@ -10085,7 +10085,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* FilterBar — barra de filtros compacta e padronizada (Inteligência comercial) */
+/* FilterBar: barra de filtros compacta e padronizada (Inteligência comercial) */
 /* -------------------------------------------------------------------------- */
 
 .filterbar {
@@ -10610,7 +10610,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Jornada do cliente — busca, recentes, lista + painel                      */
+/* Jornada do cliente: busca, recentes, lista + painel                      */
 /* -------------------------------------------------------------------------- */
 
 .jornada-busca-row {
@@ -10831,7 +10831,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Janela de configurações das conversas — modal centralizado com abas       */
+/* Janela de configurações das conversas. Modal centralizado com abas       */
 /* -------------------------------------------------------------------------- */
 
 .wa-config-modal-shell {
@@ -10939,7 +10939,7 @@ button.camp-row:hover {
   justify-content: center;
 }
 
-/* Fundo da conversa (Configurações das conversas > Aparência): três cartões — branco, imagem do
+/* Fundo da conversa (Configurações das conversas > Aparência): três cartões: branco, imagem do
    computador, cor sólida. Cada um mostra uma AMOSTRA do que vai acontecer em vez de só um rótulo,
    porque escolher fundo é uma decisão visual: dá pra ver a cor/imagem antes de aplicar. */
 .wa-fundo-opcoes {
@@ -11100,11 +11100,11 @@ button.camp-row:hover {
 
 /*
  * Backdrop compartilhado por todos os popups de Conversas (preview de imagem/vídeo, biblioteca de
- * mídia, configurações da conversa, seletor de contato, confirmações...) — usado em ~16 lugares no
+ * mídia, configurações da conversa, seletor de contato, confirmações...): usado em ~16 lugares no
  * arquivo, mas nunca tinha sido definido: sem isso, cada popup só fluía dentro do layout normal da
  * página (sem position: fixed, sem centralizar, sem escurecer o fundo), então podia ficar cortado por
  * qualquer contêiner pai com altura limitada. Os próprios modais (.wa-email-modal, .wa-config-modal-
- * shell, .wa-midia-preview, .wa-biblioteca-modal) já tinham max-height/overflow-y corretos — só
+ * shell, .wa-midia-preview, .wa-biblioteca-modal) já tinham max-height/overflow-y corretos. Só
  * faltava o overlay que os centraliza dentro da viewport inteira. Mesmo padrão de .modal-overlay,
  * já usado e testado em Documentos.
  */
@@ -11135,7 +11135,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Áudio — barra de gravação, prévia antes de enviar e player nas bolhas     */
+/* Áudio: barra de gravação, prévia antes de enviar e player nas bolhas     */
 /* -------------------------------------------------------------------------- */
 
 .chat-audio-gravando,
@@ -11386,7 +11386,7 @@ button.camp-row:hover {
   color: var(--text-faint);
 }
 
-/* Nome de quem mandou, em mensagem recebida dentro de um grupo de WhatsApp — mesmo padrão visual
+/* Nome de quem mandou, em mensagem recebida dentro de um grupo de WhatsApp. Mesmo padrão visual
    do WhatsApp de verdade (nome colorido acima do texto, um por remetente diferente). */
 .wa-remetente-grupo {
   display: block;
@@ -11396,7 +11396,7 @@ button.camp-row:hover {
   color: var(--blue);
 }
 
-/* Foto de perfil real (WhatsApp) dentro do círculo `.avatar` — substitui as iniciais quando existe. */
+/* Foto de perfil real (WhatsApp) dentro do círculo `.avatar`. Substitui as iniciais quando existe. */
 .wa-avatar-foto {
   width: 100%;
   height: 100%;
@@ -11405,7 +11405,7 @@ button.camp-row:hover {
 }
 
 /* Lista de participantes de um grupo de WhatsApp (painel flutuante aberto pelo cabeçalho da
-   conversa) — uma linha por pessoa, com atalho pra abrir a conversa individual com ela. */
+   conversa): uma linha por pessoa, com atalho pra abrir a conversa individual com ela. */
 .wa-participantes-lista {
   max-height: 340px;
   overflow-y: auto;
@@ -11437,7 +11437,7 @@ button.camp-row:hover {
   border-bottom: none;
 }
 
-/* Painel "Dados do grupo" e o popup de contato de um participante — mesmo layout centralizado
+/* Painel "Dados do grupo" e o popup de contato de um participante. Mesmo layout centralizado
    (foto grande, nome, detalhe, ação), reaproveitado nos dois. */
 .wa-dados-grupo-modal,
 .wa-participante-modal {
@@ -11722,7 +11722,7 @@ button.camp-row:hover {
 }
 
 /* Áudio tem cor própria (branco recebido / azul enviado), diferente do verde padrão do resto da
-   tela do WhatsApp — pedido explícito pra diferenciar áudio visualmente do texto. */
+   tela do WhatsApp: pedido explícito pra diferenciar áudio visualmente do texto. */
 .bubble.in.bubble-audio {
   background: #fff;
   border: 1px solid var(--line);
@@ -11744,7 +11744,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Menu de ações da mensagem — responder/mais ações/favorita                 */
+/* Menu de ações da mensagem. Responder/mais ações/favorita                 */
 /* -------------------------------------------------------------------------- */
 
 .bubble .wa-reply-btn,
@@ -11863,7 +11863,7 @@ button.camp-row:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Enviar contato — abas CRM/Criar, busca+filtros, seleção e prévia          */
+/* Enviar contato: abas CRM/Criar, busca+filtros, seleção e prévia          */
 /* -------------------------------------------------------------------------- */
 
 .wa-contato-picker-shell {
@@ -12018,8 +12018,8 @@ button.camp-row:hover {
 }
 
 /*
- * Automações — barra compacta de filtros. Esse bloco existiu antes (commit 2cec162), mas foi apagado
- * por acidente numa mesclagem posterior que sobrescreveu partes deste arquivo (267f926) — o JSX da
+ * Automações: barra compacta de filtros. Esse bloco existiu antes (commit 2cec162), mas foi apagado
+ * por acidente numa mesclagem posterior que sobrescreveu partes deste arquivo (267f926). O JSX da
  * página continuou referenciando essas classes o tempo todo, só que sem nenhum CSS por trás, o que
  * deixava a barra inteira sem estilo (inclusive o ícone de busca, que sem largura/altura explícitas e
  * sem essa classe pra conter, se esticava pra preencher a largura toda do card).
@@ -12373,10 +12373,10 @@ button.camp-row:hover {
   flex-wrap: wrap;
 }
 
-/* Reestruturação visual (redesign) — a seção INTEIRA (título + lista) é que forma a "caixinha"
-   (fundo, borda, raio, sombra), não cada item dentro dela — mesmo princípio dos blocos "Security
+/* Reestruturação visual (redesign): a seção INTEIRA (título + lista) é que forma a "caixinha"
+   (fundo, borda, raio, sombra), não cada item dentro dela. Mesmo princípio dos blocos "Security
    Status"/"System Alerts" da referência: um bloco bem demarcado contendo várias linhas simples, não
-   uma pilha de caixas menores. Sem isso, ficava "nem caixa nem flat" — cada linha perdeu a própria
+   uma pilha de caixas menores. Sem isso, ficava "nem caixa nem flat". Cada linha perdeu a própria
    caixa (pedido anterior) mas a seção não ganhou nenhuma, então tudo virou fundo liso sem nenhuma
    demarcação visual. */
 .central-dia-secao {
@@ -12469,9 +12469,9 @@ button.camp-row:hover {
 /* ------------------------- Início: fundo marinho de página inteira, quadrados soltos ------------------------- */
 
 /* Mesmo truque visual da sidebar/`.main` (painéis separados, com o marinho da marca aparecendo no
-   vão entre eles) — mas agora tomando a página inteira do Início, não só um recorte: em vez de um
+   vão entre eles): mas agora tomando a página inteira do Início, não só um recorte: em vez de um
    `.topbar`/`.content` brancos padrão, cada bloco (saudação, Pendências, Diário, Oportunidades...)
-   vira seu próprio quadrado branco solto direto em cima do marinho. Só esta página faz isso — as
+   vira seu próprio quadrado branco solto direto em cima do marinho. Só esta página faz isso. As
    outras continuam usando `.topbar`/`.content` normalmente, sem mexer no `.main` compartilhado. */
 .inicio-tela {
   position: relative;
@@ -12523,7 +12523,7 @@ button.camp-row:hover {
   gap: var(--space-4);
 }
 /* Os três cartões do funil eram esticados pra preencher a coluna. Com o piso marinho isso fazia
-   sentido — vão vazio virava um bloco de quadriculado escuro. Agora o piso é claro e o vazio lê
+   sentido: vão vazio virava um bloco de quadriculado escuro. Agora o piso é claro e o vazio lê
    como respiro; esticados, os cartões ficavam com um buraco no meio entre o número e a observação. */
 .inicio-col-lateral > * {
   flex: 0 0 auto;
@@ -12531,7 +12531,7 @@ button.camp-row:hover {
 
 .inicio-pendencias-box {
   margin-bottom: 0;
-  /* Cresce dentro da coluna esquerda (o Diário mantém altura natural abaixo) — é quem absorve o
+  /* Cresce dentro da coluna esquerda (o Diário mantém altura natural abaixo). É quem absorve o
      espaço vertical sobrando, com a lista rolando por dentro em vez de esticar itens. */
   display: flex;
   flex-direction: column;
@@ -12625,7 +12625,7 @@ button.camp-row:hover {
   background: var(--navy-raised);
 }
 /* Três degraus bem separados: número grande e preto, rótulo pequeno em caixa alta, descrição em
-   corpo normal. Antes o número era 20px e o rótulo 10,5px — perto demais pra um dizer "olhe aqui
+   corpo normal. Antes o número era 20px e o rótulo 10,5px: perto demais pra um dizer "olhe aqui
    primeiro". */
 .inicio-stat-mini .n {
   font-size: 26px;
@@ -12660,7 +12660,7 @@ button.camp-row:hover {
   letter-spacing: normal;
 }
 
-/* Versão maior — os 3 quadrados da coluna do funil (Oportunidades / Vendas perdidas / Vendas
+/* Versão maior: os 3 quadrados da coluna do funil (Oportunidades / Vendas perdidas / Vendas
    realizadas). */
 .inicio-stat-grande {
   gap: var(--space-1);
@@ -12692,7 +12692,7 @@ button.camp-row:hover {
 /* ------------------------------- Card padrão de item do dia ------------------------------- */
 
 /* Cada pendência é uma unidade fechada: fundo branco recortado da área interna cinza da seção,
-   borda perceptível e a faixa de urgência à esquerda. Antes era cinza sobre cinza com borda a 8% —
+   borda perceptível e a faixa de urgência à esquerda. Antes era cinza sobre cinza com borda a 8%.
    o conjunto lia como um bloco só, não como itens separáveis. */
 .central-dia-card {
   display: flex;
@@ -12822,7 +12822,7 @@ button.camp-row:hover {
 
 /* ------------------------------------ Compromisso (agenda) ------------------------------------ */
 
-/* Mesmo ajuste de `.central-dia-card` — a seção (`.central-dia-secao`) já é a caixinha, esta linha
+/* Mesmo ajuste de `.central-dia-card`: a seção (`.central-dia-secao`) já é a caixinha, esta linha
    fica flat dentro dela. */
 .central-dia-compromisso {
   display: flex;
@@ -12875,7 +12875,7 @@ button.camp-row:hover {
 
 /* ----------------------------------------- Recomendações ----------------------------------------- */
 
-/* Mesmo ajuste de `.central-dia-card` — a seção (`.central-dia-secao`) já é a caixinha, esta linha
+/* Mesmo ajuste de `.central-dia-card`: a seção (`.central-dia-secao`) já é a caixinha, esta linha
    fica flat dentro dela. */
 .central-dia-recomendacoes {
   display: flex;
@@ -13031,7 +13031,7 @@ button.camp-row:hover {
 }
 
 /* ============================================================= */
-/* Configurações — painel administrativo (Etapa 1, Parte B)      */
+/* Configurações: painel administrativo (Etapa 1, Parte B)      */
 /* ============================================================= */
 
 .config-layout {
@@ -13173,7 +13173,7 @@ button.camp-row:hover {
   gap: var(--space-2);
 }
 
-/* Reestruturação visual (redesign) — sem caixa própria por padrão (o `.config-bloco` que envolve
+/* Reestruturação visual (redesign): sem caixa própria por padrão (o `.config-bloco` que envolve
    já é a caixinha); só ganha fundo/borda quando ativa/selecionada, que é sinal de estado, não
    decoração. */
 .config-linha-clicavel {
@@ -13307,7 +13307,7 @@ button.camp-row:hover {
   font-weight: 700;
 }
 
-/* Aparência — prévia */
+/* Aparência: prévia */
 .config-aparencia-preview {
   display: flex;
   flex-direction: column;
@@ -13455,7 +13455,7 @@ button.camp-row:hover {
   margin-top: 8px;
 }
 
-/* Compatibilidade (WhatsApp) — mesmo vocabulário visual do construtor de automações */
+/* Compatibilidade (WhatsApp): mesmo vocabulário visual do construtor de automações */
 .config-compat-lista {
   display: flex;
   flex-direction: column;
@@ -13507,7 +13507,7 @@ button.camp-row:hover {
   line-height: 1.6;
 }
 
-/* Importação — passos */
+/* Importação: passos */
 .config-passos {
   display: flex;
   gap: var(--space-2);
@@ -13592,7 +13592,7 @@ button.camp-row:hover {
   }
 }
 
-/* Telefone detectado no texto da mensagem — mesma ideia dos atalhos que o Instagram mostra quando
+/* Telefone detectado no texto da mensagem. Mesma ideia dos atalhos que o Instagram mostra quando
    alguém manda um número: dá pra abrir a conversa no WhatsApp ou ligar sem copiar na mão. */
 .wa-telefone-detectado {
   display: inline-flex;
@@ -13622,7 +13622,7 @@ button.camp-row:hover {
   background: rgba(255, 255, 255, 0.26);
 }
 
-/* No balão recebido o fundo é escuro e o branco translúcido some — aqui o contorno é que dá o
+/* No balão recebido o fundo é escuro e o branco translúcido some. Aqui o contorno é que dá o
    contraste. */
 .bubble.in .wa-telefone-acao {
   background: rgba(0, 0, 0, 0.18);
@@ -13648,7 +13648,7 @@ button.camp-row:hover {
 
 /* Painel de conversa aberto pelo Funil (`PainelConversa`).
 
-   Ancorado embaixo à direita e subindo — a mesma origem da janelinha que existia antes, só que
+   Ancorado embaixo à direita e subindo. A mesma origem da janelinha que existia antes, só que
    grande o bastante pra atender de verdade. Centralizar com a tela escurecida atrás parecia um
    modal de confirmação e tirava o funil de vista; aqui o funil continua visível ao lado, que é o
    ponto: abrir, responder, fechar e voltar a arrastar. */
@@ -13670,7 +13670,7 @@ button.camp-row:hover {
   height: min(660px, calc(100vh - 120px));
   padding: var(--space-4) var(--space-5) var(--space-4);
   border-radius: var(--radius-xl);
-  /* Fundo SÓLIDO — com uma variável inexistente aqui o painel ficava translúcido e o funil
+  /* Fundo SÓLIDO: com uma variável inexistente aqui o painel ficava translúcido e o funil
      aparecia por trás do texto, impossível de ler. */
   background: var(--navy);
   border: 1px solid var(--line);
@@ -13693,7 +13693,7 @@ button.camp-row:hover {
   gap: var(--space-2);
 }
 
-/* Mensagens e ficha do contato lado a lado — a ficha só existe quando a engrenagem está ligada,
+/* Mensagens e ficha do contato lado a lado. A ficha só existe quando a engrenagem está ligada,
    então a conversa usa a largura inteira no uso normal. */
 .painel-conversa-corpo {
   display: flex;
@@ -13714,7 +13714,7 @@ button.camp-row:hover {
   flex-direction: column;
   /* NÃO usar `justify-content: flex-end` aqui.
      Num container rolável, ele quebra a rolagem: o navegador não consegue rolar acima do início da
-     linha flex, então as mensagens mais antigas ficam cortadas e inalcançáveis — era a "faixa
+     linha flex, então as mensagens mais antigas ficam cortadas e inalcançáveis. Era a "faixa
      branca" que engolia as mensagens antes de elas chegarem ao topo.
      O `margin-top: auto` no primeiro filho faz o mesmo efeito visual (conversa curta encostada
      embaixo) sem tirar nada do alcance da rolagem. */
@@ -13726,7 +13726,7 @@ button.camp-row:hover {
   margin-top: auto;
 }
 
-/* Ficha do contato: janela IRMÃ da conversa, encostada nela — não uma coluna espremida lá dentro.
+/* Ficha do contato: janela IRMÃ da conversa, encostada nela: não uma coluna espremida lá dentro.
    Dentro do painel, o formulário roubava a largura das mensagens e a conversa virava uma coluna
    estreita justamente enquanto a pessoa lia pra responder. */
 .painel-conversa-dados {
@@ -13805,7 +13805,7 @@ button.camp-row:hover {
   border-radius: var(--radius-md);
 }
 
-/* Numa tela estreita a ficha do contato espremeria as duas coisas — melhor virar tela cheia e
+/* Numa tela estreita a ficha do contato espremeria as duas coisas. Melhor virar tela cheia e
    manter a conversa legível. */
 @media (max-width: 760px) {
   .painel-conversa {
@@ -13841,7 +13841,7 @@ button.camp-row:hover {
 }
 
 /* Botão embaixo da prévia de conteúdo do Instagram. Clicar na imagem também abre, mas ninguém
-   adivinha que abre — o botão diz o que vai acontecer antes do clique. */
+   adivinha que abre: o botão diz o que vai acontecer antes do clique. */
 .bubble-acao-externa {
   display: block;
   margin-top: 6px;
@@ -13860,7 +13860,7 @@ button.camp-row:hover {
   background: var(--surface-active);
 }
 
-/* Cabeçalho do cartão de publicação compartilhada — quem mandou, no formato do Instagram. */
+/* Cabeçalho do cartão de publicação compartilhada. Quem mandou, no formato do Instagram. */
 .bubble-share-topo {
   display: block;
   margin-bottom: 6px;
@@ -13869,7 +13869,7 @@ button.camp-row:hover {
   opacity: 0.85;
 }
 
-/* Legenda da publicação compartilhada — cortada em três linhas, como o Instagram faz no cartão de
+/* Legenda da publicação compartilhada: cortada em três linhas, como o Instagram faz no cartão de
    compartilhamento. A legenda inteira pode ter parágrafos e dominar a conversa. */
 .bubble-share-legenda {
   display: -webkit-box;
@@ -13898,7 +13898,7 @@ button.camp-row:hover {
 }
 
 /* Barra de espaço usado em Plano e cobrança. O aviso muda de cor a partir de 80% porque encher o
-   armazenamento sem perceber significa anexo do cliente deixando de ser salvo — precisa avisar
+   armazenamento sem perceber significa anexo do cliente deixando de ser salvo. Precisa avisar
    antes, não depois. */
 .armazenamento-barra {
   height: 8px;
@@ -13924,7 +13924,7 @@ button.camp-row:hover {
   color: #b26b00;
 }
 
-/* Ação em texto dentro de um parágrafo — usada no aviso de arquivos ainda guardados no banco. Não
+/* Ação em texto dentro de um parágrafo. Usada no aviso de arquivos ainda guardados no banco. Não
    é um botão de destaque de propósito: é manutenção pontual, não uma ação principal da tela. */
 .btn-link {
   background: none;
@@ -14130,7 +14130,7 @@ button.camp-row:hover {
   font-size: 12px;
 }
 
-/* Contatos sugeridos na busca de conversas — o caminho pra falar com quem ainda não escreveu. */
+/* Contatos sugeridos na busca de conversas. O caminho pra falar com quem ainda não escreveu. */
 .conversa-contatos-novos {
   padding: var(--space-2) var(--space-3) var(--space-3);
   border-bottom: 1px solid rgba(0, 0, 0, 0.07);
@@ -14165,7 +14165,7 @@ button.camp-row:hover {
   font-weight: 600;
 }
 
-/* Prévia do anexo no painel do funil — o passo entre escolher e enviar. */
+/* Prévia do anexo no painel do funil. O passo entre escolher e enviar. */
 .painel-previa {
   display: flex;
   flex-direction: column;
@@ -14199,7 +14199,7 @@ button.camp-row:hover {
   gap: var(--space-2);
 }
 
-/* Painel do funil — passada de acabamento -------------------------------- */
+/* Painel do funil: passada de acabamento -------------------------------- */
 
 /* Erro do envio: uma faixa discreta acima do composer, não um parágrafo com símbolo colado. */
 .painel-conversa-erro {
@@ -14226,7 +14226,7 @@ button.camp-row:hover {
   font-weight: 600;
 }
 
-/* Hover discreto nos itens do menu de anexo — dá resposta ao ponteiro sem pesar a interface. */
+/* Hover discreto nos itens do menu de anexo. Dá resposta ao ponteiro sem pesar a interface. */
 .painel-conversa-mais .wa-anexo-item {
   transition: background var(--transition-fast, 120ms ease);
 }
@@ -14235,7 +14235,7 @@ button.camp-row:hover {
   background: var(--navy-raised-2, rgba(255, 255, 255, 0.06));
 }
 
-/* A engrenagem e o fechar ficam do mesmo tamanho e alinhados — antes eram um glifo de texto cada,
+/* A engrenagem e o fechar ficam do mesmo tamanho e alinhados. Antes eram um glifo de texto cada,
    com alturas diferentes conforme a fonte do sistema. */
 .painel-conversa-acoes .gear-btn,
 .painel-conversa-acoes .modal-close-btn {
@@ -14246,7 +14246,7 @@ button.camp-row:hover {
   height: 26px;
 }
 
-/* Aviso de gravação recusada no funil — fica sobre a tela até a pessoa fechar, porque perder uma
+/* Aviso de gravação recusada no funil. Fica sobre a tela até a pessoa fechar, porque perder uma
    movimentação de lead sem saber é o pior desfecho possível deste módulo. */
 .funil-erro-sync {
   position: fixed;
@@ -14279,7 +14279,7 @@ button.camp-row:hover {
 /* Áudio: container externo + player interno, nas duas direções ------------- */
 
 /* A ideia é a mesma do painel do funil, agora valendo nas duas telas (o componente já é um só):
-   um container que diz de quem é a mensagem, e dentro dele um player com contraste próprio — o
+   um container que diz de quem é a mensagem, e dentro dele um player com contraste próprio. O
    play e a linha do tempo precisam se destacar do fundo, não se dissolver nele. */
 .bubble-audio .audio-player {
   border-radius: var(--radius-lg);
@@ -14296,7 +14296,7 @@ button.camp-row:hover {
   background: rgba(17, 24, 39, 0.09);
 }
 
-/* Enviado: fora azul, dentro um azul mais fundo — a leitura de "fui eu que mandei" acontece antes
+/* Enviado: fora azul, dentro um azul mais fundo. A leitura de "fui eu que mandei" acontece antes
    de a pessoa reparar em qual lado a bolha está. */
 .bubble.out.bubble-audio .audio-player {
   background: rgba(0, 0, 0, 0.16);
@@ -14306,7 +14306,7 @@ button.camp-row:hover {
   background: rgba(0, 0, 0, 0.22);
 }
 
-/* A hora e os tiquinhos ficam FORA do player, colados no canto do container — dentro, competiam
+/* A hora e os tiquinhos ficam FORA do player, colados no canto do container. Dentro, competiam
    com a linha do tempo por atenção. */
 .bubble-audio .tm {
   padding-top: 4px;
@@ -14314,12 +14314,12 @@ button.camp-row:hover {
 }
 
 /* ========================================================================== */
-/* Acabamento das conversas — vale nas DUAS telas                            */
+/* Acabamento das conversas: vale nas DUAS telas                            */
 /* ========================================================================== */
 
 /* Estas regras vivem no fim do arquivo e usam os mesmos seletores que a tela de Conversas e o
    painel do funil já compartilham (`.bubble`, `.tm`, `.wa-*`). É de propósito: refinar por aqui
-   melhora as duas ao mesmo tempo, sem tocar em nenhuma lógica de renderização — que é o que
+   melhora as duas ao mesmo tempo, sem tocar em nenhuma lógica de renderização. Que é o que
    tornaria a mudança arriscada.
 
    O ganho de "produto caro" não vem de efeito: vem de proporção, respiro e hierarquia. Por isso
@@ -14349,7 +14349,7 @@ button.camp-row:hover {
   border-bottom-right-radius: 5px;
 }
 
-/* A hora respira e perde peso — ela é referência, não conteúdo. */
+/* A hora respira e perde peso. Ela é referência, não conteúdo. */
 .bubble .tm {
   opacity: 0.72;
   font-variant-numeric: tabular-nums;
@@ -14364,7 +14364,7 @@ button.camp-row:hover {
 
 /* TODA imagem dentro de uma bolha é limitada aqui, não importa o que a embrulhe.
    Existia regra só pra `.bubble-imagem-btn img` (o caso de abrir o visualizador). Quando a foto
-   vem de uma publicação compartilhada, ela é embrulhada num link — e sem regra o navegador
+   vem de uma publicação compartilhada, ela é embrulhada num link. E sem regra o navegador
    desenhava a imagem no tamanho natural, ocupando a conversa inteira. */
 .bubble-imagens img {
   width: 100%;
@@ -14409,7 +14409,7 @@ button.camp-row:hover {
   border-color: var(--blue);
 }
 
-/* Páginas de erro e "não encontrado" — com a identidade do CRM, não a do framework. */
+/* Páginas de erro e "não encontrado". Com a identidade do CRM, não a do framework. */
 .pagina-erro {
   min-height: 100vh;
   display: flex;
@@ -14453,7 +14453,7 @@ button.camp-row:hover {
    Seletor de data (src/components/seletor-de-data.tsx)
    O calendário nosso, que substitui o calendário nativo do navegador nos campos onde ele aparecia.
    Estética de referência: dia selecionado como pastilha azul sólida, dias de fora do mês apagados,
-   hoje marcado só por um anel — sem glow, sem gradiente, sem arredondamento exagerado.
+   hoje marcado só por um anel. Sem glow, sem gradiente, sem arredondamento exagerado.
    ========================================================================== */
 
 .seletor-data {
@@ -14461,7 +14461,7 @@ button.camp-row:hover {
 }
 
 /* O gatilho é um `<button>` com a classe `.input`, então herda altura, borda e foco dos outros
-   campos do formulário — o alinhamento com um `<input>` ao lado continua exato. */
+   campos do formulário: o alinhamento com um `<input>` ao lado continua exato. */
 .seletor-data-campo {
   display: flex;
   align-items: center;
@@ -14488,7 +14488,7 @@ button.camp-row:hover {
 
 /* Posição (top/left/width) vem inline do componente, porque o painel é montado por portal em
    `document.body` e se posiciona a partir do retângulo do botão. O z-index precisa ficar acima do
-   fundo do `FloatingDropdown` (190) — senão o calendário abriria atrás do menu que o chamou. */
+   fundo do `FloatingDropdown` (190): senão o calendário abriria atrás do menu que o chamou. */
 .seletor-data-painel {
   z-index: 240;
   max-height: 340px;
@@ -14575,7 +14575,7 @@ button.camp-row:hover {
   color: var(--text-faint);
 }
 
-/* "Hoje" é só um anel — se fosse fundo, competiria com a seleção. */
+/* "Hoje" é só um anel. Se fosse fundo, competiria com a seleção. */
 .seletor-data-dia.hoje {
   border-color: var(--blue);
   color: var(--blue);
@@ -14614,7 +14614,7 @@ button.camp-row:hover {
   color: var(--blue);
 }
 
-/* Variantes de largura do seletor de data — o gatilho é um `<button>`, então não herda o
+/* Variantes de largura do seletor de data. O gatilho é um `<button>`, então não herda o
    `width: 100%` que um `<input>` levava por style inline no lugar de cada campo trocado. */
 .seletor-data-largo {
   width: 100%;
@@ -14627,7 +14627,7 @@ button.camp-row:hover {
 
 /* ==========================================================================
    Área de envio de arquivo (src/components/area-de-upload.tsx)
-   Caixa tracejada com o ícone dentro de um círculo. A área inteira é clicável e aceita arraste —
+   Caixa tracejada com o ícone dentro de um círculo. A área inteira é clicável e aceita arraste.
    antes o alvo era um rótulo miudinho, e não havia sinal nenhum de que dava pra arrastar.
    ========================================================================== */
 
@@ -14741,7 +14741,7 @@ button.camp-row:hover {
 }
 
 /* Sobreposição que aparece ao arrastar um arquivo pra cima de uma conversa. Na conversa o clipe
-   continua sendo o caminho normal — caixa tracejada fixa ali roubaria a largura das mensagens —,
+   continua sendo o caminho normal. Caixa tracejada fixa ali roubaria a largura das mensagens.,
    mas quem arrasta precisa ver pra onde soltar. */
 .upload-soltar-aqui {
   position: absolute;
@@ -14769,7 +14769,7 @@ button.camp-row:hover {
    Ícones inline dentro de texto
    Os avisos, confirmações e explicações usavam glifo/emoji digitado no meio da frase (⚠ ✓ 💡), que
    assentava na linha de base sozinho. Trocados por SVG, precisam ser puxados um pouco pra baixo pra
-   ficarem no eixo óptico do texto — senão flutuam acima da linha.
+   ficarem no eixo óptico do texto. Senão flutuam acima da linha.
    ========================================================================== */
 
 .hint svg,
@@ -14795,7 +14795,7 @@ button.camp-row:hover {
 
 
 /* ==========================================================================
-   Estados interativos — item 9 do refinamento
+   Estados interativos: item 9 do refinamento
    Alguns elementos não davam retorno nenhum ao mouse ou ao teclado: pareciam estáticos mesmo sendo
    clicáveis. Aqui ficam as regras que faltavam, sempre no mesmo vocabulário: hover = fundo um
    degrau acima; selecionado = fundo firme + borda/accent; foco = anel azul; desabilitado = opacidade
@@ -14840,7 +14840,7 @@ button.camp-row:hover {
 
 
 /* ==========================================================================
-   Nome na linha da tabela — mesma hierarquia da lista de Conversas e do card do funil: o nome é a
+   Nome na linha da tabela. Mesma hierarquia da lista de Conversas e do card do funil: o nome é a
    informação que se procura, o resto é apoio.
    ========================================================================== */
 
@@ -14919,7 +14919,7 @@ table.tbl .name-cell .r {
 /* ==========================================================================
    Card do plano (Configurações → Plano e cobrança)
    Estética das referências de preço: preço grande antes de qualquer lista, ação preta ocupando a
-   largura, recursos com marca de conferido embaixo. Um plano só — os três níveis da referência
+   largura, recursos com marca de conferido embaixo. Um plano só: os três níveis da referência
    existem lá porque lá há três planos.
    ========================================================================== */
 
@@ -14954,7 +14954,7 @@ table.tbl .name-cell .r {
   color: var(--text-muted);
 }
 
-/* O preço é a primeira coisa que se lê: grande, preto e com o período em corpo normal ao lado —
+/* O preço é a primeira coisa que se lê: grande, preto e com o período em corpo normal ao lado.
    o par forte+leve das referências. */
 .preco-valor {
   display: flex;
@@ -15010,7 +15010,7 @@ table.tbl .name-cell .r {
   color: var(--ink);
 }
 
-/* A marca de conferido num círculo, como na referência — sem ela a lista lê como texto corrido. */
+/* A marca de conferido num círculo, como na referência: sem ela a lista lê como texto corrido. */
 .preco-recursos li svg {
   flex: none;
   padding: var(--space-1);
@@ -15522,7 +15522,7 @@ table.tbl .name-cell .r {
 
 
 /*
- * "Estou indo" — a resposta imediata ao clique no menu.
+ * "Estou indo": a resposta imediata ao clique no menu.
  *
  * Ocupa a barra da esquerda do item, o mesmo lugar da marca de item ativo: quem clicou vê o
  * destaque nascer ali na hora, e quando a página chega a barra do ativo assume o mesmo lugar. A
@@ -15588,17 +15588,17 @@ table.tbl .name-cell .r {
 /*
  * O esqueleto que ocupa o lugar da tela enquanto ela chega (ver `(app)/loading.tsx`).
  *
- * O brilho que atravessa é lento de propósito — 1,4s. Animação rápida lê como "travando"; lenta lê
+ * O brilho que atravessa é lento de propósito. 1,4s. Animação rápida lê como "travando"; lenta lê
  * como "vindo". E ela respeita quem pediu menos movimento no sistema: sem a preferência atendida,
  * uma tela inteira pulsando é desconforto real pra quem tem sensibilidade a movimento.
  */
 /*
- * O esqueleto entra ATRASADO — 400ms.
+ * O esqueleto entra ATRASADO: 400ms.
  *
  * Mostrar "carregando" numa navegação de 150ms é pior que não mostrar nada: vira um flash branco a
  * cada clique, e a tela parece estar sempre recarregando mesmo quando está rápida. Com o atraso, a
- * navegação rápida não mostra esqueleto nenhum (ela termina antes) e só a lenta ganha o retorno —
- * que é exatamente onde ele serve pra alguma coisa.
+ * navegação rápida não mostra esqueleto nenhum (ela termina antes) e só a lenta ganha o retorno.
+ * Que é exatamente onde ele serve pra alguma coisa.
  *
  * O atraso é de APARECER, não de carregar: nada fica mais lento por causa disto.
  */

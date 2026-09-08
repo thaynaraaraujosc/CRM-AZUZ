@@ -28,7 +28,7 @@ export function IaClassificarForm({
   function remover(indice: number) {
     const saindo = categorias[indice];
     onChange({ categorias: categorias.filter((_, i) => i !== indice) });
-    // A aresta ligada nessa categoria some junto — senão fica um caminho apontando pra uma saída
+    // A aresta ligada nessa categoria some junto. Senão fica um caminho apontando pra uma saída
     // que não existe mais, e o fluxo trava ali sem explicação.
     if (saindo) onRemoverCategoria?.(saindo);
   }
@@ -50,7 +50,7 @@ export function IaClassificarForm({
         <label>Categorias</label>
         <p className="hint">
           Cada uma vira uma saída do bloco. Quando a IA não encaixa a conversa em nenhuma, o fluxo
-          segue pela saída &quot;Não classificado&quot; — ela não escolhe um caminho no chute.
+          segue pela saída &quot;Não classificado&quot;. Ela não escolhe um caminho no chute.
         </p>
         {categorias.map((categoria, i) => (
           <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>

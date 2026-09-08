@@ -19,7 +19,7 @@ const MODELOS_INICIAIS: ModeloEmail[] = [
   { id: "proposta", nome: "Envio de proposta", assunto: "Sua proposta está pronta", conteudo: "Olá {primeiro_nome}, segue em anexo a proposta que conversamos...", categoria: "Vendas" },
 ];
 
-/** E-mail (item 30) — conexão simulada (não conecta conta real), modelos com preview. */
+/** E-mail (item 30): conexão simulada (não conecta conta real), modelos com preview. */
 export function EmailSecao() {
   const [aba, setAba] = useState<Aba>("contas");
   const [conectado, setConectado] = useState(false);

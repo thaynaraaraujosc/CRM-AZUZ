@@ -22,7 +22,7 @@ function paraDocumento(linha: {
   } as Documento;
 }
 
-/** Atualização por id — usada pelo helper `atualizarDocumento()` do Context, que centraliza todo
+/** Atualização por id: usada pelo helper `atualizarDocumento()` do Context, que centraliza todo
  * mutador que edita um documento existente (páginas, config, comentários, versões, acesso...). Só
  * mexe em documento do mesmo workspace de quem está logado. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/documentos/[id]">) {
@@ -31,7 +31,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/documentos
 
   const { id } = await ctx.params;
   const body = (await request.json()) as Partial<Documento>;
-  // id/criadoEm/atualizadoEm são geridos pelo banco (PK e @updatedAt) — nunca vêm do front.
+  // id/criadoEm/atualizadoEm são geridos pelo banco (PK e @updatedAt). Nunca vêm do front.
   const dados: Partial<Documento> = { ...body };
   delete dados.id;
   delete dados.criadoEm;

@@ -9,7 +9,7 @@ import {
 
 /**
  * Limpeza avulsa do espelho do WhatsApp, para quando o canal JÁ foi desconectado antes de a
- * limpeza existir — nesse caso os dados ficaram para trás e não há mais um "desconectar" para
+ * limpeza existir: nesse caso os dados ficaram para trás e não há mais um "desconectar" para
  * pendurar a limpeza. Mesma regra de escopo do desconectar (ver `limparDadosDoWhatsApp`): só apaga
  * o que veio do canal, nunca o que foi criado à mão.
  */
@@ -32,8 +32,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, corrigidas });
   }
 
-  // "grupos": tira da carteira e do funil os GRUPOS que viraram contato/card por um bug antigo —
-  // é lixo em qualquer cenário, não depende de canal nem apaga conversa nenhuma.
+  // "grupos": tira da carteira e do funil os GRUPOS que viraram contato/card por um bug antigo.
+  // É lixo em qualquer cenário, não depende de canal nem apaga conversa nenhuma.
   if (acao === "grupos") {
     const grupos = await removerGruposViradosContato(sessao.user.workspaceId);
     return NextResponse.json({ ok: true, grupos });

@@ -10,7 +10,7 @@ import { r2Configurado } from "@/lib/armazenamento/r2";
  * Move pro R2 os anexos que ainda estão gravados em base64 dentro das mensagens.
  *
  * Em lotes, de propósito. Um workspace com anos de conversa tem milhares de arquivos somando
- * gigabytes; tentar mover tudo numa requisição só estouraria o tempo limite no meio do caminho — e
+ * gigabytes; tentar mover tudo numa requisição só estouraria o tempo limite no meio do caminho. E
  * pior, sem deixar claro o que já tinha sido movido e o que não. Cada lote é independente e
  * definitivo: se a chamada morrer, o que já subiu está subido, e a próxima continua de onde parou.
  *
@@ -32,7 +32,7 @@ export async function POST() {
 
   // A busca é por `JSON_SEARCH` no banco (ver `listarIdsComAnexoNoBanco`), e não pelo filtro
   // `string_contains` do Prisma: em produção esse filtro devolvia ZERO com 59 mensagens (84 MB)
-  // pendentes, e o botão de mover nunca aparecia. É uma varredura, não índice — por isso limitada
+  // pendentes, e o botão de mover nunca aparecia. É uma varredura, não índice: por isso limitada
   // ao lote e filtrada por workspace antes de tudo.
   const ids = await listarIdsComAnexoNoBanco(workspaceId, TAMANHO_DO_LOTE);
   const pendentes = await prisma.mensagemExtra.findMany({
@@ -46,7 +46,7 @@ export async function POST() {
   for (const mensagem of pendentes) {
     try {
       const novos = await guardarMidiasDosExtras(mensagem.extras, workspaceId);
-      // Comparar antes de gravar evita reescrever mensagem que não mudou — e, mais importante,
+      // Comparar antes de gravar evita reescrever mensagem que não mudou. E, mais importante,
       // evita marcar como migrada uma cujo upload falhou e voltou a data URL original.
       if (JSON.stringify(novos) === JSON.stringify(mensagem.extras)) {
         falhas += 1;

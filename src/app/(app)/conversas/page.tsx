@@ -160,7 +160,7 @@ function gerarIdMensagem() {
 
 /**
  * Faz o status de uma mensagem enviada avançar pendente → enviado → entregue
- * → (às vezes) lido, com tempos realistas e aleatórios — nunca ajustável
+ * → (às vezes) lido, com tempos realistas e aleatórios. Nunca ajustável
  * manualmente. Fica fora do componente (só recebe o "setter" já amarrado ao
  * contato/id certos) pra não misturar código com efeito colateral agendado
  * dentro do corpo do componente.
@@ -169,7 +169,7 @@ function gerarIdMensagem() {
  * REMOVIDA: a simulação de entrega.
  *
  * Havia aqui uma função que, por temporizador, marcava toda mensagem enviada como "enviado",
- * depois "entregue" e — com 82% de chance, sorteada — "lido". Nada disso vinha do WhatsApp: os
+ * depois "entregue" e: com 82% de chance, sorteada: "lido". Nada disso vinha do WhatsApp: os
  * dois tiquinhos azuis apareciam mesmo que a mensagem não tivesse saído do servidor.
  *
  * Isso é pior do que não mostrar status nenhum. Quem atende decide o que fazer olhando o tique: se
@@ -178,10 +178,10 @@ function gerarIdMensagem() {
  *
  * Agora o status vem de onde ele existe de verdade: "enviado" quando a Meta confirma o envio e
  * devolve o `wamid`, e "entregue"/"lido" quando o webhook de status chega (casado pelo `wamid`).
- * Canal que não informa entrega para em "enviado" — que é a verdade sobre o que sabemos.
+ * Canal que não informa entrega para em "enviado". Que é a verdade sobre o que sabemos.
  */
 
-/** Aplica um fundo no rascunho de configurações — "todas" grava no padrão, "atual" só nessa conversa. */
+/** Aplica um fundo no rascunho de configurações. "todas" grava no padrão, "atual" só nessa conversa. */
 function aplicarFundoRascunho(
   config: ConfigConversas,
   fundo: FundoConversa,
@@ -209,12 +209,12 @@ function lerComoDataUrl(file: File | Blob): Promise<string> {
 // URL e telefone no mesmo passe: dois grupos de captura, um por tipo, pra `split` continuar
 // devolvendo os pedaços intercalados de forma previsível.
 //
-// O telefone cobre o jeito que as pessoas escrevem de verdade — com e sem +55, com DDD entre
+// O telefone cobre o jeito que as pessoas escrevem de verdade. Com e sem +55, com DDD entre
 // parênteses, com hífen, com espaço. Exige 10 a 13 dígitos pra não transformar preço, CEP ou
 // número de pedido em link de ligação.
 const REGEX_LINKIFICAVEL = /(https?:\/\/[^\s]+)|((?:\+?55\s?)?(?:\(?\d{2}\)?[\s.-]?)?\d{4,5}[\s.-]?\d{4})/g;
 
-/** Só dígitos, com o 55 do Brasil na frente — formato que `wa.me` exige. */
+/** Só dígitos, com o 55 do Brasil na frente. Formato que `wa.me` exige. */
 function telefoneParaWhatsapp(bruto: string): string | null {
   const digitos = bruto.replace(/\D/g, "");
   if (digitos.length < 10 || digitos.length > 13) return null;
@@ -231,7 +231,7 @@ function telefoneParaWhatsapp(bruto: string): string | null {
  * quem atendia tinha que selecionar e copiar na mão pra ligar ou abrir a conversa.
  */
 function renderizarTextoComLinks(texto: string): ReactNode[] {
-  // `String.split` com grupos de captura intercala os pedaços não casados com os casados — com dois
+  // `String.split` com grupos de captura intercala os pedaços não casados com os casados. Com dois
   // grupos, cada trecho casado vira uma dupla (url, telefone) em que só um dos dois é preenchido.
   // Mais seguro que re-testar a regex global (que mantém `lastIndex` entre chamadas e dá resultado
   // errado se reusada assim).
@@ -273,7 +273,7 @@ function renderizarTextoComLinks(texto: string): ReactNode[] {
 }
 
 /**
- * "Hoje", "Ontem" ou a data por extenso — o rótulo do separador de dia da conversa.
+ * "Hoje", "Ontem" ou a data por extenso. O rótulo do separador de dia da conversa.
  *
  * Mensagem sem `criadoEm` (as de exemplo antigas) devolve `null`: melhor nenhum separador do que
  * um separador com a data errada.
@@ -293,7 +293,7 @@ function rotuloDoDia(criadoEm: number | undefined): string | null {
   return data.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "long",
-    // O ano só entra quando não é o corrente — repetir "de 2026" em toda conversa é ruído.
+    // O ano só entra quando não é o corrente. Repetir "de 2026" em toda conversa é ruído.
     year: data.getFullYear() === hoje.getFullYear() ? undefined : "numeric",
   });
 }
@@ -375,7 +375,7 @@ const EMOJI_CATEGORIAS = [
 
 /**
  * Placeholder seguro pra quando ainda não existe nenhuma conversa real (workspace novo, ou
- * ainda carregando) — em vez de deixar `aberta` ser `undefined` (o que quebraria os dezenas de
+ * ainda carregando): em vez de deixar `aberta` ser `undefined` (o que quebraria os dezenas de
  * `useState`/cálculos que assumem uma conversa selecionada, declarados antes de qualquer retorno
  * condicional possível, por causa das Regras de Hooks), usa esse objeto vazio. A tela de fato
  * mostra "nenhuma conversa" naturalmente: a lista lateral fica vazia (`conversas.length === 0`) e
@@ -484,7 +484,7 @@ export default function ConversasPage() {
   );
 }
 
-/** Fecha um popup flutuante ao clicar fora dele — usado pelos popups menores (mídias, conectar, detalhe do contato). */
+/** Fecha um popup flutuante ao clicar fora dele. Usado pelos popups menores (mídias, conectar, detalhe do contato). */
 function useFecharAoClicarFora(
   ref: React.RefObject<HTMLElement | null>,
   ativo: boolean,
@@ -505,7 +505,7 @@ function ConversasPageInner() {
   const searchParams = useSearchParams();
   const { funis, setFunis, atribuirContatoAoFunil } = useFunis();
 
-  /** Etapa do funil onde esse contato está agora (procura em todos os funis, não só o principal) —
+  /** Etapa do funil onde esse contato está agora (procura em todos os funis, não só o principal):
    * `null` quando ele ainda não é um negócio em nenhum funil (ex.: grupo, ou lead que nunca entrou). */
   function etapaAtualDoContato(nomeContato: string): string | null {
     for (const f of funis) {
@@ -593,7 +593,7 @@ function ConversasPageInner() {
   async function salvarConfigConversas() {
     setConfigStatusSalvar("salvando");
     try {
-      // `atualizarConfig` já persiste de verdade (ver configuracoes-context.tsx) — o delay aqui é
+      // `atualizarConfig` já persiste de verdade (ver configuracoes-context.tsx): o delay aqui é
       // só pra dar a sensação de salvamento antes de fechar o painel.
       await new Promise((resolve) => setTimeout(resolve, 450));
       atualizarConfig(configRascunho);
@@ -645,7 +645,7 @@ function ConversasPageInner() {
       osc.stop(ctx.currentTime + 0.4);
       osc.onended = () => ctx.close();
     } catch {
-      // Web Audio indisponível nesse navegador — sem prévia sonora.
+      // Web Audio indisponível nesse navegador. Sem prévia sonora.
     }
   }
 
@@ -659,7 +659,7 @@ function ConversasPageInner() {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
   }
-  // `conversas` só chega depois do fetch no mount do ConversasProvider — a inicialização
+  // `conversas` só chega depois do fetch no mount do ConversasProvider. A inicialização
   // preguiçosa de `useState` não serve aqui (ela rodaria antes da lista existir). Em vez de
   // useEffect, ajusta durante a renderização (padrão já usado nesta página, ver `abertaIdAnterior`
   // mais abaixo): só seta uma vez, na primeira renderização em que a lista deixa de estar vazia.
@@ -760,7 +760,7 @@ function ConversasPageInner() {
   const [dadosGrupoAberto, setDadosGrupoAberto] = useState(false);
   const [dadosGrupoPos, setDadosGrupoPos] = useState<{ x: number; y: number } | null>(null);
   const dadosGrupoRef = useRef<HTMLDivElement>(null);
-  // Participante clicado dentro do painel de Participantes — abre um popup próprio (foto buscada
+  // Participante clicado dentro do painel de Participantes. Abre um popup próprio (foto buscada
   // sob demanda, nome, telefone, "Enviar mensagem"), igual clicar num contato dentro de um grupo no
   // WhatsApp de verdade.
   const [participanteAberto, setParticipanteAberto] = useState<{ nome: string; telefone: string } | null>(null);
@@ -769,7 +769,7 @@ function ConversasPageInner() {
   const [criandoConversaParticipante, setCriandoConversaParticipante] = useState(false);
   const participanteRef = useRef<HTMLDivElement>(null);
   const naoOficial = useIntegracaoNaoOficial();
-  // Status da API oficial (Meta) — sem hook compartilhado com polling (o `useIntegracaoMeta` só
+  // Status da API oficial (Meta). Sem hook compartilhado com polling (o `useIntegracaoMeta` só
   // busca uma vez); polling próprio aqui porque a conversa some/reaparece conforme o canal
   // conecta/desconecta, então precisa saber o estado atual, não só o do primeiro carregamento.
   const [metaWhatsappConectado, setMetaWhatsappConectado] = useState(false);
@@ -785,7 +785,7 @@ function ConversasPageInner() {
         .catch(() => setStatusMetaCarregado(true));
     }
     verificarMeta();
-    // 30 segundos, e não 5. Isto aqui só responde "o WhatsApp oficial está conectado?" — uma
+    // 30 segundos, e não 5. Isto aqui só responde "o WhatsApp oficial está conectado?": uma
     // resposta que muda quando alguém conecta ou desconecta um canal, o que acontece algumas vezes
     // por ANO. A 5 segundos, uma aba aberta o dia inteiro fazia 17.280 consultas por dia pra ouvir
     // a mesma coisa, e cada uma atravessa a internet até o banco no Railway, que cobra por byte que
@@ -797,7 +797,7 @@ function ConversasPageInner() {
     return () => clearInterval(intervalo);
   }, []);
   // Só passa a filtrar depois que os dois status (Meta e Baileys) já responderam pelo menos uma
-  // vez — sem essa guarda, a lista de conversas do WhatsApp pisca "vazia" por um instante em toda
+  // vez: sem essa guarda, a lista de conversas do WhatsApp pisca "vazia" por um instante em toda
   // carga de página, mesmo com um canal já conectado.
   const statusWhatsappPronto = statusMetaCarregado && naoOficial.estado !== null;
   const whatsappConectado = metaWhatsappConectado || naoOficial.estado?.status === "conectado";
@@ -821,7 +821,7 @@ function ConversasPageInner() {
   useFecharAoClicarFora(dadosGrupoRef, dadosGrupoAberto, () => setDadosGrupoAberto(false));
   useFecharAoClicarFora(participanteRef, !!participanteAberto, () => setParticipanteAberto(null));
 
-  // Reseta o estado da foto assim que o participante clicado muda — ajusta durante a renderização
+  // Reseta o estado da foto assim que o participante clicado muda. Ajusta durante a renderização
   // (não num `useEffect`), mesmo padrão já usado no resto do arquivo pra "resetar estado derivado
   // de uma prop que mudou" sem passar por uma cascata extra de render.
   const participanteAnteriorRef = useRef(participanteAberto);
@@ -845,7 +845,7 @@ function ConversasPageInner() {
 
   useFecharAoClicarFora(contatoDetalheRef, !!contatoDetalheAberto, () => setContatoDetalheAberto(null));
 
-  /** Busca conversas e mensagens de novo AGORA, sem esperar o próximo ciclo do polling de 5s — não
+  /** Busca conversas e mensagens de novo AGORA, sem esperar o próximo ciclo do polling de 5s. Não
    * "conecta o WhatsApp" (isso é feito em Configurações), só traz o que já chegou no servidor mais
    * rápido pra tela. Não força a Evolution a reenviar nada. */
   function sincronizarConversas() {
@@ -865,10 +865,10 @@ function ConversasPageInner() {
   const [canalTopFiltro, setCanalTopFiltro] = useState("Todos");
 
   // Movido pra antes de `conversasFiltradas` (que chama `conversaUsaWhatsappNaoOficial`, definida
-  // mais abaixo mas que fecha sobre esta variável) — como é `const`, ficava numa "zona morta
+  // mais abaixo mas que fecha sobre esta variável). Como é `const`, ficava numa "zona morta
   // temporal" até esta linha rodar; `conversasFiltradas` é calculado direto no corpo do
   // componente, então rodava ANTES desta declaração (quando ela vinha depois), lançando
-  // `ReferenceError: Cannot access before initialization` — só na hora, porque só nesse caso
+  // `ReferenceError: Cannot access before initialization`: só na hora, porque só nesse caso
   // (WhatsApp conectado + conversa do canal WhatsApp na lista) o filtro chega a chamar a função
   // que usa essa variável. Bug real que derrubava a tela de Conversas (e, por ela abrir de novo a
   // cada navegação, o app inteiro) só depois de conectar o WhatsApp.
@@ -883,11 +883,11 @@ function ConversasPageInner() {
 
   const naoOficialConectado = naoOficial.estado?.status === "conectado";
 
-  // Conversa de WhatsApp sem nenhum canal conectado (nem Meta, nem QR Code) some da lista — volta a
+  // Conversa de WhatsApp sem nenhum canal conectado (nem Meta, nem QR Code) some da lista. Volta a
   // aparecer sozinha quando reconectar (não apaga nada do banco, só deixa de mostrar; ver pedido
   // explícito: ao desconectar, nem a conversa aberta no momento pode continuar visível). Com só UMA
   // das duas integrações ativa, mostra só as conversas dessa integração (uma conta só tem uma
-  // conexão de WhatsApp por vez, então misturar não faz sentido) — a "origem" de cada conversa vem
+  // conexão de WhatsApp por vez, então misturar não faz sentido). A "origem" de cada conversa vem
   // da última mensagem com canal marcado (ver `conversaUsaWhatsappNaoOficial`); sem nenhuma
   // mensagem com canal marcado, conta como Meta (comportamento antigo, de antes da integração não
   // oficial existir).
@@ -919,7 +919,7 @@ function ConversasPageInner() {
       return c.nome.toLowerCase().includes(termo);
     })
     // Fixadas no topo; o resto pela atividade mais recente. Sem o segundo critério, a lista ficava
-    // na ordem em que o banco devolveu — uma conversa que acabou de receber mensagem podia ficar no
+    // na ordem em que o banco devolveu. Uma conversa que acabou de receber mensagem podia ficar no
     // meio ou no fim, e a pessoa só descobria a mensagem nova rolando a lista inteira.
     .sort((a, b) => {
       const fixada = Number(fixadas.has(b.id)) - Number(fixadas.has(a.id));
@@ -960,8 +960,8 @@ function ConversasPageInner() {
     }
   }
 
-  /** Quando a última mensagem dessa conversa chegou (ou saiu). Zero quando ainda não há nenhuma —
-   * conversa sem mensagem vai pro fim, não pro topo. */
+  /** Quando a última mensagem dessa conversa chegou (ou saiu). Zero quando ainda não há nenhuma.
+   * Conversa sem mensagem vai pro fim, não pro topo. */
   function ultimaAtividadeDaConversa(nomeContato: string): number {
     const mensagens = mensagensExtraPorContato[nomeContato] ?? [];
     for (let i = mensagens.length - 1; i >= 0; i--) {
@@ -975,7 +975,7 @@ function ConversasPageInner() {
   const aberta =
     abertaCandidata && !conversaEscondidaPeloWhatsapp(abertaCandidata) ? abertaCandidata : CONVERSA_VAZIA;
 
-  // Busca a foto de TODAS as conversas de WhatsApp sem uma salva ainda — não só a aberta. Sem isso
+  // Busca a foto de TODAS as conversas de WhatsApp sem uma salva ainda. Não só a aberta. Sem isso
   // a foto só aparecia (e sumia de novo, ao trocar de conversa e voltar) porque cada abertura
   // buscava de novo em vez de ficar resolvido pra sempre; rodando uma vez pra lista inteira aqui,
   // qualquer conversa já chega com a foto pronta assim que a lista carrega. `tentadasRef` evita
@@ -997,9 +997,9 @@ function ConversasPageInner() {
           const dados = (await r.json()) as { fotoUrl?: string | null };
           if (dados.fotoUrl) atualizarFotoConversa(c.id, dados.fotoUrl);
         } catch {
-          // segue pra próxima — uma falha isolada não deve travar o resto da lista
+          // segue pra próxima: uma falha isolada não deve travar o resto da lista
         }
-        // Pausa curta entre chamadas — não é urgente, e evita virar uma rajada de dezenas de
+        // Pausa curta entre chamadas: não é urgente, e evita virar uma rajada de dezenas de
         // chamadas simultâneas pra Evolution assim que a lista de conversas carrega.
         await new Promise((resolve) => setTimeout(resolve, 300));
       }
@@ -1010,20 +1010,20 @@ function ConversasPageInner() {
   }, [conversas, atualizarFotoConversa]);
 
   // Renderizar de uma vez o histórico inteiro de um contato com muita mensagem trava a tela (DOM
-  // gigante, cada bolha com menu/portal próprio) — mostra só as últimas por padrão, com botão pra
+  // gigante, cada bolha com menu/portal próprio). Mostra só as últimas por padrão, com botão pra
   // carregar mais sob demanda. Reseta pro padrão sempre que troca de conversa.
   const [limiteMensagensVisiveis, setLimiteMensagensVisiveis] = useState(200);
   // Mensagem de texto muito longa (mais comum em grupo grande, tipo aviso de condomínio) tomava a
-  // tela inteira de rolagem — trunca com "Ler mais/menos", igual qualquer app de mensagem faz.
+  // tela inteira de rolagem: trunca com "Ler mais/menos", igual qualquer app de mensagem faz.
   const [mensagensExpandidas, setMensagensExpandidas] = useState<Set<string>>(() => new Set());
-  // Ids de mensagem com o botão "Carregar áudio" em andamento — evita clique duplo enquanto busca.
+  // Ids de mensagem com o botão "Carregar áudio" em andamento. Evita clique duplo enquanto busca.
   const [midiasCarregando, setMidiasCarregando] = useState<Set<string>>(() => new Set());
   const idConversaAnteriorRef = useRef(aberta.id);
   if (idConversaAnteriorRef.current !== aberta.id) {
     idConversaAnteriorRef.current = aberta.id;
     setLimiteMensagensVisiveis(200);
   }
-  // `Conversa` real não carrega mais uma "tarefa vinculada" embutida (ver plano) — placeholder
+  // `Conversa` real não carrega mais uma "tarefa vinculada" embutida (ver plano). Placeholder
   // vazio mantém `tarefa.*` funcionando em todo o resto do arquivo, mostrando "sem tarefa" sempre.
   const tarefa = {
     data: "",
@@ -1045,7 +1045,7 @@ function ConversasPageInner() {
 
   // Troca o funil/etapa/atendente/dados selecionados toda vez que a conversa
   // aberta muda, pra sempre abrir já mostrando as atribuições desse contato
-  // (ajuste de estado a partir de uma mudança de prop — ver docs do React).
+  // (ajuste de estado a partir de uma mudança de prop. Ver docs do React).
   const [funilSelecionadoId, setFunilSelecionadoId] = useState(
     () => localizacao?.funilId ?? funis[0]?.id ?? "",
   );
@@ -1088,7 +1088,7 @@ function ConversasPageInner() {
   const [novaEtiquetaTexto, setNovaEtiquetaTexto] = useState("");
   const [trocandoResponsavel, setTrocandoResponsavel] = useState(false);
   const [abertaIdAnterior, setAbertaIdAnterior] = useState(aberta.id);
-  // Chave da mensagem cujo coração acabou de aparecer — só pra tocar a animação uma vez. A curtida
+  // Chave da mensagem cujo coração acabou de aparecer. Só pra tocar a animação uma vez. A curtida
   // em si NÃO mora aqui: ela vem da própria mensagem (`reacaoMinha`/`reacaoContato`), porque
   // precisa sobreviver a recarregar a página e ser a mesma pra qualquer pessoa da equipe.
   const [coracaoAnimando, setCoracaoAnimando] = useState<string | null>(null);
@@ -1119,7 +1119,7 @@ function ConversasPageInner() {
   const [mensagemTexto, setMensagemTexto] = useState("");
 
   /* ---------------------------------------------------------------------- */
-  /* Áudio — gravação real (getUserMedia + MediaRecorder), prévia e player   */
+  /* Áudio: gravação real (getUserMedia + MediaRecorder), prévia e player   */
   /* ---------------------------------------------------------------------- */
   const [gravandoAudio, setGravandoAudio] = useState(false);
   const [audioPausado, setAudioPausado] = useState(false);
@@ -1154,7 +1154,7 @@ function ConversasPageInner() {
   const [emojiAberto, setEmojiAberto] = useState(false);
   const [emojiRect, setEmojiRect] = useState<DOMRect | null>(null);
   /* ---------------------------------------------------------------------- */
-  /* Enviar contato — abas CRM/Criar, busca+filtros, seleção múltipla,       */
+  /* Enviar contato: abas CRM/Criar, busca+filtros, seleção múltipla,       */
   /* prévia antes de enviar                                                  */
   /* ---------------------------------------------------------------------- */
   const [contatoPickerAberto, setContatoPickerAberto] = useState(false);
@@ -1219,17 +1219,17 @@ function ConversasPageInner() {
     Record<string, { id: string; titulo: string; texto: string }[]>
   >({});
   const mensagemInputRef = useRef<HTMLTextAreaElement>(null);
-  /** Seletor de modelo aprovado — o único caminho pra falar primeiro, ou depois das 24h. */
+  /** Seletor de modelo aprovado: o único caminho pra falar primeiro, ou depois das 24h. */
   const [templateAberto, setTemplateAberto] = useState(false);
   const [respondendoMensagem, setRespondendoMensagem] = useState<{
     autor: string;
     texto: string;
-    /** Id da mensagem citada — vai junto no envio pro Instagram, pra citação existir dos dois lados. */
+    /** Id da mensagem citada: vai junto no envio pro Instagram, pra citação existir dos dois lados. */
     mid?: string;
   } | null>(null);
 
   /* ---------------------------------------------------------------------- */
-  /* Menu de ações da mensagem — copiar/encaminhar/favoritar/detalhes/apagar */
+  /* Menu de ações da mensagem. Copiar/encaminhar/favoritar/detalhes/apagar */
   /* ---------------------------------------------------------------------- */
   const [msgMenuAberto, setMsgMenuAberto] = useState<{ chave: string; rect: DOMRect } | null>(
     null,
@@ -1271,7 +1271,7 @@ function ConversasPageInner() {
     );
   }
 
-  /** Botão "⋮" reaproveitado em todos os tipos de bolha (não é componente à parte de propósito — evita remontar). */
+  /** Botão "⋮" reaproveitado em todos os tipos de bolha (não é componente à parte de propósito. Evita remontar). */
   function botaoMenuMensagem(chave: string) {
     return (
       <button
@@ -1300,7 +1300,7 @@ function ConversasPageInner() {
     if (!texto) return;
     navigator.clipboard?.writeText(texto).then(
       () => avisarAutomacao("Mensagem copiada"),
-      () => avisarAutomacao("Não deu pra copiar — copie manualmente"),
+      () => avisarAutomacao("Não deu pra copiar: copie manualmente"),
     );
   }
 
@@ -1372,7 +1372,7 @@ function ConversasPageInner() {
     if (!confirmarApagar) return;
     const { chave } = confirmarApagar;
     // Grava de verdade em MensagemExtra.apagadaParaTodos (via o mesmo PUT sincronizado que
-    // qualquer outra mudança de mensagem usa) — some do balão pra qualquer sessão que reabrir essa
+    // qualquer outra mudança de mensagem usa). Some do balão pra qualquer sessão que reabrir essa
     // conversa, não só localmente. Vale só dentro do CRM: nenhuma integração hoje (Meta/Baileys)
     // expõe um jeito de recolher a mensagem do lado do destinatário no WhatsApp.
     atualizarMensagem(aberta.nome, chave, { apagadaParaTodos: true });
@@ -1404,7 +1404,7 @@ function ConversasPageInner() {
   const documentoInputRef = useRef<HTMLInputElement>(null);
 
   /* ---------------------------------------------------------------------- */
-  /* Anexos reais — imagem, vídeo, documento                                */
+  /* Anexos reais: imagem, vídeo, documento                                */
   /* ---------------------------------------------------------------------- */
 
   const [arrastandoArquivo, setArrastandoArquivo] = useState(false);
@@ -1431,7 +1431,7 @@ function ConversasPageInner() {
   });
   const [enviandoImagens, setEnviandoImagens] = useState(false);
 
-  // Lightbox — abrir imagem já enviada em tamanho maior, com navegação e zoom.
+  // Lightbox: abrir imagem já enviada em tamanho maior, com navegação e zoom.
   const [lightbox, setLightbox] = useState<{
     urls: string[];
     indice: number;
@@ -1445,7 +1445,7 @@ function ConversasPageInner() {
    * Abre a conversa já na última mensagem, e acompanha as que chegam depois.
    *
    * Sem isto a conversa abria no começo do histórico: pra ver o que acabou de chegar era preciso
-   * rolar até o fim toda vez — e numa conversa com meses de atendimento isso é muito rolar. É o
+   * rolar até o fim toda vez. E numa conversa com meses de atendimento isso é muito rolar. É o
    * comportamento que qualquer aplicativo de mensagem tem, e que o painel do Funil já tinha.
    *
    * `instant` na troca de conversa (aparecer no lugar certo de cara, sem animação de rolagem) e
@@ -1465,10 +1465,10 @@ function ConversasPageInner() {
   }, [aberta.id, aberta.nome, quantidadeDeMensagens]);
 
   function midiaLiberada(tipo: "imagem" | "video" | "documento", id?: string, url?: string) {
-    // Mídia que o CRM JÁ TEM não fica atrás de botão — não há o que baixar, o arquivo existe.
+    // Mídia que o CRM JÁ TEM não fica atrás de botão. Não há o que baixar, o arquivo existe.
     //
     // Isto cobria só o formato antigo (`data:`, arquivo embutido na mensagem). Desde que os anexos
-    // passaram a morar no R2, eles chegam como um link nosso — e a exceção deixou de casar, então
+    // passaram a morar no R2, eles chegam como um link nosso. E a exceção deixou de casar, então
     // foto e vídeo já guardados voltaram a aparecer como "Baixar vídeo". A trava existe pra mídia
     // que ainda precisa ser buscada, não pra esconder o que está em mãos.
     if (url?.startsWith("data:") || ehLinkDeMidia(url)) return true;
@@ -1579,7 +1579,7 @@ function ConversasPageInner() {
       ctx.close();
       return { duracao, waveform };
     } catch {
-      // Formato não decodificável nesse navegador (raro) — usa a duração cronometrada e uma forma de onda plana.
+      // Formato não decodificável nesse navegador (raro). Usa a duração cronometrada e uma forma de onda plana.
       return { duracao: audioSegundos, waveform: new Array(46).fill(0.3) };
     }
   }
@@ -1665,7 +1665,7 @@ function ConversasPageInner() {
     descartarGravacao();
   }
 
-  /** Interrompe a gravação (se ainda estiver rolando), descarta o arquivo temporário e volta o campo de mensagem — nada é enviado. */
+  /** Interrompe a gravação (se ainda estiver rolando), descarta o arquivo temporário e volta o campo de mensagem. Nada é enviado. */
   function descartarGravacao() {
     const gravador = mediaRecorderRef.current;
     if (gravador && gravador.state !== "inactive") {
@@ -1705,7 +1705,7 @@ function ConversasPageInner() {
     if (!audioPreview) return;
     setAudioEnviando(true);
     try {
-      // Converte o blob gravado em base64 (mesmo padrão de imagem/documento — ver
+      // Converte o blob gravado em base64 (mesmo padrão de imagem/documento. Ver
       // `lerComoDataUrl`) antes de gravar a mensagem, pra persistir de verdade no banco (campo
       // `extras` de MensagemExtra) em vez de um blob: URL que só existe nesta aba do navegador.
       const url = await lerComoDataUrl(audioPreview.blob);
@@ -1722,9 +1722,9 @@ function ConversasPageInner() {
           waveform: audioPreview.waveform,
         },
       });
-      // Envio real do áudio — sem isso, a bolha aparecia na tela do CRM mas nunca saía de verdade
+      // Envio real do áudio: sem isso, a bolha aparecia na tela do CRM mas nunca saía de verdade
       // pro WhatsApp (bug real: gravar/mandar áudio não fazia nenhuma chamada de API, só guardava
-      // localmente). Só a integração não oficial (Evolution) por enquanto — a oficial (Meta) exige
+      // localmente). Só a integração não oficial (Evolution) por enquanto. A oficial (Meta) exige
       // um fluxo de upload de mídia em duas etapas, ainda não implementado.
       const destinatarioAudio = contatoDaConversa?.whatsapp ?? aberta.contato;
       if (viaBaileys && destinatarioAudio) {
@@ -1898,8 +1898,8 @@ function ConversasPageInner() {
     }));
   }
 
-  /** Busca o conteúdo real de uma mídia recebida (áudio, por enquanto) que só chegou como aviso —
-   * chamado quando a pessoa clica pra carregar. Substitui `midiaPendente` pelo campo específico do
+  /** Busca o conteúdo real de uma mídia recebida (áudio, por enquanto) que só chegou como aviso.
+   * Chamado quando a pessoa clica pra carregar. Substitui `midiaPendente` pelo campo específico do
    * tipo (`audio`) assim que carrega, então na próxima render a bolha já mostra o player normal. */
   function carregarMidiaPendente(msg: ConvMensagem) {
     if (!msg.midiaPendente || !msg.id) return;
@@ -1950,10 +1950,10 @@ function ConversasPageInner() {
   }
 
   // Carrega mídia pendente (áudio recebido) automaticamente assim que ela aparece na conversa
-  // aberta — o usuário só precisa clicar em play, igual no WhatsApp de verdade, sem precisar
+  // aberta: o usuário só precisa clicar em play, igual no WhatsApp de verdade, sem precisar
   // clicar num botão "Carregar" antes.
   useEffect(() => {
-    // `carregarMidiaPendente` chama `setMidiasCarregando` — adiado pro próximo tick pra não fazer
+    // `carregarMidiaPendente` chama `setMidiasCarregando`: adiado pro próximo tick pra não fazer
     // um `setState` síncrono dentro do corpo do efeito (o lint trava nisso, com razão: dispararia
     // uma cascata de renders ainda dentro do commit atual).
     const id = setTimeout(() => {
@@ -1968,7 +1968,7 @@ function ConversasPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mensagensExtraPorContato, aberta.nome]);
 
-  /** Adiciona a mensagem já com id — mensagens "out" sem status ganham "pendente" e entram na simulação real de entrega. */
+  /** Adiciona a mensagem já com id. Mensagens "out" sem status ganham "pendente" e entram na simulação real de entrega. */
   function adicionarMensagem(msg: ConvMensagem) {
     const id = msg.id ?? gerarIdMensagem();
     const contatoNome = aberta.nome;
@@ -1988,12 +1988,12 @@ function ConversasPageInner() {
     atualizarMensagem(contatoNome, id, { status: "pendente", erro: undefined });
   }
 
-  /** Conversa "pertence" ao canal WhatsApp via QR Code (não oficial) quando a última mensagem —
-   * recebida OU mandada do celular conectado (espelhada) — veio por ele; sem nenhuma mensagem com
+  /** Conversa "pertence" ao canal WhatsApp via QR Code (não oficial) quando a última mensagem.
+   * Recebida OU mandada do celular conectado (espelhada). Veio por ele; sem nenhuma mensagem com
    * canal marcado, conta como API oficial (Meta), o comportamento antigo de antes dessa integração
    * existir. Usado tanto pra decidir pra onde a resposta do atendente deve sair (`aberta.nome`)
    * quanto pra filtrar a lista de conversas pela integração realmente conectada (ver
-   * `conversasFiltradas`) — nesse segundo uso, olha qualquer contato, não só o aberto no momento. */
+   * `conversasFiltradas`): nesse segundo uso, olha qualquer contato, não só o aberto no momento. */
   function conversaUsaWhatsappNaoOficial(nomeContato: string): boolean {
     const extras = mensagensExtraPorContato[nomeContato] ?? [];
     for (let i = extras.length - 1; i >= 0; i--) {
@@ -2010,28 +2010,28 @@ function ConversasPageInner() {
    * Manda um texto pelo canal da conversa aberta.
    *
    * Extraído de `enviarMensagemTexto` pra ser reaproveitado por quem também precisa entregar texto
-   * — hoje o compartilhamento de localização, que vira um link de mapa. Duplicar esse if/else foi
+   *. Hoje o compartilhamento de localização, que vira um link de mapa. Duplicar esse if/else foi
    * a origem de mais de um "aparece no CRM mas não chega do outro lado": um caminho novo nascia
    * sem o ramo de algum canal.
    */
   /**
    * `idLocal` é o id da bolha que já está na tela. O envio é assíncrono e o status verdadeiro só
-   * se conhece quando a Meta responde — sem esse id, não havia como voltar e marcar a bolha certa,
+   * se conhece quando a Meta responde. Sem esse id, não havia como voltar e marcar a bolha certa,
    * e era essa lacuna que a simulação de entrega escondia.
    */
   function despacharTexto(texto: string, respondendoMid?: string, idLocal?: string) {
     const viaBaileys = contatoUsaWhatsappNaoOficial();
     // Erro fica registrado como mensagem de sistema DENTRO da conversa (não só um toast que some
-    // sozinho em poucos segundos) — assim dá pra ver o motivo exato depois, sem precisar
+    // sozinho em poucos segundos): assim dá pra ver o motivo exato depois, sem precisar
     // screenshotar na hora certa.
     function avisarFalhaNaConversa(prefixo: string, erro: unknown) {
       const motivo = erro instanceof Error && erro.message ? erro.message : "motivo desconhecido";
       adicionarMensagem({ tipo: "system", texto: `⚠️ Falha ao enviar (${prefixo}): ${motivo}`, hora: horaAgora() });
-      avisarAutomacao(`Falha ao enviar pelo ${prefixo} — veja o motivo na conversa.`);
+      avisarAutomacao(`Falha ao enviar pelo ${prefixo}. Veja o motivo na conversa.`);
     }
 
     if (viaBaileys && (contatoDaConversa?.whatsapp ?? aberta.contato)) {
-      // Grupo não tem `Contato` vinculado (não é uma pessoa) — o destinatário nesse caso é o JID
+      // Grupo não tem `Contato` vinculado (não é uma pessoa). O destinatário nesse caso é o JID
       // do grupo, guardado direto em `aberta.contato` (ver `upsertConversaAoReceberMensagem`).
       fetch("/api/integracoes/whatsapp-nao-oficial/enviar", {
         method: "POST",
@@ -2055,7 +2055,7 @@ function ConversasPageInner() {
         body: JSON.stringify({
           destinatario: aberta.contato ?? contatoDaConversa?.whatsapp,
           texto,
-          // Sem `contatoNome` o servidor NÃO conseguia conferir a janela de 24h — a checagem existia
+          // Sem `contatoNome` o servidor NÃO conseguia conferir a janela de 24h. A checagem existia
           // e nunca rodava. Fora da janela, o CRM tentava mandar mensagem livre e recebia um erro
           // técnico da Meta, em vez de dizer que ali só cabe modelo aprovado.
           contatoNome: nomeDaConversa,
@@ -2068,11 +2068,11 @@ function ConversasPageInner() {
               if (idLocal) atualizarMensagem(nomeDaConversa, idLocal, { status: "erro", erro: dados.erro });
               adicionarMensagem({
                 tipo: "system",
-                texto: `⚠️ ${dados.erro ?? "Fora da janela de 24h — só com modelo aprovado."}`,
+                texto: `⚠️ ${dados.erro ?? "Fora da janela de 24h. Só com modelo aprovado."}`,
                 hora: horaAgora(),
               });
               // Em vez de só avisar do impedimento, abre o caminho que funciona. Avisar e parar
-              // deixava quem atende sem saída — a regra da Meta não tem contorno, mas o modelo tem.
+              // deixava quem atende sem saída. A regra da Meta não tem contorno, mas o modelo tem.
               setTemplateAberto(true);
               return;
             }
@@ -2089,7 +2089,7 @@ function ConversasPageInner() {
     } else if (!viaBaileys && aberta.canal === "Instagram" && aberta.contato) {
       // Instagram tem rota própria: o destinatário é o id interno de quem escreveu (guardado em
       // `Conversa.contato`), não um telefone. Sem este ramo, conversa do Direct caía no aviso de
-      // "sem número de WhatsApp" — o CRM recebia a mensagem e não deixava responder.
+      // "sem número de WhatsApp": o CRM recebia a mensagem e não deixava responder.
       fetch("/api/integracoes/instagram/enviar", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -2099,7 +2099,7 @@ function ConversasPageInner() {
       })
         .then(async (r) => {
           if (!r.ok) throw new Error(((await r.json()) as { erro?: string }).erro);
-          // O Direct não devolve entrega nem leitura pra API — "enviado" é tudo que sabemos.
+          // O Direct não devolve entrega nem leitura pra API. "enviado" é tudo que sabemos.
           if (idLocal) atualizarMensagem(aberta.nome, idLocal, { status: "enviado" });
         })
         .catch((erro) => {
@@ -2107,7 +2107,7 @@ function ConversasPageInner() {
           avisarFalhaNaConversa("Instagram", erro);
         });
     } else if (!viaBaileys) {
-      // Nenhum canal real bateu (sem número/contato associado à conversa) — sem isso, a mensagem
+      // Nenhum canal real bateu (sem número/contato associado à conversa). Sem isso, a mensagem
       // parecia "sumir": ficava só no estado local, sem nenhum aviso de que não tinha pra onde ir.
       adicionarMensagem({
         tipo: "system",
@@ -2134,7 +2134,7 @@ function ConversasPageInner() {
   }
 
   /* ---------------------------------------------------------------------- */
-  /* Imagem — seleção, drag&drop, colar, edição real e envio                */
+  /* Imagem: seleção, drag&drop, colar, edição real e envio                */
   /* ---------------------------------------------------------------------- */
 
   function abrirUploadImagem() {
@@ -2318,7 +2318,7 @@ function ConversasPageInner() {
    * Imagem, vídeo e documento hoje só viram bolha na tela: não existe caminho de envio pra nenhum
    * canal (o WhatsApp oficial exige upload de mídia em duas etapas, o Instagram exige um endereço
    * público do arquivo, e a via QR Code nunca foi ligada nesses tipos). Enquanto isso não existe,
-   * a bolha não pode parecer entregue — foi assim que uma foto, um contato e um PDF "saíram" do
+   * a bolha não pode parecer entregue. Foi assim que uma foto, um contato e um PDF "saíram" do
    * CRM sem nunca chegar do outro lado. Registrar a falha dentro da conversa é o mínimo: quem está
    * atendendo precisa saber na hora que aquele arquivo não foi, pra mandar por outro caminho.
    */
@@ -2334,11 +2334,11 @@ function ConversasPageInner() {
    * Manda o anexo de verdade quando o canal sabe entregá-lo; avisa quando não sabe.
    *
    * Hoje só o Instagram tem esse caminho (ver `/api/integracoes/instagram/enviar-anexo`). Nos
-   * outros canais o comportamento continua sendo dizer que não foi — que é melhor do que a bolha
+   * outros canais o comportamento continua sendo dizer que não foi. Que é melhor do que a bolha
    * silenciosa de antes, quando o vendedor achava que a proposta tinha chegado.
    *
    * `idBolha` é a mensagem que já apareceu na tela: ela nasce "pendente" e só vira entregue se a
-   * Meta aceitar. Falhando, vira erro com o motivo — o duplo tique não pode aparecer num arquivo
+   * Meta aceitar. Falhando, vira erro com o motivo. O duplo tique não pode aparecer num arquivo
    * que a pessoa não recebeu.
    */
   function enviarAnexoPeloCanal(params: {
@@ -2369,7 +2369,7 @@ function ConversasPageInner() {
         const dados = (await r.json()) as { erro?: string; comoLink?: boolean };
         if (!r.ok) throw new Error(dados.erro);
         atualizarMensagem(contatoNome, idBolha, { status: "entregue", erro: undefined });
-        // O Direct não aceita documento — ele vai como link no texto. Dizer isso evita a confusão
+        // O Direct não aceita documento. Ele vai como link no texto. Dizer isso evita a confusão
         // de o vendedor achar que a pessoa recebeu o arquivo anexado, e deixa claro que existe um
         // endereço em circulação com aquele conteúdo.
         if (dados.comoLink) {
@@ -2409,7 +2409,7 @@ function ConversasPageInner() {
       status: "pendente",
     });
     // O Direct manda um anexo por mensagem: a primeira imagem vai como a mídia dessa bolha. Com
-    // várias selecionadas, o que passar da primeira fica registrado aqui sem ter sido enviado — e
+    // várias selecionadas, o que passar da primeira fica registrado aqui sem ter sido enviado. E
     // o aviso diz isso, em vez de deixar parecer que todas foram.
     enviarAnexoPeloCanal({
       idBolha,
@@ -2430,7 +2430,7 @@ function ConversasPageInner() {
   }
 
   /* ---------------------------------------------------------------------- */
-  /* Vídeo — seleção, corte real (in/out), mudo e envio                     */
+  /* Vídeo: seleção, corte real (in/out), mudo e envio                     */
   /* ---------------------------------------------------------------------- */
 
   function abrirUploadVideo() {
@@ -2494,7 +2494,7 @@ function ConversasPageInner() {
   /**
    * Corta de verdade o vídeo entre `videoInicio` e `videoFim` (e tira o áudio,
    * se `videoMudo`) reproduzindo o trecho e regravando os frames com
-   * MediaRecorder — não é só um controle visual, o arquivo final muda.
+   * MediaRecorder: não é só um controle visual, o arquivo final muda.
    */
   async function processarEEnviarVideo(pularEdicao: boolean) {
     if (!videoSelecionado) return;
@@ -2623,7 +2623,7 @@ function ConversasPageInner() {
   }
 
   /* ---------------------------------------------------------------------- */
-  /* Documento — biblioteca do CRM ou computador                            */
+  /* Documento: biblioteca do CRM ou computador                            */
   /* ---------------------------------------------------------------------- */
 
   function abrirUploadDocumento() {
@@ -2802,7 +2802,7 @@ function ConversasPageInner() {
         });
 
         if (aberta.canal === "Instagram") {
-          // O cartão de contato é um vCard, formato do WhatsApp — o Direct não tem equivalente.
+          // O cartão de contato é um vCard, formato do WhatsApp: o Direct não tem equivalente.
           // Sem esta parada, o envio ia pra rota do WhatsApp levando o id do Instagram como se
           // fosse telefone: falhava de um jeito confuso, em vez de dizer o que realmente acontece.
           avisarAnexoNaoEnviado(`O contato (${c.nome})`);
@@ -2818,7 +2818,7 @@ function ConversasPageInner() {
           continue;
         }
 
-        // Envio real do cartão (vCard) pelo canal certo — mesmo padrão de `enviarMensagemTexto`:
+        // Envio real do cartão (vCard) pelo canal certo. Mesmo padrão de `enviarMensagemTexto`:
         // a bolha já entrou na conversa acima, o envio roda em segundo plano e qualquer falha vira
         // uma mensagem de sistema, não um toast que some sozinho.
         const rota = viaBaileys ? "/api/integracoes/whatsapp-nao-oficial/enviar" : "/api/integracoes/meta/whatsapp/enviar";
@@ -2862,7 +2862,7 @@ function ConversasPageInner() {
   async function salvarNovoContato(enviarDepois: boolean) {
     if (!novoContatoNome.trim() || !validarNovoContato()) return;
     setNovoContatoSalvando(true);
-    // `criarContato` já persiste de verdade (ver contatos-context.tsx) — o delay aqui é só pra dar
+    // `criarContato` já persiste de verdade (ver contatos-context.tsx): o delay aqui é só pra dar
     // a sensação de salvamento antes de fechar o formulário.
     await new Promise((resolve) => setTimeout(resolve, 350));
     const criado = criarContato({
@@ -2934,7 +2934,7 @@ function ConversasPageInner() {
   /**
    * Compartilha a localização REAL de quem está atendendo.
    *
-   * Antes daqui saía um ponto fixo de Goiânia, inventado — a bolha aparecia com "Localização
+   * Antes daqui saía um ponto fixo de Goiânia, inventado: a bolha aparecia com "Localização
    * enviada" e o endereço não era o de ninguém, além de nunca sair do CRM. Agora pede a posição ao
    * navegador e manda um link de mapa pelo canal da conversa, que é o que de fato chega do outro
    * lado (nem o Direct nem a via de texto têm um tipo "localização" próprio).
@@ -2960,7 +2960,7 @@ function ConversasPageInner() {
       },
       (erro) => {
         setLocalizacaoBuscando(false);
-        // Sem isto o clique simplesmente fechava o menu e nada acontecia — que foi exatamente o
+        // Sem isto o clique simplesmente fechava o menu e nada acontecia. Que foi exatamente o
         // que apareceu na tela quando a permissão não foi concedida.
         setLocalizacaoErro(
           erro.code === erro.PERMISSION_DENIED
@@ -2968,7 +2968,7 @@ function ConversasPageInner() {
             : "Não deu pra obter sua localização agora. Tente de novo.",
         );
       },
-      // Sem `timeout`, `getCurrentPosition` pode ficar pendurado pra sempre — e a pessoa fica
+      // Sem `timeout`, `getCurrentPosition` pode ficar pendurado pra sempre. E a pessoa fica
       // olhando pra uma tela que não responde nem dá erro.
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
@@ -3045,8 +3045,8 @@ function ConversasPageInner() {
   }
 
   /** Acha, entre as conversas individuais já existentes, uma cujo telefone bate com o de um
-   * participante do grupo (comparação normalizada — mesma regra usada no back, ver
-   * `normalizarTelefoneParaComparacao`) — usado pelo "Enviar mensagem" no painel de participantes.
+   * participante do grupo (comparação normalizada. Mesma regra usada no back, ver
+   * `normalizarTelefoneParaComparacao`): usado pelo "Enviar mensagem" no painel de participantes.
    * `null` quando ainda não existe conversa individual com essa pessoa (o CRM não cria uma do
    * zero aqui; ela nasce sozinha na primeira mensagem trocada fora do grupo, igual qualquer
    * outra). */
@@ -3060,7 +3060,7 @@ function ConversasPageInner() {
     );
   }
 
-  /** Fábrica de handler de arrastar — usada pelos popups flutuantes menores (mídias, conectar, detalhe do contato). */
+  /** Fábrica de handler de arrastar. Usada pelos popups flutuantes menores (mídias, conectar, detalhe do contato). */
   function criarIniciarArraste(
     seletor: string,
     setPos: (p: { x: number; y: number }) => void,
@@ -3083,7 +3083,7 @@ function ConversasPageInner() {
     };
   }
 
-  // Fluxos REAIS deste funil — publicados e ativos. Antes a lista vinha de um catálogo em memória
+  // Fluxos REAIS deste funil: publicados e ativos. Antes a lista vinha de um catálogo em memória
   // que nunca era gravado e nunca rodava: a pessoa via nomes de automação que não existiam.
   const automacoesDoFunil = fluxos.filter(
     (f) => f.funilId === funilSelecionadoId && f.status === "publicado" && !f.arquivada,
@@ -3093,11 +3093,11 @@ function ConversasPageInner() {
    * Botão "rodar automação" manual dentro da conversa. O fluxo migrado tem o
    * mesmo `id` da `Automacao` antiga (ver `migrarAutomacaoParaFluxo`), então dá
    * pra achar o `FluxoAutomacao` real por esse id e rodar `executarFluxo` de
-   * verdade a partir do nó logo após o gatilho — assim tags/etapa/responsável
+   * verdade a partir do nó logo após o gatilho. Assim tags/etapa/responsável
    * mudam de verdade (via as mesmas ligações do `dispararEvento`), em vez de só
    * empurrar texto de `acao.mensagem` pro chat. Chamado explicitamente pelo
-   * usuário, então roda mesmo se o fluxo estiver pausado (`ativa: false`) —
-   * diferente de `dispararEvento`, que só considera fluxos publicados e ativos.
+   * usuário, então roda mesmo se o fluxo estiver pausado (`ativa: false`).
+   * Diferente de `dispararEvento`, que só considera fluxos publicados e ativos.
    */
   async function executarAutomacaoNaConversa(automacaoId: string) {
     const automacao = automacoesDoFunil.find((a) => a.id === automacaoId);
@@ -3126,18 +3126,18 @@ function ConversasPageInner() {
   const sugerirAutomacoes = mensagemTexto.startsWith("//");
   const sugerirRespostas = !sugerirAutomacoes && mensagemTexto.startsWith("/");
 
-  /** Botão único "Registrar resultado" — abre o menu com as 5 opções (seção 14 do pedido). */
+  /** Botão único "Registrar resultado": abre o menu com as 5 opções (seção 14 do pedido). */
   function abrirMenuResultado(rect: DOMRect) {
     setResultadoMenuRect(rect);
     setResultadoMenuAberto(true);
   }
 
   /**
-   * Marca venda/perda/reabertura de verdade no `NegocioCard` real (mesmo campo que o Funil usa —
-   * ver `marcarDesfecho` em `funil/page.tsx`), em vez de só guardar em `resultadoPorContato` (que
+   * Marca venda/perda/reabertura de verdade no `NegocioCard` real (mesmo campo que o Funil usa.
+   * Ver `marcarDesfecho` em `funil/page.tsx`), em vez de só guardar em `resultadoPorContato` (que
    * é puramente local e se perde ao trocar de aba). Se o contato ainda não tiver negócio em
    * nenhum funil, entra na etapa selecionada do painel (mesmo caminho de `salvarAtribuicao`) antes
-   * de marcar — não dá pra fechar um negócio que não existe.
+   * de marcar: não dá pra fechar um negócio que não existe.
    */
   function atualizarDesfechoNegocio(
     statusFechamento: "ganho" | "perdido" | null,
@@ -3155,7 +3155,7 @@ function ConversasPageInner() {
       if (!funilDestino || !etapaDestino) return;
       atribuirContatoAoFunil(funilDestino.id, etapaDestino.titulo, {
         nome,
-        valor: valorOverride || "—",
+        valor: valorOverride || "-",
         origem: (aberta.origem as NegocioCard["origem"]) ?? "Direto",
         dias: "Hoje",
         data: HOJE_ISO,
@@ -3217,7 +3217,7 @@ function ConversasPageInner() {
   async function confirmarVenda() {
     setRegistrandoResultado(true);
     atualizarDesfechoNegocio("ganho", null, vendaValor || undefined);
-    // Feedback visual — a gravação em si (`setFunis`) já é síncrona; o delay é só pra dar
+    // Feedback visual: a gravação em si (`setFunis`) já é síncrona; o delay é só pra dar
     // sensação de confirmação antes de fechar o formulário.
     await new Promise((resolve) => setTimeout(resolve, 500));
     setResultadoPorContato((prev) => ({ ...prev, [aberta.nome]: "venda" }));
@@ -3428,7 +3428,7 @@ function ConversasPageInner() {
    *
    * Só vale no Instagram: é onde a Meta aceita reagir a uma mensagem já enviada e devolve a reação
    * da outra pessoa pelo webhook. Nos outros canais o coração ficaria só na nossa tela, e a cliente
-   * nunca saberia — por isso o duplo clique simplesmente não faz nada lá.
+   * nunca saberia: por isso o duplo clique simplesmente não faz nada lá.
    *
    * A tela muda na hora (otimista) e volta atrás se a Meta recusar: esperar a ida e volta pra
    * pintar o coração faz o duplo clique parecer quebrado.
@@ -3472,7 +3472,7 @@ function ConversasPageInner() {
     }
   }
 
-  /** Coração colado no balão — o da cliente e o meu, quando existem — mais o coração grande que
+  /** Coração colado no balão: o da cliente e o meu, quando existem: mais o coração grande que
    * estoura no meio da bolha no momento do duplo clique, como no Direct. */
   function reacaoNaMensagem(msg: ConvMensagem, chave: string) {
     const animando = coracaoAnimando === chave;
@@ -3518,7 +3518,7 @@ function ConversasPageInner() {
     }
     setStatusSalvarContato("salvando");
     try {
-      // `salvarDadosContato` já persiste de verdade (ver contatos-context.tsx) — o delay aqui é só
+      // `salvarDadosContato` já persiste de verdade (ver contatos-context.tsx): o delay aqui é só
       // pra dar a sensação de salvamento antes de fechar o formulário.
       await new Promise((resolve) => setTimeout(resolve, 450));
       salvarDadosContato(aberta.nome, {
@@ -3592,7 +3592,7 @@ function ConversasPageInner() {
       const novoCard: Omit<NegocioCard, "id"> & { id?: string } = {
         id: cardExistente?.id,
         nome: aberta.nome,
-        valor: cardExistente?.valor ?? "—",
+        valor: cardExistente?.valor ?? "-",
         origem: cardExistente?.origem ?? (aberta.origem as NegocioCard["origem"]),
         dias: cardExistente?.dias ?? "Hoje",
         data: cardExistente?.data ?? HOJE_ISO,
@@ -3618,7 +3618,7 @@ function ConversasPageInner() {
         if (etapaDestino) {
           // O gatilho "entrou na etapa" roda no SERVIDOR. Antes ele rodava aqui no navegador, o
           // que queria dizer que a automação só acontecia pra quem estava com esta tela aberta e
-          // que as mensagens dela eram simuladas — apareciam na conversa sem terem sido enviadas.
+          // que as mensagens dela eram simuladas. Apareciam na conversa sem terem sido enviadas.
           void fetch("/api/automacoes/evento", {
             method: "POST",
             headers: { "content-type": "application/json" },
@@ -3642,7 +3642,7 @@ function ConversasPageInner() {
   return (
     <>
       {/* Modelo aprovado: o caminho pra falar PRIMEIRO com alguém, ou depois de fechada a janela
-          de 24h. Só faz sentido em conversa de WhatsApp oficial — nos outros canais não existe
+          de 24h. Só faz sentido em conversa de WhatsApp oficial. Nos outros canais não existe
           essa regra nem esse recurso. */}
       {templateAberto && aberta.canal === "WhatsApp" && (aberta.contato || contatoDaConversa?.whatsapp) ? (
         <EnviarTemplateWhatsApp
@@ -3656,7 +3656,7 @@ function ConversasPageInner() {
       ) : null}
       <Topbar
         title="Conversas"
-        sub="WhatsApp, Instagram e TikTok — todas as conversas num só lugar"
+        sub="WhatsApp, Instagram e TikTok: todas as conversas num só lugar"
         actions={
           <>
             <button
@@ -3743,7 +3743,7 @@ function ConversasPageInner() {
               ))}
             </FloatingDropdown>
             {/* Conectar um número é a primeira coisa que se quer fazer numa tela de atendimento
-                vazia — antes era preciso sair daqui e ir até Configurações → WhatsApp. */}
+                vazia: antes era preciso sair daqui e ir até Configurações → WhatsApp. */}
             <BotoesConectarWhatsApp />
           </>
         }
@@ -3758,7 +3758,7 @@ function ConversasPageInner() {
                 type="button"
                 className={`wa-list-refresh${sincronizando ? " spinning" : ""}`}
                 aria-label="Recarregar conversas"
-                title="Recarregar conversas — use se as mensagens do celular conectado saírem de sincronia"
+                title="Recarregar conversas: use se as mensagens do celular conectado saírem de sincronia"
                 onClick={sincronizarConversas}
               >
                 <IconRefresh width={14} height={14} />
@@ -3860,7 +3860,7 @@ function ConversasPageInner() {
               {carregandoConversas
                 ? "Carregando conversas…"
                 : conversas.length === 0
-                  ? "Nenhuma conversa ainda — conecte um canal em Configurações para começar a receber mensagens de verdade."
+                  ? "Nenhuma conversa ainda: conecte um canal em Configurações para começar a receber mensagens de verdade."
                   : "Nenhuma conversa encontrada. Digite o nome de um contato pra começar uma conversa com ele."}
             </p>
           ) : (
@@ -3973,7 +3973,7 @@ function ConversasPageInner() {
                   <button
                     type="button"
                     className="wa-row-menu-btn"
-                    aria-label={`Mais ações — ${c.nome}`}
+                    aria-label={`Mais ações: ${c.nome}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setRowMenuRect(e.currentTarget.getBoundingClientRect());
@@ -4050,7 +4050,7 @@ function ConversasPageInner() {
                         className="dropdown-item"
                         style={{ width: "100%", textAlign: "left", color: "var(--danger)" }}
                         onClick={() => {
-                          if (window.confirm(`Excluir a conversa com ${c.nome}? Isso apaga as mensagens dela também — não dá pra desfazer.`)) {
+                          if (window.confirm(`Excluir a conversa com ${c.nome}? Isso apaga as mensagens dela também. Não dá pra desfazer.`)) {
                             excluirConversa(c.id);
                           }
                           setRowMenuAberto(null);
@@ -4096,7 +4096,7 @@ function ConversasPageInner() {
                   {aberta.ehGrupo
                     ? `Grupo · ${aberta.participantesGrupo?.length ?? 0} participantes`
                     : /* No Instagram, `contato` é o id interno da thread (algo como
-                         "828654933601920") — número que não significa nada pra quem atende e que a
+                         "828654933601920"): número que não significa nada pra quem atende e que a
                          pessoa nem pode usar pra achar o perfil. O @ já é o nome exibido acima,
                          então aqui fica só o canal. No WhatsApp, `contato` É o telefone: aí vale. */
                       aberta.canal === "Instagram"
@@ -4152,7 +4152,7 @@ function ConversasPageInner() {
             {arrastandoArquivo ? (
               <div className="wa-dragover-aviso">Solte o arquivo pra anexar</div>
             ) : null}
-            {/* A curtida já foi desfeita na tela quando isso aparece — o aviso existe pra explicar
+            {/* A curtida já foi desfeita na tela quando isso aparece. O aviso existe pra explicar
                 POR QUE o coração sumiu (janela de 24h vencida, conta desconectada), em vez de
                 deixar parecer que o clique não funcionou. */}
             {localizacaoBuscando ? (
@@ -4208,12 +4208,12 @@ function ConversasPageInner() {
                 );
               }
               // UMA implementação de bolha em todo o CRM (`BolhaMensagem`). O desenho vive lá; o
-              // que é interação DESTA tela — menu, estrela, reação, bloqueio de mídia pesada,
-              // visualizador, ficha do contato, "Ler mais" — entra por props. Antes eram duas
+              // que é interação DESTA tela. Menu, estrela, reação, bloqueio de mídia pesada,
+              // visualizador, ficha do contato, "Ler mais": entra por props. Antes eram duas
               // implementações da mesma coisa, e a mesma mensagem aparecia diferente aqui e no
               // painel do Funil.
-              // Barreira por mensagem: uma mensagem com dado estranho — anexo de tipo novo, campo
-              // que mudou de forma, extra vindo de um webhook antigo — derrubava a TELA INTEIRA,
+              // Barreira por mensagem: uma mensagem com dado estranho. Anexo de tipo novo, campo
+              // que mudou de forma, extra vindo de um webhook antigo. Derrubava a TELA INTEIRA,
               // porque o erro subia até a barreira da rota. Agora o estrago fica do tamanho do
               // problema: aquela bolha vira um aviso e o atendimento continua utilizável.
               const bolha = (
@@ -4260,7 +4260,7 @@ function ConversasPageInner() {
                 </LimiteDeErro>
               );
 
-              // Separador de dia entre as bolhas — sem ele a conversa é um rolo contínuo e não dá
+              // Separador de dia entre as bolhas. Sem ele a conversa é um rolo contínuo e não dá
               // pra saber onde termina um dia e começa o outro, que é justamente o que se procura
               // ao reler um atendimento.
               const diaDesta = rotuloDoDia(msg.criadoEm);
@@ -5877,7 +5877,7 @@ function ConversasPageInner() {
                           <span className="wa-config-notif-titulo">Notificação do navegador</span>
                           <span className="wa-config-notif-desc">
                             {configPermissaoNotificacao === "granted"
-                              ? "Permissão concedida — o navegador pode notificar."
+                              ? "Permissão concedida: o navegador pode notificar."
                               : configPermissaoNotificacao === "denied"
                                 ? "Bloqueada nas configurações do navegador. Libere o site pra ativar."
                                 : configPermissaoNotificacao === "indisponivel"
@@ -6453,7 +6453,7 @@ function ConversasPageInner() {
                   <>
                     <div className="wa-config-scroll">
                       <p className="int-group-h" style={{ padding: 0, marginBottom: 8 }}>
-                        Prévia — o que vai ser compartilhado
+                        Prévia: o que vai ser compartilhado
                       </p>
                       <div className="wa-contato-previa-lista">
                         {contatosSelecionadosPicker.map((c) => (
@@ -6554,7 +6554,7 @@ function ConversasPageInner() {
                 >
                   {/* No Instagram a citação só existe do lado da cliente se o CRM souber o id da
                       mensagem citada (`reply_to`). Sem id, responder mostraria "Respondendo a…"
-                      aqui e mandaria uma mensagem solta lá — então a opção nem aparece, em vez de
+                      aqui e mandaria uma mensagem solta lá. Então a opção nem aparece, em vez de
                       dar a impressão de que a pessoa vai ver a citação. */}
                   {aberta.canal === "Instagram" && !msg.id ? null : (
                     <button
@@ -6737,7 +6737,7 @@ function ConversasPageInner() {
                     </div>
                     <p className="hint" style={{ marginBottom: 16 }}>
                       Apaga esta mensagem pra quem visualizar essa conversa no CRM. Não recolhe a
-                      mensagem do lado do contato no WhatsApp — isso depende de um recurso que a
+                      mensagem do lado do contato no WhatsApp. Isso depende de um recurso que a
                       integração conectada ainda não oferece.
                     </p>
                     <div className="section-foot">
@@ -6827,7 +6827,7 @@ function ConversasPageInner() {
                   ) : null}
                   <div className="wa-msg-detalhes-item">
                     <span className="rotulo">Hora exibida</span>
-                    <span className="valor">{detalhesMensagem.msg.hora || "—"}</span>
+                    <span className="valor">{detalhesMensagem.msg.hora || "-"}</span>
                   </div>
                 </div>
                 <p className="hint" style={{ marginTop: 12 }}>
@@ -7021,7 +7021,7 @@ function ConversasPageInner() {
                   <span className="wa-resumo-valor">
                     {aberta.canal === "Instagram"
                       ? // O @ mora em `nome`. Enquanto ele não foi resolvido, a lista mostra um
-                        // rótulo neutro (ver `nomeExibido`) — mas o id interno da thread continua
+                        // rótulo neutro (ver `nomeExibido`). Mas o id interno da thread continua
                         // existindo, e é AQUI que ele aparece: escondido da vitrine, à mão pra quem
                         // precisar dele num suporte.
                         aberta.nome.startsWith("@")
@@ -7030,7 +7030,7 @@ function ConversasPageInner() {
                       : whatsappContato || aberta.contato}
                   </span>
                   <span className="wa-resumo-label">E-mail</span>
-                  <span className="wa-resumo-valor">{emailContato || "—"}</span>
+                  <span className="wa-resumo-valor">{emailContato || "-"}</span>
                   <span className="wa-resumo-label">Responsável</span>
                   <span className="wa-resumo-valor">{aberta.atendenteSelecionado ?? ""}</span>
                   <span className="wa-resumo-label">Funil · Etapa</span>
@@ -7420,7 +7420,7 @@ function ConversasPageInner() {
                 </p>
               ) : statusSalvarContato === "erro" ? (
                 <p className="wa-status-inline wa-status-erro" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <IconClose width={13} height={13} /> Não deu pra salvar — confira o e-mail
+                  <IconClose width={13} height={13} /> Não deu pra salvar: confira o e-mail
                 </p>
               ) : null}
             </>
@@ -7496,7 +7496,7 @@ function ConversasPageInner() {
                   </p>
                 ) : (
                   <p className="hint" style={{ marginBottom: 10 }}>
-                    Nenhum resultado registrado ainda — em andamento.
+                    Nenhum resultado registrado ainda: em andamento.
                   </p>
                 )}
                 <button

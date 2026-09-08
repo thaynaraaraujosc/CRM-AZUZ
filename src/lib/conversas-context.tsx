@@ -40,10 +40,10 @@ type ConversasContextValue = {
   atribuirAtendente: (id: string, atendente: string | null) => void;
   atualizarFoto: (id: string, fotoUrl: string) => void;
   criarConversaIndividual: (nome: string, contato: string, canal?: string) => Promise<ConversaReal>;
-  /** Força buscar as conversas de novo agora, sem esperar o próximo ciclo do polling — usado pelo
+  /** Força buscar as conversas de novo agora, sem esperar o próximo ciclo do polling. Usado pelo
    * botão de atualizar da tela de Conversas. */
   recarregar: () => void;
-  /** Apaga a conversa e as mensagens dela — usado pra limpar uma conversa avulsa (ex.: mensagem de
+  /** Apaga a conversa e as mensagens dela. Usado pra limpar uma conversa avulsa (ex.: mensagem de
    * grupo que nasceu como conversa solta antes de existir a correção do sincronizador). */
   excluirConversa: (id: string) => void;
 };
@@ -59,13 +59,13 @@ function atualizarRemoto(id: string, dados: Record<string, unknown>) {
 }
 
 /**
- * Conversas de verdade (ver `prisma/schema.prisma` model `Conversa`) — nascem sozinhas quando chega
+ * Conversas de verdade (ver `prisma/schema.prisma` model `Conversa`). Nascem sozinhas quando chega
  * a primeira mensagem por um webhook conectado (`src/lib/conversas/upsert.ts`), sem nenhum dado de
  * exemplo/mock aqui. Mesmo espírito de `contatos-context.tsx`: estado local otimista + fetch no
  * mount + mutações que atualizam o estado na hora e disparam a chamada real em paralelo.
  */
 /**
- * A foto de perfil é salva com um PATCH imediato (sem debounce) — mas o polling de 5s pode chegar
+ * A foto de perfil é salva com um PATCH imediato (sem debounce). Mas o polling de 5s pode chegar
  * ANTES desse PATCH terminar de persistir, trazendo o servidor ainda com `fotoUrl: null` e apagando
  * a foto que acabou de aparecer na tela (o bug do "aparece e some" relatado). Preserva a foto local
  * quando o servidor ainda não tem uma.
@@ -102,7 +102,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
       .catch((erro) => console.error("Falha ao carregar conversas da API:", erro));
   }
 
-  /** Toda escrita (PATCH de favorita, lida, foto…) deixa a versão guardada velha — descartar aqui
+  /** Toda escrita (PATCH de favorita, lida, foto…) deixa a versão guardada velha. Descartar aqui
    * garante que a próxima batida traga o estado real em vez de um `304` enganoso. */
   function esquecerVersao() {
     etagRef.current = null;
@@ -111,7 +111,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     recarregar().finally(() => setCarregando(false));
 
-    // Polling — mensagem nova (do webhook do WhatsApp/Instagram) precisa aparecer sozinha, sem
+    // Polling: mensagem nova (do webhook do WhatsApp/Instagram) precisa aparecer sozinha, sem
     // depender de recarregar a página, igual todo app de mensagem de verdade. Só busca quando a
     // aba está visível, pra não gastar requisição à toa com o CRM aberto em segundo plano.
     const intervalo = setInterval(() => {
@@ -153,7 +153,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
   }
 
   // Preenchida sob demanda pela tela (ver `conversas/page.tsx`) quando a conversa é aberta e ainda
-  // não tem foto salva — não passa pelo otimista+PATCH normal porque não é uma ação do usuário, é
+  // não tem foto salva: não passa pelo otimista+PATCH normal porque não é uma ação do usuário, é
   // só "guardar o que a Evolution devolveu" pra não ter que buscar de novo na próxima vez.
   function atualizarFoto(id: string, fotoUrl: string) {
     setConversas((prev) => prev.map((c) => (c.id === id ? { ...c, fotoUrl } : c)));
@@ -162,7 +162,7 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
   }
 
   // Usado quando a usuária quer ser a PRIMEIRA a escrever pra alguém sem conversa ainda (ex.: um
-  // participante de grupo visto só de longe) — cria de verdade no banco (não é otimista, precisa do
+  // participante de grupo visto só de longe). Cria de verdade no banco (não é otimista, precisa do
   // `id` real devolvido antes de poder navegar pra ela).
   async function criarConversaIndividual(
     nome: string,

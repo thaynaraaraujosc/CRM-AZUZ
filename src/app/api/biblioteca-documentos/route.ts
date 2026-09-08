@@ -23,7 +23,7 @@ export async function GET() {
   return NextResponse.json(linhas.map(paraDocumento));
 }
 
-/** POST cria um documento novo — mesma semântica de `adicionarDocumento` no Context. */
+/** POST cria um documento novo. Mesma semântica de `adicionarDocumento` no Context. */
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

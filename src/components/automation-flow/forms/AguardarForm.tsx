@@ -3,10 +3,10 @@
 import type { AguardarData } from "@/lib/automation-flow/types";
 
 /**
- * "O que você quer aguardar?" — a pergunta que o bloco responde.
+ * "O que você quer aguardar?": a pergunta que o bloco responde.
  *
  * Antes era uma lista de oito modos técnicos misturados ("Por X minutos", "Até uma tarefa ser
- * concluída"). Agora são cinco escolhas, cada uma com uma frase dizendo o que acontece — e o
+ * concluída"). Agora são cinco escolhas, cada uma com uma frase dizendo o que acontece. E o
  * segundo campo muda conforme a escolha, em vez de existirem todos ao mesmo tempo.
  */
 const ESCOLHAS: { valor: AguardarData["modo"]; label: string; ajuda: string }[] = [
@@ -125,8 +125,8 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
             </select>
           </div>
           <p className="hint">
-            Se ele responder antes, o fluxo continua na hora pelo caminho <strong>Respondeu</strong> —
-            não fica esperando o prazo acabar.
+            Se ele responder antes, o fluxo continua na hora pelo caminho <strong>Respondeu</strong>.
+            Não fica esperando o prazo acabar.
           </p>
         </div>
       ) : null}

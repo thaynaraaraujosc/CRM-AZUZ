@@ -8,11 +8,11 @@ import { auth } from "@/lib/auth";
  *
  * Existe porque cadastrar webhook virou um jogo de adivinhação: o token só era legível no painel da
  * hospedagem (e o valor de lá nem sempre é o que o servidor em execução está usando), e o domínio
- * tem duas formas — com e sem `www` — que podem ser servidas por deploys diferentes, cada um com
+ * tem duas formas: com e sem `www`: que podem ser servidas por deploys diferentes, cada um com
  * suas variáveis. Digitar errado qualquer um dos dois dá a mesma mensagem genérica da Meta.
  *
  * A resposta é montada a partir do próprio pedido: a URL usa o host que a pessoa está acessando, e
- * o token vem do ambiente DESTE servidor — exatamente o que vai responder quando a Meta chamar.
+ * o token vem do ambiente DESTE servidor. Exatamente o que vai responder quando a Meta chamar.
  * Não há como copiar o valor de um lugar e o outro responder por outro.
  *
  * O token de verificação não dá acesso a dado nenhum: ele só prova, no momento do cadastro, que

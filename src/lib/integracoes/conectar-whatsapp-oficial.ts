@@ -8,18 +8,18 @@ import { chamarGraph } from "@/lib/integracoes/meta";
 /**
  * Passos comuns às DUAS formas de conectar uma conta do WhatsApp Business oficial:
  *
- *   - Embedded Signup (`/api/integracoes/meta/whatsapp/conectar`) — a Meta cria a conta do cliente
+ *   - Embedded Signup (`/api/integracoes/meta/whatsapp/conectar`). A Meta cria a conta do cliente
  *     dentro do popup e devolve um `code`, que vira token;
- *   - conexão direta (`/api/integracoes/meta/whatsapp/conectar-manual`) — a conta JÁ existe e o
+ *   - conexão direta (`/api/integracoes/meta/whatsapp/conectar-manual`). A conta JÁ existe e o
  *     token permanente vem de um usuário do sistema do próprio Business.
  *
  * A diferença entre elas é só COMO o token chega. Depois disso, inscrever o app na WABA, registrar
- * o número e ler os metadados é idêntico — daí morar aqui em vez de duplicado nas duas rotas.
+ * o número e ler os metadados é idêntico. Daí morar aqui em vez de duplicado nas duas rotas.
  */
 export const PASSOS = ["token", "inscrever_waba", "registrar_numero", "metadados"] as const;
 export type Passo = (typeof PASSOS)[number];
 
-/** `metadados` é Json (união de formatos por provedor) — o cast é só pro TS, o valor já é JSON puro. */
+/** `metadados` é Json (união de formatos por provedor). O cast é só pro TS, o valor já é JSON puro. */
 function comoJson(valor: Record<string, unknown>): Prisma.InputJsonValue {
   return valor as Prisma.InputJsonValue;
 }
@@ -37,7 +37,7 @@ export type ResultadoConexao = {
   pin: string | null;
   pinPendente: boolean;
   /** `true` quando o número vive no app do WhatsApp Business (SMB/coexistência) e a Meta não
-   * aceita o passo de registro — não há PIN a gerar nesse modo. */
+   * aceita o passo de registro. Não há PIN a gerar nesse modo. */
   registroDispensado: boolean;
 };
 
@@ -50,8 +50,8 @@ export class ErroConexao extends Error {
 }
 
 /**
- * Do token em diante: inscreve o app na WABA (sem isso o webhook NUNCA dispara pra esse cliente —
- * tudo parece conectado e nenhuma mensagem chega), registra o número na Cloud API e grava os
+ * Do token em diante: inscreve o app na WABA (sem isso o webhook NUNCA dispara pra esse cliente.
+ * Tudo parece conectado e nenhuma mensagem chega), registra o número na Cloud API e grava os
  * metadados. O passo alcançado fica em `metadados.passoConexao`, então uma nova tentativa retoma
  * de onde parou em vez de obrigar a refazer tudo.
  */
@@ -82,7 +82,7 @@ export async function finalizarConexaoWhatsapp({
 
     // ---- Registrar o número na Cloud API ----
     passo = "registrar_numero";
-    // PIN de 6 dígitos gerado aqui (nunca no navegador) — guardado criptografado e devolvido uma
+    // PIN de 6 dígitos gerado aqui (nunca no navegador). Guardado criptografado e devolvido uma
     // única vez, pra pessoa anotar. Com `pinExistente`, usa o que ela informou (número já
     // registrado antes com outro PIN recusa um PIN novo).
     const pin = pinExistente ?? String(randomInt(0, 1_000_000)).padStart(6, "0");
@@ -94,7 +94,7 @@ export async function finalizarConexaoWhatsapp({
         body: { messaging_product: "whatsapp", pin },
       });
     } catch (erro) {
-      // Número já registrado com outro PIN: não é motivo pra abortar a conexão inteira — o resto
+      // Número já registrado com outro PIN: não é motivo pra abortar a conexão inteira. O resto
       // funciona, e a tela pede o PIN antigo pra completar esse passo depois.
       const codigoMeta = (erro as Error & { codigoMeta?: number }).codigoMeta;
       const mensagemMeta = erro instanceof Error ? erro.message : "";
@@ -103,7 +103,7 @@ export async function finalizarConexaoWhatsapp({
       } else if (/not available for SMB/i.test(mensagemMeta)) {
         // Conta de número que vive no app do WhatsApp Business (SMB/coexistência), não uma conta
         // criada direto na Cloud API: ali o número já nasce registrado e a Meta recusa o
-        // `/register` por completo. Não é falha de conexão — é um passo que não se aplica, então
+        // `/register` por completo. Não é falha de conexão. É um passo que não se aplica, então
         // segue em frente sem PIN (não existe PIN a gerar nesse modo).
         registroDispensado = true;
       } else {
@@ -163,7 +163,7 @@ export async function finalizarConexaoWhatsapp({
       },
     });
 
-    // O PIN só sai daqui nesta resposta, uma vez — depois disso fica só criptografado no banco.
+    // O PIN só sai daqui nesta resposta, uma vez: depois disso fica só criptografado no banco.
     return {
       ok: true,
       pin: pinJaRegistrado || registroDispensado ? null : pin,

@@ -10,7 +10,7 @@ import {
 import { chamarGraph } from "@/lib/integracoes/meta";
 
 /**
- * Conexão DIRETA de uma conta do WhatsApp Business que já existe — a alternativa ao Embedded
+ * Conexão DIRETA de uma conta do WhatsApp Business que já existe. A alternativa ao Embedded
  * Signup, para quem já tem a WABA criada e aprovada no próprio Business Manager.
  *
  * O Embedded Signup existe pra CRIAR a conta de um cliente de dentro do CRM, e exige que o app
@@ -35,7 +35,7 @@ type NumeroInfo = { id?: string; display_phone_number?: string; verified_name?: 
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
-  // Só admin conecta um canal de atendimento do workspace inteiro — mesma regra do resto de
+  // Só admin conecta um canal de atendimento do workspace inteiro. Mesma regra do resto de
   // Configurações. `workspaceId` vem SEMPRE da sessão, nunca do corpo da requisição.
   if (sessao.user.papelTipo !== "admin") {
     return NextResponse.json({ erro: "Só o admin do workspace pode conectar o WhatsApp." }, { status: 403 });
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   });
   const metadadosAnteriores = (existente?.metadados as Record<string, unknown> | null) ?? {};
 
-  // Valida o token ANTES de gravar qualquer coisa — um token errado (ou sem acesso a esse número)
+  // Valida o token ANTES de gravar qualquer coisa. Um token errado (ou sem acesso a esse número)
   // falharia depois, no meio do fluxo, deixando a integração num estado pela metade. A mensagem da
   // Meta aqui é o que diz à pessoa o que exatamente está errado.
   let numero: NumeroInfo;

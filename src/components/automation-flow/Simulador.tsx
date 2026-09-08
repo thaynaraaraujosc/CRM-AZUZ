@@ -6,7 +6,7 @@ import type { EstadoSimulacao } from "@/lib/automacoes/simular";
 import type { AguardarData, FluxoAutomacao } from "@/lib/automation-flow/types";
 import { IconBloqueado, IconCheck, IconClose, IconErro, IconFrasco, IconPause, IconPular } from "@/components/icons";
 
-/** Situação de cada passo. Eram emojis — família tipográfica diferente da interface e cor fixa que
+/** Situação de cada passo. Eram emojis: família tipográfica diferente da interface e cor fixa que
  * não acompanha o tema. */
 const ICONE_STATUS: Record<string, typeof IconCheck> = {
   ok: IconCheck,
@@ -26,15 +26,15 @@ const LABEL_SITUACAO: Record<string, string> = {
 };
 
 /**
- * Painel "Testar" — roda o MOTOR DE VERDADE em modo seco.
+ * Painel "Testar": roda o MOTOR DE VERDADE em modo seco.
  *
  * Antes, este painel tinha a própria lógica de percorrer o fluxo. Isso quer dizer que ele podia
- * dizer "vai funcionar" sobre algo que na prática não funcionava — o pior defeito possível num
+ * dizer "vai funcionar" sobre algo que na prática não funcionava. O pior defeito possível num
  * simulador, porque a pessoa confia nele justamente pra não errar com cliente de verdade.
  *
  * Agora ele chama o servidor, que roda o mesmo motor das automações reais com duas trocas: as
  * ações não enviam nada nem gravam nada, e o estado da execução fica na memória, não no banco. As
- * decisões — condição, caminho do botão, espera — são exatamente as mesmas.
+ * decisões: condição, caminho do botão, espera: são exatamente as mesmas.
  */
 export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar: () => void }) {
   const [nome, setNome] = useState("Contato de teste");
@@ -73,7 +73,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
 
   function iniciar() {
     // O fluxo é lido no servidor a partir do rascunho salvo. Se o editor tem alteração ainda não
-    // salva, o teste roda o que está gravado — dizer isso é melhor do que testar outra coisa.
+    // salva, o teste roda o que está gravado. Dizer isso é melhor do que testar outra coisa.
     void chamar({
       contato: {
         nome: nome.trim() || "Contato de teste",
@@ -114,11 +114,11 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
         </div>
         <div className="flow-side-body">
           <p className="flow-sim-banner">
-            <IconFrasco width={13} height={13} aria-hidden="true" /> Modo de teste — nenhuma ação real será executada.
+            <IconFrasco width={13} height={13} aria-hidden="true" /> Modo de teste: nenhuma ação real será executada.
           </p>
           <p className="hint">
             Roda o mesmo motor das automações de verdade, só que sem enviar mensagem, sem mexer no
-            contato e sem gravar nada. Testa o fluxo <strong>como está salvo</strong> — alteração
+            contato e sem gravar nada. Testa o fluxo <strong>como está salvo</strong>. Alteração
             ainda não salva no editor não entra. Gatilho:{" "}
             <strong>{noGatilho ? noGatilho.titulo || noGatilho.type : "nenhum"}</strong>
           </p>
@@ -157,7 +157,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
             <div className="mt14">
               <p className="n">
                 Resultado: <strong>{LABEL_SITUACAO[estado.situacao] ?? estado.situacao}</strong>
-                {estado.erro ? ` — ${estado.erro}` : ""}
+                {estado.erro ? ` (${estado.erro})` : ""}
               </p>
 
               <ul className="flow-sim-passos">

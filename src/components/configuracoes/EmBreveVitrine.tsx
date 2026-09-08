@@ -4,7 +4,7 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
 
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 
-/** Vitrine "Em breve" reutilizável — mesmo padrão visual de `/azuz-ia` (item desativado por decisão
+/** Vitrine "Em breve" reutilizável: mesmo padrão visual de `/azuz-ia` (item desativado por decisão
  * de produto, não limitação técnica: mostra que a categoria existe, sem dar acesso a um formulário
  * que ainda não faz nada de verdade). */
 export function EmBreveVitrine({

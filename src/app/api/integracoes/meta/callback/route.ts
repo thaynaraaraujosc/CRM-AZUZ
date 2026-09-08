@@ -6,7 +6,7 @@ import { encriptar } from "@/lib/integracoes/crypto";
 import { META_GRAPH_URL, verificarState } from "@/lib/integracoes/meta";
 
 /** `metadados` tem forma diferente por provedor (união estrutural que o Prisma não casa com
- * `InputJsonValue` automaticamente) — o valor em runtime já é JSON puro, o cast é só pro TS. */
+ * `InputJsonValue` automaticamente): o valor em runtime já é JSON puro, o cast é só pro TS. */
 function comoJson(valor: Record<string, unknown>): Prisma.InputJsonValue {
   return valor as Prisma.InputJsonValue;
 }
@@ -37,7 +37,7 @@ const CATEGORIA_POR_PROVEDOR: Record<string, string> = {
   meta_ads: "/trafego",
 };
 
-/** Resolve o token de longa duração (~60 dias) a partir do `code` do OAuth — comum aos 3 provedores. */
+/** Resolve o token de longa duração (~60 dias) a partir do `code` do OAuth. Comum aos 3 provedores. */
 async function trocarCodePorToken(
   code: string,
   redirectUri: string,
@@ -56,7 +56,7 @@ async function trocarCodePorToken(
   };
 }
 
-/** Resolve o WhatsApp Business Account + número conectados — lógica original da Fase A, inalterada. */
+/** Resolve o WhatsApp Business Account + número conectados. Lógica original da Fase A, inalterada. */
 async function resolverWhatsapp(accessToken: string) {
   const negocios = await graphGet<{ data: { id: string; name: string }[] }>(`/me/businesses?access_token=${accessToken}`);
   const negocio = negocios.data?.[0];
@@ -74,7 +74,7 @@ async function resolverWhatsapp(accessToken: string) {
   const numero = numeros.data?.[0];
   if (!numero) throw new Error("Nenhum número de telefone encontrado nessa conta do WhatsApp Business.");
 
-  // Sem isso, a Meta nunca manda os eventos de mensagem recebida pro nosso webhook — o app fica
+  // Sem isso, a Meta nunca manda os eventos de mensagem recebida pro nosso webhook. O app fica
   // "conectado" (o resto acima funcionou) mas nenhuma mensagem real chega, porque o WABA nunca foi
   // inscrito pra notificar ESTE app especificamente (é inscrição por WABA, não automática por OAuth).
   await graphPost(`/${waba.id}/subscribed_apps?access_token=${accessToken}`);
@@ -92,7 +92,7 @@ async function resolverWhatsapp(accessToken: string) {
   };
 }
 
-/** Resolve a conta de anúncios (ad account) — prioriza uma ativa, senão pega a primeira. */
+/** Resolve a conta de anúncios (ad account). Prioriza uma ativa, senão pega a primeira. */
 async function resolverAds(accessToken: string) {
   const contas = await graphGet<{ data: { id: string; name: string; account_status: number; currency: string }[] }>(
     `/me/adaccounts?fields=id,name,account_status,currency&access_token=${accessToken}`,
@@ -107,8 +107,8 @@ async function resolverAds(accessToken: string) {
 }
 
 /**
- * GET recebe a volta do diálogo OAuth da Meta — pro provedor que estava assinado no `state`. Troca
- * o `code` pelo token, resolve os recursos daquele provedor, e grava tudo em `Integracao` — sempre
+ * GET recebe a volta do diálogo OAuth da Meta. Pro provedor que estava assinado no `state`. Troca
+ * o `code` pelo token, resolve os recursos daquele provedor, e grava tudo em `Integracao`. Sempre
  * no workspace do `state` (nunca de uma sessão nova, o navegador pode ter perdido a sessão original
  * durante o redirect).
  */
@@ -155,7 +155,7 @@ export async function GET(request: Request) {
     }
 
     // Preserva preferências guardadas em `metadados` que não vêm da Graph API (ex.: o toggle
-    // "Receber mensagens do Instagram no CRM", ver PATCH em /api/integracoes/meta) — sem isso, toda
+    // "Receber mensagens do Instagram no CRM", ver PATCH em /api/integracoes/meta): sem isso, toda
     // reconexão apagaria essa escolha e voltaria ao padrão sozinha.
     const existente = await prisma.integracao.findUnique({
       where: { workspaceId_provedor: { workspaceId, provedor } },

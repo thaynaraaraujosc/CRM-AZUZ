@@ -5,7 +5,7 @@ import type { CancelarAgendamentoData, CriterioAgendamento, OrigemMensagemCancel
 
 const TIPOS_AGENDAMENTO = ["Consulta", "Reunião", "Retorno", "Visita", "Demonstração", "Avaliação", "Outro"];
 
-// Mocado — modelos de mensagem de cancelamento prontos, sem integração real.
+// Mocado: modelos de mensagem de cancelamento prontos, sem integração real.
 const MODELOS_CANCELAMENTO = [
   { id: "padrao", nome: "Cancelamento padrão" },
   { id: "indisponibilidade", nome: "Cancelamento por indisponibilidade" },
@@ -20,7 +20,7 @@ const CRITERIOS: { valor: CriterioAgendamento; label: string }[] = [
   { valor: "especifico", label: "Agendamento específico" },
 ];
 
-/** Ação "Cancelar agendamento" (item 2) — qual agendamento cancelar, e opcionalmente qual mensagem
+/** Ação "Cancelar agendamento" (item 2). Qual agendamento cancelar, e opcionalmente qual mensagem
  * de cancelamento enviar ao contato. */
 export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgendamentoData; onChange: (novo: CancelarAgendamentoData) => void }) {
   const { membros: equipe } = useEquipe();

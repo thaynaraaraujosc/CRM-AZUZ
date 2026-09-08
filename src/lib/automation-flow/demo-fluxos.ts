@@ -1,12 +1,12 @@
 /**
- * Três fluxos de demonstração prontos — servem de ponto de partida no popover
+ * Três fluxos de demonstração prontos. Servem de ponto de partida no popover
  * "Nova automação → Usar um modelo" (ver `automacoes/page.tsx`) e de exemplo
  * completo do construtor em grafo. Nunca editados diretamente pelo usuário:
  * "Usar um modelo" sempre passa por `duplicarFluxo`, que cria uma cópia em
- * rascunho independente — estes objetos aqui ficam intocados no array `fluxos`.
+ * rascunho independente: estes objetos aqui ficam intocados no array `fluxos`.
  *
  * Todos os três precisam passar por `validarFluxo` com zero problemas de
- * severidade "erro" — checagem manual feita via script descartável, resultado
+ * severidade "erro": checagem manual feita via script descartável, resultado
  * colado no relatório da tarefa (não fica um arquivo de teste no repo).
  */
 
@@ -40,7 +40,7 @@ import type {
   VersaoFluxo,
 } from "./types";
 
-/** Data fixa de publicação dos 3 modelos — determinística, não usa `Date.now()`/`new Date()` em runtime. */
+/** Data fixa de publicação dos 3 modelos. Determinística, não usa `Date.now()`/`new Date()` em runtime. */
 const PUBLICADO_EM_DEMO = "2026-01-01T09:00:00.000Z";
 
 /* -------------------------------------------------------------------------- */
@@ -74,7 +74,7 @@ function fluxoDemo(base: {
   edges: FlowEdge[];
   configuracoes: ConfiguracoesFluxo;
 }): FluxoAutomacao {
-  // Posiciona tudo em camadas (BFS a partir do gatilho) — evita ter que
+  // Posiciona tudo em camadas (BFS a partir do gatilho). Evita ter que
   // calcular ~15-20 pares de coordenadas à mão por fluxo.
   layoutFluxo(base.nodes, base.edges);
 
@@ -117,7 +117,7 @@ const FUNIL_ID_SEED = "funil-principal";
 const ETAPA_NOVO_SEED = "Novo";
 
 /* -------------------------------------------------------------------------- */
-/* Automação 1 — "Recuperar lead sem resposta"                               */
+/* Automação 1: "Recuperar lead sem resposta"                               */
 /* -------------------------------------------------------------------------- */
 
 function construirRecuperarLead(): FluxoAutomacao {
@@ -125,11 +125,11 @@ function construirRecuperarLead(): FluxoAutomacao {
   const edges: FlowEdge[] = [];
 
   // Mapeamento de gatilho (julgamento documentado): a brief descreve o início
-  // como "o lead recebe uma mensagem da equipe" — um evento interno que não
+  // como "o lead recebe uma mensagem da equipe". Um evento interno que não
   // existe como `FlowNodeType` de gatilho hoje (não é webhook, não é resposta
   // recebida). O mapeamento mais honesto disponível é `lead_entrou_etapa`,
   // interpretado como "entrou na etapa de atendimento, disparado logo após o
-  // primeiro contato da equipe" — é o gatilho existente mais próximo de "a
+  // primeiro contato da equipe": é o gatilho existente mais próximo de "a
   // equipe acabou de agir sobre esse lead".
   const gatilhoData: GatilhoEtapaData = { funilId: FUNIL_ID_SEED, etapaId: "novo", disparoImediato: true };
   nodes.push(
@@ -139,7 +139,7 @@ function construirRecuperarLead(): FluxoAutomacao {
       "gatilho",
       gatilhoData,
       "Entrou na etapa de atendimento",
-      "Disparado logo após o primeiro contato da equipe (mapeamento mais próximo disponível pra \"lead recebeu mensagem da equipe\" — não existe um gatilho literal de \"mensagem enviada pela equipe\" nos tipos atuais).",
+      "Disparado logo após o primeiro contato da equipe (mapeamento mais próximo disponível pra \"lead recebeu mensagem da equipe\". Não existe um gatilho literal de \"mensagem enviada pela equipe\" nos tipos atuais).",
     ),
   );
 
@@ -153,10 +153,10 @@ function construirRecuperarLead(): FluxoAutomacao {
   nodes.push(no("rl-cond1", "condicao_grupo", "condicao", condRespondeu, "O lead respondeu?"));
   edges.push(aresta("rl-espera1", "rl-cond1"));
 
-  // Ramo SIM — lead respondeu: a inexistência de qualquer aresta partindo do
+  // Ramo SIM: lead respondeu: a inexistência de qualquer aresta partindo do
   // handle "sim" em direção aos blocos de lembrete/follow-up abaixo É a forma
   // como esse grafo já implementa "cancelar as mensagens futuras se o lead
-  // responder" — não existe (nem precisa existir) um bloco de "cancelamento"
+  // responder": não existe (nem precisa existir) um bloco de "cancelamento"
   // à parte, o motor simplesmente nunca visita esses nós nesse ramo.
   const etqRespondeu: AdicionarEtiquetaData = { etiquetaNome: "Lead respondeu" };
   nodes.push(no("rl-etq1", "adicionar_etiqueta", "acao", etqRespondeu));
@@ -170,11 +170,11 @@ function construirRecuperarLead(): FluxoAutomacao {
   nodes.push(no("rl-resp1", "alterar_responsavel", "acao", manterResp, "Manter responsável atual"));
   edges.push(aresta("rl-etq2", "rl-resp1"));
 
-  const fimSim: EncerrarFluxoData = { motivo: "Lead respondeu — fluxo de recuperação encerrado." };
+  const fimSim: EncerrarFluxoData = { motivo: "Lead respondeu: fluxo de recuperação encerrado." };
   nodes.push(no("rl-fim1", "encerrar_fluxo", "fim", fimSim));
   edges.push(aresta("rl-resp1", "rl-fim1"));
 
-  // Ramo NÃO — sem resposta: checa a janela de horário permitido antes de
+  // Ramo NÃO: sem resposta: checa a janela de horário permitido antes de
   // mandar o lembrete. Escolha de modelagem (documentada): em vez de duplicar
   // a mensagem de lembrete em dois ramos idênticos, o caminho "fora do
   // horário" só insere um `aguardar` até a janela abrir e depois converge de
@@ -191,7 +191,7 @@ function construirRecuperarLead(): FluxoAutomacao {
 
   const msgLembrete: MensagemTextoData = {
     canal: "whatsapp",
-    texto: "Oi, {primeiro_nome}! Passando pra saber se você viu nossa última mensagem — posso te ajudar com mais alguma informação?",
+    texto: "Oi, {primeiro_nome}! Passando pra saber se você viu nossa última mensagem. Posso te ajudar com mais alguma informação?",
   };
   nodes.push(no("rl-msg1", "mensagem_texto", "mensagem", msgLembrete));
   edges.push(aresta("rl-cond2", "rl-msg1", "sim"));
@@ -227,7 +227,7 @@ function construirRecuperarLead(): FluxoAutomacao {
   nodes.push(no("rl-tarefa2", "criar_tarefa", "acao", tarefaSemResposta));
   edges.push(aresta("rl-cond3", "rl-tarefa2", "nao"));
 
-  const notifSemResposta: EnviarNotificacaoData = { paraEquipe: "Responsável atual", mensagem: "Lead sem resposta após o follow-up automático — contato manual necessário." };
+  const notifSemResposta: EnviarNotificacaoData = { paraEquipe: "Responsável atual", mensagem: "Lead sem resposta após o follow-up automático. Contato manual necessário." };
   nodes.push(no("rl-notif1", "enviar_notificacao", "mensagem", notifSemResposta));
   edges.push(aresta("rl-tarefa2", "rl-notif1"));
 
@@ -241,7 +241,7 @@ function construirRecuperarLead(): FluxoAutomacao {
 
   const configuracoes: ConfiguracoesFluxo = {
     // Modelo já vem com o motor com estado ligado. Todos eles têm espera ou pergunta, e sem isto o
-    // fluxo pararia no primeiro "aguardar" e nunca continuaria — o modelo prometeria algo que não
+    // fluxo pararia no primeiro "aguardar" e nunca continuaria. O modelo prometeria algo que não
     // acontece.
     motorNovo: true,
     usarHorario: true,
@@ -249,7 +249,7 @@ function construirRecuperarLead(): FluxoAutomacao {
     horarioFim: "19:00",
     foraDaJanela: "aguardar",
     naoIniciarSeJaNoFluxo: true,
-    // `limiteExecucao` não tem uma opção de "a cada N dias" genérica — o valor
+    // `limiteExecucao` não tem uma opção de "a cada N dias" genérica. O valor
     // mais próximo de "no máximo uma vez a cada 7 dias" disponível no enum é
     // "uma_vez_por_semana" (documentado aqui por causa da granularidade limitada do enum atual).
     limiteExecucao: "uma_vez_por_semana",
@@ -270,7 +270,7 @@ function construirRecuperarLead(): FluxoAutomacao {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Automação 2 — "Distribuir e qualificar novo lead"                         */
+/* Automação 2: "Distribuir e qualificar novo lead"                         */
 /* -------------------------------------------------------------------------- */
 
 function construirDistribuirLead(): FluxoAutomacao {
@@ -283,8 +283,8 @@ function construirDistribuirLead(): FluxoAutomacao {
   // avaliação binária sim/não por nó (ver `avaliarGrupoCondicoes` em
   // motor.ts), então a bifurcação de 3 caminhos do brief vira DOIS nós
   // `condicao_grupo` encadeados: o primeiro cobre "anúncio OU formulário"
-  // (grupo tipo "OU"), o segundo (só no ramo "não") cobre "whatsapp" —
-  // sobrando "sem origem" pro "não" final.
+  // (grupo tipo "OU"), o segundo (só no ramo "não") cobre "whatsapp".
+  // Sobrando "sem origem" pro "não" final.
   const condOrigemAB: CondicaoGrupoData = {
     grupo: {
       id: "dl-cond1-grupo",
@@ -375,12 +375,12 @@ function construirDistribuirLead(): FluxoAutomacao {
   nodes.push(no("dl-msg-sem-nome", "mensagem_texto", "mensagem", msgSemNome));
   edges.push(aresta("dl-check", "dl-msg-sem-nome", "nao"));
 
-  const notifResp: EnviarNotificacaoData = { paraEquipe: "Responsável atual", mensagem: "Novo lead distribuído — primeiro atendimento pendente." };
+  const notifResp: EnviarNotificacaoData = { paraEquipe: "Responsável atual", mensagem: "Novo lead distribuído: primeiro atendimento pendente." };
   nodes.push(no("dl-notif", "enviar_notificacao", "mensagem", notifResp));
   edges.push(aresta("dl-msg-com-nome", "dl-notif"));
   edges.push(aresta("dl-msg-sem-nome", "dl-notif"));
 
-  // `AguardarData.modo` não tem um "aguardar atendimento" literal — o mapeamento
+  // `AguardarData.modo` não tem um "aguardar atendimento" literal. O mapeamento
   // mais honesto é `ate_tarefa` (esperar a tarefa "Fazer primeiro contato" ser
   // concluída), com `tempoMaximo` alinhado ao SLA de 15 minutos pra gerar os
   // handles "ok"/"timeout".
@@ -412,13 +412,13 @@ function construirDistribuirLead(): FluxoAutomacao {
   );
   edges.push(aresta("dl-status", "dl-dist2"));
 
-  const fimTimeout: EncerrarFluxoData = { motivo: "Atendimento atrasado — escalado pro gestor." };
+  const fimTimeout: EncerrarFluxoData = { motivo: "Atendimento atrasado: escalado pro gestor." };
   nodes.push(no("dl-fim-timeout", "encerrar_fluxo", "fim", fimTimeout));
   edges.push(aresta("dl-dist2", "dl-fim-timeout"));
 
   const configuracoes: ConfiguracoesFluxo = {
     // Modelo já vem com o motor com estado ligado. Todos eles têm espera ou pergunta, e sem isto o
-    // fluxo pararia no primeiro "aguardar" e nunca continuaria — o modelo prometeria algo que não
+    // fluxo pararia no primeiro "aguardar" e nunca continuaria. O modelo prometeria algo que não
     // acontece.
     motorNovo: true,
     naoIniciarSeJaNoFluxo: true,
@@ -433,7 +433,7 @@ function construirDistribuirLead(): FluxoAutomacao {
     descricao: "Distribui novos leads, cria negociação e acompanha o primeiro atendimento.",
     objetivo:
       "Rotear automaticamente cada lead novo pro caminho certo conforme a origem (anúncio, formulário, WhatsApp ou desconhecida), garantir que o primeiro atendimento aconteça dentro do prazo e escalar pro gestor quando o SLA estourar.",
-    // Funil/etapa/equipe ficam configuráveis pelo usuário — não fixados no nível do fluxo
+    // Funil/etapa/equipe ficam configuráveis pelo usuário. Não fixados no nível do fluxo
     // (só os nós individuais de ação abaixo usam um funil/etapa concreto do seed, pra
     // continuarem válidos/testáveis mesmo sem essa configuração de nível de fluxo).
     nodes,
@@ -443,7 +443,7 @@ function construirDistribuirLead(): FluxoAutomacao {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Automação 3 — "Pós-venda e relacionamento com cliente"                    */
+/* Automação 3: "Pós-venda e relacionamento com cliente"                    */
 /* -------------------------------------------------------------------------- */
 
 function construirPosVenda(): FluxoAutomacao {
@@ -451,7 +451,7 @@ function construirPosVenda(): FluxoAutomacao {
   const edges: FlowEdge[] = [];
 
   // Mapeamento de gatilho (julgamento documentado, mesmo padrão da Automação 1):
-  // não existe um `venda_concluida` literal em `FlowNodeType` — `pagamento_aprovado`
+  // não existe um `venda_concluida` literal em `FlowNodeType`-`pagamento_aprovado`
   // é o gatilho existente que mais diretamente representa "a venda foi concluída".
   nodes.push(no("pv-gatilho", "pagamento_aprovado", "gatilho", {}, "Pagamento aprovado (venda concluída)"));
 
@@ -471,7 +471,7 @@ function construirPosVenda(): FluxoAutomacao {
       "acao",
       campoData,
       undefined,
-      "Valor ilustrativo/instrucional — seria preenchido com a data real do negócio quando conectado a um backend de verdade.",
+      "Valor ilustrativo/instrucional: seria preenchido com a data real do negócio quando conectado a um backend de verdade.",
     ),
   );
   edges.push(aresta("pv-etq2", "pv-campo1"));
@@ -482,7 +482,7 @@ function construirPosVenda(): FluxoAutomacao {
 
   const msgAcompanhamento: MensagemTextoData = {
     canal: "whatsapp",
-    texto: "Oi, {primeiro_nome}! Já faz uma semana desde a sua compra — como está sendo a experiência até aqui?",
+    texto: "Oi, {primeiro_nome}! Já faz uma semana desde a sua compra. Como está sendo a experiência até aqui?",
   };
   nodes.push(no("pv-msg1", "mensagem_texto", "mensagem", msgAcompanhamento));
   edges.push(aresta("pv-espera1", "pv-msg1"));
@@ -509,10 +509,10 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-sat-msg", "mensagem_texto", "mensagem", msgAgradecimento));
   edges.push(aresta("pv-sat-etq", "pv-sat-msg"));
 
-  // Não existe um bloco literal de "pedir avaliação" no catálogo — reaproveita
+  // Não existe um bloco literal de "pedir avaliação" no catálogo. Reaproveita
   // `enviar_notificacao` como um registro interno de "solicitar avaliação,
   // quando essa integração estiver configurada" (documentado no título/observação).
-  const notifAvaliacao: EnviarNotificacaoData = { paraEquipe: "Marketing", mensagem: "Cliente satisfeito — solicitar avaliação pública quando a integração estiver configurada." };
+  const notifAvaliacao: EnviarNotificacaoData = { paraEquipe: "Marketing", mensagem: "Cliente satisfeito: solicitar avaliação pública quando a integração estiver configurada." };
   nodes.push(no("pv-sat-notif", "enviar_notificacao", "mensagem", notifAvaliacao, "Solicitar avaliação (quando configurado)"));
   edges.push(aresta("pv-sat-msg", "pv-sat-notif"));
 
@@ -524,7 +524,7 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-sat-negocio", "criar_negocio", "acao", negocioRecompra, "Oportunidade de recompra"));
   edges.push(aresta("pv-sat-espera", "pv-sat-negocio"));
 
-  const fimSatisfeito: EncerrarFluxoData = { motivo: "Pós-venda concluído — cliente satisfeito." };
+  const fimSatisfeito: EncerrarFluxoData = { motivo: "Pós-venda concluído: cliente satisfeito." };
   nodes.push(no("pv-sat-fim", "encerrar_fluxo", "fim", fimSatisfeito));
   edges.push(aresta("pv-sat-negocio", "pv-sat-fim"));
 
@@ -533,8 +533,8 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-ajuda-etq", "adicionar_etiqueta", "acao", etqAjuda));
   edges.push(aresta("pv-msg2", "pv-ajuda-etq", "ajuda"));
 
-  // `CriarTarefaData` não tem campo de prioridade — a urgência fica explícita no título.
-  const tarefaAjuda: CriarTarefaData = { titulo: "Atender cliente em pós-venda — urgente", prazoValor: 1, prazoUnidade: "horas" };
+  // `CriarTarefaData` não tem campo de prioridade. A urgência fica explícita no título.
+  const tarefaAjuda: CriarTarefaData = { titulo: "Atender cliente em pós-venda: urgente", prazoValor: 1, prazoUnidade: "horas" };
   nodes.push(no("pv-ajuda-tarefa", "criar_tarefa", "acao", tarefaAjuda));
   edges.push(aresta("pv-ajuda-etq", "pv-ajuda-tarefa"));
 
@@ -554,7 +554,7 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-insat-etq", "adicionar_etiqueta", "acao", etqInsatisfeito));
   edges.push(aresta("pv-msg2", "pv-insat-etq", "insatisfeito"));
 
-  const notifGestorInsat: EnviarNotificacaoData = { paraEquipe: "Gestor", mensagem: "Cliente insatisfeito no pós-venda — atenção prioritária." };
+  const notifGestorInsat: EnviarNotificacaoData = { paraEquipe: "Gestor", mensagem: "Cliente insatisfeito no pós-venda: atenção prioritária." };
   nodes.push(no("pv-insat-notif", "enviar_notificacao", "mensagem", notifGestorInsat));
   edges.push(aresta("pv-insat-etq", "pv-insat-notif"));
 
@@ -566,13 +566,13 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-insat-encam", "encaminhar_humano", "humano", encamInsat));
   edges.push(aresta("pv-insat-tarefa", "pv-insat-encam"));
 
-  const fimInsatisfeito: EncerrarFluxoData = { motivo: "Encerra mensagens automáticas — cliente insatisfeito segue com atendimento humano." };
+  const fimInsatisfeito: EncerrarFluxoData = { motivo: "Encerra mensagens automáticas: cliente insatisfeito segue com atendimento humano." };
   nodes.push(no("pv-insat-fim", "encerrar_fluxo", "fim", fimInsatisfeito));
   edges.push(aresta("pv-insat-encam", "pv-insat-fim"));
 
   // ---- Caminho implícito "não respondeu" ----
   // `saidasDoNo` (resumo.ts) já gera os handles "outra_resposta"/"nao_respondeu"
-  // automaticamente pra todo nó `mensagem_botoes`/`mensagem_lista" — então,
+  // automaticamente pra todo nó `mensagem_botoes`/`mensagem_lista". Então,
   // diferente do que uma leitura apressada da brief sugeriria, esse caminho É
   // representável no modelo atual. Ambos os handles convergem pro mesmo
   // lembrete único, já que a brief só descreve um comportamento pra "sem resposta".
@@ -583,18 +583,18 @@ function construirPosVenda(): FluxoAutomacao {
 
   const msgLembreteUnico: MensagemTextoData = {
     canal: "whatsapp",
-    texto: "Oi, {primeiro_nome}! Só passando pra saber se ficou tudo certo com sua compra — qualquer coisa, é só chamar.",
+    texto: "Oi, {primeiro_nome}! Só passando pra saber se ficou tudo certo com sua compra. Qualquer coisa, é só chamar.",
   };
   nodes.push(no("pv-naoresp-msg", "mensagem_texto", "mensagem", msgLembreteUnico));
   edges.push(aresta("pv-naoresp-espera", "pv-naoresp-msg"));
 
-  const fimNaoRespondeu: EncerrarFluxoData = { motivo: "Sem resposta após o lembrete único — fluxo encerrado." };
+  const fimNaoRespondeu: EncerrarFluxoData = { motivo: "Sem resposta após o lembrete único. Fluxo encerrado." };
   nodes.push(no("pv-naoresp-fim", "encerrar_fluxo", "fim", fimNaoRespondeu));
   edges.push(aresta("pv-naoresp-msg", "pv-naoresp-fim"));
 
   const configuracoes: ConfiguracoesFluxo = {
     // Modelo já vem com o motor com estado ligado. Todos eles têm espera ou pergunta, e sem isto o
-    // fluxo pararia no primeiro "aguardar" e nunca continuaria — o modelo prometeria algo que não
+    // fluxo pararia no primeiro "aguardar" e nunca continuaria. O modelo prometeria algo que não
     // acontece.
     motorNovo: true,
     // Evita reprocessar o mesmo evento de pagamento aprovado no mesmo dia
@@ -609,7 +609,7 @@ function construirPosVenda(): FluxoAutomacao {
     nome: "Pós-venda e relacionamento com cliente",
     descricao: "Realiza o pós-venda, mede satisfação e prepara a recompra.",
     objetivo:
-      "Acompanhar o cliente logo após a compra, medir satisfação com uma pergunta direta e ramificar o atendimento — elogio vira pedido de avaliação e chance de recompra, problema vira encaminhamento humano prioritário.",
+      "Acompanhar o cliente logo após a compra, medir satisfação com uma pergunta direta e ramificar o atendimento. Elogio vira pedido de avaliação e chance de recompra, problema vira encaminhamento humano prioritário.",
     nodes,
     edges,
     configuracoes,
@@ -617,13 +617,13 @@ function construirPosVenda(): FluxoAutomacao {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Automação 4 — "Boas-vindas e triagem do lead novo"                        */
+/* Automação 4: "Boas-vindas e triagem do lead novo"                        */
 /* -------------------------------------------------------------------------- */
 
 /**
  * O modelo mais simples dos quatro, de propósito: é o primeiro exemplo que
  * alguém abre pra entender o construtor (gatilho → uma pergunta de botões →
- * dois ramos curtos → fim), sem condições encadeadas nem convergência — isso
+ * dois ramos curtos → fim), sem condições encadeadas nem convergência. Isso
  * já existe nos outros três modelos.
  */
 function construirBoasVindas(): FluxoAutomacao {
@@ -644,7 +644,7 @@ function construirBoasVindas(): FluxoAutomacao {
   nodes.push(no("bv-triagem", "mensagem_botoes", "mensagem", triagem, "Pergunta e espera a resposta"));
   edges.push(aresta("bv-gatilho", "bv-triagem"));
 
-  // Ramo "já é paciente" — reconhece quem já tem histórico e encaminha pra um
+  // Ramo "já é paciente": reconhece quem já tem histórico e encaminha pra um
   // atendimento de retorno, sem repetir a triagem de lead novo.
   const etqRecorrente: AdicionarEtiquetaData = { etiquetaNome: "Paciente recorrente" };
   nodes.push(no("bv-etq-recorrente", "adicionar_etiqueta", "acao", etqRecorrente));
@@ -658,7 +658,7 @@ function construirBoasVindas(): FluxoAutomacao {
   nodes.push(no("bv-fim-recorrente", "encerrar_fluxo", "fim", fimRecorrente));
   edges.push(aresta("bv-tarefa-recorrente", "bv-fim-recorrente"));
 
-  // Ramo "primeira vez" — manda uma mensagem de boas-vindas própria e cria a
+  // Ramo "primeira vez": manda uma mensagem de boas-vindas própria e cria a
   // tarefa de triagem inicial pra equipe.
   const msgBoasVindas: MensagemTextoData = {
     canal: "whatsapp",
@@ -675,13 +675,13 @@ function construirBoasVindas(): FluxoAutomacao {
   nodes.push(no("bv-tarefa-novo", "criar_tarefa", "acao", tarefaNovo));
   edges.push(aresta("bv-etq-novo", "bv-tarefa-novo"));
 
-  const fimNovo: EncerrarFluxoData = { motivo: "Lead novo triado — tarefa criada pra equipe." };
+  const fimNovo: EncerrarFluxoData = { motivo: "Lead novo triado: tarefa criada pra equipe." };
   nodes.push(no("bv-fim-novo", "encerrar_fluxo", "fim", fimNovo));
   edges.push(aresta("bv-tarefa-novo", "bv-fim-novo"));
 
   const configuracoes: ConfiguracoesFluxo = {
     // Modelo já vem com o motor com estado ligado. Todos eles têm espera ou pergunta, e sem isto o
-    // fluxo pararia no primeiro "aguardar" e nunca continuaria — o modelo prometeria algo que não
+    // fluxo pararia no primeiro "aguardar" e nunca continuaria. O modelo prometeria algo que não
     // acontece.
     motorNovo: true,
     naoIniciarSeJaNoFluxo: true,
@@ -692,7 +692,7 @@ function construirBoasVindas(): FluxoAutomacao {
     nome: "Boas-vindas e triagem do lead novo",
     descricao: "Recebe o contato, faz uma pergunta rápida por botões e direciona pro atendimento certo.",
     objetivo:
-      "Servir de primeiro exemplo pra quem nunca usou o construtor: um gatilho, uma pergunta de múltipla escolha e dois caminhos curtos — sem condição encadeada nem convergência, pra não competir com os outros modelos mais avançados.",
+      "Servir de primeiro exemplo pra quem nunca usou o construtor: um gatilho, uma pergunta de múltipla escolha e dois caminhos curtos. Sem condição encadeada nem convergência, pra não competir com os outros modelos mais avançados.",
     funilId: FUNIL_ID_SEED,
     etapaId: "novo",
     nodes,
@@ -702,7 +702,7 @@ function construirBoasVindas(): FluxoAutomacao {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Automação 5 — "Atendimento — Empresa de Toldos" (item 10 da spec de mídia) */
+/* Automação 5: "Atendimento: Empresa de Toldos" (item 10 da spec de mídia) */
 /* -------------------------------------------------------------------------- */
 
 /**
@@ -727,7 +727,7 @@ function construirAtendimentoToldos(): FluxoAutomacao {
   edges.push(aresta("at-gatilho", "at-msg1"));
 
   // Aponta pro arquivo já cadastrado na biblioteca reutilizável (ver
-  // DOCUMENTOS_INICIAIS em biblioteca-documentos-context.tsx) — o mesmo
+  // DOCUMENTOS_INICIAIS em biblioteca-documentos-context.tsx): o mesmo
   // arquivo que outras automações também podem escolher sem reenviar nada.
   const doc: MensagemMidiaData = {
     canal: "whatsapp",
@@ -755,7 +755,7 @@ function construirAtendimentoToldos(): FluxoAutomacao {
   nodes.push(no("at-pergunta", "mensagem_botoes", "mensagem", pergunta, "Qual modelo mais chamou sua atenção?"));
   edges.push(aresta("at-doc", "at-pergunta"));
 
-  // 4 caminhos separados, um por opção — de propósito sem convergir de volta
+  // 4 caminhos separados, um por opção: de propósito sem convergir de volta
   // num nó comum, pra deixar claro que cada resposta segue seu próprio rumo.
   const caminhos: { handle: string; etiqueta: string; tarefa: string }[] = [
     { handle: "at-op-retratil", etiqueta: "Interesse: toldo retrátil", tarefa: "Enviar orçamento de toldo retrátil" },
@@ -779,7 +779,7 @@ function construirAtendimentoToldos(): FluxoAutomacao {
 
   const configuracoes: ConfiguracoesFluxo = {
     // Modelo já vem com o motor com estado ligado. Todos eles têm espera ou pergunta, e sem isto o
-    // fluxo pararia no primeiro "aguardar" e nunca continuaria — o modelo prometeria algo que não
+    // fluxo pararia no primeiro "aguardar" e nunca continuaria. O modelo prometeria algo que não
     // acontece.
     motorNovo: true,
     naoIniciarSeJaNoFluxo: true,
@@ -787,10 +787,10 @@ function construirAtendimentoToldos(): FluxoAutomacao {
 
   return fluxoDemo({
     id: "demo-atendimento-toldos",
-    nome: "Atendimento — Empresa de Toldos",
+    nome: "Atendimento: Empresa de Toldos",
     descricao: "Responde quem menciona \"toldo\", manda o catálogo da biblioteca e pergunta o modelo de interesse.",
     objetivo:
-      "Mostrar o bloco de documento ligado à biblioteca de arquivos reutilizável e uma pergunta em menu numerado virando 4 caminhos separados — o exemplo de referência dos itens de compatibilidade de pergunta e biblioteca de arquivos.",
+      "Mostrar o bloco de documento ligado à biblioteca de arquivos reutilizável e uma pergunta em menu numerado virando 4 caminhos separados. O exemplo de referência dos itens de compatibilidade de pergunta e biblioteca de arquivos.",
     nodes,
     edges,
     configuracoes,

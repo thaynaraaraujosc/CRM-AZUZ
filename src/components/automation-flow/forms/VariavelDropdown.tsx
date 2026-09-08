@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { FloatingDropdown } from "@/components/ui";
 import { VARIAVEIS_MENSAGEM } from "./variaveis";
 
-/** Botão "Inserir variável" — abre a lista de tokens da spec seção 4 e devolve o escolhido. */
+/** Botão "Inserir variável": abre a lista de tokens da spec seção 4 e devolve o escolhido. */
 export function VariavelDropdown({ onEscolher }: { onEscolher: (token: string) => void }) {
   const [aberto, setAberto] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);

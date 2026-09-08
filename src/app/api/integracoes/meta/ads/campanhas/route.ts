@@ -24,7 +24,7 @@ const TIPOS_COMPRA = ["purchase", "offsite_conversion.fb_pixel_purchase"];
 
 /**
  * GET devolve as campanhas ativas do Meta Ads conectado, já formatadas no mesmo formato de texto
- * (`sub`/`roas`) que a página de Tráfego já espera dos dados mocados — assim o resto da página
+ * (`sub`/`roas`) que a página de Tráfego já espera dos dados mocados. Assim o resto da página
  * (parse, ordenação, filtro) não precisa mudar nada, só a fonte dos dados.
  */
 export async function GET() {
@@ -61,7 +61,7 @@ export async function GET() {
         const roas = spend > 0 ? receita / spend : 0;
         return { nome: c.name, spend, leads, vendas, roas, pausada: c.status !== "ACTIVE" };
       })
-      // Campanha pausada só aparece se gastou algo no período — pausada e sem gasto é ruído.
+      // Campanha pausada só aparece se gastou algo no período. Pausada e sem gasto é ruído.
       .filter((i) => !i.pausada || i.spend > 0);
 
     const maiorSpend = Math.max(1, ...investimentos.map((i) => i.spend));

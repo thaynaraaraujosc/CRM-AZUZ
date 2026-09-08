@@ -5,7 +5,7 @@ import { exigirSuperAdmin } from "@/lib/admin/guard";
 import { PLANOS } from "@/lib/assinatura/planos";
 
 /** GET traz o workspace inteiro: membros (com papel/permissões), integrações conectadas e a
- * assinatura — a "visão 360°" de uma empresa cliente pro super-admin. */
+ * assinatura: a "visão 360°" de uma empresa cliente pro super-admin. */
 export async function GET(_request: Request, ctx: RouteContext<"/api/admin/workspaces/[id]">) {
   const guarda = await exigirSuperAdmin();
   if (!guarda.ok) return guarda.resposta;
@@ -29,9 +29,9 @@ type CorpoAtualizarWorkspace = {
 };
 
 /**
- * PATCH altera o status da assinatura de um workspace **direto no banco**, sem chamar a Asaas —
+ * PATCH altera o status da assinatura de um workspace **direto no banco**, sem chamar a Asaas:
  * é uma sobrescrita manual do super-admin (ex.: cortesia, correção de um caso, bloqueio manual),
- * não substitui o fluxo de cobrança real. Plano é sempre "completo" (plano único do CRM — ver
+ * não substitui o fluxo de cobrança real. Plano é sempre "completo" (plano único do CRM. Ver
  * `src/lib/assinatura/planos.ts`), não tem o que escolher aqui.
  */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/workspaces/[id]">) {

@@ -1,6 +1,6 @@
-/** Matriz de permissões por módulo (item 21) — usada tanto ao adicionar um usuário quanto ao criar
+/** Matriz de permissões por módulo (item 21). Usada tanto ao adicionar um usuário quanto ao criar
  * uma função personalizada (item 22). Os ids com sufixo `_visualizar` são checados de verdade pelo
- * proxy (ver `ROTA_PERMISSAO` em `src/proxy.ts`) pra bloquear a rota inteira do módulo — as demais
+ * proxy (ver `ROTA_PERMISSAO` em `src/proxy.ts`) pra bloquear a rota inteira do módulo. As demais
  * ações (criar/editar/excluir dentro do módulo) continuam só de exibição, não têm checagem
  * granular por enquanto. */
 export type PermissaoModulo = { modulo: string; permissoes: { id: string; label: string }[] };

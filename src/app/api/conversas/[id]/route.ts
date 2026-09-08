@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /** PATCH atualiza campos pontuais de uma conversa (marcar como lida, favoritar, arquivar, mudar
- * status ou atendente) — só mexe em conversa do mesmo workspace de quem está logado. */
+ * status ou atendente): só mexe em conversa do mesmo workspace de quem está logado. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/conversas/[id]">) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
@@ -29,7 +29,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/conversas/
   return NextResponse.json(linha);
 }
 
-/** DELETE apaga a conversa e as mensagens dela — usado pra limpar uma conversa avulsa que nasceu
+/** DELETE apaga a conversa e as mensagens dela. Usado pra limpar uma conversa avulsa que nasceu
  * errada (ex.: mensagem de grupo importada sem reconhecer o grupo, virou uma conversa solta com o
  * nome/telefone de quem escreveu em vez de cair dentro da thread do grupo). Não desfaz sozinho:
  * mensagem nova chegando de novo pra esse mesmo nome cria a conversa de novo. */

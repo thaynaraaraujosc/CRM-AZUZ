@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { conectarWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 
 /** POST cria (se ainda não existir) a instância da Evolution API pro workspace de quem está
- * logado e devolve o QR Code atual — grava direto no banco pra tela já mostrar o QR sem esperar
+ * logado e devolve o QR Code atual. Grava direto no banco pra tela já mostrar o QR sem esperar
  * o primeiro evento de webhook chegar. */
 export async function POST() {
   const sessao = await auth();

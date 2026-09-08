@@ -21,11 +21,11 @@ import { ImportacaoSecao } from "@/components/configuracoes/ImportacaoSecao";
 import { PlanoSecao } from "@/components/configuracoes/PlanoSecao";
 
 /**
- * Painel administrativo de Configurações (item 18) — layout de 2 colunas (categorias agrupadas à
+ * Painel administrativo de Configurações (item 18). Layout de 2 colunas (categorias agrupadas à
  * esquerda + detalhe à direita). As "subcategorias" do pedido (item 18: "coluna central quando
  * necessário") viram abas dentro do próprio painel de detalhe em vez de uma 3ª coluna sempre visível:
  * a maioria das categorias tem 0 subseções, e as que têm (WhatsApp, E-mail, Azuz IA) usam no
- * máximo 5 abas — uma coluna extra ficaria vazia na maior parte do tempo. Navegação inteira sem
+ * máximo 5 abas: uma coluna extra ficaria vazia na maior parte do tempo. Navegação inteira sem
  * recarregar a página (troca de estado local, mesma rota).
  */
 export default function ConfiguracoesPage() {
@@ -38,7 +38,7 @@ export default function ConfiguracoesPage() {
 
 function ConfiguracoesConteudo() {
   const searchParams = useSearchParams();
-  // `?categoria=plano` — usado pelo redirect pós-cadastro (proxy manda direto pra tela de
+  // `?categoria=plano`: usado pelo redirect pós-cadastro (proxy manda direto pra tela de
   // pagamento, ver `src/app/cadastro/page.tsx`) pra não obrigar a pessoa a achar "Plano e
   // cobrança" sozinha na primeira vez que entra, já bloqueada até pagar.
   const categoriaInicial = (searchParams.get("categoria") as CategoriaId | null) ?? "aparencia";
@@ -47,7 +47,7 @@ function ConfiguracoesConteudo() {
   const categoria = categoriaPorId(categoriaAtiva);
 
   // Links tipo `<Link href="/configuracoes?categoria=whatsapp">` (cards de "Conectar" na tela de
-  // Integrações) navegam pra essa mesma rota com um parâmetro novo — como o componente já está
+  // Integrações) navegam pra essa mesma rota com um parâmetro novo. Como o componente já está
   // montado, `categoriaInicial` acima não recalcula sozinho (só roda no mount). Sem isso, clicar
   // num desses links dava a impressão de botão quebrado: a URL mudava, a tela não.
   const paramCategoria = searchParams.get("categoria");
@@ -66,7 +66,7 @@ function ConfiguracoesConteudo() {
 
   return (
     <>
-      <Topbar title="Configurações" sub="Painel administrativo do workspace — escolha uma categoria ao lado" />
+      <Topbar title="Configurações" sub="Painel administrativo do workspace: escolha uma categoria ao lado" />
 
       <div className="content">
         <div className="config-layout">

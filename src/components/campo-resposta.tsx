@@ -18,7 +18,7 @@ function lerComoDataUrl(file: File): Promise<string> {
 
 export type PessoaOpcao = { id: string; nome: string };
 
-/** Campo de tags — digita e aperta Enter/vírgula pra virar chip; Backspace num campo vazio remove o
+/** Campo de tags: digita e aperta Enter/vírgula pra virar chip; Backspace num campo vazio remove o
  * último chip. `valor` guarda as tags já confirmadas, separadas por vírgula. */
 function CampoTags({
   interativo,
@@ -85,7 +85,7 @@ function CampoTags({
   );
 }
 
-/** Assinatura por desenho (mouse/toque) — sem backend pra guardar arquivo, o "valor" salvo é a
+/** Assinatura por desenho (mouse/toque): sem backend pra guardar arquivo, o "valor" salvo é a
  * própria imagem em data URL, gerada a partir do canvas. */
 function CampoAssinatura({
   interativo,
@@ -169,7 +169,7 @@ function CampoAssinatura({
  * Mostra o campo de resposta de acordo com o tipo escolhido.
  * `interativo` decide se o campo é preenchível de verdade (página pública) ou só um espelho
  * travado (linha da pergunta no construtor). Quando interativo, `valor`/`onMudarValor` controlam o
- * campo de verdade — sem isso a submissão pública não tem como capturar o que foi digitado.
+ * campo de verdade: sem isso a submissão pública não tem como capturar o que foi digitado.
  */
 export function CampoResposta({
   pergunta,
@@ -313,7 +313,7 @@ export function CampoResposta({
         pergunta.tipo === "imagem" ? IconImage : pergunta.tipo === "video" ? IconVideoCam : pergunta.tipo === "audio" ? IconMic : pergunta.tipo === "documento" ? IconDoc : IconAnexo;
       const textoRotuloVazio =
         pergunta.tipo === "imagem" ? "Escolher imagem" : pergunta.tipo === "video" ? "Escolher vídeo" : pergunta.tipo === "audio" ? "Escolher áudio" : pergunta.tipo === "documento" ? "Escolher documento" : "Anexar arquivo";
-      // `valor` guarda "nomeDoArquivo|data:...;base64,..." — o conteúdo real do arquivo, não só o
+      // `valor` guarda "nomeDoArquivo|data:...;base64,...": o conteúdo real do arquivo, não só o
       // nome (que era tudo que se salvava antes: quem preenchia achava que tinha anexado o arquivo,
       // mas ele nunca chegava no CRM). Mesmo delimitador "|" já usado no campo de intervalo de datas.
       const nomeExibicao = valor?.split("|")[0];
@@ -564,7 +564,7 @@ export function CampoResposta({
   }
 }
 
-/** Enunciado numerado + descrição/ajuda + campo de resposta — usado no construtor, na pré-visualização e na página pública. */
+/** Enunciado numerado + descrição/ajuda + campo de resposta. Usado no construtor, na pré-visualização e na página pública. */
 export function PerguntaVisualizacao({
   pergunta,
   indice,

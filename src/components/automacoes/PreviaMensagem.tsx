@@ -24,7 +24,7 @@ export function valoresDeExemplo(variaveis: MapeamentoVariavel[]): Record<string
 
 /**
  * Como a mensagem aparece pra quem recebe: bolha com o texto já preenchido e os botões embaixo.
- * A mesma prévia serve pro editor de template e pro resumo do disparo — quem monta a mensagem e
+ * A mesma prévia serve pro editor de template e pro resumo do disparo. Quem monta a mensagem e
  * quem confirma o envio precisam olhar pra mesma coisa.
  */
 export function PreviaMensagem({

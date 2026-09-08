@@ -42,22 +42,22 @@ export type OrientacaoPapel = "retrato" | "paisagem";
 export type ConfigPagina = {
   tamanho: TamanhoPapel;
   orientacao: OrientacaoPapel;
-  /** Margem padrão/legada — usada como valor inicial e como fallback pra documentos salvos antes das margens independentes. */
+  /** Margem padrão/legada: usada como valor inicial e como fallback pra documentos salvos antes das margens independentes. */
   margemMm: number;
-  /** Margens independentes — cada lado pode ser arrastado/definido sem afetar os outros. Ausentes = usa margemMm (documento antigo). */
+  /** Margens independentes: cada lado pode ser arrastado/definido sem afetar os outros. Ausentes = usa margemMm (documento antigo). */
   margemSuperiorMm?: number;
   margemInferiorMm?: number;
   margemEsquerdaMm?: number;
   margemDireitaMm?: number;
   corFundo: string;
-  /** Cabeçalho e rodapé — o mesmo conteúdo se repete em todas as páginas (não é por página). Suporta os
+  /** Cabeçalho e rodapé: o mesmo conteúdo se repete em todas as páginas (não é por página). Suporta os
    * tokens de texto {{PAGINA}} e {{TOTAL}}, substituídos pelo número real de cada página na hora de
    * renderizar, imprimir e exportar. Vazio = sem cabeçalho/rodapé (comportamento anterior, sem mudança). */
   cabecalhoHtml?: string;
   rodapeHtml?: string;
-  /** Posições de tabulação (mm a partir da margem esquerda), mostradas na régua horizontal — ver ReguaDocumento. */
+  /** Posições de tabulação (mm a partir da margem esquerda), mostradas na régua horizontal: ver ReguaDocumento. */
   tabulacoesMm?: number[];
-  /** Colunas de texto (Formatar → Colunas) — 1 = layout normal, sem colunas. */
+  /** Colunas de texto (Formatar → Colunas). 1 = layout normal, sem colunas. */
   colunas: number;
   colunasEspacoMm: number;
   colunasLinha: boolean;
@@ -617,7 +617,7 @@ type DocumentosContextValue = {
     id: string,
     patch: Partial<Pick<Documento, "pessoasAcesso" | "linkAtivo" | "linkPermissao">>,
   ) => void;
-  /** Modelos da galeria — embutidos + os que o usuário salvou ("Meus modelos"). */
+  /** Modelos da galeria: embutidos + os que o usuário salvou ("Meus modelos"). */
   todosOsModelos: ModeloDocumento[];
   modelosPersonalizados: ModeloPersonalizado[];
   salvarComoModelo: (
@@ -634,7 +634,7 @@ type DocumentosContextValue = {
 const DocumentosContext = createContext<DocumentosContextValue | null>(null);
 
 /** "Favoritos"/"recentes" de modelo (listas de id de navegação, não conteúdo dono) continuam só no
- * localStorage — mesmo precedente já aberto com "azuz-crm-documentos-prefs-ver" (preferência de
+ * localStorage: mesmo precedente já aberto com "azuz-crm-documentos-prefs-ver" (preferência de
  * visualização, também nunca migrada). */
 const MODELOS_FAVORITOS_STORAGE_KEY = "azuz-crm-documentos-modelos-favoritos";
 const MODELOS_RECENTES_STORAGE_KEY = "azuz-crm-documentos-modelos-recentes";
@@ -648,11 +648,11 @@ function idUnico(prefixo: string) {
 }
 
 /**
- * Datas fixas (não `agora()`) — esse array é avaliado no carregamento do módulo, tanto no
+ * Datas fixas (não `agora()`). Esse array é avaliado no carregamento do módulo, tanto no
  * servidor quanto no cliente, em instantes diferentes; usar `new Date()` aqui causaria
  * hydration mismatch (o texto da data renderizada no servidor não bateria com o do cliente).
  */
-/** Exportado só pra `prisma/seed.ts` semear a tabela — o Provider agora busca da API. */
+/** Exportado só pra `prisma/seed.ts` semear a tabela. O Provider agora busca da API. */
 export const DOCUMENTOS_INICIAIS: Documento[] = [
   {
     id: "doc-1",
@@ -660,7 +660,7 @@ export const DOCUMENTOS_INICIAIS: Documento[] = [
     favorito: false,
     criadoEm: "2026-01-05T09:00:00.000Z",
     atualizadoEm: "2026-01-05T09:00:00.000Z",
-    // Dado de seed fixo (usado por prisma/seed.ts) — não depende de sessão, é o mesmo autor
+    // Dado de seed fixo (usado por prisma/seed.ts): não depende de sessão, é o mesmo autor
     // mockado que o resto dos dados de demonstração já usa.
     autor: "Ana Ferreira",
     paginas: [{ id: "pagina-1", conteudoHtml: "" }],
@@ -705,7 +705,7 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(MODELOS_FAVORITOS_STORAGE_KEY, JSON.stringify(modelosFavoritosIds));
     } catch {
-      // localStorage indisponível — segue só em memória.
+      // localStorage indisponível: segue só em memória.
     }
   }, [modelosFavoritosIds]);
 
@@ -723,7 +723,7 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(MODELOS_RECENTES_STORAGE_KEY, JSON.stringify(modelosRecentesIds));
     } catch {
-      // localStorage indisponível — segue só em memória.
+      // localStorage indisponível: segue só em memória.
     }
   }, [modelosRecentesIds]);
 
@@ -773,7 +773,7 @@ export function DocumentosProvider({ children }: { children: ReactNode }) {
   }
 
   /** Duplica qualquer modelo (embutido ou já salvo por algum usuário) numa cópia própria e editável em
-   * "Meus modelos" — não altera o original, então dá pra partir de um modelo pronto e ajustar à vontade. */
+   * "Meus modelos": não altera o original, então dá pra partir de um modelo pronto e ajustar à vontade. */
   function duplicarModelo(modeloId: string) {
     const original = todosOsModelos.find((m) => m.id === modeloId);
     if (!original) return;

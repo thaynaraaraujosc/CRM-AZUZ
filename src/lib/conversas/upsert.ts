@@ -14,10 +14,10 @@ function iniciaisDe(nome: string): string {
 }
 
 /**
- * Cria (ou atualiza) a `Conversa` correspondente a uma mensagem recebida — chamado pelos três
+ * Cria (ou atualiza) a `Conversa` correspondente a uma mensagem recebida. Chamado pelos três
  * webhooks que gravam `MensagemExtra` (WhatsApp oficial, WhatsApp via QR/Baileys, Instagram), logo
  * depois de criar a mensagem em si. É o que faz uma conversa nova aparecer sozinha na tela assim
- * que chega a primeira mensagem de um número/@handle que ainda não tinha thread nenhuma — resolve a
+ * que chega a primeira mensagem de um número/@handle que ainda não tinha thread nenhuma. Resolve a
  * limitação antes documentada de "número novo não aparece na tela ainda".
  *
  * `id` é determinístico (`workspaceId` + slug do nome) de propósito: como a chave única real é
@@ -30,23 +30,23 @@ export async function upsertConversaAoReceberMensagem(params: {
   canal: string;
   contato?: string;
   origem?: string;
-  /** Id do `Contato` já criado/casado pra essa mensagem (ver `src/lib/contatos/upsert.ts`) — grava
+  /** Id do `Contato` já criado/casado pra essa mensagem (ver `src/lib/contatos/upsert.ts`). Grava
    * a FK de verdade em vez de depender só do match por `nome` em runtime no front. */
   contatoId?: string;
-  /** `false` na importação de histórico (sync completo do WhatsApp ao conectar via QR Code) —
-   * mensagem antiga não é "não lida" de verdade, incrementar o contador só gera badge enganoso.
+  /** `false` na importação de histórico (sync completo do WhatsApp ao conectar via QR Code).
+   * Mensagem antiga não é "não lida" de verdade, incrementar o contador só gera badge enganoso.
    * Padrão `true` (mensagem chegando ao vivo). */
   contarComoNaoLida?: boolean;
-  /** Grupo de WhatsApp — `nome` já é o nome do grupo nesse caso (não de uma pessoa), `contato` já
+  /** Grupo de WhatsApp: `nome` já é o nome do grupo nesse caso (não de uma pessoa), `contato` já
    * é o JID do grupo (`<id>@g.us`). Ver comentário do campo no schema. */
   ehGrupo?: boolean;
   participantesGrupo?: { nome: string; telefone: string }[];
-  /** Conexão dona da conversa (`<provedor>:<número>`, ver `src/lib/integracoes/conta-canal.ts`) —
+  /** Conexão dona da conversa (`<provedor>:<número>`, ver `src/lib/integracoes/conta-canal.ts`):
    * é o que faz a caixa de entrada zerar ao desconectar e voltar inteira ao reconectar. */
   contaCanal?: string | null;
-  /** Foto de perfil real (grupo ou pessoa) — ver comentário do campo no schema. */
+  /** Foto de perfil real (grupo ou pessoa). Ver comentário do campo no schema. */
   fotoUrl?: string | null;
-  /** Descrição e data de criação real do grupo no WhatsApp — só em grupo. */
+  /** Descrição e data de criação real do grupo no WhatsApp. Só em grupo. */
   descricaoGrupo?: string | null;
   criacaoGrupo?: Date | null;
 }) {
@@ -84,10 +84,10 @@ export async function upsertConversaAoReceberMensagem(params: {
       descricaoGrupo,
       criacaoGrupo,
     },
-    // Grava/atualiza o contatoId também num update — conversa antiga criada antes dessa FK existir
+    // Grava/atualiza o contatoId também num update. Conversa antiga criada antes dessa FK existir
     // se auto-corrige assim que uma mensagem nova chega e o contato já foi resolvido. Participantes,
     // foto, descrição e data de criação só sobrescrevem quando veio um valor novo (busca na
-    // Evolution pode falhar em silêncio — não apaga um valor que já tinha sido resolvido antes).
+    // Evolution pode falhar em silêncio. Não apaga um valor que já tinha sido resolvido antes).
     update: {
       ...(contatoId ? { contatoId } : {}),
       // Conversa criada antes desta coluna existir ganha dono na primeira mensagem nova.
@@ -99,7 +99,7 @@ export async function upsertConversaAoReceberMensagem(params: {
       // Mensagem nova ao vivo desarquiva sozinha: arquivar quer dizer "essa conversa não está em
       // atendimento agora", não "nunca mais me mostre". Se a pessoa voltar a falar e a conversa
       // continuasse escondida em "Arquivadas", o atendimento se perderia em silêncio. Só vale pra
-      // mensagem ao vivo — importação de histórico (`contarComoNaoLida: false`) não desarquiva nada.
+      // mensagem ao vivo: importação de histórico (`contarComoNaoLida: false`) não desarquiva nada.
       ...(contarComoNaoLida
         ? { naoLidas: { increment: 1 }, arquivada: false, atualizadoEm: new Date() }
         : {}),

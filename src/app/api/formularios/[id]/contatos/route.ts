@@ -16,7 +16,7 @@ function paraContato(linha: { etiquetas: unknown; [k: string]: unknown }): Conta
 }
 
 /**
- * POST público (sem `auth()`) — equivalente de `POST /api/contatos`, mas pro fluxo de
+ * POST público (sem `auth()`). Equivalente de `POST /api/contatos`, mas pro fluxo de
  * `/formulario-preview`: cria/atualiza o contato do lead que respondeu, no workspace do
  * formulário (resolvido aqui, nunca enviado pelo cliente). Mesma semântica de upsert-por-nome.
  */
@@ -50,9 +50,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
           nome,
           origem: origemPadrao,
           etapa: "Novo",
-          responsavel: "—",
+          responsavel: "-",
           ultima: "Agora",
-          valor: "—",
+          valor: "-",
           ...dados,
           etiquetas: dados.etiquetas ?? undefined,
         },

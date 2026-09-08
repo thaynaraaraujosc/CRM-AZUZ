@@ -15,7 +15,7 @@ import { registrarEnvioNaConversa } from "./registrar-envio";
  *
  * Cada rodada tem tempo curto de propósito. Numa função serverless não dá pra segurar um processo
  * por horas, então a campanha avança em fatias: o cron chama, o worker envia o que cabe na janela,
- * grava tudo e sai. A próxima chamada continua de onde parou — o estado está no banco, não na
+ * grava tudo e sai. A próxima chamada continua de onde parou. O estado está no banco, não na
  * memória.
  */
 
@@ -27,7 +27,7 @@ const SEGUNDOS_POR_RODADA = 50;
  *
  * Existe por causa do multi-tenant: sem isto, a campanha de cinco mil de um cliente ocuparia todas
  * as rodadas e a campanha de dez de outro cliente esperaria horas pra começar. Atendendo várias por
- * rodada, todas andam juntas — mais devagar cada uma, mas nenhuma parada.
+ * rodada, todas andam juntas: mais devagar cada uma, mas nenhuma parada.
  */
 const CAMPANHAS_POR_RODADA = 5;
 
@@ -42,7 +42,7 @@ type Destinatario = {
   parametros: unknown;
 };
 
-/** Quantas mensagens desta campanha já saíram nas últimas 24h — pra respeitar o teto diário. */
+/** Quantas mensagens desta campanha já saíram nas últimas 24h. Pra respeitar o teto diário. */
 async function enviadosNasUltimas24h(workspaceId: string, canal: string): Promise<number> {
   const desde = new Date(Date.now() - 24 * 60 * 60 * 1000);
   return prisma.campanhaDestinatario.count({
@@ -59,7 +59,7 @@ async function enviadosNasUltimas24h(workspaceId: string, canal: string): Promis
  * Envia UMA mensagem. Devolve o id do provedor quando ele existe.
  *
  * Erro definitivo (número inválido, e-mail inexistente) e erro temporário (rede, provedor fora)
- * chegam aqui do mesmo jeito — a distinção é feita por quem chama, olhando o número de tentativas.
+ * chegam aqui do mesmo jeito. A distinção é feita por quem chama, olhando o número de tentativas.
  * Insistir num número que não existe só gasta cota.
  */
 async function enviarUm(
@@ -73,11 +73,11 @@ async function enviarUm(
   parametros: Record<string, string>,
 ): Promise<string | undefined> {
   // Texto livre (QR e e-mail): as variáveis são trocadas AQUI, com os valores congelados desta
-  // pessoa. O corpo da campanha continua sendo o molde — é ele que a tela de acompanhamento mostra.
+  // pessoa. O corpo da campanha continua sendo o molde. É ele que a tela de acompanhamento mostra.
   const corpoDestaPessoa = preencherVariaveis(corpo, parametros);
 
   if (canal === "email") {
-    // Versão que ESTOURA: a que engole o erro serve pros e-mails de sistema, não pra campanha —
+    // Versão que ESTOURA: a que engole o erro serve pros e-mails de sistema, não pra campanha:
     // aqui um envio que falhou precisa marcar o destinatário como falhou, com o motivo.
     await enviarEmailOuFalhar({
       to: destino,
@@ -94,14 +94,14 @@ async function enviarUm(
 
   // WhatsApp oficial. Campanha fala com quem não escreveu primeiro, então a janela de 24h está
   // fechada na maioria dos casos e o único caminho permitido é o modelo aprovado. Texto livre só
-  // vai quando a campanha não tem template — aí é responsabilidade de quem montou.
-  // `contaConectada` já devolve o token descriptografado e confere status/phoneNumberId — o mesmo
+  // vai quando a campanha não tem template. Aí é responsabilidade de quem montou.
+  // `contaConectada` já devolve o token descriptografado e confere status/phoneNumberId. O mesmo
   // caminho que a tela de Conversas usa, pra campanha e atendimento nunca divergirem.
   const conta = await contaConectada(workspaceId);
   if (!conta) throw new Error("WhatsApp oficial não está conectado.");
 
   // Template COM os parâmetros na ordem que a Meta espera. Sem eles a Meta recusa qualquer modelo
-  // que tenha variável — e a versão anterior mandava só nome e idioma, então todo modelo com
+  // que tenha variável: e a versão anterior mandava só nome e idioma, então todo modelo com
   // {{1}} falhava em silêncio, um destinatário por vez, gastando a cota do dia.
   const componentes = componentesParaMeta(variaveis, parametros);
   const corpoMensagem = template
@@ -118,7 +118,7 @@ async function enviarUm(
   try {
     return (await enviarPelaCloudApi(conta, destino, corpoMensagem)) ?? undefined;
   } catch (erro) {
-    // Traduz o erro da Graph e, quando o token morreu, marca a integração como desconectada — sem
+    // Traduz o erro da Graph e, quando o token morreu, marca a integração como desconectada. Sem
     // isso a campanha seguiria queimando destinatário contra uma conexão que já caiu.
     throw new Error(await tratarErroEnvio(erro, conta.integracaoId));
   }
@@ -151,7 +151,7 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
   const variaveis = (Array.isArray(campanha.variaveis) ? campanha.variaveis : []) as MapeamentoVariavel[];
 
   // Teto diário do canal. No WhatsApp oficial ele é da CONTA e vem da Meta, lido uma vez por
-  // rodada (não por mensagem: é uma chamada de rede). Se a Meta não responder, segue sem teto — a
+  // rodada (não por mensagem: é uma chamada de rede). Se a Meta não responder, segue sem teto: a
   // própria Meta recusa quando estourar, e o destinatário fica "falhou" com o motivo dela.
   let porDia = ritmo.porDia;
   let identificadorConexao: string | null = null;
@@ -176,7 +176,7 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
     : null;
 
   while (Date.now() < prazoFinal) {
-    // Teto diário: conferido a cada mensagem, não uma vez no começo — a rodada pode atravessar a
+    // Teto diário: conferido a cada mensagem, não uma vez no começo. A rodada pode atravessar a
     // virada da janela de 24h, e outra campanha do mesmo workspace pode estar consumindo a cota.
     if (porDia !== null) {
       const jaEnviados = await enviadosNasUltimas24h(campanha.workspaceId, canal);
@@ -214,7 +214,7 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
       where: { id: proximo.id, status: "pendente" },
       data: { status: "enviando", tentativas: { increment: 1 } },
     });
-    // Outro worker chegou primeiro nesta linha — segue pro próximo sem enviar nada.
+    // Outro worker chegou primeiro nesta linha. Segue pro próximo sem enviar nada.
     if (reservado.count === 0) continue;
 
     try {
@@ -249,7 +249,7 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : "Falha ao enviar.";
       // Até 3 tentativas: falha de rede e provedor fora do ar passam, número inválido não melhora
-      // com insistência — e cada nova tentativa consome cota que faz falta pra quem existe.
+      // com insistência: e cada nova tentativa consome cota que faz falta pra quem existe.
       const desiste = proximo.tentativas + 1 >= 3;
       await prisma.campanhaDestinatario.update({
         where: { id: proximo.id },
@@ -288,7 +288,7 @@ export async function rodarRodadaDeCampanhas(): Promise<{ campanhas: number }> {
   const ids = Array.from(porWorkspace.values());
   if (!ids.length) return { campanhas: 0 };
 
-  // O tempo da rodada é dividido entre as campanhas ativas — cada uma anda um pedaço.
+  // O tempo da rodada é dividido entre as campanhas ativas. Cada uma anda um pedaço.
   const fatia = (SEGUNDOS_POR_RODADA * 1000) / ids.length;
   for (const id of ids) {
     await processarCampanha(id, Date.now() + fatia).catch((erro) => {

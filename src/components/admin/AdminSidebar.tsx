@@ -12,7 +12,7 @@ const ITENS = [
   { href: "/admin/usuarios", label: "Usuários", Icon: IconEquipe },
 ];
 
-/** Sidebar do painel de super-admin — deliberadamente sem nenhuma das dependências de contexto da
+/** Sidebar do painel de super-admin. Deliberadamente sem nenhuma das dependências de contexto da
  * `Sidebar` do app normal (workspace/funis/equipe), porque esse painel é cross-tenant, não faz
  * sentido carregar dado de um workspace específico aqui. */
 export function AdminSidebar() {

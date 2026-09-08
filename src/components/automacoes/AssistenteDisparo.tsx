@@ -56,7 +56,7 @@ function duracaoLegivel(p: Previa["previsao"]): string {
  *
  * Cada passo mostra só o que aquele passo precisa; o resto fica pro resumo. Tudo que é conta
  * (quantos recebem, quem fica de fora, quanto tempo leva) vem do servidor, pela mesma rota que o
- * disparo real vai usar — a tela nunca inventa um número.
+ * disparo real vai usar: a tela nunca inventa um número.
  */
 export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => void; aoConcluir: (id: string) => void }) {
   const { contatos } = useContatos();

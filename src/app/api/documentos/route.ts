@@ -22,7 +22,7 @@ function paraDocumento(linha: {
   } as Documento;
 }
 
-/** GET lista os documentos do workspace de quem está logado (inclusive os na lixeira — o front
+/** GET lista os documentos do workspace de quem está logado (inclusive os na lixeira. O front
  * filtra por `excluido`). */
 export async function GET() {
   const sessao = await auth();
@@ -35,7 +35,7 @@ export async function GET() {
   return NextResponse.json(linhas.map(paraDocumento));
 }
 
-/** POST cria um documento novo (ou uma cópia) — mesma semântica de `criarDocumento`/`duplicarDocumento`. */
+/** POST cria um documento novo (ou uma cópia). Mesma semântica de `criarDocumento`/`duplicarDocumento`. */
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

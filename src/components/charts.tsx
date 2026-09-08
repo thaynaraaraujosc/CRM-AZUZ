@@ -3,14 +3,14 @@
 import { useState, type ReactNode } from "react";
 
 /**
- * Primitivos de gráfico reutilizados em toda a Inteligência comercial —
- * criados pra substituir os vários gráficos de pizza/lista/barra
+ * Primitivos de gráfico reutilizados em toda a Inteligência comercial.
+ * Criados pra substituir os vários gráficos de pizza/lista/barra
  * redundantes que cada tela desenhava do zero. Cada gráfico aqui responde
  * a uma pergunta clara (ranking → BarList, evolução → LineChart, etapas →
  * FunnelSteps) em vez de "preencher espaço".
  */
 
-/** Uma linha de ranking com barra + quantidade + percentual + valor, tudo junto — nunca 4 botões pra ver a mesma coisa de jeitos diferentes. */
+/** Uma linha de ranking com barra + quantidade + percentual + valor, tudo junto: nunca 4 botões pra ver a mesma coisa de jeitos diferentes. */
 export type BarRowItem = {
   chave: string;
   label: string;
@@ -81,7 +81,7 @@ export function BarList({
 
 export type SerieLinha = { chave: string; cor: string; label: string; pontos: { x: string; y: number }[] };
 
-/** Gráfico de linha/área com até algumas séries e tooltip ao passar o mouse — usado pra "evolução no período" em qualquer tela. */
+/** Gráfico de linha/área com até algumas séries e tooltip ao passar o mouse. Usado pra "evolução no período" em qualquer tela. */
 export function LineChart({ series, altura = 200 }: { series: SerieLinha[]; altura?: number }) {
   const largura = 800;
   const n = series[0]?.pontos.length ?? 0;

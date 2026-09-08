@@ -19,7 +19,7 @@ export type OpcaoResposta = {
   id: string;
   rotulo: string;
   /**
-   * Ações extras que rodam só quando o lead escolhe essa opção — é o que permite
+   * Ações extras que rodam só quando o lead escolhe essa opção. É o que permite
    * "se ele responder 1, faz isso; se responder 2, faz aquilo" numa mensagem
    * interativa. Pode conter outra "mensagem_interativa" dentro, ramificando de novo.
    */
@@ -31,9 +31,9 @@ export type AcaoAutomacao = {
   tipo: TipoAcaoAutomacao;
   /** Usado por "mensagem", "mensagem_interativa", "enviar_formulario" (texto opcional) e "tarefa". */
   mensagem?: string;
-  /** Usado só por "mensagem_interativa" — as opções de resposta que o lead pode escolher. */
+  /** Usado só por "mensagem_interativa": as opções de resposta que o lead pode escolher. */
   opcoes?: OpcaoResposta[];
-  /** Usado por "documento" e "audio" — nome do arquivo escolhido/gravado. */
+  /** Usado por "documento" e "audio". Nome do arquivo escolhido/gravado. */
   arquivoNome?: string;
   /** Usado por "lembrete" (quando dispara) e "tarefa" (prazo). */
   tempoValor?: string;
@@ -41,9 +41,9 @@ export type AcaoAutomacao = {
   /** Usado por "mover_funil". */
   moverFunilId?: string;
   moverEtapaTitulo?: string;
-  /** Usado por "atribuir_responsavel" — nome de alguém em `equipe` (src/lib/data.ts). */
+  /** Usado por "atribuir_responsavel": nome de alguém em `equipe` (src/lib/data.ts). */
   atendenteNome?: string;
-  /** Usado por "enviar_formulario" — formulário do próprio CRM ou um link externo. */
+  /** Usado por "enviar_formulario": formulário do próprio CRM ou um link externo. */
   formularioOrigem?: "interno" | "externo";
   /** Id de um formulário em `formularios` (FormulariosContext) quando `formularioOrigem === "interno"`. */
   formularioId?: string;
@@ -53,7 +53,7 @@ export type AcaoAutomacao = {
   etiquetaNome?: string;
   /** Usado por "webhook". */
   webhookUrl?: string;
-  /** Espera antes de executar essa ação — aplica a qualquer tipo. */
+  /** Espera antes de executar essa ação. Aplica a qualquer tipo. */
   atrasoValor?: string;
   atrasoUnidade?: string;
 };
@@ -75,7 +75,7 @@ export type Automacao = {
   tempoValor?: string;
   tempoUnidade?: string;
   /**
-   * Pra gatilhos com `permiteAtraso` — false significa "espera o tempo de
+   * Pra gatilhos com `permiteAtraso`: false significa "espera o tempo de
    * `tempoValor`/`tempoUnidade` antes de disparar" em vez de disparar na
    * hora que o gatilho acontece. Undefined/true = dispara imediatamente.
    */
@@ -84,7 +84,7 @@ export type Automacao = {
   ativa: boolean;
   execucoes: string;
 
-  /** Janela de atividade — em quais dias essa automação pode disparar. Sem valor = todos os dias. */
+  /** Janela de atividade: em quais dias essa automação pode disparar. Sem valor = todos os dias. */
   diasAtivos?: DiaSemana[];
   /** Restringe o disparo a um intervalo de horário dentro dos dias ativos. */
   usarHorario?: boolean;
@@ -93,12 +93,12 @@ export type Automacao = {
   /** O que fazer quando o gatilho acontece fora da janela de dias/horário. */
   foraDaJanela?: ComportamentoForaJanela;
 
-  /** Condições opcionais — só dispara se o lead bater com elas. Vazio/"" = sem filtro. */
+  /** Condições opcionais: só dispara se o lead bater com elas. Vazio/"" = sem filtro. */
   condicaoOrigem?: Origem | "";
   condicaoValorMinimo?: string;
   /**
    * Só dispara se o lead ainda não respondeu nenhuma mensagem desde que entrou nessa
-   * etapa — é o que permite montar a cascata "lembra em 24h, se não responder
+   * etapa: é o que permite montar a cascata "lembra em 24h, se não responder
    * desqualifica em 72h": duas automações com gatilho "parado" em tempos diferentes,
    * ambas com essa condição marcada.
    */
@@ -121,7 +121,7 @@ export type RegraComentario = {
 type AutomacoesContextValue = {
   automacoes: Automacao[];
   automacoesDaEtapa: (funilId: string, etapaId: string) => Automacao[];
-  /** Automações com gatilho "entrou" e ativas — usado pra simular o disparo ao soltar um card na coluna. */
+  /** Automações com gatilho "entrou" e ativas. Usado pra simular o disparo ao soltar um card na coluna. */
   automacoesDeEntradaAtivas: (funilId: string, etapaId: string) => Automacao[];
   criarAutomacao: (dados: Omit<Automacao, "id" | "execucoes">) => void;
   atualizarAutomacao: (
@@ -130,7 +130,7 @@ type AutomacoesContextValue = {
   ) => void;
   excluirAutomacao: (automacaoId: string) => void;
   alternarAtiva: (automacaoId: string) => void;
-  /** Chamado quando uma etapa é apagada — some com as automações que só faziam sentido nela. */
+  /** Chamado quando uma etapa é apagada. Some com as automações que só faziam sentido nela. */
   excluirAutomacoesDaEtapa: (funilId: string, etapaId: string) => void;
   /** Chamado quando um funil inteiro é apagado. */
   excluirAutomacoesDoFunil: (funilId: string) => void;
@@ -210,7 +210,7 @@ export const AUTOMACOES_INICIAIS: Automacao[] = [
     id: "auto-proposta-lembrete-24h",
     funilId: "funil-principal",
     etapaId: "proposta",
-    titulo: "Lembrete de proposta parada — 24h",
+    titulo: "Lembrete de proposta parada: 24h",
     gatilhoTipo: "parado",
     tempoValor: "24",
     tempoUnidade: "horas",
@@ -219,7 +219,7 @@ export const AUTOMACOES_INICIAIS: Automacao[] = [
       {
         id: "acao-proposta-lembrete",
         tipo: "lembrete",
-        mensagem: "Retomar contato — proposta enviada sem resposta",
+        mensagem: "Retomar contato: proposta enviada sem resposta",
         tempoValor: "24",
         tempoUnidade: "horas",
       },
@@ -248,7 +248,7 @@ export const REGRAS_COMENTARIO_INICIAIS: RegraComentario[] = [
 
 /**
  * Automações agora vivem dentro da etapa de um funil (não numa aba separada
- * por funil) — cada card de automação mostra o gatilho + as ações dentro da
+ * por funil): cada card de automação mostra o gatilho + as ações dentro da
  * coluna do Kanban, igual /funil. Apagar a etapa ou o funil apaga junto as
  * automações que só faziam sentido ali.
  */

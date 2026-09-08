@@ -5,7 +5,7 @@ import { assinaturaConfere, idSemExtensao } from "@/lib/integracoes/anexo-public
 import { lerArquivo } from "@/lib/armazenamento/midia";
 
 /**
- * Entrega um anexo pra quem tem o link assinado — SEM exigir sessão.
+ * Entrega um anexo pra quem tem o link assinado. SEM exigir sessão.
  *
  * É a única rota de arquivo do CRM sem login, e existe por um motivo só: a API do Instagram recebe
  * um endereço e busca o conteúdo ela mesma, de fora. O que substitui a sessão aqui é a assinatura
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request, contexto: RouteContext<"/api/anexos/publico/[id]">) {
   const { id: parametro } = await contexto.params;
   // O endereço carrega a extensão do arquivo (`<id>.jpg`) porque a Meta decide o formato do anexo
-  // por ela — mas quem foi assinado e guardado é o id puro.
+  // por ela: mas quem foi assinado e guardado é o id puro.
   const id = idSemExtensao(parametro);
   const assinatura = new URL(request.url).searchParams.get("a");
 

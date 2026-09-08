@@ -6,21 +6,21 @@ import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 import { lerMetadados, salvarHistorico, type HistoricoSync } from "@/lib/integracoes/historico-whatsapp";
 
 /**
- * Processa UM lote pequeno de conversas por chamada — nunca o histórico inteiro de uma vez (foi
+ * Processa UM lote pequeno de conversas por chamada. Nunca o histórico inteiro de uma vez (foi
  * exatamente isso que floodou o banco numa conexão real, ver comentário em
  * `desativarSincronizacaoDeHistorico` em evolution.ts). Chamada repetidamente pelo front
  * (`useIntegracaoNaoOficial`, com um pequeno intervalo entre chamadas) até `status` virar
- * "concluido" — se a pessoa fechar a aba no meio, o progresso fica salvo em
+ * "concluido": se a pessoa fechar a aba no meio, o progresso fica salvo em
  * `Integracao.metadados.historico` e retoma do ponto certo da próxima vez que a tela abrir.
  */
-// 1 conversa por chamada (não 5+) — cada mensagem processada é um roundtrip sequencial no banco
+// 1 conversa por chamada (não 5+). Cada mensagem processada é um roundtrip sequencial no banco
 // (dedupe + criação + upsert da conversa, igual o webhook ao vivo processa uma de cada vez), e uma
 // conversa só já pode ter até `MENSAGENS_POR_CHAT` delas. Mais que isso por chamada arrisca estourar
 // o tempo limite de uma função serverless num chat bem movimentado.
 const CHATS_POR_LOTE = 1;
 const MENSAGENS_POR_CHAT = 200;
 
-/** PATCH pausa/retoma a sincronização sem perder o progresso — dá controle pra usuária, caso
+/** PATCH pausa/retoma a sincronização sem perder o progresso. Dá controle pra usuária, caso
  * desconfie que a sincronização está sobrecarregando a conexão do WhatsApp. */
 export async function PATCH(request: Request) {
   const sessao = await auth();
@@ -51,7 +51,7 @@ export async function POST() {
   const metadados = await lerMetadados(workspaceId);
   let historico = metadados.historico as HistoricoSync | undefined;
   // Sem `historico` nenhum ainda: normalmente só acontece antes da PRIMEIRA conexão (o webhook
-  // inicia sozinho no evento `connection.update`/`open`) — mas quem já estava conectado ANTES
+  // inicia sozinho no evento `connection.update`/`open`). Mas quem já estava conectado ANTES
   // dessa funcionalidade existir nunca recebeu esse evento de novo, então nunca ganhou uma
   // sincronização. Iniciar aqui também (sob demanda, chamado pelo próprio front ao detectar que
   // está conectado mas sem histórico) cobre esse caso sem exigir desconectar e reconectar.
@@ -62,7 +62,7 @@ export async function POST() {
   }
 
   try {
-    // Primeira chamada: ainda não tem a lista de conversas do celular — busca uma vez só (1
+    // Primeira chamada: ainda não tem a lista de conversas do celular. Busca uma vez só (1
     // chamada) e guarda a fila inteira, sem processar mensagem nenhuma ainda.
     if (historico.filaRestante === null) {
       const chats = await buscarChats(workspaceId);
@@ -81,7 +81,7 @@ export async function POST() {
     for (const chat of proximoLote) {
       const mensagens = await buscarMensagensDoChat(workspaceId, chat.remoteJid, MENSAGENS_POR_CHAT);
       for (const item of mensagens) {
-        // Já sabemos de QUAL conversa essa mensagem é — pedimos ela pelo remoteJid de `chat`. Não
+        // Já sabemos de QUAL conversa essa mensagem é. Pedimos ela pelo remoteJid de `chat`. Não
         // confia no `key.remoteJid` que vem dentro de cada mensagem: era isso que fazia mensagem de
         // grupo importada pelo histórico virar conversa avulsa (algumas respostas de
         // `findMessages` trazem o JID de quem mandou dentro do grupo, não o JID do grupo em si, no

@@ -5,14 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { iniciarFluxoComEstado } from "@/lib/automacoes/iniciar";
 
 /**
- * Roda um fluxo agora, para um contato, porque alguém pediu — o botão "rodar automação" dentro da
+ * Roda um fluxo agora, para um contato, porque alguém pediu: o botão "rodar automação" dentro da
  * conversa.
  *
  * Antes isso rodava no navegador e as mensagens do fluxo eram SIMULADAS: apareciam na conversa
  * como se tivessem sido enviadas, sem terem saído. Aqui é o motor de verdade, com as ações de
  * verdade.
  *
- * Como é um pedido explícito, não avalia gatilho nem se o fluxo está pausado — mas exige uma
+ * Como é um pedido explícito, não avalia gatilho nem se o fluxo está pausado. Mas exige uma
  * versão publicada, porque rodar o rascunho de alguém em cima de um cliente real seria pior.
  */
 export async function POST(request: Request, ctx: RouteContext<"/api/automacoes-fluxos/[id]/rodar">) {
@@ -47,7 +47,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/automacoes-
 
   if (!fim) {
     return NextResponse.json(
-      { erro: "Esse fluxo ainda não foi publicado — publique antes de rodar num contato de verdade." },
+      { erro: "Esse fluxo ainda não foi publicado. Publique antes de rodar num contato de verdade." },
       { status: 400 },
     );
   }

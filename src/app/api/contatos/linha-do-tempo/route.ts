@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /**
- * Linha do tempo de um lead — o que aconteceu com ele, em ordem, em qualquer canal.
+ * Linha do tempo de um lead. O que aconteceu com ele, em ordem, em qualquer canal.
  *
  * Diferente do histórico de mensagens: aqui entram também os acontecimentos que não são mensagem
  * (comentou numa publicação, a automação disparou, o CRM respondeu, entrou no funil). É esse

@@ -8,7 +8,7 @@ import type { CanalCampanha } from "./ritmo";
  * CRM mandou.
  *
  * Sem isto a conversa ficava pela metade: a pessoa respondia "Sim" e quem abria a conversa via só
- * o "Sim", sem a pergunta. O disparo é uma mensagem nossa e precisa estar no histórico — é o que
+ * o "Sim", sem a pergunta. O disparo é uma mensagem nossa e precisa estar no histórico. É o que
  * permite entender a resposta, e é onde o webhook de status (entregue/lido) encontra a bolha pra
  * atualizar o tiquinho.
  *

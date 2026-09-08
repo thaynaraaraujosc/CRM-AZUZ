@@ -1,7 +1,7 @@
 import { extrairVariaveis, paraNumeradas, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 
 /**
- * Regras de um template por canal — o que a tela mostra, o que o servidor recusa.
+ * Regras de um template por canal. O que a tela mostra, o que o servidor recusa.
  *
  * Os limites do WhatsApp oficial são os da Meta, não escolha nossa: 3 botões de resposta rápida,
  * 25 caracteres por botão, 1.024 no corpo, nome só com minúsculas/números/underscore. Passar
@@ -153,7 +153,7 @@ export function validarTemplate(t: TemplateEditavel): string[] {
   return problemas;
 }
 
-/** Exemplo que a Meta exige pra cada variável na análise — sem isso ela recusa o modelo. */
+/** Exemplo que a Meta exige pra cada variável na análise. Sem isso ela recusa o modelo. */
 function exemploDe(v: MapeamentoVariavel): string {
   if (v.origem === "texto" && v.valor?.trim()) return v.valor.trim();
   const porOrigem: Record<string, string> = {

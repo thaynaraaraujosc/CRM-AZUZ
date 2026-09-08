@@ -19,7 +19,7 @@ const PRIORIDADES: { valor: PrioridadeTarefa; label: string }[] = [
   { valor: "urgente", label: "Urgente" },
 ];
 
-/** Ação "Criar tarefa" (item 16) — tipo, título, descrição, responsável, prazo, prioridade e a que
+/** Ação "Criar tarefa" (item 16). Tipo, título, descrição, responsável, prazo, prioridade e a que
  * relacionar, tudo configurável direto no bloco. */
 export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onChange: (novo: CriarTarefaData) => void }) {
   const equipes = useEquipesDisponiveis();

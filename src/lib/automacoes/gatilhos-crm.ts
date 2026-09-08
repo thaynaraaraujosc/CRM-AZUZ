@@ -1,10 +1,10 @@
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 
 /**
- * Os gatilhos que nascem de uma mudança no próprio CRM — e não de uma mensagem que chegou.
+ * Os gatilhos que nascem de uma mudança no próprio CRM. E não de uma mensagem que chegou.
  *
  * Estes blocos existiam na biblioteca e nunca disparavam: ninguém os acionava. Quem montasse um
- * fluxo com "Etiqueta adicionada" ficava esperando pra sempre, sem nenhum erro na tela — o pior
+ * fluxo com "Etiqueta adicionada" ficava esperando pra sempre, sem nenhum erro na tela. O pior
  * tipo de defeito, porque parece que a automação está funcionando e só não deu a hora.
  *
  * Tudo aqui falha em silêncio de propósito: disparar automação é efeito secundário de salvar um
@@ -16,7 +16,7 @@ function disparar(params: Parameters<typeof dispararAutomacoesDoCrm>[0]): void {
   );
 }
 
-/** Contato novo no CRM — veio de mensagem, de formulário, de importação ou da mão de alguém. */
+/** Contato novo no CRM: veio de mensagem, de formulário, de importação ou da mão de alguém. */
 export function aoCriarContato(params: { workspaceId: string; contatoNome: string; contatoId?: string }): void {
   disparar({
     workspaceId: params.workspaceId,
@@ -43,7 +43,7 @@ function etiquetasDe(contato: FotoDoContato | null | undefined): string[] {
 /**
  * Compara o contato antes e depois de uma edição e dispara o que mudou.
  *
- * Uma edição pode acionar mais de um gatilho — trocar o responsável e acrescentar uma etiqueta no
+ * Uma edição pode acionar mais de um gatilho. Trocar o responsável e acrescentar uma etiqueta no
  * mesmo salvamento são duas coisas que aconteceram, e cada fluxo interessado precisa saber da sua.
  */
 export function aoAtualizarContato(params: {
@@ -75,7 +75,7 @@ export function aoAtualizarContato(params: {
   }
 
   // Qualquer outro campo do contato. Etiqueta e responsável ficam de fora porque já têm gatilho
-  // próprio — senão uma troca de responsável dispararia dois fluxos diferentes sem a pessoa pedir.
+  // próprio: senão uma troca de responsável dispararia dois fluxos diferentes sem a pessoa pedir.
   const ignorados = new Set(["etiquetas", "responsavel", "atualizadoEm", "criadoEm", "id", "workspaceId"]);
   const mudou = Object.keys(depois).some(
     (campo) => !ignorados.has(campo) && JSON.stringify(antes[campo] ?? null) !== JSON.stringify(depois[campo] ?? null),
@@ -85,7 +85,7 @@ export function aoAtualizarContato(params: {
   }
 }
 
-/** O lead saiu de uma etapa do funil — o par de "entrou". */
+/** O lead saiu de uma etapa do funil. O par de "entrou". */
 export function aoSairDaEtapa(params: {
   workspaceId: string;
   contatoNome: string;
@@ -106,7 +106,7 @@ export function aoSairDaEtapa(params: {
 }
 
 /** Chave de idempotência com o minuto: segura clique repetido e retry de rede, sem segurar a mesma
- * mudança feita de novo amanhã — que é um acontecimento novo. */
+ * mudança feita de novo amanhã. Que é um acontecimento novo. */
 function chave(prefixo: string, alvo: string, valor: string): string {
   return `${prefixo}:${alvo}:${valor}:${new Date().toISOString().slice(0, 16)}`;
 }
@@ -141,7 +141,7 @@ export function aoConcluirTarefa(params: {
   });
 }
 
-/** Compromisso da agenda — agendado, confirmado, cancelado, ou o cliente não apareceu. */
+/** Compromisso da agenda: agendado, confirmado, cancelado, ou o cliente não apareceu. */
 export function aoMudarCompromisso(params: {
   workspaceId: string;
   contatoNome: string;

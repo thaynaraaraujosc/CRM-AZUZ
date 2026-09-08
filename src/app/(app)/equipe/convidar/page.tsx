@@ -11,7 +11,7 @@ export default function ConvidarPage() {
     <>
       <Topbar
         title="Convidar membro"
-        sub="A pessoa recebe um e-mail e cria a própria senha — vocês nunca digitam a senha de ninguém"
+        sub="A pessoa recebe um e-mail e cria a própria senha. Vocês nunca digitam a senha de ninguém"
         actions={
           <Link className="btn ghost" href="/equipe">
             ← Voltar pra equipe

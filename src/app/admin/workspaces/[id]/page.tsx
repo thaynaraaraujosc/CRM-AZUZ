@@ -44,7 +44,7 @@ const NOME_PROVEDOR: Record<string, string> = {
 };
 
 /** Detalhe de um workspace pro super-admin: todos os membros (com botão pra ativar/desativar
- * acesso e trocar papelTipo), integrações conectadas, e a assinatura — com plano/status editáveis
+ * acesso e trocar papelTipo), integrações conectadas, e a assinatura: com plano/status editáveis
  * direto (sobrescrita manual, ver comentário na rota `PATCH /api/admin/workspaces/[id]`). */
 export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -99,7 +99,7 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
           <div className="field">
             <label>Plano</label>
             <p className="r">
-              {PLANOS.completo.nome} — {PLANOS.completo.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês
+              {PLANOS.completo.nome}: {PLANOS.completo.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês
             </p>
           </div>
           <div className="field">
@@ -119,7 +119,7 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
           </div>
         </div>
         <p className="hint" style={{ padding: "0 17px 14px" }}>
-          Alterar aqui muda o status direto no banco — não cria nem cancela cobrança na Asaas. Use só pra correção manual/cortesia.
+          Alterar aqui muda o status direto no banco. Não cria nem cancela cobrança na Asaas. Use só pra correção manual/cortesia.
         </p>
       </div>
 
@@ -157,7 +157,7 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
         {senhaGerada ? (
           <div className="config-grid-2" style={{ padding: "0 17px 14px" }}>
             <div className="field" style={{ padding: 0, gridColumn: "1 / -1" }}>
-              <label>Senha nova gerada — copie agora, ela não aparece de novo</label>
+              <label>Senha nova gerada: copie agora, ela não aparece de novo</label>
               <div style={{ display: "flex", gap: 8 }}>
                 <input className="input" style={{ width: "100%", fontFamily: "monospace" }} readOnly value={senhaGerada.senha} />
                 <button type="button" className="btn ghost" onClick={() => navigator.clipboard.writeText(senhaGerada.senha)}>

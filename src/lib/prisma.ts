@@ -2,13 +2,13 @@ import { setDefaultResultOrder } from "node:dns";
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-// Node 18+ prioriza resultado IPv6 na resolução de DNS por padrão — em redes onde a rota IPv6
+// Node 18+ prioriza resultado IPv6 na resolução de DNS por padrão. Em redes onde a rota IPv6
 // pro host do banco não funciona direito, isso trava a conexão até estourar o timeout do pool
 // (em vez de falhar rápido e cair pro IPv4). Forçar IPv4 primeiro evita esse travamento.
 setDefaultResultOrder("ipv4first");
 
 /**
- * Instância única do Prisma Client por processo — cada instância abre um pool de conexões, e o
+ * Instância única do Prisma Client por processo. Cada instância abre um pool de conexões, e o
  * hot-reload do `next dev` recriaria o módulo (e o pool) a cada mudança de arquivo sem esse cache
  * global, esgotando as conexões do banco rapidinho.
  */
@@ -17,9 +17,9 @@ const globalParaPrisma = globalThis as unknown as { prisma?: PrismaClient };
 function criarPrismaClient() {
   // O CLI do Prisma (`db push`/`migrate`) exige o prefixo `mysql://` na `DATABASE_URL` (é o
   // provider declarado no schema), mas o driver `@prisma/adapter-mariadb` só aceita `mariadb://`
-  // — convertendo aqui, a mesma variável serve pros dois sem o usuário precisar manter duas versões.
+  //. Convertendo aqui, a mesma variável serve pros dois sem o usuário precisar manter duas versões.
   let url = process.env.DATABASE_URL!.replace(/^mysql:\/\//, "mariadb://");
-  // Sem isso o driver `mariadb` abre um pool de até 10 conexões por padrão — o banco compartilhado
+  // Sem isso o driver `mariadb` abre um pool de até 10 conexões por padrão. O banco compartilhado
   // (plano pequeno do Railway) tem um teto de conexões simultâneas bem menor que isso, e cada
   // restart de container (deploy, crash-loop, `prisma db push` no boot) soma mais conexões em cima
   // das que containers anteriores ainda não liberaram. Já aconteceu de estourar o limite do banco
@@ -27,7 +27,7 @@ function criarPrismaClient() {
   // seguidas. Um teto baixo aqui é o suficiente pro tráfego de um workspace só.
   url += url.includes("?") ? "&connectionLimit=3" : "?connectionLimit=3";
   // `compress=true`: o servidor comprime (zlib) tudo que manda pra cá. O banco mora na Railway e a
-  // aplicação na Vercel, e a Railway cobra por gigabyte que SAI do banco — foi a linha de $101 na
+  // aplicação na Vercel, e a Railway cobra por gigabyte que SAI do banco. Foi a linha de $101 na
   // fatura de setembro. Texto e JSON (que é o grosso do que trafega: mensagens, contatos, cards)
   // encolhem de 3 a 5 vezes comprimidos. Custa CPU, que é a linha mais barata da conta (centavos),
   // pra economizar tráfego, que é a mais cara. O driver `mariadb` e o MySQL 8+ falam esse
@@ -38,7 +38,7 @@ function criarPrismaClient() {
 }
 
 /**
- * Criação sob demanda (não no carregamento do módulo) — o build do Next.js importa toda rota de
+ * Criação sob demanda (não no carregamento do módulo). O build do Next.js importa toda rota de
  * API pra analisá-la (`next build`/"collect page data"), sem `DATABASE_URL` disponível nessa etapa
  * no Railway. Um Prisma Client criado eager no import quebrava o build inteiro; este `Proxy` só
  * instancia de verdade no primeiro uso real (dentro de um handler, em runtime, quando a variável

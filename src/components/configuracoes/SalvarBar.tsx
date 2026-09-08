@@ -4,8 +4,8 @@ import { useState } from "react";
 import { IconCheck } from "@/components/icons";
 
 /**
- * Barra de "alterações não salvas" — aparece fixa no rodapé do painel sempre que o rascunho local
- * (`dirty`) diverge do que foi salvo. `onSalvar` é definido por quem usa o componente — cada seção
+ * Barra de "alterações não salvas". Aparece fixa no rodapé do painel sempre que o rascunho local
+ * (`dirty`) diverge do que foi salvo. `onSalvar` é definido por quem usa o componente. Cada seção
  * de Configurações já persiste de verdade (via `/api/preferencias/[chave]` ou rota própria), esse
  * componente só cuida da UI de "salvar/descartar".
  */

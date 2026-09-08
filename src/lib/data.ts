@@ -1,5 +1,5 @@
 /**
- * Dados fictícios do CRM AZUZ — não é usado como fonte real de nome/segmento do workspace (isso
+ * Dados fictícios do CRM AZUZ. Não é usado como fonte real de nome/segmento do workspace (isso
  * vem de `Workspace.nome`/`segmento` no banco, ver `src/app/api/workspace/route.ts`); serve só de
  * exemplo/seed pra telas ainda não conectadas e pro `prisma/seed.ts` de desenvolvimento local.
  *
@@ -23,7 +23,7 @@ export const currentUser = {
   email: "ana@empresademo.com.br",
 };
 
-/** Quinta, 30 de julho de 2026 — dia de referência de todas as telas. */
+/** Quinta, 30 de julho de 2026. Dia de referência de todas as telas. */
 export const today = "Quinta, 30 de julho de 2026";
 
 export type Canal = "WhatsApp" | "Instagram" | "TikTok";
@@ -47,7 +47,7 @@ export const ORIGENS: Origem[] = [
 
 /** Classe CSS que pinta a nomenclatura da origem com a cor da própria plataforma. */
 /** Aceita `string` (não só `Origem`) porque `Conversa.origem`/`NegocioCard.origem` reais vêm do
- * banco como texto livre (ex.: `"Direto"`, `"WhatsApp"`) — fora do conjunto fechado usado nos
+ * banco como texto livre (ex.: `"Direto"`, `"WhatsApp"`): fora do conjunto fechado usado nos
  * filtros de Contatos. Valor fora da lista conhecida cai no fallback, sem quebrar o card. */
 export function classeOrigem(origem: string): string {
   switch (origem) {
@@ -79,7 +79,7 @@ export const kpisInicio = [
   { label: "ROAS médio", value: "4,2x", delta: "↑ 0,4x" },
 ];
 
-/** Leads por dia — últimos 14 dias (17 a 30 de julho). */
+/** Leads por dia: últimos 14 dias (17 a 30 de julho). */
 export const leadsPorDia = [
   { dia: "17", altura: 38 },
   { dia: "18", altura: 52 },
@@ -141,7 +141,7 @@ export const atividadeRecente = [
 
 export type Contato = {
   /**
-   * Identificador estável do contato — mesmo slug usado como `id` em
+   * Identificador estável do contato: mesmo slug usado como `id` em
    * `NegocioCard`, `Conversa` e `TaskCard`, pra todo módulo poder cruzar
    * essas entidades sem depender de comparar `nome` (string).
    * Ver `slugId()` em `src/lib/ids.ts`.
@@ -158,7 +158,7 @@ export type Contato = {
   whatsapp?: string;
   nascimento?: string;
   endereco?: string;
-  /** Campos abaixo alimentam o seletor de contatos e a aba "Contato" do painel — front-end apenas, prontos pro back-end preencher de verdade. */
+  /** Campos abaixo alimentam o seletor de contatos e a aba "Contato" do painel. Front-end apenas, prontos pro back-end preencher de verdade. */
   sobrenome?: string;
   empresa?: string;
   cargo?: string;
@@ -168,9 +168,9 @@ export type Contato = {
   pais?: string;
   canalPreferido?: Canal;
   melhorHorario?: string;
-  /** @ do Instagram (sem arroba) — preenchido sozinho quando a pessoa chega pelo Direct. */
+  /** @ do Instagram (sem arroba). Preenchido sozinho quando a pessoa chega pelo Direct. */
   instagram?: string;
-  /** Foto de perfil já baixada — a mesma pessoa usa a mesma foto em conversas, funil e contatos. */
+  /** Foto de perfil já baixada. A mesma pessoa usa a mesma foto em conversas, funil e contatos. */
   fotoUrl?: string;
   etiquetas?: string[];
   favorito?: boolean;
@@ -286,7 +286,7 @@ export const filtrosContatos = [
 ];
 
 /* -------------------------------------------------------------------------- */
-/* Funil (kanban de negócios — pode ter mais de um funil)                    */
+/* Funil (kanban de negócios: pode ter mais de um funil)                    */
 /* -------------------------------------------------------------------------- */
 
 export type NegocioCard = {
@@ -299,18 +299,18 @@ export type NegocioCard = {
   data: string;
   /** Etiquetas adicionadas manualmente ou por automação (ex.: "adicionar_etiqueta"). */
   etiquetas?: string[];
-  /** Responsável por esse negócio específico — distinto de `Funil.responsavel` (que é o funil inteiro). */
+  /** Responsável por esse negócio específico. Distinto de `Funil.responsavel` (que é o funil inteiro). */
   responsavel?: string;
-  /** Desfecho real do negócio — `undefined`/`null` = ainda aberto. É o que faz Inteligência
+  /** Desfecho real do negócio: `undefined`/`null` = ainda aberto. É o que faz Inteligência
    * Comercial (conversão, motivo de perda, faturamento) calcular sobre dado real. */
   statusFechamento?: "ganho" | "perdido" | null;
   motivoPerda?: string | null;
-  /** ISO (aaaa-mm-dd) — quando o negócio foi marcado como ganho/perdido. */
+  /** ISO (aaaa-mm-dd): quando o negócio foi marcado como ganho/perdido. */
   dataFechamento?: string | null;
 };
 
 export type ColunaFunil = {
-  /** Identificador estável da etapa — é nele que a automação se prende, não no título (que pode ser renomeado). */
+  /** Identificador estável da etapa: é nele que a automação se prende, não no título (que pode ser renomeado). */
   id: string;
   titulo: string;
   total: number;
@@ -321,7 +321,7 @@ export type Funil = {
   id: string;
   nome: string;
   colunas: ColunaFunil[];
-  /** Atendente responsável por esse funil — quem recebe as conversas/tarefas atribuídas a ele. */
+  /** Atendente responsável por esse funil. Quem recebe as conversas/tarefas atribuídas a ele. */
   responsavel?: string;
 };
 
@@ -436,7 +436,7 @@ export const funis: Funil[] = [
 ];
 
 /**
- * Onde um contato está de verdade no funil — busca direto nos cards do
+ * Onde um contato está de verdade no funil. Busca direto nos cards do
  * funil (mesma fonte que a tela Funil usa), pra nunca dessincronizar da
  * etapa mostrada em Contatos. É essa etapa que a automação usa pra decidir
  * a próxima ação.
@@ -466,13 +466,13 @@ export type ConvStatus =
 
 /**
  * Estado real de entrega de uma mensagem enviada (tipo "out"), como reportado
- * pelo canal — nunca é ajustado manualmente pelo usuário.
+ * pelo canal: nunca é ajustado manualmente pelo usuário.
  * "pendente" = ainda subindo/enviando · "enviado" = saiu do CRM · "entregue" =
  * chegou no aparelho do lead · "lido" = o lead abriu a conversa · "erro" = falhou.
  */
 /**
  * "reproduzido" só existe pra mensagens de áudio, e só pode ser aplicado por
- * uma confirmação real do canal/webhook — nunca simulado automaticamente
+ * uma confirmação real do canal/webhook. Nunca simulado automaticamente
  * (ver contrato `AudioAnexoContrato` e `ExclusaoMensagemContrato` em
  * `src/lib/conversas-contracts.ts`).
  */
@@ -503,11 +503,11 @@ export type AnexoDocumento = {
 export type AnexoAudio = {
   url: string;
   duracao: number;
-  /** Picos de amplitude (0–1) usados pra desenhar a forma de onda — calculados no front-end a partir do blob gravado ou decodificado. */
+  /** Picos de amplitude (0-1) usados pra desenhar a forma de onda. Calculados no front-end a partir do blob gravado ou decodificado. */
   waveform: number[];
 };
 
-/** Tipo de exclusão solicitada — ver `ExclusaoMensagemContrato`. */
+/** Tipo de exclusão solicitada: ver `ExclusaoMensagemContrato`. */
 export type TipoExclusaoMensagem = "para_mim" | "para_todos";
 
 export type ConvMensagem = {
@@ -515,12 +515,12 @@ export type ConvMensagem = {
   tipo: "in" | "out" | "system";
   texto: string;
   hora: string;
-  /** Timestamp real de criação — usado pra calcular prazo de "apagar pra todos" e pra "Ver detalhes". Ausente em mensagens de exemplo (seed). */
+  /** Timestamp real de criação: usado pra calcular prazo de "apagar pra todos" e pra "Ver detalhes". Ausente em mensagens de exemplo (seed). */
   criadoEm?: number;
-  /** Presente quando a mensagem é um compartilhamento de localização — mostra um mapa em vez de só texto. */
+  /** Presente quando a mensagem é um compartilhamento de localização. Mostra um mapa em vez de só texto. */
   localizacao?: { lat: number; lng: number; endereco?: string };
   /**
-   * Presente quando a mensagem é um cartão de contato compartilhado — só
+   * Presente quando a mensagem é um cartão de contato compartilhado. Só
    * carrega os campos que o usuário escolheu incluir na prévia (ver seção
    * 19 do pedido e `ContatoCompartilhadoContrato` em
    * `src/lib/conversas-contracts.ts`).
@@ -543,34 +543,34 @@ export type ConvMensagem = {
    * do nada.
    */
   botoes?: string[];
-  /** Uma ou mais imagens reais anexadas — vira um balão com a imagem de verdade, não só o nome do arquivo. */
+  /** Uma ou mais imagens reais anexadas. Vira um balão com a imagem de verdade, não só o nome do arquivo. */
   imagens?: AnexoImagem[];
   /** Vídeo real anexado (já cortado/processado, se o usuário editou antes de enviar). */
   video?: AnexoVideo;
-  /** Documento real anexado — vindo da biblioteca do CRM ou do computador do usuário. */
+  /** Documento real anexado: vindo da biblioteca do CRM ou do computador do usuário. */
   documento?: AnexoDocumento;
-  /** Áudio real gravado/enviado — bolha com player, forma de onda e velocidade. */
+  /** Áudio real gravado/enviado: bolha com player, forma de onda e velocidade. */
   audio?: AnexoAudio;
   /** Legenda opcional que acompanha imagem/vídeo. */
   legenda?: string;
-  /** @ de quem compartilhou o conteúdo, mostrado no topo do cartão de publicação — como o Instagram
+  /** @ de quem compartilhou o conteúdo, mostrado no topo do cartão de publicação. Como o Instagram
    * faz. Só existe em conteúdo compartilhado (post, reel, story), não em mídia enviada direto. */
   compartilhadoPor?: string;
-  /** Legenda da publicação compartilhada (a do post, não a da mensagem) — mostrada abaixo da
+  /** Legenda da publicação compartilhada (a do post, não a da mensagem): mostrada abaixo da
    * prévia, cortada, como o Instagram faz. Só existe quando a Meta a envia. */
   legendaPublicacao?: string;
-  /** `true` quando `linkExterno` aponta pra CONVERSA no Instagram, não pra publicação — a Meta nem
+  /** `true` quando `linkExterno` aponta pra CONVERSA no Instagram, não pra publicação: a Meta nem
    * sempre manda o endereço do post. Serve pra o botão não prometer o que não vai cumprir. */
   linkEhConversa?: boolean;
   /** Endereço da publicação original, quando a mensagem é um conteúdo que vive fora do CRM (post,
-   * reel ou story compartilhado no Direct). Clicar na prévia leva pra lá — o arquivo continua no
+   * reel ou story compartilhado no Direct). Clicar na prévia leva pra lá. O arquivo continua no
    * Instagram; o CRM guarda só a miniatura pra dar contexto na conversa. */
   linkExterno?: string;
-  /** Presente quando o usuário respondeu a uma mensagem específica — mostra a citação em cima do
+  /** Presente quando o usuário respondeu a uma mensagem específica. Mostra a citação em cima do
    * texto. `mid` é o id da mensagem citada no canal de origem: é ele que faz a citação aparecer
    * também do lado da pessoa (hoje usado no Direct do Instagram, via `reply_to`). */
   /** Referência da mensagem citada. `miniatura`/`tipoConteudo` existem quando o que foi respondido
-   * era mídia — sem eles, responder a uma foto mostrava uma citação vazia. */
+   * era mídia: sem eles, responder a uma foto mostrava uma citação vazia. */
   respondendoA?: {
     autor: string;
     texto: string;
@@ -578,36 +578,36 @@ export type ConvMensagem = {
     miniatura?: string;
     tipoConteudo?: string;
   };
-  /** Id que a Meta gerou pra esta mensagem enviada (`wamid`) — é a chave que casa os webhooks de
+  /** Id que a Meta gerou pra esta mensagem enviada (`wamid`). É a chave que casa os webhooks de
    * entrega/leitura com ela. Sem isso, os ticks nunca passavam de "enviado". */
   wamid?: string;
-  /** "Reel" | "Publicação" | "Story" | "Carrossel" — etiqueta do que o conteúdo é, quando a Meta
+  /** "Reel" | "Publicação" | "Story" | "Carrossel". Etiqueta do que o conteúdo é, quando a Meta
    * declara o tipo. Sem ela, prévia de reel e foto comum ficam idênticas na conversa. */
   tipoConteudo?: string;
   /** Curtida do Instagram nessa mensagem. Cada lado tem a sua: `reacaoContato` é o coração que a
    * pessoa do outro lado deu, `reacaoMinha` é o que saiu daqui (ou do app do Instagram, pela conta
-   * conectada). Ficam separadas porque as duas podem existir na MESMA mensagem — sobrescrever uma
+   * conectada). Ficam separadas porque as duas podem existir na MESMA mensagem. Sobrescrever uma
    * com a outra apagaria da tela a curtida da cliente, que é justamente o que se quer ver. */
   reacaoContato?: string;
   reacaoMinha?: string;
-  /** Só existe em mensagens "out" — o estado real reportado pelo canal. */
+  /** Só existe em mensagens "out". O estado real reportado pelo canal. */
   status?: StatusMensagem;
-  /** Motivo do erro, quando status === "erro" — mostrado com a opção de tentar de novo. */
+  /** Motivo do erro, quando status === "erro": mostrado com a opção de tentar de novo. */
   erro?: string;
-  /** Canal de origem/destino real da mensagem (ex.: "whatsapp_baileys") — nada a ver com o `canal`
+  /** Canal de origem/destino real da mensagem (ex.: "whatsapp_baileys"): nada a ver com o `canal`
    * (rótulo tipo WhatsApp/Instagram/TikTok) da `Conversa`; ausente = comportamento antigo,
    * implicitamente a integração oficial da Meta. Decide por qual integração uma resposta sai. */
   canal?: string;
-  /** "Apagar pra todos" real (persistido) — some do balão de qualquer sessão/usuário que reveja essa
+  /** "Apagar pra todos" real (persistido). Some do balão de qualquer sessão/usuário que reveja essa
    * conversa, não só do navegador de quem apagou. Vale só dentro do CRM: nenhuma integração atual
    * (Meta/Baileys) expõe um jeito de recolher a mensagem do lado do destinatário no WhatsApp. */
   apagadaParaTodos?: boolean;
   /** Nome de quem mandou, só em mensagem recebida (`tipo === "in"`) DENTRO de um grupo de WhatsApp
-   * (`Conversa.ehGrupo`) — sem isso não dá pra saber qual dos participantes escreveu cada balão,
+   * (`Conversa.ehGrupo`): sem isso não dá pra saber qual dos participantes escreveu cada balão,
    * igual o WhatsApp de verdade mostra. Ausente em conversa individual (não faz sentido lá). */
   remetenteNome?: string;
   /** Mídia recebida cujo conteúdo real não veio no webhook (mídia embutida em base64 foi desligada
-   * de propósito, pra não derrubar o servidor com arquivo grande — ver `configurarWebhook`) — só
+   * de propósito, pra não derrubar o servidor com arquivo grande. Ver `configurarWebhook`): só
    * texto de aviso apareceu na hora. Guarda o suficiente pra buscar o conteúdo de verdade sob
    * demanda (ver `GET /api/integracoes/whatsapp-nao-oficial/midia`), só quando a pessoa clicar pra
    * carregar. Some assim que carregado (o campo específico do tipo, ex. `audio`, passa a existir). */
@@ -623,7 +623,7 @@ export type Conversa = {
   tempo: string;
   status: ConvStatus;
   origem: Origem;
-  /** Mensagens não lidas nessa conversa — mostra o selo verde na lista. */
+  /** Mensagens não lidas nessa conversa. Mostra o selo verde na lista. */
   naoLidas?: number;
   favorita?: boolean;
   mensagens: ConvMensagem[];
@@ -690,7 +690,7 @@ export const conversas: Conversa[] = [
     atendenteSelecionado: "Dr. Hélio Marinho",
     tarefa: {
       data: "01/08/2026 · 14h",
-      oQueFazer: "Retorno de avaliação — confirmar presença",
+      oQueFazer: "Retorno de avaliação: confirmar presença",
       valor: "R$ 890,00",
       responsavel: "Dr. Hélio Marinho",
       anexo: {
@@ -893,14 +893,14 @@ export const conversas: Conversa[] = [
 
 export type Urgencia = "Baixa" | "Média" | "Alta";
 
-/** Toda tarefa começa em "Geral" — as outras equipes são criadas na hora, ao criar uma tarefa pra uma equipe específica. */
+/** Toda tarefa começa em "Geral". As outras equipes são criadas na hora, ao criar uma tarefa pra uma equipe específica. */
 export const EQUIPE_PADRAO_TAREFA = "Geral";
 
 export type TaskCard = {
   id: string;
   titulo: string;
   contato: string;
-  /** Id do contato relacionado (`Contato.id`), quando o contato já existe no CRM — permite ligar
+  /** Id do contato relacionado (`Contato.id`), quando o contato já existe no CRM. Permite ligar
    * a tarefa ao contato por id em vez de comparar `contato` (nome) espalhado pelo código. */
   contatoId?: string;
   data: string;
@@ -910,12 +910,12 @@ export type TaskCard = {
   urgencia: Urgencia;
   descricao: string;
   anexo: { arquivo: string; detalhe: string } | null;
-  /** Equipe dona da tarefa — "Geral" por padrão, ou o nome de uma equipe criada na hora. */
+  /** Equipe dona da tarefa: "Geral" por padrão, ou o nome de uma equipe criada na hora. */
   modelo?: string;
 };
 
 export type ColunaTarefas = {
-  /** Id real da etapa no banco (ver src/app/api/tarefas/etapas/) — ausente só no mock estático de
+  /** Id real da etapa no banco (ver src/app/api/tarefas/etapas/). Ausente só no mock estático de
    * seed, que nunca chega direto na UI (o Provider sempre popula a partir da API). */
   id?: string;
   titulo: string;
@@ -965,7 +965,7 @@ export const tarefas: ColunaTarefas[] = [
     cards: [
       {
         id: "retorno-marcos",
-        titulo: "Retorno de avaliação — confirmar presença",
+        titulo: "Retorno de avaliação: confirmar presença",
         contato: "Marcos Aurélio",
         data: "01 ago",
         responsavel: { nome: "Dr. Hélio Marinho", initials: "DH" },
@@ -1048,9 +1048,9 @@ export type Membro = {
   permissoes: string[];
   ativo: boolean;
   convitePendente?: boolean;
-  /** Foto de perfil (data URL) que a pessoa colocou em "Meu Perfil" — se não tiver, mostra as iniciais. */
+  /** Foto de perfil (data URL) que a pessoa colocou em "Meu Perfil". Se não tiver, mostra as iniciais. */
   foto?: string;
-  /** Timestamp ISO do último login real (`authorize()` em auth.ts) — null/ausente = nunca entrou. */
+  /** Timestamp ISO do último login real (`authorize()` em auth.ts): null/ausente = nunca entrou. */
   ultimoAcesso?: string | null;
 };
 
@@ -1127,7 +1127,7 @@ export const equipe: Membro[] = [
     senha: "Lv&vitta064",
     papel: "Cliente",
     papelTipo: "padrao",
-    leads: "—",
+    leads: "-",
     enxerga: "Portal do cliente · só resultados",
     permissoes: [],
     ativo: true,
@@ -1141,8 +1141,8 @@ export const equipe: Membro[] = [
     papel: "Estoquista",
     papelTipo: "custom",
     papelNota: "· personalizado",
-    leads: "—",
-    enxerga: "Nenhum módulo de vendas — papel criado do zero",
+    leads: "-",
+    enxerga: "Nenhum módulo de vendas: papel criado do zero",
     permissoes: [],
     ativo: false,
     convitePendente: true,
@@ -1188,7 +1188,7 @@ export const kpisTrafego = [
  * 42 + 26 + 16 = 84 leads
  * 7.992 + 3.952 + 1.496 = R$ 13.440 de receita → ROAS 4,2x
  */
-/** Mesmo formato usado pela rota real `GET /api/integracoes/meta/ads/campanhas` — texto pré-
+/** Mesmo formato usado pela rota real `GET /api/integracoes/meta/ads/campanhas`. Texto pré-
  * formatado (`sub`/`roas`) de propósito, pra não precisar mudar o parse (`parseSubCampanha` em
  * `src/lib/metrics.ts`) quando a fonte troca de mock pra real. */
 export type Campanha = {
@@ -1324,7 +1324,7 @@ export const motivosPerda = [
   { motivo: "Não é o momento", quantidade: 1, valor: "R$ 1.200,00", percentual: 18 },
 ];
 
-/** Uma linha por oportunidade perdida — pra investigar caso a caso qual foi o processo com aquele cliente. */
+/** Uma linha por oportunidade perdida. Pra investigar caso a caso qual foi o processo com aquele cliente. */
 export const oportunidadesPerdidas = [
   {
     cliente: "Marcos Aurélio",
@@ -1369,7 +1369,7 @@ export const oportunidadesPerdidas = [
 ];
 
 /* -------------------------------------------------------------------------- */
-/* CRM Live — telão pra projetar no escritório                                */
+/* CRM Live: telão pra projetar no escritório                                */
 /* -------------------------------------------------------------------------- */
 
 export const crmLive = {
@@ -1424,7 +1424,7 @@ export const relatorioAutomatico = [
   { label: "Receita vinda de indicação", value: "R$ 4.180" },
 ];
 
-/** Cada origem tem seu próprio mini-relatório — a pessoa escolhe quais entram no PDF. */
+/** Cada origem tem seu próprio mini-relatório. A pessoa escolhe quais entram no PDF. */
 export const relatorioPorOrigem = [
   {
     id: "google",
@@ -1465,7 +1465,7 @@ export const relatoriosAnteriores = [
 ];
 
 /* -------------------------------------------------------------------------- */
-/* Relatórios — análise (tipo Dashboard, Pipeline, Equipes…)                  */
+/* Relatórios: análise (tipo Dashboard, Pipeline, Equipes…)                  */
 /* -------------------------------------------------------------------------- */
 
 export const TIPOS_RELATORIO_ANALISE = [
@@ -1481,7 +1481,7 @@ export const TIPOS_RELATORIO_ANALISE = [
   "Comparativo de ligações",
 ] as const;
 
-/** Ligações feitas pelo telefone virtual do CRM — usado no relatório "Ligações". */
+/** Ligações feitas pelo telefone virtual do CRM. Usado no relatório "Ligações". */
 export const ligacoesPorResponsavel = [
   { nome: "Ana Ferreira", quantidade: 14, duracaoMedia: "3min 40s" },
   { nome: "Dr. Hélio Marinho", quantidade: 9, duracaoMedia: "5min 10s" },
@@ -1503,7 +1503,7 @@ export const CAMPOS_FILTRO_PERSONALIZADO = [
   "Marca / Modelo",
 ];
 
-/** Soma R$ 38.400,00 — bate com `kpisConversao` ("Valor total vendido"). */
+/** Soma R$ 38.400,00: bate com `kpisConversao` ("Valor total vendido"). */
 export const faturamentoPorResponsavel = [
   { nome: "Ana Ferreira", valor: 15200 },
   { nome: "Dr. Hélio Marinho", valor: 11400 },
@@ -1513,7 +1513,7 @@ export const faturamentoPorResponsavel = [
 
 /**
  * Dia a dia do mês pra montar o gráfico de área (oportunidades/vendas/perdas)
- * e o gráfico de valor vendido do Dashboard de relatórios — só teve venda em
+ * e o gráfico de valor vendido do Dashboard de relatórios. Só teve venda em
  * valor mesmo nos dias 13, 17 e 19 (esse último bem maior que os outros).
  */
 export const serieDashboardRelatorios = [
@@ -1556,7 +1556,7 @@ export const serieDashboardRelatorios = [
 
 export type TipoGatilhoEtapa = "entrou" | "parado" | "saiu" | "respondeu" | "agendado";
 
-/** O que dispara a automação — sempre relativo ao lead dentro da etapa onde ela foi criada. */
+/** O que dispara a automação. Sempre relativo ao lead dentro da etapa onde ela foi criada. */
 export const GATILHOS_ETAPA: {
   tipo: TipoGatilhoEtapa;
   label: string;
@@ -1564,7 +1564,7 @@ export const GATILHOS_ETAPA: {
   precisaTempo?: boolean;
   /**
    * Deixa escolher entre disparar na hora ou esperar um tempo personalizado
-   * depois do gatilho acontecer — ex.: "entrou na etapa" mas só manda a
+   * depois do gatilho acontecer: ex.: "entrou na etapa" mas só manda a
    * mensagem 2 horas depois, não na mesma hora.
    */
   permiteAtraso?: boolean;
@@ -1591,7 +1591,7 @@ export const GATILHOS_ETAPA: {
   },
   {
     tipo: "agendado",
-    label: "Em um horário programado (recorrente) — usa a janela de atividade abaixo",
+    label: "Em um horário programado (recorrente). Usa a janela de atividade abaixo",
   },
 ];
 
@@ -1667,7 +1667,7 @@ export const LIMITES_EXECUCAO: { valor: "sempre" | "uma_vez"; label: string }[] 
 
 export const integracoes = [
   {
-    grupo: 'Tráfego pago — é daqui que a tela "Tráfego" se alimenta sozinha',
+    grupo: 'Tráfego pago: é daqui que a tela "Tráfego" se alimenta sozinha',
     itens: [
       {
         logo: "M",
@@ -1695,7 +1695,7 @@ export const integracoes = [
     ],
   },
   {
-    grupo: "Comunicação — o que alimenta o WhatsApp",
+    grupo: "Comunicação: o que alimenta o WhatsApp",
     itens: [
       {
         logo: "wa",
@@ -1713,7 +1713,7 @@ export const integracoes = [
       },
       {
         logo: "TT",
-        titulo: "TikTok — mensagens e comentários",
+        titulo: "TikTok: mensagens e comentários",
         sub: "Conecte pra receber lead de comentário automaticamente",
         status: "Não conectado" as const,
         acao: "Conectar",
@@ -1734,7 +1734,7 @@ export const integracoes = [
   },
   {
     grupo:
-      "Inteligência artificial — conecte a IA que sua equipe já usa, por API ou MCP",
+      "Inteligência artificial: conecte a IA que sua equipe já usa, por API ou MCP",
     itens: [
       {
         logo: "IA",
@@ -1761,7 +1761,7 @@ export const integracoes = [
       {
         logo: "MCP",
         titulo: "Servidor MCP personalizado",
-        sub: "Conecte qualquer IA que fale o protocolo MCP — cole a URL do servidor",
+        sub: "Conecte qualquer IA que fale o protocolo MCP. Cole a URL do servidor",
         status: "Não conectado" as const,
         acao: "Conectar",
       },
@@ -1786,7 +1786,7 @@ export const webhooks = [
   },
   {
     titulo: "Marketplace de integrações",
-    sub: "Mercado Pago, Asaas, Conta Azul e outras — chega no médio prazo",
+    sub: "Mercado Pago, Asaas, Conta Azul e outras: chega no médio prazo",
     status: "Em breve" as const,
     acao: null,
   },
@@ -1799,7 +1799,7 @@ export const webhooks = [
 export const planoAtual = {
   nome: "Plano Completo",
   descricao:
-    "Tudo incluso — funil, WhatsApp/Instagram/TikTok, automações, relatórios, IA e integrações",
+    "Tudo incluso: funil, WhatsApp/Instagram/TikTok, automações, relatórios, IA e integrações",
   valor: "R$ 249,00",
   periodo: "por mês",
 };

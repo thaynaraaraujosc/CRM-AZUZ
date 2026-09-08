@@ -1,15 +1,15 @@
 import { headers } from "next/headers";
 
 /**
- * Limite de uso por janela de tempo — a trava contra força bruta, spam e abuso de custo.
+ * Limite de uso por janela de tempo. A trava contra força bruta, spam e abuso de custo.
  *
  * Não existia nada disso no CRM: login, recuperação de senha e envio de mensagem aceitavam
  * chamadas ilimitadas. Na prática, testar senhas até acertar era só uma questão de paciência, e um
  * endpoint que fala com a Meta ou com a IA podia ser disparado em laço por qualquer pessoa
- * autenticada — cada chamada é dinheiro.
+ * autenticada: cada chamada é dinheiro.
  *
  * LIMITAÇÃO QUE VOCÊ PRECISA CONHECER: a contagem vive na MEMÓRIA do processo. Em ambiente
- * serverless (Vercel) existem várias instâncias, e cada uma conta o seu pedaço — então o limite
+ * serverless (Vercel) existem várias instâncias, e cada uma conta o seu pedaço. Então o limite
  * real é o configurado multiplicado pelo número de instâncias ativas. Isso reduz muito a força
  * bruta (que depende de milhares de tentativas), mas não é uma trava exata.
  *
@@ -21,7 +21,7 @@ type Registro = { contagem: number; expiraEm: number };
 
 const contadores = new Map<string, Registro>();
 
-/** Descarta o que já venceu — sem isso o mapa cresce pra sempre num processo de vida longa. */
+/** Descarta o que já venceu. Sem isso o mapa cresce pra sempre num processo de vida longa. */
 function limpar(agora: number) {
   if (contadores.size < 5000) return;
   for (const [chave, registro] of contadores) {
@@ -43,7 +43,7 @@ export type PoliticaDeLimite = {
 export const POLITICAS = {
   /** Login: apertado. Ninguém erra a senha 10 vezes em 5 minutos usando o CRM de verdade. */
   login: { maximo: 10, janelaSegundos: 300 },
-  /** Recuperação de senha: mais apertado ainda — cada chamada manda e-mail e revela se a conta existe. */
+  /** Recuperação de senha: mais apertado ainda: cada chamada manda e-mail e revela se a conta existe. */
   recuperacaoDeSenha: { maximo: 5, janelaSegundos: 900 },
   /** Cadastro: impede criação de contas em massa. */
   cadastro: { maximo: 5, janelaSegundos: 3600 },
@@ -57,7 +57,7 @@ export const POLITICAS = {
 
 export type ResultadoDoLimite = {
   permitido: boolean;
-  /** Quantos segundos faltam pra janela virar — vai no cabeçalho `Retry-After`. */
+  /** Quantos segundos faltam pra janela virar. Vai no cabeçalho `Retry-After`. */
   esperarSegundos: number;
 };
 
@@ -89,7 +89,7 @@ export function contarChamada(chave: string, politica: PoliticaDeLimite): Result
  * IP de quem chamou, atrás do proxy da hospedagem.
  *
  * `x-forwarded-for` pode vir com uma cadeia; o primeiro é o cliente original. É um valor que o
- * cliente NÃO controla sozinho aqui porque a Vercel reescreve o cabeçalho — mas ainda assim ele
+ * cliente NÃO controla sozinho aqui porque a Vercel reescreve o cabeçalho. Mas ainda assim ele
  * nunca é usado como identidade, só como um dos ingredientes do limite.
  */
 export async function ipDeQuemChamou(): Promise<string> {
@@ -98,7 +98,7 @@ export async function ipDeQuemChamou(): Promise<string> {
   return encaminhado?.split(",")[0]?.trim() || cabecalhos.get("x-real-ip") || "desconhecido";
 }
 
-/** Resposta padrão de limite estourado. Diz só o necessário — nada sobre a política interna. */
+/** Resposta padrão de limite estourado. Diz só o necessário: nada sobre a política interna. */
 export function respostaDeLimiteExcedido(esperarSegundos: number): Response {
   return new Response(
     JSON.stringify({ erro: "Muitas tentativas. Aguarde um momento e tente de novo." }),

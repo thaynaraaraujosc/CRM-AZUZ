@@ -17,12 +17,12 @@ import { categoriaEscolhida, conversaEmTexto, provedorDeIA } from "./ia";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
 
 /**
- * O que uma automação consegue FAZER no mundo — separado de QUANDO fazer (o motor).
+ * O que uma automação consegue FAZER no mundo. Separado de QUANDO fazer (o motor).
  *
  * A separação existe por um motivo prático: o botão "Testar" precisa percorrer exatamente o mesmo
  * fluxo, tomar exatamente as mesmas decisões, e **não** mandar mensagem pra ninguém nem mexer no
  * funil. Com as ações atrás de uma interface, o simulador troca a implementação e ganha uma
- * simulação que é o comportamento real — não uma aproximação escrita à parte, que foi o que o
+ * simulação que é o comportamento real. Não uma aproximação escrita à parte, que foi o que o
  * simulador antigo era (e que por isso divergia do que acontecia de verdade).
  *
  * Toda ação devolve `{ ok, detalhe, erroTecnico? }` em vez de estourar: uma automação de sete
@@ -44,16 +44,16 @@ export type AcoesDoMotor = {
   /** Envia texto pelo canal da conversa daquele contato. */
   enviarTexto: (params: { contatoNome: string; texto: string; canal?: string }) => Promise<ResultadoAcao>;
   /** Envia uma pergunta com opções no melhor formato que o canal suporta (botão, lista, resposta
-   * rápida ou menu numerado). O `detalhe` diz qual formato saiu — a pessoa precisa ver isso. */
+   * rápida ou menu numerado). O `detalhe` diz qual formato saiu. A pessoa precisa ver isso. */
   perguntar: (params: { contatoNome: string; texto: string; opcoes: OpcaoPergunta[] }) => Promise<ResultadoAcao>;
   /** Envia uma localização (cartão com mapa no WhatsApp; link do Maps nos outros canais). */
   enviarLocalizacao: (params: { contatoNome: string; latitude: number; longitude: number; nome?: string; endereco?: string }) => Promise<ResultadoAcao>;
   /** Envia um cartão de contato. */
   enviarContato: (params: { contatoNome: string; nome: string; telefone?: string; email?: string; empresa?: string }) => Promise<ResultadoAcao>;
-  /** Avisa a equipe por dentro do CRM — vai pro histórico do lead e, quando há e-mail, pra caixa
+  /** Avisa a equipe por dentro do CRM. Vai pro histórico do lead e, quando há e-mail, pra caixa
    * de quem foi indicado. */
   avisarEquipe: (params: { contatoNome: string; equipe?: string; mensagem: string }) => Promise<ResultadoAcao>;
-  /** Dados de um contato do CRM, em JSON no `detalhe` — pro bloco que compartilha um contato. */
+  /** Dados de um contato do CRM, em JSON no `detalhe`: pro bloco que compartilha um contato. */
   buscarContato: (nome: string) => Promise<ResultadoAcao>;
   /** Endereço público do formulário, no `detalhe`. */
   linkDoFormulario: (params: { origem: "interno" | "externo"; formularioId?: string; urlExterna?: string }) => Promise<ResultadoAcao>;
@@ -100,13 +100,13 @@ export function acoesReais(params: {
   workspaceId: string;
   /** Só existe quando o fluxo foi disparado por um comentário. */
   responderComentario?: (texto: string) => Promise<void>;
-  /** Idem — ocultar só faz sentido quando há um comentário de origem. */
+  /** Idem: ocultar só faz sentido quando há um comentário de origem. */
   ocultarComentario?: () => Promise<void>;
 }): AcoesDoMotor {
   const { workspaceId } = params;
   return {
     async enviarTexto({ contatoNome, texto }) {
-      if (!texto.trim()) return falha("Mensagem vazia — nada foi enviado.");
+      if (!texto.trim()) return falha("Mensagem vazia: nada foi enviado.");
       try {
         const r = await enviarTextoPeloCanal({ workspaceId, conversaNome: contatoNome, texto });
         if (!r.enviado) return falha(`Não foi possível enviar: ${r.motivo ?? "motivo desconhecido"}`);
@@ -120,7 +120,7 @@ export function acoesReais(params: {
     },
 
     async perguntar({ contatoNome, texto, opcoes }) {
-      if (!texto.trim()) return falha("Pergunta sem texto — nada foi enviado.");
+      if (!texto.trim()) return falha("Pergunta sem texto: nada foi enviado.");
       try {
         const r = await enviarPerguntaPeloCanal({ workspaceId, conversaNome: contatoNome, texto, opcoes });
         if (!r.enviado) return falha(`Não foi possível enviar: ${r.motivo ?? "motivo desconhecido"}`);
@@ -133,14 +133,14 @@ export function acoesReais(params: {
           opcoes: r.formato === "numerado" ? undefined : opcoes.map((o) => o.rotulo),
           origem: "automacao",
         });
-        return ok(`Pergunta enviada (${NOME_DO_FORMATO[r.formato]})${r.observacao ? ` — ${r.observacao}` : ""}.`);
+        return ok(`Pergunta enviada (${NOME_DO_FORMATO[r.formato]})${r.observacao ? `: ${r.observacao}` : ""}.`);
       } catch (erro) {
         return falha("Falha ao enviar a pergunta.", mensagemDoErro(erro));
       }
     },
 
     async enviarMidia({ contatoNome, arquivoId, tipo, legenda }) {
-      if (!arquivoId) return falha("O bloco não tem arquivo escolhido — nada foi enviado.");
+      if (!arquivoId) return falha("O bloco não tem arquivo escolhido. Nada foi enviado.");
       try {
         const r = await enviarMidiaPeloCanal({ workspaceId, conversaNome: contatoNome, arquivoId, tipo, legenda });
         if (!r.enviado) return falha(`Não foi possível enviar o arquivo: ${r.motivo ?? "motivo desconhecido"}`);
@@ -214,7 +214,7 @@ export function acoesReais(params: {
           destinos.map((to) =>
             enviarEmailOuFalhar({
               to,
-              subject: `CRM AZUZ — ${contatoNome}`,
+              subject: `CRM AZUZ: ${contatoNome}`,
               html: `<p>${mensagem}</p><p style="color:#666">Lead: ${contatoNome}</p>`,
             }).catch((erro) => console.error("[automacao] aviso interno não saiu por e-mail:", erro)),
           ),
@@ -252,7 +252,7 @@ export function acoesReais(params: {
         const formulario = await prisma.formulario.findFirst({ where: { id: formularioId, workspaceId }, select: { id: true } });
         if (!formulario) return falha("Esse formulário não existe mais.");
         const base = (process.env.APP_URL ?? "").replace(/\/+$/, "");
-        if (!base) return falha("APP_URL não está configurado no servidor — sem ele não dá pra montar o link do formulário.");
+        if (!base) return falha("APP_URL não está configurado no servidor. Sem ele não dá pra montar o link do formulário.");
         return ok(`${base}/formulario-preview?id=${formulario.id}`);
       } catch (erro) {
         return falha("Falha ao montar o link do formulário.", mensagemDoErro(erro));
@@ -303,7 +303,7 @@ export function acoesReais(params: {
           const contato = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome: contatoNome } } });
           destino = contato?.email?.trim() || undefined;
         }
-        if (!destino) return falha(`${contatoNome} não tem e-mail cadastrado — nada foi enviado.`);
+        if (!destino) return falha(`${contatoNome} não tem e-mail cadastrado. Nada foi enviado.`);
         // `enviarEmailOuFalhar` e não `enviarEmail`: o segundo engole a falha e devolve sucesso,
         // e o histórico da automação diria "enviado" para alguém que não recebeu nada.
         await enviarEmailOuFalhar({ to: destino, subject: assunto, html: corpo });
@@ -331,7 +331,7 @@ export function acoesReais(params: {
             contato: contatoNome,
             contatoId: contato?.id ?? null,
             data: quando.toISOString().slice(0, 10),
-            responsavelNome: responsavel ?? "—",
+            responsavelNome: responsavel ?? "-",
             responsavelInitials: iniciais(responsavel ?? contatoNome),
             urgencia: prioridade ?? "normal",
             descricao: descricao ?? "",
@@ -347,7 +347,7 @@ export function acoesReais(params: {
       const ia = provedorDeIA();
       // Sem IA configurada o bloco NÃO inventa resposta: uma frase genérica saindo em nome da
       // empresa é pior do que nenhuma, e quem montou o fluxo precisa saber que falta a chave.
-      if (!ia) return falha("IA não configurada no servidor — nada foi respondido.");
+      if (!ia) return falha("IA não configurada no servidor. Nada foi respondido.");
       if (!instrucao.trim()) return falha("O bloco de IA está sem instrução.");
 
       try {
@@ -361,7 +361,7 @@ export function acoesReais(params: {
             `Instrução de quem montou o atendimento: ${instrucao}`,
             contexto?.trim() ? `Informações da empresa: ${contexto}` : "",
             `Responda em português do Brasil, em no máximo ${limite} caracteres.`,
-            "Não invente preço, prazo ou política que não estejam nas informações acima — se não souber, diga que vai confirmar.",
+            "Não invente preço, prazo ou política que não estejam nas informações acima. Se não souber, diga que vai confirmar.",
           ]
             .filter(Boolean)
             .join("\n"),
@@ -431,7 +431,7 @@ export function acoesReais(params: {
             workspaceId,
             contato: contatoNome,
             contatoId: contato?.id ?? null,
-            responsavel: responsavel || "—",
+            responsavel: responsavel || "-",
             dataIso,
             hora,
             tipo: tipo || "Consulta",
@@ -468,7 +468,7 @@ export function acoesReais(params: {
 
     async ocultarComentario() {
       // Sem comentário na origem não é erro: é o mesmo fluxo disparado por outro gatilho.
-      if (!params.ocultarComentario) return ok("Ignorado — este disparo não veio de um comentário.");
+      if (!params.ocultarComentario) return ok("Ignorado: este disparo não veio de um comentário.");
       try {
         await params.ocultarComentario();
         return ok("Comentário ocultado.");
@@ -491,8 +491,8 @@ export function acoesReais(params: {
           });
         }
         // Pausar e cancelar terminam do mesmo jeito hoje: encerram a execução. A diferença seria
-        // poder RETOMAR depois, e pra isso faltaria guardar de onde retomar e quem manda retomar —
-        // duas coisas que não existem. O histórico diz qual das duas a pessoa pediu, pra o dia em
+        // poder RETOMAR depois, e pra isso faltaria guardar de onde retomar e quem manda retomar.
+        // Duas coisas que não existem. O histórico diz qual das duas a pessoa pediu, pra o dia em
         // que a retomada existir não haver dúvida sobre a intenção de quem montou o fluxo.
         return ok(`${outras.length} ${outras.length === 1 ? "automação encerrada" : "automações encerradas"} (${modo}).`);
       } catch (erro) {
@@ -526,7 +526,7 @@ export function acoesReais(params: {
 
         // Rodízio: gira a partir de quem recebeu o último encaminhamento, pela ordem alfabética
         // (estável). Sem contador guardado, a base é quem está como responsável no contato mais
-        // recente — o suficiente pra não cair sempre na mesma pessoa.
+        // recente: o suficiente pra não cair sempre na mesma pessoa.
         const ultimo = await prisma.contato.findFirst({
           where: { workspaceId, responsavel: { in: equipe.map((m) => m.nome) } },
           orderBy: { atualizadoEm: "desc" },
@@ -598,7 +598,7 @@ export function acoesReais(params: {
             ordem: 0,
             workspaceId,
             nome: contatoNome,
-            valor: "—",
+            valor: "-",
             origem: "Automação",
             dias: "Hoje",
             data: new Date().toISOString().slice(0, 10),
@@ -612,7 +612,7 @@ export function acoesReais(params: {
 
     async responderComentario(texto) {
       // Sem comentário na origem não é erro: é o mesmo fluxo disparado por outro gatilho.
-      if (!params.responderComentario) return ok("Ignorado — este disparo não veio de um comentário.");
+      if (!params.responderComentario) return ok("Ignorado: este disparo não veio de um comentário.");
       try {
         await params.responderComentario(texto);
         return ok(`Comentário respondido: "${resumir(texto)}"`);
@@ -728,7 +728,7 @@ const NOME_DO_FORMATO = {
   numerado: "menu numerado",
 } as const;
 
-/** As últimas mensagens da conversa, em ordem — o contexto que a IA lê. */
+/** As últimas mensagens da conversa, em ordem: o contexto que a IA lê. */
 async function ultimasMensagens(workspaceId: string, contatoNome: string) {
   const linhas = await prisma.mensagemExtra.findMany({
     where: { workspaceId, contato: contatoNome },

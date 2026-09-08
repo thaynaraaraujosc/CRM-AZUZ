@@ -60,7 +60,7 @@ import {
 type Snapshot = { nodes: FlowRFNode[]; edges: FlowRFEdge[] };
 
 /**
- * Gatilhos mais comuns, na ordem sugerida pro fluxo guiado de primeira automação — evita jogar as 31
+ * Gatilhos mais comuns, na ordem sugerida pro fluxo guiado de primeira automação. Evita jogar as 31
  * opções de gatilho de uma vez só pra quem está começando. "Ver todos os gatilhos" continua abrindo a
  * biblioteca completa (nada fica escondido, só não é a primeira coisa que aparece).
  */
@@ -76,7 +76,7 @@ const GATILHOS_COMUNS: FlowNodeType[] = [
   "horario_programado",
 ];
 
-/** Frase curta pro modo "Entender fluxo" (item 24) — mesma frase de resumoNo(), só emoldurada por
+/** Frase curta pro modo "Entender fluxo" (item 24). Mesma frase de resumoNo(), só emoldurada por
  * categoria pra ler como narrativa ("Começa quando...", "Verifica...", "Envia...") em vez de um
  * fragmento solto. */
 function explicacaoDoNo(flowNode: DomainFlowNode, funis: Funil[]): string {
@@ -124,14 +124,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [minimapaVisivel, setMinimapaVisivel] = useState(true);
   const [arrastandoSobreCanvas, setArrastandoSobreCanvas] = useState(false);
   const [entenderFluxoAtivo, setEntenderFluxoAtivo] = useState(false);
-  /** Modo Visualizar (item 25): mesmo canvas, mas sem nada editável — sem arrastar bloco da
+  /** Modo Visualizar (item 25): mesmo canvas, mas sem nada editável: sem arrastar bloco da
    * biblioteca, sem menu de contexto, sem botão "+", sem arrastar node. Útil pra revisar o fluxo
    * com alguém sem risco de mexer em nada sem querer. */
   const [modoConstrucao, setModoConstrucao] = useState(true);
 
   const historyRef = useRef<Snapshot[]>([{ nodes: rfNodes, edges: rfEdges }]);
   const [historyIndex, setHistoryIndex] = useState(0);
-  /** Espelha `historyRef.current.length` em estado — ref não pode ser lido durante o render (regra do React 19/compiler). */
+  /** Espelha `historyRef.current.length` em estado: ref não pode ser lido durante o render (regra do React 19/compiler). */
   const [historyLen, setHistoryLen] = useState(1);
   const salvandoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -159,14 +159,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     setHistoryLen(limitado.length);
   }
 
-  /** Mudança estrutural (drag stop, conectar, excluir, adicionar bloco…) — persiste na hora e entra no histórico de undo/redo. */
+  /** Mudança estrutural (drag stop, conectar, excluir, adicionar bloco…): persiste na hora e entra no histórico de undo/redo. */
   function persist(nodes: FlowRFNode[], edges: FlowRFEdge[]) {
     atualizarFluxo(fluxoId, { nodes: rfNodesToDomain(nodes), edges: rfEdgesToDomain(edges) });
     marcarSalvando(400);
     pushHistory(nodes, edges);
   }
 
-  /** Edição de campo no painel de configuração — debounça a gravação (evita salvar/empilhar histórico a cada tecla). */
+  /** Edição de campo no painel de configuração. Debounça a gravação (evita salvar/empilhar histórico a cada tecla). */
   function persistDebounced(nodes: FlowRFNode[], edges: FlowRFEdge[]) {
     setSalvando(true);
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -275,7 +275,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     persist(novoNodes, rfEdges);
   }
 
-  /** "O que acontece agora?" (botão + depois de um node) — cria o bloco já conectado à saída clicada. */
+  /** "O que acontece agora?" (botão + depois de um node). Cria o bloco já conectado à saída clicada. */
   function adicionarBlocoConectado(tipo: FlowNodeType, nodeOrigemId: string, handleId: string | undefined) {
     const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
     const origem = rfNodes.find((n) => n.id === nodeOrigemId);
@@ -307,7 +307,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
   /**
    * Insere um follow-up depois de um bloco: a espera com prazo e a mensagem que sai quando o prazo
-   * vence, já ligadas. Não é um bloco novo nem um motor novo — é o par que a pessoa montaria à
+   * vence, já ligadas. Não é um bloco novo nem um motor novo. É o par que a pessoa montaria à
    * mão, montado por ela.
    */
   function adicionarFollowUp(nodeOrigemId: string, handleId: string | undefined) {
@@ -378,7 +378,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     if (!arrastandoSobreCanvas) setArrastandoSobreCanvas(true);
   }
   function onDragLeave(e: React.DragEvent) {
-    // Só desliga o destaque quando sai de fato da área do canvas — dragleave também dispara ao passar
+    // Só desliga o destaque quando sai de fato da área do canvas. Dragleave também dispara ao passar
     // por cima de um node/filho dentro dela, e não queremos piscar o destaque nesses casos.
     if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
     setArrastandoSobreCanvas(false);
@@ -518,13 +518,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     atualizarFluxo(fluxoId, { nodes: rfNodesToDomain(rfNodes), edges: rfEdgesToDomain(rfEdges) });
     setSalvando(false);
     // setTimeout(0) garante que `publicarFluxo` (que lê o estado do contexto) já
-    // enxerga o `atualizarFluxo` de cima — os dois não podem rodar na mesma
+    // enxerga o `atualizarFluxo` de cima. Os dois não podem rodar na mesma
     // atualização em lote do React.
     setTimeout(() => {
       const resultado = publicarFluxo(fluxoId, "Você");
       const erros = resultado.filter((p) => p.severidade === "erro");
       if (erros.length > 0) {
-        avisar(`Não deu pra publicar: ${erros.length} problema(s) — veja a aba "Problemas" no painel à direita.`);
+        avisar(`Não deu pra publicar: ${erros.length} problema(s). Veja a aba "Problemas" no painel à direita.`);
       } else {
         avisar("Fluxo publicado com sucesso.");
       }
@@ -559,7 +559,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     });
     return m;
   }, [problemas]);
-  /** Quais saídas (por nó) já têm uma aresta indo pra algum lugar — o botão "+" só aparece nas que não têm. */
+  /** Quais saídas (por nó) já têm uma aresta indo pra algum lugar. O botão "+" só aparece nas que não têm. */
   const saidasConectadasPorNode = useMemo(() => {
     const m = new Map<string, Set<string>>();
     rfEdges.forEach((e) => {
@@ -570,7 +570,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     });
     return m;
   }, [rfEdges]);
-  /** Ordem narrativa (1, 2, 3...) pro modo "Entender fluxo" — BFS a partir dos gatilhos, seguindo as
+  /** Ordem narrativa (1, 2, 3...) pro modo "Entender fluxo". BFS a partir dos gatilhos, seguindo as
    * arestas na ordem em que aparecem; um node já visitado (branches que se reencontram) não ganha
    * um segundo número. */
   const ordemNarrativaPorNode = useMemo(() => {
@@ -595,7 +595,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     }
     return m;
   }, [entenderFluxoAtivo, rfNodes, rfEdges]);
-  /** Quantos caminhos diferentes chegam em cada node — >1 quer dizer que branches diferentes se
+  /** Quantos caminhos diferentes chegam em cada node. >1 quer dizer que branches diferentes se
    * reencontram ali (item 31), o que merece um aviso visual em vez de parecer só mais uma seta. */
   const entradasPorNode = useMemo(() => {
     const m = new Map<string, number>();
@@ -607,7 +607,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }, [rfEdges]);
   /**
    * Com exatamente 1 node selecionado, destaca ele + vizinhos diretos (quem alimenta e quem recebe
-   * dele) e apaga levemente o resto — ajuda a acompanhar o fluxo em automações com muitos nós/
+   * dele) e apaga levemente o resto. Ajuda a acompanhar o fluxo em automações com muitos nós/
    * conexões cruzando a tela. Com 0 ou 2+ selecionados (seleção múltipla), não apaga nada.
    */
   const nodesRelacionados = useMemo(() => {
@@ -731,7 +731,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               e.preventDefault();
               if (!modoConstrucao) return;
               setSelectedNodeIds([node.id]);
-              // Grampeia (clamp) a posição aos limites da viewport — tamanho estimado do menu
+              // Grampeia (clamp) a posição aos limites da viewport. Tamanho estimado do menu
               // (min-width 180px + ~2 itens), pra nunca abrir cortado perto da borda da tela.
               const margem = 8;
               const larguraEstimada = 180;
@@ -986,7 +986,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onRemoverOpcaoAresta={removerOpcaoAresta}
           onSelecionarNode={(nodeId) => {
             setSelectedNodeIds([nodeId]);
-            // Clicar num problema não pode só selecionar o node fora da vista — centraliza a
+            // Clicar num problema não pode só selecionar o node fora da vista. Centraliza a
             // viewport nele, senão quem tem um fluxo grande não acha o que precisa corrigir.
             requestAnimationFrame(() => fitView({ nodes: [{ id: nodeId }], duration: 300, padding: 1.5, maxZoom: 1 }));
           }}

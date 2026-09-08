@@ -5,7 +5,7 @@ import { exigirSuperAdmin } from "@/lib/admin/guard";
 
 /** GET agrega números da plataforma inteira (todos os workspaces) pro dashboard do super-admin:
  * totais, MRR (soma das assinaturas ativas) e crescimento de workspaces nos últimos 6 meses. Tudo
- * calculado na hora — não guarda nada derivado no banco. */
+ * calculado na hora: não guarda nada derivado no banco. */
 export async function GET() {
   const guarda = await exigirSuperAdmin();
   if (!guarda.ok) return guarda.resposta;
@@ -24,7 +24,7 @@ export async function GET() {
     porStatus[a.status] = (porStatus[a.status] ?? 0) + 1;
   }
 
-  // Crescimento — workspaces criados por mês, últimos 6 meses (incluindo o atual).
+  // Crescimento: workspaces criados por mês, últimos 6 meses (incluindo o atual).
   const seisMesesAtras = new Date();
   seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 5);
   seisMesesAtras.setDate(1);

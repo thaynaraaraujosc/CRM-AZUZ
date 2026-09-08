@@ -7,7 +7,7 @@ import { contaConectada, tratarErroEnvio } from "@/lib/integracoes/whatsapp-ofic
 import { LIMITES } from "@/lib/templates/regras";
 import { prepararTemplate, type CorpoTemplate } from "@/lib/templates/preparar";
 
-/** Sempre pelo workspace da sessão E pelo id — id é adivinhável. */
+/** Sempre pelo workspace da sessão E pelo id. Id é adivinhável. */
 async function templateDoWorkspace(id: string, workspaceId: string) {
   return prisma.template.findFirst({ where: { id, workspaceId } });
 }
@@ -54,7 +54,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       corpo: editavel.corpo,
       variaveis: editavel.variaveis as never,
       botoes: editavel.botoes as never,
-      // Rejeitado que foi editado volta a rascunho — o vínculo com a Meta se desfaz, porque a
+      // Rejeitado que foi editado volta a rascunho. O vínculo com a Meta se desfaz, porque a
       // versão de lá é outra.
       ...(atual.status === "rejeitado" ? { status: "rascunho", whatsappTemplateId: null, motivoRejeicao: null } : {}),
       ...(!LIMITES[editavel.canal].temAnalise ? { status: "aprovado" } : {}),

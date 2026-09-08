@@ -8,10 +8,10 @@ import { apagarDoR2, chaveDeArquivo, guardarNoR2, lerDoR2, r2Configurado } from 
  *
  * Até aqui o arquivo ia inteiro, em base64, dentro da coluna `extras` da mensagem. Agora ele vai
  * pro R2 e no lugar dele fica só uma REFERÊNCIA: a string `r2:<chave>`. A mensagem continua sendo
- * a dona do anexo — o que muda é que ela guarda o endereço em vez do conteúdo.
+ * a dona do anexo: o que muda é que ela guarda o endereço em vez do conteúdo.
  *
  * Compatibilidade é o ponto central deste arquivo: tudo que já está gravado em base64 continua
- * gravado em base64 e continua sendo lido normalmente. Não existe "dia da virada" — mensagem
+ * gravado em base64 e continua sendo lido normalmente. Não existe "dia da virada". Mensagem
  * antiga e mensagem nova convivem, e a migração do que já existe pode acontecer depois, com calma.
  * Se o R2 não estiver configurado, o comportamento antigo segue valendo inteiro.
  */
@@ -153,7 +153,7 @@ export async function espacoUsado(workspaceId: string): Promise<number> {
 /**
  * Mensagens que ainda guardam anexo em base64 dentro de `extras`, por workspace.
  *
- * `JSON_SEARCH` com padrão `data:%` acha qualquer string do JSON que comece com `data:` — em
+ * `JSON_SEARCH` com padrão `data:%` acha qualquer string do JSON que comece com `data:`. Em
  * qualquer profundidade, sem precisar enumerar os campos. Não é o filtro `string_contains` do
  * Prisma de propósito: em produção ele devolvia zero com dezenas de mensagens pendentes, e a
  * tela escondia o botão de mover achando que não havia o que mover.

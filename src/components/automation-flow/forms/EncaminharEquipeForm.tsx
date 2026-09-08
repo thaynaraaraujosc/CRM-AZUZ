@@ -3,7 +3,7 @@
 import type { EncaminharEquipeData } from "@/lib/automation-flow/types";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 
-/** Ação "Encaminhar pra equipe" — qual equipe/fila recebe o atendimento. */
+/** Ação "Encaminhar pra equipe": qual equipe/fila recebe o atendimento. */
 export function EncaminharEquipeForm({ data, onChange }: { data: EncaminharEquipeData; onChange: (novo: EncaminharEquipeData) => void }) {
   const equipes = useEquipesDisponiveis();
 

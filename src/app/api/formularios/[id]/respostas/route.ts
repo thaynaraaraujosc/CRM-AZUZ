@@ -5,15 +5,15 @@ import { prisma } from "@/lib/prisma";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 
 /**
- * POST registra uma resposta pra esse formulário — usado por `registrarResposta` no Context e
+ * POST registra uma resposta pra esse formulário. Usado por `registrarResposta` no Context e
  * pela página pública `/formulario-preview` (sem sessão, sem Provider, chama a API direto). Sem
  * `auth()` de propósito: quem responde é um lead externo. O `workspaceId` da resposta nunca vem do
- * corpo da requisição — é copiado do Formulario pai, resolvido aqui pelo `formularioId` da URL.
+ * corpo da requisição: é copiado do Formulario pai, resolvido aqui pelo `formularioId` da URL.
  */
 /**
  * Quem respondeu, pra automação saber com quem falar.
  *
- * O formulário é montado pela pessoa, então não existe campo obrigatório chamado "nome" — a busca
+ * O formulário é montado pela pessoa, então não existe campo obrigatório chamado "nome". A busca
  * é pelo rótulo mais provável, e sem nenhum deles a resposta ainda vale (o fluxo roda identificado
  * pelo id da resposta em vez de morrer sem disparar).
  */

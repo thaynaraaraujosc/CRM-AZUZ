@@ -3,7 +3,7 @@
 import type { DistribuirDisponibilidadeData, ModoDistribuicao } from "@/lib/automation-flow/types";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 
-/** Ação "Distribuir por disponibilidade" — como escolher entre os atendentes da equipe. */
+/** Ação "Distribuir por disponibilidade": como escolher entre os atendentes da equipe. */
 export function DistribuirDisponibilidadeForm({
   data,
   onChange,

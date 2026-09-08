@@ -13,7 +13,7 @@ function baixarBlob(blob: Blob, nomeArquivo: string) {
   URL.revokeObjectURL(url);
 }
 
-/** Extrai texto puro de um HTML — usa o próprio DOM do navegador, sem parser externo. */
+/** Extrai texto puro de um HTML. Usa o próprio DOM do navegador, sem parser externo. */
 function htmlParaTexto(html: string): string {
   const div = document.createElement("div");
   div.innerHTML = html;
@@ -33,7 +33,7 @@ export function baixarHtml(titulo: string, paginas: PaginaDoc[]) {
   baixarBlob(new Blob([html], { type: "text/html;charset=utf-8" }), `${titulo}.html`);
 }
 
-/** RTF simples — preserva parágrafos, sem parser externo (formato bem estabelecido, gerado à mão). */
+/** RTF simples: preserva parágrafos, sem parser externo (formato bem estabelecido, gerado à mão). */
 export function baixarRtf(titulo: string, paginas: PaginaDoc[]) {
   const paragrafos = paginas
     .map((p) => htmlParaTexto(p.conteudoHtml))
@@ -77,10 +77,10 @@ function corParaHexOoxml(cor: string): string | null {
 }
 
 /**
- * Gera um .docx (OOXML) de verdade — parágrafo a parágrafo, percorrendo cada nó em vez de olhar só o
+ * Gera um .docx (OOXML) de verdade: parágrafo a parágrafo, percorrendo cada nó em vez de olhar só o
  * bloco inteiro. Preserva negrito/itálico/sublinhado/tachado/cor por trecho de texto (não o bloco todo
  * de uma vez, então "só metade em negrito" sai correto), e embute imagens de verdade (não vira texto
- * nem link — a imagem vai dentro do word/media/ com o relacionamento OOXML correto).
+ * nem link: a imagem vai dentro do word/media/ com o relacionamento OOXML correto).
  */
 export async function baixarDocx(titulo: string, paginas: PaginaDoc[]) {
   const zip = new JSZip();
@@ -111,7 +111,7 @@ export async function baixarDocx(titulo: string, paginas: PaginaDoc[]) {
     return { rId, idNumero };
   }
 
-  /** Elementos que representam um parágrafo/linha de verdade — tudo que não é isso é formatação inline. */
+  /** Elementos que representam um parágrafo/linha de verdade. Tudo que não é isso é formatação inline. */
   const TAGS_DE_BLOCO = new Set(["P", "DIV", "H1", "H2", "H3", "H4", "H5", "H6", "LI", "BLOCKQUOTE"]);
 
   function noParaRuns(no: Node, heranca: FormatacaoTexto): RunDocx[] {
@@ -138,7 +138,7 @@ export async function baixarDocx(titulo: string, paginas: PaginaDoc[]) {
       corHex: corInline ?? heranca.corHex,
     };
     // Elemento de bloco (ex.: <table>/<tr>/<td> não mapeados aqui) some como parágrafo próprio na hora
-    // de percorrer os filhos diretos da página — aqui, dentro de um bloco pai já aberto, tudo vira runs
+    // de percorrer os filhos diretos da página. Aqui, dentro de um bloco pai já aberto, tudo vira runs
     // do MESMO parágrafo (é assim que uma tabela citada dentro de um parágrafo sai como texto corrido).
     return Array.from(el.childNodes).flatMap((filho) => noParaRuns(filho, novaHeranca));
   }
@@ -190,15 +190,15 @@ export async function baixarDocx(titulo: string, paginas: PaginaDoc[]) {
 
   /**
    * Percorre os filhos DIRETOS da página. Um elemento de bloco (parágrafo/título/item de lista/citação)
-   * vira seu próprio <w:p>. Qualquer outra coisa no nível superior — texto solto, ou formatação inline
-   * (negrito/itálico/imagem) sem um parágrafo container — é acumulada no MESMO parágrafo corrente até o
+   * vira seu próprio <w:p>. Qualquer outra coisa no nível superior. Texto solto, ou formatação inline
+   * (negrito/itálico/imagem) sem um parágrafo container. É acumulada no MESMO parágrafo corrente até o
    * próximo bloco aparecer. Isso corrige o caso comum do editor: digitar texto simples, alternar negrito/
    * itálico e inserir uma imagem sem nunca apertar Enter gera um monte de nós irmãos soltos (texto, <b>,
-   * <i>, <img>) direto na página, sem nenhum <div>/<p> ao redor — juntar tudo é o comportamento certo.
+   * <i>, <img>) direto na página, sem nenhum <div>/<p> ao redor. Juntar tudo é o comportamento certo.
    */
   const formatacaoVazia: FormatacaoTexto = { negrito: false, italico: false, sublinhado: false, tachado: false, corHex: null };
 
-  /** Gera uma tabela OOXML de verdade (<w:tbl>) — linhas e colunas preservadas, não texto corrido. */
+  /** Gera uma tabela OOXML de verdade (<w:tbl>): linhas e colunas preservadas, não texto corrido. */
   function tabelaParaXml(tabela: HTMLTableElement): string {
     const linhas = Array.from(tabela.rows);
     if (linhas.length === 0) return "";
@@ -235,13 +235,13 @@ export async function baixarDocx(titulo: string, paginas: PaginaDoc[]) {
     </w:tbl>
     <w:p/>`;
     // OOXML exige um parágrafo depois de uma tabela (não pode ser o último elemento do corpo, nem duas
-    // tabelas podem ficar diretamente coladas) — o <w:p/> extra cobre os dois casos com segurança.
+    // tabelas podem ficar diretamente coladas). O <w:p/> extra cobre os dois casos com segurança.
   }
 
   /**
    * Percorre um container (a página, ou um <div>/<p> dentro dela) e empilha parágrafos/tabelas em
    * `paragrafosXml`. É recursivo: um <div> que contenha uma tabela em qualquer nível de aninhamento é
-   * processado de novo em vez de achatado em texto corrido — isso é comum no editor real, porque o
+   * processado de novo em vez de achatado em texto corrido. Isso é comum no editor real, porque o
    * Chrome costuma envolver o conteúdo recém-inserido (como uma tabela) num <div> vazio criado pelo
    * Enter anterior, então a tabela nem sempre é filha direta da página.
    */
@@ -384,7 +384,7 @@ export function analisarSelecaoPaginas(texto: string, total: number): number[] |
 }
 
 /**
- * Gera um PDF de verdade a partir dos elementos das páginas já renderizadas na tela — sem passar
+ * Gera um PDF de verdade a partir dos elementos das páginas já renderizadas na tela. Sem passar
  * pela janela de impressão do navegador. Cada página é rasterizada (html2canvas) e embutida como
  * imagem num PDF real (jsPDF), respeitando tamanho, orientação e margens exatamente como aparecem
  * no editor. Faz o download diretamente, sem abrir aba nova.
@@ -414,7 +414,7 @@ export async function baixarPdfReal(
  * Abre uma janela própria e limpa, contendo só o conteúdo do documento (sem menu, barra de
  * ferramentas, régua ou botões da aplicação), e dispara a impressão dessa janela isolada.
  * Isso evita que a interface do app apareça na impressão. O cabeçalho/rodapé automático do
- * PRÓPRIO NAVEGADOR (data, URL, título) fica fora do alcance do JavaScript — é uma opção do
+ * PRÓPRIO NAVEGADOR (data, URL, título) fica fora do alcance do JavaScript. É uma opção do
  * diálogo de impressão do navegador ("Cabeçalhos e rodapés") que só o usuário pode desligar ali.
  */
 export function abrirPreviaImpressaoLimpa(
@@ -435,7 +435,7 @@ export function abrirPreviaImpressaoLimpa(
 ) {
   const janela = window.open("", "_blank", "width=900,height=1000");
   if (!janela) {
-    window.alert("O navegador bloqueou a janela de pré-visualização — permita pop-ups pra esse site e tente de novo.");
+    window.alert("O navegador bloqueou a janela de pré-visualização. Permita pop-ups pra esse site e tente de novo.");
     return;
   }
   const padding = `${opcoes.margemSuperiorMm}mm ${opcoes.margemDireitaMm}mm ${opcoes.margemInferiorMm}mm ${opcoes.margemEsquerdaMm}mm`;
@@ -446,7 +446,7 @@ export function abrirPreviaImpressaoLimpa(
     )
     .join("");
   const qtdColunas = opcoes.qtdColunas ?? 1;
-  // O corpo (texto do documento) fica dentro de .doc-corpo-impresso — as colunas só se aplicam a ele,
+  // O corpo (texto do documento) fica dentro de .doc-corpo-impresso: as colunas só se aplicam a ele,
   // nunca ao cabeçalho/rodapé repetido (que continua em largura cheia, uma linha só, como no editor).
   const cssColunas =
     qtdColunas > 1
@@ -464,13 +464,13 @@ export function abrirPreviaImpressaoLimpa(
   * { box-sizing: border-box; }
   html { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
   body { margin: 0; background: #e7e9f0; font-family: Arial, sans-serif; }
-  /* position: relative — o mesmo contêiner que a página usa no editor (.doc-page-sheet). Sem isso,
+  /* position: relative: o mesmo contêiner que a página usa no editor (.doc-page-sheet). Sem isso,
      qualquer imagem em "atrás"/"na frente"/"posição livre" (position: absolute, herdada do editor)
      perde a página como referência e se posiciona relativa à janela inteira de impressão. */
   .folha { position: relative; isolation: isolate; margin: 12mm auto; box-shadow: 0 4px 20px rgba(0,0,0,.15); overflow-wrap: break-word; overflow: hidden; }
   .doc-cabecalho-repetido { font-size: 11px; color: #666; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid #e2e2e2; }
   .doc-rodape-repetido { font-size: 11px; color: #666; padding-top: 10px; margin-top: 14px; border-top: 1px solid #e2e2e2; }
-  /* Mesma escala de títulos do editor (globals.css, ".doc-body-rich h1/h2/h3/h4") — repetida aqui
+  /* Mesma escala de títulos do editor (globals.css, ".doc-body-rich h1/h2/h3/h4"): repetida aqui
      porque esta janela de impressão é um documento à parte, que não carrega o CSS do app. */
   .doc-corpo-impresso h1 { font-size: 26px; font-weight: 700; line-height: 1.3; margin: 0.7em 0 0.35em; }
   .doc-corpo-impresso h2 { font-size: 21px; font-weight: 700; line-height: 1.35; margin: 0.65em 0 0.3em; }
@@ -491,7 +491,7 @@ export function abrirPreviaImpressaoLimpa(
   janela.document.close();
   janela.focus();
   // Espera a janela terminar de carregar (imagens em base64 incluídas) antes de imprimir, em vez de um
-  // tempo fixo — evita imprimir uma página ainda incompleta em documentos maiores/mais lentos. Um
+  // tempo fixo: evita imprimir uma página ainda incompleta em documentos maiores/mais lentos. Um
   // fallback curto cobre o caso raro do evento de carga já ter dado (ou nunca disparar).
   const janelaAberta = janela;
   let jaImprimiu = false;

@@ -6,7 +6,7 @@ import type { AnexoAudio } from "@/lib/data";
 import { IconPause, IconPlay } from "@/components/icons";
 
 /**
- * Só um áudio toca por vez no módulo inteiro — quando um player começa a
+ * Só um áudio toca por vez no módulo inteiro. Quando um player começa a
  * tocar, ele pausa o que estava tocando antes. Variável de módulo (não
  * estado React) de propósito: é um registro global de runtime, não algo que
  * precise disparar re-render de quem não está tocando.
@@ -28,7 +28,7 @@ function formatarDuracao(segundos: number) {
   return `${min}:${String(seg).padStart(2, "0")}`;
 }
 
-/** Barras de forma de onda a partir de picos de amplitude (0–1), com preenchimento de progresso. */
+/** Barras de forma de onda a partir de picos de amplitude (0-1), com preenchimento de progresso. */
 export function AudioWaveformBars({
   waveform,
   progresso,
@@ -83,7 +83,7 @@ const VELOCIDADES = [1, 1.5, 2] as const;
 
 /**
  * Player completo de uma bolha de áudio (enviado ou recebido). Cuida do
- * próprio estado de reprodução — o pai só passa os dados do anexo e o status
+ * próprio estado de reprodução: o pai só passa os dados do anexo e o status
  * da mensagem.
  */
 export function AudioBubblePlayer({
@@ -163,7 +163,7 @@ export function AudioBubblePlayer({
         onClick={() =>
           setVelocidade((v) => VELOCIDADES[(VELOCIDADES.indexOf(v) + 1) % VELOCIDADES.length])
         }
-        aria-label={`Velocidade de reprodução, atual ${velocidade}x — toque pra mudar`}
+        aria-label={`Velocidade de reprodução, atual ${velocidade}x: toque pra mudar`}
         title="Mudar velocidade"
       >
         {velocidade}x

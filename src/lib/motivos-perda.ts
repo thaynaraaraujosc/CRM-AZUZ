@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-/** Motivos de perda cadastrados no workspace — busca real (`/api/motivos-perda`, que semeia um
+/** Motivos de perda cadastrados no workspace. Busca real (`/api/motivos-perda`, que semeia um
  * padrão na primeira vez). Usado no seletor ao marcar um negócio como "perdido". */
 export function useMotivosPerda(): string[] {
   const [motivos, setMotivos] = useState<string[]>([]);

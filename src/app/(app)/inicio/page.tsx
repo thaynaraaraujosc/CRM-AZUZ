@@ -39,9 +39,9 @@ const PRIORIDADE_PESO: Record<ItemDia["prioridade"], number> = {
   oportunidade: 2,
 };
 
-/** Origens pagas (tráfego/anúncios) — o resto (Direto, Instagram, TikTok, Indicação, Formulário…)
+/** Origens pagas (tráfego/anúncios): o resto (Direto, Instagram, TikTok, Indicação, Formulário…)
  * entra em "Outros". Hoje só o Meta Ads grava atribuição real em `Conversa.origem`; Google Ads fica
- * zerado até essa integração existir — número real, não fictício, mesmo que comece em zero. */
+ * zerado até essa integração existir. Número real, não fictício, mesmo que comece em zero. */
 function ehOrigemPaga(origem: string): boolean {
   return origem === "Meta Ads" || origem === "Google Ads";
 }
@@ -74,10 +74,10 @@ function tempoDesde(timestamp: number): string {
 }
 
 /**
- * Central do Dia — substitui a antiga "Visão geral" (que duplicava gráficos já existentes em
+ * Central do Dia: substitui a antiga "Visão geral" (que duplicava gráficos já existentes em
  * Inteligência Comercial). A pergunta que essa página responde agora é só uma: "o que precisa ser
- * feito hoje?". Todo item é derivado de dados reais de outros módulos (`@/lib/central-dia/mock`) —
- * a única exceção documentada é a agenda mockada (o CRM ainda não tem um módulo de compromissos com
+ * feito hoje?". Todo item é derivado de dados reais de outros módulos (`@/lib/central-dia/mock`).
+ * A única exceção documentada é a agenda mockada (o CRM ainda não tem um módulo de compromissos com
  * hora/local) e as recomendações (regras locais, não IA de verdade).
  */
 export default function InicioPage() {
@@ -146,7 +146,7 @@ export default function InicioPage() {
 
   const tudoConcluido = itensFiltrados.length === 0 && compromissosHoje.length === 0 && concluidos.length > 0;
 
-  /** Leads que entraram hoje (conversa criada de verdade hoje), divididos por origem — atualiza
+  /** Leads que entraram hoje (conversa criada de verdade hoje), divididos por origem: atualiza
    * sozinho conforme `useConversas()` recebe mensagem nova (mesmo hook que alimenta o resto do
    * app). `Conversa.criadoEm` é timestamp real de banco, por isso compara contra a data real de
    * agora, não contra o "HOJE" simulado que a agenda mockada usa. */

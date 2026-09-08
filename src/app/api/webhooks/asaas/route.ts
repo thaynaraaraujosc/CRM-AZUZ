@@ -12,16 +12,16 @@ type PayloadAsaas = {
   };
 };
 
-/** Status de cobrança da Asaas que colocam a assinatura em dia (o valor foi confirmado — via
+/** Status de cobrança da Asaas que colocam a assinatura em dia (o valor foi confirmado. Via
  * cartão aprovado na hora, ou boleto/PIX compensado depois). */
 const STATUS_QUE_ATIVAM = new Set(["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"]);
-/** Cobrança vencida sem pagamento — assinatura fica "atrasada" mas continua existindo (diferente
+/** Cobrança vencida sem pagamento: assinatura fica "atrasada" mas continua existindo (diferente
  * de "cancelada", que só acontece por ação explícita do admin ou da Asaas). */
 const STATUS_QUE_ATRASAM = new Set(["OVERDUE"]);
 
 /**
  * POST recebe eventos de cobrança da Asaas (`PAYMENT_RECEIVED`, `PAYMENT_CONFIRMED`,
- * `PAYMENT_OVERDUE`, etc. — sempre sobre uma cobrança individual, a Asaas não tem webhook
+ * `PAYMENT_OVERDUE`, etc. Sempre sobre uma cobrança individual, a Asaas não tem webhook
  * dedicado a assinatura). Sem `auth()` de propósito, quem chama é a Asaas; a autenticidade vem do
  * header `asaas-access-token`, configurado no painel da Asaas com o mesmo valor de
  * `ASAAS_WEBHOOK_TOKEN`.
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   if (!novoStatus) return NextResponse.json({ ok: true });
 
   // Aproxima o próximo vencimento em +1 mês a partir do vencimento da cobrança que acabou de ser
-  // paga (ciclo é sempre MONTHLY) — evita ter que fazer uma segunda chamada à Asaas só pra buscar
+  // paga (ciclo é sempre MONTHLY). Evita ter que fazer uma segunda chamada à Asaas só pra buscar
   // a assinatura atualizada.
   const proximoVencimento = pagamento.dueDate
     ? new Date(new Date(pagamento.dueDate).setMonth(new Date(pagamento.dueDate).getMonth() + 1))

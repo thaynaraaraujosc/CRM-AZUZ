@@ -7,7 +7,7 @@ import { ehRotaPublica } from "../rotas-publicas";
  *
  * Rota chamada por sistema (webhook, cron) que fica de fora da lista não dá erro: o proxy responde
  * 307 pro /login, quem chamou registra "sucesso" e a rota simplesmente nunca roda. Já aconteceu
- * três vezes — Evolution, saúde do WhatsApp e cron das campanhas — e em nenhuma delas apareceu
+ * três vezes: Evolution, saúde do WhatsApp e cron das campanhas. E em nenhuma delas apareceu
  * mensagem de erro em lugar nenhum. O sintoma foi sempre "a funcionalidade não faz nada".
  *
  * E o teste corre nos dois sentidos: esquecer de abrir uma rota de sistema quebra em silêncio,
@@ -34,7 +34,7 @@ describe("rotas que dispensam sessão", () => {
   });
 
   it("mantém a landing aberta sem abrir o resto do site junto", () => {
-    // "/" é prefixo de tudo — comparado como prefixo, liberaria o CRM inteiro.
+    // "/" é prefixo de tudo. Comparado como prefixo, liberaria o CRM inteiro.
     expect(ehRotaPublica("/")).toBe(true);
     expect(ehRotaPublica("/inicio")).toBe(false);
   });

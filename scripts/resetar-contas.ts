@@ -1,4 +1,4 @@
-// Script de uso único — deixa só duas contas ativas (a admin e a de teste "cliente"), sem apagar
+// Script de uso único: deixa só duas contas ativas (a admin e a de teste "cliente"), sem apagar
 // nada: as demais só perdem o acesso (ativo=false), os dados que já apontam pra elas (conversas,
 // tarefas etc.) continuam intactos. As duas contas mantidas recebem senha nova.
 // Rode com: npx tsx scripts/resetar-contas.ts
@@ -11,7 +11,7 @@ import bcrypt from "bcryptjs";
 setDefaultResultOrder("ipv4first");
 
 if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL não encontrada — confira se o arquivo .env existe na raiz do projeto.");
+  console.error("DATABASE_URL não encontrada: confira se o arquivo .env existe na raiz do projeto.");
   process.exit(1);
 }
 
@@ -30,7 +30,7 @@ async function main() {
   for (const conta of CONTAS_MANTIDAS) {
     const membro = await prisma.membro.findUnique({ where: { email: conta.email } });
     if (!membro) {
-      console.error(`Conta ${conta.email} não encontrada — nada foi feito pra ela.`);
+      console.error(`Conta ${conta.email} não encontrada: nada foi feito pra ela.`);
       continue;
     }
     const hash = await bcrypt.hash(conta.senha, 10);

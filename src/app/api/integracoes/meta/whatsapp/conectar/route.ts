@@ -11,7 +11,7 @@ import {
 import { META_GRAPH_URL, type ErroGraph } from "@/lib/integracoes/meta";
 
 /**
- * Finaliza a conexão do WhatsApp Business oficial (Cloud API) depois do Embedded Signup — o popup
+ * Finaliza a conexão do WhatsApp Business oficial (Cloud API) depois do Embedded Signup. O popup
  * da Meta devolve `code` + os ids dos recursos criados, e é aqui que isso vira uma integração
  * usável de verdade.
  *
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       accessToken = decriptar(existente.accessTokenCriptografado);
     }
     if (!accessToken) {
-      return NextResponse.json({ erro: "Autorização não recebida — refaça a conexão." }, { status: 400 });
+      return NextResponse.json({ erro: "Autorização não recebida: refaça a conexão." }, { status: 400 });
     }
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : "Falha ao obter a autorização da Meta.";

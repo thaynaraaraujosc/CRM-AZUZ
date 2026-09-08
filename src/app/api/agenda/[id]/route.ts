@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { aoMudarCompromisso } from "@/lib/automacoes/gatilhos-crm";
 
-/** Atualização direta por id — usada por `editarAgendamento`/`reagendar`/`cancelar`/`concluir`. Só
+/** Atualização direta por id: usada por `editarAgendamento`/`reagendar`/`cancelar`/`concluir`. Só
  * mexe em compromisso do mesmo workspace de quem está logado. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/agenda/[id]">) {
   const sessao = await auth();

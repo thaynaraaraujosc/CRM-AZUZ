@@ -39,7 +39,7 @@ function LoginForm() {
     if (resultado?.error) {
       // O NextAuth devolve o mesmo erro quando a senha está errada e quando `authorize` não
       // conseguiu nem consultar o banco. Sem essa checagem, uma queda do banco aparecia aqui como
-      // "senha incorreta" — a pessoa tentava de novo, trocava a senha, e nada funcionava, porque
+      // "senha incorreta": a pessoa tentava de novo, trocava a senha, e nada funcionava, porque
       // a senha nunca foi o problema.
       const bancoOk = await fetch("/api/saude/banco")
         .then((r) => r.ok)
@@ -47,7 +47,7 @@ function LoginForm() {
       setErro(
         bancoOk
           ? "E-mail ou senha incorretos."
-          : "O servidor não está conseguindo acessar o banco de dados agora — não é a sua senha. Tente de novo em alguns minutos.",
+          : "O servidor não está conseguindo acessar o banco de dados agora. Não é a sua senha. Tente de novo em alguns minutos.",
       );
       return;
     }
@@ -78,7 +78,7 @@ function LoginForm() {
         <h1 className="auth-title">Acesse sua conta</h1>
         <p className="auth-sub">Entre para continuar de onde parou no seu CRM.</p>
 
-        {/* O rótulo continua no HTML, escondido por CSS — o campo precisa dele pra leitor de tela,
+        {/* O rótulo continua no HTML, escondido por CSS: o campo precisa dele pra leitor de tela,
             mesmo com o placeholder dizendo a mesma coisa visualmente. */}
         <div className="field">
           <label htmlFor="email">E-mail</label>

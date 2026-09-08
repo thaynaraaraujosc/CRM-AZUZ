@@ -89,7 +89,7 @@ function valorSimulado(pergunta: PerguntaFormulario): string {
   }
 }
 
-/** Todas as perguntas do formulário, na ordem, com um número de exibição — blocos de layout não contam. */
+/** Todas as perguntas do formulário, na ordem, com um número de exibição. Blocos de layout não contam. */
 function perguntasNumeradas(formulario: Formulario): { pergunta: PerguntaFormulario; numero: number }[] {
   const lista: { pergunta: PerguntaFormulario; numero: number }[] = [];
   let numero = 0;
@@ -102,7 +102,7 @@ function perguntasNumeradas(formulario: Formulario): { pergunta: PerguntaFormula
   return lista;
 }
 
-/** Nome de quem respondeu — usa a primeira pergunta mapeada pro campo "nome" do contato. */
+/** Nome de quem respondeu: usa a primeira pergunta mapeada pro campo "nome" do contato. */
 function nomeResposta(formulario: Formulario, resposta: RespostaFormulario): string {
   const todasPerguntas = formulario.paginas.flatMap((p) => p.perguntas);
   const perguntaNome = todasPerguntas.find((p) => p.mapeamentoCrm === "nome");
@@ -252,14 +252,14 @@ export default function FormulariosPage() {
     });
     registrarResposta(formularioAberto.id, valores);
     criarContato({
-      nome: dadosContato.nome || `Resposta — ${formularioAberto.nome}`,
+      nome: dadosContato.nome || `Resposta: ${formularioAberto.nome}`,
       email: dadosContato.email,
       whatsapp: dadosContato.whatsapp,
       empresa: dadosContato.empresa,
       cidade: dadosContato.cidade,
       estado: dadosContato.estado,
     });
-    avisar("Resposta simulada — contato criado em Contatos.");
+    avisar("Resposta simulada: contato criado em Contatos.");
   }
 
   const respostas = formularioAberto ? respostasDoFormulario(formularioAberto.id) : [];
@@ -290,7 +290,7 @@ export default function FormulariosPage() {
               <span>
                 <span className="form-scratch-title">Criar formulário do zero</span>
                 <span className="form-scratch-sub">
-                  Monte páginas, campos e lógica do seu jeito — como um construtor profissional.
+                  Monte páginas, campos e lógica do seu jeito. Como um construtor profissional.
                 </span>
               </span>
             </button>
@@ -301,7 +301,7 @@ export default function FormulariosPage() {
             <div className="card">
               {formularios.length === 0 ? (
                 <p className="hint" style={{ padding: 24, textAlign: "center" }}>
-                  Nenhum formulário ainda — clique em &quot;Criar formulário do zero&quot; acima pra criar o primeiro.
+                  Nenhum formulário ainda: clique em &quot;Criar formulário do zero&quot; acima pra criar o primeiro.
                 </p>
               ) : (
                 formularios.map((f) => {
@@ -408,7 +408,7 @@ export default function FormulariosPage() {
                 className={`btn ${formularioAberto.status === "publicado" ? "ghost" : "primary"}`}
                 onClick={() => {
                   alternarPublicacao(formularioAberto.id);
-                  avisar(formularioAberto.status === "publicado" ? "Formulário voltou pra rascunho." : "Formulário publicado — o link já responde.");
+                  avisar(formularioAberto.status === "publicado" ? "Formulário voltou pra rascunho." : "Formulário publicado: o link já responde.");
                 }}
               >
                 {formularioAberto.status === "publicado" ? "Despublicar" : "Publicar"}
@@ -481,7 +481,7 @@ export default function FormulariosPage() {
                     {formularioAberto.paginas.flatMap((p) => p.perguntas).filter((q) => !TIPOS_LAYOUT.includes(q.tipo)).map((pergunta) => {
                       const valor = respostaAberta.valores[pergunta.id];
                       // Campos de upload guardam "nomeDoArquivo|data:...;base64,..." (ver
-                      // campo-resposta.tsx) — mostra o nome com um link real pra abrir/baixar o
+                      // campo-resposta.tsx): mostra o nome com um link real pra abrir/baixar o
                       // arquivo, em vez de despejar o base64 inteiro como texto.
                       const ehUpload = TIPOS_UPLOAD.includes(pergunta.tipo);
                       const [nomeArquivo, urlArquivo] = ehUpload && valor ? valor.split("|") : [undefined, undefined];
@@ -493,7 +493,7 @@ export default function FormulariosPage() {
                               <IconAnexo width={13} height={13} /> {nomeArquivo}
                             </a>
                           ) : (
-                            <div className="input">{ehUpload ? "—" : valor || "—"}</div>
+                            <div className="input">{ehUpload ? "-" : valor || "-"}</div>
                           )}
                         </div>
                       );
@@ -504,7 +504,7 @@ export default function FormulariosPage() {
                 <div className="card">
                   {respostas.length === 0 ? (
                     <p className="hint" style={{ padding: 24, textAlign: "center" }}>
-                      Nenhuma resposta ainda — publique o formulário e compartilhe o link, ou use &quot;Simular resposta&quot; na aba Editar.
+                      Nenhuma resposta ainda: publique o formulário e compartilhe o link, ou use &quot;Simular resposta&quot; na aba Editar.
                     </p>
                   ) : (
                     respostas.map((r) => (
@@ -606,7 +606,7 @@ export default function FormulariosPage() {
                     <div className="form-canvas-folha" onClick={(e) => e.stopPropagation()}>
                       {paginaAtiva.perguntas.length === 0 ? (
                         <p className="hint" style={{ padding: "40px 0", textAlign: "center" }}>
-                          Página vazia — adicione o primeiro campo abaixo.
+                          Página vazia: adicione o primeiro campo abaixo.
                         </p>
                       ) : (
                         paginaAtiva.perguntas.map((pergunta, indice) => {
@@ -741,7 +741,7 @@ export default function FormulariosPage() {
 
             {abaBuilder === "editar" ? (
               <div className="card mt14" style={{ padding: 17 }}>
-                <p className="hint mb14">Sem API pública ainda — use este botão pra simular alguém respondendo (vira contato em Contatos).</p>
+                <p className="hint mb14">Sem API pública ainda: use este botão pra simular alguém respondendo (vira contato em Contatos).</p>
                 <button type="button" className="btn ghost block" onClick={simularResposta}>
                   Simular resposta
                 </button>
@@ -861,7 +861,7 @@ function PainelPagina({
   return (
     <>
       <p className="hint" style={{ padding: "14px 14px 0" }}>
-        Nada selecionado — configurando a página.
+        Nada selecionado: configurando a página.
       </p>
       <SecaoPainel titulo="Geral">
         <div className="field">
@@ -1492,7 +1492,7 @@ function PainelDesign({
         </div>
         {formulario.versoes.length === 0 ? (
           <p className="hint" style={{ marginTop: 0 }}>
-            Toda vez que você publicar o formulário, uma versão fica salva aqui — dá pra voltar pra ela depois.
+            Toda vez que você publicar o formulário, uma versão fica salva aqui. Dá pra voltar pra ela depois.
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

@@ -15,11 +15,11 @@ import type { ConvMensagem } from "@/lib/data";
 import { INTERVALO_POLLING_MS } from "@/lib/conversas/polling";
 
 /**
- * Mensagens extras (enviadas/recebidas depois do "seed" de cada conversa) — compartilhado entre
+ * Mensagens extras (enviadas/recebidas depois do "seed" de cada conversa). Compartilhado entre
  * WhatsApp (`/conversas`) e o popup de resposta rápida do Funil, porque as duas telas conversam
  * com o MESMO contato: uma mensagem mandada de um lugar precisa aparecer no outro.
  *
- * Banco real (ver src/app/api/mensagens-extra/) — não tem mutador dedicado aqui (só 4 chamadas
+ * Banco real (ver src/app/api/mensagens-extra/): não tem mutador dedicado aqui (só 4 chamadas
  * cruas de `setMensagensExtraPorContato` em `funil/page.tsx`/`conversas/page.tsx`), então sincroniza
  * o Record inteiro com a API a cada mudança, mesmo molde de `funis-context.tsx`. Resolve de graça o
  * bug que já existia aqui: anexo grande estourava a cota do localStorage.
@@ -27,21 +27,21 @@ import { INTERVALO_POLLING_MS } from "@/lib/conversas/polling";
 type MensagensExtraContextValue = {
   mensagensExtraPorContato: Record<string, ConvMensagem[]>;
   setMensagensExtraPorContato: Dispatch<SetStateAction<Record<string, ConvMensagem[]>>>;
-  /** Força buscar as mensagens de novo agora, sem esperar o próximo ciclo do polling — usado pelo
+  /** Força buscar as mensagens de novo agora, sem esperar o próximo ciclo do polling. Usado pelo
    * botão de atualizar da tela de Conversas. */
   recarregar: () => void;
 };
 
 const MensagensExtraContext = createContext<MensagensExtraContextValue | null>(null);
 
-/** Chave estável de uma mensagem — usa `id` quando existe (toda mensagem que já veio ou já foi
+/** Chave estável de uma mensagem. Usa `id` quando existe (toda mensagem que já veio ou já foi
  * sincronizada com o servidor tem um), senão cai num par texto+hora só pra não colidir tudo num
  * balde só (mensagem otimista sem id ainda, rarérrimo depois do primeiro render). */
 function chaveMensagem(m: ConvMensagem, indice: number): string {
   return m.id ?? `${m.texto}-${m.hora}-${indice}`;
 }
 
-/** Chave estável e globalmente única de uma mensagem — usada pra achar o que mudou entre dois
+/** Chave estável e globalmente única de uma mensagem. Usada pra achar o que mudou entre dois
  * estados (ver `calcularDelta`) e como `id` de fallback no upsert do servidor. */
 function chaveGlobal(contato: string, m: ConvMensagem, indice: number): string {
   return m.id ?? `${contato}::${indice}`;
@@ -49,7 +49,7 @@ function chaveGlobal(contato: string, m: ConvMensagem, indice: number): string {
 
 /**
  * Compara o estado atual com o último estado que já se sabe estar refletido no servidor (depois
- * de um GET ou de um PUT bem-sucedido) e devolve só o que precisa ser enviado — nunca a tabela
+ * de um GET ou de um PUT bem-sucedido) e devolve só o que precisa ser enviado. Nunca a tabela
  * inteira. Isso é o que evita reprocessar/retransmitir todo o histórico do workspace a cada
  * mudança de estado (inclusive as que vêm do próprio polling), que era a causa raiz do
  * travamento em `/conversas`.
@@ -85,17 +85,17 @@ function calcularDelta(
 }
 
 /**
- * Funde o que o servidor devolveu com o que já está na tela — nunca um `set` bruto. Um polling
+ * Funde o que o servidor devolveu com o que já está na tela. Nunca um `set` bruto. Um polling
  * (rodando em qualquer aba aberta, e você pode ter mais de uma) sempre reflete um instante do
  * passado; se ele chegou ANTES de uma mensagem que você acabou de mandar ter sido persistida, um
  * `set` bruto apagaria essa mensagem da tela (e, pior, o próximo PUT reconciliaria o servidor com
- * essa versão sem ela — apagando de vez). Fundir por id resolve os dois: o servidor manda quem
+ * essa versão sem ela: apagando de vez). Fundir por id resolve os dois: o servidor manda quem
  * ganha em conteúdo/status quando os dois lados já concordam, e nada que só existe localmente
  * ainda (otimista, PUT em voo) é descartado.
  */
 /**
  * Uma mídia pendente (áudio/imagem recebida sem conteúdo no webhook) é resolvida localmente sob
- * demanda — o PUT que persiste isso no servidor é debounçado (400ms) e só reflete no GET depois.
+ * demanda: o PUT que persiste isso no servidor é debounçado (400ms) e só reflete no GET depois.
  * Sem isso, o polling de 5s pega o servidor ainda com o placeholder antigo e sobrescreve o áudio/
  * imagem já carregado na tela, fazendo ele "aparecer e sumir" e disparando um novo fetch à toa.
  */
@@ -140,12 +140,12 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
     Record<string, ConvMensagem[]>
   >({});
   const carregadoRef = useRef(false);
-  // Último estado que já se sabe estar refletido no servidor — a base pra calcular o delta do
+  // Último estado que já se sabe estar refletido no servidor. A base pra calcular o delta do
   // próximo PUT. Atualizado depois de todo GET/PUT bem-sucedido, nunca durante o merge otimista.
   const ultimoSincronizadoRef = useRef<Record<string, ConvMensagem[]>>({});
 
   /**
-   * Versão que o servidor já confirmou — mandada de volta em `If-None-Match` na próxima batida.
+   * Versão que o servidor já confirmou. Mandada de volta em `If-None-Match` na próxima batida.
    * Quando nada mudou, a resposta é um `304` sem corpo: o servidor nem chega a consultar as
    * mensagens. Ver `src/lib/conversas/assinatura.ts`; era esta chamada, repetida a cada 5s por aba
    * aberta, que sozinha puxava ~1,9 TB do banco por mês.
@@ -155,7 +155,7 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
    * Sincronização incremental (ver `GET /api/mensagens-extra`). `marca` é o instante até o qual
    * esta tela está em dia; a próxima batida pede só o que mudou depois dele. `total` é quantas
    * mensagens o servidor disse ter na última resposta: apagamento não aparece num delta, então é
-   * comparando o total que se descobre que algo sumiu — e aí se pede a lista inteira uma vez.
+   * comparando o total que se descobre que algo sumiu. E aí se pede a lista inteira uma vez.
    *
    * O que isto muda na conta: antes, cada mensagem nova fazia a tela baixar as 3.000 mais recentes
    * de novo. O custo de UMA mensagem era proporcional ao tamanho do histórico inteiro, o que não
@@ -170,7 +170,7 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
     return fetch(url, {
       // O cache do navegador faria a revalidação sozinho, mas de um jeito que o código não enxerga
       // (ele entrega um 200 vindo do cache). Fazendo à mão dá pra SABER que nada mudou e não mexer
-      // no estado — o que evita re-render inútil da tela de Conversas a cada batida.
+      // no estado: o que evita re-render inútil da tela de Conversas a cada batida.
       cache: "no-store",
       headers: etagRef.current ? { "if-none-match": etagRef.current } : undefined,
     })
@@ -185,7 +185,7 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
         if (parcial) {
           // Quantas das que vieram a tela ainda não conhecia. Se o total do servidor for diferente
           // de "o que eu tinha + as novas", alguma foi apagada (por outra aba, outra pessoa, ou
-          // uma limpeza) — e um delta não tem como contar isso. Lista inteira, uma vez.
+          // uma limpeza): e um delta não tem como contar isso. Lista inteira, uma vez.
           const conhecidas = new Set<string>();
           for (const msgs of Object.values(ultimoSincronizadoRef.current)) for (const m of msgs) if (m.id) conhecidas.add(m.id);
           let novas = 0;
@@ -211,7 +211,7 @@ export function MensagensExtraProvider({ children }: { children: ReactNode }) {
       carregadoRef.current = true;
     });
 
-    // Polling — mensagem nova (do webhook do WhatsApp/Instagram) precisa aparecer sozinha, sem
+    // Polling: mensagem nova (do webhook do WhatsApp/Instagram) precisa aparecer sozinha, sem
     // depender de recarregar a página, igual todo app de mensagem de verdade.
     const intervalo = setInterval(() => {
       if (document.visibilityState === "visible") recarregar();

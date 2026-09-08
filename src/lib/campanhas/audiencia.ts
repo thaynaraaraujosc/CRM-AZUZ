@@ -7,7 +7,7 @@ export type { Audiencia, ModoAudiencia } from "./audiencia-tipos";
 export { descreverAudiencia } from "./audiencia-tipos";
 
 /**
- * Quem recebe um disparo — e como isso é decidido NO SERVIDOR.
+ * Quem recebe um disparo: e como isso é decidido NO SERVIDOR.
  *
  * A tela descreve o público ("etiqueta VIP", "etapa Proposta do funil X") e o servidor resolve
  * pra uma lista de contatos do workspace da sessão. Resolver no servidor é o que garante duas

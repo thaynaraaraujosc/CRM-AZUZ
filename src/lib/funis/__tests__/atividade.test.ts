@@ -22,7 +22,7 @@ describe("rótulo de atividade do card", () => {
   });
 
   it("madrugada: 23:50 de ontem visto às 00:30 é '40 min', não 'Ontem'", () => {
-    // A tela de Conversas usa dia de calendário, e ali faz sentido — ela separa as bolhas por dia.
+    // A tela de Conversas usa dia de calendário, e ali faz sentido: ela separa as bolhas por dia.
     // No card do funil a pergunta é outra: "isto está quente?". Uma conversa de 40 minutos atrás
     // está, e chamá-la de "Ontem" só porque virou a meia-noite faria ela parecer parada.
     expect(rotuloDeAtividade(new Date("2026-03-09T23:50:00"), new Date("2026-03-10T00:30:00"))).toBe("40 min");
@@ -45,8 +45,8 @@ describe("rótulo de atividade do card", () => {
   });
 
   it("sem data nenhuma não inventa", () => {
-    expect(rotuloDeAtividade(null, agora)).toBe("—");
-    expect(rotuloDeAtividade("data inválida", agora)).toBe("—");
+    expect(rotuloDeAtividade(null, agora)).toBe("-");
+    expect(rotuloDeAtividade("data inválida", agora)).toBe("-");
   });
 
   it("data no futuro não vira número negativo", () => {

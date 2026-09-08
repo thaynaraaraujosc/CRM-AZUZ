@@ -4,7 +4,7 @@
 //
 // Por que JSON e não `mysqldump`: o dump em SQL é melhor tecnicamente, mas exige ter o cliente do
 // MySQL instalado na máquina, e quem mais precisa do backup é justamente quem não vai instalar
-// nada num momento de aperto. Este script usa o Prisma, que o projeto já tem — funciona em
+// nada num momento de aperto. Este script usa o Prisma, que o projeto já tem. Funciona em
 // qualquer computador que consiga rodar o CRM, sem instalar mais nada.
 //
 // O arquivo sai na pasta `backups/`, com data e hora no nome. GUARDE EM DOIS LUGARES (o computador
@@ -21,7 +21,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 setDefaultResultOrder("ipv4first");
 
 if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL não encontrada — confira se o arquivo .env existe na raiz do projeto.");
+  console.error("DATABASE_URL não encontrada: confira se o arquivo .env existe na raiz do projeto.");
   process.exit(1);
 }
 
@@ -31,7 +31,7 @@ const prisma = new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABAS
  * Todas as tabelas, na ordem em que aparecem no schema. A lista é explícita de propósito: descobrir
  * as tabelas por reflexão pareceria mais esperto, mas uma tabela nova que ninguém lembrou de
  * incluir some do backup em silêncio, e só se descobre no dia de restaurar. Aqui, esquecer uma
- * significa esquecer no schema E aqui — e o total impresso no fim denuncia.
+ * significa esquecer no schema E aqui. E o total impresso no fim denuncia.
  */
 const TABELAS = [
   "contato",
@@ -79,7 +79,7 @@ async function main() {
     const modelo = prisma[tabela as keyof typeof prisma] as unknown as {
       findMany: (args?: unknown) => Promise<unknown[]>;
     };
-    // Tabela ausente ANOTA e segue, em vez de abortar. A primeira versão disto saía na hora — e o
+    // Tabela ausente ANOTA e segue, em vez de abortar. A primeira versão disto saía na hora. E o
     // resultado foi ler 31 tabelas, esbarrar na 32ª e não gravar arquivo nenhum. Backup pela
     // metade é melhor que backup nenhum; o que não pode é a falta passar despercebida, e por isso
     // ela é gritada no fim e o processo termina com erro mesmo tendo gravado.
@@ -118,7 +118,7 @@ async function main() {
   console.log(`  Backup que mora num lugar só não é backup.`);
 
   if (faltando.length) {
-    console.error(`\n⚠ BACKUP INCOMPLETO — ${faltando.length} tabela(s) de fora: ${faltando.join(", ")}`);
+    console.error(`\n⚠ BACKUP INCOMPLETO: ${faltando.length} tabela(s) de fora: ${faltando.join(", ")}`);
     console.error(`  Quase sempre é o client do Prisma desatualizado nesta máquina (ele não vem no`);
     console.error(`  repositório, é gerado aqui). Rode "npx prisma generate" e repita o backup.`);
     process.exit(1);

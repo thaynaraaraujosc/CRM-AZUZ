@@ -19,7 +19,7 @@ const METODOS: { valor: MetodoDistribuicaoAtendimento; label: string }[] = [
   { valor: "prioridade", label: "Prioridade definida" },
 ];
 
-/** Ação "Encaminhar pra atendimento humano" (item 1) — obriga escolher pra onde o lead vai, e
+/** Ação "Encaminhar pra atendimento humano" (item 1). Obriga escolher pra onde o lead vai, e
  * opcionalmente move ele de etapa/funil junto. */
 export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHumanoData; onChange: (novo: EncaminharHumanoData) => void }) {
   const { funis } = useFunis();

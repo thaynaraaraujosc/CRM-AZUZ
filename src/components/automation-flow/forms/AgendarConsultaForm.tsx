@@ -4,7 +4,7 @@ import { useEquipe } from "@/lib/equipe-context";
 import type { AgendarConsultaData } from "@/lib/automation-flow/types";
 import { SeletorDeData } from "@/components/seletor-de-data";
 
-/** Ação "Agendar consulta" — data, horário, profissional e tipo de serviço da consulta. */
+/** Ação "Agendar consulta": data, horário, profissional e tipo de serviço da consulta. */
 export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaData; onChange: (novo: AgendarConsultaData) => void }) {
   const { membros: equipe } = useEquipe();
   return (

@@ -4,7 +4,7 @@ import { CANAL_INSTAGRAM, CANAL_NAO_OFICIAL, CANAL_OFICIAL } from "@/lib/integra
 import { ehIdentificadorDeGrupo } from "@/lib/contatos/upsert";
 
 /**
- * Apaga tudo que um canal de WhatsApp trouxe pro CRM — conversas, mensagens, contatos criados
+ * Apaga tudo que um canal de WhatsApp trouxe pro CRM. Conversas, mensagens, contatos criados
  * sozinhos e cards de funil que nasceram desses leads.
  *
  * Por que isso existe: desconectar só mudava o status da integração, e o espelho do WhatsApp
@@ -12,14 +12,14 @@ import { ehIdentificadorDeGrupo } from "@/lib/contatos/upsert";
  * Início, conversa órfã aberta). Ao conectar outro canal por cima, os dados dos dois se misturavam
  * sem nenhuma forma de distinguir de onde veio o quê.
  *
- * SÓ apaga o que dá pra atribuir ao canal com certeza — nada criado à mão pela pessoa é tocado:
+ * SÓ apaga o que dá pra atribuir ao canal com certeza. Nada criado à mão pela pessoa é tocado:
  *   - `MensagemExtra.canal` marca a conexão que trouxe a mensagem;
  *   - `Contato.criadoVia = "whatsapp"` só existe em contato que nasceu de mensagem recebida
  *     (contato cadastrado na tela de Contatos é `"manual"` e fica);
  *   - `NegocioCard.origem = "WhatsApp"` é o card criado automaticamente na etapa de entrada
  *     (card criado à mão tem outra origem e fica).
  *
- * É destrutivo e irreversível — quem chama precisa ter confirmado com a pessoa antes.
+ * É destrutivo e irreversível: quem chama precisa ter confirmado com a pessoa antes.
  */
 export type ResumoLimpeza = {
   conversas: number;
@@ -42,7 +42,7 @@ export async function limparDadosDoWhatsApp(
 ): Promise<ResumoLimpeza> {
   const filtroCanal = FILTRO_CANAL[conexao];
 
-  // 1) Mensagens do canal. Guarda os nomes de contato ANTES de apagar — é por `contato` (nome) que
+  // 1) Mensagens do canal. Guarda os nomes de contato ANTES de apagar. É por `contato` (nome) que
   // `MensagemExtra` se liga à `Conversa`, então depois do delete não teria como achar as conversas.
   const mensagensDoCanal = await prisma.mensagemExtra.findMany({
     where: { workspaceId, ...filtroCanal },
@@ -54,7 +54,7 @@ export async function limparDadosDoWhatsApp(
     where: { workspaceId, ...filtroCanal },
   });
 
-  // 2) Conversas de WhatsApp que ficaram sem nenhuma mensagem — se sobrou mensagem de outro canal
+  // 2) Conversas de WhatsApp que ficaram sem nenhuma mensagem. Se sobrou mensagem de outro canal
   // com o mesmo contato, a conversa continua valendo e não é tocada.
   const candidatas = await prisma.conversa.findMany({
     where: { workspaceId, canal: "WhatsApp" },
@@ -90,12 +90,12 @@ export async function limparDadosDoWhatsApp(
 }
 
 /**
- * Remove contatos e cards de funil que na verdade são GRUPOS do WhatsApp — entulho deixado por
+ * Remove contatos e cards de funil que na verdade são GRUPOS do WhatsApp. Entulho deixado por
  * antes de `criarContatoPeloWhatsAppSeNaoExistir` recusar identificador de grupo. Apareciam na
  * carteira de clientes e no funil como "+120363422457482263", que não é telefone de ninguém.
  *
  * Diferente da limpeza por canal, isto NÃO é opcional nem depende de conexão: é lixo em qualquer
- * cenário. A conversa do grupo em si não é tocada — ela é legítima e continua na caixa de entrada.
+ * cenário. A conversa do grupo em si não é tocada. Ela é legítima e continua na caixa de entrada.
  */
 export async function removerGruposViradosContato(workspaceId: string): Promise<{ contatos: number; cards: number }> {
   const candidatos = await prisma.contato.findMany({
@@ -116,7 +116,7 @@ export async function removerGruposViradosContato(workspaceId: string): Promise<
 
 /**
  * Remove o entulho que as tentativas de baixar anexo do Instagram sem autenticação deixaram: o CDN
- * respondia uma página HTML com status 200, e ela era guardada como se fosse arquivo — virando um
+ * respondia uma página HTML com status 200, e ela era guardada como se fosse arquivo. Virando um
  * card de download de centenas de KB grudado em mensagens que muitas vezes eram só texto.
  *
  * Não apaga a mensagem: tira só o anexo inválido, preservando o texto que a pessoa escreveu.
@@ -131,7 +131,7 @@ export async function limparAnexosInvalidosInstagram(workspaceId: string): Promi
   for (const mensagem of mensagens) {
     const extras = mensagem.extras as { documento?: { url?: string } } | null;
     const url = extras?.documento?.url ?? "";
-    // Documento cujo conteúdo embutido é HTML — nunca foi arquivo de verdade.
+    // Documento cujo conteúdo embutido é HTML. Nunca foi arquivo de verdade.
     if (!url.startsWith("data:text/html")) continue;
 
     await prisma.mensagemExtra.update({ where: { id: mensagem.id }, data: { extras: Prisma.DbNull } });

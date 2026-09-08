@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
-/** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
+/** Preferências (banco real, ver src/app/api/preferencias/): chave desse blob na tabela `Preferencia`. */
 const CHAVE_PREFERENCIA = "notificacoes";
 
 type PrefsNotificacoes = {
@@ -26,7 +26,7 @@ type NotificacoesContextValue = {
   notificarNovaTarefa: boolean;
   alternarNotificarNovaTarefa: () => void;
   marcarTodasLidas: () => void;
-  /** Dispara quando chega mensagem nova de verdade no WhatsApp — ver `NotificacoesPonte`, que
+  /** Dispara quando chega mensagem nova de verdade no WhatsApp. Ver `NotificacoesPonte`, que
    * detecta isso comparando o `naoLidas` real de `conversas-context.tsx` a cada nova busca. */
   notificarNovaMensagem: (nomeContato: string) => void;
   /** Dispara ao criar uma tarefa nova de verdade (ver `tarefas/page.tsx`). */
@@ -55,7 +55,7 @@ function tocarSinal() {
     osc.start();
     osc.stop(ctx.currentTime + 0.4);
   } catch {
-    // navegador sem suporte a Web Audio — só não toca o sinal
+    // navegador sem suporte a Web Audio. Só não toca o sinal
   }
 }
 

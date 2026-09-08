@@ -7,7 +7,7 @@ import { ehRotaPublica } from "@/lib/rotas-publicas";
 
 /** Módulo do CRM que cada rota pertence, pro bloqueio de permissão (item 4 do pedido: "se eu
  * restringir Formulários/Automações/Configurações, o membro realmente não pode mexer"). Checa só
- * a permissão `_visualizar` de cada módulo — é o suficiente pra decidir se a rota inteira abre ou
+ * a permissão `_visualizar` de cada módulo. É o suficiente pra decidir se a rota inteira abre ou
  * não; ações mais finas (criar/editar/excluir) continuam decorativas por enquanto, ver
  * `src/lib/configuracoes/permissoes.ts`. Rota que não aparece aqui não é restringível (fica aberta
  * pra qualquer membro logado, mesmo sem nenhuma permissão marcada). */
@@ -32,7 +32,7 @@ const ROTA_PERMISSAO: Record<string, string> = {
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // A lista mora em `rotas-publicas.ts`, com teste — ver o porquê lá.
+  // A lista mora em `rotas-publicas.ts`, com teste: ver o porquê lá.
   if (ehRotaPublica(pathname)) return NextResponse.next();
 
   const sessao = await auth();
@@ -42,7 +42,7 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Painel de super-admin (visão cross-tenant de todos os workspaces) — só a conta marcada como
+  // Painel de super-admin (visão cross-tenant de todos os workspaces). Só a conta marcada como
   // superAdmin em `auth.ts` (via SUPERADMIN_EMAIL) pode entrar; qualquer outro Membro logado que
   // tentar acessar /admin ou /api/admin/* volta pro próprio workspace, não pro login (ele está
   // autenticado, só não tem permissão pra essa área).
@@ -51,13 +51,13 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/inicio", request.url));
   }
 
-  // Bloqueio por pagamento — consulta o banco a cada navegação de página (não em chamada de API,
+  // Bloqueio por pagamento: consulta o banco a cada navegação de página (não em chamada de API,
   // pra não quebrar os providers do shell que buscam dado em segundo plano) porque o status muda
   // por webhook da Asaas, fora do controle de quando o token JWT da sessão foi emitido; não dá pra
   // confiar em cache de sessão pra isso. Super-admin nunca é afetado (ele não é "de" nenhum
   // workspace pra fins de cobrança).
   //
-  // Só "ativa" libera acesso — sem isso, item novo (workspace recém-cadastrado, ainda "pendente"
+  // Só "ativa" libera acesso: sem isso, item novo (workspace recém-cadastrado, ainda "pendente"
   // porque não pagou) passaria direto sem bloqueio nenhum. É o paywall: ninguém usa o CRM antes de
   // confirmar o pagamento, e quem atrasar/cancelar depois volta a ficar bloqueado do mesmo jeito.
   if (!sessao.user.superAdmin && !pathname.startsWith("/api")) {
@@ -75,7 +75,7 @@ export default async function proxy(request: NextRequest) {
     }
   }
 
-  // Permissão por módulo — admin do workspace sempre vê tudo (é o dono da conta, restringir ele
+  // Permissão por módulo: admin do workspace sempre vê tudo (é o dono da conta, restringir ele
   // mesmo não faz sentido); qualquer outro papelTipo só entra se o módulo da rota estiver marcado
   // nas permissões dele. Sem isso, o toggle de permissão em Configurações > Usuários era só
   // decorativo (salvava no banco, nunca impedia nada de verdade).

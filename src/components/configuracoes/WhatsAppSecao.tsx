@@ -10,7 +10,7 @@ import { useIntegracaoNaoOficial, type HistoricoSync } from "./useIntegracaoNaoO
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { IconAlerta } from "@/components/icons";
 
-/** Semáforo de qualidade que a Meta atribui ao número — cai pra amarelo/vermelho quando as pessoas
+/** Semáforo de qualidade que a Meta atribui ao número. Cai pra amarelo/vermelho quando as pessoas
  * bloqueiam/denunciam, e vermelho por tempo demais leva a restrição de envio. */
 function SaudeConexaoOficial({ metadados }: { metadados: Record<string, unknown> }) {
   const qualidade = metadados.qualityRating as string | undefined;
@@ -31,7 +31,7 @@ function SaudeConexaoOficial({ metadados }: { metadados: Record<string, unknown>
       ) : null}
       {pinPendente ? (
         <p className="hint" style={{ color: "var(--danger)", margin: 0 }}>
-          <IconAlerta width={12} height={12} aria-hidden="true" /> Este número já tinha sido registrado antes com outro PIN — informe o PIN antigo pra
+          <IconAlerta width={12} height={12} aria-hidden="true" /> Este número já tinha sido registrado antes com outro PIN. Informe o PIN antigo pra
           concluir o registro na Cloud API.
         </p>
       ) : null}
@@ -51,9 +51,9 @@ function SaudeConexaoOficial({ metadados }: { metadados: Record<string, unknown>
   );
 }
 
-/** Progresso da sincronização de histórico sob demanda (ver `sincronizar-historico/route.ts`) —
+/** Progresso da sincronização de histórico sob demanda (ver `sincronizar-historico/route.ts`).
  * "Sincronizando conversas antigas: 34 de 180" enquanto roda, some sozinho quando termina. Tem um
- * botão de pausar/retomar — dá controle pra usuária caso desconfie que está pesando na conexão. */
+ * botão de pausar/retomar: dá controle pra usuária caso desconfie que está pesando na conexão. */
 function SincronizacaoHistoricoStatus({
   historico,
   onPausar,
@@ -78,7 +78,7 @@ function SincronizacaoHistoricoStatus({
     <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
       <p className="hint" style={{ margin: 0 }}>
         {pausado ? "Sincronização de histórico pausada" : "Trazendo o histórico de conversas do celular"}
-        {total != null ? ` — ${historico.chatsProcessados} de ${total}` : "…"}
+        {total != null ? `: ${historico.chatsProcessados} de ${total}` : "…"}
         {total != null ? "." : ""}
         {!pausado ? " Pode continuar usando o CRM normal enquanto isso." : ""}
       </p>
@@ -89,18 +89,18 @@ function SincronizacaoHistoricoStatus({
   );
 }
 
-/** WhatsApp (Configurações > Integrações) — só conecta o número, igual Instagram e Facebook. As
+/** WhatsApp (Configurações > Integrações): só conecta o número, igual Instagram e Facebook. As
  * abas de Atendimento/Mensagens/Compatibilidade/Horários que existiam aqui saíram: eram só
  * `useState` local sem persistência nenhuma (nenhum toggle/texto/horário sobrevivia a um refresh),
- * e o que descreviam — distribuir automaticamente, responder fora do horário, mensagem de
- * boas-vindas — é comportamento automático, não conexão. Isso é escopo do módulo Automação, que
+ * e o que descreviam: distribuir automaticamente, responder fora do horário, mensagem de
+ * boas-vindas: é comportamento automático, não conexão. Isso é escopo do módulo Automação, que
  * ainda vai consumir essa integração pra funcionar de verdade (mesmo princípio já aplicado em
  * Instagram e Facebook: integração conecta o canal, automação decide o que fazer com ele).
  *
  * Uma conta só tem uma integração de WhatsApp: oficial (Meta) OU não oficial (QR Code), nunca as
- * duas ao mesmo tempo — por isso, com uma conectada, a outra opção nem aparece. Responsável/funil
+ * duas ao mesmo tempo: por isso, com uma conectada, a outra opção nem aparece. Responsável/funil
  * padrão saíram: a integração já é da conta que está logada, não faz sentido escolher "responsável"
- * separado — quem manda mensagem é quem está logado. */
+ * separado: quem manda mensagem é quem está logado. */
 export function WhatsAppSecao() {
   const { integracao, desconectando, desconectar, erroDoRedirect, recarregar } = useIntegracaoMeta("meta_whatsapp");
   const naoOficial = useIntegracaoNaoOficial();
@@ -140,7 +140,7 @@ export function WhatsAppSecao() {
                 onClick={() => {
                   // Desconectar sem limpar deixava o espelho do WhatsApp para trás (contatos, cards
                   // no funil, pendências no Início, conversa órfã), que se misturava com o do canal
-                  // conectado depois. Apagar é irreversível, então é escolha explícita — e "Cancelar"
+                  // conectado depois. Apagar é irreversível, então é escolha explícita: e "Cancelar"
                   // mantém o comportamento antigo em vez de abortar a desconexão.
                   const limpar = window.confirm(
                     "Desconectar e apagar tudo que veio deste WhatsApp?\n\n" +
@@ -172,7 +172,7 @@ export function WhatsAppSecao() {
               <div>
                 <p className="int-title" style={{ margin: 0 }}>Conectar com a API oficial (Meta)</p>
                 <p className="hint" style={{ margin: "4px 0 0" }}>
-                  Abre o cadastro da própria Meta aqui dentro — cria (ou conecta) sua conta do
+                  Abre o cadastro da própria Meta aqui dentro. Cria (ou conecta) sua conta do
                   WhatsApp Business sem sair do CRM e sem copiar token nenhum.
                 </p>
               </div>
@@ -188,7 +188,7 @@ export function WhatsAppSecao() {
                 <div>
                   <p className="int-title" style={{ margin: 0 }}>Conectar com a API não oficial (QR Code)</p>
                   <p className="hint" style={{ margin: "4px 0 0" }}>
-                    Escaneia como o WhatsApp Web — não passa pela verificação de negócio da Meta,
+                    Escaneia como o WhatsApp Web. Não passa pela verificação de negócio da Meta,
                     e o número corre risco de ser banido por violar os termos de uso do WhatsApp.
                   </p>
                 </div>
@@ -214,7 +214,7 @@ export function WhatsAppSecao() {
                   </p>
                 ) : naoOficial.estado?.status === "aguardando_qr" && naoOficial.estado.metadados?.qrDataUrl ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 14 }}>
-                    {/* Fundo branco explícito — o PNG que a Evolution devolve tem fundo TRANSPARENTE
+                    {/* Fundo branco explícito: o PNG que a Evolution devolve tem fundo TRANSPARENTE
                         (não branco de verdade), então sem isso o card do CRM (levemente azulado)
                         aparecia por trás, dando aquele efeito de QR "com uma tela azul em cima". */}
                     <div style={{ background: "#fff", padding: 12, borderRadius: 8 }}>
@@ -234,8 +234,8 @@ export function WhatsAppSecao() {
         )}
 
         {/* Fora do ramo acima de propósito: o espelho de um WhatsApp antigo continua no CRM mesmo
-            com OUTRO canal já conectado — foi o que aconteceu ao conectar a API oficial por cima do
-            QR Code — e era exatamente aí que o botão sumia, sem forma nenhuma de limpar. */}
+            com OUTRO canal já conectado. Foi o que aconteceu ao conectar a API oficial por cima do
+            QR Code: e era exatamente aí que o botão sumia, sem forma nenhuma de limpar. */}
         <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />
       </div>
     </div>

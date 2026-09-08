@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 
-/** Seção recolhível padrão da Central do Dia — título, contador, recolher/expandir e estado vazio
+/** Seção recolhível padrão da Central do Dia. Título, contador, recolher/expandir e estado vazio
  * próprio (itens 3 e 16 do pedido). Usada tanto pelos 3 grupos de prioridade quanto pelas seções por
  * módulo (conversas, agenda, tarefas…), pra não duplicar esse cabeçalho em cada uma. */
 export function SecaoLista({

@@ -1,13 +1,13 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
- * Token de curta duração (1 minuto — só o tempo de ser usado uma vez, na hora) que autoriza
+ * Token de curta duração (1 minuto. Só o tempo de ser usado uma vez, na hora) que autoriza
  * "entrar como" um membro específico, sem senha nenhuma. Reaproveita `AUTH_SECRET` (o mesmo
- * segredo que o NextAuth já usa pra assinar a sessão) em vez de inventar mais uma env var — dá no
+ * segredo que o NextAuth já usa pra assinar a sessão) em vez de inventar mais uma env var. Dá no
  * mesmo, é um segredo do servidor que só ele conhece.
  *
- * `superAdminId` viaja dentro do token quando é o super-admin começando a impersonar alguém —
- * assim o provider "impersonar" (`auth.ts`) devolve esse id junto na sessão do usuário
+ * `superAdminId` viaja dentro do token quando é o super-admin começando a impersonar alguém.
+ * Assim o provider "impersonar" (`auth.ts`) devolve esse id junto na sessão do usuário
  * impersonado, e o botão "Voltar pro admin" sabe pra quem voltar sem precisar de senha de novo
  * (chama esse mesmo mecanismo ao contrário, sem `superAdminId`).
  */

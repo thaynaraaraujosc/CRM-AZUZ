@@ -15,7 +15,7 @@ const MODULO_LABEL: Record<ItemDia["modulo"], string> = {
   automacao: "Automações",
 };
 
-/** Tempo estimado mockado por módulo — só pra dar noção de esforço na sequência sugerida, nunca
+/** Tempo estimado mockado por módulo. Só pra dar noção de esforço na sequência sugerida, nunca
  * calculado a partir de dado real (item 11 do pedido). */
 const TEMPO_ESTIMADO: Record<ItemDia["modulo"], string> = {
   conversa: "5 min",
@@ -26,7 +26,7 @@ const TEMPO_ESTIMADO: Record<ItemDia["modulo"], string> = {
 };
 
 /**
- * Drawer "Organizar meu dia" (item 11) — monta uma sequência sugerida a partir dos itens urgentes/
+ * Drawer "Organizar meu dia" (item 11). Monta uma sequência sugerida a partir dos itens urgentes/
  * que precisam de atenção, permite reordenar/remover antes de começar e, no modo execução, navegar
  * item a item (Anterior/Próximo/Concluir). Tudo em estado local do componente + `central-dia-context`
  * pra persistir a organização entre aberturas.
@@ -45,7 +45,7 @@ export function OrganizarMeuDia({
   const [sequencia, setSequencia] = useState<ItemDia[]>(itensSugeridos.slice(0, 5));
 
   // Recalcula a sequência sempre que o drawer abre (com a lista corrente, já sem o que foi
-  // resolvido/adiado enquanto estava fechado) — sem isso, `useState` só capturaria o instantâneo do
+  // resolvido/adiado enquanto estava fechado): sem isso, `useState` só capturaria o instantâneo do
   // primeiro render da página e a sequência ficaria presa a itens que já saíram da lista principal.
   useEffect(() => {
     if (aberto && !organizacao) {
@@ -97,7 +97,7 @@ export function OrganizarMeuDia({
       aberto={aberto}
       onFechar={onFechar}
       titulo="Organizar meu dia"
-      subtitulo={emExecucao ? "Modo execução — siga a sequência sugerida" : "Sequência sugerida a partir do que precisa de atenção hoje"}
+      subtitulo={emExecucao ? "Modo execução: siga a sequência sugerida" : "Sequência sugerida a partir do que precisa de atenção hoje"}
       rodape={
         emExecucao ? (
           <>
@@ -137,7 +137,7 @@ export function OrganizarMeuDia({
       }
     >
       {sequencia.length === 0 ? (
-        <p className="hint">Nenhum item pra organizar agora — tudo em dia por aqui.</p>
+        <p className="hint">Nenhum item pra organizar agora. Tudo em dia por aqui.</p>
       ) : (
         <div className="central-dia-organizar-lista">
           {sequencia.map((item, i) => {

@@ -16,14 +16,14 @@ const SCRIPT_TEMA_INICIAL = `
 
 /* Não há mais fonte baixada: o produto inteiro usa Arial, que é fonte de sistema (ver
    `--pilha-sistema` no globals.css). Poppins e Montserrat saíram daqui porque ninguém mais as
-   referencia — mantê-las carregadas seria baixar duas famílias de fonte que nenhuma tela usa. */
+   referencia: mantê-las carregadas seria baixar duas famílias de fonte que nenhuma tela usa. */
 
 export const metadata: Metadata = {
-  title: "CRM AZUZ — Painel web",
+  title: "CRM AZUZ: Painel web",
   description:
     "Painel web do CRM AZUZ: Início, WhatsApp, Funil, Tarefas, Ações, Equipe, Contatos, Tráfego, Relatórios, Automações, Azuz IA e Configurações.",
-  // Prova de propriedade do domínio pro Business Manager da Meta (verificação de negócio) —
-  // gerado uma vez no painel deles, não é segredo (fica público no <head> de qualquer jeito).
+  // Prova de propriedade do domínio pro Business Manager da Meta (verificação de negócio).
+  // Gerado uma vez no painel deles, não é segredo (fica público no <head> de qualquer jeito).
   verification: {
     other: { "facebook-domain-verification": "93gk9hohnqd8s4triwtdsfe3s2es9t" },
   },

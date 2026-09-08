@@ -3,7 +3,7 @@
 import type { MensagemLocalizacaoData, OrigemLocalizacao } from "@/lib/automation-flow/types";
 import { IconLocalizacao } from "@/components/icons";
 
-// Mocado — localizações salvas do workspace, sem integração real com mapa.
+// Mocado: localizações salvas do workspace, sem integração real com mapa.
 const LOCALIZACOES_SALVAS = [
   { id: "sede", nome: "Sede", endereco: "Av. Exemplo, 123", cidade: "Goiânia", estado: "GO" },
   { id: "unidade_centro", nome: "Unidade Centro", endereco: "Rua das Flores, 45", cidade: "Goiânia", estado: "GO" },
@@ -13,7 +13,7 @@ const LOCALIZACOES_SALVAS = [
 
 const LOCALIZACAO_WORKSPACE = { nome: "Sede", endereco: "Av. Exemplo, 123", cidade: "Goiânia", estado: "GO" };
 
-/** Ação "Enviar localização" (item 4) — de onde vem a localização enviada ao contato. */
+/** Ação "Enviar localização" (item 4). De onde vem a localização enviada ao contato. */
 export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLocalizacaoData; onChange: (novo: MensagemLocalizacaoData) => void }) {
   const salva = LOCALIZACOES_SALVAS.find((l) => l.id === data.localSalvoId);
 
@@ -54,7 +54,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
       ) : null}
 
       {data.origem === "workspace" ? (
-        <p className="hint">Usa a localização cadastrada em Configurações do workspace: {LOCALIZACAO_WORKSPACE.nome} — {LOCALIZACAO_WORKSPACE.endereco}, {LOCALIZACAO_WORKSPACE.cidade}/{LOCALIZACAO_WORKSPACE.estado}.</p>
+        <p className="hint">Usa a localização cadastrada em Configurações do workspace: {LOCALIZACAO_WORKSPACE.nome}, {LOCALIZACAO_WORKSPACE.endereco}, {LOCALIZACAO_WORKSPACE.cidade}/{LOCALIZACAO_WORKSPACE.estado}.</p>
       ) : null}
 
       {data.origem === "endereco" ? (

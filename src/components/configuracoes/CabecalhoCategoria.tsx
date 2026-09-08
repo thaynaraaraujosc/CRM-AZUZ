@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-/** Cabeçalho padrão do painel de detalhe de cada categoria — título + descrição à esquerda, ações à
+/** Cabeçalho padrão do painel de detalhe de cada categoria. Título + descrição à esquerda, ações à
  * direita (item 18: "cabeçalho com título, descrição e ações"). */
 export function CabecalhoCategoria({ titulo, descricao, acoes }: { titulo: string; descricao: string; acoes?: ReactNode }) {
   return (

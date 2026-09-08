@@ -315,7 +315,7 @@ export function IconEnviar(props: Props) {
   );
 }
 
-/** Segurança (autenticação, sessões) — sem ícone de cadeado/escudo existente ainda, adicionado no
+/** Segurança (autenticação, sessões): sem ícone de cadeado/escudo existente ainda, adicionado no
  * mesmo estilo (stroke, viewBox) dos demais, não é uma biblioteca nova. */
 export function IconEscudo(props: Props) {
   return (
@@ -348,7 +348,7 @@ export function IconImportar(props: Props) {
   );
 }
 
-/** Entrar — seta apontando pra dentro de uma porta. Selo do cartão de login. */
+/** Entrar: seta apontando pra dentro de uma porta. Selo do cartão de login. */
 export function IconEntrar(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -359,7 +359,7 @@ export function IconEntrar(props: Props) {
   );
 }
 
-/** Criar conta — pessoa com um mais. Selo do cartão de cadastro. */
+/** Criar conta: pessoa com um mais. Selo do cartão de cadastro. */
 export function IconNovaConta(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -371,7 +371,7 @@ export function IconNovaConta(props: Props) {
   );
 }
 
-/** Expandir para tela cheia — editor de automações. */
+/** Expandir para tela cheia: editor de automações. */
 export function IconExpandir(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -383,7 +383,7 @@ export function IconExpandir(props: Props) {
   );
 }
 
-/** Ramificação — bloco de condição das automações (o caminho se divide em dois). */
+/** Ramificação: bloco de condição das automações (o caminho se divide em dois). */
 export function IconRamificacao(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -394,7 +394,7 @@ export function IconRamificacao(props: Props) {
   );
 }
 
-/** Tomada — bloco de integração das automações. */
+/** Tomada: bloco de integração das automações. */
 export function IconPlug(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -406,7 +406,7 @@ export function IconPlug(props: Props) {
   );
 }
 
-/** Bandeira — bloco de fim das automações. */
+/** Bandeira: bloco de fim das automações. */
 export function IconBandeira(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -416,7 +416,7 @@ export function IconBandeira(props: Props) {
   );
 }
 
-/** Lâmpada — explicação/dica ao lado de um bloco. */
+/** Lâmpada: explicação/dica ao lado de um bloco. */
 export function IconLampada(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -427,7 +427,7 @@ export function IconLampada(props: Props) {
   );
 }
 
-/** Frasco — modo de teste do simulador de automações. */
+/** Frasco: modo de teste do simulador de automações. */
 export function IconFrasco(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -438,7 +438,7 @@ export function IconFrasco(props: Props) {
   );
 }
 
-/** Círculo com barra — bloco pulado/bloqueado no simulador. */
+/** Círculo com barra: bloco pulado/bloqueado no simulador. */
 export function IconBloqueado(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -448,7 +448,7 @@ export function IconBloqueado(props: Props) {
   );
 }
 
-/** Avançar — bloco pulado (segue adiante) no simulador. */
+/** Avançar: bloco pulado (segue adiante) no simulador. */
 export function IconPular(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -458,7 +458,7 @@ export function IconPular(props: Props) {
   );
 }
 
-/** Troféu — pódio do CRM ao vivo. */
+/** Troféu: pódio do CRM ao vivo. */
 export function IconTrofeu(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -471,7 +471,7 @@ export function IconTrofeu(props: Props) {
   );
 }
 
-/** Seta pra cima — enviar arquivo. `IconImportar` é a seta pra baixo (baixar), não serve aqui. */
+/** Seta pra cima: enviar arquivo. `IconImportar` é a seta pra baixo (baixar), não serve aqui. */
 export function IconUpload(props: Props) {
   return (
     <svg {...base} {...props}>
@@ -515,10 +515,10 @@ export function CanalBadge({ canal }: { canal: "WhatsApp" | "Instagram" | "TikTo
   );
 }
 
-/* Redesign — ícones lineares (mesma família Lucide-like do resto do arquivo) pra substituir emoji
+/* Redesign: ícones lineares (mesma família Lucide-like do resto do arquivo) pra substituir emoji
    usado como ícone de interface (⚠️✕✓⭐📌▶⏸📎📷🔒🎤🔔📍), que o pedido de redesign proíbe
    explicitamente ("NÃO UTILIZAR EMOJIS NA INTERFACE"). Emoji digitado pelo usuário dentro de uma
-   mensagem de chat não entra aqui — é conteúdo, não ícone. */
+   mensagem de chat não entra aqui. É conteúdo, não ícone. */
 
 export function IconClose(props: Props) {
   return (

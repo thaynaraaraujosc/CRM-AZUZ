@@ -55,7 +55,7 @@ import {
 } from "@/components/icons";
 import { FloatingDropdown, Topbar } from "@/components/ui";
 
-/* Web Speech API — não faz parte do lib.dom.d.ts padrão do TypeScript, então declaramos o mínimo usado aqui. */
+/* Web Speech API: não faz parte do lib.dom.d.ts padrão do TypeScript, então declaramos o mínimo usado aqui. */
 interface ReconhecimentoDeVoz {
   lang: string;
   continuous: boolean;
@@ -66,7 +66,7 @@ interface ReconhecimentoDeVoz {
   stop: () => void;
 }
 
-/** Fecha um popup flutuante ao clicar fora dele — mesmo padrão usado em Conversas. */
+/** Fecha um popup flutuante ao clicar fora dele. Mesmo padrão usado em Conversas. */
 function useFecharAoClicarFora(
   ref: React.RefObject<HTMLElement | null>,
   ativo: boolean,
@@ -84,7 +84,7 @@ function useFecharAoClicarFora(
 }
 
 let contadorIdImagem = 0;
-/** Id estável pra cada imagem inserida — usado só como `key` do painel/handles no React, pra resetar o
+/** Id estável pra cada imagem inserida. Usado só como `key` do painel/handles no React, pra resetar o
  * estado local (unidade de medida, corte pendente, efeitos) sempre que a imagem selecionada troca. */
 function proximoIdImagem(): string {
   contadorIdImagem += 1;
@@ -98,7 +98,7 @@ function garantirIdImagem(img: HTMLImageElement): string {
 }
 
 /**
- * Fábrica de handler de arraste — permite mover qualquer popup flutuante pela tela,
+ * Fábrica de handler de arraste. Permite mover qualquer popup flutuante pela tela,
  * pegando pelo cabeçalho. A posição é sempre grampeada (clamp) aos limites da
  * viewport usando o tamanho real do painel, então nenhum painel pode ser
  * arrastado para fora da tela e "sumir".
@@ -142,11 +142,11 @@ const TAMANHOS_PAPEL_MM: Record<Exclude<TamanhoPapel, "Personalizado">, { w: num
 };
 
 /**
- * Fontes do documento — sempre com uma pilha de fallback (a fonte muda pra próxima da lista se a
+ * Fontes do documento: sempre com uma pilha de fallback (a fonte muda pra próxima da lista se a
  * primeira não existir no computador de quem está lendo/editando). Não dá pra ler a lista real de
  * fontes instaladas no sistema: a Local Font Access API (window.queryLocalFonts) só existe no
  * Chrome/Edge, atrás de uma permissão que o usuário precisa aceitar, e nem faz parte de nenhum padrão
- * suportado no Firefox/Safari — depender dela quebraria o editor nesses navegadores. Por isso a lista
+ * suportado no Firefox/Safari: depender dela quebraria o editor nesses navegadores. Por isso a lista
  * é uma seleção de fontes "web-safe" (que praticamente todo sistema operacional já tem instalada).
  */
 const FONTES_DOCUMENTO = [
@@ -203,7 +203,7 @@ function formatarQuando(iso: string) {
     d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
-/** Lê uma preferência de visualização (Ver → …) persistida — sobrevive entre sessões, por padrão do usuário. */
+/** Lê uma preferência de visualização (Ver → …) persistida. Sobrevive entre sessões, por padrão do usuário. */
 function lerPrefVer(chave: string, padrao: boolean): boolean {
   if (typeof window === "undefined") return padrao;
   try {
@@ -793,7 +793,7 @@ function MenuTopo({
 
 /**
  * Grupo de botões da barra de ferramentas do editor, escondidos atrás de um botão só ("Inserir ▾",
- * "Parágrafo ▾"...) — reduz a quantidade de ícones sempre visíveis sem esconder a função embaixo de
+ * "Parágrafo ▾"...): reduz a quantidade de ícones sempre visíveis sem esconder a função embaixo de
  * vários cliques. Fica aberto até o usuário clicar fora (mesmo comportamento do "Mais filtros" em
  * FilterBar), então dá pra usar vários controles do grupo em sequência sem reabrir o menu.
  */
@@ -851,14 +851,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [menuAberto, setMenuAberto] = useState<NomeMenu | null>(null);
   const [zoom, setZoom] = useState(100);
   const [modo, setModo] = useState<"edicao" | "sugestao" | "visualizacao">("edicao");
-  /** Snapshot do conteúdo de cada página no instante em que o modo sugestão foi ativado — null = não está rastreando. */
+  /** Snapshot do conteúdo de cada página no instante em que o modo sugestão foi ativado. Null = não está rastreando. */
   const [sugestaoSnapshot, setSugestaoSnapshot] = useState<Record<string, string> | null>(null);
   const [mostrarNaoImprimiveis, setMostrarNaoImprimiveis] = useState(() => lerPrefVer("mostrarNaoImprimiveis", false));
   const [semPaginas, setSemPaginas] = useState(() => lerPrefVer("semPaginas", false));
   const [corretorAtivo, setCorretorAtivo] = useState(() => lerPrefVer("corretorAtivo", true));
   const [fonteAtual, setFonteAtual] = useState(FONTES_DOCUMENTO[0].valor);
   // Prioridade 5 da reformulação: o topo passa a mostrar só ações globais (desfazer/refazer/zoom/
-  // imprimir, agora em doc-header-acoes) por padrão — a barra de formatação completa (fonte, negrito,
+  // imprimir, agora em doc-header-acoes) por padrão. A barra de formatação completa (fonte, negrito,
   // Inserir/Parágrafo/Mais opções) fica escondida até o usuário pedir ("Formatação" no cabeçalho, ou
   // Ver → Mostrar barra de ferramentas), já que o painel lateral (aba Texto) cobre o mesmo terreno.
   const [mostrarToolbar, setMostrarToolbar] = useState(() => lerPrefVer("mostrarToolbar", false));
@@ -873,7 +873,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         JSON.stringify({ mostrarNaoImprimiveis, semPaginas, corretorAtivo, mostrarToolbar }),
       );
     } catch {
-      // localStorage indisponível — segue só em memória
+      // localStorage indisponível: segue só em memória
     }
   }, [mostrarNaoImprimiveis, semPaginas, corretorAtivo, mostrarToolbar]);
 
@@ -922,7 +922,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const [celulaSelecionada, setCelulaSelecionada] = useState<{ paginaId: string; td: HTMLTableCellElement } | null>(null);
 
   // Contorno de seleção visível na própria imagem (a imagem é um <img> real dentro do HTML, não um
-  // componente React controlado — por isso a classe é alternada direto no elemento do DOM).
+  // componente React controlado: por isso a classe é alternada direto no elemento do DOM).
   useEffect(() => {
     const el = imagemSelecionada?.el;
     if (!el) return;
@@ -931,7 +931,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }, [imagemSelecionada]);
 
   /**
-   * Toolbar flutuante mini (item 6/Prioridade 4) — aparece logo acima de uma seleção de texto não
+   * Toolbar flutuante mini (item 6/Prioridade 4). Aparece logo acima de uma seleção de texto não
    * vazia dentro do documento, com só as ações mais rápidas (B/I/U/Cor/Link). O painel lateral
    * continua com as opções completas; isso aqui é só o atalho "mão no mouse, sem sair da seleção".
    */
@@ -960,7 +960,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }, []);
 
   /**
-   * Atalhos de teclado pra imagem selecionada — setas movem (só em posição fixa), Delete/Backspace
+   * Atalhos de teclado pra imagem selecionada. Setas movem (só em posição fixa), Delete/Backspace
    * exclui, Esc desmarca, Ctrl/Cmd+D duplica. Fica num listener global de window (não no onKeyDown do
    * contentEditable) porque selecionar uma imagem não necessariamente move o foco do navegador pra
    * dentro dela. Não interfere na digitação normal: só existe enquanto uma imagem está selecionada.
@@ -1053,8 +1053,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   /**
    * Guarda, por página, o último HTML que este componente escreveu no DOM.
    * É a peça-chave que corrige o bug do cursor saltando: nunca reaplicamos `innerHTML` numa página
-   * cujo conteúdo já está sincronizado (ou seja, cuja última mudança veio da própria digitação nela) —
-   * só escrevemos de novo quando o conteúdo mudou por uma fonte externa (trocar de documento, mover
+   * cujo conteúdo já está sincronizado (ou seja, cuja última mudança veio da própria digitação nela).
+   * Só escrevemos de novo quando o conteúdo mudou por uma fonte externa (trocar de documento, mover
    * bloco por causa da paginação, desfazer/refazer, restaurar versão, colar, etc). Antes disso, toda
    * vez que o autosave rodava, o React reaplicava o `dangerouslySetInnerHTML` da própria página que o
    * usuário estava digitando, e o navegador jogava o cursor de volta pro início do elemento.
@@ -1130,7 +1130,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Autosave com debounce — mostra "Salvando…" na hora e "Salvo" depois de um instante parado.
+  // Autosave com debounce: mostra "Salvando…" na hora e "Salvo" depois de um instante parado.
   useEffect(() => {
     if (!doc) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- indicador visual do debounce de autosave
@@ -1144,7 +1144,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }, [paginasLocais]);
 
   // Ctrl+P precisa funcionar mesmo com o foco fora do texto (num botão da barra, num painel flutuante
-  // etc.) — por isso fica num listener global de window, e não só no onKeyDown do contentEditable.
+  // etc.): por isso fica num listener global de window, e não só no onKeyDown do contentEditable.
   useEffect(() => {
     function aoTeclarPrint(e: KeyboardEvent) {
       const mod = e.ctrlKey || e.metaKey;
@@ -1160,7 +1160,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
   // O caminho normal de impressão (botão 🖨/Ctrl+P) abre uma janela própria já com o tamanho de papel
   // certo (abrirPreviaImpressaoLimpa). Mas se a impressão nativa do navegador for disparada por fora
-  // disso (menu Arquivo > Imprimir, botão de imprimir da barra do navegador — o app não consegue
+  // disso (menu Arquivo > Imprimir, botão de imprimir da barra do navegador. O app não consegue
   // interceptar isso via JavaScript), o fallback em CSS (".doc-print-area" em globals.css) precisa saber
   // o tamanho real da página em tempo real, porque puro CSS não lê o estado do documento.
   useEffect(() => {
@@ -1203,7 +1203,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }, []);
 
   // Contagem de ocorrências (popup Localizar e substituir) precisa ler o DOM de cada página via
-  // ref — não é seguro fazer isso durante o render, então recalculamos aqui, num efeito, e guardamos
+  // ref: não é seguro fazer isso durante o render, então recalculamos aqui, num efeito, e guardamos
   // o resultado em estado normal.
   useEffect(() => {
     if (!localizarAberto) return;
@@ -1230,7 +1230,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   const larguraMm = doc.config.orientacao === "paisagem" ? dimensao.h : dimensao.w;
   const alturaMm = doc.config.orientacao === "paisagem" ? dimensao.w : dimensao.h;
   const qtdColunas = doc.config.colunas ?? 1;
-  // Margens independentes — cada lado cai de volta pra margemMm (documentos salvos antes dessa mudança).
+  // Margens independentes: cada lado cai de volta pra margemMm (documentos salvos antes dessa mudança).
   const margemSuperiorMm = doc.config.margemSuperiorMm ?? doc.config.margemMm;
   const margemInferiorMm = doc.config.margemInferiorMm ?? doc.config.margemMm;
   const margemEsquerdaMm = doc.config.margemEsquerdaMm ?? doc.config.margemMm;
@@ -1240,7 +1240,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     const el = paginaRefs.current[paginaId];
     if (!el) return;
     const html = el.innerHTML;
-    // O DOM já está exatamente nesse estado (acabamos de lê-lo dele) — marca como sincronizado ANTES de
+    // O DOM já está exatamente nesse estado (acabamos de lê-lo dele). Marca como sincronizado ANTES de
     // salvar, senão o efeito de sincronização (useEffect logo abaixo) vê o novo conteudoHtml como uma
     // mudança "externa" e reescreve innerHTML de novo, o que recria todos os nós filhos do zero. Isso
     // invalidava referências de elemento ao vivo (ex.: a <img> selecionada no painel de edição de imagem,
@@ -1251,10 +1251,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }
 
   /**
-   * Histórico de desfazer/refazer próprio — não depende do document.execCommand("undo") nativo do
+   * Histórico de desfazer/refazer próprio: não depende do document.execCommand("undo") nativo do
    * navegador, que só rastreia comandos disparados por execCommand (digitação, negrito, etc). Ações que
-   * mexem no DOM diretamente via JavaScript — redimensionar/mover/cortar imagem, editar linha/coluna de
-   * tabela, mudar colunas do documento — não entram nessa pilha nativa, e desfazer depois delas removia a
+   * mexem no DOM diretamente via JavaScript. Redimensionar/mover/cortar imagem, editar linha/coluna de
+   * tabela, mudar colunas do documento: não entram nessa pilha nativa, e desfazer depois delas removia a
    * imagem/tabela inteira (o undo nativo desfazia a ÚLTIMA operação DA PILHA DELE, que era a inserção).
    * Como salvarConteudoPagina já é o ponto único por onde toda edição passa, registrar um snapshot de
    * HTML aqui cobre todo tipo de edição de forma uniforme.
@@ -1268,7 +1268,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     if (atual.pilha[atual.indice] === html) return; // nada mudou de verdade
     const novaPilha = atual.pilha.slice(0, atual.indice + 1);
     novaPilha.push(html);
-    if (novaPilha.length > 100) novaPilha.shift(); // limita o tamanho — não é ilimitado
+    if (novaPilha.length > 100) novaPilha.shift(); // limita o tamanho: não é ilimitado
     historicoEdicaoRef.current[paginaId] = { pilha: novaPilha, indice: novaPilha.length - 1 };
   }
 
@@ -1343,7 +1343,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     const alvoMm = proxima ?? (Math.floor(cursorXmm / 12.5) + 1) * 12.5;
     const larguraPx = Math.max(6, Math.round((alvoMm - cursorXmm) * pxPorMm));
 
-    // Inserção via Range direto (não execCommand("insertHTML")) — um <span contenteditable="false">
+    // Inserção via Range direto (não execCommand("insertHTML")). Um <span contenteditable="false">
     // não é um lugar válido pro cursor pousar, e inserir só ele deixava a seleção num estado inválido
     // onde a digitação seguinte era descartada silenciosamente. Insere o span E um nó de texto vazio
     // logo depois, e move o cursor pra dentro desse nó de texto explicitamente.
@@ -1390,7 +1390,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }
 
   /**
-   * O conteúdo digitado só chega em `paginasLocais` depois do debounce do autosave (600ms) — ler
+   * O conteúdo digitado só chega em `paginasLocais` depois do debounce do autosave (600ms). Ler
    * o estado direto na impressão/exportação corre o risco de perder a digitação mais recente se o
    * usuário imprimir/exportar rápido demais depois de digitar. Isso lê o HTML atual direto do DOM de
    * cada página (sem esperar o debounce), garantindo que impressão e exportação sempre reflitam
@@ -1409,7 +1409,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }
 
   /** Igual paginasComConteudoAtual(), mas com o cabeçalho/rodapé (se existir) embutido no HTML de cada
-   * página — usado por toda exportação/impressão, pra nenhuma delas "esquecer" o cabeçalho/rodapé. */
+   * página: usado por toda exportação/impressão, pra nenhuma delas "esquecer" o cabeçalho/rodapé. */
   function paginasParaExportar(): PaginaDoc[] {
     if (!doc) return [];
     const paginas = paginasComConteudoAtual();
@@ -1425,7 +1425,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     });
   }
 
-  /** Visualização de impressão própria — só o conteúdo do documento (+ cabeçalho/rodapé se o usuário criou), sem menu/barra/régua/botões. */
+  /** Visualização de impressão própria: só o conteúdo do documento (+ cabeçalho/rodapé se o usuário criou), sem menu/barra/régua/botões. */
   function abrirPreviaImpressao() {
     if (!doc) return;
     const paginas = paginasComConteudoAtual();
@@ -1437,7 +1437,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       const rodape = doc.config.rodapeHtml
         ? `<div class="doc-rodape-repetido">${substituirTokensPagina(doc.config.rodapeHtml, i + 1, total)}</div>`
         : "";
-      // O corpo vai numa div própria (.doc-corpo-impresso) — é só ela que recebe a CSS de colunas,
+      // O corpo vai numa div própria (.doc-corpo-impresso): é só ela que recebe a CSS de colunas,
       // cabeçalho/rodapé continuam em largura cheia igual aparecem no editor.
       return `${cabecalho}<div class="doc-corpo-impresso">${p.conteudoHtml}</div>${rodape}`;
     });
@@ -1514,7 +1514,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     setTimeout(() => setPaginaAtivaId(novoId), 0);
   }
 
-  /** Cola da área de transferência de verdade — tenta manter HTML formatado, cai pra texto puro quando não dá. */
+  /** Cola da área de transferência de verdade. Tenta manter HTML formatado, cai pra texto puro quando não dá. */
   async function colarConteudo(semFormatacao: boolean) {
     try {
       if (!semFormatacao && navigator.clipboard && "read" in navigator.clipboard) {
@@ -1531,7 +1531,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       aplicarFormatacao("insertText", texto);
     } catch {
       window.alert(
-        "Não consegui ler a área de transferência — o navegador pode estar bloqueando o acesso. Use Ctrl+V diretamente sobre o documento, que funciona pelo comportamento nativo do navegador.",
+        "Não consegui ler a área de transferência. O navegador pode estar bloqueando o acesso. Use Ctrl+V diretamente sobre o documento, que funciona pelo comportamento nativo do navegador.",
       );
     }
   }
@@ -1550,12 +1550,12 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
   /**
    * Atalhos que o contentEditable não trata nativamente (Ctrl+B/I/U/Z/Y/X/C/V/A já funcionam sozinhos,
-   * de graça, pelo próprio navegador — só interceptamos aqui o que realmente precisa de tratamento nosso).
+   * de graça, pelo próprio navegador: só interceptamos aqui o que realmente precisa de tratamento nosso).
    */
   function aoTeclarNaPagina(e: React.KeyboardEvent<HTMLDivElement>) {
     const mod = e.ctrlKey || e.metaKey;
-    // Desfazer/refazer usam o histórico próprio (ver registrarHistorico), não o nativo do navegador —
-    // ele não sabe nada sobre redimensionar/mover imagem ou editar tabela (manipulação direta do DOM,
+    // Desfazer/refazer usam o histórico próprio (ver registrarHistorico), não o nativo do navegador.
+    // Ele não sabe nada sobre redimensionar/mover imagem ou editar tabela (manipulação direta do DOM,
     // fora do execCommand), e desfazer usando só a pilha nativa acabava removendo a imagem/tabela inteira.
     if (mod && !e.shiftKey && (e.key === "z" || e.key === "Z")) {
       e.preventDefault();
@@ -1573,7 +1573,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       return;
     }
     // Ctrl+P é tratado por um listener global (ver useEffect logo abaixo da definição de
-    // abrirPreviaImpressao) — assim funciona mesmo com o foco fora do texto, não só aqui dentro.
+    // abrirPreviaImpressao): assim funciona mesmo com o foco fora do texto, não só aqui dentro.
     if (mod && e.shiftKey && (e.key === "v" || e.key === "V")) {
       e.preventDefault();
       colarConteudo(true);
@@ -1619,31 +1619,31 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       return;
     }
     // Enter normal e Shift+Enter: deixamos o navegador tratar nativamente (cria parágrafo / quebra de
-    // linha) — isso já é seguro agora que a página não reescreve seu próprio innerHTML a cada tecla
+    // linha): isso já é seguro agora que a página não reescreve seu próprio innerHTML a cada tecla
     // (ver ultimoConteudoRef acima). O onInput cuida de reavaliar a auto-paginação em seguida.
   }
 
   /**
    * Auto-paginação real: se o conteúdo estourar a altura da folha, o último bloco vira o começo da próxima página.
-   * O salvamento do texto digitado é adiado (debounce) — chamar setPaginasLocais a cada tecla reaplicaria o
+   * O salvamento do texto digitado é adiado (debounce). Chamar setPaginasLocais a cada tecla reaplicaria o
    * dangerouslySetInnerHTML da própria div a cada letra, resetando o cursor para o início (o texto saía invertido).
    *
    * A reflow roda a cada tecla (como antes), mas agora nunca remove o nó do DOM que contém o cursor: se o
    * cursor estiver dentro do último bloco, dividimos exatamente na posição do cursor (só o que vem DEPOIS
-   * dele vai para a próxima página) em vez de arrancar o bloco inteiro — isso era a causa do cursor "saltar"
+   * dele vai para a próxima página) em vez de arrancar o bloco inteiro. Isso era a causa do cursor "saltar"
    * de posição ao digitar perto do fim da página (o nó focado era removido do documento no meio da digitação).
    */
   function aoDigitarNaPagina(paginaId: string) {
     if (salvarDigitacaoRef.current) clearTimeout(salvarDigitacaoRef.current);
     // 250ms (não 600ms): salvarConteudoPagina também é quem registra o checkpoint no histórico de
-    // desfazer/refazer (ver registrarHistorico) — um debounce longo demais deixava "digitar e desfazer
+    // desfazer/refazer (ver registrarHistorico): um debounce longo demais deixava "digitar e desfazer
     // logo em seguida" sem checkpoint nenhum pra voltar (Ctrl+Z virava um no-op enquanto o debounce não
     // disparava). 250ms ainda evita registrar um checkpoint por tecla durante digitação contínua.
     salvarDigitacaoRef.current = setTimeout(() => salvarConteudoPagina(paginaId), 250);
     reflowPagina(paginaId);
   }
 
-  /** Caminho de índices de nó-filho da raiz até o alvo — serve pra "re-achar" o mesmo ponto depois que o HTML é reconstruído. */
+  /** Caminho de índices de nó-filho da raiz até o alvo. Serve pra "re-achar" o mesmo ponto depois que o HTML é reconstruído. */
   function caminhoAteNo(raiz: Node, alvo: Node): number[] | null {
     const caminho: number[] = [];
     let atual: Node | null = alvo;
@@ -1686,7 +1686,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       }
 
       // Marca a página de origem como já sincronizada (o DOM dela já reflete `htmlAtual`, foi o próprio
-      // reflowPagina que a mutou) — evita que o efeito de sincronização a reescreva à toa.
+      // reflowPagina que a mutou): evita que o efeito de sincronização a reescreva à toa.
       ultimoConteudoRef.current[paginaId] = htmlAtual;
 
       // Se a página de destino já existe e já está montada no DOM, escreve o transbordo nela e restaura
@@ -1694,7 +1694,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       // ponto-chave que fecha a corrida de digitação rápida: antes, entre o momento em que o bloco com o
       // cursor era removido da página de origem e o momento em que o efeito assíncrono escrevia o HTML na
       // página de destino e restaurava a seleção ali, o cursor nativo do navegador ficava "no limbo" (o nó
-      // que ele apontava já tinha sido removido do documento) — teclas digitadas nesse intervalo caíam em
+      // que ele apontava já tinha sido removido do documento). Teclas digitadas nesse intervalo caíam em
       // posição imprevisível, embaralhando o conteúdo entre páginas. Escrevendo e restaurando tudo aqui,
       // antes de devolver o controle ao event loop, não sobra intervalo nenhum pra outra tecla se intrometer.
       const elProxima = paginaRefs.current[idProximaPagina];
@@ -1718,14 +1718,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
   /**
    * Move para a próxima página tudo que estoura a altura da folha, em uma única passada (loop), pra dar
-   * conta de digitação rápida ou colar um bloco grande de uma vez — não só uma linha por chamada.
+   * conta de digitação rápida ou colar um bloco grande de uma vez. Não só uma linha por chamada.
    *
    * Blocos que não contêm o cursor podem ser movidos inteiros sem risco. Quando o loop chega no bloco que
    * contém o cursor: se houver conteúdo de verdade depois da posição do cursor dentro dele, só essa parte
    * vai pra próxima página (o texto antes do cursor, e o próprio cursor, nunca são tocados). Se não houver
-   * nada depois do cursor mas a página ainda estourar, o bloco inteiro precisa ir mesmo assim — isso é o
-   * comportamento esperado ("digitar perto do fim da página continua corretamente na página seguinte") —
-   * mas nesse caso guardamos o caminho exato até o nó do cursor em `cursorPendenteRef` pra restaurar o foco
+   * nada depois do cursor mas a página ainda estourar, o bloco inteiro precisa ir mesmo assim. Isso é o
+   * comportamento esperado ("digitar perto do fim da página continua corretamente na página seguinte").
+   * Mas nesse caso guardamos o caminho exato até o nó do cursor em `cursorPendenteRef` pra restaurar o foco
    * na posição certa assim que o bloco reaparecer no topo da próxima página. É essa restauração explícita
    * que evita o bug relatado: sem ela, a seleção nativa do navegador colapsa pra um lugar imprevisível
    * assim que o nó com foco é removido do documento, fazendo o cursor "saltar" de posição.
@@ -1759,7 +1759,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       const rangeDepois = range!.cloneRange();
       rangeDepois.selectNodeContents(ultimo);
       rangeDepois.setStart(range!.endContainer, range!.endOffset);
-      // Só espia o que tem depois do cursor (cloneContents não remove nada) — um <br> residual de fim de
+      // Só espia o que tem depois do cursor (cloneContents não remove nada). Um <br> residual de fim de
       // linha não conta como conteúdo real; se for só isso, não vale a pena separar por aqui.
       const previa = document.createElement("div");
       previa.appendChild(rangeDepois.cloneContents());
@@ -1795,10 +1795,10 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   /**
    * Busca de verdade sobre o DOM ao vivo de cada página (não usa o window.find() do navegador, que é uma
    * API não padronizada/legada e nem existe em todo navegador). Cada ocorrência aponta pro nó de texto e
-   * offsets exatos onde foi encontrada — a mesma lista alimenta contagem, destaque/navegação e substituição,
+   * offsets exatos onde foi encontrada. A mesma lista alimenta contagem, destaque/navegação e substituição,
    * então os três nunca divergem entre si (o bug antigo: a contagem usava o texto puro da página, mas a
    * substituição rodava regex sobre o HTML bruto, podendo contar e substituir universos de texto diferentes).
-   * Limitação conhecida: só encontra ocorrências inteiramente dentro de um único nó de texto — um termo que
+   * Limitação conhecida: só encontra ocorrências inteiramente dentro de um único nó de texto. Um termo que
    * atravesse duas formatações diferentes (ex.: metade em negrito, metade não) não é encontrado.
    */
   function coletarOcorrencias(): { paginaId: string; node: Text; start: number; end: number }[] {
@@ -1999,7 +1999,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       return;
     }
     if (alvo.closest("td, th")) {
-      // Célula de tabela já tem painel dedicado (docked) — não sobrepõe com o menu de texto genérico.
+      // Célula de tabela já tem painel dedicado (docked). Não sobrepõe com o menu de texto genérico.
       setMenuImagemPos(null);
       setMenuTextoPos(null);
       return;
@@ -2010,7 +2010,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     setMenuTextoPos({ x: e.clientX, y: e.clientY });
   }
 
-  /** Elemento de bloco (parágrafo/título/item de lista/etc) mais próximo do cursor atual — usado por
+  /** Elemento de bloco (parágrafo/título/item de lista/etc) mais próximo do cursor atual. Usado por
    * "Duplicar bloco"/"Excluir bloco" no menu de botão direito do texto. */
   function blocoDeTextoAtual(): HTMLElement | null {
     const el = paginaRefs.current[paginaAtivaId];
@@ -2135,15 +2135,15 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }
 
   /**
-   * Movimentação livre de imagem — funciona em QUALQUER modo de posição (inline, quebra de texto,
+   * Movimentação livre de imagem: funciona em QUALQUER modo de posição (inline, quebra de texto,
    * acima/abaixo, fixa), não só quando a imagem já estava em "fixa". Se a imagem ainda for inline no
    * início do gesto, o próprio arraste a converte pra `position: absolute` assim que o movimento
-   * ultrapassa um pequeno limiar (`LIMIAR_INICIO_ARRASTE`) — abaixo disso, tratamos como clique de
+   * ultrapassa um pequeno limiar (`LIMIAR_INICIO_ARRASTE`). Abaixo disso, tratamos como clique de
    * seleção comum e não mexemos na imagem, pra não converter o modo dela sem o usuário ter arrastado
    * de verdade. A posição inicial é calculada a partir do retângulo real da imagem (`getBoundingClientRect`),
    * então ela não "pula" de lugar no instante em que vira absoluta.
    *
-   * Guias de alinhamento (snap) — ao arrastar, encaixa nas margens e no centro da página (horizontal e
+   * Guias de alinhamento (snap): ao arrastar, encaixa nas margens e no centro da página (horizontal e
    * vertical) e mostra uma linha guia enquanto o encaixe está ativo, igual ao comportamento do
    * PowerPoint/Google Slides. As linhas são manipuladas direto no DOM (sem passar por estado do React)
    * pra não haver atraso visual durante o arraste.
@@ -2160,11 +2160,11 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     const dy = e.clientY - imgRect.top;
     const larguraImgPx = imgRect.width;
     const alturaImgPx = imgRect.height;
-    // `.doc-canvas` (ancestral da folha) usa `zoom: X%` — getBoundingClientRect() já retorna valores
+    // `.doc-canvas` (ancestral da folha) usa `zoom: X%`. GetBoundingClientRect() já retorna valores
     // em pixels de tela pós-zoom, mas `img.style.left/top` é interpretado em pixels "lógicos" (o
     // próprio zoom reescala isso de novo na hora de pintar). Sem dividir pelo fator de zoom aqui,
     // arrastar com zoom ≠ 100% move a imagem mais rápido/devagar que o mouse, e a janela de impressão
-    // (que não tem esse wrapper de zoom) reaplica os px "de tela" como se fossem lógicos — a imagem
+    // (que não tem esse wrapper de zoom) reaplica os px "de tela" como se fossem lógicos. A imagem
     // aparece deslocada, sobrepondo texto de um jeito que pode parecer duplicação.
     const fatorZoom = zoom / 100;
     const jaEhAbsoluta = img.style.position === "absolute";
@@ -2178,7 +2178,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
     // Geometria da folha (posição na tela + candidatos de encaixe) recalculada sob demanda, não só
     // uma vez no início: quando a imagem ainda inline vira `position: absolute` no meio do gesto, ela
-    // sai do fluxo do texto e a página pode reflowar — a posição da folha na tela muda entre o
+    // sai do fluxo do texto e a página pode reflowar. A posição da folha na tela muda entre o
     // mousedown e o primeiro mousemove seguinte. Usar um `folhaRect` capturado só no início (e
     // ficou obsoleto) fazia a imagem "pular" ~a altura da linha de texto que ela deixou de ocupar.
     let folhaRect = folha.getBoundingClientRect();
@@ -2267,7 +2267,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     inserirNaPagina(`<table style="border-collapse:collapse;width:100%;">${linhaHtml.repeat(linhas)}</table>`);
   }
 
-  /** Edição real de tabela — inserir/excluir linha ou coluna a partir da célula selecionada (ver PainelTabela). */
+  /** Edição real de tabela: inserir/excluir linha ou coluna a partir da célula selecionada (ver PainelTabela). */
   function comCelulaSelecionada(fn: (td: HTMLTableCellElement, tabela: HTMLTableElement) => void) {
     if (!celulaSelecionada) return;
     const { paginaId, td } = celulaSelecionada;
@@ -2370,7 +2370,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       div.querySelectorAll("h1, h2, h3, h4").forEach((h) => titulos.push(h.textContent ?? ""));
     }
     if (titulos.length === 0) {
-      window.alert("Nenhum título encontrado — use os estilos de título no texto primeiro.");
+      window.alert("Nenhum título encontrado: use os estilos de título no texto primeiro.");
       return;
     }
     inserirNaPagina(`<p><b>Sumário</b></p><ul>${titulos.map((t) => `<li>${t}</li>`).join("")}</ul>`);
@@ -2402,7 +2402,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   }
 
   /**
-   * Modo sugestão de verdade — não é só um aviso decorativo. Entrar no modo tira uma foto do conteúdo
+   * Modo sugestão de verdade: não é só um aviso decorativo. Entrar no modo tira uma foto do conteúdo
    * de cada página; "Aceitar todas" mantém o que foi editado (só sai do modo); "Rejeitar todas" restaura
    * o conteúdo exatamente como estava antes de entrar no modo, em todas as páginas.
    */
@@ -2471,7 +2471,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       onClick: () =>
         window.open(
           `mailto:?subject=${encodeURIComponent(doc.titulo)}&body=${encodeURIComponent(
-            contarPalavrasTexto(paginasLocais).palavras + " palavras — confira o documento no CRM.",
+            contarPalavrasTexto(paginasLocais).palavras + " palavras: confira o documento no CRM.",
           )}`,
         ),
     },
@@ -2601,8 +2601,8 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     { label: "Localizar e substituir", onClick: () => setLocalizarAberto(true) },
     { label: gravandoVoz ? "Parar digitação por voz" : "Digitação por voz", onClick: alternarDigitacaoPorVoz },
     "sep",
-    { label: "Dicionário", onClick: () => window.alert("Dicionário exige um serviço externo — não incluído nesse protótipo.") },
-    { label: "Tradução do documento", onClick: () => window.alert("Tradução exige um serviço externo — não incluído nesse protótipo.") },
+    { label: "Dicionário", onClick: () => window.alert("Dicionário exige um serviço externo. Não incluído nesse protótipo.") },
+    { label: "Tradução do documento", onClick: () => window.alert("Tradução exige um serviço externo. Não incluído nesse protótipo.") },
     { label: "Comparar versões", onClick: () => setHistoricoAberto(true) },
     "sep",
     { label: "Preferências", onClick: () => setConfigPaginaAberto(true) },
@@ -2746,7 +2746,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <span className="n">Ícone</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => aplicarFormatacao("insertHorizontalRule")}>
-              <span className="n">— Linha</span>
+              <span className="n">. Linha</span>
             </button>
 
             <p className="doc-menu-categoria">Estrutura</p>
@@ -2853,7 +2853,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       {modo === "sugestao" ? (
         <div className="doc-aviso-modo">
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <IconEdit width={13} height={13} /> Modo sugestão ativo —{" "}
+            <IconEdit width={13} height={13} /> Modo sugestão ativo:{" "}
             {statsSugestao && (statsSugestao.adicionados > 0 || statsSugestao.removidos > 0)
               ? `${statsSugestao.adicionados} caractere(s) adicionado(s), ${statsSugestao.removidos} removido(s) desde que o modo foi ativado.`
               : "edite normalmente; as mudanças feitas a partir de agora podem ser aceitas ou rejeitadas em bloco."}
@@ -2922,7 +2922,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                     if (el && ultimoConteudoRef.current[pagina.id] === undefined) {
                       el.innerHTML = pagina.conteudoHtml;
                       ultimoConteudoRef.current[pagina.id] = pagina.conteudoHtml;
-                      // Snapshot inicial no histórico — sem isso, desfazer a primeiríssima edição não
+                      // Snapshot inicial no histórico: sem isso, desfazer a primeiríssima edição não
                       // teria pra onde voltar (o histórico só nasceria depois de já ter uma mudança).
                       historicoEdicaoRef.current[pagina.id] = { pilha: [pagina.conteudoHtml], indice: 0 };
                     }
@@ -3319,7 +3319,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           style={ajudaPos ? { left: ajudaPos.x, top: ajudaPos.y, right: "auto", bottom: "auto" } : undefined}
         >
           <div className="wa-email-drag" onMouseDown={criarIniciarArraste(".wa-email-modal", setAjudaPos)}>
-            <p className="n">Central de ajuda — Documentos</p>
+            <p className="n">Central de ajuda: Documentos</p>
             <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setAjudaAberta(false)}><IconClose width={12} height={12} /></button>
           </div>
           <div className="doc-ajuda-conteudo">
@@ -3338,7 +3338,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <div className="stat-row"><span className="sl">Fechar menus/janelas</span><span className="sv">Esc</span></div>
             <p className="hint">Guia rápido</p>
             <ul className="doc-ajuda-lista">
-              <li><b>Arquivo</b> — novo documento, cópia, compartilhar, exportar (PDF/Word/TXT/RTF/HTML) e configuração da página.</li>
+              <li><b>Arquivo</b>: novo documento, cópia, compartilhar, exportar (PDF/Word/TXT/RTF/HTML) e configuração da página.</li>
               <li><b>Inserir</b> → Imagem: clique na imagem depois de inserida para redimensionar, recortar, girar e definir a quebra de texto.</li>
               <li><b>Formatar</b> → Colunas: define 1, 2 ou 3 colunas para o documento ou para a seleção.</li>
               <li><b>Ver</b> → alterna régua, caracteres não imprimíveis, modo paginado/contínuo e zoom.</li>
@@ -3357,7 +3357,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             </div>
             <div style={{ padding: 20 }}>
               <p className="hint" style={{ marginTop: 0 }}>
-                O que você escrever aqui se repete em todas as páginas do documento — na tela, na impressão e no PDF.
+                O que você escrever aqui se repete em todas as páginas do documento. Na tela, na impressão e no PDF.
               </p>
               <div
                 ref={cabecalhoRodapeEditRef}
@@ -3497,7 +3497,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             </div>
           </div>
           <div className="field">
-            <label>Margens (mm) — cada lado é independente</label>
+            <label>Margens (mm): cada lado é independente</label>
             <div className="doc-margens-grid">
               <label className="doc-margem-campo">
                 <span>Superior</span>
@@ -3595,7 +3595,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             </button>
           </div>
           <p className="hint" style={{ marginBottom: 10 }}>
-            O convite fica registrado aqui — o envio real de e-mail depende de um serviço de e-mail conectado ao CRM.
+            O convite fica registrado aqui. O envio real de e-mail depende de um serviço de e-mail conectado ao CRM.
           </p>
           {doc.pessoasAcesso.length > 0 ? (
             <div className="mb14">
@@ -3726,7 +3726,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             Linha divisória entre colunas
           </label>
           <p className="hint" style={{ marginTop: 10 }}>
-            Aplica ao documento inteiro (todas as páginas). Colunas de verdade via CSS — sem tabela.
+            Aplica ao documento inteiro (todas as páginas). Colunas de verdade via CSS. Sem tabela.
           </p>
           <button type="button" className="btn primary block" onClick={() => setColunasAberto(false)}>
             Aplicar
@@ -3769,7 +3769,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           ) : null}
           <p className="hint" style={{ marginBottom: 10 }}>
             Usa o tamanho, a orientação e as margens já configurados no documento. O arquivo é gerado de verdade
-            e baixado direto — não abre a janela de impressão.
+            e baixado direto: não abre a janela de impressão.
           </p>
           <button type="button" className="btn primary block" disabled={gerandoPdf} onClick={confirmarExportarPdf}>
             {gerandoPdf ? "Gerando PDF…" : "Baixar PDF"}
@@ -3843,7 +3843,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
 type ModoPosicaoImagem = "inline" | "quebrar" | "acima-abaixo" | "atras" | "frente" | "fixa";
 
-/** Painel real de edição de imagem — aparece flutuando ao selecionar uma imagem no documento. */
+/** Painel real de edição de imagem. Aparece flutuando ao selecionar uma imagem no documento. */
 function PainelImagem({
   imagem,
   onFechar,
@@ -3933,7 +3933,7 @@ function PainelImagem({
 
   function restaurarOriginal() {
     onMudar((img) => {
-      // Desfaz de verdade o corte (que substitui o src por um recorte via canvas), não só o CSS —
+      // Desfaz de verdade o corte (que substitui o src por um recorte via canvas), não só o CSS:
       // a imagem original fica guardada em data-original-src desde a inserção/substituição.
       if (img.dataset.originalSrc) img.src = img.dataset.originalSrc;
       img.removeAttribute("style");
@@ -3946,7 +3946,7 @@ function PainelImagem({
 
   function alternarBorda() {
     onMudar((img) => {
-      // Usa border-style como a fonte da verdade de "tem borda ou não" — os controles de espessura e
+      // Usa border-style como a fonte da verdade de "tem borda ou não". Os controles de espessura e
       // cor abaixo mexem só em border-width/border-color (longhand), nunca no atalho "border" inteiro,
       // então os dois nunca se pisam.
       const temBorda = img.style.borderStyle === "solid";
@@ -4035,7 +4035,7 @@ function PainelImagem({
     const sw = nl - sx - (cortarDireita / 100) * nl;
     const sh = na - sy - (cortarBaixo / 100) * na;
     if (sw <= 0 || sh <= 0) {
-      window.alert("Corte inválido — a área restante ficaria vazia.");
+      window.alert("Corte inválido: a área restante ficaria vazia.");
       return;
     }
     canvas.width = sw;
@@ -4320,7 +4320,7 @@ const ALCAS: { pos: PosicaoAlca; cursor: string }[] = [
 ];
 
 /**
- * Alças visuais de redimensionar sobrepostas na própria imagem selecionada — cantos redimensionam
+ * Alças visuais de redimensionar sobrepostas na própria imagem selecionada. Cantos redimensionam
  * mantendo proporção, laterais redimensionam livre (só largura ou só altura), igual Canva/Figma/Word.
  * A posição é recalculada via `getBoundingClientRect()` (a imagem é DOM cru, fora do React) sempre que
  * a janela rola/redimensiona ou a própria imagem muda de tamanho.
@@ -4410,7 +4410,7 @@ function AlcasRedimensionarImagem({
   );
 }
 
-/** Menu de botão direito na imagem — reposiciona sozinho se abriria fora da viewport. */
+/** Menu de botão direito na imagem. Reposiciona sozinho se abriria fora da viewport. */
 function MenuContextoImagem({
   pos,
   bloqueada,
@@ -4476,7 +4476,7 @@ function MenuContextoImagem({
 
 const CORES_MENU_TEXTO = ["#0b1533", "#2e6bff", "#0f9d63", "#d64545", "#c9660a"];
 
-/** Menu de botão direito em texto (item 5) — reposiciona sozinho se abriria fora da viewport, igual o de imagem. */
+/** Menu de botão direito em texto (item 5). Reposiciona sozinho se abriria fora da viewport, igual o de imagem. */
 function MenuContextoTexto({
   pos,
   onFechar,
@@ -4556,7 +4556,7 @@ function MenuContextoTexto({
   );
 }
 
-/** Toolbar mini flutuante (Prioridade 4) — some sozinha quando a seleção de texto acaba (governada
+/** Toolbar mini flutuante (Prioridade 4). Some sozinha quando a seleção de texto acaba (governada
  * pelo `selectionchange` no componente pai, não tem estado próprio de aberto/fechado). */
 function ToolbarFlutuanteTexto({
   pos,
@@ -4612,7 +4612,7 @@ function ToolbarFlutuanteTexto({
 }
 
 /**
- * Seletor de fonte com busca e prévia visual — cada opção é renderizada na própria fonte que
+ * Seletor de fonte com busca e prévia visual. Cada opção é renderizada na própria fonte que
  * representa, e um campo de busca filtra a lista por nome. Substitui o <select> nativo, que não dá
  * pra estilizar cada <option> de forma confiável entre navegadores nem colocar um campo de busca
  * dentro dele.

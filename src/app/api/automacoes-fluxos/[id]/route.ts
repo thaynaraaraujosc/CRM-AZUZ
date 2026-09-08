@@ -22,7 +22,7 @@ function paraFluxo(linha: {
   } as FluxoAutomacao;
 }
 
-/** Atualização por id — usada pelo helper `tocarFluxo()` do Context, que centraliza todo mutador
+/** Atualização por id: usada pelo helper `tocarFluxo()` do Context, que centraliza todo mutador
  * que edita um fluxo existente (rascunho, publicação, restaurar versão, arquivar, ativar...). Só
  * mexe em fluxo do mesmo workspace de quem está logado. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/automacoes-fluxos/[id]">) {
@@ -31,7 +31,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/automacoes
 
   const { id } = await ctx.params;
   const body = (await request.json()) as Partial<FluxoAutomacao>;
-  // id/criadoEm/atualizadoEm são geridos pelo banco (PK e @updatedAt) — nunca vêm do front.
+  // id/criadoEm/atualizadoEm são geridos pelo banco (PK e @updatedAt). Nunca vêm do front.
   const dados: Partial<FluxoAutomacao> = { ...body };
   delete dados.id;
   delete dados.criadoEm;
@@ -52,7 +52,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/automacoes
 
   const linha = await prisma.fluxoAutomacao.findUniqueOrThrow({ where: { id } });
 
-  // Publicação também vira uma linha em `VersaoAutomacao` — é ela que o motor executa, em vez do
+  // Publicação também vira uma linha em `VersaoAutomacao`. É ela que o motor executa, em vez do
   // rascunho. Enquanto a migração acontece os dois formatos convivem: o Json continua sendo escrito
   // (o editor lê dele) e a tabela passa a ser a fonte da verdade da execução. Ver
   // `src/lib/automacoes/versoes.ts`. Falhar aqui não pode derrubar o salvamento do fluxo.

@@ -2,7 +2,7 @@
 
 import { PERMISSOES_POR_MODULO } from "@/lib/configuracoes/permissoes";
 
-/** Matriz de permissões por módulo (item 21/22) — reutilizada ao adicionar usuário e ao criar
+/** Matriz de permissões por módulo (item 21/22). Reutilizada ao adicionar usuário e ao criar
  * função personalizada, pra não duplicar essa lista de checkboxes em dois lugares. */
 export function MatrizPermissoes({
   selecionadas,

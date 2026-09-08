@@ -3,13 +3,13 @@ import { prisma } from "@/lib/prisma";
 /**
  * Troca o nome de uma conversa e leva as mensagens junto.
  *
- * As mensagens são casadas com a conversa pelo NOME (`MensagemExtra.contato`), não por uma FK — então
+ * As mensagens são casadas com a conversa pelo NOME (`MensagemExtra.contato`), não por uma FK: então
  * renomear só a conversa deixaria o histórico órfão, invisível na tela. As duas coisas mudam na
  * mesma transação, ou nenhuma muda.
  *
  * Se já existir uma conversa com o nome novo (a mesma pessoa escreveu de novo e dessa vez o @
  * resolveu, criando uma segunda thread), as mensagens são movidas pra ela e a que estava com o
- * número é removida — o resultado é uma conversa só, que é o que a pessoa espera ver.
+ * número é removida: o resultado é uma conversa só, que é o que a pessoa espera ver.
  */
 export async function renomearConversa(workspaceId: string, de: string, para: string): Promise<void> {
   if (de === para) return;
@@ -22,7 +22,7 @@ export async function renomearConversa(workspaceId: string, de: string, para: st
   await prisma.$transaction([
     prisma.mensagemExtra.updateMany({ where: { workspaceId, contato: de }, data: { contato: para } }),
     // O negócio no funil também é casado pelo nome. Sem renomear junto, o card ficava órfão: o
-    // contato aparecia no funil com o nome velho e não existia mais em Conversas — os dois lados
+    // contato aparecia no funil com o nome velho e não existia mais em Conversas. Os dois lados
     // do CRM falando de pessoas diferentes.
     prisma.negocioCard.updateMany({ where: { workspaceId, nome: de }, data: { nome: para } }),
     prisma.contato.updateMany({ where: { workspaceId, nome: de }, data: { nome: para } }),

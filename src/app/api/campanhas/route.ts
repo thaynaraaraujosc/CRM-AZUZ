@@ -18,7 +18,7 @@ export async function GET() {
     take: 50,
   });
 
-  // Contagem por situação, numa consulta só — sem isso seria uma consulta por campanha.
+  // Contagem por situação, numa consulta só: sem isso seria uma consulta por campanha.
   const contagens = await prisma.campanhaDestinatario.groupBy({
     by: ["campanhaId", "status"],
     where: { campanhaId: { in: campanhas.map((c) => c.id) } },
@@ -26,7 +26,7 @@ export async function GET() {
   });
 
   // "Respondidas" não é um status (a pessoa respondeu DEPOIS de lido/entregue), é uma marca à
-  // parte — por isso a segunda contagem.
+  // parte: por isso a segunda contagem.
   const respostas = await prisma.campanhaDestinatario.groupBy({
     by: ["campanhaId"],
     where: { campanhaId: { in: campanhas.map((c) => c.id) }, respondidoEm: { not: null } },
@@ -65,7 +65,7 @@ type CorpoCriar = {
   /** Como o público foi escolhido. Quando vem, o servidor resolve a lista (ver `audiencia.ts`). */
   audiencia?: Audiencia;
   agendadaPara?: string;
-  /** Nomes dos contatos, como aparecem na tela — alternativa a `audiencia` (compatibilidade). */
+  /** Nomes dos contatos, como aparecem na tela: alternativa a `audiencia` (compatibilidade). */
   contatos?: string[];
 };
 
@@ -74,11 +74,11 @@ type CorpoCriar = {
  *
  * Toda a fila é gravada AGORA, antes de qualquer envio. É isso que dá idempotência sem gambiarra:
  * o par (campanha, contato) é único no banco, então clicar duas vezes, dar F5 no meio ou repetir a
- * chamada por timeout não cria destinatário repetido — a segunda tentativa esbarra na restrição.
+ * chamada por timeout não cria destinatário repetido. A segunda tentativa esbarra na restrição.
  *
  * O destino (telefone/e-mail) é resolvido e CONGELADO aqui. Buscar na hora do envio seria pior: uma
  * campanha de vários dias sobrevive a edições do contato, e a mensagem sairia pra um número que já
- * não é mais aquele — ou pra lugar nenhum, se alguém apagou o contato no meio.
+ * não é mais aquele: ou pra lugar nenhum, se alguém apagou o contato no meio.
  */
 export async function POST(request: Request) {
   const sessao = await auth();
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
   }
 
   // Template do CRM: quando vem, é ELE a fonte do texto, do assunto e do modelo da Meta. A tela
-  // não manda o corpo de um template — mandar deixaria a pessoa (ou um bug) enviar um texto
+  // não manda o corpo de um template. Mandar deixaria a pessoa (ou um bug) enviar um texto
   // diferente do que a Meta aprovou.
   let variaveis = Array.isArray(corpo.variaveis) ? corpo.variaveis : [];
   let texto = (corpo.corpo ?? "").trim();
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
   const titulo = (corpo.titulo ?? "").trim() || texto.split("\n")[0].slice(0, 60);
 
   // Público: resolvido no servidor a partir da descrição (ou da lista de nomes, no caminho antigo).
-  // É a mesma resolução da prévia — o que a tela mostrou é o que vai receber.
+  // É a mesma resolução da prévia. O que a tela mostrou é o que vai receber.
   const audiencia: Audiencia | null = corpo.audiencia?.modo
     ? corpo.audiencia
     : corpo.contatos?.length
@@ -147,7 +147,7 @@ export async function POST(request: Request) {
   for (const c of contatos) {
     const destino = destinoDoContato(c, corpo.canal);
     if (destino) {
-      // Valores das variáveis DESTA pessoa, congelados agora — pelo mesmo motivo do destino.
+      // Valores das variáveis DESTA pessoa, congelados agora: pelo mesmo motivo do destino.
       destinos.push({ contatoNome: c.nome, destino, parametros: resolverParametros(variaveis, c) });
     } else {
       semDestino.push(c.nome);

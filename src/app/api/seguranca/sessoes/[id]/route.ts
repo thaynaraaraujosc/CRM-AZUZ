@@ -4,8 +4,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /**
- * DELETE — encerra uma sessão de verdade: marca `revogadaEm`, e o callback `jwt` em
- * `src/lib/auth.ts` confere isso a cada request daquela sessão — a próxima vez que o dispositivo
+ * DELETE: encerra uma sessão de verdade: marca `revogadaEm`, e o callback `jwt` em
+ * `src/lib/auth.ts` confere isso a cada request daquela sessão. A próxima vez que o dispositivo
  * revogado tentar usar o CRM, cai pro login. Só encerra sessão do próprio Membro (nunca de outra
  * conta) e nunca a sessão atual por aqui (isso é "Sair", já existe no menu da conta).
  */

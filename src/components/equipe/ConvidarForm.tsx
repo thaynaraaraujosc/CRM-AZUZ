@@ -10,7 +10,7 @@ import { RadioList, Toggle } from "@/components/ui";
 const OPCAO_PERSONALIZADO = "Papel personalizado";
 
 /**
- * Formulário de convite — nasce em branco (item 1 do pedido: nada pré-preenchido, é uma conta
+ * Formulário de convite: nasce em branco (item 1 do pedido: nada pré-preenchido, é uma conta
  * nova). Nome/e-mail são digitados de verdade; o papel escolhe uma função padrão (com as
  * permissões dela já marcadas, mas editáveis) ou "personalizado" (começa zerado, você monta do
  * zero). `convidarMembro` já persiste na API de verdade (ver `equipe-context.tsx`).
@@ -136,7 +136,7 @@ export function ConvidarForm() {
           </div>
         ))}
         <p className="hint" style={{ padding: "10px 17px" }}>
-          Sem a permissão &quot;Visualizar&quot; de um módulo, esse módulo fica totalmente bloqueado pra essa pessoa — ela nem consegue abrir a tela.
+          Sem a permissão &quot;Visualizar&quot; de um módulo, esse módulo fica totalmente bloqueado pra essa pessoa. Ela nem consegue abrir a tela.
         </p>
 
         {erro ? <p style={{ color: "var(--danger)", padding: "0 17px 10px", fontSize: 12.5 }}>{erro}</p> : null}

@@ -16,7 +16,7 @@ const MODOS: { valor: FiltroTarefaModo; label: string }[] = [
   { valor: "funil", label: "Tarefa relacionada a determinado funil" },
 ];
 
-/** Gatilhos "Tarefa criada"/"Tarefa concluída" (item 10/11) — nunca pede pro usuário criar uma
+/** Gatilhos "Tarefa criada"/"Tarefa concluída" (item 10/11). Nunca pede pro usuário criar uma
  * tarefa; pergunta qual tipo de tarefa (já existente em outro lugar do fluxo) deve iniciar essa
  * automação. */
 export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; onChange: (novo: TarefaEventoData) => void }) {

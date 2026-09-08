@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { aoAtualizarContato } from "@/lib/automacoes/gatilhos-crm";
 import { encontrarContatoPorTelefone, upsertContato } from "@/lib/contatos/upsert";
 
-/** Linha do banco -> `Contato` do front — só o formato de `etiquetas` (JSON no banco) muda. */
+/** Linha do banco -> `Contato` do front. Só o formato de `etiquetas` (JSON no banco) muda. */
 function paraContato(linha: { etiquetas: unknown; [k: string]: unknown }): Contato {
   return {
     ...linha,
@@ -27,14 +27,14 @@ export async function GET() {
 }
 
 /**
- * POST faz upsert por `nome` dentro do workspace — mesma semântica que
+ * POST faz upsert por `nome` dentro do workspace. Mesma semântica que
  * `salvarDadosContato`/`atribuirAtendente`/`criarContato` já tinham no Context (ver
  * contatos-context.tsx): cria com valores padrão se o nome ainda não existe nesse workspace, ou
  * funde os dados enviados se já existe.
  *
  * Dedupe por telefone: se o `nome` ainda não existe mas o `whatsapp` enviado já bate (comparação
  * normalizada) com outro Contato já cadastrado, mescla nele em vez de criar um segundo registro
- * "órfão" pro mesmo número — devolve `mesclado: true` pra UI avisar o usuário.
+ * "órfão" pro mesmo número: devolve `mesclado: true` pra UI avisar o usuário.
  */
 export async function POST(request: Request) {
   const sessao = await auth();
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     nome: string;
     dados?: Partial<Contato> & Record<string, unknown>;
-    /** Origem só aplicada se o contato ainda não existir — ex.: `/formulario-preview` usa
+    /** Origem só aplicada se o contato ainda não existir. Ex.: `/formulario-preview` usa
      * "Formulário" aqui, sem afetar a origem de um contato já existente que responde de novo. */
     origemPadrao?: Contato["origem"];
   };
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       where: { id: duplicataPorTelefone.id },
       data: { ...dados, etiquetas: dados.etiquetas ?? undefined },
     });
-    // Este caminho escreve direto, sem passar por `upsertContato` — então o disparo precisa estar
+    // Este caminho escreve direto, sem passar por `upsertContato`: então o disparo precisa estar
     // aqui também, senão uma edição que cai na mesclagem por telefone não acionaria nada.
     aoAtualizarContato({ workspaceId, contatoNome: linha.nome, antes: duplicataPorTelefone, depois: linha });
     return NextResponse.json({ ...paraContato(linha), mesclado: true });

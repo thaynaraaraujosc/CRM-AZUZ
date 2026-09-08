@@ -5,11 +5,11 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA, buscarBlocos, type BlocoDefinicao } from "@/lib/automation-flow/blocos";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
 
-/** Tipo MIME custom carregado no drag — o que a área do canvas lê no `onDrop`. */
+/** Tipo MIME custom carregado no drag. O que a área do canvas lê no `onDrop`. */
 export const FLOW_DND_MIME = "application/x-flow-node-type";
 
 /**
- * "Mais usados" — a lista dos seis blocos que aparecem em quase toda automação comercial. É fixa,
+ * "Mais usados": a lista dos seis blocos que aparecem em quase toda automação comercial. É fixa,
  * não calculada: não há execução por bloco registrada em quantidade suficiente pra ranquear, e uma
  * lista que muda de ordem sozinha faria a pessoa procurar de novo a cada visita.
  */
@@ -37,7 +37,7 @@ export function BlockLibrary({
 
   // Sem IA configurada no servidor, os blocos de IA não aparecem. Deixá-los na biblioteca faria
   // alguém montar um fluxo inteiro em volta de um bloco que, na hora de rodar, não manda nada.
-  // Assim que a chave existir, eles aparecem sozinhos — não precisa mexer em código.
+  // Assim que a chave existir, eles aparecem sozinhos: não precisa mexer em código.
   useEffect(() => {
     let cancelado = false;
     fetch("/api/recursos", { cache: "no-store" })
@@ -98,7 +98,7 @@ export function BlockLibrary({
                   return novo;
                 });
                 onFechar();
-                // A biblioteca abre com todas as categorias já visíveis — só remover do
+                // A biblioteca abre com todas as categorias já visíveis. Só remover do
                 // "fechadas" não rola até ela, então precisa esperar o próximo frame (depois
                 // do painel reabrir) pra achar e rolar até a seção certa.
                 requestAnimationFrame(() => {
@@ -171,7 +171,7 @@ export function BlockLibrary({
   );
 }
 
-/** Envolve a parte do texto que bate com o termo buscado num <mark> — só na visão de resultados de busca. */
+/** Envolve a parte do texto que bate com o termo buscado num <mark>. Só na visão de resultados de busca. */
 function destacarTermo(texto: string, termo: string): ReactNode {
   const t = termo.trim();
   if (!t) return texto;

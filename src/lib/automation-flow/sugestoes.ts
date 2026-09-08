@@ -1,7 +1,7 @@
 import type { FlowNodeType } from "./types";
 
 /**
- * O que costuma vir DEPOIS de cada bloco — o miolo do "+" contextual.
+ * O que costuma vir DEPOIS de cada bloco. O miolo do "+" contextual.
  *
  * O menu do "+" mostrava sempre a mesma lista fixa. Só que "o que acontece agora?" tem resposta
  * diferente conforme onde você está: depois de uma mensagem, quase sempre é esperar a resposta;
@@ -69,12 +69,12 @@ export function sugestoesApos(tipo: FlowNodeType | undefined, categoria: string 
  * Um follow-up é uma espera com prazo + a mensagem que sai quando o prazo vence.
  *
  * O briefing pede FOLLOW-UP como recurso de alto nível, e ao mesmo tempo diz pra não criar um
- * segundo motor. As duas coisas cabem juntas: aqui é só um gerador de nós — ele monta o par que a
+ * segundo motor. As duas coisas cabem juntas: aqui é só um gerador de nós. Ele monta o par que a
  * pessoa montaria à mão, já ligado e já configurado. O motor não sabe que isso se chama follow-up,
  * e é justamente por isso que funciona sem nenhum código novo de execução.
  *
  * A espera é "até responder OU X horas": quem responder antes sai pelo caminho de cima e NÃO
- * recebe a cobrança — que é o comportamento que a pessoa espera e o que o motor com estado agora
+ * recebe a cobrança: que é o comportamento que a pessoa espera e o que o motor com estado agora
  * sabe fazer.
  */
 export function nosDeFollowUp(params: { horas: number; mensagem: string }): {

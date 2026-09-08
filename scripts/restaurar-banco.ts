@@ -3,7 +3,7 @@
 // Rode com: npx tsx scripts/restaurar-banco.ts backups/crm-azuz-AAAA-MM-DDTHH-MM-SS.json
 //
 // POR QUE ISTO EXISTE: o backup nasceu antes do restore, e por um dia o projeto teve um arquivo que
-// ninguém sabia como usar. Backup sem restauração testada é só um arquivo grande — a hora de
+// ninguém sabia como usar. Backup sem restauração testada é só um arquivo grande. A hora de
 // descobrir que não dá pra voltar não pode ser a hora em que o banco sumiu.
 //
 // LEIA ANTES DE RODAR:
@@ -28,7 +28,7 @@ if (!arquivo) {
   process.exit(1);
 }
 if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL não encontrada — confira se o arquivo .env existe na raiz do projeto.");
+  console.error("DATABASE_URL não encontrada: confira se o arquivo .env existe na raiz do projeto.");
   process.exit(1);
 }
 
@@ -40,7 +40,7 @@ const prisma = new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABAS
 const LOTE = 100;
 
 /** Data que o `JSON.stringify` produziu a partir de um `Date`, e só ela: `2026-09-04T22:25:42.123Z`.
- * O padrão é estrito de propósito — o schema tem campos String que guardam data curta
+ * O padrão é estrito de propósito. O schema tem campos String que guardam data curta
  * (`aaaa-mm-dd`, ver `NegocioCard.data` e `DocumentoBiblioteca.atualizadoEm`), e converter esses
  * para `Date` faria o Prisma recusar a linha inteira. */
 const ISO_COMPLETO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
@@ -68,7 +68,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Backup de ${backup.geradoEm ?? "data desconhecida"} — ${backup.totalLinhas ?? "?"} linhas.`);
+  console.log(`Backup de ${backup.geradoEm ?? "data desconhecida"}: ${backup.totalLinhas ?? "?"} linhas.`);
   if (backup.tabelasAusentes?.length) {
     console.warn(`⚠ Este backup está INCOMPLETO. Ficaram de fora: ${backup.tabelasAusentes.join(", ")}`);
   }
@@ -113,7 +113,7 @@ async function main() {
             } catch (erroLinha) {
               const msg = erroLinha instanceof Error ? erroLinha.message.trim().split("\n").slice(0, 3).join(" ") : String(erroLinha);
               // Imprime o PRIMEIRO erro de cada tabela na hora. A versão anterior só mostrava tudo
-              // no relatório final — e quando a execução morria antes do fim (foi o que aconteceu:
+              // no relatório final: e quando a execução morria antes do fim (foi o que aconteceu:
               // a conexão caiu na última instrução), a informação que explicava a falha ia junto.
               // Diagnóstico que só aparece se tudo der certo não serve pra nada.
               if (!tabelasJaRelatadas.has(tabela)) {
@@ -136,7 +136,7 @@ async function main() {
     //
     // Mas com try/catch PRÓPRIO: esta é a última instrução da restauração, e a conexão pelo
     // endereço público do Railway às vezes já caiu quando ela roda (`pool timeout`). Sem a
-    // proteção, essa falha de encerramento derrubava o processo ANTES do relatório — a restauração
+    // proteção, essa falha de encerramento derrubava o processo ANTES do relatório. A restauração
     // inteira tinha funcionado e a saída dizia "NÃO foi concluída", sem nenhum dos erros por tabela.
     //
     // A checagem é por conexão, não global: uma conexão nova (o app em produção, por exemplo) já

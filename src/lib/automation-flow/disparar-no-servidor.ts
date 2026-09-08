@@ -6,11 +6,11 @@ import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 import { continuarComResposta, iniciarFluxoComEstado, motorNovoAtivo } from "@/lib/automacoes/iniciar";
 
 /**
- * Dispara as automações quando chega uma mensagem — do lado do SERVIDOR, a partir do webhook.
+ * Dispara as automações quando chega uma mensagem. Do lado do SERVIDOR, a partir do webhook.
  *
  * Antes disto, o motor só rodava no navegador (painel "Testar" do editor de fluxos) e as mensagens
  * eram apenas simuladas. Na prática isso queria dizer que automação nenhuma funcionava de verdade:
- * dependia de alguém estar com a tela aberta. Atendimento não funciona assim — a mensagem chega de
+ * dependia de alguém estar com a tela aberta. Atendimento não funciona assim: a mensagem chega de
  * madrugada e a resposta tem que sair.
  *
  * O motor em si continua síncrono e puro. Como `Ligacoes` não é assíncrono, aqui ele só ANOTA o
@@ -19,7 +19,7 @@ import { continuarComResposta, iniciarFluxoComEstado, motorNovoAtivo } from "@/l
 export async function dispararAutomacoesDeMensagemRecebida(params: {
   workspaceId: string;
   contatoNome: string;
-  /** "WhatsApp" | "Instagram" — o rótulo do canal da conversa, como fica em `Conversa.canal`. */
+  /** "WhatsApp" | "Instagram": o rótulo do canal da conversa, como fica em `Conversa.canal`. */
   canal: string;
   textoRecebido: string;
   /** Id da opção escolhida, quando a mensagem foi um clique em botão/lista/resposta rápida. */
@@ -36,7 +36,7 @@ export async function dispararAutomacoesDeMensagemRecebida(params: {
 }
 
 /**
- * Dispara as automações de um evento do Instagram que NÃO é mensagem — comentário, resposta a
+ * Dispara as automações de um evento do Instagram que NÃO é mensagem. Comentário, resposta a
  * comentário, reação, mídia, publicação compartilhada.
  *
  * Reaproveita o mesmo motor e as mesmas ações do resto do CRM de propósito: o Instagram é só a
@@ -49,7 +49,7 @@ export async function dispararAutomacoesDeEventoInstagram(params: {
   contatoNome: string;
   tipoGatilho: string;
   textoRecebido: string;
-  /** Id da publicação, quando o evento vier de uma — permite a automação valer só pra ela. */
+  /** Id da publicação, quando o evento vier de uma. Permite a automação valer só pra ela. */
   publicacaoId?: string;
   /** Trava contra disparo repetido: "comentario:<id>". */
   chaveEvento?: string;
@@ -61,10 +61,10 @@ export async function dispararAutomacoesDeEventoInstagram(params: {
 }
 
 /**
- * Dispara as automações de um evento do CRM — entrar numa etapa do funil, virar lead novo.
+ * Dispara as automações de um evento do CRM. Entrar numa etapa do funil, virar lead novo.
  *
  * Estes gatilhos rodavam no NAVEGADOR: quem arrastasse o card via um aviso na tela e nada mais.
- * Duas consequências ruins — a automação não acontecia quando o card se movia por qualquer outro
+ * Duas consequências ruins: a automação não acontecia quando o card se movia por qualquer outro
  * caminho (webhook, importação, outra aba), e quando acontecia era só um toast, não a mensagem.
  */
 export async function dispararAutomacoesDoCrm(params: {
@@ -108,7 +108,7 @@ async function dispararAutomacoes(params: {
   const { workspaceId, contatoNome, canal, textoRecebido } = params;
 
   // Antes de avaliar gatilho nenhum: alguma automação está ESPERANDO a resposta desta pessoa?
-  // Se está, esta mensagem é a continuação dela — não o começo de outra. Sem esta checagem,
+  // Se está, esta mensagem é a continuação dela. Não o começo de outra. Sem esta checagem,
   // responder "1" a uma pergunta receberia o fluxo inteiro de novo por cima.
   if (params.tipoGatilho === "mensagem_recebida") {
     const continuou = await continuarComResposta({
@@ -133,7 +133,7 @@ async function dispararAutomacoes(params: {
   });
 
   const contato = {
-    // `etiquetas` vem como Json do banco (pode ser null) e o motor espera sempre uma lista — por
+    // `etiquetas` vem como Json do banco (pode ser null) e o motor espera sempre uma lista. Por
     // isso é normalizada DEPOIS do espalhamento, não antes.
     ...(contatoNoBanco ?? {}),
     nome: contatoNome,
@@ -150,7 +150,7 @@ async function dispararAutomacoes(params: {
 
     // Um evento pode casar com mais de um bloco de gatilho. Uma mensagem que chega serve pra
     // "Mensagem recebida", pra "Palavra-chave recebida" (a filtragem por palavra é do próprio
-    // bloco) e pra "Lead respondeu" — são três formas de dizer a mesma coisa, e quem monta o fluxo
+    // bloco) e pra "Lead respondeu". São três formas de dizer a mesma coisa, e quem monta o fluxo
     // escolhe a que faz sentido pra ela. Sem isto, um fluxo com o bloco "Palavra-chave recebida"
     // simplesmente nunca disparava: o tipo do evento não batia com o tipo do bloco.
     const noGatilhoDoFluxo = fluxo.nodes.find((n) => n.category === "gatilho");
@@ -191,7 +191,7 @@ async function dispararAutomacoes(params: {
 
     // Fluxos com a chave ligada rodam no motor com estado: ele grava a posição a cada bloco e
     // sabe esperar (por tempo ou por resposta), que é justamente o que o motor abaixo não sabe.
-    // Sem a chave, nada muda — o caminho antigo segue igual.
+    // Sem a chave, nada muda: o caminho antigo segue igual.
     if (motorNovoAtivo(linha.configuracoes)) {
       const fim = await iniciarFluxoComEstado({
         workspaceId,
@@ -213,7 +213,7 @@ async function dispararAutomacoes(params: {
         return null;
       });
       // `null` = fluxo sem versão publicada ou sem nada ligado no gatilho. Cair no motor antigo
-      // aqui seria rodar o RASCUNHO — melhor não executar e deixar isso visível.
+      // aqui seria rodar o RASCUNHO. Melhor não executar e deixar isso visível.
       if (!fim) {
         console.warn(`[automacao] fluxo ${linha.id} tem o motor novo ligado mas nenhuma versão publicada pra rodar`);
         continue;
@@ -243,7 +243,7 @@ async function dispararAutomacoes(params: {
       // Deixa de ser "simulada": o que o fluxo manda escrever entra na fila e sai de verdade
       // logo abaixo.
       registrarMensagemSimulada: (info) => mensagensParaEnviar.push(info),
-      // Responder o comentário só faz sentido quando FOI um comentário que disparou o fluxo — em
+      // Responder o comentário só faz sentido quando FOI um comentário que disparou o fluxo. Em
       // outro gatilho não existe comentário a que responder, e a ação é ignorada em silêncio em
       // vez de falhar o fluxo inteiro.
       responderComentario: (texto) => {
@@ -259,7 +259,7 @@ async function dispararAutomacoes(params: {
       continue;
     }
 
-    // A automação entra na linha do tempo do lead — sem isso, o histórico mostrava a mensagem
+    // A automação entra na linha do tempo do lead. Sem isso, o histórico mostrava a mensagem
     // automática saindo do nada, sem dizer que foi um fluxo que a mandou.
     await anotarNaLinhaDoTempo({
       workspaceId,
@@ -338,8 +338,8 @@ function tipoDoGatilhoQueCasa(tipoDoEvento: string, tipoDoBloco: string | undefi
   if (tipoDoBloco === tipoDoEvento) return tipoDoEvento;
 
   const equivalentes: Record<string, string[]> = {
-    // "Lead respondeu" só vale quando a conversa já existia, mas o CRM não distingue isso hoje —
-    // e deixar de fora seria pior: o bloco existe na biblioteca e nunca dispararia.
+    // "Lead respondeu" só vale quando a conversa já existia, mas o CRM não distingue isso hoje.
+    // E deixar de fora seria pior: o bloco existe na biblioteca e nunca dispararia.
     mensagem_recebida: ["palavra_chave", "lead_respondeu"],
   };
   return equivalentes[tipoDoEvento]?.includes(tipoDoBloco) ? tipoDoBloco : null;
@@ -373,7 +373,7 @@ async function moverCardDeEtapa(
       ordem: 0,
       workspaceId,
       nome: contatoNome,
-      valor: "—",
+      valor: "-",
       origem: "Automação",
       dias: "Hoje",
       data: new Date().toISOString().slice(0, 10),

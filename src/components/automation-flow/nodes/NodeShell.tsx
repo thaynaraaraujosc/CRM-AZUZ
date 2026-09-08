@@ -20,7 +20,7 @@ import {
   IconRelogio,
 } from "@/components/icons";
 
-/** Ícone por categoria de bloco. Eram emojis — cada um com desenho, peso e cor de uma fonte
+/** Ícone por categoria de bloco. Eram emojis: cada um com desenho, peso e cor de uma fonte
  * diferente, e o conjunto nunca ia parecer uma família só. Agora saem todos da mesma biblioteca
  * do CRM: mesmo traço, mesma proporção, e herdam a cor do tema. */
 const ICONE_CATEGORIA: Record<FlowNodeCategory, typeof IconAutomacoes> = {
@@ -34,7 +34,7 @@ const ICONE_CATEGORIA: Record<FlowNodeCategory, typeof IconAutomacoes> = {
   fim: IconBandeira,
 };
 
-/** Nome da categoria mostrado em cima do título — a leitura do tipo de bloco precisa funcionar sem abrir o nó. */
+/** Nome da categoria mostrado em cima do título. A leitura do tipo de bloco precisa funcionar sem abrir o nó. */
 const NOME_CATEGORIA: Record<FlowNodeCategory, string> = {
   gatilho: "Gatilho",
   condicao: "Condição",
@@ -48,7 +48,7 @@ const NOME_CATEGORIA: Record<FlowNodeCategory, string> = {
 
 /**
  * Renderizador único de nó, reaproveitado pelos 8 componentes registrados em
- * `nodeTypes` (um por `FlowNodeCategory`) — a diferença visual/comportamental
+ * `nodeTypes` (um por `FlowNodeCategory`). A diferença visual/comportamental
  * entre tipos dentro da mesma categoria vem só de `saidasDoNo`/`resumoNo`,
  * então não faz sentido duplicar esse JSX 8 vezes.
  */
@@ -137,10 +137,10 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             const chave = s.handleId ?? "__default__";
             const conectada = saidasConectadas?.has(chave) ?? false;
             /* Condição binária (item 8): "Sim"/"Não" tem que ler como uma bifurcação clara, não só
-               mais uma linha de opção igual às outras — verde/vermelho reforça qual caminho é qual
+               mais uma linha de opção igual às outras. Verde/vermelho reforça qual caminho é qual
                sem precisar ler o texto. */
             const corBifurcacao = flowNode.category === "condicao" ? (chave === "sim" ? "sim" : chave === "nao" ? "nao" : undefined) : undefined;
-            /* Pergunta com várias opções (item 8): visual de "menu" (pill azulado) — diferente da
+            /* Pergunta com várias opções (item 8): visual de "menu" (pill azulado). Diferente da
                bifurcação binária de condição, pra não parecer o mesmo tipo de componente. */
             const ehOpcaoDePergunta =
               (flowNode.type === "mensagem_botoes" || flowNode.type === "mensagem_lista") &&

@@ -4,12 +4,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
 
-/** Seed padrão criado no primeiro acesso do workspace a essa lista — editável/removível depois,
+/** Seed padrão criado no primeiro acesso do workspace a essa lista. Editável/removível depois,
  * não é fixo por código (diferente do seed de `prisma/seed.ts`, que só semeia o workspace de
  * demonstração). */
 const MOTIVOS_PADRAO = ["Achou caro", "Sem retorno", "Fechou com concorrente", "Não era o momento", "Outro"];
 
-/** GET lista os motivos de perda do workspace — semeia os padrões na primeira vez (nenhum motivo
+/** GET lista os motivos de perda do workspace. Semeia os padrões na primeira vez (nenhum motivo
  * cadastrado ainda). */
 export async function GET() {
   const sessao = await auth();

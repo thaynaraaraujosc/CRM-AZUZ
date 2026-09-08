@@ -27,7 +27,7 @@ const ICONE_CATEGORIA: Record<CategoriaEvento, typeof IconConversas> = {
 };
 
 /**
- * Linha do tempo unificada — usada dentro do painel de um contato, de uma
+ * Linha do tempo unificada: usada dentro do painel de um contato, de uma
  * negociação, ou na tela "Jornada do cliente". Sempre recebe eventos já
  * derivados (ver `gerarLinhaDoTempo` em `src/lib/timeline.ts`), nunca gera
  * dado próprio. Cada evento com `link` abre a origem (conversa, tarefa,
@@ -94,10 +94,10 @@ export function Timeline({ eventos }: { eventos: Evento[] }) {
 /**
  * Um evento da linha do tempo.
  *
- * Era um card por evento — a lista virava uma pilha de caixas e a cronologia, que é o assunto da
+ * Era um card por evento. A lista virava uma pilha de caixas e a cronologia, que é o assunto da
  * tela, ficava escondida atrás delas. Agora o que estrutura é a própria linha: marcador com o
  * ícone da categoria, fio fino descendo, e o texto solto ao lado. Sem borda, sem fundo, sem
- * sombra. Quem tem link continua clicável — o realce vira fundo sutil, não card levantando.
+ * sombra. Quem tem link continua clicável. O realce vira fundo sutil, não card levantando.
  */
 function TimelineItem({ evento }: { evento: Evento }) {
   const categoria = EVENTO_CATEGORIA[evento.tipo];

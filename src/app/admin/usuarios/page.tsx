@@ -28,7 +28,7 @@ function formatarData(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
 
-/** Todos os usuários agrupados por empresa (workspace) — uma linha por empresa, com quem é o
+/** Todos os usuários agrupados por empresa (workspace). Uma linha por empresa, com quem é o
  * admin dela em destaque e o total de membros; clicar na setinha expande e mostra todo mundo
  * daquela conta, com edição de papel/acesso ali mesmo. */
 export default function AdminUsuariosPage() {
@@ -104,7 +104,7 @@ export default function AdminUsuariosPage() {
 
       {senhaGerada ? (
         <div className="field" style={{ padding: "0 17px 14px" }}>
-          <label>Senha nova gerada — copie agora, ela não aparece de novo</label>
+          <label>Senha nova gerada: copie agora, ela não aparece de novo</label>
           <div style={{ display: "flex", gap: 8 }}>
             <input className="input" style={{ width: "100%", fontFamily: "monospace" }} readOnly value={senhaGerada.senha} />
             <button type="button" className="btn ghost" onClick={() => navigator.clipboard.writeText(senhaGerada.senha)}>

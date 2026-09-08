@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
+import { ehVazio } from "../vazio";
 
 /**
  * Os gatilhos que dependem do RELÓGIO, não de alguém fazer alguma coisa.
@@ -11,11 +12,11 @@ import type { FluxoAutomacao } from "@/lib/automation-flow/types";
  * existe.
  *
  * **Custo**: a varredura começa procurando FLUXOS com esses gatilhos. Sem nenhum fluxo desses no
- * workspace, ela não toca na tabela de contatos nem na de cards — o custo é uma consulta e acabou.
+ * workspace, ela não toca na tabela de contatos nem na de cards. O custo é uma consulta e acabou.
  * Isso importa: é código que roda a cada minuto, para sempre.
  *
  * **Repetição**: cada disparo carrega uma chave com a DATA. Aniversário dispara uma vez por dia,
- * não uma vez por minuto — mesmo a varredura passando 1.440 vezes por dia por cima do mesmo
+ * não uma vez por minuto. Mesmo a varredura passando 1.440 vezes por dia por cima do mesmo
  * contato.
  */
 const TIPOS_DE_TEMPO = [
@@ -75,7 +76,7 @@ export async function rodarGatilhosDeTempo(agora = new Date()): Promise<{ dispar
 }
 
 /**
- * Se agora é a hora configurada. Sem horário, vale 09:00 — mandar mensagem automática de
+ * Se agora é a hora configurada. Sem horário, vale 09:00: mandar mensagem automática de
  * madrugada é o tipo de coisa que faz o cliente bloquear o número.
  *
  * A janela é de um minuto porque a varredura roda a cada minuto: mais estreita perderia o disparo
@@ -153,14 +154,14 @@ async function contatosAlvo(params: {
 
   if (tipo === "tarefa_vencida") {
     // Vencida = passou da data e ninguém concluiu. A data da tarefa é texto ("aaaa-mm-dd" ou "Sem
-    // data"), então a comparação é de string mesmo — e "Sem data" nunca vence, que é o certo.
+    // data"), então a comparação é de string mesmo. E "Sem data" nunca vence, que é o certo.
     const hoje = diaDe(agora);
     const tarefas = await prisma.tarefaCard.findMany({
       where: { workspaceId, concluida: false },
       select: { contato: true, data: true },
     });
     return tarefas
-      .filter((t) => /^\d{4}-\d{2}-\d{2}$/.test(t.data) && t.data < hoje && t.contato && t.contato !== "—")
+      .filter((t) => /^\d{4}-\d{2}-\d{2}$/.test(t.data) && t.data < hoje && t.contato && !ehVazio(t.contato))
       .map((t) => t.contato);
   }
 
@@ -196,7 +197,7 @@ async function contatosAlvo(params: {
   return cards
     .filter((c) => {
       const ultima = ultimaPorContato.get(c.nome);
-      // Sem nenhuma mensagem, o lead está parado desde sempre — e é justamente quem precisa ser
+      // Sem nenhuma mensagem, o lead está parado desde sempre. E é justamente quem precisa ser
       // cutucado.
       return !ultima || ultima < limite;
     })
@@ -204,7 +205,7 @@ async function contatosAlvo(params: {
 }
 
 /**
- * Quem está numa etapa do funil — o público dos gatilhos de relógio.
+ * Quem está numa etapa do funil. O público dos gatilhos de relógio.
  *
  * Horário fixo e data marcada precisam de um público, senão não querem dizer nada. Sem etapa
  * escolhida devolve VAZIO, de propósito: o contrário seria disparar pra base inteira porque alguém
@@ -225,8 +226,8 @@ function diaMesDe(bruto: string | null): string | null {
   return br ? `${br[1]}-${br[2]}` : null;
 }
 
-/** Converte "dd/mm/aaaa" ou "aaaa-mm-dd" para "aaaa-mm-dd". Devolve `null` no que não reconhece —
- * comparar formato desconhecido daria disparo no dia errado. */
+/** Converte "dd/mm/aaaa" ou "aaaa-mm-dd" para "aaaa-mm-dd". Devolve `null` no que não reconhece.
+ * Comparar formato desconhecido daria disparo no dia errado. */
 function paraIso(bruto: string): string | null {
   const iso = bruto.match(/^(\d{4}-\d{2}-\d{2})/);
   if (iso) return iso[1];

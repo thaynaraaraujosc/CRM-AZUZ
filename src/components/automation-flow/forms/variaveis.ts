@@ -1,4 +1,4 @@
-/** Variáveis disponíveis pra interpolar em mensagens — spec seção 4. */
+/** Variáveis disponíveis pra interpolar em mensagens. Spec seção 4. */
 export const VARIAVEIS_MENSAGEM: { token: string; label: string }[] = [
   { token: "{primeiro_nome}", label: "Primeiro nome" },
   { token: "{nome_completo}", label: "Nome completo" },
