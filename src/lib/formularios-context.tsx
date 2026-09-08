@@ -238,6 +238,14 @@ export type TemaFormulario = {
   bannerUrl?: string;
   /** Referência interna do banner enviado. Mesmo papel do `logoArquivo`. */
   bannerArquivo?: string;
+  /**
+   * Que altura da imagem do banner fica visível na faixa, de 0 (topo) a 100 (base). Padrão 50.
+   *
+   * A faixa tem proporção fixa, então uma imagem mais alta que ela é recortada. Sem esse controle
+   * o recorte seria sempre pelo meio, e é justamente o meio que costuma ser a parte sem nada:
+   * numa foto de equipe os rostos estão em cima, num produto sobre mesa o assunto está embaixo.
+   */
+  bannerPosicao?: number;
   imagemFundoUrl?: string;
   /** Referência interna da imagem de fundo enviada. Mesmo papel do `logoArquivo`. */
   fundoArquivo?: string;

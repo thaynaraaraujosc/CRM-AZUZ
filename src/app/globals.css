@@ -8287,11 +8287,40 @@ button.camp-row:hover {
   display: block;
 }
 
+/**
+ * A faixa do banner.
+ *
+ * Era `width: 100%` sem nenhuma restrição de altura, então a imagem mandava: uma foto em pé de
+ * 1200x1600 virava 560x747 dentro do cartão e empurrava o formulário inteiro pra baixo da dobra.
+ * A pessoa abria o link e via uma foto, não um formulário.
+ *
+ * Agora a faixa tem proporção fixa de 3:1 (no cartão de 560px dá cerca de 187px de altura:
+ * presente, sem dominar, e ainda legível no celular) e a imagem preenche por `cover`, recortando
+ * o que sobra em vez de espremer. Qual pedaço fica visível é escolha de quem monta o formulário,
+ * via `object-position` (ver `bannerPosicao` no tema).
+ */
 .form-public-banner {
   width: 100%;
+  aspect-ratio: 3 / 1;
+  object-fit: cover;
   border-radius: var(--radius-md);
   margin-bottom: 14px;
   display: block;
+}
+
+/* Controle de recorte do banner, no painel de Design. */
+.form-banner-corte {
+  width: 100%;
+  accent-color: var(--acao);
+  cursor: pointer;
+}
+
+.form-banner-corte-legenda {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  margin-top: 2px;
 }
 
 .form-public-campos {
