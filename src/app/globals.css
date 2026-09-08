@@ -8311,20 +8311,73 @@ button.camp-row:hover {
   padding: var(--space-3) 0;
 }
 
-.form-public-obrigado {
-  width: 100%;
-  max-width: 480px;
-  border-radius: var(--radius-xl);
-  padding: var(--space-6) var(--space-6);
-  text-align: center;
-  box-shadow: var(--shadow-lg);
-  color: var(--ink);
+/**
+ * A tela de "obrigado".
+ *
+ * Era um cartão de 480px encostado no TOPO de uma página vazia: o olho lia como se alguma coisa
+ * tivesse faltado carregar, não como "pronto, deu certo". Vira uma tela inteira em marinho, com o
+ * conteúdo centralizado nos dois eixos e um selo de confirmação em cima da mensagem.
+ *
+ * Não segue o tema do formulário de propósito. O formulário é da empresa que o publicou; o fecho
+ * é o momento em que a pessoa termina e sai, e um encerramento na cor da marca fecha a experiência
+ * em vez de deixá-la no meio de uma página em branco.
+ */
+.form-public-page.form-public-final {
+  align-items: center;
+  justify-content: center;
+  background: var(--acao);
+  /* `dvh` e não `vh`: no celular a barra do navegador entra e sai, e com `vh` o conteúdo
+     centralizado fica deslocado justamente enquanto a barra está visível. */
+  min-height: 100dvh;
 }
 
-.form-public-obrigado.tema-escuro {
-  background: #14182a !important;
-  color: #eef1fb;
+.form-public-obrigado {
+  width: 100%;
+  max-width: 520px;
+  padding: var(--space-6);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  background: transparent;
+  box-shadow: none;
+  color: #ffffff;
 }
+
+.form-public-obrigado h2 {
+  color: #ffffff;
+  font-size: 26px;
+  line-height: 1.35;
+  margin: 0;
+}
+
+/* O selo. Círculo do azul vibrante da marca com o traço em branco: é o único elemento colorido da
+   tela, então é pra ele que o olho vai primeiro, que é o certo aqui. */
+.form-obrigado-selo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #ffffff;
+}
+
+.form-obrigado-botao {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: var(--acao);
+  font-weight: var(--fw-semibold);
+}
+
+.form-obrigado-botao:hover {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(255, 255, 255, 0.88);
+}
+
+
 
 @media (max-width: 640px) {
   /* No celular a folha é a tela: o respiro lateral fica menor e vertical, e o cartão ocupa a
@@ -8335,8 +8388,7 @@ button.camp-row:hover {
     align-items: center;
   }
 
-  .form-public-card,
-  .form-public-obrigado {
+  .form-public-card {
     padding: var(--space-5) var(--space-4);
   }
 

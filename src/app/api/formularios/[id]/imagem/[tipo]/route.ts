@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { guardarArquivo, lerArquivo } from "@/lib/armazenamento/midia";
 import type { TemaFormulario } from "@/lib/formularios-context";
@@ -78,7 +79,10 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
   const { id, tipo } = await ctx.params;
   if (!ehTipoValido(tipo)) return NextResponse.json({ erro: "Tipo de imagem inválido." }, { status: 400 });
 
-  const formulario = await prisma.formulario.findUnique({ where: { id }, select: { workspaceId: true } });
+  const formulario = await prisma.formulario.findUnique({
+    where: { id },
+    select: { workspaceId: true, tema: true },
+  });
   if (!formulario || formulario.workspaceId !== sessao.user.workspaceId) {
     // Mesma resposta pra "não existe" e "não é seu", pra não virar um jeito de descobrir quais ids
     // existem em outras empresas.
@@ -111,8 +115,50 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
     origem: "logo",
   });
 
-  return NextResponse.json({
-    arquivo: referencia,
-    url: `/api/formularios/${id}/imagem/${tipo}?v=${Date.now()}`,
+  /**
+   * Confere que o arquivo pode ser LIDO de volta antes de dar o envio por bem-sucedido.
+   *
+   * `guardarArquivo` não lança quando o R2 recusa: ele registra o erro no log e devolve a própria
+   * data URL, pra não perder o arquivo do cliente por causa de uma piscada da nuvem. Ótimo pra
+   * mensagem, ruim aqui: a tela recebia "deu certo", gravava um endereço, e a imagem simplesmente
+   * não aparecia, sem nada na interface dizendo o motivo. Lendo de volta na hora, um problema de
+   * armazenamento vira uma frase na tela em vez de um ícone de imagem quebrada pra investigar
+   * depois.
+   */
+  if (!(await lerArquivo(referencia))) {
+    return NextResponse.json(
+      { erro: "O arquivo subiu mas não pôde ser lido de volta. Verifique o armazenamento (R2)." },
+      { status: 502 },
+    );
+  }
+
+  const url = `/api/formularios/${id}/imagem/${tipo}?v=${Date.now()}`;
+
+  /**
+   * A referência é gravada AQUI, antes de responder, e não deixada a cargo da tela.
+   *
+   * Era a tela que gravava, e isso criava uma corrida que quebrava a imagem toda vez: o React
+   * renderizava o `<img>` com o endereço novo no mesmo instante em que disparava o PATCH do
+   * formulário, sem esperar. O navegador pedia a imagem antes de o banco ter a referência, o GET
+   * respondia 404, e navegador não tenta de novo: ficava o ícone de imagem quebrada até recarregar
+   * a página inteira. Gravando antes de responder, quando a tela recebe o endereço ele já funciona.
+   *
+   * A tela continua atualizando o estado local depois, com os mesmos valores: é o que faz a
+   * miniatura e a prévia aparecerem na hora, sem esperar recarregar.
+   */
+  const CAMPO_URL_POR_TIPO = { logo: "logoUrl", banner: "bannerUrl", fundo: "imagemFundoUrl" } as const;
+  const temaNovo: Record<string, unknown> = {
+    ...temaDoFormulario(formulario.tema),
+    [CAMPO_POR_TIPO[tipo]]: referencia,
+    [CAMPO_URL_POR_TIPO[tipo]]: url,
+  };
+
+  await prisma.formulario.update({
+    where: { id },
+    // O `tema` é uma coluna Json: o Prisma exige o tipo dele pra escrita, e o tipo do TEMA não é o
+    // mesmo (tem campos opcionais que o Json não descreve).
+    data: { tema: temaNovo as Prisma.InputJsonValue },
   });
+
+  return NextResponse.json({ arquivo: referencia, url });
 }
