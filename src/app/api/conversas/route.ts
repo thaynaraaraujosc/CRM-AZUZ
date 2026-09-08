@@ -80,7 +80,24 @@ export async function GET(request: Request) {
     for (const c of comFoto) if (!c.fotoUrl) c.fotoUrl = porNome.get(c.nome) ?? null;
   }
 
-  return NextResponse.json(comFoto, { headers: cabecalhosComEtag(etag) });
+  // Quando foi a ÚLTIMA MENSAGEM de cada conversa — diferente de `atualizadoEm`, que é "última vez
+  // que a linha foi tocada" e sobe por qualquer coisa (favoritar, mudar status, uma importação).
+  // Era por isso que o funil inteiro parecia recente: uma importação encostou em todas as conversas
+  // no mesmo minuto. É um `groupBy` de máximo — não lê o texto de mensagem nenhuma.
+  const ultimas = await prisma.mensagemExtra.groupBy({
+    by: ["contato"],
+    where: { workspaceId: sessao.user.workspaceId, contato: { in: comFoto.map((c) => c.nome) } },
+    _max: { criadoEm: true },
+  });
+  const ultimaPorContato = new Map(ultimas.map((u) => [u.contato, u._max.criadoEm]));
+
+  const comAtividade = comFoto.map((c) => ({
+    ...c,
+    // `null` quando a conversa ainda não tem mensagem gravada — quem lê cai na data de criação.
+    ultimaMensagemEm: ultimaPorContato.get(c.nome) ?? null,
+  }));
+
+  return NextResponse.json(comAtividade, { headers: cabecalhosComEtag(etag) });
 }
 
 /**

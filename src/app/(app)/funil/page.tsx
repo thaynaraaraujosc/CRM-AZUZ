@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -14,6 +14,7 @@ import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useConversas } from "@/lib/conversas-context";
+import { rotuloDeAtividade } from "@/lib/funis/atividade";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { useMotivosPerda } from "@/lib/motivos-perda";
@@ -77,6 +78,20 @@ function FunilPageInner() {
   const { fluxos } = useAutomationFlows();
   const { contatos } = useContatos();
   const { conversas } = useConversas();
+
+  /**
+   * Última movimentação por contato — é o que o card mostra no canto e o que dá sentido ao botão
+   * "Mensagens recentes no topo". Antes o card exibia `NegocioCard.dias`, uma string gravada como
+   * "Hoje" quando ele nasceu e nunca mais tocada: o funil inteiro dizia "Hoje", inclusive card de
+   * semanas atrás.
+   */
+  const atividadePorNome = useMemo(
+    // `ultimaMensagemEm` e não `atualizadoEm`: o segundo sobe por qualquer escrita na conversa, e
+    // uma importação de contatos encostava em todas de uma vez — deixando o funil inteiro com cara
+    // de recente. Sem mensagem gravada ainda, cai na data de criação do card.
+    () => new Map(conversas.map((c) => [c.nome, c.ultimaMensagemEm ?? null])),
+    [conversas],
+  );
   const { membros: equipe } = useEquipe();
   const motivosPerda = useMotivosPerda();
   const [configAberto, setConfigAberto] = useState(false);
@@ -985,7 +1000,9 @@ function FunilPageInner() {
                         <span className={`tag ${classeOrigem(card.origem)}`}>
                           {card.origem}
                         </span>
-                        <span className="days">{card.dias}</span>
+                        <span className="days" title="Última movimentação deste negócio">
+                          {rotuloDeAtividade(atividadePorNome.get(card.nome) ?? card.data)}
+                        </span>
                         {card.statusFechamento === "ganho" ? (
                           <span className="stage-tag won" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><IconCheck width={11} height={11} /> Ganho</span>
                         ) : card.statusFechamento === "perdido" ? (
