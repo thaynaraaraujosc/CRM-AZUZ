@@ -1306,6 +1306,17 @@ function PainelCampo({
  * Mostra a primeira página. Quem tem mais de uma vê o aviso de que existem outras: o que se
  * confere aqui é aparência, e a aparência é a mesma em todas.
  */
+/**
+ * Os fundos oferecidos, um conjunto por tema.
+ *
+ * A lista era uma só, de tons claros, e continuava aparecendo com o tema escuro ligado: escolher
+ * um creme ali deixava texto claro sobre fundo claro. Os dois conjuntos estão na MESMA ORDEM de
+ * propósito, pra trocar de tema poder levar a escolha junto (branco vira quase-preto, o azulzinho
+ * vira azul-noite, e assim por diante) em vez de jogar tudo fora.
+ */
+const FUNDOS_CLAROS = ["#ffffff", "#eef2ff", "#e6f7ee", "#fff8e1", "#fdeaea", "#f3e8ff"];
+const FUNDOS_ESCUROS = ["#14182a", "#111a33", "#0f2019", "#231c0e", "#2a1416", "#1e1430"];
+
 function PreviaDesign({ formulario }: { formulario: Formulario }) {
   const tema = formulario.tema;
   const primeira = formulario.paginas[0];
@@ -1367,11 +1378,16 @@ function PreviaDesign({ formulario }: { formulario: Formulario }) {
             </div>
           )}
 
+          {/* Sem `disabled`: `.btn:disabled` aplica `opacity: 0.5`, e era isso a névoa por cima do
+              botão. A prévia precisa mostrar a cor EXATA que foi escolhida, senão ela atrapalha
+              justamente a decisão que existe pra ajudar. Fica inerte por `pointer-events`, sem
+              mudar um pixel da aparência. */}
           <button
             type="button"
             className="btn block"
-            style={{ background: tema.corBotao, color: "#fff", marginTop: 14 }}
-            disabled
+            style={{ background: tema.corBotao, color: "#fff", marginTop: 14, pointerEvents: "none" }}
+            tabIndex={-1}
+            aria-hidden="true"
           >
             {formulario.paginas.length > 1 ? "Continuar" : "Enviar"}
           </button>
@@ -1403,6 +1419,25 @@ function PainelDesign({
 
   function atualizarTema(patch: Partial<Formulario["tema"]>) {
     onAtualizar({ tema: { ...formulario.tema, ...patch } });
+  }
+
+  /**
+   * Troca o tema levando o fundo junto.
+   *
+   * Só troca a cor quando ela é um dos tons oferecidos do tema anterior: nesse caso a pessoa
+   * escolheu "o segundo quadradinho", não aquele valor exato de hexadecimal, e o equivalente do
+   * outro conjunto é o que ela espera. Cor escolhida no seletor personalizado é decisão dela e
+   * fica como está, mesmo que fique estranha: sobrescrever escolha explícita é pior que deixar
+   * feio, e ela vê o resultado na prévia ao lado na mesma hora.
+   */
+  function trocarTema(escuro: boolean) {
+    const antes = escuro ? FUNDOS_CLAROS : FUNDOS_ESCUROS;
+    const depois = escuro ? FUNDOS_ESCUROS : FUNDOS_CLAROS;
+    const posicao = antes.indexOf(formulario.tema.corPrincipal);
+    atualizarTema({
+      temaEscuro: escuro,
+      ...(posicao >= 0 ? { corPrincipal: depois[posicao] } : {}),
+    });
   }
 
   /**
@@ -1504,10 +1539,10 @@ function PainelDesign({
         <div className="field">
           <label>Tema</label>
           <div className="filters-row" style={{ margin: 0 }}>
-            <button type="button" className={`fchip${!formulario.tema.temaEscuro ? " active" : ""}`} onClick={() => atualizarTema({ temaEscuro: false })}>
+            <button type="button" className={`fchip${!formulario.tema.temaEscuro ? " active" : ""}`} onClick={() => trocarTema(false)}>
               Claro
             </button>
-            <button type="button" className={`fchip${formulario.tema.temaEscuro ? " active" : ""}`} onClick={() => atualizarTema({ temaEscuro: true })}>
+            <button type="button" className={`fchip${formulario.tema.temaEscuro ? " active" : ""}`} onClick={() => trocarTema(true)}>
               Escuro
             </button>
           </div>
@@ -1516,7 +1551,7 @@ function PainelDesign({
           <label>Cor principal (fundo)</label>
           <div className="filters-row" style={{ margin: 0, alignItems: "center" }}>
             <div className="cor-chips">
-              {["#ffffff", "#eef2ff", "#e6f7ee", "#fff8e1", "#fdeaea", "#f3e8ff"].map((c) => (
+              {(formulario.tema.temaEscuro ? FUNDOS_ESCUROS : FUNDOS_CLAROS).map((c) => (
                 <button
                   key={c}
                   type="button"

@@ -350,6 +350,15 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
         {pagina?.titulo ? <h4 style={{ margin: "6px 0 10px" }}>{pagina.titulo}</h4> : null}
         {pagina?.descricao ? <p className="hint" style={{ marginBottom: 10 }}>{pagina.descricao}</p> : null}
 
+        {/* Formulário publicado sem nenhuma pergunta visível mostrava título e botão "Enviar", e
+            mais nada: parecia quebrado, e responder criaria um contato vazio no CRM. Com aviso, a
+            pessoa entende que não é ela que está fazendo algo errado, e ninguém envia em branco. */}
+        {camposDaPagina.length === 0 ? (
+          <p className="hint" style={{ margin: "10px 0" }}>
+            Este formulário ainda não tem perguntas. Avise quem te mandou o link.
+          </p>
+        ) : null}
+
         <div className="form-public-campos">
           {camposDaPagina.map((pergunta) => (
             <div key={pergunta.id} className={pergunta.largura === "metade" ? "form-campo-metade" : "form-campo-total"}>
@@ -367,16 +376,18 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
           ))}
         </div>
 
-        <div className="filters-row" style={{ marginTop: 14 }}>
-          {paginaIndice > 0 ? (
-            <button type="button" className="btn ghost" onClick={voltar}>
-              Voltar
+        {camposDaPagina.length > 0 ? (
+          <div className="filters-row" style={{ marginTop: 14 }}>
+            {paginaIndice > 0 ? (
+              <button type="button" className="btn ghost" onClick={voltar}>
+                Voltar
+              </button>
+            ) : null}
+            <button type="button" className="btn block" style={{ background: tema.corBotao, color: "#fff" }} onClick={avancar}>
+              {ehUltimaPagina ? "Enviar" : "Próxima"}
             </button>
-          ) : null}
-          <button type="button" className="btn block" style={{ background: tema.corBotao, color: "#fff" }} onClick={avancar}>
-            {ehUltimaPagina ? "Enviar" : "Próxima"}
-          </button>
-        </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
