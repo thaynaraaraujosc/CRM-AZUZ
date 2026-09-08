@@ -17,10 +17,14 @@ import type {
   FlowNode,
   IaClassificarData,
   IaResponderData,
+  EnviarFormularioData,
   MensagemBotoesData,
+  MensagemContatoData,
   MensagemEmailData,
+  MensagemLocalizacaoData,
   MensagemMidiaData,
   MensagemModeloWhatsappData,
+  NotificacaoInternaData,
   RemoverEtiquetaData,
 } from "@/lib/automation-flow/types";
 import type { AcoesDoMotor } from "./acoes";
@@ -451,17 +455,61 @@ async function executarNo(params: {
       return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
     }
 
-    // Contato, localização, formulário e notificação interna continuam sem envio real. Mandar só o
-    // texto do bloco entregaria coisa errada e ainda registraria "enviado" — o histórico diz o que
-    // faltou, e o fluxo segue.
-    case "mensagem_contato":
-    case "mensagem_localizacao":
-    case "enviar_formulario":
-    case "notificacao_interna":
-      return {
-        tipo: "seguir",
-        detalhe: `"${no.titulo ?? no.type}" ainda não é enviado pelo motor — nada saiu, e o fluxo seguiu.`,
-      };
+    case "mensagem_localizacao": {
+      const data = no.data as MensagemLocalizacaoData;
+      const latitude = Number(data.latitude);
+      const longitude = Number(data.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        // Endereço escrito por extenso não vira coordenada sozinho: isso precisaria de um serviço
+        // de geocodificação, que o CRM não tem. Dizer isso é melhor que mandar um mapa no lugar
+        // errado.
+        return { tipo: "erro", detalhe: "O bloco de localização precisa de latitude e longitude — endereço por extenso ainda não é convertido." };
+      }
+      const enderecoCompleto = [data.endereco, data.numero, data.bairro, data.cidade, data.estado].filter(Boolean).join(", ");
+      const r = await acoes.enviarLocalizacao({
+        contatoNome: nome,
+        latitude,
+        longitude,
+        nome: data.nomeLocal,
+        endereco: enderecoCompleto || undefined,
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "mensagem_contato": {
+      const data = no.data as MensagemContatoData;
+      const escolhido = data.contatoSelecionadoNome?.trim();
+      if (!escolhido) return { tipo: "erro", detalhe: "O bloco não tem contato escolhido." };
+      const dados = await acoes.buscarContato(escolhido);
+      if (!dados.ok) return { tipo: "erro", detalhe: dados.detalhe, erroTecnico: dados.erroTecnico };
+      const r = await acoes.enviarContato({ contatoNome: nome, ...JSON.parse(dados.detalhe) });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "enviar_formulario": {
+      const data = no.data as EnviarFormularioData;
+      const link = await acoes.linkDoFormulario({
+        origem: data.formularioOrigem ?? "interno",
+        formularioId: data.formularioId,
+        urlExterna: data.formularioUrlExterna,
+      });
+      if (!link.ok) return { tipo: "erro", detalhe: link.detalhe, erroTecnico: link.erroTecnico };
+      const texto = [preencher(data.mensagem ?? "", contato).trim(), link.detalhe].filter(Boolean).join("\n\n");
+      const envio = await acoes.enviarTexto({ contatoNome: nome, texto });
+      return envio.ok
+        ? { tipo: "seguir", detalhe: `Formulário enviado: ${link.detalhe}` }
+        : { tipo: "erro", detalhe: envio.detalhe, erroTecnico: envio.erroTecnico };
+    }
+
+    case "notificacao_interna": {
+      const data = no.data as NotificacaoInternaData;
+      const r = await acoes.avisarEquipe({
+        contatoNome: nome,
+        equipe: data.paraEquipe,
+        mensagem: preencher(data.mensagem ?? "", contato),
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
 
     case "adicionar_etiqueta": {
       const data = no.data as AdicionarEtiquetaData;

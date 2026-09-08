@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { aoAtualizarContato, aoCriarContato } from "@/lib/automacoes/gatilhos-crm";
 import { slugId } from "@/lib/ids";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
 import type { Contato } from "@/lib/data";
@@ -30,12 +31,17 @@ export async function upsertContato(params: {
 
   const existente = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome } } });
   if (existente) {
-    return prisma.contato.update({
+    const atualizado = await prisma.contato.update({
       where: { workspaceId_nome: { workspaceId, nome } },
       data: { ...dados, etiquetas: dados.etiquetas ?? undefined },
     });
+    aoAtualizarContato({ workspaceId, contatoNome: nome, antes: existente, depois: atualizado });
+    return atualizado;
   }
-  return prisma.contato.create({
+  // É por AQUI que quase todo lead de verdade entra: o webhook do WhatsApp/Instagram cria o contato
+  // na primeira mensagem. Sem o disparo aqui, "Lead criado" valeria só pra quem fosse cadastrado à
+  // mão — ou seja, quase nunca.
+  const criado = await prisma.contato.create({
     data: {
       id: `${workspaceId}-${slugId(nome)}`,
       workspaceId,
@@ -50,6 +56,8 @@ export async function upsertContato(params: {
       etiquetas: dados.etiquetas ?? undefined,
     },
   });
+  aoCriarContato({ workspaceId, contatoNome: nome, contatoId: criado.id });
+  return criado;
 }
 
 /**

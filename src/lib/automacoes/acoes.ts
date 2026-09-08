@@ -1,7 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 import { registrarMensagemEnviada } from "@/lib/conversas/registrar-saida";
-import { enviarPerguntaPeloCanal, textoNumerado, type OpcaoPergunta } from "@/lib/conversas/enviar-pergunta";
+import {
+  enviarContatoPeloCanal,
+  enviarLocalizacaoPeloCanal,
+  enviarPerguntaPeloCanal,
+  textoNumerado,
+  type OpcaoPergunta,
+} from "@/lib/conversas/enviar-pergunta";
 import { enviarMidiaPeloCanal, type TipoMidia } from "@/lib/conversas/enviar-midia";
 import { componentesParaMeta, resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
@@ -39,6 +45,17 @@ export type AcoesDoMotor = {
   /** Envia uma pergunta com opções no melhor formato que o canal suporta (botão, lista, resposta
    * rápida ou menu numerado). O `detalhe` diz qual formato saiu — a pessoa precisa ver isso. */
   perguntar: (params: { contatoNome: string; texto: string; opcoes: OpcaoPergunta[] }) => Promise<ResultadoAcao>;
+  /** Envia uma localização (cartão com mapa no WhatsApp; link do Maps nos outros canais). */
+  enviarLocalizacao: (params: { contatoNome: string; latitude: number; longitude: number; nome?: string; endereco?: string }) => Promise<ResultadoAcao>;
+  /** Envia um cartão de contato. */
+  enviarContato: (params: { contatoNome: string; nome: string; telefone?: string; email?: string; empresa?: string }) => Promise<ResultadoAcao>;
+  /** Avisa a equipe por dentro do CRM — vai pro histórico do lead e, quando há e-mail, pra caixa
+   * de quem foi indicado. */
+  avisarEquipe: (params: { contatoNome: string; equipe?: string; mensagem: string }) => Promise<ResultadoAcao>;
+  /** Dados de um contato do CRM, em JSON no `detalhe` — pro bloco que compartilha um contato. */
+  buscarContato: (nome: string) => Promise<ResultadoAcao>;
+  /** Endereço público do formulário, no `detalhe`. */
+  linkDoFormulario: (params: { origem: "interno" | "externo"; formularioId?: string; urlExterna?: string }) => Promise<ResultadoAcao>;
   /** Envia um arquivo da biblioteca pelo canal da conversa. */
   enviarMidia: (params: { contatoNome: string; arquivoId: string; tipo: TipoMidia; legenda?: string }) => Promise<ResultadoAcao>;
   /** Envia um modelo aprovado do WhatsApp oficial, com as variáveis preenchidas. É o único jeito
@@ -123,6 +140,109 @@ export function acoesReais(params: {
         return ok(`Arquivo enviado (${tipo}).`);
       } catch (erro) {
         return falha("Falha ao enviar o arquivo.", mensagemDoErro(erro));
+      }
+    },
+
+    async enviarLocalizacao({ contatoNome, latitude, longitude, nome, endereco }) {
+      try {
+        const r = await enviarLocalizacaoPeloCanal({ workspaceId, conversaNome: contatoNome, latitude, longitude, nome, endereco });
+        if (!r.enviado) return falha(`Não foi possível enviar a localização: ${r.motivo ?? "motivo desconhecido"}`);
+        await registrarMensagemEnviada({
+          workspaceId,
+          contatoNome,
+          texto: [nome, endereco, `https://maps.google.com/?q=${latitude},${longitude}`].filter(Boolean).join("\n"),
+          origem: "automacao",
+        });
+        return ok(r.comoTexto ? "Localização enviada como link do mapa (o canal não tem cartão de localização)." : "Localização enviada.");
+      } catch (erro) {
+        return falha("Falha ao enviar a localização.", mensagemDoErro(erro));
+      }
+    },
+
+    async enviarContato({ contatoNome, nome, telefone, email, empresa }) {
+      if (!nome.trim()) return falha("O bloco não tem contato escolhido.");
+      try {
+        const r = await enviarContatoPeloCanal({ workspaceId, conversaNome: contatoNome, nome, telefone, email, empresa });
+        if (!r.enviado) return falha(`Não foi possível enviar o contato: ${r.motivo ?? "motivo desconhecido"}`);
+        await registrarMensagemEnviada({
+          workspaceId,
+          contatoNome,
+          texto: [nome, empresa, telefone, email].filter(Boolean).join("\n"),
+          origem: "automacao",
+        });
+        return ok(r.comoTexto ? `Contato "${nome}" enviado como texto (o canal não tem cartão de contato).` : `Contato "${nome}" enviado.`);
+      } catch (erro) {
+        return falha("Falha ao enviar o contato.", mensagemDoErro(erro));
+      }
+    },
+
+    async avisarEquipe({ contatoNome, equipe, mensagem }) {
+      if (!mensagem.trim()) return falha("Aviso interno sem texto.");
+      try {
+        // Vai pro histórico do lead sempre: é ali que quem abre a conversa vê o que aconteceu.
+        await anotarNaLinhaDoTempo({
+          workspaceId,
+          contatoNome,
+          canal: "CRM",
+          tipo: "aviso_interno",
+          descricao: mensagem,
+          dados: equipe ? { equipe } : undefined,
+        });
+
+        // E por e-mail, quando dá: um aviso que só existe dentro da tela não acorda ninguém.
+        const membros = await prisma.membro.findMany({
+          where: { workspaceId, ativo: true, convitePendente: false, ...(equipe ? { papel: equipe } : {}) },
+          select: { email: true },
+        });
+        const destinos = membros.map((m) => m.email).filter(Boolean);
+        if (!destinos.length) return ok("Aviso registrado no histórico do lead.");
+
+        await Promise.all(
+          destinos.map((to) =>
+            enviarEmailOuFalhar({
+              to,
+              subject: `CRM AZUZ — ${contatoNome}`,
+              html: `<p>${mensagem}</p><p style="color:#666">Lead: ${contatoNome}</p>`,
+            }).catch((erro) => console.error("[automacao] aviso interno não saiu por e-mail:", erro)),
+          ),
+        );
+        return ok(`Aviso registrado e enviado para ${destinos.length} pessoa(s) da equipe.`);
+      } catch (erro) {
+        return falha("Falha ao avisar a equipe.", mensagemDoErro(erro));
+      }
+    },
+
+    async buscarContato(nome) {
+      try {
+        const contato = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome } } });
+        if (!contato) return falha(`O contato "${nome}" não existe mais.`);
+        return ok(
+          JSON.stringify({
+            nome: contato.nome,
+            telefone: contato.whatsapp ?? undefined,
+            email: contato.email ?? undefined,
+            empresa: contato.empresa ?? undefined,
+          }),
+        );
+      } catch (erro) {
+        return falha("Falha ao buscar o contato.", mensagemDoErro(erro));
+      }
+    },
+
+    async linkDoFormulario({ origem, formularioId, urlExterna }) {
+      if (origem === "externo") {
+        const url = urlExterna?.trim();
+        return url ? ok(url) : falha("O bloco não tem o endereço do formulário externo.");
+      }
+      if (!formularioId) return falha("O bloco não tem formulário escolhido.");
+      try {
+        const formulario = await prisma.formulario.findFirst({ where: { id: formularioId, workspaceId }, select: { id: true } });
+        if (!formulario) return falha("Esse formulário não existe mais.");
+        const base = (process.env.APP_URL ?? "").replace(/\/+$/, "");
+        if (!base) return falha("APP_URL não está configurado no servidor — sem ele não dá pra montar o link do formulário.");
+        return ok(`${base}/formulario-preview?id=${formulario.id}`);
+      } catch (erro) {
+        return falha("Falha ao montar o link do formulário.", mensagemDoErro(erro));
       }
     },
 
@@ -424,6 +544,21 @@ export function acoesSecas(): AcoesDoMotor & { intencoes: string[] } {
     },
     async enviarMidia({ contatoNome, tipo }) {
       return registrar(`Enviaria um arquivo (${tipo}) para ${contatoNome}`);
+    },
+    async enviarLocalizacao({ contatoNome, nome }) {
+      return registrar(`Enviaria a localização${nome ? ` de "${nome}"` : ""} para ${contatoNome}`);
+    },
+    async buscarContato(nome) {
+      return ok(JSON.stringify({ nome }));
+    },
+    async linkDoFormulario({ origem, urlExterna }) {
+      return ok(origem === "externo" ? (urlExterna ?? "(link externo)") : "(link do formulário)");
+    },
+    async enviarContato({ contatoNome, nome }) {
+      return registrar(`Enviaria o contato de ${nome} para ${contatoNome}`);
+    },
+    async avisarEquipe({ equipe, mensagem }) {
+      return registrar(`Avisaria ${equipe ? `a equipe ${equipe}` : "a equipe"}: "${resumir(mensagem)}"`);
     },
     async enviarModeloOficial({ contatoNome, templateId }) {
       return registrar(`Enviaria o modelo ${templateId} para ${contatoNome}`);

@@ -3,6 +3,7 @@ import { decriptar } from "@/lib/integracoes/crypto";
 import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 import { enviarDirectComRespostasRapidas } from "@/lib/integracoes/instagram-login";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
+import { enviarTextoPeloCanal } from "./enviar-pelo-canal";
 
 /**
  * Manda uma pergunta com opções pelo canal da conversa, no melhor formato que aquele canal
@@ -144,5 +145,105 @@ export async function enviarPerguntaPeloCanal(params: {
     };
   } catch (erro) {
     return { enviado: false, formato: "numerado", motivo: erro instanceof Error ? erro.message : "falha no envio" };
+  }
+}
+
+
+/**
+ * Envia uma LOCALIZAÇÃO pelo canal da conversa.
+ *
+ * Só o WhatsApp tem tipo próprio pra isso (um cartão com mapa). O Instagram não tem — lá a
+ * localização vira um link do Google Maps, que é o que a pessoa faria à mão de qualquer jeito.
+ */
+export async function enviarLocalizacaoPeloCanal(params: {
+  workspaceId: string;
+  conversaNome: string;
+  latitude: number;
+  longitude: number;
+  nome?: string;
+  endereco?: string;
+}): Promise<{ enviado: boolean; motivo?: string; comoTexto?: boolean }> {
+  const { workspaceId, conversaNome, latitude, longitude } = params;
+  const conversa = await prisma.conversa.findUnique({ where: { workspaceId_nome: { workspaceId, nome: conversaNome } } });
+  if (!conversa?.contato) return { enviado: false, motivo: "conversa sem destinatário" };
+  if (conversa.ehGrupo) return { enviado: false, motivo: "conversa de grupo" };
+
+  const link = `https://maps.google.com/?q=${latitude},${longitude}`;
+  const comoTexto = [params.nome, params.endereco, link].filter(Boolean).join("\n");
+
+  try {
+    const porQrCode =
+      conversa.contaCanal?.startsWith("whatsapp_nao_oficial:") || conversa.contaCanal?.startsWith("whatsapp_baileys:");
+
+    if (conversa.canal === "Instagram" || porQrCode) {
+      // Instagram não tem mensagem de localização, e no QR Code o formato não é confiável — o link
+      // do mapa abre igual e não corre o risco de chegar vazio.
+      const r = await enviarTextoPeloCanal({ workspaceId, conversaNome, texto: comoTexto });
+      return { enviado: r.enviado, motivo: r.motivo, comoTexto: true };
+    }
+
+    const conta = await contaConectada(workspaceId);
+    if (!conta) return { enviado: false, motivo: "WhatsApp não conectado" };
+    await enviarPelaCloudApi(conta, conversa.contato, {
+      type: "location",
+      location: {
+        latitude,
+        longitude,
+        ...(params.nome ? { name: params.nome } : {}),
+        ...(params.endereco ? { address: params.endereco } : {}),
+      },
+    });
+    return { enviado: true };
+  } catch (erro) {
+    return { enviado: false, motivo: erro instanceof Error ? erro.message : "falha no envio" };
+  }
+}
+
+/**
+ * Envia um CARTÃO DE CONTATO pelo canal da conversa.
+ *
+ * O WhatsApp oficial tem o tipo `contacts`, que chega como cartão salvável na agenda. Nos outros
+ * canais vira texto com nome e telefone — perde o cartão, mas a informação chega, que é o ponto.
+ */
+export async function enviarContatoPeloCanal(params: {
+  workspaceId: string;
+  conversaNome: string;
+  nome: string;
+  telefone?: string;
+  email?: string;
+  empresa?: string;
+}): Promise<{ enviado: boolean; motivo?: string; comoTexto?: boolean }> {
+  const { workspaceId, conversaNome } = params;
+  const conversa = await prisma.conversa.findUnique({ where: { workspaceId_nome: { workspaceId, nome: conversaNome } } });
+  if (!conversa?.contato) return { enviado: false, motivo: "conversa sem destinatário" };
+  if (conversa.ehGrupo) return { enviado: false, motivo: "conversa de grupo" };
+
+  const comoTexto = [params.nome, params.empresa, params.telefone, params.email].filter(Boolean).join("\n");
+
+  try {
+    const porQrCode =
+      conversa.contaCanal?.startsWith("whatsapp_nao_oficial:") || conversa.contaCanal?.startsWith("whatsapp_baileys:");
+
+    if (conversa.canal === "Instagram" || porQrCode) {
+      const r = await enviarTextoPeloCanal({ workspaceId, conversaNome, texto: comoTexto });
+      return { enviado: r.enviado, motivo: r.motivo, comoTexto: true };
+    }
+
+    const conta = await contaConectada(workspaceId);
+    if (!conta) return { enviado: false, motivo: "WhatsApp não conectado" };
+    await enviarPelaCloudApi(conta, conversa.contato, {
+      type: "contacts",
+      contacts: [
+        {
+          name: { formatted_name: params.nome, first_name: params.nome.split(" ")[0] },
+          ...(params.telefone ? { phones: [{ phone: params.telefone, type: "CELL" }] } : {}),
+          ...(params.email ? { emails: [{ email: params.email, type: "WORK" }] } : {}),
+          ...(params.empresa ? { org: { company: params.empresa } } : {}),
+        },
+      ],
+    });
+    return { enviado: true };
+  } catch (erro) {
+    return { enviado: false, motivo: erro instanceof Error ? erro.message : "falha no envio" };
   }
 }
