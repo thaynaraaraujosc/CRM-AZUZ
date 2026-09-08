@@ -2496,15 +2496,26 @@ table.tbl tbody tr:hover td {
   margin-bottom: var(--space-3);
 }
 
+/* O nome da etapa é o rótulo da coluna inteira, e vinha do jeito que a pessoa digitou: uma etapa
+   escrita em minúscula ficava com menos presença que outra escrita em maiúscula, e o quadro
+   perdia o alinhamento. Maiúscula por CSS resolve sem mexer no que está gravado: o valor no banco
+   continua exatamente como foi digitado, e a caixa de renomear mostra o texto original. */
 .kcol-h .t {
   font-family: var(--display);
   font-size: 14px;
   font-weight: var(--fw-bold);
-  color: var(--ink);
-  letter-spacing: var(--track-tight);
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+/* O campo de renomear fica no lugar do nome, mas ali a pessoa está EDITANDO: precisa ver o que
+   digitou, com a caixa que digitou. */
+.kcol-h .input {
+  text-transform: none;
 }
 
 .kcol-h .dot {

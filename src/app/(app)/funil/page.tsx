@@ -15,6 +15,7 @@ import { useFunis } from "@/lib/funis-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useConversas } from "@/lib/conversas-context";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
+import { VAZIO, ehVazio } from "@/lib/vazio";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { useMotivosPerda } from "@/lib/motivos-perda";
@@ -217,6 +218,7 @@ function FunilPageInner() {
   const [colunaRenomeando, setColunaRenomeando] = useState<number | null>(null);
   const [nomeRenomeando, setNomeRenomeando] = useState("");
   const [colunaArrastando, setColunaArrastando] = useState<number | null>(null);
+  const kanbanRef = useRef<HTMLDivElement | null>(null);
 
   // Menu "Marcar como ganho/perdido": abre por card (⋮), grava statusFechamento/motivoPerda/
   // dataFechamento de verdade no NegocioCard (persiste via o mesmo PUT /api/funis que já sincroniza
@@ -408,6 +410,20 @@ function FunilPageInner() {
       }),
     );
     setColunaRenomeando(null);
+  }
+
+  /** Distância da borda em que o quadro começa a rolar, e o passo de cada quadro de animação. */
+  const MARGEM_ROLAGEM = 90;
+  const PASSO_ROLAGEM = 18;
+
+  function rolarQuadroNaBorda(e: React.DragEvent<HTMLDivElement>) {
+    const quadro = kanbanRef.current;
+    if (!quadro) return;
+    const caixa = quadro.getBoundingClientRect();
+    const daEsquerda = e.clientX - caixa.left;
+    const daDireita = caixa.right - e.clientX;
+    if (daDireita < MARGEM_ROLAGEM) quadro.scrollLeft += PASSO_ROLAGEM;
+    else if (daEsquerda < MARGEM_ROLAGEM) quadro.scrollLeft -= PASSO_ROLAGEM;
   }
 
   function reordenarEtapa(origem: number, destino: number) {
@@ -796,7 +812,15 @@ function FunilPageInner() {
           </section>
         ) : null}
 
-        <div className="kanban">
+        <div
+          className="kanban"
+          ref={kanbanRef}
+          /* O quadro rola na horizontal, e o arraste nativo do HTML não rola sozinho: a etapa (ou
+             o card) que está fora da tela à direita era simplesmente inalcançável. Daí a sensação
+             de que só dava pra arrastar pra esquerda. Perto de qualquer uma das bordas, o quadro
+             passa a rolar enquanto o ponteiro estiver ali. */
+          onDragOver={rolarQuadroNaBorda}
+        >
           {funilAtivo?.colunas.map((coluna, colIndex) => {
             const cardsComIndice = coluna.cards.map((card, cardIndex) => ({
               card,
@@ -817,7 +841,10 @@ function FunilPageInner() {
             return (
               <div
                 key={coluna.id}
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                }}
                 onDrop={(e) => {
                   e.preventDefault();
                   if (colunaArrastando !== null) {
@@ -836,7 +863,15 @@ function FunilPageInner() {
                     <span
                       className="kcol-drag-handle"
                       draggable
-                      onDragStart={() => setColunaArrastando(colIndex)}
+                      onDragStart={(e) => {
+                        setColunaArrastando(colIndex);
+                        // O Safari só inicia um arraste se o `dataTransfer` receber algum dado.
+                        // Sem isto o arraste até começa visualmente em alguns casos, mas o `drop`
+                        // nunca chega ao destino: era por isso que reordenar etapa funcionava de
+                        // um jeito e falhava de outro.
+                        e.dataTransfer.setData("text/plain", String(colIndex));
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
                       onDragEnd={() => setColunaArrastando(null)}
                       title="Arraste pra reordenar a etapa"
                     >
@@ -919,9 +954,11 @@ function FunilPageInner() {
                       className="lead-card"
                       key={card.id}
                       draggable
-                      onDragStart={() =>
-                        setArrastando({ coluna: colIndex, card: cardIndex })
-                      }
+                      onDragStart={(e) => {
+                        setArrastando({ coluna: colIndex, card: cardIndex });
+                        e.dataTransfer.setData("text/plain", card.id);
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
                       onDragEnd={() => setArrastando(null)}
                       onDoubleClick={() =>
                         router.push(
@@ -971,7 +1008,7 @@ function FunilPageInner() {
                             </span>
                           ) : null}
                         </span>
-                        <span className="lval">{card.valor}</span>
+                        <span className="lval">{ehVazio(card.valor) ? VAZIO : card.valor}</span>
                         <span
                           role="button"
                           tabIndex={0}
