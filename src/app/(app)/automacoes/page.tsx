@@ -304,12 +304,38 @@ function AutomacoesPageInner() {
     setNovoErro(null);
   }
 
+  /**
+   * Automação nova. Quando a pessoa chegou pelo "+ Automação" de uma ETAPA do funil, o fluxo já
+   * nasce amarrado àquela etapa e com o gatilho "Lead entrou na etapa" posto no canvas.
+   *
+   * É o ponto 28 do pedido: dentro do funil a pessoa pensa "quando o lead cair aqui, faça isso" —
+   * obrigá-la a abrir o construtor vazio e reencontrar funil e etapa numa lista é fazer ela repetir
+   * uma informação que o clique já tinha dado.
+   */
   function comecarDoZero() {
     if (novoCarregando) return; // trava contra duplo clique
     setNovoErro(null);
     setNovoCarregando(true);
     try {
-      const novo = criarFluxo({ nome: "Nova automação" });
+      const funil = funis.find((f) => f.id === funilParam);
+      const etapa = funil?.colunas.find((c) => c.id === etapaParam);
+
+      const gatilho = funil && etapa
+        ? {
+            id: `no-${Date.now()}`,
+            type: "lead_entrou_etapa" as const,
+            category: "gatilho" as const,
+            position: { x: 240, y: 80 },
+            data: { funilId: funil.id, etapaId: etapa.id },
+          }
+        : null;
+
+      const novo = criarFluxo({
+        nome: etapa ? `Quando entrar em "${etapa.titulo}"` : "Nova automação",
+        ...(funil ? { funilId: funil.id } : {}),
+        ...(etapa ? { etapaId: etapa.id } : {}),
+        ...(gatilho ? { nodes: [gatilho], edges: [] } : {}),
+      });
       router.push(`/automacoes/editor/${novo.id}`);
       fecharPopoverNovo();
     } catch {

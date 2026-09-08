@@ -7,15 +7,73 @@
 
 import type { FlowNodeCategory, FlowNodeType } from "./types";
 
+/**
+ * Onde o bloco aparece NA BIBLIOTECA — separado de `categoria`, que é a natureza do bloco pro
+ * motor e pra cor do nó no canvas.
+ *
+ * São duas perguntas diferentes e por isso dois campos. `categoria` responde "que tipo de coisa é
+ * isto?" (mensagem, ação, espera) e governa cor e comportamento. `grupo` responde "onde a pessoa
+ * vai procurar isto?" — e a resposta muda: quem quer responder um comentário do Instagram procura
+ * em INSTAGRAM, não em "Ações"; quem quer um lembrete de consulta procura em AGENDA, não em
+ * "Gatilhos" e "Ações" separados. Com um campo só, a biblioteca ficava organizada pela lógica do
+ * programa em vez da lógica de quem usa.
+ */
+export type GrupoBiblioteca =
+  | "gatilhos"
+  | "mensagens"
+  | "aguardar"
+  | "decisoes"
+  | "followup"
+  | "whatsapp"
+  | "whatsapp_oficial"
+  | "instagram"
+  | "crm"
+  | "agenda"
+  | "humano"
+  | "ia"
+  | "integracoes"
+  | "encerramento";
+
 export type BlocoDefinicao = {
   tipo: FlowNodeType;
   categoria: FlowNodeCategory;
+  grupo: GrupoBiblioteca;
   label: string;
   descricao: string;
   icone: string;
   corClasse: string;
   dataPadrao: () => object;
 };
+
+/**
+ * Os grupos da biblioteca, na ordem em que aparecem.
+ *
+ * A ordem não é alfabética nem por quantidade: segue a frase que a pessoa está montando —
+ * QUANDO (gatilhos) → FAÇA (mensagens) → AGUARDE → SE (decisões) → e daí os canais e o resto.
+ * Quem está construindo lê de cima pra baixo e encontra o próximo passo onde espera encontrar.
+ */
+export const GRUPOS_BIBLIOTECA: {
+  id: GrupoBiblioteca;
+  label: string;
+  ajuda: string;
+  /** Qual cor de categoria representa o grupo — a bolinha do cabeçalho e da barra recolhida. */
+  cor: FlowNodeCategory;
+}[] = [
+  { id: "gatilhos", label: "Gatilhos", ajuda: "Quando a automação começa", cor: "gatilho" },
+  { id: "mensagens", label: "Mensagens", ajuda: "O que enviar pro contato", cor: "mensagem" },
+  { id: "aguardar", label: "Aguardar", ajuda: "Esperar tempo, resposta ou evento", cor: "espera" },
+  { id: "decisoes", label: "Decisões", ajuda: "Separar caminhos conforme o que aconteceu", cor: "condicao" },
+  { id: "followup", label: "Follow-up", ajuda: "Insistir com quem não respondeu", cor: "espera" },
+  { id: "whatsapp", label: "WhatsApp", ajuda: "Recursos que só existem no WhatsApp", cor: "mensagem" },
+  { id: "whatsapp_oficial", label: "WhatsApp Oficial / Meta", ajuda: "Modelos aprovados e janela de 24 horas", cor: "mensagem" },
+  { id: "instagram", label: "Instagram", ajuda: "Direct, comentários e stories", cor: "gatilho" },
+  { id: "crm", label: "Ações do CRM", ajuda: "Mexer no lead, no funil e no responsável", cor: "acao" },
+  { id: "agenda", label: "Agenda e tarefas", ajuda: "Consultas, lembretes e tarefas", cor: "acao" },
+  { id: "humano", label: "Atendimento humano", ajuda: "Passar a conversa pra uma pessoa", cor: "humano" },
+  { id: "ia", label: "IA", ajuda: "Responder e classificar com inteligência artificial", cor: "integracao" },
+  { id: "integracoes", label: "Integrações", ajuda: "Falar com sistemas de fora", cor: "integracao" },
+  { id: "encerramento", label: "Encerramento", ajuda: "Terminar o fluxo", cor: "fim" },
+];
 
 /** Cor por categoria — usada tanto na paleta quanto no nó desenhado no canvas. */
 export const CATEGORIAS_BLOCOS: {
@@ -43,6 +101,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "lead_criado",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Lead criado",
     descricao: "Dispara quando um novo contato entra no CRM.",
     icone: "UserPlus",
@@ -52,6 +111,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "lead_entrou_etapa",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Lead entrou na etapa",
     descricao: "Dispara quando o lead entra numa etapa do funil.",
     icone: "LogIn",
@@ -61,6 +121,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "lead_saiu_etapa",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Lead saiu da etapa",
     descricao: "Dispara quando o lead sai de uma etapa do funil.",
     icone: "LogOut",
@@ -70,6 +131,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "lead_parado_etapa",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Lead parado na etapa",
     descricao: "Dispara quando o lead fica parado numa etapa por um tempo.",
     icone: "Clock",
@@ -79,6 +141,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "lead_respondeu",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Lead respondeu",
     descricao: "Dispara quando o lead responde uma mensagem.",
     icone: "MessageSquareReply",
@@ -88,6 +151,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "lead_nao_respondeu",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Lead não respondeu",
     descricao: "Dispara quando o lead fica sem responder por um tempo.",
     icone: "MessageSquareOff",
@@ -97,6 +161,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "palavra_chave",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Palavra-chave recebida",
     descricao: "Dispara quando a mensagem recebida contém uma palavra-chave.",
     icone: "Hash",
@@ -106,6 +171,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "mensagem_recebida",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Mensagem recebida",
     descricao: "Dispara em qualquer mensagem recebida no canal escolhido.",
     icone: "Inbox",
@@ -115,6 +181,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "etiqueta_adicionada",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Etiqueta adicionada",
     descricao: "Dispara quando uma etiqueta é adicionada ao contato.",
     icone: "Tag",
@@ -124,6 +191,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "etiqueta_removida",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Etiqueta removida",
     descricao: "Dispara quando uma etiqueta é removida do contato.",
     icone: "TagOff",
@@ -133,6 +201,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "campo_alterado",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Campo alterado",
     descricao: "Dispara quando um campo do contato muda de valor.",
     icone: "PencilLine",
@@ -142,6 +211,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "responsavel_alterado",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Responsável alterado",
     descricao: "Dispara quando o atendente responsável muda.",
     icone: "UserCog",
@@ -151,6 +221,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "tarefa_criada",
     categoria: "gatilho",
+    grupo: "agenda",
     label: "Tarefa criada",
     descricao: "Dispara quando uma tarefa é criada pro contato.",
     icone: "ListPlus",
@@ -160,6 +231,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "tarefa_concluida",
     categoria: "gatilho",
+    grupo: "agenda",
     label: "Tarefa concluída",
     descricao: "Dispara quando uma tarefa do contato é concluída.",
     icone: "ListChecks",
@@ -169,6 +241,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "tarefa_vencida",
     categoria: "gatilho",
+    grupo: "agenda",
     label: "Tarefa vencida",
     descricao: "Dispara quando uma tarefa do contato vence sem ser concluída.",
     icone: "AlarmClockOff",
@@ -178,6 +251,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "consulta_agendada",
     categoria: "gatilho",
+    grupo: "agenda",
     label: "Consulta agendada",
     descricao: "Dispara quando uma consulta é agendada.",
     icone: "CalendarPlus",
@@ -187,6 +261,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "consulta_confirmada",
     categoria: "gatilho",
+    grupo: "agenda",
     label: "Consulta confirmada",
     descricao: "Dispara quando o lead confirma presença na consulta.",
     icone: "CalendarCheck",
@@ -196,6 +271,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "consulta_cancelada",
     categoria: "gatilho",
+    grupo: "agenda",
     label: "Consulta cancelada",
     descricao: "Dispara quando uma consulta é cancelada.",
     icone: "CalendarX",
@@ -205,6 +281,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "cliente_nao_compareceu",
     categoria: "gatilho",
+    grupo: "agenda",
     label: "Cliente não compareceu",
     descricao: "Dispara quando o lead falta a uma consulta agendada.",
     icone: "UserX",
@@ -214,6 +291,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "formulario_preenchido",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Formulário preenchido",
     descricao: "Dispara quando o lead preenche um formulário do CRM.",
     icone: "FileText",
@@ -223,6 +301,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "pagamento_aprovado",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Pagamento aprovado",
     descricao: "Dispara quando um pagamento do lead é aprovado.",
     icone: "CircleDollarSign",
@@ -232,6 +311,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "pagamento_pendente",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Pagamento pendente",
     descricao: "Dispara quando um pagamento fica pendente.",
     icone: "Hourglass",
@@ -241,6 +321,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "pagamento_vencido",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Pagamento vencido",
     descricao: "Dispara quando um pagamento pendente vence.",
     icone: "CircleAlert",
@@ -250,6 +331,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "aniversario",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Aniversário do contato",
     descricao: "Dispara na data de nascimento do contato.",
     icone: "Cake",
@@ -259,6 +341,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "data_personalizada",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Data personalizada",
     descricao: "Dispara numa data específica.",
     icone: "CalendarClock",
@@ -268,6 +351,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "horario_programado",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Horário programado",
     descricao: "Dispara recorrentemente num horário fixo.",
     icone: "Timer",
@@ -277,6 +361,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "comentario_instagram",
     categoria: "gatilho",
+    grupo: "instagram",
     label: "Comentário no Instagram",
     descricao: "Dispara quando alguém comenta numa publicação ou reel. Pode filtrar por palavra e por publicação.",
     icone: "Instagram",
@@ -294,6 +379,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "instagram_resposta_comentario",
     categoria: "gatilho",
+    grupo: "instagram",
     label: "Resposta a comentário (Instagram)",
     descricao: "Dispara quando alguém responde a um comentário na sua publicação.",
     icone: "Instagram",
@@ -309,6 +395,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "instagram_midia_recebida",
     categoria: "gatilho",
+    grupo: "instagram",
     label: "Mídia recebida no Direct (Instagram)",
     descricao: "Dispara quando a pessoa manda foto, vídeo ou áudio pelo Direct.",
     icone: "Instagram",
@@ -318,6 +405,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "instagram_publicacao_compartilhada",
     categoria: "gatilho",
+    grupo: "instagram",
     label: "Publicação compartilhada (Instagram)",
     descricao: "Dispara quando a pessoa encaminha uma publicação ou reel pelo Direct.",
     icone: "Instagram",
@@ -327,6 +415,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "instagram_story_respondido",
     categoria: "gatilho",
+    grupo: "instagram",
     label: "Story respondido (Instagram)",
     descricao: "Dispara quando alguém responde a um story seu pelo Direct.",
     icone: "Instagram",
@@ -341,6 +430,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "instagram_mencao_story",
     categoria: "gatilho",
+    grupo: "instagram",
     label: "Menção em story (Instagram)",
     descricao: "Dispara quando alguém marca seu perfil num story.",
     icone: "Instagram",
@@ -350,6 +440,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "instagram_reacao_recebida",
     categoria: "gatilho",
+    grupo: "instagram",
     label: "Reação a mensagem (Instagram)",
     descricao: "Dispara quando alguém reage a uma mensagem sua no Direct.",
     icone: "Instagram",
@@ -359,6 +450,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "comentario_tiktok",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Comentário no TikTok",
     descricao: "Dispara quando alguém comenta um vídeo no TikTok.",
     icone: "Music2",
@@ -368,6 +460,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "lead_anuncio",
     categoria: "gatilho",
+    grupo: "gatilhos",
     label: "Lead de anúncio",
     descricao: "Dispara quando um lead chega via Meta/Google/TikTok Ads.",
     icone: "Megaphone",
@@ -377,6 +470,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "webhook_recebido",
     categoria: "gatilho",
+    grupo: "integracoes",
     label: "Webhook recebido",
     descricao: "Dispara quando um webhook externo chega.",
     icone: "Webhook",
@@ -386,6 +480,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "integracao_externa",
     categoria: "gatilho",
+    grupo: "integracoes",
     label: "Evento de integração externa",
     descricao: "Dispara quando uma integração conectada emite um evento.",
     icone: "Plug",
@@ -397,17 +492,40 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "condicao_grupo",
     categoria: "condicao",
-    label: "Condição",
-    descricao: "Verifica alguma informação do lead e segue por um caminho diferente conforme o resultado.",
+    grupo: "decisoes",
+    // "Condição atendida / não atendida" é linguagem de programa. Quem monta a automação está
+    // decidindo um caminho, e o nome do bloco passa a dizer isso.
+    label: "Decisão — sim ou não",
+    descricao: "Verifica uma informação do lead e separa em dois caminhos: sim e não.",
     icone: "GitBranch",
     corClasse: corDaCategoria("condicao"),
     dataPadrao: () => ({ grupo: { id: `grupo-${Date.now()}`, tipo: "E", regras: [], subgrupos: [] } }),
+  },
+  {
+    tipo: "decisao_multipla",
+    categoria: "condicao",
+    grupo: "decisoes",
+    label: "Decisão — vários caminhos",
+    descricao: "Uma pergunta, quantas respostas você precisar. Cada resposta vira uma saída do bloco.",
+    icone: "GitBranch",
+    corClasse: corDaCategoria("condicao"),
+    dataPadrao: () => ({
+      // Nasce com a decisão mais comum já montada — responder um menu numerado. Bloco novo em
+      // branco obriga a pessoa a adivinhar o formato antes de conseguir experimentar.
+      campo: "mensagem",
+      operador: "igual",
+      caminhos: [
+        { id: `cam-${Date.now()}-1`, rotulo: "Opção 1", valor: "1" },
+        { id: `cam-${Date.now()}-2`, rotulo: "Opção 2", valor: "2" },
+      ],
+    }),
   },
 
   // ------------------------------------------------------------- mensagem --
   {
     tipo: "mensagem_texto",
     categoria: "mensagem",
+    grupo: "mensagens",
     label: "Enviar texto",
     descricao: "Envia uma mensagem de texto simples.",
     icone: "MessageSquare",
@@ -417,6 +535,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "mensagem_imagem",
     categoria: "mensagem",
+    grupo: "mensagens",
     label: "Enviar imagem",
     descricao: "Envia uma imagem com legenda opcional.",
     icone: "Image",
@@ -426,6 +545,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "mensagem_video",
     categoria: "mensagem",
+    grupo: "mensagens",
     label: "Enviar vídeo",
     descricao: "Envia um vídeo com legenda opcional.",
     icone: "Video",
@@ -435,6 +555,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "mensagem_audio",
     categoria: "mensagem",
+    grupo: "mensagens",
     label: "Enviar áudio",
     descricao: "Envia um áudio gravado ou escolhido.",
     icone: "Mic",
@@ -444,6 +565,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "mensagem_documento",
     categoria: "mensagem",
+    grupo: "mensagens",
     label: "Enviar documento",
     descricao: "Envia um arquivo (PDF, etc).",
     icone: "FileText",
@@ -453,6 +575,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "mensagem_contato",
     categoria: "mensagem",
+    grupo: "mensagens",
     label: "Enviar contato",
     descricao: "Envia um cartão de contato.",
     icone: "Contact",
@@ -466,6 +589,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "mensagem_localizacao",
     categoria: "mensagem",
+    grupo: "mensagens",
     label: "Enviar localização",
     descricao: "Envia uma localização (endereço da clínica, etc).",
     icone: "MapPin",
@@ -475,6 +599,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "mensagem_botoes",
     categoria: "mensagem",
+    grupo: "whatsapp",
     label: "Mensagem com botões",
     descricao: "Envia texto com opções de resposta em botões — ramifica o fluxo.",
     icone: "ListTodo",
@@ -484,6 +609,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "mensagem_lista",
     categoria: "mensagem",
+    grupo: "whatsapp",
     label: "Mensagem com lista",
     descricao: "Envia texto com opções de resposta em lista — ramifica o fluxo.",
     icone: "List",
@@ -493,6 +619,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "mensagem_modelo_whatsapp",
     categoria: "mensagem",
+    grupo: "whatsapp_oficial",
     label: "Modelo aprovado do WhatsApp",
     descricao: "Envia um template pré-aprovado da API oficial do WhatsApp.",
     icone: "FileCheck",
@@ -502,6 +629,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "mensagem_email",
     categoria: "mensagem",
+    grupo: "mensagens",
     label: "Enviar e-mail",
     descricao: "Envia um e-mail pro contato.",
     icone: "Mail",
@@ -518,6 +646,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "notificacao_interna",
     categoria: "mensagem",
+    grupo: "mensagens",
     label: "Notificação interna",
     descricao: "Notifica alguém da equipe dentro do CRM.",
     icone: "BellRing",
@@ -527,6 +656,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "enviar_formulario",
     categoria: "mensagem",
+    grupo: "mensagens",
     label: "Enviar formulário",
     descricao: "Envia um formulário interno do CRM ou um link externo.",
     icone: "ClipboardList",
@@ -538,6 +668,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "aguardar",
     categoria: "espera",
+    grupo: "aguardar",
     label: "Aguardar",
     descricao: "Pausa o fluxo por um tempo ou até uma condição acontecer.",
     icone: "Clock3",
@@ -549,6 +680,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "adicionar_etiqueta",
     categoria: "acao",
+    grupo: "crm",
     label: "Adicionar etiqueta",
     descricao: "Adiciona uma etiqueta ao contato.",
     icone: "TagPlus",
@@ -558,6 +690,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "remover_etiqueta",
     categoria: "acao",
+    grupo: "crm",
     label: "Remover etiqueta",
     descricao: "Remove uma etiqueta do contato.",
     icone: "TagMinus",
@@ -567,6 +700,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "alterar_etapa",
     categoria: "acao",
+    grupo: "crm",
     label: "Mover pra outra etapa",
     descricao: "Move o lead pra outra etapa do mesmo funil.",
     icone: "MoveRight",
@@ -576,6 +710,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "alterar_funil",
     categoria: "acao",
+    grupo: "crm",
     label: "Mover pra outro funil",
     descricao: "Move o lead pra outro funil.",
     icone: "Shuffle",
@@ -585,6 +720,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "alterar_responsavel",
     categoria: "acao",
+    grupo: "crm",
     label: "Atribuir responsável",
     descricao: "Atribui o lead a um atendente da equipe.",
     icone: "UserCheck",
@@ -594,6 +730,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "encaminhar_equipe",
     categoria: "acao",
+    grupo: "crm",
     label: "Encaminhar pra equipe",
     descricao: "Encaminha o atendimento pra uma equipe/fila.",
     icone: "Users",
@@ -603,6 +740,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "distribuir_disponibilidade",
     categoria: "acao",
+    grupo: "crm",
     label: "Distribuir por disponibilidade",
     descricao: "Distribui o lead entre atendentes disponíveis.",
     icone: "Split",
@@ -612,6 +750,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "criar_tarefa",
     categoria: "acao",
+    grupo: "agenda",
     label: "Criar tarefa",
     descricao: "Cria uma tarefa com prazo pro time.",
     icone: "ListPlus",
@@ -630,6 +769,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "criar_lembrete",
     categoria: "acao",
+    grupo: "agenda",
     label: "Criar lembrete",
     descricao: "Cria um lembrete de follow-up.",
     icone: "BellPlus",
@@ -639,6 +779,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "atualizar_campo",
     categoria: "acao",
+    grupo: "crm",
     label: "Atualizar campo do contato",
     descricao: "Grava um valor num campo do contato.",
     icone: "PencilLine",
@@ -648,6 +789,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "criar_negocio",
     categoria: "acao",
+    grupo: "crm",
     label: "Criar negócio",
     descricao: "Cria um novo card de negócio pro contato.",
     icone: "BriefcaseBusiness",
@@ -657,6 +799,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "atualizar_valor",
     categoria: "acao",
+    grupo: "crm",
     label: "Atualizar valor do negócio",
     descricao: "Atualiza o valor do negócio do contato.",
     icone: "DollarSign",
@@ -666,6 +809,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "atualizar_status",
     categoria: "acao",
+    grupo: "crm",
     label: "Atualizar status",
     descricao: "Atualiza o status do contato/negócio.",
     icone: "Flag",
@@ -675,6 +819,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "agendar_consulta",
     categoria: "acao",
+    grupo: "agenda",
     label: "Agendar consulta",
     descricao: "Agenda uma consulta pro contato.",
     icone: "CalendarPlus",
@@ -684,6 +829,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "cancelar_agendamento",
     categoria: "acao",
+    grupo: "agenda",
     label: "Cancelar agendamento",
     descricao: "Cancela um agendamento existente do contato.",
     icone: "CalendarX",
@@ -693,6 +839,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "enviar_notificacao",
     categoria: "acao",
+    grupo: "crm",
     label: "Enviar notificação",
     descricao: "Envia uma notificação interna pra equipe.",
     icone: "Bell",
@@ -702,6 +849,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "pausar_automacoes",
     categoria: "acao",
+    grupo: "crm",
     label: "Pausar automações do contato",
     descricao: "Pausa outras automações rodando pro mesmo contato.",
     icone: "Pause",
@@ -711,6 +859,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "cancelar_automacoes",
     categoria: "acao",
+    grupo: "crm",
     label: "Cancelar automações do contato",
     descricao: "Cancela outras automações rodando pro mesmo contato.",
     icone: "X",
@@ -720,6 +869,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "chamar_webhook",
     categoria: "acao",
+    grupo: "integracoes",
     label: "Chamar webhook",
     descricao: "Envia dados pra uma URL externa, com três tentativas se ela estiver fora do ar.",
     icone: "Webhook",
@@ -729,6 +879,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "ia_responder",
     categoria: "mensagem",
+    grupo: "ia",
     label: "Responder com IA",
     descricao: "A IA lê a conversa e responde seguindo a sua instrução. Sem IA configurada, o bloco avisa e não inventa resposta.",
     icone: "Sparkles",
@@ -738,6 +889,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "ia_classificar",
     categoria: "condicao",
+    grupo: "ia",
     label: "Classificar com IA",
     descricao: "Lê a última mensagem e escolhe uma categoria. Cada categoria é uma saída do bloco.",
     icone: "Sparkles",
@@ -747,6 +899,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "executar_integracao",
     categoria: "acao",
+    grupo: "integracoes",
     label: "Executar integração",
     descricao: "Executa uma ação numa integração conectada (simulado).",
     icone: "Plug",
@@ -758,6 +911,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "encaminhar_humano",
     categoria: "humano",
+    grupo: "humano",
     label: "Encaminhar pra atendimento humano",
     descricao: "Tira o contato do fluxo automático e passa pra um atendente.",
     icone: "Headset",
@@ -769,6 +923,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "responder_comentario_instagram",
     categoria: "acao",
+    grupo: "instagram",
     label: "Responder comentário (Instagram)",
     descricao: "Responde publicamente o comentário que disparou a automação.",
     icone: "Instagram",
@@ -778,6 +933,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "ocultar_comentario_instagram",
     categoria: "acao",
+    grupo: "instagram",
     label: "Ocultar comentário (Instagram)",
     descricao: "Esconde o comentário da publicação — útil pra spam.",
     icone: "EyeOff",
@@ -787,6 +943,7 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
   {
     tipo: "encerrar_fluxo",
     categoria: "fim",
+    grupo: "encerramento",
     label: "Encerrar fluxo",
     descricao: "Termina a execução desse caminho do fluxo.",
     icone: "OctagonX",

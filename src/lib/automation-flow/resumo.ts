@@ -10,6 +10,7 @@ import type { Funil } from "@/lib/data";
 import type {
   AguardarData,
   CondicaoGrupoData,
+  DecisaoMultiplaData,
   IaClassificarData,
   FlowNode,
   FlowNodeCategory,
@@ -66,6 +67,17 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
     ];
   }
 
+  if (node.type === "decisao_multipla") {
+    const data = node.data as DecisaoMultiplaData;
+    const caminhos = (data.caminhos ?? []).filter((c) => c.rotulo?.trim() || c.valor?.trim());
+    return [
+      ...caminhos.map((c) => ({ handleId: c.id, label: c.rotulo || c.valor })),
+      // Sempre existe e não é configurável: um valor que ninguém previu precisa ter pra onde ir,
+      // senão a automação morre em silêncio no meio da conversa.
+      { handleId: "senao", label: "Qualquer outra" },
+    ];
+  }
+
   if (node.type === "ia_classificar") {
     const data = node.data as IaClassificarData;
     const categorias = (data.categorias ?? []).filter((c) => c.trim());
@@ -81,9 +93,13 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
   if (node.type === "aguardar") {
     const data = node.data as AguardarData;
     if (data.tempoMaximo) {
+      // Numa espera por resposta os dois caminhos têm nome de gente: é "respondeu" ou "não
+      // respondeu", não "ok" e "timeout". Os `handleId` continuam os mesmos pra não desligar as
+      // arestas de fluxos que já existem.
+      const esperandoResposta = data.modo === "ate_resposta";
       return [
-        { handleId: "ok", label: "✓ OK" },
-        { handleId: "timeout", label: "⏱ Tempo esgotado" },
+        { handleId: "ok", label: esperandoResposta ? "✓ Respondeu" : "✓ OK" },
+        { handleId: "timeout", label: esperandoResposta ? "⏱ Não respondeu" : "⏱ Tempo esgotado" },
       ];
     }
   }
@@ -114,6 +130,7 @@ const ROTULO_OPERADOR: Record<string, string> = {
 /** Nome amigável de cada campo de condição — usado no resumo do node e na frase em linguagem natural,
  * pra nunca mostrar o identificador técnico ("valor_negocio") pro usuário final. */
 const ROTULO_CAMPO_CONDICAO: Record<string, string> = {
+  mensagem: "Resposta do contato",
   origem: "Origem",
   canal: "Canal",
   etapa: "Etapa atual",
@@ -265,6 +282,12 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     }
     case "mensagem_texto": {
       return `"${truncar(String(d.texto ?? ""))}" · Canal: ${d.canal ?? "whatsapp"}`;
+    }
+    case "decisao_multipla": {
+      const data = node.data as DecisaoMultiplaData;
+      const caminhos = (data.caminhos ?? []).filter((c) => c.valor?.trim());
+      if (!caminhos.length) return "Sem caminhos definidos";
+      return `${ROTULO_CAMPO_CONDICAO[data.campo] ?? data.campo}: ${caminhos.map((c) => c.rotulo || c.valor).join(" · ")}`;
     }
     case "ia_responder": {
       const instrucao = String(d.instrucao ?? "").trim();

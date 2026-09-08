@@ -11,6 +11,7 @@ import type {
   ChamarWebhookData,
   CondicaoGrupoData,
   CriarTarefaData,
+  DecisaoMultiplaData,
   EncaminharHumanoData,
   FlowEdge,
   FlowNode,
@@ -224,10 +225,41 @@ function atualizarContato(contexto: ContextoExecucaoPersistido, mudanca: Record<
 /** Momento em que uma espera termina, a partir da configuração do bloco. */
 export function calcularEspera(data: AguardarData, agora: Date): Date | null {
   const valor = data.valor ?? 0;
-  if (data.modo === "minutos") return new Date(agora.getTime() + valor * 60_000);
-  if (data.modo === "horas") return new Date(agora.getTime() + valor * 3_600_000);
-  if (data.modo === "dias") return new Date(agora.getTime() + valor * 86_400_000);
-  return null;
+  let quando: Date | null = null;
+  if (data.modo === "minutos") quando = new Date(agora.getTime() + valor * 60_000);
+  if (data.modo === "horas") quando = new Date(agora.getTime() + valor * 3_600_000);
+  if (data.modo === "dias") {
+    // Contar em dias ÚTEIS é diferente de contar em dias e depois empurrar: "2 dias úteis" a
+    // partir de uma sexta é terça, não domingo empurrado pra segunda.
+    quando = data.apenasDiasUteis ? somarDiasUteis(agora, valor) : new Date(agora.getTime() + valor * 86_400_000);
+  }
+  if (!quando) return null;
+
+  // Empurra pra segunda quando cai no fim de semana. Uma cobrança que chega sábado de manhã tem
+  // menos chance de resposta e mais chance de irritar — era a razão de a opção existir na tela.
+  if (data.pularFinaisDeSemana) quando = proximoDiaUtil(quando);
+  return quando;
+}
+
+function ehFimDeSemana(data: Date): boolean {
+  const dia = data.getDay();
+  return dia === 0 || dia === 6;
+}
+
+function proximoDiaUtil(data: Date): Date {
+  const resultado = new Date(data);
+  while (ehFimDeSemana(resultado)) resultado.setDate(resultado.getDate() + 1);
+  return resultado;
+}
+
+function somarDiasUteis(inicio: Date, dias: number): Date {
+  const resultado = new Date(inicio);
+  let restantes = Math.max(0, Math.round(dias));
+  while (restantes > 0) {
+    resultado.setDate(resultado.getDate() + 1);
+    if (!ehFimDeSemana(resultado)) restantes--;
+  }
+  return resultado;
 }
 
 /** Prazo máximo de uma espera por resposta ("resposta OU 2 horas"). */
@@ -339,6 +371,24 @@ async function executarNo(params: {
       if (data.seSemEmail === "encerrar") return { tipo: "encerrar", situacao: "concluida", detalhe: r.detalhe };
       if (data.seSemEmail === "caminho_alternativo") return { tipo: "seguir", saida: "sem_email", detalhe: r.detalhe };
       return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "decisao_multipla": {
+      const data = no.data as DecisaoMultiplaData;
+      const caminhos = (data.caminhos ?? []).filter((c) => c.valor?.trim());
+      const valor = String(valorParaDecisao(data, contato) ?? "").trim().toLowerCase();
+      const operador = data.operador ?? "igual";
+
+      // Primeiro que bate ganha, na ordem em que a pessoa escreveu. Ordem importa quando os valores
+      // se sobrepõem ("valor" e "valores"), e a ordem da tela é a que ela consegue prever.
+      const escolhido = caminhos.find((c) => {
+        const alvoValor = c.valor.trim().toLowerCase();
+        return operador === "contem" ? valor.includes(alvoValor) : valor === alvoValor;
+      });
+
+      return escolhido
+        ? { tipo: "seguir", saida: escolhido.id, detalhe: `Seguiu por "${escolhido.rotulo || escolhido.valor}".` }
+        : { tipo: "seguir", saida: "senao", detalhe: `"${valor || "(vazio)"}" não bate com nenhum caminho — seguiu por "Qualquer outra".` };
     }
 
     case "ia_responder": {
@@ -537,6 +587,24 @@ function valorDoContato(contato: Record<string, unknown>, chave: string): string
   const personalizados = contato.camposPersonalizados as Record<string, string> | undefined;
   const doCampo = personalizados?.[chave];
   return typeof doCampo === "string" ? doCampo : null;
+}
+
+/**
+ * O valor que a decisão compara.
+ *
+ * `mensagem` é o caso comum e vem do contexto (o motor grava ali a última resposta). Campo
+ * personalizado é lido do mapa próprio; o resto sai direto do contato.
+ */
+function valorParaDecisao(data: DecisaoMultiplaData, contato: Record<string, unknown>): unknown {
+  if (data.campo === "campo_personalizado") {
+    const personalizados = contato.camposPersonalizados as Record<string, string> | undefined;
+    return personalizados?.[data.campoPersonalizadoNome ?? ""];
+  }
+  if (data.campo === "etiqueta") {
+    const etiquetas = contato.etiquetas;
+    return Array.isArray(etiquetas) ? etiquetas.join(",") : "";
+  }
+  return contato[data.campo];
 }
 
 const TIPO_DE_MIDIA: Record<string, "imagem" | "video" | "audio" | "documento"> = {

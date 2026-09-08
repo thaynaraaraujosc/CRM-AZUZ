@@ -50,6 +50,16 @@ export async function podeIniciar(params: {
   // e é o próprio gatilho que decide se houve entrada.
   if (limite === "sempre" || limite === "uma_vez_por_entrada") return { pode: true };
 
+  if (limite === "no_maximo") {
+    const teto = Math.max(1, Math.round(cfg.maximoExecucoes ?? 1));
+    const quantas = await prisma.execucaoAutomacao.count({
+      where: { workspaceId: params.workspaceId, fluxoId: params.fluxoId, contatoNome: params.contatoNome },
+    });
+    return quantas < teto
+      ? { pode: true }
+      : { pode: false, motivo: `esse fluxo já rodou ${quantas} ${quantas === 1 ? "vez" : "vezes"} para este contato (o teto é ${teto})` };
+  }
+
   const janela = JANELAS[limite];
   const desde = janela === null || janela === undefined ? undefined : new Date(agora.getTime() - janela);
 

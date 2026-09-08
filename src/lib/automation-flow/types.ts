@@ -62,6 +62,7 @@ export type FlowNodeType =
   | "integracao_externa"
   // condicao
   | "condicao_grupo"
+  | "decisao_multipla"
   // mensagem
   | "mensagem_texto"
   | "mensagem_imagem"
@@ -126,6 +127,10 @@ export type FlowNodeMeta = {
 /* -------------------------------------------------------------------------- */
 
 export type CampoCondicao =
+  /** O texto que o contato acabou de responder. A avaliação já funcionava (o motor põe `mensagem`
+   * no contexto); o que faltava era a opção existir na tela pra alguém escolher. É o campo mais
+   * usado numa decisão: "se a resposta for 1…". */
+  | "mensagem"
   | "origem"
   | "canal"
   | "etapa"
@@ -228,6 +233,33 @@ export type TarefaEventoData = {
 };
 
 export type CondicaoGrupoData = { grupo: GrupoCondicoes };
+
+/**
+ * Decisão com quantos caminhos forem necessários — não só sim/não.
+ *
+ * O bloco de condição responde uma pergunta fechada, e por isso toda automação de atendimento
+ * acabava virando uma escada de "sim/não" encadeados pra tratar três opções de menu. Aqui a
+ * pergunta é feita UMA vez ("o que verificar?") e cada resposta possível vira uma saída própria.
+ *
+ * O caminho "senão" existe sempre e não é configurável: um valor que ninguém previu tem que ter
+ * pra onde ir, senão a automação morre em silêncio no meio da conversa.
+ */
+export type CaminhoDecisao = {
+  /** Vira o `sourceHandle` da aresta. Estável: renomear o rótulo não desliga o caminho. */
+  id: string;
+  rotulo: string;
+  /** O valor comparado com o campo escolhido. */
+  valor: string;
+};
+
+export type DecisaoMultiplaData = {
+  campo: CampoCondicao;
+  /** Padrão "igual". "contem" é o outro comum: "se a resposta contém 'valor'". */
+  operador?: OperadorCondicao;
+  /** Só usado quando `campo === "campo_personalizado"`. */
+  campoPersonalizadoNome?: string;
+  caminhos: CaminhoDecisao[];
+};
 
 export type MensagemTextoData = {
   canal: CanalMensagem;
@@ -353,6 +385,9 @@ export type AguardarData = {
   valor?: number;
   apenasDiasUteis?: boolean;
   pularFinaisDeSemana?: boolean;
+  /** Fora da tela: o CRM não tem calendário de feriados, e um botão que promete pular feriado sem
+   * saber quais são faria a mensagem sair no dia errado. O campo fica pra não invalidar fluxo já
+   * salvo com ele. */
   pularFeriados?: boolean;
   /** Se definido, gera as saídas "ok"/"timeout" no FlowEdge.sourceHandle. */
   tempoMaximo?: { valor: number; unidade: string };
@@ -500,7 +535,14 @@ export type ConfiguracoesFluxo = {
   horarioInicio?: string;
   horarioFim?: string;
   fusoHorario?: string;
-  foraDaJanela?: "aguardar" | "ignorar";
+  /**
+   * O que fazer quando o gatilho acontece fora dos dias/horário ativos.
+   *
+   * "aguardar" estaciona a execução e retoma na abertura seguinte — o motor com estado é o que
+   * tornou isso possível; antes tinha exatamente o mesmo efeito de "continuar". "ignorar" é o nome
+   * antigo de "encerrar", mantido pra não invalidar fluxo já salvo.
+   */
+  foraDaJanela?: "aguardar" | "continuar" | "encerrar" | "ignorar";
   dataInicio?: string;
   dataFim?: string;
   prioridade?: "baixa" | "normal" | "alta";
@@ -510,7 +552,11 @@ export type ConfiguracoesFluxo = {
     | "uma_vez_por_entrada"
     | "uma_vez_por_dia"
     | "uma_vez_por_semana"
-    | "uma_vez_por_mes";
+    | "uma_vez_por_mes"
+    /** Teto explícito por contato — o número vem de `maximoExecucoes`. */
+    | "no_maximo";
+  /** Quantas vezes no máximo, quando `limiteExecucao === "no_maximo"`. */
+  maximoExecucoes?: number;
   naoIniciarSeJaNoFluxo?: boolean;
   cancelarExecucaoAnterior?: boolean;
   /**

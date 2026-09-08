@@ -23,6 +23,7 @@ import "@xyflow/react/dist/style.css";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoNo, saidasDoNo } from "@/lib/automation-flow/resumo";
+import { nosDeFollowUp, sugestoesApos } from "@/lib/automation-flow/sugestoes";
 import { validarFluxo } from "@/lib/automation-flow/validacao";
 import type { Funil } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
@@ -73,17 +74,6 @@ const GATILHOS_COMUNS: FlowNodeType[] = [
   "etiqueta_adicionada",
   "campo_alterado",
   "horario_programado",
-];
-
-/** Ações mais comuns no botão "+" ("O que acontece agora?") — o resto continua na biblioteca completa. */
-const ACOES_COMUNS: FlowNodeType[] = [
-  "mensagem_texto",
-  "mensagem_botoes",
-  "aguardar",
-  "condicao_grupo",
-  "alterar_etapa",
-  "adicionar_etiqueta",
-  "criar_tarefa",
 ];
 
 /** Frase curta pro modo "Entender fluxo" (item 24) — mesma frase de resumoNo(), só emoldurada por
@@ -312,6 +302,63 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     setRfNodes(novoNodes);
     setRfEdges(novoEdges);
     setSelectedNodeIds([novoDomain.id]);
+    persist(novoNodes, novoEdges);
+  }
+
+  /**
+   * Insere um follow-up depois de um bloco: a espera com prazo e a mensagem que sai quando o prazo
+   * vence, já ligadas. Não é um bloco novo nem um motor novo — é o par que a pessoa montaria à
+   * mão, montado por ela.
+   */
+  function adicionarFollowUp(nodeOrigemId: string, handleId: string | undefined) {
+    const origem = rfNodes.find((n) => n.id === nodeOrigemId);
+    if (!origem) return;
+    const receita = nosDeFollowUp({ horas: 2, mensagem: "" });
+
+    const defEspera = BLOCOS_DISPONIVEIS.find((b) => b.tipo === receita.espera.tipo);
+    const defMensagem = BLOCOS_DISPONIVEIS.find((b) => b.tipo === receita.mensagem.tipo);
+    if (!defEspera || !defMensagem) return;
+
+    const espera: DomainFlowNode = {
+      id: novoIdNo(),
+      type: receita.espera.tipo,
+      category: defEspera.categoria,
+      position: { x: origem.position.x, y: origem.position.y + 170 },
+      titulo: "Aguardar resposta",
+      data: receita.espera.data,
+    };
+    const mensagem: DomainFlowNode = {
+      id: novoIdNo(),
+      type: receita.mensagem.tipo,
+      category: defMensagem.categoria,
+      // Desloca pra direita: o follow-up sai pelo ramo do tempo esgotado, e empilhar os dois na
+      // mesma coluna faria a mensagem parecer o caminho de quem respondeu.
+      position: { x: origem.position.x + 260, y: origem.position.y + 340 },
+      titulo: "Follow-up",
+      data: receita.mensagem.data,
+    };
+
+    const rfEspera: FlowRFNode = { id: espera.id, type: espera.category, position: espera.position, data: { flowNode: espera, problemas: [] } };
+    const rfMensagem: FlowRFNode = { id: mensagem.id, type: mensagem.category, position: mensagem.position, data: { flowNode: mensagem, problemas: [] } };
+
+    const seta = (source: string, target: string, sourceHandle?: string): FlowRFEdge => ({
+      id: novoIdAresta(),
+      source,
+      target,
+      sourceHandle,
+      type: "smoothstep",
+      markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+    });
+
+    const novoNodes = [...rfNodes, rfEspera, rfMensagem];
+    const novoEdges = [
+      ...rfEdges,
+      seta(nodeOrigemId, espera.id, handleId),
+      seta(espera.id, mensagem.id, receita.saidaDaEspera),
+    ];
+    setRfNodes(novoNodes);
+    setRfEdges(novoEdges);
+    setSelectedNodeIds([mensagem.id]);
     persist(novoNodes, novoEdges);
   }
 
@@ -828,7 +875,21 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                   </button>
                 </div>
                 <div className="flow-escolher-gatilho-lista">
-                  {ACOES_COMUNS.map((tipo) => {
+                  <button
+                    type="button"
+                    className="flow-escolher-gatilho-item"
+                    onClick={() => {
+                      adicionarFollowUp(acaoRapida.nodeId, acaoRapida.handleId);
+                      setAcaoRapida(null);
+                    }}
+                  >
+                    <span className="n">Adicionar follow-up</span>
+                    <span className="r">Espera a resposta por 2 horas e, se não vier, manda uma cobrança.</span>
+                  </button>
+                  {sugestoesApos(
+                    rfNodes.find((n) => n.id === acaoRapida.nodeId)?.data.flowNode.type,
+                    rfNodes.find((n) => n.id === acaoRapida.nodeId)?.data.flowNode.category,
+                  ).map((tipo) => {
                     const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
                     if (!bloco) return null;
                     return (

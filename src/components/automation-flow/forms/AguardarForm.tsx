@@ -2,127 +2,168 @@
 
 import type { AguardarData } from "@/lib/automation-flow/types";
 
-const MODOS: { valor: AguardarData["modo"]; label: string }[] = [
-  { valor: "minutos", label: "Por X minutos" },
-  { valor: "horas", label: "Por X horas" },
-  { valor: "dias", label: "Por X dias" },
-  { valor: "ate_data", label: "Até uma data específica" },
-  { valor: "ate_horario", label: "Até um horário específico" },
-  { valor: "ate_resposta", label: "Até o lead responder" },
-  { valor: "ate_tarefa", label: "Até uma tarefa ser concluída" },
-  { valor: "ate_consulta", label: "Até a data da consulta" },
+/**
+ * "O que você quer aguardar?" — a pergunta que o bloco responde.
+ *
+ * Antes era uma lista de oito modos técnicos misturados ("Por X minutos", "Até uma tarefa ser
+ * concluída"). Agora são cinco escolhas, cada uma com uma frase dizendo o que acontece — e o
+ * segundo campo muda conforme a escolha, em vez de existirem todos ao mesmo tempo.
+ */
+const ESCOLHAS: { valor: AguardarData["modo"]; label: string; ajuda: string }[] = [
+  { valor: "horas", label: "Um período de tempo", ajuda: "Segura o fluxo e continua sozinho quando o tempo passar." },
+  {
+    valor: "ate_resposta",
+    label: "A resposta do contato",
+    ajuda: "Continua no instante em que ele responder. Com prazo, o bloco ganha duas saídas: respondeu e não respondeu.",
+  },
+  { valor: "ate_horario", label: "Um horário do dia", ajuda: "Espera até chegar a hora marcada." },
+  { valor: "ate_data", label: "Uma data", ajuda: "Espera até o dia marcado." },
+  { valor: "ate_consulta", label: "A data da consulta", ajuda: "Espera até a consulta agendada do contato." },
 ];
 
-const MODOS_COM_VALOR: AguardarData["modo"][] = ["minutos", "horas", "dias"];
+const UNIDADES = [
+  { valor: "minutos", label: "minutos" },
+  { valor: "horas", label: "horas" },
+  { valor: "dias", label: "dias" },
+];
+
+/** Os três modos de duração são a mesma escolha ("um período") com unidades diferentes. */
+const DURACAO: AguardarData["modo"][] = ["minutos", "horas", "dias"];
 
 export function AguardarForm({ data, onChange }: { data: AguardarData; onChange: (novo: AguardarData) => void }) {
+  const ehDuracao = DURACAO.includes(data.modo);
+  const escolhida = ehDuracao ? "horas" : data.modo;
+  const ajuda = ESCOLHAS.find((e) => e.valor === escolhida)?.ajuda;
+
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Aguardar</label>
-        <select className="input" value={data.modo} onChange={(e) => onChange({ ...data, modo: e.target.value as AguardarData["modo"] })}>
-          {MODOS.map((m) => (
-            <option key={m.valor} value={m.valor}>
-              {m.label}
+        <label>O que você quer aguardar?</label>
+        <select
+          className="input"
+          value={escolhida}
+          onChange={(e) => {
+            const modo = e.target.value as AguardarData["modo"];
+            // Trocar de escolha limpa o que não vale mais: um prazo máximo de "esperar resposta"
+            // ficaria pendurado num "esperar 2 dias" e criaria uma saída de timeout sem sentido.
+            onChange(
+              modo === "ate_resposta"
+                ? { modo, tempoMaximo: data.tempoMaximo ?? { valor: 2, unidade: "horas" } }
+                : { ...data, modo, valor: data.valor ?? 1, tempoMaximo: undefined },
+            );
+          }}
+        >
+          {ESCOLHAS.map((e) => (
+            <option key={e.valor} value={e.valor}>
+              {e.label}
             </option>
           ))}
         </select>
+        {ajuda ? <p className="hint">{ajuda}</p> : null}
       </div>
 
-      {MODOS_COM_VALOR.includes(data.modo) ? (
+      {ehDuracao ? (
         <div className="field">
-          <label>Quantidade</label>
-          <input
-            className="input"
-            type="number"
-            min={1}
-            value={data.valor ?? ""}
-            onChange={(e) => onChange({ ...data, valor: e.target.value ? Number(e.target.value) : undefined })}
-          />
-        </div>
-      ) : null}
-
-      <div className="toggle-row">
-        <span className="tl">Só contar dias úteis</span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={!!data.apenasDiasUteis}
-          aria-label="Só contar dias úteis"
-          className={`toggle${data.apenasDiasUteis ? " on" : ""}`}
-          onClick={() => onChange({ ...data, apenasDiasUteis: !data.apenasDiasUteis })}
-        >
-          <span className="knob" />
-        </button>
-      </div>
-      <div className="toggle-row">
-        <span className="tl">Pular finais de semana</span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={!!data.pularFinaisDeSemana}
-          aria-label="Pular finais de semana"
-          className={`toggle${data.pularFinaisDeSemana ? " on" : ""}`}
-          onClick={() => onChange({ ...data, pularFinaisDeSemana: !data.pularFinaisDeSemana })}
-        >
-          <span className="knob" />
-        </button>
-      </div>
-      <div className="toggle-row">
-        <span className="tl">Pular feriados</span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={!!data.pularFeriados}
-          aria-label="Pular feriados"
-          className={`toggle${data.pularFeriados ? " on" : ""}`}
-          onClick={() => onChange({ ...data, pularFeriados: !data.pularFeriados })}
-        >
-          <span className="knob" />
-        </button>
-      </div>
-
-      <div className="toggle-row">
-        <span className="tl">Tem tempo máximo de espera</span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={!!data.tempoMaximo}
-          aria-label="Tem tempo máximo de espera"
-          className={`toggle${data.tempoMaximo ? " on" : ""}`}
-          onClick={() =>
-            onChange({ ...data, tempoMaximo: data.tempoMaximo ? undefined : { valor: 1, unidade: "dias" } })
-          }
-        >
-          <span className="knob" />
-        </button>
-      </div>
-      {data.tempoMaximo ? (
-        <div className="field">
-          <label>Tempo máximo (gera as saídas &quot;OK&quot; / &quot;Tempo esgotado&quot;)</label>
+          <label>Quanto tempo</label>
           <div style={{ display: "flex", gap: 6 }}>
             <input
               className="input"
+              style={{ flex: 1 }}
               type="number"
               min={1}
-              style={{ flex: 1 }}
-              value={data.tempoMaximo.valor}
-              onChange={(e) =>
-                onChange({ ...data, tempoMaximo: { ...data.tempoMaximo!, valor: Number(e.target.value) || 1 } })
-              }
+              value={data.valor ?? ""}
+              onChange={(e) => onChange({ ...data, valor: e.target.value ? Number(e.target.value) : undefined })}
+              aria-label="Quantidade de tempo"
             />
             <select
               className="input"
               style={{ flex: 1 }}
-              value={data.tempoMaximo.unidade}
-              onChange={(e) => onChange({ ...data, tempoMaximo: { ...data.tempoMaximo!, unidade: e.target.value } })}
+              value={data.modo}
+              onChange={(e) => onChange({ ...data, modo: e.target.value as AguardarData["modo"] })}
+              aria-label="Unidade de tempo"
             >
-              <option value="minutos">Minutos</option>
-              <option value="horas">Horas</option>
-              <option value="dias">Dias</option>
+              {UNIDADES.map((u) => (
+                <option key={u.valor} value={u.valor}>
+                  {u.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>
+      ) : null}
+
+      {data.modo === "ate_resposta" ? (
+        <div className="field">
+          <label>Esperar no máximo</label>
+          <div style={{ display: "flex", gap: 6 }}>
+            <input
+              className="input"
+              style={{ flex: 1 }}
+              type="number"
+              min={1}
+              value={data.tempoMaximo?.valor ?? 2}
+              onChange={(e) =>
+                onChange({
+                  ...data,
+                  tempoMaximo: { valor: Number(e.target.value) || 1, unidade: data.tempoMaximo?.unidade ?? "horas" },
+                })
+              }
+              aria-label="Prazo máximo de espera"
+            />
+            <select
+              className="input"
+              style={{ flex: 1 }}
+              value={data.tempoMaximo?.unidade ?? "horas"}
+              onChange={(e) => onChange({ ...data, tempoMaximo: { valor: data.tempoMaximo?.valor ?? 2, unidade: e.target.value } })}
+              aria-label="Unidade do prazo"
+            >
+              {UNIDADES.map((u) => (
+                <option key={u.valor} value={u.valor}>
+                  {u.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <p className="hint">
+            Se ele responder antes, o fluxo continua na hora pelo caminho <strong>Respondeu</strong> —
+            não fica esperando o prazo acabar.
+          </p>
+        </div>
+      ) : null}
+
+      {ehDuracao ? (
+        <>
+          <div className="toggle-row">
+            <span className="tl">Contar só dias úteis</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!!data.apenasDiasUteis}
+              aria-label="Contar só dias úteis"
+              className={`toggle${data.apenasDiasUteis ? " on" : ""}`}
+              onClick={() => onChange({ ...data, apenasDiasUteis: !data.apenasDiasUteis })}
+            >
+              <span className="knob" />
+            </button>
+          </div>
+          <div className="toggle-row">
+            <span className="tl">Não cair em fim de semana</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!!data.pularFinaisDeSemana}
+              aria-label="Não cair em fim de semana"
+              className={`toggle${data.pularFinaisDeSemana ? " on" : ""}`}
+              onClick={() => onChange({ ...data, pularFinaisDeSemana: !data.pularFinaisDeSemana })}
+            >
+              <span className="knob" />
+            </button>
+          </div>
+          <p className="hint">
+            Feriado não entra nessa conta: o CRM não tem calendário de feriados, e fingir que pula
+            faria a mensagem sair no dia errado sem ninguém entender por quê.
+          </p>
+        </>
       ) : null}
     </div>
   );
