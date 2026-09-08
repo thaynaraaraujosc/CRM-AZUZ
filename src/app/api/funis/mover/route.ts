@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 import { aoSairDaEtapa } from "@/lib/automacoes/gatilhos-crm";
 
@@ -125,6 +126,16 @@ export async function POST(request: Request) {
       // uma entrada nova, e "entrou na etapa" tem que disparar de novo.
       chaveEvento: `etapa:${cardId}:${etapaId}:${new Date().toISOString().slice(0, 16)}`,
     }).catch((erro) => console.error("[funil] falha ao disparar automações de etapa:", erro));
+
+    // Os gatilhos que moram NA ETAPA (o quadro "Automatizar" do funil). Rodam junto com os fluxos
+    // que têm gatilho próprio, não no lugar deles: são duas formas de ligar a mesma automação, e
+    // desligar uma não pode desligar a outra.
+    dispararGatilhosDaEtapa({
+      workspaceId,
+      etapaId,
+      contatoNome: card.nome,
+      evento: "movido",
+    }).catch((erro) => console.error("[funil] falha ao disparar gatilhos da etapa:", erro));
   }
 
   return NextResponse.json({ ok: true, card: atualizado }, { headers: { "cache-control": "no-store" } });

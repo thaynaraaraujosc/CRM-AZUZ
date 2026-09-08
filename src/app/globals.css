@@ -16462,3 +16462,206 @@ table.tbl .name-cell .r {
   border-color: var(--acao);
   outline: none;
 }
+
+/* ============================================================================
+   Automação do funil: a camada em que a ETAPA é dona do gatilho.
+
+   Mesma largura de coluna do quadro (240px, flex 1 0) de propósito: a faixa tem que ficar
+   alinhada com as etapas, senão a leitura "esta automação é DESTA etapa" se perde.
+   ============================================================================ */
+.funil-auto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.funil-auto-grade {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.funil-auto-col {
+  flex: 1 0 240px;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.funil-auto-col-topo {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0 2px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.funil-auto-cartao {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--blue);
+  border-radius: var(--radius-2);
+  padding: 8px 8px 8px 10px;
+}
+
+/* Desligado continua visível, só apagado: sumir com ele faria parecer que foi apagado. */
+.funil-auto-cartao.desligado {
+  opacity: 0.55;
+  border-left-color: var(--border);
+}
+
+.funil-auto-cartao-corpo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.funil-auto-quando {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.funil-auto-robo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.funil-auto-janela {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.funil-auto-cartao-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.funil-auto-mini {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.funil-auto-mini:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.funil-auto-add {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-2);
+  padding: 9px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+.funil-auto-add:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.funil-auto-painel {
+  width: 300px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-3);
+  padding: var(--space-3);
+  position: sticky;
+  top: var(--space-3);
+}
+
+.funil-auto-painel-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.funil-auto-painel-fim {
+  display: flex;
+  gap: 8px;
+  margin-top: var(--space-2);
+}
+
+.funil-auto-dias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.funil-auto-dia {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.funil-auto-dia.on {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+.funil-auto-horas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.funil-auto-horas .input {
+  flex: 1;
+}
+
+/* Numa tela estreita o painel vai pra baixo da faixa: com 300px fixos ao lado, as colunas ficam
+   espremidas a ponto de o nome da etapa não caber. */
+@media (max-width: 900px) {
+  .funil-auto {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .funil-auto-painel {
+    width: auto;
+    position: static;
+  }
+}

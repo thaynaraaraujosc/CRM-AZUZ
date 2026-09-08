@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import type { Funil } from "@/lib/data";
 import { auth } from "@/lib/auth";
+import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
 import { prisma } from "@/lib/prisma";
 import { filtroConexaoDeNegocio, provedoresConectados } from "@/lib/integracoes/conta-canal";
 
@@ -250,6 +251,11 @@ export async function PUT(request: Request) {
     operacoes.push(prisma.negocioCard.createMany({ data: cardsParaCriar }));
   }
 
+  // Card novo no quadro dispara os gatilhos de "criado nesta etapa". Depois da gravação, e sem
+  // esperar: automação é efeito secundário de salvar o funil, e uma automação com problema não
+  // pode fazer o salvamento falhar.
+  const criadosParaGatilho = cardsParaCriar.map((c) => ({ etapaId: c.etapaId, nome: c.nome }));
+
   // A transação inteira estava sem tratamento de erro: qualquer falha do banco virava um 500 mudo,
   // e a tela só conseguia dizer "Funis não foram salvos: 500": sem nada que apontasse a causa, nem
   // no navegador nem pra quem fosse investigar. O erro real fica no log do servidor, com quantos
@@ -308,6 +314,15 @@ export async function PUT(request: Request) {
       },
       { status: 500 },
     );
+  }
+
+  for (const criado of criadosParaGatilho) {
+    dispararGatilhosDaEtapa({
+      workspaceId,
+      etapaId: criado.etapaId,
+      contatoNome: criado.nome,
+      evento: "criado",
+    }).catch((erro) => console.error("[funil] falha ao disparar gatilhos de card criado:", erro));
   }
 
   return NextResponse.json({ ok: true });

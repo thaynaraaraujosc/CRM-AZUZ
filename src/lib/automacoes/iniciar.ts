@@ -42,11 +42,19 @@ export function motorNovoAtivo(configuracoes: unknown): boolean {
 }
 
 /** O bloco de gatilho e a primeira aresta que sai dele. Onde a execução realmente começa. */
-function primeiroNoDepoisDoGatilho(versao: VersaoPublicada): { gatilho: FlowNode; alvoId: string } | null {
+function primeiroNoDepoisDoGatilho(versao: VersaoPublicada): { gatilho: FlowNode | null; alvoId: string } | null {
   const gatilho = versao.nodes.find((n) => n.category === "gatilho");
-  if (!gatilho) return null;
-  const aresta = versao.edges.find((e) => e.source === gatilho.id);
-  return aresta ? { gatilho, alvoId: aresta.target } : null;
+  if (gatilho) {
+    const aresta = versao.edges.find((e) => e.source === gatilho.id);
+    return aresta ? { gatilho, alvoId: aresta.target } : null;
+  }
+
+  // Robô sem bloco de gatilho: quem dispara é a etapa do funil, não um bloco dentro do fluxo.
+  // O começo é o único nó em que ninguém entra. Com mais de um candidato não dá pra saber por
+  // onde começar, e escolher um mandaria o contato pro caminho errado.
+  const comEntrada = new Set(versao.edges.map((e) => e.target));
+  const entradas = versao.nodes.filter((n) => !comEntrada.has(n.id));
+  return entradas.length === 1 ? { gatilho: null, alvoId: entradas[0].id } : null;
 }
 
 /**

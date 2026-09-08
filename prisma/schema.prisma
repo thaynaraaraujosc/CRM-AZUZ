@@ -69,7 +69,7 @@ model Contato {
   // nenhum comportamento.
   criadoVia String @default("manual")
 
-  conversas Conversa[]
+  conversas          Conversa[]
   execucoesAutomacao ExecucaoAutomacao[]
 
   criadoEm     DateTime @default(now())
@@ -245,6 +245,7 @@ model Workspace {
   formularios           Formulario[]
   respostasFormulario   RespostaFormulario[]
   fluxosAutomacao       FluxoAutomacao[]
+  gatilhosEtapa         GatilhoEtapa[]
   documentos            Documento[]
   modelosPersonalizados ModeloPersonalizado[]
   integracoes           Integracao[]
@@ -364,9 +365,10 @@ model FunilEtapa {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  titulo String
-  ordem  Int
-  cards  NegocioCard[]
+  titulo   String
+  ordem    Int
+  cards    NegocioCard[]
+  gatilhos GatilhoEtapa[]
 }
 
 model NegocioCard {
@@ -441,21 +443,21 @@ model MensagemExtra {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  contato    String
-  tipo       String
-  texto      String    @db.Text
-  hora       String
-  criadoEm   DateTime?
-  status     String?
-  extras     Json?
+  contato      String
+  tipo         String
+  texto        String    @db.Text
+  hora         String
+  criadoEm     DateTime?
+  status       String?
+  extras       Json?
   // Canal de origem/destino da mensagem. Nulo = comportamento antigo (implicitamente Meta
   // oficial); "whatsapp_baileys" marca mensagens da conexão não oficial via QR Code, pra saber
   // por qual integração uma resposta deve sair quando o workspace tem as duas conectadas.
-  canal      String?
+  canal        String?
   // Conexão dona desta mensagem: mesmo formato e mesmo motivo de `Conversa.contaCanal`. `canal`
   // acima diz só o tipo de conexão; este diz QUAL número, que é o que separa duas contas do mesmo
   // canal (a pessoa troca de número e a caixa de entrada precisa zerar).
-  contaCanal String?
+  contaCanal   String?
   /// Id que a Meta gera pra mensagem que NÓS enviamos (`wamid`).
   ///
   /// É por ele que os webhooks de entrega/leitura encontram a mensagem certa: a Meta não conhece o
@@ -463,7 +465,7 @@ model MensagemExtra {
   /// procurava a mensagem e não achava nada. Entregue e lido nunca saíam do lugar.
   ///
   /// Nulo em mensagem recebida (ali o próprio id JÁ é o wamid) e em canal que não devolve id.
-  wamid      String?   @db.VarChar(191)
+  wamid        String?   @db.VarChar(191)
   /// Carimbo da última escrita nesta linha. Existe pra a tela poder perguntar "mudou alguma coisa?"
   /// com uma consulta barata (um MAX indexado) em vez de baixar o histórico inteiro a cada 5s.
   ///
@@ -573,7 +575,7 @@ model FluxoAutomacao {
   /// Publicações e execuções: ver `VersaoAutomacao` e `ExecucaoAutomacao`. `historicoVersoes`
   /// (Json acima) continua existindo enquanto a migração roda; a fonte da verdade passa a ser a
   /// tabela.
-  versoes   VersaoAutomacao[]
+  versoes              VersaoAutomacao[]
   execucoesEmAndamento ExecucaoAutomacao[]
 }
 
@@ -967,7 +969,7 @@ model ExecucaoAutomacao {
   contexto Json?
 
   /// Quando o cron deve retomar (espera por tempo).
-  aguardandoAte DateTime?
+  aguardandoAte    DateTime?
   /// O que retoma esta execução: "resposta", "clique", "formulario"… com o nó que espera.
   aguardandoEvento String?
   aguardandoNoId   String?
@@ -995,9 +997,9 @@ model ExecucaoAutomacao {
 /// aprovado"), `erroTecnico` é o que serve pra investigar (código da Meta, corpo do erro). Nunca
 /// credencial: o que entra aqui é mensagem de erro, não token.
 model PassoAutomacao {
-  id          String            @id
-  execucaoId  String
-  execucao    ExecucaoAutomacao @relation(fields: [execucaoId], references: [id], onDelete: Cascade)
+  id         String            @id
+  execucaoId String
+  execucao   ExecucaoAutomacao @relation(fields: [execucaoId], references: [id], onDelete: Cascade)
 
   /// Repetido aqui pra consultar log por workspace sem entrar na execução.
   workspaceId String
@@ -1007,8 +1009,8 @@ model PassoAutomacao {
   titulo String?
 
   /// ok | condicao_falsa | aguardando | erro | pulado
-  resultado String
-  detalhe   String? @db.Text
+  resultado   String
+  detalhe     String? @db.Text
   erroTecnico String? @db.Text
 
   /// Quantas vezes este nó já foi tentado nesta execução (retry).
@@ -1081,14 +1083,14 @@ model Campanha {
   templateIdioma String?
   /// Template do CRM (tabela `Template`) de onde a mensagem saiu, quando saiu de um. Guardado por
   /// id pra tela de acompanhamento mostrar "Template: Retomar atendimento" mesmo que o texto mude.
-  templateId String?
+  templateId     String?
   /// Como cada variável da mensagem é preenchida: `[{ chave: "nome", indice: 1, origem: "contato.nome" }]`.
   /// O valor por destinatário é resolvido NA CRIAÇÃO e congelado em `CampanhaDestinatario.parametros`,
   /// pelo mesmo motivo do `destino`. Ver `src/lib/campanhas/variaveis.ts`.
-  variaveis Json?
+  variaveis      Json?
   /// Como o público foi escolhido (`{ modo: "etiqueta", valor: "vip" }`…), só pra reexibir na tela
   /// de acompanhamento. Quem recebe de verdade está em `destinatarios`.
-  audiencia Json?
+  audiencia      Json?
 
   /// agendada | enviando | pausada | concluida | concluida_com_erros | cancelada
   status String @default("agendada")
@@ -1127,25 +1129,25 @@ model Template {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  nome  String
+  nome      String
   /// "whatsapp_oficial" | "whatsapp_nao_oficial" | "email"
-  canal String
+  canal     String
   /// Só o WhatsApp oficial exige: MARKETING | UTILITY | AUTHENTICATION.
   categoria String?
   idioma    String  @default("pt_BR")
   /// Só e-mail usa.
-  assunto String?
-  corpo   String  @db.Text
+  assunto   String?
+  corpo     String  @db.Text
   /// `[{ chave: "nome", indice: 1, origem: "contato.nome" }]`: o mapeamento padrão de cada variável.
   variaveis Json?
   /// `[{ texto: "Sim, quero continuar" }]`: botões de resposta rápida, com o limite do canal
   /// aplicado na gravação (ver `limitesDoCanal`).
-  botoes Json?
+  botoes    Json?
 
   /// rascunho | em_analise | aprovado | rejeitado. Canal sem análise (QR, e-mail) vai direto pra
   /// "aprovado" ao salvar: o status existe pra tela ser uma só, não pra fingir um processo.
-  status         String  @default("rascunho")
-  motivoRejeicao String? @db.Text
+  status             String  @default("rascunho")
+  motivoRejeicao     String? @db.Text
   /// Espelho na Meta (`WhatsappTemplate.id`), preenchido quando enviado pra análise.
   whatsappTemplateId String?
 
@@ -1188,7 +1190,7 @@ model CampanhaDestinatario {
   respondidoEm DateTime?
   /// Valores das variáveis PARA ESTA PESSOA (`{ nome: "Maria", produto: "Plano X" }`), resolvidos na
   /// criação da campanha. O worker só substitui; nunca consulta o contato na hora do envio.
-  parametros Json?
+  parametros   Json?
 
   criadoEm DateTime @default(now())
 
@@ -1198,4 +1200,50 @@ model CampanhaDestinatario {
   /// A varredura do worker: próximos pendentes de uma campanha, na ordem de criação.
   @@index([campanhaId, status])
   @@index([workspaceId, status])
+}
+
+/**
+ * Gatilho preso a uma ETAPA do funil: "quando o lead entra nesta etapa, execute o robô X".
+ * A automação passa a ser vista de onde ela acontece. Antes o gatilho morava dentro do fluxo, o
+ * que escondia do quadro do funil quais etapas fazem alguma coisa sozinhas: pra saber, era preciso
+ * abrir automação por automação. Aqui a etapa é a dona do gatilho, e o fluxo vira um robô
+ * reutilizável que várias etapas podem executar.
+ * Não substitui o gatilho de dentro do fluxo: os dois convivem. Fluxos que já existem continuam
+ * disparando pelo bloco de gatilho deles.
+ */
+model GatilhoEtapa {
+  id String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  funilId String
+  etapaId String
+  etapa   FunilEtapa @relation(fields: [etapaId], references: [id], onDelete: Cascade)
+
+  // "movido" | "criado" | "movido_ou_criado" | "responsavel_alterado" | "diariamente"
+  quando String
+
+  // O robô que roda. É um FluxoAutomacao, sem exigir bloco de gatilho dentro dele.
+  fluxoId String
+
+  // Condição extra ("Para todos os leads com:"), no mesmo formato do bloco de condição do editor.
+  condicao Json?
+
+  // Janela em que o gatilho vale. Lista vazia/ausente = todos os dias. Horas em "HH:MM".
+  // Fora da janela o gatilho não dispara: é o "Ativo: sempre" do Kommo com dias e horário.
+  diasAtivos Json?
+  horaInicio String?
+  horaFim    String?
+
+  // Só pro quando = "diariamente": a que horas a varredura roda ("12:00").
+  horarioDiario String?
+
+  ativo Boolean @default(true)
+  ordem Int     @default(0)
+
+  criadoEm DateTime @default(now())
+
+  @@index([workspaceId, etapaId])
+  @@index([workspaceId, funilId])
 }

@@ -20,6 +20,7 @@ import { useEquipe } from "@/lib/equipe-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { useMotivosPerda } from "@/lib/motivos-perda";
 import { IconAutomacoes } from "@/components/icons";
+import { AutomacaoDoFunil } from "@/components/funil/AutomacaoDoFunil";
 import { IconConfiguracoes } from "@/components/icons";
 import { ChipFilters, FloatingDropdown, Topbar } from "@/components/ui";
 import { IconCheck, IconClose, IconErro } from "@/components/icons";
@@ -207,6 +208,7 @@ function FunilPageInner() {
   );
   const [origensFiltro, setOrigensFiltro] = useState<Set<string>>(new Set());
   const [filtroAberto, setFiltroAberto] = useState(false);
+  const [modoAutomatizar, setModoAutomatizar] = useState(false);
   const [dataDe, setDataDe] = useState("");
   const [dataAte, setDataAte] = useState("");
   const [arrastando, setArrastando] = useState<{
@@ -523,6 +525,16 @@ function FunilPageInner() {
             >
               {filtroAberto ? "Fechar filtro" : "+ Filtrar"}
             </button>
+            {/* Troca o quadro de negócios pelo quadro de AUTOMAÇÃO: as mesmas colunas, mostrando
+                o que cada etapa dispara sozinha em vez dos cards. */}
+            <button
+              type="button"
+              className={`btn ghost${modoAutomatizar ? " active" : ""}`}
+              onClick={() => setModoAutomatizar((v) => !v)}
+              title="Ver e configurar o que cada etapa dispara sozinha"
+            >
+              {modoAutomatizar ? "Ver negócios" : "Automatizar"}
+            </button>
             {funilAtivo ? (
               <div className="dropdown-anchor">
                 <button
@@ -814,6 +826,12 @@ function FunilPageInner() {
           </section>
         ) : null}
 
+        {modoAutomatizar && funilAtivo ? (
+          <AutomacaoDoFunil
+            funilId={funilAtivo.id}
+            colunas={funilAtivo.colunas.map((c) => ({ id: c.id, titulo: c.titulo }))}
+          />
+        ) : (
         <div
           className="kanban"
           ref={kanbanRef}
@@ -1065,6 +1083,7 @@ function FunilPageInner() {
             );
           })}
         </div>
+        )}
       </div>
 
       {desfechoMenu ? (
