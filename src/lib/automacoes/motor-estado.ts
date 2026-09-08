@@ -867,5 +867,15 @@ export function saidaDaResposta(data: MensagemBotoesData, resposta: string): str
   );
   if (exata) return exata.id;
   const contida = opcoes.find((o) => limpa.includes(o.rotulo.trim().toLowerCase()));
-  return contida?.id ?? null;
+  if (contida) return contida.id;
+
+  // O contrário também acontece, e mais: a opção é "Sim, quero saber os valores" e a pessoa digita
+  // só "sim". Vale quando a resposta é o COMEÇO do rótulo e uma opção só começa assim: com duas
+  // opções começando igual ("Sim, quero" e "Sim, depois") não dá pra saber qual foi, e chutar
+  // mandaria a pessoa pro ramo errado, que é pior do que cair em "outra resposta".
+  const comecam = opcoes.filter((o) => {
+    const rotulo = o.rotulo.trim().toLowerCase();
+    return rotulo !== limpa && rotulo.startsWith(limpa) && /^[\wà-ü]+$/.test(limpa);
+  });
+  return comecam.length === 1 ? comecam[0].id : null;
 }

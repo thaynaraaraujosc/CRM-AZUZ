@@ -137,6 +137,18 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
       });
     }
 
+    // A saída "Não respondeu" existe no desenho, mas a pergunta espera sem prazo: só o bloco
+    // "Aguardar resposta" tem tempo máximo. Sem esse aviso, o ramo fica pendurado pra sempre e
+    // parece que a automação simplesmente parou.
+    if (saidas.some((e) => e.sourceHandle === "nao_respondeu")) {
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "aviso",
+        mensagem: `O caminho "Não respondeu" do bloco "${n.titulo ?? n.type}" nunca é seguido: a pergunta espera sem prazo. Pra ter desistência por tempo, use o bloco "Aguardar" com tempo máximo depois da pergunta.`,
+        nodeId: n.id,
+      });
+    }
+
     opcoes.forEach((opcao) => {
       if (ehTextoVazio(opcao.rotulo)) {
         problemas.push({
@@ -168,6 +180,15 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         id: proximoIdProblema(),
         severidade: "erro",
         mensagem: `Bloco "${n.titulo ?? n.type}" está sem arquivo escolhido.`,
+        nodeId: n.id,
+      });
+    } else if (ehTextoVazio(data.arquivoId)) {
+      // O nome é o que aparece na tela, mas quem envia o arquivo é o id. Um bloco com nome e sem
+      // id parece pronto no editor e não envia nada na conversa: por isso é erro, não aviso.
+      problemas.push({
+        id: proximoIdProblema(),
+        severidade: "erro",
+        mensagem: `Bloco "${n.titulo ?? n.type}": o arquivo "${data.arquivoNome}" não ficou guardado na biblioteca. Escolha o arquivo de novo.`,
         nodeId: n.id,
       });
     }

@@ -45,9 +45,18 @@ export const CATEGORIAS_ARQUIVO_AUTOMACAO = [
 
 type BibliotecaDocumentosContextValue = {
   documentos: DocumentoBiblioteca[];
+  /**
+   * Guarda o documento e devolve a linha **gravada**, com o id que o banco criou.
+   *
+   * É uma promessa de propósito. A lista da tela aparece na hora (com um id provisório), mas quem
+   * precisa GUARDAR a referência do arquivo em outro lugar (o bloco de mídia de uma automação)
+   * tem que esperar o id de verdade: um bloco apontando pro id provisório fica apontando pra um
+   * arquivo que não existe no banco, e o envio falha na hora da automação rodar, sem aviso no
+   * editor.
+   */
   adicionarDocumento: (
     doc: Omit<DocumentoBiblioteca, "id" | "atualizadoEm">,
-  ) => DocumentoBiblioteca;
+  ) => Promise<DocumentoBiblioteca>;
   atualizarDocumento: (id: string, patch: Partial<Omit<DocumentoBiblioteca, "id">>) => void;
   removerDocumento: (id: string) => void;
 };
@@ -211,24 +220,30 @@ export function BibliotecaDocumentosProvider({ children }: { children: ReactNode
       .catch((erro) => console.error("Falha ao carregar biblioteca de documentos da API:", erro));
   }, []);
 
-  function adicionarDocumento(doc: Omit<DocumentoBiblioteca, "id" | "atualizadoEm">) {
-    const novo: DocumentoBiblioteca = {
+  async function adicionarDocumento(doc: Omit<DocumentoBiblioteca, "id" | "atualizadoEm">) {
+    // Id provisório só pra lista da tela não piscar. Ele nunca sai daqui: o que a função devolve
+    // é a linha gravada, com o id do banco.
+    const provisorio: DocumentoBiblioteca = {
       ...doc,
-      id: `doc-${Date.now()}`,
+      id: `provisorio-${Date.now()}`,
       atualizadoEm: new Date().toISOString().slice(0, 10),
     };
-    setDocumentos((prev) => [novo, ...prev]);
-    fetch("/api/biblioteca-documentos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(doc),
-    })
-      .then((r) => r.json())
-      .then((salvo: DocumentoBiblioteca) => {
-        setDocumentos((prev) => prev.map((d) => (d.id === novo.id ? salvo : d)));
-      })
-      .catch((erro) => console.error("Falha ao adicionar documento na API:", erro));
-    return novo;
+    setDocumentos((prev) => [provisorio, ...prev]);
+    try {
+      const resposta = await fetch("/api/biblioteca-documentos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(doc),
+      });
+      if (!resposta.ok) throw new Error(`A biblioteca respondeu ${resposta.status}.`);
+      const salvo = (await resposta.json()) as DocumentoBiblioteca;
+      setDocumentos((prev) => prev.map((d) => (d.id === provisorio.id ? salvo : d)));
+      return salvo;
+    } catch (erro) {
+      // Tira o provisório da lista: deixá-lo lá faz a pessoa acreditar que o arquivo está guardado.
+      setDocumentos((prev) => prev.filter((d) => d.id !== provisorio.id));
+      throw erro;
+    }
   }
 
   function atualizarDocumento(id: string, patch: Partial<Omit<DocumentoBiblioteca, "id">>) {

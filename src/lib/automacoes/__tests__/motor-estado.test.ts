@@ -99,6 +99,30 @@ describe("pergunta com opções", () => {
     expect(saidaDaResposta(data, "acho que quero saber valores mesmo")).toBe("o1");
   });
 
+  it("uma palavra que começa o rótulo de uma opção só basta", () => {
+    // Caso real: a opção é "Sim, quero saber" e a pessoa responde só "sim".
+    const sn: MensagemBotoesData = {
+      ...data,
+      opcoes: [
+        { id: "s", rotulo: "Sim, quero saber" },
+        { id: "t", rotulo: "Talvez depois" },
+      ],
+    };
+    expect(saidaDaResposta(sn, "sim")).toBe("s");
+    expect(saidaDaResposta(sn, "Talvez")).toBe("t");
+  });
+
+  it("com duas opções começando igual, não chuta", () => {
+    const ambiguo: MensagemBotoesData = {
+      ...data,
+      opcoes: [
+        { id: "a", rotulo: "Sim, quero agora" },
+        { id: "b", rotulo: "Sim, mas depois" },
+      ],
+    };
+    expect(saidaDaResposta(ambiguo, "sim")).toBeNull();
+  });
+
   it("número fora da lista não vira opção", () => {
     expect(saidaDaResposta(data, "7")).toBeNull();
   });

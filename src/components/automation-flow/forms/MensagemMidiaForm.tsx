@@ -103,6 +103,7 @@ export function MensagemMidiaForm({
   const [busca, setBusca] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("Todas");
   const [enviando, setEnviando] = useState(false);
+  const [erroUpload, setErroUpload] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const legendaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -124,9 +125,13 @@ export function MensagemMidiaForm({
 
   async function processarUpload(file: File) {
     setEnviando(true);
+    setErroUpload(null);
     try {
       const url = await lerComoDataUrl(file);
-      const salvo = adicionarDocumento({
+      // Espera o arquivo estar GRAVADO antes de escrever a referência no bloco. O id que interessa
+      // é o do banco: é ele que o motor procura na hora de enviar. Guardar um id provisório aqui
+      // fazia o bloco apontar pra um arquivo inexistente, e a mídia simplesmente não saía.
+      const salvo = await adicionarDocumento({
         nome: file.name,
         categoria: "Outros",
         formato: extensaoDoNome(file.name),
@@ -144,7 +149,9 @@ export function MensagemMidiaForm({
         arquivoUrlTemporaria: undefined,
       });
     } catch {
-      // Falha ao ler o arquivo (raríssimo). Não altera o estado, o usuário tenta de novo.
+      // Nada é escrito no bloco: um bloco sem arquivo mostra o erro no editor, um bloco com
+      // arquivo quebrado só falha na frente do cliente.
+      setErroUpload("Não deu pra guardar o arquivo na biblioteca. Tente enviar de novo.");
     } finally {
       setEnviando(false);
     }
@@ -198,6 +205,7 @@ export function MensagemMidiaForm({
             {enviando ? "Enviando…" : "Enviar novo arquivo"}
           </button>
         </div>
+        {erroUpload ? <p className="hint mt8" style={{ color: "var(--danger)" }}>{erroUpload}</p> : null}
         <input
           ref={fileInputRef}
           type="file"
