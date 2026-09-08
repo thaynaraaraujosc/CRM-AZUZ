@@ -318,8 +318,7 @@
 :root[data-theme="dark"] .btn.primary,
 :root[data-theme="dark"] .sidebar,
 :root[data-theme="dark"] .open-conv-h,
-:root[data-theme="dark"] .wa-row.active,
-:root[data-theme="dark"] .bubble.out {
+:root[data-theme="dark"] .wa-row.active {
   border-color: rgba(255, 255, 255, 0.16);
 }
 
@@ -2938,10 +2937,17 @@ table.tbl tbody tr:hover td {
   word-break: break-all;
 }
 
-/* Link dentro da bolha marinho: azul claro o bastante pra se ler como link, sem brigar com o
-   branco do texto ao redor. */
+/* Link dentro da bolha azul: quase branco, sublinhado. Um azul mais claro sobre azul não se lê
+   como link — a diferença de cor some, e o que sobra é o sublinhado. */
 .bubble.out .wa-link-mensagem {
-  color: #a8c0ff;
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* Horário e tiquinhos dentro da bolha azul: 0,6 de opacidade sobre o azul vivo cai abaixo do
+   legível. Sobre a bolha cinza da outra pessoa, 0,6 continua valendo. */
+.bubble.out .tm {
+  opacity: 0.85;
 }
 
 /* Botão "Carregar áudio" — mídia recebida sem conteúdo embutido no webhook, buscada sob demanda. */
@@ -3053,12 +3059,19 @@ table.tbl tbody tr:hover td {
 
 /* Enviada: superfície de contraste na identidade nova. Era azul — a única área grande de cor
    sólida que sobrava no produto, e ela reaparecia dezenas de vezes numa conversa só. */
-/* Bolha do que NÓS mandamos: marinho escuro, chapado. Era um gradiente de cinza escuro pra
-   quase-preto — de longe lia como preto, e era o maior bloco de preto da tela. Sem gradiente de
-   propósito: qualquer clareada no topo puxa a bolha pra longe do tom da marca, e é o tom que
-   precisa se repetir igual no menu, no cabeçalho e aqui. */
+/*
+ * Bolha do que NÓS mandamos: o AZUL DA MARCA, não o marinho.
+ *
+ * A separação é proposital e tem uma lógica: o marinho é a ESTRUTURA (menu, cabeçalho, cartão
+ * selecionado) — coisas que emolduram a tela e ficam paradas. A bolha é CONTEÚDO, e conteúdo nosso:
+ * o azul vivo faz a nossa voz saltar dentro da conversa em vez de se confundir com a moldura.
+ *
+ * Contraste: branco sobre #2e6bff dá 4,5:1 — passa no mínimo, mas com folga curta. Por isso o
+ * horário e os tiquinhos sobem de opacidade aqui dentro (`.tm` a 0,6 cairia abaixo do legível), e
+ * por isso o texto é branco puro e não translúcido.
+ */
 .bubble.out {
-  background: var(--acao);
+  background: var(--blue);
   color: var(--white);
   align-self: flex-end;
   border-bottom-right-radius: 5px;
