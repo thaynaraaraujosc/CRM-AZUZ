@@ -100,6 +100,9 @@ export type FlowNodeType =
   | "cancelar_automacoes"
   | "chamar_webhook"
   | "executar_integracao"
+  // IA
+  | "ia_responder"
+  | "ia_classificar"
   // humano
   | "encaminhar_humano"
   // fim
@@ -410,6 +413,33 @@ export type EnviarNotificacaoData = { paraEquipe?: string; mensagem: string };
 export type PausarAutomacoesData = Record<string, never>;
 export type CancelarAutomacoesData = Record<string, never>;
 export type ChamarWebhookData = { url: string; payload?: string };
+
+/**
+ * Responde o contato com IA, seguindo uma instrução e o contexto do negócio.
+ *
+ * Sem IA configurada no servidor, o bloco não inventa resposta: ele diz isso no histórico e o fluxo
+ * segue. Uma resposta genérica saindo em nome da empresa é pior que nenhuma.
+ */
+export type IaResponderData = {
+  /** O que a IA deve fazer ("responda a dúvida sobre preço em até 3 frases, com tom cordial"). */
+  instrucao: string;
+  /** Informações do negócio que ela pode usar (horário, preços, política de troca). */
+  contexto?: string;
+  /** Teto de caracteres da resposta — mensagem de atendimento curta é lida, longa não. */
+  maximoCaracteres?: number;
+};
+
+/**
+ * Classifica a última mensagem do contato em uma das categorias e segue por ela.
+ *
+ * Cada categoria vira uma saída do bloco; quando a IA não encaixa em nenhuma, o fluxo segue pela
+ * saída "nao_classificado" em vez de escolher um caminho no chute.
+ */
+export type IaClassificarData = {
+  instrucao?: string;
+  /** As saídas possíveis, na ordem. O `sourceHandle` da aresta é a própria categoria. */
+  categorias: string[];
+};
 export type ExecutarIntegracaoData = { integracaoId?: string; acao?: string };
 export type ModoDestinoAtendimento = "atendente" | "equipe" | "distribuicao" | "manter";
 export type MetodoDistribuicaoAtendimento = "disponibilidade" | "rodizio" | "menos_atendimentos" | "prioridade";
@@ -440,7 +470,8 @@ export type FlowNode<T = Record<string, unknown>> = {
   observacao?: string;
   /** Bloco pausado — continua no fluxo (não perde a posição/conexões) mas fica marcado como "não
    * roda por enquanto"; útil pra desligar temporariamente uma etapa sem ter que desconectar e
-   * excluir. Puramente visual/de estado nesta fase (front-end apenas). */
+   * excluir. O motor com estado respeita este marcador (registra "pulado" e segue); o motor
+   * antigo ainda não. */
   desativado?: boolean;
   data: T;
 };
@@ -482,6 +513,14 @@ export type ConfiguracoesFluxo = {
     | "uma_vez_por_mes";
   naoIniciarSeJaNoFluxo?: boolean;
   cancelarExecucaoAnterior?: boolean;
+  /**
+   * Liga o motor com estado (`src/lib/automacoes/motor-estado.ts`) para ESTE fluxo.
+   *
+   * A chave é por fluxo de propósito: o motor novo é o único que sabe esperar (retomar por tempo
+   * ou por resposta), mas trocar todos os fluxos de uma vez arriscaria os que já funcionam. Com a
+   * chave desligada, nada muda — o fluxo continua no motor antigo.
+   */
+  motorNovo?: boolean;
 };
 
 export type VersaoFluxo = {

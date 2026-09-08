@@ -1,20 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 
-import { executarFluxo, type ContextoExecucao, type Ligacoes } from "@/lib/automation-flow/motor";
-import type {
-  AguardarData,
-  FluxoAutomacao,
-  MensagemBotoesData,
-  PassoExecucao,
-  RegistroExecucao,
-} from "@/lib/automation-flow/types";
+import type { EstadoSimulacao } from "@/lib/automacoes/simular";
+import type { AguardarData, FluxoAutomacao } from "@/lib/automation-flow/types";
 import { IconBloqueado, IconCheck, IconClose, IconErro, IconFrasco, IconPause, IconPular } from "@/components/icons";
 
-/** Situação de cada passo simulado. Eram emojis — família tipográfica diferente da interface e
- * cor fixa que não acompanha o tema. */
-const ICONE_STATUS: Record<PassoExecucao["status"], typeof IconCheck> = {
+/** Situação de cada passo. Eram emojis — família tipográfica diferente da interface e cor fixa que
+ * não acompanha o tema. */
+const ICONE_STATUS: Record<string, typeof IconCheck> = {
   ok: IconCheck,
   condicao_falsa: IconBloqueado,
   aguardando: IconPause,
@@ -22,27 +16,25 @@ const ICONE_STATUS: Record<PassoExecucao["status"], typeof IconCheck> = {
   pulado: IconPular,
 };
 
-const LABEL_SITUACAO: Record<RegistroExecucao["situacao"], string> = {
-  aguardando: "Aguardando",
+const LABEL_SITUACAO: Record<string, string> = {
   em_andamento: "Em andamento",
+  aguardando_tempo: "Esperando o tempo passar",
+  aguardando_evento: "Esperando a resposta",
   concluida: "Concluída",
-  pausada: "Pausada",
   cancelada: "Cancelada",
   erro: "Erro",
 };
 
 /**
- * Painel "Testar" — roda o fluxo de verdade (`executarFluxo`) mas com
- * `Ligacoes` totalmente simuladas: nenhuma delas toca `useFunis`/`useContatos`
- * de verdade, só empilha uma linha de log. Ver spec seção 14 — sem enviar
- * mensagens reais nem mexer em dado real do CRM.
+ * Painel "Testar" — roda o MOTOR DE VERDADE em modo seco.
  *
- * Como `executarFluxo` para de vez em quando esperando algo (uma resposta de
- * botão/lista, ou uma espera que não é "curta o suficiente" pra seguir
- * direto — ver `motor.ts`), o simulador implementa retomada manual: cada
- * "continuação" é uma nova chamada de `executarFluxo` a partir do nó de
- * destino escolhido, com os passos novos anexados ao rastro (trace) que já
- * vinha crescendo — nunca reinicia do zero.
+ * Antes, este painel tinha a própria lógica de percorrer o fluxo. Isso quer dizer que ele podia
+ * dizer "vai funcionar" sobre algo que na prática não funcionava — o pior defeito possível num
+ * simulador, porque a pessoa confia nele justamente pra não errar com cliente de verdade.
+ *
+ * Agora ele chama o servidor, que roda o mesmo motor das automações reais com duas trocas: as
+ * ações não enviam nada nem gravam nada, e o estado da execução fica na memória, não no banco. As
+ * decisões — condição, caminho do botão, espera — são exatamente as mesmas.
  */
 export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar: () => void }) {
   const [nome, setNome] = useState("Contato de teste");
@@ -51,123 +43,65 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
   const [campoNome, setCampoNome] = useState("");
   const [campoValor, setCampoValor] = useState("");
 
-  const [passos, setPassos] = useState<PassoExecucao[]>([]);
-  const [log, setLog] = useState<string[]>([]);
-  const [situacao, setSituacao] = useState<RegistroExecucao["situacao"] | null>(null);
-  const [erroFinal, setErroFinal] = useState<string | undefined>(undefined);
+  const [estado, setEstado] = useState<EstadoSimulacao | null>(null);
   const [erroSetup, setErroSetup] = useState<string | null>(null);
-  const [rodando, setRodando] = useState(false);
-
-  const contatoRef = useRef<ContextoExecucao["contato"] | null>(null);
+  const [ocupado, setOcupado] = useState(false);
 
   const noGatilho = fluxo.nodes.find((n) => n.category === "gatilho");
 
-  function criarLigacoes(): Ligacoes {
-    return {
-      moverEtapa: (funilId, etapaTitulo) => setLog((l) => [...l, `(simulado) moveria o card pra "${etapaTitulo}" no funil ${funilId}.`]),
-      salvarContato: (contatoNome, dados) => {
-        setLog((l) => [...l, `(simulado) salvaria em "${contatoNome}": ${JSON.stringify(dados)}.`]);
-        if (contatoRef.current && dados && typeof dados === "object") {
-          const d = dados as Record<string, unknown>;
-          if (Array.isArray(d.etiquetas)) contatoRef.current.etiquetas = d.etiquetas as string[];
-          Object.entries(d).forEach(([chave, valor]) => {
-            if (chave === "etiquetas" || !contatoRef.current) return;
-            if (typeof valor === "string") {
-              contatoRef.current.camposPersonalizados = { ...contatoRef.current.camposPersonalizados, [chave]: valor };
-            }
-          });
-        }
-      },
-      atribuirAtendente: (contatoNome, atendente) => {
-        setLog((l) => [...l, `(simulado) atribuiria "${atendente}" a "${contatoNome}".`]);
-        if (contatoRef.current) contatoRef.current.responsavel = atendente;
-      },
-      registrarMensagemSimulada: (info) => setLog((l) => [...l, `(simulado) mensagem [${info.canal}]: "${info.conteudo}"`]),
-      registrarWebhookSimulado: (info) => setLog((l) => [...l, `(simulado) webhook pra ${info.url}.`]),
-    };
-  }
-
-  function contextoAtual(): ContextoExecucao {
-    return { contato: contatoRef.current! };
-  }
-
-  function aplicarRegistro(registro: RegistroExecucao) {
-    setPassos((p) => [...p, ...registro.passos]);
-    setSituacao(registro.situacao);
-    setErroFinal(registro.erro);
+  async function chamar(corpo: Record<string, unknown>) {
+    setOcupado(true);
+    setErroSetup(null);
+    try {
+      const resposta = await fetch(`/api/automacoes-fluxos/${fluxo.id}/simular`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(corpo),
+      });
+      const dados = await resposta.json();
+      if (!resposta.ok) {
+        setErroSetup(dados?.erro ?? "Não foi possível rodar a simulação.");
+        return;
+      }
+      setEstado(dados as EstadoSimulacao);
+    } catch {
+      setErroSetup("Não foi possível falar com o servidor pra rodar a simulação.");
+    } finally {
+      setOcupado(false);
+    }
   }
 
   function iniciar() {
-    setErroSetup(null);
-    if (!noGatilho) {
-      setErroSetup("Esse fluxo não tem um bloco de gatilho — nada pra simular.");
-      return;
-    }
-    const primeiraAresta = fluxo.edges.find((e) => e.source === noGatilho.id);
-    if (!primeiraAresta) {
-      setErroSetup("O gatilho desse fluxo ainda não está conectado a nada.");
-      return;
-    }
-
-    contatoRef.current = {
-      nome: nome.trim() || "Contato de teste",
-      etiquetas: etiquetas.split(",").map((e) => e.trim()).filter(Boolean),
-      origem: origem.trim() || undefined,
-      camposPersonalizados: campoNome.trim() ? { [campoNome.trim()]: campoValor } : undefined,
-    };
-    setPassos([]);
-    setLog([]);
-    setSituacao(null);
-    setErroFinal(undefined);
-    setRodando(true);
-
-    const registro = executarFluxo(fluxo, primeiraAresta.target, contextoAtual(), criarLigacoes());
-    aplicarRegistro(registro);
+    // O fluxo é lido no servidor a partir do rascunho salvo. Se o editor tem alteração ainda não
+    // salva, o teste roda o que está gravado — dizer isso é melhor do que testar outra coisa.
+    void chamar({
+      contato: {
+        nome: nome.trim() || "Contato de teste",
+        etiquetas: etiquetas.split(",").map((e) => e.trim()).filter(Boolean),
+        origem: origem.trim() || undefined,
+        camposPersonalizados: campoNome.trim() ? { [campoNome.trim()]: campoValor } : undefined,
+      },
+    });
   }
 
-  /** Continua a execução a partir da aresta de saída do nó que parou, escolhendo o handle certo. */
-  function continuarDoNoParado(handle: string | undefined) {
-    if (!contatoRef.current || passos.length === 0) return;
-    const ultimoPasso = passos[passos.length - 1];
-    const saidas = fluxo.edges.filter((e) => e.source === ultimoPasso.nodeId);
-    const proxima = handle !== undefined ? saidas.find((e) => e.sourceHandle === handle) : saidas[0];
-    if (!proxima) {
-      setLog((l) => [...l, `(simulador) não há caminho de saída "${handle ?? "padrão"}" configurado nesse bloco.`]);
-      return;
-    }
-    const registro = executarFluxo(fluxo, proxima.target, contextoAtual(), criarLigacoes());
-    aplicarRegistro(registro);
+  function responder(resposta: string) {
+    if (estado) void chamar({ estado, resposta });
   }
 
-  function escolherResposta(opcaoId: string) {
-    if (contatoRef.current) contatoRef.current.ultimaRespostaEm = new Date().toISOString();
-    continuarDoNoParado(opcaoId);
-  }
-
-  function avancarTempo(comoTimeout: boolean) {
-    continuarDoNoParado(comoTimeout ? "timeout" : undefined);
-  }
-
-  function avancarTempoComOk() {
-    continuarDoNoParado("ok");
+  function seguirPor(saida?: string) {
+    if (estado) void chamar({ estado, saida });
   }
 
   function reiniciar() {
-    setPassos([]);
-    setLog([]);
-    setSituacao(null);
-    setErroFinal(undefined);
+    setEstado(null);
     setErroSetup(null);
-    setRodando(false);
-    contatoRef.current = null;
   }
 
-  const ultimoPasso = passos.length > 0 ? passos[passos.length - 1] : null;
-  const noParado = ultimoPasso && situacao === "aguardando" ? fluxo.nodes.find((n) => n.id === ultimoPasso.nodeId) : undefined;
-  const aguardandoBotoes = noParado && (noParado.type === "mensagem_botoes" || noParado.type === "mensagem_lista");
-  const aguardandoEspera = noParado && noParado.type === "aguardar";
-  const esperaData = aguardandoEspera ? (noParado!.data as AguardarData) : undefined;
-  const opcoesBotoes = aguardandoBotoes ? (noParado!.data as MensagemBotoesData).opcoes ?? [] : [];
+  const esperando = estado?.esperando ?? null;
+  const noParado = esperando ? fluxo.nodes.find((n) => n.id === esperando.noId) : undefined;
+  const aguardandoOpcoes = esperando && (esperando.tipo === "mensagem_botoes" || esperando.tipo === "mensagem_lista");
+  const aguardandoEspera = esperando && esperando.tipo === "aguardar";
+  const esperaData = aguardandoEspera && noParado ? (noParado.data as AguardarData) : undefined;
 
   return (
     <div className="flow-side-overlay" role="dialog" aria-label="Testar automação" onClick={onFechar}>
@@ -183,11 +117,13 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
             <IconFrasco width={13} height={13} aria-hidden="true" /> Modo de teste — nenhuma ação real será executada.
           </p>
           <p className="hint">
-            Simulação local — não envia mensagem real, não move card de verdade e não grava nada no CRM. Gatilho:{" "}
+            Roda o mesmo motor das automações de verdade, só que sem enviar mensagem, sem mexer no
+            contato e sem gravar nada. Testa o fluxo <strong>como está salvo</strong> — alteração
+            ainda não salva no editor não entra. Gatilho:{" "}
             <strong>{noGatilho ? noGatilho.titulo || noGatilho.type : "nenhum"}</strong>
           </p>
 
-          {!rodando ? (
+          {!estado ? (
             <>
               <div className="flow-form">
                 <div className="field">
@@ -211,8 +147,8 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                 </div>
               </div>
 
-              <button type="button" className="btn primary block mt14" onClick={iniciar}>
-                Rodar simulação
+              <button type="button" className="btn primary block mt14" onClick={iniciar} disabled={ocupado}>
+                {ocupado ? "Rodando…" : "Rodar simulação"}
               </button>
 
               {erroSetup ? <p className="flow-problema erro mt14">{erroSetup}</p> : null}
@@ -220,41 +156,40 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
           ) : (
             <div className="mt14">
               <p className="n">
-                Resultado: <strong>{situacao ? LABEL_SITUACAO[situacao] : "—"}</strong>
-                {erroFinal ? ` — ${erroFinal}` : ""}
+                Resultado: <strong>{LABEL_SITUACAO[estado.situacao] ?? estado.situacao}</strong>
+                {estado.erro ? ` — ${estado.erro}` : ""}
               </p>
 
               <ul className="flow-sim-passos">
-                {passos.map((passo, i) => (
-                  <li key={`${passo.nodeId}-${i}`}>
-                    <span aria-hidden="true" style={{ display: "inline-flex" }}>
-                      {(() => {
-                        const IconeStatus = ICONE_STATUS[passo.status];
-                        return <IconeStatus width={13} height={13} />;
-                      })()}
-                    </span>
-                    <div>
-                      <p className="n">{passo.label}</p>
-                      {passo.detalhe ? <p className="r">{passo.detalhe}</p> : null}
-                    </div>
-                  </li>
-                ))}
+                {estado.passos.map((passo, i) => {
+                  const IconeStatus = ICONE_STATUS[passo.resultado] ?? IconCheck;
+                  return (
+                    <li key={`${passo.noId}-${i}`}>
+                      <span aria-hidden="true" style={{ display: "inline-flex" }}>
+                        <IconeStatus width={13} height={13} />
+                      </span>
+                      <div>
+                        <p className="n">{passo.titulo || passo.noTipo}</p>
+                        {passo.detalhe ? <p className="r">{passo.detalhe}</p> : null}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
 
-              {aguardandoBotoes ? (
+              {aguardandoOpcoes ? (
                 <div className="flow-sim-continuar">
                   <p className="n">Qual resposta o contato dá?</p>
                   <div className="flow-sim-opcoes">
-                    {opcoesBotoes.map((op) => (
-                      <button key={op.id} type="button" className="btn ghost" onClick={() => escolherResposta(op.id)}>
+                    {(esperando?.opcoes ?? []).map((op) => (
+                      <button key={op.id} type="button" className="btn ghost" disabled={ocupado} onClick={() => responder(op.rotulo)}>
                         {op.rotulo || "Opção sem nome"}
                       </button>
                     ))}
-                    <button type="button" className="btn ghost" onClick={() => escolherResposta("outra_resposta")}>
+                    {/* Manda um texto que de propósito não bate com opção nenhuma: é assim que dá
+                        pra ver o que acontece quando a pessoa responde qualquer outra coisa. */}
+                    <button type="button" className="btn ghost" disabled={ocupado} onClick={() => responder("(qualquer outra coisa)")}>
                       Outra resposta
-                    </button>
-                    <button type="button" className="btn ghost" onClick={() => escolherResposta("nao_respondeu")}>
-                      Não respondeu
                     </button>
                   </div>
                 </div>
@@ -262,13 +197,13 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
 
               {aguardandoEspera ? (
                 <div className="flow-sim-continuar">
-                  <p className="n">Fluxo pausado em uma espera ({esperaData?.modo}).</p>
+                  <p className="n">Fluxo parado numa espera ({esperaData?.modo ?? "tempo"}).</p>
                   <div className="flow-sim-opcoes">
-                    <button type="button" className="btn ghost" onClick={() => (esperaData?.tempoMaximo ? avancarTempoComOk() : avancarTempo(false))}>
+                    <button type="button" className="btn ghost" disabled={ocupado} onClick={() => seguirPor(undefined)}>
                       ⏭ Avançar o tempo
                     </button>
                     {esperaData?.tempoMaximo ? (
-                      <button type="button" className="btn ghost" onClick={() => avancarTempo(true)}>
+                      <button type="button" className="btn ghost" disabled={ocupado} onClick={() => seguirPor("timeout")}>
                         Simular tempo esgotado
                       </button>
                     ) : null}
@@ -276,16 +211,18 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                 </div>
               ) : null}
 
-              {log.length > 0 ? (
+              {estado.intencoes.length > 0 ? (
                 <>
-                  <p className="n mt14">Log da simulação</p>
+                  <p className="n mt14">O que teria acontecido de verdade</p>
                   <ul className="flow-sim-log">
-                    {log.map((linha, i) => (
+                    {estado.intencoes.map((linha, i) => (
                       <li key={i}>{linha}</li>
                     ))}
                   </ul>
                 </>
               ) : null}
+
+              {erroSetup ? <p className="flow-problema erro mt14">{erroSetup}</p> : null}
 
               <button type="button" className="btn ghost block mt14" onClick={reiniciar}>
                 Reiniciar teste

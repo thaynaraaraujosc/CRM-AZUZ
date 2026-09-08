@@ -17,7 +17,6 @@ import {
 import { migrarAutomacaoParaFluxo, migrarRegraComentarioParaFluxo } from "./automation-flow/migracao";
 import { FLUXOS_DEMONSTRACAO_INICIAIS } from "./automation-flow/demo-fluxos";
 import { validarFluxo } from "./automation-flow/validacao";
-import { avaliarGatilho, executarFluxo, type ContextoExecucao, type EventoAutomacao, type Ligacoes } from "./automation-flow/motor";
 import type {
   ConfiguracoesFluxo,
   FluxoAutomacao,
@@ -65,11 +64,6 @@ type AutomationFlowContextValue = {
    * CRM (entrou na etapa, respondeu, etc) — testa todo fluxo publicado e ativo
    * contra o evento e, pra cada acerto, roda o motor de execução de verdade.
    */
-  dispararEvento: (
-    evento: EventoAutomacao,
-    contexto: ContextoExecucao,
-    ligacoes: Ligacoes,
-  ) => RegistroExecucao[];
 };
 
 const AutomationFlowContext = createContext<AutomationFlowContextValue | null>(null);
@@ -258,34 +252,6 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
     return execucoes.filter((e) => e.fluxoId === fluxoId);
   }
 
-  function dispararEvento(
-    evento: EventoAutomacao,
-    contexto: ContextoExecucao,
-    ligacoes: Ligacoes,
-  ): RegistroExecucao[] {
-    const gerados: RegistroExecucao[] = [];
-
-    for (const fluxo of fluxos) {
-      if (fluxo.status !== "publicado" || !fluxo.ativa) continue;
-      if (!avaliarGatilho(fluxo, evento)) continue;
-
-      const noGatilho = fluxo.nodes.find((n) => n.category === "gatilho");
-      if (!noGatilho) continue;
-
-      // Se o bloco logo depois do gatilho for uma condição, ela já foi checada
-      // dentro de `avaliarGatilho` — a execução de verdade começa a partir dela
-      // (ou do próprio próximo nó, se não houver condição).
-      const primeiraAresta = fluxo.edges.find((e) => e.source === noGatilho.id);
-      if (!primeiraAresta) continue;
-
-      const registro = executarFluxo(fluxo, primeiraAresta.target, contexto, ligacoes);
-      registrarExecucao(registro);
-      gerados.push(registro);
-    }
-
-    return gerados;
-  }
-
   return (
     <AutomationFlowContext.Provider
       value={{
@@ -302,7 +268,6 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
         execucoes,
         registrarExecucao,
         execucoesDoFluxo,
-        dispararEvento,
       }}
     >
       {children}

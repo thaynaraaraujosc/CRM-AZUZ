@@ -66,7 +66,6 @@ function FunilPageInner() {
     funilAtivoId,
     setFunilAtivoId,
     excluirFunil,
-    atribuirContatoAoFunil,
     moverNegocio,
     criarFunilPersistido,
     criarEtapaPersistida,
@@ -74,10 +73,9 @@ function FunilPageInner() {
     erroSincronizacao,
     limparErroSincronizacao,
   } = useFunis();
-  const { automacoesDaEtapa, automacoesDeEntradaAtivas, excluirAutomacoesDaEtapa, excluirAutomacoesDoFunil } =
-    useAutomacoes();
-  const { dispararEvento } = useAutomationFlows();
-  const { salvarDadosContato, atribuirAtendente, contatos } = useContatos();
+  const { excluirAutomacoesDaEtapa, excluirAutomacoesDoFunil } = useAutomacoes();
+  const { fluxos } = useAutomationFlows();
+  const { contatos } = useContatos();
   const { conversas } = useConversas();
   const { membros: equipe } = useEquipe();
   const motivosPerda = useMotivosPerda();
@@ -362,43 +360,9 @@ function FunilPageInner() {
       // volta ao que realmente está salvo.
       void moverNegocio({ cardId: cardMovido.id, etapaId: etapaDestino.id });
 
-      const disparadas = automacoesDeEntradaAtivas(funilAtivo.id, etapaDestino.id);
-      for (const automacao of disparadas) {
-        avisarAutomacao(
-          `Automação "${automacao.titulo}" disparada pra ${cardMovido.nome} (entrou em "${etapaDestino.titulo}")`,
-        );
-      }
-
-      // Motor de fluxos de verdade — roda em cima do mesmo evento, mas com
-      // ações reais (tags/etapa/responsável mutam funis/contatos via ligações,
-      // não só um toast). Não é recursivo: `moverEtapa`/`salvarContato` abaixo
-      // só chamam `atribuirContatoAoFunil`/`salvarDadosContato`, nunca `dispararEvento` de novo.
-      dispararEvento(
-        {
-          tipo: "lead_entrou_etapa",
-          funilId: funilAtivo.id,
-          etapaId: etapaDestino.id,
-          contatoNome: cardMovido.nome,
-        },
-        {
-          contato: {
-            nome: cardMovido.nome,
-            etiquetas: cardMovido.etiquetas ?? [],
-            origem: cardMovido.origem,
-            funilId: funilAtivo.id,
-            etapaTitulo: etapaDestino.titulo,
-          },
-        },
-        {
-          moverEtapa: (funilId, etapaTitulo, contato) =>
-            atribuirContatoAoFunil(funilId, etapaTitulo, contato as Omit<NegocioCard, "id"> & { id?: string }),
-          salvarContato: (nome, dados) => salvarDadosContato(nome, dados),
-          atribuirAtendente: (nome, atendente) => atribuirAtendente(nome, atendente),
-          registrarMensagemSimulada: (info) =>
-            avisarAutomacao(`Mensagem (${info.canal}) simulada: "${info.conteudo}"`),
-          registrarWebhookSimulado: (info) => avisarAutomacao(`Webhook simulado → ${info.url}`),
-        },
-      );
+      // O gatilho "entrou na etapa" NÃO roda mais aqui. Ele acontece no servidor, dentro de
+      // `/api/funis/mover` — assim a automação vale pra qualquer caminho que mova o card
+      // (importação, webhook, outra aba) e não só pra quem estava com esta tela aberta.
     }
   }
 
@@ -827,8 +791,12 @@ function FunilPageInner() {
               ? cardsComIndice.filter(({ card }) => passaNoFiltro(card))
               : cardsComIndice;
 
+            // Conta os fluxos REAIS ligados a esta etapa. Antes vinha de um catálogo em memória que
+            // nunca era gravado e nunca rodava — a etapa anunciava "2 automações" que não existiam.
             const automacoesEtapa = funilAtivo
-              ? automacoesDaEtapa(funilAtivo.id, coluna.id)
+              ? fluxos.filter(
+                  (f) => f.funilId === funilAtivo.id && f.etapaId === coluna.id && f.status === "publicado" && !f.arquivada,
+                )
               : [];
 
             return (

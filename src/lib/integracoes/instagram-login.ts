@@ -134,6 +134,42 @@ export async function enviarDirectInstagram(
 }
 
 /**
+ * Manda um direct com respostas rápidas — os "botões" do Instagram.
+ *
+ * Diferente do WhatsApp, aqui não existe botão que fica na mensagem: a resposta rápida some depois
+ * que a pessoa toca, e o toque volta como uma mensagem de texto com o título escolhido (o `payload`
+ * vem junto no webhook, em `quick_reply.payload`). Teto da Meta: 13 opções, 20 caracteres cada —
+ * quem chama já manda encurtado.
+ *
+ * Lista vazia envia o texto puro, pra este caminho servir também de fallback sem duplicar código.
+ */
+export async function enviarDirectComRespostasRapidas(
+  accessToken: string,
+  destinatarioId: string,
+  texto: string,
+  opcoes: { id: string; titulo: string }[],
+): Promise<string | undefined> {
+  const resposta = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/messages`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      recipient: { id: destinatarioId },
+      message: {
+        text: texto,
+        ...(opcoes.length
+          ? { quick_replies: opcoes.map((o) => ({ content_type: "text", title: o.titulo, payload: o.id })) }
+          : {}),
+      },
+    }),
+  });
+  const dados = (await resposta.json()) as { message_id?: string } & ErroGraph;
+  if (!resposta.ok) {
+    throw new Error(dados.error_message ?? dados.error?.message ?? `Falha ao enviar (HTTP ${resposta.status})`);
+  }
+  return dados.message_id;
+}
+
+/**
  * Baixa a foto de perfil e devolve embutida (data URL).
  *
  * O link que o Instagram entrega é de CDN e expira em poucas horas — guardar só a URL deixaria a

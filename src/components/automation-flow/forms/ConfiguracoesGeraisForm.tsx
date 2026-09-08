@@ -204,6 +204,26 @@ export function ConfiguracoesGeraisForm({
           <span className="knob" />
         </button>
       </div>
+
+      <div className="toggle-row">
+        <span className="tl">Esperas de verdade (motor novo)</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={!!cfg.motorNovo}
+          aria-label="Esperas de verdade (motor novo)"
+          className={`toggle${cfg.motorNovo ? " on" : ""}`}
+          onClick={() => onChangeConfiguracoes({ motorNovo: !cfg.motorNovo })}
+        >
+          <span className="knob" />
+        </button>
+      </div>
+      <p className="hint">
+        Ligado, este fluxo passa a guardar onde parou: um bloco de espera continua depois de horas
+        ou dias, e a resposta do contato retoma a conversa de onde ela estava. Desligado, ele roda
+        do jeito antigo — tudo de uma vez, e a espera encerra o fluxo. Só vale para o fluxo
+        publicado: o que roda é a última versão publicada, não o rascunho aberto aqui.
+      </p>
     </div>
   );
 }

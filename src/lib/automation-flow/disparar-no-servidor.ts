@@ -3,6 +3,7 @@ import { avaliarGatilho, executarFluxo, type EventoAutomacao, type Ligacoes } fr
 import { anotarNaLinhaDoTempo, marcarExecucaoDeAutomacao } from "@/lib/integracoes/instagram-eventos";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
+import { continuarComResposta, iniciarFluxoComEstado, motorNovoAtivo } from "@/lib/automacoes/iniciar";
 
 /**
  * Dispara as automações quando chega uma mensagem — do lado do SERVIDOR, a partir do webhook.
@@ -21,12 +22,15 @@ export async function dispararAutomacoesDeMensagemRecebida(params: {
   /** "WhatsApp" | "Instagram" — o rótulo do canal da conversa, como fica em `Conversa.canal`. */
   canal: string;
   textoRecebido: string;
+  /** Id da opção escolhida, quando a mensagem foi um clique em botão/lista/resposta rápida. */
+  idDaOpcao?: string;
 }): Promise<void> {
   await dispararAutomacoes({
     workspaceId: params.workspaceId,
     contatoNome: params.contatoNome,
     canal: params.canal,
     textoRecebido: params.textoRecebido,
+    idDaOpcao: params.idDaOpcao,
     tipoGatilho: "mensagem_recebida",
   });
 }
@@ -56,18 +60,68 @@ export async function dispararAutomacoesDeEventoInstagram(params: {
   await dispararAutomacoes({ ...params, canal: "Instagram" });
 }
 
+/**
+ * Dispara as automações de um evento do CRM — entrar numa etapa do funil, virar lead novo.
+ *
+ * Estes gatilhos rodavam no NAVEGADOR: quem arrastasse o card via um aviso na tela e nada mais.
+ * Duas consequências ruins — a automação não acontecia quando o card se movia por qualquer outro
+ * caminho (webhook, importação, outra aba), e quando acontecia era só um toast, não a mensagem.
+ */
+export async function dispararAutomacoesDoCrm(params: {
+  workspaceId: string;
+  contatoNome: string;
+  tipoGatilho: string;
+  funilId?: string;
+  etapaId?: string;
+  etapaTitulo?: string;
+  /** Trava contra disparo repetido: "etapa:<cardId>:<etapaId>". */
+  chaveEvento?: string;
+}): Promise<void> {
+  await dispararAutomacoes({
+    workspaceId: params.workspaceId,
+    contatoNome: params.contatoNome,
+    canal: "CRM",
+    textoRecebido: "",
+    tipoGatilho: params.tipoGatilho,
+    funilId: params.funilId,
+    etapaId: params.etapaId,
+    etapaTitulo: params.etapaTitulo,
+    chaveEvento: params.chaveEvento,
+  });
+}
+
 async function dispararAutomacoes(params: {
   workspaceId: string;
   contatoNome: string;
   canal: string;
   textoRecebido: string;
   tipoGatilho: string;
+  idDaOpcao?: string;
+  funilId?: string;
+  etapaId?: string;
+  etapaTitulo?: string;
   publicacaoId?: string;
   chaveEvento?: string;
   instagramUserId?: string;
   responderComentario?: (texto: string) => Promise<void>;
 }): Promise<void> {
   const { workspaceId, contatoNome, canal, textoRecebido } = params;
+
+  // Antes de avaliar gatilho nenhum: alguma automação está ESPERANDO a resposta desta pessoa?
+  // Se está, esta mensagem é a continuação dela — não o começo de outra. Sem esta checagem,
+  // responder "1" a uma pergunta receberia o fluxo inteiro de novo por cima.
+  if (params.tipoGatilho === "mensagem_recebida") {
+    const continuou = await continuarComResposta({
+      workspaceId,
+      contatoNome,
+      texto: textoRecebido,
+      idDaOpcao: params.idDaOpcao,
+    }).catch((erro) => {
+      console.error("[automacao] falha ao continuar execução em espera:", erro);
+      return false;
+    });
+    if (continuou) return;
+  }
 
   const linhas = await prisma.fluxoAutomacao.findMany({
     where: { workspaceId, status: "publicado", ativa: true, arquivada: false },
@@ -87,6 +141,8 @@ async function dispararAutomacoes(params: {
     // Disponíveis pras condições do fluxo ("mensagem contém…", "canal é…").
     canal: canalDoGatilho(canal),
     mensagem: textoRecebido,
+    ...(params.funilId ? { funilId: params.funilId } : {}),
+    ...(params.etapaTitulo ? { etapaTitulo: params.etapaTitulo } : {}),
   };
 
   for (const linha of linhas) {
@@ -97,6 +153,8 @@ async function dispararAutomacoes(params: {
       contatoNome,
       canal: canalDoGatilho(canal),
       mensagem: textoRecebido,
+      ...(params.funilId ? { funilId: params.funilId } : {}),
+      ...(params.etapaId ? { etapaId: params.etapaId } : {}),
       ...(params.publicacaoId ? { publicacaoId: params.publicacaoId } : {}),
     };
     if (!avaliarGatilho(fluxo, evento)) continue;
@@ -105,7 +163,7 @@ async function dispararAutomacoes(params: {
     // Instagram só porque chegou mensagem de lá.
     const noGatilho = fluxo.nodes.find((n) => n.category === "gatilho");
     const canalDoFluxo = (noGatilho?.data as { canal?: string } | undefined)?.canal;
-    if (canalDoFluxo && canalDoFluxo !== canalDoGatilho(canal)) continue;
+    if (canal !== "CRM" && canalDoFluxo && canalDoFluxo !== canalDoGatilho(canal)) continue;
 
     const primeiraAresta = fluxo.edges.find((e) => e.source === noGatilho?.id);
     if (!primeiraAresta) continue;
@@ -120,6 +178,42 @@ async function dispararAutomacoes(params: {
         instagramUserId: params.instagramUserId,
       });
       if (!primeiraVez) continue;
+    }
+
+    // Fluxos com a chave ligada rodam no motor com estado: ele grava a posição a cada bloco e
+    // sabe esperar (por tempo ou por resposta), que é justamente o que o motor abaixo não sabe.
+    // Sem a chave, nada muda — o caminho antigo segue igual.
+    if (motorNovoAtivo(linha.configuracoes)) {
+      const fim = await iniciarFluxoComEstado({
+        workspaceId,
+        fluxoId: linha.id,
+        gatilho: params.tipoGatilho,
+        configuracoes: linha.configuracoes as never,
+        contatoNome,
+        contatoId: contatoNoBanco?.id ?? null,
+        contato,
+        responderComentario: params.responderComentario,
+      }).catch((erro) => {
+        console.error(`[automacao] fluxo ${linha.id} falhou no motor com estado:`, erro);
+        return null;
+      });
+      // `null` = fluxo sem versão publicada ou sem nada ligado no gatilho. Cair no motor antigo
+      // aqui seria rodar o RASCUNHO — melhor não executar e deixar isso visível.
+      if (!fim) {
+        console.warn(`[automacao] fluxo ${linha.id} tem o motor novo ligado mas nenhuma versão publicada pra rodar`);
+        continue;
+      }
+      await anotarNaLinhaDoTempo({
+        workspaceId,
+        contatoNome,
+        canal,
+        tipo: "automacao_iniciou",
+        descricao: `automação "${linha.nome}" começou`,
+        dados: { fluxoId: linha.id },
+      });
+      await prisma.fluxoAutomacao.update({ where: { id: linha.id }, data: { execucoes: { increment: 1 } } }).catch(() => {});
+      console.log(`[automacao] fluxo "${linha.nome}" no motor com estado`, fim);
+      continue;
     }
 
     const mensagensParaEnviar: { canal: string; conteudo: string }[] = [];

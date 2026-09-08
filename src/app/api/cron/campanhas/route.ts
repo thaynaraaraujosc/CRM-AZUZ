@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { rodarRodadaDeCampanhas } from "@/lib/campanhas/worker";
+import { retomarEsperasVencidas } from "@/lib/automacoes/iniciar";
 
 /**
  * Batida do relógio das campanhas.
@@ -10,6 +11,10 @@ import { rodarRodadaDeCampanhas } from "@/lib/campanhas/worker";
  *
  * `maxDuration` acompanha a janela que o worker usa: sem isso a função seria cortada no meio de um
  * envio, e o destinatário ficaria preso em "enviando" até a próxima rodada.
+ *
+ * A mesma batida retoma as automações que estavam esperando o relógio ("aguardar 2 horas"). É de
+ * propósito que não seja um cron separado: cada cron é uma função a mais rodando a cada minuto, e
+ * as duas tarefas cabem folgadas na mesma chamada.
  */
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -29,5 +34,11 @@ export async function GET(request: Request) {
   }
 
   const resultado = await rodarRodadaDeCampanhas();
-  return NextResponse.json({ ok: true, ...resultado });
+  // Uma falha nas automações não pode esconder o resultado das campanhas (nem o contrário): as
+  // duas tarefas são independentes e o relatório mostra as duas.
+  const automacoes = await retomarEsperasVencidas().catch((erro) => {
+    console.error("[cron] falha ao retomar automações:", erro);
+    return { retomadas: 0, erros: 1 };
+  });
+  return NextResponse.json({ ok: true, ...resultado, automacoes });
 }

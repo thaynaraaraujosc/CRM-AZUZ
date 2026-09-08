@@ -418,6 +418,10 @@ export async function POST(request: Request) {
         // continua o fluxo.
         const textoDoBotao =
           mensagem.button?.text ?? mensagem.interactive?.button_reply?.title ?? mensagem.interactive?.list_reply?.title;
+        // O id do botão é melhor que o texto pra automação: dois botões podem começar igual, e a
+        // Meta corta o título em 20 caracteres no envio.
+        const idDaOpcao =
+          mensagem.interactive?.button_reply?.id ?? mensagem.interactive?.list_reply?.id ?? mensagem.button?.payload;
         const texto = mensagem.text?.body ?? textoDoBotao ?? midia?.caption ?? RÓTULO_POR_TIPO[mensagem.type] ?? "[Mensagem não suportada]";
         if (midia && !temMidiaBaixada) {
           console.error(`Falha ao baixar mídia (${mensagem.type}) da mensagem ${mensagem.id} — caiu no rótulo em texto.`);
@@ -465,6 +469,7 @@ export async function POST(request: Request) {
           contatoNome: chaveContato,
           canal: "WhatsApp",
           textoRecebido: texto,
+          idDaOpcao,
         }).catch((erro) => console.error("[webhook whatsapp] falha ao disparar automações:", erro));
       }
     }

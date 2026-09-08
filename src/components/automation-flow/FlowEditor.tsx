@@ -37,6 +37,7 @@ import type {
 
 import { BlockLibrary, FLOW_DND_MIME } from "./BlockLibrary";
 import { ConfigPanel } from "./ConfigPanel";
+import { HistoricoExecucoes } from "./HistoricoExecucoes";
 import { HistoricoVersoes } from "./HistoricoVersoes";
 import { Simulador } from "./Simulador";
 import { Toolbar } from "./Toolbar";
@@ -124,6 +125,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [salvando, setSalvando] = useState(false);
   const [libAberta, setLibAberta] = useState(true);
   const [simuladorAberto, setSimuladorAberto] = useState(false);
+  const [execucoesAbertas, setExecucoesAbertas] = useState(false);
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [menuContexto, setMenuContexto] = useState<{ x: number; y: number; nodeId: string } | null>(null);
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
@@ -637,6 +639,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         onSalvarRascunho={salvarRascunhoAgora}
         onPublicar={publicar}
         onAbrirHistorico={() => setHistoricoAberto(true)}
+        onAbrirExecucoes={() => setExecucoesAbertas(true)}
         onOrganizarAutomaticamente={organizarAutomaticamente}
         entenderFluxoAtivo={entenderFluxoAtivo}
         onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
@@ -930,6 +933,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       </div>
 
       {simuladorAberto && fluxoParaSimular ? <Simulador fluxo={fluxoParaSimular} onFechar={() => setSimuladorAberto(false)} /> : null}
+      {execucoesAbertas ? <HistoricoExecucoes fluxoId={fluxoId} onFechar={() => setExecucoesAbertas(false)} /> : null}
       {historicoAberto ? (
         <HistoricoVersoes
           versoes={fluxo.historicoVersoes}
