@@ -189,6 +189,12 @@ async function dispararAutomacoes(params: {
         fluxoId: linha.id,
         gatilho: params.tipoGatilho,
         configuracoes: linha.configuracoes as never,
+        publicarSeFaltar: {
+          versao: Math.max(1, Number(linha.versaoAtual ?? 1)),
+          nodes: fluxo.nodes,
+          edges: fluxo.edges,
+          configuracoes: fluxo.configuracoes,
+        },
         contatoNome,
         contatoId: contatoNoBanco?.id ?? null,
         contato,

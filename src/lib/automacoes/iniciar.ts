@@ -16,7 +16,7 @@ import {
 import { comportamentoForaDaJanela, dentroDaJanela, proximaAbertura } from "./janela";
 import { podeIniciar } from "./limites";
 import { proximaAresta, rodarExecucao, saidaDaResposta, type FimDaRodada } from "./motor-estado";
-import { versaoAtualPublicada, versaoPorId, type VersaoPublicada } from "./versoes";
+import { publicarVersao, versaoAtualPublicada, versaoPorId, type VersaoPublicada } from "./versoes";
 
 /**
  * A porta de entrada do motor com estado: começar uma execução, continuar uma que esperava
@@ -27,9 +27,18 @@ import { versaoAtualPublicada, versaoPorId, type VersaoPublicada } from "./verso
  * e "os fluxos que já funcionavam pararam de funcionar".
  */
 
-/** A chave por fluxo. Desligada (o normal, hoje) o fluxo segue no motor antigo. */
+/**
+ * A chave por fluxo — agora LIGADA por padrão.
+ *
+ * Ela nasceu desligada pra não mexer no que já rodava. O primeiro teste real mostrou que isso
+ * estava errado: com o motor antigo, um bloco de pergunta manda só o texto e engole as opções, e
+ * qualquer espera descarta a execução. Ou seja, o padrão entregava a versão quebrada, e a que
+ * funciona ficava atrás de um botão escondido no fim de um painel.
+ *
+ * Continua sendo uma chave: `motorNovo: false` volta pro motor antigo, explicitamente.
+ */
 export function motorNovoAtivo(configuracoes: unknown): boolean {
-  return (configuracoes as ConfiguracoesFluxo | null | undefined)?.motorNovo === true;
+  return (configuracoes as ConfiguracoesFluxo | null | undefined)?.motorNovo !== false;
 }
 
 /** O bloco de gatilho e a primeira aresta que sai dele — onde a execução realmente começa. */
@@ -52,6 +61,8 @@ export async function iniciarFluxoComEstado(params: {
   gatilho: string;
   /** Configurações do fluxo — dizem se ele pode rodar de novo pra este contato. */
   configuracoes?: ConfiguracoesFluxo | null;
+  /** Estado atual do fluxo, pra publicar uma versão quando ele ainda não tem nenhuma. */
+  publicarSeFaltar?: { versao: number; nodes: FlowNode[]; edges: FlowEdge[]; configuracoes: ConfiguracoesFluxo };
   contatoNome: string;
   contatoId?: string | null;
   /** O que as condições do fluxo enxergam: campos do contato, canal, mensagem recebida. */
@@ -59,7 +70,22 @@ export async function iniciarFluxoComEstado(params: {
   /** Só existe quando o disparo veio de um comentário do Instagram. */
   responderComentario?: (texto: string) => Promise<void>;
 }): Promise<FimDaRodada | null> {
-  const versao = await versaoAtualPublicada(params.workspaceId, params.fluxoId);
+  let versao = await versaoAtualPublicada(params.workspaceId, params.fluxoId);
+
+  // Fluxo publicado antes de as versões existirem não tem linha em VersaoAutomacao. Em vez de
+  // simplesmente não rodar — que é como um fluxo que funcionava ontem pararia hoje —, publica uma
+  // versão a partir do estado atual e segue. É o mesmo que o script de migração faz.
+  if (!versao && params.publicarSeFaltar) {
+    versao = await publicarVersao({
+      workspaceId: params.workspaceId,
+      fluxoId: params.fluxoId,
+      versao: params.publicarSeFaltar.versao,
+      nodes: params.publicarSeFaltar.nodes,
+      edges: params.publicarSeFaltar.edges,
+      configuracoes: params.publicarSeFaltar.configuracoes,
+      publicadoPor: "migração automática",
+    });
+  }
   if (!versao) return null;
 
   const inicio = primeiroNoDepoisDoGatilho(versao);

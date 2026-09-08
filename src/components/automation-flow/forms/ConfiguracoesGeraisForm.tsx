@@ -231,23 +231,24 @@ export function ConfiguracoesGeraisForm({
       </div>
 
       <div className="toggle-row">
-        <span className="tl">Esperas de verdade (motor novo)</span>
+        <span className="tl">Esperas e botões de verdade</span>
         <button
           type="button"
           role="switch"
-          aria-checked={!!cfg.motorNovo}
-          aria-label="Esperas de verdade (motor novo)"
-          className={`toggle${cfg.motorNovo ? " on" : ""}`}
-          onClick={() => onChangeConfiguracoes({ motorNovo: !cfg.motorNovo })}
+          aria-checked={cfg.motorNovo !== false}
+          aria-label="Esperas e botões de verdade"
+          className={`toggle${cfg.motorNovo !== false ? " on" : ""}`}
+          onClick={() => onChangeConfiguracoes({ motorNovo: cfg.motorNovo === false })}
         >
           <span className="knob" />
         </button>
       </div>
       <p className="hint">
-        Ligado, este fluxo passa a guardar onde parou: um bloco de espera continua depois de horas
-        ou dias, e a resposta do contato retoma a conversa de onde ela estava. Desligado, ele roda
-        do jeito antigo — tudo de uma vez, e a espera encerra o fluxo. Só vale para o fluxo
-        publicado: o que roda é a última versão publicada, não o rascunho aberto aqui.
+        Ligado (o normal), o fluxo guarda onde parou: a espera continua depois de horas ou dias, a
+        resposta do contato retoma a conversa, e a pergunta sai com as opções. Desligado, ele roda
+        do jeito antigo — a pergunta vai só com o texto, sem as opções, e qualquer espera encerra o
+        fluxo. O que roda é sempre a <strong>última versão publicada</strong>, não o rascunho aberto
+        aqui: depois de mexer, publique de novo.
       </p>
     </div>
   );
