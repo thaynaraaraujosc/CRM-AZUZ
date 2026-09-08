@@ -38,10 +38,15 @@
      identidade azul do CRM sumia justamente onde a pessoa mais olha.
      É um token PRÓPRIO, e não `--ink` repintado, porque `--ink` também é a cor do texto: mudar ele
      deixaria toda palavra da tela azul-marinho, que não é a intenção.
-     Branco sobre #0b1533 fica em 18:1 — muito acima do mínimo de 4,5:1. */
-  --acao: #0b1533;
-  --acao-hover: #16224a;
-  --acao-active: #060c1f;
+
+     A primeira tentativa usou #0b1533 — o marinho que já vive nos documentos e nos e-mails. No
+     texto ele funciona; num botão preenchido, não: com 11 de vermelho contra 51 de azul, naquela
+     escuridão o olho não separa de preto. Cor de texto e cor de fundo têm exigências diferentes, e
+     um marinho de fundo precisa ser claro o bastante pra ALGUÉM VER que é azul.
+     Branco sobre #1a3d8f fica em 9,9:1 — muito acima do mínimo de 4,5:1. */
+  --acao: #1a3d8f;
+  --acao-hover: #234ba8;
+  --acao-active: #142f70;
   --acao-texto: #ffffff;
 
   /* Bordas organizam, não são protagonistas — mas precisam ser vistas. A 8% ela sumia sobre branco
@@ -276,13 +281,12 @@
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
   --shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.42);
 
-  /* O marinho do tema claro não serve aqui: #0b1533 sobre um fundo #08080a é quase o mesmo tom, e
-     o botão principal desapareceria. Este é o mesmo azul, clareado até se destacar da superfície
-     mantendo texto branco em 10:1. A cor continua sendo marinho, não o azul vivo do accent —
-     senão o botão competiria com link e item selecionado, que já usam --blue. */
-  --acao: #1c3f7a;
-  --acao-hover: #25539e;
-  --acao-active: #16325f;
+  /* Um pouco mais claro que no tema claro: sobre um fundo #08080a, o mesmo tom perderia presença.
+     Continua sendo marinho, não o azul vivo do accent — senão o botão competiria com link e item
+     selecionado, que já usam --blue. */
+  --acao: #2a55b0;
+  --acao-hover: #3a68c9;
+  --acao-active: #1f4290;
   --acao-texto: #ffffff;
 }
 
