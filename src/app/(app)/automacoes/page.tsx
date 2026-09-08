@@ -972,8 +972,8 @@ function AutomacoesPageInner() {
           </div>
         ) : null}
 
-        <div className="card">
-          {fluxosFiltrados.length === 0 ? (
+        {fluxosFiltrados.length === 0 ? (
+          <div className="card">
             <p className="hint" style={{ padding: 17 }}>
               {busca.trim()
                 ? "Nenhuma automação encontrada para essa busca."
@@ -981,8 +981,10 @@ function AutomacoesPageInner() {
                 ? "Nenhuma automação encontrada com esses filtros."
                 : "Nenhuma automação encontrada."}
             </p>
-          ) : (
-            fluxosFiltrados.map((fluxo) => {
+          </div>
+        ) : (
+          <div className="lista-cartoes azul">
+            {fluxosFiltrados.map((fluxo) => {
               const pill = statusPill(fluxo);
               const execs = execucoesDoFluxo(fluxo.id);
               const funilDoFluxo = funis.find((f) => f.id === fluxo.funilId);
@@ -1203,9 +1205,9 @@ function AutomacoesPageInner() {
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
 
       {exclusaoAlvo ? (
