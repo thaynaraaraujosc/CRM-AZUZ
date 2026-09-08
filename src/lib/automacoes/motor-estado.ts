@@ -11,6 +11,7 @@ import type {
   ChamarWebhookData,
   CondicaoGrupoData,
   CriarTarefaData,
+  DecisaoMultiplaData,
   EncaminharHumanoData,
   FlowEdge,
   FlowNode,
@@ -341,6 +342,24 @@ async function executarNo(params: {
       return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
     }
 
+    case "decisao_multipla": {
+      const data = no.data as DecisaoMultiplaData;
+      const caminhos = (data.caminhos ?? []).filter((c) => c.valor?.trim());
+      const valor = String(valorParaDecisao(data, contato) ?? "").trim().toLowerCase();
+      const operador = data.operador ?? "igual";
+
+      // Primeiro que bate ganha, na ordem em que a pessoa escreveu. Ordem importa quando os valores
+      // se sobrepõem ("valor" e "valores"), e a ordem da tela é a que ela consegue prever.
+      const escolhido = caminhos.find((c) => {
+        const alvoValor = c.valor.trim().toLowerCase();
+        return operador === "contem" ? valor.includes(alvoValor) : valor === alvoValor;
+      });
+
+      return escolhido
+        ? { tipo: "seguir", saida: escolhido.id, detalhe: `Seguiu por "${escolhido.rotulo || escolhido.valor}".` }
+        : { tipo: "seguir", saida: "senao", detalhe: `"${valor || "(vazio)"}" não bate com nenhum caminho — seguiu por "Qualquer outra".` };
+    }
+
     case "ia_responder": {
       const data = no.data as IaResponderData;
       const r = await acoes.responderComIA({
@@ -537,6 +556,24 @@ function valorDoContato(contato: Record<string, unknown>, chave: string): string
   const personalizados = contato.camposPersonalizados as Record<string, string> | undefined;
   const doCampo = personalizados?.[chave];
   return typeof doCampo === "string" ? doCampo : null;
+}
+
+/**
+ * O valor que a decisão compara.
+ *
+ * `mensagem` é o caso comum e vem do contexto (o motor grava ali a última resposta). Campo
+ * personalizado é lido do mapa próprio; o resto sai direto do contato.
+ */
+function valorParaDecisao(data: DecisaoMultiplaData, contato: Record<string, unknown>): unknown {
+  if (data.campo === "campo_personalizado") {
+    const personalizados = contato.camposPersonalizados as Record<string, string> | undefined;
+    return personalizados?.[data.campoPersonalizadoNome ?? ""];
+  }
+  if (data.campo === "etiqueta") {
+    const etiquetas = contato.etiquetas;
+    return Array.isArray(etiquetas) ? etiquetas.join(",") : "";
+  }
+  return contato[data.campo];
 }
 
 const TIPO_DE_MIDIA: Record<string, "imagem" | "video" | "audio" | "documento"> = {

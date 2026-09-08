@@ -8994,6 +8994,26 @@ button.camp-row:hover {
   cursor: pointer;
 }
 
+/* Uma linha dizendo pra que serve o grupo. Nome de categoria sozinho não explica: "Decisões" e
+   "Aguardar" só ficam óbvios depois que a pessoa já sabe montar automação — e ela está aqui
+   justamente porque ainda não sabe. */
+/* Valor + rótulo + remover, numa linha só. Duas linhas empilhadas por caminho fariam uma decisão
+   de quatro saídas ocupar a tela inteira do painel. */
+.flow-decisao-linha {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr auto;
+  gap: 6px;
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+.flow-lib-cat-ajuda {
+  margin: 0 0 var(--space-2);
+  padding: 0 var(--space-3);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
 .flow-lib-cat-n {
   color: var(--text-faint);
   font-weight: 500;

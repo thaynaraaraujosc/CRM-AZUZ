@@ -14,6 +14,7 @@ import type {
   DistribuirDisponibilidadeData,
   EncaminharEquipeData,
   EncaminharHumanoData,
+  DecisaoMultiplaData,
   IaClassificarData,
   FlowNode,
   FluxoAutomacao,
@@ -39,6 +40,7 @@ import { CriarTarefaForm } from "./forms/CriarTarefaForm";
 import { DistribuirDisponibilidadeForm } from "./forms/DistribuirDisponibilidadeForm";
 import { EncaminharEquipeForm } from "./forms/EncaminharEquipeForm";
 import { EncaminharHumanoForm } from "./forms/EncaminharHumanoForm";
+import { DecisaoMultiplaForm } from "./forms/DecisaoMultiplaForm";
 import { IaClassificarForm } from "./forms/IaClassificarForm";
 import { GenericForm } from "./forms/GenericForm";
 import { MensagemContatoForm } from "./forms/MensagemContatoForm";
@@ -103,6 +105,15 @@ function FormularioDoNode({
   }
   if (node.type === "mensagem_modelo_whatsapp") {
     return <MensagemModeloForm data={node.data as MensagemModeloWhatsappData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "decisao_multipla") {
+    return (
+      <DecisaoMultiplaForm
+        data={node.data as DecisaoMultiplaData}
+        onChange={(d) => onUpdateNodeData(node.id, d)}
+        onRemoverCaminho={(caminhoId) => onRemoverOpcaoAresta(node.id, caminhoId)}
+      />
+    );
   }
   if (node.type === "ia_classificar") {
     return (

@@ -2,16 +2,16 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { BLOCOS_DISPONIVEIS, CATEGORIAS_BLOCOS, buscarBlocos, type BlocoDefinicao } from "@/lib/automation-flow/blocos";
+import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA, buscarBlocos, type BlocoDefinicao } from "@/lib/automation-flow/blocos";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
 
 /** Tipo MIME custom carregado no drag — o que a área do canvas lê no `onDrop`. */
 export const FLOW_DND_MIME = "application/x-flow-node-type";
 
 /**
- * "Mais usados" — mockado por enquanto (não há execuções reais registradas por bloco pra calcular
- * isso de verdade ainda). Reduz bastante a necessidade de procurar os itens mais comuns dentro das
- * 8 categorias.
+ * "Mais usados" — a lista dos seis blocos que aparecem em quase toda automação comercial. É fixa,
+ * não calculada: não há execução por bloco registrada em quantidade suficiente pra ranquear, e uma
+ * lista que muda de ordem sozinha faria a pessoa procurar de novo a cada visita.
  */
 const MAIS_USADOS: FlowNodeType[] = [
   "mensagem_texto",
@@ -84,7 +84,7 @@ export function BlockLibrary({
           ▶
         </button>
         <div className="flow-lib-recolhida-cats">
-          {CATEGORIAS_BLOCOS.map((cat) => (
+          {GRUPOS_BIBLIOTECA.map((cat) => (
             <button
               type="button"
               key={cat.id}
@@ -106,7 +106,7 @@ export function BlockLibrary({
                 });
               }}
             >
-              <span className={`flow-cat-dot flow-cat-${cat.id}`} aria-hidden="true" />
+              <span className={`flow-cat-dot flow-cat-${cat.cor}`} aria-hidden="true" />
             </button>
           ))}
         </div>
@@ -141,18 +141,26 @@ export function BlockLibrary({
         ) : (
           <>
             <BlocoSecao titulo="Mais usados" blocos={maisUsados} onAdicionarBloco={onAdicionarBloco} />
-            {CATEGORIAS_BLOCOS.map((cat) => {
-              const blocos = disponiveis.filter((b) => b.categoria === cat.id);
-              const fechada = categoriasFechadas.has(cat.id);
+            {GRUPOS_BIBLIOTECA.map((grupo) => {
+              const blocos = disponiveis.filter((b) => b.grupo === grupo.id);
+              // Grupo vazio não aparece. "Follow-up" só ganha bloco quando o gerador entra; até lá,
+              // uma seção vazia só ocuparia espaço e faria a pessoa achar que faltou carregar algo.
+              if (!blocos.length) return null;
+              const fechada = categoriasFechadas.has(grupo.id);
               return (
-                <div className="flow-lib-cat" key={cat.id} data-flow-lib-cat={cat.id}>
-                  <button type="button" className="flow-lib-cat-h" onClick={() => alternarCategoria(cat.id)} aria-expanded={!fechada}>
-                    <span className={`flow-cat-dot flow-cat-${cat.id}`} aria-hidden="true" />
-                    <span>{cat.label}</span>
+                <div className="flow-lib-cat" key={grupo.id} data-flow-lib-cat={grupo.id}>
+                  <button type="button" className="flow-lib-cat-h" onClick={() => alternarCategoria(grupo.id)} aria-expanded={!fechada}>
+                    <span className={`flow-cat-dot flow-cat-${grupo.cor}`} aria-hidden="true" />
+                    <span>{grupo.label}</span>
                     <span className="flow-lib-cat-n">{blocos.length}</span>
                     <span className="flow-lib-cat-arrow">{fechada ? "▸" : "▾"}</span>
                   </button>
-                  {fechada ? null : <BlocoSecao blocos={blocos} onAdicionarBloco={onAdicionarBloco} />}
+                  {fechada ? null : (
+                    <>
+                      <p className="flow-lib-cat-ajuda">{grupo.ajuda}</p>
+                      <BlocoSecao blocos={blocos} onAdicionarBloco={onAdicionarBloco} />
+                    </>
+                  )}
                 </div>
               );
             })}
