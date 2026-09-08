@@ -336,9 +336,13 @@ body {
 body {
   margin: 0;
   background: var(--canvas);
-  /* Texto solto direto sobre o chão (raro — quase tudo vive dentro de um painel) acompanha o
-     fundo, senão ficaria marinho sobre marinho enquanto o teste durar. */
-  color: var(--acao-texto);
+  /* A tinta do corpo continua sendo a estrutural, MESMO com o chão marinho.
+     Cheguei a deixar branco aqui, achando que era coerente com o fundo — e quebrou o menu
+     "Inteligência comercial": popover renderizado com `createPortal(..., document.body)` fica fora
+     de qualquer painel e herda a cor daqui. Sobre o fundo claro do próprio popover, o texto branco
+     sumia: era uma caixa vazia. Quase todo texto vive dentro de um painel branco, então a tinta
+     escura é a certa; o pouco que encosta no chão marinho recebe cor explícita. */
+  color: var(--ink);
   font-family: var(--body);
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
@@ -5362,11 +5366,14 @@ button.camp-row:hover {
   position: relative;
 }
 
+/* `color` explícito porque este componente é renderizado por portal, fora da árvore visual: ele
+   não pode herdar a tinta de quem por acaso estiver acima dele no DOM. */
 .dropdown-pop {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
   width: 280px;
+  color: var(--ink);
   max-height: 360px;
   overflow-y: auto;
   background: var(--surface-elevated);
@@ -15585,11 +15592,35 @@ table.tbl .name-cell .r {
  * como "vindo". E ela respeita quem pediu menos movimento no sistema: sem a preferência atendida,
  * uma tela inteira pulsando é desconforto real pra quem tem sensibilidade a movimento.
  */
+/*
+ * O esqueleto entra ATRASADO — 400ms.
+ *
+ * Mostrar "carregando" numa navegação de 150ms é pior que não mostrar nada: vira um flash branco a
+ * cada clique, e a tela parece estar sempre recarregando mesmo quando está rápida. Com o atraso, a
+ * navegação rápida não mostra esqueleto nenhum (ela termina antes) e só a lenta ganha o retorno —
+ * que é exatamente onde ele serve pra alguma coisa.
+ *
+ * O atraso é de APARECER, não de carregar: nada fica mais lento por causa disto.
+ */
 .tela-carregando {
   padding: var(--space-6) var(--space-5);
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  opacity: 0;
+  animation: esqueleto-entrar var(--transition-base) ease-out 0.4s forwards;
+}
+
+@keyframes esqueleto-entrar {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tela-carregando {
+    animation-duration: 1ms;
+  }
 }
 
 .tela-carregando-topo {
