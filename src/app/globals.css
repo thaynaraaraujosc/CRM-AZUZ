@@ -39,35 +39,41 @@
      É um token PRÓPRIO, e não `--ink` repintado, porque `--ink` também é a cor do texto: mudar ele
      deixaria toda palavra da tela azul-marinho, que não é a intenção.
 
-     A primeira tentativa usou #0b1533 — o marinho que já vive nos documentos e nos e-mails. No
-     texto ele funciona; num botão preenchido, não: com 11 de vermelho contra 51 de azul, naquela
-     escuridão o olho não separa de preto. Cor de texto e cor de fundo têm exigências diferentes, e
-     um marinho de fundo precisa ser claro o bastante pra ALGUÉM VER que é azul.
-     Branco sobre #1a3d8f fica em 9,9:1 — muito acima do mínimo de 4,5:1. */
-  --acao: #1a3d8f;
-  --acao-hover: #234ba8;
-  --acao-active: #142f70;
+     Houve uma versão intermediária em #1a3d8f, escolhida quando só os BOTÕES eram marinho: naquele
+     contexto o tom oficial se confundia com preto, porque não havia mais nada azul por perto pra
+     dar referência ao olho. Com a interface inteira em marinho — menu, tinta, conversa aberta — a
+     referência existe, e o tom oficial da marca é o certo.
+     Branco sobre #0b1533 fica em 18:1, muito acima do mínimo de 4,5:1. */
+  --acao: #0b1533;
+  --acao-hover: #16224a;
+  --acao-active: #060c1f;
   --acao-texto: #ffffff;
 
   /* Bordas organizam, não são protagonistas — mas precisam ser vistas. A 8% ela sumia sobre branco
      e o card ficava sem começo nem fim. `--line-strong` é pro que precisa de recorte de verdade:
      card dentro de card, cabeçalho de tabela, item destacado. */
-  --line: rgba(9, 9, 11, 0.1);
-  --line-soft: rgba(9, 9, 11, 0.06);
-  --line-strong: rgba(9, 9, 11, 0.18);
+  --line: rgba(11, 21, 51, 0.1);
+  --line-soft: rgba(11, 21, 51, 0.06);
+  --line-strong: rgba(11, 21, 51, 0.18);
 
   /* Preto neutro no lugar do marinho: o texto parava de ser preto e puxava azul, o que somado ao
      piso marinho fazia a interface inteira ter temperatura de marca em vez de neutralidade. */
-  --ink: #09090b;
+  /* A TINTA ESTRUTURAL DO CRM — texto, ícone e todo elemento que antes era preto.
+     Era #09090b (preto neutro). Passa a ser o azul marinho da marca: sobre branco fica em 18:1 de
+     contraste, bem acima do mínimo, e a interface inteira ganha a temperatura da identidade sem
+     precisar pintar área grande de cor. */
+  --ink: #0b1533;
   /* Tinta de nome próprio: grafite, não preto. Numa lista longa, preto puro repetido em toda linha
      pesa — cada nome vira um bloco escuro e o olho não descansa. Um passo abaixo mantém o nome
      dominante sem transformar a lista num paredão. Título de página segue em `--ink`. */
-  --ink-nome: #2f2f36;
+  /* Nome de pessoa: um degrau mais claro que a tinta principal, pra o nome não competir com o
+     título da tela. Segue a mesma família marinho. */
+  --ink-nome: #253052;
   --white: #ffffff;
   /* Secundário sobe de 58% pra 64%; terciário, de 46% pra 54%. Cinza claro fica reservado pra
      informação de fato acessória — data, contador, rodapé —, não pra conteúdo que se lê. */
-  --text-muted: rgba(9, 9, 11, 0.64);
-  --text-faint: rgba(9, 9, 11, 0.54);
+  --text-muted: rgba(11, 21, 51, 0.64);
+  --text-faint: rgba(11, 21, 51, 0.54);
 
   /* Arial no produto INTEIRO — landing, telas de entrada e app.
      Ela é a única fonte que está instalada em Mac, Windows, Android e Linux ao mesmo tempo, então é
@@ -96,14 +102,14 @@
   /* Duas camadas em cada sombra: um contato curto e escuro logo abaixo do elemento, e um halo
      largo e quase transparente. É essa combinação que faz a peça parecer pousada numa superfície —
      uma sombra só, difusa, faz o elemento parecer que está boiando. */
-  --shadow-xs: 0 1px 2px rgba(9, 9, 11, 0.05);
-  --shadow-sm: 0 1px 2px rgba(9, 9, 11, 0.06), 0 2px 6px rgba(9, 9, 11, 0.04);
-  --shadow-md: 0 1px 3px rgba(9, 9, 11, 0.07), 0 6px 16px rgba(9, 9, 11, 0.05);
-  --shadow-lg: 0 2px 6px rgba(9, 9, 11, 0.06), 0 24px 56px rgba(9, 9, 11, 0.12);
-  --shadow-hover: 0 2px 4px rgba(9, 9, 11, 0.07), 0 10px 24px rgba(9, 9, 11, 0.07);
+  --shadow-xs: 0 1px 2px rgba(11, 21, 51, 0.05);
+  --shadow-sm: 0 1px 2px rgba(11, 21, 51, 0.06), 0 2px 6px rgba(11, 21, 51, 0.04);
+  --shadow-md: 0 1px 3px rgba(11, 21, 51, 0.07), 0 6px 16px rgba(11, 21, 51, 0.05);
+  --shadow-lg: 0 2px 6px rgba(11, 21, 51, 0.06), 0 24px 56px rgba(11, 21, 51, 0.12);
+  --shadow-hover: 0 2px 4px rgba(11, 21, 51, 0.07), 0 10px 24px rgba(11, 21, 51, 0.07);
   /* Sombra do botão preto: precisa nascer da própria cor dele, senão vira um borrão cinza embaixo
      de uma peça escura. */
-  --shadow-preto: 0 1px 2px rgba(9, 9, 11, 0.28), 0 6px 16px rgba(9, 9, 11, 0.2);
+  --shadow-preto: 0 1px 2px rgba(11, 21, 51, 0.28), 0 6px 16px rgba(11, 21, 51, 0.2);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -136,19 +142,19 @@
      degraus que faltavam) — pra qualquer superfície/borda/texto secundário parar de inventar
      opacidade solta. `--surface-hover`/`--surface-active` são o fundo padrão de qualquer linha/
      item interativo (linha de tabela, opção de dropdown, item de menu) nos estados hover/pressed. */
-  --gray-50: rgba(9, 9, 11, 0.025);
-  --gray-100: rgba(9, 9, 11, 0.04);
-  --gray-200: rgba(9, 9, 11, 0.07);
-  --gray-300: rgba(9, 9, 11, 0.11);
-  --gray-400: rgba(9, 9, 11, 0.17);
-  --gray-500: rgba(9, 9, 11, 0.28);
-  --gray-600: rgba(9, 9, 11, 0.42);
-  --gray-700: rgba(9, 9, 11, 0.58);
-  --gray-800: rgba(9, 9, 11, 0.78);
-  --gray-900: #09090b;
+  --gray-50: rgba(11, 21, 51, 0.025);
+  --gray-100: rgba(11, 21, 51, 0.04);
+  --gray-200: rgba(11, 21, 51, 0.07);
+  --gray-300: rgba(11, 21, 51, 0.11);
+  --gray-400: rgba(11, 21, 51, 0.17);
+  --gray-500: rgba(11, 21, 51, 0.28);
+  --gray-600: rgba(11, 21, 51, 0.42);
+  --gray-700: rgba(11, 21, 51, 0.58);
+  --gray-800: rgba(11, 21, 51, 0.78);
+  --gray-900: #0b1533;
 
-  --surface-hover: rgba(9, 9, 11, 0.035);
-  --surface-active: rgba(9, 9, 11, 0.06);
+  --surface-hover: rgba(11, 21, 51, 0.035);
+  --surface-active: rgba(11, 21, 51, 0.06);
 
   /* Peso + altura de linha — hierarquia deve vir de tamanho+peso+espaçamento juntos, não só do
      tamanho (`--fs-*` abaixo). `--lh-tight` pra títulos/números grandes, `--lh-base` pro resto. */
@@ -402,13 +408,44 @@ table {
   z-index: 1;
 }
 
+/*
+ * MENU LATERAL EM MARINHO.
+ *
+ * É a única área grande de cor da interface, e é de propósito: o menu é a moldura fixa, está
+ * sempre na tela e não compete com conteúdo nenhum. O resto do CRM segue branco e claro — encher
+ * o corpo de cor é o que deixa um painel de trabalho pesado.
+ *
+ * Tudo dentro dele inverte: os tokens de texto e linha são calculados sobre branco e ficariam
+ * invisíveis aqui. As regras abaixo redefinem os tokens PARA DENTRO do menu, em vez de sobrescrever
+ * cada componente um por um — assim qualquer coisa nova que entre no menu já nasce legível.
+ */
 .sidebar {
   width: 216px;
   flex: 0 0 auto;
-  background: var(--navy-raised);
-  border: 1px solid var(--line);
+  background: var(--acao);
+  border: 1px solid var(--acao);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
+
+  /* Sobre o marinho, a escada de cinzas passa a ser feita de BRANCO diluído. */
+  --line: rgba(255, 255, 255, 0.12);
+  --line-soft: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --ink: #ffffff;
+  --ink-nome: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.72);
+  --text-faint: rgba(255, 255, 255, 0.55);
+  --surface-active: rgba(255, 255, 255, 0.1);
+  --surface-elevated: rgba(255, 255, 255, 0.14);
+  --navy: rgba(255, 255, 255, 0.08);
+  --navy-raised: rgba(255, 255, 255, 0.06);
+  --navy-raised-2: rgba(255, 255, 255, 0.12);
+  --gray-100: rgba(255, 255, 255, 0.1);
+  /* O azul do accent também clareia: #2e6bff sobre marinho fica escuro demais pra servir de
+     destaque — some justamente onde deveria chamar atenção. */
+  --blue: #7ea2ff;
+  --blue-soft: rgba(126, 162, 255, 0.2);
+  --blue-soft-2: rgba(126, 162, 255, 0.12);
   padding: var(--space-5) var(--space-4);
   display: flex;
   flex-direction: column;
@@ -448,7 +485,7 @@ table {
   flex: 0 0 auto;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: var(--navy);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-faint);
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
@@ -489,7 +526,7 @@ table {
   display: block;
   width: 100%;
   text-align: left;
-  background: var(--navy-raised);
+  background: rgba(255, 255, 255, 0.07);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3);
@@ -596,14 +633,14 @@ table {
   color: var(--ink);
 }
 
-/* Selecionado: preto cheio sobre superfície cinza, com peso maior. O inativo é cinza médio em peso
-   normal — a distância entre os dois é de tinta e de peso, não só de fundo. É por isso que dá pra
-   achar o item ativo de relance numa lista de doze. */
+/* Selecionado sobre o marinho: branco cheio, peso maior e um véu claro por baixo. A distância pro
+   inativo é de tinta E de peso, não só de fundo — é o que permite achar o item ativo de relance
+   numa lista de doze. A barra azul da esquerda (`::before`) continua sendo a marca principal. */
 .nav-item.active {
   background: var(--surface-elevated);
   color: var(--ink);
   font-weight: var(--fw-semibold);
-  box-shadow: var(--shadow-xs);
+  box-shadow: none;
 }
 
 .nav-item.active svg {
@@ -1241,14 +1278,20 @@ table {
   --navy-deep: #ffffff;
   --surface-elevated: #ffffff;
 
-  --line: rgba(9, 9, 11, 0.1);
-  --line-soft: rgba(9, 9, 11, 0.06);
-  --line-strong: rgba(9, 9, 11, 0.18);
+  --line: rgba(11, 21, 51, 0.1);
+  --line-soft: rgba(11, 21, 51, 0.06);
+  --line-strong: rgba(11, 21, 51, 0.18);
 
-  --ink: #09090b;
-  --ink-nome: #2f2f36;
-  --text-muted: rgba(9, 9, 11, 0.64);
-  --text-faint: rgba(9, 9, 11, 0.54);
+  /* A TINTA ESTRUTURAL DO CRM — texto, ícone e todo elemento que antes era preto.
+     Era #09090b (preto neutro). Passa a ser o azul marinho da marca: sobre branco fica em 18:1 de
+     contraste, bem acima do mínimo, e a interface inteira ganha a temperatura da identidade sem
+     precisar pintar área grande de cor. */
+  --ink: #0b1533;
+  /* Nome de pessoa: um degrau mais claro que a tinta principal, pra o nome não competir com o
+     título da tela. Segue a mesma família marinho. */
+  --ink-nome: #253052;
+  --text-muted: rgba(11, 21, 51, 0.64);
+  --text-faint: rgba(11, 21, 51, 0.54);
 
   min-height: 100vh;
   display: flex;
@@ -2844,8 +2887,10 @@ table.tbl tbody tr:hover td {
   word-break: break-all;
 }
 
+/* Link dentro da bolha marinho: azul claro o bastante pra se ler como link, sem brigar com o
+   branco do texto ao redor. */
 .bubble.out .wa-link-mensagem {
-  color: #cfd6e6;
+  color: #a8c0ff;
 }
 
 /* Botão "Carregar áudio" — mídia recebida sem conteúdo embutido no webhook, buscada sob demanda. */
@@ -2957,8 +3002,11 @@ table.tbl tbody tr:hover td {
 
 /* Enviada: superfície de contraste na identidade nova. Era azul — a única área grande de cor
    sólida que sobrava no produto, e ela reaparecia dezenas de vezes numa conversa só. */
+/* Bolha do que NÓS mandamos: marinho, como o resto da identidade. Era um gradiente de cinza
+   escuro pra quase-preto — de longe lia como preto, e era o maior bloco de preto da tela. O
+   gradiente continua, agora dentro da família marinho: ele dá volume à bolha sem virar decoração. */
 .bubble.out {
-  background: linear-gradient(180deg, #2b2b31 0%, #17171b 100%);
+  background: linear-gradient(180deg, #1b2a54 0%, #0b1533 100%);
   color: var(--white);
   align-self: flex-end;
   border-bottom-right-radius: 5px;
@@ -3022,8 +3070,10 @@ table.tbl tbody tr:hover td {
    TikTok e e-mail, a bolha verde aparecia em canal que não é WhatsApp — e, mesmo no WhatsApp, é a
    cor de outra marca dentro do produto. Sem regra própria, ela usa a bolha padrão do CRM. */
 
+/* No tema WhatsApp o cartão aberto também é marinho cheio — a barra azul da lateral era a marca
+   antiga de seleção e agora seria um segundo sinal dizendo a mesma coisa. */
 .wa-whatsapp .wa-row.active {
-  border-left-color: var(--blue);
+  border-left-color: var(--acao);
 }
 
 .wa-whatsapp .wa-main-gear.active {
@@ -3401,12 +3451,64 @@ table.tbl tbody tr:hover td {
   box-shadow: var(--shadow-sm);
 }
 
-/* Selecionada: barra preta na lateral e contorno firme. Fundo colorido apagaria o cartão branco,
-   que é justamente o que separa uma conversa da outra. */
+/*
+ * CONVERSA ABERTA: cartão marinho cheio.
+ *
+ * Antes era só uma barrinha na lateral, e num scroll longo era fácil perder de vista qual conversa
+ * estava aberta. Fundo cheio resolve isso de relance — e some a dúvida de "estou respondendo quem?",
+ * que é o erro mais caro que se pode cometer numa caixa de entrada com trinta conversas.
+ *
+ * Mesma técnica do menu: os tokens são redefinidos PARA DENTRO do cartão. Nome, prévia, horário,
+ * ícone e etiqueta seguem cada um a sua regra normal e ficam legíveis sem nenhum deles precisar
+ * saber que está sobre marinho.
+ */
 .wa-row.active {
-  border-color: var(--line-strong);
-  border-left-color: var(--ink-nome);
+  background: var(--acao);
+  border-color: var(--acao);
+  border-left-color: var(--acao);
   box-shadow: var(--shadow-sm);
+
+  --ink: #ffffff;
+  --ink-nome: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.78);
+  --text-faint: rgba(255, 255, 255, 0.62);
+  --line: rgba(255, 255, 255, 0.16);
+  --line-strong: rgba(255, 255, 255, 0.28);
+  --navy-raised-2: rgba(255, 255, 255, 0.14);
+  --gray-100: rgba(255, 255, 255, 0.12);
+  --gray-200: rgba(255, 255, 255, 0.16);
+  --blue: #9db8ff;
+  --blue-soft: rgba(157, 184, 255, 0.22);
+}
+
+/* Hover não altera o cartão aberto: ele já está no estado mais forte que existe, e clarear no
+   passar do mouse faria parecer que o clique desfez a seleção. */
+.wa-row.active:hover {
+  border-color: var(--acao);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Sobre o marinho, o contador de não lidas precisa do contraste invertido: o azul da marca sobre
+   marinho quase some. */
+.wa-row.active .wa-unread-badge {
+  background: #ffffff;
+  color: var(--acao);
+}
+
+/* Etiquetas de estado (NOVO, QUALIFICADO, FECHADO…) dentro do cartão aberto: fundo claro
+   translúcido e texto branco, em vez das cores próprias de cada uma — sobre marinho elas ficariam
+   ilegíveis, e o que importa ali é ler a palavra, não a cor dela. */
+.wa-row.active .pill,
+.wa-row.active .tag,
+.wa-row.active .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+
+/* Foco pelo teclado sobre o cartão marinho — o azul do contorno padrão sumiria. */
+.wa-row.active:focus-visible {
+  outline-color: #ffffff;
 }
 
 .wa-row .cr1 {
@@ -3467,7 +3569,7 @@ table.tbl tbody tr:hover td {
   text-overflow: ellipsis;
 }
 
-/* Conversa não lida: o nome fica em preto cheio e a prévia ganha peso. Sem isso, a única marca de
+/* Conversa não lida: o nome fica na tinta cheia e a prévia ganha peso. Sem isso, a única marca de
    não lida era o contador no canto — fácil de não ver numa lista longa. */
 .wa-row.nao-lida .cname {
   color: var(--ink);
@@ -6762,7 +6864,7 @@ button.camp-row:hover {
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-2);
-  background: rgba(9, 9, 11, 0.45);
+  background: rgba(11, 21, 51, 0.45);
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -6775,7 +6877,7 @@ button.camp-row:hover {
 @media (hover: none) {
   .doc-modelo-thumb-acoes {
     opacity: 1;
-    background: rgba(9, 9, 11, 0.45);
+    background: rgba(11, 21, 51, 0.45);
   }
 }
 
@@ -9772,7 +9874,7 @@ button.camp-row:hover {
   border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  box-shadow: -16px 0 40px rgba(9, 9, 11, 0.12);
+  box-shadow: -16px 0 40px rgba(11, 21, 51, 0.12);
 }
 
 .flow-side-body {
@@ -9797,7 +9899,7 @@ button.camp-row:hover {
   border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  box-shadow: -16px 0 40px rgba(9, 9, 11, 0.12);
+  box-shadow: -16px 0 40px rgba(11, 21, 51, 0.12);
 }
 
 .flow-preview-summary {
@@ -9876,7 +9978,7 @@ button.camp-row:hover {
     position: absolute;
     z-index: 20;
     height: 100%;
-    box-shadow: 8px 0 24px rgba(9, 9, 11, 0.12);
+    box-shadow: 8px 0 24px rgba(11, 21, 51, 0.12);
   }
 
   .flow-config {
@@ -9884,7 +9986,7 @@ button.camp-row:hover {
     right: 0;
     z-index: 20;
     height: 100%;
-    box-shadow: -8px 0 24px rgba(9, 9, 11, 0.12);
+    box-shadow: -8px 0 24px rgba(11, 21, 51, 0.12);
   }
 }
 
@@ -10122,7 +10224,7 @@ button.camp-row:hover {
 .wizard-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(9, 9, 11, 0.45);
+  background: rgba(11, 21, 51, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11581,7 +11683,7 @@ button.camp-row:hover {
   height: 22px;
   border-radius: 50%;
   border: none;
-  background: rgba(9, 9, 11, 0.45);
+  background: rgba(11, 21, 51, 0.45);
   color: #fff;
   display: flex;
   align-items: center;
@@ -12101,7 +12203,7 @@ button.camp-row:hover {
     width: 100%;
     max-height: 80vh;
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -16px 40px rgba(9, 9, 11, 0.12);
+    box-shadow: 0 -16px 40px rgba(11, 21, 51, 0.12);
   }
 
   .automacoes-search {
@@ -13381,7 +13483,7 @@ button.camp-row:hover {
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
-  box-shadow: 0 -4px 16px rgba(9, 9, 11, 0.12);
+  box-shadow: 0 -4px 16px rgba(11, 21, 51, 0.12);
 }
 .config-salvar-bar-acoes {
   display: flex;
