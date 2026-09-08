@@ -22,7 +22,13 @@
      lê como uma superfície contínua, com a separação vindo da borda, não do contraste de cor. */
   /* Piso branco. O cinza deixa de cobrir área e passa a ser recurso de peso: menu, botão, campo,
      coluna do kanban. Numa tela grande, cinza claro em toda a superfície ainda lê como cinza. */
-  --canvas: #ffffff;
+  /* TESTE — a camada de trás de tudo.
+     É o "chão" onde o menu e o painel de conteúdo flutuam: aparece nas margens da página e na
+     folga entre os dois. Era branco, o que fazia tudo parecer uma folha só. Em marinho, o menu
+     deixa de ser um bloco de cor solto e vira parte de uma moldura — e os painéis brancos ganham
+     recorte.
+     Pra voltar ao branco é só esta linha: `--canvas: #ffffff`. */
+  --canvas: #0b1533;
 
   /* Azul da marca — daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
@@ -287,12 +293,13 @@
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
   --shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.42);
 
-  /* Um pouco mais claro que no tema claro: sobre um fundo #08080a, o mesmo tom perderia presença.
-     Continua sendo marinho, não o azul vivo do accent — senão o botão competiria com link e item
-     selecionado, que já usam --blue. */
-  --acao: #2a55b0;
-  --acao-hover: #3a68c9;
-  --acao-active: #1f4290;
+  /* O MESMO marinho do tema claro. Cheguei a clarear pra ele se destacar do fundo quase preto, e
+     estava errado: o tom da marca é um só, e mudar de tom entre os temas faz o CRM parecer dois
+     produtos. O que separa o marinho do fundo aqui não é a luminosidade — é a BORDA clara que as
+     superfícies de ação ganham no escuro (ver `:root[data-theme="dark"] .btn.primary` abaixo). */
+  --acao: #0b1533;
+  --acao-hover: #16224a;
+  --acao-active: #060c1f;
   --acao-texto: #ffffff;
 }
 
@@ -303,6 +310,16 @@
 :root[data-theme="dark"] .fchip.active,
 :root[data-theme="dark"] .wa-filter-chip.active {
   color: var(--acao-texto);
+}
+
+/* No tema escuro o marinho e o fundo têm luminosidade parecida, e é a BORDA que separa os dois —
+   não uma cor diferente. Assim o tom da marca é o mesmo nos dois temas e o botão continua tendo
+   contorno visível. */
+:root[data-theme="dark"] .btn.primary,
+:root[data-theme="dark"] .sidebar,
+:root[data-theme="dark"] .open-conv-h,
+:root[data-theme="dark"] .wa-row.active {
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 *,
@@ -319,7 +336,9 @@ body {
 body {
   margin: 0;
   background: var(--canvas);
-  color: var(--ink);
+  /* Texto solto direto sobre o chão (raro — quase tudo vive dentro de um painel) acompanha o
+     fundo, senão ficaria marinho sobre marinho enquanto o teste durar. */
+  color: var(--acao-texto);
   font-family: var(--body);
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
@@ -2805,13 +2824,44 @@ table.tbl tbody tr:hover td {
   overflow: hidden;
 }
 
+/*
+ * BARRA DO TOPO DA CONVERSA — marinho escuro.
+ *
+ * Ela diz com quem você está falando, e é a primeira coisa que o olho procura ao trocar de
+ * conversa. Em cinza claro ela se misturava com o corpo da tela; em marinho, o cabeçalho e o
+ * cartão selecionado na lista passam a ser a mesma cor, e a ligação entre os dois fica óbvia.
+ *
+ * Mesma técnica do menu e do cartão: os tokens são redefinidos para dentro, então nome, telefone,
+ * avatar e botões seguem as regras de sempre e ficam legíveis sem saber que estão sobre marinho.
+ */
 .open-conv-h {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-4) var(--space-4);
-  background: var(--gray-50);
-  border-bottom: 1px solid var(--line);
+  background: var(--acao);
+  border-bottom: 1px solid var(--acao);
+
+  --ink: #ffffff;
+  --ink-nome: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.78);
+  --text-faint: rgba(255, 255, 255, 0.62);
+  --line: rgba(255, 255, 255, 0.16);
+  --line-strong: rgba(255, 255, 255, 0.28);
+  --surface-active: rgba(255, 255, 255, 0.12);
+  --navy-raised-2: rgba(255, 255, 255, 0.14);
+  --gray-100: rgba(255, 255, 255, 0.12);
+  --blue: #9db8ff;
+  --blue-soft: rgba(157, 184, 255, 0.22);
+  --blue-soft-2: rgba(157, 184, 255, 0.14);
+  color: #ffffff;
+}
+
+/* O avatar tem fundo azul-claro próprio, que sobre marinho vira uma mancha. Aqui ele fica
+   translúcido, deixando a foto (quando existe) e as iniciais em branco. */
+.open-conv-h .avatar {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
 }
 
 .open-conv-h .n {
@@ -2887,10 +2937,17 @@ table.tbl tbody tr:hover td {
   word-break: break-all;
 }
 
-/* Link dentro da bolha marinho: azul claro o bastante pra se ler como link, sem brigar com o
-   branco do texto ao redor. */
+/* Link dentro da bolha azul: quase branco, sublinhado. Um azul mais claro sobre azul não se lê
+   como link — a diferença de cor some, e o que sobra é o sublinhado. */
 .bubble.out .wa-link-mensagem {
-  color: #a8c0ff;
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* Horário e tiquinhos dentro da bolha azul: 0,6 de opacidade sobre o azul vivo cai abaixo do
+   legível. Sobre a bolha cinza da outra pessoa, 0,6 continua valendo. */
+.bubble.out .tm {
+  opacity: 0.85;
 }
 
 /* Botão "Carregar áudio" — mídia recebida sem conteúdo embutido no webhook, buscada sob demanda. */
@@ -3002,11 +3059,19 @@ table.tbl tbody tr:hover td {
 
 /* Enviada: superfície de contraste na identidade nova. Era azul — a única área grande de cor
    sólida que sobrava no produto, e ela reaparecia dezenas de vezes numa conversa só. */
-/* Bolha do que NÓS mandamos: marinho, como o resto da identidade. Era um gradiente de cinza
-   escuro pra quase-preto — de longe lia como preto, e era o maior bloco de preto da tela. O
-   gradiente continua, agora dentro da família marinho: ele dá volume à bolha sem virar decoração. */
+/*
+ * Bolha do que NÓS mandamos: o AZUL DA MARCA, não o marinho.
+ *
+ * A separação é proposital e tem uma lógica: o marinho é a ESTRUTURA (menu, cabeçalho, cartão
+ * selecionado) — coisas que emolduram a tela e ficam paradas. A bolha é CONTEÚDO, e conteúdo nosso:
+ * o azul vivo faz a nossa voz saltar dentro da conversa em vez de se confundir com a moldura.
+ *
+ * Contraste: branco sobre #2e6bff dá 4,5:1 — passa no mínimo, mas com folga curta. Por isso o
+ * horário e os tiquinhos sobem de opacidade aqui dentro (`.tm` a 0,6 cairia abaixo do legível), e
+ * por isso o texto é branco puro e não translúcido.
+ */
 .bubble.out {
-  background: linear-gradient(180deg, #1b2a54 0%, #0b1533 100%);
+  background: var(--blue);
   color: var(--white);
   align-self: flex-end;
   border-bottom-right-radius: 5px;
