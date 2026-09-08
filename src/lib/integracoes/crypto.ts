@@ -1,19 +1,19 @@
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "node:crypto";
 
 /**
- * Criptografa/descriptografa tokens de integração (AES-256-GCM) — diferente do bcrypt usado no
+ * Criptografa/descriptografa tokens de integração (AES-256-GCM). Diferente do bcrypt usado no
  * login: senha só precisa ser *verificada* (hash de mão única basta), mas o token de acesso
  * precisa ser *usado de novo* depois (pra mandar mensagem/buscar relatório), então tem que dar pra
  * recuperar o valor original.
  *
  * `INTEGRACAO_ENCRYPTION_KEY` (.env) é uma chave de 32 bytes gerada uma vez (`openssl rand -base64
- * 32`) — deriva a chave AES real via scrypt em vez de usar os bytes crus direto, pra não depender
+ * 32`): deriva a chave AES real via scrypt em vez de usar os bytes crus direto, pra não depender
  * do formato exato (base64/hex/utf8) que a env var tiver.
  */
 function chaveDerivada(): Buffer {
   const segredo = process.env.INTEGRACAO_ENCRYPTION_KEY;
   if (!segredo) {
-    throw new Error("INTEGRACAO_ENCRYPTION_KEY não configurada — necessária pra guardar tokens de integração.");
+    throw new Error("INTEGRACAO_ENCRYPTION_KEY não configurada: necessária pra guardar tokens de integração.");
   }
   return scryptSync(segredo, "azuz-crm-integracoes", 32);
 }

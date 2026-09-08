@@ -5,7 +5,7 @@
  * porquê de cada um escrito ao lado. Espalhados pelo código, eles viram chute que ninguém revisa.
  *
  * O modelo NÃO é "lote de 30". Lote significa 30 requisições ao mesmo tempo, e o resultado é um
- * pico seguido de silêncio — exatamente o padrão que faz um número ser sinalizado. O modelo é
+ * pico seguido de silêncio: exatamente o padrão que faz um número ser sinalizado. O modelo é
  * gotejamento: uma mensagem por vez, por conexão, num intervalo constante.
  */
 
@@ -26,7 +26,7 @@ export type RitmoCanal = {
   /**
    * Variação aleatória aplicada ao intervalo, em porcentagem. Existe só no canal não oficial: ali
    * um intervalo exato e repetido é justamente a assinatura de robô que os sistemas antifraude
-   * procuram. Nos outros dois o envio é por API declarada — não há nada a disfarçar, e variar só
+   * procuram. Nos outros dois o envio é por API declarada. Não há nada a disfarçar, e variar só
    * tornaria a campanha mais lenta sem motivo.
    */
   variacao: number;
@@ -38,7 +38,7 @@ export const RITMO: Record<CanalCampanha, RitmoCanal> = {
   /**
    * WhatsApp oficial (Cloud API).
    *
-   * A API aguenta 80 mensagens por segundo — velocidade não é o gargalo aqui, e é por isso que um
+   * A API aguenta 80 mensagens por segundo. Velocidade não é o gargalo aqui, e é por isso que um
    * número alto neste campo não ajudaria em nada. O gargalo é a cota de 24h da conta.
    *
    * 20 por minuto é ritmo de segurança, não de capacidade: mantém a campanha lenta o bastante pra
@@ -61,7 +61,7 @@ export const RITMO: Record<CanalCampanha, RitmoCanal> = {
    * risco real é o número ser bloqueado, e quem paga isso é o cliente.
    *
    * 3 por minuto (um a cada ~20s, com variação) e teto de 200 por dia são números conservadores
-   * escolhidos por precaução, não por documentação — não há documentação. Ficam aqui em vez de
+   * escolhidos por precaução, não por documentação: não há documentação. Ficam aqui em vez de
    * escondidos no worker justamente pra poderem ser discutidos e ajustados com o que a prática
    * mostrar.
    */
@@ -70,7 +70,7 @@ export const RITMO: Record<CanalCampanha, RitmoCanal> = {
     porDia: 200,
     variacao: 0.35,
     explicacao:
-      "Esta conexão não é uma API oficial — é o WhatsApp comum sendo operado pelo CRM. " +
+      "Esta conexão não é uma API oficial. É o WhatsApp comum sendo operado pelo CRM. " +
       "Volume alto é o motivo mais comum de bloqueio de número, então o envio é bem mais lento.",
   },
 

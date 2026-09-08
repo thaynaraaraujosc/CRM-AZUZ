@@ -10,19 +10,19 @@ import { criarContatoPeloInstagramSeNaoExistir } from "@/lib/contatos/upsert";
 import { dispararAutomacoesDeEventoInstagram } from "@/lib/automation-flow/disparar-no-servidor";
 
 /**
- * Comentários do Instagram — recebimento, normalização e disparo das automações.
+ * Comentários do Instagram: recebimento, normalização e disparo das automações.
  *
  * Vive fora do webhook de propósito. O webhook agora faz só o que é dele: conferir a assinatura,
  * achar de quem é a conta e entregar o payload pra quem sabe interpretá-lo. Toda a decisão sobre o
  * que um comentário significa está aqui, num arquivo que dá pra ler inteiro.
  *
  * O que a Meta manda em `entry[].changes[]` com `field: "comments"`:
- * - `value.id` — id do comentário (nossa chave de deduplicação)
- * - `value.text` — o que a pessoa escreveu
- * - `value.from` — quem escreveu (id + username). PODE VIR VAZIO: em conta sem o vínculo
+ * - `value.id`: id do comentário (nossa chave de deduplicação)
+ * - `value.text`: o que a pessoa escreveu
+ * - `value.from`: quem escreveu (id + username). PODE VIR VAZIO: em conta sem o vínculo
  *   necessário a Meta omite o autor, e sem ele não há a quem responder no Direct.
- * - `value.media` — a publicação comentada (id e tipo)
- * - `value.parent_id` — presente só quando é RESPOSTA a outro comentário
+ * - `value.media`: a publicação comentada (id e tipo)
+ * - `value.parent_id`: presente só quando é RESPOSTA a outro comentário
  */
 
 export type ComentarioInstagram = {
@@ -44,7 +44,7 @@ export async function processarComentarioInstagram(params: {
   const comentarioId = comentario.id;
   if (!comentarioId) return;
 
-  // Comentário da PRÓPRIA conta — inclusive a resposta automática que acabou de sair daqui. Sem
+  // Comentário da PRÓPRIA conta: inclusive a resposta automática que acabou de sair daqui. Sem
   // esta guarda, responder um comentário dispararia a automação de novo, que responderia de novo:
   // a conta entraria numa discussão infinita consigo mesma, em público, na publicação.
   if (comentario.from?.id && comentario.from.id === contaInstagramId) return;
@@ -52,7 +52,7 @@ export async function processarComentarioInstagram(params: {
   const texto = comentario.text ?? "";
   const ehResposta = Boolean(comentario.parent_id);
   const arroba = comentario.from?.username ? `@${comentario.from.username}` : null;
-  // Sem @ nem id, não há contato nem conversa possível — mas o evento é registrado assim mesmo,
+  // Sem @ nem id, não há contato nem conversa possível. Mas o evento é registrado assim mesmo,
   // pra que "não disparou" fique distinguível de "não chegou".
   const chaveContato = arroba ?? comentario.from?.id ?? `comentario:${comentarioId}`;
 
@@ -73,7 +73,7 @@ export async function processarComentarioInstagram(params: {
   if (!primeiraVez) return;
 
   try {
-    // Vira contato de verdade no CRM — sem duplicar quem já existe (a busca é por @, ignorando
+    // Vira contato de verdade no CRM. Sem duplicar quem já existe (a busca é por @, ignorando
     // arroba e caixa).
     if (arroba) {
       await criarContatoPeloInstagramSeNaoExistir({
@@ -131,7 +131,7 @@ export async function processarComentarioInstagram(params: {
   }
 }
 
-/** Oculta um comentário — exposto pra ação de moderação da automação e pra uso manual. */
+/** Oculta um comentário: exposto pra ação de moderação da automação e pra uso manual. */
 export async function ocultarComentario(params: {
   accessTokenCriptografado: string;
   comentarioId: string;

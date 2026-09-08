@@ -54,7 +54,7 @@ function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-/** Tamanho em unidade legível — ninguém entende "3.221.225.472 bytes". */
+/** Tamanho em unidade legível: ninguém entende "3.221.225.472 bytes". */
 function formatarTamanho(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -62,11 +62,11 @@ function formatarTamanho(bytes: number): string {
 }
 
 function formatarData(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Date(iso).toLocaleDateString("pt-BR");
 }
 
-/** Plano e cobrança — assinatura real do CRM via Asaas (não mais mockada). `GET /api/assinatura`
+/** Plano e cobrança: assinatura real do CRM via Asaas (não mais mockada). `GET /api/assinatura`
  * traz o estado salvo + histórico de cobranças ao vivo; assinar/trocar de plano e cancelar chamam
  * as rotas que falam com a Asaas de verdade (sandbox por padrão, ver ASAAS_ENV). */
 export function PlanoSecao() {
@@ -139,7 +139,7 @@ export function PlanoSecao() {
         const dados = (await resposta.json()) as { migradas: number; restantes: number };
         setArmazenamento((atual) => (atual ? { ...atual, pendentesNoBanco: dados.restantes } : atual));
         // Nenhuma migrada e ainda restam: são arquivos que falham sempre (corrompidos, ou tipo que
-        // o R2 recusa). Insistir aqui viraria laço infinito — eles ficam no banco, funcionando.
+        // o R2 recusa). Insistir aqui viraria laço infinito. Eles ficam no banco, funcionando.
         if (dados.restantes === 0 || dados.migradas === 0) break;
       }
       const atualizado = await fetch("/api/armazenamento").then((r) => r.json());
@@ -222,9 +222,9 @@ export function PlanoSecao() {
           </p>
           <p className="plano-desc">
             {assinatura?.status === "cancelada"
-              ? "Sem novas cobranças — acesso até o fim do período já pago."
+              ? "Sem novas cobranças: acesso até o fim do período já pago."
               : assinatura?.status === "atrasada"
-                ? "Última cobrança não foi paga — regularize pra manter o acesso."
+                ? "Última cobrança não foi paga. Regularize pra manter o acesso."
                 : "Cobrança mensal via Asaas."}
           </p>
         </div>
@@ -277,7 +277,7 @@ export function PlanoSecao() {
               {armazenamento.percentual >= 80 ? (
                 <span className="armazenamento-aviso">
                   {" "}
-                  · Perto do limite. Ao encher, novos anexos param de ser salvos — as mensagens de texto continuam
+                  · Perto do limite. Ao encher, novos anexos param de ser salvos. As mensagens de texto continuam
                   normalmente.
                 </span>
               ) : null}
@@ -296,7 +296,7 @@ export function PlanoSecao() {
       </div>
 
       {/* Card do plano na linguagem das referências de preço: preço grande primeiro, recursos com
-          marca de conferido, ação preta ocupando a largura. Um plano só — não invento os três
+          marca de conferido, ação preta ocupando a largura. Um plano só: não invento os três
           níveis da referência, porque só existe um de verdade. */}
       <div className="config-bloco">
         <div className="preco-card">
@@ -333,7 +333,7 @@ export function PlanoSecao() {
       {planoEmEdicao ? (
         <form onSubmit={assinarPlano}>
           <div className="panel-h divided">
-            <h4>Pagamento — plano {PLANOS[planoEmEdicao].nome}</h4>
+            <h4>Pagamento: plano {PLANOS[planoEmEdicao].nome}</h4>
           </div>
 
           <div className="field">

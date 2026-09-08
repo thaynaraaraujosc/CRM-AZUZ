@@ -6,13 +6,13 @@ import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servi
 import { aoSairDaEtapa } from "@/lib/automacoes/gatilhos-crm";
 
 /**
- * Move UM negócio: de etapa, de funil e/ou de responsável — numa chamada só, gravada na hora.
+ * Move UM negócio: de etapa, de funil e/ou de responsável. Numa chamada só, gravada na hora.
  *
  * Existe porque até aqui o funil inteiro era reconciliado por um PUT de estado completo, com 500ms
  * de espera. Isso tinha três consequências ruins:
  *
  * 1. Uma falha derrubava TUDO. O PUT é uma transação só; se qualquer parte falhava, nada era
- *    gravado — nem o funil novo, nem a etapa nova, nem o card arrastado. E o cliente não conferia
+ *    gravado: nem o funil novo, nem a etapa nova, nem o card arrastado. E o cliente não conferia
  *    o resultado da resposta, então a falha era invisível: a tela mostrava a mudança feita e o
  *    banco não tinha nada.
  * 2. "Não veio no payload" significava "apague". Um estado desatualizado do navegador podia apagar
@@ -20,7 +20,7 @@ import { aoSairDaEtapa } from "@/lib/automacoes/gatilhos-crm";
  * 3. Arrastar um card e recarregar em menos de 500ms perdia o movimento.
  *
  * Aqui é o oposto: uma operação, um registro, resposta imediata e um erro que o front consegue ver
- * — e desfazer na tela se a gravação não aconteceu.
+ *. E desfazer na tela se a gravação não aconteceu.
  *
  * O card é o MESMO registro do começo ao fim: muda de etapa, nunca é recriado. É o que garante que
  * histórico, valor e data de fechamento sigam o negócio ao mudar de funil.
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     select: { id: true, etapaId: true, responsavel: true },
   });
 
-  // O gatilho "entrou na etapa" acontece AQUI, no servidor — não no navegador de quem arrastou.
+  // O gatilho "entrou na etapa" acontece AQUI, no servidor: não no navegador de quem arrastou.
   // Antes ele só valia pra quem estava com a tela aberta, e o mesmo movimento vindo de outro
   // caminho (importação, webhook, outra aba) não disparava nada.
   if (etapaId && etapaId !== card.etapaId) {

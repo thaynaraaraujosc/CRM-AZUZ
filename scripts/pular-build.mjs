@@ -6,7 +6,7 @@
  *   - sair com código 0 = PULE o build
  *
  * POR QUE ISTO EXISTE: todo push em qualquer branch virava um deploy. Trabalhando numa branch e
- * depois mesclando na `main`, cada mudança era buildada DUAS vezes — e build é a segunda maior
+ * depois mesclando na `main`, cada mudança era buildada DUAS vezes. E build é a segunda maior
  * linha da fatura da Vercel (4 dias e 9 horas de CPU num mês, $21,55). Metade disso era o mesmo
  * código sendo compilado de novo.
  *
@@ -15,12 +15,12 @@
  *
  * O caso do `ref` vazio é deliberado e importante: um redeploy disparado à mão pelo painel da
  * Vercel não traz o nome da branch. Tratar vazio como "pule" faria o botão de redeploy não
- * funcionar, e essa falha é chata de diagnosticar — na dúvida, buildar é o lado seguro do erro.
+ * funcionar, e essa falha é chata de diagnosticar. Na dúvida, buildar é o lado seguro do erro.
  */
 const ref = process.env.VERCEL_GIT_COMMIT_REF ?? "";
 
 if (ref === "" || ref === "main") {
-  console.log(`[build] branch "${ref || "(sem nome — deploy manual)"}": buildando.`);
+  console.log(`[build] branch "${ref || "(sem nome: deploy manual)"}": buildando.`);
   process.exit(1);
 }
 

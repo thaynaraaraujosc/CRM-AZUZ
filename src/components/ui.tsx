@@ -8,7 +8,7 @@ import { IconCheck, IconClose, IconStar } from "./icons";
 import { SeletorDeData } from "./seletor-de-data";
 
 /**
- * Drawer lateral genérico — mesmo padrão CSS (`.flow-side-overlay`/`.flow-side-panel`) já usado
+ * Drawer lateral genérico: mesmo padrão CSS (`.flow-side-overlay`/`.flow-side-panel`) já usado
  * pelo Simulador/Histórico de versões das automações, extraído aqui pra não duplicar o boilerplate
  * de overlay+Escape em cada novo drawer (Central do Dia, Configurações). Cabeçalho e rodapé ficam
  * fixos; só o conteúdo rola.
@@ -68,11 +68,11 @@ export function Drawer({
 }
 
 /**
- * Modal centralizado genérico — mesmo padrão CSS (`.modal-overlay`/`.modal`) repetido à mão em várias
+ * Modal centralizado genérico: mesmo padrão CSS (`.modal-overlay`/`.modal`) repetido à mão em várias
  * telas (automações, Configurações). Fecha com Esc, clique no fundo ou no botão ✕; o clique dentro do
  * modal não propaga pro fundo.
  */
-/** Larguras padrão — usar `tamanho` cobre a maioria dos casos sem precisar escolher um número de
+/** Larguras padrão: usar `tamanho` cobre a maioria dos casos sem precisar escolher um número de
  * pixel arbitrário; `largura` continua disponível pra um valor específico quando nenhum preset serve. */
 const TAMANHOS_MODAL = { sm: 380, md: 480, lg: 640, xl: 820 } as const;
 
@@ -130,7 +130,7 @@ export function Modal({
 
 /**
  * Popover flutuante montado via portal em document.body, posicionado com
- * `position: fixed` a partir do retângulo do botão que o abriu — assim ele
+ * `position: fixed` a partir do retângulo do botão que o abriu. Assim ele
  * nunca fica cortado pelo `overflow: auto` de `.content`, e vira de baixo
  * pra cima sozinho quando não cabe espaço abaixo do botão.
  */
@@ -162,7 +162,7 @@ export function FloatingDropdown({
     espacoAbaixo < alturaMax + margem && anchorRect.top > alturaMax + margem;
 
   // Largura real nunca maior que a viewport, e a posição horizontal é sempre
-  // grampeada (clamp) dentro da tela — o alinhamento (left/right) só decide
+  // grampeada (clamp) dentro da tela. O alinhamento (left/right) só decide
   // de que lado o dropdown nasce, não permite que ele saia da viewport.
   const larguraReal = Math.min(width, window.innerWidth - margem * 2);
   const maxLeft = Math.max(margem, window.innerWidth - larguraReal - margem);
@@ -317,7 +317,7 @@ export function Topbar({
   );
 }
 
-/** Toggle que realmente liga e desliga (estado local — protótipo sem backend). */
+/** Toggle que realmente liga e desliga (estado local. Protótipo sem backend). */
 export function Toggle({
   defaultOn = false,
   label,
@@ -328,10 +328,10 @@ export function Toggle({
   onToggle?: (on: boolean) => void;
 }) {
   const [on, setOn] = useState(defaultOn);
-  // Ressincroniza quando `defaultOn` muda depois do primeiro render — sem isso, todo toggle cujo
+  // Ressincroniza quando `defaultOn` muda depois do primeiro render. Sem isso, todo toggle cujo
   // valor real só chega depois (fetch assíncrono de preferência salva, ver *-context.tsx) nasce
   // mostrando o valor padrão errado até o usuário clicar nele, mesmo já tendo sido desligado antes.
-  // Ajuste durante o render (não em efeito) — padrão recomendado pelo React pra "adjusting state
+  // Ajuste durante o render (não em efeito). Padrão recomendado pelo React pra "adjusting state
   // when a prop changes", evita o re-render em cascata de um `useEffect` fazendo a mesma coisa.
   const [defaultOnAnterior, setDefaultOnAnterior] = useState(defaultOn);
   if (defaultOn !== defaultOnAnterior) {
@@ -439,7 +439,7 @@ export function RadioList({
 }
 
 /**
- * Cartão de indicador padronizado — usado em toda a área de Inteligência
+ * Cartão de indicador padronizado: usado em toda a área de Inteligência
  * comercial (Visão geral, Performance, Atividades, CRM Live) pra garantir
  * que todo indicador olhe/funcione igual: mostra a fórmula no hover (seção
  * 15 do escopo) e, quando tem `href`, é clicável e abre os registros reais
@@ -507,7 +507,7 @@ export type VisaoSalva = { nome: string; padrao?: boolean };
 /**
  * Barra de filtros única e compacta, reutilizada em todas as páginas da
  * Inteligência comercial (Tráfego, Atividades, Performance, Motivos de
- * perda...) — período + filtro principal na linha visível, o resto dentro
+ * perda...): período + filtro principal na linha visível, o resto dentro
  * de "Mais filtros", chips do que está ativo, e limpar/exportar. Sem várias
  * linhas de seletores soltos.
  */

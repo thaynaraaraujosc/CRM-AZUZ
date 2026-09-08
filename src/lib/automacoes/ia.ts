@@ -9,7 +9,7 @@ import { perguntarClaude } from "@/lib/azuz-ia/claude";
  *    interno; se amanhã for outro provedor (ou um modelo local), muda uma função aqui e o motor
  *    não sabe da diferença.
  * 2. **Quando não há IA configurada, o bloco precisa DIZER isso.** Sem chave, `provedorDeIA()`
- *    devolve `null` e o bloco registra "IA não configurada" no histórico — em vez de o fluxo
+ *    devolve `null` e o bloco registra "IA não configurada" no histórico. Em vez de o fluxo
  *    parecer ter respondido o cliente e não ter respondido nada.
  */
 export type ProvedorIA = {
@@ -30,7 +30,7 @@ export function provedorDeIA(): ProvedorIA | null {
  * O texto que a IA recebe como contexto da conversa.
  *
  * Sem histórico, a resposta sai genérica e o cliente percebe na primeira frase. Com histórico
- * demais, o custo por mensagem sobe sem melhorar a resposta — por isso o corte nas últimas trocas.
+ * demais, o custo por mensagem sobe sem melhorar a resposta. Por isso o corte nas últimas trocas.
  */
 export function conversaEmTexto(mensagens: { tipo: string; texto: string }[], limite = 10): string {
   return mensagens
@@ -42,7 +42,7 @@ export function conversaEmTexto(mensagens: { tipo: string; texto: string }[], li
 /**
  * Qual categoria a IA escolheu.
  *
- * A resposta de um modelo nunca é garantidamente uma das opções — ele pode responder "Parece ser
+ * A resposta de um modelo nunca é garantidamente uma das opções. Ele pode responder "Parece ser
  * uma dúvida sobre preço". Por isso a leitura é tolerante, e quando nada bate devolve `null`: o
  * fluxo segue pela saída de "não classificado" em vez de escolher um ramo no chute.
  */

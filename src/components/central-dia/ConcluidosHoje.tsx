@@ -3,7 +3,7 @@
 import { useCentralDia } from "@/lib/central-dia-context";
 import { SecaoLista } from "./SecaoLista";
 
-/** Área "Concluídos hoje" (item 15) — só o que foi resolvido nesta sessão/navegador, nunca apaga
+/** Área "Concluídos hoje" (item 15). Só o que foi resolvido nesta sessão/navegador, nunca apaga
  * dado real (o item continua existindo no módulo de origem, só sai da lista principal aqui). */
 export function ConcluidosHoje() {
   const { concluidos, desfazerConcluido, limparConcluidos } = useCentralDia();

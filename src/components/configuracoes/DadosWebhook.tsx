@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { IconAlerta } from "@/components/icons";
 
 /**
- * Mostra o que copiar pro painel da Meta ao cadastrar um webhook — URL e token de verificação.
+ * Mostra o que copiar pro painel da Meta ao cadastrar um webhook. URL e token de verificação.
  *
  * Cadastrar webhook virava tentativa e erro: o token só era legível no painel da hospedagem (que
  * nem sempre reflete o que o servidor em execução usa) e o domínio tem duas formas, com e sem
  * `www`, possivelmente servidas por deploys diferentes. Errar qualquer um dos dois produz a mesma
  * mensagem genérica da Meta, sem dizer qual.
  *
- * Aqui os dois valores vêm do servidor que está respondendo agora, e há um botão de copiar — não
+ * Aqui os dois valores vêm do servidor que está respondendo agora, e há um botão de copiar. Não
  * há o que digitar errado.
  */
 type Dados = {
@@ -30,7 +30,7 @@ function LinhaCopiavel({ rotulo, valor }: { rotulo: string; valor: string }) {
       setCopiado(true);
       setTimeout(() => setCopiado(false), 1600);
     } catch {
-      // Navegador sem permissão de área de transferência — o valor continua visível pra seleção
+      // Navegador sem permissão de área de transferência. O valor continua visível pra seleção
       // manual, então não vale interromper com um erro.
     }
   }
@@ -48,7 +48,7 @@ function LinhaCopiavel({ rotulo, valor }: { rotulo: string; valor: string }) {
   );
 }
 
-/** Tira das conversas os "anexos" que na verdade são página HTML — sobra do período em que o CRM
+/** Tira das conversas os "anexos" que na verdade são página HTML. Sobra do período em que o CRM
  * baixava a mídia do Instagram sem autenticação. Some daqui quando não houver mais nenhum. */
 function LimparAnexosInstagram() {
   const [rodando, setRodando] = useState(false);
@@ -74,7 +74,7 @@ function LimparAnexosInstagram() {
       <p className="hint" style={{ margin: "12px 0 0" }}>
         {resultado === 0
           ? "Nenhum anexo inválido encontrado."
-          : `${resultado} mensagens corrigidas — o anexo inválido saiu e o texto ficou.`}
+          : `${resultado} mensagens corrigidas: o anexo inválido saiu e o texto ficou.`}
       </p>
     );
   }
@@ -110,13 +110,13 @@ export function DadosWebhook() {
     <div className="config-bloco">
       <p className="config-bloco-titulo">Dados para cadastrar o webhook na Meta</p>
       <p className="hint" style={{ margin: "0 0 12px" }}>
-        Copie daqui e cole no painel da Meta. Estes valores são deste servidor —{" "}
-        <b>{dados.host}</b> — que é quem vai responder quando a Meta chamar. Se você acessar o CRM
+        Copie daqui e cole no painel da Meta. Estes valores são deste servidor,{" "}
+        <b>{dados.host}</b>, que é quem vai responder quando a Meta chamar. Se você acessar o CRM
         por outro endereço, os valores podem ser outros: use sempre os que aparecem aqui.
       </p>
 
-      <LinhaCopiavel rotulo="URL do webhook — WhatsApp" valor={dados.urlWhatsapp} />
-      <LinhaCopiavel rotulo="URL do webhook — Instagram" valor={dados.urlInstagram} />
+      <LinhaCopiavel rotulo="URL do webhook do WhatsApp" valor={dados.urlWhatsapp} />
+      <LinhaCopiavel rotulo="URL do webhook do Instagram" valor={dados.urlInstagram} />
 
       <LimparAnexosInstagram />
 

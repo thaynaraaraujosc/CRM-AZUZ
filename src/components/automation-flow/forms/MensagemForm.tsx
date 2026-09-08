@@ -19,7 +19,7 @@ const CANAIS: { valor: CanalMensagem; label: string }[] = [
 /**
  * Formulário genérico pra todos os tipos de "mensagem" que não ramificam
  * (mensagem_botoes/mensagem_lista têm form próprio, ver `MensagemOpcoesForm`)
- * — os campos que aparecem dependem de quais chaves existem em `node.data`.
+ *. Os campos que aparecem dependem de quais chaves existem em `node.data`.
  */
 export function MensagemForm({ node, onChange }: { node: FlowNode; onChange: (data: Record<string, unknown>) => void }) {
   const d = node.data as Record<string, unknown>;
@@ -47,7 +47,7 @@ export function MensagemForm({ node, onChange }: { node: FlowNode; onChange: (da
   const temParaEquipe = "paraEquipe" in d;
   const temFormularioOrigem = "formularioOrigem" in d;
 
-  /** Qual chave guarda o texto neste bloco — os campos mudam de nome conforme o tipo. */
+  /** Qual chave guarda o texto neste bloco. Os campos mudam de nome conforme o tipo. */
   const chaveDoTexto = temCorpo ? "corpo" : temLegenda ? "legenda" : temMensagem ? "mensagem" : "texto";
   const textoDaMensagem = String(d[chaveDoTexto] ?? "");
 
@@ -160,7 +160,7 @@ export function MensagemForm({ node, onChange }: { node: FlowNode; onChange: (da
 
       {textoDaMensagem.trim() ? (
         // A mesma prévia do editor de modelos e do resumo do disparo. Quem escreve a mensagem e
-        // quem confirma o envio precisam olhar pra mesma coisa — inclusive pra ver a variável
+        // quem confirma o envio precisam olhar pra mesma coisa. Inclusive pra ver a variável
         // trocada pelo valor, que é onde o erro aparece ("Oi {{nome}}" indo literal pro cliente).
         <PreviaMensagem
           corpo={textoDaMensagem}

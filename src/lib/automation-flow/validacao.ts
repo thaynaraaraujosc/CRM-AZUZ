@@ -1,5 +1,5 @@
 /**
- * Validações mecânicas do grafo — o que dá pra checar só olhando nós/arestas,
+ * Validações mecânicas do grafo: o que dá pra checar só olhando nós/arestas,
  * sem rodar o fluxo de verdade. Usado antes de publicar (`publicarFluxo`) e,
  * depois, pra destacar problema em cada nó no canvas.
  */
@@ -65,11 +65,11 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     problemas.push({
       id: proximoIdProblema(),
       severidade: "erro",
-      mensagem: "O fluxo não tem nenhum gatilho — nada vai disparar essa automação.",
+      mensagem: "O fluxo não tem nenhum gatilho. Nada vai disparar essa automação.",
     });
   }
 
-  // 2. Raiz (sem entrada) que não é gatilho — bloco solto no começo do fluxo.
+  // 2. Raiz (sem entrada) que não é gatilho. Bloco solto no começo do fluxo.
   nodes.forEach((n) => {
     const temEntrada = (entradasPorNo.get(n.id)?.length ?? 0) > 0;
     if (!temEntrada && n.category !== "gatilho") {
@@ -82,7 +82,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     }
   });
 
-  // 3. Caminho pendurado — sem saída e não é um bloco de fim.
+  // 3. Caminho pendurado: sem saída e não é um bloco de fim.
   nodes.forEach((n) => {
     const temSaida = (saidasPorNo.get(n.id)?.length ?? 0) > 0;
     if (!temSaida && n.category !== "fim") {
@@ -95,7 +95,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     }
   });
 
-  // 4. Botões/lista — precisa ter pelo menos uma opção, cada opção precisa de rótulo preenchido, e
+  // 4. Botões/lista: precisa ter pelo menos uma opção, cada opção precisa de rótulo preenchido, e
   // toda opção precisa ter uma aresta de saída com esse handle (nenhum "caminho sem identificação").
   nodes.forEach((n) => {
     if (!TIPOS_MENSAGEM_OPCOES.has(n.type)) return;
@@ -111,19 +111,19 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
       });
     }
     // O que o canal ENTREGA de verdade, não o que o editor desenha. Aviso, não erro: o envio não
-    // falha — ele cai num formato menos bonito, e é isso que a pessoa precisa saber antes.
+    // falha: ele cai num formato menos bonito, e é isso que a pessoa precisa saber antes.
     if (opcoes.length > 3 && opcoes.length <= 10) {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
-        mensagem: `Bloco "${n.titulo ?? n.type}" tem ${opcoes.length} opções — o WhatsApp oficial só entrega 3 como botões, então vai como lista.`,
+        mensagem: `Bloco "${n.titulo ?? n.type}" tem ${opcoes.length} opções: o WhatsApp oficial só entrega 3 como botões, então vai como lista.`,
         nodeId: n.id,
       });
     } else if (opcoes.length > 10) {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "aviso",
-        mensagem: `Bloco "${n.titulo ?? n.type}" tem ${opcoes.length} opções — acima de 10 nenhum canal tem formato interativo, e a pergunta sai como menu numerado.`,
+        mensagem: `Bloco "${n.titulo ?? n.type}" tem ${opcoes.length} opções: acima de 10 nenhum canal tem formato interativo, e a pergunta sai como menu numerado.`,
         nodeId: n.id,
       });
     }
@@ -413,7 +413,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     }
   });
 
-  // 7n. Cancelar agendamento — precisa do critério, e se enviar mensagem, precisa do
+  // 7n. Cancelar agendamento: precisa do critério, e se enviar mensagem, precisa do
   // canal/mensagem-ou-modelo.
   nodes.forEach((n) => {
     if (n.type !== "cancelar_agendamento") return;
@@ -442,7 +442,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     }
   });
 
-  // 7o. Enviar contato — precisa do contato (quando "outro") e do destino.
+  // 7o. Enviar contato: precisa do contato (quando "outro") e do destino.
   nodes.forEach((n) => {
     if (n.type !== "mensagem_contato") return;
     const data = n.data as MensagemContatoData;
@@ -469,7 +469,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     }
   });
 
-  // 7p. Enviar localização — precisa de uma localização definida conforme a origem escolhida.
+  // 7p. Enviar localização: precisa de uma localização definida conforme a origem escolhida.
   nodes.forEach((n) => {
     if (n.type !== "mensagem_localizacao") return;
     const data = n.data as MensagemLocalizacaoData;
@@ -487,7 +487,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     }
   });
 
-  // 7q. Enviar e-mail — precisa de destinatário (quando específico/campo) e de assunto/corpo.
+  // 7q. Enviar e-mail: precisa de destinatário (quando específico/campo) e de assunto/corpo.
   nodes.forEach((n) => {
     if (n.type !== "mensagem_email") return;
     const data = n.data as MensagemEmailData;
@@ -511,7 +511,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     }
   });
 
-  // 8. Ciclo — heurística simples: DFS de detecção de ciclo; se o ciclo não
+  // 8. Ciclo: heurística simples: DFS de detecção de ciclo; se o ciclo não
   // passar por nenhum nó "aguardar" ou "condicao_grupo", é risco real de loop
   // infinito (nada quebra o círculo nem no tempo, nem numa condição).
   const ciclosDetectados = detectarCiclosDeLoopInfinito(nodes, edges, nodesPorId);
@@ -519,7 +519,7 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     problemas.push({
       id: proximoIdProblema(),
       severidade: "erro",
-      mensagem: `Bloco "${nodesPorId.get(nodeId)?.titulo ?? nodeId}" faz parte de um ciclo sem espera nem condição — risco de loop infinito.`,
+      mensagem: `Bloco "${nodesPorId.get(nodeId)?.titulo ?? nodeId}" faz parte de um ciclo sem espera nem condição. Risco de loop infinito.`,
       nodeId,
     });
   });
@@ -530,8 +530,8 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
 /**
  * DFS clássica com pilha de recursão pra achar ciclos. Pra cada ciclo achado,
  * se nenhum nó dele "quebra o loop" (aguardar/condição), marca todos os nós
- * do ciclo como problematicos. Não tenta achar TODOS os ciclos possíveis —
- * só o suficiente pra avisar o usuário, sem virar um analisador completo de grafos.
+ * do ciclo como problematicos. Não tenta achar TODOS os ciclos possíveis.
+ * Só o suficiente pra avisar o usuário, sem virar um analisador completo de grafos.
  */
 function detectarCiclosDeLoopInfinito(
   nodes: FlowNode[],

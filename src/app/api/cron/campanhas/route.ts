@@ -21,8 +21,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(request: Request) {
-  // Esta rota não passa pela checagem de sessão do `proxy.ts` — não pode, o cron não faz login —
-  // então o segredo compartilhado é a ÚNICA defesa dela. Por isso ele é obrigatório: antes a
+  // Esta rota não passa pela checagem de sessão do `proxy.ts`. Não pode, o cron não faz login.
+  // Então o segredo compartilhado é a ÚNICA defesa dela. Por isso ele é obrigatório: antes a
   // verificação só valia `if (segredo)`, e sem a variável configurada a rota ficava aberta pra
   // qualquer um na internet acelerar as campanhas de todos os clientes chamando a URL em laço.
   // Recusar quando falta configuração é o lado seguro do erro.

@@ -9,13 +9,14 @@ import { BolhaMensagem } from "./BolhaMensagem";
 import { IconClose, IconConfiguracoes, IconDoc, IconEnviar, IconImage, IconLocalizacao, IconUpload } from "@/components/icons";
 import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
 import { useFunis } from "@/lib/funis-context";
+import { ehVazio } from "@/lib/vazio";
 
 /**
- * Painel de conversa completo, em popup — a janela que abre ao clicar num card do Funil.
+ * Painel de conversa completo, em popup: a janela que abre ao clicar num card do Funil.
  *
  * É por AQUI que o dia a dia acontece pra quem compra o CRM: o vendedor olha o funil, abre o card,
  * atende, fecha e volta a arrastar. Por isso o popup não pode ser uma caixinha de canto com um
- * campo de texto: precisa das mesmas ferramentas da tela de Conversas — anexo, resposta rápida e
+ * campo de texto: precisa das mesmas ferramentas da tela de Conversas. Anexo, resposta rápida e
  * os dados do contato à mão.
  *
  * É sobreposto (não empurra o funil pro lado) e fecha inteiro, pra o arraste dos cards continuar
@@ -23,7 +24,7 @@ import { useFunis } from "@/lib/funis-context";
  *
  * Mora em `components/` e não dentro da página do Funil de propósito: a tela de Conversas vai
  * passar a usar este mesmo painel. Enquanto existirem duas implementações da mesma conversa, uma
- * das duas fica pra trás — foi assim que a resposta pelo Funil ficou meses sem enviar de verdade.
+ * das duas fica pra trás. Foi assim que a resposta pelo Funil ficou meses sem enviar de verdade.
  */
 export type RespostaRapida = { id: string; titulo: string; texto: string };
 
@@ -41,7 +42,7 @@ export function PainelConversa({
   initials: string;
   fotoUrl?: string | null;
   respostasRapidas?: RespostaRapida[];
-  /** Etapa em que o negócio está no funil — mostrada na aba Negociação. */
+  /** Etapa em que o negócio está no funil. Mostrada na aba Negociação. */
   etapaAtual?: string;
   aoFechar: () => void;
 }) {
@@ -57,7 +58,7 @@ export function PainelConversa({
    *
    * Antes o clique em "Foto" já disparava o envio: escolheu errado, era mensagem errada na
    * conversa do cliente, sem volta. Agora passa por uma prévia, com legenda opcional e a chance de
-   * desistir — que é como qualquer aplicativo de mensagem se comporta.
+   * desistir: que é como qualquer aplicativo de mensagem se comporta.
    */
   const [previa, setPrevia] = useState<{ arquivo: File; dataUrl: string; tipo: "image" | "file" } | null>(null);
   const [legendaPrevia, setLegendaPrevia] = useState("");
@@ -77,7 +78,7 @@ export function PainelConversa({
   const ultima = mensagens[mensagens.length - 1];
   const contato = contatos.find((c) => c.nome === contatoNome);
 
-  // O negócio deste contato, em qualquer funil — é ele que a transferência move. Buscar pelo nome
+  // O negócio deste contato, em qualquer funil: é ele que a transferência move. Buscar pelo nome
   // é o mesmo critério que o resto do módulo já usa pra ligar conversa e card.
   const { funis } = useFunis();
   const cardDoContato = funis
@@ -106,13 +107,13 @@ export function PainelConversa({
   const [empresaEdit, setEmpresaEdit] = useState(contato?.empresa ?? "");
   const [salvo, setSalvo] = useState(false);
 
-  // Rola pro fim ao abrir e a cada mensagem nova — sem isso o painel abre no topo do histórico,
+  // Rola pro fim ao abrir e a cada mensagem nova. Sem isso o painel abre no topo do histórico,
   // longe do que acabou de chegar.
   useEffect(() => {
     fimDaListaRef.current?.scrollIntoView({ block: "end" });
   }, [mensagens.length, contatoNome]);
 
-  // Ajuste durante o render (não num efeito) ao trocar de conversa — é o padrão do React pra
+  // Ajuste durante o render (não num efeito) ao trocar de conversa. É o padrão do React pra
   // "adjusting state when a prop changes", e evita a cascata de re-render que um `useEffect`
   // fazendo a mesma coisa provoca. Só dispara na troca: reabrir a mesma conversa não pode
   // descartar o que está sendo digitado.
@@ -169,8 +170,8 @@ export function PainelConversa({
   }
 
   /**
-   * Arrastar o arquivo pra cima da conversa vale como anexar. O clipe continua onde estava — numa
-   * janela de conversa a caixa tracejada fixa roubaria o espaço das mensagens —, mas quem arrasta
+   * Arrastar o arquivo pra cima da conversa vale como anexar. O clipe continua onde estava. Numa
+   * janela de conversa a caixa tracejada fixa roubaria o espaço das mensagens., mas quem arrasta
    * um arquivo pra dentro agora vê pra onde soltar em vez de nada acontecer.
    */
   async function prepararArquivo(arquivo: File, tipo: "image" | "file") {
@@ -188,7 +189,7 @@ export function PainelConversa({
     setLegendaPrevia("");
     await enviarArquivo(arquivo, tipo);
     // A legenda vai como mensagem própria: nem todo canal aceita legenda junto do anexo, e mandar
-    // separado funciona em todos — melhor do que a legenda sumir em silêncio num deles.
+    // separado funciona em todos: melhor do que a legenda sumir em silêncio num deles.
     if (legenda) await enviarTexto(legenda);
   }
 
@@ -243,7 +244,7 @@ export function PainelConversa({
       className="painel-conversa-fundo"
       onClick={aoFechar}
       onDragOver={(e) => {
-        // Só reage a arquivo vindo de fora — arrastar texto selecionado não é anexar.
+        // Só reage a arquivo vindo de fora. Arrastar texto selecionado não é anexar.
         if (!e.dataTransfer.types.includes("Files")) return;
         e.preventDefault();
         setArrastandoArquivo(true);
@@ -282,7 +283,7 @@ export function PainelConversa({
         <header className="painel-conversa-topo">
           <div className="name-cell">
             <div className="avatar">
-              {/* A conversa manda a foto quando tem; senão vale a do contato — é a mesma pessoa, e
+              {/* A conversa manda a foto quando tem; senão vale a do contato. É a mesma pessoa, e
                   no funil nem sempre existe conversa carregada pra fornecer a imagem. */}
               {fotoUrl ?? contato?.fotoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- imagem já baixada e servida pelo CRM
@@ -296,11 +297,11 @@ export function PainelConversa({
               {/* Canal + identificador + responsável numa linha só: é o que o atendente precisa
                   saber antes de escrever, e ocupa o espaço de uma linha em vez de três. */}
               <p className="s">
-                {/* `filter(Boolean)` não bastava: um responsável vazio chega como "—" e virava um
-                    traço solto no fim ("Instagram · fulano · —"). Some o que não tem conteúdo. */}
+                {/* `filter(Boolean)` não bastava: um responsável vazio chega como "-" e virava um
+                    traço solto no fim ("Instagram · fulano ·."). Some o que não tem conteúdo. */}
                 {[canal ?? "Conversa", contato?.instagram ?? contato?.whatsapp, contato?.responsavel]
                   .map((parte) => parte?.trim())
-                  .filter((parte) => parte && parte !== "—")
+                  .filter((parte) => parte && !ehVazio(parte))
                   .join(" · ")}
               </p>
             </div>
@@ -327,7 +328,7 @@ export function PainelConversa({
               <p className="hint">Nenhuma mensagem ainda.</p>
             ) : (
               mensagens.map((msg, i) => {
-                // Mesmo separador de dia da tela de Conversas — sem ele o histórico é um rolo
+                // Mesmo separador de dia da tela de Conversas. Sem ele o histórico é um rolo
                 // contínuo e não dá pra saber onde termina um dia e começa o outro.
                 const dia = rotuloDoDia(msg.criadoEm);
                 const diaAnterior = i > 0 ? rotuloDoDia(mensagens[i - 1].criadoEm) : null;
@@ -350,7 +351,7 @@ export function PainelConversa({
           </p>
         ) : null}
 
-        {/* Prévia do que vai ser enviado — com legenda e a chance de desistir. */}
+        {/* Prévia do que vai ser enviado. Com legenda e a chance de desistir. */}
         {previa ? (
           <div className="painel-previa">
             {previa.tipo === "image" ? (
@@ -483,7 +484,7 @@ export function PainelConversa({
         />
       </div>
 
-      {/* Fora da janela da conversa, ao lado dela — como o painel do WhatsApp. Espremido lá dentro,
+      {/* Fora da janela da conversa, ao lado dela: como o painel do WhatsApp. Espremido lá dentro,
           o formulário roubava a largura das mensagens e a conversa virava uma coluna estreita
           justamente enquanto a pessoa lia pra responder. */}
       {dadosAberto ? (
@@ -543,7 +544,7 @@ export function PainelConversa({
                 </div>
                 <div className="field">
                   <label>Origem</label>
-                  <div className="input">{contato?.origem ?? canal ?? "—"}</div>
+                  <div className="input">{contato?.origem ?? canal ?? "-"}</div>
                 </div>
                 <div className="field">
                   <label>Responsável</label>
@@ -569,7 +570,7 @@ export function PainelConversa({
                   Transferir de funil
                 </button>
                 <p className="hint" style={{ margin: "8px 0 0" }}>
-                  Arrastar o card no funil atrás desta janela também move — e nesse caminho a
+                  Arrastar o card no funil atrás desta janela também move. E nesse caminho a
                   mudança passa pelas automações de entrada da etapa.
                 </p>
               </>
@@ -582,7 +583,7 @@ export function PainelConversa({
                 </p>
                 <div className="field">
                   <label>Última mensagem</label>
-                  <div className="input">{ultima ? `${ultima.hora} · ${resumo(ultima.texto)}` : "—"}</div>
+                  <div className="input">{ultima ? `${ultima.hora} · ${resumo(ultima.texto)}` : "-"}</div>
                 </div>
                 <div className="field">
                   <label>Recebidas / enviadas</label>
@@ -596,7 +597,7 @@ export function PainelConversa({
 
             {aba === "historico" ? (
               <ol className="painel-conversa-historico">
-                {/* Linha do tempo real: inclui o que NÃO é mensagem — comentou numa publicação, a
+                {/* Linha do tempo real: inclui o que NÃO é mensagem. Comentou numa publicação, a
                     automação disparou, o CRM respondeu, entrou no funil. É esse encadeamento que
                     explica por que a pessoa está falando com a gente. */}
                 {linhaDoTempo.map((e) => (
@@ -645,7 +646,7 @@ export function PainelConversa({
     navigator.geolocation.getCurrentPosition(
       (posicao) => {
         const { latitude, longitude } = posicao.coords;
-        // O texto ainda carrega o endereço do mapa — é o que a pessoa do outro lado recebe, já
+        // O texto ainda carrega o endereço do mapa. É o que a pessoa do outro lado recebe, já
         // que nem WhatsApp nem Instagram aceitam localização estruturada pela nossa camada de
         // envio. Mas a bolha DAQUI vira um cartão com prévia do mapa, em vez de uma linha com um
         // endereço gigante: URL é camada técnica, não conteúdo de leitura.
@@ -668,7 +669,7 @@ export function PainelConversa({
 /**
  * Cria a bolha "pendente" e devolve o marcador do resultado.
  *
- * Fica fora do componente porque só roda dentro de um handler (clique/envio), nunca no render — e
+ * Fica fora do componente porque só roda dentro de um handler (clique/envio), nunca no render: e
  * `Date.now()`/`Math.random()` dentro do corpo de um componente são lidos como impuros pelo lint,
  * com razão: ali eles rodariam a cada renderização.
  */
@@ -693,7 +694,7 @@ function adicionarBolhaOtimista(
     }));
 }
 
-/** "Hoje", "Ontem" ou a data por extenso — o separador de dia da conversa. Mora aqui e na tela de
+/** "Hoje", "Ontem" ou a data por extenso. O separador de dia da conversa. Mora aqui e na tela de
  * Conversas; quando o painel substituir aquela tela, sobra só esta cópia. */
 function rotuloDoDia(criadoEm: number | undefined): string | null {
   if (!criadoEm) return null;
@@ -712,7 +713,7 @@ function rotuloDoDia(criadoEm: number | undefined): string | null {
   });
 }
 
-/** Primeira linha do texto, curta — o histórico é uma lista de referências, não a conversa toda. */
+/** Primeira linha do texto, curta: o histórico é uma lista de referências, não a conversa toda. */
 function resumo(texto: string): string {
   const limpo = texto.split("\n")[0].trim();
   if (!limpo) return "(anexo)";

@@ -9,8 +9,8 @@ import { camposAssinadosNoInstagram, inscreverAppNoInstagram } from "@/lib/integ
 /**
  * Refaz a assinatura dos webhooks da conta do Instagram já conectada.
  *
- * A assinatura é feita UMA vez, no momento de conectar. Se ela falhar ali — e já falhou, por um
- * nome de campo errado do nosso lado — a conta fica "Conectada" e nenhuma mensagem chega, sem que
+ * A assinatura é feita UMA vez, no momento de conectar. Se ela falhar ali: e já falhou, por um
+ * nome de campo errado do nosso lado. A conta fica "Conectada" e nenhuma mensagem chega, sem que
  * nada na tela indique o que fazer. A única saída era desconectar e conectar de novo, um passo que
  * assusta (parece que vai perder as conversas) e que ninguém adivinha sozinho.
  *
@@ -30,7 +30,7 @@ export async function POST() {
 
   const token = decriptar(integracao.accessTokenCriptografado);
   const erro = await inscreverAppNoInstagram(token);
-  // Confere na fonte se a assinatura ficou mesmo de pé — a chamada de inscrição pode responder OK
+  // Confere na fonte se a assinatura ficou mesmo de pé. A chamada de inscrição pode responder OK
   // e a conta continuar sem os campos, e aí a pessoa clicaria no botão achando que resolveu.
   const campos = await camposAssinadosNoInstagram(token);
 
@@ -53,12 +53,12 @@ export async function POST() {
     );
   }
   // `comments` é assinado junto de `messages`, mas confirmar separado importa: sem ele o Direct
-  // funciona e as automações de comentário ficam mudas — falha silenciosa, a pior de todas. Não é
+  // funciona e as automações de comentário ficam mudas. Falha silenciosa, a pior de todas. Não é
   // erro fatal (o Direct segue), só um aviso honesto de que metade não vai funcionar.
   const semComentarios = campos ? !campos.includes("comments") : false;
   // Mesmo raciocínio pro eco: sem `message_echoes`, o que ela responde pelo APP do Instagram não
   // chega no CRM e a thread aqui fica só com o lado da cliente. Também não é fatal, mas explica
-  // sozinho o "não aparece em tempo real" — que de outra forma parece bug da tela.
+  // sozinho o "não aparece em tempo real". Que de outra forma parece bug da tela.
   const semEco = campos ? !campos.includes("message_echoes") : false;
   const avisos = [
     semComentarios

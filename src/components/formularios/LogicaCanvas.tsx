@@ -30,11 +30,11 @@ import {
 } from "@/lib/formularios-context";
 
 /**
- * Construtor visual da lógica condicional de UM campo — "SE [condição] ENTÃO [mostrar/ocultar/
+ * Construtor visual da lógica condicional de UM campo. "SE [condição] ENTÃO [mostrar/ocultar/
  * obrigatório este campo]". Reaproveita o mesmo motor (@xyflow/react) e a mesma linguagem visual
  * (classes `.flow-node`/`.flow-handle`) do editor de automações (`src/components/automation-flow`),
  * mas num escopo bem menor: só dois tipos de nó, topologia fixa (toda condição aponta pro nó
- * "resultado", sem o usuário desenhar conexões), sem undo/redo/minimapa/auto-layout — é uma lista de
+ * "resultado", sem o usuário desenhar conexões), sem undo/redo/minimapa/auto-layout: é uma lista de
  * regras (`RegraLogica[]`) desenhada como grafo, não um fluxo de automação de verdade.
  */
 
@@ -183,7 +183,7 @@ function LogicaCanvasInner({
     atualizarModo,
   );
 
-  // Posição do node é só visual (arrastar pra organizar a leitura) — nunca persistida no domínio,
+  // Posição do node é só visual (arrastar pra organizar a leitura). Nunca persistida no domínio,
   // só guardada localmente pra sobreviver ao próximo render enquanto o campo continuar selecionado.
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     setPosicoesCustom((prev) => {
@@ -205,7 +205,7 @@ function LogicaCanvasInner({
   }
 
   const { fitView } = useReactFlow();
-  // `fitView` (prop abaixo) só roda na primeira montagem — sem isso, um node de condição adicionado
+  // `fitView` (prop abaixo) só roda na primeira montagem. Sem isso, um node de condição adicionado
   // depois fica fora da área visível (e inacessível a clique), porque o pan/zoom continua enquadrado
   // no que existia no instante do mount.
   useEffect(() => {

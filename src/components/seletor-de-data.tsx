@@ -6,18 +6,18 @@ import { createPortal } from "react-dom";
 import { IconCalendar } from "@/components/icons";
 
 /**
- * Seletor de data do CRM — o calendário que a gente controla.
+ * Seletor de data do CRM. O calendário que a gente controla.
  *
  * Os 19 campos de data do sistema usam `<input type="date">`, que abre o calendário NATIVO do
  * navegador. Aquele calendário não aceita estilo nenhum: ele muda de aparência entre Safari,
  * Chrome e Windows, ignora o tema claro/escuro do CRM e não tem como seguir a identidade azul.
- * Era por isso que "deixar o calendário bonito" não era possível — não havia calendário nosso.
+ * Era por isso que "deixar o calendário bonito" não era possível. Não havia calendário nosso.
  *
  * Este é. Sem dependência nova: o cálculo de dias é aritmética de `Date`, e a aparência sai dos
  * mesmos tokens do resto do sistema.
  *
  * O painel sai por portal em `document.body`, com `position: fixed` a partir do retângulo do
- * botão — mesma técnica do `FloatingDropdown`. Sem isso ele seria cortado nos lugares onde o
+ * botão: mesma técnica do `FloatingDropdown`. Sem isso ele seria cortado nos lugares onde o
  * calendário vive dentro de um contêiner que rola (`.dropdown-pop` tem `overflow-y: auto` e
  * altura máxima), que é justamente onde ficam o menu de adiar e o seletor de período.
  */

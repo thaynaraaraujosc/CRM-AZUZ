@@ -1,8 +1,8 @@
 /**
- * Tipos da Central do Dia (página Início) — um "item do dia" é sempre derivado de dados que já
+ * Tipos da Central do Dia (página Início). Um "item do dia" é sempre derivado de dados que já
  * existem em outro módulo do CRM (conversa, tarefa, negócio, automação) ou, quando esse módulo não
  * tem o dado necessário ainda (agenda/compromissos), de um mock dedicado e claramente comentado como
- * tal. Nunca inventa estado próprio de negócio — só agrega e prioriza o que já existe.
+ * tal. Nunca inventa estado próprio de negócio. Só agrega e prioriza o que já existe.
  */
 
 export type ModuloOrigem = "conversa" | "agenda" | "tarefa" | "lead" | "automacao";
@@ -46,7 +46,7 @@ export type CompromissoDia = {
   responsavel: string;
   local: string;
   status: StatusCompromisso;
-  /** Minutos até começar — só usado pro destaque "Começa em X minutos". */
+  /** Minutos até começar: só usado pro destaque "Começa em X minutos". */
   minutosParaComecar?: number;
 };
 
@@ -56,6 +56,6 @@ export type RecomendacaoDia = {
   quantidade: number;
   impacto: "alto" | "medio" | "baixo";
   acaoSugerida: string;
-  /** Pra "Ver itens" — filtro rápido que a recomendação representa. */
+  /** Pra "Ver itens": filtro rápido que a recomendação representa. */
   filtroRelacionado?: string;
 };

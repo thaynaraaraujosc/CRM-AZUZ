@@ -5,10 +5,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gerarSenhaAleatoria } from "@/lib/senha-aleatoria";
 
-/** POST — versão do reset de senha pro admin de um workspace resolver o acesso do próprio time,
+/** POST: versão do reset de senha pro admin de um workspace resolver o acesso do próprio time,
  * sem precisar do super-admin (`/api/admin/membros/[id]/resetar-senha`, mesma lógica, escopo
  * global). Só mexe em membro do mesmo workspace de quem está logado, e só se quem está logado for
- * admin — mesmo padrão de posse de `/api/equipe/[id]`. */
+ * admin: mesmo padrão de posse de `/api/equipe/[id]`. */
 export async function POST(_request: Request, ctx: RouteContext<"/api/equipe/[id]/resetar-senha">) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

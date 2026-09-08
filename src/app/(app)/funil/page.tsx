@@ -33,7 +33,7 @@ const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Indicação",
 ];
 
-/** Formata um telefone salvo cru (só dígitos, com DDI — ex.: "5562982041013") pra leitura —
+/** Formata um telefone salvo cru (só dígitos, com DDI: ex.: "5562982041013") pra leitura:
  * "+55 62 98204-1013". Sem DDI reconhecido (não é BR, ou veio incompleto) devolve só com "+" na
  * frente, ainda melhor que uma sequência crua de números. */
 function formatarTelefoneExibicao(numero: string | null | undefined): string | null {
@@ -80,14 +80,14 @@ function FunilPageInner() {
   const { conversas } = useConversas();
 
   /**
-   * Última movimentação por contato — é o que o card mostra no canto e o que dá sentido ao botão
+   * Última movimentação por contato: é o que o card mostra no canto e o que dá sentido ao botão
    * "Mensagens recentes no topo". Antes o card exibia `NegocioCard.dias`, uma string gravada como
    * "Hoje" quando ele nasceu e nunca mais tocada: o funil inteiro dizia "Hoje", inclusive card de
    * semanas atrás.
    */
   const atividadePorNome = useMemo(
     // `ultimaMensagemEm` e não `atualizadoEm`: o segundo sobe por qualquer escrita na conversa, e
-    // uma importação de contatos encostava em todas de uma vez — deixando o funil inteiro com cara
+    // uma importação de contatos encostava em todas de uma vez. Deixando o funil inteiro com cara
     // de recente. Sem mensagem gravada ainda, cai na data de criação do card.
     () => new Map(conversas.map((c) => [c.nome, c.ultimaMensagemEm ?? null])),
     [conversas],
@@ -95,14 +95,14 @@ function FunilPageInner() {
   const { membros: equipe } = useEquipe();
   const motivosPerda = useMotivosPerda();
   const [configAberto, setConfigAberto] = useState(false);
-  /** Negócio sendo transferido — a janela é a mesma usada no painel do funil e nas conversas. */
+  /** Negócio sendo transferido: a janela é a mesma usada no painel do funil e nas conversas. */
   const [transferindo, setTransferindo] = useState<{ id: string; nome: string; responsavel?: string } | null>(null);
   const [configAnchorRect, setConfigAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: configPopRef, posicao: configPos } = useFloatingPosition(configAnchorRect, configAberto, 8, () => setConfigAberto(false));
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const proximoToastId = useRef(0);
 
-  /** Popup de resposta rápida — lê/grava na MESMA conversa que o WhatsApp usa (ver
+  /** Popup de resposta rápida: lê/grava na MESMA conversa que o WhatsApp usa (ver
    * src/lib/mensagens-extra-context.tsx): Funil e WhatsApp falam com o mesmo contato, então uma
    * mensagem mandada de um lugar aparece no outro. */
   const [respostaRapidaContato, setRespostaRapidaContato] = useState<string | null>(null);
@@ -113,7 +113,7 @@ function FunilPageInner() {
   /**
    * Traz pro funil as conversas que ainda não viraram negócio.
    *
-   * Só quem escreve pela primeira vez entra no funil sozinho — o que é certo pro dia a dia (mandar
+   * Só quem escreve pela primeira vez entra no funil sozinho. O que é certo pro dia a dia (mandar
    * mensagem de novo não pode mexer na etapa em que o vendedor deixou a pessoa), mas deixa de fora
    * quem já era contato antes. Este botão é a porta de entrada em massa: quem começa com a caixa
    * cheia puxa tudo de uma vez, e quem perdeu cards recupera sem abrir conversa por conversa.
@@ -129,7 +129,7 @@ function FunilPageInner() {
           ? `${dados.criados} ${dados.criados === 1 ? "conversa trazida" : "conversas trazidas"} pro funil.`
           : "Todas as conversas já estão no funil.",
       );
-      // Recarrega do servidor — os cards novos foram criados lá, não aqui; sem isso a tela só
+      // Recarrega do servidor: os cards novos foram criados lá, não aqui; sem isso a tela só
       // mostraria a mudança no próximo F5. Por `recarregar` (e não `setFunis`) pra tela não
       // devolver num PUT o funil inteiro que o servidor acabou de escrever.
       await recarregarFunis();
@@ -142,7 +142,7 @@ function FunilPageInner() {
 
   /**
    * Correção de uma vez pro acúmulo antigo: até a mudança que passou a colocar lead novo no topo,
-   * todo card entrava pelo FIM da coluna — então quem chegou primeiro ficava em cima e o lead
+   * todo card entrava pelo FIM da coluna. Então quem chegou primeiro ficava em cima e o lead
    * recente ficava enterrado. Daqui pra frente o funil já nasce certo; este botão arruma o que
    * ficou pra trás, sem mudar card de etapa.
    */
@@ -154,7 +154,7 @@ function FunilPageInner() {
       if (!resposta.ok) throw new Error(dados.erro ?? "Não foi possível reordenar.");
       avisarAutomacao(
         dados.reordenados
-          ? `${dados.reordenados} ${dados.reordenados === 1 ? "card reordenado" : "cards reordenados"} — quem falou por último ficou no topo.`
+          ? `${dados.reordenados} ${dados.reordenados === 1 ? "card reordenado" : "cards reordenados"}: quem falou por último ficou no topo.`
           : "As colunas já estavam na ordem das mensagens mais recentes.",
       );
       await recarregarFunis();
@@ -218,7 +218,7 @@ function FunilPageInner() {
   const [nomeRenomeando, setNomeRenomeando] = useState("");
   const [colunaArrastando, setColunaArrastando] = useState<number | null>(null);
 
-  // Menu "Marcar como ganho/perdido" — abre por card (⋮), grava statusFechamento/motivoPerda/
+  // Menu "Marcar como ganho/perdido": abre por card (⋮), grava statusFechamento/motivoPerda/
   // dataFechamento de verdade no NegocioCard (persiste via o mesmo PUT /api/funis que já sincroniza
   // o resto do kanban).
   const [desfechoMenu, setDesfechoMenu] = useState<{ coluna: number; card: number; rect: DOMRect } | null>(null);
@@ -326,7 +326,7 @@ function FunilPageInner() {
     const novoCard: NegocioCard = {
       id: `negocio-${Date.now()}`,
       nome,
-      valor: valorNegocio.trim() || "—",
+      valor: valorNegocio.trim() || "-",
       origem: origemNegocio,
       dias: "Hoje",
       data: HOJE_ISO,
@@ -370,13 +370,13 @@ function FunilPageInner() {
 
     if (cardMovido && etapaDestino) {
       // Grava na hora e CONFERE o resultado. Antes a chamada era disparada e esquecida: se o banco
-      // recusasse, o card ficava na etapa nova só na tela e voltava no F5 seguinte — sem erro em
+      // recusasse, o card ficava na etapa nova só na tela e voltava no F5 seguinte. Sem erro em
       // lugar nenhum. Agora, se a gravação falhar, `moverNegocio` relê o funil do banco e a tela
       // volta ao que realmente está salvo.
       void moverNegocio({ cardId: cardMovido.id, etapaId: etapaDestino.id });
 
       // O gatilho "entrou na etapa" NÃO roda mais aqui. Ele acontece no servidor, dentro de
-      // `/api/funis/mover` — assim a automação vale pra qualquer caminho que mova o card
+      // `/api/funis/mover`: assim a automação vale pra qualquer caminho que mova o card
       // (importação, webhook, outra aba) e não só pra quem estava com esta tela aberta.
     }
   }
@@ -385,7 +385,7 @@ function FunilPageInner() {
     const titulo = nomeNovaEtapa.trim();
     if (!titulo || !funilAtivo) return;
     // Grava ANTES de aparecer na tela. Antes a etapa entrava no estado e dependia do sync geral do
-    // funil pra ser salva — quando aquele sync falhava, ela sumia no F5 sem nenhum aviso.
+    // funil pra ser salva: quando aquele sync falhava, ela sumia no F5 sem nenhum aviso.
     const { ok } = await criarEtapaPersistida(funilAtivo.id, { id: `etapa-${Date.now()}`, titulo });
     if (!ok) return;
     setNomeNovaEtapa("");
@@ -464,7 +464,7 @@ function FunilPageInner() {
         sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} ${totalVisivel === 1 ? "negócio" : "negócios"} ${filtroAtivo ? (totalVisivel === 1 ? "encontrado" : "encontrados") : "no funil"}`}
         actions={
           <>
-            {/* Ação de apoio — usada de vez em quando, não deve competir com criar funil/etapa. */}
+            {/* Ação de apoio: usada de vez em quando, não deve competir com criar funil/etapa. */}
             <button
               type="button"
               className="btn terciario"
@@ -630,7 +630,7 @@ function FunilPageInner() {
               <div>
                 <p className="n">Novo funil</p>
                 <p className="s">
-                  Cada funil pertence a um atendente — as mensagens e tarefas
+                  Cada funil pertence a um atendente. As mensagens e tarefas
                   atribuídas a ele entram nesse funil. Já sai com o modelo
                   pronto: Novo, Qualificado, Proposta, Fechado.
                 </p>
@@ -736,10 +736,10 @@ function FunilPageInner() {
         {filtroAberto ? (
           <section className="card mb14">
             <div className="panel-h">
-              <h4>Filtrar — qual origem e qual período</h4>
+              <h4>Filtrar: qual origem e qual período</h4>
             </div>
             <div className="field">
-              <label>Origem do lead — pode escolher mais de uma</label>
+              <label>Origem do lead: pode escolher mais de uma</label>
               <div className="filters-row">
                 <button
                   type="button"
@@ -807,7 +807,7 @@ function FunilPageInner() {
               : cardsComIndice;
 
             // Conta os fluxos REAIS ligados a esta etapa. Antes vinha de um catálogo em memória que
-            // nunca era gravado e nunca rodava — a etapa anunciava "2 automações" que não existiam.
+            // nunca era gravado e nunca rodava. A etapa anunciava "2 automações" que não existiam.
             const automacoesEtapa = funilAtivo
               ? fluxos.filter(
                   (f) => f.funilId === funilAtivo.id && f.etapaId === coluna.id && f.status === "publicado" && !f.arquivada,
@@ -909,7 +909,7 @@ function FunilPageInner() {
                 {cardsVisiveis.map(({ card, cardIndex }) => {
                   const conversaDoCard = conversas.find((c) => c.nome === card.nome);
                   const temMensagemNova = (conversaDoCard?.naoLidas ?? 0) > 0;
-                  // "AD" — lead veio de anúncio (Meta/Google Ads), não de contato direto/indicação.
+                  // "AD": lead veio de anúncio (Meta/Google Ads), não de contato direto/indicação.
                   const veioDeAnuncio = card.origem === "Meta Ads" || card.origem === "Google Ads";
                   return (
                     <button
@@ -1029,7 +1029,7 @@ function FunilPageInner() {
               return (
                 <div style={{ padding: 12 }}>
                   <p className="hint" style={{ margin: "0 0 10px" }}>
-                    {cardAtual.statusFechamento === "ganho" ? "Marcado como ganho." : `Marcado como perdido${cardAtual.motivoPerda ? ` — ${cardAtual.motivoPerda}` : ""}.`}
+                    {cardAtual.statusFechamento === "ganho" ? "Marcado como ganho." : `Marcado como perdido${cardAtual.motivoPerda ? `: ${cardAtual.motivoPerda}` : ""}.`}
                   </p>
                   <button
                     type="button"

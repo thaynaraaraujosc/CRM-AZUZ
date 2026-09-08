@@ -31,7 +31,7 @@ export function HistoricoVersoes({
         </div>
         <div className="flow-side-body">
           {ordenadas.length === 0 ? (
-            <p className="hint">Esse fluxo ainda não foi publicado — não existe versão salva.</p>
+            <p className="hint">Esse fluxo ainda não foi publicado. Não existe versão salva.</p>
           ) : (
             ordenadas.map((v) => (
               <div className="flow-versao-row" key={v.versao}>

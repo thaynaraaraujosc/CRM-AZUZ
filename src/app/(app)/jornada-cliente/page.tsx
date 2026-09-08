@@ -62,7 +62,7 @@ const COLUNAS_OPCIONAIS: { chave: ColunaOpcional; label: string }[] = [
 
 type Ordenacao = { coluna: string; asc: boolean };
 
-/** Remove acentos e normaliza caixa — a pesquisa ignora os dois. */
+/** Remove acentos e normaliza caixa. A pesquisa ignora os dois. */
 function normalizar(texto: string): string {
   return texto
     .normalize("NFD")
@@ -122,7 +122,7 @@ function JornadaClientePageInner() {
   const [painelMobileAberto, setPainelMobileAberto] = useState(!!searchParams.get("contato"));
 
   // Começa vazio (igual ao HTML pré-renderizado no build) e só lê o
-  // localStorage depois de montar — inicializar direto no useState causaria
+  // localStorage depois de montar: inicializar direto no useState causaria
   // erro de hidratação sempre que o navegador já tivesse recentes salvos
   // (a página é pré-renderizada estática, sem acesso a localStorage).
   const [contatosRecentes, setContatosRecentes] = useState<ContatoRecente[]>([]);
@@ -135,14 +135,14 @@ function JornadaClientePageInner() {
   const [wizardAberto, setWizardAberto] = useState(false);
 
   // Hidratação: começa vazio (igual ao HTML estático) e só lê o
-  // localStorage depois de montar — ver comentário nos useState acima.
+  // localStorage depois de montar: ver comentário nos useState acima.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setContatosRecentes(lerContatosRecentes());
     setHistoricosRecentes(lerHistoricosRecentes());
   }, []);
 
-  // Espera 220ms sem digitar antes de aplicar o termo — mesma UX que uma
+  // Espera 220ms sem digitar antes de aplicar o termo. Mesma UX que uma
   // busca remota teria (ver seção 1: "preparar busca remota para o
   // back-end"). Enquanto `busca` e `buscaDebounced` divergem, a lista
   // mostra "Buscando…"; o setState só acontece dentro do timeout, nunca
@@ -175,7 +175,7 @@ function JornadaClientePageInner() {
 
   const termo = normalizar(buscaDebounced);
   // A busca roda sobre TODOS os contatos (não só os visíveis na página
-  // atual) — seção 1: "não pesquisar somente os contatos visíveis na tela".
+  // atual): seção 1: "não pesquisar somente os contatos visíveis na tela".
   const resultadosBusca = useMemo(() => {
     if (!termo) return contatos;
     return contatos.filter((c) => {
@@ -397,7 +397,7 @@ function JornadaClientePageInner() {
           <div className="topbar-title-row">
             <h2>Jornada do cliente</h2>
           </div>
-          <p className="sub">A jornada completa de um contato — desde a primeira entrada até a última interação</p>
+          <p className="sub">A jornada completa de um contato. Desde a primeira entrada até a última interação</p>
         </div>
       </div>
 
@@ -599,7 +599,7 @@ function JornadaClientePageInner() {
                                 </span>
                               </button>
                             </td>
-                            <td>{c.empresa ?? "—"}</td>
+                            <td>{c.empresa ?? "-"}</td>
                             <td>
                               <span className={`origin-tag ${classeOrigem(c.origem)}`}>{c.origem}</span>
                             </td>
@@ -762,7 +762,7 @@ function JornadaClientePageInner() {
   );
 }
 
-function ResumoItem({ label, value, vazio = "—" }: { label: string; value: string | null | undefined; vazio?: string }) {
+function ResumoItem({ label, value, vazio = "-" }: { label: string; value: string | null | undefined; vazio?: string }) {
   return (
     <div className="jornada-resumo-item">
       <p className="l">{label}</p>

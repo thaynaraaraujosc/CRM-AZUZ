@@ -11,7 +11,7 @@ import {
 } from "react";
 
 /**
- * Estado local da Central do Dia (página Início) — só front-end: quais itens foram concluídos ou
+ * Estado local da Central do Dia (página Início). Só front-end: quais itens foram concluídos ou
  * adiados, a organização sugerida do dia e os filtros selecionados. Persistido em localStorage pra
  * sobreviver a um reload, mas nunca criado como rotina no servidor (ver item 12/13/14/15 do pedido).
  */
@@ -87,7 +87,7 @@ type CentralDiaContextValue = {
 
 const CentralDiaContext = createContext<CentralDiaContextValue | null>(null);
 
-/** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
+/** Preferências (banco real, ver src/app/api/preferencias/): chave desse blob na tabela `Preferencia`. */
 const CHAVE_PREFERENCIA = "central-dia";
 
 type EstadoPersistido = {
@@ -121,7 +121,7 @@ async function carregarEstado(): Promise<EstadoPersistido> {
 
 export function CentralDiaProvider({ children }: { children: ReactNode }) {
   // Começa sempre com o padrão (igual ao HTML pré-renderizado) e só lê o localStorage depois de
-  // montar, senão dá erro de hidratação — mesmo cuidado tomado em `inicio/page.tsx` hoje.
+  // montar, senão dá erro de hidratação. Mesmo cuidado tomado em `inicio/page.tsx` hoje.
   const [concluidos, setConcluidos] = useState<ItemConcluido[]>(ESTADO_PADRAO.concluidos);
   const [adiados, setAdiados] = useState<ItemAdiado[]>(ESTADO_PADRAO.adiados);
   const [recomendacoesIgnoradas, setRecomendacoesIgnoradas] = useState<string[]>(

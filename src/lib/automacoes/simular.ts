@@ -8,7 +8,7 @@ import { proximaAresta, rodarExecucao, saidaDaResposta } from "./motor-estado";
  * O botão "Testar", rodando o MOTOR DE VERDADE.
  *
  * O simulador antigo era código escrito à parte: percorria o fluxo com a própria lógica dele. Isso
- * significa que ele podia dizer "vai funcionar" sobre algo que na prática não funcionava — o pior
+ * significa que ele podia dizer "vai funcionar" sobre algo que na prática não funcionava. O pior
  * defeito possível num simulador, porque a pessoa confia nele justamente pra não errar com cliente
  * de verdade.
  *
@@ -32,7 +32,7 @@ export type EstadoSimulacao = {
   execucao: ExecucaoAtiva;
   passos: PassoSimulado[];
   intencoes: string[];
-  /** O bloco onde parou, quando parou esperando algo — é o que a tela usa pra oferecer as opções. */
+  /** O bloco onde parou, quando parou esperando algo: é o que a tela usa pra oferecer as opções. */
   esperando: { noId: string; tipo: string; opcoes: { id: string; rotulo: string }[]; evento: string | null } | null;
   situacao: string;
   erro?: string;
@@ -92,7 +92,7 @@ export async function simularInicio(params: {
   contato: Record<string, unknown>;
 }): Promise<EstadoSimulacao> {
   const gatilho = params.nodes.find((n) => n.category === "gatilho");
-  if (!gatilho) throw new Error("Esse fluxo não tem um bloco de gatilho — nada pra simular.");
+  if (!gatilho) throw new Error("Esse fluxo não tem um bloco de gatilho. Nada pra simular.");
   const aresta = params.edges.find((e) => e.source === gatilho.id);
   if (!aresta) throw new Error("O gatilho desse fluxo ainda não está conectado a nada.");
 
@@ -151,7 +151,7 @@ export async function simularContinuacao(params: {
         noTipo: no.type,
         titulo: no.titulo ?? null,
         resultado: "aguardando",
-        detalhe: `"${params.resposta}" não bate com nenhuma opção — no fluxo de verdade, continuaria esperando.`,
+        detalhe: `"${params.resposta}" não bate com nenhuma opção. No fluxo de verdade, continuaria esperando.`,
       });
       return { ...params.estado, passos };
     }

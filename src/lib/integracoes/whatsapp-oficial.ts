@@ -19,7 +19,7 @@ export type ContaWhatsappOficial = {
   accessToken: string;
 };
 
-/** Carrega a conta conectada DAQUELE workspace com o token já descriptografado — sempre pelo
+/** Carrega a conta conectada DAQUELE workspace com o token já descriptografado. Sempre pelo
  * workspace da sessão, nunca por id vindo da requisição. */
 export async function contaConectada(workspaceId: string): Promise<ContaWhatsappOficial | null> {
   const integracao = await prisma.integracao.findUnique({
@@ -39,7 +39,7 @@ export async function contaConectada(workspaceId: string): Promise<ContaWhatsapp
   };
 }
 
-/** `true` quando a pessoa mandou alguma mensagem nas últimas 24h — ou seja, dá pra responder com
+/** `true` quando a pessoa mandou alguma mensagem nas últimas 24h. Ou seja, dá pra responder com
  * mensagem livre. Fora disso, só modelo aprovado. */
 export async function janelaDeAtendimentoAberta(workspaceId: string, contatoNome: string): Promise<boolean> {
   const ultimaRecebida = await prisma.mensagemExtra.findFirst({
@@ -69,7 +69,7 @@ export async function tratarErroEnvio(erro: unknown, integracaoId: string): Prom
  *
  * A Meta chama de `messaging_limit_tier` e o valor sobe sozinho com o histórico de qualidade
  * (250 → 1.000 → 10.000 → 100.000 → ilimitado). É o número que decide quantos dias um disparo
- * leva — chutar aqui seria segurar uma conta que já podia mais ou passar do que ela pode e ver a
+ * leva: chutar aqui seria segurar uma conta que já podia mais ou passar do que ela pode e ver a
  * Meta recusar. `null` = não deu pra ler (conta sem o campo, token sem permissão, Graph fora);
  * quem chama decide o que fazer sem o número.
  */
@@ -90,7 +90,7 @@ export async function limiteDiarioDaConta(conta: ContaWhatsappOficial): Promise<
     );
     const tier = numero.messaging_limit_tier;
     if (!tier || !(tier in CONVERSAS_POR_TIER)) return { conhecido: false, porDia: null };
-    // Guarda no metadados pra tela mostrar sem nova chamada — e pra sobreviver a uma Graph fora.
+    // Guarda no metadados pra tela mostrar sem nova chamada. E pra sobreviver a uma Graph fora.
     await prisma.integracao
       .update({
         where: { id: conta.integracaoId },
@@ -111,7 +111,7 @@ async function metadadosAtuais(integracaoId: string): Promise<Record<string, unk
 type RespostaEnvio = { messages?: { id?: string }[] };
 
 /**
- * Manda uma mensagem pela Cloud API com o token DAQUELE workspace e devolve o `wamid` — o id que a
+ * Manda uma mensagem pela Cloud API com o token DAQUELE workspace e devolve o `wamid`. O id que a
  * Meta gera, usado depois pra casar os webhooks de entrega/leitura com a mensagem certa.
  */
 export async function enviarPelaCloudApi(

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-/** Tipo de mídia do arquivo — usado pra filtrar o que aparece no seletor de cada bloco (enviar
+/** Tipo de mídia do arquivo. Usado pra filtrar o que aparece no seletor de cada bloco (enviar
  * documento só oferece "documento", enviar imagem só "imagem", etc). */
 export type TipoMidiaArquivo = "documento" | "imagem" | "video" | "audio";
 
@@ -12,10 +12,10 @@ export type DocumentoBiblioteca = {
   categoria: string;
   formato: string;
   tamanho: number;
-  /** ISO — última alteração. */
+  /** ISO: última alteração. */
   atualizadoEm: string;
   autor: string;
-  /** Data URL do conteúdo real do arquivo — o mesmo que é anexado na conversa. */
+  /** Data URL do conteúdo real do arquivo. O mesmo que é anexado na conversa. */
   url: string;
   /** Ausente = "documento", pra não quebrar quem já usava essa biblioteca antes dela cobrir outras mídias. */
   tipoMidia?: TipoMidiaArquivo;
@@ -55,13 +55,13 @@ type BibliotecaDocumentosContextValue = {
 const BibliotecaDocumentosContext =
   createContext<BibliotecaDocumentosContextValue | null>(null);
 
-/** Um SVG mínimo em data URL — só pra biblioteca ter algo "real" pra pré-visualizar/baixar sem precisar de arquivos binários versionados. */
+/** Um SVG mínimo em data URL. Só pra biblioteca ter algo "real" pra pré-visualizar/baixar sem precisar de arquivos binários versionados. */
 function svgPlaceholder(texto: string, cor: string) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800"><rect width="600" height="800" fill="${cor}"/><text x="50%" y="50%" font-family="sans-serif" font-size="28" fill="white" text-anchor="middle">${texto}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-/** Exportado só pra `prisma/seed.ts` semear a tabela — o Provider agora busca da API. */
+/** Exportado só pra `prisma/seed.ts` semear a tabela. O Provider agora busca da API. */
 export const DOCUMENTOS_INICIAIS: DocumentoBiblioteca[] = [
   {
     id: "doc-apresentacao",
@@ -76,7 +76,7 @@ export const DOCUMENTOS_INICIAIS: DocumentoBiblioteca[] = [
   },
   {
     id: "doc-tabela-precos",
-    nome: "Tabela de preços — pacotes.pdf",
+    nome: "Tabela de preços: pacotes.pdf",
     categoria: "Financeiro",
     formato: "PDF",
     tamanho: 231_000,
@@ -87,7 +87,7 @@ export const DOCUMENTOS_INICIAIS: DocumentoBiblioteca[] = [
   },
   {
     id: "doc-contrato-padrao",
-    nome: "Contrato de adesão — modelo.pdf",
+    nome: "Contrato de adesão: modelo.pdf",
     categoria: "Contratos",
     formato: "PDF",
     tamanho: 156_000,
@@ -98,7 +98,7 @@ export const DOCUMENTOS_INICIAIS: DocumentoBiblioteca[] = [
   },
   {
     id: "doc-guia-emagrecimento",
-    nome: "Guia — primeiros passos no tratamento.pdf",
+    nome: "Guia: primeiros passos no tratamento.pdf",
     categoria: "Marketing",
     formato: "PDF",
     tamanho: 1_240_000,
@@ -162,7 +162,7 @@ export const DOCUMENTOS_INICIAIS: DocumentoBiblioteca[] = [
   },
   {
     id: "arq-foto-modelo-retratil",
-    nome: "Toldo retrátil — foto modelo.jpg",
+    nome: "Toldo retrátil: foto modelo.jpg",
     categoria: "Materiais comerciais",
     formato: "JPG",
     tamanho: 1_800_000,
@@ -175,7 +175,7 @@ export const DOCUMENTOS_INICIAIS: DocumentoBiblioteca[] = [
   },
   {
     id: "arq-video-instalacao",
-    nome: "Vídeo — como funciona a instalação.mp4",
+    nome: "Vídeo: como funciona a instalação.mp4",
     categoria: "Materiais comerciais",
     formato: "MP4",
     tamanho: 8_400_000,
@@ -188,7 +188,7 @@ export const DOCUMENTOS_INICIAIS: DocumentoBiblioteca[] = [
   },
   {
     id: "arq-audio-saudacao",
-    nome: "Áudio — saudação padrão.mp3",
+    nome: "Áudio: saudação padrão.mp3",
     categoria: "Materiais comerciais",
     formato: "MP3",
     tamanho: 420_000,

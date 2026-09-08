@@ -80,9 +80,9 @@ function GlyphArquivo({ tipo }: { tipo: TipoMidiaArquivo }) {
 }
 
 /**
- * Form dedicado dos 4 blocos "enviar mídia" (item 3-9 da spec) — escolher da biblioteca reutilizável
+ * Form dedicado dos 4 blocos "enviar mídia" (item 3-9 da spec). Escolher da biblioteca reutilizável
  * OU enviar um arquivo novo, que entra de verdade na mesma biblioteca (base64 real, mesmo padrão de
- * imagem/documento/áudio em Conversas — ver `lerComoDataUrl`) em vez de um `blob:` URL que só existe
+ * imagem/documento/áudio em Conversas: ver `lerComoDataUrl`) em vez de um `blob:` URL que só existe
  * na aba do navegador e não sobreviveria até a automação disparar de verdade mais tarde.
  */
 export function MensagemMidiaForm({
@@ -131,7 +131,7 @@ export function MensagemMidiaForm({
         categoria: "Outros",
         formato: extensaoDoNome(file.name),
         tamanho: file.size,
-        autor: sessao?.user?.name ?? "—",
+        autor: sessao?.user?.name ?? "-",
         url,
         tipoMidia,
       });
@@ -144,7 +144,7 @@ export function MensagemMidiaForm({
         arquivoUrlTemporaria: undefined,
       });
     } catch {
-      // Falha ao ler o arquivo (raríssimo) — não altera o estado, o usuário tenta de novo.
+      // Falha ao ler o arquivo (raríssimo). Não altera o estado, o usuário tenta de novo.
     } finally {
       setEnviando(false);
     }
@@ -268,7 +268,7 @@ export function MensagemMidiaForm({
           value={data.arquivoNomeExibicao ?? ""}
           onChange={(e) => set({ arquivoNomeExibicao: e.target.value })}
         />
-        <p className="hint mt8">Opcional — se vazio, usa o nome real do arquivo ({data.arquivoNome || "nenhum ainda"}).</p>
+        <p className="hint mt8">Opcional: se vazio, usa o nome real do arquivo ({data.arquivoNome || "nenhum ainda"}).</p>
       </div>
 
       <div className="field">

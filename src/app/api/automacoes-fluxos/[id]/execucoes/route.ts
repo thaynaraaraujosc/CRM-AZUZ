@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /**
- * O histórico de execuções de um fluxo — o que aconteceu, com quem, e onde parou.
+ * O histórico de execuções de um fluxo. O que aconteceu, com quem, e onde parou.
  *
  * Até agora não existia: o motor antigo só imprimia a contagem de passos no log do servidor, então
  * quando uma automação não respondia um cliente ninguém tinha como saber por quê. É a pergunta mais

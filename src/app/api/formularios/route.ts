@@ -34,7 +34,7 @@ export async function GET() {
   return NextResponse.json(linhas.map(paraFormulario));
 }
 
-/** POST cria um formulário novo (ou uma cópia) — mesma semântica de `criarFormulario`/`duplicarFormulario`. */
+/** POST cria um formulário novo (ou uma cópia). Mesma semântica de `criarFormulario`/`duplicarFormulario`. */
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

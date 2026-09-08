@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
   const provedor = new URL(request.url).searchParams.get("provedor") ?? "meta_whatsapp";
-  // `limparDados` vem do clique de quem já confirmou na tela o que vai ser apagado — nunca é o
+  // `limparDados` vem do clique de quem já confirmou na tela o que vai ser apagado. Nunca é o
   // padrão, porque é irreversível. Só faz sentido pro canal de WhatsApp (Ads/Instagram não
   // espelham conversa nenhuma pro CRM).
   const { limparDados } = await request

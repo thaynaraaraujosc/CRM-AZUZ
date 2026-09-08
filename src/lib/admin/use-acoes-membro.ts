@@ -6,7 +6,7 @@ import { useState } from "react";
 
 /**
  * Ações de "resolver o acesso de alguém" que qualquer tela do painel de admin que lista membros
- * pode usar — resetar senha (mostra a senha nova uma vez só, ver rota) e "entrar como" (vira a
+ * pode usar: resetar senha (mostra a senha nova uma vez só, ver rota) e "entrar como" (vira a
  * sessão desse membro, sem senha nenhuma). Compartilhado entre o detalhe de workspace e a lista de
  * usuários pra não duplicar a lógica nos dois lugares.
  */

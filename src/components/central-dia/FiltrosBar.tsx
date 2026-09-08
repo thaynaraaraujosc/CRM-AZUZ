@@ -24,7 +24,7 @@ function contarFiltrosAtivos(filtros: typeof FILTROS_PADRAO): number {
   return n;
 }
 
-/** Barra de filtros da Central do Dia (item 2 do pedido) — chips rápidos + período (controlados,
+/** Barra de filtros da Central do Dia (item 2 do pedido). Chips rápidos + período (controlados,
  * pra dar pra "Limpar filtros" de fora) + painel "Mais filtros" com os campos adicionais. */
 export function FiltrosBar() {
   const { filtros, setFiltros, limparFiltros } = useCentralDia();

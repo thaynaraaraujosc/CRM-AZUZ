@@ -10,14 +10,14 @@ import {
 
 import type { ColunaTarefas } from "@/lib/data";
 
-/** Data de "hoje" de verdade (relógio real, não mais um dia fixo no passado) — calculada uma vez
+/** Data de "hoje" de verdade (relógio real, não mais um dia fixo no passado). Calculada uma vez
  * quando o app carrega, pra Agenda, Central do Dia e o restante do app concordarem sobre o que é
  * "hoje" na mesma sessão. */
 export const HOJE_ISO = new Date().toISOString().slice(0, 10);
 
 export type StatusCompromisso = "agendado" | "concluido" | "cancelado";
 
-/** Categoria do compromisso — só pra dar uma distinção visual sutil (cor do chip) na Agenda; não
+/** Categoria do compromisso: só pra dar uma distinção visual sutil (cor do chip) na Agenda; não
  * confundir com `tipo`, que é o rótulo livre exibido (ex.: "Retorno da Marina Costa"). */
 export type CategoriaCompromisso = "consulta" | "retorno" | "reuniao" | "ligacao" | "outro";
 
@@ -34,24 +34,24 @@ export type Compromisso = {
   contatoId?: string;
   contato: string;
   responsavel: string;
-  /** Data no formato ISO (aaaa-mm-dd) — ao contrário de `TaskCard.data`, que é texto livre. */
+  /** Data no formato ISO (aaaa-mm-dd). Ao contrário de `TaskCard.data`, que é texto livre. */
   dataIso: string;
   hora: string;
-  /** Horário de término — opcional (compromissos derivados de tarefa e agendamentos antigos não têm). */
+  /** Horário de término: opcional (compromissos derivados de tarefa e agendamentos antigos não têm). */
   horaFim?: string;
   tipo: string;
   categoria?: CategoriaCompromisso;
   descricao?: string;
   local?: string;
   status: StatusCompromisso;
-  /** Preenchido só quando `status === "cancelado"` — motivo informado no cancelamento. */
+  /** Preenchido só quando `status === "cancelado"`: motivo informado no cancelamento. */
   motivoCancelamento?: string;
   /** "manual" = criado direto na Agenda; "tarefa" = derivado ao vivo de uma tarefa com data (ver `compromissosDeTarefas`). */
   origem: "manual" | "tarefa";
 };
 
 /** Compromissos "manuais" (não cancelados) cujo intervalo [hora, horaFim) se sobrepõe ao informado,
- * no mesmo dia e responsável — usado pra alertar de conflito de horário antes de salvar (ver
+ * no mesmo dia e responsável. Usado pra alertar de conflito de horário antes de salvar (ver
  * `AgendaPage`). Sem `horaFim`, assume um intervalo mínimo de 30 minutos pra comparação. */
 export function compromissosConflitantes(
   compromissos: Compromisso[],
@@ -88,7 +88,7 @@ function pad2(n: number) {
 
 /**
  * Deriva compromissos a partir das tarefas que têm data (mesma heurística que a Agenda já usava:
- * `TaskCard.data` é texto livre tipo "28 jul", sem ano — assume o ano corrente por padrão, quem
+ * `TaskCard.data` é texto livre tipo "28 jul", sem ano: assume o ano corrente por padrão, quem
  * chama pode passar outro pra navegar entre anos no calendário). Front-end apenas: quando o CRM
  * tiver um jeito real de agendar hora/local numa tarefa, essa função para de ser necessária.
  * Reaproveitada tanto pela página Agenda quanto pela Central do Dia, pra não ter duas heurísticas
@@ -151,7 +151,7 @@ const AgendaContext = createContext<AgendaContextValue | null>(null);
  * ficar com uma fonte própria e incompatível de "agenda" (antes eram duas: `EventoManual` só na
  * página Agenda, e `COMPROMISSOS_HOJE_MOCK` só na Central do Dia).
  *
- * Núcleo comercial (2ª leva de migração pro banco real, ver `src/app/api/agenda/`) — mesmo padrão do
+ * Núcleo comercial (2ª leva de migração pro banco real, ver `src/app/api/agenda/`): mesmo padrão do
  * piloto de Contatos: contrato público não muda, só o motor por dentro troca `localStorage` por
  * `fetch` na API real, com atualização otimista local. Falha de rede só loga no console.
  */

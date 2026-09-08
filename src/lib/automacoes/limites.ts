@@ -4,7 +4,7 @@ import type { ConfiguracoesFluxo } from "@/lib/automation-flow/types";
 import { encerrarExecucao, execucoesVivasDoContato, SITUACOES_VIVAS } from "./execucoes";
 
 /**
- * As regras de "pode começar de novo?" — que existiam nas Configurações do fluxo mas nunca eram
+ * As regras de "pode começar de novo?": que existiam nas Configurações do fluxo mas nunca eram
  * consultadas por ninguém.
  *
  * Era um caso de botão que não faz nada: a pessoa marcava "uma vez por contato" e o fluxo disparava
@@ -83,7 +83,7 @@ const MOTIVO: Record<string, string> = {
   uma_vez_por_mes: "esse fluxo já rodou para este contato nos últimos 30 dias",
 };
 
-/** Quantas execuções vivas o workspace tem — usado pra não deixar um fluxo em laço consumir tudo. */
+/** Quantas execuções vivas o workspace tem. Usado pra não deixar um fluxo em laço consumir tudo. */
 export async function execucoesVivasNoWorkspace(workspaceId: string): Promise<number> {
   return prisma.execucaoAutomacao.count({ where: { workspaceId, situacao: { in: [...SITUACOES_VIVAS] } } });
 }

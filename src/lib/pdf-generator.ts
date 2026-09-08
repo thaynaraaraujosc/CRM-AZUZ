@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import { formatarDataComRelativo, formatarDataPorExtenso, HOJE } from "@/lib/datas";
 
 /**
- * Gerador de PDF real (vetorial, via jsPDF) — documento com proporção A4 de
+ * Gerador de PDF real (vetorial, via jsPDF): documento com proporção A4 de
  * verdade: mede a altura de cada seção antes de desenhar (pra nunca deixar
  * um título sozinho no fim da página), calcula largura de coluna de tabela
  * a partir do conteúdo (com quebra de texto, sem vazar da margem) e repete
@@ -57,12 +57,12 @@ function iniciais(nome: string): string {
     .toUpperCase();
 }
 
-/** Data absoluta padronizada — nunca o texto relativo cru dentro de um documento arquivado. */
+/** Data absoluta padronizada: nunca o texto relativo cru dentro de um documento arquivado. */
 export function dataParaDocumento(raw: string): string {
   return formatarDataComRelativo(raw);
 }
 
-/** Gera o documento em memória — quem chama decide se salva (`doc.save()`) ou inspeciona antes. */
+/** Gera o documento em memória. Quem chama decide se salva (`doc.save()`) ou inspeciona antes. */
 export function gerarPdfRelatorio(config: ConfigRelatorioPdf): jsPDF {
   const modoCapa = config.capa ?? "nenhuma";
   const comLogo = config.incluirLogotipo !== false;
@@ -273,7 +273,7 @@ export function gerarPdfRelatorio(config: ConfigRelatorioPdf): jsPDF {
       const maiorNumeroLinhas = Math.max(1, ...celulasQuebradas.map((c) => c.length));
       const alturaLinha = maiorNumeroLinhas * 4.2 + 2.5;
 
-      // nunca corta uma linha entre duas páginas — quebra antes se não couber inteira
+      // nunca corta uma linha entre duas páginas. Quebra antes se não couber inteira
       if (alturaLinha > espacoRestante()) {
         novaPagina();
         desenharCabecalhoTabela(t.colunas, larguras);
@@ -328,7 +328,7 @@ export function gerarPdfRelatorio(config: ConfigRelatorioPdf): jsPDF {
 
   for (const secao of config.secoes) {
     // Estima a altura mínima (título + um primeiro pedaço de conteúdo) pra
-    // decidir se quebra a página ANTES de desenhar o título — nunca deixa
+    // decidir se quebra a página ANTES de desenhar o título. Nunca deixa
     // um título sozinho no fim da página, sem nada abaixo dele.
     let alturaMinima = 10;
     if (secao.linhas?.length) alturaMinima += Math.min(alturaLinhasKV(secao.linhas.length), 20);
@@ -363,7 +363,7 @@ export function gerarPdfRelatorio(config: ConfigRelatorioPdf): jsPDF {
   return doc;
 }
 
-/** Estimativa de quantidade de páginas — usada na etapa "Conteúdo" do assistente, antes de gerar a prévia de verdade. */
+/** Estimativa de quantidade de páginas. Usada na etapa "Conteúdo" do assistente, antes de gerar a prévia de verdade. */
 export function estimarPaginas(config: ConfigRelatorioPdf): number {
   const alturaPagina = 297 - MARGEM * 2;
   let total = 20; // cabeçalho + título
@@ -386,7 +386,7 @@ export type AvisoValidacao = {
 
 /**
  * Validação estrutural do relatório antes de liberar a exportação (seção 20
- * do escopo). Não é análise pixel-a-pixel — verifica o que dá pra saber
+ * do escopo). Não é análise pixel-a-pixel: verifica o que dá pra saber
  * antes de desenhar: seção vazia, tabela larga demais pra orientação
  * escolhida, nada selecionado. Erros bloqueiam "Aprovar relatório";
  * avisos não bloqueiam, só alertam.
@@ -398,7 +398,7 @@ export function validarConteudoRelatorio(
   const avisos: AvisoValidacao[] = [];
 
   if (secoes.length === 0) {
-    avisos.push({ nivel: "erro", mensagem: "Nenhuma seção selecionada — volte em \"Conteúdo\" e marque ao menos uma." });
+    avisos.push({ nivel: "erro", mensagem: "Nenhuma seção selecionada: volte em \"Conteúdo\" e marque ao menos uma." });
     return avisos;
   }
 
@@ -411,7 +411,7 @@ export function validarConteudoRelatorio(
     if (secao.tabela && secao.tabela.colunas.length > 5 && orientacao === "p") {
       avisos.push({
         nivel: "aviso",
-        mensagem: `A tabela de "${secao.titulo}" tem ${secao.tabela.colunas.length} colunas — considere orientação paisagem pra não espremer o texto.`,
+        mensagem: `A tabela de "${secao.titulo}" tem ${secao.tabela.colunas.length} colunas: considere orientação paisagem pra não espremer o texto.`,
         secao: secao.titulo,
       });
     }

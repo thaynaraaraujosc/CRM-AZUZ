@@ -9,7 +9,7 @@ import { IconClose } from "@/components/icons";
 
 const CORES = ["#2e6bff", "#0f9d63", "#d8a400", "#d64545", "#8a3ffc", "#0891b2"];
 
-/** Etiquetas (item 26) — a contagem "quantidade de contatos" é real (deriva de `contatos`/`funis`);
+/** Etiquetas (item 26): a contagem "quantidade de contatos" é real (deriva de `contatos`/`funis`);
  * criar/mesclar/arquivar etiqueta novas fica em estado local (`configuracoes-context`). */
 export function EtiquetasSecao() {
   const { estado, adicionarEtiqueta, removerEtiqueta } = useConfiguracoes();

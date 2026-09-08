@@ -33,17 +33,17 @@ function labelGatilho(tipo: FlowNodeType): string {
   return BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo)?.label ?? tipo;
 }
 
-/** "Lead entrou na etapa — Funil: x · Etapa: y" — rótulo do bloco + o resumo de uma linha que o próprio motor usa no canvas. */
+/** "Lead entrou na etapa: Funil: x · Etapa: y": rótulo do bloco + o resumo de uma linha que o próprio motor usa no canvas. */
 function resumoGatilhoFluxo(fluxo: FluxoAutomacao, funis: Funil[]): string {
   const no = noGatilhoDoFluxo(fluxo);
   if (!no) return "Sem gatilho definido";
   const detalhe = resumoNo(no, funis);
   return detalhe && detalhe !== "Sem configuração adicional"
-    ? `${labelGatilho(no.type)} — ${detalhe}`
+    ? `${labelGatilho(no.type)}: ${detalhe}`
     : labelGatilho(no.type);
 }
 
-/** Status pesquisáveis na barra de filtros — "com_erro" e "arquivada" são derivados/reais, não decorativos (ver `statusBate`). */
+/** Status pesquisáveis na barra de filtros. "com_erro" e "arquivada" são derivados/reais, não decorativos (ver `statusBate`). */
 type StatusFiltro = "rascunho" | "publicado" | "ativa" | "pausada" | "com_erro" | "arquivada";
 
 const STATUS_FILTROS: { valor: StatusFiltro; label: string }[] = [
@@ -82,7 +82,7 @@ function statusBate(
   }
 }
 
-/** A pill de "Arquivada" tem precedência sobre ativa/pausada — arquivar é um estado à parte. */
+/** A pill de "Arquivada" tem precedência sobre ativa/pausada. Arquivar é um estado à parte. */
 function statusPill(fluxo: FluxoAutomacao): { label: string; on: boolean } {
   if (fluxo.arquivada) return { label: "Arquivada", on: false };
   if (fluxo.status === "rascunho") return { label: "Rascunho", on: false };
@@ -92,7 +92,7 @@ function statusPill(fluxo: FluxoAutomacao): { label: string; on: boolean } {
 
 /**
  * "Mais recentes" cobre tanto a leitura de marketing quanto a técnica
- * (`atualizadoEm` desc) — a brief citava "Atualizadas recentemente" como um
+ * (`atualizadoEm` desc): a brief citava "Atualizadas recentemente" como um
  * rótulo possivelmente separado, mas como o comportamento seria idêntico a
  * "Mais recentes", optei por manter só uma opção canônica pra esse critério
  * em vez de duas entradas redundantes na lista.
@@ -119,7 +119,7 @@ const ORDENACOES: { valor: Ordenacao; label: string }[] = [
 ];
 
 function taxaSucesso(execucoes: RegistroExecucao[]): string {
-  if (execucoes.length === 0) return "—";
+  if (execucoes.length === 0) return "-";
   const concluidas = execucoes.filter((e) => e.situacao === "concluida").length;
   return `${Math.round((concluidas / execucoes.length) * 100)}%`;
 }
@@ -134,7 +134,7 @@ function ultimaExecucao(execucoes: RegistroExecucao[]): string {
   return formatarData(new Date(maisRecente).toISOString());
 }
 
-/** Tipos de gatilho "de comentário" — usados só pra dar um atalho de filtro sem precisar escolher canal por canal. */
+/** Tipos de gatilho "de comentário". Usados só pra dar um atalho de filtro sem precisar escolher canal por canal. */
 const TIPOS_GATILHO_COMENTARIO: FlowNodeType[] = ["comentario_instagram", "comentario_tiktok"];
 
 const CANAL_LABELS: Record<CanalMensagem, string> = {
@@ -145,7 +145,7 @@ const CANAL_LABELS: Record<CanalMensagem, string> = {
   interno: "Interno",
 };
 
-/** Só os canais que de fato aparecem em algum nó de mensagem — ou que o gatilho de comentário já escopa (Insta/TikTok) mesmo sem nó de mensagem. */
+/** Só os canais que de fato aparecem em algum nó de mensagem. Ou que o gatilho de comentário já escopa (Insta/TikTok) mesmo sem nó de mensagem. */
 function canaisDoFluxo(fluxo: FluxoAutomacao): Set<CanalMensagem> {
   const canais = new Set<CanalMensagem>();
   fluxo.nodes.forEach((n) => {
@@ -162,7 +162,7 @@ function canaisDoFluxo(fluxo: FluxoAutomacao): Set<CanalMensagem> {
   return canais;
 }
 
-/** Busca casa nome, descrição, nome do funil, título da etapa e rótulo do gatilho — não só o nome do fluxo. */
+/** Busca casa nome, descrição, nome do funil, título da etapa e rótulo do gatilho. Não só o nome do fluxo. */
 function fluxoBateBusca(
   fluxo: FluxoAutomacao,
   termo: string,
@@ -280,12 +280,12 @@ function AutomacoesPageInner() {
   const [visualizarAlvo, setVisualizarAlvo] = useState<FluxoAutomacao | null>(null);
   const [ativarDemoAlvo, setAtivarDemoAlvo] = useState<FluxoAutomacao | null>(null);
   // O `Toggle` é não-controlado (flipa o próprio estado visual no clique antes
-  // de qualquer confirmação) — incrementar esse nonce força o `key` do Toggle
+  // de qualquer confirmação): incrementar esse nonce força o `key` do Toggle
   // a mudar e ele remontar de volta pro `defaultOn` real sempre que a gente
   // intercepta o clique pra mostrar a confirmação (aceita ou cancela).
   const [demoToggleResetNonce, setDemoToggleResetNonce] = useState(0);
 
-  /* --------------------- "+ Nova automação" — popover ------------------- */
+  /* --------------------- "+ Nova automação": popover ------------------- */
   const [novoAberto, setNovoAberto] = useState(false);
   const [novoAnchorRect, setNovoAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: novoPopoverRef, posicao: novoPosicao } = useFloatingPosition(novoAnchorRect, novoAberto, 8, () => setNovoAberto(false));
@@ -308,7 +308,7 @@ function AutomacoesPageInner() {
    * Automação nova. Quando a pessoa chegou pelo "+ Automação" de uma ETAPA do funil, o fluxo já
    * nasce amarrado àquela etapa e com o gatilho "Lead entrou na etapa" posto no canvas.
    *
-   * É o ponto 28 do pedido: dentro do funil a pessoa pensa "quando o lead cair aqui, faça isso" —
+   * É o ponto 28 do pedido: dentro do funil a pessoa pensa "quando o lead cair aqui, faça isso":
    * obrigá-la a abrir o construtor vazio e reencontrar funil e etapa numa lista é fazer ela repetir
    * uma informação que o clique já tinha dado.
    */
@@ -407,7 +407,7 @@ function AutomacoesPageInner() {
     setCanalFiltro(new Set());
   }
 
-  // "Limpar filtros" dentro do popover só reseta os facets do próprio popover — a busca
+  // "Limpar filtros" dentro do popover só reseta os facets do próprio popover. A busca
   // (que já mora fora do popover, na barra compacta) fica intacta. O botão "Limpar" da
   // barra compacta é que limpa tudo junto (busca + filtros), via `limparBuscaEFiltros`.
   function limparFacetsDoPopover() {
@@ -421,7 +421,7 @@ function AutomacoesPageInner() {
   const fluxosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     let lista = fluxos.filter((f) => {
-      // Arquivadas ficam fora da lista por padrão — só aparecem quando o chip
+      // Arquivadas ficam fora da lista por padrão. Só aparecem quando o chip
       // "Arquivada" é explicitamente selecionado (mesmo espírito de "Excluir": some da visão).
       if (f.arquivada && !statusFiltro.has("arquivada")) return false;
 
@@ -518,7 +518,7 @@ function AutomacoesPageInner() {
 
   function verExecucoes(fluxo: FluxoAutomacao) {
     // Ainda não existe uma UI dedicada de histórico de execuções (o `HistoricoVersoes.tsx`
-    // do editor cobre versões, não execuções) — enquanto isso não existe, o atalho mais
+    // do editor cobre versões, não execuções): enquanto isso não existe, o atalho mais
     // honesto é abrir o construtor (que tem o Simulador) e deixar um rastro no console
     // pra quem for construir a tela de verdade depois.
     console.log(`Ver execuções de "${fluxo.nome}":`, execucoesDoFluxo(fluxo.id));
@@ -657,7 +657,7 @@ function AutomacoesPageInner() {
                         className="dropdown-item"
                         style={{ width: "100%", textAlign: "left" }}
                         disabled={novoCarregando}
-                        aria-label="Começar do zero — abre o construtor vazio"
+                        aria-label="Começar do zero: abre o construtor vazio"
                         onClick={comecarDoZero}
                       >
                         <span className="n">Começar do zero</span>
@@ -750,7 +750,7 @@ function AutomacoesPageInner() {
                 className={`automacoes-chip-btn${totalFiltrosAtivos > 0 ? " active" : ""}`}
                 aria-expanded={filtrosAbertos}
                 aria-controls="automacoes-filtros-popover"
-                aria-label={`Filtros — ${totalFiltrosAtivos} ativos`}
+                aria-label={`Filtros: ${totalFiltrosAtivos} ativos`}
                 onClick={() => setFiltrosAbertos((v) => !v)}
               >
                 Filtros
@@ -1028,7 +1028,7 @@ function AutomacoesPageInner() {
                       >
                         {fluxo.nome}
                         {fluxo.modeloDemonstracao ? (
-                          <span className="pill secondary" title="Fluxo de exemplo pronto — edite ou duplique livremente">
+                          <span className="pill secondary" title="Fluxo de exemplo pronto: edite ou duplique livremente">
                             Modelo de demonstração
                           </span>
                         ) : null}
@@ -1041,7 +1041,7 @@ function AutomacoesPageInner() {
                     </p>
                     <p className="hint" style={{ marginTop: 4 }}>
                       {fluxo.modeloDemonstracao && fluxo.execucoes === 0
-                        ? "0 execuções — modelo de demonstração"
+                        ? "0 execuções: modelo de demonstração"
                         : `${fluxo.execucoes} ${fluxo.execucoes === 1 ? "execução" : "execuções"} · Sucesso: ${taxaSucesso(execs)} · ${ultimaExecucao(execs)}`}
                     </p>
                   </div>
@@ -1070,7 +1070,7 @@ function AutomacoesPageInner() {
                     <button
                       type="button"
                       className="icon-btn subtle"
-                      aria-label={`Mais ações — ${fluxo.nome}`}
+                      aria-label={`Mais ações: ${fluxo.nome}`}
                       onClick={(e) => abrirMenu(fluxo.id, e.currentTarget.getBoundingClientRect())}
                     >
                       ⋯
@@ -1116,7 +1116,7 @@ function AutomacoesPageInner() {
                             }}
                           >
                             <span className="n">Testar</span>
-                            <span className="r">Abre o construtor — o simulador de verdade fica lá</span>
+                            <span className="r">Abre o construtor: o simulador de verdade fica lá</span>
                           </button>
                           <button
                             type="button"
@@ -1126,7 +1126,7 @@ function AutomacoesPageInner() {
                           >
                             <span className="n">Ver execuções</span>
                             <span className="r">
-                              Sem tela dedicada ainda — abre o construtor (registra no console por ora)
+                              Sem tela dedicada ainda: abre o construtor (registra no console por ora)
                             </span>
                           </button>
                           <button
@@ -1139,7 +1139,7 @@ function AutomacoesPageInner() {
                             }}
                           >
                             <span className="n">Histórico</span>
-                            <span className="r">Abre o construtor — o histórico de versões fica lá</span>
+                            <span className="r">Abre o construtor: o histórico de versões fica lá</span>
                           </button>
                           <button
                             type="button"

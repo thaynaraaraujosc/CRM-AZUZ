@@ -1,6 +1,6 @@
 /**
  * Resumo de uma linha por nó (pro card no canvas) e definição das saídas
- * (handles nomeados) de cada tipo de nó — dois pedaços de lógica puramente
+ * (handles nomeados) de cada tipo de nó. Dois pedaços de lógica puramente
  * derivados do `data` do nó, sem estado próprio, usados tanto pelo
  * renderizador dos nós (`components/automation-flow/nodes`) quanto por quem
  * precisar descrever o fluxo em texto (simulador, etc).
@@ -39,7 +39,7 @@ export function temEntrada(categoria: FlowNodeCategory): boolean {
   return !CATEGORIAS_SEM_ENTRADA.includes(categoria);
 }
 
-/** Handles de saída do nó — vazio pra blocos de fim, um só (sem rótulo) pro caso comum, vários nomeados pra quem ramifica. */
+/** Handles de saída do nó. Vazio pra blocos de fim, um só (sem rótulo) pro caso comum, vários nomeados pra quem ramifica. */
 export function saidasDoNo(node: FlowNode): SaidaNo[] {
   if (CATEGORIAS_SEM_SAIDA.includes(node.category)) return [];
 
@@ -54,7 +54,7 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
 
   if (node.type === "mensagem_botoes" || node.type === "mensagem_lista") {
     const data = node.data as MensagemBotoesData;
-    // Numeradas (1, 2, 3...) — é assim que o contato de fato as vê no formato de menu numerado,
+    // Numeradas (1, 2, 3...): é assim que o contato de fato as vê no formato de menu numerado,
     // e ajuda a diferenciar visualmente esse nó de múltiplas saídas de uma condição binária comum.
     const opcoes = (data.opcoes ?? []).map((o, i) => ({
       handleId: o.id,
@@ -127,7 +127,7 @@ const ROTULO_OPERADOR: Record<string, string> = {
   nao_existe: "não existe",
 };
 
-/** Nome amigável de cada campo de condição — usado no resumo do node e na frase em linguagem natural,
+/** Nome amigável de cada campo de condição. Usado no resumo do node e na frase em linguagem natural,
  * pra nunca mostrar o identificador técnico ("valor_negocio") pro usuário final. */
 const ROTULO_CAMPO_CONDICAO: Record<string, string> = {
   mensagem: "Resposta do contato",
@@ -177,7 +177,7 @@ function resumoGrupoCondicoes(grupo: GrupoCondicoes | undefined): string {
 }
 
 /**
- * Saídas "Sim"/"Não" de uma condição, só que explicando o que cada caminho significa (item 11) — só dá
+ * Saídas "Sim"/"Não" de uma condição, só que explicando o que cada caminho significa (item 11). Só dá
  * pra ser específico quando a condição é uma regra única e simples; com E/OU/subgrupos, cai num rótulo
  * genérico mas ainda compreensível ("Condição atendida"/"Condição não atendida") em vez de só "Sim"/"Não".
  */
@@ -259,7 +259,7 @@ function primeiroCampoTexto(data: Record<string, unknown>): string | undefined {
 
 /**
  * `resumoNo` sinaliza bloco incompleto embutindo a frase no próprio texto ("Sem etiqueta
- * escolhida", "sem regras definidas"...) — essa função reconhece esse padrão pra quem renderiza
+ * escolhida", "sem regras definidas"...): essa função reconhece esse padrão pra quem renderiza
  * poder destacar visualmente (ícone + cor de aviso) sem duplicar a lista de frases em outro lugar.
  * "Sem configuração adicional" fica de fora de propósito: é o estado normal (não um aviso) de
  * blocos sem nenhum campo pra preencher, como a maioria dos gatilhos.
@@ -269,8 +269,8 @@ export function resumoIndicaIncompleto(texto: string): boolean {
   return texto.startsWith("Sem ") || texto.startsWith("Selecione ") || texto === "sem regras definidas";
 }
 
-/** Uma linha de resumo por baixo do título do nó no canvas — o que esse bloco de fato faz, sem abrir
- * o painel de configuração. `funis` é opcional só pra quem chama sem acesso ao contexto (ex.: testes) —
+/** Uma linha de resumo por baixo do título do nó no canvas. O que esse bloco de fato faz, sem abrir
+ * o painel de configuração. `funis` é opcional só pra quem chama sem acesso ao contexto (ex.: testes):
  * sem ele, cai de volta pro id cru em vez do nome. */
 export function resumoNo(node: FlowNode, funis?: Funil[]): string {
   const d = node.data as Record<string, unknown>;
@@ -500,7 +500,7 @@ const ROTULO_UNIDADE_TEMPO: Record<string, string> = {
 };
 
 /**
- * Frase completa em linguagem natural — "o que este bloco fará" (item 35), pro painel de
+ * Frase completa em linguagem natural. "o que este bloco fará" (item 35), pro painel de
  * configuração. Cobre os tipos com formulário dedicado; os demais caem num fallback genérico a
  * partir do resumo de uma linha (melhor que nada, mas sem tanta fluidez quanto os cobertos aqui).
  */
@@ -597,7 +597,7 @@ export function resumoNaturalNo(node: FlowNode, funis?: Funil[]): string {
     }
     case "condicao_grupo": {
       const data = node.data as CondicaoGrupoData;
-      return `Verifica se ${resumoGrupoCondicoes(data.grupo)} — segue por caminhos diferentes conforme o resultado.`;
+      return `Verifica se ${resumoGrupoCondicoes(data.grupo)}: segue por caminhos diferentes conforme o resultado.`;
     }
     case "mensagem_texto": {
       if (!d.texto) return "Escreva a mensagem que será enviada.";

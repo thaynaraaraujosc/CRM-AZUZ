@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { FloatingDropdown } from "@/components/ui";
 import type { AcaoItemDia } from "@/lib/central-dia/tipos";
 
-/** Menu "•••" de ações secundárias — mesmo padrão de popover flutuante (`FloatingDropdown`) usado no
+/** Menu "•••" de ações secundárias. Mesmo padrão de popover flutuante (`FloatingDropdown`) usado no
  * resto do CRM, só que embrulhado numa lista de ações simples pra não repetir o boilerplate de
  * ref+anchorRect em cada card. */
 export function AcoesMenu({ acoes, label = "Mais ações" }: { acoes: AcaoItemDia[]; label?: string }) {

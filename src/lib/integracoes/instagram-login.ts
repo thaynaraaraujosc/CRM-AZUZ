@@ -1,13 +1,13 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
- * "API do Instagram com Login do Instagram" — fluxo de OAuth separado do Login do Facebook usado
+ * "API do Instagram com Login do Instagram". Fluxo de OAuth separado do Login do Facebook usado
  * pelo resto da integração da Meta (`src/lib/integracoes/meta.ts`). A Meta migrou o acesso a
  * mensagens/comentários do Instagram pra esse produto novo (login direto pela conta do Instagram,
- * sem precisar de Página do Facebook nem da verificação de empresa que isso exige) — as permissões
+ * sem precisar de Página do Facebook nem da verificação de empresa que isso exige). As permissões
  * antigas baseadas em Login do Facebook (`instagram_basic` etc.) já não são aceitas.
  *
- * Tem App ID/Secret PRÓPRIOS, diferentes do App principal (`META_APP_ID`/`META_APP_SECRET`) — são
+ * Tem App ID/Secret PRÓPRIOS, diferentes do App principal (`META_APP_ID`/`META_APP_SECRET`). São
  * dois produtos separados dentro do mesmo App da Meta, cada um com seu painel de credenciais.
  */
 
@@ -25,7 +25,7 @@ function appSecret(): string {
   return valor;
 }
 
-/** Permissões atuais do produto "API do Instagram com Login do Instagram" — nomes diferentes das
+/** Permissões atuais do produto "API do Instagram com Login do Instagram". Nomes diferentes das
  * antigas baseadas em Página do Facebook (`instagram_basic`, `instagram_manage_messages`...). */
 export const ESCOPOS_INSTAGRAM_LOGIN = [
   "instagram_business_basic",
@@ -46,7 +46,7 @@ export function urlAutorizacao(redirectUri: string, state: string): string {
 type ErroGraph = { error_message?: string; error?: { message?: string } };
 
 /**
- * Troca o `code` do redirect pelo token de longa duração (~60 dias) — dois passos, formato
+ * Troca o `code` do redirect pelo token de longa duração (~60 dias). Dois passos, formato
  * diferente do fluxo de Login do Facebook: primeiro token curto via POST form-encoded em
  * `api.instagram.com`, depois troca por um de longa duração via GET em `graph.instagram.com`.
  */
@@ -86,7 +86,7 @@ export async function trocarCodePorTokenInstagram(
   };
 }
 
-/** Busca @usuário e id da conta a partir do token — o `user_id` que já vem da troca de token acima
+/** Busca @usuário e id da conta a partir do token. O `user_id` que já vem da troca de token acima
  * deveria bastar, mas confirma/complementa com o `username` de exibição. */
 export async function buscarPerfilInstagram(accessToken: string): Promise<{ instagramContaId: string; username: string }> {
   const resposta = await fetch(
@@ -103,7 +103,7 @@ export async function buscarPerfilInstagram(accessToken: string): Promise<{ inst
  * Manda uma mensagem pelo Direct.
  *
  * `destinatarioId` é o id interno de quem vai receber (o mesmo que chega no webhook e fica em
- * `Conversa.contato`), não o @ — é o que a API aceita, e ele não muda se a pessoa trocar de nome
+ * `Conversa.contato`), não o @: é o que a API aceita, e ele não muda se a pessoa trocar de nome
  * de usuário.
  *
  * Vale a mesma janela de 24h do WhatsApp: fora dela a Meta recusa mensagem livre. Aqui o erro dela
@@ -113,8 +113,8 @@ export async function enviarDirectInstagram(
   accessToken: string,
   destinatarioId: string,
   texto: string,
-  /** `mid` da mensagem sendo respondida. Faz a citação aparecer TAMBÉM no Instagram da pessoa —
-   * sem isso, o CRM mostrava a citação só de um lado e a cliente recebia uma mensagem solta, sem
+  /** `mid` da mensagem sendo respondida. Faz a citação aparecer TAMBÉM no Instagram da pessoa.
+   * Sem isso, o CRM mostrava a citação só de um lado e a cliente recebia uma mensagem solta, sem
    * saber a que ela respondia. */
   respondendoMid?: string,
 ): Promise<string | undefined> {
@@ -134,11 +134,11 @@ export async function enviarDirectInstagram(
 }
 
 /**
- * Manda um direct com respostas rápidas — os "botões" do Instagram.
+ * Manda um direct com respostas rápidas. Os "botões" do Instagram.
  *
  * Diferente do WhatsApp, aqui não existe botão que fica na mensagem: a resposta rápida some depois
  * que a pessoa toca, e o toque volta como uma mensagem de texto com o título escolhido (o `payload`
- * vem junto no webhook, em `quick_reply.payload`). Teto da Meta: 13 opções, 20 caracteres cada —
+ * vem junto no webhook, em `quick_reply.payload`). Teto da Meta: 13 opções, 20 caracteres cada:
  * quem chama já manda encurtado.
  *
  * Lista vazia envia o texto puro, pra este caminho servir também de fallback sem duplicar código.
@@ -172,7 +172,7 @@ export async function enviarDirectComRespostasRapidas(
 /**
  * Baixa a foto de perfil e devolve embutida (data URL).
  *
- * O link que o Instagram entrega é de CDN e expira em poucas horas — guardar só a URL deixaria a
+ * O link que o Instagram entrega é de CDN e expira em poucas horas. Guardar só a URL deixaria a
  * conversa sem foto no dia seguinte. Foto de perfil é pequena, então embutir sai barato e resolve
  * de vez. Falha vira `null`, e a tela cai nas iniciais como já fazia.
  */
@@ -181,7 +181,7 @@ export async function baixarFotoPerfil(url: string): Promise<string | null> {
     const resposta = await fetch(url);
     if (!resposta.ok) return null;
     const bytes = Buffer.from(await resposta.arrayBuffer());
-    // Acima disso não é foto de perfil — não vale embutir no banco.
+    // Acima disso não é foto de perfil. Não vale embutir no banco.
     if (bytes.length > 2 * 1024 * 1024) return null;
     const mimeType = resposta.headers.get("content-type") ?? "image/jpeg";
     return `data:${mimeType};base64,${bytes.toString("base64")}`;
@@ -195,7 +195,7 @@ export async function baixarFotoPerfil(url: string): Promise<string | null> {
  * Inscreve o app nos webhooks da conta do Instagram recém-conectada.
  *
  * SEM ISSO O WEBHOOK NUNCA DISPARA: a conta autoriza, o CRM mostra "Conectado" e nenhuma mensagem
- * do Direct chega — exatamente o mesmo passo que o WhatsApp exige por WABA (`subscribed_apps`) e
+ * do Direct chega: exatamente o mesmo passo que o WhatsApp exige por WABA (`subscribed_apps`) e
  * que aqui simplesmente não existia. Autorizar no OAuth dá permissão de acesso, não assinatura de
  * eventos; são duas coisas.
  *
@@ -203,22 +203,22 @@ export async function baixarFotoPerfil(url: string): Promise<string | null> {
  * por causa da assinatura deixaria a pessoa sem nada. Quem chama guarda isso pra mostrar na tela.
  *
  * `message_reactions` entra junto de `messages`: sem esse campo, a curtida que a cliente dá numa
- * mensagem simplesmente não chega — a Meta manda cada tipo de evento só pra quem assinou aquele
+ * mensagem simplesmente não chega: a Meta manda cada tipo de evento só pra quem assinou aquele
  * campo. Quem conectou antes disto precisa reconectar pra assinatura ser refeita.
  *
  * ATENÇÃO ao nome: é `message_reactions`, no singular em "message". Escrito como
  * `messaging_reactions` (que é o padrão dos OUTROS campos: `messaging_seen`, `messaging_postbacks`)
- * a Meta REJEITA A CHAMADA INTEIRA — não só aquele campo. O resultado é a conta ficar "Conectada"
+ * a Meta REJEITA A CHAMADA INTEIRA. Não só aquele campo. O resultado é a conta ficar "Conectada"
  * sem assinatura nenhuma, e NENHUMA mensagem chegar. Já aconteceu.
  */
 /**
  * `comments` é o que faz comentário em publicação e resposta a comentário chegarem no webhook. Sem
- * ele o CRM recebia só Direct — e o gatilho "Comentário no Instagram", que já existia no construtor
+ * ele o CRM recebia só Direct. E o gatilho "Comentário no Instagram", que já existia no construtor
  * de automações, nunca disparava.
  *
  * `message_echoes` é o que faz a mensagem que a PRÓPRIA conta manda pelo APP do Instagram chegar
- * aqui. O webhook já sabia tratar eco (`is_echo`) desde sempre, mas o campo nunca foi assinado —
- * então responder pelo celular não aparecia em Conversas, e a thread no CRM ficava só com o lado da
+ * aqui. O webhook já sabia tratar eco (`is_echo`) desde sempre, mas o campo nunca foi assinado.
+ * Então responder pelo celular não aparecia em Conversas, e a thread no CRM ficava só com o lado da
  * cliente. Este era o "não chega em tempo real" relatado.
  */
 const CAMPOS_WEBHOOK = ["messages", "message_echoes", "message_reactions", "comments"];
@@ -240,7 +240,7 @@ export async function inscreverAppNoInstagram(accessToken: string): Promise<stri
     const erro = await postSubscribedApps(accessToken, CAMPOS_WEBHOOK);
     if (!erro) return null;
 
-    // Um campo recusado derruba a chamada INTEIRA e a conta fica sem assinatura nenhuma — pior do
+    // Um campo recusado derruba a chamada INTEIRA e a conta fica sem assinatura nenhuma. Pior do
     // que ficar sem um campo. Então, se a lista completa falhar, reassina só com o conjunto que já
     // se sabe aceito: melhor perder o eco do que perder a caixa de entrada toda.
     console.error("[instagram] Assinatura completa recusada, tentando sem `message_echoes`:", erro);
@@ -262,7 +262,7 @@ export async function inscreverAppNoInstagram(accessToken: string): Promise<stri
  * Busca o @ de QUEM MANDOU uma mensagem, a partir do id que o webhook entrega.
  *
  * O Direct identifica o remetente por um id interno e longo (`17841400...`), específico daquela
- * conta — sem essa busca, a conversa aparece no CRM com esse número no lugar do nome, e não há
+ * conta: sem essa busca, a conversa aparece no CRM com esse número no lugar do nome, e não há
  * como saber com quem se está falando.
  *
  * Devolve `null` em qualquer falha (perfil sem permissão, id de um app diferente, API fora do ar):
@@ -274,8 +274,8 @@ export async function buscarPerfilDeQuemMandou(
 ): Promise<{ username?: string; nome?: string; fotoUrl?: string } | null> {
   try {
     const resposta = await fetch(
-      // SÓ `profile_pic`. Pedir também `profile_picture_url` — que não existe neste objeto —
-      // derrubava a chamada INTEIRA: a Graph responde "Tried accessing nonexistent field" e não
+      // SÓ `profile_pic`. Pedir também `profile_picture_url`: que não existe neste objeto.
+      // Derrubava a chamada INTEIRA: a Graph responde "Tried accessing nonexistent field" e não
       // devolve nada, nem o @ nem a foto. Era uma tentativa de cobrir os dois nomes possíveis do
       // campo, e o efeito foi o oposto: em vez de aumentar a chance de vir foto, garantia que
       // nunca viesse nenhuma.
@@ -292,7 +292,7 @@ export async function buscarPerfilDeQuemMandou(
       console.error("[instagram] Falha ao buscar o perfil de quem mandou:", dados.error?.message ?? resposta.status);
       return null;
     }
-    // A foto vem em `profile_pic` — mas nem toda conta/permissão devolve esse campo, e quando ele
+    // A foto vem em `profile_pic`. Mas nem toda conta/permissão devolve esse campo, e quando ele
     // falta a conversa fica só com as iniciais sem nenhuma pista do porquê. Registrar quais campos
     // vieram (nunca os valores) é o que permite saber se é ausência de permissão ou outro nome.
     const fotoUrl = dados.profile_pic;
@@ -306,7 +306,7 @@ export async function buscarPerfilDeQuemMandou(
   }
 }
 
-/** Assina/verifica o `state` do OAuth — mesma lógica de `assinarState`/`verificarState` de
+/** Assina/verifica o `state` do OAuth. Mesma lógica de `assinarState`/`verificarState` de
  * `meta.ts`, chave própria (não precisa ser a mesma do App principal, só interna a este fluxo). */
 export function assinarStateInstagram(workspaceId: string): string {
   const assinatura = createHmac("sha256", appSecret()).update(workspaceId).digest("hex");
@@ -328,7 +328,7 @@ export function verificarStateInstagram(state: string | null): string | null {
 }
 
 /**
- * Curte (ou descurte) uma mensagem do Direct — o mesmo coração que o app do Instagram manda ao dar
+ * Curte (ou descurte) uma mensagem do Direct. O mesmo coração que o app do Instagram manda ao dar
  * dois cliques numa mensagem.
  *
  * Não é uma mensagem nova: é uma `sender_action` sobre uma mensagem que já existe, identificada
@@ -367,7 +367,7 @@ export type TipoAnexoInstagram = "image" | "video" | "audio" | "file";
  * Manda um anexo pelo Direct.
  *
  * A API NÃO recebe o arquivo: recebe um endereço e vai buscar o conteúdo ela mesma. Por isso o
- * `url` precisa ser público e alcançável de fora (ver `publicarAnexoTemporario`) — um endereço que
+ * `url` precisa ser público e alcançável de fora (ver `publicarAnexoTemporario`). Um endereço que
  * exija sessão faz a Meta desistir em silêncio, e a mensagem nunca chega.
  */
 export async function enviarAnexoDirectInstagram(
@@ -398,7 +398,7 @@ export async function enviarAnexoDirectInstagram(
  *
  * Sem isto, "as mensagens não chegam" é indistinguível de "a assinatura caiu": a tela mostra
  * "Conectado" nos dois casos, e o único jeito de saber era mandar mensagem e esperar. Aqui a
- * resposta vem da fonte — se `messages` não estiver na lista, nada vai chegar mesmo.
+ * resposta vem da fonte: se `messages` não estiver na lista, nada vai chegar mesmo.
  */
 export async function camposAssinadosNoInstagram(accessToken: string): Promise<string[] | null> {
   try {
@@ -423,7 +423,7 @@ export async function camposAssinadosNoInstagram(accessToken: string): Promise<s
  * Segunda tentativa de descobrir o @ de alguém: pela lista de conversas da conta.
  *
  * A busca direta pelo id (`buscarPerfilDeQuemMandou`) é a via principal, mas ela depende de uma
- * permissão que nem toda conta concede — e quando falha, a pessoa entra na caixa de entrada como
+ * permissão que nem toda conta concede. E quando falha, a pessoa entra na caixa de entrada como
  * "Contato do Instagram", sem @ e sem foto, que é o pior resultado possível pra quem atende.
  *
  * A lista de conversas devolve os participantes de cada thread com `username`, por outro caminho de
@@ -463,17 +463,17 @@ export async function buscarPerfilNasConversas(
  *
  * Resolve a miniatura de story em vídeo sem processar vídeo nenhum: a Meta já gera a capa e a
  * entrega em `thumbnail_url`. A alternativa era baixar o vídeo inteiro no servidor e extrair o
- * primeiro quadro — pesado, e num container pequeno é o tipo de coisa que derruba o processo sem
+ * primeiro quadro: pesado, e num container pequeno é o tipo de coisa que derruba o processo sem
  * deixar erro no log.
  *
  * Só faz sentido pra vídeo: em foto a Meta não devolve `thumbnail_url`, e `media_url` já é a
- * imagem. Devolve `null` em qualquer falha — a mensagem continua chegando, só sem prévia.
+ * imagem. Devolve `null` em qualquer falha. A mensagem continua chegando, só sem prévia.
  */
 /**
  * Permalink da última mídia consultada por `buscarCapaDaMidia`.
  *
  * Guardado à parte pra não mudar a assinatura da função, que já é usada em vários pontos. Vale só
- * imediatamente após a chamada — quem precisa lê na sequência.
+ * imediatamente após a chamada: quem precisa lê na sequência.
  */
 let ultimoPermalinkDaMidia: string | null = null;
 
@@ -484,7 +484,7 @@ export function permalinkDaUltimaMidia(): string | null {
 export async function buscarCapaDaMidia(accessToken: string, midiaId: string): Promise<string | null> {
   try {
     const resposta = await fetch(
-      // `permalink` vai junto: quando a Meta o devolve, é ele o destino certo do clique — o
+      // `permalink` vai junto: quando a Meta o devolve, é ele o destino certo do clique. O
       // endereço real da publicação no Instagram, e não a URL temporária do CDN. Uma chamada só
       // resolve capa e link.
       `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${midiaId}?fields=thumbnail_url,media_url,media_type,permalink&access_token=${accessToken}`,
@@ -519,7 +519,7 @@ export async function buscarCapaDaMidia(accessToken: string, midiaId: string): P
  *
  * Exige o escopo `instagram_business_manage_comments`, que já é pedido no login. Vale a ressalva
  * comercial: pra contas de TERCEIROS (seus clientes), esse escopo só funciona depois da revisão do
- * app pela Meta — em desenvolvimento ele funciona só pra quem tem papel no app.
+ * app pela Meta: em desenvolvimento ele funciona só pra quem tem papel no app.
  */
 export async function responderComentarioInstagram(
   accessToken: string,
@@ -567,7 +567,7 @@ export type PublicacaoInstagram = {
 };
 
 /**
- * Publicações da conta conectada — pra escolher em qual delas uma automação de comentário vale.
+ * Publicações da conta conectada: pra escolher em qual delas uma automação de comentário vale.
  *
  * `thumbnail_url` só existe em vídeo/reel; em imagem e carrossel a capa é a própria `media_url`.
  * Por isso os dois campos são pedidos e o primeiro que existir é usado.
@@ -649,7 +649,7 @@ export function classificarErroMeta(mensagem: string): { motivo: MotivoFalhaMeta
   if (texto.includes("outside") && texto.includes("window")) {
     return {
       motivo: "fora_da_janela",
-      explicacao: "Passaram-se mais de 24h desde a última mensagem da pessoa — o Instagram não deixa mais responder.",
+      explicacao: "Passaram-se mais de 24h desde a última mensagem da pessoa. O Instagram não deixa mais responder.",
     };
   }
   if (texto.includes("does not exist") || texto.includes("deleted") || texto.includes("unavailable")) {

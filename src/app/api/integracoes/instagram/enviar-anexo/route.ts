@@ -19,7 +19,7 @@ import { apagarArquivo } from "@/lib/armazenamento/midia";
  * que ela mesma vai buscar. Então o arquivo é publicado num link assinado e de vida curta (ver
  * `anexo-publico.ts`), o link é entregue à Meta, e ele vence pouco depois.
  *
- * Até existir esta rota, mandar um PDF pelo CRM criava a bolha na tela e não enviava nada — o
+ * Até existir esta rota, mandar um PDF pelo CRM criava a bolha na tela e não enviava nada. O
  * vendedor achava que a proposta tinha chegado.
  */
 
@@ -32,13 +32,13 @@ const TIPOS: TipoAnexoInstagram[] = ["image", "video", "audio", "file"];
 /**
  * Validade do link quando o arquivo vai como LINK, não como anexo.
  *
- * O Direct só aceita imagem, vídeo e áudio — documento a Meta recusa com "This attachment format
+ * O Direct só aceita imagem, vídeo e áudio: documento a Meta recusa com "This attachment format
  * is not supported" (o próprio app do Instagram também não deixa mandar PDF numa conversa). A
  * saída é mandar o endereço do arquivo no texto, que é o que qualquer pessoa faria na mão.
  *
  * Aí o prazo não pode ser de uma hora: quem recebe abre a proposta quando puder, não em segundos.
  * 30 dias é o meio-termo entre a pessoa conseguir abrir depois e o link não ficar de pé pra
- * sempre. O endereço continua assinado e com id aleatório — não é público no sentido de
+ * sempre. O endereço continua assinado e com id aleatório. Não é público no sentido de
  * "descobrível", só no de "não pede login".
  */
 const VALIDADE_LINK_MS = 30 * 24 * 60 * 60 * 1000;
@@ -46,14 +46,14 @@ const VALIDADE_LINK_MS = 30 * 24 * 60 * 60 * 1000;
 /**
  * O que o Direct do Instagram realmente aceita como anexo.
  *
- * A Meta responde "This attachment format is not supported" pra tudo que está fora desta lista —
- * uma frase igual pra formato errado, arquivo ilegível e link inalcançável, o que torna
+ * A Meta responde "This attachment format is not supported" pra tudo que está fora desta lista.
+ * Uma frase igual pra formato errado, arquivo ilegível e link inalcançável, o que torna
  * impossível saber o que houve só pelo erro dela. Barrar aqui troca esse beco sem saída por uma
  * frase que diz o que fazer.
  *
  * WEBP e HEIC ficam de fora de propósito, e são justamente os que mais aparecem: HEIC é o padrão
  * de foto do iPhone e WEBP é o que o navegador salva ao baixar imagem de site. Os dois abrem
- * normalmente no Mac, então parecem arquivos comuns — e a Meta recusa os dois.
+ * normalmente no Mac, então parecem arquivos comuns: e a Meta recusa os dois.
  */
 const FORMATOS_ACEITOS: Record<Exclude<TipoAnexoInstagram, "file">, string[]> = {
   image: ["image/jpeg", "image/jpg", "image/png", "image/gif"],
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
   const corpo = (await request.json()) as {
     destinatario?: string;
     /** Alternativa a `destinatario`: o nome da conversa, e o servidor resolve o resto. É o que as
-     * telas novas usam — quem chama não precisa saber o id interno da thread nem o canal. */
+     * telas novas usam: quem chama não precisa saber o id interno da thread nem o canal. */
     conversaNome?: string;
     dataUrl?: string;
     nome?: string;
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
   const tamanhoAproximado = Math.floor((dataUrl.length - dataUrl.indexOf(",") - 1) * 0.75);
   if (tamanhoAproximado > TAMANHO_MAX) {
     return NextResponse.json(
-      { erro: "Arquivo acima de 25 MB — o Instagram não aceita anexo desse tamanho." },
+      { erro: "Arquivo acima de 25 MB. O Instagram não aceita anexo desse tamanho." },
       { status: 400 },
     );
   }
@@ -181,7 +181,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, messageId, comoLink });
   } catch (erro) {
     // Falhou o envio: o link não tem mais razão de existir, então sai na hora em vez de esperar o
-    // prazo — não faz sentido manter exposto um arquivo que não chegou a lugar nenhum.
+    // prazo: não faz sentido manter exposto um arquivo que não chegou a lugar nenhum.
     if (publicado) {
       // Apaga o registro E o arquivo no R2. Só apagar a linha deixaria o objeto órfão no bucket,
       // ocupando espaço pago pra sempre sem nada no banco sabendo que ele existe.

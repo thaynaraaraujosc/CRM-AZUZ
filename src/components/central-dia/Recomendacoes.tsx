@@ -9,7 +9,7 @@ const LABEL_IMPACTO: Record<RecomendacaoDia["impacto"], string> = {
   baixo: "Impacto baixo",
 };
 
-/** "Recomendações para hoje" (item 10) — regras locais mockadas, nunca IA de verdade (a Azuz IA de
+/** "Recomendações para hoje" (item 10). Regras locais mockadas, nunca IA de verdade (a Azuz IA de
  * verdade nem está conectada nesta fase). */
 export function Recomendacoes({
   recomendacoes,

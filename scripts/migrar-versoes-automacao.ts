@@ -6,15 +6,15 @@
 //
 // POR QUE ISTO EXISTE: o motor novo executa a VERSÃO PUBLICADA, não o rascunho aberto no editor.
 // Pra isso a versão precisa ser uma linha consultável, e não um Json que cresce sem limite dentro
-// do fluxo. Este script traz o que já existe pra nova tabela, sem apagar nada do formato antigo —
-// o editor continua escrevendo os dois enquanto a migração roda, e o Json só sai depois que o motor
+// do fluxo. Este script traz o que já existe pra nova tabela, sem apagar nada do formato antigo.
+// O editor continua escrevendo os dois enquanto a migração roda, e o Json só sai depois que o motor
 // novo estiver rodando em produção.
 //
 // É seguro rodar quantas vezes quiser: a gravação é por (fluxo, versão), então repetir atualiza em
 // vez de duplicar.
 //
 // Fluxo publicado que NÃO tem nenhuma versão no histórico (publicado antes de o histórico existir,
-// ou seed) ganha uma versão a partir do estado atual — senão ele ficaria publicado e sem nada pra
+// ou seed) ganha uma versão a partir do estado atual. Senão ele ficaria publicado e sem nada pra
 // executar, que é pior do que uma versão aproximada.
 import "dotenv/config";
 import { setDefaultResultOrder } from "node:dns";
@@ -29,7 +29,7 @@ setDefaultResultOrder("ipv4first");
 const soContar = process.argv.includes("--contar");
 
 if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL não encontrada — confira se o arquivo .env existe na raiz do projeto.");
+  console.error("DATABASE_URL não encontrada: confira se o arquivo .env existe na raiz do projeto.");
   process.exit(1);
 }
 
@@ -114,7 +114,7 @@ async function main() {
   if (fluxosSemHistorico) {
     console.log(`  ${fluxosSemHistorico} fluxo(s) publicado(s) sem histórico ganharam uma versão a partir do estado atual.`);
   }
-  console.log("  O formato antigo (historicoVersoes) continua intacto — nada foi apagado.");
+  console.log("  O formato antigo (historicoVersoes) continua intacto. Nada foi apagado.");
 }
 
 main()

@@ -9,17 +9,17 @@ type Posicao = { top: number; left: number };
 /**
  * Calcula a posição de um elemento flutuante (dropdown, menu de contexto, popover) portalizado em
  * `document.body`, medindo a altura/largura REAIS do conteúdo já renderizado (via `useLayoutEffect` +
- * `getBoundingClientRect`), em vez de estimar um tamanho fixo — é a mesma técnica que já funcionava
+ * `getBoundingClientRect`), em vez de estimar um tamanho fixo. É a mesma técnica que já funcionava
  * bem no menu de contexto de imagem de Documentos, generalizada aqui pra qualquer flutuante do CRM.
  *
  * Flip vertical: abre pra cima se não couber embaixo. Clamp horizontal: nunca deixa vazar pelas
- * laterais. Recalcula em `scroll`/`resize` enquanto está aberto — nenhuma das implementações
+ * laterais. Recalcula em `scroll`/`resize` enquanto está aberto. Nenhuma das implementações
  * anteriores de posicionamento flutuante no projeto fazia isso, o que deixava o menu preso na posição
  * errada se a janela fosse redimensionada com ele aberto.
  *
- * `aoFechar` (opcional) — clique fora do flutuante ou tecla Esc chamam esse callback. Sem isso, cada
+ * `aoFechar` (opcional): clique fora do flutuante ou tecla Esc chamam esse callback. Sem isso, cada
  * flutuante ficava por conta própria pra fechar sozinho, e boa parte não implementava nada (menu
- * ficava aberto até um clique manual no próprio botão que abriu) — centralizando aqui, todo
+ * ficava aberto até um clique manual no próprio botão que abriu). Centralizando aqui, todo
  * consumidor do hook ganha o comportamento padrão de propósito só de passar o callback.
  */
 export function useFloatingPosition(
@@ -90,7 +90,7 @@ export function useFloatingPosition(
     // eslint-disable-next-line react-hooks/exhaustive-deps -- anchorRect é um objeto novo a cada render; comparamos pelos campos primitivos abaixo
   }, [aberto, anchorRect?.top, anchorRect?.bottom, anchorRect?.left, anchorRect?.right, margem]);
 
-  // Posição "ingênua" (sem medir o conteúdo ainda) usada só no primeiro paint — sem ela o elemento
+  // Posição "ingênua" (sem medir o conteúdo ainda) usada só no primeiro paint. Sem ela o elemento
   // nunca chegaria a ser montado pra `useLayoutEffect` poder medir e corrigir (problema do ovo e da
   // galinha). `useLayoutEffect` roda antes do navegador pintar a tela, então a correção é invisível.
   const posicaoInicial: Posicao | null = anchorRect

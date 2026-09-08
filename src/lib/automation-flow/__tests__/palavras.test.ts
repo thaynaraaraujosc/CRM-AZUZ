@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { textoCasaComPalavras } from "@/lib/automation-flow/motor";
 
 /**
- * A regra de palavra-chave decide se uma automação dispara ou não — é o ponto onde um engano custa
+ * A regra de palavra-chave decide se uma automação dispara ou não. É o ponto onde um engano custa
  * caro dos dois lados: não disparar deixa o lead sem resposta, e disparar errado manda mensagem
  * comercial pra quem não pediu.
  */

@@ -167,11 +167,11 @@ function TarefasContent() {
       membros.find((m) => m.nome === responsavelNovaTarefa) ?? membros[0];
     criarTarefaCtx({
       titulo,
-      contato: "—",
+      contato: "-",
       data: dataNovaTarefa.trim() || "Sem data",
       responsavel: {
-        nome: responsavelEscolhido?.nome ?? "—",
-        initials: responsavelEscolhido?.initials ?? "—",
+        nome: responsavelEscolhido?.nome ?? "-",
+        initials: responsavelEscolhido?.initials ?? "-",
       },
       urgencia: urgenciaNovaTarefa,
       descricao: descricaoNovaTarefa.trim() || "Sem descrição.",
@@ -192,7 +192,7 @@ function TarefasContent() {
     <>
       <Topbar
         title="Tarefas"
-        sub="Kanban por prazo — arraste um card pra mudar o status, até chegar em Concluídas"
+        sub="Kanban por prazo: arraste um card pra mudar o status, até chegar em Concluídas"
         actions={
           <>
             <button
@@ -312,7 +312,7 @@ function TarefasContent() {
             <div className="open-conv-h">
               <div>
                 <p className="n">Nova tarefa</p>
-                <p className="s">Preencha e salve — ela entra no kanban abaixo</p>
+                <p className="s">Preencha e salve: ela entra no kanban abaixo</p>
               </div>
               <span className="close" style={{ cursor: "pointer" }} onClick={fecharNovaTarefa}>
                 Fechar <IconClose width={11} height={11} />

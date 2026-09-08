@@ -19,7 +19,7 @@ const BADGE_POR_STATUS: Record<string, string> = {
 /**
  * Templates: a lista de mensagens reutilizáveis do workspace.
  *
- * Não é o construtor de automações — é só onde a mensagem é escrita uma vez pra ser escolhida
+ * Não é o construtor de automações. É só onde a mensagem é escrita uma vez pra ser escolhida
  * depois, no Disparo em massa e (na próxima etapa) dentro de uma automação. No WhatsApp oficial
  * o status vem da Meta; nos outros canais o template fica pronto ao salvar.
  */

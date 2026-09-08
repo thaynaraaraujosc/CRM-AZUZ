@@ -9,7 +9,7 @@
  *
  * Toda métrica tem UMA função aqui, que deriva o valor de dado real do
  * workspace (`NegocioCard.statusFechamento`/`motivoPerda` reais, `Conversa`
- * real, campanhas reais do Meta Ads) — nenhuma tem default fictício; quem
+ * real, campanhas reais do Meta Ads). Nenhuma tem default fictício; quem
  * chama sempre passa o dado real explícito. Cada função também devolve os
  * registros que formaram o resultado, pra alimentar indicadores clicáveis.
  */
@@ -19,9 +19,9 @@ import type { Campanha, Funil, NegocioCard } from "@/lib/data";
 export type Metrica<T> = {
   valor: number;
   label: string;
-  /** Mostrado no tooltip ao passar o mouse — a fórmula exata usada. */
+  /** Mostrado no tooltip ao passar o mouse. A fórmula exata usada. */
   formula: string;
-  /** Registros granulares que compõem o resultado — base dos indicadores clicáveis. */
+  /** Registros granulares que compõem o resultado. Base dos indicadores clicáveis. */
   registros: T[];
 };
 
@@ -40,7 +40,7 @@ export function formatarMinutos(min: number): string {
   return m > 0 ? `${h}h${m}min` : `${h}h`;
 }
 
-/** Achata todos os `NegocioCard` de todos os funis/etapas num array só — ponto de entrada comum
+/** Achata todos os `NegocioCard` de todos os funis/etapas num array só. Ponto de entrada comum
  * pras métricas de negócio (a maioria não se importa de qual funil/etapa o card está, só do
  * desfecho). */
 export function todosOsCards(funis: Funil[]): NegocioCard[] {
@@ -119,14 +119,14 @@ export function calcularMotivoPrincipalPerda(cards: NegocioCard[]): Metrica<Nego
   const percentual = perdidas.length > 0 && motivoPrincipal ? (qtd / perdidas.length) * 100 : 0;
   return {
     valor: percentual,
-    label: motivoPrincipal ?? "—",
-    motivo: motivoPrincipal ?? "—",
+    label: motivoPrincipal ?? "-",
+    motivo: motivoPrincipal ?? "-",
     formula: "Motivo com mais negócios perdidos, entre os que têm motivo registrado",
     registros: perdidas,
   };
 }
 
-/** Distribuição de motivos de perda (pra gráfico/ranking) — cada motivo com contagem e percentual
+/** Distribuição de motivos de perda (pra gráfico/ranking). Cada motivo com contagem e percentual
  * sobre o total de negócios perdidos com motivo registrado. */
 export function calcularDistribuicaoMotivosPerda(
   cards: NegocioCard[],
@@ -146,7 +146,7 @@ export function calcularDistribuicaoMotivosPerda(
 }
 
 /** Leads aguardando atendimento = conversas cujo status ainda não teve resposta da equipe. Tipo
- * estrutural mínimo (só `status`) — aceita tanto `Conversa` (mock) quanto `ConversaReal`
+ * estrutural mínimo (só `status`). Aceita tanto `Conversa` (mock) quanto `ConversaReal`
  * (`useConversas()`), sem acoplar essa métrica a um dos dois. */
 export function calcularLeadsAguardando<T extends { status: string }>(conversas: T[]): Metrica<T> {
   const registros = conversas.filter((c) => c.status === "Não respondido");
@@ -158,7 +158,7 @@ export function calcularLeadsAguardando<T extends { status: string }>(conversas:
   };
 }
 
-/** Leads no funil, na etapa "Novo" (ou primeira etapa) — mesma fonte que o Kanban mostra. */
+/** Leads no funil, na etapa "Novo" (ou primeira etapa). Mesma fonte que o Kanban mostra. */
 export function calcularFunilResumo(funis: Funil[]): Metrica<NegocioCard> {
   const primeiraEtapa = funis[0]?.colunas[0];
   const cards = primeiraEtapa?.cards ?? [];
@@ -170,7 +170,7 @@ export function calcularFunilResumo(funis: Funil[]): Metrica<NegocioCard> {
   };
 }
 
-/** Desempenho agrupado por responsável — vendidas/perdidas/receita, derivado direto de
+/** Desempenho agrupado por responsável: vendidas/perdidas/receita, derivado direto de
  * `NegocioCard.responsavel` + `statusFechamento`. Cards sem responsável ficam de fora (não dá pra
  * atribuir a ninguém). */
 export function calcularPorResponsavel(
@@ -191,7 +191,7 @@ export function calcularPorResponsavel(
   return [...porNome.entries()].map(([nome, v]) => ({ nome, ...v }));
 }
 
-/** Série diária real (últimos N dias com movimento) — negócios criados (`data`) e
+/** Série diária real (últimos N dias com movimento). Negócios criados (`data`) e
  * ganhos/perdidos/receita (`dataFechamento`), agrupados por dia. Substitui o antigo
  * `serieDashboardRelatorios` mockado; só existe ponto no gráfico pros dias em que algo realmente
  * aconteceu. */
@@ -229,7 +229,7 @@ function parseSubCampanha(sub: string): { leads: number; investido: number } {
 export { parseSubCampanha };
 
 /** Investimento total em tráfego pago = soma do investido em todas as campanhas ativas
- * (conectadas via Meta Ads — `GET /api/integracoes/meta/ads/campanhas`). */
+ * (conectadas via Meta Ads: `GET /api/integracoes/meta/ads/campanhas`). */
 export function calcularInvestimentoTrafego(campanhas: Campanha[]): Metrica<Campanha> {
   const valor = campanhas.reduce((s, c) => s + parseSubCampanha(c.sub).investido, 0);
   return {
@@ -253,7 +253,7 @@ export function calcularLeadsTrafego(campanhas: Campanha[]): Metrica<Campanha> {
 
 /**
  * ROAS médio ponderado = receita total gerada por tráfego pago ÷ investimento total, ponderado
- * pelo investido de cada campanha — evita ter um "ROAS médio" solto e desconectado do ROAS por
+ * pelo investido de cada campanha. Evita ter um "ROAS médio" solto e desconectado do ROAS por
  * campanha.
  */
 export function calcularRoasMedio(campanhas: Campanha[]): Metrica<Campanha> {

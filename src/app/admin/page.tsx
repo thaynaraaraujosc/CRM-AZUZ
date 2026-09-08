@@ -55,7 +55,7 @@ function GraficoCrescimento({ crescimento }: { crescimento: Overview["cresciment
   );
 }
 
-/** Dashboard do super-admin — visão geral da plataforma inteira: quantos workspaces/usuários
+/** Dashboard do super-admin: visão geral da plataforma inteira: quantos workspaces/usuários
  * existem, MRR real (soma das assinaturas ativas), distribuição por plano e crescimento recente. */
 export default function AdminDashboardPage() {
   const [dados, setDados] = useState<Overview | null>(null);

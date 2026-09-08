@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 /** Faixa fixa mostrada só enquanto a sessão atual é um "entrar como" (super-admin vendo o CRM
- * como outro usuário) — sem isso, dava pra esquecer que está impersonando e mexer em dado de
+ * como outro usuário): sem isso, dava pra esquecer que está impersonando e mexer em dado de
  * cliente pensando que é teste. */
 export function ImpersonandoBanner() {
   const { data: sessao } = useSession();

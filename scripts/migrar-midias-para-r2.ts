@@ -3,7 +3,7 @@
 // Rode com: npx tsx scripts/migrar-midias-para-r2.ts
 // Só pra ver quanto tem, sem mover nada: npx tsx scripts/migrar-midias-para-r2.ts --contar
 //
-// POR QUE ISTO EXISTE — a linha de EGRESS da fatura da Railway.
+// POR QUE ISTO EXISTE: a linha de EGRESS da fatura da Railway.
 //
 // Mensagem antiga guarda o anexo INTEIRO, em base64, dentro da coluna `extras`. A tela de Conversas
 // carrega as 3.000 mensagens mais recentes do workspace de uma vez, e faz isso de novo toda vez que
@@ -36,7 +36,7 @@ setDefaultResultOrder("ipv4first");
 const soContar = process.argv.includes("--contar");
 
 if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL não encontrada — confira se o arquivo .env existe na raiz do projeto.");
+  console.error("DATABASE_URL não encontrada: confira se o arquivo .env existe na raiz do projeto.");
   process.exit(1);
 }
 if (!soContar && !r2Configurado()) {
@@ -50,10 +50,10 @@ const prisma = new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABAS
 /**
  * A busca é feita pelo BANCO, com `JSON_SEARCH`, e traz só o id e o tamanho. Trazer `extras` de
  * todas as mensagens pra decidir aqui quais têm data URL seria justamente o tráfego que este
- * script existe pra eliminar — e faria a migração custar, sozinha, mais uma carga inteira.
+ * script existe pra eliminar: e faria a migração custar, sozinha, mais uma carga inteira.
  *
  * Sem `ORDER BY` de propósito: ordenar obriga o MySQL a passar as linhas (com o JSON gigante
- * dentro) pelo buffer de ordenação, que é pequeno — e ele responde `1038 Out of sort memory`.
+ * dentro) pelo buffer de ordenação, que é pequeno: e ele responde `1038 Out of sort memory`.
  * A ordem não importa pra migrar.
  */
 async function listarPendentes(): Promise<{ id: string; workspaceId: string; bytes: number }[]> {
@@ -110,7 +110,7 @@ async function main() {
 
     // `guardarMidiasDosExtras` devolve a data URL de volta quando a subida falha (nunca perde o
     // arquivo). Então "migrou" é: o resultado não tem mais data URL nenhuma. Se ainda tem, alguma
-    // subida falhou, e a mensagem NÃO é reescrita — evita gravar meio migrada.
+    // subida falhou, e a mensagem NÃO é reescrita. Evita gravar meio migrada.
     const extrasNovos = await guardarMidiasDosExtras(mensagem.extras, mensagem.workspaceId);
     const aindaTemDataUrl = JSON.stringify(extrasNovos).includes('"data:');
     if (aindaTemDataUrl) {

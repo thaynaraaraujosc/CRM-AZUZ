@@ -53,16 +53,16 @@ export async function GET() {
 }
 
 /**
- * PUT reconcilia o funil do workspace de quem está logado com o array `funis` mandado pelo front —
- * não existem mutadores dedicados no Context pra Funil (~13 pontos em
+ * PUT reconcilia o funil do workspace de quem está logado com o array `funis` mandado pelo front.
+ * Não existem mutadores dedicados no Context pra Funil (~13 pontos em
  * `funil/page.tsx`/`FunisSecao.tsx` mexem direto em `setFunis`), então o Provider sincroniza o
  * estado inteiro a cada mudança em vez de granular por operação. Roda numa transação: upsert de
- * cada funil/etapa/card presente, e apaga o que sumiu do array — **sempre filtrado por
+ * cada funil/etapa/card presente, e apaga o que sumiu do array. **sempre filtrado por
  * `workspaceId`** nos `deleteMany`, senão apagaria funis/etapas/cards de outras empresas (qualquer
  * id que não seja dessa empresa "não está no payload dela").
  *
  * O `deleteMany` dos cards leva TAMBÉM o filtro por conexão, e isso não é detalhe: o GET esconde
- * os negócios de um canal desconectado, então o front nunca os recebe — e "não veio no payload"
+ * os negócios de um canal desconectado, então o front nunca os recebe. E "não veio no payload"
  * passaria a significar "apague". Sem esta linha, desconectar um canal deixava de esconder os
  * negócios dele e passava a APAGÁ-LOS no primeiro salvamento seguinte. Regra geral: um PUT que
  * reconcilia estado inteiro só pode apagar dentro do mesmo recorte que o GET mostrou.
@@ -83,12 +83,12 @@ export async function PUT(request: Request) {
   // Estado ATUAL do banco, lido antes de escrever qualquer coisa.
   //
   // Sem isto, a reconciliação mandava um `upsert` por funil, por etapa e por CARD a cada
-  // salvamento — dezenas de idas e voltas até o banco no Railway dentro de UMA transação, com um
+  // salvamento: dezenas de idas e voltas até o banco no Railway dentro de UMA transação, com um
   // pool de 3 conexões. Passando dos 20s a transação inteira era abortada por prazo (P2028) e o
   // funil não salvava: era o "O funil é grande demais para salvar de uma vez".
   //
   // O que muda num salvamento real é quase sempre UM card (arrastar, fechar, editar). Comparando
-  // com o que já está gravado, a transação passa a levar só o que de fato mudou — de ~50
+  // com o que já está gravado, a transação passa a levar só o que de fato mudou. De ~50
   // instruções para 1 ou 2 no caso comum.
   const [funisAtuais, etapasAtuais, cardsAtuais] = await Promise.all([
     prisma.funil.findMany({ where: { workspaceId }, select: { id: true, nome: true, responsavel: true } }),
@@ -120,7 +120,7 @@ export async function PUT(request: Request) {
   const etapaPorId = new Map(etapasAtuais.map((e) => [e.id, e]));
   const cardPorId = new Map(cardsAtuais.map((c) => [c.id, c]));
 
-  /** Data de fechamento normalizada pra "AAAA-MM-DD" (ou null) dos dois lados da comparação — o
+  /** Data de fechamento normalizada pra "AAAA-MM-DD" (ou null) dos dois lados da comparação. O
    * banco devolve `Date` e o front manda string; comparar direto marcaria tudo como alterado. */
   function dataFechamentoIso(valor: Date | string | null | undefined): string | null {
     if (!valor) return null;
@@ -179,7 +179,7 @@ export async function PUT(request: Request) {
     });
   }
 
-  // Cards novos vão todos numa instrução só (`createMany`), em vez de uma por card — é o caso do
+  // Cards novos vão todos numa instrução só (`createMany`), em vez de uma por card. É o caso do
   // "Trazer conversas", que pode criar dezenas de uma vez.
   const cardsParaCriar: Prisma.NegocioCardCreateManyInput[] = [];
 
@@ -251,7 +251,7 @@ export async function PUT(request: Request) {
   }
 
   // A transação inteira estava sem tratamento de erro: qualquer falha do banco virava um 500 mudo,
-  // e a tela só conseguia dizer "Funis não foram salvos: 500" — sem nada que apontasse a causa, nem
+  // e a tela só conseguia dizer "Funis não foram salvos: 500": sem nada que apontasse a causa, nem
   // no navegador nem pra quem fosse investigar. O erro real fica no log do servidor, com quantos
   // funis/etapas/cards estavam no payload, que é o que separa "dado inválido num card" de
   // "transação grande demais e estourou o tempo".
@@ -259,12 +259,12 @@ export async function PUT(request: Request) {
     // Em LOTES, não numa transação só.
     //
     // Uma transação única com centenas de instruções estourava o prazo e devolvia "o funil é
-    // grande demais" — e o pior: não salvava nada, nem a parte que já tinha passado. Um funil que
+    // grande demais": e o pior: não salvava nada, nem a parte que já tinha passado. Um funil que
     // cresce (é o que se espera de um CRM em uso) ficava com um teto invisível a partir do qual
     // parava de salvar.
     //
     // Cada lote é uma transação: dentro dele continua tudo-ou-nada, que é o que importa pra não
-    // deixar um card sem etapa. Entre lotes não há atomicidade, e isso é aceitável aqui — o pior
+    // deixar um card sem etapa. Entre lotes não há atomicidade, e isso é aceitável aqui. O pior
     // caso de uma falha no meio é parte da reordenação ficar pra trás, coisa que o próximo
     // salvamento corrige. Perder o salvamento inteiro é bem pior.
     const TAMANHO_DO_LOTE = 50;
@@ -289,7 +289,7 @@ export async function PUT(request: Request) {
       funis: funis.length,
       etapas: idsEtapas.length,
       cards: idsCards.length,
-      // Quantas instruções a transação realmente levou — com a comparação contra o banco isto é
+      // Quantas instruções a transação realmente levou. Com a comparação contra o banco isto é
       // quase sempre um número pequeno, e um número grande aqui é o sinal de que algo está
       // marcando tudo como alterado a cada salvamento.
       operacoes: operacoes.length,
@@ -300,7 +300,7 @@ export async function PUT(request: Request) {
       {
         erro:
           codigo === "P2028"
-            ? "O banco demorou demais pra responder. Parte do funil pode não ter sido salva — recarregue a página."
+            ? "O banco demorou demais pra responder. Parte do funil pode não ter sido salva. Recarregue a página."
             : "Não foi possível salvar o funil agora.",
         // Só o código, nunca a mensagem crua do banco: ela carrega nome de tabela, coluna e às
         // vezes o próprio valor do registro, e isso não pode chegar ao navegador.

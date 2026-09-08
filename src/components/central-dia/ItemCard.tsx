@@ -20,7 +20,7 @@ const LABEL_PRIORIDADE: Record<ItemDia["prioridade"], string> = {
 };
 
 /**
- * Card de pendência — só visualização. Clicar no card inteiro leva direto pra pendência
+ * Card de pendência: só visualização. Clicar no card inteiro leva direto pra pendência
  * (conversa/tarefa/lead/automação); resolver/adiar continuam nas telas de origem, sem duplicar
  * botões de ação aqui (a Central do Dia é só um resumo do que precisa de atenção hoje).
  */

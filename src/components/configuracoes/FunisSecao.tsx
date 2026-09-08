@@ -7,7 +7,7 @@ import type { ColunaFunil } from "@/lib/data";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { IconClose } from "@/components/icons";
 
-/** Funis e etapas (item 24) — reaproveita `useFunis()` de verdade (mesmo dado usado em /funil), com
+/** Funis e etapas (item 24). Reaproveita `useFunis()` de verdade (mesmo dado usado em /funil), com
  * renomear/duplicar/arquivar de funil e reordenar etapas por drag-and-drop. */
 export function FunisSecao() {
   const { funis, setFunis, excluirFunil } = useFunis();

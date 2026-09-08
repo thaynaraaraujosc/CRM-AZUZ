@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 /**
- * Testes das regras puras — as decisões que mudam o comportamento do CRM sem depender de rede:
+ * Testes das regras puras: as decisões que mudam o comportamento do CRM sem depender de rede:
  * se uma automação dispara, o que uma falha da Meta significa.
  *
  * Deliberadamente sem ambiente de navegador nem banco: teste que precisa dos dois é lento, quebra

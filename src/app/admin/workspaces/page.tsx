@@ -26,7 +26,7 @@ function formatarData(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
 
-/** Lista de todos os workspaces da plataforma — nome, quantos usuários, plano/status da
+/** Lista de todos os workspaces da plataforma. Nome, quantos usuários, plano/status da
  * assinatura. Clicar numa linha abre o detalhe pra editar plano/acessos. */
 export default function AdminWorkspacesPage() {
   const [workspaces, setWorkspaces] = useState<WorkspaceLinha[] | null>(null);
@@ -70,7 +70,7 @@ export default function AdminWorkspacesPage() {
                     </Link>
                   </td>
                   <td>{w._count.membros}</td>
-                  <td>{w.assinatura ? PLANOS[w.assinatura.plano as PlanoId]?.nome ?? w.assinatura.plano : "—"}</td>
+                  <td>{w.assinatura ? PLANOS[w.assinatura.plano as PlanoId]?.nome ?? w.assinatura.plano : "-"}</td>
                   <td>
                     {w.assinatura ? (
                       <span className={`pill${w.assinatura.status === "ativa" ? " on" : ""}`}>{NOME_STATUS[w.assinatura.status]}</span>

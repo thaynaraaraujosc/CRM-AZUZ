@@ -7,7 +7,7 @@ export type StatusIntegracaoMeta = {
 };
 
 /**
- * Estado de conexão de uma integração da Meta (`meta_whatsapp`/`meta_instagram`/`meta_ads`) — usado
+ * Estado de conexão de uma integração da Meta (`meta_whatsapp`/`meta_instagram`/`meta_ads`). Usado
  * pelas telas de Configurações e pela página de Tráfego, que só diferem no `provedor` e em quais
  * campos de `metadados` mostram. Centraliza fetch/desconectar/leitura do erro pós-redirect do OAuth
  * pra não duplicar essa lógica em cada tela.
@@ -15,7 +15,7 @@ export type StatusIntegracaoMeta = {
 export function useIntegracaoMeta(provedor: string) {
   const [integracao, setIntegracao] = useState<StatusIntegracaoMeta | null>(null);
   const [desconectando, setDesconectando] = useState(false);
-  // Lido direto de `window.location` (não `useSearchParams`) — as telas que usam esse hook não têm
+  // Lido direto de `window.location` (não `useSearchParams`). As telas que usam esse hook não têm
   // um limite <Suspense> em volta, e é só pra mostrar um erro pontual depois do redirect do OAuth.
   // Inicializador preguiçoso (não um efeito): já roda com o valor certo na primeira renderização.
   const [erroDoRedirect] = useState<string | null>(() =>

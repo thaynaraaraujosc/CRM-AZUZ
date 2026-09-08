@@ -3,12 +3,12 @@
  *
  * O histórico inteiro do workspace é carregado de uma vez em `GET /api/mensagens-extra` (e de novo
  * a cada 5s pelo polling). Enquanto o anexo ia embutido dentro desse JSON, uma única foto ou áudio
- * podia somar megabytes ao payload — e o navegador tinha que baixar e parsear TUDO antes de
+ * podia somar megabytes ao payload. E o navegador tinha que baixar e parsear TUDO antes de
  * desenhar a primeira bolha. Era isso que fazia as mensagens antigas demorarem a aparecer ao
  * atualizar a página.
  *
  * A troca: no lugar da data URL vai um link pra `GET /api/mensagens-extra/midia`. O JSON volta a
- * ser pequeno, e cada arquivo é baixado pelo próprio `<img>`/`<audio>` — sob demanda, em paralelo,
+ * ser pequeno, e cada arquivo é baixado pelo próprio `<img>`/`<audio>`. Sob demanda, em paralelo,
  * e com cache do navegador (o conteúdo de uma mensagem nunca muda, então vale `immutable`).
  *
  * O formato guardado no banco NÃO muda: continua data URL. A troca acontece só na saída.
@@ -21,11 +21,11 @@ export function ehLinkDeMidia(valor: unknown): valor is string {
 }
 
 /**
- * Um campo que guarda um anexo — nos dois formatos que convivem no banco.
+ * Um campo que guarda um anexo. Nos dois formatos que convivem no banco.
  *
  * A checagem é definida AQUI, e não importada de `armazenamento/midia`, de propósito: este arquivo
  * roda também no navegador, e aquele módulo importa o Prisma. Importar de lá arrastava o driver do
- * banco inteiro pro pacote do cliente — o build quebrava tentando resolver `fs` dentro do
+ * banco inteiro pro pacote do cliente. O build quebrava tentando resolver `fs` dentro do
  * `mariadb`. Predicado puro não deve depender de módulo de servidor.
  */
 function ehMidiaGuardada(valor: unknown): valor is string {
@@ -69,7 +69,7 @@ export function trocarMidiaPorLink(extras: unknown, mensagemId: string): Record<
   ) as Record<string, unknown>;
 }
 
-/** Lê o anexo que está num caminho (`imagens.0.url`) dentro de `extras` — data URL ou referência. */
+/** Lê o anexo que está num caminho (`imagens.0.url`) dentro de `extras`. Data URL ou referência. */
 export function lerMidiaNoCaminho(extras: unknown, caminho: string): string | null {
   let atual: unknown = extras;
   for (const parte of caminho.split(".")) {
@@ -82,7 +82,7 @@ export function lerMidiaNoCaminho(extras: unknown, caminho: string): string | nu
 /**
  * Devolve o conteúdo de verdade nos campos em que o cliente mandou de volta só o nosso link.
  *
- * Sem isto, o primeiro `PUT` depois de um `GET` gravaria o link por cima da data URL — o arquivo
+ * Sem isto, o primeiro `PUT` depois de um `GET` gravaria o link por cima da data URL. O arquivo
  * seria perdido e o link passaria a apontar pra si mesmo. Vale a regra geral: o cliente nunca
  * recebeu o conteúdo, então não pode ser fonte de verdade sobre ele.
  */

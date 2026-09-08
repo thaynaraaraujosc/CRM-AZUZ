@@ -12,9 +12,9 @@ datasource db {
   provider = "mysql"
 }
 
-// Piloto de migração pra banco real — espelha o tipo `Contato` de src/lib/data.ts.
+// Piloto de migração pra banco real. Espelha o tipo `Contato` de src/lib/data.ts.
 // `id` continua String, mas a partir da Fase 2 do multi-tenancy passa a ser prefixado com o
-// workspace (`${workspaceId}-${slugId(nome)}`, ver POST /api/contatos) — sem isso, duas empresas
+// workspace (`${workspaceId}-${slugId(nome)}`, ver POST /api/contatos): sem isso, duas empresas
 // com um contato de mesmo nome colidiriam na chave primária, que é global. `nome` deixa de ser
 // único globalmente e vira único por workspace (`@@unique`).
 model Contato {
@@ -45,7 +45,7 @@ model Contato {
   canalPreferido String?
   melhorHorario  String?
 
-  // @ do Instagram (sem arroba) — preenchido sozinho quando a pessoa chega pelo Direct e o CRM
+  // @ do Instagram (sem arroba). Preenchido sozinho quando a pessoa chega pelo Direct e o CRM
   // resolve o username na primeira mensagem. É o equivalente do `whatsapp` pro outro canal: sem
   // ele, um lead vindo do Direct virava contato sem nenhuma forma de reencontrar a pessoa.
   instagram String?
@@ -53,19 +53,19 @@ model Contato {
   ///
   /// Mora no CONTATO, não só na conversa, porque é a mesma pessoa em todo lugar: lista de
   /// conversas, funil, painel do funil, tela de contatos. Com a foto presa à conversa, o funil
-  /// mostrava iniciais enquanto a conversa mostrava o rosto — o vendedor não reconhecia que era o
+  /// mostrava iniciais enquanto a conversa mostrava o rosto. O vendedor não reconhecia que era o
   /// mesmo lead.
   ///
   /// Guardada (não um link do CDN da Meta, que expira em horas) pelo mesmo motivo das miniaturas.
   fotoUrl   String? @db.Text
 
-  // MySQL não tem array nativo — etiquetas vira JSON (lista de strings) pra não inflar o
+  // MySQL não tem array nativo. Etiquetas vira JSON (lista de strings) pra não inflar o
   // escopo do piloto com uma tabela relacionada agora.
   etiquetas Json?
   favorito  Boolean @default(false)
 
   // "manual" (criado por um usuário na tela de Contatos), "whatsapp" ou "instagram" (nasceu
-  // sozinho quando uma mensagem nova chegou por aquele canal) — só rastreabilidade, não muda
+  // sozinho quando uma mensagem nova chegou por aquele canal). Só rastreabilidade, não muda
   // nenhum comportamento.
   criadoVia String @default("manual")
 
@@ -78,9 +78,9 @@ model Contato {
   @@unique([workspaceId, nome])
 }
 
-// Uma "conversa" (thread de atendimento por canal) — nasce sozinha quando chega a primeira
+// Uma "conversa" (thread de atendimento por canal). Nasce sozinha quando chega a primeira
 // mensagem de um contato novo por um webhook conectado (WhatsApp oficial, WhatsApp via QR/Baileys
-// ou Instagram). As mensagens em si continuam em `MensagemExtra`, casadas pelo mesmo `nome` — essa
+// ou Instagram). As mensagens em si continuam em `MensagemExtra`, casadas pelo mesmo `nome`: essa
 // tabela só guarda o estado da thread (canal, status de atendimento, não lidas, favorita...).
 model Conversa {
   id          String    @id
@@ -98,7 +98,7 @@ model Conversa {
   status    String  @default("Não respondido")
   naoLidas  Int     @default(0)
   favorita  Boolean @default(false)
-  // Antes só existia como `Set` local no navegador (`useState`) — sumia a cada F5/login novo,
+  // Antes só existia como `Set` local no navegador (`useState`). Sumia a cada F5/login novo,
   // então uma conversa "arquivada" voltava a aparecer em "Tudo" sozinha, e a aba "Arquivadas" (que
   // só nasce quando tem pelo menos uma) sumia junto. Vira coluna real pelo mesmo motivo de
   // `favorita` acima: precisa sobreviver a atualizar a página.
@@ -106,21 +106,21 @@ model Conversa {
 
   atendenteSelecionado String?
 
-  // Grupo de WhatsApp — sem isso, o webhook tratava cada mensagem de grupo como se fosse de um
+  // Grupo de WhatsApp: sem isso, o webhook tratava cada mensagem de grupo como se fosse de um
   // contato individual (usava o nome de quem mandou como chave), então cada pessoa que falava no
   // mesmo grupo virava uma "conversa" separada em vez de tudo cair na thread do grupo. `nome` (a
   // coluna acima) já guarda o nome do grupo nesse caso; `contato` guarda o JID do grupo
-  // (`<id>@g.us`) — é essa dupla que identifica a thread, igual telefone identifica uma pessoa.
+  // (`<id>@g.us`): é essa dupla que identifica a thread, igual telefone identifica uma pessoa.
   ehGrupo            Boolean   @default(false)
-  // Lista de participantes ({ nome, telefone }) — buscada na Evolution API quando o grupo é visto
+  // Lista de participantes ({ nome, telefone }): buscada na Evolution API quando o grupo é visto
   // pela primeira vez (ver `buscarInfoGrupo`), null até a primeira busca ter sucesso.
   participantesGrupo Json?
-  // Foto de perfil real (do WhatsApp) — grupo ou contato individual, buscada na Evolution API
+  // Foto de perfil real (do WhatsApp). Grupo ou contato individual, buscada na Evolution API
   // (`buscarFotoPerfil`) quando a conversa é vista pela primeira vez. Null até a busca ter sucesso
-  // (WhatsApp sem foto definida, ou busca falhou) — nesse caso a tela cai pras iniciais como antes.
+  // (WhatsApp sem foto definida, ou busca falhou): nesse caso a tela cai pras iniciais como antes.
   fotoUrl            String?
   // Descrição do grupo (texto livre configurado no WhatsApp) e data real de criação DO GRUPO no
-  // WhatsApp — não confundir com `criadoEm` abaixo, que é quando essa linha nasceu NESTE banco.
+  // WhatsApp: não confundir com `criadoEm` abaixo, que é quando essa linha nasceu NESTE banco.
   // Ambos exibidos no painel "Dados do grupo" (clicar no cabeçalho da conversa), separado do painel
   // de participantes (que é outro clique, dentro desse).
   descricaoGrupo     String?   @db.Text
@@ -129,7 +129,7 @@ model Conversa {
   // Conexão dona desta conversa: `<provedor>:<identificador do número>` (ex.:
   // `whatsapp_baileys:5562963404 38`, `meta_whatsapp:143588938831846`). Existe porque uma conversa
   // pertence a UM número conectado, não ao workspace inteiro: ao trocar de canal ou de número, a
-  // caixa de entrada tem que zerar sem apagar nada — e voltar inteira se aquela conexão voltar.
+  // caixa de entrada tem que zerar sem apagar nada. E voltar inteira se aquela conexão voltar.
   // Null = conversa anterior a esta coluna (tratada como do canal não oficial, ver
   // `contaCanalDaConexao`).
   contaCanal String?
@@ -141,8 +141,8 @@ model Conversa {
   @@index([workspaceId, contaCanal])
 }
 
-// Núcleo comercial (2ª leva) — espelha o tipo `Compromisso` de src/lib/agenda-context.tsx. Registro
-// plano, sem aninhamento — só compromissos criados manualmente na Agenda (os derivados de Tarefa são
+// Núcleo comercial (2ª leva): espelha o tipo `Compromisso` de src/lib/agenda-context.tsx. Registro
+// plano, sem aninhamento: só compromissos criados manualmente na Agenda (os derivados de Tarefa são
 // calculados ao vivo no cliente por `compromissosDeTarefas`, nunca persistidos).
 model Compromisso {
   id String @id
@@ -168,7 +168,7 @@ model Compromisso {
   atualizadoEm DateTime @updatedAt
 }
 
-// Núcleo comercial (2ª leva) — espelha `ColunaTarefas`/`TaskCard` de src/lib/data.ts. Etapas são
+// Núcleo comercial (2ª leva): espelha `ColunaTarefas`/`TaskCard` de src/lib/data.ts. Etapas são
 // editáveis pelo usuário (criar/renomear/reordenar/excluir em /tarefas), por isso viram tabela
 // própria (não dá pra derivar só dos cards, porque uma etapa pode existir vazia). Excluir uma etapa
 // remove os cards dela junto (mesmo comportamento que o Provider já tinha antes: `excluirEtapa`
@@ -191,7 +191,7 @@ model TarefaCard {
   ordem   Int
 
   // Denormalizado (não só via etapaId) pra toda rota conseguir checar posse do card direto, sem
-  // precisar de um join até TarefaEtapa — mesmo padrão usado em NegocioCard/FunilEtapa.
+  // precisar de um join até TarefaEtapa. Mesmo padrão usado em NegocioCard/FunilEtapa.
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
@@ -213,13 +213,13 @@ model TarefaCard {
   atualizadoEm DateTime @updatedAt
 }
 
-// Multi-tenancy Fase 1 — uma empresa que se cadastra no CRM. Cada Membro pertence a exatamente um
+// Multi-tenancy Fase 1: uma empresa que se cadastra no CRM. Cada Membro pertence a exatamente um
 // Workspace; login é sempre "e-mail + senha dentro de um Workspace" (o e-mail do Membro é único
 // globalmente, então não precisa desambiguar workspace no login).
 model Workspace {
   id       String   @id
   nome     String
-  // Fonte única de verdade pro segmento do negócio — antes só existia dentro do blob de
+  // Fonte única de verdade pro segmento do negócio. Antes só existia dentro do blob de
   // `Preferencia` (chave "configuracoes"), desencontrado da coluna `nome` real e sem sobreviver
   // corretamente entre sessões/dispositivos. Null = ainda não preenchido pelo usuário.
   segmento String?
@@ -228,9 +228,9 @@ model Workspace {
 
   membros Membro[]
 
-  // Fase 2 — back-relations exigidas pelo Prisma pra cada modelo de negócio que ganhou
+  // Fase 2: back-relations exigidas pelo Prisma pra cada modelo de negócio que ganhou
   // workspaceId. Nenhuma é consultada a partir do Workspace no código (sempre se busca o modelo
-  // filho direto, filtrado por workspaceId) — só formalizam a relação nos dois lados do schema.
+  // filho direto, filtrado por workspaceId): só formalizam a relação nos dois lados do schema.
   contatos              Contato[]
   compromissos          Compromisso[]
   tarefaEtapas          TarefaEtapa[]
@@ -264,9 +264,9 @@ model Workspace {
   templates             Template[]
 }
 
-// Núcleo comercial (2ª leva) — espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
+// Núcleo comercial (2ª leva): espelha o tipo `Membro` de src/lib/data.ts. Segue o mesmo padrão de
 // Contato: id continua o slug do front, email vira @unique (já era a chave de busca de convite).
-// Multi-tenancy Fase 1: ganhou `workspaceId` — é a tabela real de autenticação agora, `senha` passa
+// Multi-tenancy Fase 1: ganhou `workspaceId`: é a tabela real de autenticação agora, `senha` passa
 // a guardar hash bcrypt (mesma coluna, conteúdo diferente, sem renomear pra não inflar o escopo).
 model Membro {
   id String @id
@@ -284,12 +284,12 @@ model Membro {
   leads     String
   enxerga   String
 
-  // MySQL não tem array nativo — permissoes vira JSON (lista de strings).
+  // MySQL não tem array nativo. Permissoes vira JSON (lista de strings).
   permissoes Json
 
   ativo           Boolean @default(true)
   convitePendente Boolean @default(false)
-  // Foto hoje é gravada como data URL (base64 inline) — pode ficar grande, então usa TEXT em vez
+  // Foto hoje é gravada como data URL (base64 inline). Pode ficar grande, então usa TEXT em vez
   // do VARCHAR padrão.
   foto            String? @db.Text
 
@@ -301,9 +301,9 @@ model Membro {
   sessoesAtivas          SessaoAtiva[]
 }
 
-// Token de "esqueci minha senha" — mesmo espírito do token de convite (`/convite/[token]`), só que
+// Token de "esqueci minha senha". Mesmo espírito do token de convite (`/convite/[token]`), só que
 // pra um Membro que já existe pedindo pra trocar a própria senha. `tokenHash` (não o token cru) é o
-// que fica gravado, igual senha — o valor em texto puro só existe no link do e-mail, nunca no
+// que fica gravado, igual senha: o valor em texto puro só existe no link do e-mail, nunca no
 // banco. Expira rápido (curto de propósito, é um link de e-mail) e só pode ser usado uma vez
 // (`usadoEm` marca isso, evita reuso do mesmo link).
 model TokenRedefinicaoSenha {
@@ -316,10 +316,10 @@ model TokenRedefinicaoSenha {
   criadoEm  DateTime  @default(now())
 }
 
-// Sessão de login real — uma linha por login bem-sucedido (JWT carrega o `jti`, ver `src/lib/
+// Sessão de login real: uma linha por login bem-sucedido (JWT carrega o `jti`, ver `src/lib/
 // auth.ts`). Alimenta "Sessões ativas" em Configurações > Segurança com dispositivo/navegador de
 // verdade (parseados do User-Agent no momento do login) em vez do mock anterior. `revogadaEm`
-// marcado é conferido no callback `jwt` do NextAuth a cada request — sessão revogada para de
+// marcado é conferido no callback `jwt` do NextAuth a cada request. Sessão revogada para de
 // autenticar, então "Encerrar sessão" derruba o acesso de verdade, não só remove da lista.
 model SessaoAtiva {
   id         String    @id
@@ -334,14 +334,14 @@ model SessaoAtiva {
   @@index([membroId])
 }
 
-// Núcleo comercial (2ª leva, último módulo) — espelha `Funil`/`ColunaFunil`/`NegocioCard` de
+// Núcleo comercial (2ª leva, último módulo): espelha `Funil`/`ColunaFunil`/`NegocioCard` de
 // src/lib/data.ts. Diferente de Contato/Membro/Compromisso/Tarefa, aqui NÃO existem mutadores
 // dedicados no Context: o kanban de negócios (`funil/page.tsx`) e a tela de Funis em Configurações
 // (`FunisSecao.tsx`) mexem direto em `setFunis` em ~13 lugares diferentes (criar/renomear/duplicar
 // funil, criar/renomear/reordenar/excluir etapa, mover/criar negócio...). Reescrever cada um desses
 // pontos pra chamar uma API própria multiplicaria o escopo dessa migração e arriscaria o kanban
 // (a tela mais interativa do CRM). Por isso o Provider sincroniza o estado inteiro com o banco a cada
-// mudança (`PUT /api/funis`, que reconcilia tudo numa transação) — mesmo espírito do `useEffect` que
+// mudança (`PUT /api/funis`, que reconcilia tudo numa transação). Mesmo espírito do `useEffect` que
 // gravava tudo no localStorage antes, só que gravando de verdade.
 model Funil {
   id String @id
@@ -359,7 +359,7 @@ model FunilEtapa {
   funilId String
   funil   Funil  @relation(fields: [funilId], references: [id], onDelete: Cascade)
 
-  // Denormalizado (mesmo motivo de TarefaCard) — o `PUT /api/funis` reconcilia a tabela inteira e
+  // Denormalizado (mesmo motivo de TarefaCard). O `PUT /api/funis` reconcilia a tabela inteira e
   // precisa filtrar o que apaga por workspace sem depender de join.
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
@@ -386,7 +386,7 @@ model NegocioCard {
   etiquetas   Json?
   responsavel String?
 
-  // Estado de fechamento real do negócio — null = ainda aberto (só a etapa/coluna descreve onde
+  // Estado de fechamento real do negócio. Null = ainda aberto (só a etapa/coluna descreve onde
   // está no funil). "ganho"/"perdido" grava o desfecho de verdade, é o que faz Inteligência
   // Comercial (conversão, motivo de perda, faturamento) calcular sobre dado real em vez de mock.
   statusFechamento String? // "ganho" | "perdido"
@@ -394,7 +394,7 @@ model NegocioCard {
   dataFechamento   DateTime?
   // Conexão que originou este negócio (`<provedor>:<identificador>`, mesmo formato de
   // `Conversa.contaCanal`). Existe pelo mesmo motivo: ao desconectar um canal, o funil precisa
-  // parar de mostrar os negócios que vieram DELE — e mostrá-los de novo se aquela conexão voltar.
+  // parar de mostrar os negócios que vieram DELE. E mostrá-los de novo se aquela conexão voltar.
   // Nada é apagado: some da vista, continua no banco.
   //
   // Null = card criado à mão, ou anterior a esta coluna. Esses aparecem sempre: não pertencem a
@@ -402,7 +402,7 @@ model NegocioCard {
   contaCanal       String?
 }
 
-// Motivos de perda configuráveis por workspace — usados no seletor ao marcar um NegocioCard como
+// Motivos de perda configuráveis por workspace. Usados no seletor ao marcar um NegocioCard como
 // "perdido" (ver src/app/(app)/funil/page.tsx) e nos indicadores de Inteligência Comercial. Cada
 // workspace novo ganha um seed padrão na primeira vez que a tela é acessada (não em prisma/seed.ts,
 // que só semeia o workspace de demonstração).
@@ -416,9 +416,9 @@ model MotivoPerda {
   @@unique([workspaceId, nome])
 }
 
-// Preferências simples (Notificações/Central do Dia/Configurações/Conversas-config) — cada Context
+// Preferências simples (Notificações/Central do Dia/Configurações/Conversas-config). Cada Context
 // não tem entidade própria, é um blob de preferências de UI, então vira uma linha só por Context
-// identificada pela chave — a partir da Fase 2, uma linha por (workspace, chave), já que cada
+// identificada pela chave: a partir da Fase 2, uma linha por (workspace, chave), já que cada
 // empresa tem sua própria configuração. Ver src/app/api/preferencias/[chave]/.
 model Preferencia {
   workspaceId String
@@ -430,10 +430,10 @@ model Preferencia {
   @@id([workspaceId, chave])
 }
 
-// Mensagens extras trocadas depois do seed (WhatsApp + popup de resposta rápida do Funil) — mesmo
+// Mensagens extras trocadas depois do seed (WhatsApp + popup de resposta rápida do Funil). Mesmo
 // Record<contato, ConvMensagem[]> de src/lib/mensagens-extra-context.tsx, só que relacional (uma
 // linha por mensagem, não um blob por contato) porque é uma lista naturalmente crescente. Os anexos
-// (imagem/vídeo/documento/áudio/localização/contato compartilhado/citação) ficam em `extras` — mesmo
+// (imagem/vídeo/documento/áudio/localização/contato compartilhado/citação) ficam em `extras`. Mesmo
 // espírito de `etiquetas`/`permissoes` Json já usado no resto do schema.
 model MensagemExtra {
   id String @id
@@ -448,11 +448,11 @@ model MensagemExtra {
   criadoEm   DateTime?
   status     String?
   extras     Json?
-  // Canal de origem/destino da mensagem — nulo = comportamento antigo (implicitamente Meta
+  // Canal de origem/destino da mensagem. Nulo = comportamento antigo (implicitamente Meta
   // oficial); "whatsapp_baileys" marca mensagens da conexão não oficial via QR Code, pra saber
   // por qual integração uma resposta deve sair quando o workspace tem as duas conectadas.
   canal      String?
-  // Conexão dona desta mensagem — mesmo formato e mesmo motivo de `Conversa.contaCanal`. `canal`
+  // Conexão dona desta mensagem: mesmo formato e mesmo motivo de `Conversa.contaCanal`. `canal`
   // acima diz só o tipo de conexão; este diz QUAL número, que é o que separa duas contas do mesmo
   // canal (a pessoa troca de número e a caixa de entrada precisa zerar).
   contaCanal String?
@@ -460,7 +460,7 @@ model MensagemExtra {
   ///
   /// É por ele que os webhooks de entrega/leitura encontram a mensagem certa: a Meta não conhece o
   /// id interno do CRM, ela só devolve o dela. Sem guardar isto, o webhook de status chegava,
-  /// procurava a mensagem e não achava nada — entregue e lido nunca saíam do lugar.
+  /// procurava a mensagem e não achava nada. Entregue e lido nunca saíam do lugar.
   ///
   /// Nulo em mensagem recebida (ali o próprio id JÁ é o wamid) e em canal que não devolve id.
   wamid      String?   @db.VarChar(191)
@@ -469,7 +469,7 @@ model MensagemExtra {
   ///
   /// `criadoEm` sozinho não serve: mudança de status (enviado → entregue → lido) reescreve a linha
   /// sem criar linha nova, e a tela ficaria sem ver o visto azul. Nulo nas linhas anteriores a esta
-  /// coluna — por isso a assinatura combina os dois carimbos e a contagem.
+  /// coluna: por isso a assinatura combina os dois carimbos e a contagem.
   atualizadoEm DateTime? @updatedAt
 
   @@index([workspaceId, criadoEm])
@@ -491,17 +491,17 @@ model DocumentoBiblioteca {
   formato      String
   tamanho      Int
   autor        String
-  // Data URL — pode ser mídia grande, o TEXT padrão do MySQL (64KB) não é suficiente.
+  // Data URL: pode ser mídia grande, o TEXT padrão do MySQL (64KB) não é suficiente.
   url          String  @db.LongText
   tipoMidia    String?
   descricao    String?
   tags         Json?
-  // ISO curto (aaaa-mm-dd) definido pelo front a cada mutação — não é um timestamp gerenciado pelo
+  // ISO curto (aaaa-mm-dd) definido pelo front a cada mutação. Não é um timestamp gerenciado pelo
   // Prisma, por isso não é @updatedAt.
   atualizadoEm String
 }
 
-// Form builder — páginas/perguntas/tema/versões ficam como Json na própria linha do formulário
+// Form builder: páginas/perguntas/tema/versões ficam como Json na própria linha do formulário
 // porque os mutadores de src/lib/formularios-context.tsx sempre recalculam o array inteiro e
 // substituem (nunca endereçam página/pergunta por id numa API própria).
 model Formulario {
@@ -523,9 +523,9 @@ model Formulario {
   atualizadoEm DateTime @updatedAt
 }
 
-// Respostas de formulário — lista naturalmente crescente (igual Compromisso/TarefaCard), tabela
+// Respostas de formulário: lista naturalmente crescente (igual Compromisso/TarefaCard), tabela
 // própria em vez de Json na linha do Formulario. `workspaceId` aqui NUNCA vem de uma sessão (quem
-// responde é um lead público, sem login) — é copiado do Formulario pai no momento da criação, em
+// responde é um lead público, sem login): é copiado do Formulario pai no momento da criação, em
 // POST /api/formularios/[id]/respostas.
 model RespostaFormulario {
   id String @id
@@ -538,7 +538,7 @@ model RespostaFormulario {
   valores      Json
 }
 
-// Motor de fluxo de automação (visual, nodes/edges) — mesmo raciocínio de Formulario: os mutadores
+// Motor de fluxo de automação (visual, nodes/edges): mesmo raciocínio de Formulario: os mutadores
 // de src/lib/automation-flow-context.tsx sempre recalculam nodes/edges/configuracoes/historicoVersoes
 // inteiros. Log de execução continua só em memória (nunca persistiu, sem mudança de comportamento).
 model FluxoAutomacao {
@@ -548,7 +548,7 @@ model FluxoAutomacao {
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
   nome               String
-  // Texto livre — alguns fluxos de demonstração passam de 191 caracteres (VARCHAR padrão), por
+  // Texto livre: alguns fluxos de demonstração passam de 191 caracteres (VARCHAR padrão), por
   // isso @db.Text (mesmo motivo do `objetivo` abaixo).
   descricao          String?   @db.Text
   funilId            String?
@@ -570,17 +570,17 @@ model FluxoAutomacao {
   criadoEm           DateTime  @default(now())
   atualizadoEm       DateTime  @updatedAt
 
-  /// Publicações e execuções — ver `VersaoAutomacao` e `ExecucaoAutomacao`. `historicoVersoes`
+  /// Publicações e execuções: ver `VersaoAutomacao` e `ExecucaoAutomacao`. `historicoVersoes`
   /// (Json acima) continua existindo enquanto a migração roda; a fonte da verdade passa a ser a
   /// tabela.
   versoes   VersaoAutomacao[]
   execucoesEmAndamento ExecucaoAutomacao[]
 }
 
-// Editor de documentos (rich-text) — mesmo raciocínio: páginas/comentários/versões/acessos/config
+// Editor de documentos (rich-text): mesmo raciocínio: páginas/comentários/versões/acessos/config
 // ficam como Json na linha do documento (mutadores de src/lib/documentos-context.tsx sempre
 // recalculam o array inteiro). "Favoritos"/"recentes" de modelo (localStorage puro hoje, listas de
-// id de navegação, não conteúdo dono) continuam fora do banco — mesmo precedente de
+// id de navegação, não conteúdo dono) continuam fora do banco. Mesmo precedente de
 // "azuz-crm-documentos-prefs-ver", que já não fazia parte do Context.
 model Documento {
   id String @id
@@ -612,16 +612,16 @@ model ModeloPersonalizado {
   nome          String
   descricao     String   @db.Text
   categoria     String
-  // HTML do conteúdo do documento — pode ser grande, TEXT padrão (64KB) não é suficiente.
+  // HTML do conteúdo do documento. Pode ser grande, TEXT padrão (64KB) não é suficiente.
   conteudoHtml  String   @db.LongText
   compartilhado Boolean  @default(false)
   autor         String
   criadoEm      DateTime @default(now())
 }
 
-// Integrações oficiais (Fase A) — uma linha por (workspace, provedor). Começa só com
+// Integrações oficiais (Fase A): uma linha por (workspace, provedor). Começa só com
 // "meta_whatsapp"; Instagram/Meta Ads/Google Ads entram como novos valores de `provedor` nas
-// próximas fases, reaproveitando o mesmo modelo. Tokens nunca ficam em texto puro — ver
+// próximas fases, reaproveitando o mesmo modelo. Tokens nunca ficam em texto puro. Ver
 // src/lib/integracoes/crypto.ts (AES-256-GCM, diferente do bcrypt do login: aqui o token precisa
 // ser usado de novo depois, não só verificado).
 model Integracao {
@@ -636,7 +636,7 @@ model Integracao {
   refreshTokenCriptografado String?   @db.Text
   expiraEm                  DateTime?
 
-  // Dados específicos do provedor (ex.: phoneNumberId/wabaId da Meta) — cada provedor usa um
+  // Dados específicos do provedor (ex.: phoneNumberId/wabaId da Meta): cada provedor usa um
   // subconjunto de chaves diferentes, por isso Json em vez de colunas fixas.
   metadados    Json?
   erroMensagem String? @db.Text
@@ -647,10 +647,10 @@ model Integracao {
   @@unique([workspaceId, provedor])
 }
 
-// Assinatura do próprio CRM (cobrança da mensalidade do workspace via Asaas) — não confundir com
+// Assinatura do próprio CRM (cobrança da mensalidade do workspace via Asaas). Não confundir com
 // `Integracao`: aqui não é o cliente conectando a conta Asaas dele, é a Azuz cobrando o cliente
 // pela conta Asaas da própria Azuz. Uma linha por workspace (1:1). O histórico de cobranças não é
-// espelhado no banco — é buscado ao vivo na Asaas (`GET /subscriptions/{id}/payments`) pra nunca
+// espelhado no banco: é buscado ao vivo na Asaas (`GET /subscriptions/{id}/payments`) pra nunca
 // dessincronizar; aqui só fica o suficiente pra saber o status atual sem chamar a API a cada
 // carregamento de tela.
 model Assinatura {
@@ -658,7 +658,7 @@ model Assinatura {
   workspaceId String    @unique
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  plano String // "completo" — plano único do CRM, ver src/lib/assinatura/planos.ts
+  plano String // "completo". Plano único do CRM, ver src/lib/assinatura/planos.ts
   valor Decimal @db.Decimal(10, 2)
 
   status String // "pendente" | "ativa" | "atrasada" | "cancelada"
@@ -674,10 +674,10 @@ model Assinatura {
   atualizadoEm DateTime @updatedAt
 }
 
-// Ações (item 7 do pedido de novas demandas) — lista de transmissão agendada/enviada, tela
+// Ações (item 7 do pedido de novas demandas). Lista de transmissão agendada/enviada, tela
 // "Ações". Antes o histórico inteiro (inclusive "Dia Mundial do Diabetes", "Reativação"...) era
 // mock fixo em src/lib/data.ts, e "Agendar envio" só empilhava em memória (sumia no F5). Guarda só
-// o registro da ação em si — o disparo de verdade pros contatos (via WhatsApp/Instagram/SMS) ainda
+// o registro da ação em si. O disparo de verdade pros contatos (via WhatsApp/Instagram/SMS) ainda
 // não existe (precisaria de um agendador/fila rodando fora do request, fora do escopo agora); por
 // enquanto fica marcado como "Agendado" e é isso.
 /// OBSOLETO. Era o registro de "Ações" antes de existir o disparo de verdade (`Campanha`); a tela
@@ -692,9 +692,9 @@ model AcaoEnvio {
   titulo       String
   legenda      String?  @db.Text
   midiaTipo    String // "imagem" | "audio" | "texto"
-  canais       Json // string[] — "WhatsApp" | "Instagram" | "E-mail" | "SMS"
+  canais       Json // string[]: "WhatsApp" | "Instagram" | "E-mail" | "SMS"
   agendadoPara DateTime
-  // Snapshot dos nomes dos contatos no momento da criação — não é uma relação de verdade porque
+  // Snapshot dos nomes dos contatos no momento da criação. Não é uma relação de verdade porque
   // Contato não tem id estável o suficiente pra isso ainda (mesmo padrão já aceito em outras
   // tabelas desta fase, ver `TarefaCard.contato`).
   contatos     Json // string[]
@@ -702,9 +702,9 @@ model AcaoEnvio {
   criadoEm DateTime @default(now())
 }
 
-// Histórico de relatórios já gerados (Central de Relatórios) — antes só vivia no localStorage do
+// Histórico de relatórios já gerados (Central de Relatórios). Antes só vivia no localStorage do
 // navegador (não sobrevivia a trocar de dispositivo, e conta nova começava com 3 relatórios de
-// exemplo fictícios). Só cria (histórico é sempre apêndice, nunca editado) — GET lista, POST
+// exemplo fictícios). Só cria (histórico é sempre apêndice, nunca editado): GET lista, POST
 // adiciona um novo registro.
 model RelatorioGerado {
   id          String    @id
@@ -724,7 +724,7 @@ model RelatorioGerado {
   criadoEm DateTime @default(now())
 }
 
-// Modelo de mensagem (template) do WhatsApp Business oficial — cada WABA tem os próprios, não
+// Modelo de mensagem (template) do WhatsApp Business oficial. Cada WABA tem os próprios, não
 // existe template global. Nasce como espelho local do que existe na Graph API (criado por lá ou
 // por aqui), pra não precisar fazer polling: a aprovação/rejeição chega pelo webhook
 // `message_template_status_update` e atualiza esse registro na hora.
@@ -749,13 +749,13 @@ model WhatsappTemplate {
   @@index([workspaceId])
 }
 
-// Arquivo exposto por um link público, assinado e de vida curta — existe só pra a Meta conseguir
+// Arquivo exposto por um link público, assinado e de vida curta. Existe só pra a Meta conseguir
 // buscá-lo.
 //
 // Mandar anexo pelo Direct do Instagram não aceita o arquivo no corpo da requisição: a API recebe
 // um ENDEREÇO e vai buscar o conteúdo ela mesma, de fora. Todas as rotas de mídia do CRM exigem
 // sessão, então a Meta batia numa porta fechada. Esta tabela guarda o arquivo por pouco tempo e o
-// serve num endereço que não pede login, mas exige uma assinatura e expira — é o mínimo de
+// serve num endereço que não pede login, mas exige uma assinatura e expira. É o mínimo de
 // exposição que faz o envio funcionar.
 model AnexoPublico {
   id String @id
@@ -780,7 +780,7 @@ model AnexoPublico {
 
 /// Um arquivo guardado no Cloudflare R2.
 ///
-/// O arquivo em si NÃO está aqui — no banco fica só o registro dele. Existe por dois motivos:
+/// O arquivo em si NÃO está aqui. No banco fica só o registro dele. Existe por dois motivos:
 /// somar o espaço usado por workspace sem precisar varrer o bucket inteiro (o R2 cobra por
 /// listagem, e um cliente com anos de conversa tem dezenas de milhares de objetos), e saber o que
 /// apagar quando um cliente sai, sem tocar no arquivo de ninguém.
@@ -802,7 +802,7 @@ model ArquivoArmazenado {
   @@index([workspaceId])
 }
 
-/// Evento do Instagram, já normalizado — a camada que separa o CRM do formato cru da Meta.
+/// Evento do Instagram, já normalizado: a camada que separa o CRM do formato cru da Meta.
 ///
 /// Por que existe: até aqui o webhook lia o corpo da Meta e gravava direto em `MensagemExtra`.
 /// Funcionava pro Direct, mas amarrava o CRM inteiro ao formato dela: todo evento novo (comentário,
@@ -813,7 +813,7 @@ model ArquivoArmazenado {
 /// precisa saber como a Meta nomeia as coisas.
 ///
 /// O `id` é a chave natural do evento na Meta (o `mid` da mensagem, o id do comentário). Como é
-/// chave primária, um webhook reenviado — coisa que a Meta faz rotineiramente — falha ao gravar em
+/// chave primária, um webhook reenviado: coisa que a Meta faz rotineiramente. Falha ao gravar em
 /// vez de duplicar. A deduplicação não depende de ninguém lembrar de checar.
 model InstagramEvento {
   id String @id @db.VarChar(191)
@@ -821,7 +821,7 @@ model InstagramEvento {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
-  /// IGSID da conta conectada que recebeu o evento — separa duas contas do mesmo workspace.
+  /// IGSID da conta conectada que recebeu o evento. Separa duas contas do mesmo workspace.
   contaInstagramId String
 
   /// Tipo normalizado: mensagem_recebida, mensagem_enviada, midia_recebida, story_respondido,
@@ -860,7 +860,7 @@ model InstagramEvento {
   @@index([comentarioId])
 }
 
-/// Uma automação que já rodou para um evento — a trava contra disparo repetido.
+/// Uma automação que já rodou para um evento. A trava contra disparo repetido.
 ///
 /// Sem isso, o mesmo comentário podia executar o mesmo fluxo várias vezes: a Meta reenvia webhook,
 /// e do lado de cá cada reenvio parecia um comentário novo. Na prática o cliente receberia a mesma
@@ -879,7 +879,7 @@ model AutomacaoExecucao {
   /// Identificador do que disparou: "comentario:<id>", "mensagem:<mid>", "reacao:<mid>".
   chaveEvento String @db.VarChar(191)
 
-  /// Quem era a pessoa do outro lado — útil pra investigar disparo indevido depois.
+  /// Quem era a pessoa do outro lado. Útil pra investigar disparo indevido depois.
   instagramUserId String?
 
   executadoEm DateTime @default(now())
@@ -888,7 +888,7 @@ model AutomacaoExecucao {
   @@index([workspaceId, executadoEm])
 }
 
-/// Linha do tempo do lead — o histórico legível de tudo que aconteceu com um contato.
+/// Linha do tempo do lead. O histórico legível de tudo que aconteceu com um contato.
 ///
 /// Serve a duas coisas: o atendente entender o contexto sem reconstruir a história na cabeça, e a
 /// Inteligência Comercial / IA receberem esse contexto já estruturado, em vez de terem que inferir
@@ -932,7 +932,7 @@ model VersaoAutomacao {
 /// Como a execução volta a andar, os dois únicos caminhos:
 /// - TEMPO: `aguardandoAte` no passado e o cron pega (mesmo padrão do disparo em massa).
 /// - EVENTO: o webhook de mensagem procura execução `aguardando_evento` daquele contato ANTES de
-///   avaliar gatilhos novos — é isso que faz "clicou em Sim" continuar o fluxo em vez de começar
+///   avaliar gatilhos novos: é isso que faz "clicou em Sim" continuar o fluxo em vez de começar
 ///   outro.
 model ExecucaoAutomacao {
   id          String    @id
@@ -942,7 +942,7 @@ model ExecucaoAutomacao {
   fluxoId String
   fluxo   FluxoAutomacao @relation(fields: [fluxoId], references: [id], onDelete: Cascade)
 
-  /// A versão publicada que esta execução está rodando — congelada no início.
+  /// A versão publicada que esta execução está rodando. Congelada no início.
   versaoId String?
   versao   VersaoAutomacao? @relation(fields: [versaoId], references: [id])
 
@@ -988,7 +988,7 @@ model ExecucaoAutomacao {
   @@index([workspaceId, fluxoId, iniciadaEm])
 }
 
-/// O log de UM nó dentro de uma execução — é o "Histórico de execuções" que hoje não existe (o
+/// O log de UM nó dentro de uma execução. É o "Histórico de execuções" que hoje não existe (o
 /// motor só imprime `console.log` com a contagem de passos).
 ///
 /// Guarda o erro em duas camadas de propósito: `detalhe` é o que a pessoa lê na tela ("Template não
@@ -1048,16 +1048,16 @@ model EventoDoLead {
 // ============================================================================
 // Campanhas (Disparo em massa)
 //
-// `AcaoEnvio` acima guarda só o registro da ação e nunca enviou nada — a tela dizia "Envio
+// `AcaoEnvio` acima guarda só o registro da ação e nunca enviou nada. A tela dizia "Envio
 // agendado" e a mensagem não saía. Estes dois modelos são o disparo de verdade.
 //
 // Duas tabelas, e a separação é o que sustenta tudo o mais: a campanha é a intenção, o
 // destinatário é o trabalho. Cada pessoa vira UMA linha gravada ANTES de qualquer envio, com
 // estado próprio. É isso que dá, sem truque nenhum:
-//   - idempotência — clicar duas vezes não cria destinatário duas vezes (`@@unique`);
-//   - retomada — worker que morreu no meio recomeça de onde parou, porque o estado está no banco;
-//   - rastreio individual — dá pra dizer o que aconteceu com CADA contato, e por quê;
-//   - ritmo — o worker pega só o que cabe na janela, em vez de despejar tudo de uma vez.
+//   - idempotência: clicar duas vezes não cria destinatário duas vezes (`@@unique`);
+//   - retomada: worker que morreu no meio recomeça de onde parou, porque o estado está no banco;
+//   - rastreio individual: dá pra dizer o que aconteceu com CADA contato, e por quê;
+//   - ritmo: o worker pega só o que cabe na janela, em vez de despejar tudo de uma vez.
 // ============================================================================
 
 model Campanha {
@@ -1068,7 +1068,7 @@ model Campanha {
   titulo  String
   /// Texto da mensagem. Em e-mail é o corpo; no WhatsApp é a mensagem em si.
   corpo   String  @db.Text
-  /// Assunto — só e-mail usa.
+  /// Assunto: só e-mail usa.
   assunto String?
 
   /// "whatsapp_oficial" | "whatsapp_nao_oficial" | "email". Um canal por campanha, de propósito:
@@ -1101,7 +1101,7 @@ model Campanha {
   concluidaEm DateTime?
 
   /// Erro que interrompeu a campanha inteira (canal desconectado, token morto). Falha de UM
-  /// destinatário não vem pra cá — fica na linha dele.
+  /// destinatário não vem pra cá. Fica na linha dele.
   erroMensagem String? @db.Text
 
   criadoEm     DateTime @default(now())
@@ -1114,7 +1114,7 @@ model Campanha {
   @@index([status, agendadaPara])
 }
 
-/// Mensagem reutilizável do CRM — o que o Disparo em massa e, depois, o construtor de automações
+/// Mensagem reutilizável do CRM: o que o Disparo em massa e, depois, o construtor de automações
 /// escolhem. NÃO substitui `WhatsappTemplate`: aquele é o espelho do que existe na Meta; este é o
 /// que a pessoa escreve aqui, em qualquer canal. No WhatsApp oficial os dois se ligam por
 /// `whatsappTemplateId` quando o template é enviado pra análise.
@@ -1136,9 +1136,9 @@ model Template {
   /// Só e-mail usa.
   assunto String?
   corpo   String  @db.Text
-  /// `[{ chave: "nome", indice: 1, origem: "contato.nome" }]` — o mapeamento padrão de cada variável.
+  /// `[{ chave: "nome", indice: 1, origem: "contato.nome" }]`: o mapeamento padrão de cada variável.
   variaveis Json?
-  /// `[{ texto: "Sim, quero continuar" }]` — botões de resposta rápida, com o limite do canal
+  /// `[{ texto: "Sim, quero continuar" }]`: botões de resposta rápida, com o limite do canal
   /// aplicado na gravação (ver `limitesDoCanal`).
   botoes Json?
 
@@ -1164,11 +1164,11 @@ model CampanhaDestinatario {
   /// campanha, e é o que permite limitar concorrência por cliente.
   workspaceId String
 
-  /// Nome do contato no CRM — a mesma chave usada em `Conversa.nome` e `MensagemExtra.contato`.
+  /// Nome do contato no CRM. A mesma chave usada em `Conversa.nome` e `MensagemExtra.contato`.
   contatoNome String
   /// Para onde vai de verdade, resolvido NA CRIAÇÃO da campanha e congelado aqui. Não pode ser
   /// buscado na hora do envio: o contato pode ser editado ou apagado no meio de uma campanha de
-  /// vários dias, e aí a mensagem iria pro lugar errado — ou pra lugar nenhum.
+  /// vários dias, e aí a mensagem iria pro lugar errado. Ou pra lugar nenhum.
   destino     String
 
   /// pendente | enviando | enviado | entregue | lido | falhou | cancelado

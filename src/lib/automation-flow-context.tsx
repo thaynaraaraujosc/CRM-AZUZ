@@ -41,16 +41,16 @@ type PatchFluxo = Partial<{
 type AutomationFlowContextValue = {
   fluxos: FluxoAutomacao[];
   criarFluxo: (dados: Partial<Omit<FluxoAutomacao, "id">> & { nome: string }) => FluxoAutomacao;
-  /** Sempre escreve no rascunho (nodes/edges/configuracoes) — nunca mexe em `status`/versão publicada. */
+  /** Sempre escreve no rascunho (nodes/edges/configuracoes). Nunca mexe em `status`/versão publicada. */
   atualizarFluxo: (id: string, patch: PatchFluxo) => void;
   /** Valida; se não houver erro (severidade "erro"), publica uma nova versão. Retorna os problemas achados de qualquer forma. */
   publicarFluxo: (id: string, usuario: string) => ProblemaValidacao[];
   restaurarVersao: (fluxoId: string, versao: number) => void;
-  /** Retorna a cópia recém-criada (rascunho independente) — útil pra navegar direto pro editor dela. Aditivo: quem já chamava sem usar o retorno continua funcionando igual. */
+  /** Retorna a cópia recém-criada (rascunho independente). Útil pra navegar direto pro editor dela. Aditivo: quem já chamava sem usar o retorno continua funcionando igual. */
   duplicarFluxo: (id: string) => FluxoAutomacao | undefined;
-  /** Arquiva: pausa (`ativa: false`) E marca `arquivada: true` — some da lista principal (ver automacoes/page.tsx). */
+  /** Arquiva: pausa (`ativa: false`) E marca `arquivada: true`. Some da lista principal (ver automacoes/page.tsx). */
   arquivarFluxo: (id: string) => void;
-  /** Desfaz o arquivamento — volta a aparecer na lista principal. Não reativa sozinho (`ativa` continua false; usuário liga pelo Toggle se quiser). */
+  /** Desfaz o arquivamento: volta a aparecer na lista principal. Não reativa sozinho (`ativa` continua false; usuário liga pelo Toggle se quiser). */
   desarquivarFluxo: (id: string) => void;
   excluirFluxo: (id: string) => void;
   alternarAtivo: (id: string) => void;
@@ -61,7 +61,7 @@ type AutomationFlowContextValue = {
 
   /**
    * Ponto de entrada único pra disparar automações a partir de um evento real do
-   * CRM (entrou na etapa, respondeu, etc) — testa todo fluxo publicado e ativo
+   * CRM (entrou na etapa, respondeu, etc): testa todo fluxo publicado e ativo
    * contra o evento e, pra cada acerto, roda o motor de execução de verdade.
    */
 };
@@ -72,7 +72,7 @@ function agoraISO(): string {
   return new Date().toISOString();
 }
 
-/** Exportado só pra `prisma/seed.ts` semear a tabela — o Provider agora busca da API. */
+/** Exportado só pra `prisma/seed.ts` semear a tabela. O Provider agora busca da API. */
 export function fluxosIniciaisPadrao(): FluxoAutomacao[] {
   return [
     ...AUTOMACOES_INICIAIS.map((a) => migrarAutomacaoParaFluxo(a, funisIniciais)),
@@ -82,9 +82,9 @@ export function fluxosIniciaisPadrao(): FluxoAutomacao[] {
 }
 
 /**
- * Banco real (ver src/app/api/automacoes-fluxos/) — nodes/edges/configuracoes/historicoVersoes
+ * Banco real (ver src/app/api/automacoes-fluxos/): nodes/edges/configuracoes/historicoVersoes
  * ficam como Json na própria linha do fluxo, já que os mutadores sempre recalculam o objeto inteiro
- * e substituem. `execucoes` (log de auditoria do Simulador/Histórico) continua só em memória — nunca
+ * e substituem. `execucoes` (log de auditoria do Simulador/Histórico) continua só em memória. Nunca
  * persistiu, sem mudança de comportamento.
  */
 function criarRemoto(fluxo: FluxoAutomacao) {
@@ -216,7 +216,7 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
       atualizadoEm: agora,
       execucoes: 0,
       historicoVersoes: [],
-      // A cópia deixa de ser um "modelo de demonstração" — vira uma automação real do usuário.
+      // A cópia deixa de ser um "modelo de demonstração". Vira uma automação real do usuário.
       modeloDemonstracao: false,
     };
     setFluxos((prev) => [...prev, copia]);

@@ -2,8 +2,8 @@
  * Sincroniza o schema do Prisma com o banco antes do build.
  *
  * Existe porque nada aplicava mudança de banco em produção: o `prisma db push` morava no script
- * `start`, que a Vercel (serverless) nunca executa. Colocá-lo no `build` resolve — a Vercel sempre
- * roda o build e tem a `DATABASE_URL` — mas o repositório também é buildado em ambientes sem banco
+ * `start`, que a Vercel (serverless) nunca executa. Colocá-lo no `build` resolve: a Vercel sempre
+ * roda o build e tem a `DATABASE_URL`. Mas o repositório também é buildado em ambientes sem banco
  * configurado (o serviço do Railway, por exemplo, não tem nenhuma variável definida), e ali o
  * comando aborta e derruba o build inteiro por uma etapa que nem se aplica.
  *
@@ -18,7 +18,7 @@
  * problema real". A justificativa está certa; a conclusão não estava, e um dia inteiro de produção
  * mostrou o porquê.
  *
- * O banco ficou fora do ar. O `db push` não conseguiu conectar. O build passou a falhar — e com ele
+ * O banco ficou fora do ar. O `db push` não conseguiu conectar. O build passou a falhar. E com ele
  * foi embora a capacidade de fazer QUALQUER deploy, inclusive o deploy que consertaria a situação.
  * Uma indisponibilidade do banco virou uma indisponibilidade de entrega, e as duas coisas se
  * travaram uma na outra: pra publicar era preciso o banco de pé, e pra arrumar o banco era preciso
@@ -31,7 +31,7 @@
  *
  * - **Não alcancei o banco** (fora do ar, endereço trocado, credencial errada, rede): AVISA bem
  *   alto e deixa o build seguir. A aplicação vai subir e reclamar em tempo de execução, com uma
- *   mensagem clara pra quem abrir a tela — mas o deploy acontece, e é possível publicar a correção.
+ *   mensagem clara pra quem abrir a tela. Mas o deploy acontece, e é possível publicar a correção.
  *
  * - **Alcancei o banco e a mudança foi recusada** (schema inválido, alteração destrutiva): FALHA o
  *   build, como antes. Aqui o build é o lugar certo pra barrar, porque o problema é do código que
@@ -40,7 +40,7 @@
 import { spawnSync } from "node:child_process";
 
 if (!process.env.DATABASE_URL) {
-  console.warn("[schema] DATABASE_URL não definida — pulando a sincronização do banco.");
+  console.warn("[schema] DATABASE_URL não definida: pulando a sincronização do banco.");
   process.exit(0);
 }
 
@@ -58,7 +58,7 @@ if (resultado.status === 0) process.exit(0);
  * Os códigos `P1xxx` do Prisma são a via principal e são estáveis: P1000 autenticação, P1001 não
  * alcançou o servidor, P1002 tempo esgotado, P1017 conexão fechada pelo servidor. Os erros de
  * sistema (`ECONNREFUSED` e companhia) entram porque a falha nem sempre chega a virar erro do
- * Prisma — quando o endereço não existe, ela vem crua do sistema operacional.
+ * Prisma: quando o endereço não existe, ela vem crua do sistema operacional.
  */
 const FALHA_DE_CONEXAO = [
   "P1000",
@@ -79,7 +79,7 @@ if (naoAlcancouOBanco) {
   console.warn("========================================================================");
   console.warn("[schema] ATENÇÃO: não foi possível ALCANÇAR o banco de dados.");
   console.warn("");
-  console.warn("  O build vai continuar de propósito — travar a publicação por causa de um");
+  console.warn("  O build vai continuar de propósito. Travar a publicação por causa de um");
   console.warn("  banco fora do ar impediria de publicar justamente a correção que resolve.");
   console.warn("");
   console.warn("  Mas a aplicação vai subir SEM a sincronização do schema. Se o banco estiver");
@@ -95,7 +95,7 @@ if (naoAlcancouOBanco) {
 
 console.error("");
 console.error("[schema] A sincronização do schema foi RECUSADA pelo banco (o banco respondeu).");
-console.error("  Isso é problema do código que está sendo publicado, não de disponibilidade —");
+console.error("  Isso é problema do código que está sendo publicado, não de disponibilidade: ");
 console.error("  provavelmente uma mudança destrutiva de coluna/tabela. O build para aqui de");
 console.error("  propósito: publicar assim quebraria o que já está no ar.");
 console.error("");

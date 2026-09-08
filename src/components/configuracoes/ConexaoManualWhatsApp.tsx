@@ -8,7 +8,7 @@ import { IconAlerta } from "@/components/icons";
  *
  * É a alternativa ao Embedded Signup: aquele fluxo serve pra CRIAR a conta de um cliente de dentro
  * do CRM e exige que o app esteja aprovado como Provedor de Tecnologia pela Meta (dias de análise).
- * Quem já tem a WABA criada e aprovada não precisa de nada disso — só de um token permanente.
+ * Quem já tem a WABA criada e aprovada não precisa de nada disso. Só de um token permanente.
  *
  * O token é digitado uma única vez, vai pro servidor e sai criptografado pro banco. Nenhuma rota
  * devolve ele de volta, então o campo nunca é preenchido de novo com o valor salvo.
@@ -68,19 +68,19 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
             <p className="int-title" style={{ margin: 0 }}>Conectado! Guarde este PIN:</p>
             <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: 4, margin: "8px 0" }}>{pin}</p>
             <p className="hint" style={{ margin: 0 }}>
-              É o PIN de verificação em duas etapas do seu número na Meta. Ele não aparece de novo —
-              anote agora num lugar seguro.
+              É o PIN de verificação em duas etapas do seu número na Meta. Ele não aparece de novo.
+              Anote agora num lugar seguro.
             </p>
           </>
         ) : pinPendente ? (
           <p className="hint" style={{ margin: 0 }}>
             Conectado. O número já estava registrado na Meta com um PIN anterior, então esse passo
-            ficou pendente — informe o PIN antigo aqui pra completar, se precisar reenviá-lo.
+            ficou pendente: informe o PIN antigo aqui pra completar, se precisar reenviá-lo.
           </p>
         ) : (
           <p className="hint" style={{ margin: 0 }}>
-            Conectado. Seu número usa o app do WhatsApp Business, que já vem registrado na Meta —
-            por isso não há PIN a guardar.
+            Conectado. Seu número usa o app do WhatsApp Business, que já vem registrado na Meta.
+            Por isso não há PIN a guardar.
           </p>
         )}
       </div>
@@ -90,7 +90,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
   if (!aberto) {
     return (
       <button type="button" className="btn ghost" style={{ marginTop: 10 }} onClick={() => setAberto(true)}>
-        Já tenho conta na API oficial — conectar com token
+        Já tenho conta na API oficial. Conectar com token
       </button>
     );
   }

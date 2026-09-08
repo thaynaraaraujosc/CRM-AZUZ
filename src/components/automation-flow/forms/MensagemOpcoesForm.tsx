@@ -14,7 +14,7 @@ const CANAIS: { valor: CanalMensagem; label: string }[] = [
 ];
 
 /**
- * Item 1/2 da spec: o CRM não pode parecer dependente de API oficial — menu numerado e texto livre
+ * Item 1/2 da spec: o CRM não pode parecer dependente de API oficial. Menu numerado e texto livre
  * são texto puro, então funcionam em qualquer conexão ("Compatibilidade ampla"); botões/lista dependem
  * do que o provedor conectado suporta de verdade, daí o selo mais cauteloso nesses dois.
  */
@@ -22,7 +22,7 @@ const FORMATOS: { valor: FormatoResposta; label: string; desc: string; compatibi
   {
     valor: "menu_numerado",
     label: "Menu numerado",
-    desc: "As opções viram uma lista numerada em texto — o contato responde digitando o número (recomendado).",
+    desc: "As opções viram uma lista numerada em texto. O contato responde digitando o número (recomendado).",
     compatibilidade: "Compatibilidade ampla",
   },
   {
@@ -40,12 +40,12 @@ const FORMATOS: { valor: FormatoResposta; label: string; desc: string; compatibi
   {
     valor: "texto_livre",
     label: "Texto livre",
-    desc: "Sem botões nem números — o contato responde do jeito que quiser, e depois dá pra criar condições (contém, é igual a, começa com, termina com, corresponde a palavra-chave).",
+    desc: "Sem botões nem números: o contato responde do jeito que quiser, e depois dá pra criar condições (contém, é igual a, começa com, termina com, corresponde a palavra-chave).",
     compatibilidade: "Compatibilidade ampla",
   },
 ];
 
-/** Prévia de como o menu numerado fica em texto puro — útil pra canais sem suporte a botão nativo. */
+/** Prévia de como o menu numerado fica em texto puro. Útil pra canais sem suporte a botão nativo. */
 function previaMenuNumerado(texto: string, opcoes: OpcaoBotaoLista[]): string {
   const linhas = opcoes.map((o, i) => `${i + 1} - ${o.rotulo || `Opção ${i + 1}`}`);
   return [texto || "(sem texto)", "", ...linhas, "", "Digite o número da opção."].join("\n");
@@ -57,7 +57,7 @@ function novoIdOpcao(): string {
   return `opcao-${Date.now()}-${contador}`;
 }
 
-/** mensagem_botoes / mensagem_lista — cada opção vira um handle de saída nomeado no nó. */
+/** mensagem_botoes / mensagem_lista: cada opção vira um handle de saída nomeado no nó. */
 export function MensagemOpcoesForm({
   data,
   onChange,
@@ -65,7 +65,7 @@ export function MensagemOpcoesForm({
 }: {
   data: MensagemBotoesData;
   onChange: (novo: MensagemBotoesData) => void;
-  /** Chamado ANTES do onChange que tira a opção do array — pra quem escuta remover a aresta correspondente. */
+  /** Chamado ANTES do onChange que tira a opção do array. Pra quem escuta remover a aresta correspondente. */
   onRemoverOpcao: (opcaoId: string) => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -146,7 +146,7 @@ export function MensagemOpcoesForm({
           ))}
         </div>
         <p className="hint mt8">
-          Só front-end nesta fase — nenhum formato liga em envio real de mensagem ainda. O menu numerado
+          Só front-end nesta fase: nenhum formato liga em envio real de mensagem ainda. O menu numerado
           continua disponível independentemente da conexão selecionada.
         </p>
       </div>
@@ -190,7 +190,7 @@ export function MensagemOpcoesForm({
             {formatoAtual === "menu_numerado" ? (
               <div className="flow-opcao-alternativas">
                 <label>
-                  Respostas alternativas aceitas (além do número {i + 1}) — separe por vírgula
+                  Respostas alternativas aceitas (além do número {i + 1}): separe por vírgula
                 </label>
                 <input
                   className="input"
@@ -218,7 +218,7 @@ export function MensagemOpcoesForm({
           + Adicionar opção
         </button>
         <p className="hint mt8">
-          Cada opção vira uma saída no bloco — conecte ela a um próximo passo no canvas. As saídas &quot;Outra resposta&quot; e
+          Cada opção vira uma saída no bloco. Conecte ela a um próximo passo no canvas. As saídas &quot;Outra resposta&quot; e
           &quot;Não respondeu&quot; já existem sempre.
         </p>
       </div>

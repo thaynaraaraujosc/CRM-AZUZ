@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
  * O banco está respondendo?
  *
  * Existe por causa de um sintoma enganoso no login: quando o banco está fora do ar, `authorize`
- * não consegue conferir a senha e o NextAuth devolve o MESMO erro de credencial inválida — a tela
+ * não consegue conferir a senha e o NextAuth devolve o MESMO erro de credencial inválida. A tela
  * dizia "E-mail ou senha incorretos" para uma pessoa cuja senha estava perfeitamente certa. Quem
  * está do outro lado tenta de novo, troca a senha, e nada resolve, porque o problema não é a senha.
  *

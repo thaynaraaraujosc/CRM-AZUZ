@@ -21,7 +21,7 @@ type Grupo = (typeof GRUPOS)[number];
  * indicador é clicável e abre os registros correspondentes. Tempo de
  * primeira resposta por responsável e ligações ainda não têm fonte real no
  * CRM (não existe telefonia integrada nem tracking de responsável por
- * mensagem) — aparecem como "Dados não conectados" em vez de número
+ * mensagem): aparecem como "Dados não conectados" em vez de número
  * inventado.
  */
 export default function AtividadesVendasPage() {
@@ -76,7 +76,7 @@ export default function AtividadesVendasPage() {
           <div className="topbar-title-row">
             <h2>Atividades</h2>
           </div>
-          <p className="sub">Como a equipe está se comportando — atendimento, tarefas e interações</p>
+          <p className="sub">Como a equipe está se comportando. Atendimento, tarefas e interações</p>
         </div>
       </div>
 
@@ -132,7 +132,7 @@ export default function AtividadesVendasPage() {
                 <h4>Tempo de primeira resposta por responsável</h4>
               </div>
               <div className="dados-nao-conectados" style={{ margin: 17 }}>
-                Dados não conectados — o CRM ainda não rastreia qual responsável atendeu cada
+                Dados não conectados: o CRM ainda não rastreia qual responsável atendeu cada
                 mensagem, então não dá pra medir tempo de resposta por pessoa ainda.
               </div>
             </div>
@@ -244,7 +244,7 @@ export default function AtividadesVendasPage() {
                   <h4>Ligações</h4>
                 </div>
                 <div className="dados-nao-conectados" style={{ margin: 17 }}>
-                  Dados não conectados — o CRM ainda não tem telefonia integrada.
+                  Dados não conectados: o CRM ainda não tem telefonia integrada.
                 </div>
               </div>
               <div className="card">
@@ -252,7 +252,7 @@ export default function AtividadesVendasPage() {
                   <h4>Reuniões e e-mails</h4>
                 </div>
                 <div className="dados-nao-conectados" style={{ margin: 17 }}>
-                  Dados não conectados — conecte agenda/e-mail pra ver reuniões e e-mails aqui.
+                  Dados não conectados: conecte agenda/e-mail pra ver reuniões e e-mails aqui.
                 </div>
               </div>
             </div>
@@ -261,7 +261,7 @@ export default function AtividadesVendasPage() {
                 <h4>Documentos enviados</h4>
               </div>
               <div className="dados-nao-conectados" style={{ margin: 17 }}>
-                Dados não conectados — vincule documentos a conversas pra ver esse total aqui.
+                Dados não conectados: vincule documentos a conversas pra ver esse total aqui.
               </div>
             </div>
           </>

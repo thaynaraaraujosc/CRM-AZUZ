@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { LIMITES } from "@/lib/templates/regras";
 
-/** Cópia local, sem vínculo com a Meta — é o jeito de "editar" um template que já está lá. */
+/** Cópia local, sem vínculo com a Meta. É o jeito de "editar" um template que já está lá. */
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

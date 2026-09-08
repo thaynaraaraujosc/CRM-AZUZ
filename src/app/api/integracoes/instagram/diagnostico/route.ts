@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
  * Saúde da integração do Instagram: o que chegou e o que falhou.
  *
  * Existe porque falha de automação era invisível. Um token vencido ou um limite de chamadas da
- * Meta parava as respostas automáticas em silêncio — o log ficava no servidor, onde a dona do CRM
+ * Meta parava as respostas automáticas em silêncio. O log ficava no servidor, onde a dona do CRM
  * não olha, e o primeiro sinal era o cliente reclamando que ninguém respondeu.
  */
 export const dynamic = "force-dynamic";

@@ -25,8 +25,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const senha = credenciais?.senha;
         if (typeof email !== "string" || typeof senha !== "string") return null;
 
-        // `authorize` devolvendo `null` cobre quatro situações bem diferentes — e-mail que não
-        // existe, conta desativada, conta sem senha e senha errada — que na tela viram a mesma
+        // `authorize` devolvendo `null` cobre quatro situações bem diferentes. E-mail que não
+        // existe, conta desativada, conta sem senha e senha errada. Que na tela viram a mesma
         // frase. Isso é proposital pra fora (dizer "esse e-mail não existe" entrega quem tem conta),
         // mas sem registro nenhum ficava impossível diagnosticar de dentro. O log fica no servidor,
         // com o e-mail e o motivo, nunca a senha.
@@ -34,12 +34,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         //
         // A chave combina IP e e-mail de propósito. Só por IP, um escritório inteiro atrás do mesmo
         // endereço é punido junto. Só por e-mail, qualquer pessoa consegue trancar a conta de outra
-        // — vira um jeito fácil de derrubar um cliente, que é o oposto de segurança. Combinando os
+        //. Vira um jeito fácil de derrubar um cliente, que é o oposto de segurança. Combinando os
         // dois, o ataque precisa variar as duas pontas, e um usuário legítimo nunca esbarra.
         const ip = await ipDeQuemChamou();
         const limite = contarChamada(`login:${ip}:${email}`, POLITICAS.login);
         if (!limite.permitido) {
-          // O log registra o e-mail e o motivo — nunca a senha tentada.
+          // O log registra o e-mail e o motivo. Nunca a senha tentada.
           console.warn(`[login] bloqueado por excesso de tentativas: ${email}`);
           return null;
         }
@@ -49,7 +49,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           membro = await prisma.membro.findUnique({ where: { email }, include: { workspace: true } });
         } catch (erro) {
           // Banco fora do ar. Lançar (em vez de devolver `null`) mantém a diferença entre "não
-          // consegui conferir" e "conferi e está errado" — ver `/api/saude/banco`, que é o que a
+          // consegui conferir" e "conferi e está errado". Ver `/api/saude/banco`, que é o que a
           // tela de login consulta pra não acusar a senha de uma falha de infraestrutura.
           console.error("[login] falha ao consultar o banco:", erro instanceof Error ? erro.message : erro);
           throw erro;
@@ -73,7 +73,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        // Fire-and-forget — não atrasa o login por causa disso; só alimenta a coluna "Último
+        // Fire-and-forget: não atrasa o login por causa disso; só alimenta a coluna "Último
         // acesso" em Configurações > Usuários.
         prisma.membro.update({ where: { id: membro.id }, data: { ultimoAcesso: new Date() } }).catch(() => {});
 
@@ -88,7 +88,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           role: membro.papel,
           permissoes: Array.isArray(membro.permissoes) ? (membro.permissoes as string[]) : [],
           // Super-admin da plataforma (não confundir com `papelTipo: "admin"`, que é só admin do
-          // próprio workspace) — decidido por e-mail via env var em vez de coluna no banco, porque
+          // próprio workspace): decidido por e-mail via env var em vez de coluna no banco, porque
           // é uma conta só (a da Azuz), não um papel que qualquer workspace atribui a alguém.
           superAdmin: ehSuperAdmin(membro.email),
         };
@@ -99,10 +99,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       name: "Impersonar",
       credentials: { membroId: { label: "membroId" }, token: { label: "token" } },
       /**
-       * "Entrar como" — troca a sessão atual pela de outro Membro sem pedir senha nenhuma dele.
+       * "Entrar como": troca a sessão atual pela de outro Membro sem pedir senha nenhuma dele.
        * Só funciona com um token de curta duração emitido por `POST /api/admin/membros/[id]/
        * impersonar` (super-admin) ou `POST /api/impersonar/voltar` (retorno de quem estava
-       * impersonando) — ver `src/lib/admin/impersonar.ts`. Sem token válido, não autentica ninguém.
+       * impersonando): ver `src/lib/admin/impersonar.ts`. Sem token válido, não autentica ninguém.
        */
       async authorize(credenciais) {
         const membroId = credenciais?.membroId;
@@ -142,7 +142,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.permissoes = user.permissoes;
         token.superAdmin = user.superAdmin;
         // Some do token quando a sessão nova não é impersonação (login normal ou "voltar pro
-        // admin") — senão o campo ficaria "grudado" indefinidamente numa sessão que já não é mais
+        // admin"): senão o campo ficaria "grudado" indefinidamente numa sessão que já não é mais
         // um "entrar como".
         token.impersonadoPorId = user.impersonadoPorId;
       }

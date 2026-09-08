@@ -10,7 +10,7 @@ import {
   respostaDeLimiteExcedido,
 } from "@/lib/seguranca/limite-de-uso";
 
-/** POST — valida o token (existe, não expirou, não foi usado) e troca a senha do Membro dono dele. */
+/** POST: valida o token (existe, não expirou, não foi usado) e troca a senha do Membro dono dele. */
 export async function POST(request: Request) {
   // O token de redefinição é longo e aleatório, mas sem limite dá pra tentar adivinhar em laço.
   const ipRedefinicao = await ipDeQuemChamou();

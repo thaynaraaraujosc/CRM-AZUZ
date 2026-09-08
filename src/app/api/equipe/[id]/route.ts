@@ -11,7 +11,7 @@ function paraMembro(linha: { permissoes: unknown; [k: string]: unknown }): Membr
   } as Membro;
 }
 
-/** Atualização direta por id — usada por `editarMembro`/`alternarAtivo`. Só mexe em membro do
+/** Atualização direta por id: usada por `editarMembro`/`alternarAtivo`. Só mexe em membro do
  * mesmo workspace de quem está logado (senão qualquer id daria pra editar gente de outra empresa). */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/equipe/[id]">) {
   const sessao = await auth();

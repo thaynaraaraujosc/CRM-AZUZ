@@ -44,7 +44,7 @@ import {
 } from "./execucoes";
 
 /**
- * O motor com ESTADO — a diferença central em relação ao motor antigo.
+ * O motor com ESTADO: a diferença central em relação ao motor antigo.
  *
  * O antigo percorre o fluxo inteiro numa chamada e devolve um relatório. Quando encontra uma
  * espera ("aguardar 2 horas", "esperar a resposta"), ele para e o resultado é descartado: nada
@@ -92,7 +92,7 @@ export async function rodarExecucao(params: {
   /** Onde a posição e o histórico são gravados. O padrão grava no banco; o simulador passa um
    * gravador de memória e por isso consegue rodar o motor de verdade sem sujar nada. */
   gravador?: GravadorDeExecucao;
-  /** Substitui `new Date()` — o simulador usa pra "avançar o relógio". */
+  /** Substitui `new Date()`: o simulador usa pra "avançar o relógio". */
   agora?: Date;
 }): Promise<FimDaRodada> {
   const { execucao, nodes, edges, acoes } = params;
@@ -104,7 +104,7 @@ export async function rodarExecucao(params: {
   let contexto: ContextoExecucaoPersistido = { ...execucao.contexto };
   let passos = 0;
   // Trava contra ciclo: um nó já visitado NESTA rodada não roda de novo. Entre rodadas o mesmo nó
-  // pode repetir (um follow-up que volta pro começo é legítimo) — o que não pode é girar sem parar
+  // pode repetir (um follow-up que volta pro começo é legítimo). O que não pode é girar sem parar
   // dentro de uma chamada.
   const visitadosNaRodada = new Set<string>();
 
@@ -132,7 +132,7 @@ export async function rodarExecucao(params: {
     }
 
     if (visitadosNaRodada.has(no.id)) {
-      const detalhe = "Bloco repetido na mesma rodada — parado pra evitar loop.";
+      const detalhe = "Bloco repetido na mesma rodada. Parado pra evitar loop.";
       await gravador.registrarPasso({
         execucaoId: execucao.id,
         workspaceId: execucao.workspaceId,
@@ -152,7 +152,7 @@ export async function rodarExecucao(params: {
     // sem ter que desconectar o bloco do fluxo.
     let resultado: ResultadoDoNo;
     if (no.desativado) {
-      resultado = { tipo: "seguir", detalhe: "Bloco desativado — pulado." };
+      resultado = { tipo: "seguir", detalhe: "Bloco desativado: pulado." };
     } else {
       resultado = await executarNo({ no, contexto, acoes, agora, fluxoId: execucao.fluxoId });
     }
@@ -192,7 +192,7 @@ export async function rodarExecucao(params: {
 
     const proximo = proximaAresta(edges, no.id, resultado.saida);
     if (!proximo) {
-      // Sem saída é o fim normal do caminho — inclusive quando o último bloco não é "encerrar".
+      // Sem saída é o fim normal do caminho. Inclusive quando o último bloco não é "encerrar".
       await gravador.encerrarExecucao({ execucaoId: execucao.id, situacao: "concluida" });
       return { situacao: "concluida", passos };
     }
@@ -229,7 +229,7 @@ function contatoDoContexto(contexto: ContextoExecucaoPersistido) {
   };
 }
 
-/** Aplica no contexto uma mudança que o próprio fluxo fez — o nó seguinte precisa enxergar. */
+/** Aplica no contexto uma mudança que o próprio fluxo fez. O nó seguinte precisa enxergar. */
 function atualizarContato(contexto: ContextoExecucaoPersistido, mudanca: Record<string, unknown>): void {
   contexto.contato = { ...contatoDoContexto(contexto), ...mudanca };
 }
@@ -248,7 +248,7 @@ export function calcularEspera(data: AguardarData, agora: Date): Date | null {
   if (!quando) return null;
 
   // Empurra pra segunda quando cai no fim de semana. Uma cobrança que chega sábado de manhã tem
-  // menos chance de resposta e mais chance de irritar — era a razão de a opção existir na tela.
+  // menos chance de resposta e mais chance de irritar. Era a razão de a opção existir na tela.
   if (data.pularFinaisDeSemana) quando = proximoDiaUtil(quando);
   return quando;
 }
@@ -289,7 +289,7 @@ function fatorDaUnidade(unidade: string): number {
 
 async function executarNo(params: {
   no: FlowNode;
-  /** Qual fluxo está rodando — o bloco de parar automações precisa poupar a si mesmo. */
+  /** Qual fluxo está rodando: o bloco de parar automações precisa poupar a si mesmo. */
   fluxoId: string;
   contexto: ContextoExecucaoPersistido;
   acoes: AcoesDoMotor;
@@ -358,7 +358,7 @@ async function executarNo(params: {
       const legenda = preencher(data.legenda ?? "", contato);
       const r = await acoes.enviarMidia({ contatoNome: nome, arquivoId: data.arquivoId, tipo, legenda });
       if (!r.ok) return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
-      // O Direct do Instagram manda o anexo sozinho — a legenda vai numa segunda mensagem, senão
+      // O Direct do Instagram manda o anexo sozinho. A legenda vai numa segunda mensagem, senão
       // ela simplesmente não aparece pra quem recebe.
       if (legenda && contatoCanal(contexto) === "instagram") {
         await acoes.enviarTexto({ contatoNome: nome, texto: legenda });
@@ -402,7 +402,7 @@ async function executarNo(params: {
 
       return escolhido
         ? { tipo: "seguir", saida: escolhido.id, detalhe: `Seguiu por "${escolhido.rotulo || escolhido.valor}".` }
-        : { tipo: "seguir", saida: "senao", detalhe: `"${valor || "(vazio)"}" não bate com nenhum caminho — seguiu por "Qualquer outra".` };
+        : { tipo: "seguir", saida: "senao", detalhe: `"${valor || "(vazio)"}" não bate com nenhum caminho. Seguiu por "Qualquer outra".` };
     }
 
     case "ia_responder": {
@@ -447,7 +447,7 @@ async function executarNo(params: {
     case "alterar_funil": {
       const data = no.data as AlterarFunilData;
       if (!data.funilId) return { tipo: "erro", detalhe: "O bloco não tem funil escolhido." };
-      // Sem etapa escolhida vai pra primeira do funil — mover pra um funil sem dizer onde é o que
+      // Sem etapa escolhida vai pra primeira do funil. Mover pra um funil sem dizer onde é o que
       // a pessoa quer dizer com "mandar pro começo dele".
       const r = await acoes.moverEtapa({ contatoNome: nome, funilId: data.funilId, etapaTitulo: data.etapaTitulo ?? "" });
       return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
@@ -474,7 +474,7 @@ async function executarNo(params: {
       const quando = data.tempoValor
         ? new Date(agora.getTime() + data.tempoValor * fatorDaUnidade(data.tempoUnidade ?? "dias"))
         : agora;
-      // Lembrete é uma tarefa com prazo — mesmo quadro, mesma tela. Um segundo lugar pra "coisas
+      // Lembrete é uma tarefa com prazo. Mesmo quadro, mesma tela. Um segundo lugar pra "coisas
       // pra fazer" só faria a pessoa procurar em dois lugares.
       const r = await acoes.criarTarefa({ contatoNome: nome, titulo, prazo: quando, prioridade: "normal" });
       return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
@@ -577,7 +577,7 @@ async function executarNo(params: {
         // Endereço escrito por extenso não vira coordenada sozinho: isso precisaria de um serviço
         // de geocodificação, que o CRM não tem. Dizer isso é melhor que mandar um mapa no lugar
         // errado.
-        return { tipo: "erro", detalhe: "O bloco de localização precisa de latitude e longitude — endereço por extenso ainda não é convertido." };
+        return { tipo: "erro", detalhe: "O bloco de localização precisa de latitude e longitude. Endereço por extenso ainda não é convertido." };
       }
       const enderecoCompleto = [data.endereco, data.numero, data.bairro, data.cidade, data.estado].filter(Boolean).join(", ");
       const r = await acoes.enviarLocalizacao({
@@ -718,7 +718,7 @@ async function executarNo(params: {
     default:
       // Bloco que ainda não tem execução real. Segue em frente e diz isso no histórico, em vez de
       // fingir que fez ou derrubar o fluxo inteiro por causa de um passo.
-      return { tipo: "seguir", detalhe: `"${no.titulo ?? no.type}" ainda não é executado pelo motor — o fluxo seguiu.` };
+      return { tipo: "seguir", detalhe: `"${no.titulo ?? no.type}" ainda não é executado pelo motor. O fluxo seguiu.` };
   }
 }
 
@@ -726,7 +726,7 @@ async function executarNo(params: {
  * Troca `{{nome}}`, `{{origem}}`, `{{responsavel}}` e afins pelo valor do contato.
  *
  * O motor não fazia isso: quem escrevia "Oi {{nome}}" no bloco via a mensagem sair com as chaves
- * literais pro cliente. Variável sem valor vira texto vazio — melhor uma frase com um buraco do que
+ * literais pro cliente. Variável sem valor vira texto vazio. Melhor uma frase com um buraco do que
  * uma frase com `{{primeiro_nome}}` no meio dela.
  */
 export function preencher(texto: string, contato: Record<string, unknown>): string {
@@ -776,7 +776,7 @@ const TIPO_DE_MIDIA: Record<string, "imagem" | "video" | "audio" | "documento"> 
   mensagem_documento: "documento",
 };
 
-/** O canal da conversa, quando o contexto sabe — usado pra decidir detalhes de formato. */
+/** O canal da conversa, quando o contexto sabe: usado pra decidir detalhes de formato. */
 function contatoCanal(contexto: ContextoExecucaoPersistido): string {
   const contato = (contexto.contato ?? {}) as { canal?: string };
   return (contato.canal ?? "").toLowerCase();
@@ -798,7 +798,7 @@ function prazoDaTarefa(data: CriarTarefaData, agora: Date): Date | undefined {
  * Qual saída a resposta do contato escolheu, num bloco de opções.
  *
  * Aceita as formas que a pessoa usa de verdade: o número ("2"), o texto do botão ("Quero saber
- * valores") — que é também como um clique chega — e as `respostasAlternativas` que o fluxo listou
+ * valores"): que é também como um clique chega. E as `respostasAlternativas` que o fluxo listou
  * pra aquela opção ("orçamento"). Sem correspondência,
  * devolve `null` e quem chama decide (seguir por "outra_resposta" ou continuar esperando).
  */

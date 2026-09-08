@@ -7,7 +7,7 @@ import { FlowEditor } from "@/components/automation-flow/FlowEditor";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 
 /**
- * `id` é ou o id de um `FluxoAutomacao` existente, ou o literal "novo" — nesse
+ * `id` é ou o id de um `FluxoAutomacao` existente, ou o literal "novo": nesse
  * caso a gente cria um rascunho vazio uma vez (em `useEffect`, não na
  * inicialização preguiçosa de `useState`, pra não mexer no estado do
  * `AutomationFlowProvider` no meio da renderização dessa página) e troca a URL

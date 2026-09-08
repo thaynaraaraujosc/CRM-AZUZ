@@ -13,7 +13,7 @@ const OPCOES: { periodo: PeriodoAdiamento; label: string }[] = [
   { periodo: "data_escolhida", label: "Escolher data e horário" },
 ];
 
-/** Botão "Adiar" — abre as opções do item 13 do pedido. Front-end apenas: guarda a escolha no
+/** Botão "Adiar": abre as opções do item 13 do pedido. Front-end apenas: guarda a escolha no
  * context (`adiarItem`), nunca agenda nada de verdade. */
 export function AdiarMenu({ onAdiar }: { onAdiar: (periodo: PeriodoAdiamento, data?: string, hora?: string) => void }) {
   const [aberto, setAberto] = useState(false);

@@ -4,10 +4,10 @@ import { Toggle } from "@/components/ui";
 import { useNotificacoes } from "@/lib/notificacoes-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 
-/** Notificações — só o que chega de verdade: mensagem nova no WhatsApp (real, ver
+/** Notificações: só o que chega de verdade: mensagem nova no WhatsApp (real, ver
  * `NotificacoesPonte`) e tarefa nova (real, disparado em `tarefas/page.tsx` ao criar). Os dois
  * toggles persistem via `notificacoes-context.tsx` (banco real, sobrevive a refresh/logout). A
- * antiga "preferência por evento" (matriz canal × frequência) saiu — eram preferências de coisas
+ * antiga "preferência por evento" (matriz canal × frequência) saiu. Eram preferências de coisas
  * que nunca chegavam a ser enviadas de verdade (e-mail/push/WhatsApp), só a tela dentro do CRM
  * existe hoje. */
 export function NotificacoesSecao() {

@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 /** GET (chamado pela página server-side, ver `/convite/[id]`) devolve os dados públicos do convite
- * — sem autenticação, porque quem está aceitando ainda não tem conta. Só existe pra centralizar a
+ *. Sem autenticação, porque quem está aceitando ainda não tem conta. Só existe pra centralizar a
  * regra "só é válido se ainda estiver pendente" num lugar. */
 export async function GET(_request: Request, ctx: RouteContext<"/api/convite/[id]">) {
   const { id } = await ctx.params;
@@ -19,7 +19,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/convite/[id
 }
 
 /** POST aceita o convite: define a senha de verdade, ativa a conta e marca o convite como usado.
- * Sem autenticação (a pessoa ainda não tem login) — a validação é "esse id existe e ainda está
+ * Sem autenticação (a pessoa ainda não tem login). A validação é "esse id existe e ainda está
  * pendente", mesma regra do GET. */
 export async function POST(request: Request, ctx: RouteContext<"/api/convite/[id]">) {
   const { id } = await ctx.params;

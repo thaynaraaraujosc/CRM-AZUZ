@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-/** GET traz uma campanha com os destinatários — é a tela de acompanhamento, contato por contato. */
+/** GET traz uma campanha com os destinatários. É a tela de acompanhamento, contato por contato. */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
@@ -23,7 +23,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 /**
  * PATCH controla a campanha: pausar, retomar ou cancelar.
  *
- * Nenhuma das três mexe em quem já foi enviado — mensagem que saiu não volta. Elas só mudam o que
+ * Nenhuma das três mexe em quem já foi enviado. Mensagem que saiu não volta. Elas só mudam o que
  * o worker vai fazer com o que ainda está pendente.
  */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -57,8 +57,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (["concluida", "concluida_com_erros", "cancelada"].includes(campanha.status)) {
       return NextResponse.json({ erro: "Campanha já terminou." }, { status: 409 });
     }
-    // Só o que ainda não saiu vira "cancelado". Quem já recebeu continua registrado como enviado —
-    // o histórico tem que contar o que realmente aconteceu.
+    // Só o que ainda não saiu vira "cancelado". Quem já recebeu continua registrado como enviado.
+    // O histórico tem que contar o que realmente aconteceu.
     await prisma.$transaction([
       prisma.campanhaDestinatario.updateMany({
         where: { campanhaId: id, status: "pendente" },

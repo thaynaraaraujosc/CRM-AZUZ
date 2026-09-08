@@ -33,7 +33,7 @@ export function DecisaoMultiplaForm({
 }: {
   data: DecisaoMultiplaData;
   onChange: (data: Partial<DecisaoMultiplaData>) => void;
-  /** Remove também a aresta ligada — senão sobra um caminho apontando pra uma saída que sumiu. */
+  /** Remove também a aresta ligada. Senão sobra um caminho apontando pra uma saída que sumiu. */
   onRemoverCaminho?: (caminhoId: string) => void;
 }) {
   const caminhos = data.caminhos ?? [];
@@ -105,7 +105,7 @@ export function DecisaoMultiplaForm({
       <div className="field">
         <label>Caminhos</label>
         <p className="hint">
-          Cada linha vira uma saída do bloco. O primeiro que bater ganha — se dois valores se
+          Cada linha vira uma saída do bloco. O primeiro que bater ganha. Se dois valores se
           parecem (&quot;valor&quot; e &quot;valores&quot;), deixe o mais específico em cima.
         </p>
 

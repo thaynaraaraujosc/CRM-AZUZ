@@ -7,7 +7,7 @@ import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 /**
  * Manda um texto numa conversa, escolhendo o canal pela própria conversa.
  *
- * Caminho ÚNICO de envio pra qualquer tela do CRM que não seja a de Conversas — hoje o popup de
+ * Caminho ÚNICO de envio pra qualquer tela do CRM que não seja a de Conversas. Hoje o popup de
  * resposta rápida do Funil, amanhã qualquer outra. Existe porque cada tela que montava o próprio
  * envio acabou virando um lugar a menos onde a mensagem realmente saía: a resposta rápida do Funil
  * só guardava a mensagem no estado local e ainda a marcava como "lida", então o vendedor via

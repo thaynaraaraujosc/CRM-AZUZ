@@ -8,9 +8,9 @@ type CorpoAtualizarMembro = {
   papelTipo?: "admin" | "padrao" | "custom";
 };
 
-/** PATCH mexe em qualquer membro, de qualquer workspace — diferente de `PATCH /api/equipe/[id]`
+/** PATCH mexe em qualquer membro, de qualquer workspace: diferente de `PATCH /api/equipe/[id]`
  * (que só deixa mexer em gente do próprio workspace de quem está logado). Só os campos de acesso
- * (ativo/papelTipo) — não deixa o super-admin trocar senha ou dado pessoal de ninguém por aqui. */
+ * (ativo/papelTipo): não deixa o super-admin trocar senha ou dado pessoal de ninguém por aqui. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/membros/[id]">) {
   const guarda = await exigirSuperAdmin();
   if (!guarda.ok) return guarda.resposta;

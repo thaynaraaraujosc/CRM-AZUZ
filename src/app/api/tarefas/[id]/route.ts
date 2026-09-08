@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { aoConcluirTarefa } from "@/lib/automacoes/gatilhos-crm";
 
 /**
- * Atualização direta por id — usada por `editarTarefa`/`concluirTarefa`. Aceita tanto os campos
+ * Atualização direta por id: usada por `editarTarefa`/`concluirTarefa`. Aceita tanto os campos
  * planos de `TaskCard` quanto `etapaId`/`ordem` (só usados quando a tarefa muda de etapa, ex.:
  * concluir joga na etapa "Concluídas"). Só mexe em card do mesmo workspace de quem está logado.
  */

@@ -21,7 +21,7 @@ function parseValor(raw: string): number {
 }
 
 /**
- * Telão pra projetar no escritório (aberto numa aba separada, sem sidebar) — busca os dados
+ * Telão pra projetar no escritório (aberto numa aba separada, sem sidebar): busca os dados
  * direto das rotas reais (`/api/funis`, `/api/tarefas`, `/api/equipe`) porque essa página fica
  * fora do grupo `(app)` e não tem os providers de contexto. Atualiza sozinha a cada 30s, sem
  * botão de "simular venda": tudo aqui é o estado real do workspace no momento.
@@ -121,7 +121,7 @@ export default function CrmLivePage() {
           </button>
         </div>
         <div className="crm-live-filtros">
-          <span>Funil de vendas: {funilPrincipal?.nome ?? "—"}</span>
+          <span>Funil de vendas: {funilPrincipal?.nome ?? "-"}</span>
           <span>Dados em tempo real</span>
         </div>
       </header>
@@ -132,20 +132,20 @@ export default function CrmLivePage() {
             <div className="crm-live-vencedor-card">
               <span className="crm-live-trofeu"><IconTrofeu width={16} height={16} aria-hidden="true" /></span>
               <p className="crm-live-vencedor-titulo">Quem mais criou oportunidades</p>
-              <p className="crm-live-vencedor-nome">{maisOportunidades?.[0] ?? "—"}</p>
-              <p className="crm-live-vencedor-valor">{maisOportunidades ? String(maisOportunidades[1]) : "—"}</p>
+              <p className="crm-live-vencedor-nome">{maisOportunidades?.[0] ?? "-"}</p>
+              <p className="crm-live-vencedor-valor">{maisOportunidades ? String(maisOportunidades[1]) : "-"}</p>
             </div>
             <div className="crm-live-vencedor-card">
               <span className="crm-live-trofeu"><IconTrofeu width={16} height={16} aria-hidden="true" /></span>
               <p className="crm-live-vencedor-titulo">Quem mais vendeu (un)</p>
-              <p className="crm-live-vencedor-nome">{maisVendasUnidade && maisVendasUnidade.vendidas > 0 ? maisVendasUnidade.nome : "—"}</p>
-              <p className="crm-live-vencedor-valor">{maisVendasUnidade && maisVendasUnidade.vendidas > 0 ? String(maisVendasUnidade.vendidas) : "—"}</p>
+              <p className="crm-live-vencedor-nome">{maisVendasUnidade && maisVendasUnidade.vendidas > 0 ? maisVendasUnidade.nome : "-"}</p>
+              <p className="crm-live-vencedor-valor">{maisVendasUnidade && maisVendasUnidade.vendidas > 0 ? String(maisVendasUnidade.vendidas) : "-"}</p>
             </div>
             <div className="crm-live-vencedor-card">
               <span className="crm-live-trofeu"><IconTrofeu width={16} height={16} aria-hidden="true" /></span>
               <p className="crm-live-vencedor-titulo">Quem mais vendeu (R$)</p>
-              <p className="crm-live-vencedor-nome">{maisVendasValor && maisVendasValor.receita > 0 ? maisVendasValor.nome : "—"}</p>
-              <p className="crm-live-vencedor-valor">{maisVendasValor && maisVendasValor.receita > 0 ? formatarMoeda(maisVendasValor.receita) : "—"}</p>
+              <p className="crm-live-vencedor-nome">{maisVendasValor && maisVendasValor.receita > 0 ? maisVendasValor.nome : "-"}</p>
+              <p className="crm-live-vencedor-valor">{maisVendasValor && maisVendasValor.receita > 0 ? formatarMoeda(maisVendasValor.receita) : "-"}</p>
             </div>
           </div>
 

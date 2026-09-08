@@ -86,7 +86,7 @@ function novaRegra(): RegraCondicao {
   return { id: novoId("regra"), campo: "origem", operador: "igual", valor: "" };
 }
 
-/** Editor recursivo de `GrupoCondicoes` — E/OU/NÃO + regras + subgrupos aninhados. */
+/** Editor recursivo de `GrupoCondicoes`: E/OU/NÃO + regras + subgrupos aninhados. */
 export function CondicaoForm({
   grupo,
   onChange,

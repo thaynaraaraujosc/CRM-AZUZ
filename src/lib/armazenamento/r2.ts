@@ -1,17 +1,17 @@
 import { createHash, createHmac } from "node:crypto";
 
 /**
- * Cloudflare R2 — onde os arquivos do CRM passam a morar.
+ * Cloudflare R2: onde os arquivos do CRM passam a morar.
  *
  * Por que sair do banco: até aqui todo anexo era gravado como base64 dentro do MySQL. Base64 infla
  * o arquivo em ~33%, e cada leitura de conversa carregava esse peso pelo mesmo caminho das
  * consultas de texto. Um banco gerenciado é o lugar mais caro por gigabyte que existe pra guardar
- * foto — e é o único que, quando enche, derruba o CRM inteiro junto.
+ * foto: e é o único que, quando enche, derruba o CRM inteiro junto.
  *
- * Por que R2 e não S3: a conta de armazenamento em nuvem que dói não é o disco, é o EGRESSO — o
+ * Por que R2 e não S3: a conta de armazenamento em nuvem que dói não é o disco, é o EGRESSO: o
  * que se paga cada vez que alguém ABRE o arquivo. Num CRM as mesmas fotos são abertas o dia
  * inteiro por vários vendedores. O R2 cobra armazenamento e não cobra egresso, e fala o mesmo
- * protocolo do S3 — então se um dia valer a pena migrar pra AWS, o código abaixo continua servindo.
+ * protocolo do S3: então se um dia valer a pena migrar pra AWS, o código abaixo continua servindo.
  *
  * Por que não usamos o SDK da AWS: pra ler, gravar e apagar um objeto por vez, o que se precisa é
  * assinar a requisição (SigV4). O SDK resolveria isso trazendo dezenas de megabytes de dependência
@@ -42,7 +42,7 @@ function configuracao(): Configuracao | null {
  * Se as quatro variáveis estão no ambiente.
  *
  * Existe pra que o CRM continue funcionando sem elas: quem ainda não configurou o R2 segue
- * gravando no banco, como antes. Nada quebra no dia do deploy — a troca acontece quando as chaves
+ * gravando no banco, como antes. Nada quebra no dia do deploy. A troca acontece quando as chaves
  * chegam.
  */
 export function r2Configurado(): boolean {
@@ -67,7 +67,7 @@ function hmac(chave: Buffer | string, dado: string): Buffer {
  * Monta o cabeçalho `Authorization` no formato AWS Signature V4.
  *
  * A assinatura cobre método, caminho, cabeçalhos e o hash do corpo. Qualquer byte diferente do que
- * foi assinado faz o R2 recusar — é isso que impede alguém que intercepte a requisição de trocar o
+ * foi assinado faz o R2 recusar. É isso que impede alguém que intercepte a requisição de trocar o
  * arquivo no meio do caminho.
  */
 function assinar(params: {
@@ -91,7 +91,7 @@ function assinar(params: {
     "x-amz-date": dataHora,
   };
 
-  // Os cabeçalhos entram na assinatura em ordem alfabética e com o nome em minúsculas — o R2
+  // Os cabeçalhos entram na assinatura em ordem alfabética e com o nome em minúsculas. O R2
   // recalcula exatamente a mesma string do lado dele, então a ordem não é cosmética.
   const nomes = Object.keys(cabecalhos)
     .map((nome) => nome.toLowerCase())
@@ -158,12 +158,12 @@ async function chamar(params: {
     method: params.metodo,
     headers: cabecalhos,
     // O fetch do Node aceita `Buffer` como corpo; o tipo `BodyInit` das libs do DOM é que não o
-    // descreve. A conversão é só de tipo — nenhum byte é copiado nem reinterpretado.
+    // descreve. A conversão é só de tipo. Nenhum byte é copiado nem reinterpretado.
     body:
       params.metodo === "GET" || params.metodo === "HEAD" || params.metodo === "DELETE"
         ? undefined
         : (corpo as unknown as BodyInit),
-    // Arquivo é conteúdo imutável identificado por chave única — cache de camada intermediária
+    // Arquivo é conteúdo imutável identificado por chave única. Cache de camada intermediária
     // aqui só serviria pra devolver versão velha.
     cache: "no-store",
   });
@@ -189,7 +189,7 @@ export async function guardarNoR2(params: {
   return params.chave;
 }
 
-/** Lê o arquivo. Devolve `null` quando a chave não existe mais — apagado, ou de um workspace já removido. */
+/** Lê o arquivo. Devolve `null` quando a chave não existe mais. Apagado, ou de um workspace já removido. */
 export async function lerDoR2(chave: string): Promise<{ conteudo: Buffer; mimeType: string } | null> {
   const resposta = await chamar({ metodo: "GET", chave });
   if (resposta.status === 404) return null;

@@ -2,7 +2,7 @@
 
 Processo Node separado que espelha um número de WhatsApp direto pelo protocolo multi-device
 (biblioteca [Baileys](https://github.com/WhiskeySockets/Baileys)), sem navegador. Existe porque a
-conexão precisa ficar aberta 24/7 — isso não roda dentro do Next.js na Vercel (funções serverless
+conexão precisa ficar aberta 24/7. Isso não roda dentro do Next.js na Vercel (funções serverless
 não sustentam WebSocket vivo), então este serviço mora à parte.
 
 Cada instância deste serviço cuida de **um único número de WhatsApp** (um `WORKSPACE_ID`). Se no
@@ -12,10 +12,10 @@ empresa.
 ## Como funciona
 
 1. Ao subir, o serviço tenta abrir a sessão salva em `PASTA_SESSAO`. Se não existir, gera um QR
-   code e manda pro CRM (`CRM_WEBHOOK_URL`) como uma imagem `data:` — o CRM guarda isso na tabela
+   code e manda pro CRM (`CRM_WEBHOOK_URL`) como uma imagem `data:`. O CRM guarda isso na tabela
    `Integracao` e a tela de Configurações → WhatsApp → Conexão não oficial mostra o QR pra escanear.
 2. Depois de escaneado, a conexão abre e o serviço avisa o CRM que está `conectado` (com o número).
-3. Toda mensagem de texto recebida é repassada pro CRM, que grava em `MensagemExtra` — aparece na
+3. Toda mensagem de texto recebida é repassada pro CRM, que grava em `MensagemExtra`: aparece na
    tela de Conversas normalmente.
 4. O CRM pode chamar `POST /enviar` neste serviço pra mandar mensagem pelo número conectado.
 
@@ -44,7 +44,7 @@ WHATSAPP_SERVICO_URL=http://localhost:3333
 1. No projeto Railway que já tem o MySQL, clique em **New → GitHub Repo** e aponte pra este mesmo
    repositório, mas configure o **Root Directory** como `whatsapp-service` (Railway builda só essa
    pasta como um serviço separado do Next.js).
-2. Build command: `npm install && npm run build` — Start command: `npm start`.
+2. Build command: `npm install && npm run build`: Start command: `npm start`.
 3. Variáveis de ambiente (aba Variables do serviço): `WORKSPACE_ID`, `CRM_WEBHOOK_URL` (URL pública
    do CRM em produção + `/api/webhooks/whatsapp-nao-oficial`), `SERVICO_SEGREDO`.
 4. **Volume persistente**: em Settings → Volumes, monte um volume em `/app/sessao` (ou o caminho de
@@ -54,8 +54,8 @@ WHATSAPP_SERVICO_URL=http://localhost:3333
 
 ## Limitações conhecidas (nesta primeira versão)
 
-- Só mensagens de **texto** são espelhadas (sem mídia/áudio/figurinha) — mesmo escopo inicial que a
+- Só mensagens de **texto** são espelhadas (sem mídia/áudio/figurinha). Mesmo escopo inicial que a
   integração oficial da Meta teve.
 - Um serviço = um número. Sem suporte a múltiplas empresas na mesma instância ainda.
 - É uma conexão não oficial: a sessão pode cair e pedir novo QR code de tempos em tempos, e há risco
-  inerente de bloqueio do número pela Meta — trade-off conhecido desse tipo de integração, não é bug.
+  inerente de bloqueio do número pela Meta. Trade-off conhecido desse tipo de integração, não é bug.

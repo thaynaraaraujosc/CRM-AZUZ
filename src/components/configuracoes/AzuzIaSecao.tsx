@@ -11,7 +11,7 @@ export function AzuzIaSecao() {
       titulo="Azuz IA"
       descricao="Comportamento, dados permitidos e sugestões."
       Icon={IconSparkle}
-      texto="Estamos trabalhando pra trazer uma assistente que entende os dados reais do seu workspace — leads, conversas, tarefas e funil. As preferências de comportamento ficam disponíveis aqui assim que a Azuz IA voltar a funcionar."
+      texto="Estamos trabalhando pra trazer uma assistente que entende os dados reais do seu workspace (leads, conversas, tarefas e funil). As preferências de comportamento ficam disponíveis aqui assim que a Azuz IA voltar a funcionar."
     />
   );
 }

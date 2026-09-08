@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { enviarMensagemWhatsAppNaoOficial, enviarAudioWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 
-/** POST manda uma mensagem de texto (ou áudio) pelo WhatsApp não oficial (Evolution API) —
- * chamada pela tela de Conversas quando o atendente responde numa conversa desse canal. */
+/** POST manda uma mensagem de texto (ou áudio) pelo WhatsApp não oficial (Evolution API).
+ * Chamada pela tela de Conversas quando o atendente responde numa conversa desse canal. */
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ erro: "destinatario e (texto ou audioBase64) são obrigatórios" }, { status: 400 });
   }
 
-  // JID de grupo (`<id>@g.us`) precisa ir inteiro pra Evolution — só numeral vira número de
+  // JID de grupo (`<id>@g.us`) precisa ir inteiro pra Evolution. Só numeral vira número de
   // telefone pra ela, não acha o grupo. Telefone de pessoa continua só-dígitos como sempre.
   const numeroOuJid = destinatario.endsWith("@g.us") ? destinatario : destinatario.replace(/\D/g, "");
 

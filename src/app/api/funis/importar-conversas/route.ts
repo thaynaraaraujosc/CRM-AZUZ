@@ -10,14 +10,14 @@ import { contasCanalVisiveis, filtroContaCanal } from "@/lib/integracoes/conta-c
  *
  * Existe por dois motivos que se encontram no mesmo lugar:
  *
- * 1. Só quem escreve PELA PRIMEIRA VEZ entra no funil sozinho — mandar mensagem de novo nunca pode
+ * 1. Só quem escreve PELA PRIMEIRA VEZ entra no funil sozinho. Mandar mensagem de novo nunca pode
  *    mexer na etapa em que o vendedor deixou a pessoa. Quem já era contato antes de existir funil
  *    (ou antes de conectar o canal) ficava fora pra sempre, sem nenhuma forma de entrar em massa.
  * 2. Quem começa a usar o CRM com uma caixa de entrada cheia precisa de um jeito de puxar tudo pro
  *    funil de uma vez, em vez de abrir conversa por conversa.
  *
  * Nunca mexe em card existente: conversa que já tem negócio é pulada, esteja na etapa que estiver.
- * Grupo fica de fora — grupo não é um lead.
+ * Grupo fica de fora: grupo não é um lead.
  */
 export async function POST() {
   const sessao = await auth();
@@ -64,7 +64,7 @@ export async function POST() {
       ordem: ordem++,
       workspaceId,
       nome: conversa.nome,
-      valor: "—",
+      valor: "-",
       origem: conversa.canal,
       // Sem isto o card entraria sem dono e nunca sumiria ao desconectar o canal de onde veio.
       contaCanal: conversa.contaCanal,

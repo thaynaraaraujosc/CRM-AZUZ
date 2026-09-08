@@ -23,10 +23,10 @@ import {
 type ColunaOrdenavel = "nome" | "investido" | "leads" | "vendas" | "cpl" | "roas";
 
 /**
- * Visão completa da aquisição — do investimento até a receita. Campos que o
+ * Visão completa da aquisição: do investimento até a receita. Campos que o
  * modelo de dados atual não liga de verdade (ex.: venda por campanha
  * específica, Google Ads sem integração própria) mostram "Dados não
- * conectados" em vez de número inventado — inclusive a lista de campanhas
+ * conectados" em vez de número inventado. Inclusive a lista de campanhas
  * fica vazia até o Meta Ads ser conectado (antes mostrava mock inteiro).
  */
 export default function TrafegoPage() {
@@ -43,7 +43,7 @@ export default function TrafegoPage() {
   const { integracao: adsIntegracao, desconectando: adsDesconectando, desconectar: desconectarAds } = useIntegracaoMeta("meta_ads");
   const [campanhasReais, setCampanhasReais] = useState<Campanha[] | null>(null);
 
-  // Ajusta durante a renderização (não num efeito) quando o status muda pra "não conectado" — evita
+  // Ajusta durante a renderização (não num efeito) quando o status muda pra "não conectado". Evita
   // setState síncrono dentro do corpo do efeito (regra `react-hooks/set-state-in-effect`).
   const [ultimoStatusAds, setUltimoStatusAds] = useState<string | null | undefined>(undefined);
   if (adsIntegracao?.status !== ultimoStatusAds) {
@@ -59,7 +59,7 @@ export default function TrafegoPage() {
       .catch((erro) => console.error("Falha ao carregar campanhas do Meta Ads:", erro));
   }, [adsIntegracao?.status]);
 
-  // Google Ads não tem integração própria ainda — só entra campanha de verdade (Meta Ads
+  // Google Ads não tem integração própria ainda. Só entra campanha de verdade (Meta Ads
   // conectado). Sem conexão nenhuma, a lista fica vazia (não mais um mock inteiro).
   const campanhas = campanhasReais ?? [];
 
@@ -117,7 +117,7 @@ export default function TrafegoPage() {
   const custoPorVenda = vendas > 0 ? investido.valor / vendas : 0;
 
   // Funil de tráfego usa as etapas de verdade do funil ativo (nome/quantidade de colunas variam
-  // por workspace — não são mais 4 rótulos fixos de mock).
+  // por workspace: não são mais 4 rótulos fixos de mock).
   const funilPrincipal = funis[0];
   const funilSteps = (funilPrincipal?.colunas ?? []).map((coluna, i, todas) => ({
     chave: coluna.id,
@@ -164,7 +164,7 @@ export default function TrafegoPage() {
           {adsIntegracao?.status === "conectado" ? (
             <>
               <span className="hint">
-                Meta Ads conectado — {(adsIntegracao.metadados?.adAccountNome as string | undefined) ?? "conta"}
+                Meta Ads conectado: {(adsIntegracao.metadados?.adAccountNome as string | undefined) ?? "conta"}
               </span>
               <button type="button" className="btn ghost" onClick={() => void desconectarAds()} disabled={adsDesconectando}>
                 {adsDesconectando ? "Desconectando…" : "Desconectar Meta Ads"}
@@ -204,7 +204,7 @@ export default function TrafegoPage() {
         {campanhas.length === 0 ? (
           <div className="card mb14">
             <div className="dados-nao-conectados" style={{ padding: 17 }}>
-              Você ainda não possui dados suficientes para gerar este indicador — conecte o Meta Ads
+              Você ainda não possui dados suficientes para gerar este indicador. Conecte o Meta Ads
               (botão acima) pra ver investimento, leads e ROAS reais aqui. Google Ads ainda não tem
               integração própria no CRM.
             </div>

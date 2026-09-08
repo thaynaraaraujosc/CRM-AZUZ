@@ -20,7 +20,7 @@ type FunisContextValue = {
   setFunilAtivoId: (id: string) => void;
   /**
    * Move (ou cria) o card desse contato pra etapa escolhida, dentro do funil
-   * escolhido — tira o card de onde ele estivesse antes, em qualquer funil,
+   * escolhido: tira o card de onde ele estivesse antes, em qualquer funil,
    * pra nunca ficar duplicado.
    */
   atribuirContatoAoFunil: (
@@ -28,10 +28,10 @@ type FunisContextValue = {
     etapaTitulo: string,
     contato: Omit<NegocioCard, "id"> & { id?: string },
   ) => void;
-  /** Não deixa apagar o último funil que sobrou — sempre precisa ter pelo menos um. */
+  /** Não deixa apagar o último funil que sobrou. Sempre precisa ter pelo menos um. */
   excluirFunil: (funilId: string) => void;
   /**
-   * Move UM negócio de etapa/funil e, opcionalmente, troca o responsável — gravado na hora.
+   * Move UM negócio de etapa/funil e, opcionalmente, troca o responsável: gravado na hora.
    *
    * Devolve `{ ok }`. Quando dá errado, a tela volta ao que está no banco em vez de continuar
    * mostrando uma mudança que não aconteceu.
@@ -42,7 +42,7 @@ type FunisContextValue = {
     responsavel?: string | null;
   }) => Promise<{ ok: boolean; erro?: string }>;
   /**
-   * Relê os funis do banco e marca o resultado como "veio do servidor" — assim a tela NÃO devolve
+   * Relê os funis do banco e marca o resultado como "veio do servidor". Assim a tela NÃO devolve
    * num PUT o que o servidor acabou de escrever. Use depois de qualquer rota que mexe no funil do
    * lado do banco (trazer conversas, reordenar): com `setFunis` cru, o efeito de sincronização
    * mandaria o funil inteiro de volta, que é exatamente a transação gigante que estourava o prazo.
@@ -68,17 +68,17 @@ const FunisContext = createContext<FunisContextValue | null>(null);
 export function FunisProvider({ children }: { children: ReactNode }) {
   const [funis, setFunis] = useState<Funil[]>([]);
   const [funilAtivoId, setFunilAtivoId] = useState("");
-  /** Último erro de gravação — a tela mostra pra ninguém achar que salvou quando não salvou. */
+  /** Último erro de gravação: a tela mostra pra ninguém achar que salvou quando não salvou. */
   const [erroSincronizacao, setErroSincronizacao] = useState<string | null>(null);
   const carregadoRef = useRef(false);
   /**
-   * Marca que o próximo `funis` novo veio do BANCO, não de uma edição — então não deve ser
+   * Marca que o próximo `funis` novo veio do BANCO, não de uma edição: então não deve ser
    * gravado de volta.
    *
    * Sem isto havia um laço fechado: o PUT falhava, o `.then` recarregava do banco, o
    * `setFunis` da recarga disparava o efeito de sincronização, que mandava outro PUT, que
    * falhava de novo. O console enchia com o mesmo 500 repetido pra sempre e cada volta
-   * segurava mais uma das 3 conexões do pool — o erro se alimentava sozinho e ia piorando.
+   * segurava mais uma das 3 conexões do pool. O erro se alimentava sozinho e ia piorando.
    */
   const vindoDoServidorRef = useRef(false);
 
@@ -94,7 +94,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Não existem mutadores dedicados pra Funil (~13 pontos em funil/page.tsx/FunisSecao.tsx mexem
-  // direto em setFunis) — por isso sincroniza o estado inteiro com o banco a cada mudança, em vez de
+  // direto em setFunis): por isso sincroniza o estado inteiro com o banco a cada mudança, em vez de
   // granular por operação (mesmo espírito do antigo useEffect que gravava tudo no localStorage).
   // Debounça 500ms pra não disparar um PUT a cada pixel de um drag de card/coluna.
   const pendenteRef = useRef<Funil[] | null>(null);
@@ -109,7 +109,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
     })
       .then(async (resposta) => {
         // O `.catch` sozinho NÃO pega isto: um HTTP 500 resolve a promessa normalmente. Sem
-        // conferir `ok`, uma gravação recusada pelo banco era invisível — a tela mostrava o funil
+        // conferir `ok`, uma gravação recusada pelo banco era invisível. A tela mostrava o funil
         // novo, o banco não tinha nada, e no F5 ele "sumia" sem nenhum erro em lugar nenhum. Era a
         // causa do bug de funil e etapa desaparecendo.
         if (resposta.ok) return;
@@ -125,7 +125,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
       .catch((erro) => console.error("Falha ao sincronizar funis na API:", erro));
   }
 
-  /** Relê os funis do banco — usado depois de uma gravação recusada e depois de cada operação
+  /** Relê os funis do banco. Usado depois de uma gravação recusada e depois de cada operação
    * imediata, pra tela e banco contarem a mesma história. */
   async function recarregar() {
     const dados = (await fetch("/api/funis").then((r) => r.json())) as Funil[];
@@ -136,7 +136,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!carregadoRef.current) return;
-    // Estado que acabou de ser lido do banco não precisa voltar pra ele — e devolvê-lo depois de
+    // Estado que acabou de ser lido do banco não precisa voltar pra ele. E devolvê-lo depois de
     // uma gravação recusada era o que criava o laço infinito de PUTs (ver `vindoDoServidorRef`).
     if (vindoDoServidorRef.current) {
       vindoDoServidorRef.current = false;
@@ -149,7 +149,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
   }, [funis]);
 
   // Um F5/fechar aba logo após arrastar um card cancela o setTimeout acima antes dele disparar
-  // (a navegação mata o JS antes dos 500ms) — sem isso, a mudança nunca chega a ser salva e o
+  // (a navegação mata o JS antes dos 500ms). Sem isso, a mudança nunca chega a ser salva e o
   // usuário vê o funil "voltar" pro estado anterior ao recarregar. `keepalive` garante que o PUT
   // sobrevive à navegação em vez de ser abortado junto com a página.
   useEffect(() => {
@@ -168,7 +168,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
    * Grava a movimentação imediatamente e só então mexe na tela.
    *
    * O contrário do que existia: o card se movia primeiro e a gravação vinha meio segundo depois,
-   * dentro de uma reconciliação do funil inteiro. Se ela falhasse — e falhava em silêncio — o card
+   * dentro de uma reconciliação do funil inteiro. Se ela falhasse: e falhava em silêncio: o card
    * aparecia na etapa nova e voltava pra antiga no próximo F5.
    */
   async function moverNegocio({
@@ -221,7 +221,7 @@ export function FunisProvider({ children }: { children: ReactNode }) {
         setErroSincronizacao(dados.erro ?? "Não foi possível criar o funil.");
         return { ok: false, erro: dados.erro };
       }
-      // Só entra na tela DEPOIS de existir no banco — nunca mais um funil que some no F5.
+      // Só entra na tela DEPOIS de existir no banco. Nunca mais um funil que some no F5.
       setFunis((prev) => [...prev, funil]);
       return { ok: true };
     } catch {
@@ -300,8 +300,8 @@ export function FunisProvider({ children }: { children: ReactNode }) {
     });
 
     // Card que JÁ existe é movido na hora, pela mesma rota do arrastar e da janela de transferir.
-    // Sem isto, este caminho (usado pelas Conversas) dependia do sync do funil inteiro — o mesmo
-    // que falhava em silêncio — e o lead voltava pra etapa antiga no F5. Os três caminhos precisam
+    // Sem isto, este caminho (usado pelas Conversas) dependia do sync do funil inteiro. O mesmo
+    // que falhava em silêncio: e o lead voltava pra etapa antiga no F5. Os três caminhos precisam
     // terminar no mesmo lugar do banco.
     //
     // Card NOVO continua nascendo pelo sync geral: ele ainda não existe pra ser movido.

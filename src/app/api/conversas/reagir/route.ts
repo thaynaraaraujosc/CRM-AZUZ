@@ -6,11 +6,11 @@ import { decriptar } from "@/lib/integracoes/crypto";
 import { reagirNoDirectInstagram } from "@/lib/integracoes/instagram-login";
 
 /**
- * Curte (ou descurte) uma mensagem do Direct — o duplo clique na bolha, em `/conversas`.
+ * Curte (ou descurte) uma mensagem do Direct. O duplo clique na bolha, em `/conversas`.
  *
  * Só Instagram por enquanto: é o canal em que a Meta expõe reação como ação sobre uma mensagem
  * existente e devolve a reação da outra pessoa pelo webhook (`messaging_reactions`). Num canal em
- * que o CRM não conseguisse ENTREGAR o coração, mostrar um coração na tela seria mentira — a
+ * que o CRM não conseguisse ENTREGAR o coração, mostrar um coração na tela seria mentira. A
  * cliente nunca veria.
  *
  * O token nunca sai daqui: o cliente manda só o id da mensagem, e quem fala com a Meta é o
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   const { mensagemId, curtir } = (await request.json()) as { mensagemId?: string; curtir?: boolean };
   if (!mensagemId) return NextResponse.json({ erro: "mensagemId é obrigatório" }, { status: 400 });
 
-  // A mensagem precisa ser deste workspace — sem esta checagem, um id adivinhado reagiria na
+  // A mensagem precisa ser deste workspace. Sem esta checagem, um id adivinhado reagiria na
   // conversa de outra empresa.
   const mensagem = await prisma.mensagemExtra.findUnique({ where: { id: mensagemId } });
   if (!mensagem || mensagem.workspaceId !== workspaceId) {

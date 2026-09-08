@@ -20,7 +20,7 @@ describe("escolha da saída", () => {
     expect(proximaAresta(edges, "a", "nao")?.target).toBe("nao");
   });
 
-  it("não escolhe nada quando o ramo pedido não existe — mandar a pessoa pro lado errado é pior que parar", () => {
+  it("não escolhe nada quando o ramo pedido não existe. Mandar a pessoa pro lado errado é pior que parar", () => {
     const edges = [aresta("e1", "a", "sim", "sim")];
     expect(proximaAresta(edges, "a", "nao")).toBeUndefined();
   });
@@ -39,7 +39,7 @@ describe("cálculo da espera", () => {
     expect(calcularEspera({ modo: "dias", valor: 1 } as AguardarData, agora)?.toISOString()).toBe("2026-03-11T12:00:00.000Z");
   });
 
-  it("devolve nada nos modos que não são duração — quem chama trata como configuração faltando", () => {
+  it("devolve nada nos modos que não são duração. Quem chama trata como configuração faltando", () => {
     expect(calcularEspera({ modo: "ate_resposta" } as AguardarData, agora)).toBeNull();
     expect(calcularEspera({ modo: "ate_data" } as AguardarData, agora)).toBeNull();
   });
@@ -69,7 +69,7 @@ describe("pergunta com opções", () => {
     expect(textoNumerado(data.texto, [])).toBe("Como posso ajudar?");
   });
 
-  it("entende o rótulo encurtado — é o que o botão do WhatsApp leva", () => {
+  it("entende o rótulo encurtado: é o que o botão do WhatsApp leva", () => {
     // "Quero saber valores" tem 19 caracteres; um rótulo maior é cortado em 20 pela Meta, e o
     // clique volta com o texto cortado. Sem isso, o clique não bateria com nenhuma opção.
     const longa: MensagemBotoesData = {
@@ -86,7 +86,7 @@ describe("pergunta com opções", () => {
     expect(saidaDaResposta(data, " 1 ")).toBe("o1");
   });
 
-  it("entende o texto do botão — é assim que o clique chega", () => {
+  it("entende o texto do botão. É assim que o clique chega", () => {
     expect(saidaDaResposta(data, "Falar com atendente")).toBe("o2");
     expect(saidaDaResposta(data, "quero saber valores")).toBe("o1");
   });
@@ -103,7 +103,7 @@ describe("pergunta com opções", () => {
     expect(saidaDaResposta(data, "7")).toBeNull();
   });
 
-  it("resposta que não bate com nada devolve nada — quem chama decide se espera mais", () => {
+  it("resposta que não bate com nada devolve nada. Quem chama decide se espera mais", () => {
     expect(saidaDaResposta(data, "bom dia")).toBeNull();
     expect(saidaDaResposta(data, "   ")).toBeNull();
   });
@@ -132,7 +132,7 @@ describe("variáveis no texto", () => {
     expect(preencher("Oi {{ nome }}", contato)).toBe("Oi Maria Clara Souza");
   });
 
-  it("variável sem valor vira vazio — melhor um buraco do que {{chave}} na cara do cliente", () => {
+  it("variável sem valor vira vazio. Melhor um buraco do que {{chave}} na cara do cliente", () => {
     expect(preencher("Oi {{apelido}}, tudo bem?", contato)).toBe("Oi , tudo bem?");
   });
 
@@ -149,11 +149,11 @@ describe("categoria escolhida pela IA", () => {
     expect(categoriaEscolhida("  Reclamação \n", categorias)).toBe("reclamação");
   });
 
-  it("aceita a categoria dentro de uma frase — modelo nem sempre responde só a palavra", () => {
+  it("aceita a categoria dentro de uma frase. Modelo nem sempre responde só a palavra", () => {
     expect(categoriaEscolhida("Parece ser uma dúvida sobre o produto", categorias)).toBe("dúvida");
   });
 
-  it("devolve nada quando não encaixa — o fluxo segue por 'não classificado' em vez de chutar", () => {
+  it("devolve nada quando não encaixa. O fluxo segue por 'não classificado' em vez de chutar", () => {
     expect(categoriaEscolhida("nenhuma", categorias)).toBeNull();
     expect(categoriaEscolhida("", categorias)).toBeNull();
   });
@@ -169,7 +169,7 @@ describe("conversa em texto pra IA", () => {
     ).toBe("Cliente: Quanto custa?\nNós: Depende do modelo.");
   });
 
-  it("corta nas últimas trocas — histórico demais só aumenta o custo por mensagem", () => {
+  it("corta nas últimas trocas: histórico demais só aumenta o custo por mensagem", () => {
     const muitas = Array.from({ length: 30 }, (_, i) => ({ tipo: "in", texto: `msg ${i}` }));
     expect(conversaEmTexto(muitas, 3).split("\n")).toHaveLength(3);
     expect(conversaEmTexto(muitas, 3)).toContain("msg 29");
@@ -185,7 +185,7 @@ describe("espera em dias úteis", () => {
     expect(r?.getDay()).toBe(0);
   });
 
-  it("dois dias ÚTEIS a partir de sexta caem na terça — não é o mesmo que empurrar o domingo", () => {
+  it("dois dias ÚTEIS a partir de sexta caem na terça. Não é o mesmo que empurrar o domingo", () => {
     const r = calcularEspera({ modo: "dias", valor: 2, apenasDiasUteis: true } as AguardarData, sexta);
     expect(r?.getDay()).toBe(2);
   });

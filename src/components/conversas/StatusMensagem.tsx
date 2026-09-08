@@ -12,7 +12,7 @@ import { IconCheck, IconCheckDuplo, IconErro, IconMic, IconRelogio } from "@/com
  * contar a mesma história nos dois lugares. Antes, quem respondia pelo funil não via status nenhum
  * e não tinha como saber se a mensagem havia saído.
  *
- * Cada estado corresponde a um fato conhecido — "enviado" é a Meta confirmando o envio, "entregue"
+ * Cada estado corresponde a um fato conhecido. "enviado" é a Meta confirmando o envio, "entregue"
  * e "lido" vêm do webhook de status. Não existe estado adivinhado aqui.
  */
 export function StatusMensagemIcone({
@@ -29,7 +29,7 @@ export function StatusMensagemIcone({
       <span className="msg-status msg-status-erro">
         <span
           className="msg-status-icone"
-          title="Não enviada — toque para tentar de novo"
+          title="Não enviada: toque para tentar de novo"
           aria-label="Mensagem não enviada"
         >
           <IconErro width={13} height={13} />
@@ -51,7 +51,7 @@ export function StatusMensagemIcone({
     reproduzido: { icone: <IconMic width={12} height={12} />, titulo: "Áudio reproduzido pelo lead", classe: "reproduzido" },
   };
 
-  // `status` é digitado como união fechada, mas em runtime ele vem do BANCO — e ali é só texto.
+  // `status` é digitado como união fechada, mas em runtime ele vem do BANCO. E ali é só texto.
   // Um valor fora do mapa (status gravado por uma versão antiga, ou o nome cru que a Meta manda em
   // inglês) fazia `mapa[status]` ser `undefined`, e ler `.classe` disso derrubava a renderização
   // inteira: o erro subia até a barreira da rota e a tela de Conversas virava "Algo deu errado".

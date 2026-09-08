@@ -2,13 +2,13 @@
  * Contratos conceituais pra integração futura do módulo de Conversas com o
  * back-end e com as APIs oficiais dos canais (WhatsApp/Instagram/TikTok).
  *
- * Nada aqui é chamado hoje — são os formatos que os componentes visuais e o
+ * Nada aqui é chamado hoje. São os formatos que os componentes visuais e o
  * estado do front-end já assumem, documentados num lugar só, pra quando o
  * engenheiro de back-end for implementar as rotas reais. Quando isso
  * acontecer, a ideia é que só a camada de serviço (as funções `async` como
  * `enviarAudioGravado`, `confirmarApagarParaTodos`, `confirmarEnvioContatos`,
- * `salvarConfigConversas` em `conversas/page.tsx`) precise trocar o corpo —
- * os tipos abaixo já batem com o que essas funções produzem/consomem.
+ * `salvarConfigConversas` em `conversas/page.tsx`) precise trocar o corpo.
+ * Os tipos abaixo já batem com o que essas funções produzem/consomem.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -32,12 +32,12 @@ export type EstadoReproducaoAudio = "nao_reproduzido" | "reproduzido";
  * de criar a mensagem.
  */
 export type AudioAnexoContrato = {
-  /** Id local, gerado no front-end antes do upload — usado pra rastrear o card de progresso até o back-end confirmar. */
+  /** Id local, gerado no front-end antes do upload. Usado pra rastrear o card de progresso até o back-end confirmar. */
   idLocal: string;
   /** Depois do upload, o back-end troca a URL local (blob:) pela URL definitiva de storage. */
   arquivo: { url: string; mimeType: string; tamanhoBytes: number };
   duracaoSegundos: number;
-  /** Picos de amplitude 0–1, calculados no front-end — reaproveitados como estão, sem precisar reprocessar no servidor. */
+  /** Picos de amplitude 0-1, calculados no front-end: reaproveitados como estão, sem precisar reprocessar no servidor. */
   formaDeOnda: number[];
   estadoUpload: EstadoUploadAudio;
   estadoMensagem: EstadoMensagemContrato;
@@ -46,7 +46,7 @@ export type AudioAnexoContrato = {
   enviadoEm?: string;
   entregueEm?: string;
   lidoEm?: string;
-  /** Só populado por confirmação real do canal/webhook — nunca setado a partir de o próprio remetente ter ouvido o áudio. */
+  /** Só populado por confirmação real do canal/webhook. Nunca setado a partir de o próprio remetente ter ouvido o áudio. */
   reproduzidoEm?: string;
 };
 
@@ -102,7 +102,7 @@ export type FormatoCartaoContatoPorCanal = "whatsapp_vcard" | "instagram_texto" 
 export type ContatoCompartilhadoContrato = {
   idContatoCrm: string;
   nome: string;
-  /** Só os telefones que o usuário marcou pra incluir na prévia (seção 19 do pedido) — nunca todos automaticamente. */
+  /** Só os telefones que o usuário marcou pra incluir na prévia (seção 19 do pedido). Nunca todos automaticamente. */
   telefonesSelecionados: { tipo: "principal" | "alternativo"; numero: string }[];
   emailSelecionado?: string;
   empresa?: string;
@@ -118,7 +118,7 @@ export type ContatoCompartilhadoContrato = {
 /**
  * Espelha `ConfigConversas` (`src/lib/conversas-config-context.tsx`), que
  * hoje persiste só em localStorage. Com back-end, vira preferência por
- * usuário/equipe — o formato de campos é o mesmo, só troca onde é lido e
+ * usuário/equipe: o formato de campos é o mesmo, só troca onde é lido e
  * gravado (o rascunho da janela de configurações já isola a edição do que
  * está aplicado, então a troca é só na função `salvarConfigConversas`).
  */

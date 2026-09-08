@@ -15,7 +15,7 @@ type Template = {
 
 type ComponenteTemplate = { type?: string; text?: string; format?: string };
 
-/** Texto do corpo do modelo — é o que a pessoa vai receber, e o único jeito de escolher sem
+/** Texto do corpo do modelo. É o que a pessoa vai receber, e o único jeito de escolher sem
  * decorar nomes como `primeiro_contato_v2`. */
 function corpoDoTemplate(componentes: unknown): string {
   if (!Array.isArray(componentes)) return "";
@@ -35,11 +35,11 @@ function preencher(texto: string, valores: string[]): string {
 }
 
 /**
- * Envio de modelo aprovado — o único jeito de FALAR PRIMEIRO com alguém no WhatsApp.
+ * Envio de modelo aprovado: o único jeito de FALAR PRIMEIRO com alguém no WhatsApp.
  *
  * Fora da janela de 24h (ou com quem nunca escreveu), a Meta recusa mensagem livre. Até aqui o CRM
  * sabia buscar os modelos e sabia enviá-los, mas não tinha por onde escolher um: quem usava ficava
- * preso a só responder quem chamasse primeiro — inútil pra prospecção, que é metade do trabalho
+ * preso a só responder quem chamasse primeiro. Inútil pra prospecção, que é metade do trabalho
  * comercial.
  */
 export function EnviarTemplateWhatsApp({
@@ -109,7 +109,7 @@ export function EnviarTemplateWhatsApp({
       const dados = (await resposta.json()) as { erro?: string; wamid?: string };
       if (!resposta.ok) throw new Error(dados.erro ?? "Falha ao enviar o modelo.");
 
-      // A bolha na conversa mostra o texto JÁ preenchido — é o que a pessoa recebeu, não o molde
+      // A bolha na conversa mostra o texto JÁ preenchido. É o que a pessoa recebeu, não o molde
       // com {{1}}.
       aoEnviar(preencher(corpo, valores), dados.wamid);
       aoFechar();
@@ -154,7 +154,7 @@ export function EnviarTemplateWhatsApp({
       ) : aprovados.length === 0 ? (
         <p className="hint">
           Você ainda não tem nenhum modelo aprovado. Crie um no Gerenciador do WhatsApp (Modelos de
-          mensagem) — a aprovação costuma sair em minutos.
+          mensagem): a aprovação costuma sair em minutos.
         </p>
       ) : (
         <div className="modelo-lista">

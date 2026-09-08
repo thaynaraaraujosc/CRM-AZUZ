@@ -38,7 +38,7 @@ type EquipeContextValue = {
   editarMembro: (id: string, dados: Partial<Membro>) => void;
   alternarAtivo: (id: string) => void;
   removerMembro: (id: string) => void;
-  /** Gera e salva uma senha nova pro membro, devolvendo o texto plano uma vez (ver rota) — pra
+  /** Gera e salva uma senha nova pro membro, devolvendo o texto plano uma vez (ver rota). Pra
    * quando o admin precisa ajudar alguém do time travado no acesso, sem nunca expor a senha
    * antiga (impossível, é hash de mão única). */
   resetarSenha: (id: string) => Promise<string | null>;
@@ -47,7 +47,7 @@ type EquipeContextValue = {
 const EquipeContext = createContext<EquipeContextValue | null>(null);
 
 /**
- * Núcleo comercial (2ª leva de migração pro banco real, ver `src/app/api/equipe/`) — mesmo padrão
+ * Núcleo comercial (2ª leva de migração pro banco real, ver `src/app/api/equipe/`): mesmo padrão
  * do piloto de Contatos: contrato público do Provider não muda, só o motor por dentro troca
  * `localStorage` por `fetch` na API real, com atualização otimista local. Falha de rede só loga no
  * console, sem toast de erro (mesma limitação assumida no piloto).
@@ -83,7 +83,7 @@ export function EquipeProvider({ children }: { children: ReactNode }) {
       papel: dados.papel,
       papelTipo: dados.papelTipo,
       papelNota: dados.papelNota,
-      leads: "—",
+      leads: "-",
       enxerga: dados.enxerga,
       permissoes: dados.permissoes,
       ativo: false,

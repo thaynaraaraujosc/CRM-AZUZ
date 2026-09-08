@@ -17,7 +17,7 @@ export async function GET() {
   return NextResponse.json(linhas as unknown as ModeloPersonalizado[]);
 }
 
-/** POST cria um modelo novo (ou uma cópia) — mesma semântica de `salvarComoModelo`/`duplicarModelo`. */
+/** POST cria um modelo novo (ou uma cópia). Mesma semântica de `salvarComoModelo`/`duplicarModelo`. */
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

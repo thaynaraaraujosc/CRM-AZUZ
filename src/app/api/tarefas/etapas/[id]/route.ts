@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-/** PATCH renomeia a etapa — usada por `renomearEtapa`. Só mexe em etapa do mesmo workspace. */
+/** PATCH renomeia a etapa: usada por `renomearEtapa`. Só mexe em etapa do mesmo workspace. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/tarefas/etapas/[id]">) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
@@ -21,7 +21,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/tarefas/et
   return NextResponse.json(etapa);
 }
 
-/** DELETE exclui a etapa — os cards dela vão junto (relação `onDelete: Cascade` no schema), mesmo
+/** DELETE exclui a etapa: os cards dela vão junto (relação `onDelete: Cascade` no schema), mesmo
  * comportamento que `excluirEtapa` já tinha no Context (descartava a coluna com tudo dentro). Só
  * mexe em etapa do mesmo workspace. */
 export async function DELETE(_request: Request, ctx: RouteContext<"/api/tarefas/etapas/[id]">) {

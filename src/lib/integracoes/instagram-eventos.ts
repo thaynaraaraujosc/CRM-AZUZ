@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { primeiraVezPara } from "@/lib/automacoes/idempotencia";
 
 /**
- * Eventos do Instagram, normalizados — a fronteira entre o formato da Meta e o resto do CRM.
+ * Eventos do Instagram, normalizados: a fronteira entre o formato da Meta e o resto do CRM.
  *
  * Nada fora deste arquivo (e do webhook que o alimenta) precisa saber que a Meta chama resposta a
  * story de `reply_to.story`, que reação vem em `reaction` e não em `message`, ou que comentário
@@ -45,11 +45,11 @@ export type EventoInstagramNormalizado = {
 };
 
 /**
- * Grava o evento. Devolve `false` se ele já existia — o webhook foi reenviado.
+ * Grava o evento. Devolve `false` se ele já existia. O webhook foi reenviado.
  *
  * A Meta reenvia webhook rotineiramente (por timeout, por retentativa, por entrega em duplicidade),
  * e sem trava o mesmo comentário dispararia a mesma automação de novo: o cliente receberia a mesma
- * resposta duas ou três vezes. A trava é a própria chave primária — a segunda gravação falha por
+ * resposta duas ou três vezes. A trava é a própria chave primária. A segunda gravação falha por
  * construção, não por alguém ter lembrado de checar antes.
  */
 export async function registrarEvento(
@@ -100,7 +100,7 @@ export async function concluirEvento(id: string, erro?: string): Promise<void> {
  *
  * Complementa a dedup do webhook em vez de repeti-la: mesmo com o evento chegando uma vez só, um
  * reprocessamento manual ou uma automação disparada por dois caminhos poderia executar o mesmo
- * fluxo de novo. A unicidade é (fluxo, evento) — o mesmo comentário PODE disparar fluxos
+ * fluxo de novo. A unicidade é (fluxo, evento): o mesmo comentário PODE disparar fluxos
  * diferentes, o que é desejado.
  */
 export async function marcarExecucaoDeAutomacao(params: {
@@ -109,7 +109,7 @@ export async function marcarExecucaoDeAutomacao(params: {
   chaveEvento: string;
   instagramUserId?: string;
 }): Promise<boolean> {
-  // A trava mora em `src/lib/automacoes/idempotencia.ts` — o problema não é só do Instagram (a
+  // A trava mora em `src/lib/automacoes/idempotencia.ts`. O problema não é só do Instagram (a
   // Meta reenvia webhook em todo canal, e o mesmo card pode ser movido em duas abas), então a
   // regra é uma só. Esta função continua existindo como o nome que o Instagram já usa.
   return primeiraVezPara(params);

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { IconAlerta } from "@/components/icons";
 
 /**
- * Embedded Signup v4 da Meta — popup hospedado por eles, aberto de dentro do CRM, que cria a conta
+ * Embedded Signup v4 da Meta. Popup hospedado por eles, aberto de dentro do CRM, que cria a conta
  * do WhatsApp Business do cliente e devolve o que a gente precisa pra conectar. Não é v2/v3 (a v2
  * é descontinuada em out/2026).
  *
@@ -36,7 +36,7 @@ declare global {
   }
 }
 
-/** Origens legítimas do popup da Meta — mensagem de qualquer outra origem é ignorada (qualquer
+/** Origens legítimas do popup da Meta. Mensagem de qualquer outra origem é ignorada (qualquer
  * página aberta poderia mandar `postMessage` pra esta janela se não filtrasse). */
 const ORIGENS_META = ["https://www.facebook.com", "https://web.facebook.com"];
 
@@ -51,7 +51,7 @@ export function EmbeddedSignupWhatsApp({
   const configId = process.env.NEXT_PUBLIC_META_CONFIG_ID;
   const versaoGraph = process.env.NEXT_PUBLIC_META_GRAPH_VERSION ?? "v23.0";
 
-  // Inicialização preguiçosa em vez de `setState` dentro do efeito — o SDK pode já estar carregado
+  // Inicialização preguiçosa em vez de `setState` dentro do efeito. O SDK pode já estar carregado
   // (outro componente montou antes), e nesse caso o botão precisa nascer habilitado.
   const [sdkPronto, setSdkPronto] = useState(() => typeof window !== "undefined" && Boolean(window.FB));
   const [conectando, setConectando] = useState(false);
@@ -60,7 +60,7 @@ export function EmbeddedSignupWhatsApp({
   const sessionInfoRef = useRef<SessionInfo | null>(null);
   const telaAbandonadaRef = useRef<string | null>(null);
 
-  // Listener registrado ANTES de qualquer abertura de popup — é por ele que chega o session_info,
+  // Listener registrado ANTES de qualquer abertura de popup. É por ele que chega o session_info,
   // e ele pode chegar antes do callback do FB.login terminar.
   useEffect(() => {
     function aoReceberMensagem(evento: MessageEvent) {
@@ -76,12 +76,12 @@ export function EmbeddedSignupWhatsApp({
             businessId: dados.data?.business_id,
           };
         } else if (dados.event === "CANCEL") {
-          // Abandono ANTES da tela final — a Meta diz em qual etapa parou, dá pra ser específico
+          // Abandono ANTES da tela final. A Meta diz em qual etapa parou, dá pra ser específico
           // em vez de mostrar "erro desconhecido".
           telaAbandonadaRef.current = dados.data?.current_step ?? null;
         }
       } catch {
-        // Mensagem que não é JSON do Embedded Signup — ignora em silêncio.
+        // Mensagem que não é JSON do Embedded Signup. Ignora em silêncio.
       }
     }
     window.addEventListener("message", aoReceberMensagem);
@@ -107,8 +107,8 @@ export function EmbeddedSignupWhatsApp({
     if (!info?.wabaId || !info?.phoneNumberId) {
       setErro(
         telaAbandonadaRef.current
-          ? `A conexão não foi concluída — você parou na etapa "${telaAbandonadaRef.current}". Pode tentar de novo de onde parou.`
-          : "A conexão não foi concluída — os dados da conta não chegaram. Tente de novo.",
+          ? `A conexão não foi concluída. Você parou na etapa "${telaAbandonadaRef.current}". Pode tentar de novo de onde parou.`
+          : "A conexão não foi concluída. Os dados da conta não chegaram. Tente de novo.",
       );
       return;
     }
@@ -144,7 +144,7 @@ export function EmbeddedSignupWhatsApp({
         if (!code) {
           setErro(
             telaAbandonadaRef.current
-              ? `Você saiu na etapa "${telaAbandonadaRef.current}" — a conexão não foi concluída.`
+              ? `Você saiu na etapa "${telaAbandonadaRef.current}". A conexão não foi concluída.`
               : "A autorização foi cancelada.",
           );
           return;
@@ -157,7 +157,7 @@ export function EmbeddedSignupWhatsApp({
         override_default_response_type: true,
         extras: {
           setup: {
-            // Pré-preenche o que já sabemos do cadastro — reduz telas que a pessoa tem que
+            // Pré-preenche o que já sabemos do cadastro. Reduz telas que a pessoa tem que
             // preencher no popup da Meta.
             business: {
               name: dadosDoNegocio?.nome,
@@ -187,8 +187,8 @@ export function EmbeddedSignupWhatsApp({
         <p className="int-title" style={{ margin: 0 }}>Conectado! Guarde este PIN:</p>
         <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: 4, margin: "8px 0" }}>{pin}</p>
         <p className="hint" style={{ margin: 0 }}>
-          É o PIN de verificação em duas etapas do seu número na Meta. Ele não aparece de novo —
-          anote agora num lugar seguro.
+          É o PIN de verificação em duas etapas do seu número na Meta. Ele não aparece de novo.
+          Anote agora num lugar seguro.
         </p>
       </div>
     );

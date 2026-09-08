@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-/** DELETE remove um relatório do histórico — só mexe em registro do mesmo workspace de quem está logado. */
+/** DELETE remove um relatório do histórico. Só mexe em registro do mesmo workspace de quem está logado. */
 export async function DELETE(_request: Request, ctx: RouteContext<"/api/relatorios/[id]">) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

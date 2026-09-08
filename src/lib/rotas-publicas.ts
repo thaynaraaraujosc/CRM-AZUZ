@@ -4,13 +4,13 @@
  * Isto morava dentro do `proxy.ts`, no meio de uma condição de dez linhas, e o mesmo erro já foi
  * cometido três vezes: a rota da Evolution mudou de nome e a exceção não acompanhou (nenhuma
  * mensagem espelhava no CRM); o cron de saúde do WhatsApp nunca entrou na lista; e o cron das
- * campanhas nasceu de fora dela — disparava no horário certo, respondia 307 pro /login e a rota
+ * campanhas nasceu de fora dela. Disparava no horário certo, respondia 307 pro /login e a rota
  * nunca executava. Os três sintomas foram idênticos e nenhum apareceu como erro: a coisa
  * simplesmente não acontecia.
  *
  * Separado num arquivo com teste, esquecer de incluir uma rota nova deixa de ser silencioso.
  *
- * IMPORTANTE: nada aqui fica sem defesa — o que muda é ONDE ela mora. Quem entra nesta lista é
+ * IMPORTANTE: nada aqui fica sem defesa. O que muda é ONDE ela mora. Quem entra nesta lista é
  * chamado por um sistema, não por uma pessoa, e se defende dentro da própria rota: assinatura HMAC
  * nos webhooks da Meta, token fixo na Evolution e na Asaas, `CRON_SECRET` nos crons.
  */
@@ -33,7 +33,7 @@ const PREFIXOS_PUBLICOS = [
   "/api/cron/",
 ];
 
-/** Caminhos exatos — sem nada abaixo deles. */
+/** Caminhos exatos: sem nada abaixo deles. */
 const EXATOS_PUBLICOS = [
   // A landing. Precisa ser exata: "/" é prefixo de todo o resto do site.
   "/",
@@ -46,7 +46,7 @@ const EXATOS_PUBLICOS = [
   "/api/webhooks/evolution",
   // Asaas (eventos de cobrança da assinatura), validada pelo `asaas-access-token` na rota.
   "/api/webhooks/asaas",
-  // Verificação diária das conexões oficiais, chamada pelo cron — mesma regra dos `/api/cron/`,
+  // Verificação diária das conexões oficiais, chamada pelo cron: mesma regra dos `/api/cron/`,
   // só que esta rota nasceu antes dessa pasta existir.
   "/api/integracoes/meta/whatsapp/saude",
 ];

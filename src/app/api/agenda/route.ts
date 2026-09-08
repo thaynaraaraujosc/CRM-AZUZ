@@ -17,7 +17,7 @@ export async function GET() {
   return NextResponse.json(linhas as Compromisso[]);
 }
 
-/** POST cria um agendamento novo — mesma semântica de `criarAgendamento` no Context. */
+/** POST cria um agendamento novo. Mesma semântica de `criarAgendamento` no Context. */
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

@@ -7,7 +7,7 @@ import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { IconAlerta } from "@/components/icons";
 
 /**
- * Conexão do Instagram e do Meta Ads como painel — mesmo motivo de `ConexaoQrCode` e
+ * Conexão do Instagram e do Meta Ads como painel. Mesmo motivo de `ConexaoQrCode` e
  * `ConexaoWhatsAppOficial`: o fluxo roda embaixo do botão que a pessoa clicou, em vez de mandar
  * ela pra outra tela.
  *
@@ -54,11 +54,11 @@ function PainelOAuth({
 }
 
 /**
- * Uma preferência booleana guardada em `Integracao.metadados` — o PATCH faz merge, então cada
+ * Uma preferência booleana guardada em `Integracao.metadados`. O PATCH faz merge, então cada
  * toggle grava só a sua chave sem apagar o resto (token, ids da conta, @ do perfil...).
  *
  * Salva no ato do clique, sem botão "Salvar": é uma chave só, e o estado visual do toggle já é a
- * confirmação. Se a gravação falhar, volta pro valor anterior — deixar o botão ligado com o banco
+ * confirmação. Se a gravação falhar, volta pro valor anterior: deixar o botão ligado com o banco
  * dizendo o contrário seria pior do que não ter o controle.
  */
 function ToggleDaIntegracao({
@@ -144,11 +144,11 @@ export function ConexaoInstagram() {
         dados.fotosPreenchidas && dados.fotosPreenchidas > 0
           ? `${dados.fotosPreenchidas} fotos de perfil foram recuperadas. ` +
             ((dados.conversasSemFoto ?? 0) > (dados.fotosPreenchidas ?? 0)
-              ? "Clique de novo pra continuar — vai de 20 em 20 pra não estourar o limite da Meta."
+              ? "Clique de novo pra continuar. Vai de 20 em 20 pra não estourar o limite da Meta."
               : "")
           : dados.temFoto
             ? "A Meta está entregando a foto normalmente."
-            : "A Meta não devolveu foto pra esse perfil — veja o detalhe abaixo.";
+            : "A Meta não devolveu foto pra esse perfil. Veja o detalhe abaixo.";
       setDiagnostico(`${resumo}\n\n${JSON.stringify(dados, null, 2)}`);
     } catch (e) {
       setDiagnostico(e instanceof Error ? e.message : "Falha ao testar.");
@@ -168,7 +168,7 @@ export function ConexaoInstagram() {
       const dados = (await resposta.json()) as { erro?: string; aviso?: string };
       if (!resposta.ok) throw new Error(dados.erro ?? "Falha ao reativar.");
       // O aviso não é erro: o Direct volta a funcionar, mas as automações de comentário ficariam
-      // mudas — e isso precisa ser dito, não descoberto depois.
+      // mudas: e isso precisa ser dito, não descoberto depois.
       setResultadoAssinatura(dados.aviso ?? "Recebimento reativado. Peça uma mensagem nova pra confirmar.");
     } catch (e) {
       setResultadoAssinatura(e instanceof Error ? e.message : "Falha ao reativar.");
@@ -191,8 +191,8 @@ export function ConexaoInstagram() {
         <div style={{ marginTop: 8 }}>
           {erroAssinatura ? (
             <p className="hint" style={{ color: "var(--danger)", margin: "0 0 6px" }}>
-              <IconAlerta width={12} height={12} aria-hidden="true" /> A conta conectou, mas o CRM não conseguiu assinar o recebimento de mensagens:{" "}
-              {erroAssinatura} — as mensagens do Direct não vão chegar até isso ser resolvido.
+              <IconAlerta width={12} height={12} aria-hidden="true" /> A conta conectou, mas o CRM não conseguiu assinar o recebimento de mensagens. As mensagens do Direct não vão chegar até isso ser resolvido.{" "}
+              Detalhe: {erroAssinatura}
             </p>
           ) : null}
           <button type="button" className="btn ghost" disabled={reassinando} onClick={() => void reassinar()}>
@@ -200,11 +200,11 @@ export function ConexaoInstagram() {
           </button>
           <p className="hint" style={{ margin: "4px 0 0" }}>
             {resultadoAssinatura ??
-              "Use se as mensagens pararem de chegar no CRM mesmo com a conta conectada. Refaz só a assinatura dos eventos na Meta — não desconecta nada nem apaga conversa."}
+              "Use se as mensagens pararem de chegar no CRM mesmo com a conta conectada. Refaz só a assinatura dos eventos na Meta. Não desconecta nada nem apaga conversa."}
           </p>
           {/* Responde dentro do CRM a pergunta que antes só se respondia caçando log do servidor:
               a Meta está mesmo chamando o CRM? Se este carimbo não avança quando chega mensagem no
-              Instagram, o problema está na assinatura/webhook — não no que o CRM faz depois. */}
+              Instagram, o problema está na assinatura/webhook. Não no que o CRM faz depois. */}
           <p className="hint" style={{ margin: "6px 0 0" }}>
             Último evento recebido da Meta:{" "}
             <b>{ultimoEventoEm ? new Date(ultimoEventoEm).toLocaleString("pt-BR") : "nenhum ainda"}</b>

@@ -8,7 +8,7 @@ const STATUS: { valor: StatusNegocio; label: string }[] = [
   { valor: "perdido", label: "Perdido" },
 ];
 
-/** Ação "Atualizar status" — status do negócio, com motivo obrigatório quando marcado como perdido. */
+/** Ação "Atualizar status": status do negócio, com motivo obrigatório quando marcado como perdido. */
 export function AtualizarStatusForm({ data, onChange }: { data: AtualizarStatusData; onChange: (novo: AtualizarStatusData) => void }) {
   return (
     <div className="flow-form">

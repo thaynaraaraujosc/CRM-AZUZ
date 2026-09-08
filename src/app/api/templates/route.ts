@@ -7,7 +7,7 @@ import { prepararTemplate, type CorpoTemplate } from "@/lib/templates/preparar";
 import { sincronizarTemplatesMeta } from "@/lib/templates/sincronizar-meta";
 
 /**
- * Templates do CRM — mensagens reutilizáveis, por workspace.
+ * Templates do CRM: mensagens reutilizáveis, por workspace.
  *
  * GET sincroniza com a Meta antes de listar (modelo criado no WhatsApp Manager aparece aqui sem
  * a pessoa fazer nada) e devolve tudo do workspace de quem está logado. Nunca de outro.

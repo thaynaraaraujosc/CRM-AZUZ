@@ -12,7 +12,7 @@ import { slugId } from "@/lib/ids";
 import { PLANOS } from "@/lib/assinatura/planos";
 
 /**
- * POST cria uma empresa nova (Workspace) + o primeiro Membro (admin) numa transação — fluxo de
+ * POST cria uma empresa nova (Workspace) + o primeiro Membro (admin) numa transação. Fluxo de
  * autocadastro em /cadastro. Slug do Workspace e id do Membro derivam do nome (mesmo padrão de
  * slugId já usado em Contato/Membro), com sufixo numérico se já existir.
  */
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
         senha: senhaHash,
         papel: "Administrador",
         papelTipo: "admin",
-        leads: "—",
+        leads: "-",
         enxerga: "Tudo",
         permissoes: [],
         ativo: true,
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // Assinatura nasce "pendente" — sem isso o proxy (bloqueio por pagamento, ver `proxy.ts`)
+    // Assinatura nasce "pendente": sem isso o proxy (bloqueio por pagamento, ver `proxy.ts`)
     // trataria um workspace novo como "sem assinatura" e liberaria acesso total até alguém pagar,
     // que é exatamente o buraco que fechamos: nenhum workspace fica sem essa linha.
     await tx.assinatura.create({

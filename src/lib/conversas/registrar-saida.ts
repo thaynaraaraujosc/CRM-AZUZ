@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
  * Faz uma mensagem que o CRM enviou aparecer na tela de Conversas.
  *
  * Sem isto a conversa fica pela metade: a automação pergunta "tudo bem?", a pessoa responde "Sim",
- * e quem abre a conversa vê só o "Sim" — sem a pergunta. Foi exatamente o que aconteceu no primeiro
+ * e quem abre a conversa vê só o "Sim". Sem a pergunta. Foi exatamente o que aconteceu no primeiro
  * teste real: a mensagem chegou no WhatsApp do contato e não existia no CRM.
  *
  * O disparo em massa já fazia isso (`registrarEnvioNaConversa`), mas amarrado a campanha e
@@ -14,14 +14,14 @@ import { prisma } from "@/lib/prisma";
  * mande mensagem pelo servidor.
  *
  * Nunca derruba quem chamou: a mensagem JÁ saiu quando isto roda. Falhar aqui é perder o registro,
- * não o envio — e derrubar a automação por causa do registro seria trocar um problema pequeno por
+ * não o envio: e derrubar a automação por causa do registro seria trocar um problema pequeno por
  * um grande.
  */
 export async function registrarMensagemEnviada(params: {
   workspaceId: string;
   contatoNome: string;
   texto: string;
-  /** Id da Meta, quando existe — é por ele que o webhook de entregue/lido acha esta bolha. */
+  /** Id da Meta, quando existe: é por ele que o webhook de entregue/lido acha esta bolha. */
   wamid?: string | null;
   /** Botões/opções que foram junto, pra bolha mostrar o que a pessoa viu. */
   opcoes?: string[];

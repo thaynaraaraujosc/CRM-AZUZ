@@ -13,7 +13,7 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     // whatsapp-worker/ é um projeto Node separado (deploy próprio no Railway), não faz parte do
-    // app Next.js — tem seu próprio tsc, sem regras de React (o linter daqui confundia
+    // app Next.js: tem seu próprio tsc, sem regras de React (o linter daqui confundia
     // `useMultiFileAuthState` do Baileys com um Hook do React por causa do prefixo "use").
     "whatsapp-worker/**",
   ]),

@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 
 /**
- * Cliente da API v3 da Asaas — cobrança da assinatura do próprio CRM (mensalidade do workspace),
+ * Cliente da API v3 da Asaas. Cobrança da assinatura do próprio CRM (mensalidade do workspace),
  * não a integração de pagamento de um cliente do CRM. `ASAAS_ENV` escolhe sandbox ("homologação",
  * chave começa com `$aact_hmlg_`) ou produção (chave começa com `$aact_prod_`); default sandbox
  * pra nunca cobrar de verdade por engano se a env var não for setada.
@@ -38,7 +38,7 @@ async function chamarAsaas<T>(caminho: string, init?: RequestInit): Promise<T> {
 export type AsaasCliente = { id: string };
 
 export async function criarOuBuscarCliente(dados: {
-  /** externalReference casa o cliente Asaas com o workspace — evita criar um cliente Asaas
+  /** externalReference casa o cliente Asaas com o workspace. Evita criar um cliente Asaas
    * duplicado se a chamada de criação for repetida (ex.: usuário atualiza a página no meio do
    * fluxo). */
   workspaceId: string;
@@ -75,7 +75,7 @@ export async function criarAssinatura(dados: {
   valor: number;
   formaPagamento: FormaPagamentoAsaas;
   descricao: string;
-  /** Obrigatório quando formaPagamento é CREDIT_CARD — a Asaas não guarda cartão sem esses dados. */
+  /** Obrigatório quando formaPagamento é CREDIT_CARD. A Asaas não guarda cartão sem esses dados. */
   cartao?: {
     numero: string;
     nomeImpresso: string;
@@ -140,10 +140,10 @@ export async function listarCobrancas(assinaturaId: string): Promise<AsaasCobran
 }
 
 /**
- * Valida o header `asaas-access-token` que a Asaas manda em todo POST de webhook — o valor é
+ * Valida o header `asaas-access-token` que a Asaas manda em todo POST de webhook. O valor é
  * escolhido por quem configura o webhook no painel da Asaas (Configurações > Integrações >
  * Webhooks) e precisa ser o mesmo salvo em `ASAAS_WEBHOOK_TOKEN`. Diferente da Meta, a Asaas não
- * assina o corpo com HMAC — é comparação direta de token, por isso `timingSafeEqual` (evita side
+ * assina o corpo com HMAC. É comparação direta de token, por isso `timingSafeEqual` (evita side
  * channel de tempo de comparação) em vez de `===`.
  */
 export function validarTokenWebhookAsaas(tokenHeader: string | null): boolean {

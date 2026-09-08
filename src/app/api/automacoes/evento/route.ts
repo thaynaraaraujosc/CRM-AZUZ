@@ -8,7 +8,7 @@ import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servi
  *
  * Existe porque nem toda mudança passa por um endpoint próprio: mudar a etapa de um lead pela tela
  * de Conversas, por exemplo, grava por outro caminho. Antes, esses casos rodavam o motor no
- * NAVEGADOR — o que significa que a automação só acontecia pra quem estava com a tela aberta, e as
+ * NAVEGADOR: o que significa que a automação só acontecia pra quem estava com a tela aberta, e as
  * mensagens não saíam de verdade.
  *
  * O workspace vem SEMPRE da sessão, nunca do corpo: senão qualquer pessoa logada conseguiria

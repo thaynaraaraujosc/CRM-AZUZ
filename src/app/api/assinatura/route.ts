@@ -12,7 +12,7 @@ import {
 } from "@/lib/integracoes/asaas";
 
 /** GET devolve a assinatura atual do workspace (o que está salvo localmente, não chama a Asaas de
- * novo pra isso) mais o histórico de cobranças, buscado ao vivo na Asaas — ver comentário no
+ * novo pra isso) mais o histórico de cobranças, buscado ao vivo na Asaas. Ver comentário no
  * schema (`model Assinatura`) sobre por que o histórico não é espelhado no banco. */
 export async function GET() {
   const sessao = await auth();
@@ -25,7 +25,7 @@ export async function GET() {
     const cobrancas = assinatura.asaasSubscriptionId ? await listarCobrancas(assinatura.asaasSubscriptionId) : [];
     return NextResponse.json({ assinatura, cobrancas });
   } catch {
-    // Asaas fora do ar não pode derrubar a tela de Configurações — mostra a assinatura salva sem
+    // Asaas fora do ar não pode derrubar a tela de Configurações. Mostra a assinatura salva sem
     // histórico em vez de erro 500.
     return NextResponse.json({ assinatura, cobrancas: [] });
   }
@@ -45,7 +45,7 @@ type CorpoCriarAssinatura = {
   };
 };
 
-/** POST assina (ou troca de plano — cancela a assinatura anterior na Asaas e cria outra, a Asaas
+/** POST assina (ou troca de plano. Cancela a assinatura anterior na Asaas e cria outra, a Asaas
  * não tem "trocar valor de assinatura ativa" de forma simples via API pública) o workspace de quem
  * está logado. */
 export async function POST(request: Request) {
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   const plano = PLANOS[corpo.plano];
 
   // Se já existe uma assinatura salva pra esse workspace, cancela a antiga na Asaas antes de criar
-  // outra — sem isso, cada troca de plano (ou cada retry depois de um erro) deixa uma assinatura
+  // outra: sem isso, cada troca de plano (ou cada retry depois de um erro) deixa uma assinatura
   // órfã cobrando em paralelo na Asaas, sem ligação nenhuma com o que fica salvo aqui.
   const assinaturaExistente = await prisma.assinatura.findUnique({ where: { workspaceId } });
   if (assinaturaExistente?.asaasSubscriptionId && assinaturaExistente.status !== "cancelada") {
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       await cancelarAssinatura(assinaturaExistente.asaasSubscriptionId);
     } catch {
       // Segue mesmo se a assinatura antiga já não existir mais (ex.: cancelada manualmente na
-      // Asaas) — não pode travar quem só quer assinar de novo.
+      // Asaas): não pode travar quem só quer assinar de novo.
     }
   }
 
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       customerId: cliente.id,
       valor: plano.valor,
       formaPagamento: corpo.formaPagamento,
-      descricao: `CRM Azuz — plano ${plano.nome}`,
+      descricao: `CRM Azuz: plano ${plano.nome}`,
       cartao: corpo.cartao
         ? {
             numero: corpo.cartao.numero,
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
         },
       });
     } catch (erroSalvar) {
-      // A assinatura já foi criada de verdade na Asaas nesse ponto — se não conseguir salvar
+      // A assinatura já foi criada de verdade na Asaas nesse ponto. Se não conseguir salvar
       // localmente (ex.: banco fora do ar), cancela ela na Asaas também, pra não deixar cobrança
       // órfã que ninguém vê nesta tela.
       await cancelarAssinatura(assinaturaAsaas.id).catch(() => {});

@@ -1,9 +1,9 @@
 /**
- * Há quanto tempo esse negócio teve movimento — o rótulo que aparece no canto do card.
+ * Há quanto tempo esse negócio teve movimento. O rótulo que aparece no canto do card.
  *
  * Antes esse texto era uma STRING GRAVADA no banco (`NegocioCard.dias`), escrita como "Hoje" no
  * momento em que o card nascia e nunca mais tocada. Resultado: um funil inteiro dizendo "Hoje",
- * inclusive em card de duas semanas atrás — e nenhuma pista de quem falou por último, que é
+ * inclusive em card de duas semanas atrás. E nenhuma pista de quem falou por último, que é
  * justamente o que a coluna precisa mostrar pra funcionar como caixa de entrada.
  *
  * Agora o rótulo é CALCULADO na hora de desenhar, a partir da última atividade real da conversa (ou
@@ -11,9 +11,9 @@
  * não tem como mentir.
  */
 export function rotuloDeAtividade(quando: Date | string | null | undefined, agora: Date = new Date()): string {
-  if (!quando) return "—";
+  if (!quando) return "-";
   const data = quando instanceof Date ? quando : new Date(quando);
-  if (Number.isNaN(data.getTime())) return "—";
+  if (Number.isNaN(data.getTime())) return "-";
 
   const minutos = Math.floor((agora.getTime() - data.getTime()) / 60_000);
   // Futuro (relógio do servidor à frente do navegador, por exemplo) conta como agora, em vez de
@@ -31,7 +31,7 @@ export function rotuloDeAtividade(quando: Date | string | null | undefined, agor
 }
 
 /** Diferença em DIAS DE CALENDÁRIO, não em blocos de 24 horas: às 00:30 de terça, uma mensagem das
- * 23:50 de segunda é "Ontem" — mesmo tendo 40 minutos de diferença. */
+ * 23:50 de segunda é "Ontem". Mesmo tendo 40 minutos de diferença. */
 function diferencaEmDias(data: Date, agora: Date): number {
   const inicio = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   return Math.round((inicio(agora) - inicio(data)) / 86_400_000);

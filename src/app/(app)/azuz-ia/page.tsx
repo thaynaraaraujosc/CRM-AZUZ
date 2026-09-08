@@ -4,9 +4,9 @@ import { IconSparkle } from "@/components/icons";
 import { Topbar } from "@/components/ui";
 
 /**
- * Azuz IA desativada temporariamente (decisão de produto, não limitação técnica — o backend real
+ * Azuz IA desativada temporariamente (decisão de produto, não limitação técnica: o backend real
  * já existe e funciona, ver `src/app/api/azuz-ia/perguntar/route.ts` e `src/lib/azuz-ia/claude.ts`).
- * Esta tela NÃO chama a API real de propósito — é só uma vitrine informativa, pra não dar acesso a
+ * Esta tela NÃO chama a API real de propósito. É só uma vitrine informativa, pra não dar acesso a
  * uma experiência parcial nem mostrar dado fictício de conversa. Reativar é trocar este componente
  * de volta pelo chat (a rota de API não precisa de nenhuma mudança).
  */
@@ -15,7 +15,7 @@ export default function AzuzIaPage() {
     <>
       <Topbar
         title="Azuz IA"
-        sub="Sua assistente dentro do CRM — pergunta qualquer coisa sobre leads, tarefas ou funil"
+        sub="Sua assistente dentro do CRM. Pergunta qualquer coisa sobre leads, tarefas ou funil"
       />
 
       <div className="content" style={{ justifyContent: "center", alignItems: "center", display: "flex" }}>
@@ -43,7 +43,7 @@ export default function AzuzIaPage() {
           </h2>
           <p className="hint" style={{ fontSize: 13, lineHeight: 1.6 }}>
             Estamos trabalhando pra trazer uma assistente que entende os dados reais do seu
-            workspace — leads, conversas, tarefas e funil — e responde suas perguntas na hora. Em
+            workspace (leads, conversas, tarefas e funil) e responde suas perguntas na hora. Em
             breve ela estará disponível por aqui.
           </p>
         </div>

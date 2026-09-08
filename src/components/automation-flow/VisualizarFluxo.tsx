@@ -21,7 +21,7 @@ import { CORES_CATEGORIA, autoLayout, domainEdgesToRF, domainNodesToRF } from ".
 import { IconClose } from "@/components/icons";
 
 /**
- * Lista "funcionalidades utilizadas" — derivada AO VIVO dos nós reais do
+ * Lista "funcionalidades utilizadas": derivada AO VIVO dos nós reais do
  * fluxo (nunca escrita à mão por fluxo), pra nunca ficar desatualizada em
  * relação ao que o fluxo de fato faz.
  */

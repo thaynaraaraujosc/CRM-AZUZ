@@ -6,7 +6,7 @@ import type { MensagemModeloWhatsappData } from "@/lib/automation-flow/types";
 import type { TemplateSalvo } from "@/components/automacoes/EditorTemplate";
 
 /**
- * Ação "Modelo aprovado do WhatsApp" — escolhe um template REAL do CRM (tela Automações →
+ * Ação "Modelo aprovado do WhatsApp". Escolhe um template REAL do CRM (tela Automações →
  * Templates), aprovado pela Meta. A lista mocada que vivia aqui foi embora: agora quem aparece é o
  * que existe de verdade no workspace, e só o que a Meta já aprovou (o resto não pode ser enviado).
  */

@@ -38,8 +38,8 @@ type NavEntry = {
 };
 
 /**
- * Sub-rotas agrupadas dentro do menu "Inteligência comercial" na sidebar —
- * a central que conecta tráfego, atividades, performance, jornada do
+ * Sub-rotas agrupadas dentro do menu "Inteligência comercial" na sidebar.
+ * A central que conecta tráfego, atividades, performance, jornada do
  * cliente, motivos de perda, relatórios e o telão em tempo real, todos
  * lendo dos mesmos dados (ver `src/lib/metrics.ts` e `src/lib/timeline.ts`).
  */
@@ -57,7 +57,7 @@ const gestaoAtividadeHrefs = new Set(gestaoAtividadeItens.map((i) => i.href));
 
 export const navEntries: NavEntry[] = [
   { href: "/inicio", label: "Início", Icon: IconInicio },
-  // A tela atende WhatsApp, Instagram, TikTok e e-mail — chamar de "WhatsApp" no menu descrevia
+  // A tela atende WhatsApp, Instagram, TikTok e e-mail: chamar de "WhatsApp" no menu descrevia
   // um canal só e escondia os outros três de quem procurava por eles.
   { href: "/conversas", label: "Conversas", Icon: IconConversas },
   { href: "/funil", label: "Funil", Icon: IconPipeline },
@@ -74,7 +74,7 @@ export const navEntries: NavEntry[] = [
 
 /**
  * Posiciona um popover flutuante ao lado do elemento que o abriu, sempre
- * dentro dos limites da tela — vira pra esquerda se não couber à direita e
+ * dentro dos limites da tela. Vira pra esquerda se não couber à direita e
  * nunca deixa o topo/base vazar pra fora da viewport (funciona em qualquer
  * tamanho de tela, do desktop ao tablet).
  */
@@ -103,12 +103,12 @@ const CHAVE_SIDEBAR_RECOLHIDA = "azuz-crm-sidebar-recolhida";
 /**
  * A marca de "estou indo" dentro do item do menu.
  *
- * Precisa ser um componente separado porque `useLinkStatus` só funciona DENTRO do `<Link>` — é ele
+ * Precisa ser um componente separado porque `useLinkStatus` só funciona DENTRO do `<Link>`. É ele
  * que sabe se aquela navegação específica está em curso.
  *
  * Antes disto, o item só ficava marcado como ativo quando a rota TERMINAVA de trocar (o `active`
  * vem de `usePathname`). Entre o clique e a chegada não acontecia nada, e numa tela pesada isso são
- * segundos de silêncio — que a pessoa lê como "não funcionou" e clica de novo.
+ * segundos de silêncio: que a pessoa lê como "não funcionou" e clica de novo.
  */
 function IndoPara() {
   const { pending } = useLinkStatus();
@@ -118,7 +118,7 @@ function IndoPara() {
 export function Sidebar() {
   const pathname = usePathname();
   const { data: sessao } = useSession();
-  // Aberta por padrão pra quem entra — só recolhe se a própria pessoa pedir (guardado por
+  // Aberta por padrão pra quem entra. Só recolhe se a própria pessoa pedir (guardado por
   // navegador, não é preferência de conta). Lazy-init lê `localStorage` uma vez, sem flash.
   const [recolhida, setRecolhida] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -134,7 +134,7 @@ export function Sidebar() {
       try {
         localStorage.setItem(CHAVE_SIDEBAR_RECOLHIDA, proximo ? "1" : "0");
       } catch {
-        // localStorage indisponível — só não persiste entre sessões
+        // localStorage indisponível: só não persiste entre sessões
       }
       return proximo;
     });
@@ -154,7 +154,7 @@ export function Sidebar() {
   const [nomeEmpresa, setNomeEmpresa] = useState("");
   const [nomeEmpresaSincronizado, setNomeEmpresaSincronizado] = useState<string | null>(null);
   const [salvandoNome, setSalvandoNome] = useState(false);
-  // Sincroniza com a sessão assim que ela carregar — "ajustar estado durante a renderização" (não
+  // Sincroniza com a sessão assim que ela carregar. "ajustar estado durante a renderização" (não
   // num useEffect) porque só precisa rodar uma vez, quando o nome do workspace muda de verdade.
   if (sessao?.user?.workspaceNome && sessao.user.workspaceNome !== nomeEmpresaSincronizado) {
     setNomeEmpresaSincronizado(sessao.user.workspaceNome);
@@ -163,7 +163,7 @@ export function Sidebar() {
   const [workspaceAnchorRect, setWorkspaceAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: workspacePopRef, posicao: workspacePos } = useFloatingPosition(workspaceAnchorRect, workspaceAberto, 8, () => setWorkspaceAberto(false));
 
-  // Único lugar do CRM que edita o nome do workspace (`PATCH /api/workspace`, coluna real) — a
+  // Único lugar do CRM que edita o nome do workspace (`PATCH /api/workspace`, coluna real): a
   // categoria "Workspace" de Configurações > Geral foi removida por ser redundante com isto aqui.
   function salvarNomeWorkspace() {
     const nome = nomeEmpresa.trim();
@@ -208,7 +208,7 @@ export function Sidebar() {
   }
 
   /** Dá uma folga bem curta antes de fechar, só pra não fechar se o mouse passar rapidinho pelo
-   * vão até o submenu — 2s (valor anterior) dava a sensação de "não fecha nunca" quando o mouse
+   * vão até o submenu: 2s (valor anterior) dava a sensação de "não fecha nunca" quando o mouse
    * saía de vez da sidebar. */
   function agendarFechamentoGestaoAtividade() {
     cancelarFechamentoGestaoAtividade();
@@ -342,7 +342,7 @@ export function Sidebar() {
                     />
                   </div>
                 ) : (
-                  <div className="input">{nomeEmpresa || "—"}</div>
+                  <div className="input">{nomeEmpresa || "-"}</div>
                 )}
               </div>
               <div className="panel-h divided">
@@ -468,7 +468,7 @@ export function Sidebar() {
                       rel="noopener noreferrer"
                       className="dropdown-item"
                       style={{ width: "100%", textAlign: "left" }}
-                      title="Abre numa aba nova — telão pra projetar no escritório"
+                      title="Abre numa aba nova: telão pra projetar no escritório"
                     >
                       <span className="n">{item.label}</span>
                       <span className="r">TV</span>

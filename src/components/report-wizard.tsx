@@ -42,7 +42,7 @@ const CORES_CAPA: { nome: string; valor: [number, number, number] }[] = [
 ];
 
 /**
- * Configuração de um relatório — o mesmo formato que o back-end vai
+ * Configuração de um relatório: o mesmo formato que o back-end vai
  * persistir quando existir uma tabela real de relatórios (seção 28 do
  * escopo). Hoje só vive no estado do wizard e no histórico local.
  */
@@ -79,7 +79,7 @@ function tipoParaNomePadrao(tipo: TipoRelatorio): string {
 
 /**
  * Assistente em etapas usado tanto pela Central de Relatórios quanto pelo
- * botão "Gerar relatório de tráfego"/"Gerar relatório" da Jornada — mesmo
+ * botão "Gerar relatório de tráfego"/"Gerar relatório" da Jornada. Mesmo
  * componente, mesma fonte de dados. O fluxo é sequencial de verdade:
  * configurar → gerar prévia real (o mesmo PDF que será baixado) → conferir
  * → aprovar → só então exportar. Nada baixa sozinho.
@@ -150,7 +150,7 @@ export function ReportWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Campanhas reais do Meta Ads (mesmo padrão de `trafego/page.tsx`) — lista vazia sem integração
+  /** Campanhas reais do Meta Ads (mesmo padrão de `trafego/page.tsx`). Lista vazia sem integração
    * conectada, nunca dado fictício. */
   useEffect(() => {
     fetch("/api/integracoes/meta/ads/campanhas")
@@ -168,7 +168,7 @@ export function ReportWizard({
     invalidarPrevia();
   }
 
-  /** Qualquer mudança de configuração depois de aprovado invalida a prévia — precisa gerar de novo antes de exportar. */
+  /** Qualquer mudança de configuração depois de aprovado invalida a prévia. Precisa gerar de novo antes de exportar. */
   function invalidarPrevia() {
     setAprovado(false);
     if (previaUrl) URL.revokeObjectURL(previaUrl);
@@ -242,7 +242,7 @@ export function ReportWizard({
   const filtrosLabel = [
     funilFiltro !== "Todos" ? `Funil: ${funilFiltro}` : null,
     responsavelFiltro !== "Todos" ? `Responsável: ${responsavelFiltro}` : null,
-    tipo === "cliente" ? `Contato: ${contatos.find((c) => c.id === contatoId)?.nome ?? "—"}` : null,
+    tipo === "cliente" ? `Contato: ${contatos.find((c) => c.id === contatoId)?.nome ?? "-"}` : null,
     `Nível: ${nivelDetalhe === "detalhado" ? "Detalhado" : "Resumido"}`,
   ]
     .filter(Boolean)
@@ -361,7 +361,7 @@ export function ReportWizard({
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${nomeRelatorio} — ${periodoLabel(periodo)}.csv`;
+        a.download = `${nomeRelatorio} - ${periodoLabel(periodo)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
         setStatus("sucesso");
@@ -535,7 +535,7 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Resumido — indicadores principais, menos páginas
+                    Resumido: indicadores principais, menos páginas
                   </button>
                   <button
                     type="button"
@@ -545,7 +545,7 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Detalhado — todos os eventos/registros selecionados
+                    Detalhado: todos os eventos/registros selecionados
                   </button>
                 </div>
               </div>
@@ -752,7 +752,7 @@ export function ReportWizard({
                     </div>
                   ) : (
                     <p className="hint" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <IconCheck width={12} height={12} /> Nenhum problema encontrado — {totalPaginasPrevia} página(s).
+                      <IconCheck width={12} height={12} /> Nenhum problema encontrado: {totalPaginasPrevia} página(s).
                     </p>
                   )}
 
@@ -788,7 +788,7 @@ export function ReportWizard({
                     style={{ width: "100%", height: 420, border: "1px solid var(--line)", borderRadius: 10 }}
                   />
                   <p className="hint">
-                    Essa é a prévia real — o mesmo arquivo que será baixado, com zoom e navegação de página do
+                    Essa é a prévia real. O mesmo arquivo que será baixado, com zoom e navegação de página do
                     próprio visualizador de PDF do navegador.
                   </p>
 
@@ -815,7 +815,7 @@ export function ReportWizard({
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {!aprovado ? (
                 <p className="hint">
-                  O relatório ainda não foi aprovado — volte em &quot;Pré-visualização&quot; e gere/aprove a prévia
+                  O relatório ainda não foi aprovado. Volte em &quot;Pré-visualização&quot; e gere/aprove a prévia
                   primeiro.
                 </p>
               ) : (
@@ -866,7 +866,7 @@ export function ReportWizard({
                     Voltar e editar
                   </button>
                   <button type="button" className="btn ghost block" disabled title="Ainda não disponível nesta versão">
-                    Programar envio (indisponível — recurso em desenvolvimento)
+                    Programar envio (indisponível: recurso em desenvolvimento)
                   </button>
                 </>
               )}

@@ -2,7 +2,7 @@
 
 import type { AtualizarValorData, ModoAtualizarValor } from "@/lib/automation-flow/types";
 
-/** Ação "Atualizar valor do negócio" — definir um valor novo, ou somar/subtrair do valor atual. */
+/** Ação "Atualizar valor do negócio". Definir um valor novo, ou somar/subtrair do valor atual. */
 export function AtualizarValorForm({ data, onChange }: { data: AtualizarValorData; onChange: (novo: AtualizarValorData) => void }) {
   return (
     <div className="flow-form">

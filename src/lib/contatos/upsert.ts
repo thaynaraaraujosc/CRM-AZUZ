@@ -17,7 +17,7 @@ function iniciaisDe(nome: string): string {
 }
 
 /**
- * Upsert por `nome` dentro do workspace — mesma semântica que `POST /api/contatos` já usava
+ * Upsert por `nome` dentro do workspace. Mesma semântica que `POST /api/contatos` já usava
  * (extraída pra cá pra ser reaproveitada também pelos webhooks do WhatsApp, ver
  * `criarContatoPeloWhatsAppSeNaoExistir` abaixo, em vez de duplicar a lógica de criação).
  */
@@ -40,7 +40,7 @@ export async function upsertContato(params: {
   }
   // É por AQUI que quase todo lead de verdade entra: o webhook do WhatsApp/Instagram cria o contato
   // na primeira mensagem. Sem o disparo aqui, "Lead criado" valeria só pra quem fosse cadastrado à
-  // mão — ou seja, quase nunca.
+  // mão: ou seja, quase nunca.
   const criado = await prisma.contato.create({
     data: {
       id: `${workspaceId}-${slugId(nome)}`,
@@ -49,9 +49,9 @@ export async function upsertContato(params: {
       nome,
       origem: origemPadrao,
       etapa: "Novo",
-      responsavel: "—",
+      responsavel: "-",
       ultima: "Agora",
-      valor: "—",
+      valor: "-",
       ...dados,
       etiquetas: dados.etiquetas ?? undefined,
     },
@@ -61,7 +61,7 @@ export async function upsertContato(params: {
 }
 
 /**
- * Acha um Contato existente pelo telefone (comparação normalizada — dígitos + correção do 9º
+ * Acha um Contato existente pelo telefone (comparação normalizada. Dígitos + correção do 9º
  * dígito BR, ver `normalizarTelefoneParaComparacao`), não pelo `contains` cru que os webhooks
  * usavam antes: `"(62) 99999-9999"` cadastrado à mão nunca batia com `"5562999999999"` vindo do
  * WhatsApp, mesmo sendo o mesmo número. O dataset de contatos por workspace é pequeno o bastante
@@ -72,8 +72,8 @@ export async function encontrarContatoPorTelefone(workspaceId: string, telefone:
   if (!normalizado) return null;
 
   // Só `id` e `whatsapp` na varredura, e a linha inteira APENAS do contato que bateu. A versão
-  // anterior trazia todos os contatos do workspace inteiros — inclusive `fotoUrl`, que guarda a
-  // foto em base64 — a cada mensagem recebida pelo WhatsApp. Com algumas centenas de contatos
+  // anterior trazia todos os contatos do workspace inteiros. Inclusive `fotoUrl`, que guarda a
+  // foto em base64: a cada mensagem recebida pelo WhatsApp. Com algumas centenas de contatos
   // isso eram megabytes saindo do banco por mensagem, pagos por gigabyte na Railway, pra achar
   // um telefone. Era a maior fonte de egress que sobrava depois do `304` nas telas.
   const candidatos = await prisma.contato.findMany({
@@ -86,7 +86,7 @@ export async function encontrarContatoPorTelefone(workspaceId: string, telefone:
 }
 
 /** Identificador de grupo do WhatsApp (`<id>@g.us`, ou só os dígitos dele). Telefone brasileiro
- * com DDI tem 12–13 dígitos; id de grupo tem 15 ou mais e começa por `1203`. */
+ * com DDI tem 12-13 dígitos; id de grupo tem 15 ou mais e começa por `1203`. */
 export function ehIdentificadorDeGrupo(valor: string | null | undefined): boolean {
   if (!valor) return false;
   if (valor.includes("@g.us")) return true;
@@ -96,7 +96,7 @@ export function ehIdentificadorDeGrupo(valor: string | null | undefined): boolea
 
 /**
  * Chamado pelos webhooks do WhatsApp (Meta oficial e Evolution API/QR Code) quando chega mensagem
- * de um número — cria o Contato automaticamente se ainda não existir (por telefone OU por nome já
+ * de um número: cria o Contato automaticamente se ainda não existir (por telefone OU por nome já
  * casado com o perfil/número), preenchendo nome e WhatsApp direto do que a mensagem trouxe. Sem
  * isso, número novo virava só uma Conversa "órfã", nunca aparecendo na tela de Contatos até alguém
  * salvar manualmente.
@@ -109,7 +109,7 @@ export async function criarContatoPeloWhatsAppSeNaoExistir(params: {
   const { workspaceId, nome, whatsapp } = params;
 
   // Um grupo NÃO é um lead. O identificador de grupo do WhatsApp (`<id>@g.us`, 15+ dígitos, ex.:
-  // `120363422457482263`) não é telefone de ninguém — quando virava contato, aparecia na carteira
+  // `120363422457482263`) não é telefone de ninguém. Quando virava contato, aparecia na carteira
   // de clientes e no funil como "+120363422457482263", entulhando as duas telas com algo que nunca
   // deveria estar lá. A conversa do grupo continua existindo normalmente; só não gera contato.
   if (ehIdentificadorDeGrupo(whatsapp)) return null;
@@ -149,7 +149,7 @@ export async function criarContatoPeloInstagramSeNaoExistir(params: {
   });
 }
 
-/** Busca por @ do Instagram ignorando arroba e caixa — "@Fulana" e "fulana" são a mesma pessoa. */
+/** Busca por @ do Instagram ignorando arroba e caixa. "@Fulana" e "fulana" são a mesma pessoa. */
 export async function encontrarContatoPorInstagram(workspaceId: string, arroba: string) {
   const alvo = arroba.replace(/^@/, "").trim().toLowerCase();
   if (!alvo) return null;

@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /** nodes/edges/configuracoes/historicoVersoes têm tipos TS ricos (genéricos, uniões) que o Prisma
- * não consegue casar estruturalmente com `InputJsonValue` — o valor em runtime já é JSON puro (veio
+ * não consegue casar estruturalmente com `InputJsonValue`. O valor em runtime já é JSON puro (veio
  * de `request.json()`), então o cast é só pra satisfazer o TS. */
 function comoJson(valor: unknown): Prisma.InputJsonValue {
   return valor as Prisma.InputJsonValue;
@@ -40,7 +40,7 @@ export async function GET() {
   return NextResponse.json(linhas.map(paraFluxo));
 }
 
-/** POST cria um fluxo novo (ou uma cópia) — mesma semântica de `criarFluxo`/`duplicarFluxo`. */
+/** POST cria um fluxo novo (ou uma cópia). Mesma semântica de `criarFluxo`/`duplicarFluxo`. */
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });

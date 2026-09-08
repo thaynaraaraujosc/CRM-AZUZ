@@ -197,7 +197,7 @@ export function ConfigPanel({
         {aba === "problemas" ? (
           <div className="flow-form">
             {problemas.length === 0 ? (
-              <p className="hint">Nenhum problema encontrado — esse fluxo está pronto pra publicar.</p>
+              <p className="hint">Nenhum problema encontrado: esse fluxo está pronto pra publicar.</p>
             ) : (
               problemas.map((p) => (
                 <button
@@ -252,7 +252,7 @@ export function ConfigPanel({
             </div>
           </>
         ) : selectedNodes.length > 1 ? (
-          <p className="hint">{selectedNodes.length} blocos selecionados — selecione um só pra configurar, ou nenhum pra ver as configurações gerais do fluxo.</p>
+          <p className="hint">{selectedNodes.length} blocos selecionados: selecione um só pra configurar, ou nenhum pra ver as configurações gerais do fluxo.</p>
         ) : (
           <>
             <div className="panel-h">

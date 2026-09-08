@@ -1,5 +1,5 @@
 /**
- * Tipos e rótulos do público de um disparo — SEM banco, porque a tela importa daqui. A resolução
+ * Tipos e rótulos do público de um disparo. SEM banco, porque a tela importa daqui. A resolução
  * de verdade (quem recebe) mora em `audiencia.ts`, que puxa o Prisma e só roda no servidor.
  */
 export type ModoAudiencia = "todos" | "selecionados" | "etiqueta" | "origem" | "funil" | "etapa" | "periodo";

@@ -1,13 +1,13 @@
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+This version has breaking changes. APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
 # Referências de design do CRM AZUZ
 
 Fontes que a Thaynara escolheu para guiar a evolução visual do produto. Servem como **referência
-de princípios** (hierarquia, espaçamento, densidade, microinterações) — não para copiar telas nem
+de princípios** (hierarquia, espaçamento, densidade, microinterações): não para copiar telas nem
 para importar componentes sem avaliar peso, acessibilidade e encaixe na identidade azul do CRM.
 
 | Fonte | Endereço | Para quê |
@@ -18,7 +18,7 @@ para importar componentes sem avaliar peso, acessibilidade e encaixe na identida
 | Dribbble | https://dribbble.com/ | Inspiração visual. Termos úteis: `CRM dashboard`, `SaaS dashboard`, `sales pipeline`, `inbox UI`, `dark SaaS`. |
 
 Contraste de cor: usar o **Color Contrast Checker** do Figma. (Havia uma quarta ferramenta chamada
-"Color" que não foi identificada com segurança — se aparecer o endereço certo, é só acrescentar aqui.)
+"Color" que não foi identificada com segurança. Se aparecer o endereço certo, é só acrescentar aqui.)
 
 ## Como usar isto sem estragar o que existe
 
@@ -26,6 +26,6 @@ Contraste de cor: usar o **Color Contrast Checker** do Figma. (Havia uma quarta 
   identidade, nunca para substituí-la por outra.
 - O produto evita glow, neon, gradiente pesado, vidro em tudo e arredondamento exagerado. A
   sensação de produto caro vem de proporção, tipografia, espaçamento e consistência.
-- Componente copiado de fora precisa passar pelos tokens do `globals.css` antes de entrar — caso
+- Componente copiado de fora precisa passar pelos tokens do `globals.css` antes de entrar. Caso
   contrário o CRM volta a ter várias linguagens visuais convivendo, que foi o problema que a
   unificação do renderizador de mensagens acabou de resolver.

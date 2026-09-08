@@ -21,7 +21,7 @@ type ContatosContextValue = {
   /**
    * Cria o contato se ainda não existir (ex.: alguém que só existe no WhatsApp), ou atualiza os dados dele.
    * Aceita qualquer campo extra (ex.: `etiquetas`, `camposPersonalizados`) além dos campos tipados de
-   * `DadosContato` — é o que o motor de automação usa via `Ligacoes.salvarContato` pra gravar mudanças
+   * `DadosContato`: é o que o motor de automação usa via `Ligacoes.salvarContato` pra gravar mudanças
    * de etiqueta/campo que não têm uma coluna dedicada em `Contato`.
    */
   salvarDadosContato: (nome: string, dados: Partial<DadosContato> & Record<string, unknown>) => void;
@@ -31,7 +31,7 @@ type ContatosContextValue = {
   adicionarEtiqueta: (nome: string, etiqueta: string) => void;
   removerEtiqueta: (nome: string, etiqueta: string) => void;
   alternarFavorito: (nome: string) => void;
-  /** Edita os dados de um contato existente, por id (não mexe em `nome`/`id` — evita quebrar
+  /** Edita os dados de um contato existente, por id (não mexe em `nome`/`id`. Evita quebrar
    * referências por nome usadas em Funis/Automações/etc). */
   atualizarContato: (id: string, dados: Partial<DadosContato>) => void;
   excluirContato: (id: string) => void;
@@ -50,11 +50,11 @@ function iniciais(nome: string) {
 }
 
 /**
- * Piloto de migração pro banco real (MySQL/Railway via Prisma, ver `src/app/api/contatos/`) — o
+ * Piloto de migração pro banco real (MySQL/Railway via Prisma, ver `src/app/api/contatos/`): o
  * contrato público do Provider continua o mesmo de antes (mesmas funções, mesmas assinaturas), só o
  * motor por dentro mudou: em vez de `localStorage`, busca da API no mount e cada mutação atualiza o
  * estado local otimisticamente E dispara a chamada real pra API, sem bloquear a UI. Falha de rede só
- * loga no console nesta fase — sem toast de erro ainda (fica pra quando o padrão se expandir pros
+ * loga no console nesta fase. Sem toast de erro ainda (fica pra quando o padrão se expandir pros
  * outros módulos).
  */
 export function ContatosProvider({ children }: { children: ReactNode }) {

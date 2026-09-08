@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
-/** Categorias do menu "Adicionar campo" — mesma organização usada no painel de configuração. */
+/** Categorias do menu "Adicionar campo". Mesma organização usada no painel de configuração. */
 export type CategoriaCampo = "texto" | "data" | "escolha" | "upload" | "pessoas" | "layout";
 
 export type TipoCampoFormulario =
@@ -38,7 +38,7 @@ export type TipoCampoFormulario =
   | "sim_nao"
   | "avaliacao"
   | "nota"
-  // upload (visual apenas — sem storage real, front-end apenas)
+  // upload (visual apenas: sem storage real, front-end apenas)
   | "arquivo"
   | "documento"
   | "imagem"
@@ -107,7 +107,7 @@ export const CATEGORIAS_CAMPO: { categoria: CategoriaCampo; label: string }[] = 
   { categoria: "layout", label: "Layout" },
 ];
 
-/** Tipos que não capturam resposta — são só blocos visuais no canvas. */
+/** Tipos que não capturam resposta. São só blocos visuais no canvas. */
 export const TIPOS_LAYOUT: TipoCampoFormulario[] = [
   "titulo",
   "texto_bloco",
@@ -116,7 +116,7 @@ export const TIPOS_LAYOUT: TipoCampoFormulario[] = [
   "imagem_bloco",
 ];
 
-/** Tipos de upload de arquivo — guardam a resposta como "nomeDoArquivo|data:...;base64,..." (ver
+/** Tipos de upload de arquivo. Guardam a resposta como "nomeDoArquivo|data:...;base64,..." (ver
  * `campo-resposta.tsx`), não texto puro. Assinatura fica de fora: já é só a imagem em data URL,
  * sem nome de arquivo pra separar. */
 export const TIPOS_UPLOAD: TipoCampoFormulario[] = ["arquivo", "documento", "imagem", "video", "audio"];
@@ -127,7 +127,7 @@ export function labelTipoCampo(tipo: TipoCampoFormulario) {
 
 export const CORES_TEMA_FORMULARIO = ["#2e6bff", "#0f9d63", "#c9660a", "#d81b60", "#8a3ffc", "#0b1533"];
 
-/** Campos do Contato que uma pergunta pode ser mapeada — usado no seletor "Mapear para campo
+/** Campos do Contato que uma pergunta pode ser mapeada. Usado no seletor "Mapear para campo
  * existente" e na hora de criar/atualizar o contato de verdade ao registrar uma resposta. */
 export const CAMPOS_CRM_MAPEAVEIS: { campo: string; label: string }[] = [
   { campo: "nome", label: "Nome" },
@@ -178,16 +178,16 @@ export type PerguntaFormulario = {
   opcoes?: string[];
   min?: number;
   max?: number;
-  /** Padrão de máscara (ex.: "999.999.999-99") — "9" vira dígito digitado, o resto é literal e é
+  /** Padrão de máscara (ex.: "999.999.999-99"): "9" vira dígito digitado, o resto é literal e é
    * inserido automaticamente enquanto a pessoa digita. Só faz sentido pra campos de texto/número. */
   mascara?: string;
   /** Regex adicional que o valor precisa bater pra ser aceito no envio (além de obrigatório/min/max). */
   regex?: string;
   largura: "total" | "metade";
-  /** Campo do Contato que essa resposta preenche de verdade — undefined = campo novo, não mapeado. */
+  /** Campo do Contato que essa resposta preenche de verdade. Undefined = campo novo, não mapeado. */
   mapeamentoCrm?: string;
   logica?: LogicaCampo;
-  /** Aparência individual — sem valor definido, cada propriedade cai no visual padrão do tema do formulário. */
+  /** Aparência individual: sem valor definido, cada propriedade cai no visual padrão do tema do formulário. */
   estilo?: {
     corFundo?: string;
     corBorda?: string;
@@ -209,7 +209,7 @@ export type PaginaFormulario = {
   titulo: string;
   descricao?: string;
   perguntas: PerguntaFormulario[];
-  /** Se definida, a página só é exibida quando a condição bate — avaliada contra respostas de páginas anteriores. */
+  /** Se definida, a página só é exibida quando a condição bate. Avaliada contra respostas de páginas anteriores. */
   condicao?: CondicaoPagina;
 };
 
@@ -228,7 +228,7 @@ export type TemaFormulario = {
 
 export type StatusFormulario = "rascunho" | "publicado";
 
-/** Fotografia do conteúdo do formulário no momento em que foi publicado — permite voltar pra uma
+/** Fotografia do conteúdo do formulário no momento em que foi publicado. Permite voltar pra uma
  * versão anterior sem precisar reconstruir tudo manualmente. Não existe backend/cron aqui: a
  * fotografia é tirada só quando `alternarPublicacao` liga o status pra "publicado". */
 export type VersaoFormulario = {
@@ -254,13 +254,13 @@ export type Formulario = {
   tema: TemaFormulario;
   senha?: string;
   /** Quando preenchido, cada resposta pública vira automaticamente um negócio no funil/etapa
-   * escolhidos e dispara o evento "formulario_preenchido" pras automações — ver `/formulario-preview`. */
+   * escolhidos e dispara o evento "formulario_preenchido" pras automações. Ver `/formulario-preview`. */
   integracoes?: {
     funilId?: string;
     etapaTitulo?: string;
     responsavelPadrao?: string;
   };
-  /** Histórico de fotografias tiradas a cada publicação — mais recente por último. */
+  /** Histórico de fotografias tiradas a cada publicação. Mais recente por último. */
   versoes: VersaoFormulario[];
   criadoEm: string;
   atualizadoEm: string;
@@ -323,7 +323,7 @@ function formularioNovo(): Formulario {
   };
 }
 
-/** Exportado só pra `prisma/seed.ts` semear a tabela — o Provider agora busca da API. */
+/** Exportado só pra `prisma/seed.ts` semear a tabela. O Provider agora busca da API. */
 export const FORMULARIOS_INICIAIS: Formulario[] = [
   (() => {
     const base = formularioNovo();
@@ -331,7 +331,7 @@ export const FORMULARIOS_INICIAIS: Formulario[] = [
       ...base,
       id: "form-triagem",
       nome: "Triagem de novo paciente",
-      descricao: "Leva menos de 2 minutos — nos ajuda a te atender melhor.",
+      descricao: "Leva menos de 2 minutos. Nos ajuda a te atender melhor.",
       status: "publicado" as StatusFormulario,
       senha: "vitta2026",
       paginas: [
@@ -416,8 +416,8 @@ const MAPA_TIPO_LEGADO: Record<LegadoPerguntaTipo, TipoCampoFormulario> = {
 
 /**
  * Formulários salvos com o schema antigo (lista plana `perguntas`, sem `paginas`/`status`/`tema`)
- * viram uma única página, preservando o que o usuário já tinha criado em vez de resetar tudo —
- * mesmo espírito de `lerPrefVer` em Documentos, mas pra uma migração de shape inteira.
+ * viram uma única página, preservando o que o usuário já tinha criado em vez de resetar tudo.
+ * Mesmo espírito de `lerPrefVer` em Documentos, mas pra uma migração de shape inteira.
  */
 export function migrarFormulario(bruto: unknown): Formulario {
   const f = bruto as Record<string, unknown>;
@@ -503,7 +503,7 @@ type FormulariosContextValue = {
 const FormulariosContext = createContext<FormulariosContextValue | null>(null);
 
 /**
- * Banco real (ver src/app/api/formularios/) — páginas/perguntas/tema/versões ficam como Json na
+ * Banco real (ver src/app/api/formularios/): páginas/perguntas/tema/versões ficam como Json na
  * própria linha do formulário porque os mutadores sempre recalculam o array inteiro e substituem via
  * `tocar()`, o helper central que agora também sincroniza com a API a cada chamada.
  */
@@ -516,7 +516,7 @@ function criarRemoto(formulario: Formulario) {
 }
 
 /**
- * Formulários viram contatos do CRM quando alguém responde — por isso as respostas registradas
+ * Formulários viram contatos do CRM quando alguém responde. Por isso as respostas registradas
  * aqui são usadas por quem chama `registrarResposta` (a própria página pública) pra também
  * atualizar o contato certo via `mapeamentoCrm` de cada pergunta.
  */
@@ -609,7 +609,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
     });
   }
 
-  /** Restaura o conteúdo (páginas/tema/mensagem final) de uma versão publicada anterior — o
+  /** Restaura o conteúdo (páginas/tema/mensagem final) de uma versão publicada anterior. O
    * formulário volta pra rascunho pra dar chance de revisar antes de publicar de novo. */
   function restaurarVersaoFormulario(formularioId: string, versaoId: string) {
     tocar(formularioId, (f) => {
@@ -803,7 +803,7 @@ export function useFormularios() {
 }
 
 /**
- * Avalia uma condição de página/lógica de campo contra os valores já respondidos — usada tanto no
+ * Avalia uma condição de página/lógica de campo contra os valores já respondidos. Usada tanto no
  * builder (pra listar campos disponíveis) quanto na página pública (pra decidir o que mostrar).
  */
 export function condicaoBate(
@@ -830,7 +830,7 @@ export function condicaoBate(
 
 /**
  * Aplica uma máscara simples de dígito ("9" no padrão = próximo dígito digitado, qualquer outro
- * caractere do padrão é literal e entra sozinho) — mesma convenção usada por libs de máscara mais
+ * caractere do padrão é literal e entra sozinho). Mesma convenção usada por libs de máscara mais
  * conhecidas, suficiente pra CPF/CNPJ/telefone sem precisar de dependência nova. Ignora tudo que não
  * for dígito no valor digitado, então funciona bem tanto digitando quanto colando.
  */

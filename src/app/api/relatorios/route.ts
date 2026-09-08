@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-/** GET lista o histórico de relatórios já gerados do workspace, mais recentes primeiro — antes só
+/** GET lista o histórico de relatórios já gerados do workspace, mais recentes primeiro: antes só
  * vivia no localStorage do navegador (perdia ao trocar de dispositivo) e conta nova começava com
  * 3 relatórios de exemplo fictícios; agora é sempre o histórico real, vazio até o primeiro
  * relatório de verdade ser gerado. */
@@ -46,7 +46,7 @@ type CorpoCriarRelatorio = {
   configuracao: unknown;
 };
 
-/** POST registra um relatório recém-gerado — histórico é sempre apêndice (nunca editado ou
+/** POST registra um relatório recém-gerado. Histórico é sempre apêndice (nunca editado ou
  * reordenado depois de criado), então não precisa de PUT de estado inteiro como Funil/Tarefas. */
 export async function POST(request: Request) {
   const sessao = await auth();

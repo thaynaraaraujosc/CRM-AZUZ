@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 /**
  * Progresso da sincronização de histórico sob demanda (ver `POST
- * .../whatsapp-nao-oficial/sincronizar-historico`) — guardado dentro de
+ * .../whatsapp-nao-oficial/sincronizar-historico`): guardado dentro de
  * `Integracao.metadados` (não uma tabela própria: é estado transitório de UMA sincronização, não
  * um dado de negócio que precise de histórico/relacionamentos próprios).
  *
@@ -39,7 +39,7 @@ export async function salvarHistorico(
   });
 }
 
-/** Chamado assim que a conexão abre pela primeira vez — não faz nada se esse workspace já tem uma
+/** Chamado assim que a conexão abre pela primeira vez. Não faz nada se esse workspace já tem uma
  * sincronização (em andamento ou já concluída) registrada, pra uma reconexão comum (celular caiu e
  * voltou) não reprocessar o histórico inteiro de novo. */
 export async function iniciarHistoricoSeNecessario(workspaceId: string): Promise<void> {

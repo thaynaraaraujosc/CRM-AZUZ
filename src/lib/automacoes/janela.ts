@@ -2,15 +2,15 @@ import type { DiaSemana } from "@/lib/data";
 import type { ConfiguracoesFluxo } from "@/lib/automation-flow/types";
 
 /**
- * A janela de funcionamento da automação — dias ativos e faixa de horário.
+ * A janela de funcionamento da automação. Dias ativos e faixa de horário.
  *
  * Isto existia na tela e quase funcionava: "Aguardar próxima janela" tinha o mesmo efeito de
  * "continuar mesmo assim", porque o único caminho possível era deixar passar ou barrar. Com o motor
- * com estado existe uma terceira coisa a fazer — começar a execução e ESTACIONAR até a janela
- * abrir — e é isso que a opção sempre prometeu.
+ * com estado existe uma terceira coisa a fazer. Começar a execução e ESTACIONAR até a janela
+ * abrir: e é isso que a opção sempre prometeu.
  *
  * Fuso: a conta é feita na hora do servidor. Quando `fusoHorario` estiver configurado, ele é usado
- * pra descobrir que horas são no fuso da empresa — senão uma automação "das 8 às 18" de um cliente
+ * pra descobrir que horas são no fuso da empresa. Senão uma automação "das 8 às 18" de um cliente
  * em Manaus dispararia pelo relógio de São Paulo.
  */
 const DIAS: DiaSemana[] = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
@@ -38,7 +38,7 @@ function momento(cfg: ConfiguracoesFluxo, agora: Date): { dia: DiaSemana; minuto
 
   const hora = Number(partes.find((p) => p.type === "hour")?.value ?? "0");
   const minuto = Number(partes.find((p) => p.type === "minute")?.value ?? "0");
-  // `formatToParts` devolve o dia como "seg.", "ter."… — o ponto sai fora.
+  // `formatToParts` devolve o dia como "seg.", "ter."…: o ponto sai fora.
   const rotulo = (partes.find((p) => p.type === "weekday")?.value ?? "").replace(".", "").toLowerCase();
   const dia = (DIAS.find((d) => rotulo.startsWith(d)) ?? DIAS[agora.getDay()]) as DiaSemana;
 
@@ -66,8 +66,8 @@ export function dentroDaJanela(cfg: ConfiguracoesFluxo | null | undefined, agora
 }
 
 /**
- * Quando a janela abre de novo. Procura minuto a minuto em passos de 15 pelos próximos 8 dias —
- * simples de ler e mais que suficiente pra qualquer configuração de dias/horário.
+ * Quando a janela abre de novo. Procura minuto a minuto em passos de 15 pelos próximos 8 dias.
+ * Simples de ler e mais que suficiente pra qualquer configuração de dias/horário.
  *
  * Devolve `null` quando nenhuma abertura existe nos próximos 8 dias: é o caso de uma configuração
  * impossível (nenhum dia ativo), e quem chama trata como "não dá pra esperar".

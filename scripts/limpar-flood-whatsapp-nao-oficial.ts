@@ -1,4 +1,4 @@
-// Script de uso único — limpa o que floodou o banco na primeira conexão do WhatsApp não oficial
+// Script de uso único: limpa o que floodou o banco na primeira conexão do WhatsApp não oficial
 // (Evolution API trouxe TODO o histórico do celular de uma vez, antes da correção que só aceita
 // mensagem recente). Apaga só o que nasceu desse flood: mensagens com canal "whatsapp_nao_oficial",
 // os contatos que a Evolution criou sozinha a partir delas (criadoVia="whatsapp"), as conversas e
@@ -13,7 +13,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 setDefaultResultOrder("ipv4first");
 
 if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL não encontrada — confira se o arquivo .env existe na raiz do projeto.");
+  console.error("DATABASE_URL não encontrada: confira se o arquivo .env existe na raiz do projeto.");
   process.exit(1);
 }
 
@@ -45,7 +45,7 @@ async function main() {
     console.log(`Contatos apagados: ${contatos.count}`);
   }
 
-  console.log("Limpeza concluída — o número continua conectado, só o histórico importado errado saiu.");
+  console.log("Limpeza concluída: o número continua conectado, só o histórico importado errado saiu.");
   await prisma.$disconnect();
 }
 

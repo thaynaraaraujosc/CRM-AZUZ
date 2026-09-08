@@ -4,10 +4,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /**
- * Criar e apagar funil/etapa — gravado na hora, e não pelo PUT de estado inteiro.
+ * Criar e apagar funil/etapa: gravado na hora, e não pelo PUT de estado inteiro.
  *
  * Criar era a operação mais frágil do módulo: dependia de um PUT debouçado que reconciliava o funil
- * inteiro dentro de uma transação única. Qualquer falha em qualquer parte descartava tudo — e como
+ * inteiro dentro de uma transação única. Qualquer falha em qualquer parte descartava tudo. E como
  * o cliente não olhava a resposta, o funil novo simplesmente não existia depois do F5, sem erro,
  * sem aviso, sem pista.
  *
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     if (!corpo.id || !corpo.nome || !corpo.funilId) {
       return NextResponse.json({ erro: "id, nome e funilId são obrigatórios" }, { status: 400 });
     }
-    // O funil precisa ser desta empresa — id de outro workspace não vira etapa aqui.
+    // O funil precisa ser desta empresa. Id de outro workspace não vira etapa aqui.
     const funil = await prisma.funil.findFirst({ where: { id: corpo.funilId, workspaceId }, select: { id: true } });
     if (!funil) return NextResponse.json({ erro: "Funil não encontrado." }, { status: 404 });
 
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
 }
 
 /**
- * Apaga uma etapa ou um funil — recusando quando há negócio dentro.
+ * Apaga uma etapa ou um funil. Recusando quando há negócio dentro.
  *
  * `?destinoEtapaId=` move os negócios antes de apagar. Sem ele, e havendo negócios, a resposta é
  * 409 com a contagem: quem chama decide o que fazer, em vez de descobrir depois que os leads
@@ -112,7 +112,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json(
         {
           erro:
-            `Existem ${negocios} negócios aqui dentro. Escolha para onde movê-los antes de apagar — ` +
+            `Existem ${negocios} negócios aqui dentro. Escolha para onde movê-los antes de apagar. ` +
             "apagar levaria o histórico deles junto.",
           negocios,
           precisaDestino: true,

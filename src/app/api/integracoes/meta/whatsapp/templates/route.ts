@@ -7,13 +7,13 @@ import { contaConectada, tratarErroEnvio } from "@/lib/integracoes/whatsapp-ofic
 import { sincronizarTemplatesMeta } from "@/lib/templates/sincronizar-meta";
 
 /**
- * Modelos de mensagem (templates) do WhatsApp Business — cada WABA tem os próprios, não existe
+ * Modelos de mensagem (templates) do WhatsApp Business. Cada WABA tem os próprios, não existe
  * template global. São o único jeito de falar com alguém fora da janela de 24h.
  *
  * O status inicial é sempre PENDING; a aprovação/rejeição chega pelo webhook
  * `message_template_status_update` e atualiza o registro local (sem polling).
  */
-/** GET sincroniza a lista da Graph API com o espelho local e devolve o espelho — assim a tela
+/** GET sincroniza a lista da Graph API com o espelho local e devolve o espelho. Assim a tela
  * funciona mesmo se a Graph estiver fora do ar no momento. A sincronização mora em
  * `src/lib/templates/sincronizar-meta.ts`, compartilhada com `/api/templates`. */
 export async function GET() {
@@ -94,7 +94,7 @@ export async function DELETE(request: Request) {
     await chamarGraph(`/${conta.wabaId}/message_templates?name=${encodeURIComponent(nome)}`, conta.accessToken, {
       method: "DELETE",
     });
-    // Filtra por workspace também — nunca só pelo nome, senão apagaria o espelho de outra empresa
+    // Filtra por workspace também: nunca só pelo nome, senão apagaria o espelho de outra empresa
     // que por acaso usa o mesmo nome de modelo.
     await prisma.whatsappTemplate.deleteMany({ where: { workspaceId, nome } });
     return NextResponse.json({ ok: true });

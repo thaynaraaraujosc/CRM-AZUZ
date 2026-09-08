@@ -9,7 +9,7 @@ import HumanoNode from "./HumanoNode";
 import IntegracaoNode from "./IntegracaoNode";
 import MensagemNode from "./MensagemNode";
 
-/** Um componente por `FlowNodeCategory` — todos reaproveitam `NodeShell`, ver comentário lá. */
+/** Um componente por `FlowNodeCategory`: todos reaproveitam `NodeShell`, ver comentário lá. */
 export const nodeTypes: NodeTypes = {
   gatilho: GatilhoNode,
   condicao: CondicaoNode,

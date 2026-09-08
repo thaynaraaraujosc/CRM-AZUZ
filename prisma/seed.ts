@@ -3,7 +3,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import bcrypt from "bcryptjs";
 
-// Ver src/lib/prisma.ts — mesma correção pro script de seed, que abre sua própria conexão.
+// Ver src/lib/prisma.ts: mesma correção pro script de seed, que abre sua própria conexão.
 setDefaultResultOrder("ipv4first");
 
 import {
@@ -22,13 +22,13 @@ const prisma = new PrismaClient({ adapter });
 
 const WORKSPACE_SEED_ID = "empresa-demo";
 
-/** Multi-tenancy Fase 1 — Workspace de demonstração local (dev only, nunca roda em produção — ver
+/** Multi-tenancy Fase 1: Workspace de demonstração local (dev only, nunca roda em produção: ver
  * prisma.config.ts, só é chamado via `npx prisma db seed`), dono dos 6 membros já semeados em
  * `semearEquipe`. */
 async function semearWorkspace() {
   const existente = await prisma.workspace.findUnique({ where: { id: WORKSPACE_SEED_ID } });
   if (existente) {
-    console.log("Workspace de demonstração já existe — nada a semear.");
+    console.log("Workspace de demonstração já existe. Nada a semear.");
     return;
   }
 
@@ -41,7 +41,7 @@ async function semearWorkspace() {
 async function semearContatos() {
   const total = await prisma.contato.count();
   if (total > 0) {
-    console.log(`Tabela Contato já tem ${total} registro(s) — nada a semear.`);
+    console.log(`Tabela Contato já tem ${total} registro(s). Nada a semear.`);
     return;
   }
 
@@ -54,7 +54,7 @@ async function semearContatos() {
 async function semearEquipe() {
   const total = await prisma.membro.count();
   if (total > 0) {
-    console.log(`Tabela Membro já tem ${total} registro(s) — nada a semear.`);
+    console.log(`Tabela Membro já tem ${total} registro(s). Nada a semear.`);
     return;
   }
 
@@ -63,7 +63,7 @@ async function semearEquipe() {
       ...m,
       workspaceId: WORKSPACE_SEED_ID,
       permissoes: m.permissoes,
-      // Senha do mock era texto puro (resquício do piloto) — vira hash bcrypt real no seed.
+      // Senha do mock era texto puro (resquício do piloto). Vira hash bcrypt real no seed.
       senha: m.senha ? await bcrypt.hash(m.senha, 10) : null,
     })),
   );
@@ -74,7 +74,7 @@ async function semearEquipe() {
 async function semearTarefas() {
   const total = await prisma.tarefaEtapa.count();
   if (total > 0) {
-    console.log(`Tabela TarefaEtapa já tem ${total} registro(s) — nada a semear.`);
+    console.log(`Tabela TarefaEtapa já tem ${total} registro(s). Nada a semear.`);
     return;
   }
 
@@ -114,7 +114,7 @@ async function semearTarefas() {
 async function semearFunis() {
   const total = await prisma.funil.count();
   if (total > 0) {
-    console.log(`Tabela Funil já tem ${total} registro(s) — nada a semear.`);
+    console.log(`Tabela Funil já tem ${total} registro(s). Nada a semear.`);
     return;
   }
 
@@ -155,7 +155,7 @@ async function semearFunis() {
 async function semearBibliotecaDocumentos() {
   const total = await prisma.documentoBiblioteca.count();
   if (total > 0) {
-    console.log(`Tabela DocumentoBiblioteca já tem ${total} registro(s) — nada a semear.`);
+    console.log(`Tabela DocumentoBiblioteca já tem ${total} registro(s). Nada a semear.`);
     return;
   }
 
@@ -168,7 +168,7 @@ async function semearBibliotecaDocumentos() {
 async function semearFormularios() {
   const total = await prisma.formulario.count();
   if (total > 0) {
-    console.log(`Tabela Formulario já tem ${total} registro(s) — nada a semear.`);
+    console.log(`Tabela Formulario já tem ${total} registro(s). Nada a semear.`);
     return;
   }
 
@@ -181,14 +181,14 @@ async function semearFormularios() {
 async function semearFluxosAutomacao() {
   const total = await prisma.fluxoAutomacao.count();
   if (total > 0) {
-    console.log(`Tabela FluxoAutomacao já tem ${total} registro(s) — nada a semear.`);
+    console.log(`Tabela FluxoAutomacao já tem ${total} registro(s). Nada a semear.`);
     return;
   }
 
   const fluxos = fluxosIniciaisPadrao();
   await prisma.fluxoAutomacao.createMany({
     // nodes/edges/configuracoes/historicoVersoes têm tipos TS ricos que o Prisma não casa
-    // estruturalmente com InputJsonValue — em runtime já é JSON puro, o cast é só pro TS.
+    // estruturalmente com InputJsonValue: em runtime já é JSON puro, o cast é só pro TS.
     data: fluxos.map((f) => ({
       ...f,
       workspaceId: WORKSPACE_SEED_ID,
@@ -201,13 +201,13 @@ async function semearFluxosAutomacao() {
 async function semearDocumentos() {
   const total = await prisma.documento.count();
   if (total > 0) {
-    console.log(`Tabela Documento já tem ${total} registro(s) — nada a semear.`);
+    console.log(`Tabela Documento já tem ${total} registro(s). Nada a semear.`);
     return;
   }
 
   await prisma.documento.createMany({
     // paginas/config/pessoasAcesso/comentarios/versoes têm tipos TS ricos que o Prisma não casa
-    // estruturalmente com InputJsonValue — em runtime já é JSON puro, o cast é só pro TS.
+    // estruturalmente com InputJsonValue: em runtime já é JSON puro, o cast é só pro TS.
     data: DOCUMENTOS_INICIAIS.map((d) => ({ ...d, workspaceId: WORKSPACE_SEED_ID })) as unknown as NonNullable<
       Parameters<typeof prisma.documento.createMany>[0]
     >["data"],

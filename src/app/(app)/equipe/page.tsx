@@ -9,6 +9,7 @@ import { useTarefas } from "@/lib/tarefas-context";
 import { IconClose } from "@/components/icons";
 import { PERMISSOES_POR_MODULO } from "@/lib/configuracoes/permissoes";
 import { Toggle, Topbar } from "@/components/ui";
+import { ehVazio } from "@/lib/vazio";
 
 const LABEL_PERMISSAO: Record<string, string> = Object.fromEntries(
   PERMISSOES_POR_MODULO.flatMap((grupo) => grupo.permissoes.map((p) => [p.id, `${grupo.modulo} · ${p.label}`])),
@@ -120,7 +121,7 @@ export default function EquipePage() {
                       </span>
                     </td>
                     <td>
-                      {m.leads === "—" ? (
+                      {ehVazio(m.leads) ? (
                         m.leads
                       ) : (
                         <span className="leads-pill">{m.leads}</span>
@@ -182,7 +183,7 @@ export default function EquipePage() {
                 style={{ marginLeft: "auto", marginRight: 10 }}
                 onClick={() => {
                   const mensagem = membro.convitePendente
-                    ? `Excluir o convite de ${membro.nome}? Ele deixa de existir — dá pra convidar outro e-mail depois.`
+                    ? `Excluir o convite de ${membro.nome}? Ele deixa de existir: dá pra convidar outro e-mail depois.`
                     : `Excluir ${membro.nome} da equipe? Ele perde o acesso ao CRM na hora.`;
                   if (!window.confirm(mensagem)) return;
                   removerMembro(membro.id);
@@ -212,7 +213,7 @@ export default function EquipePage() {
                 <div className="field">
                   <label>Senha</label>
                   {membro.convitePendente ? (
-                    <span className="pill">Ainda não definida — convite pendente</span>
+                    <span className="pill">Ainda não definida: convite pendente</span>
                   ) : senhaGerada ? (
                     <div className="key-row" style={{ padding: 0 }}>
                       <div className="key-box">{senhaGerada}</div>
@@ -239,7 +240,7 @@ export default function EquipePage() {
                         {gerandoSenha ? "Gerando…" : "Gerar nova senha"}
                       </button>
                       <p className="hint" style={{ padding: "8px 0 0" }}>
-                        A senha antiga não pode ser mostrada (é guardada de forma irreversível). Gerar uma nova substitui a atual — repasse pra pessoa.
+                        A senha antiga não pode ser mostrada (é guardada de forma irreversível). Gerar uma nova substitui a atual. Repasse pra pessoa.
                       </p>
                     </>
                   )}
@@ -250,7 +251,7 @@ export default function EquipePage() {
                 </div>
                 {membro.permissoes.length === 0 ? (
                   <p className="hint">
-                    Nenhuma permissão de CRM ligada a esse papel — {membro.enxerga.toLowerCase()}.
+                    Nenhuma permissão de CRM ligada a esse papel. {membro.enxerga.toLowerCase()}.
                   </p>
                 ) : (
                   membro.permissoes.map((permissao) => (

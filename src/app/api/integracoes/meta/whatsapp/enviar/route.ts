@@ -19,12 +19,12 @@ type ContatoPayload = {
 };
 
 /**
- * POST manda uma mensagem de verdade pelo WhatsApp Business oficial (Meta) conectado — chamada
+ * POST manda uma mensagem de verdade pelo WhatsApp Business oficial (Meta) conectado. Chamada
  * pela tela de Conversas quando o atendente responde numa conversa que NÃO é do canal
  * `whatsapp_baileys` (ver `contatoUsaWhatsappBaileys()` em conversas/page.tsx). Antes desta rota
- * existir, o envio pelo canal oficial só atualizava o estado local — nunca chamava a Graph API,
+ * existir, o envio pelo canal oficial só atualizava o estado local. Nunca chamava a Graph API,
  * então a mensagem nunca saía de verdade. Aceita `texto` (mensagem normal) OU `contato`
- * (cartão/vCard, `type: "contacts"` da Graph API) — nunca os dois juntos.
+ * (cartão/vCard, `type: "contacts"` da Graph API): nunca os dois juntos.
  */
 export async function POST(request: Request) {
   const sessao = await auth();
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     destinatario?: string;
     texto?: string;
     contato?: ContatoPayload;
-    /** Nome da conversa no CRM — usado pra checar a janela de 24h daquela pessoa. */
+    /** Nome da conversa no CRM. Usado pra checar a janela de 24h daquela pessoa. */
     contatoNome?: string;
     /** Modelo de mensagem aprovado, único jeito de falar com a janela de 24h fechada. */
     template?: { nome: string; idioma: string; componentes?: unknown[] };
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     if (!janelaAberta) {
       return NextResponse.json(
         {
-          erro: "Passaram mais de 24h desde a última mensagem dessa pessoa — pra falar agora só usando um modelo de mensagem aprovado.",
+          erro: "Passaram mais de 24h desde a última mensagem dessa pessoa. Pra falar agora só usando um modelo de mensagem aprovado.",
           precisaTemplate: true,
         },
         { status: 409 },
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
 
   try {
     // `wamid` volta pra quem chamou porque é ele que casa os webhooks de entrega/leitura com esta
-    // mensagem — sem guardar isso, `statuses` do webhook não encontram nada pra atualizar.
+    // mensagem: sem guardar isso, `statuses` do webhook não encontram nada pra atualizar.
     const wamid = await enviarPelaCloudApi(conta, destinatario, corpoMensagem);
     return NextResponse.json({ ok: true, wamid });
   } catch (erro) {

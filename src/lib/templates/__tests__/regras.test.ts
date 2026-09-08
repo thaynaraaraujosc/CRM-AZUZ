@@ -5,7 +5,7 @@ import { LIMITES, montarComponentesMeta, normalizarNomeMeta, statusDaMeta, valid
 
 /**
  * Estes limites são da Meta, não nossos. Se alguém "afrouxar" pra caber um quarto botão, a tela
- * deixa salvar e a Meta recusa o modelo — e a pessoa não vai entender o erro. Os testes fixam
+ * deixa salvar e a Meta recusa o modelo. E a pessoa não vai entender o erro. Os testes fixam
  * os números e o formato que a Graph API espera.
  */
 describe("limites por canal", () => {
@@ -61,7 +61,7 @@ describe("formato da Meta", () => {
   });
 
   it("nome vira o formato da Meta e status volta no vocabulário do CRM", () => {
-    expect(normalizarNomeMeta("Retomar Atendimento — Março!")).toBe("retomar_atendimento_marco");
+    expect(normalizarNomeMeta("Retomar Atendimento: Março!")).toBe("retomar_atendimento_marco");
     expect(statusDaMeta("APPROVED")).toBe("aprovado");
     expect(statusDaMeta("REJECTED")).toBe("rejeitado");
     expect(statusDaMeta("PENDING")).toBe("em_analise");

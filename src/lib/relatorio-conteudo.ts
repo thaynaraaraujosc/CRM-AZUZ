@@ -70,10 +70,10 @@ export const TIPOS_RELATORIO: { tipo: TipoRelatorio; nome: string; descricao: st
   },
 ];
 
-/** Dado real do workspace logado — sempre fornecido por quem monta o relatório (`ReportWizard`),
+/** Dado real do workspace logado. Sempre fornecido por quem monta o relatório (`ReportWizard`),
  * que já tem tudo isso via `useFunis`/`useContatos`/`useEquipe`/`useConversas`/`useMensagensExtra`/
  * `useTarefas` + a busca de campanhas reais do Meta Ads (mesmo padrão de `trafego/page.tsx`). Sem
- * default fictício — cada seção usa só o que vier aqui. */
+ * default fictício: cada seção usa só o que vier aqui. */
 export type DadosRelatorio = {
   funis: Funil[];
   contatos: Contato[];

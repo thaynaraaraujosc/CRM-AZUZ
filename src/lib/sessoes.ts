@@ -1,5 +1,5 @@
-/** Descrição legível de dispositivo/navegador a partir do User-Agent real da requisição de login —
- * sem depender de biblioteca externa (parser leve, cobre os casos comuns). Usado só pra exibição em
+/** Descrição legível de dispositivo/navegador a partir do User-Agent real da requisição de login.
+ * Sem depender de biblioteca externa (parser leve, cobre os casos comuns). Usado só pra exibição em
  * Configurações > Segurança > Sessões ativas, não pra nenhuma decisão de segurança. */
 export function descreverDispositivo(userAgent: string | null): string {
   if (!userAgent) return "Dispositivo desconhecido";
@@ -22,7 +22,7 @@ export function descreverDispositivo(userAgent: string | null): string {
   return sistema ? `${navegador} · ${sistema}` : navegador;
 }
 
-/** IP real do cliente — atrás de proxy (Railway/Vercel), o primeiro valor de `x-forwarded-for` é
+/** IP real do cliente: atrás de proxy (Railway/Vercel), o primeiro valor de `x-forwarded-for` é
  * quem originou a requisição. */
 export function capturarIp(request: Request): string | null {
   const encaminhado = request.headers.get("x-forwarded-for");

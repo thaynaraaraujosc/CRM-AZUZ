@@ -5,13 +5,13 @@ import { decriptar } from "@/lib/integracoes/crypto";
 import { chamarGraph, ehTokenInvalido, MENSAGEM_POR_CODIGO_META } from "@/lib/integracoes/meta";
 
 /**
- * Verificação diária de saúde de TODAS as conexões oficiais (Cloud API) — roda por cron da Vercel,
+ * Verificação diária de saúde de TODAS as conexões oficiais (Cloud API). Roda por cron da Vercel,
  * não por sessão de usuário. Existe porque a conexão quebra em silêncio: o cliente revoga a
- * permissão pelo WhatsApp Manager, o cartão dele vence, o número é banido — e sem isso o CRM segue
+ * permissão pelo WhatsApp Manager, o cartão dele vence, o número é banido: e sem isso o CRM segue
  * mostrando "conectado" enquanto nada mais funciona.
  *
  * Autenticado pelo header `Authorization: Bearer ${CRON_SECRET}` (padrão do Vercel Cron). Sem esse
- * segredo configurado, a rota recusa — não pode ficar aberta na internet.
+ * segredo configurado, a rota recusa: não pode ficar aberta na internet.
  */
 export async function GET(request: Request) {
   const segredo = process.env.CRON_SECRET;

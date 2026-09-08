@@ -3,7 +3,7 @@
  * automacoes-context.tsx) pro formato novo em grafo (`FluxoAutomacao`).
  *
  * As duas funções aqui só devem ser chamadas UMA VEZ, de forma preguiçosa (lazy),
- * no `useState(() => ...)` inicial de `automation-flow-context.tsx` — é assim que
+ * no `useState(() => ...)` inicial de `automation-flow-context.tsx`. É assim que
  * a gente garante que nenhuma automação existente se perde quando o construtor
  * visual substitui o editor antigo.
  */
@@ -49,14 +49,14 @@ function execucoesParaNumero(execucoes: string): number {
   return match ? Number(match[0]) : 0;
 }
 
-/** Contador de nó por chamada de migração — mantém os ids curtos e previsíveis. */
+/** Contador de nó por chamada de migração. Mantém os ids curtos e previsíveis. */
 function criarFabricaDeIds(prefixo: string) {
   let n = 0;
   return () => `${prefixo}-n${n++}`;
 }
 
 /**
- * Layout em camadas — bem simples e determinístico (BFS a partir das raízes):
+ * Layout em camadas: bem simples e determinístico (BFS a partir das raízes):
  * profundidade (nº de arestas até a raiz) vira posição Y, índice do nó dentro
  * da mesma profundidade vira posição X. Suficiente pro construtor visual
  * desenhar algo legível sem precisar do `dagre` de fato.
@@ -230,7 +230,7 @@ function criarNoDaAcao(estado: EstadoMigracao, acao: AcaoAutomacao): FlowNode {
       });
     }
     default: {
-      // "mensagem_interativa" é tratada à parte em `encadearAcoes` — nunca deveria
+      // "mensagem_interativa" é tratada à parte em `encadearAcoes`. Nunca deveria
       // cair aqui, mas o tipo `AcaoAutomacao.tipo` não é discriminado, então o
       // TypeScript não consegue provar isso sozinho.
       const data: MensagemTextoData = { canal: "whatsapp", texto: acao.mensagem ?? "" };
@@ -242,7 +242,7 @@ function criarNoDaAcao(estado: EstadoMigracao, acao: AcaoAutomacao): FlowNode {
 /**
  * Encadeia uma lista de ações (formato antigo) a partir de uma lista de "pontas
  * abertas" (nó + handle opcional), retornando as novas pontas abertas ao final
- * — pode ser mais de uma ponta quando a lista contém uma `mensagem_interativa`
+ *. Pode ser mais de uma ponta quando a lista contém uma `mensagem_interativa`
  * (cada opção de resposta vira um ramo).
  */
 function encadearAcoes(
@@ -277,7 +277,7 @@ function encadearAcoes(
 
       // Comportamento novo (não existia no formato antigo): toda mensagem interativa
       // agora também precisa de um caminho explícito pra "respondeu outra coisa" e
-      // "não respondeu" — o formato antigo nunca capturou isso, então encerramos os
+      // "não respondeu": o formato antigo nunca capturou isso, então encerramos os
       // dois direto num nó de fim, sem inventar uma ação que os dados antigos não tinham.
       const noFimNaoTratado = novoNo(estado.proximoId, "encerrar_fluxo", "fim", {
         motivo: "Resposta fora das opções previstas (gerado na migração)",
@@ -363,7 +363,7 @@ export function migrarAutomacaoParaFluxo(automacao: Automacao, funis: Funil[]): 
     const noCondicao = novoNo(proximoId, "condicao_grupo", "condicao", condicaoData);
     estado.nodes.push(noCondicao);
     pontas.forEach((p) => estado.edges.push(novaAresta(p.id, noCondicao.id, p.handle)));
-    // Só o caminho "sim" segue adiante — o formato antigo nunca definia o que fazer
+    // Só o caminho "sim" segue adiante. O formato antigo nunca definia o que fazer
     // quando a condição falha, então o "não" fica sem ramo (nenhuma ação lá).
     pontas = [{ id: noCondicao.id, handle: "sim" }];
   }
@@ -461,7 +461,7 @@ export function migrarRegraComentarioParaFluxo(regra: RegraComentario): FluxoAut
 
   return {
     id: regra.id,
-    nome: `Comentário ${regra.canal} — "${regra.palavraChave}"`,
+    nome: `Comentário ${regra.canal}: "${regra.palavraChave}"`,
     categoria: "comentario",
     status: "publicado",
     ativa: regra.ativa,

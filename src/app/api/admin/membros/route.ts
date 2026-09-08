@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
 
-/** GET lista todo mundo que tem login no CRM, de qualquer workspace — "todos os usuários" que o
+/** GET lista todo mundo que tem login no CRM, de qualquer workspace: "todos os usuários" que o
  * super-admin pediu pra enxergar num lugar só. */
 export async function GET() {
   const guarda = await exigirSuperAdmin();

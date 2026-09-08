@@ -18,7 +18,7 @@ const CAMPOS_COMPARTILHAVEIS: { valor: string; label: string }[] = [
   { valor: "campos_personalizados", label: "Campos personalizados" },
 ];
 
-/** Ação "Enviar contato" (item 3) — qual contato compartilhar, quais dados dele, e pra quem enviar. */
+/** Ação "Enviar contato" (item 3). Qual contato compartilhar, quais dados dele, e pra quem enviar. */
 export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoData; onChange: (novo: MensagemContatoData) => void }) {
   const equipes = useEquipesDisponiveis();
   const { contatos } = useContatos();

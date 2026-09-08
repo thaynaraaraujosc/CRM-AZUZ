@@ -14,7 +14,7 @@ import {
 
 /**
  * O que está em jogo aqui é dinheiro e reputação: uma variável trocada de posição manda "Olá,
- * Plano X" pra Maria, e um parâmetro vazio faz a Meta recusar o envio inteiro — depois de a cota
+ * Plano X" pra Maria, e um parâmetro vazio faz a Meta recusar o envio inteiro. Depois de a cota
  * do dia já ter sido gasta. Os testes fixam as regras de conversão pra que nenhuma mexida no
  * editor de templates as mude sem querer.
  */
@@ -32,7 +32,7 @@ describe("variáveis nomeadas", () => {
     ]);
   });
 
-  it("preserva índice e origem ao editar o texto — a Meta já conhece {{1}} pelo número", () => {
+  it("preserva índice e origem ao editar o texto. A Meta já conhece {{1}} pelo número", () => {
     const anterior = mapearVariaveis("Olá {{nome}}, sobre {{produto}}");
     // Tirou {{nome}} e acrescentou {{empresa}}: {{produto}} continua sendo o 2.
     const novo = mapearVariaveis("Sobre {{produto}}, {{empresa}}", anterior);

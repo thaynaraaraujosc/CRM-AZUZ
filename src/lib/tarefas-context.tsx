@@ -24,7 +24,7 @@ type NovaTarefa = {
   descricao: string;
   anexo?: { arquivo: string; detalhe: string } | null;
   modelo?: string;
-  /** Título da coluna destino — "Hoje" por padrão, igual ao comportamento anterior. */
+  /** Título da coluna destino: "Hoje" por padrão, igual ao comportamento anterior. */
   coluna?: string;
 };
 
@@ -49,7 +49,7 @@ const TarefasContext = createContext<TarefasContextValue | null>(null);
  * uma tarefa em /tarefas precisa aparecer em Agenda, Central do Dia, no contato relacionado e na
  * página de Equipe, sem cada tela ficar com uma cópia local dessincronizada do kanban.
  *
- * Núcleo comercial (2ª leva de migração pro banco real, ver `src/app/api/tarefas/`) — a lógica local
+ * Núcleo comercial (2ª leva de migração pro banco real, ver `src/app/api/tarefas/`): a lógica local
  * de índice/splice (mover card, reordenar etapa) continua igual, porque já funcionava bem e mexer
  * nela seria o ponto de maior risco dessa migração. O que muda: cada mutação também resolve os ids
  * reais (vindos do fetch inicial) e dispara a chamada de API correspondente, sem bloquear a UI.
@@ -68,7 +68,7 @@ export function TarefasProvider({ children }: { children: ReactNode }) {
     const nova: TaskCard = {
       id: `tarefa-${Date.now()}`,
       titulo: dados.titulo,
-      contato: dados.contato ?? "—",
+      contato: dados.contato ?? "-",
       contatoId: dados.contatoId,
       data: dados.data || "Sem data",
       responsavel: dados.responsavel,
@@ -141,7 +141,7 @@ export function TarefasProvider({ children }: { children: ReactNode }) {
         colOrigem === colDestino && indiceOrigem < posicao ? posicao - 1 : posicao;
       destino.splice(posicaoAjustada, 0, card);
 
-      // Reenvia a ordem final de todos os cards das etapas afetadas — mais simples e seguro do que
+      // Reenvia a ordem final de todos os cards das etapas afetadas. Mais simples e seguro do que
       // calcular só o delta, e o volume de cards por etapa é sempre pequeno nesse CRM.
       const etapasAfetadas = colOrigem === colDestino ? [proximo[colOrigem]] : [proximo[colOrigem], proximo[colDestino]];
       const cardsParaSincronizar = etapasAfetadas.flatMap((etapa) =>

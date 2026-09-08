@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 /**
  * Rota genérica pra blobs de preferência sem entidade própria (Notificações, Central do Dia,
- * Configurações, Conversas-config) — cada Context é uma linha só por workspace, identificada por
+ * Configurações, Conversas-config): cada Context é uma linha só por workspace, identificada por
  * (workspaceId, chave) (ex.: "notificacoes"). GET devolve o objeto salvo ou `{}` se ainda não
  * existir (Provider aplica os próprios defaults nesse caso, igual já fazia lendo de um localStorage
  * vazio).

@@ -9,10 +9,10 @@ declare module "next-auth" {
     role: string;
     permissoes: string[];
     superAdmin: boolean;
-    /** Id do Membro super-admin que iniciou a impersonação — só existe enquanto a sessão atual é
+    /** Id do Membro super-admin que iniciou a impersonação. Só existe enquanto a sessão atual é
      * um "entrar como" de outro usuário; ausente numa sessão normal. */
     impersonadoPorId?: string;
-    /** Id da linha `SessaoAtiva` desta sessão (ver `src/lib/auth.ts`) — usado pelo callback `jwt`
+    /** Id da linha `SessaoAtiva` desta sessão (ver `src/lib/auth.ts`). Usado pelo callback `jwt`
      * pra revogar de verdade quando a pessoa clica "Encerrar sessão". Ausente na impersonação. */
     jti?: string;
   }
@@ -28,7 +28,7 @@ declare module "next-auth" {
       superAdmin: boolean;
       impersonadoPorId?: string;
     } & DefaultSession["user"];
-    /** Id da `SessaoAtiva` da sessão atual — pra Configurações > Segurança marcar "esta sessão". */
+    /** Id da `SessaoAtiva` da sessão atual. Pra Configurações > Segurança marcar "esta sessão". */
     jti?: string;
   }
 }

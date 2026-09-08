@@ -3,7 +3,7 @@
  *
  * A regra central deste arquivo: a pessoa ESCREVE com nomes (`{{nome}}`), porque é assim que se
  * escreve. A Meta EXIGE números (`{{1}}`), porque é assim que a API dela funciona. A conversão mora
- * aqui e em nenhum outro lugar — quem usa este módulo nunca vê `{{1}}`, exceto na hora de montar o
+ * aqui e em nenhum outro lugar. Quem usa este módulo nunca vê `{{1}}`, exceto na hora de montar o
  * pedido pra Graph API.
  *
  * Tudo aqui é puro (sem banco, sem rede) de propósito: é o que permite testar cada regra sozinha,
@@ -25,7 +25,7 @@ export type OrigemVariavel =
 export type MapeamentoVariavel = {
   /** Nome como aparece na mensagem, sem chaves: `nome`, `produto`. */
   chave: string;
-  /** Posição na versão numerada (`{{1}}`), fixa desde a criação — a Meta identifica por ela. */
+  /** Posição na versão numerada (`{{1}}`), fixa desde a criação: a Meta identifica por ela. */
   indice: number;
   origem: OrigemVariavel;
   /** Só quando `origem === "texto"`. */
@@ -44,7 +44,7 @@ export const ORIGENS_DO_CONTATO: { origem: OrigemVariavel; label: string }[] = [
   { origem: "contato.responsavel", label: "Responsável" },
 ];
 
-/** O pedaço do contato que as variáveis enxergam — é o `select` que quem busca no banco deve usar. */
+/** O pedaço do contato que as variáveis enxergam. É o `select` que quem busca no banco deve usar. */
 export type ContatoParaVariaveis = {
   nome: string;
   sobrenome?: string | null;
@@ -98,7 +98,7 @@ export function mapearVariaveis(texto: string, anterior: MapeamentoVariavel[] = 
   });
 }
 
-/** Substitui `{{chave}}` pelos valores. Variável sem valor fica como está, visível — melhor do que
+/** Substitui `{{chave}}` pelos valores. Variável sem valor fica como está, visível: melhor do que
  * mandar "Olá, ." pra pessoa e ninguém perceber. */
 export function preencherVariaveis(texto: string, valores: Record<string, string>): string {
   return texto.replace(PADRAO_NOMEADA, (original, chave: string) => {
@@ -125,7 +125,7 @@ export function resolverParametros(
   return valores;
 }
 
-/** Quais chaves ficaram sem valor pra esta pessoa — a tela avisa antes, o worker não manda vazio. */
+/** Quais chaves ficaram sem valor pra esta pessoa. A tela avisa antes, o worker não manda vazio. */
 export function variaveisSemValor(variaveis: MapeamentoVariavel[], parametros: Record<string, string>): string[] {
   return variaveis.filter((v) => !parametros[v.chave]?.trim()).map((v) => v.chave);
 }
@@ -159,7 +159,7 @@ export function quantidadeNumeradas(texto: string): number {
 
 /**
  * O componente `body` do envio pela Cloud API, com os parâmetros NA ORDEM DOS ÍNDICES. A Meta não
- * aceita nome, só posição — e recusa o envio inteiro se faltar um ou se um vier vazio. Devolve
+ * aceita nome, só posição: e recusa o envio inteiro se faltar um ou se um vier vazio. Devolve
  * `undefined` quando o modelo não tem variável (mandar `components: []` também é recusado).
  */
 export function componentesParaMeta(

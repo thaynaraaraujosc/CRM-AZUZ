@@ -14,7 +14,7 @@ import {
  *
  * Existe porque "a foto de perfil não aparece" já custou várias rodadas de tentativa: o CRM pede o
  * campo, a Meta não manda, e nada na tela indica se faltou permissão, se o campo mudou de nome ou
- * se a pessoa não tem foto. Aqui a resposta vem crua — quais campos vieram e qual erro, se houve.
+ * se a pessoa não tem foto. Aqui a resposta vem crua. Quais campos vieram e qual erro, se houve.
  *
  * Devolve NOMES de campos e o @, nunca o conteúdo do perfil de terceiros além disso: o objetivo é
  * diagnosticar a integração, não expor dados de quem conversa.
@@ -31,7 +31,7 @@ export async function POST() {
     return NextResponse.json({ erro: "Instagram não está conectado." }, { status: 400 });
   }
 
-  // A conversa mais recente do Direct serve de cobaia — é alguém que comprovadamente escreveu, que
+  // A conversa mais recente do Direct serve de cobaia. É alguém que comprovadamente escreveu, que
   // é a condição que a Meta exige pra devolver o perfil.
   const conversa = await prisma.conversa.findFirst({
     where: { workspaceId, canal: "Instagram", contato: { not: null } },

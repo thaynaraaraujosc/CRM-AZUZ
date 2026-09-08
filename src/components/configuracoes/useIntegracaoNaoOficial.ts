@@ -16,7 +16,7 @@ export type StatusIntegracaoNaoOficial = {
 
 /**
  * Status da conexão WhatsApp "não oficial" (Evolution API, servidor próprio fora da Vercel, ver
- * src/lib/integracoes/evolution.ts) — polling contínuo porque o QR expira e a conexão pode cair a
+ * src/lib/integracoes/evolution.ts): polling contínuo porque o QR expira e a conexão pode cair a
  * qualquer momento; usado tanto pela tela de Configurações quanto pela lista de Conversas (que
  * precisa saber se esse canal está conectado pra decidir se mostra/filtra o WhatsApp).
  */
@@ -38,7 +38,7 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
    *
    * Os 4 segundos existem por causa do QR Code: ele expira rápido, e quem está com o celular na mão
    * apontando pra tela precisa ver "conectado" quase na hora. Mas esse é um momento de dois minutos
-   * — o resto do tempo a conexão está estabelecida e não muda por dias.
+   *. O resto do tempo a conexão está estabelecida e não muda por dias.
    *
    * Cobrando os 4 segundos o tempo todo, uma aba de Conversas aberta o dia inteiro batia no banco
    * 21.600 vezes por dia só pra ouvir "continua conectado". Cada uma dessas idas atravessa a
@@ -70,7 +70,7 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
         atual.status === "aguardando_qr" ||
         atual.metadados?.historico?.status === "em_andamento";
       temporizador = setTimeout(() => {
-        // Só busca com a aba à frente — com o CRM aberto em segundo plano (o normal, é uma aba que
+        // Só busca com a aba à frente. Com o CRM aberto em segundo plano (o normal, é uma aba que
         // fica o dia inteiro) isso era requisição sem ninguém olhando.
         if (document.visibilityState === "visible") carregar();
         agendar();
@@ -81,18 +81,18 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intervaloMs é constante na prática, não precisa reiniciar o polling se mudar
   }, []);
 
-  // Motor da sincronização de histórico — chama o batch (5 conversas por vez) repetidamente
+  // Motor da sincronização de histórico. Chama o batch (5 conversas por vez) repetidamente
   // enquanto `historico.status === "em_andamento"`, com uma pausa pequena entre chamadas (não bate
   // a Evolution/banco sem parar). Some da fila quando ninguém tem essa tela aberta (fecha a aba,
-  // sincronização pausa) — retoma sozinha da próxima vez que alguém abrir, porque o progresso já
+  // sincronização pausa): retoma sozinha da próxima vez que alguém abrir, porque o progresso já
   // está salvo no servidor (`Integracao.metadados.historico`), não perdido.
   const sincronizandoRef = useRef(false);
   const historicoStatus = estado?.metadados?.historico?.status;
   const temHistorico = Boolean(estado?.metadados?.historico);
   const conectada = estado?.status === "conectado";
   useEffect(() => {
-    // Dispara também quando NUNCA teve histórico nenhum (não só quando já está "em_andamento") —
-    // cobre quem já estava conectado ANTES dessa sincronização existir: o gatilho normal
+    // Dispara também quando NUNCA teve histórico nenhum (não só quando já está "em_andamento").
+    // Cobre quem já estava conectado ANTES dessa sincronização existir: o gatilho normal
     // (`connection.update`/`open` no webhook) só dispara numa conexão nova, não pra quem já tava
     // conectado, então sem isso essa conta nunca ganhava a sincronização sozinha.
     // `conectada` é condição pra TUDO: sem sessão do WhatsApp de pé não há o que sincronizar, e
@@ -106,7 +106,7 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
 
     // Uma resposta sem `historico` é falha (rede, sessão caída, erro no servidor). Desistir na
     // primeira seria frágil demais numa sincronização longa, mas insistir sem limite foi o que
-    // gerou o laço apertado — então: espera antes de tentar de novo e para depois de 3 seguidas.
+    // gerou o laço apertado: então: espera antes de tentar de novo e para depois de 3 seguidas.
     const MAX_FALHAS_SEGUIDAS = 3;
     let falhasSeguidas = 0;
 
@@ -136,7 +136,7 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
           continue;
         }
         if (dados.historico.status !== "em_andamento") break;
-        // 4s entre conversas (não 800ms) — uma sessão do WhatsApp recém-conectada é mais sensível a
+        // 4s entre conversas (não 800ms). Uma sessão do WhatsApp recém-conectada é mais sensível a
         // comportamento automatizado; ir mais devagar reduz o risco de a própria WhatsApp derrubar
         // a sessão de novo por parecer bot batendo na API sem parar.
         await new Promise((resolve) => setTimeout(resolve, 4000));
@@ -150,7 +150,7 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     };
   }, [historicoStatus, temHistorico, conectada]);
 
-  /** Pausa a sincronização de histórico sem perder o progresso — pode retomar depois clicando de
+  /** Pausa a sincronização de histórico sem perder o progresso. Pode retomar depois clicando de
    * novo. Existe pra usuária ter controle se desconfiar que a sincronização está sobrecarregando a
    * conexão do WhatsApp. */
   async function pausarSincronizacaoHistorico() {
@@ -177,7 +177,7 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     }
   }
 
-  /** Cria a instância na Evolution (se ainda não existir) e busca o primeiro QR Code — chamado
+  /** Cria a instância na Evolution (se ainda não existir) e busca o primeiro QR Code. Chamado
    * quando a pessoa clica em "Conectar"; depois disso, o polling e os eventos de webhook cuidam do
    * resto (QR renovado, confirmação de conectado). */
   async function conectar() {

@@ -5,14 +5,14 @@ import { enviarDirectInstagram } from "@/lib/integracoes/instagram-login";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
 
 /**
- * Manda um texto pelo canal de uma conversa — do lado do SERVIDOR.
+ * Manda um texto pelo canal de uma conversa. Do lado do SERVIDOR.
  *
  * A tela de Conversas tem o equivalente dela (`despacharTexto`), mas aquele roda no navegador de
  * quem está atendendo. Automação precisa de um caminho que funcione sem ninguém logado: a mensagem
  * chega de madrugada, o fluxo dispara e a resposta sai.
  *
  * Escolhe o canal pela conversa, não por parâmetro, pra não existir a chance de um chamador novo
- * mandar pelo canal errado — a conversa já sabe por onde ela fala.
+ * mandar pelo canal errado: a conversa já sabe por onde ela fala.
  */
 export async function enviarTextoPeloCanal(params: {
   workspaceId: string;
@@ -44,7 +44,7 @@ export async function enviarTextoPeloCanal(params: {
     }
 
     // WhatsApp: a conversa pertence à conexão por onde ela veio (ver `contaCanal`). QR Code e API
-    // oficial são serviços diferentes — mandar pelo errado dá erro ou vai pro número errado.
+    // oficial são serviços diferentes: mandar pelo errado dá erro ou vai pro número errado.
     if (conversa.contaCanal?.startsWith("whatsapp_nao_oficial:") || conversa.contaCanal?.startsWith("whatsapp_baileys:")) {
       await enviarMensagemWhatsAppNaoOficial(workspaceId, conversa.contato, texto);
       return { enviado: true };

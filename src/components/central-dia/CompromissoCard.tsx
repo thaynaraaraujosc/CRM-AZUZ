@@ -12,7 +12,7 @@ const CLASSE_STATUS: Record<StatusCompromisso, string> = {
   Atrasado: "is-atrasado",
 };
 
-/** Card de compromisso da seção "Agenda de hoje" (item 6) — campos e ações próprias (confirmar,
+/** Card de compromisso da seção "Agenda de hoje" (item 6). Campos e ações próprias (confirmar,
  * reagendar, cancelar), diferentes do card genérico de item do dia. Tudo local: mudar o status aqui
  * não mexe em nenhum agendamento real. */
 export function CompromissoCard({ compromisso }: { compromisso: CompromissoDia }) {

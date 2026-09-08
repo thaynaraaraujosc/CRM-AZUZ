@@ -6,7 +6,7 @@ import { decriptar } from "@/lib/integracoes/crypto";
 import { classificarErroMeta, listarPublicacoesInstagram } from "@/lib/integracoes/instagram-login";
 
 /**
- * Publicações da conta conectada — pra escolher em qual delas uma automação de comentário vale.
+ * Publicações da conta conectada: pra escolher em qual delas uma automação de comentário vale.
  *
  * Só leitura, e nada é guardado: a lista muda toda vez que a pessoa publica, e uma cópia no banco
  * envelheceria em horas. O custo é uma chamada à Meta quando o editor de automações abre a lista.

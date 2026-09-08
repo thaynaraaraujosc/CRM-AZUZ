@@ -28,9 +28,9 @@ const METRICAS_EVOLUCAO = [
 type MetricaEvolucao = (typeof METRICAS_EVOLUCAO)[number]["chave"];
 
 /**
- * Performance mostra só desempenho e conversão — motivos de perda tem
+ * Performance mostra só desempenho e conversão. Motivos de perda tem
  * página própria (/motivos-perda), com link daqui pro resumo completo.
- * Tudo calculado sobre NegocioCard real (ver src/lib/metrics.ts) — sem
+ * Tudo calculado sobre NegocioCard real (ver src/lib/metrics.ts): sem
  * indicador nenhum começa com dado fictício; workspace sem negócio fechado
  * ainda mostra zero/vazio de verdade.
  */
@@ -120,7 +120,7 @@ function PerformanceVendasPageInner() {
         {totalOportunidades === 0 ? (
           <div className="card mb14">
             <div className="dados-nao-conectados" style={{ padding: 17 }}>
-              Você ainda não possui dados suficientes para gerar este indicador — marque negócios
+              Você ainda não possui dados suficientes para gerar este indicador. Marque negócios
               como ganhos/perdidos no Funil pra ver a performance aqui.
             </div>
           </div>
@@ -216,7 +216,7 @@ function PerformanceVendasPageInner() {
         >
           {serieDiaria.length === 0 ? (
             <p className="hint" style={{ padding: 17 }}>
-              Ainda sem movimento suficiente pra traçar uma evolução — o gráfico aparece assim que
+              Ainda sem movimento suficiente pra traçar uma evolução. O gráfico aparece assim que
               houver negócios criados/fechados em mais de um dia.
             </p>
           ) : (

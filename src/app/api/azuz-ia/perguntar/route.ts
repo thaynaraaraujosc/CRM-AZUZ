@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       azuzIa.comportamentoPersonalizado ? `Instruções adicionais definidas por esse workspace: ${azuzIa.comportamentoPersonalizado}` : null,
       contexto
         ? `Os dados abaixo são reais do workspace, use-os pra responder perguntas sobre o negócio. Se a pergunta não tiver relação com eles, responda normalmente sem forçar os dados.\n\n${contexto}`
-        : "Nenhuma categoria de dado do workspace está liberada em Configurações → Azuz IA → Dados permitidos — responda só com conhecimento geral, sem inventar dado nenhum do workspace.",
+        : "Nenhuma categoria de dado do workspace está liberada em Configurações → Azuz IA → Dados permitidos. Responda só com conhecimento geral, sem inventar dado nenhum do workspace.",
     ]
       .filter(Boolean)
       .join("\n\n");

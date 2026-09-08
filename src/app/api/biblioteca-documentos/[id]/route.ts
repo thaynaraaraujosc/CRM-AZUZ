@@ -11,7 +11,7 @@ function paraDocumento(linha: { tags: unknown; [k: string]: unknown }): Document
   } as DocumentoBiblioteca;
 }
 
-/** Atualização direta por id — usada por `atualizarDocumento`. Só mexe em documento do mesmo
+/** Atualização direta por id: usada por `atualizarDocumento`. Só mexe em documento do mesmo
  * workspace de quem está logado. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/biblioteca-documentos/[id]">) {
   const sessao = await auth();

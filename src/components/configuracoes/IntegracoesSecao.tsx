@@ -20,7 +20,7 @@ type AppFuturo = { nome: string; descricao: string; categoria: string };
 const APPS_EM_BREVE: AppFuturo[] = [
   { nome: "Google Ads", descricao: "Traga essa origem pro painel de Tráfego.", categoria: "Marketing" },
   { nome: "TikTok Ads", descricao: "Traga essa origem pro painel de Tráfego.", categoria: "Marketing" },
-  { nome: "TikTok — mensagens", descricao: "Receba lead de comentário automaticamente.", categoria: "Comunicação" },
+  { nome: "Mensagens do TikTok", descricao: "Receba lead de comentário automaticamente.", categoria: "Comunicação" },
   { nome: "Google Agenda", descricao: "Sincronize compromissos com sua agenda pessoal.", categoria: "Agenda" },
   { nome: "Gmail", descricao: "Envie e receba e-mails direto do CRM.", categoria: "Comunicação" },
   { nome: "Outlook", descricao: "Sincronize sua caixa de entrada corporativa.", categoria: "Comunicação" },
@@ -35,7 +35,7 @@ const CATEGORIAS = ["Todas", "Comunicação", "Marketing", "Produtividade", "Pag
 /**
  * Uma integração da lista "Prontas pra usar".
  *
- * Com `painel`, "Conectar" abre o fluxo AQUI MESMO, logo abaixo da linha — antes ele levava pra
+ * Com `painel`, "Conectar" abre o fluxo AQUI MESMO, logo abaixo da linha: antes ele levava pra
  * outra tela onde a pessoa tinha que escolher de novo entre os canais que ela já tinha escolhido
  * clicando naquela linha. Sem `painel` (integração cujo fluxo é um redirect externo, como o OAuth
  * do Instagram, ou que vive noutra tela, como o painel de Tráfego), continua sendo um link.
@@ -90,12 +90,12 @@ function LinhaReal({
 }
 
 /**
- * Integrações e aplicativos (item 2 do pedido de novas demandas) — antes toda a lista, mesmo as
+ * Integrações e aplicativos (item 2 do pedido de novas demandas). Antes toda a lista, mesmo as
  * que já tinham rota real por trás (Meta/Baileys), era só decoração: status fixo "Conectado" com
  * dado inventado, botão sem `onClick`. Agora mostra o status real de cada integração que já
- * funciona de verdade (linka pra tela onde o fluxo de conexão de fato acontece — OAuth da Meta ou
+ * funciona de verdade (linka pra tela onde o fluxo de conexão de fato acontece. OAuth da Meta ou
  * QR Code do WhatsApp) e separa claramente o que ainda não existe ("Em breve", sem fingir que
- * funciona) — cada integração nova entra aqui trocando de lista, não com um botão fake.
+ * funciona): cada integração nova entra aqui trocando de lista, não com um botão fake.
  */
 export function IntegracoesSecao() {
   const { data: sessao } = useSession();
@@ -103,7 +103,7 @@ export function IntegracoesSecao() {
   const instagram = useIntegracaoMeta("meta_instagram");
   const metaAds = useIntegracaoMeta("meta_ads");
 
-  // Status do WhatsApp não oficial (Evolution API) direto aqui, sem polling — só pra mostrar o
+  // Status do WhatsApp não oficial (Evolution API) direto aqui, sem polling: só pra mostrar o
   // estado atual ao abrir a tela. Falha em silêncio (serviço fora do ar não pode quebrar essa tela).
   const [naoOficialStatus, setNaoOficialStatus] = useState<StatusIntegracaoNaoOficial | null>(null);
   useEffect(() => {
@@ -140,7 +140,7 @@ export function IntegracoesSecao() {
             painel={
               <>
                 <ConexaoQrCode />
-                {/* A limpeza morava só na categoria WhatsApp, que não está no menu — ficava
+                {/* A limpeza morava só na categoria WhatsApp, que não está no menu. Ficava
                     inalcançável. Aqui ela está no canal de onde os dados vieram. */}
                 <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />
               </>
@@ -164,7 +164,7 @@ export function IntegracoesSecao() {
       </div>
 
       {/* Só pra quem administra a plataforma.
-          Cadastrar o webhook na Meta é feito UMA vez, no app da Meta, por quem é dono dele — não
+          Cadastrar o webhook na Meta é feito UMA vez, no app da Meta, por quem é dono dele. Não
           por cada empresa que usa o CRM. O cliente conecta a conta dele por um clique de
           autorização e nunca precisa ver URL nem token: expor isso na tela dele só assusta e
           convida a mexer no que pode quebrar o recebimento de todo mundo. */}

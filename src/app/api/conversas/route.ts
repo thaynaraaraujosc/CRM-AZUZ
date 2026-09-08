@@ -6,7 +6,7 @@ import { contasCanalVisiveis, filtroContaCanal, provedoresConectados } from "@/l
 import { cabecalhosComEtag, clienteJaTem, montarEtag, naoModificado } from "@/lib/conversas/assinatura";
 
 /**
- * GET lista as conversas do workspace de quem está logado, mais recentes primeiro — só as da(s)
+ * GET lista as conversas do workspace de quem está logado, mais recentes primeiro: só as da(s)
  * conexão(ões) de WhatsApp conectada(s) agora (ver `conta-canal.ts`). Nada é apagado ao
  * desconectar: a conversa continua no banco e reaparece inteira se aquele número voltar.
  */
@@ -20,8 +20,8 @@ export async function GET(request: Request) {
 
   // Conversa do Instagram aparece enquanto o Instagram estiver conectado, tenha ela conexão
   // marcada ou não. Sem isto, uma conversa criada antes dessa coluna existir (ou sem o
-  // identificador gravado) caía na regra do WhatsApp e só apareceria com o QR Code conectado —
-  // ficava invisível em Conversas enquanto o negócio dela continuava no funil. Ver o card órfão
+  // identificador gravado) caía na regra do WhatsApp e só apareceria com o QR Code conectado.
+  // Ficava invisível em Conversas enquanto o negócio dela continuava no funil. Ver o card órfão
   // que apareceu na tela: o mesmo contato existindo num lugar e não no outro.
   const where = provedores.includes("meta_instagram")
     ? { workspaceId: sessao.user.workspaceId, OR: [...filtro.OR ?? [{ contaCanal: filtro.contaCanal }], { canal: "Instagram" }] }
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 
   // Igual à rota de mensagens: a pergunta barata antes da cara. Esta tela também é batida a cada
   // 5 segundos, e responder `304` aqui evita ler a lista inteira de conversas por nada.
-  // O contato entra na assinatura porque a foto dele é usada como reserva mais abaixo — ela pode
+  // O contato entra na assinatura porque a foto dele é usada como reserva mais abaixo. Ela pode
   // mudar sem que a conversa mude, e a tela ficaria com as iniciais até alguém recarregar.
   const [resumoConversas, resumoContatos] = await Promise.all([
     prisma.conversa.aggregate({ where, _count: { _all: true }, _max: { atualizadoEm: true } }),
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
   const linhas = await prisma.conversa.findMany({
     where,
     orderBy: { atualizadoEm: "desc" },
-    // A foto do contato ligado entra como reserva da foto da conversa — ver abaixo.
+    // A foto do contato ligado entra como reserva da foto da conversa. Ver abaixo.
     include: { contatoVinculado: { select: { fotoUrl: true } } },
   });
 
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
 
   // Segunda via, por NOME: nem toda conversa tem a FK preenchida (as criadas antes da coluna
   // existir, e as do Instagram quando "levar para o funil" está desligado, não têm contatoId).
-  // Nesses casos o contato existe e tem a foto, só não está ligado — e é o mesmo nome dos dois
+  // Nesses casos o contato existe e tem a foto, só não está ligado: e é o mesmo nome dos dois
   // lados, porque quem cria os dois é o mesmo webhook.
   const semFoto = comFoto.filter((c) => !c.fotoUrl).map((c) => c.nome);
   if (semFoto.length) {
@@ -80,10 +80,10 @@ export async function GET(request: Request) {
     for (const c of comFoto) if (!c.fotoUrl) c.fotoUrl = porNome.get(c.nome) ?? null;
   }
 
-  // Quando foi a ÚLTIMA MENSAGEM de cada conversa — diferente de `atualizadoEm`, que é "última vez
+  // Quando foi a ÚLTIMA MENSAGEM de cada conversa. Diferente de `atualizadoEm`, que é "última vez
   // que a linha foi tocada" e sobe por qualquer coisa (favoritar, mudar status, uma importação).
   // Era por isso que o funil inteiro parecia recente: uma importação encostou em todas as conversas
-  // no mesmo minuto. É um `groupBy` de máximo — não lê o texto de mensagem nenhuma.
+  // no mesmo minuto. É um `groupBy` de máximo. Não lê o texto de mensagem nenhuma.
   const ultimas = await prisma.mensagemExtra.groupBy({
     by: ["contato"],
     where: { workspaceId: sessao.user.workspaceId, contato: { in: comFoto.map((c) => c.nome) } },
@@ -93,7 +93,7 @@ export async function GET(request: Request) {
 
   const comAtividade = comFoto.map((c) => ({
     ...c,
-    // `null` quando a conversa ainda não tem mensagem gravada — quem lê cai na data de criação.
+    // `null` quando a conversa ainda não tem mensagem gravada. Quem lê cai na data de criação.
     ultimaMensagemEm: ultimaPorContato.get(c.nome) ?? null,
   }));
 
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
 }
 
 /**
- * POST cria uma conversa individual vazia (sem mensagem ainda) — usado quando a usuária quer ser a
+ * POST cria uma conversa individual vazia (sem mensagem ainda). Usado quando a usuária quer ser a
  * PRIMEIRA a escrever pra alguém, ex.: um participante de grupo que ela nunca conversou fora do
  * grupo. Se já existir uma conversa com esse `contato` (telefone) no workspace, devolve ela em vez
  * de duplicar.

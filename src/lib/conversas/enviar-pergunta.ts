@@ -10,18 +10,18 @@ import { enviarTextoPeloCanal } from "./enviar-pelo-canal";
  * REALMENTE suporta.
  *
  * O bloco "mensagem com botões" existia só no editor: no envio, virava texto. E cada canal tem um
- * teto diferente — não é escolha de gosto, é o que a API aceita:
+ * teto diferente: não é escolha de gosto, é o que a API aceita:
  *
  * - **WhatsApp oficial**: até 3 botões (`interactive.button`), título de 20 caracteres. De 4 a 10
  *   opções só cabe em lista (`interactive.list`). Acima disso, nenhum formato interativo existe.
  * - **Instagram**: respostas rápidas (`quick_replies`), até 13, título de 20 caracteres.
- * - **WhatsApp por QR Code (Baileys)**: botão não é confiável — o WhatsApp derruba botão vindo de
+ * - **WhatsApp por QR Code (Baileys)**: botão não é confiável: o WhatsApp derruba botão vindo de
  *   conexão não oficial, e a pessoa receberia uma mensagem vazia. Aqui vai menu numerado, que
  *   funciona em qualquer conexão.
  *
  * Quando não cabe no formato interativo, cai no menu numerado em vez de falhar: a pergunta chega,
  * e `saidaDaResposta` já entende o número. O formato usado volta no retorno pra ficar no histórico
- * — a pessoa precisa saber que aquele fluxo saiu numerado, não em botões.
+ *. A pessoa precisa saber que aquele fluxo saiu numerado, não em botões.
  */
 export type FormatoEnviado = "botoes" | "lista" | "respostas_rapidas" | "numerado";
 
@@ -39,7 +39,7 @@ export type ResultadoPergunta = {
 export const MAX_ROTULO = 20;
 
 /** Encurta o rótulo pro teto do canal. Exportado porque a leitura da resposta precisa comparar
- * contra o MESMO texto que foi enviado — a pessoa clica no botão encurtado. */
+ * contra o MESMO texto que foi enviado. A pessoa clica no botão encurtado. */
 export function rotuloCurto(rotulo: string, max = MAX_ROTULO): string {
   const limpo = rotulo.trim();
   return limpo.length <= max ? limpo : `${limpo.slice(0, max - 1)}…`;
@@ -88,7 +88,7 @@ export async function enviarPerguntaPeloCanal(params: {
       return {
         enviado: true,
         formato: "numerado",
-        observacao: opcoes.length > 13 ? "mais de 13 opções — o Instagram não aceita, foi menu numerado" : undefined,
+        observacao: opcoes.length > 13 ? "mais de 13 opções: o Instagram não aceita, foi menu numerado" : undefined,
       };
     }
 
@@ -99,7 +99,7 @@ export async function enviarPerguntaPeloCanal(params: {
       return {
         enviado: true,
         formato: "numerado",
-        observacao: opcoes.length ? "conexão por QR Code não entrega botão — foi menu numerado" : undefined,
+        observacao: opcoes.length ? "conexão por QR Code não entrega botão. Foi menu numerado" : undefined,
       };
     }
 
@@ -134,14 +134,14 @@ export async function enviarPerguntaPeloCanal(params: {
           },
         },
       });
-      return { enviado: true, formato: "lista", observacao: "mais de 3 opções — foi lista, não botões" };
+      return { enviado: true, formato: "lista", observacao: "mais de 3 opções: foi lista, não botões" };
     }
 
     await enviarPelaCloudApi(conta, conversa.contato, { type: "text", text: { body: textoNumerado(texto, opcoes) } });
     return {
       enviado: true,
       formato: "numerado",
-      observacao: opcoes.length ? "mais de 10 opções — nenhum formato interativo cabe, foi menu numerado" : undefined,
+      observacao: opcoes.length ? "mais de 10 opções: nenhum formato interativo cabe, foi menu numerado" : undefined,
     };
   } catch (erro) {
     return { enviado: false, formato: "numerado", motivo: erro instanceof Error ? erro.message : "falha no envio" };
@@ -152,7 +152,7 @@ export async function enviarPerguntaPeloCanal(params: {
 /**
  * Envia uma LOCALIZAÇÃO pelo canal da conversa.
  *
- * Só o WhatsApp tem tipo próprio pra isso (um cartão com mapa). O Instagram não tem — lá a
+ * Só o WhatsApp tem tipo próprio pra isso (um cartão com mapa). O Instagram não tem: lá a
  * localização vira um link do Google Maps, que é o que a pessoa faria à mão de qualquer jeito.
  */
 export async function enviarLocalizacaoPeloCanal(params: {
@@ -176,7 +176,7 @@ export async function enviarLocalizacaoPeloCanal(params: {
       conversa.contaCanal?.startsWith("whatsapp_nao_oficial:") || conversa.contaCanal?.startsWith("whatsapp_baileys:");
 
     if (conversa.canal === "Instagram" || porQrCode) {
-      // Instagram não tem mensagem de localização, e no QR Code o formato não é confiável — o link
+      // Instagram não tem mensagem de localização, e no QR Code o formato não é confiável. O link
       // do mapa abre igual e não corre o risco de chegar vazio.
       const r = await enviarTextoPeloCanal({ workspaceId, conversaNome, texto: comoTexto });
       return { enviado: r.enviado, motivo: r.motivo, comoTexto: true };
@@ -203,7 +203,7 @@ export async function enviarLocalizacaoPeloCanal(params: {
  * Envia um CARTÃO DE CONTATO pelo canal da conversa.
  *
  * O WhatsApp oficial tem o tipo `contacts`, que chega como cartão salvável na agenda. Nos outros
- * canais vira texto com nome e telefone — perde o cartão, mas a informação chega, que é o ponto.
+ * canais vira texto com nome e telefone. Perde o cartão, mas a informação chega, que é o ponto.
  */
 export async function enviarContatoPeloCanal(params: {
   workspaceId: string;

@@ -5,14 +5,14 @@ import { contarMensagensComAnexoNoBanco, espacoUsado } from "@/lib/armazenamento
 import { apagarDoR2, chaveDeArquivo, guardarNoR2, lerDoR2, r2Configurado } from "@/lib/armazenamento/r2";
 
 /**
- * Quanto espaço o workspace ocupa — e, sob pedido, se a nuvem está mesmo respondendo.
+ * Quanto espaço o workspace ocupa. E, sob pedido, se a nuvem está mesmo respondendo.
  *
  * O número vem da tabela de registro, não de uma listagem no R2: listar objeto é cobrado e um
  * cliente com anos de conversa tem dezenas de milhares deles. Ver `ArquivoArmazenado` no schema.
  */
 export const dynamic = "force-dynamic";
 
-/** Cortesia inicial por workspace. Casa com os 10 GB gratuitos do R2 — daqui pra cima é plano pago. */
+/** Cortesia inicial por workspace. Casa com os 10 GB gratuitos do R2. Daqui pra cima é plano pago. */
 const LIMITE_PADRAO_BYTES = 5 * 1024 * 1024 * 1024;
 
 export async function GET(request: Request) {
@@ -21,21 +21,21 @@ export async function GET(request: Request) {
 
   const usado = await espacoUsado(sessao.user.workspaceId);
   // Quantas mensagens ainda carregam o arquivo embutido, do formato antigo. É o que decide se o
-  // botão de mover pra nuvem aparece — some sozinho quando chega a zero, então nenhum cliente vê
+  // botão de mover pra nuvem aparece. Some sozinho quando chega a zero, então nenhum cliente vê
   // um botão de manutenção que não tem mais o que fazer.
   const pendentes = r2Configurado() ? await contarMensagensComAnexoNoBanco(sessao.user.workspaceId) : 0;
   const limite = Number(process.env.R2_LIMITE_BYTES ?? LIMITE_PADRAO_BYTES);
 
   const resposta: Record<string, unknown> = {
     // Quem está respondendo. O Railway injeta isso sozinho em todo container que ele roda, então é
-    // a única fonte confiável sobre QUAL serviço atende o domínio — mais confiável do que ler o
+    // a única fonte confiável sobre QUAL serviço atende o domínio. Mais confiável do que ler o
     // painel, onde dois projetos com o mesmo nome de serviço são fáceis de confundir. Nada aqui é
     // segredo: são nomes de projeto e o commit que está no ar.
     ondeEstouRodando: {
       projeto: process.env.RAILWAY_PROJECT_NAME ?? "(fora do Railway)",
-      servico: process.env.RAILWAY_SERVICE_NAME ?? "—",
-      ambiente: process.env.RAILWAY_ENVIRONMENT_NAME ?? "—",
-      commit: (process.env.RAILWAY_GIT_COMMIT_SHA ?? "—").slice(0, 7),
+      servico: process.env.RAILWAY_SERVICE_NAME ?? "-",
+      ambiente: process.env.RAILWAY_ENVIRONMENT_NAME ?? "-",
+      commit: (process.env.RAILWAY_GIT_COMMIT_SHA ?? "-").slice(0, 7),
     },
     configurado: r2Configurado(),
     usadoBytes: usado,
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
 /**
  * Estado de cada variável, SEM revelar o valor.
  *
- * Diz só se existe e quantos caracteres tem — o suficiente pra separar "não chegou no container"
+ * Diz só se existe e quantos caracteres tem. O suficiente pra separar "não chegou no container"
  * de "chegou com espaço/quebra de linha colada junto", que é invisível na tela do Railway e quebra
  * a assinatura do mesmo jeito. Nenhum pedaço do segredo sai daqui.
  */

@@ -1,5 +1,5 @@
 /**
- * Contratos e helpers de "recentes" da Jornada do cliente — hoje persistidos
+ * Contratos e helpers de "recentes" da Jornada do cliente. Hoje persistidos
  * em `localStorage` (por navegador, não por usuário de verdade), mas já no
  * formato que o back-end vai usar quando existir uma tabela real de
  * "contato_recente" por usuário (seção 28 do escopo).
@@ -7,7 +7,7 @@
 export type ContatoRecente = {
   usuario: string;
   contatoId: string;
-  /** ISO 8601 — quando o back-end existir, isso vem do servidor, não de `Date.now()` local. */
+  /** ISO 8601: quando o back-end existir, isso vem do servidor, não de `Date.now()` local. */
   data: string;
   contexto: "aberto" | "consultado";
 };
@@ -40,7 +40,7 @@ function escrever<T>(chave: string, valor: T[]) {
   try {
     localStorage.setItem(chave, JSON.stringify(valor));
   } catch {
-    // localStorage indisponível — só não persiste entre sessões
+    // localStorage indisponível: só não persiste entre sessões
   }
 }
 

@@ -3,17 +3,17 @@
 import type { DestinatarioEmailModo, MensagemEmailData, SeSemEmailModo } from "@/lib/automation-flow/types";
 import { IconAlerta } from "@/components/icons";
 
-// Mocado — contas de e-mail configuradas no workspace, sem conexão real.
+// Mocado: contas de e-mail configuradas no workspace, sem conexão real.
 const CONTAS_EMAIL: string[] = [];
 
-// Mocado — modelos de e-mail salvos, sem integração real.
+// Mocado: modelos de e-mail salvos, sem integração real.
 const MODELOS_EMAIL = [
   { id: "proposta", nome: "Proposta pronta" },
   { id: "boas_vindas", nome: "Boas-vindas" },
   { id: "cobranca", nome: "Cobrança" },
 ];
 
-/** Ação "Enviar e-mail" (item 5) — o destinatário precisa estar ligado dinamicamente ao lead da
+/** Ação "Enviar e-mail" (item 5). O destinatário precisa estar ligado dinamicamente ao lead da
  * automação, não só um assunto/corpo soltos. */
 export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData; onChange: (novo: MensagemEmailData) => void }) {
   return (

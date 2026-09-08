@@ -7,12 +7,12 @@ import { prisma } from "@/lib/prisma";
  * Reordena os cards DENTRO de cada coluna pela data da última mensagem da conversa correspondente:
  * quem falou por último fica no topo.
  *
- * É uma correção de UMA VEZ, disparada por botão — não um comportamento automático. A partir da
+ * É uma correção de UMA VEZ, disparada por botão: não um comportamento automático. A partir da
  * correção que colocou o lead novo no topo (`src/lib/funis/upsert.ts`), o funil já nasce na ordem
  * certa; o que esta rota resolve é o acúmulo de antes, que entrou pelo fim da coluna e continuaria
  * assim pra sempre.
  *
- * NUNCA muda card de ETAPA. Cada card fica exatamente na coluna em que está — o que muda é só a
+ * NUNCA muda card de ETAPA. Cada card fica exatamente na coluna em que está. O que muda é só a
  * posição dentro dela. Card sem conversa correspondente (criado à mão, ou de alguém que não tem
  * thread) vai pro fim da coluna, mantendo a ordem relativa que já tinha entre eles: não há data de
  * atividade pra comparar, e inventar uma seria pior do que preservar o que a pessoa arrumou.

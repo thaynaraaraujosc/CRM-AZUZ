@@ -8,10 +8,10 @@ import { ReportWizard, type ConfiguracaoRelatorio, type RelatorioGerado } from "
 import { TIPOS_RELATORIO, type TipoRelatorio } from "@/lib/relatorio-conteudo";
 
 /**
- * Central de relatórios — entra numa seleção clara de tipos (nunca direto
+ * Central de relatórios: entra numa seleção clara de tipos (nunca direto
  * numa tela com dezenas de gráficos). Cada tipo abre o mesmo assistente
  * (ReportWizard), que é também o componente usado pelo botão "Gerar
- * relatório de tráfego" em /trafego — mesma fonte, mesmos filtros.
+ * relatório de tráfego" em /trafego. Mesma fonte, mesmos filtros.
  */
 export default function RelatoriosPage() {
   return (
@@ -28,7 +28,7 @@ function RelatoriosPageInner() {
   const [wizardAberto, setWizardAberto] = useState(!!tipoQuery);
   const [tipoWizard, setTipoWizard] = useState<TipoRelatorio>(tipoQuery ?? "executivo");
   const [configWizard, setConfigWizard] = useState<ConfiguracaoRelatorio | undefined>(undefined);
-  // Histórico real do workspace (`RelatorioGerado` no banco) — começa vazio de verdade (sem
+  // Histórico real do workspace (`RelatorioGerado` no banco). Começa vazio de verdade (sem
   // relatório de exemplo nenhum) até o primeiro relatório real ser gerado.
   const [historico, setHistorico] = useState<RelatorioGerado[]>([]);
 
@@ -62,7 +62,7 @@ function RelatoriosPageInner() {
   }
 
   // Reabre o assistente já preenchido com a mesma configuração usada
-  // anteriormente — o usuário só revisa e aprova de novo (nunca reaproveita
+  // anteriormente: o usuário só revisa e aprova de novo (nunca reaproveita
   // o PDF antigo, sempre gera uma prévia nova a partir dos dados atuais).
   function duplicarConfiguracao(registro: RelatorioGerado) {
     setTipoWizard(registro.tipo);
@@ -72,7 +72,7 @@ function RelatoriosPageInner() {
 
   return (
     <>
-      <Topbar title="Relatórios" sub="Escolha o tipo de relatório — o conteúdo e os filtros você ajusta no assistente" />
+      <Topbar title="Relatórios" sub="Escolha o tipo de relatório. O conteúdo e os filtros você ajusta no assistente" />
 
       <div className="content">
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 14 }}>
@@ -135,7 +135,7 @@ function RelatoriosPageInner() {
                   <tr key={r.id}>
                     <td>{r.nome}</td>
                     <td>{TIPOS_RELATORIO.find((t) => t.tipo === r.tipo)?.nome ?? r.tipo}</td>
-                    <td>{r.contato ?? "—"}</td>
+                    <td>{r.contato ?? "-"}</td>
                     <td>{r.periodo}</td>
                     <td>{r.autor}</td>
                     <td>{r.data}</td>

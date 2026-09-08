@@ -7,7 +7,7 @@ import { ESCOPOS_POR_PROVEDOR, assinarState } from "@/lib/integracoes/meta";
  * GET redireciona pro diálogo OAuth da Meta pra conectar o provedor pedido (`?provedor=`, default
  * `meta_whatsapp` pra manter os links existentes funcionando sem mudança) do workspace de quem
  * está logado. Os botões "Conectar" em Configurações linkam pra cá diretamente
- * (`<a href="/api/integracoes/meta/conectar?provedor=...">`) — não precisa de fetch/JS. O
+ * (`<a href="/api/integracoes/meta/conectar?provedor=...">`): não precisa de fetch/JS. O
  * `redirect_uri` é sempre o mesmo callback pros três provedores; só o `state` assinado diz qual é.
  */
 export async function GET(request: Request) {

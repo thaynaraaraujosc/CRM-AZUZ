@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 /**
- * GET público (sem `auth()` — lead externo não tem sessão) usado só por `/formulario-preview` pra
+ * GET público (sem `auth()`: lead externo não tem sessão) usado só por `/formulario-preview` pra
  * popular a busca de "contato já existente". Resolve o workspace a partir do formulário (nunca de
- * uma sessão) e devolve só `{id, nome}` — nem essa página nem o público que a acessa precisam do
+ * uma sessão) e devolve só `{id, nome}`. Nem essa página nem o público que a acessa precisam do
  * contato inteiro (e-mail/whatsapp/etc.), só do nome pra buscar/selecionar.
  */
 export async function GET(_request: Request, ctx: RouteContext<"/api/formularios/[id]/contatos-sugeridos">) {

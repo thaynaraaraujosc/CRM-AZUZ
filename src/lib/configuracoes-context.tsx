@@ -10,7 +10,7 @@ import {
 } from "react";
 
 /**
- * Estado persistido de toda a tela de Configurações — banco de verdade (`PUT /api/preferencias/{chave}`,
+ * Estado persistido de toda a tela de Configurações. Banco de verdade (`PUT /api/preferencias/{chave}`,
  * debounced), não localStorage. Um context só pra não espalhar 20 providers novos no layout pra 20
  * categorias que, na prática, são todas "preferências do workspace" salvas no mesmo blob JSON.
  */
@@ -26,7 +26,7 @@ export type AzuzIaConfig = {
 
 export type ConfiguracoesEstado = {
   azuzIa: AzuzIaConfig;
-  /** Entidades simples criadas nas telas de gestão (equipes, funções, campos, etiquetas) — cada uma
+  /** Entidades simples criadas nas telas de gestão (equipes, funções, campos, etiquetas): cada uma
    * guarda só o essencial, tudo mockado/local. */
   funcoesPersonalizadas: { id: string; nome: string; descricao: string; cor: string; baseadaEm: string }[];
   equipesPersonalizadas: { id: string; nome: string; descricao: string; gestor: string; cor: string; metodoDistribuicao: string }[];
@@ -34,7 +34,7 @@ export type ConfiguracoesEstado = {
   etiquetasPersonalizadas: { id: string; nome: string; cor: string }[];
 };
 
-/** Preferências (banco real, ver src/app/api/preferencias/) — chave desse blob na tabela `Preferencia`. */
+/** Preferências (banco real, ver src/app/api/preferencias/): chave desse blob na tabela `Preferencia`. */
 const CHAVE_PREFERENCIA = "configuracoes";
 
 const AZUZ_IA_PADRAO: AzuzIaConfig = {
@@ -56,7 +56,7 @@ const ESTADO_PADRAO: ConfiguracoesEstado = {
 
 type ConfiguracoesContextValue = {
   estado: ConfiguracoesEstado;
-  /** Rascunho não salvo em alguma seção (Automações/Azuz IA) — usado pelo painel de Configurações
+  /** Rascunho não salvo em alguma seção (Automações/Azuz IA). Usado pelo painel de Configurações
    * pra confirmar antes de trocar de categoria e descartar a edição em andamento. */
   categoriaSuja: boolean;
   setCategoriaSuja: (valor: boolean) => void;

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { RITMO, intervaloEntreEnvios, preverDuracao } from "../ritmo";
 
 /**
- * O que estes testes protegem não é aritmética — é decisão de segurança operacional.
+ * O que estes testes protegem não é aritmética. É decisão de segurança operacional.
  *
  * Os números de ritmo são o que separa uma campanha de um disparo em massa que derruba o número do
  * cliente. Um ajuste distraído aqui não quebra nenhuma tela, não falha no build e só aparece quando
@@ -19,7 +19,7 @@ describe("ritmo por canal", () => {
   });
 
   it("só o não oficial varia o intervalo", () => {
-    // Intervalo exato e repetido é a assinatura de robô que os sistemas antifraude procuram — e só
+    // Intervalo exato e repetido é a assinatura de robô que os sistemas antifraude procuram. E só
     // faz sentido disfarçar onde não há API declarada.
     expect(RITMO.whatsapp_nao_oficial.variacao).toBeGreaterThan(0);
     expect(RITMO.whatsapp_oficial.variacao).toBe(0);

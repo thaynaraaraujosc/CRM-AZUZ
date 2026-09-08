@@ -48,7 +48,7 @@ const NOME_TIPO: Record<string, string> = {
  *
  * Formulário próprio em vez do genérico por dois motivos: a lista de palavras não é um campo de
  * texto (é um conjunto, e digitar "guia,quero" numa caixa esconde erros de espaço), e a escolha da
- * publicação precisa mostrar a foto — ninguém reconhece um post por um id de 17 dígitos.
+ * publicação precisa mostrar a foto. Ninguém reconhece um post por um id de 17 dígitos.
  */
 export function ComentarioInstagramForm({
   data,
@@ -104,7 +104,7 @@ export function ComentarioInstagramForm({
         </div>
         <input
           className="input"
-          placeholder="Digite e aperte Enter — ex.: GUIA"
+          placeholder="Digite e aperte Enter. Ex.: GUIA"
           value={novaPalavra}
           onChange={(e) => setNovaPalavra(e.target.value)}
           onKeyDown={(e) => {

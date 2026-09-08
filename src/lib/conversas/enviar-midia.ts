@@ -9,11 +9,11 @@ import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-o
  * Envia um arquivo (imagem, vídeo, áudio, documento) pelo canal da conversa.
  *
  * Os blocos de mídia das automações existiam só no editor: no envio, ou não saía nada, ou saía só a
- * legenda — o que é pior, porque registra "enviado" e o contato não recebeu o arquivo.
+ * legenda: o que é pior, porque registra "enviado" e o contato não recebeu o arquivo.
  *
  * O arquivo mora na biblioteca do CRM como data URL. Nenhum dos canais aceita o conteúdo no corpo
  * da chamada: todos recebem um ENDEREÇO e vão buscar o arquivo por fora, sem sessão. Por isso o
- * caminho é o mesmo que o envio de anexo do Instagram já usa — um link assinado e temporário
+ * caminho é o mesmo que o envio de anexo do Instagram já usa. Um link assinado e temporário
  * (`publicarAnexoTemporario`), que vence pouco depois do envio.
  */
 export type TipoMidia = "imagem" | "video" | "audio" | "documento";
@@ -35,7 +35,7 @@ const TIPO_INSTAGRAM: Record<TipoMidia, TipoAnexoInstagram> = {
 export async function enviarMidiaPeloCanal(params: {
   workspaceId: string;
   conversaNome: string;
-  /** Id em `DocumentoBiblioteca` — é o que o bloco guarda. */
+  /** Id em `DocumentoBiblioteca`: é o que o bloco guarda. */
   arquivoId: string;
   tipo: TipoMidia;
   legenda?: string;
@@ -82,7 +82,7 @@ export async function enviarMidiaPeloCanal(params: {
         TIPO_INSTAGRAM[tipo],
         publicado.url,
       );
-      // O Direct manda o anexo sozinho — a legenda vai como uma segunda mensagem, senão ela some.
+      // O Direct manda o anexo sozinho. A legenda vai como uma segunda mensagem, senão ela some.
       return { enviado: true };
     }
 
@@ -90,7 +90,7 @@ export async function enviarMidiaPeloCanal(params: {
       conversa.contaCanal?.startsWith("whatsapp_nao_oficial:") || conversa.contaCanal?.startsWith("whatsapp_baileys:");
     if (porQrCode) {
       if (tipo === "audio") {
-        // A Evolution tem endpoint próprio pra nota de voz, e ele não aceita URL — só base64. O
+        // A Evolution tem endpoint próprio pra nota de voz, e ele não aceita URL. Só base64. O
         // conteúdo do data URL já está aqui, então vai direto.
         await enviarAudioWhatsAppNaoOficial(workspaceId, conversa.contato, arquivo.url.slice(arquivo.url.indexOf(",") + 1));
         return { enviado: true };

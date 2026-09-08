@@ -7,11 +7,11 @@ import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 
 /**
- * Transferir um negócio: responsável, funil e etapa — numa janela só, usada em todo o CRM.
+ * Transferir um negócio: responsável, funil e etapa: numa janela só, usada em todo o CRM.
  *
  * Existe pra que os três caminhos (menu do card, painel do funil, configurações da conversa)
  * produzam exatamente o mesmo efeito no banco. Três implementações separadas divergiriam na
- * primeira correção feita só numa delas — e a divergência apareceria como "transferi por um lugar
+ * primeira correção feita só numa delas. E a divergência apareceria como "transferi por um lugar
  * e por outro não funcionou", o tipo de bug que ninguém consegue reproduzir.
  *
  * As três propriedades são independentes de propósito:
@@ -37,7 +37,7 @@ export function TransferirNegocio({
   const { funis, moverNegocio } = useFunis();
   const { membros: equipe } = useEquipe();
 
-  /** Onde o negócio está agora — ponto de partida dos seletores. */
+  /** Onde o negócio está agora. Ponto de partida dos seletores. */
   const localAtual = useMemo(() => {
     for (const funil of funis) {
       for (const coluna of funil.colunas) {
@@ -58,7 +58,7 @@ export function TransferirNegocio({
   function trocarFunil(novoFunilId: string) {
     setFunilId(novoFunilId);
     // A etapa atual pertence ao funil ANTERIOR. Mantê-la selecionada deixaria escolher uma etapa
-    // que não existe no destino — e o servidor recusaria com um erro que ninguém entenderia.
+    // que não existe no destino. E o servidor recusaria com um erro que ninguém entenderia.
     const etapas = funis.find((f) => f.id === novoFunilId)?.colunas ?? [];
     setEtapaId(etapas.some((c) => c.id === etapaId) ? etapaId : "");
   }
@@ -129,7 +129,7 @@ export function TransferirNegocio({
         <label>Etapa</label>
         <select className="input" value={etapaId} onChange={(e) => setEtapaId(e.target.value)}>
           <option value="">Escolha a etapa</option>
-          {/* Só as etapas do funil selecionado — nunca as de outro funil misturadas. */}
+          {/* Só as etapas do funil selecionado. Nunca as de outro funil misturadas. */}
           {etapasDoFunil.map((coluna) => (
             <option key={coluna.id} value={coluna.id}>
               {coluna.titulo}

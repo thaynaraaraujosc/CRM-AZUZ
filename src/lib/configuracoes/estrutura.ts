@@ -37,7 +37,7 @@ export type CategoriaConfig = {
   descricao: string;
   Icon: IconeCategoria;
   /** Mostra a tag "Em breve" ao lado do label e troca o conteúdo da categoria por uma vitrine
-   * informativa em vez do formulário — mesmo padrão já usado em Azuz IA (`/azuz-ia`). */
+   * informativa em vez do formulário. Mesmo padrão já usado em Azuz IA (`/azuz-ia`). */
   emBreve?: boolean;
 };
 
@@ -47,7 +47,7 @@ export type GrupoConfig = {
 };
 
 /**
- * Estrutura enxuta: só configurações realmente globais da conta ficam aqui — o que já tem módulo
+ * Estrutura enxuta: só configurações realmente globais da conta ficam aqui. O que já tem módulo
  * próprio no menu principal (Funis e etapas → /funil; usuários/equipes/campos/automações/agenda →
  * /equipe, /automacoes, /agenda) saiu daqui de vez (eram redundantes com o módulo real, não só uma
  * segunda navegação pro mesmo lugar).
@@ -87,7 +87,7 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
 
 /**
  * WhatsApp e Instagram continuam existindo como categoria de verdade (a tela em si, o
- * conteúdo, os links "Conectar" da tela "Outras integrações") — só saíram da navegação lateral
+ * conteúdo, os links "Conectar" da tela "Outras integrações"). Só saíram da navegação lateral
  * a pedido, porque essa navegação ficou redundante com os cards de "Outras integrações". Ficam
  * fora de `GRUPOS_CONFIGURACOES` (não aparecem no menu) mas continuam resolvíveis por
  * `categoriaPorId`, senão os links `?categoria=whatsapp`/`?categoria=instagram` quebravam.

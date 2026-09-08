@@ -5,7 +5,7 @@ import { useState } from "react";
 const CHAVE_TEMA = "azuz-crm-tema";
 type Tema = "light" | "dark";
 
-/** Tela clara ou escura — vale só nesse navegador (guardado em localStorage, lido no boot por
+/** Tela clara ou escura: vale só nesse navegador (guardado em localStorage, lido no boot por
  * `src/app/layout.tsx` antes do primeiro paint). Sem "Sistema": só as duas opções que a pessoa
  * escolhe de fato. */
 export function ThemeToggle() {
@@ -20,7 +20,7 @@ export function ThemeToggle() {
     try {
       localStorage.setItem(CHAVE_TEMA, novoTema);
     } catch {
-      // localStorage indisponível (modo privado etc.) — só não persiste entre sessões
+      // localStorage indisponível (modo privado etc.): só não persiste entre sessões
     }
   }
 

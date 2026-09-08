@@ -21,7 +21,7 @@ const CHAVES_TEXTAREA = new Set(["payload", "observacao", "motivo", "instrucao",
 const CHAVES_OCULTAS = new Set(["variaveis", "candidatos", "anexos", "variaveisUsadas"]);
 
 /**
- * Fallback genérico pros ~40 tipos de nó sem formulário dedicado — reflete
+ * Fallback genérico pros ~40 tipos de nó sem formulário dedicado. Reflete
  * sobre as chaves já presentes em `node.data` (nunca some/aparece campo à
  * toa: o conjunto de chaves vem de `dataPadrao()` no momento em que o bloco
  * foi criado) e escolhe o melhor controle pra cada uma por heurística de nome/tipo.
@@ -37,7 +37,7 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
   }
 
   if (chaves.length === 0) {
-    return <p className="hint">Esse bloco não tem opções — só o título/observação, ali em cima.</p>;
+    return <p className="hint">Esse bloco não tem opções. Só o título/observação, ali em cima.</p>;
   }
 
   const funilEscolhidoId = typeof d.funilId === "string" ? d.funilId : undefined;
@@ -165,7 +165,7 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
         }
 
         if (valor !== null && typeof valor === "object") {
-          // Estrutura aninhada (ex.: `tempoMaximo`, `variaveis`) — sem editor dedicado nesse fallback genérico.
+          // Estrutura aninhada (ex.: `tempoMaximo`, `variaveis`): sem editor dedicado nesse fallback genérico.
           return (
             <p className="hint" key={chave}>
               &quot;{rotuloDaChave(chave)}&quot; tem uma estrutura própria, sem edição nesse formulário genérico.

@@ -43,7 +43,7 @@ export default function CadastroPage() {
       return;
     }
 
-    // Conta acabou de nascer com assinatura "pendente" (ver /api/cadastro) — o proxy bloqueia
+    // Conta acabou de nascer com assinatura "pendente" (ver /api/cadastro). O proxy bloqueia
     // tudo até o pagamento, então já manda direto pra tela de pagamento em vez de /inicio (que só
     // ia rebater de volta pra cá mesmo).
     router.push("/configuracoes?categoria=plano");

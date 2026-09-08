@@ -1,8 +1,8 @@
 import { Resend } from "resend";
 
 /**
- * E-mail transacional da plataforma (recuperação de senha, e futuramente reenvio de convite) —
- * não confundir com `EmailSecao.tsx` (Configurações → E-mail), que é a conta de e-mail do
+ * E-mail transacional da plataforma (recuperação de senha, e futuramente reenvio de convite).
+ * Não confundir com `EmailSecao.tsx` (Configurações → E-mail), que é a conta de e-mail do
  * workspace pra falar com os leads. Esse aqui é da própria AZUZ, uma chave só, configurada por
  * variável de ambiente.
  */
@@ -14,7 +14,7 @@ export function emailConfigurado(): boolean {
 
 export async function enviarEmail({ to, subject, html }: { to: string; subject: string; html: string }): Promise<void> {
   if (!resend) {
-    console.error("RESEND_API_KEY não configurada — e-mail não enviado:", { to, subject });
+    console.error("RESEND_API_KEY não configurada: e-mail não enviado:", { to, subject });
     return;
   }
   const remetente = process.env.EMAIL_FROM || "CRM AZUZ <onboarding@resend.dev>";
@@ -29,7 +29,7 @@ export async function enviarEmail({ to, subject, html }: { to: string; subject: 
  * senha, convite), onde derrubar o fluxo por causa de um e-mail seria pior que registrar a falha.
  *
  * Campanha é o caso oposto: se a mensagem não saiu, aquele destinatário precisa ficar marcado como
- * falhou, com o motivo — senão o relatório diz "enviado" para gente que nunca recebeu nada, que é a
+ * falhou, com o motivo: senão o relatório diz "enviado" para gente que nunca recebeu nada, que é a
  * pior coisa que um sistema de disparo pode fazer.
  */
 export async function enviarEmailOuFalhar({
@@ -59,7 +59,7 @@ export function templateRedefinicaoSenha(nome: string, link: string): string {
           Redefinir senha
         </a>
       </p>
-      <p style="font-size: 13px; color: #6e7694;">Esse link expira em 1 hora. Se você não pediu essa redefinição, pode ignorar este e-mail — sua senha continua a mesma.</p>
+      <p style="font-size: 13px; color: #6e7694;">Esse link expira em 1 hora. Se você não pediu essa redefinição, pode ignorar este e-mail: sua senha continua a mesma.</p>
     </div>
   `;
 }
@@ -71,7 +71,7 @@ export function templateEmailAlterado(nome: string, novoEmail: string): string {
       <h2 style="color: #0b1533;">Seu e-mail de acesso foi alterado</h2>
       <p>Olá, ${primeiroNome}.</p>
       <p>O e-mail de acesso da sua conta no CRM AZUZ foi alterado para <strong>${novoEmail}</strong>. A partir de agora, use esse novo e-mail (com sua senha atual) pra entrar.</p>
-      <p style="font-size: 13px; color: #6e7694;">Se você não fez essa alteração, entre em contato com a equipe AZUZ imediatamente — sua senha atual continua sendo a única forma de acessar a conta.</p>
+      <p style="font-size: 13px; color: #6e7694;">Se você não fez essa alteração, entre em contato com a equipe AZUZ imediatamente. Sua senha atual continua sendo a única forma de acessar a conta.</p>
     </div>
   `;
 }

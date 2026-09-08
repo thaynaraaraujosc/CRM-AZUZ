@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { descreverDispositivo } from "@/lib/sessoes";
 
 /**
- * GET — sessões de verdade do Membro logado (`SessaoAtiva`, criada no login em `src/lib/auth.ts`),
+ * GET: sessões de verdade do Membro logado (`SessaoAtiva`, criada no login em `src/lib/auth.ts`),
  * não mais o mock fixo de 3 linhas. `atual` marca a sessão de quem está fazendo a requisição agora
  * (comparando o `jti` desta sessão, exposto pelo callback `session`).
  */
