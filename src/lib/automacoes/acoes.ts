@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
+import { registrarMensagemEnviada } from "@/lib/conversas/registrar-saida";
 import { enviarPerguntaPeloCanal, textoNumerado, type OpcaoPergunta } from "@/lib/conversas/enviar-pergunta";
 import { enviarMidiaPeloCanal, type TipoMidia } from "@/lib/conversas/enviar-midia";
 import { componentesParaMeta, resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
@@ -78,7 +79,11 @@ export function acoesReais(params: {
       if (!texto.trim()) return falha("Mensagem vazia — nada foi enviado.");
       try {
         const r = await enviarTextoPeloCanal({ workspaceId, conversaNome: contatoNome, texto });
-        return r.enviado ? ok(`Mensagem enviada: "${resumir(texto)}"`) : falha(`Não foi possível enviar: ${r.motivo ?? "motivo desconhecido"}`);
+        if (!r.enviado) return falha(`Não foi possível enviar: ${r.motivo ?? "motivo desconhecido"}`);
+        // A mensagem entra na conversa. Sem isto quem abre a tela vê a resposta do cliente sem a
+        // pergunta que a automação fez.
+        await registrarMensagemEnviada({ workspaceId, contatoNome, texto, origem: "automacao" });
+        return ok(`Mensagem enviada: "${resumir(texto)}"`);
       } catch (erro) {
         return falha("Falha ao enviar a mensagem.", mensagemDoErro(erro));
       }
@@ -89,6 +94,15 @@ export function acoesReais(params: {
       try {
         const r = await enviarPerguntaPeloCanal({ workspaceId, conversaNome: contatoNome, texto, opcoes });
         if (!r.enviado) return falha(`Não foi possível enviar: ${r.motivo ?? "motivo desconhecido"}`);
+        // Registra com o texto do jeito que a pessoa recebeu: no menu numerado as opções fazem
+        // parte do texto; nos formatos interativos elas vão em `opcoes` e viram as bolhas de botão.
+        await registrarMensagemEnviada({
+          workspaceId,
+          contatoNome,
+          texto: r.formato === "numerado" ? textoNumerado(texto, opcoes) : texto,
+          opcoes: r.formato === "numerado" ? undefined : opcoes.map((o) => o.rotulo),
+          origem: "automacao",
+        });
         return ok(`Pergunta enviada (${NOME_DO_FORMATO[r.formato]})${r.observacao ? ` — ${r.observacao}` : ""}.`);
       } catch (erro) {
         return falha("Falha ao enviar a pergunta.", mensagemDoErro(erro));
@@ -99,7 +113,14 @@ export function acoesReais(params: {
       if (!arquivoId) return falha("O bloco não tem arquivo escolhido — nada foi enviado.");
       try {
         const r = await enviarMidiaPeloCanal({ workspaceId, conversaNome: contatoNome, arquivoId, tipo, legenda });
-        return r.enviado ? ok(`Arquivo enviado (${tipo}).`) : falha(`Não foi possível enviar o arquivo: ${r.motivo ?? "motivo desconhecido"}`);
+        if (!r.enviado) return falha(`Não foi possível enviar o arquivo: ${r.motivo ?? "motivo desconhecido"}`);
+        await registrarMensagemEnviada({
+          workspaceId,
+          contatoNome,
+          texto: legenda || `[${tipo}]`,
+          origem: "automacao",
+        });
+        return ok(`Arquivo enviado (${tipo}).`);
       } catch (erro) {
         return falha("Falha ao enviar o arquivo.", mensagemDoErro(erro));
       }
