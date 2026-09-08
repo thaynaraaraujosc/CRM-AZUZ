@@ -23,6 +23,11 @@ const PREFIXOS_PUBLICOS = [
   "/redefinir-senha",
   "/convite",
   "/formulario-preview",
+  // A tela pública do formulário, aberta pelo link compartilhado. Quem chega aqui é um lead que
+  // nunca vai ter login: exigir sessão devolveria um 307 pro /login e o formulário jamais seria
+  // respondido. Ela só desenha o formulário e chama as rotas de `/api/formularios`, que já são
+  // públicas e já devolvem o mínimo.
+  "/f",
   "/acesso-bloqueado",
   "/politica-de-privacidade",
   "/api/auth",

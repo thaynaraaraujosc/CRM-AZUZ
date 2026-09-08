@@ -67,7 +67,7 @@ const EXTENSAO_POR_TIPO: Record<string, string> = {
 export async function guardarArquivo(params: {
   workspaceId: string;
   dataUrl: string;
-  origem: "mensagem" | "envio";
+  origem: "mensagem" | "envio" | "logo";
 }): Promise<string> {
   if (!r2Configurado()) return params.dataUrl;
 

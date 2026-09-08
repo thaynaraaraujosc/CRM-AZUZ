@@ -219,7 +219,13 @@ export type TemaFormulario = {
   corPrincipal: string;
   corBotao: string;
   temaEscuro: boolean;
+  /** Endereço que a tela usa pra desenhar a logo. Quando a logo foi ENVIADA como arquivo, aponta
+   *  pra `/api/formularios/<id>/logo`. Quando foi colada como link, é o endereço externo. */
   logoUrl?: string;
+  /** Referência interna do arquivo enviado (`r2:<chave>`, ou a própria data URL quando o R2 não
+   *  está configurado). Só existe quando a logo veio de um upload, e é o que a rota pública lê
+   *  pra devolver os bytes. Nunca sai do servidor: a tela pública recebe só a `logoUrl`. */
+  logoArquivo?: string;
   bannerUrl?: string;
   imagemFundoUrl?: string;
   layout: "coluna-unica" | "duas-colunas";

@@ -7890,11 +7890,72 @@ button.camp-row:hover {
   padding: var(--space-2) var(--space-3);
 }
 
+/* A aba Design ocupava uma coluna e deixava metade da tela vazia. Agora são os controles à
+   esquerda e o formulário desenhado à direita, que acompanha cada tecla. */
+.form-design-colunas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+  gap: var(--space-5);
+  align-items: start;
+}
+
 .form-builder-design {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   max-width: 640px;
+  min-width: 0;
+}
+
+/* Acompanha a rolagem: mexer numa cor lá embaixo, na lista de opções, com a prévia fora da tela
+   seria o mesmo problema de antes, só que com mais passos. */
+.form-design-previa {
+  position: sticky;
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.form-design-previa-moldura {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--navy-raised);
+  padding: var(--space-4);
+  max-height: 66vh;
+  overflow-y: auto;
+}
+
+/* Dentro da moldura o cartão é o conteúdo, não a página: perde a sombra e a largura fixa que ele
+   tem quando ocupa a tela inteira do lead. */
+.form-design-previa .form-public-card {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  box-shadow: none;
+}
+
+.form-design-previa-nota {
+  margin: 0;
+}
+
+/* Numa tela estreita a prévia vai pra baixo dos controles, em vez de espremer as duas. */
+@media (max-width: 1180px) {
+  .form-design-colunas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form-design-previa {
+    position: static;
+  }
+}
+
+/* O botão de adicionar página era `width: 100%` com margem lateral de 12px dentro de uma coluna de
+   220px: 244px no total, e os 24px que sobravam eram cortados pelo `overflow: hidden` do quadro.
+   O respiro passa a ser padding do container. */
+.form-builder-paginas-add {
+  padding: var(--space-2) var(--space-3);
 }
 
 .form-preview-viewport {
@@ -16082,4 +16143,40 @@ table.tbl .name-cell .r {
   .nav-item::before {
     transition: none;
   }
+}
+
+/* Envio da logo do formulário. A prévia fica ao lado dos botões, não embaixo: o que se quer saber
+   ao trocar a imagem é se ela ficou boa, e ter que rolar pra ver derrota o propósito. */
+.form-design-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.form-design-logo-previa {
+  max-height: 46px;
+  max-width: 160px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-2);
+  background: var(--white);
+}
+
+.form-design-logo-vazia {
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 var(--space-3);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md);
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.form-design-logo-acoes {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
