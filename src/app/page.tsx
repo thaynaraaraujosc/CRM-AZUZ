@@ -64,10 +64,16 @@ const FUNIL_ETAPAS = [
  * `/login`. Tema fixo, independente do claro/escuro do app: é página de marketing e não herda a
  * preferência salva do usuário.
  *
- * A identidade aqui é preto, branco e cinza, sem o azul da marca. O que dá a sensação de produto
- * caro não é cor: é título grande com entrelinha fechada, largura de conteúdo curta, muito espaço
- * vertical entre blocos, borda de 1px e sombra quase invisível. Cor entraria como um quarto
- * elemento disputando atenção com o texto que vende.
+ * A identidade aqui é MARINHO com o azul oceano da marca. A versão anterior era preto, branco e
+ * cinza: correta, silenciosa e igual a metade das landings de SaaS. O que se pede de uma página de
+ * entrada não é discrição, é ser lembrada, e num produto que vende tecnologia a própria página
+ * precisa parecer tecnologia.
+ *
+ * A profundidade vem de fundo escuro com superfícies translúcidas empilhadas, de um campo de luz
+ * que se move devagar atrás do título, e de entrada escalonada dos elementos. Não de neon: o azul
+ * aparece em poucos lugares e sempre com função (a marca, o botão principal, a metade destacada do
+ * título, a barra de hoje no gráfico). Fundo escuro com um acento só é o que separa "tecnológico"
+ * de "árvore de Natal".
  *
  * As telas de produto abaixo do hero são recriações fiéis das UIs internas (mesma estrutura de
  * Início, Funil e Conversas): não são screenshots reais porque esse ambiente não alcança o banco
@@ -82,23 +88,31 @@ export default function LandingPage() {
              e não segue o tema claro/escuro escolhido pelo usuário. Antes isso servia pra fixar
              o fundo escuro, agora fixa o claro. O azul da marca sai do primeiro contato de
              propósito: a página vende com tipografia, espaço e proporção, não com cor. */
-          --lp-bg: #ffffff;
-          --lp-bg-2: #fafafa;
-          --lp-ink: #0a0a0a;
-          --lp-muted: #5f5f5f;
-          --lp-faint: #8e8e8e;
-          --lp-line: rgba(0, 0, 0, 0.09);
-          --lp-line-forte: rgba(0, 0, 0, 0.16);
-          --lp-superficie: #f5f5f5;
+          /* O fundo é mais fundo que o marinho da marca de propósito: assim o próprio marinho
+             (#0b1533) pode ser usado como superfície ELEVADA em cima dele, e a página ganha
+             camadas em vez de ser um bloco de cor só. */
+          --lp-bg: #060b1a;
+          --lp-bg-2: #0b1533;
+          --lp-ink: #ffffff;
+          --lp-muted: rgba(255, 255, 255, 0.68);
+          --lp-faint: rgba(255, 255, 255, 0.46);
+          --lp-line: rgba(255, 255, 255, 0.1);
+          --lp-line-forte: rgba(255, 255, 255, 0.24);
+          --lp-superficie: rgba(255, 255, 255, 0.05);
+          --lp-superficie-2: rgba(255, 255, 255, 0.08);
+          /* O oceano da marca. É o único acento da página. */
+          --lp-oceano: #2e6bff;
+          --lp-oceano-claro: #7ea2ff;
           min-height: 100vh;
           background: var(--lp-bg);
           color: var(--lp-ink);
           font-family: var(--body);
           position: relative;
           overflow: hidden;
-          /* A landing é sempre clara: sem isto, o navegador de quem usa o sistema no escuro pinta
-             os controles nativos (barra de rolagem, autofill) como se a página fosse escura. */
-          color-scheme: light;
+          /* A landing é sempre escura, independente do tema do sistema: sem isto o navegador de
+             quem usa no claro pinta os controles nativos (barra de rolagem, autofill) como se a
+             página fosse clara, e eles aparecem como manchas brancas. */
+          color-scheme: dark;
         }
         /* Malha quase invisível atrás do topo. Dá o traço "tecnológico" sem virar mais um
            elemento na tela. Some antes do primeiro bloco de conteúdo. */
@@ -106,12 +120,48 @@ export default function LandingPage() {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(rgba(0, 0, 0, 0.028) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 0, 0, 0.028) 1px, transparent 1px);
+            linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
           background-size: 72px 72px;
           mask-image: radial-gradient(ellipse 65% 42% at 50% 0%, #000 30%, transparent 100%);
           pointer-events: none;
         }
+
+        /* Campo de luz atrás do título: duas manchas de azul muito diluídas que respiram devagar,
+           em ciclos longos e diferentes entre si, pra nunca baterem no mesmo compasso (é a
+           repetição que denuncia o efeito). Fica atrás de tudo e não recebe clique. É o que dá
+           profundidade sem acender neon em cima do texto. */
+        .lp-aurora {
+          position: absolute;
+          inset: -20% -10% auto;
+          height: 900px;
+          pointer-events: none;
+          background:
+            radial-gradient(ellipse 42% 38% at 28% 32%, rgba(46, 107, 255, 0.3), transparent 70%),
+            radial-gradient(ellipse 38% 34% at 74% 20%, rgba(126, 162, 255, 0.18), transparent 72%);
+          filter: blur(28px);
+          animation: lp-respirar 18s ease-in-out infinite;
+        }
+
+        @keyframes lp-respirar {
+          0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.9; }
+          50% { transform: translate3d(-2%, 2%, 0) scale(1.08); opacity: 1; }
+        }
+
+        /* Entrada dos elementos do topo, em cascata curta. A página se monta na ordem em que se
+           lê, em vez de aparecer inteira e pronta. */
+        @keyframes lp-entrar {
+          from { opacity: 0; transform: translateY(14px); }
+          to { opacity: 1; transform: none; }
+        }
+        .lp-badge, .lp-h1, .lp-sub, .lp-cta-row, .lp-microcopy, .lp-frame-wrap {
+          animation: lp-entrar 0.62s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+        }
+        .lp-h1 { animation-delay: 0.06s; }
+        .lp-sub { animation-delay: 0.12s; }
+        .lp-cta-row { animation-delay: 0.18s; }
+        .lp-microcopy { animation-delay: 0.24s; }
+        .lp-frame-wrap { animation-delay: 0.3s; }
         .lp-shell { position: relative; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
         /* Header flutuante: uma faixa branca destacada do topo, com borda fina, em vez de colada
@@ -121,16 +171,18 @@ export default function LandingPage() {
           display: flex; align-items: center; justify-content: space-between;
           max-width: 940px; margin: 0 auto; padding: 10px 10px 10px 22px;
           border: 1px solid var(--lp-line); border-radius: 999px;
-          background: rgba(255, 255, 255, 0.82);
-          backdrop-filter: blur(14px);
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
+          /* Vidro escuro, não branco: sobre o marinho o branco translúcido vira uma faixa leitosa
+             que apaga o que passa por baixo. */
+          background: rgba(11, 21, 51, 0.72);
+          backdrop-filter: blur(16px);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 34px -12px rgba(0, 0, 0, 0.6);
         }
         .lp-logo { display: flex; align-items: center; gap: 9px; }
         .lp-mark {
           width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
-          /* Era um quadrado azul. Preto chapado mantém a marca no header sem ser o elemento mais
-             colorido de uma página que não tem cor nenhuma. */
-          background: var(--lp-ink); color: #fff;
+          /* Volta a ser o azul da marca. Num fundo marinho o preto sumiria, e este é o único
+             lugar do header onde a cor tem função: é a identidade. */
+          background: var(--lp-oceano); color: #fff;
           display: flex; align-items: center; justify-content: center;
           font-family: var(--display); font-weight: 700; font-size: 13px;
         }
@@ -145,20 +197,23 @@ export default function LandingPage() {
         }
         .lp-btn-ghost { color: var(--lp-ink); border-color: transparent; background: transparent; }
         .lp-btn-ghost:hover { background: var(--lp-superficie); }
-        .lp-btn-primary { color: #ffffff; background: var(--lp-ink); }
-        .lp-btn-primary:hover { background: #2b2b2b; }
+        .lp-btn-primary {
+          color: #ffffff; background: var(--lp-oceano);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 10px 26px -12px rgba(46, 107, 255, 0.9);
+        }
+        .lp-btn-primary:hover { background: #1f57e0; }
         /* A seta é do botão, não do texto: entra por CSS pra nenhuma frase da página mudar. */
         .lp-btn-primary::after { content: "→"; font-size: 13px; line-height: 1; }
-        .lp-btn-linha { color: var(--lp-ink); border-color: var(--lp-line-forte); background: #fff; }
-        .lp-btn-linha:hover { background: var(--lp-superficie); }
+        .lp-btn-linha { color: var(--lp-ink); border-color: var(--lp-line-forte); background: var(--lp-superficie); }
+        .lp-btn-linha:hover { background: var(--lp-superficie-2); }
 
         .lp-badge {
           display: inline-flex; align-items: center; gap: 8px; margin: 0 auto 30px;
           padding: 7px 15px 7px 11px; border-radius: 999px; border: 1px solid var(--lp-line);
-          background: #fff; font-size: 11.5px; font-weight: 600; color: var(--lp-muted);
+          background: var(--lp-superficie); font-size: 11.5px; font-weight: 600; color: var(--lp-muted);
           letter-spacing: 0.04em; text-transform: uppercase;
         }
-        .lp-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--lp-ink); animation: lp-pulse 2.4s ease-in-out infinite; }
+        .lp-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--lp-oceano-claro); animation: lp-pulse 2.4s ease-in-out infinite; }
         @keyframes lp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 
         .lp-hero { text-align: center; padding: 104px 0 0; }
@@ -171,9 +226,14 @@ export default function LandingPage() {
           text-wrap: balance;
         }
         .lp-h1 span {
-          /* Era azul. Numa página monocromática o destaque vem do próprio peso do título; pintar
-             metade da frase de outra cor reintroduziria o acento que a paleta acabou de tirar. */
-          color: var(--lp-ink);
+          /* A metade destacada da frase volta a ter cor. Num título de 76px em fundo escuro, é o
+             que faz o olho parar na parte que importa antes de ler a frase inteira. Gradiente e
+             não chapado: dá a leitura de luz atravessando o texto, que é o traço tecnológico que
+             a página pedia, sem acender nada. */
+          background: linear-gradient(100deg, var(--lp-oceano-claro), var(--lp-oceano));
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
         }
         .lp-sub {
           font-size: 17px; color: var(--lp-muted); max-width: 580px; margin: 0 auto 34px;
@@ -187,22 +247,25 @@ export default function LandingPage() {
         .lp-frame-wrap { margin: 84px 0 0; }
         .lp-frame {
           max-width: 940px; margin: 0 auto; border-radius: 18px; overflow: hidden;
-          background: var(--lp-bg);
+          background: var(--lp-bg-2);
           border: 1px solid var(--lp-line);
-          /* Sombra em duas camadas e muito baixa opacidade: descola o cartão do branco sem
-             desenhar uma borda escura embaixo dele. */
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 18px 44px -18px rgba(0, 0, 0, 0.16);
+          /* Fio de luz na quina de cima e sombra funda embaixo: sobre fundo escuro é o contraste
+             de aresta que descola o cartão, não a sombra sozinha. */
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            0 30px 70px -30px rgba(0, 0, 0, 0.9),
+            0 0 0 1px rgba(46, 107, 255, 0.12);
         }
         .lp-frame-bar {
           display: flex; align-items: center; gap: 7px; padding: 12px 16px;
-          background: var(--lp-bg-2); border-bottom: 1px solid var(--lp-line);
+          background: rgba(255, 255, 255, 0.04); border-bottom: 1px solid var(--lp-line);
         }
         /* Os três pontos ficam em cinza: em vermelho/amarelo/verde eram as cores mais fortes da
            página inteira, e ficariam brigando com o conteúdo do próprio print. */
-        .lp-frame-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(0, 0, 0, 0.14); }
+        .lp-frame-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, 0.18); }
         .lp-frame-url {
           margin-left: 10px; font-size: 11.5px; color: var(--lp-faint); font-family: var(--body);
-          background: #fff; border: 1px solid var(--lp-line); border-radius: 999px; padding: 4px 14px;
+          background: var(--lp-superficie); border: 1px solid var(--lp-line); border-radius: 999px; padding: 4px 14px;
         }
 
         .lp-crm { padding: 20px; display: grid; grid-template-columns: 186px 1fr; gap: 18px; }
@@ -215,39 +278,39 @@ export default function LandingPage() {
         .lp-crm-side-item svg { width: 14px; height: 14px; opacity: 0.75; }
         .lp-crm-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
         .lp-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .lp-kpi { border: 1px solid var(--lp-line); background: #fff; border-radius: 12px; padding: 12px 13px; }
+        .lp-kpi { border: 1px solid var(--lp-line); background: var(--lp-superficie); border-radius: 12px; padding: 12px 13px; }
         .lp-kpi .l { font-size: 10.5px; color: var(--lp-faint); margin-bottom: 5px; }
         .lp-kpi .n { font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: -0.02em; }
         .lp-kpi .d { font-size: 10px; color: var(--lp-muted); margin-top: 3px; }
         .lp-chart {
-          border: 1px solid var(--lp-line); background: #fff;
+          border: 1px solid var(--lp-line); background: var(--lp-superficie);
           border-radius: 12px; padding: 13px; display: flex; align-items: flex-end; gap: 5px; height: 92px;
         }
-        .lp-bar { flex: 1; border-radius: 3px 3px 0 0; background: rgba(0, 0, 0, 0.14); }
-        .lp-bar.now { background: var(--lp-ink); }
+        .lp-bar { flex: 1; border-radius: 3px 3px 0 0; background: rgba(255, 255, 255, 0.14); }
+        .lp-bar.now { background: linear-gradient(180deg, var(--lp-oceano-claro), var(--lp-oceano)); }
 
         .lp-funil { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .lp-funil-col { border: 1px solid var(--lp-line); border-radius: 12px; padding: 10px; background: var(--lp-bg-2); }
+        .lp-funil-col { border: 1px solid var(--lp-line); border-radius: 12px; padding: 10px; background: rgba(255, 255, 255, 0.03); }
         .lp-funil-col-h { font-size: 10px; font-weight: 700; color: var(--lp-faint); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 9px; padding: 0 2px; }
         .lp-funil-card {
           border: 1px solid var(--lp-line); border-radius: 10px; padding: 9px 10px; margin-bottom: 7px;
-          background: #fff; font-size: 11px;
+          background: var(--lp-superficie-2); font-size: 11px;
         }
         .lp-funil-card:last-child { margin-bottom: 0; }
         .lp-funil-card .fn { font-weight: 600; margin-bottom: 3px; }
         .lp-funil-card .fv { color: var(--lp-faint); font-size: 10.5px; }
 
         .lp-conv { display: grid; grid-template-columns: 168px 1fr; gap: 10px; height: 148px; }
-        .lp-conv-list { border: 1px solid var(--lp-line); border-radius: 12px; overflow: hidden; background: #fff; }
+        .lp-conv-list { border: 1px solid var(--lp-line); border-radius: 12px; overflow: hidden; background: var(--lp-superficie); }
         .lp-conv-item { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--lp-line); }
-        .lp-conv-item .av { width: 22px; height: 22px; border-radius: 50%; background: var(--lp-superficie); border: 1px solid var(--lp-line); flex-shrink: 0; }
+        .lp-conv-item .av { width: 22px; height: 22px; border-radius: 50%; background: var(--lp-superficie-2); border: 1px solid var(--lp-line); flex-shrink: 0; }
         .lp-conv-item .tx { min-width: 0; }
         .lp-conv-item .nm { font-size: 10.5px; font-weight: 600; }
         .lp-conv-item .ms { font-size: 9.5px; color: var(--lp-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .lp-conv-chat { border: 1px solid var(--lp-line); border-radius: 12px; padding: 12px; background: var(--lp-bg-2); display: flex; flex-direction: column; gap: 7px; justify-content: flex-end; }
+        .lp-conv-chat { border: 1px solid var(--lp-line); border-radius: 12px; padding: 12px; background: rgba(255, 255, 255, 0.03); display: flex; flex-direction: column; gap: 7px; justify-content: flex-end; }
         .lp-bubble { max-width: 74%; font-size: 10.5px; padding: 8px 11px; border-radius: 12px; line-height: 1.45; }
-        .lp-bubble.in { align-self: flex-start; background: #fff; border: 1px solid var(--lp-line); border-bottom-left-radius: 4px; }
-        .lp-bubble.out { align-self: flex-end; background: var(--lp-ink); color: #fff; border-bottom-right-radius: 4px; }
+        .lp-bubble.in { align-self: flex-start; background: var(--lp-superficie-2); border: 1px solid var(--lp-line); border-bottom-left-radius: 4px; }
+        .lp-bubble.out { align-self: flex-end; background: var(--lp-oceano); color: #fff; border-bottom-right-radius: 4px; }
 
         .lp-tabs-caption { display: flex; justify-content: center; gap: 26px; padding: 0 0 16px; }
         .lp-tabs-caption span { font-size: 12px; color: var(--lp-faint); display: flex; align-items: center; gap: 7px; }
@@ -326,6 +389,7 @@ export default function LandingPage() {
         }
       `}</style>
 
+      <div className="lp-aurora" aria-hidden />
       <div className="lp-grid" aria-hidden />
 
       <div className="lp-shell">

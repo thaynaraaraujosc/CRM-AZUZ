@@ -270,22 +270,21 @@ export default function InicioPage() {
               <span className="inicio-stat-mini-obs">Sucesso</span>
             </Link>
 
-            {/* O Diário morava embaixo das Pendências, atravessado na largura toda: dois números
-                pequenos ocupando uma faixa inteira da tela e empurrando o cartão principal pra
-                cima. Junto aos outros indicadores, ele vira o rodapé natural da coluna de
-                números, e a coluna da esquerda fica só com as Pendências. */}
-            <div className="inicio-diario-secao">
-              <h3 className="inicio-diario-titulo">Diário</h3>
-              <div className="inicio-diario-grade">
-                <div className="inicio-stat-mini">
-                  <span className="n">{leadsHoje.trafego}</span>
-                  <span className="r">Tráfego/Anúncios</span>
-                </div>
-                <div className="inicio-stat-mini">
-                  <span className="n">{leadsHoje.outros}</span>
-                  <span className="r">Outros</span>
-                </div>
-              </div>
+            {/* Os dois de leads do dia ficavam agrupados sob um título "Diário", dentro de um
+                bloco próprio. Isso quebrava a coluna: os três de cima eram cartões soltos e estes
+                dois eram um conjunto, com espaçamento diferente e sem a linha de apoio que os
+                outros têm. Agora são cinco cartões irmãos, com a mesma estrutura (número, rótulo e
+                apoio), o que é o que permite todos terem exatamente a mesma altura. O título
+                sumiu porque os rótulos já dizem o que cada número é. */}
+            <div className="inicio-stat-mini">
+              <span className="n">{leadsHoje.trafego}</span>
+              <span className="r">Tráfego/Anúncios</span>
+              <span className="inicio-stat-mini-obs">Leads que entraram hoje</span>
+            </div>
+            <div className="inicio-stat-mini">
+              <span className="n">{leadsHoje.outros}</span>
+              <span className="r">Outros</span>
+              <span className="inicio-stat-mini-obs">Leads que entraram hoje</span>
             </div>
           </div>
         </div>
