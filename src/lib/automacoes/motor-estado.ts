@@ -3,16 +3,24 @@ import { rotuloCurto } from "@/lib/conversas/enviar-pergunta";
 import type {
   AdicionarEtiquetaData,
   AguardarData,
+  AgendarConsultaData,
   AlterarEtapaData,
+  AlterarFunilData,
   AlterarResponsavelData,
   AtualizarCampoData,
   AtualizarStatusData,
   AtualizarValorData,
+  CancelarAgendamentoData,
   ChamarWebhookData,
   CondicaoGrupoData,
+  CriarLembreteData,
+  CriarNegocioData,
   CriarTarefaData,
   DecisaoMultiplaData,
+  DistribuirDisponibilidadeData,
+  EncaminharEquipeData,
   EncaminharHumanoData,
+  EnviarNotificacaoData,
   FlowEdge,
   FlowNode,
   EnviarFormularioData,
@@ -433,6 +441,98 @@ async function executarNo(params: {
         fluxoAtualId: fluxoId,
         modo: no.type === "pausar_automacoes" ? "pausar" : "cancelar",
       });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "alterar_funil": {
+      const data = no.data as AlterarFunilData;
+      if (!data.funilId) return { tipo: "erro", detalhe: "O bloco não tem funil escolhido." };
+      // Sem etapa escolhida vai pra primeira do funil — mover pra um funil sem dizer onde é o que
+      // a pessoa quer dizer com "mandar pro começo dele".
+      const r = await acoes.moverEtapa({ contatoNome: nome, funilId: data.funilId, etapaTitulo: data.etapaTitulo ?? "" });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "encaminhar_equipe":
+    case "distribuir_disponibilidade": {
+      const data = no.data as EncaminharEquipeData & DistribuirDisponibilidadeData;
+      const escolhido = await acoes.escolherAtendente({
+        equipe: data.equipeNome,
+        metodo: data.modo === "menos_ocupado" ? "menos_atendimentos" : "rodizio",
+      });
+      if (!escolhido.ok) return { tipo: "erro", detalhe: escolhido.detalhe, erroTecnico: escolhido.erroTecnico };
+      const r = await acoes.salvarContato({ contatoNome: nome, dados: { responsavel: escolhido.detalhe } });
+      return r.ok
+        ? { tipo: "seguir", detalhe: `Atendimento com ${escolhido.detalhe}.` }
+        : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "criar_lembrete": {
+      const data = no.data as CriarLembreteData;
+      const titulo = preencher(data.titulo ?? "", contato);
+      if (!titulo.trim()) return { tipo: "erro", detalhe: "Lembrete sem título." };
+      const quando = data.tempoValor
+        ? new Date(agora.getTime() + data.tempoValor * fatorDaUnidade(data.tempoUnidade ?? "dias"))
+        : agora;
+      // Lembrete é uma tarefa com prazo — mesmo quadro, mesma tela. Um segundo lugar pra "coisas
+      // pra fazer" só faria a pessoa procurar em dois lugares.
+      const r = await acoes.criarTarefa({ contatoNome: nome, titulo, prazo: quando, prioridade: "normal" });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "criar_negocio": {
+      const data = no.data as CriarNegocioData;
+      if (!data.funilId || !data.etapaTitulo) return { tipo: "erro", detalhe: "O bloco não tem funil e etapa escolhidos." };
+      const r = await acoes.criarNegocio({
+        contatoNome: nome,
+        nome: preencher(data.nome ?? "", contato) || nome,
+        funilId: data.funilId,
+        etapaTitulo: data.etapaTitulo,
+        valor: data.valor,
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "agendar_consulta": {
+      const data = no.data as AgendarConsultaData;
+      if (!data.data || !data.horario) {
+        return { tipo: "erro", detalhe: "O bloco de agendamento precisa de data e horário." };
+      }
+      const r = await acoes.agendarConsulta({
+        contatoNome: nome,
+        dataIso: data.data,
+        hora: data.horario,
+        responsavel: data.profissional,
+        tipo: data.tipoServico,
+        observacao: data.observacao,
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "cancelar_agendamento": {
+      const data = no.data as CancelarAgendamentoData;
+      const r = await acoes.cancelarAgendamento({ contatoNome: nome, motivo: data.mensagem });
+      if (!r.ok) return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+      // O aviso ao contato é opcional e sai depois do cancelamento: avisar antes e falhar o
+      // cancelamento deixaria a pessoa achando que perdeu a consulta sem ter perdido.
+      if (data.enviarMensagem && data.mensagem?.trim()) {
+        await acoes.enviarTexto({ contatoNome: nome, texto: preencher(data.mensagem, contato) });
+      }
+      return { tipo: "seguir", detalhe: r.detalhe };
+    }
+
+    case "enviar_notificacao": {
+      const data = no.data as EnviarNotificacaoData;
+      const r = await acoes.avisarEquipe({
+        contatoNome: nome,
+        equipe: data.paraEquipe,
+        mensagem: preencher(data.mensagem ?? "", contato),
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "ocultar_comentario_instagram": {
+      const r = await acoes.ocultarComentario();
       return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
     }
 

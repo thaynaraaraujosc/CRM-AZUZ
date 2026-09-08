@@ -106,6 +106,8 @@ function corDaCategoria(categoria: FlowNodeCategory): string {
  * - `comentario_tiktok`: não há integração com o TikTok.
  * - `lead_anuncio`: não há webhook de formulário de anúncio da Meta.
  * - `webhook_recebido`, `integracao_externa`: não existe endereço público que receba esses eventos.
+ * - `executar_integracao`: não existe um catálogo de integrações com ações executáveis. "Chamar
+ *   webhook" cobre o caso real de falar com um sistema de fora, e esse funciona.
  *
  * O `FlowNodeType` de cada um continua existindo, então fluxo já salvo com eles não quebra — eles
  * só deixam de ser oferecíveis. Um bloco que nunca dispara é pior que bloco nenhum: a pessoa monta
@@ -168,10 +170,10 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     categoria: "gatilho",
     grupo: "gatilhos",
     label: "Lead não respondeu",
-    descricao: "Dispara quando o lead fica sem responder por um tempo.",
+    descricao: "Dispara quando a última mensagem da conversa é nossa e o lead não respondeu no prazo.",
     icone: "MessageSquareOff",
     corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({ tempoValor: 24, tempoUnidade: "horas" }),
+    dataPadrao: () => ({ tempoValor: 2, tempoUnidade: "horas" }),
   },
   {
     tipo: "palavra_chave",
@@ -840,16 +842,6 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     icone: "Sparkles",
     corClasse: corDaCategoria("condicao"),
     dataPadrao: () => ({ instrucao: "", categorias: ["dúvida", "orçamento", "reclamação"] }),
-  },
-  {
-    tipo: "executar_integracao",
-    categoria: "acao",
-    grupo: "integracoes",
-    label: "Executar integração",
-    descricao: "Executa uma ação numa integração conectada (simulado).",
-    icone: "Plug",
-    corClasse: corDaCategoria("acao"),
-    dataPadrao: () => ({}),
   },
 
   // --------------------------------------------------------------- humano --

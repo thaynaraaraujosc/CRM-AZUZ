@@ -71,6 +71,14 @@ export type AcoesDoMotor = {
   /** Classifica a última mensagem numa das categorias. A escolhida volta no `detalhe`; `ok: false`
    * com detalhe vazio quer dizer "não encaixou em nenhuma". */
   classificarComIA: (params: { contatoNome: string; instrucao?: string; categorias: string[] }) => Promise<ResultadoAcao>;
+  /** Cria um negócio (card) no funil/etapa escolhidos. */
+  criarNegocio: (params: { contatoNome: string; nome: string; funilId: string; etapaTitulo: string; valor?: string }) => Promise<ResultadoAcao>;
+  /** Marca um compromisso na agenda. */
+  agendarConsulta: (params: { contatoNome: string; dataIso: string; hora: string; responsavel?: string; tipo?: string; observacao?: string }) => Promise<ResultadoAcao>;
+  /** Cancela o próximo compromisso do contato. */
+  cancelarAgendamento: (params: { contatoNome: string; motivo?: string }) => Promise<ResultadoAcao>;
+  /** Oculta o comentário do Instagram que disparou o fluxo. */
+  ocultarComentario: () => Promise<ResultadoAcao>;
   /** Pausa ou cancela as OUTRAS automações vivas deste contato. */
   pararOutrasAutomacoes: (params: { contatoNome: string; fluxoAtualId: string; modo: "pausar" | "cancelar" }) => Promise<ResultadoAcao>;
   /** Escolhe quem assume o atendimento. O nome escolhido volta no `detalhe`. */
@@ -92,6 +100,8 @@ export function acoesReais(params: {
   workspaceId: string;
   /** Só existe quando o fluxo foi disparado por um comentário. */
   responderComentario?: (texto: string) => Promise<void>;
+  /** Idem — ocultar só faz sentido quando há um comentário de origem. */
+  ocultarComentario?: () => Promise<void>;
 }): AcoesDoMotor {
   const { workspaceId } = params;
   return {
@@ -398,6 +408,75 @@ export function acoesReais(params: {
       }
     },
 
+    async criarNegocio({ contatoNome, nome, funilId, etapaTitulo, valor }) {
+      // Reaproveita `moverEtapa`: ele já cria o card quando não existe, e já confere o workspace
+      // antes do funil. Duas implementações do mesmo "põe esse contato nessa etapa" divergiriam na
+      // primeira correção feita só de um lado.
+      const r = await acoesReais({ workspaceId }).moverEtapa({ contatoNome: nome || contatoNome, funilId, etapaTitulo });
+      if (!r.ok) return r;
+      if (valor?.trim()) {
+        await prisma.negocioCard
+          .updateMany({ where: { workspaceId, nome: nome || contatoNome }, data: { valor } })
+          .catch(() => {});
+      }
+      return ok(`Negócio criado em "${etapaTitulo}"${valor ? ` (${valor})` : ""}.`);
+    },
+
+    async agendarConsulta({ contatoNome, dataIso, hora, responsavel, tipo, observacao }) {
+      try {
+        const contato = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome: contatoNome } } });
+        const linha = await prisma.compromisso.create({
+          data: {
+            id: `agenda-auto-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            workspaceId,
+            contato: contatoNome,
+            contatoId: contato?.id ?? null,
+            responsavel: responsavel || "—",
+            dataIso,
+            hora,
+            tipo: tipo || "Consulta",
+            descricao: observacao || null,
+            status: "agendado",
+            origem: "Automação",
+          },
+        });
+        return ok(`Consulta marcada para ${linha.dataIso} às ${linha.hora}.`);
+      } catch (erro) {
+        return falha("Falha ao marcar a consulta.", mensagemDoErro(erro));
+      }
+    },
+
+    async cancelarAgendamento({ contatoNome, motivo }) {
+      try {
+        // O PRÓXIMO compromisso, não todos: cancelar o histórico inteiro de alguém por causa de uma
+        // automação seria destrutivo e irreversível.
+        const hoje = new Date().toISOString().slice(0, 10);
+        const proximo = await prisma.compromisso.findFirst({
+          where: { workspaceId, contato: contatoNome, status: { notIn: ["cancelado"] }, dataIso: { gte: hoje } },
+          orderBy: [{ dataIso: "asc" }, { hora: "asc" }],
+        });
+        if (!proximo) return ok("Não havia compromisso futuro pra cancelar.");
+        await prisma.compromisso.update({
+          where: { id: proximo.id },
+          data: { status: "cancelado", motivoCancelamento: motivo ?? "Cancelado por automação" },
+        });
+        return ok(`Compromisso de ${proximo.dataIso} às ${proximo.hora} cancelado.`);
+      } catch (erro) {
+        return falha("Falha ao cancelar o compromisso.", mensagemDoErro(erro));
+      }
+    },
+
+    async ocultarComentario() {
+      // Sem comentário na origem não é erro: é o mesmo fluxo disparado por outro gatilho.
+      if (!params.ocultarComentario) return ok("Ignorado — este disparo não veio de um comentário.");
+      try {
+        await params.ocultarComentario();
+        return ok("Comentário ocultado.");
+      } catch (erro) {
+        return falha("Falha ao ocultar o comentário.", mensagemDoErro(erro));
+      }
+    },
+
     async pararOutrasAutomacoes({ contatoNome, fluxoAtualId, modo }) {
       try {
         const vivas = await execucoesVivasDoContato(workspaceId, contatoNome);
@@ -605,6 +684,18 @@ export function acoesSecas(): AcoesDoMotor & { intencoes: string[] } {
       if (!primeira) return falha("O bloco de classificação está sem categorias.");
       intencoes.push(`Classificaria a conversa (no teste, assume "${primeira}")`);
       return ok(primeira);
+    },
+    async criarNegocio({ nome, etapaTitulo }) {
+      return registrar(`Criaria o negócio "${nome}" em "${etapaTitulo}"`);
+    },
+    async agendarConsulta({ contatoNome, dataIso, hora }) {
+      return registrar(`Marcaria consulta de ${contatoNome} em ${dataIso} às ${hora}`);
+    },
+    async cancelarAgendamento({ contatoNome }) {
+      return registrar(`Cancelaria o próximo compromisso de ${contatoNome}`);
+    },
+    async ocultarComentario() {
+      return registrar("Ocultaria o comentário");
     },
     async pararOutrasAutomacoes({ modo }) {
       return registrar(`${modo === "pausar" ? "Pausaria" : "Cancelaria"} as outras automações deste contato`);

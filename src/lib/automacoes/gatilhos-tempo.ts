@@ -24,9 +24,13 @@ const TIPOS_DE_TEMPO = [
   "horario_programado",
   "lead_parado_etapa",
   "tarefa_vencida",
+  "lead_nao_respondeu",
 ] as const;
 
 type GatilhoDeTempo = (typeof TIPOS_DE_TEMPO)[number];
+
+/** Os que acontecem NUM horário. O resto mede tempo decorrido e é conferido a cada rodada. */
+const POR_HORA_DO_DIA = new Set<string>(["aniversario", "data_personalizada", "horario_programado", "tarefa_vencida"]);
 
 export async function rodarGatilhosDeTempo(agora = new Date()): Promise<{ disparados: number }> {
   const fluxos = await prisma.fluxoAutomacao.findMany({
@@ -42,8 +46,10 @@ export async function rodarGatilhosDeTempo(agora = new Date()): Promise<{ dispar
     if (!gatilho || !TIPOS_DE_TEMPO.includes(gatilho.type as GatilhoDeTempo)) continue;
 
     const data = (gatilho.data ?? {}) as Record<string, unknown>;
-    // Fora do horário marcado, não é a hora — sai barato, sem consultar contato nenhum.
-    if (!naHoraCerta(data.horario, agora)) continue;
+    // Só os gatilhos de HORA DO DIA respeitam o horário marcado. "Lead não respondeu em 2 horas" e
+    // "lead parado há 3 dias" medem tempo DECORRIDO: prendê-los a um horário faria a cobrança de 2
+    // horas chegar só no dia seguinte às 9h.
+    if (POR_HORA_DO_DIA.has(gatilho.type) && !naHoraCerta(data.horario, agora)) continue;
 
     const alvos = await contatosAlvo({
       workspaceId: linha.workspaceId,
@@ -113,6 +119,36 @@ async function contatosAlvo(params: {
     const marcada = typeof data.data === "string" ? paraIso(data.data) : null;
     if (!marcada || marcada !== diaDe(agora)) return [];
     return contatosDaEtapa(workspaceId, data.etapaId);
+  }
+
+  if (tipo === "lead_nao_respondeu") {
+    // "Não respondeu" = a ÚLTIMA mensagem da conversa é nossa, e já faz um tempo. Medir só pelo
+    // silêncio não serviria: uma conversa em que ninguém falou nada nunca teve pergunta pendente.
+    const valor = Number(data.tempoValor ?? 2) || 2;
+    const unidade = String(data.tempoUnidade ?? "horas");
+    const limite = new Date(agora.getTime() - valor * (unidade.startsWith("dia") ? 86_400_000 : 3_600_000));
+
+    const conversas = await prisma.conversa.findMany({ where: { workspaceId }, select: { nome: true } });
+    if (!conversas.length) return [];
+
+    const ultimas = await prisma.mensagemExtra.findMany({
+      where: { workspaceId, contato: { in: conversas.map((c) => c.nome) } },
+      orderBy: { criadoEm: "desc" },
+      select: { contato: true, tipo: true, criadoEm: true },
+      // Uma varredura por minuto não pode ler o histórico inteiro do workspace. Este teto cobre
+      // com folga as conversas com movimento recente, que são as únicas que podem virar "não
+      // respondeu" agora.
+      take: 500,
+    });
+
+    const vistos = new Set<string>();
+    const alvos: string[] = [];
+    for (const m of ultimas) {
+      if (vistos.has(m.contato)) continue;
+      vistos.add(m.contato);
+      if (m.tipo === "out" && m.criadoEm && m.criadoEm < limite) alvos.push(m.contato);
+    }
+    return alvos;
   }
 
   if (tipo === "tarefa_vencida") {
