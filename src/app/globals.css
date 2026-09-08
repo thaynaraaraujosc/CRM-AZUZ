@@ -8997,6 +8997,31 @@ button.camp-row:hover {
 /* Uma linha dizendo pra que serve o grupo. Nome de categoria sozinho não explica: "Decisões" e
    "Aguardar" só ficam óbvios depois que a pessoa já sabe montar automação — e ela está aqui
    justamente porque ainda não sabe. */
+/* Opções que foram junto da mensagem (botões do WhatsApp, respostas rápidas do Instagram).
+   Desenhadas como o contato viu: empilhadas, separadas por linha, dentro da bolha. Não são
+   clicáveis — quem escolhe é o contato, no aparelho dele. */
+.wa-bolha-opcoes {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-2);
+  border-top: 1px solid currentColor;
+  border-color: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.wa-bolha-opcao {
+  padding: 7px 2px 0;
+  margin-top: 6px;
+  font-size: 12.5px;
+  text-align: center;
+  opacity: 0.85;
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.wa-bolha-opcao:first-child {
+  border-top: 0;
+  margin-top: 0;
+}
+
 /* Valor + rótulo + remover, numa linha só. Duas linhas empilhadas por caminho fariam uma decisão
    de quatro saídas ocupar a tela inteira do painel. */
 .flow-decisao-linha {

@@ -534,6 +534,15 @@ export type ConvMensagem = {
     empresa?: string;
     cargo?: string;
   };
+  /**
+   * Opções que foram junto da mensagem (botões do WhatsApp oficial, respostas rápidas do
+   * Instagram). Ficam abaixo do texto, como o contato viu.
+   *
+   * Sem isto a conversa contava a história errada: no celular a pessoa recebia uma pergunta com
+   * três botões e clicava num deles; no CRM aparecia só a pergunta solta, e a resposta dela vinha
+   * do nada.
+   */
+  botoes?: string[];
   /** Uma ou mais imagens reais anexadas — vira um balão com a imagem de verdade, não só o nome do arquivo. */
   imagens?: AnexoImagem[];
   /** Vídeo real anexado (já cortado/processado, se o usuário editou antes de enviar). */

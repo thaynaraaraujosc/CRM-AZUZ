@@ -65,6 +65,22 @@ export function BolhaMensagem({
     );
   }
 
+  /**
+   * As opções que foram junto da mensagem, desenhadas como o contato as viu.
+   *
+   * Não são clicáveis de propósito: quem escolhe é o contato, no aparelho dele. Aqui é registro do
+   * que saiu — clicar não faria nada e só geraria a expectativa de que faria.
+   */
+  const opcoesEnviadas = msg.botoes?.length ? (
+    <div className="wa-bolha-opcoes" aria-label="Opções enviadas com esta mensagem">
+      {msg.botoes.map((rotulo, i) => (
+        <span className="wa-bolha-opcao" key={`${rotulo}-${i}`}>
+          {rotulo}
+        </span>
+      ))}
+    </div>
+  ) : null;
+
   /** Hora + tiquinhos, o rodapé que toda bolha tem. */
   const rodape = (
     <span className="tm">
@@ -338,6 +354,7 @@ export function BolhaMensagem({
       ) : null}
       {citacao}
       {texto}
+      {opcoesEnviadas}
       {botaoExterno}
       {rodape}
     </div>
