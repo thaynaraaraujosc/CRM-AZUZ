@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { prisma } from "@/lib/prisma";
 import { FormularioPublico } from "@/components/formularios/FormularioPublico";
 
 /**
@@ -16,7 +17,36 @@ import { FormularioPublico } from "@/components/formularios/FormularioPublico";
  * `integracoes` nem `versoes`), e o `workspaceId` de uma resposta é copiado do formulário pai, sem
  * jamais vir do cliente.
  */
-export const metadata: Metadata = { title: "Formulário" };
+/**
+ * O título e a descrição que aparecem na prévia do link.
+ *
+ * Sem isto, quem recebia o link via o título e a descrição do LAYOUT: "Painel web do CRM AZUZ:
+ * Início, WhatsApp, Funil, Tarefas…". Nada disso diz o que a pessoa vai responder, e link que não
+ * se explica não é clicado. Agora mostra o nome do formulário.
+ *
+ * `robots: noindex` de propósito: o link é pra ser mandado pra quem a empresa escolheu, não pra
+ * ser achado no Google. Um formulário indexado passa a receber resposta de qualquer um.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const formulario = await prisma.formulario
+    .findUnique({ where: { id }, select: { nome: true, descricao: true } })
+    .catch(() => null);
+
+  const nome = formulario?.nome || "Formulário";
+  const descricao = formulario?.descricao || "Leva menos de um minuto pra responder.";
+
+  return {
+    title: nome,
+    description: descricao,
+    robots: { index: false, follow: false },
+    openGraph: { title: nome, description: descricao, type: "website" },
+  };
+}
 
 export default async function FormularioPublicoPage({
   params,

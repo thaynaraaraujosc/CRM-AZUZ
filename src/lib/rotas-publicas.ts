@@ -54,6 +54,18 @@ const EXATOS_PUBLICOS = [
   // Verificação diária das conexões oficiais, chamada pelo cron: mesma regra dos `/api/cron/`,
   // só que esta rota nasceu antes dessa pasta existir.
   "/api/integracoes/meta/whatsapp/saude",
+  // Ícone e imagem de compartilhamento, geradas pelo Next a partir de `icon.tsx`,
+  // `apple-icon.tsx` e `opengraph-image.tsx`.
+  //
+  // Quem busca estes endereços é o navegador montando a aba, o iPhone salvando o atalho e o
+  // servidor do WhatsApp montando a prévia do link: nenhum deles tem sessão. Sem a liberação o
+  // proxy respondia 307 pro /login, e imagem que responde redirecionamento é o mesmo que imagem
+  // nenhuma. Não vaza nada: são desenhos fixos com o nome do produto.
+  "/icon",
+  "/apple-icon",
+  "/opengraph-image",
+  "/twitter-image",
+  "/favicon.ico",
 ];
 
 export function ehRotaPublica(pathname: string): boolean {

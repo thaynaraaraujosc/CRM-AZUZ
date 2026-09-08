@@ -65,6 +65,14 @@ describe("rotas que dispensam sessão", () => {
     expect(ehRotaPublica("/f")).toBe(true);
   });
 
+  it("abre o ícone e a imagem de compartilhamento", () => {
+    // Quem busca é o navegador montando a aba e o servidor do WhatsApp montando a prévia do link:
+    // nenhum tem sessão, e um 307 pro /login dá no mesmo que não existir imagem.
+    for (const rota of ["/icon", "/apple-icon", "/opengraph-image", "/favicon.ico"]) {
+      expect(ehRotaPublica(rota), `${rota} precisa abrir sem sessão`).toBe(true);
+    }
+  });
+
   it("não deixa um nome parecido passar por outra rota", () => {
     // `startsWith` cru abriria `/loginfalso` junto com `/login`, e `/api/cron-secreto` junto com
     // `/api/cron/`. A comparação tem que respeitar a fronteira do caminho.

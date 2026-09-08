@@ -19,6 +19,12 @@ const SCRIPT_TEMA_INICIAL = `
    referencia: mantê-las carregadas seria baixar duas famílias de fonte que nenhuma tela usa. */
 
 export const metadata: Metadata = {
+  /**
+   * Sem isto, `og:image` sai como caminho relativo, e aplicativo de mensagem não busca imagem
+   * relativa: ele precisa do endereço completo pra ir atrás do arquivo. Era mais um motivo pra
+   * prévia do link cair no ícone do site em vez da imagem própria.
+   */
+  metadataBase: new URL(process.env.APP_URL ?? "https://azuzcrm.com.br"),
   title: "CRM AZUZ: Painel web",
   description:
     "Painel web do CRM AZUZ: Início, WhatsApp, Funil, Tarefas, Ações, Equipe, Contatos, Tráfego, Relatórios, Automações, Azuz IA e Configurações.",
