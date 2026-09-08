@@ -167,6 +167,27 @@ export function enviarMensagemWhatsAppNaoOficial(workspaceId: string, numero: st
   return chamarEvolution(`/message/sendText/${nomeInstancia(workspaceId)}`, "POST", { number: numero, text: texto });
 }
 
+/**
+ * Manda um arquivo (imagem, vídeo, documento) pelo número conectado.
+ *
+ * `midiaUrl` precisa ser alcançável de fora — a Evolution busca o arquivo por conta dela, igual a
+ * Meta faz (ver `publicarAnexoTemporario`). Áudio tem endpoint próprio (`enviarAudioWhatsAppNaoOficial`).
+ */
+export function enviarMidiaWhatsAppNaoOficial(
+  workspaceId: string,
+  numero: string,
+  midia: { url: string; tipo: "image" | "video" | "document"; mimetype?: string; nomeArquivo?: string; legenda?: string },
+) {
+  return chamarEvolution(`/message/sendMedia/${nomeInstancia(workspaceId)}`, "POST", {
+    number: numero,
+    mediatype: midia.tipo,
+    ...(midia.mimetype ? { mimetype: midia.mimetype } : {}),
+    media: midia.url,
+    ...(midia.nomeArquivo ? { fileName: midia.nomeArquivo } : {}),
+    ...(midia.legenda ? { caption: midia.legenda } : {}),
+  });
+}
+
 /** Manda um áudio (nota de voz) gravado no CRM pelo número conectado — `audioBase64` é só o
  * conteúdo (sem o prefixo `data:audio/...;base64,` do blob gravado no navegador, tirado antes de
  * chegar aqui). Endpoint ainda não validado contra a instância de produção (mesmo aviso de

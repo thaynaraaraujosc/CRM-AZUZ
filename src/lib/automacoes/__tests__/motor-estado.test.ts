@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { AguardarData, FlowEdge, MensagemBotoesData } from "@/lib/automation-flow/types";
 import { rotuloCurto, textoNumerado } from "@/lib/conversas/enviar-pergunta";
-import { calcularEspera, calcularTempoMaximo, proximaAresta, saidaDaResposta } from "../motor-estado";
+import { calcularEspera, calcularTempoMaximo, preencher, proximaAresta, saidaDaResposta } from "../motor-estado";
 
 const aresta = (id: string, source: string, target: string, sourceHandle?: string): FlowEdge =>
   ({ id, source, target, ...(sourceHandle ? { sourceHandle } : {}) }) as FlowEdge;
@@ -105,5 +105,37 @@ describe("pergunta com opções", () => {
   it("resposta que não bate com nada devolve nada — quem chama decide se espera mais", () => {
     expect(saidaDaResposta(data, "bom dia")).toBeNull();
     expect(saidaDaResposta(data, "   ")).toBeNull();
+  });
+});
+
+describe("variáveis no texto", () => {
+  const contato = {
+    nome: "Maria Clara Souza",
+    origem: "Instagram",
+    camposPersonalizados: { cidade: "Recife" },
+  };
+
+  it("troca a variável pelo valor do contato", () => {
+    expect(preencher("Oi {{nome}}, tudo bem?", contato)).toBe("Oi Maria Clara Souza, tudo bem?");
+  });
+
+  it("entende primeiro_nome", () => {
+    expect(preencher("Oi {{primeiro_nome}}!", contato)).toBe("Oi Maria!");
+  });
+
+  it("procura também nos campos personalizados", () => {
+    expect(preencher("Atendemos {{cidade}}", contato)).toBe("Atendemos Recife");
+  });
+
+  it("aceita espaço dentro das chaves", () => {
+    expect(preencher("Oi {{ nome }}", contato)).toBe("Oi Maria Clara Souza");
+  });
+
+  it("variável sem valor vira vazio — melhor um buraco do que {{chave}} na cara do cliente", () => {
+    expect(preencher("Oi {{apelido}}, tudo bem?", contato)).toBe("Oi , tudo bem?");
+  });
+
+  it("texto sem variável passa intacto", () => {
+    expect(preencher("Bom dia!", contato)).toBe("Bom dia!");
   });
 });

@@ -8,10 +8,16 @@ import type {
   AtualizarCampoData,
   AtualizarStatusData,
   AtualizarValorData,
+  ChamarWebhookData,
   CondicaoGrupoData,
+  CriarTarefaData,
+  EncaminharHumanoData,
   FlowEdge,
   FlowNode,
   MensagemBotoesData,
+  MensagemEmailData,
+  MensagemMidiaData,
+  MensagemModeloWhatsappData,
   RemoverEtiquetaData,
 } from "@/lib/automation-flow/types";
 import type { AcoesDoMotor } from "./acoes";
@@ -226,8 +232,13 @@ export function calcularEspera(data: AguardarData, agora: Date): Date | null {
 export function calcularTempoMaximo(data: AguardarData, agora: Date): Date | null {
   if (!data.tempoMaximo) return null;
   const { valor, unidade } = data.tempoMaximo;
-  const fator = unidade.startsWith("min") ? 60_000 : unidade.startsWith("hor") ? 3_600_000 : 86_400_000;
-  return new Date(agora.getTime() + valor * fator);
+  return new Date(agora.getTime() + valor * fatorDaUnidade(unidade));
+}
+
+/** Milissegundos de uma unidade escrita por extenso ("minutos", "horas", "dias"). Dias é o padrão:
+ * é a unidade que a interface oferece primeiro. */
+function fatorDaUnidade(unidade: string): number {
+  return unidade.startsWith("min") ? 60_000 : unidade.startsWith("hor") ? 3_600_000 : 86_400_000;
 }
 
 async function executarNo(params: {
@@ -274,14 +285,14 @@ async function executarNo(params: {
       // a resposta acorda esta execução e escolhe a saída pelo id da opção.
       const data = no.data as MensagemBotoesData;
       const opcoes = (data.opcoes ?? []).filter((o) => o.rotulo?.trim()).map((o) => ({ id: o.id, rotulo: o.rotulo }));
-      const envio = await acoes.perguntar({ contatoNome: nome, texto: data.texto ?? "", opcoes });
+      const envio = await acoes.perguntar({ contatoNome: nome, texto: preencher(data.texto ?? "", contato), opcoes });
       if (!envio.ok) return { tipo: "erro", detalhe: envio.detalhe, erroTecnico: envio.erroTecnico };
       return { tipo: "aguardar_evento", evento: "resposta", detalhe: `${envio.detalhe} Esperando a escolha do contato.` };
     }
 
     case "mensagem_texto": {
       const data = no.data as { texto?: string; mensagem?: string; canal?: string };
-      const texto = (data.texto ?? data.mensagem ?? "").trim();
+      const texto = preencher((data.texto ?? data.mensagem ?? "").trim(), contato);
       if (!texto) return { tipo: "erro", detalhe: "Bloco de mensagem sem texto configurado." };
       const envio = await acoes.enviarTexto({ contatoNome: nome, texto, canal: data.canal });
       return envio.ok
@@ -289,18 +300,83 @@ async function executarNo(params: {
         : { tipo: "erro", detalhe: envio.detalhe, erroTecnico: envio.erroTecnico };
     }
 
-    // Mídia, e-mail, modelo oficial e formulário NÃO caem no envio de texto de propósito. Mandar só
-    // a legenda de um bloco de imagem — ou o assunto de um e-mail pelo WhatsApp — entregaria coisa
-    // errada e ainda registraria "enviado". Enquanto o envio de verdade não existe (fase 4), o
-    // histórico diz o que faltou, e o fluxo segue.
     case "mensagem_imagem":
     case "mensagem_video":
     case "mensagem_audio":
-    case "mensagem_documento":
+    case "mensagem_documento": {
+      const data = no.data as MensagemMidiaData;
+      if (!data.arquivoId) return { tipo: "erro", detalhe: "O bloco não tem arquivo escolhido." };
+      const tipo = TIPO_DE_MIDIA[no.type];
+      const legenda = preencher(data.legenda ?? "", contato);
+      const r = await acoes.enviarMidia({ contatoNome: nome, arquivoId: data.arquivoId, tipo, legenda });
+      if (!r.ok) return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+      // O Direct do Instagram manda o anexo sozinho — a legenda vai numa segunda mensagem, senão
+      // ela simplesmente não aparece pra quem recebe.
+      if (legenda && contatoCanal(contexto) === "instagram") {
+        await acoes.enviarTexto({ contatoNome: nome, texto: legenda });
+      }
+      return { tipo: "seguir", detalhe: r.detalhe };
+    }
+
+    case "mensagem_modelo_whatsapp": {
+      const data = no.data as MensagemModeloWhatsappData;
+      if (!data.templateId) return { tipo: "erro", detalhe: "O bloco não tem modelo escolhido." };
+      const r = await acoes.enviarModeloOficial({ contatoNome: nome, templateId: data.templateId, variaveis: data.variaveis });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "mensagem_email": {
+      const data = no.data as MensagemEmailData;
+      const assunto = preencher(data.assunto ?? "", contato);
+      const corpo = preencher(data.corpo ?? "", contato);
+      if (!assunto.trim() && !corpo.trim()) return { tipo: "erro", detalhe: "E-mail sem assunto e sem corpo." };
+      const para = data.destinatarioModo === "especifico" ? data.destinatarioEspecifico : undefined;
+      const r = await acoes.enviarEmail({ contatoNome: nome, para, assunto, corpo });
+      if (r.ok) return { tipo: "seguir", detalhe: r.detalhe };
+      // "Sem e-mail" é uma situação prevista no próprio bloco, não uma falha do fluxo.
+      if (data.seSemEmail === "encerrar") return { tipo: "encerrar", situacao: "concluida", detalhe: r.detalhe };
+      if (data.seSemEmail === "caminho_alternativo") return { tipo: "seguir", saida: "sem_email", detalhe: r.detalhe };
+      return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "criar_tarefa": {
+      const data = no.data as CriarTarefaData;
+      const titulo = preencher(data.titulo ?? "", contato);
+      if (!titulo.trim()) return { tipo: "erro", detalhe: "Tarefa sem título." };
+      const r = await acoes.criarTarefa({
+        contatoNome: nome,
+        titulo,
+        descricao: preencher(data.descricao ?? "", contato),
+        responsavel:
+          data.modoResponsavel === "pessoa"
+            ? data.responsavel
+            : ((contato as Record<string, unknown>).responsavel as string | undefined),
+        prazo: prazoDaTarefa(data, agora),
+        prioridade: data.prioridade,
+      });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    case "chamar_webhook": {
+      const data = no.data as ChamarWebhookData;
+      if (!data.url?.trim()) return { tipo: "erro", detalhe: "Webhook sem endereço." };
+      let corpo: Record<string, unknown> = { contato: contato.nome, fluxo: no.id, em: agora.toISOString() };
+      if (data.payload?.trim()) {
+        try {
+          corpo = JSON.parse(preencher(data.payload, contato)) as Record<string, unknown>;
+        } catch {
+          return { tipo: "erro", detalhe: "O conteúdo do webhook não é um JSON válido." };
+        }
+      }
+      const r = await acoes.chamarWebhook({ url: data.url.trim(), corpo });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
+    // Contato, localização, formulário e notificação interna continuam sem envio real. Mandar só o
+    // texto do bloco entregaria coisa errada e ainda registraria "enviado" — o histórico diz o que
+    // faltou, e o fluxo segue.
     case "mensagem_contato":
     case "mensagem_localizacao":
-    case "mensagem_modelo_whatsapp":
-    case "mensagem_email":
     case "enviar_formulario":
     case "notificacao_interna":
       return {
@@ -373,8 +449,27 @@ async function executarNo(params: {
       return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
     }
 
-    case "encaminhar_humano":
+    case "encaminhar_humano": {
+      const data = no.data as EncaminharHumanoData;
+      // "manter" é o único caso em que ninguém novo assume: o fluxo só sai do caminho.
+      if (data.destino === "atendente" && data.atendenteNome) {
+        const r = await acoes.salvarContato({ contatoNome: nome, dados: { responsavel: data.atendenteNome } });
+        if (!r.ok) return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+      } else if (data.destino === "distribuicao" || data.destino === "equipe") {
+        const escolhido = await acoes.escolherAtendente({ equipe: data.equipeNome, metodo: data.metodoDistribuicao });
+        if (!escolhido.ok) return { tipo: "erro", detalhe: escolhido.detalhe, erroTecnico: escolhido.erroTecnico };
+        const r = await acoes.salvarContato({ contatoNome: nome, dados: { responsavel: escolhido.detalhe } });
+        if (!r.ok) return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+      }
+
+      if (data.moverFunil && data.funilId && data.etapaTitulo) {
+        await acoes.moverEtapa({ contatoNome: nome, funilId: data.funilId, etapaTitulo: data.etapaTitulo });
+      }
+
+      // Encerra de propósito: o atendimento passou pra uma pessoa, e a automação continuar mandando
+      // mensagem por cima de quem assumiu é o comportamento que mais irrita cliente.
       return { tipo: "encerrar", situacao: "concluida", detalhe: "Encaminhado pra atendimento humano." };
+    }
 
     case "encerrar_fluxo":
       return { tipo: "encerrar", situacao: "concluida" };
@@ -384,6 +479,60 @@ async function executarNo(params: {
       // fingir que fez ou derrubar o fluxo inteiro por causa de um passo.
       return { tipo: "seguir", detalhe: `"${no.titulo ?? no.type}" ainda não é executado pelo motor — o fluxo seguiu.` };
   }
+}
+
+/**
+ * Troca `{{nome}}`, `{{origem}}`, `{{responsavel}}` e afins pelo valor do contato.
+ *
+ * O motor não fazia isso: quem escrevia "Oi {{nome}}" no bloco via a mensagem sair com as chaves
+ * literais pro cliente. Variável sem valor vira texto vazio — melhor uma frase com um buraco do que
+ * uma frase com `{{primeiro_nome}}` no meio dela.
+ */
+export function preencher(texto: string, contato: Record<string, unknown>): string {
+  if (!texto.includes("{{")) return texto;
+  return texto.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_todo, chave: string) => {
+    const valor = valorDoContato(contato, chave);
+    return valor ?? "";
+  });
+}
+
+function valorDoContato(contato: Record<string, unknown>, chave: string): string | null {
+  const direto = contato[chave];
+  if (typeof direto === "string" || typeof direto === "number") return String(direto);
+
+  if (chave === "primeiro_nome") {
+    const nome = typeof contato.nome === "string" ? contato.nome : "";
+    return nome.trim().split(/\s+/)[0] ?? null;
+  }
+
+  const personalizados = contato.camposPersonalizados as Record<string, string> | undefined;
+  const doCampo = personalizados?.[chave];
+  return typeof doCampo === "string" ? doCampo : null;
+}
+
+const TIPO_DE_MIDIA: Record<string, "imagem" | "video" | "audio" | "documento"> = {
+  mensagem_imagem: "imagem",
+  mensagem_video: "video",
+  mensagem_audio: "audio",
+  mensagem_documento: "documento",
+};
+
+/** O canal da conversa, quando o contexto sabe — usado pra decidir detalhes de formato. */
+function contatoCanal(contexto: ContextoExecucaoPersistido): string {
+  const contato = (contexto.contato ?? {}) as { canal?: string };
+  return (contato.canal ?? "").toLowerCase();
+}
+
+/** Quando a tarefa vence, conforme o bloco. Sem prazo configurado, é pra hoje. */
+function prazoDaTarefa(data: CriarTarefaData, agora: Date): Date | undefined {
+  if (data.modoPrazo === "data_especifica" && data.data) {
+    const escolhida = new Date(`${data.data}T${data.horario ?? "09:00"}:00`);
+    return Number.isNaN(escolhida.getTime()) ? undefined : escolhida;
+  }
+  if (data.modoPrazo === "depois_de" && data.prazoValor) {
+    return new Date(agora.getTime() + data.prazoValor * fatorDaUnidade(data.prazoUnidade ?? "dias"));
+  }
+  return undefined;
 }
 
 /**

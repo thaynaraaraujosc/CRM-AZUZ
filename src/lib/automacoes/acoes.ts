@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 import { enviarPerguntaPeloCanal, textoNumerado, type OpcaoPergunta } from "@/lib/conversas/enviar-pergunta";
+import { enviarMidiaPeloCanal, type TipoMidia } from "@/lib/conversas/enviar-midia";
+import { componentesParaMeta, resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
+import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
+import { enviarEmailOuFalhar } from "@/lib/email";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
 
 /**
@@ -33,6 +37,19 @@ export type AcoesDoMotor = {
   /** Envia uma pergunta com opções no melhor formato que o canal suporta (botão, lista, resposta
    * rápida ou menu numerado). O `detalhe` diz qual formato saiu — a pessoa precisa ver isso. */
   perguntar: (params: { contatoNome: string; texto: string; opcoes: OpcaoPergunta[] }) => Promise<ResultadoAcao>;
+  /** Envia um arquivo da biblioteca pelo canal da conversa. */
+  enviarMidia: (params: { contatoNome: string; arquivoId: string; tipo: TipoMidia; legenda?: string }) => Promise<ResultadoAcao>;
+  /** Envia um modelo aprovado do WhatsApp oficial, com as variáveis preenchidas. É o único jeito
+   * de falar com alguém fora da janela de 24 horas. */
+  enviarModeloOficial: (params: { contatoNome: string; templateId: string; variaveis?: Record<string, string> }) => Promise<ResultadoAcao>;
+  /** Manda um e-mail. */
+  enviarEmail: (params: { contatoNome: string; para?: string; assunto: string; corpo: string }) => Promise<ResultadoAcao>;
+  /** Cria uma tarefa no quadro. */
+  criarTarefa: (params: { contatoNome: string; titulo: string; descricao?: string; responsavel?: string; prazo?: Date; prioridade?: string }) => Promise<ResultadoAcao>;
+  /** Escolhe quem assume o atendimento. O nome escolhido volta no `detalhe`. */
+  escolherAtendente: (params: { equipe?: string; metodo?: string }) => Promise<ResultadoAcao>;
+  /** Chama um endereço externo, com repetição em caso de falha temporária. */
+  chamarWebhook: (params: { url: string; corpo: Record<string, unknown> }) => Promise<ResultadoAcao>;
   /** Grava campos no contato (etiquetas, responsável, campo personalizado, valor…). */
   salvarContato: (params: { contatoNome: string; dados: Record<string, unknown> }) => Promise<ResultadoAcao>;
   /** Move (ou cria) o card do contato numa etapa do funil. */
@@ -70,6 +87,164 @@ export function acoesReais(params: {
       } catch (erro) {
         return falha("Falha ao enviar a pergunta.", mensagemDoErro(erro));
       }
+    },
+
+    async enviarMidia({ contatoNome, arquivoId, tipo, legenda }) {
+      if (!arquivoId) return falha("O bloco não tem arquivo escolhido — nada foi enviado.");
+      try {
+        const r = await enviarMidiaPeloCanal({ workspaceId, conversaNome: contatoNome, arquivoId, tipo, legenda });
+        return r.enviado ? ok(`Arquivo enviado (${tipo}).`) : falha(`Não foi possível enviar o arquivo: ${r.motivo ?? "motivo desconhecido"}`);
+      } catch (erro) {
+        return falha("Falha ao enviar o arquivo.", mensagemDoErro(erro));
+      }
+    },
+
+    async enviarModeloOficial({ contatoNome, templateId, variaveis }) {
+      if (!templateId) return falha("O bloco não tem modelo escolhido.");
+      try {
+        const modelo = await prisma.template.findFirst({ where: { id: templateId, workspaceId } });
+        if (!modelo) return falha("Esse modelo não existe mais.");
+        // Modelo não aprovado é recusado pela Meta com erro genérico. Dizer isso aqui é o que
+        // permite corrigir; deixar tentar só produziria "falhou" sem motivo.
+        if (modelo.status !== "aprovado") return falha(`O modelo "${modelo.nome}" ainda não está aprovado pela Meta.`);
+
+        const conta = await contaConectada(workspaceId);
+        if (!conta) return falha("WhatsApp oficial não conectado.");
+
+        const conversa = await prisma.conversa.findUnique({ where: { workspaceId_nome: { workspaceId, nome: contatoNome } } });
+        if (!conversa?.contato) return falha("Conversa sem destinatário.");
+
+        const contato = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome: contatoNome } } });
+        const mapeamento = ((modelo.variaveis ?? []) as MapeamentoVariavel[]).map((v) => ({
+          ...v,
+          // Valor fixo escolhido no bloco tem prioridade sobre o padrão do modelo.
+          ...(variaveis?.[v.chave] ? { origem: "texto" as const, valor: variaveis[v.chave] } : {}),
+        }));
+        const parametros = resolverParametros(mapeamento, contato ? { ...contato, nome: contatoNome } : null);
+
+        await enviarPelaCloudApi(conta, conversa.contato, {
+          type: "template",
+          template: {
+            name: modelo.nome,
+            language: { code: modelo.idioma },
+            components: componentesParaMeta(mapeamento, parametros),
+          },
+        });
+        return ok(`Modelo "${modelo.nome}" enviado.`);
+      } catch (erro) {
+        return falha("Falha ao enviar o modelo.", mensagemDoErro(erro));
+      }
+    },
+
+    async enviarEmail({ contatoNome, para, assunto, corpo }) {
+      try {
+        let destino = para?.trim();
+        if (!destino) {
+          const contato = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome: contatoNome } } });
+          destino = contato?.email?.trim() || undefined;
+        }
+        if (!destino) return falha(`${contatoNome} não tem e-mail cadastrado — nada foi enviado.`);
+        // `enviarEmailOuFalhar` e não `enviarEmail`: o segundo engole a falha e devolve sucesso,
+        // e o histórico da automação diria "enviado" para alguém que não recebeu nada.
+        await enviarEmailOuFalhar({ to: destino, subject: assunto, html: corpo });
+        return ok(`E-mail enviado para ${destino}.`);
+      } catch (erro) {
+        return falha("Falha ao enviar o e-mail.", mensagemDoErro(erro));
+      }
+    },
+
+    async criarTarefa({ contatoNome, titulo, descricao, responsavel, prazo, prioridade }) {
+      try {
+        // A tarefa entra na primeira coluna do quadro ("a fazer"), que é onde alguém vai olhar.
+        const etapa = await prisma.tarefaEtapa.findFirst({ where: { workspaceId }, orderBy: { ordem: "asc" } });
+        if (!etapa) return falha("Não há quadro de tarefas configurado nesse workspace.");
+
+        const contato = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome: contatoNome } } });
+        const quando = prazo ?? new Date();
+        await prisma.tarefaCard.create({
+          data: {
+            id: `tarefa-auto-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            etapaId: etapa.id,
+            workspaceId,
+            ordem: 0,
+            titulo,
+            contato: contatoNome,
+            contatoId: contato?.id ?? null,
+            data: quando.toISOString().slice(0, 10),
+            responsavelNome: responsavel ?? "—",
+            responsavelInitials: iniciais(responsavel ?? contatoNome),
+            urgencia: prioridade ?? "normal",
+            descricao: descricao ?? "",
+          },
+        });
+        return ok(`Tarefa criada: "${resumir(titulo)}".`);
+      } catch (erro) {
+        return falha("Falha ao criar a tarefa.", mensagemDoErro(erro));
+      }
+    },
+
+    async escolherAtendente({ metodo }) {
+      try {
+        const equipe = await prisma.membro.findMany({
+          where: { workspaceId, ativo: true, convitePendente: false },
+          select: { nome: true },
+          orderBy: { nome: "asc" },
+        });
+        if (!equipe.length) return falha("Não há ninguém ativo na equipe pra assumir o atendimento.");
+
+        if (metodo === "menos_atendimentos") {
+          // Quem tem menos conversa aberta assume. É o único método aqui que olha carga de verdade;
+          // "disponibilidade" e "prioridade" dependem de dados que o CRM ainda não guarda.
+          const contagens = await prisma.contato.groupBy({
+            by: ["responsavel"],
+            where: { workspaceId, responsavel: { in: equipe.map((m) => m.nome) } },
+            _count: { _all: true },
+          });
+          const porNome = new Map(contagens.map((c) => [c.responsavel, c._count._all]));
+          const escolhido = equipe.reduce((menor, atual) =>
+            (porNome.get(atual.nome) ?? 0) < (porNome.get(menor.nome) ?? 0) ? atual : menor,
+          );
+          return ok(escolhido.nome);
+        }
+
+        // Rodízio: gira a partir de quem recebeu o último encaminhamento, pela ordem alfabética
+        // (estável). Sem contador guardado, a base é quem está como responsável no contato mais
+        // recente — o suficiente pra não cair sempre na mesma pessoa.
+        const ultimo = await prisma.contato.findFirst({
+          where: { workspaceId, responsavel: { in: equipe.map((m) => m.nome) } },
+          orderBy: { atualizadoEm: "desc" },
+          select: { responsavel: true },
+        });
+        const indiceAnterior = equipe.findIndex((m) => m.nome === ultimo?.responsavel);
+        return ok(equipe[(indiceAnterior + 1) % equipe.length].nome);
+      } catch (erro) {
+        return falha("Falha ao escolher o atendente.", mensagemDoErro(erro));
+      }
+    },
+
+    async chamarWebhook({ url, corpo }) {
+      if (!/^https?:\/\//i.test(url)) return falha("Endereço do webhook inválido.");
+      // Três tentativas com espera crescente. Um endereço fora do ar por dois segundos é o caso
+      // comum, e sem repetição a automação perderia o evento em silêncio.
+      let ultimoErro = "";
+      for (let tentativa = 1; tentativa <= 3; tentativa++) {
+        try {
+          const resposta = await fetch(url, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(corpo),
+            signal: AbortSignal.timeout(10_000),
+          });
+          if (resposta.ok) return ok(`Webhook chamado (HTTP ${resposta.status}).`);
+          // 4xx é erro de quem chamou: repetir daria o mesmo resultado três vezes.
+          if (resposta.status < 500) return falha(`O webhook respondeu HTTP ${resposta.status}.`);
+          ultimoErro = `HTTP ${resposta.status}`;
+        } catch (erro) {
+          ultimoErro = mensagemDoErro(erro);
+        }
+        if (tentativa < 3) await esperar(tentativa * 1000);
+      }
+      return falha("O webhook não respondeu depois de 3 tentativas.", ultimoErro);
     },
 
     async salvarContato({ contatoNome, dados }) {
@@ -155,6 +330,24 @@ export function acoesSecas(): AcoesDoMotor & { intencoes: string[] } {
     async perguntar({ contatoNome, texto, opcoes }) {
       return registrar(`Perguntaria para ${contatoNome}: "${resumir(textoNumerado(texto, opcoes))}"`);
     },
+    async enviarMidia({ contatoNome, tipo }) {
+      return registrar(`Enviaria um arquivo (${tipo}) para ${contatoNome}`);
+    },
+    async enviarModeloOficial({ contatoNome, templateId }) {
+      return registrar(`Enviaria o modelo ${templateId} para ${contatoNome}`);
+    },
+    async enviarEmail({ contatoNome, assunto }) {
+      return registrar(`Mandaria e-mail para ${contatoNome}: "${resumir(assunto)}"`);
+    },
+    async criarTarefa({ contatoNome, titulo }) {
+      return registrar(`Criaria a tarefa "${resumir(titulo)}" para ${contatoNome}`);
+    },
+    async escolherAtendente({ equipe }) {
+      return registrar(`Escolheria um atendente${equipe ? ` da equipe ${equipe}` : ""}`);
+    },
+    async chamarWebhook({ url }) {
+      return registrar(`Chamaria o webhook ${url}`);
+    },
     async salvarContato({ contatoNome, dados }) {
       return registrar(`Gravaria em ${contatoNome}: ${descreverCampos(dados)}`);
     },
@@ -176,6 +369,15 @@ const NOME_DO_FORMATO = {
   respostas_rapidas: "respostas rápidas",
   numerado: "menu numerado",
 } as const;
+
+function esperar(ms: number): Promise<void> {
+  return new Promise((resolver) => setTimeout(resolver, ms));
+}
+
+function iniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase() || "??";
+}
 
 function resumir(texto: string): string {
   const limpo = texto.trim().replace(/\s+/g, " ");
