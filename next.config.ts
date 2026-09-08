@@ -38,6 +38,28 @@ const CSP = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  /**
+   * Cache de navegação no cliente.
+   *
+   * O CRM inteiro é rota dinâmica (o layout chama `auth()`), e desde o Next 15 o `dynamic` do
+   * Client Cache vem em ZERO segundo. Na prática: cada clique no menu era uma ida ao servidor pra
+   * buscar o RSC payload da rota, mesmo voltando pra uma tela aberta cinco segundos antes. É a
+   * demora entre clicar e a página entrar.
+   *
+   * Guardar esse payload no cliente é seguro AQUI por um motivo específico: as telas são
+   * componentes de cliente e os dados não vêm no payload, vêm dos contexts do layout, que buscam
+   * nas rotas `/api` e continuam vivos entre navegações. O que fica em cache é a casca, não o
+   * conteúdo, então nada envelhece na tela por causa disto.
+   */
+  experimental: {
+    staleTimes: {
+      // Rotas prefetchadas por inteiro (os itens do menu lateral pedem `prefetch`).
+      static: 300,
+      // Rede de segurança pra qualquer rota que caia fora do prefetch completo.
+      dynamic: 180,
+    },
+  },
+
   async headers() {
     return [
       {

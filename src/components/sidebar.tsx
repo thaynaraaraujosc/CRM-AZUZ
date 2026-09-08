@@ -405,6 +405,12 @@ export function Sidebar() {
             <div key={href} onMouseEnter={fecharGestaoAtividadeNaHora}>
               <Link
                 href={href}
+                /* Sem isto, o padrão em rota dinâmica prefetcha só a casca até o `loading.tsx`, e o
+                   conteúdo da tela ainda é buscado no servidor na hora do clique: é a espera entre
+                   clicar e a página entrar. Com `true`, a rota inteira já está no cliente antes do
+                   clique. Custa pouco aqui porque as telas são componentes de cliente (o payload é
+                   casca, não dados) e a sessão é JWT, então prefetch não vira consulta no banco. */
+                prefetch
                 className={`nav-item${href === "/conversas" ? " nav-item-whatsapp" : ""}${active ? " active" : ""}`}
                 aria-current={active ? "page" : undefined}
                 title={recolhida ? label : undefined}
@@ -479,6 +485,9 @@ export function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    /* Só entram em viewport quando o menu abre, então o prefetch acontece no
+                       momento em que a pessoa demonstra intenção, não no carregamento da página. */
+                    prefetch
                     className="dropdown-item"
                     style={{ width: "100%", textAlign: "left" }}
                     onClick={() => setGestaoAtividadeAberta(false)}
