@@ -22,18 +22,24 @@ export async function POST() {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
   const workspaceId = sessao.user.workspaceId;
 
-  const [etapas, conversas] = await Promise.all([
+  const [etapas, ultimasMensagens] = await Promise.all([
     prisma.funilEtapa.findMany({
       where: { workspaceId },
       select: { id: true, cards: { select: { id: true, nome: true, ordem: true }, orderBy: { ordem: "asc" } } },
     }),
-    prisma.conversa.findMany({
+    // Última MENSAGEM, não `Conversa.atualizadoEm`: o segundo sobe por qualquer escrita na linha
+    // (favoritar, mudar status, uma importação em massa) e ordenaria por "última vez que o sistema
+    // encostou", não por "quem falou por último".
+    prisma.mensagemExtra.groupBy({
+      by: ["contato"],
       where: { workspaceId },
-      select: { nome: true, atualizadoEm: true },
+      _max: { criadoEm: true },
     }),
   ]);
 
-  const atividadePorNome = new Map(conversas.map((c) => [c.nome, c.atualizadoEm.getTime()]));
+  const atividadePorNome = new Map(
+    ultimasMensagens.flatMap((c) => (c._max.criadoEm ? [[c.contato, c._max.criadoEm.getTime()] as const] : [])),
+  );
 
   const atualizacoes: { id: string; ordem: number }[] = [];
   for (const etapa of etapas) {

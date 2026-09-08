@@ -24,6 +24,10 @@ export type ConversaReal = {
   criacaoGrupo: string | null;
   criadoEm: string;
   atualizadoEm: string;
+  /** Quando chegou/saiu a última mensagem. Diferente de `atualizadoEm`, que sobe por qualquer
+   * escrita na linha (favoritar, mudar status, uma importação) e por isso não serve pra dizer o que
+   * está quente. `null` quando ainda não há mensagem gravada. */
+  ultimaMensagemEm?: string | null;
 };
 
 type ConversasContextValue = {
