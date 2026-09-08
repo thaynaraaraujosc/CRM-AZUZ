@@ -2460,7 +2460,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
   padding: 0 var(--space-1);
 }
 
@@ -2483,9 +2483,18 @@ table.tbl tbody tr:hover td {
   cursor: grabbing;
 }
 
+/* Faixa de identidade da etapa: nome, contador e a ação de automação. Antes eram três elementos
+   soltos na mesma superfície da coluna, sem nada marcando onde a etapa termina e os cards
+   começam. A régua marinho fecha esse bloco e dá à coluna um cabeçalho de verdade. */
+.kcol-topo {
+  border-bottom: 2px solid var(--acao);
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
 .kcol-h .t {
   font-family: var(--display);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: var(--fw-bold);
   color: var(--ink);
   letter-spacing: var(--track-tight);
@@ -2502,14 +2511,31 @@ table.tbl tbody tr:hover td {
   flex: 0 0 auto;
 }
 
+/* O contador era um chip cinza do lado do nome, e cinza sobre cinza claro some. Ele é justamente
+   o número que a pessoa procura ao bater o olho na coluna. Passa a ser o ponto de maior contraste
+   do cabeçalho: ciano cheio, número branco. */
 .kcol-h .c {
-  font-size: 10.5px;
-  color: var(--text-muted);
-  font-weight: var(--fw-semibold);
-  background: var(--gray-200);
-  padding: var(--space-1) var(--space-2);
+  font-size: 11.5px;
+  color: #ffffff;
+  font-weight: var(--fw-bold);
+  background: var(--cyan);
+  padding: 2px var(--space-2);
+  min-width: 22px;
+  text-align: center;
   border-radius: 999px;
   font-variant-numeric: tabular-nums;
+}
+
+/* No tema escuro o ciano clareia pra se separar do fundo, e aí branco sobre ele cai pra 3,2:1.
+   O número passa a ser marinho, que sobre o mesmo ciano dá 5,7:1. */
+:root[data-theme="dark"] .kcol-h .c {
+  color: var(--acao);
+}
+
+/* Marinho sobre a coluna escura é marinho sobre marinho: a régua sumiria. No tema escuro quem
+   separa é o contorno claro, mesmo princípio já usado no botão primário e na barra lateral. */
+:root[data-theme="dark"] .kcol-topo {
+  border-bottom-color: rgba(255, 255, 255, 0.18);
 }
 
 /* Ação contextual da etapa. Tinha fundo azul cheio e chamava mais atenção que a ação principal da
@@ -2525,7 +2551,7 @@ table.tbl tbody tr:hover td {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   padding: var(--space-1) var(--space-2);
-  margin-bottom: 10px;
+  margin-bottom: 0;
   width: fit-content;
   text-decoration: none;
   transition: background var(--transition-fast), color var(--transition-fast);
@@ -3130,10 +3156,11 @@ table.tbl tbody tr:hover td {
 
 /* A tela de Conversas atende todos os canais. Instagram, TikTok, e-mail, WhatsApp. Ela usava o
    verde do WhatsApp como tema, o que pintava de verde conversas que não são do WhatsApp e trazia
-   pra dentro do produto a cor de outra marca. Passa a usar o azul da identidade. */
-.wa-whatsapp .open-conv-h {
-  background: var(--blue-soft-2);
-}
+   pra dentro do produto a cor de outra marca.
+   A correção de então trocou o verde por um azul quase branco, e isso criou um bug pior: o
+   `.open-conv-h` já tinha virado marinho com texto branco, e esta regra sobrescrevia SÓ o fundo.
+   O nome do contato ficava branco sobre azul claríssimo, ilegível. Sem regra própria, a barra usa
+   o marinho da identidade, que é o que a legibilidade do texto branco pressupõe. */
 
 /* A bolha enviada era o verde-claro do WhatsApp. Como a mesma tela mostra conversa de Instagram,
    TikTok e e-mail, a bolha verde aparecia em canal que não é WhatsApp. E, mesmo no WhatsApp, é a

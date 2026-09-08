@@ -831,81 +831,83 @@ function FunilPageInner() {
                   opacity: colunaArrastando === colIndex ? 0.5 : 1,
                 }}
               >
-                <div className="kcol-h">
-                  <span
-                    className="kcol-drag-handle"
-                    draggable
-                    onDragStart={() => setColunaArrastando(colIndex)}
-                    onDragEnd={() => setColunaArrastando(null)}
-                    title="Arraste pra reordenar a etapa"
-                  >
-                    ⠿
-                  </span>
-                  {colunaRenomeando === colIndex ? (
-                    <input
-                      className="input"
-                      autoFocus
-                      style={{ flex: 1, marginRight: 8 }}
-                      value={nomeRenomeando}
-                      onChange={(e) => setNomeRenomeando(e.target.value)}
-                      onBlur={() => renomearEtapa(colIndex)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") renomearEtapa(colIndex);
-                        if (e.key === "Escape") setColunaRenomeando(null);
-                      }}
-                    />
-                  ) : (
+                <div className="kcol-topo">
+                  <div className="kcol-h">
                     <span
-                      className="t"
-                      style={{ cursor: "pointer" }}
-                      title="Clique pra renomear"
-                      onClick={() => {
-                        setColunaRenomeando(colIndex);
-                        setNomeRenomeando(coluna.titulo);
-                      }}
+                      className="kcol-drag-handle"
+                      draggable
+                      onDragStart={() => setColunaArrastando(colIndex)}
+                      onDragEnd={() => setColunaArrastando(null)}
+                      title="Arraste pra reordenar a etapa"
                     >
-                      <span className="dot" />
-                      {coluna.titulo}
+                      ⠿
                     </span>
-                  )}
-                  <span style={{ display: "flex", alignItems: "center", gap: 6, flex: "0 0 auto" }}>
-                    <span className="c">
-                      {filtroAtivo ? cardsVisiveis.length : coluna.total}
+                    {colunaRenomeando === colIndex ? (
+                      <input
+                        className="input"
+                        autoFocus
+                        style={{ flex: 1, marginRight: 8 }}
+                        value={nomeRenomeando}
+                        onChange={(e) => setNomeRenomeando(e.target.value)}
+                        onBlur={() => renomearEtapa(colIndex)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") renomearEtapa(colIndex);
+                          if (e.key === "Escape") setColunaRenomeando(null);
+                        }}
+                      />
+                    ) : (
+                      <span
+                        className="t"
+                        style={{ cursor: "pointer" }}
+                        title="Clique pra renomear"
+                        onClick={() => {
+                          setColunaRenomeando(colIndex);
+                          setNomeRenomeando(coluna.titulo);
+                        }}
+                      >
+                        <span className="dot" />
+                        {coluna.titulo}
+                      </span>
+                    )}
+                    <span style={{ display: "flex", alignItems: "center", gap: 6, flex: "0 0 auto" }}>
+                      <span className="c">
+                        {filtroAtivo ? cardsVisiveis.length : coluna.total}
+                      </span>
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Excluir etapa ${coluna.titulo}`}
+                        title="Excluir etapa"
+                        style={{ cursor: "pointer", color: "var(--text-faint)" }}
+                        onClick={() => excluirEtapa(colIndex)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            excluirEtapa(colIndex);
+                          }
+                        }}
+                      >
+                        <IconClose width={11} height={11} />
+                      </span>
                     </span>
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Excluir etapa ${coluna.titulo}`}
-                      title="Excluir etapa"
-                      style={{ cursor: "pointer", color: "var(--text-faint)" }}
-                      onClick={() => excluirEtapa(colIndex)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          excluirEtapa(colIndex);
-                        }
-                      }}
+                  </div>
+                  {funilAtivo ? (
+                    <Link
+                      href={`/automacoes?funil=${funilAtivo.id}&etapa=${coluna.id}${automacoesEtapa.length === 0 ? "&criar=1" : ""}`}
+                      className="kcol-auto-link"
+                      title={
+                        automacoesEtapa.length > 0
+                          ? "Ver as automações que rodam quando o lead entra nesta etapa"
+                          : "Criar uma automação que roda quando o lead entrar nesta etapa"
+                      }
                     >
-                      <IconClose width={11} height={11} />
-                    </span>
-                  </span>
+                      <IconAutomacoes width={12} height={12} />
+                      {automacoesEtapa.length > 0
+                        ? `${automacoesEtapa.length} ${automacoesEtapa.length > 1 ? "automações" : "automação"}`
+                        : "+ Quando entrar aqui…"}
+                    </Link>
+                  ) : null}
                 </div>
-                {funilAtivo ? (
-                  <Link
-                    href={`/automacoes?funil=${funilAtivo.id}&etapa=${coluna.id}${automacoesEtapa.length === 0 ? "&criar=1" : ""}`}
-                    className="kcol-auto-link"
-                    title={
-                      automacoesEtapa.length > 0
-                        ? "Ver as automações que rodam quando o lead entra nesta etapa"
-                        : "Criar uma automação que roda quando o lead entrar nesta etapa"
-                    }
-                  >
-                    <IconAutomacoes width={12} height={12} />
-                    {automacoesEtapa.length > 0
-                      ? `${automacoesEtapa.length} ${automacoesEtapa.length > 1 ? "automações" : "automação"}`
-                      : "+ Quando entrar aqui…"}
-                  </Link>
-                ) : null}
                 {cardsVisiveis.map(({ card, cardIndex }) => {
                   const conversaDoCard = conversas.find((c) => c.nome === card.nome);
                   const temMensagemNova = (conversaDoCard?.naoLidas ?? 0) > 0;
