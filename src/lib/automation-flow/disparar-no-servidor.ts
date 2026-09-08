@@ -22,12 +22,15 @@ export async function dispararAutomacoesDeMensagemRecebida(params: {
   /** "WhatsApp" | "Instagram" — o rótulo do canal da conversa, como fica em `Conversa.canal`. */
   canal: string;
   textoRecebido: string;
+  /** Id da opção escolhida, quando a mensagem foi um clique em botão/lista/resposta rápida. */
+  idDaOpcao?: string;
 }): Promise<void> {
   await dispararAutomacoes({
     workspaceId: params.workspaceId,
     contatoNome: params.contatoNome,
     canal: params.canal,
     textoRecebido: params.textoRecebido,
+    idDaOpcao: params.idDaOpcao,
     tipoGatilho: "mensagem_recebida",
   });
 }
@@ -63,6 +66,7 @@ async function dispararAutomacoes(params: {
   canal: string;
   textoRecebido: string;
   tipoGatilho: string;
+  idDaOpcao?: string;
   publicacaoId?: string;
   chaveEvento?: string;
   instagramUserId?: string;
@@ -74,7 +78,12 @@ async function dispararAutomacoes(params: {
   // Se está, esta mensagem é a continuação dela — não o começo de outra. Sem esta checagem,
   // responder "1" a uma pergunta receberia o fluxo inteiro de novo por cima.
   if (params.tipoGatilho === "mensagem_recebida") {
-    const continuou = await continuarComResposta({ workspaceId, contatoNome, texto: textoRecebido }).catch((erro) => {
+    const continuou = await continuarComResposta({
+      workspaceId,
+      contatoNome,
+      texto: textoRecebido,
+      idDaOpcao: params.idDaOpcao,
+    }).catch((erro) => {
       console.error("[automacao] falha ao continuar execução em espera:", erro);
       return false;
     });

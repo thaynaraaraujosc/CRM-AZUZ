@@ -124,6 +124,9 @@ type PayloadInstagram = {
            * com que a mensagem original foi gravada, então dá pra buscar o que foi dito. */
           mid?: string;
         };
+        /** Toque numa resposta rápida que o CRM mandou. O `payload` é o id da opção do fluxo — é
+         * o que faz a automação escolher o caminho certo mesmo que dois botões comecem igual. */
+        quick_reply?: { payload?: string };
         /** `true` quando a mensagem foi enviada PELA conta conectada — inclusive de fora do CRM,
          * respondendo pelo app do Instagram. É o que permite o histórico ficar completo. */
         is_echo?: boolean;
@@ -914,6 +917,7 @@ export async function POST(request: Request) {
           contatoNome: chaveContato,
           canal: "Instagram",
           textoRecebido: texto,
+          idDaOpcao: mensagem.quick_reply?.payload,
         }).catch((erro) => console.error("[instagram] falha ao disparar automações:", erro));
 
         // Gatilhos específicos do Instagram — só quando o evento é mesmo um deles, pra que um

@@ -1,4 +1,5 @@
 import { avaliarGrupoCondicoes } from "@/lib/automation-flow/motor";
+import { rotuloCurto } from "@/lib/conversas/enviar-pergunta";
 import type {
   AdicionarEtiquetaData,
   AguardarData,
@@ -15,14 +16,10 @@ import type {
 } from "@/lib/automation-flow/types";
 import type { AcoesDoMotor } from "./acoes";
 import {
-  avancarPara,
-  aguardarEvento,
-  aguardarTempo,
-  encerrarExecucao,
-  reagendarRodada,
-  registrarPasso,
+  gravadorNoBanco,
   type ContextoExecucaoPersistido,
   type ExecucaoAtiva,
+  type GravadorDeExecucao,
 } from "./execucoes";
 
 /**
@@ -71,10 +68,14 @@ export async function rodarExecucao(params: {
   nodes: FlowNode[];
   edges: FlowEdge[];
   acoes: AcoesDoMotor;
+  /** Onde a posição e o histórico são gravados. O padrão grava no banco; o simulador passa um
+   * gravador de memória e por isso consegue rodar o motor de verdade sem sujar nada. */
+  gravador?: GravadorDeExecucao;
   /** Substitui `new Date()` — o simulador usa pra "avançar o relógio". */
   agora?: Date;
 }): Promise<FimDaRodada> {
   const { execucao, nodes, edges, acoes } = params;
+  const gravador = params.gravador ?? gravadorNoBanco;
   const agora = params.agora ?? new Date();
   const porId = new Map(nodes.map((n) => [n.id, n]));
 
@@ -90,14 +91,14 @@ export async function rodarExecucao(params: {
     if (passos >= NOS_POR_RODADA) {
       // Reagenda em vez de continuar: a rodada tem tempo limitado, e o cron pega a sobra em
       // seguida. Uma automação longa avança em fatias, sem estourar a função.
-      await reagendarRodada({ execucaoId: execucao.id, noId: noAtualId, contexto, ate: agora });
+      await gravador.reagendarRodada({ execucaoId: execucao.id, noId: noAtualId, contexto, ate: agora });
       return { situacao: "aguardando_tempo", passos, detalhe: "Continua na próxima rodada." };
     }
 
     const no = porId.get(noAtualId);
     if (!no) {
       const detalhe = `O bloco "${noAtualId}" não existe mais nesta versão do fluxo.`;
-      await registrarPasso({
+      await gravador.registrarPasso({
         execucaoId: execucao.id,
         workspaceId: execucao.workspaceId,
         noId: noAtualId,
@@ -105,13 +106,13 @@ export async function rodarExecucao(params: {
         resultado: "erro",
         detalhe,
       });
-      await encerrarExecucao({ execucaoId: execucao.id, situacao: "erro", erroMensagem: detalhe });
+      await gravador.encerrarExecucao({ execucaoId: execucao.id, situacao: "erro", erroMensagem: detalhe });
       return { situacao: "erro", passos, detalhe };
     }
 
     if (visitadosNaRodada.has(no.id)) {
       const detalhe = "Bloco repetido na mesma rodada — parado pra evitar loop.";
-      await registrarPasso({
+      await gravador.registrarPasso({
         execucaoId: execucao.id,
         workspaceId: execucao.workspaceId,
         noId: no.id,
@@ -120,7 +121,7 @@ export async function rodarExecucao(params: {
         resultado: "pulado",
         detalhe,
       });
-      await encerrarExecucao({ execucaoId: execucao.id, situacao: "erro", erroMensagem: detalhe });
+      await gravador.encerrarExecucao({ execucaoId: execucao.id, situacao: "erro", erroMensagem: detalhe });
       return { situacao: "erro", passos, detalhe };
     }
     visitadosNaRodada.add(no.id);
@@ -135,7 +136,7 @@ export async function rodarExecucao(params: {
       resultado = await executarNo({ no, contexto, acoes, agora });
     }
 
-    await registrarPasso({
+    await gravador.registrarPasso({
       execucaoId: execucao.id,
       workspaceId: execucao.workspaceId,
       noId: no.id,
@@ -152,34 +153,34 @@ export async function rodarExecucao(params: {
     });
 
     if (resultado.tipo === "erro") {
-      await encerrarExecucao({ execucaoId: execucao.id, situacao: "erro", erroMensagem: resultado.detalhe });
+      await gravador.encerrarExecucao({ execucaoId: execucao.id, situacao: "erro", erroMensagem: resultado.detalhe });
       return { situacao: "erro", passos, detalhe: resultado.detalhe };
     }
     if (resultado.tipo === "aguardar_tempo") {
-      await aguardarTempo({ execucaoId: execucao.id, noId: no.id, ate: resultado.ate, evento: resultado.evento, contexto });
+      await gravador.aguardarTempo({ execucaoId: execucao.id, noId: no.id, ate: resultado.ate, evento: resultado.evento, contexto });
       return { situacao: "aguardando_tempo", passos, detalhe: resultado.detalhe };
     }
     if (resultado.tipo === "aguardar_evento") {
-      await aguardarEvento({ execucaoId: execucao.id, noId: no.id, evento: resultado.evento, ate: resultado.ate, contexto });
+      await gravador.aguardarEvento({ execucaoId: execucao.id, noId: no.id, evento: resultado.evento, ate: resultado.ate, contexto });
       return { situacao: "aguardando_evento", passos, detalhe: resultado.detalhe };
     }
     if (resultado.tipo === "encerrar") {
-      await encerrarExecucao({ execucaoId: execucao.id, situacao: resultado.situacao });
+      await gravador.encerrarExecucao({ execucaoId: execucao.id, situacao: resultado.situacao });
       return { situacao: resultado.situacao, passos, detalhe: resultado.detalhe };
     }
 
     const proximo = proximaAresta(edges, no.id, resultado.saida);
     if (!proximo) {
       // Sem saída é o fim normal do caminho — inclusive quando o último bloco não é "encerrar".
-      await encerrarExecucao({ execucaoId: execucao.id, situacao: "concluida" });
+      await gravador.encerrarExecucao({ execucaoId: execucao.id, situacao: "concluida" });
       return { situacao: "concluida", passos };
     }
     noAtualId = proximo.target;
     contexto = { ...contexto };
-    await avancarPara(execucao.id, noAtualId, contexto);
+    await gravador.avancarPara(execucao.id, noAtualId, contexto);
   }
 
-  await encerrarExecucao({ execucaoId: execucao.id, situacao: "concluida" });
+  await gravador.encerrarExecucao({ execucaoId: execucao.id, situacao: "concluida" });
   return { situacao: "concluida", passos };
 }
 
@@ -272,9 +273,10 @@ async function executarNo(params: {
       // Manda a pergunta e PARA esperando a escolha. É aqui que "clicou em Sim" continua o fluxo:
       // a resposta acorda esta execução e escolhe a saída pelo id da opção.
       const data = no.data as MensagemBotoesData;
-      const envio = await acoes.enviarTexto({ contatoNome: nome, texto: montarPergunta(data), canal: data.canal });
+      const opcoes = (data.opcoes ?? []).filter((o) => o.rotulo?.trim()).map((o) => ({ id: o.id, rotulo: o.rotulo }));
+      const envio = await acoes.perguntar({ contatoNome: nome, texto: data.texto ?? "", opcoes });
       if (!envio.ok) return { tipo: "erro", detalhe: envio.detalhe, erroTecnico: envio.erroTecnico };
-      return { tipo: "aguardar_evento", evento: "resposta", detalhe: "Esperando a escolha do contato." };
+      return { tipo: "aguardar_evento", evento: "resposta", detalhe: `${envio.detalhe} Esperando a escolha do contato.` };
     }
 
     case "mensagem_texto": {
@@ -384,14 +386,6 @@ async function executarNo(params: {
   }
 }
 
-/** A pergunta com as opções numeradas — é o que vai no texto quando o canal não tem botão. */
-export function montarPergunta(data: MensagemBotoesData): string {
-  const opcoes = (data.opcoes ?? []).filter((o) => o.rotulo?.trim());
-  if (!opcoes.length) return data.texto;
-  const linhas = opcoes.map((o, i) => `${i + 1} - ${o.rotulo}`);
-  return `${data.texto}\n\n${linhas.join("\n")}`;
-}
-
 /**
  * Qual saída a resposta do contato escolheu, num bloco de opções.
  *
@@ -410,9 +404,12 @@ export function saidaDaResposta(data: MensagemBotoesData, resposta: string): str
   if (Number.isInteger(porNumero) && porNumero >= 1 && porNumero <= opcoes.length && /^\D*\d+\D*$/.test(limpa)) {
     return opcoes[porNumero - 1].id;
   }
+  // O rótulo encurtado entra na comparação porque é ELE que a pessoa recebeu: botão do WhatsApp e
+  // resposta rápida do Instagram cortam em 20 caracteres, e o clique volta com o texto cortado.
   const exata = opcoes.find(
     (o) =>
       o.rotulo.trim().toLowerCase() === limpa ||
+      rotuloCurto(o.rotulo).toLowerCase() === limpa ||
       (o.respostasAlternativas ?? []).some((r) => r.trim().toLowerCase() === limpa),
   );
   if (exata) return exata.id;

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { AguardarData, FlowEdge, MensagemBotoesData } from "@/lib/automation-flow/types";
-import { calcularEspera, calcularTempoMaximo, montarPergunta, proximaAresta, saidaDaResposta } from "../motor-estado";
+import { rotuloCurto, textoNumerado } from "@/lib/conversas/enviar-pergunta";
+import { calcularEspera, calcularTempoMaximo, proximaAresta, saidaDaResposta } from "../motor-estado";
 
 const aresta = (id: string, source: string, target: string, sourceHandle?: string): FlowEdge =>
   ({ id, source, target, ...(sourceHandle ? { sourceHandle } : {}) }) as FlowEdge;
@@ -60,11 +61,23 @@ describe("pergunta com opções", () => {
   };
 
   it("numera as opções pro canal que não tem botão", () => {
-    expect(montarPergunta(data)).toBe("Como posso ajudar?\n\n1 - Quero saber valores\n2 - Falar com atendente");
+    expect(textoNumerado(data.texto, data.opcoes)).toBe("Como posso ajudar?\n\n1 - Quero saber valores\n2 - Falar com atendente");
   });
 
   it("sem opções, é só o texto", () => {
-    expect(montarPergunta({ ...data, opcoes: [] })).toBe("Como posso ajudar?");
+    expect(textoNumerado(data.texto, [])).toBe("Como posso ajudar?");
+  });
+
+  it("entende o rótulo encurtado — é o que o botão do WhatsApp leva", () => {
+    // "Quero saber valores" tem 19 caracteres; um rótulo maior é cortado em 20 pela Meta, e o
+    // clique volta com o texto cortado. Sem isso, o clique não bateria com nenhuma opção.
+    const longa: MensagemBotoesData = {
+      ...data,
+      opcoes: [{ id: "o1", rotulo: "Quero falar sobre o orçamento agora" }],
+    };
+    const enviado = rotuloCurto(longa.opcoes[0].rotulo);
+    expect(enviado).toBe("Quero falar sobre o…");
+    expect(saidaDaResposta(longa, enviado)).toBe("o1");
   });
 
   it("entende o número", () => {

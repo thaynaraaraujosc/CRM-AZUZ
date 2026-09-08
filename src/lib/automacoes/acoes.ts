@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
+import { enviarPerguntaPeloCanal, textoNumerado, type OpcaoPergunta } from "@/lib/conversas/enviar-pergunta";
 import { anotarNaLinhaDoTempo } from "@/lib/integracoes/instagram-eventos";
 
 /**
@@ -29,6 +30,9 @@ const falha = (detalhe: string, erroTecnico?: string): ResultadoAcao => ({ ok: f
 export type AcoesDoMotor = {
   /** Envia texto pelo canal da conversa daquele contato. */
   enviarTexto: (params: { contatoNome: string; texto: string; canal?: string }) => Promise<ResultadoAcao>;
+  /** Envia uma pergunta com opções no melhor formato que o canal suporta (botão, lista, resposta
+   * rápida ou menu numerado). O `detalhe` diz qual formato saiu — a pessoa precisa ver isso. */
+  perguntar: (params: { contatoNome: string; texto: string; opcoes: OpcaoPergunta[] }) => Promise<ResultadoAcao>;
   /** Grava campos no contato (etiquetas, responsável, campo personalizado, valor…). */
   salvarContato: (params: { contatoNome: string; dados: Record<string, unknown> }) => Promise<ResultadoAcao>;
   /** Move (ou cria) o card do contato numa etapa do funil. */
@@ -54,6 +58,17 @@ export function acoesReais(params: {
         return r.enviado ? ok(`Mensagem enviada: "${resumir(texto)}"`) : falha(`Não foi possível enviar: ${r.motivo ?? "motivo desconhecido"}`);
       } catch (erro) {
         return falha("Falha ao enviar a mensagem.", mensagemDoErro(erro));
+      }
+    },
+
+    async perguntar({ contatoNome, texto, opcoes }) {
+      if (!texto.trim()) return falha("Pergunta sem texto — nada foi enviado.");
+      try {
+        const r = await enviarPerguntaPeloCanal({ workspaceId, conversaNome: contatoNome, texto, opcoes });
+        if (!r.enviado) return falha(`Não foi possível enviar: ${r.motivo ?? "motivo desconhecido"}`);
+        return ok(`Pergunta enviada (${NOME_DO_FORMATO[r.formato]})${r.observacao ? ` — ${r.observacao}` : ""}.`);
+      } catch (erro) {
+        return falha("Falha ao enviar a pergunta.", mensagemDoErro(erro));
       }
     },
 
@@ -137,6 +152,9 @@ export function acoesSecas(): AcoesDoMotor & { intencoes: string[] } {
     async enviarTexto({ contatoNome, texto }) {
       return registrar(`Enviaria para ${contatoNome}: "${resumir(texto)}"`);
     },
+    async perguntar({ contatoNome, texto, opcoes }) {
+      return registrar(`Perguntaria para ${contatoNome}: "${resumir(textoNumerado(texto, opcoes))}"`);
+    },
     async salvarContato({ contatoNome, dados }) {
       return registrar(`Gravaria em ${contatoNome}: ${descreverCampos(dados)}`);
     },
@@ -151,6 +169,13 @@ export function acoesSecas(): AcoesDoMotor & { intencoes: string[] } {
     },
   };
 }
+
+const NOME_DO_FORMATO = {
+  botoes: "botões",
+  lista: "lista",
+  respostas_rapidas: "respostas rápidas",
+  numerado: "menu numerado",
+} as const;
 
 function resumir(texto: string): string {
   const limpo = texto.trim().replace(/\s+/g, " ");

@@ -91,6 +91,10 @@ export async function continuarComResposta(params: {
   workspaceId: string;
   contatoNome: string;
   texto: string;
+  /** Id exato da opção, quando o canal informa (botão/lista do WhatsApp, resposta rápida do
+   * Instagram). É melhor que casar por texto: dois botões podem começar igual, e o rótulo pode ter
+   * sido cortado em 20 caracteres no envio. */
+  idDaOpcao?: string;
   responderComentario?: (texto: string) => Promise<void>;
 }): Promise<boolean> {
   const execucao = await execucaoAguardandoDoContato({
@@ -131,7 +135,9 @@ export async function continuarComResposta(params: {
 
   let saida: string | undefined;
   if (no.type === "mensagem_botoes" || no.type === "mensagem_lista") {
-    const escolhida = saidaDaResposta(no.data as MensagemBotoesData, params.texto);
+    const dados = no.data as MensagemBotoesData;
+    const porId = params.idDaOpcao && (dados.opcoes ?? []).some((o) => o.id === params.idDaOpcao) ? params.idDaOpcao : null;
+    const escolhida = porId ?? saidaDaResposta(dados, params.texto);
     if (escolhida) {
       saida = escolhida;
     } else if (temSaida(versao.edges, no.id, "outra_resposta")) {

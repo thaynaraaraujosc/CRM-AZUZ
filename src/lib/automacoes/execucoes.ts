@@ -285,3 +285,29 @@ export async function passosDaExecucao(workspaceId: string, execucaoId: string) 
     orderBy: { criadoEm: "asc" },
   });
 }
+
+/**
+ * As gravações que o motor faz, atrás de uma interface.
+ *
+ * Serve pro modo seco: o botão "Testar" roda o MESMO motor, com as mesmas decisões, sem criar
+ * linha nenhuma no banco. Antes o simulador era código escrito à parte — e por isso divergia do
+ * que acontecia de verdade, que é o pior defeito possível num simulador.
+ */
+export type GravadorDeExecucao = {
+  avancarPara: typeof avancarPara;
+  aguardarTempo: typeof aguardarTempo;
+  aguardarEvento: typeof aguardarEvento;
+  reagendarRodada: typeof reagendarRodada;
+  encerrarExecucao: typeof encerrarExecucao;
+  registrarPasso: typeof registrarPasso;
+};
+
+/** O gravador de verdade — grava no banco. É o padrão do motor. */
+export const gravadorNoBanco: GravadorDeExecucao = {
+  avancarPara,
+  aguardarTempo,
+  aguardarEvento,
+  reagendarRodada,
+  encerrarExecucao,
+  registrarPasso,
+};
