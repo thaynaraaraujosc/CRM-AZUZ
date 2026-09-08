@@ -256,15 +256,28 @@ export async function PUT(request: Request) {
   // funis/etapas/cards estavam no payload, que é o que separa "dado inválido num card" de
   // "transação grande demais e estourou o tempo".
   try {
-    await prisma.$transaction(
-      operacoes,
-      // O padrão do Prisma para transação em lote é 5s de execução e 2s de espera por conexão.
-      // Aqui isso é pouco: mesmo mandando só o que mudou, um "Trazer conversas" com a caixa cheia
-      // ainda é um lote grande, e cada instrução é uma ida e volta até o banco no Railway. O
-      // `maxWait` sobe pelo mesmo motivo: o pool tem só 3 conexões, e sob salvamentos seguidos a
-      // espera por uma conexão livre estourava antes mesmo de a transação começar.
-      { timeout: 20_000, maxWait: 15_000 },
-    );
+    // Em LOTES, não numa transação só.
+    //
+    // Uma transação única com centenas de instruções estourava o prazo e devolvia "o funil é
+    // grande demais" — e o pior: não salvava nada, nem a parte que já tinha passado. Um funil que
+    // cresce (é o que se espera de um CRM em uso) ficava com um teto invisível a partir do qual
+    // parava de salvar.
+    //
+    // Cada lote é uma transação: dentro dele continua tudo-ou-nada, que é o que importa pra não
+    // deixar um card sem etapa. Entre lotes não há atomicidade, e isso é aceitável aqui — o pior
+    // caso de uma falha no meio é parte da reordenação ficar pra trás, coisa que o próximo
+    // salvamento corrige. Perder o salvamento inteiro é bem pior.
+    const TAMANHO_DO_LOTE = 50;
+    for (let i = 0; i < operacoes.length; i += TAMANHO_DO_LOTE) {
+      await prisma.$transaction(operacoes.slice(i, i + TAMANHO_DO_LOTE), {
+        // O padrão do Prisma é 5s de execução e 2s de espera por conexão, e aqui isso é pouco:
+        // cada instrução é uma ida e volta até o banco no Railway. O `maxWait` sobe pelo mesmo
+        // motivo: o pool tem só 3 conexões, e sob salvamentos seguidos a espera por uma conexão
+        // livre estourava antes mesmo de a transação começar.
+        timeout: 20_000,
+        maxWait: 15_000,
+      });
+    }
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : String(erro);
     // O código do Prisma (P2028 = prazo da transação, P2002 = id repetido, P2003 = chave
@@ -287,7 +300,7 @@ export async function PUT(request: Request) {
       {
         erro:
           codigo === "P2028"
-            ? "O funil é grande demais para salvar de uma vez. Tente de novo."
+            ? "O banco demorou demais pra responder. Parte do funil pode não ter sido salva — recarregue a página."
             : "Não foi possível salvar o funil agora.",
         // Só o código, nunca a mensagem crua do banco: ela carrega nome de tabela, coluna e às
         // vezes o próprio valor do registro, e isso não pode chegar ao navegador.

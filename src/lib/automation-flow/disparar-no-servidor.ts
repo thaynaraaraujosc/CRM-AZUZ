@@ -148,8 +148,17 @@ async function dispararAutomacoes(params: {
   for (const linha of linhas) {
     const fluxo = linha as unknown as FluxoAutomacao;
 
+    // Um evento pode casar com mais de um bloco de gatilho. Uma mensagem que chega serve pra
+    // "Mensagem recebida", pra "Palavra-chave recebida" (a filtragem por palavra é do próprio
+    // bloco) e pra "Lead respondeu" — são três formas de dizer a mesma coisa, e quem monta o fluxo
+    // escolhe a que faz sentido pra ela. Sem isto, um fluxo com o bloco "Palavra-chave recebida"
+    // simplesmente nunca disparava: o tipo do evento não batia com o tipo do bloco.
+    const noGatilhoDoFluxo = fluxo.nodes.find((n) => n.category === "gatilho");
+    const tipoAceito = tipoDoGatilhoQueCasa(params.tipoGatilho, noGatilhoDoFluxo?.type);
+    if (!tipoAceito) continue;
+
     const evento = {
-      tipo: params.tipoGatilho as EventoAutomacao["tipo"],
+      tipo: tipoAceito as EventoAutomacao["tipo"],
       contatoNome,
       canal: canalDoGatilho(canal),
       mensagem: textoRecebido,
@@ -315,6 +324,25 @@ async function dispararAutomacoes(params: {
       mensagens: mensagensParaEnviar.length,
     });
   }
+}
+
+/**
+ * Que tipo de gatilho este evento consegue acionar neste fluxo.
+ *
+ * Devolve o tipo a usar na avaliação, ou `null` quando o bloco de gatilho do fluxo não tem nada a
+ * ver com o evento. Existe porque "chegou uma mensagem" é o mesmo acontecimento para três blocos
+ * diferentes, e antes só um deles era considerado.
+ */
+function tipoDoGatilhoQueCasa(tipoDoEvento: string, tipoDoBloco: string | undefined): string | null {
+  if (!tipoDoBloco) return null;
+  if (tipoDoBloco === tipoDoEvento) return tipoDoEvento;
+
+  const equivalentes: Record<string, string[]> = {
+    // "Lead respondeu" só vale quando a conversa já existia, mas o CRM não distingue isso hoje —
+    // e deixar de fora seria pior: o bloco existe na biblioteca e nunca dispararia.
+    mensagem_recebida: ["palavra_chave", "lead_respondeu"],
+  };
+  return equivalentes[tipoDoEvento]?.includes(tipoDoBloco) ? tipoDoBloco : null;
 }
 
 /** O gatilho guarda o canal em minúsculas ("whatsapp"/"instagram"); a conversa guarda o rótulo. */
