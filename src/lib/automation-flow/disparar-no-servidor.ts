@@ -60,6 +60,36 @@ export async function dispararAutomacoesDeEventoInstagram(params: {
   await dispararAutomacoes({ ...params, canal: "Instagram" });
 }
 
+/**
+ * Dispara as automações de um evento do CRM — entrar numa etapa do funil, virar lead novo.
+ *
+ * Estes gatilhos rodavam no NAVEGADOR: quem arrastasse o card via um aviso na tela e nada mais.
+ * Duas consequências ruins — a automação não acontecia quando o card se movia por qualquer outro
+ * caminho (webhook, importação, outra aba), e quando acontecia era só um toast, não a mensagem.
+ */
+export async function dispararAutomacoesDoCrm(params: {
+  workspaceId: string;
+  contatoNome: string;
+  tipoGatilho: string;
+  funilId?: string;
+  etapaId?: string;
+  etapaTitulo?: string;
+  /** Trava contra disparo repetido: "etapa:<cardId>:<etapaId>". */
+  chaveEvento?: string;
+}): Promise<void> {
+  await dispararAutomacoes({
+    workspaceId: params.workspaceId,
+    contatoNome: params.contatoNome,
+    canal: "CRM",
+    textoRecebido: "",
+    tipoGatilho: params.tipoGatilho,
+    funilId: params.funilId,
+    etapaId: params.etapaId,
+    etapaTitulo: params.etapaTitulo,
+    chaveEvento: params.chaveEvento,
+  });
+}
+
 async function dispararAutomacoes(params: {
   workspaceId: string;
   contatoNome: string;
@@ -67,6 +97,9 @@ async function dispararAutomacoes(params: {
   textoRecebido: string;
   tipoGatilho: string;
   idDaOpcao?: string;
+  funilId?: string;
+  etapaId?: string;
+  etapaTitulo?: string;
   publicacaoId?: string;
   chaveEvento?: string;
   instagramUserId?: string;
@@ -108,6 +141,8 @@ async function dispararAutomacoes(params: {
     // Disponíveis pras condições do fluxo ("mensagem contém…", "canal é…").
     canal: canalDoGatilho(canal),
     mensagem: textoRecebido,
+    ...(params.funilId ? { funilId: params.funilId } : {}),
+    ...(params.etapaTitulo ? { etapaTitulo: params.etapaTitulo } : {}),
   };
 
   for (const linha of linhas) {
@@ -118,6 +153,8 @@ async function dispararAutomacoes(params: {
       contatoNome,
       canal: canalDoGatilho(canal),
       mensagem: textoRecebido,
+      ...(params.funilId ? { funilId: params.funilId } : {}),
+      ...(params.etapaId ? { etapaId: params.etapaId } : {}),
       ...(params.publicacaoId ? { publicacaoId: params.publicacaoId } : {}),
     };
     if (!avaliarGatilho(fluxo, evento)) continue;
@@ -126,7 +163,7 @@ async function dispararAutomacoes(params: {
     // Instagram só porque chegou mensagem de lá.
     const noGatilho = fluxo.nodes.find((n) => n.category === "gatilho");
     const canalDoFluxo = (noGatilho?.data as { canal?: string } | undefined)?.canal;
-    if (canalDoFluxo && canalDoFluxo !== canalDoGatilho(canal)) continue;
+    if (canal !== "CRM" && canalDoFluxo && canalDoFluxo !== canalDoGatilho(canal)) continue;
 
     const primeiraAresta = fluxo.edges.find((e) => e.source === noGatilho?.id);
     if (!primeiraAresta) continue;
@@ -151,6 +188,7 @@ async function dispararAutomacoes(params: {
         workspaceId,
         fluxoId: linha.id,
         gatilho: params.tipoGatilho,
+        configuracoes: linha.configuracoes as never,
         contatoNome,
         contatoId: contatoNoBanco?.id ?? null,
         contato,

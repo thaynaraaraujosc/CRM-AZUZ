@@ -12,6 +12,7 @@ import {
   type ContextoExecucaoPersistido,
   type ExecucaoAtiva,
 } from "./execucoes";
+import { podeIniciar } from "./limites";
 import { proximaAresta, rodarExecucao, saidaDaResposta, type FimDaRodada } from "./motor-estado";
 import { versaoAtualPublicada, versaoPorId, type VersaoPublicada } from "./versoes";
 
@@ -47,6 +48,8 @@ export async function iniciarFluxoComEstado(params: {
   workspaceId: string;
   fluxoId: string;
   gatilho: string;
+  /** Configurações do fluxo — dizem se ele pode rodar de novo pra este contato. */
+  configuracoes?: ConfiguracoesFluxo | null;
   contatoNome: string;
   contatoId?: string | null;
   /** O que as condições do fluxo enxergam: campos do contato, canal, mensagem recebida. */
@@ -59,6 +62,17 @@ export async function iniciarFluxoComEstado(params: {
 
   const inicio = primeiroNoDepoisDoGatilho(versao);
   if (!inicio) return null;
+
+  // As regras de "uma vez por contato", "não iniciar se já está no fluxo" e "cancelar a execução
+  // anterior" vêm das Configurações do fluxo. Elas existiam na tela e não eram consultadas por
+  // ninguém — a partir daqui, valem.
+  const veredito = await podeIniciar({
+    workspaceId: params.workspaceId,
+    fluxoId: params.fluxoId,
+    contatoNome: params.contatoNome,
+    configuracoes: params.configuracoes ?? versao.configuracoes,
+  });
+  if (!veredito.pode) return { situacao: "cancelada", passos: 0, detalhe: `Não iniciou: ${veredito.motivo}.` };
 
   const execucao = await criarExecucao({
     workspaceId: params.workspaceId,

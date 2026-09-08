@@ -29,8 +29,6 @@ import { LimiteDeErro } from "@/components/limite-de-erro";
 import { StatusMensagemIcone } from "@/components/conversas/StatusMensagem";
 import { EnviarTemplateWhatsApp } from "@/components/conversas/EnviarTemplateWhatsApp";
 import { useAutomacoes } from "@/lib/automacoes-context";
-import { useAutomationFlows } from "@/lib/automation-flow-context";
-import { executarFluxo } from "@/lib/automation-flow/motor";
 import { useContatos } from "@/lib/contatos-context";
 import { useConversas, type ConversaReal } from "@/lib/conversas-context";
 import { useEquipe } from "@/lib/equipe-context";
@@ -541,8 +539,7 @@ function ConversasPageInner() {
   const { membros: membrosEquipe } = useEquipe();
   const motivosPerdaBase = useMotivosPerda();
   const { colunas: tarefas } = useTarefas();
-  const { automacoes, automacoesDeEntradaAtivas } = useAutomacoes();
-  const { fluxos, dispararEvento, registrarExecucao } = useAutomationFlows();
+  const { automacoes } = useAutomacoes();
   const { config, atualizarConfig, fundoDaConversa } = useConfigConversas();
   const [configConversasAberto, setConfigConversasAberto] = useState(false);
   const [configAba, setConfigAba] = useState<
@@ -3098,59 +3095,22 @@ function ConversasPageInner() {
    * usuário, então roda mesmo se o fluxo estiver pausado (`ativa: false`) —
    * diferente de `dispararEvento`, que só considera fluxos publicados e ativos.
    */
-  function executarAutomacaoNaConversa(automacaoId: string) {
+  async function executarAutomacaoNaConversa(automacaoId: string) {
     const automacao = automacoesDoFunil.find((a) => a.id === automacaoId);
     if (!automacao) return;
 
-    const fluxo = fluxos.find((f) => f.id === automacaoId);
-    const noGatilho = fluxo?.nodes.find((n) => n.category === "gatilho");
-    const primeiraAresta = noGatilho
-      ? fluxo?.edges.find((e) => e.source === noGatilho.id)
-      : undefined;
+    // Roda no SERVIDOR, com as ações de verdade. Antes rodava aqui no navegador e as mensagens do
+    // fluxo eram simuladas: apareciam na conversa como se tivessem sido enviadas, sem terem saído.
+    const resposta = await fetch(`/api/automacoes-fluxos/${automacaoId}/rodar`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ contatoNome: aberta.nome }),
+    }).catch(() => null);
 
-    if (fluxo && primeiraAresta) {
-      const cardContato = funilSelecionado?.colunas
-        .flatMap((c) => c.cards)
-        .find((c) => c.nome === aberta.nome);
-
-      const registro = executarFluxo(
-        fluxo,
-        primeiraAresta.target,
-        {
-          contato: {
-            nome: aberta.nome,
-            etiquetas: cardContato?.etiquetas ?? [],
-            origem: aberta.origem,
-            responsavel: atendenteSelecionado,
-            funilId: funilSelecionado?.id,
-            etapaTitulo: etapaSelecionada,
-          },
-        },
-        {
-          moverEtapa: (funilId, etapaTitulo, contato) =>
-            atribuirContatoAoFunil(funilId, etapaTitulo, contato as Omit<NegocioCard, "id"> & { id?: string }),
-          salvarContato: (nome, dados) => salvarDadosContato(nome, dados),
-          atribuirAtendente: (nome, atendente) => atribuirAtendente(nome, atendente),
-          registrarMensagemSimulada: (info) => {
-            // Único caso em que "simulado" ainda aparece de verdade no log da
-            // conversa — igual o código antigo já fazia com `acao.mensagem`.
-            adicionarMensagem({ tipo: "out", texto: info.conteudo, hora: horaAgora() });
-          },
-          registrarWebhookSimulado: (info) => avisarAutomacao(`Webhook simulado → ${info.url}`),
-        },
-      );
-      registrarExecucao(registro);
-    } else {
-      // Fallback defensivo — não deveria acontecer, já que todo `Automacao`
-      // migrado vira um `FluxoAutomacao` com o mesmo id.
-      for (const acao of automacao.acoes) {
-        if (
-          (acao.tipo === "mensagem" || acao.tipo === "mensagem_interativa") &&
-          acao.mensagem
-        ) {
-          adicionarMensagem({ tipo: "out", texto: acao.mensagem, hora: horaAgora() });
-        }
-      }
+    const dados = resposta ? await resposta.json().catch(() => null) : null;
+    if (!resposta?.ok) {
+      avisarAutomacao(dados?.erro ?? `Não foi possível rodar "${automacao.titulo}".`);
+      return;
     }
 
     adicionarHistorico("sistema", `Automação "${automacao.titulo}" executada`);
@@ -3652,46 +3612,24 @@ function ConversasPageInner() {
           (c) => c.titulo === etapaSelecionada,
         );
         if (etapaDestino) {
-          const disparadas = automacoesDeEntradaAtivas(
-            funilSelecionado.id,
-            etapaDestino.id,
-          );
-          for (const automacao of disparadas) {
-            avisarAutomacao(
-              `Automação "${automacao.titulo}" disparada pra ${aberta.nome} (entrou em "${etapaDestino.titulo}")`,
-            );
-          }
-
-          // Mesma coisa que arrastar o card no Funil: dispara o motor de
-          // fluxos de verdade em cima do mesmo evento de entrada de etapa.
-          dispararEvento(
-            {
-              tipo: "lead_entrou_etapa",
+          // O gatilho "entrou na etapa" roda no SERVIDOR. Antes ele rodava aqui no navegador, o
+          // que queria dizer que a automação só acontecia pra quem estava com esta tela aberta e
+          // que as mensagens dela eram simuladas — apareciam na conversa sem terem sido enviadas.
+          void fetch("/api/automacoes/evento", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              tipoGatilho: "lead_entrou_etapa",
+              contatoNome: aberta.nome,
               funilId: funilSelecionado.id,
               etapaId: etapaDestino.id,
-              contatoNome: aberta.nome,
-            },
-            {
-              contato: {
-                nome: aberta.nome,
-                etiquetas: novoCard.etiquetas ?? [],
-                origem: novoCard.origem,
-                responsavel: atendenteSelecionado,
-                funilId: funilSelecionado.id,
-                etapaTitulo: etapaDestino.titulo,
-              },
-            },
-            {
-              moverEtapa: (funilId, etapaTitulo, contato) =>
-                atribuirContatoAoFunil(funilId, etapaTitulo, contato as Omit<NegocioCard, "id"> & { id?: string }),
-              salvarContato: (nome, dados) => salvarDadosContato(nome, dados),
-              atribuirAtendente: (nome, atendente) => atribuirAtendente(nome, atendente),
-              registrarMensagemSimulada: (info) => {
-                adicionarMensagem({ tipo: "out", texto: info.conteudo, hora: horaAgora() });
-              },
-              registrarWebhookSimulado: (info) => avisarAutomacao(`Webhook simulado → ${info.url}`),
-            },
-          );
+              etapaTitulo: etapaDestino.titulo,
+              chaveEvento: `etapa:${aberta.nome}:${etapaDestino.id}:${new Date().toISOString().slice(0, 16)}`,
+            }),
+          }).catch(() => {
+            /* automação é efeito secundário da troca de etapa: falhar aqui não pode desfazer o que
+               a pessoa acabou de fazer na tela. O erro fica no log do servidor. */
+          });
         }
       }
     }

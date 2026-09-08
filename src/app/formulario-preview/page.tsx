@@ -12,8 +12,6 @@ import {
   type PaginaFormulario,
   type PerguntaFormulario,
 } from "@/lib/formularios-context";
-import { avaliarGatilho, executarFluxo, type ContextoExecucao, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
-import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
 import { IconCadeado } from "@/components/icons";
 
@@ -56,16 +54,6 @@ async function carregarEquipeSugerida(id: string): Promise<OpcaoNome[]> {
   }
 }
 
-async function carregarFluxosSugeridos(id: string): Promise<FluxoAutomacao[]> {
-  try {
-    const resposta = await fetch(`/api/formularios/${id}/fluxos-automacao`);
-    if (!resposta.ok) return [];
-    return (await resposta.json()) as FluxoAutomacao[];
-  } catch {
-    return [];
-  }
-}
-
 /** Equivalente em runtime puro de `useFunis().atribuirContatoAoFunil` — move (ou cria) o card desse
  * contato pra etapa escolhida, tirando de onde estivesse antes em qualquer funil do workspace do
  * formulário. Ver src/app/api/formularios/[id]/funil/ — a movimentação acontece toda no servidor,
@@ -77,20 +65,28 @@ function atribuirContatoAoFunilPublico(
   etapaTitulo: string,
   card: { nome: string; valor: string; origem: string; dias: string; data: string; responsavel?: string },
 ) {
-  fetch(`/api/formularios/${formularioId}/funil`, {
+  return fetch(`/api/formularios/${formularioId}/funil`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ funilId, etapaTitulo, card }),
   }).catch((erro) => console.error("Falha ao atribuir contato ao funil (público):", erro));
 }
 
-/** Grava a resposta via API real (ver src/app/api/formularios/[id]/respostas/) — fire-and-forget,
- * não trava o envio do formulário se a rede falhar. */
-function registrarRespostaPublica(formularioId: string, valores: Record<string, string>) {
-  fetch(`/api/formularios/${formularioId}/respostas`, {
+/**
+ * Grava a resposta via API real (ver src/app/api/formularios/[id]/respostas/).
+ *
+ * É esta chamada que dispara o gatilho "formulário preenchido" — do lado do SERVIDOR, com as ações
+ * de verdade. Antes o disparo acontecia aqui no navegador: a automação só rodava enquanto a aba do
+ * lead estivesse aberta, e as mensagens dela nunca saíam.
+ *
+ * Por isso ela vai por último e leva o nome já resolvido: a automação precisa do contato já criado
+ * e de saber com quem está falando.
+ */
+function registrarRespostaPublica(formularioId: string, valores: Record<string, string>, contatoNome: string) {
+  return fetch(`/api/formularios/${formularioId}/respostas`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ valores }),
+    body: JSON.stringify({ valores, contatoNome }),
   }).catch((erro) => console.error("Falha ao registrar resposta pública:", erro));
 }
 
@@ -99,8 +95,8 @@ function registrarRespostaPublica(formularioId: string, valores: Record<string, 
  * formulário (ver src/app/api/formularios/[id]/contatos/). Usado tanto pelo submit do formulário
  * quanto pelas `Ligacoes` (`salvarContato`/`atribuirAtendente`) do motor de automações. */
 function salvarDadosContatoPublico(formularioId: string, nome: string, dados: Record<string, unknown>) {
-  if (!nome) return;
-  fetch(`/api/formularios/${formularioId}/contatos`, {
+  if (!nome) return Promise.resolve();
+  return fetch(`/api/formularios/${formularioId}/contatos`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nome, dados, origemPadrao: "Formulário" }),
@@ -111,42 +107,8 @@ function salvarDadosContatoPublico(formularioId: string, nome: string, dados: Re
  * `useContatos().criarContato`, mas em runtime puro (sem Provider), via API real. */
 function salvarContatoPublico(formularioId: string, dadosMapeados: Record<string, string>) {
   const nome = dadosMapeados.nome;
-  if (!nome) return;
-  salvarDadosContatoPublico(formularioId, nome, dadosMapeados);
-}
-
-/** Dispara "formulario_preenchido" pra todo fluxo publicado e ativo do workspace do formulário,
- * exatamente como `useAutomationFlows().dispararEvento` — mas em runtime puro (sem Provider),
- * buscando os fluxos na rota pública e usando `Ligacoes` que também chamam rotas públicas. */
-async function dispararEventoFormularioPublico(formularioId: string, contexto: ContextoExecucao) {
-  const fluxos = await carregarFluxosSugeridos(formularioId);
-  const evento: EventoAutomacao = { tipo: "formulario_preenchido", contatoNome: contexto.contato.nome };
-
-  const ligacoes: Ligacoes = {
-    moverEtapa: (funilId, etapaTitulo, contato) =>
-      atribuirContatoAoFunilPublico(formularioId, funilId, etapaTitulo, {
-        nome: contato.nome,
-        valor: (contato.valor as string) ?? "—",
-        origem: "Formulário",
-        dias: "0",
-        data: new Date().toISOString().slice(0, 10),
-        responsavel: contato.responsavel as string | undefined,
-      }),
-    salvarContato: (nome, dados) => salvarDadosContatoPublico(formularioId, nome, dados),
-    atribuirAtendente: (nome, atendente) => salvarDadosContatoPublico(formularioId, nome, { responsavel: atendente }),
-  };
-
-  for (const fluxo of fluxos) {
-    if (fluxo.status !== "publicado" || !fluxo.ativa) continue;
-    if (!avaliarGatilho(fluxo, evento)) continue;
-
-    const noGatilho = fluxo.nodes.find((n) => n.category === "gatilho");
-    if (!noGatilho) continue;
-    const primeiraAresta = fluxo.edges.find((e) => e.source === noGatilho.id);
-    if (!primeiraAresta) continue;
-
-    executarFluxo(fluxo, primeiraAresta.target, contexto, ligacoes);
-  }
+  if (!nome) return Promise.resolve();
+  return salvarDadosContatoPublico(formularioId, nome, dadosMapeados);
 }
 
 /** Campos de uma página que devem aparecer, respeitando `oculta` e `logica` (mostrar_se/ocultar_se). */
@@ -256,9 +218,8 @@ function FormularioPreviewContent() {
     setPaginaIndice((i) => Math.max(0, i - 1));
   }
 
-  function enviar() {
+  async function enviar() {
     if (!formulario) return;
-    registrarRespostaPublica(formulario.id, valores);
 
     const dadosMapeados: Record<string, string> = {};
     for (const pagina2 of formulario.paginas) {
@@ -268,12 +229,12 @@ function FormularioPreviewContent() {
         }
       }
     }
-    salvarContatoPublico(formulario.id, dadosMapeados);
+    await salvarContatoPublico(formulario.id, dadosMapeados);
 
     const nomeContato = dadosMapeados.nome || `Resposta ${new Date().toLocaleString("pt-BR")}`;
     const integracoes = formulario.integracoes;
     if (integracoes?.funilId && integracoes.etapaTitulo) {
-      atribuirContatoAoFunilPublico(formulario.id, integracoes.funilId, integracoes.etapaTitulo, {
+      await atribuirContatoAoFunilPublico(formulario.id, integracoes.funilId, integracoes.etapaTitulo, {
         nome: nomeContato,
         valor: "—",
         origem: "Formulário",
@@ -283,18 +244,8 @@ function FormularioPreviewContent() {
       });
     }
 
-    dispararEventoFormularioPublico(formulario.id, {
-      contato: {
-        nome: nomeContato,
-        etiquetas: [],
-        origem: "Formulário",
-        responsavel: integracoes?.responsavelPadrao,
-        camposPersonalizados: valores,
-        funilId: integracoes?.funilId,
-        etapaTitulo: integracoes?.etapaTitulo,
-        ultimaRespostaEm: new Date().toISOString(),
-      },
-    }).catch((erro) => console.error("Falha ao disparar automação pública:", erro));
+    // Por último: é esta chamada que dispara as automações, no servidor, e o contato já existe.
+    await registrarRespostaPublica(formulario.id, valores, nomeContato);
 
     if (formulario.paginaFinal.urlRedirecionamento && formulario.paginaFinal.redirecionarAutomaticamente) {
       window.location.href = formulario.paginaFinal.urlRedirecionamento;

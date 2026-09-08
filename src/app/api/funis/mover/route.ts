@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 
 /**
  * Move UM negócio: de etapa, de funil e/ou de responsável — numa chamada só, gravada na hora.
@@ -65,6 +66,28 @@ export async function POST(request: Request) {
     },
     select: { id: true, etapaId: true, responsavel: true },
   });
+
+  // O gatilho "entrou na etapa" acontece AQUI, no servidor — não no navegador de quem arrastou.
+  // Antes ele só valia pra quem estava com a tela aberta, e o mesmo movimento vindo de outro
+  // caminho (importação, webhook, outra aba) não disparava nada.
+  if (etapaId && etapaId !== card.etapaId) {
+    const etapa = await prisma.funilEtapa.findFirst({
+      where: { id: etapaId, workspaceId },
+      select: { titulo: true, funilId: true },
+    });
+    await dispararAutomacoesDoCrm({
+      workspaceId,
+      contatoNome: card.nome,
+      tipoGatilho: "lead_entrou_etapa",
+      funilId: etapa?.funilId,
+      etapaId,
+      etapaTitulo: etapa?.titulo,
+      // A trava é por minuto de propósito. Ela precisa segurar o clique repetido e o retry de
+      // rede (que chegam juntos), sem segurar a entrada de amanhã: sair da etapa e voltar depois é
+      // uma entrada nova, e "entrou na etapa" tem que disparar de novo.
+      chaveEvento: `etapa:${cardId}:${etapaId}:${new Date().toISOString().slice(0, 16)}`,
+    }).catch((erro) => console.error("[funil] falha ao disparar automações de etapa:", erro));
+  }
 
   return NextResponse.json({ ok: true, card: atualizado }, { headers: { "cache-control": "no-store" } });
 }
