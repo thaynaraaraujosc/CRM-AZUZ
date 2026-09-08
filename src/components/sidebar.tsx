@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { createPortal } from "react-dom";
@@ -99,6 +99,21 @@ function posicionarFlyoutLateral(
 }
 
 const CHAVE_SIDEBAR_RECOLHIDA = "azuz-crm-sidebar-recolhida";
+
+/**
+ * A marca de "estou indo" dentro do item do menu.
+ *
+ * Precisa ser um componente separado porque `useLinkStatus` só funciona DENTRO do `<Link>` — é ele
+ * que sabe se aquela navegação específica está em curso.
+ *
+ * Antes disto, o item só ficava marcado como ativo quando a rota TERMINAVA de trocar (o `active`
+ * vem de `usePathname`). Entre o clique e a chegada não acontecia nada, e numa tela pesada isso são
+ * segundos de silêncio — que a pessoa lê como "não funcionou" e clica de novo.
+ */
+function IndoPara() {
+  const { pending } = useLinkStatus();
+  return <span className={`nav-item-indo${pending ? " ativo" : ""}`} aria-hidden="true" />;
+}
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -401,6 +416,7 @@ export function Sidebar() {
                     {href === "/azuz-ia" ? <span className="nav-badge-em-breve">Em breve</span> : null}
                   </>
                 ) : null}
+                <IndoPara />
               </Link>
               {href === "/funil" && !recolhida ? (
                 <div className="nav-sublist">
