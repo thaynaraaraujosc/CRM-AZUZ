@@ -26,7 +26,7 @@ import {
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { Modal, Topbar } from "@/components/ui";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
-import { classesDoCartao, estiloDoCartao } from "@/components/formularios/FormularioPublico";
+import { classesDoCartao, estiloDoBanner, estiloDoCartao } from "@/components/formularios/FormularioPublico";
 import { LogicaCanvas } from "@/components/formularios/LogicaCanvas";
 
 type AbaBuilder = "editar" | "design" | "respostas";
@@ -1340,12 +1340,18 @@ function CampoImagem({
   formularioId,
   url,
   onMudar,
+  medidaIdeal,
+  extra,
 }: {
   rotulo: string;
   tipo: "logo" | "banner" | "fundo";
   formularioId: string;
   url: string | undefined;
   onMudar: (url: string | undefined, arquivo: string | undefined) => void;
+  /** Dica de tamanho ideal, mostrada junto com os formatos aceitos. */
+  medidaIdeal?: string;
+  /** Controle extra que só faz sentido quando já existe imagem (o recorte do banner). */
+  extra?: React.ReactNode;
 }) {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
@@ -1429,7 +1435,11 @@ function CampoImagem({
           no armazenamento.
         </p>
       ) : null}
-      <p className="hint">PNG, JPG, WEBP ou GIF, até 2 MB.</p>
+      <p className="hint">
+        PNG, JPG, WEBP ou GIF, até 2 MB.
+        {medidaIdeal ? ` Ideal: ${medidaIdeal}.` : ""}
+      </p>
+      {url && !naoCarregou ? extra : null}
     </div>
   );
 }
@@ -1455,7 +1465,7 @@ function PreviaDesign({ formulario }: { formulario: Formulario }) {
           ) : null}
           {tema.bannerUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={tema.bannerUrl} alt="" className="form-public-banner" />
+            <img src={tema.bannerUrl} alt="" className="form-public-banner" style={estiloDoBanner(tema)} />
           ) : null}
           <h2>{formulario.nome || "Formulário sem título"}</h2>
           {formulario.descricao ? (
@@ -1664,7 +1674,33 @@ function PainelDesign({
           tipo="banner"
           formularioId={formulario.id}
           url={formulario.tema.bannerUrl}
+          medidaIdeal="1200 × 400 px"
           onMudar={(url, arquivo) => atualizarTema({ bannerUrl: url, bannerArquivo: arquivo })}
+          extra={
+            /* A faixa tem proporção fixa (3:1), senão uma foto em pé viraria 747px de altura no
+               cartão e o formulário inteiro ficaria abaixo da dobra. Como a faixa recorta, quem
+               escolhe o pedaço é quem montou o formulário: recortar sempre pelo meio pega
+               justamente a parte sem nada, porque em foto de equipe o assunto está em cima e em
+               foto de produto sobre mesa está embaixo. */
+            <div className="field" style={{ padding: 0, marginTop: 10 }}>
+              <label>Parte da imagem que aparece</label>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={formulario.tema.bannerPosicao ?? 50}
+                onChange={(e) => atualizarTema({ bannerPosicao: Number(e.target.value) })}
+                className="form-banner-corte"
+                aria-label="Parte da imagem que aparece na faixa"
+              />
+              <div className="form-banner-corte-legenda">
+                <span>Topo</span>
+                <span>Meio</span>
+                <span>Base</span>
+              </div>
+            </div>
+          }
         />
         <CampoImagem
           rotulo="Imagem de fundo"

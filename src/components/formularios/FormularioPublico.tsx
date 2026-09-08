@@ -35,6 +35,11 @@ export function classesDoCartao(tema: TemaFormulario): string {
     .join(" ");
 }
 
+/** Qual altura da imagem aparece dentro da faixa do banner. Ver `bannerPosicao` no tema. */
+export function estiloDoBanner(tema: TemaFormulario): React.CSSProperties {
+  return { objectPosition: `center ${tema.bannerPosicao ?? 50}%` };
+}
+
 export function estiloDoCartao(tema: TemaFormulario): React.CSSProperties {
   const estilo: Record<string, string> = { background: tema.corPrincipal };
   if (tema.corTexto) {
@@ -376,7 +381,7 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
         ) : null}
         {tema.bannerUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- URL livre informada pelo usuário
-          <img src={tema.bannerUrl} alt="Banner" className="form-public-banner" />
+          <img src={tema.bannerUrl} alt="" className="form-public-banner" style={estiloDoBanner(tema)} />
         ) : null}
         <h2>{formulario.nome}</h2>
         {formulario.descricao ? <p className="hint" style={{ marginBottom: 6 }}>{formulario.descricao}</p> : null}
