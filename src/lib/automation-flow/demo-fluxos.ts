@@ -240,6 +240,10 @@ function construirRecuperarLead(): FluxoAutomacao {
   edges.push(aresta("rl-etq5", "rl-fim3"));
 
   const configuracoes: ConfiguracoesFluxo = {
+    // Modelo já vem com o motor com estado ligado. Todos eles têm espera ou pergunta, e sem isto o
+    // fluxo pararia no primeiro "aguardar" e nunca continuaria — o modelo prometeria algo que não
+    // acontece.
+    motorNovo: true,
     usarHorario: true,
     horarioInicio: "09:00",
     horarioFim: "19:00",
@@ -413,6 +417,10 @@ function construirDistribuirLead(): FluxoAutomacao {
   edges.push(aresta("dl-dist2", "dl-fim-timeout"));
 
   const configuracoes: ConfiguracoesFluxo = {
+    // Modelo já vem com o motor com estado ligado. Todos eles têm espera ou pergunta, e sem isto o
+    // fluxo pararia no primeiro "aguardar" e nunca continuaria — o modelo prometeria algo que não
+    // acontece.
+    motorNovo: true,
     naoIniciarSeJaNoFluxo: true,
     // "uma_vez_por_contato" combinado com `naoIniciarSeJaNoFluxo` é o par mais
     // próximo do requisito "impedir criação duplicada de negociação".
@@ -585,6 +593,10 @@ function construirPosVenda(): FluxoAutomacao {
   edges.push(aresta("pv-naoresp-msg", "pv-naoresp-fim"));
 
   const configuracoes: ConfiguracoesFluxo = {
+    // Modelo já vem com o motor com estado ligado. Todos eles têm espera ou pergunta, e sem isto o
+    // fluxo pararia no primeiro "aguardar" e nunca continuaria — o modelo prometeria algo que não
+    // acontece.
+    motorNovo: true,
     // Evita reprocessar o mesmo evento de pagamento aprovado no mesmo dia
     // (ex.: parcelas aprovadas em sequência) sem impedir um novo ciclo de
     // pós-venda numa compra futura.
@@ -668,6 +680,10 @@ function construirBoasVindas(): FluxoAutomacao {
   edges.push(aresta("bv-tarefa-novo", "bv-fim-novo"));
 
   const configuracoes: ConfiguracoesFluxo = {
+    // Modelo já vem com o motor com estado ligado. Todos eles têm espera ou pergunta, e sem isto o
+    // fluxo pararia no primeiro "aguardar" e nunca continuaria — o modelo prometeria algo que não
+    // acontece.
+    motorNovo: true,
     naoIniciarSeJaNoFluxo: true,
   };
 
@@ -762,6 +778,10 @@ function construirAtendimentoToldos(): FluxoAutomacao {
   });
 
   const configuracoes: ConfiguracoesFluxo = {
+    // Modelo já vem com o motor com estado ligado. Todos eles têm espera ou pergunta, e sem isto o
+    // fluxo pararia no primeiro "aguardar" e nunca continuaria — o modelo prometeria algo que não
+    // acontece.
+    motorNovo: true,
     naoIniciarSeJaNoFluxo: true,
   };
 

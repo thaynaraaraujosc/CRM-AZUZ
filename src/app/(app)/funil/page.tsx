@@ -10,6 +10,7 @@ import { classeOrigem, type NegocioCard } from "@/lib/data";
 import { PainelConversa } from "@/components/conversas/PainelConversa";
 import { HOJE_ISO } from "@/lib/agenda-context";
 import { useAutomacoes } from "@/lib/automacoes-context";
+import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useConversas } from "@/lib/conversas-context";
@@ -72,7 +73,8 @@ function FunilPageInner() {
     erroSincronizacao,
     limparErroSincronizacao,
   } = useFunis();
-  const { automacoesDaEtapa, excluirAutomacoesDaEtapa, excluirAutomacoesDoFunil } = useAutomacoes();
+  const { excluirAutomacoesDaEtapa, excluirAutomacoesDoFunil } = useAutomacoes();
+  const { fluxos } = useAutomationFlows();
   const { contatos } = useContatos();
   const { conversas } = useConversas();
   const { membros: equipe } = useEquipe();
@@ -789,8 +791,12 @@ function FunilPageInner() {
               ? cardsComIndice.filter(({ card }) => passaNoFiltro(card))
               : cardsComIndice;
 
+            // Conta os fluxos REAIS ligados a esta etapa. Antes vinha de um catálogo em memória que
+            // nunca era gravado e nunca rodava — a etapa anunciava "2 automações" que não existiam.
             const automacoesEtapa = funilAtivo
-              ? automacoesDaEtapa(funilAtivo.id, coluna.id)
+              ? fluxos.filter(
+                  (f) => f.funilId === funilAtivo.id && f.etapaId === coluna.id && f.status === "publicado" && !f.arquivada,
+                )
               : [];
 
             return (

@@ -28,7 +28,7 @@ import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
 import { LimiteDeErro } from "@/components/limite-de-erro";
 import { StatusMensagemIcone } from "@/components/conversas/StatusMensagem";
 import { EnviarTemplateWhatsApp } from "@/components/conversas/EnviarTemplateWhatsApp";
-import { useAutomacoes } from "@/lib/automacoes-context";
+import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useConversas, type ConversaReal } from "@/lib/conversas-context";
 import { useEquipe } from "@/lib/equipe-context";
@@ -539,7 +539,7 @@ function ConversasPageInner() {
   const { membros: membrosEquipe } = useEquipe();
   const motivosPerdaBase = useMotivosPerda();
   const { colunas: tarefas } = useTarefas();
-  const { automacoes } = useAutomacoes();
+  const { fluxos } = useAutomationFlows();
   const { config, atualizarConfig, fundoDaConversa } = useConfigConversas();
   const [configConversasAberto, setConfigConversasAberto] = useState(false);
   const [configAba, setConfigAba] = useState<
@@ -3083,7 +3083,11 @@ function ConversasPageInner() {
     };
   }
 
-  const automacoesDoFunil = automacoes.filter((a) => a.funilId === funilSelecionadoId);
+  // Fluxos REAIS deste funil — publicados e ativos. Antes a lista vinha de um catálogo em memória
+  // que nunca era gravado e nunca rodava: a pessoa via nomes de automação que não existiam.
+  const automacoesDoFunil = fluxos.filter(
+    (f) => f.funilId === funilSelecionadoId && f.status === "publicado" && !f.arquivada,
+  );
 
   /**
    * Botão "rodar automação" manual dentro da conversa. O fluxo migrado tem o
@@ -3109,12 +3113,12 @@ function ConversasPageInner() {
 
     const dados = resposta ? await resposta.json().catch(() => null) : null;
     if (!resposta?.ok) {
-      avisarAutomacao(dados?.erro ?? `Não foi possível rodar "${automacao.titulo}".`);
+      avisarAutomacao(dados?.erro ?? `Não foi possível rodar "${automacao.nome}".`);
       return;
     }
 
-    adicionarHistorico("sistema", `Automação "${automacao.titulo}" executada`);
-    avisarAutomacao(`Automação "${automacao.titulo}" executada`);
+    adicionarHistorico("sistema", `Automação "${automacao.nome}" executada`);
+    avisarAutomacao(`Automação "${automacao.nome}" executada`);
     setMensagemTexto("");
     setAnexoAberto(false);
   }
@@ -4499,7 +4503,7 @@ function ConversasPageInner() {
                 <div className="chat-sugestoes">
                   {automacoesDoFunil.length === 0 ? (
                     <p className="hint" style={{ padding: "8px 10px" }}>
-                      Nenhuma automação nesse funil ainda.
+                      Nenhuma automação publicada nesse funil ainda.
                     </p>
                   ) : (
                     automacoesDoFunil.map((a) => (
@@ -4510,7 +4514,7 @@ function ConversasPageInner() {
                         style={{ width: "100%", textAlign: "left" }}
                         onClick={() => executarAutomacaoNaConversa(a.id)}
                       >
-                        <span className="n"><IconAutomacoes width={12} height={12} /> {a.titulo}</span>
+                        <span className="n"><IconAutomacoes width={12} height={12} /> {a.nome}</span>
                       </button>
                     ))
                   )}
