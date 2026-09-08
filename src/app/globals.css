@@ -466,10 +466,13 @@ table {
   --navy-raised-2: rgba(255, 255, 255, 0.12);
   --gray-100: rgba(255, 255, 255, 0.1);
   /* O azul do accent também clareia: #2e6bff sobre marinho fica escuro demais pra servir de
-     destaque: some justamente onde deveria chamar atenção. */
+     destaque: some justamente onde deveria chamar atenção. Vale igual pro ciano, que é o mesmo
+     tom e é o que desenha o trilho do item ativo. */
   --blue: #7ea2ff;
   --blue-soft: rgba(126, 162, 255, 0.2);
   --blue-soft-2: rgba(126, 162, 255, 0.12);
+  --cyan: #7ea2ff;
+  --cyan-soft: rgba(126, 162, 255, 0.16);
   /* Redefinir `--ink` não basta: a cor do texto é herdada do `body`, onde `--ink` já resolveu pra
      marinho. Sem declarar `color` aqui, tudo que não tem cor própria (o nome do workspace, o nome
      de quem está logado no rodapé) ficava marinho sobre marinho, ou seja, invisível. */
@@ -15864,5 +15867,219 @@ table.tbl .name-cell .r {
 @media (prefers-reduced-motion: reduce) {
   .esqueleto {
     animation: none;
+  }
+}
+
+/* ============================================================================================
+   Camada de movimento
+   --------------------------------------------------------------------------------------------
+   O CRM tinha ficado correto e parado: cor certa, contraste certo, e nenhuma vida. O pedido é
+   "mais tecnológico". Isso aqui resolve por MOVIMENTO E PRECISÃO, não por neon: o `AGENTS.md`
+   pede pra evitar glow, gradiente pesado e vidro em tudo, e essas coisas envelhecem rápido e
+   competem com a leitura. Máquina cara não brilha, ela responde: a sensação vem de resposta
+   imediata ao toque, de entrada ordenada e de um traço fino de luz no lugar exato.
+
+   Três regras que valem pra tudo daqui pra baixo:
+   1. Movimento nunca segura a leitura. Nada acima de 320ms, nada que atrase conteúdo.
+   2. Movimento só onde há causa: entrada, foco, toque, mudança de estado. Nada em laço infinito
+      pedindo atenção sem motivo.
+   3. Tudo desliga em `prefers-reduced-motion`. Quem marcou isso no sistema tem motivo, e às vezes
+      é enjoo de verdade, não preferência estética.
+   ========================================================================================== */
+
+/* ---- Entrada escalonada das listas ----------------------------------------------------------
+   Os itens sobem juntos, com alguns milissegundos de diferença entre eles. Lido como o quadro se
+   montando na ordem, em vez de tudo aparecendo de uma vez já pronto. O atraso para no oitavo item:
+   depois disso a espera acumulada começaria a parecer lentidão, que é o oposto do efeito. */
+@keyframes crm-entrada-item {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lead-card,
+.lista-cartoes .int-row,
+.inicio-pendencias-lista > * {
+  animation: crm-entrada-item 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.lead-card:nth-child(2),
+.lista-cartoes .int-row:nth-child(2),
+.inicio-pendencias-lista > *:nth-child(2) {
+  animation-delay: 0.03s;
+}
+.lead-card:nth-child(3),
+.lista-cartoes .int-row:nth-child(3),
+.inicio-pendencias-lista > *:nth-child(3) {
+  animation-delay: 0.06s;
+}
+.lead-card:nth-child(4),
+.lista-cartoes .int-row:nth-child(4),
+.inicio-pendencias-lista > *:nth-child(4) {
+  animation-delay: 0.09s;
+}
+.lead-card:nth-child(5),
+.lista-cartoes .int-row:nth-child(5),
+.inicio-pendencias-lista > *:nth-child(5) {
+  animation-delay: 0.12s;
+}
+.lead-card:nth-child(6),
+.lista-cartoes .int-row:nth-child(6),
+.inicio-pendencias-lista > *:nth-child(6) {
+  animation-delay: 0.15s;
+}
+.lead-card:nth-child(n + 7),
+.lista-cartoes .int-row:nth-child(n + 7),
+.inicio-pendencias-lista > *:nth-child(n + 7) {
+  animation-delay: 0.18s;
+}
+
+/* ---- Trilho de luz no menu lateral ----------------------------------------------------------
+   O item ativo já tinha superfície própria. Ganha um traço ciano rente à borda esquerda, que
+   cresce do centro pras pontas quando entra. É o detalhe que dá leitura de instrumento: uma marca
+   fina e exata, em vez de mais uma área pintada. No hover ele aparece a meia altura, dizendo
+   "é aqui que você vai cair" antes do clique. */
+.nav-item {
+  position: relative;
+}
+
+.nav-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 0;
+  border-radius: 999px;
+  background: var(--cyan);
+  transform: translateY(-50%);
+  transition: height var(--transition-base);
+}
+
+.nav-item:hover::before {
+  height: 40%;
+}
+
+.nav-item.active::before {
+  height: 62%;
+}
+
+/* ---- Resposta ao toque ----------------------------------------------------------------------
+   O botão afunda 1px enquanto o dedo/mouse está pressionado. É pequeno de propósito: o que se
+   quer é a confirmação física de que o clique chegou, não uma animação pra ver. */
+.btn,
+.automacoes-abas .tab {
+  transition: transform var(--transition-fast), background var(--transition-fast),
+    border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn:active:not(:disabled),
+.automacoes-abas .tab:active {
+  transform: translateY(1px);
+}
+
+/* ---- Varredura no botão principal -----------------------------------------------------------
+   Uma faixa de luz atravessa o botão marinho uma vez, ao passar o mouse. Acontece só no hover e
+   só uma vez por passagem: em laço infinito viraria enfeite piscando na tela o dia inteiro. */
+.btn.primary {
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), var(--shadow-sm);
+}
+
+.btn.primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.16) 50%, transparent 65%);
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+
+.btn.primary:hover::after {
+  animation: crm-varredura 0.6s ease-out;
+}
+
+@keyframes crm-varredura {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* ---- Aresta de luz nas superfícies marinho --------------------------------------------------
+   Um fio de branco a 8% na borda de cima. Sobre marinho ele lê como quina usinada pegando a luz
+   do ambiente, e é o que separa "azul chapado" de "objeto com volume". Custa um `inset` e nenhum
+   pixel de desenho. */
+.open-conv-h,
+.wa-row.active,
+.agenda-cell.hoje {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), var(--shadow-sm);
+}
+
+.sidebar {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), var(--shadow-md);
+}
+
+/* ---- Régua da etapa com o segmento da marca -------------------------------------------------
+   A régua marinho embaixo do cabeçalho começa em ciano nos primeiros 56px e vira marinho no
+   resto. É a mesma ideia do trilho do menu: a cor da marca entra como marcação curta e precisa,
+   não como área. */
+.kcol-topo {
+  border-bottom: none;
+  background-image: linear-gradient(to right, var(--cyan) 0 56px, var(--acao) 56px);
+  background-repeat: no-repeat;
+  background-position: bottom left;
+  background-size: 100% 2px;
+}
+
+:root[data-theme="dark"] .kcol-topo {
+  background-image: linear-gradient(to right, var(--cyan) 0 56px, rgba(255, 255, 255, 0.18) 56px);
+}
+
+/* ---- Varredura do esqueleto ------------------------------------------------------------------
+   O brilho que corre pelos blocos enquanto a tela carrega passa a ser azul e direcional, em vez
+   de um clarão neutro pulsando. Lido como leitura em andamento, não como "travou". */
+.esqueleto {
+  background: linear-gradient(
+    100deg,
+    var(--gray-100) 20%,
+    var(--blue-soft-2) 42%,
+    var(--blue-soft) 50%,
+    var(--blue-soft-2) 58%,
+    var(--gray-100) 80%
+  );
+  background-size: 260% 100%;
+}
+
+/* ---- O desligamento ---------------------------------------------------------------------------
+   Uma regra só, cobrindo tudo que foi criado aqui. Estados finais preservados: quem desliga
+   movimento continua vendo o trilho do item ativo e o esqueleto, só que parados. */
+@media (prefers-reduced-motion: reduce) {
+  .lead-card,
+  .lista-cartoes .int-row,
+  .inicio-pendencias-lista > *,
+  .btn.primary:hover::after {
+    animation: none;
+  }
+
+  .lead-card,
+  .lista-cartoes .int-row,
+  .inicio-pendencias-lista > * {
+    opacity: 1;
+    transform: none;
+  }
+
+  .btn:active:not(:disabled),
+  .automacoes-abas .tab:active {
+    transform: none;
+  }
+
+  .nav-item::before {
+    transition: none;
   }
 }
