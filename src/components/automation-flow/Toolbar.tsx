@@ -9,6 +9,9 @@ export function Toolbar({
   onChangeNome,
   status,
   salvando,
+  temPendencia,
+  onSalvarAlteracoes,
+  onDescartarAlteracoes,
   ativa,
   podeAtivar,
   onToggleAtiva,
@@ -33,6 +36,10 @@ export function Toolbar({
   onChangeNome: (v: string) => void;
   status: "rascunho" | "publicado";
   salvando: boolean;
+  /** Existe alteração digitada que ainda não foi gravada. */
+  temPendencia: boolean;
+  onSalvarAlteracoes: () => void;
+  onDescartarAlteracoes: () => void;
   ativa: boolean;
   podeAtivar: boolean;
   onToggleAtiva: () => void;
@@ -81,7 +88,27 @@ export function Toolbar({
         )}
 
         <span className={`pill${status === "publicado" ? " on" : ""}`}>{status === "publicado" ? "Publicado" : "Rascunho"}</span>
-        <span className="flow-save-indicator">{salvando ? "Salvando…" : "Todas as alterações foram salvas"}</span>
+        {/*
+          O editor não grava mais sozinho. Antes ele gravava a cada meia tecla, e com o robô ligado
+          isso significava duas coisas ruins ao mesmo tempo: a tela piscando enquanto se digitava um
+          título, e um erro de digitação indo pro ar antes de a frase terminar.
+
+          Por isso a alteração fica À VISTA, com os dois caminhos ao lado dela. "Descartar" existe
+          porque errar ao digitar é o caso comum, e desfazer tecla a tecla não é resposta.
+        */}
+        {temPendencia ? (
+          <span className="flow-pendencia">
+            <span className="flow-pendencia-aviso">Alterações não salvas</span>
+            <button type="button" className="btn primary" onClick={onSalvarAlteracoes}>
+              Salvar
+            </button>
+            <button type="button" className="btn ghost" onClick={onDescartarAlteracoes}>
+              Descartar
+            </button>
+          </span>
+        ) : (
+          <span className="flow-save-indicator">{salvando ? "Salvando…" : "Todas as alterações foram salvas"}</span>
+        )}
       </div>
 
       <div className="flow-toolbar-dir">

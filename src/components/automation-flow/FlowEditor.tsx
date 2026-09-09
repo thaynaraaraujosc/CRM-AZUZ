@@ -138,6 +138,17 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [rfEdges, setRfEdges] = useState<FlowRFEdge[]>(() => domainEdgesToRF(fluxo?.edges ?? []));
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [salvando, setSalvando] = useState(false);
+  /**
+   * O que foi mexido e ainda NÃO foi gravado.
+   *
+   * O editor gravava sozinho, a cada tecla, com meio segundo de espera. Isso tem dois preços que
+   * só aparecem com o robô ligado: a tela pisca a cada gravação enquanto se digita um título, e um
+   * erro de digitação vai pro ar antes de a pessoa terminar a frase. Agora nada é gravado sem
+   * clique: o que muda fica aqui, com "Salvar" e "Descartar" à vista.
+   */
+  const [temPendencia, setTemPendencia] = useState(false);
+  /** Alterações de nome/descrição/configuração do fluxo, ainda não gravadas. */
+  const [metaPendente, setMetaPendente] = useState<Partial<FluxoAutomacao>>({});
   // A biblioteca começa FECHADA. Ela ocupava um terço da tela o tempo todo, inclusive nas horas
   // em que a pessoa só quer ler o fluxo, e o canvas é o que precisa de espaço. Abrir é um clique.
   const [libAberta, setLibAberta] = useState(false);
@@ -166,7 +177,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   /** Espelha `historyRef.current.length` em estado: ref não pode ser lido durante o render (regra do React 19/compiler). */
   const [historyLen, setHistoryLen] = useState(1);
   const salvandoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clipboardRef = useRef<DomainFlowNode[]>([]);
   const toastIdRef = useRef(0);
 
@@ -192,21 +202,49 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }
 
   /** Mudança estrutural (drag stop, conectar, excluir, adicionar bloco…): persiste na hora e entra no histórico de undo/redo. */
+  /**
+   * Registra a mudança no canvas SEM gravar.
+   *
+   * O histórico (desfazer/refazer) continua sendo empilhado: ele é local e existe justamente pra
+   * consertar o passo anterior sem precisar descartar tudo.
+   */
   function persist(nodes: FlowRFNode[], edges: FlowRFEdge[]) {
-    atualizarFluxo(fluxoId, { nodes: rfNodesToDomain(nodes), edges: rfEdgesToDomain(edges) });
-    marcarSalvando(400);
+    setTemPendencia(true);
     pushHistory(nodes, edges);
   }
 
-  /** Edição de campo no painel de configuração. Debounça a gravação (evita salvar/empilhar histórico a cada tecla). */
+  /** Edição de campo no painel: idêntico ao acima, e mantido pelo nome pra não reescrever as
+   * dezenas de chamadas. A diferença de antes (esperar meio segundo pra gravar) deixou de existir
+   * porque não há mais gravação automática nenhuma. */
   function persistDebounced(nodes: FlowRFNode[], edges: FlowRFEdge[]) {
+    persist(nodes, edges);
+  }
+
+  /** Grava tudo que está pendente: canvas e meta, numa escrita só. */
+  function salvarAlteracoes() {
     setSalvando(true);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      atualizarFluxo(fluxoId, { nodes: rfNodesToDomain(nodes), edges: rfEdgesToDomain(edges) });
-      pushHistory(nodes, edges);
-      setSalvando(false);
-    }, 500);
+    atualizarFluxo(fluxoId, {
+      nodes: rfNodesToDomain(rfNodes),
+      edges: rfEdgesToDomain(rfEdges),
+      ...metaPendente,
+    });
+    setMetaPendente({});
+    setTemPendencia(false);
+    marcarSalvando(400);
+  }
+
+  /**
+   * Joga fora o que não foi gravado e volta pro que está no banco.
+   *
+   * Recarrega do `fluxo` do contexto, e não de um snapshot próprio: o que está lá é exatamente o
+   * que foi gravado por último, e é isso que "descartar" tem que devolver.
+   */
+  function descartarAlteracoes() {
+    setRfNodes(domainNodesToRF(fluxo?.nodes ?? []));
+    setRfEdges(domainEdgesToRF(fluxo?.edges ?? []));
+    setMetaPendente({});
+    setTemPendencia(false);
+    setSelectedNodeIds([]);
   }
 
   function undo() {
@@ -595,41 +633,31 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     persistDebounced(rfNodes, novoEdges);
   }
   function updateFluxoMeta(patch: Partial<Pick<FluxoAutomacao, "nome" | "descricao" | "funilId" | "etapaId" | "categoria">>) {
-    setSalvando(true);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      atualizarFluxo(fluxoId, patch);
-      setSalvando(false);
-    }, 500);
+    setMetaPendente((atual) => ({ ...atual, ...patch }));
+    setTemPendencia(true);
   }
   function updateConfiguracoes(patch: Partial<ConfiguracoesFluxo>) {
-    setSalvando(true);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      atualizarFluxo(fluxoId, { configuracoes: { ...(fluxo?.configuracoes ?? {}), ...patch } });
-      setSalvando(false);
-    }, 500);
+    setMetaPendente((atual) => ({
+      ...atual,
+      configuracoes: { ...(fluxo?.configuracoes ?? {}), ...(atual.configuracoes ?? {}), ...patch },
+    }));
+    setTemPendencia(true);
   }
 
   /* ------------------------------------------------------------- ações topo --- */
 
   function salvarRascunhoAgora() {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-    }
-    atualizarFluxo(fluxoId, { nodes: rfNodesToDomain(rfNodes), edges: rfEdgesToDomain(rfEdges) });
-    setSalvando(false);
+    // Grava o canvas E o que foi digitado no painel: são a mesma alteração pra quem está editando,
+    // e salvar só metade produziria um rascunho que não é o que está na tela.
+    salvarAlteracoes();
     avisar("Rascunho salvo.");
   }
 
   function publicar() {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-    }
-    atualizarFluxo(fluxoId, { nodes: rfNodesToDomain(rfNodes), edges: rfEdgesToDomain(rfEdges) });
-    setSalvando(false);
+    // Publicar grava o que está pendente ANTES de versionar. Sem isso, a versão publicada seria a
+    // anterior ao que a pessoa acabou de digitar, e ela veria o texto novo na tela com o texto
+    // velho rodando pros clientes.
+    salvarAlteracoes();
     // setTimeout(0) garante que `publicarFluxo` (que lê o estado do contexto) já
     // enxerga o `atualizarFluxo` de cima. Os dois não podem rodar na mesma
     // atualização em lote do React.
@@ -848,6 +876,17 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     [inicioDesenhado, edgesParaRenderizar],
   );
 
+  /**
+   * O fluxo como está NA TELA: o gravado, com o que foi digitado por cima.
+   *
+   * Sem isso, digitar no nome do fluxo não mostrava nada, porque o campo lê do que está gravado e
+   * a gravação passou a depender de um clique.
+   */
+  const fluxoNaTela = useMemo(
+    () => ({ ...(fluxo as FluxoAutomacao), ...metaPendente }) as FluxoAutomacao,
+    [fluxo, metaPendente],
+  );
+
   const nodesComInicio = useMemo(
     () => (inicioDesenhado ? [inicioDesenhado.no, ...nodesParaRenderizar] : nodesParaRenderizar),
     [inicioDesenhado, nodesParaRenderizar],
@@ -873,10 +912,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   return (
     <div className="flow-shell">
       <Toolbar
-        nome={fluxo.nome}
+        nome={fluxoNaTela.nome}
         onChangeNome={(nome) => updateFluxoMeta({ nome })}
         status={fluxo.status}
         salvando={salvando}
+        temPendencia={temPendencia}
+        onSalvarAlteracoes={salvarAlteracoes}
+        onDescartarAlteracoes={descartarAlteracoes}
         ativa={fluxo.ativa}
         podeAtivar={fluxo.status === "publicado"}
         onToggleAtiva={() => alternarAtivo(fluxoId)}
@@ -1228,7 +1270,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         )}
 
         <ConfigPanel
-          fluxo={fluxo}
+          fluxo={fluxoNaTela}
           selectedNodes={selectedNodes}
           problemas={problemas}
           onUpdateFluxoMeta={updateFluxoMeta}
