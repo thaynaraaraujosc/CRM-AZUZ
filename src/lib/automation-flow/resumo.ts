@@ -65,10 +65,15 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
     const data = node.data as MensagemBotoesData;
     // Numeradas (1, 2, 3...): é assim que o contato de fato as vê no formato de menu numerado,
     // e ajuda a diferenciar visualmente esse nó de múltiplas saídas de uma condição binária comum.
-    const opcoes = (data.opcoes ?? []).map((o, i) => ({
-      handleId: o.id,
-      label: `${i + 1} · ${o.rotulo || "Opção sem nome"}`,
-    }));
+    // Botão de URL não vira saída: quem clica sai pro site e não volta com resposta, então não
+    // existe "o que acontece depois" pra ligar num caminho.
+    const opcoes = (data.opcoes ?? [])
+      .map((o, i) => ({ opcao: o, numero: i + 1 }))
+      .filter(({ opcao }) => !opcao.url?.trim())
+      .map(({ opcao, numero }) => ({
+        handleId: opcao.id,
+        label: `${numero} · ${opcao.rotulo || "Opção sem nome"}`,
+      }));
     return [
       ...opcoes,
       { handleId: "outra_resposta", label: "Outra resposta" },

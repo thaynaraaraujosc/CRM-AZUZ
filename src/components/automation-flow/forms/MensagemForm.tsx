@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 
-import type { CanalMensagem, FlowNode } from "@/lib/automation-flow/types";
+import type { CanalMensagem, FlowNode, FlowNodeType, OpcaoBotaoLista } from "@/lib/automation-flow/types";
 import { VariavelDropdown } from "./VariavelDropdown";
 import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
 import { mapearVariaveis } from "@/lib/campanhas/variaveis";
@@ -22,7 +22,16 @@ const CANAIS: { valor: CanalMensagem; label: string }[] = [
  * (mensagem_botoes/mensagem_lista têm form próprio, ver `MensagemOpcoesForm`)
  *. Os campos que aparecem dependem de quais chaves existem em `node.data`.
  */
-export function MensagemForm({ node, onChange }: { node: FlowNode; onChange: (data: Record<string, unknown>) => void }) {
+export function MensagemForm({
+  node,
+  onChange,
+  onTrocarTipo,
+}: {
+  node: FlowNode;
+  onChange: (data: Record<string, unknown>) => void;
+  /** Trocar o tipo do bloco. É o que faz "+ Botão de ação" virar uma pergunta. */
+  onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
+}) {
   const d = node.data as Record<string, unknown>;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -157,6 +166,34 @@ export function MensagemForm({ node, onChange }: { node: FlowNode; onChange: (da
         </div>
       ) : null}
 
+      {/* O botão mora dentro da mensagem, como no Kommo. Aqui a pergunta é um tipo próprio de
+          bloco, então acrescentar um botão TROCA o tipo, levando junto o texto já escrito. É a
+          mesma coisa que apagar e recriar, sem obrigar a pessoa a fazer isso à mão. */}
+      {node.type === "mensagem_texto" && onTrocarTipo ? (
+        <div className="field">
+          <label>Botões</label>
+          <button
+            type="button"
+            className="btn ghost block"
+            onClick={() => onTrocarTipo(node.id, "mensagem_botoes", virarPergunta(d, { rotulo: "" }))}
+          >
+            + Botão de ação
+          </button>
+          <button
+            type="button"
+            className="btn ghost block mt8"
+            onClick={() =>
+              onTrocarTipo(node.id, "mensagem_botoes", virarPergunta(d, { rotulo: "", url: "https://" }))
+            }
+          >
+            + Botão de URL
+          </button>
+          <p className="hint mt8">
+            Com botão, a mensagem vira uma pergunta: ela para e espera a escolha do contato.
+          </p>
+        </div>
+      ) : null}
+
       {textoDaMensagem.trim() ? (
         // A mesma prévia do editor de modelos e do resumo do disparo. Quem escreve a mensagem e
         // quem confirma o envio precisam olhar pra mesma coisa. Inclusive pra ver a variável
@@ -211,4 +248,20 @@ function EscolherFormulario({
       </p>
     </>
   );
+}
+
+/**
+ * Converte o `data` de uma mensagem de texto no `data` de uma pergunta, guardando o texto.
+ *
+ * O canal e o texto seguem; o resto do formato é o padrão de uma pergunta nova. Perder o texto
+ * aqui seria o pior resultado possível: a pessoa clicou pra ganhar um botão, não pra reescrever
+ * a mensagem.
+ */
+function virarPergunta(d: Record<string, unknown>, primeira: OpcaoBotaoLista | Omit<OpcaoBotaoLista, "id">) {
+  return {
+    canal: d.canal ?? "whatsapp",
+    texto: String(d.texto ?? d.mensagem ?? ""),
+    formatoResposta: "menu_numerado",
+    opcoes: [{ id: `op-${Date.now()}`, ...primeira }],
+  };
 }

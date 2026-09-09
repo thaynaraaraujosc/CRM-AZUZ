@@ -331,6 +331,15 @@ export type OpcaoBotaoLista = {
    * O número da posição (1, 2, 3…) sempre é aceito automaticamente, não precisa listar aqui.
    */
   respostasAlternativas?: string[];
+  /**
+   * Botão de URL: abrir um endereço em vez de responder.
+   *
+   * Uma opção com URL não ramifica o fluxo. Quem clica sai pro site e não volta com resposta
+   * nenhuma, então não existe "o que acontece depois" pra ligar. Ela também não vira botão
+   * interativo: os canais aqui não mandam botão de link, e o endereço vai no texto da opção,
+   * onde a pessoa consegue tocar.
+   */
+  url?: string;
 };
 /**
  * "Formato de resposta" é só front-end/visual nesta fase. Nenhum dos quatro formatos liga em envio

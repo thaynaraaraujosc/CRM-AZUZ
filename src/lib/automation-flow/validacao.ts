@@ -160,6 +160,8 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
         });
         return;
       }
+      // Botão de URL não precisa de caminho: a pessoa sai pro site e não responde nada.
+      if (opcao.url?.trim()) return;
       const temAresta = saidas.some((e) => e.sourceHandle === opcao.id);
       if (!temAresta) {
         problemas.push({

@@ -187,7 +187,24 @@ export function MensagemOpcoesForm({
                 <IconClose width={13} height={13} />
               </button>
             </div>
-            {formatoAtual === "menu_numerado" ? (
+            <div className="flow-opcao-alternativas">
+              <label>Endereço (deixa vazio pra ser um botão de resposta)</label>
+              <input
+                className="input"
+                placeholder="https://…"
+                value={opcao.url ?? ""}
+                onChange={(e) => atualizarOpcao(opcao.id, { url: e.target.value })}
+                aria-label={`Endereço da opção ${i + 1}`}
+              />
+              {opcao.url?.trim() ? (
+                <p className="hint mt8">
+                  Botão de URL: leva pro endereço e não cria caminho no fluxo, porque quem clica sai
+                  e não responde nada. Com um botão desses, a pergunta inteira sai como menu
+                  numerado, com o link escrito na opção.
+                </p>
+              ) : null}
+            </div>
+            {formatoAtual === "menu_numerado" && !opcao.url?.trim() ? (
               <div className="flow-opcao-alternativas">
                 <label>
                   Respostas alternativas aceitas (além do número {i + 1}): separe por vírgula
@@ -215,7 +232,14 @@ export function MensagemOpcoesForm({
           className="btn ghost block mt8"
           onClick={() => onChange({ ...data, opcoes: [...opcoes, { id: novoIdOpcao(), rotulo: "" }] })}
         >
-          + Adicionar opção
+          + Botão de ação
+        </button>
+        <button
+          type="button"
+          className="btn ghost block mt8"
+          onClick={() => onChange({ ...data, opcoes: [...opcoes, { id: novoIdOpcao(), rotulo: "", url: "https://" }] })}
+        >
+          + Botão de URL
         </button>
         <p className="hint mt8">
           Cada opção vira uma saída no bloco. Conecte ela a um próximo passo no canvas. As saídas &quot;Outra resposta&quot; e

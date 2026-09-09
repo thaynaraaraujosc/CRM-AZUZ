@@ -354,7 +354,9 @@ async function executarNo(params: {
       // Manda a pergunta e PARA esperando a escolha. É aqui que "clicou em Sim" continua o fluxo:
       // a resposta acorda esta execução e escolhe a saída pelo id da opção.
       const data = no.data as MensagemBotoesData;
-      const opcoes = (data.opcoes ?? []).filter((o) => o.rotulo?.trim()).map((o) => ({ id: o.id, rotulo: o.rotulo }));
+      const opcoes = (data.opcoes ?? [])
+        .filter((o) => o.rotulo?.trim())
+        .map((o) => ({ id: o.id, rotulo: o.rotulo, url: o.url }));
       const envio = await acoes.perguntar({ contatoNome: nome, texto: preencher(data.texto ?? "", contato), opcoes });
       if (!envio.ok) return { tipo: "erro", detalhe: envio.detalhe, erroTecnico: envio.erroTecnico };
       return { tipo: "aguardar_evento", evento: "resposta", detalhe: `${envio.detalhe} Esperando a escolha do contato.` };

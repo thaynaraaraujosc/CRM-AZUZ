@@ -18,6 +18,7 @@ import type {
   DecisaoMultiplaData,
   IaClassificarData,
   FlowNode,
+  FlowNodeType,
   FluxoAutomacao,
   MensagemBotoesData,
   MensagemContatoData,
@@ -64,11 +65,14 @@ function FormularioDoNode({
   fluxoAtualId,
   onUpdateNodeData,
   onRemoverOpcaoAresta,
+  onTrocarTipo,
 }: {
   node: FlowNode;
   fluxoAtualId?: string;
   onUpdateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
   onRemoverOpcaoAresta: (nodeId: string, opcaoId: string) => void;
+  /** Troca o tipo do bloco. É o que transforma uma mensagem de texto em pergunta com botões. */
+  onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
 }) {
   // Gatilhos de comentário do Instagram: palavras, modo de comparação e escolha da publicação.
   if (node.type === "comentario_instagram" || node.type === "instagram_resposta_comentario") {
@@ -165,7 +169,13 @@ function FormularioDoNode({
     return <MensagemMidiaForm node={node} onChange={(d) => onUpdateNodeData(node.id, d)} />;
   }
   if (node.category === "mensagem") {
-    return <MensagemForm node={node} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+    return (
+      <MensagemForm
+        node={node}
+        onChange={(d) => onUpdateNodeData(node.id, d)}
+        onTrocarTipo={onTrocarTipo}
+      />
+    );
   }
   return <GenericForm node={node} onChange={(d) => onUpdateNodeData(node.id, d)} />;
 }
@@ -179,6 +189,7 @@ export function ConfigPanel({
   onUpdateNode,
   onUpdateNodeData,
   onRemoverOpcaoAresta,
+  onTrocarTipo,
   onSelecionarNode,
 }: {
   fluxo: FluxoAutomacao;
@@ -189,6 +200,8 @@ export function ConfigPanel({
   onUpdateNode: (nodeId: string, patch: Partial<Pick<FlowNode, "titulo" | "observacao">>) => void;
   onUpdateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
   onRemoverOpcaoAresta: (nodeId: string, opcaoId: string) => void;
+  /** Troca o tipo do bloco. É o que transforma uma mensagem de texto em pergunta com botões. */
+  onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
   onSelecionarNode: (nodeId: string) => void;
 }) {
   const [aba, setAba] = useState<"configurar" | "problemas">("configurar");
@@ -256,7 +269,7 @@ export function ConfigPanel({
             <div className="panel-h divided">
               <h4>Configuração</h4>
             </div>
-            <FormularioDoNode node={node} fluxoAtualId={fluxo?.id} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
+            <FormularioDoNode node={node} fluxoAtualId={fluxo?.id} onTrocarTipo={onTrocarTipo} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
             <div className="panel-h divided">
               <h4>O que este bloco fará</h4>
             </div>

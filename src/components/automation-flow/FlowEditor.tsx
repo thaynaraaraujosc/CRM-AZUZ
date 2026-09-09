@@ -480,6 +480,34 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     setRfNodes(novo);
     persistDebounced(novo, rfEdges);
   }
+  /**
+   * Troca o TIPO de um bloco, mantendo id, posição e as setas que chegam nele.
+   *
+   * É o que faz "+ Botão de ação" numa mensagem de texto virar uma pergunta: no Kommo o botão
+   * mora dentro da mensagem, aqui a pergunta é um tipo próprio. Sem esta troca, a pessoa teria
+   * que apagar o bloco, criar outro e religar tudo.
+   *
+   * As setas que SAEM são descartadas de propósito: as saídas do tipo novo são outras, e uma
+   * seta apontando pra um handle que não existe mais é um caminho que nunca é seguido.
+   */
+  function trocarTipoDoNode(nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) {
+    const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
+    if (!bloco) return;
+    const novoNodes = rfNodes.map((n) =>
+      n.id === nodeId
+        ? {
+            ...n,
+            type: bloco.categoria,
+            data: { ...n.data, flowNode: { ...n.data.flowNode, type: tipo, category: bloco.categoria, data } },
+          }
+        : n,
+    );
+    const novoEdges = rfEdges.filter((e) => e.source !== nodeId);
+    setRfNodes(novoNodes);
+    setRfEdges(novoEdges);
+    persist(novoNodes, novoEdges);
+  }
+
   function removerOpcaoAresta(nodeId: string, opcaoId: string) {
     const novoEdges = rfEdges.filter((e) => !(e.source === nodeId && e.sourceHandle === opcaoId));
     setRfEdges(novoEdges);
@@ -1022,6 +1050,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onUpdateNode={updateNodeMeta}
           onUpdateNodeData={updateNodeData}
           onRemoverOpcaoAresta={removerOpcaoAresta}
+          onTrocarTipo={trocarTipoDoNode}
           onSelecionarNode={(nodeId) => {
             setSelectedNodeIds([nodeId]);
             // Clicar num problema não pode só selecionar o node fora da vista. Centraliza a

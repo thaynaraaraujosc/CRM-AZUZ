@@ -40,6 +40,21 @@ describe("saídas de um bloco", () => {
     expect(saidas.map((s) => s.handleId)).toEqual(["o1", "outra_resposta", "nao_respondeu"]);
   });
 
+  it("botão de URL não vira saída: quem clica sai e não responde", () => {
+    const saidas = saidasDoNo(
+      no("mensagem_botoes", "mensagem", {
+        opcoes: [
+          { id: "o1", rotulo: "Falar com atendente" },
+          { id: "o2", rotulo: "Ver o site", url: "https://azuz.com.br" },
+        ],
+      }),
+    );
+    expect(saidas.map((s) => s.handleId)).toEqual(["o1", "outra_resposta", "nao_respondeu"]);
+    // A numeração segue a posição real na lista, não a posição depois de tirar os de URL: é o
+    // número que o contato vê na mensagem.
+    expect(saidas[0].label).toBe("1 · Falar com atendente");
+  });
+
   it("bloco de fim não tem saída nenhuma", () => {
     expect(saidasDoNo(no("encerrar_fluxo", "fim"))).toEqual([]);
   });

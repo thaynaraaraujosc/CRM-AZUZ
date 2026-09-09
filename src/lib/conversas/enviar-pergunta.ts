@@ -25,7 +25,12 @@ import { enviarTextoPeloCanal } from "./enviar-pelo-canal";
  */
 export type FormatoEnviado = "botoes" | "lista" | "respostas_rapidas" | "numerado";
 
-export type OpcaoPergunta = { id: string; rotulo: string };
+export type OpcaoPergunta = {
+  id: string;
+  rotulo: string;
+  /** Botão de URL: a opção leva a um endereço em vez de esperar resposta. */
+  url?: string;
+};
 
 export type ResultadoPergunta = {
   enviado: boolean;
@@ -48,7 +53,18 @@ export function rotuloCurto(rotulo: string, max = MAX_ROTULO): string {
 /** O menu numerado: a pergunta seguida de "1 - …", "2 - …". Funciona em qualquer canal. */
 export function textoNumerado(texto: string, opcoes: OpcaoPergunta[]): string {
   if (!opcoes.length) return texto;
-  return `${texto}\n\n${opcoes.map((o, i) => `${i + 1} - ${o.rotulo}`).join("\n")}`;
+  // A opção com endereço leva o endereço junto: é o único jeito de a pessoa chegar no link, já
+  // que nenhum destes canais manda botão de URL por aqui.
+  const linhas = opcoes.map((o, i) => (o.url ? `${i + 1} - ${o.rotulo}: ${o.url}` : `${i + 1} - ${o.rotulo}`));
+  return `${texto}\n\n${linhas.join("\n")}`;
+}
+
+/**
+ * Uma opção com endereço não cabe em botão interativo aqui, e misturar formatos deixaria metade
+ * das opções invisível. Com qualquer uma delas, a pergunta inteira sai numerada.
+ */
+function temBotaoDeUrl(opcoes: OpcaoPergunta[]): boolean {
+  return opcoes.some((o) => !!o.url?.trim());
 }
 
 export async function enviarPerguntaPeloCanal(params: {
@@ -75,7 +91,7 @@ export async function enviarPerguntaPeloCanal(params: {
         return { enviado: false, formato: "numerado", motivo: "Instagram não conectado" };
       }
       const token = decriptar(integracao.accessTokenCriptografado);
-      if (opcoes.length && opcoes.length <= 13) {
+      if (opcoes.length && opcoes.length <= 13 && !temBotaoDeUrl(opcoes)) {
         await enviarDirectComRespostasRapidas(
           token,
           conversa.contato,
@@ -106,7 +122,7 @@ export async function enviarPerguntaPeloCanal(params: {
     const conta = await contaConectada(workspaceId);
     if (!conta) return { enviado: false, formato: "numerado", motivo: "WhatsApp não conectado" };
 
-    if (opcoes.length && opcoes.length <= 3) {
+    if (opcoes.length && opcoes.length <= 3 && !temBotaoDeUrl(opcoes)) {
       await enviarPelaCloudApi(conta, conversa.contato, {
         type: "interactive",
         interactive: {
@@ -120,7 +136,7 @@ export async function enviarPerguntaPeloCanal(params: {
       return { enviado: true, formato: "botoes" };
     }
 
-    if (opcoes.length && opcoes.length <= 10) {
+    if (opcoes.length && opcoes.length <= 10 && !temBotaoDeUrl(opcoes)) {
       await enviarPelaCloudApi(conta, conversa.contato, {
         type: "interactive",
         interactive: {
