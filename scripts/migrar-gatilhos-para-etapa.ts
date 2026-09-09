@@ -3,33 +3,31 @@
 // Rode com: npx tsx scripts/migrar-gatilhos-para-etapa.ts
 // Só pra ver o que aconteceria: npx tsx scripts/migrar-gatilhos-para-etapa.ts --contar
 //
-// POR QUE ISTO EXISTE: até aqui havia duas formas de dizer "esta automação roda nesta etapa". O
-// bloco de gatilho no canvas (com funil e etapa escolhidos no próprio bloco) e a linha em
-// `GatilhoEtapa` (a grade "Automatizar" do funil). Duas fontes de verdade pra mesma coisa, e nada
-// as conciliava: um fluxo com as duas disparava DUAS vezes pro mesmo lead.
+// Existe também um botão pra isto na tela "Automatizar funil", que faz exatamente o mesmo e não
+// precisa de terminal. Este script serve pra rodar em TODOS os workspaces de uma vez (o botão só
+// mexe no de quem clicou) e pra ficar o registro do que foi feito.
 //
-// Depois desta migração a etapa é a dona do gatilho, que é o modelo do Kommo e o que a tela do
-// funil mostra. O bloco de gatilho continua no fluxo, intocado: ele deixa de disparar (o
-// disparador passa a pular fluxos que já têm gatilho de etapa), mas continua desenhado, e é o que
-// permite voltar atrás sem perder nada.
+// POR QUE ISTO EXISTE: havia duas formas de dizer "esta automação roda nesta etapa". O bloco de
+// gatilho no canvas e a linha em `GatilhoEtapa` (a grade do funil). Nada as conciliava: um fluxo
+// com as duas disparava DUAS vezes pro mesmo lead.
 //
-// É seguro rodar quantas vezes quiser: já existindo um gatilho de etapa equivalente, não cria
-// outro.
+// A lógica NÃO está aqui: está em `src/lib/funil/migrar-gatilhos.ts`, compartilhada com o botão.
+// Duas cópias divergiriam na primeira correção feita só numa delas, que é justamente a classe de
+// problema que esta migração resolve.
 //
-// NÃO migra gatilho de conversa (mensagem recebida, palavra-chave, comentário do Instagram):
-// esses não são "entrar numa etapa", não têm etapa a que se prender, e continuam disparando pelo
-// bloco como sempre.
+// É seguro rodar quantas vezes quiser: já existindo um gatilho equivalente, não cria outro. Nada
+// é apagado: os blocos de gatilho continuam no canvas.
 import "dotenv/config";
 import { setDefaultResultOrder } from "node:dns";
 
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
-import type { FlowNode, GatilhoEtapaData } from "../src/lib/automation-flow/types";
+import { migrarGatilhosParaEtapa } from "../src/lib/funil/migrar-gatilhos";
 
 setDefaultResultOrder("ipv4first");
 
-const soContar = process.argv.includes("--contar");
+const apenasSimular = process.argv.includes("--contar");
 
 if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL não encontrada: confira se o arquivo .env existe na raiz do projeto.");
@@ -38,94 +36,33 @@ if (!process.env.DATABASE_URL) {
 
 const prisma = new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABASE_URL) });
 
-/** Que `quando` de `GatilhoEtapa` corresponde a cada bloco de gatilho do canvas. */
-const QUANDO_POR_TIPO: Record<string, string> = {
-  lead_criado: "criado",
-  lead_entrou_etapa: "movido",
-  responsavel_alterado: "responsavel_alterado",
-};
-
 async function main() {
-  const fluxos = await prisma.fluxoAutomacao.findMany({
-    where: { arquivada: false },
-    select: { id: true, workspaceId: true, nome: true, nodes: true, funilId: true, etapaId: true, ativa: true },
-  });
+  // Todos os workspaces: é o que o script tem de diferente do botão.
+  const workspaces = await prisma.workspace.findMany({ select: { id: true, nome: true } });
 
-  let criados = 0;
-  let jaTinham = 0;
-  let semEtapa = 0;
+  let total = 0;
+  for (const workspace of workspaces) {
+    const resultado = await migrarGatilhosParaEtapa({ workspaceId: workspace.id, apenasSimular });
+    if (!resultado.migrados.length && !resultado.semEtapa.length) continue;
 
-  for (const fluxo of fluxos) {
-    const nodes = (fluxo.nodes ?? []) as FlowNode[];
-    const gatilho = Array.isArray(nodes) ? nodes.find((n) => n.category === "gatilho") : undefined;
-    if (!gatilho) continue;
-
-    const quando = QUANDO_POR_TIPO[gatilho.type];
-    if (!quando) continue;
-
-    // A etapa pode estar no bloco (o caso normal) ou no próprio fluxo (formato mais antigo).
-    const dados = (gatilho.data ?? {}) as GatilhoEtapaData;
-    const etapaId = dados.etapaId || fluxo.etapaId || null;
-    if (!etapaId) {
-      // Gatilho de etapa sem etapa escolhida. Não dá pra migrar (não se sabe QUAL etapa), e
-      // inventar uma seria pior do que deixar como está.
-      semEtapa++;
-      continue;
+    console.log(`\n${workspace.nome}`);
+    for (const m of resultado.migrados) {
+      console.log(
+        `  ${apenasSimular ? "[seria migrado]" : "→"} "${m.fluxoNome}": ${m.tipoGatilho} → etapa "${m.etapaTitulo}" (${m.quando})${m.ativo ? "" : " [pausada]"}`,
+      );
     }
-
-    const etapa = await prisma.funilEtapa.findFirst({
-      where: { id: etapaId, workspaceId: fluxo.workspaceId },
-      select: { id: true, funilId: true, titulo: true },
-    });
-    if (!etapa) {
-      semEtapa++;
-      continue;
+    for (const s of resultado.semEtapa) {
+      console.log(`  [sem etapa escolhida, ficou como estava] "${s.fluxoNome}"`);
     }
-
-    const existente = await prisma.gatilhoEtapa.findFirst({
-      where: { workspaceId: fluxo.workspaceId, etapaId: etapa.id, fluxoId: fluxo.id },
-      select: { id: true },
-    });
-    if (existente) {
-      jaTinham++;
-      continue;
-    }
-
-    console.log(
-      `${soContar ? "[seria migrado]" : "→"} "${fluxo.nome}": ${gatilho.type} → etapa "${etapa.titulo}" (${quando})`,
-    );
-    if (soContar) {
-      criados++;
-      continue;
-    }
-
-    await prisma.gatilhoEtapa.create({
-      data: {
-        id: `gat-mig-${fluxo.id}`,
-        workspaceId: fluxo.workspaceId,
-        funilId: etapa.funilId,
-        etapaId: etapa.id,
-        quando,
-        tipoAcao: "robo",
-        fluxoId: fluxo.id,
-        // Herda o liga/desliga do fluxo: uma automação pausada não pode voltar a disparar só
-        // porque o gatilho mudou de lugar.
-        ativo: fluxo.ativa,
-        ordem: 0,
-      },
-    });
-    criados++;
+    if (resultado.jaTinham) console.log(`  ${resultado.jaTinham} ja tinha(m) gatilho de etapa.`);
+    total += resultado.migrados.length;
   }
 
   console.log(
-    soContar
-      ? `\n(--contar: nada foi gravado.) ${criados} gatilho(s) de etapa seriam criados.`
-      : `\n✓ ${criados} gatilho(s) de etapa criados.`,
+    apenasSimular
+      ? `\n(--contar: nada foi gravado.) ${total} gatilho(s) de etapa seriam criados.`
+      : `\n✓ ${total} gatilho(s) de etapa criados.`,
   );
-  if (jaTinham) console.log(`  ${jaTinham} fluxo(s) já tinham gatilho de etapa. Nada foi duplicado.`);
-  if (semEtapa) {
-    console.log(`  ${semEtapa} fluxo(s) têm gatilho de etapa SEM etapa escolhida e ficaram como estavam.`);
-  }
   console.log("  Os blocos de gatilho continuam no canvas. Nada foi apagado.");
 }
 

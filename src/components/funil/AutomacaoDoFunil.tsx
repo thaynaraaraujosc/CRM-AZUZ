@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { IconAutomacoes, IconClose } from "@/components/icons";
 import { CondicaoForm } from "@/components/automation-flow/forms/CondicaoForm";
+import { MigrarGatilhos } from "./MigrarGatilhos";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
 import {
   ACAO_ROTULO,
@@ -377,6 +378,8 @@ export function AutomacaoDoFunil({
           </button>
         ) : null}
       </div>
+
+      <MigrarGatilhos aoMigrar={() => void recarregar()} />
 
       <div className="fauto-corpo">
         <aside className="fauto-lado">

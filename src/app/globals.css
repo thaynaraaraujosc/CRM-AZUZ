@@ -17219,3 +17219,56 @@ table.tbl .name-cell .r {
   gap: 8px;
   margin-top: var(--space-3);
 }
+
+/* Aviso da migração dos gatilhos. Some sozinho quando não há mais nada a trazer, então não vira
+   um item permanente na tela. */
+.migrar-aviso {
+  background: color-mix(in srgb, var(--blue) 7%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--blue) 25%, var(--border));
+  border-radius: var(--radius-3);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.migrar-aviso.pronto {
+  background: color-mix(in srgb, #0f9d63 8%, var(--surface));
+  border-color: color-mix(in srgb, #0f9d63 30%, var(--border));
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.migrar-aviso-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.migrar-aviso strong {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.migrar-aviso span {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.migrar-lista {
+  margin: var(--space-2) 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.migrar-lista b {
+  color: var(--ink);
+}
+
+.migrar-aviso-fim {
+  display: flex;
+  gap: 8px;
+  margin-top: var(--space-2);
+}
