@@ -10119,7 +10119,33 @@ button.camp-row:hover {
 .flow-config-body {
   flex: 1;
   overflow-y: auto;
+  /*
+   * Nunca rola pro lado.
+   *
+   * O painel tem largura fixa, e um `select` nativo cresce até caber a maior opção dele: uma linha
+   * longa esticava o conteúdo inteiro e aparecia uma barra horizontal, com metade dos campos fora
+   * da vista. Rolar pro lado num painel de formulário é sempre defeito, nunca recurso.
+   */
+  overflow-x: hidden;
   padding: var(--space-4);
+  /* Item de flex não encolhe abaixo do conteúdo sem isto, e a regra acima não teria efeito. */
+  min-width: 0;
+}
+
+/*
+ * Todo campo do painel cabe na largura do painel.
+ *
+ * `.input` não define largura, então cada tipo de campo se dimensionava sozinho: `input` acompanha
+ * o container, `select` acompanha a maior opção e estoura. Aqui os três passam a obedecer o mesmo
+ * limite, e `border-box` é o que impede o padding de somar por fora e voltar a estourar.
+ */
+.flow-config-body .input,
+.flow-config-body select.input,
+.flow-config-body textarea.input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .flow-form {
@@ -10212,7 +10238,9 @@ button.camp-row:hover {
   border-radius: var(--radius-2);
   background: var(--surface);
   padding: var(--space-3);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
+  /* Sem isto o cartão acompanha o conteúdo mais largo em vez do painel. */
+  min-width: 0;
 }
 
 .flow-opcao-row {
@@ -10239,9 +10267,10 @@ button.camp-row:hover {
 
 /* Os ajustes finos, fechados por padrão: ver `temAjuste` no formulário. */
 .flow-opcao-avancado {
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
   border-top: 1px solid var(--line-soft);
-  padding-top: var(--space-2);
+  padding-top: var(--space-3);
+  min-width: 0;
 }
 
 .flow-opcao-avancado > summary {
@@ -10282,8 +10311,24 @@ button.camp-row:hover {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   line-height: 1.35;
+}
+
+/* A explicação fica colada no campo que ela explica, e longe do próximo. */
+.flow-opcao-alternativas .hint {
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* O rótulo da opção e os botões de mover/remover: os botões não encolhem, o campo sim. */
+.flow-opcao-row .input {
+  min-width: 0;
+}
+
+.flow-opcao-row .icon-btn,
+.flow-opcao-row .remove-chip {
+  flex: none;
 }
 
 /* Seletor de "formato de resposta" (item 10). Mesmo visual do seletor de gatilho/ação rápida. */

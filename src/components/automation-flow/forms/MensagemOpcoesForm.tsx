@@ -13,7 +13,10 @@ import type {
 
 /** Como casar a resposta com esta opção. O padrão cobre quase tudo; o resto é pra casos difíceis. */
 const COMPARACOES: { valor: TipoComparacao; label: string }[] = [
-  { valor: "padrao", label: "Padrão (número, texto do botão ou alternativas)" },
+  // O rótulo era "Padrão (número, texto do botão ou alternativas)", e um `select` cresce até
+  // caber a maior opção: era essa linha que empurrava o painel inteiro pra fora e fazia a barra
+  // rolar pro lado. A explicação passou pra baixo do campo, onde cabe sem esticar nada.
+  { valor: "padrao", label: "Padrão" },
   { valor: "igual", label: "Exatamente igual a" },
   { valor: "contem", label: "Contém" },
   { valor: "comeca_com", label: "Começa com" },
@@ -263,6 +266,11 @@ export function MensagemOpcoesForm({
                   </option>
                 ))}
               </select>
+              {(opcao.comparacao ?? "padrao") === "padrao" ? (
+                <p className="hint mt8">
+                  Aceita o número da opção, o texto dela e as respostas alternativas abaixo.
+                </p>
+              ) : null}
               {(opcao.comparacao ?? "padrao") !== "padrao" && opcao.comparacao !== "qualquer" ? (
                 <input
                   className="input mt8"
@@ -295,7 +303,7 @@ export function MensagemOpcoesForm({
               ) : null}
             </div>
             <div className="flow-opcao-alternativas">
-              <label>Endereço (deixa vazio pra ser um botão de resposta)</label>
+              <label>Endereço do link</label>
               <input
                 className="input"
                 placeholder="https://…"
@@ -303,6 +311,9 @@ export function MensagemOpcoesForm({
                 onChange={(e) => atualizarOpcao(opcao.id, { url: e.target.value })}
                 aria-label={`Endereço da opção ${i + 1}`}
               />
+              {!opcao.url?.trim() ? (
+                <p className="hint mt8">Vazio = a opção é uma resposta normal, com caminho no fluxo.</p>
+              ) : null}
               {opcao.url?.trim() ? (
                 <p className="hint mt8">
                   Botão de URL: leva pro endereço e não cria caminho no fluxo, porque quem clica sai
@@ -313,9 +324,7 @@ export function MensagemOpcoesForm({
             </div>
             {formatoAtual === "menu_numerado" && !opcao.url?.trim() ? (
               <div className="flow-opcao-alternativas">
-                <label>
-                  Respostas alternativas aceitas (além do número {i + 1}): separe por vírgula
-                </label>
+                <label>Outras respostas aceitas</label>
                 <input
                   className="input"
                   placeholder={`ex.: número ${i + 1}, opcao ${i + 1}, ${(opcao.rotulo || "palavra-chave").toLowerCase()}`}
@@ -330,6 +339,9 @@ export function MensagemOpcoesForm({
                   }
                   aria-label={`Respostas alternativas da opção ${i + 1}`}
                 />
+                <p className="hint mt8">
+                  Separe por vírgula. O número {i + 1} e o texto da opção já valem sozinhos.
+                </p>
               </div>
             ) : null}
             </details>
