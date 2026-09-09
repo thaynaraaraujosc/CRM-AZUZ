@@ -989,22 +989,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 {/* O começo e o fim ficam à vista o tempo todo, como no Kommo: quem abre um fluxo
                     com quinze blocos precisa saber de onde ele parte sem procurar, e precisa de um
                     jeito curto de fechar o caminho que acabou de montar. */}
-                <div className="flow-inicio-fim">
-                  {/* O começo já aparece como pastilha verde no canvas, ligada ao primeiro bloco.
-                      Aqui fica só o funil, que a pastilha não tem espaço pra dizer, e o atalho pro
-                      bloco vermelho de encerramento. */}
-                  <span className="flow-inicio-fim-funil">{inicioNoFunil.funilNome}</span>
-                  {modoConstrucao ? (
-                    <button
-                      type="button"
-                      className="btn ghost flow-btn-encerrar"
-                      title="Acrescenta um bloco de encerramento no canvas"
-                      onClick={() => adicionarBloco("encerrar_fluxo")}
-                    >
-                      Encerrar robô
-                    </button>
-                  ) : null}
-                </div>
+                {/* O começo já aparece como pastilha verde no canvas, ligada ao primeiro bloco.
+                    Aqui fica só o funil, que a pastilha não tem espaço pra dizer. O fim sai da
+                    biblioteca, pelo bloco "Encerrar fluxo": um segundo atalho pra criar o mesmo
+                    bloco só faria a pessoa procurar em dois lugares. */}
+                <span className="flow-inicio-fim-funil">{inicioNoFunil.funilNome}</span>
               </Panel>
             ) : null}
             <Panel position="top-right">

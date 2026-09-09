@@ -18103,14 +18103,6 @@ table.tbl .name-cell .r {
 }
 
 
-/* Início e fim à vista no canvas do robô de etapa. Quem abre um fluxo com quinze blocos precisa
- * saber de onde ele parte sem procurar. */
-.flow-inicio-fim {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 .flow-inicio-fim-funil {
   padding: 6px 10px;
   border: 1px solid var(--border);
@@ -18118,18 +18110,6 @@ table.tbl .name-cell .r {
   background: var(--surface-elevated);
   font-size: 11.5px;
   color: var(--text-muted);
-}
-
-/* Encerrar em vermelho, como o bloco de fim que ele cria: o botão e o resultado dele têm que ter
- * a mesma cor, senão a relação entre os dois some. */
-.flow-btn-encerrar {
-  color: var(--danger);
-  border-color: var(--danger);
-}
-
-.flow-btn-encerrar:hover {
-  background: var(--danger);
-  color: #ffffff;
 }
 
 /*
