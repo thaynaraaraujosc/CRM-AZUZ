@@ -27,7 +27,13 @@ export type FlowRFNodeData = {
   onAdicionarApos?: (handleId: string | undefined) => void;
 };
 
-export type FlowRFNode = Node<FlowRFNodeData, FlowNodeCategory>;
+/**
+ * `"inicio"` entra no tipo mas NÃO é uma categoria de bloco.
+ *
+ * É a pastilha verde de começo, desenhada no canvas e nunca salva no fluxo: ver `InicioNode`. Ela
+ * precisa existir aqui só porque o React Flow tipa o nó pelo nome do componente que o desenha.
+ */
+export type FlowRFNode = Node<FlowRFNodeData, FlowNodeCategory | "inicio">;
 export type FlowRFEdge = Edge<Record<string, never>>;
 
 export function domainNodesToRF(nodes: FlowNode[]): FlowRFNode[] {

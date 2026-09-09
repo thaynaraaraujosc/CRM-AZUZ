@@ -233,10 +233,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   /* --------------------------------------------------------------- canvas --- */
 
   function onNodesChange(changes: NodeChange<FlowRFNode>[]) {
-    setRfNodes((nds) => applyNodeChanges(changes, nds));
+    // A pastilha de início é desenhada, não salva. Deixar uma mudança dela chegar ao estado a
+    // gravaria no fluxo, e ela passaria a existir de verdade: um bloco fantasma que o motor não
+    // sabe executar.
+    setRfNodes((nds) => applyNodeChanges(changes.filter((c) => !ehDesenhado("id" in c ? c.id : "")), nds));
   }
   function onEdgesChange(changes: EdgeChange<FlowRFEdge>[]) {
-    setRfEdges((eds) => applyEdgeChanges(changes, eds));
+    setRfEdges((eds) => applyEdgeChanges(changes.filter((c) => !ehDesenhado("id" in c ? c.id : "")), eds));
   }
   function onConnect(connection: Connection) {
     const novaEdge: FlowRFEdge = {
@@ -780,6 +783,56 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       })),
     [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis],
   );
+  /**
+   * De qual bloco o fluxo parte: o gatilho, ou o primeiro bloco sem nada chegando nele.
+   *
+   * É a mesma pergunta que a pastilha verde responde, e ela precisa de uma resposta mesmo em fluxo
+   * torto (dois começos, ninguém ligado a ninguém): aí ela aponta pro primeiro, que é melhor que
+   * não aparecer.
+   */
+  const idDoPrimeiroBloco = useMemo(() => {
+    if (!rfNodes.length) return null;
+    const gatilho = rfNodes.find((n) => n.data.flowNode.category === "gatilho");
+    if (gatilho) return gatilho.id;
+    const comEntrada = new Set(rfEdges.map((e) => e.target));
+    return (rfNodes.find((n) => !comEntrada.has(n.id)) ?? rfNodes[0]).id;
+  }, [rfNodes, rfEdges]);
+
+  /**
+   * A pastilha verde e a linha que sai dela.
+   *
+   * Entram no que é DESENHADO, nunca no estado: não são blocos do fluxo, o motor não os executa, e
+   * salvá-los criaria um passo fantasma. Por isso também não se arrastam, não se selecionam e não
+   * se apagam.
+   */
+  const inicioDesenhado = useMemo(() => {
+    const alvo = rfNodes.find((n) => n.id === idDoPrimeiroBloco);
+    if (!alvo) return null;
+    const no: FlowRFNode = {
+      id: ID_INICIO,
+      type: "inicio",
+      position: { x: alvo.position.x - 230, y: alvo.position.y + 8 },
+      draggable: false,
+      selectable: false,
+      deletable: false,
+      data: {
+        flowNode: alvo.data.flowNode,
+        problemas: [],
+        ...(inicioNoFunil ? { detalheInicio: `Lead entra em “${inicioNoFunil.etapaTitulo}”` } : {}),
+      } as FlowRFNode["data"],
+    };
+    const aresta: FlowRFEdge = {
+      id: `${ID_INICIO}-linha`,
+      source: ID_INICIO,
+      target: alvo.id,
+      type: "smoothstep",
+      deletable: false,
+      selectable: false,
+      style: { stroke: "var(--success)" },
+    };
+    return { no, aresta };
+  }, [rfNodes, idDoPrimeiroBloco, inicioNoFunil]);
+
   const edgesParaRenderizar = useMemo(
     () =>
       rfEdges.map((e) => ({
@@ -789,6 +842,17 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       })),
     [rfEdges, arestasRelacionadas],
   );
+
+  const edgesComInicio = useMemo(
+    () => (inicioDesenhado ? [inicioDesenhado.aresta, ...edgesParaRenderizar] : edgesParaRenderizar),
+    [inicioDesenhado, edgesParaRenderizar],
+  );
+
+  const nodesComInicio = useMemo(
+    () => (inicioDesenhado ? [inicioDesenhado.no, ...nodesParaRenderizar] : nodesParaRenderizar),
+    [inicioDesenhado, nodesParaRenderizar],
+  );
+
   const selectedNodes = useMemo(
     () => rfNodes.filter((n) => selectedNodeIds.includes(n.id)).map((n) => ({ ...n.data.flowNode, position: n.position })),
     [rfNodes, selectedNodeIds],
@@ -866,8 +930,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onDragLeave={onDragLeave}
         >
           <ReactFlow
-            nodes={nodesParaRenderizar}
-            edges={edgesParaRenderizar}
+            nodes={nodesComInicio}
+            edges={edgesComInicio}
             nodeTypes={nodeTypes}
             nodesDraggable={modoConstrucao}
             nodesConnectable={modoConstrucao}
@@ -926,20 +990,18 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                     com quinze blocos precisa saber de onde ele parte sem procurar, e precisa de um
                     jeito curto de fechar o caminho que acabou de montar. */}
                 <div className="flow-inicio-fim">
-                  <span className="flow-inicio-fim-chip">
-                    <strong>Início</strong>
-                    <span>
-                      Lead entra em “{inicioNoFunil.etapaTitulo}” · {inicioNoFunil.funilNome}
-                    </span>
-                  </span>
+                  {/* O começo já aparece como pastilha verde no canvas, ligada ao primeiro bloco.
+                      Aqui fica só o funil, que a pastilha não tem espaço pra dizer, e o atalho pro
+                      bloco vermelho de encerramento. */}
+                  <span className="flow-inicio-fim-funil">{inicioNoFunil.funilNome}</span>
                   {modoConstrucao ? (
                     <button
                       type="button"
-                      className="btn ghost"
+                      className="btn ghost flow-btn-encerrar"
                       title="Acrescenta um bloco de encerramento no canvas"
                       onClick={() => adicionarBloco("encerrar_fluxo")}
                     >
-                      + Encerrar fluxo
+                      Encerrar robô
                     </button>
                   ) : null}
                 </div>
@@ -1219,6 +1281,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       ) : null}
     </div>
   );
+}
+
+/** Id da pastilha verde de começo e da linha que sai dela. */
+const ID_INICIO = "__inicio__";
+
+/** O nó/aresta é apenas desenhado (nunca salvo)? Ver `InicioNode`. */
+function ehDesenhado(id: string): boolean {
+  return id.startsWith("__");
 }
 
 export function FlowEditor({ fluxoId }: { fluxoId: string }) {

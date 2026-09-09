@@ -6,6 +6,7 @@ import EsperaNode from "./EsperaNode";
 import FimNode from "./FimNode";
 import GatilhoNode from "./GatilhoNode";
 import HumanoNode from "./HumanoNode";
+import InicioNode from "./InicioNode";
 import IntegracaoNode from "./IntegracaoNode";
 import MensagemNode from "./MensagemNode";
 
@@ -19,4 +20,6 @@ export const nodeTypes: NodeTypes = {
   humano: HumanoNode,
   integracao: IntegracaoNode,
   fim: FimNode,
+  /** Desenhado, não salvo: ver `InicioNode`. Não é uma `FlowNodeCategory`. */
+  inicio: InicioNode,
 };
