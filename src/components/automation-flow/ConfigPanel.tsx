@@ -61,6 +61,7 @@ import { MensagemModeloForm } from "./forms/MensagemModeloForm";
 import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
 import { TarefaEventoForm } from "./forms/TarefaEventoForm";
 import { IconAlerta, IconErro } from "@/components/icons";
+import type { AreaAutomacao } from "@/lib/canais/capacidades";
 
 const TIPOS_OPCOES = new Set(["mensagem_botoes", "mensagem_lista"]);
 const TIPOS_MIDIA = new Set(["mensagem_imagem", "mensagem_video", "mensagem_audio", "mensagem_documento"]);
@@ -68,12 +69,15 @@ const TIPOS_TAREFA_EVENTO = new Set(["tarefa_criada", "tarefa_concluida"]);
 
 function FormularioDoNode({
   node,
+  area,
   fluxoAtualId,
   onUpdateNodeData,
   onRemoverOpcaoAresta,
   onTrocarTipo,
 }: {
   node: FlowNode;
+  /** Comercial ou social: decide os canais que os formulários de mensagem oferecem. */
+  area: AreaAutomacao;
   fluxoAtualId?: string;
   onUpdateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
   onRemoverOpcaoAresta: (nodeId: string, opcaoId: string) => void;
@@ -174,6 +178,7 @@ function FormularioDoNode({
   if (TIPOS_OPCOES.has(node.type)) {
     return (
       <MensagemOpcoesForm
+        area={area}
         data={node.data as MensagemBotoesData}
         onChange={(d) => onUpdateNodeData(node.id, d)}
         onRemoverOpcao={(opcaoId) => onRemoverOpcaoAresta(node.id, opcaoId)}
@@ -181,12 +186,13 @@ function FormularioDoNode({
     );
   }
   if (TIPOS_MIDIA.has(node.type)) {
-    return <MensagemMidiaForm node={node} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+    return <MensagemMidiaForm node={node} area={area} onChange={(d) => onUpdateNodeData(node.id, d)} />;
   }
   if (node.category === "mensagem") {
     return (
       <MensagemForm
         node={node}
+        area={area}
         onChange={(d) => onUpdateNodeData(node.id, d)}
         onTrocarTipo={onTrocarTipo}
       />
@@ -284,7 +290,7 @@ export function ConfigPanel({
             <div className="panel-h divided">
               <h4>Configuração</h4>
             </div>
-            <FormularioDoNode node={node} fluxoAtualId={fluxo?.id} onTrocarTipo={onTrocarTipo} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
+            <FormularioDoNode node={node} area={fluxo?.area ?? "comercial"} fluxoAtualId={fluxo?.id} onTrocarTipo={onTrocarTipo} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
             <div className="panel-h divided">
               <h4>O que este bloco fará</h4>
             </div>

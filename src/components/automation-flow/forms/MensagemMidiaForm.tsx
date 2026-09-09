@@ -10,24 +10,13 @@ import {
   type TipoMidiaArquivo,
 } from "@/lib/biblioteca-documentos-context";
 import type { CanalMensagem, FlowNodeType, MensagemMidiaData } from "@/lib/automation-flow/types";
+import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
+import type { AreaAutomacao } from "@/lib/canais/capacidades";
 import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";
 import { AreaDeUpload } from "@/components/area-de-upload";
 import { IconClose, IconDoc, IconFolder, IconImage, IconMic, IconVideoCam } from "@/components/icons";
 
-/**
- * Os canais deste construtor: WhatsApp, oficial ou por QR Code.
- *
- * Instagram ficou de fora de propósito, e não por esquecimento: ele terá aba própria, com gatilhos
- * que só existem lá (comentário, story, menção). Deixá-lo aqui faria a pessoa montar um fluxo de
- * Instagram neste construtor e depois ter que refazer.
- *
- * O canal escolhido aqui não decide por onde a mensagem sai: quem decide é a CONVERSA do contato.
- * Ele serve pra a tela avisar o que aquele canal suporta, e pra o fluxo dizer pra que foi feito.
- */
-const CANAIS: { valor: CanalMensagem; label: string }[] = [
-  { valor: "whatsapp", label: "WhatsApp (oficial ou QR Code)" },
-];
 
 function tipoMidiaDoBloco(tipo: FlowNodeType): TipoMidiaArquivo {
   switch (tipo) {
@@ -93,13 +82,18 @@ function GlyphArquivo({ tipo }: { tipo: TipoMidiaArquivo }) {
  */
 export function MensagemMidiaForm({
   node,
+  area,
   onChange,
 }: {
   node: { type: FlowNodeType; data: Record<string, unknown> };
+  /** Comercial ou social: decide quais canais o seletor oferece. */
+  area: AreaAutomacao;
   onChange: (data: Record<string, unknown>) => void;
 }) {
   const data = node.data as MensagemMidiaData;
   const tipoMidia = tipoMidiaDoBloco(node.type);
+  const canais = canaisDaAreaParaBloco(area);
+  const janela = avisoDeJanela(area);
   const { data: sessao } = useSession();
   const { documentos, adicionarDocumento } = useBibliotecaDocumentos();
   const arquivosDoTipo = documentos.filter((d) => (d.tipoMidia ?? "documento") === tipoMidia);
@@ -189,13 +183,18 @@ export function MensagemMidiaForm({
     <div className="flow-form">
       <div className="field">
         <label>Canal</label>
-        <select className="input" value={data.canal ?? "whatsapp"} onChange={(e) => set({ canal: e.target.value as CanalMensagem })}>
-          {CANAIS.map((c) => (
+        <select
+          className="input"
+          value={data.canal ?? canais[0]?.valor ?? "whatsapp"}
+          onChange={(e) => set({ canal: e.target.value as CanalMensagem })}
+        >
+          {canais.map((c) => (
             <option key={c.valor} value={c.valor}>
               {c.label}
             </option>
           ))}
         </select>
+        {janela ? <p className="hint mt8">{janela}</p> : null}
       </div>
 
       <div className="field">

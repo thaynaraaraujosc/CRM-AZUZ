@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { IconClose } from "@/components/icons";
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blocos";
+import { blocoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { sugestoesApos } from "@/lib/automation-flow/sugestoes";
 import type { FlowNodeCategory, FlowNodeType } from "@/lib/automation-flow/types";
 
@@ -21,6 +22,7 @@ import type { FlowNodeCategory, FlowNodeType } from "@/lib/automation-flow/types
 export function PainelProximoPasso({
   tipoAnterior,
   categoriaAnterior,
+  area,
   rotuloDaSaida,
   onEscolher,
   onFollowUp,
@@ -28,6 +30,8 @@ export function PainelProximoPasso({
 }: {
   tipoAnterior?: FlowNodeType;
   categoriaAnterior?: FlowNodeCategory;
+  /** Comercial ou social: o que o canal desta área não entrega, não aparece aqui. */
+  area: AreaAutomacao;
   /** De qual saída o passo vai sair ("Sim", "1 · Quero agendar"). Fica no cabeçalho. */
   rotuloDaSaida?: string;
   onEscolher: (tipo: FlowNodeType) => void;
@@ -39,14 +43,17 @@ export function PainelProximoPasso({
   const termo = busca.trim().toLowerCase();
 
   const sugeridos = useMemo(
-    () => (termo ? [] : sugestoesApos(tipoAnterior, categoriaAnterior)),
-    [termo, tipoAnterior, categoriaAnterior],
+    () =>
+      termo
+        ? []
+        : sugestoesApos(tipoAnterior, categoriaAnterior).filter((tipo) => blocoValeNaArea(tipo, area)),
+    [termo, tipoAnterior, categoriaAnterior, area],
   );
 
   /** Gatilho não é "próximo passo": ele é o começo, e só pode existir um por fluxo. */
   const candidatos = useMemo(
-    () => BLOCOS_DISPONIVEIS.filter((b) => b.categoria !== "gatilho"),
-    [],
+    () => BLOCOS_DISPONIVEIS.filter((b) => b.categoria !== "gatilho" && blocoValeNaArea(b.tipo, area)),
+    [area],
   );
 
   const porGrupo = useMemo(() => {

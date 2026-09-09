@@ -108,6 +108,8 @@ function explicacaoDoNo(flowNode: DomainFlowNode, funis: Funil[]): string {
 function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const { fluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo } = useAutomationFlows();
   const fluxo = fluxos.find((f) => f.id === fluxoId);
+  // Fluxo sem área é comercial: é o que todo fluxo criado antes desta coluna é.
+  const area = fluxo?.area ?? "comercial";
   const { screenToFlowPosition, fitView, setCenter, zoomIn, zoomOut } = useReactFlow();
   const { funis } = useFunis();
 
@@ -761,7 +763,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
       <div className="flow-body">
         {modoConstrucao ? (
-          <BlockLibrary aberta={libAberta} onFechar={() => setLibAberta((v) => !v)} onAdicionarBloco={(tipo) => adicionarBloco(tipo)} />
+          <BlockLibrary
+            aberta={libAberta}
+            area={area}
+            onFechar={() => setLibAberta((v) => !v)}
+            onAdicionarBloco={(tipo) => adicionarBloco(tipo)}
+          />
         ) : null}
 
         {modoPassos ? (
@@ -944,6 +951,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             <PainelProximoPasso
               tipoAnterior={noDaAcaoRapida?.type}
               categoriaAnterior={noDaAcaoRapida?.category}
+              area={area}
               rotuloDaSaida={saidaDaAcaoRapida?.label || undefined}
               onEscolher={(tipo) => {
                 adicionarBlocoConectado(tipo, acaoRapida.nodeId, acaoRapida.handleId);

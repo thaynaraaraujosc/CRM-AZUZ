@@ -31,20 +31,9 @@ import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";
 import { IconClose } from "@/components/icons";
 import { validarRegex } from "@/lib/automacoes/regex-seguro";
+import { CANAIS_DA_AREA, formatosDePergunta, type AreaAutomacao } from "@/lib/canais/capacidades";
+import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
 
-/**
- * Os canais deste construtor: WhatsApp, oficial ou por QR Code.
- *
- * Instagram ficou de fora de propósito, e não por esquecimento: ele terá aba própria, com gatilhos
- * que só existem lá (comentário, story, menção). Deixá-lo aqui faria a pessoa montar um fluxo de
- * Instagram neste construtor e depois ter que refazer.
- *
- * O canal escolhido aqui não decide por onde a mensagem sai: quem decide é a CONVERSA do contato.
- * Ele serve pra a tela avisar o que aquele canal suporta, e pra o fluxo dizer pra que foi feito.
- */
-const CANAIS: { valor: CanalMensagem; label: string }[] = [
-  { valor: "whatsapp", label: "WhatsApp (oficial ou QR Code)" },
-];
 
 /**
  * Item 1/2 da spec: o CRM não pode parecer dependente de API oficial. Menu numerado e texto livre
@@ -93,10 +82,13 @@ function novoIdOpcao(): string {
 /** mensagem_botoes / mensagem_lista: cada opção vira um handle de saída nomeado no nó. */
 export function MensagemOpcoesForm({
   data,
+  area,
   onChange,
   onRemoverOpcao,
 }: {
   data: MensagemBotoesData;
+  /** Comercial ou social: decide os canais e quais formatos de resposta existem de verdade. */
+  area: AreaAutomacao;
   onChange: (novo: MensagemBotoesData) => void;
   /** Chamado ANTES do onChange que tira a opção do array. Pra quem escuta remover a aresta correspondente. */
   onRemoverOpcao: (opcaoId: string) => void;
@@ -104,6 +96,13 @@ export function MensagemOpcoesForm({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const opcoes = data.opcoes ?? [];
   const formatoAtual = data.formatoResposta ?? "menu_numerado";
+  const canais = canaisDaAreaParaBloco(area);
+  const janela = avisoDeJanela(area);
+  // Os formatos que ALGUM canal desta área entrega. Lista interativa não existe no Direct, e
+  // oferecê-la num robô de Instagram seria prometer um menu que não vai aparecer.
+  const formatosDaArea = FORMATOS.filter((f) =>
+    CANAIS_DA_AREA[area].some((canal) => formatosDePergunta(canal).includes(f.valor)),
+  );
 
   function moverOpcao(indice: number, direcao: -1 | 1) {
     const alvo = indice + direcao;
@@ -126,13 +125,18 @@ export function MensagemOpcoesForm({
     <div className="flow-form">
       <div className="field">
         <label>Canal</label>
-        <select className="input" value={data.canal} onChange={(e) => onChange({ ...data, canal: e.target.value as CanalMensagem })}>
-          {CANAIS.map((c) => (
+        <select
+          className="input"
+          value={data.canal ?? canais[0]?.valor}
+          onChange={(e) => onChange({ ...data, canal: e.target.value as CanalMensagem })}
+        >
+          {canais.map((c) => (
             <option key={c.valor} value={c.valor}>
               {c.label}
             </option>
           ))}
         </select>
+        {janela ? <p className="hint mt8">{janela}</p> : null}
       </div>
 
       <div className="field">
@@ -160,7 +164,7 @@ export function MensagemOpcoesForm({
           </span>
         </div>
         <div className="flow-formato-resposta-lista">
-          {FORMATOS.map((f) => (
+          {formatosDaArea.map((f) => (
             <button
               type="button"
               key={f.valor}

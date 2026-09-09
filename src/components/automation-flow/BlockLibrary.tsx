@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA, buscarBlocos, type BlocoDefinicao } from "@/lib/automation-flow/blocos";
+import { blocoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
 
 /** Tipo MIME custom carregado no drag. O que a área do canvas lê no `onDrop`. */
@@ -24,10 +25,13 @@ const MAIS_USADOS: FlowNodeType[] = [
 
 export function BlockLibrary({
   aberta,
+  area,
   onFechar,
   onAdicionarBloco,
 }: {
   aberta: boolean;
+  /** Comercial ou social. Decide quais blocos existem aqui: ver `blocoValeNaArea`. */
+  area: AreaAutomacao;
   onFechar: () => void;
   onAdicionarBloco: (tipo: FlowNodeType) => void;
 }) {
@@ -53,15 +57,17 @@ export function BlockLibrary({
     };
   }, []);
 
-  const disponiveis = useMemo(
-    () => (iaDisponivel ? BLOCOS_DISPONIVEIS : BLOCOS_DISPONIVEIS.filter((b) => !b.tipo.startsWith("ia_"))),
-    [iaDisponivel],
+  // Dois filtros com o mesmo espírito: um bloco que não vai funcionar não aparece. A IA some
+  // quando não há chave configurada; o bloco de canal some quando nenhum canal da área o entrega
+  // (lista interativa num robô de Instagram, comentário num robô de funil).
+  const cabeAqui = useCallback(
+    (b: BlocoDefinicao) => (iaDisponivel || !b.tipo.startsWith("ia_")) && blocoValeNaArea(b.tipo, area),
+    [iaDisponivel, area],
   );
 
-  const resultados = useMemo(
-    () => buscarBlocos(busca).filter((b) => iaDisponivel || !b.tipo.startsWith("ia_")),
-    [busca, iaDisponivel],
-  );
+  const disponiveis = useMemo(() => BLOCOS_DISPONIVEIS.filter(cabeAqui), [cabeAqui]);
+
+  const resultados = useMemo(() => buscarBlocos(busca).filter(cabeAqui), [busca, cabeAqui]);
   const buscando = busca.trim().length > 0;
   const maisUsados = useMemo(
     () => MAIS_USADOS.map((tipo) => disponiveis.find((b) => b.tipo === tipo)).filter((b): b is BlocoDefinicao => !!b),

@@ -551,6 +551,11 @@ model FluxoAutomacao {
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
   nome               String
+  /// "comercial" (funil, WhatsApp, e-mail) ou "social" (Instagram). NÃO é um motor diferente: o
+  /// motor, as execuções e o versionamento são os mesmos. A área diz quais canais estão em jogo e,
+  /// portanto, quais blocos fazem sentido oferecer no construtor. O padrão é comercial porque todo
+  /// fluxo que já existe é comercial.
+  area               String    @default("comercial")
   // Texto livre: alguns fluxos de demonstração passam de 191 caracteres (VARCHAR padrão), por
   // isso @db.Text (mesmo motivo do `objetivo` abaixo).
   descricao          String?   @db.Text

@@ -2,26 +2,15 @@
 
 import { useRef } from "react";
 
-import type { CanalMensagem, FlowNode, FlowNodeType, OpcaoBotaoLista } from "@/lib/automation-flow/types";
+import type { FlowNode, FlowNodeType, OpcaoBotaoLista } from "@/lib/automation-flow/types";
 import { VariavelDropdown } from "./VariavelDropdown";
 import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
 import { mapearVariaveis } from "@/lib/campanhas/variaveis";
 import { inserirTokenNoTexto } from "./variaveis";
 import { useFormularios } from "@/lib/formularios-context";
+import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
+import type { AreaAutomacao } from "@/lib/canais/capacidades";
 
-/**
- * Os canais deste construtor: WhatsApp, oficial ou por QR Code.
- *
- * Instagram ficou de fora de propósito, e não por esquecimento: ele terá aba própria, com gatilhos
- * que só existem lá (comentário, story, menção). Deixá-lo aqui faria a pessoa montar um fluxo de
- * Instagram neste construtor e depois ter que refazer.
- *
- * O canal escolhido aqui não decide por onde a mensagem sai: quem decide é a CONVERSA do contato.
- * Ele serve pra a tela avisar o que aquele canal suporta, e pra o fluxo dizer pra que foi feito.
- */
-const CANAIS: { valor: CanalMensagem; label: string }[] = [
-  { valor: "whatsapp", label: "WhatsApp (oficial ou QR Code)" },
-];
 
 /**
  * Formulário genérico pra todos os tipos de "mensagem" que não ramificam
@@ -30,16 +19,21 @@ const CANAIS: { valor: CanalMensagem; label: string }[] = [
  */
 export function MensagemForm({
   node,
+  area,
   onChange,
   onTrocarTipo,
 }: {
   node: FlowNode;
+  /** Comercial ou social: decide quais canais o seletor oferece. Ver `canaisDaAreaParaBloco`. */
+  area: AreaAutomacao;
   onChange: (data: Record<string, unknown>) => void;
   /** Trocar o tipo do bloco. É o que faz "+ Botão de ação" virar uma pergunta. */
   onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
 }) {
   const d = node.data as Record<string, unknown>;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const canais = canaisDaAreaParaBloco(area);
+  const janela = avisoDeJanela(area);
 
   function set(patch: Record<string, unknown>) {
     onChange({ ...d, ...patch });
@@ -72,13 +66,18 @@ export function MensagemForm({
       {temCanal ? (
         <div className="field">
           <label>Canal</label>
-          <select className="input" value={String(d.canal ?? "whatsapp")} onChange={(e) => set({ canal: e.target.value })}>
-            {CANAIS.map((c) => (
+          <select
+            className="input"
+            value={String(d.canal ?? canais[0]?.valor ?? "whatsapp")}
+            onChange={(e) => set({ canal: e.target.value })}
+          >
+            {canais.map((c) => (
               <option key={c.valor} value={c.valor}>
                 {c.label}
               </option>
             ))}
           </select>
+          {janela ? <p className="hint mt8">{janela}</p> : null}
         </div>
       ) : null}
 

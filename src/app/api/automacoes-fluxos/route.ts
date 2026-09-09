@@ -56,6 +56,9 @@ export async function POST(request: Request) {
       funilId: dados.funilId,
       etapaId: dados.etapaId,
       categoria: dados.categoria,
+      // Comercial é o padrão porque todo fluxo anterior a esta coluna é comercial. Um fluxo social
+      // só nasce social se quem criou disser isso.
+      area: dados.area ?? "comercial",
       status: dados.status,
       ativa: dados.ativa,
       arquivada: dados.arquivada ?? false,
