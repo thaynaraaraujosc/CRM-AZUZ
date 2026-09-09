@@ -414,33 +414,6 @@ export function AutomacaoDoFunil({
           <Link href="/integracoes" className="fauto-lado-link">
             + Adicionar fonte
           </Link>
-
-          <h4 className="mt8">Robôs</h4>
-          {robos.length ? (
-            <>
-              {/* A lista dos robôs, clicável. Antes havia só a CONTAGEM e um link pra outra tela,
-                  e a pergunta "onde eu vejo o fluxograma deste robô?" não tinha resposta em lugar
-                  nenhum: era preciso sair da grade e procurar pelo nome. */}
-              <ul className="fauto-robos">
-                {robos.map((r) => (
-                  <li key={r.id}>
-                    <button type="button" onClick={() => abrirFluxograma(r.id)} title="Abrir o fluxograma">
-                      <strong>{r.nome}</strong>
-                      <span>{r.status === "publicado" ? "Publicado" : "Rascunho"}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <p className="hint">
-                Clique num robô pra abrir o fluxograma dele. O mesmo robô pode ser executado por
-                várias etapas.
-              </p>
-            </>
-          ) : (
-            <p className="hint">
-              Nenhum robô criado ainda. Adicione um gatilho numa etapa e escolha “Executar robô”.
-            </p>
-          )}
         </aside>
 
         <div className="fauto-grade">
