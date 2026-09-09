@@ -9709,7 +9709,10 @@ button.camp-row:hover {
   border-radius: var(--radius-lg);
   background: var(--navy);
   border: 1.5px solid var(--line);
-  border-left: 4px solid var(--flow-cor-categoria, var(--line));
+  /* A cor da categoria vive numa barra fina, não no cartão. O cartão é branco com texto
+     azul-marinho; a cor serve pra identificar o tipo de bloco de relance, não pra pintar a tela
+     inteira de sete cores diferentes. */
+  border-left: 3px solid var(--flow-cor-categoria, var(--line));
   box-shadow: var(--shadow-sm);
   font-size: 13px;
   overflow: visible;
@@ -9866,12 +9869,17 @@ button.camp-row:hover {
   padding: var(--space-3) var(--space-3);
   border-bottom: 1px solid var(--line-soft);
   border-radius: 0 12px 0 0;
-  background: color-mix(in srgb, var(--flow-cor-categoria, var(--line)) 10%, transparent);
+  /* Sem fundo tingido: o cabeçalho colorido somado à barra lateral colorida fazia cada bloco
+     parecer de uma cor, e um fluxo com dez blocos virava um mosaico. A cor fica só no ícone e na
+     barra. */
+  background: transparent;
 }
 
 .flow-node-icon {
   font-size: 15px;
   line-height: 1.3;
+  /* O ícone é o indicador de cor do bloco, junto com a barra da esquerda. */
+  color: var(--flow-cor-categoria, var(--text-muted));
 }
 
 .flow-node-textos {

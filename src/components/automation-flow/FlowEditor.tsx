@@ -114,7 +114,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [rfEdges, setRfEdges] = useState<FlowRFEdge[]>(() => domainEdgesToRF(fluxo?.edges ?? []));
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [salvando, setSalvando] = useState(false);
-  const [libAberta, setLibAberta] = useState(true);
+  // A biblioteca começa FECHADA. Ela ocupava um terço da tela o tempo todo, inclusive nas horas
+  // em que a pessoa só quer ler o fluxo, e o canvas é o que precisa de espaço. Abrir é um clique.
+  const [libAberta, setLibAberta] = useState(false);
   const [simuladorAberto, setSimuladorAberto] = useState(false);
   const [execucoesAbertas, setExecucoesAbertas] = useState(false);
   const [historicoAberto, setHistoricoAberto] = useState(false);
