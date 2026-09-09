@@ -240,12 +240,15 @@ export function AutomacaoDoFunil({
   }, [gatilhos]);
 
   /**
-   * Quantas linhas a grade tem. É a etapa com mais gatilhos, com um mínimo de 6 pra a grade não
-   * ficar espremida num funil que ainda não tem quase nada configurado.
+   * Quantas linhas a grade tem.
+   *
+   * A etapa com mais gatilhos, mais três linhas de folga, com um mínimo de 6. A folga é o que faz
+   * "posso acrescentar mais um" continuar verdadeiro depois de a coluna encher: sem ela, a última
+   * linha ficava ocupada e não sobrava célula pra clicar.
    */
   const linhas = useMemo(() => {
     const maior = colunas.reduce((max, c) => Math.max(max, porEtapa.get(c.id)?.length ?? 0), 0);
-    return Math.max(maior, 6);
+    return Math.max(maior + 3, 6);
   }, [colunas, porEtapa]);
 
   function faltaAlgo(r: Rascunho): string | null {
@@ -521,13 +524,21 @@ export function AutomacaoDoFunil({
                         </div>
                       </div>
                     ) : (
-                      // A primeira célula vazia da coluna é a que convida a criar. As de baixo
-                      // ficam vazias mesmo: um "+" repetido em toda célula vira ruído.
-                      (porEtapa.get(coluna.id)?.length ?? 0) === linha && (
-                        <button type="button" className="fauto-add" onClick={() => abrirNovo(coluna.id)}>
-                          <span aria-hidden="true">+</span> Adicionar gatilho
-                        </button>
-                      )
+                      // Toda célula vazia aceita um gatilho, então toda célula vazia tem o botão.
+                      // O que muda é a VISIBILIDADE: a primeira vazia da coluna fica sempre à
+                      // vista, porque é ela que convida quem chegou numa etapa sem automação; as
+                      // de baixo só aparecem sob o mouse. Um "+" repetido em quinze células o
+                      // tempo todo vira ruído; um "+" que não existe em lugar nenhum faz parecer
+                      // que só cabe um gatilho por etapa.
+                      <button
+                        type="button"
+                        className={`fauto-add${
+                          (porEtapa.get(coluna.id)?.length ?? 0) === linha ? "" : " ao-passar"
+                        }`}
+                        onClick={() => abrirNovo(coluna.id)}
+                      >
+                        <span aria-hidden="true">+</span> Adicionar gatilho
+                      </button>
                     )}
                   </div>
                 );

@@ -16718,6 +16718,28 @@ table.tbl .name-cell .r {
   color: var(--blue);
 }
 
+/*
+ * Célula vazia que não é a primeira da coluna: o botão existe, mas só aparece sob o mouse.
+ *
+ * Toda célula vazia aceita um gatilho, e escondê-lo por completo fazia parecer que só cabia um por
+ * etapa. Mostrá-lo em quinze células ao mesmo tempo enchia a grade de tracejado e tirava a atenção
+ * do que já está configurado. Aparecer ao passar resolve os dois.
+ *
+ * `visibility` junto com a opacidade: só a opacidade deixaria um botão invisível ainda clicável, e
+ * um clique que dispara sem nada visível na tela é pior que nenhum.
+ */
+.fauto-add.ao-passar {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-fast);
+}
+
+.fauto-cel:hover .fauto-add.ao-passar,
+.fauto-add.ao-passar:focus-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* ---------------------------------------------------------------- painel -- */
 .fauto-painel {
   position: fixed;
