@@ -51,11 +51,15 @@ function AutomacoesConteudo() {
       <AbasAutomacoes />
 
       <div className="content">
-        {/* O seletor respira do que vem antes e do que vem depois: o rótulo, o campo e o nome do
-            funil abaixo eram três coisas de pesos diferentes empilhadas com a mesma distância. */}
-        <div className="field" style={{ maxWidth: 340, padding: 0, marginBottom: "var(--space-5)" }}>
-          <label>Qual funil você quer automatizar</label>
+        {/*
+          Classe própria em vez de `.field`: `.field` carrega uma linha embaixo, que existe pra
+          separar um campo do SEGUINTE dentro de um painel. Aqui não há campo seguinte, e a linha
+          ficava solta, atravessando a tela sem separar nada.
+        */}
+        <div className="fauto-escolher-funil">
+          <label htmlFor="funil-a-automatizar">Qual funil você quer automatizar</label>
           <select
+            id="funil-a-automatizar"
             className="input"
             value={funil?.id ?? ""}
             onChange={(e) => setFunilEscolhido(e.target.value)}

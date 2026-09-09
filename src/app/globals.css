@@ -18376,3 +18376,43 @@ table.tbl .name-cell .r {
     box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.35);
   }
 }
+
+/*
+ * "Qual funil você quer automatizar": o seletor no topo da grade.
+ *
+ * Fora de `.field` de propósito. `.field` desenha uma linha embaixo pra separar um campo do
+ * SEGUINTE dentro de um painel; aqui não existe campo seguinte, e a linha ficava solta,
+ * atravessando a tela sem separar nada.
+ *
+ * O campo ganha borda visível em vez de só um fundo cinza. Preenchimento sem contorno funciona
+ * numa pilha de campos, onde um explica o outro; sozinho no meio de uma tela clara, ele deixa de
+ * parecer um controle e vira uma faixa de fundo.
+ */
+.fauto-escolher-funil {
+  max-width: 340px;
+  margin-bottom: var(--space-5);
+}
+
+.fauto-escolher-funil label {
+  display: block;
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.fauto-escolher-funil .input {
+  width: 100%;
+  box-sizing: border-box;
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  font-size: 13px;
+  padding: 10px 12px;
+}
+
+.fauto-escolher-funil .input:hover {
+  border-color: var(--border-strong);
+}
