@@ -645,7 +645,7 @@ export function AutomacaoDoFunil({
                 {rascunho.fluxoId ? (
                   <button
                     type="button"
-                    className="btn mt8"
+                    className="btn primary mt8"
                     disabled={salvando}
                     onClick={() => void salvar(true)}
                   >
