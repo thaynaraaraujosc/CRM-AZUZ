@@ -1,4 +1,5 @@
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
+import { dispararGatilhosDoLead } from "@/lib/funil/gatilhos-etapa";
 
 /**
  * Os gatilhos que nascem de uma mudança no próprio CRM. E não de uma mensagem que chegou.
@@ -13,6 +14,16 @@ import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servi
 function disparar(params: Parameters<typeof dispararAutomacoesDoCrm>[0]): void {
   void dispararAutomacoesDoCrm(params).catch((erro) =>
     console.error(`[automacao] gatilho ${params.tipoGatilho} falhou:`, erro instanceof Error ? erro.message : erro),
+  );
+
+  // O mesmo evento também acorda os gatilhos da ETAPA em que o lead está. É o que faz "quando
+  // mudarem a etiqueta de alguém que está em Follow-up" existir de verdade, e não só na tela.
+  void dispararGatilhosDoLead({
+    workspaceId: params.workspaceId,
+    contatoNome: params.contatoNome,
+    tipoGatilho: params.tipoGatilho,
+  }).catch((erro) =>
+    console.error(`[gatilho-etapa] ${params.tipoGatilho} falhou:`, erro instanceof Error ? erro.message : erro),
   );
 }
 

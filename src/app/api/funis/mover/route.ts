@@ -136,6 +136,16 @@ export async function POST(request: Request) {
       contatoNome: card.nome,
       evento: "movido",
     }).catch((erro) => console.error("[funil] falha ao disparar gatilhos da etapa:", erro));
+
+    // "Saiu" dispara na etapa de ONDE ele saiu, não na de destino. Só aqui se sabe qual era.
+    if (card.etapaId && card.etapaId !== etapaId) {
+      dispararGatilhosDaEtapa({
+        workspaceId,
+        etapaId: card.etapaId,
+        contatoNome: card.nome,
+        evento: "saiu",
+      }).catch((erro) => console.error("[funil] falha ao disparar gatilhos de saída:", erro));
+    }
   }
 
   return NextResponse.json({ ok: true, card: atualizado }, { headers: { "cache-control": "no-store" } });

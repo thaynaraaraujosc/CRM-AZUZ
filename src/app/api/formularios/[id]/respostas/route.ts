@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import type { RespostaFormulario } from "@/lib/formularios-context";
 import { prisma } from "@/lib/prisma";
+import { dispararGatilhosDoLead } from "@/lib/funil/gatilhos-etapa";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 
 /**
@@ -53,6 +54,14 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
     contatoNome: contatoNome?.trim() || nomeDeQuemRespondeu(valores) || `Resposta ${linha.id}`,
     chaveEvento: `formulario:${linha.id}`,
   }).catch((erro) => console.error("[formularios] falha ao disparar automações:", erro));
+
+  // E os gatilhos da etapa em que esse lead está: "quando alguém de Follow-up responder o
+  // formulário, faça X". Sem isto o gatilho existiria na grade do funil e nunca aconteceria.
+  await dispararGatilhosDoLead({
+    workspaceId: formulario.workspaceId,
+    contatoNome: contatoNome?.trim() || nomeDeQuemRespondeu(valores) || `Resposta ${linha.id}`,
+    tipoGatilho: "formulario_preenchido",
+  }).catch((erro) => console.error("[formularios] falha ao disparar gatilhos de etapa:", erro));
 
   const resposta: RespostaFormulario = {
     id: linha.id,

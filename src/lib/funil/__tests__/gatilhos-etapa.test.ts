@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { dentroDaJanelaDoGatilho, quandoAceitos } from "../gatilhos-etapa-tipos";
+import {
+  CATEGORIAS_GATILHO,
+  dentroDaJanelaDoGatilho,
+  EVENTO_DO_QUANDO,
+  QUANDO_ROTULO,
+  quandoAceitos,
+  type QuandoGatilho,
+} from "../gatilhos-etapa-tipos";
 
 /** Uma terça-feira, pra os testes de dia da semana não dependerem de quando rodam. */
 function terca(hora: number, minuto = 0): Date {
@@ -45,7 +52,34 @@ describe("quais gatilhos um evento aciona", () => {
     expect(quandoAceitos("criado")).toEqual(["criado", "movido_ou_criado"]);
   });
 
-  it("troca de responsável não aciona os de entrada na etapa", () => {
+  it("os outros acionam só a si mesmos", () => {
     expect(quandoAceitos("responsavel_alterado")).toEqual(["responsavel_alterado"]);
+    expect(quandoAceitos("etiqueta_adicionada")).toEqual(["etiqueta_adicionada"]);
+    expect(quandoAceitos("saiu")).toEqual(["saiu"]);
+  });
+});
+
+describe("o menu de gatilhos", () => {
+  it("todo gatilho aparece em alguma categoria", () => {
+    // Sem isto, um gatilho novo entraria no tipo e ficaria invisível na tela: existiria no motor
+    // e não teria como ser escolhido.
+    const noMenu = CATEGORIAS_GATILHO.flatMap((c) => c.quandos);
+    const todos = Object.keys(QUANDO_ROTULO) as QuandoGatilho[];
+    expect([...noMenu].sort()).toEqual([...todos].sort());
+  });
+
+  it("nenhum gatilho aparece em duas categorias", () => {
+    const noMenu = CATEGORIAS_GATILHO.flatMap((c) => c.quandos);
+    expect(new Set(noMenu).size).toBe(noMenu.length);
+  });
+
+  it("os gatilhos que não são de etapa têm um evento do CRM que os aciona", () => {
+    // O contrário é o defeito que essa tabela existe pra impedir: oferecer na tela um gatilho que
+    // o servidor nunca dispara, e a pessoa monta a automação e fica esperando.
+    const deEntrada: QuandoGatilho[] = ["movido", "criado", "movido_ou_criado", "diariamente"];
+    const todos = Object.keys(QUANDO_ROTULO) as QuandoGatilho[];
+    for (const q of todos.filter((x) => !deEntrada.includes(x))) {
+      expect(EVENTO_DO_QUANDO[q], `"${q}" não tem evento do CRM`).toBeTruthy();
+    }
   });
 });

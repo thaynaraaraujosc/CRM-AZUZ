@@ -8,6 +8,7 @@ import { CondicaoForm } from "@/components/automation-flow/forms/CondicaoForm";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
 import {
   ACAO_ROTULO,
+  CATEGORIAS_GATILHO,
   QUANDO_ROTULO,
   type AcaoDados,
   type GatilhoEtapaVisao,
@@ -40,8 +41,6 @@ const DIAS = [
   { valor: 6, label: "Sáb" },
   { valor: 7, label: "Dom" },
 ];
-
-const QUANDOS: QuandoGatilho[] = ["movido", "criado", "movido_ou_criado", "responsavel_alterado", "diariamente"];
 
 const ACOES: { tipo: TipoAcaoGatilho; descricao: string }[] = [
   { tipo: "robo", descricao: "Executa uma automação inteira, com mensagens, esperas e condições." },
@@ -542,10 +541,17 @@ export function AutomacaoDoFunil({
                 value={rascunho.quando}
                 onChange={(e) => setRascunho({ ...rascunho, quando: e.target.value as QuandoGatilho })}
               >
-                {QUANDOS.map((q) => (
-                  <option key={q} value={q}>
-                    {QUANDO_ROTULO[q]}
-                  </option>
+                {/* Agrupado por categoria, como no Kommo: a lista corrida não deixa ver que
+                    "movido para esta etapa" e "quando uma tarefa for concluída" são coisas de
+                    naturezas diferentes. */}
+                {CATEGORIAS_GATILHO.map((categoria) => (
+                  <optgroup key={categoria.titulo} label={categoria.titulo}>
+                    {categoria.quandos.map((q) => (
+                      <option key={q} value={q}>
+                        {QUANDO_ROTULO[q]}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
               {rascunho.quando === "diariamente" ? (

@@ -4,6 +4,7 @@ import { iniciarFluxoComEstado } from "@/lib/automacoes/iniciar";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
 import {
   ACAO_ROTULO,
+  EVENTO_DO_QUANDO,
   dentroDaJanelaDoGatilho,
   quandoAceitos,
   QUANDO_ROTULO,
@@ -122,7 +123,7 @@ export async function dispararGatilhosDaEtapa(params: {
   workspaceId: string;
   etapaId: string;
   contatoNome: string;
-  evento: "movido" | "criado" | "responsavel_alterado";
+  evento: QuandoGatilho;
   agora?: Date;
 }): Promise<void> {
   const agora = params.agora ?? new Date();
@@ -308,4 +309,48 @@ export async function rodarGatilhosDiarios(agora: Date = new Date()): Promise<{ 
     }).catch(() => 0);
   }
   return { gatilhos: linhas.length, leads };
+}
+
+/**
+ * Dispara os gatilhos da etapa em que o lead ESTÁ AGORA, a partir de um evento que não é entrada
+ * na etapa (mudou uma etiqueta, um campo, concluiu uma tarefa).
+ *
+ * A etapa continua sendo a dona: "quando mudarem a etiqueta de alguém que está em Follow-up, faça
+ * X". Sem isto, esses gatilhos existiriam na tela e nunca aconteceriam, que é o pior defeito
+ * possível numa automação, porque parece que está funcionando e só não deu a hora.
+ *
+ * Lead sem card em funil nenhum simplesmente não tem etapa, e não há gatilho de etapa a disparar.
+ */
+export async function dispararGatilhosDoLead(params: {
+  workspaceId: string;
+  contatoNome: string;
+  /** O tipo de evento do CRM ("etiqueta_adicionada", "tarefa_concluida"…). */
+  tipoGatilho: string;
+  agora?: Date;
+}): Promise<void> {
+  const quando = (Object.keys(EVENTO_DO_QUANDO) as QuandoGatilho[]).find(
+    (q) => EVENTO_DO_QUANDO[q] === params.tipoGatilho,
+  );
+  if (!quando) return;
+
+  // "Sair da etapa" é o único que NÃO vale pela etapa atual: quando o evento chega, o lead já
+  // está na etapa nova, e disparar por ela faria "quando sair de Follow-up" rodar os gatilhos de
+  // quem chegou em Qualificação. Quem sabe de qual etapa ele saiu é quem moveu o card, e é de lá
+  // que esse disparo sai.
+  if (quando === "saiu") return;
+
+  const card = await prisma.negocioCard.findFirst({
+    where: { workspaceId: params.workspaceId, nome: params.contatoNome },
+    select: { etapaId: true },
+    orderBy: { ordem: "asc" },
+  });
+  if (!card) return;
+
+  await dispararGatilhosDaEtapa({
+    workspaceId: params.workspaceId,
+    etapaId: card.etapaId,
+    contatoNome: params.contatoNome,
+    evento: quando,
+    agora: params.agora,
+  });
 }
