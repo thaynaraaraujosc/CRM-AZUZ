@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { rodarRodadaDeCampanhas } from "@/lib/campanhas/worker";
 import { retomarEsperasVencidas } from "@/lib/automacoes/iniciar";
 import { rodarGatilhosDeTempo } from "@/lib/automacoes/gatilhos-tempo";
+import { rodarGatilhosDiarios } from "@/lib/funil/gatilhos-etapa";
 
 /**
  * Batida do relógio das campanhas.
@@ -49,5 +50,12 @@ export async function GET(request: Request) {
     return { disparados: 0 };
   });
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo });
+  // Os gatilhos "Diariamente às HH:MM" das etapas do funil. Só olha o minuto exato, então na
+  // maioria das batidas a consulta não devolve nada e sai de graça.
+  const diarios = await rodarGatilhosDiarios().catch((erro) => {
+    console.error("[cron] falha nos gatilhos diários do funil:", erro);
+    return { gatilhos: 0, leads: 0 };
+  });
+
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios });
 }

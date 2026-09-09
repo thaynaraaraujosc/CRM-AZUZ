@@ -16665,3 +16665,54 @@ table.tbl .name-cell .r {
     position: static;
   }
 }
+
+/* Seletor de "o que esta etapa faz". Uma pergunta por vez: escolher a ação antes de configurá-la
+   evita um painel cheio de campos que não valem pra ação escolhida. */
+.funil-auto-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.funil-auto-acao {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  padding: 9px 11px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.funil-auto-acao:hover {
+  border-color: var(--blue);
+}
+
+.funil-auto-acao strong {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.funil-auto-acao span {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.funil-auto-caixa {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 0 var(--space-2) var(--space-2);
+  cursor: pointer;
+}
+
+.funil-auto-caixa input {
+  margin-top: 2px;
+}

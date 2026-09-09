@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import type { GatilhoEtapaVisao } from "@/lib/funil/gatilhos-etapa-tipos";
+import type { AcaoDados, GatilhoEtapaVisao, TipoAcaoGatilho } from "@/lib/funil/gatilhos-etapa-tipos";
 
 /**
  * Os gatilhos que moram nas etapas do funil.
@@ -16,7 +16,9 @@ function paraVisao(linha: {
   funilId: string;
   etapaId: string;
   quando: string;
-  fluxoId: string;
+  tipoAcao: string;
+  fluxoId: string | null;
+  acaoDados: unknown;
   condicao: unknown;
   diasAtivos: unknown;
   horaInicio: string | null;
@@ -28,6 +30,8 @@ function paraVisao(linha: {
   return {
     ...linha,
     quando: linha.quando as GatilhoEtapaVisao["quando"],
+    tipoAcao: (linha.tipoAcao ?? "robo") as TipoAcaoGatilho,
+    acaoDados: (linha.acaoDados as AcaoDados) ?? null,
     condicao: (linha.condicao as GatilhoEtapaVisao["condicao"]) ?? null,
     diasAtivos: Array.isArray(linha.diasAtivos) ? (linha.diasAtivos as number[]) : null,
   };
@@ -47,13 +51,16 @@ export async function GET(request: Request) {
   // O nome do robô junto: a faixa do funil mostra "Executar robô: NOME PACIENTE", e sem isso a
   // tela teria que buscar cada fluxo separado só pra escrever um nome.
   const fluxos = await prisma.fluxoAutomacao.findMany({
-    where: { workspaceId: sessao.user.workspaceId, id: { in: linhas.map((l) => l.fluxoId) } },
+    where: {
+      workspaceId: sessao.user.workspaceId,
+      id: { in: linhas.map((l) => l.fluxoId).filter((id): id is string => !!id) },
+    },
     select: { id: true, nome: true },
   });
   const nomePorId = new Map(fluxos.map((f) => [f.id, f.nome]));
 
   return NextResponse.json(
-    linhas.map((l) => ({ ...paraVisao(l), fluxoNome: nomePorId.get(l.fluxoId) })),
+    linhas.map((l) => ({ ...paraVisao(l), fluxoNome: l.fluxoId ? nomePorId.get(l.fluxoId) : undefined })),
     { headers: { "cache-control": "no-store" } },
   );
 }
@@ -65,8 +72,12 @@ export async function POST(request: Request) {
   const workspaceId = sessao.user.workspaceId;
 
   const dados = (await request.json()) as Partial<GatilhoEtapaVisao>;
-  if (!dados.etapaId || !dados.fluxoId || !dados.quando) {
-    return NextResponse.json({ erro: "Faltam etapa, robô ou quando." }, { status: 400 });
+  const tipoAcao = (dados.tipoAcao ?? "robo") as TipoAcaoGatilho;
+  if (!dados.etapaId || !dados.quando) {
+    return NextResponse.json({ erro: "Faltam etapa ou quando." }, { status: 400 });
+  }
+  if (tipoAcao === "robo" && !dados.fluxoId) {
+    return NextResponse.json({ erro: "Gatilho de robô precisa de um robô escolhido." }, { status: 400 });
   }
 
   // A etapa e o robô têm que ser DESTE workspace. Sem esta checagem, um id chutado ligaria um
@@ -77,11 +88,16 @@ export async function POST(request: Request) {
   });
   if (!etapa) return NextResponse.json({ erro: "Etapa não encontrada" }, { status: 404 });
 
-  const fluxo = await prisma.fluxoAutomacao.findFirst({
-    where: { id: dados.fluxoId, workspaceId },
-    select: { id: true },
-  });
-  if (!fluxo) return NextResponse.json({ erro: "Robô não encontrado" }, { status: 404 });
+  // O robô só é conferido quando a ação é de robô: uma ação direta não tem fluxo nenhum.
+  let fluxoId: string | null = null;
+  if (tipoAcao === "robo") {
+    const fluxo = await prisma.fluxoAutomacao.findFirst({
+      where: { id: dados.fluxoId!, workspaceId },
+      select: { id: true },
+    });
+    if (!fluxo) return NextResponse.json({ erro: "Robô não encontrado" }, { status: 404 });
+    fluxoId = fluxo.id;
+  }
 
   const ultimo = await prisma.gatilhoEtapa.findFirst({
     where: { workspaceId, etapaId: etapa.id },
@@ -96,7 +112,9 @@ export async function POST(request: Request) {
       funilId: etapa.funilId,
       etapaId: etapa.id,
       quando: dados.quando,
-      fluxoId: fluxo.id,
+      tipoAcao,
+      fluxoId,
+      acaoDados: dados.acaoDados ?? undefined,
       condicao: dados.condicao ?? undefined,
       diasAtivos: dados.diasAtivos ?? undefined,
       horaInicio: dados.horaInicio ?? null,

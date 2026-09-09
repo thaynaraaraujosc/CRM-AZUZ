@@ -1224,8 +1224,17 @@ model GatilhoEtapa {
   // "movido" | "criado" | "movido_ou_criado" | "responsavel_alterado" | "diariamente"
   quando String
 
-  // O robô que roda. É um FluxoAutomacao, sem exigir bloco de gatilho dentro dele.
-  fluxoId String
+  // O QUE a etapa faz. "robo" executa um fluxo; os outros são ações diretas, sem robô no meio,
+  // que é como o Kommo deixa uma etapa trocar o responsável ou marcar uma tarefa sozinha.
+  // "robo" | "responsavel" | "etapa" | "etiquetas" | "tarefa" | "webhook" | "mensagem"
+  tipoAcao String @default("robo")
+
+  // O robô que roda, quando tipoAcao = "robo". Nulo nas ações diretas.
+  fluxoId String?
+
+  // Parâmetros da ação direta: o responsável escolhido, a etapa de destino, as etiquetas, o
+  // texto da tarefa, o endereço do webhook. Formato depende do tipoAcao.
+  acaoDados Json?
 
   // Condição extra ("Para todos os leads com:"), no mesmo formato do bloco de condição do editor.
   condicao Json?

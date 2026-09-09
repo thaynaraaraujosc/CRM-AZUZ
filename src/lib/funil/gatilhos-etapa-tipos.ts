@@ -11,12 +11,60 @@ import type { GrupoCondicoes } from "@/lib/automation-flow/types";
 /** Quando a etapa executa o robô. */
 export type QuandoGatilho = "movido" | "criado" | "movido_ou_criado" | "responsavel_alterado" | "diariamente";
 
+/**
+ * O que a etapa faz quando o gatilho bate.
+ *
+ * "robo" executa um fluxo inteiro. Os outros são ações diretas, sem robô no meio: é assim que uma
+ * etapa troca o responsável ou marca uma tarefa sozinha, sem obrigar a criar um fluxo de um passo
+ * só pra isso.
+ */
+export type TipoAcaoGatilho =
+  | "robo"
+  | "responsavel"
+  | "etapa"
+  | "etiquetas"
+  | "tarefa"
+  | "webhook"
+  | "mensagem";
+
+export const ACAO_ROTULO: Record<TipoAcaoGatilho, string> = {
+  robo: "Executar robô",
+  responsavel: "Alterar responsável do lead",
+  etapa: "Mudar a etapa do lead",
+  etiquetas: "Editar etiquetas",
+  tarefa: "Adicionar uma tarefa",
+  webhook: "Enviar um webhook",
+  mensagem: "Enviar mensagem",
+};
+
+/** Os parâmetros de cada ação direta. Só o campo da ação escolhida é lido. */
+export type AcaoDados = {
+  /** responsavel */
+  responsavel?: string;
+  /** etapa: pra onde mover (o funil é o mesmo do gatilho, salvo se outro for escolhido) */
+  etapaDestinoId?: string;
+  /** etiquetas */
+  etiquetasAdicionar?: string[];
+  etiquetasRemover?: string[];
+  /** tarefa */
+  tarefaTitulo?: string;
+  tarefaResponsavel?: string;
+  tarefaPrazoDias?: number;
+  /** webhook */
+  webhookUrl?: string;
+  /** mensagem */
+  mensagemTexto?: string;
+};
+
 export type GatilhoEtapaVisao = {
   id: string;
   funilId: string;
   etapaId: string;
   quando: QuandoGatilho;
-  fluxoId: string;
+  tipoAcao: TipoAcaoGatilho;
+  /** Só quando tipoAcao = "robo". */
+  fluxoId: string | null;
+  acaoDados?: AcaoDados | null;
   /** Só pra tela: o nome do robô, pra faixa do funil não mostrar um id. */
   fluxoNome?: string;
   condicao?: GrupoCondicoes | null;

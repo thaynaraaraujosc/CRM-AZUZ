@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import type { GatilhoEtapaVisao } from "@/lib/funil/gatilhos-etapa-tipos";
+import type { AcaoDados, GatilhoEtapaVisao, TipoAcaoGatilho } from "@/lib/funil/gatilhos-etapa-tipos";
 
 /** PATCH altera um gatilho de etapa. DELETE remove. Os dois só enxergam o próprio workspace. */
 
@@ -24,7 +24,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     where: { id },
     data: {
       ...(patch.quando ? { quando: patch.quando } : {}),
-      ...(patch.fluxoId ? { fluxoId: patch.fluxoId } : {}),
+      ...(patch.tipoAcao ? { tipoAcao: patch.tipoAcao } : {}),
+      // `fluxoId` entra como null quando a ação deixa de ser de robô: sem isso o gatilho ficaria
+      // apontando pro robô antigo, que não roda mais mas continua na tela.
+      ...("fluxoId" in patch ? { fluxoId: patch.fluxoId ?? null } : {}),
+      ...("acaoDados" in patch ? { acaoDados: patch.acaoDados ?? undefined } : {}),
       ...("condicao" in patch ? { condicao: patch.condicao ?? undefined } : {}),
       ...("diasAtivos" in patch ? { diasAtivos: patch.diasAtivos ?? undefined } : {}),
       ...("horaInicio" in patch ? { horaInicio: patch.horaInicio ?? null } : {}),
@@ -38,6 +42,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   return NextResponse.json({
     ...linha,
     quando: linha.quando as GatilhoEtapaVisao["quando"],
+    tipoAcao: (linha.tipoAcao ?? "robo") as TipoAcaoGatilho,
+    acaoDados: (linha.acaoDados as AcaoDados) ?? null,
     condicao: (linha.condicao as GatilhoEtapaVisao["condicao"]) ?? null,
     diasAtivos: Array.isArray(linha.diasAtivos) ? (linha.diasAtivos as number[]) : null,
   });
