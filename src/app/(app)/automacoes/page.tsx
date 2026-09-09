@@ -6,8 +6,10 @@ import { createPortal } from "react-dom";
 
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
+import { QUANDO_ROTULO, type GatilhoEtapaVisao } from "@/lib/funil/gatilhos-etapa-tipos";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoNo } from "@/lib/automation-flow/resumo";
+import { HistoricoExecucoes } from "@/components/automation-flow/HistoricoExecucoes";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import type {
   CanalMensagem,
@@ -184,6 +186,29 @@ function fluxoBateBusca(
   return false;
 }
 
+/**
+ * "Executado por: NOVO LEAD (quando movido para esta etapa)".
+ *
+ * Um robô pode ser executado por várias etapas, e é justamente isso que a lista precisa mostrar:
+ * mexer nele mexe em todas. Sem essa linha, a pessoa edita um robô achando que ele serve a uma
+ * etapa só.
+ */
+function etapasQueExecutam(
+  fluxoId: string,
+  gatilhos: GatilhoEtapaVisao[],
+  funis: ReturnType<typeof useFunis>["funis"],
+): string | null {
+  const meus = gatilhos.filter((g) => g.fluxoId === fluxoId);
+  if (!meus.length) return null;
+  const partes = meus.map((g) => {
+    const funil = funis.find((f) => f.id === g.funilId);
+    const etapa = funil?.colunas.find((c) => c.id === g.etapaId);
+    const onde = etapa?.titulo ?? "etapa apagada";
+    return `${onde} (${QUANDO_ROTULO[g.quando].toLowerCase()})${g.ativo ? "" : " · desligado"}`;
+  });
+  return `Executado por: ${partes.join(" · ")}`;
+}
+
 /** Alterna um valor dentro de um Set guardado em estado (imutável). */
 function alternarNoSet<T>(setEstado: Dispatch<SetStateAction<Set<T>>>, valor: T) {
   setEstado((prev) => {
@@ -213,6 +238,7 @@ function AutomacoesPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { funis } = useFunis();
+
   const {
     fluxos,
     execucoesDoFluxo,
@@ -235,6 +261,25 @@ function AutomacoesPageInner() {
   }, [criarParam]);
 
   const [busca, setBusca] = useState("");
+  /** Os gatilhos de etapa do workspace inteiro: é o que revela quais robôs uma etapa executa. */
+  const [gatilhosDeEtapa, setGatilhosDeEtapa] = useState<GatilhoEtapaVisao[]>([]);
+  /** Id do robô cujo histórico de execuções está aberto. */
+  const [execucoesDe, setExecucoesDe] = useState<string | null>(null);
+  // Quais etapas executam cada robô. É a prova de que a automação é uma só: o mesmo registro que
+  // aparece aqui é o que a grade do funil dispara, e a lista mostra essa ligação sem a pessoa
+  // precisar abrir o funil pra descobrir.
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/funis/gatilhos")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((lista: GatilhoEtapaVisao[]) => {
+        if (vivo) setGatilhosDeEtapa(Array.isArray(lista) ? lista : []);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
   const [statusFiltro, setStatusFiltro] = useState<Set<StatusFiltro>>(new Set());
   const [funilFiltroIds, setFunilFiltroIds] = useState<Set<string>>(
     () => new Set(funilParam ? [funilParam] : []),
@@ -516,14 +561,16 @@ function AutomacoesPageInner() {
     setExclusaoAlvo(null);
   }
 
+  /**
+   * Abre o histórico de execuções aqui mesmo.
+   *
+   * Antes isto abria o construtor e escrevia no console: um item de menu que prometia uma coisa e
+   * fazia outra. A tela existe (`HistoricoExecucoes`, a mesma do editor), lê a mesma API, e não
+   * havia motivo pra a lista não usar.
+   */
   function verExecucoes(fluxo: FluxoAutomacao) {
-    // Ainda não existe uma UI dedicada de histórico de execuções (o `HistoricoVersoes.tsx`
-    // do editor cobre versões, não execuções): enquanto isso não existe, o atalho mais
-    // honesto é abrir o construtor (que tem o Simulador) e deixar um rastro no console
-    // pra quem for construir a tela de verdade depois.
-    console.log(`Ver execuções de "${fluxo.nome}":`, execucoesDoFluxo(fluxo.id));
     setMenuAbertoId(null);
-    router.push(`/automacoes/editor/${fluxo.id}`);
+    setExecucoesDe(fluxo.id);
   }
 
   /* ---------------------------------------------------------------------- */
@@ -1041,6 +1088,11 @@ function AutomacoesPageInner() {
                       {funilDoFluxo ? ` · Funil: ${funilDoFluxo.nome}` : ""}
                       {` · ${fluxo.nodes.length} ${fluxo.nodes.length === 1 ? "bloco" : "blocos"}`}
                     </p>
+                    {etapasQueExecutam(fluxo.id, gatilhosDeEtapa, funis) ? (
+                      <p className="hint" style={{ marginTop: 4 }}>
+                        {etapasQueExecutam(fluxo.id, gatilhosDeEtapa, funis)}
+                      </p>
+                    ) : null}
                     <p className="hint" style={{ marginTop: 4 }}>
                       {fluxo.modeloDemonstracao && fluxo.execucoes === 0
                         ? "0 execuções: modelo de demonstração"
@@ -1127,9 +1179,7 @@ function AutomacoesPageInner() {
                             onClick={() => verExecucoes(fluxo)}
                           >
                             <span className="n">Ver execuções</span>
-                            <span className="r">
-                              Sem tela dedicada ainda: abre o construtor (registra no console por ora)
-                            </span>
+                            <span className="r">Quem entrou, onde parou e por quê</span>
                           </button>
                           <button
                             type="button"
@@ -1289,6 +1339,8 @@ function AutomacoesPageInner() {
           </div>
         </div>
       ) : null}
+
+      {execucoesDe ? <HistoricoExecucoes fluxoId={execucoesDe} onFechar={() => setExecucoesDe(null)} /> : null}
 
       {visualizarAlvo ? (
         <VisualizarFluxo fluxo={visualizarAlvo} onFechar={() => setVisualizarAlvo(null)} />
