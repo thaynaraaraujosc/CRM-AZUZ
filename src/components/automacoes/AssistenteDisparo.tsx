@@ -229,7 +229,11 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
         <div className="disp-passo">
           <p className="hint">Por onde a mensagem sai. Só aparece o que está conectado neste workspace.</p>
           <div className="disp-canais">
-            {canais.map((c) => (
+            {/* O Instagram sai daqui e tem cartão próprio logo abaixo: o disparo dele obedece a
+                janela de 24 horas e por isso vive em Social → Disparos, não neste assistente. */}
+            {canais
+              .filter((c) => c.canal !== "instagram")
+              .map((c) => (
               <button
                 key={c.canal}
                 type="button"
@@ -237,7 +241,9 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                 disabled={!c.conectado}
                 title={!c.conectado ? c.motivo : undefined}
                 onClick={() => {
-                  setCanal(c.canal);
+                  // O filtro acima já tirou o Instagram; o `as` é o que conta isso pro TypeScript,
+                  // que não consegue estreitar o tipo através do `.filter`.
+                  setCanal(c.canal as CanalCampanha);
                   setTemplateId(null);
                   setVariaveis([]);
                 }}
@@ -245,10 +251,10 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                 <strong>{c.label}</strong>
                 <span>{c.conectado ? c.detalhe || "Conectado" : c.motivo}</span>
               </button>
-            ))}
+              ))}
             <div className="tpl-canal disp-canal-indisponivel" aria-disabled>
               <strong>Instagram</strong>
-              <span>O Instagram não permite mensagem em massa: só responder quem escreveu nas últimas 24h. Use Automações pra isso.</span>
+              <span>O Instagram só deixa falar com quem escreveu nas últimas 24 horas. O disparo dentro dessa janela fica em Social → Disparos.</span>
             </div>
           </div>
           {canal ? <p className="hint">{LIMITES[canal].explicacao}</p> : null}

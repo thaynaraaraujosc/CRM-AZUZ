@@ -12,7 +12,7 @@ import { emailConfigurado } from "@/lib/email";
  * configuração do servidor (o provedor é um só pra todos os clientes).
  */
 export type CanalDisponivel = {
-  canal: "whatsapp_oficial" | "whatsapp_nao_oficial" | "email";
+  canal: "whatsapp_oficial" | "whatsapp_nao_oficial" | "email" | "instagram";
   label: string;
   conectado: boolean;
   /** Número/identificação, quando conectado. */
@@ -27,10 +27,11 @@ export async function GET() {
   const workspaceId = sessao.user.workspaceId;
 
   const integracoes = await prisma.integracao.findMany({
-    where: { workspaceId, provedor: { in: ["meta_whatsapp", "whatsapp_nao_oficial"] } },
+    where: { workspaceId, provedor: { in: ["meta_whatsapp", "whatsapp_nao_oficial", "meta_instagram"] } },
     select: { provedor: true, status: true, metadados: true },
   });
   const oficial = integracoes.find((i) => i.provedor === "meta_whatsapp");
+  const instagram = integracoes.find((i) => i.provedor === "meta_instagram");
   const qr = integracoes.find((i) => i.provedor === "whatsapp_nao_oficial");
   const numeroOficial = (oficial?.metadados as { displayPhoneNumber?: string; phoneNumber?: string } | null)?.displayPhoneNumber;
   const numeroQr = (qr?.metadados as { numero?: string } | null)?.numero;
@@ -49,6 +50,18 @@ export async function GET() {
       conectado: qr?.status === "conectado",
       detalhe: numeroQr ?? null,
       motivo: qr?.status === "conectado" ? undefined : "Escaneie o QR Code em Configurações → Outras integrações.",
+    },
+    {
+      canal: "instagram",
+      label: "Instagram (Direct)",
+      conectado: instagram?.status === "conectado",
+      detalhe: (instagram?.metadados as { username?: string } | null)?.username
+        ? `@${(instagram?.metadados as { username?: string }).username}`
+        : null,
+      motivo:
+        instagram?.status === "conectado"
+          ? undefined
+          : "Conecte a conta em Configurações → Outras integrações.",
     },
     {
       canal: "email",

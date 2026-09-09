@@ -12,7 +12,7 @@ import { extrairVariaveis, paraNumeradas, type MapeamentoVariavel } from "@/lib/
  * Puro (sem banco), pra tela e servidor usarem a MESMA validação. Se a regra mudar, muda aqui e
  * os dois lados acompanham.
  */
-export type CanalTemplate = "whatsapp_oficial" | "whatsapp_nao_oficial" | "email";
+export type CanalTemplate = "whatsapp_oficial" | "whatsapp_nao_oficial" | "email" | "instagram";
 
 export type BotaoTemplate = { texto: string };
 
@@ -78,6 +78,21 @@ export const LIMITES: Record<CanalTemplate, LimitesDoCanal> = {
     exigeAssunto: false,
     temAnalise: false,
     explicacao: "Texto puro, sem aprovação. Botões não funcionam de forma confiável por este canal, por isso não existem aqui.",
+  },
+  instagram: {
+    label: "Instagram (Direct)",
+    // Teto de texto de uma mensagem do Direct. Acima disso a API recusa a mensagem inteira.
+    corpoMaximo: 1000,
+    // Respostas rápidas: até 13, título de 20 caracteres. Não são o botão do WhatsApp (aparecem
+    // acima do teclado e somem depois de usadas), e por isso a tela as chama pelo nome delas.
+    botoesMaximo: 13,
+    botaoMaximo: 20,
+    exigeCategoria: false,
+    exigeIdioma: false,
+    exigeAssunto: false,
+    temAnalise: false,
+    explicacao:
+      "Sem aprovação. Só sai dentro de 24 horas depois da última mensagem da pessoa: fora da janela o Instagram recusa o envio.",
   },
   email: {
     label: "E-mail",
