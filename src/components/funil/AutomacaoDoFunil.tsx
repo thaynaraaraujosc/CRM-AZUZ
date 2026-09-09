@@ -449,7 +449,10 @@ export function AutomacaoDoFunil({
           ) : (
             <p className="hint">Nenhum canal conectado ainda.</p>
           )}
-          <Link href="/integracoes" className="fauto-lado-link">
+          {/* `/integracoes` nunca existiu como rota: o link caía no vazio. As conexões moram em
+              Configurações, e o parâmetro abre direto na categoria certa em vez de largar a pessoa
+              na primeira aba pra procurar. */}
+          <Link href="/configuracoes?categoria=integracoes" className="fauto-lado-link">
             + Adicionar fonte
           </Link>
         </aside>
