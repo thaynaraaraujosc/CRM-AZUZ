@@ -62,7 +62,7 @@ export async function publicarAnexoTemporario(params: {
 
   const separador = dataUrl.indexOf(",");
   if (!dataUrl.startsWith("data:") || separador < 0) throw new Error("Arquivo em formato inesperado.");
-  const mimeType = dataUrl.slice(5, separador).split(";")[0] || "application/octet-stream";
+  const mimeType = tipoDeAudioCorrigido(dataUrl.slice(5, separador).split(";")[0] || "application/octet-stream", nome);
   // `conteudo` guarda o base64 (formato antigo) OU a referência `r2:<chave>` quando o R2 está
   // configurado. Quem lê usa `lerArquivo`, que trata os dois: ver `armazenamento/midia.ts`.
   const conteudo = await guardarArquivo({ workspaceId, dataUrl, origem: "envio" }).then((valor) =>
@@ -89,7 +89,28 @@ export async function publicarAnexoTemporario(params: {
 }
 
 /** Extensão pro endereço do anexo. Do nome do arquivo quando ele tem uma, senão do tipo. */
+/**
+ * Corrige o tipo do áudio antes de publicar o link.
+ *
+ * O WhatsApp aceita OGG **só com codec Opus**, e é isso que um arquivo `.opus` é. Mas o navegador
+ * costuma entregar esse arquivo como `audio/opus` (que não existe na lista da Meta) ou sem tipo
+ * nenhum, e aí a Cloud API recusa a mensagem inteira dizendo que o formato não é suportado, mesmo
+ * o conteúdo estando certo.
+ *
+ * A extensão do ENDEREÇO acompanha, porque a Meta também olha pra ela: `.opus` vira `.ogg`.
+ */
+export function tipoDeAudioCorrigido(mimeType: string, nome: string): string {
+  const ehArquivoOpus = /\.(opus|ogg)$/i.test(nome);
+  if (mimeType === "audio/opus" || (ehArquivoOpus && (!mimeType || mimeType === "application/octet-stream"))) {
+    return "audio/ogg";
+  }
+  return mimeType;
+}
+
 function extensaoDe(mimeType: string, nome: string): string {
+  // `.opus` no endereço faz a Meta recusar o anexo. O conteúdo é o mesmo; o que muda é o rótulo.
+  if (/\.opus$/i.test(nome)) return ".ogg";
+
   const doNome = nome.includes(".") ? nome.split(".").pop() : null;
   if (doNome && /^[a-z0-9]{1,5}$/i.test(doNome)) return `.${doNome.toLowerCase()}`;
 

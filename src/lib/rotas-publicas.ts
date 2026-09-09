@@ -36,6 +36,17 @@ const PREFIXOS_PUBLICOS = [
   // Cron da plataforma. Quem chama é o agendador da hospedagem, que não tem navegador nem sessão.
   // A defesa é o `CRON_SECRET` conferido dentro de cada rota.
   "/api/cron/",
+  // O anexo assinado que a Meta e a Evolution buscam pra montar a mensagem de mídia.
+  //
+  // A rota SEMPRE foi escrita pra não exigir sessão (é o que o comentário dela diz), mas nunca
+  // entrou nesta lista, e é exatamente o terceiro sintoma descrito no topo deste arquivo: o proxy
+  // devolvia 307 pro /login, a Meta recebia uma página de login em vez do arquivo, e a mensagem de
+  // imagem ou de áudio simplesmente não chegava. Sem erro em lugar nenhum, porque do ponto de
+  // vista do CRM o envio tinha sido aceito.
+  //
+  // A defesa mora dentro da rota e não some por estar aqui: id aleatório de 16 bytes, assinatura
+  // HMAC do id (`?a=`) conferida antes de tocar no banco, e validade de 15 minutos.
+  "/api/anexos/publico",
 ];
 
 /** Caminhos exatos: sem nada abaixo deles. */

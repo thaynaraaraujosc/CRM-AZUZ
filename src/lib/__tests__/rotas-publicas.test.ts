@@ -101,3 +101,22 @@ describe("rotas que dispensam sessão", () => {
     expect(ehRotaPublica("/formularios")).toBe(false);
   });
 });
+
+describe("anexo assinado que os canais buscam de fora", () => {
+  it("não exige sessão", () => {
+    // A Meta e a Evolution buscam o arquivo elas mesmas, sem navegador e sem login. Fora desta
+    // lista, o proxy devolvia 307 pro /login e o canal recebia uma página de login em vez da
+    // imagem: a mensagem de mídia não chegava, e sem erro em lugar nenhum, porque do lado do CRM
+    // o envio tinha sido aceito.
+    expect(ehRotaPublica("/api/anexos/publico/abc123.jpg")).toBe(true);
+    expect(ehRotaPublica("/api/anexos/publico/abc123")).toBe(true);
+  });
+
+  it("não abre o resto das rotas de arquivo", () => {
+    // A exceção é só esta rota, que se defende sozinha com assinatura e prazo. Qualquer outra
+    // rota de arquivo continua exigindo login.
+    expect(ehRotaPublica("/api/anexos")).toBe(false);
+    expect(ehRotaPublica("/api/arquivos")).toBe(false);
+    expect(ehRotaPublica("/api/biblioteca-documentos")).toBe(false);
+  });
+});
