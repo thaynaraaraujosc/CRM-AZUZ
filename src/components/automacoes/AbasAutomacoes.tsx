@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 /**
- * Navegação interna do módulo de Automações: Automações · Templates · Disparo em massa.
+ * Navegação interna do módulo de Automações: Automações · Automatizar funil · Templates ·
+ * Disparo em massa.
  *
  * "Disparo em massa" era o item "Ações" do menu principal. Ele saiu de lá porque mandar mensagem
  * pra muita gente de uma vez é um tipo de automação (a mais simples), e ter dois lugares no menu
@@ -16,6 +17,7 @@ import { usePathname } from "next/navigation";
  */
 const ABAS = [
   { href: "/automacoes", label: "Automações", exato: true },
+  { href: "/automacoes/funil", label: "Automatizar funil", exato: false },
   { href: "/automacoes/templates", label: "Templates", exato: false },
   { href: "/automacoes/disparos", label: "Disparo em massa", exato: false },
 ] as const;
