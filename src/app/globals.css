@@ -18079,3 +18079,44 @@ table.tbl .name-cell .r {
 .no-gatilho-vazio-btn:hover {
   background: var(--surface-active);
 }
+
+/* A lista de robôs na coluna da esquerda da grade do funil: clicável, porque é daqui que se chega
+ * no fluxograma. Antes havia só a contagem, e "onde vejo o fluxograma deste robô?" não tinha
+ * resposta em lugar nenhum da tela. */
+.fauto-robos {
+  list-style: none;
+  margin: var(--space-2) 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fauto-robos button {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.fauto-robos button:hover {
+  border-color: var(--ink);
+}
+
+.fauto-robos strong {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.fauto-robos span {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}

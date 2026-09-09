@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { IconAutomacoes, IconClose } from "@/components/icons";
 import { CondicaoForm } from "@/components/automation-flow/forms/CondicaoForm";
@@ -168,6 +169,7 @@ export function AutomacaoDoFunil({
   colunas: ColunaResumo[];
   onFechar?: () => void;
 }) {
+  const router = useRouter();
   const [gatilhos, setGatilhos] = useState<GatilhoEtapaVisao[]>([]);
   const [robos, setRobos] = useState<RoboResumo[]>([]);
   const [canais, setCanais] = useState<CanalConectado[]>([]);
@@ -251,7 +253,13 @@ export function AutomacaoDoFunil({
     return null;
   }
 
-  async function salvar() {
+  /**
+   * Salva o gatilho e, quando pedido, abre o fluxograma do robô em seguida.
+   *
+   * Salvar ANTES de navegar não é detalhe: sair da tela com o rascunho aberto perderia tudo que a
+   * pessoa acabou de configurar, e ela descobriria isso só ao voltar.
+   */
+  async function salvar(abrirFluxogramaDepois = false) {
     if (!rascunho) return;
     const falta = faltaAlgo(rascunho);
     if (falta) {
@@ -301,7 +309,11 @@ export function AutomacaoDoFunil({
       }
 
       await recarregar();
+      const fluxoParaAbrir = rascunho.tipoAcao === "robo" ? rascunho.fluxoId : "";
       setRascunho(null);
+      if (abrirFluxogramaDepois && fluxoParaAbrir) {
+        router.push(`/automacoes/editor/${fluxoParaAbrir}`);
+      }
     } catch {
       setErro("Não deu pra salvar o gatilho. Tente de novo.");
     } finally {
@@ -315,6 +327,11 @@ export function AutomacaoDoFunil({
     setGatilhos((atual) => atual.filter((g) => g.id !== id));
     await fetch(`/api/funis/gatilhos/${id}`, { method: "DELETE" }).catch(() => {});
     await recarregar();
+  }
+
+  /** Abre o fluxograma do robô de um gatilho já salvo, direto da grade. */
+  function abrirFluxograma(fluxoId: string) {
+    router.push(`/automacoes/editor/${fluxoId}`);
   }
 
   async function alternarAtivo(g: GatilhoEtapaVisao) {
@@ -399,14 +416,31 @@ export function AutomacaoDoFunil({
           </Link>
 
           <h4 className="mt8">Robôs</h4>
-          <p className="hint">
-            {robos.length
-              ? `${robos.length} ${robos.length > 1 ? "automações disponíveis" : "automação disponível"} pra executar a partir de uma etapa.`
-              : "Nenhuma automação criada ainda."}
-          </p>
-          <Link href="/automacoes" className="fauto-lado-link">
-            Abrir automações
-          </Link>
+          {robos.length ? (
+            <>
+              {/* A lista dos robôs, clicável. Antes havia só a CONTAGEM e um link pra outra tela,
+                  e a pergunta "onde eu vejo o fluxograma deste robô?" não tinha resposta em lugar
+                  nenhum: era preciso sair da grade e procurar pelo nome. */}
+              <ul className="fauto-robos">
+                {robos.map((r) => (
+                  <li key={r.id}>
+                    <button type="button" onClick={() => abrirFluxograma(r.id)} title="Abrir o fluxograma">
+                      <strong>{r.nome}</strong>
+                      <span>{r.status === "publicado" ? "Publicado" : "Rascunho"}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className="hint">
+                Clique num robô pra abrir o fluxograma dele. O mesmo robô pode ser executado por
+                várias etapas.
+              </p>
+            </>
+          ) : (
+            <p className="hint">
+              Nenhum robô criado ainda. Adicione um gatilho numa etapa e escolha “Executar robô”.
+            </p>
+          )}
         </aside>
 
         <div className="fauto-grade">
@@ -452,6 +486,19 @@ export function AutomacaoDoFunil({
                           </span>
                         </button>
                         <div className="fauto-gat-acoes">
+                          {gatilho.tipoAcao === "robo" && gatilho.fluxoId ? (
+                            // O caminho mais curto entre "esta etapa faz alguma coisa" e "quero ver
+                            // o que ela faz". Sem ele, achar o fluxograma exigia sair da grade,
+                            // abrir outra tela e procurar o robô pelo nome.
+                            <button
+                              type="button"
+                              className="fauto-mini"
+                              onClick={() => abrirFluxograma(gatilho.fluxoId!)}
+                              title="Abrir o fluxograma deste robô"
+                            >
+                              Gerenciar
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             className="fauto-mini"
@@ -592,6 +639,16 @@ export function AutomacaoDoFunil({
                 <button type="button" className="fauto-add mt8" onClick={criarRobo} disabled={criandoRobo}>
                   <span aria-hidden="true">+</span> {criandoRobo ? "Criando…" : "Criar um novo robô"}
                 </button>
+                {rascunho.fluxoId ? (
+                  <button
+                    type="button"
+                    className="btn mt8"
+                    disabled={salvando}
+                    onClick={() => void salvar(true)}
+                  >
+                    Salvar e abrir o fluxograma
+                  </button>
+                ) : null}
                 <p className="hint mt8">
                   O mesmo robô pode ser executado por várias etapas. O robô novo entra na lista
                   aqui e também na aba Automações: é o mesmo registro, não uma cópia.
@@ -804,7 +861,7 @@ export function AutomacaoDoFunil({
             {aviso ? <p className="hint">{aviso}</p> : null}
 
             <div className="fauto-painel-fim">
-              <button type="button" className="btn primary" onClick={salvar} disabled={salvando}>
+              <button type="button" className="btn primary" onClick={() => void salvar()} disabled={salvando}>
                 {salvando ? "Salvando…" : "Pronto"}
               </button>
               <button type="button" className="btn ghost" onClick={() => setRascunho(null)}>
