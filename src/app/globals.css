@@ -17502,3 +17502,45 @@ table.tbl .name-cell .r {
   font-size: 13px;
   color: var(--ink);
 }
+
+/* Painel social: os números que existem, em grade. Nada de cartão colorido por métrica: a cor
+ * carregaria um julgamento ("bom"/"ruim") que nenhum destes números sustenta sozinho. */
+.social-periodo {
+  display: flex;
+  gap: 6px;
+}
+
+.social-numeros {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: var(--space-2);
+}
+
+.social-numero {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  padding: var(--space-2);
+  background: var(--surface);
+}
+
+.social-numero strong {
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.social-numero span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.social-numero em {
+  font-size: 10px;
+  font-style: normal;
+  color: var(--text-muted);
+  opacity: 0.8;
+  line-height: 1.35;
+}
