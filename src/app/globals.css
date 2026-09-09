@@ -17100,3 +17100,122 @@ table.tbl .name-cell .r {
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* ============================================================================
+   Assistente "Nova automação": nome, onde, quando.
+
+   O canvas vazio pedia a decisão errada primeiro. A pessoa chega sabendo QUANDO a automação deve
+   acontecer e era recebida por uma tela em branco pedindo blocos.
+   ============================================================================ */
+.nova-auto-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(11, 21, 51, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+}
+
+.nova-auto {
+  width: 460px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-3);
+  padding: var(--space-4);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+}
+
+.nova-auto-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.nova-auto-topo strong {
+  font-size: 15px;
+  color: var(--ink);
+}
+
+/* Os três passos ficam visíveis o tempo todo: saber quantos faltam é o que separa um assistente
+   de uma sequência de telas surpresa. */
+.nova-auto-passos {
+  display: flex;
+  gap: 14px;
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0 0 var(--space-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.nova-auto-passos .on {
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.nova-auto-escolhas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nova-auto-escolha {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  padding: 10px 12px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.nova-auto-escolha.on {
+  border-color: var(--blue);
+  background: color-mix(in srgb, var(--blue) 8%, var(--surface));
+}
+
+.nova-auto-escolha strong {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.nova-auto-escolha span {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.nova-auto-resumo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  padding: 10px 12px;
+  margin: 0 var(--space-2) var(--space-2);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.nova-auto-resumo strong {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.nova-auto-fim {
+  display: flex;
+  gap: 8px;
+  margin-top: var(--space-3);
+}

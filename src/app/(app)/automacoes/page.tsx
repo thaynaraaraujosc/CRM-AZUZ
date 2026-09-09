@@ -10,6 +10,7 @@ import { QUANDO_ROTULO, type GatilhoEtapaVisao } from "@/lib/funil/gatilhos-etap
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoNo } from "@/lib/automation-flow/resumo";
 import { HistoricoExecucoes } from "@/components/automation-flow/HistoricoExecucoes";
+import { NovaAutomacao } from "@/components/automacoes/NovaAutomacao";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import type {
   CanalMensagem,
@@ -337,6 +338,8 @@ function AutomacoesPageInner() {
   const [novoModoModelo, setNovoModoModelo] = useState(false);
   const [novoCarregando, setNovoCarregando] = useState(false);
   const [novoErro, setNovoErro] = useState<string | null>(null);
+  /** O assistente em passos. Substitui o "abre o canvas vazio e se vira". */
+  const [assistenteAberto, setAssistenteAberto] = useState(false);
 
   const modelosDisponiveis = useMemo(
     () => fluxos.filter((f) => f.modeloDemonstracao),
@@ -704,11 +707,14 @@ function AutomacoesPageInner() {
                         className="dropdown-item"
                         style={{ width: "100%", textAlign: "left" }}
                         disabled={novoCarregando}
-                        aria-label="Começar do zero: abre o construtor vazio"
-                        onClick={comecarDoZero}
+                        aria-label="Começar do zero: escolher nome, etapa e gatilho"
+                        onClick={() => {
+                          fecharPopoverNovo();
+                          setAssistenteAberto(true);
+                        }}
                       >
                         <span className="n">Começar do zero</span>
-                        <span className="r">Abre o construtor visual com um rascunho em branco</span>
+                        <span className="r">Nome, onde ela acontece e quando. Depois você monta o robô</span>
                       </button>
                       <button
                         type="button"
@@ -1338,6 +1344,18 @@ function AutomacoesPageInner() {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {assistenteAberto ? (
+        <NovaAutomacao
+          funilSugerido={funilParam ?? undefined}
+          etapaSugerida={etapaParam ?? undefined}
+          onCancelar={() => setAssistenteAberto(false)}
+          onCriado={(fluxoId) => {
+            setAssistenteAberto(false);
+            router.push(`/automacoes/editor/${fluxoId}`);
+          }}
+        />
       ) : null}
 
       {execucoesDe ? <HistoricoExecucoes fluxoId={execucoesDe} onFechar={() => setExecucoesDe(null)} /> : null}
