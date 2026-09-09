@@ -25,6 +25,8 @@ export function Toolbar({
   entenderFluxoAtivo,
   onAlternarEntenderFluxo,
   modoConstrucao,
+  modoPassos,
+  onModoPassos,
   onAlternarModo,
 }: {
   nome: string;
@@ -48,6 +50,9 @@ export function Toolbar({
   entenderFluxoAtivo: boolean;
   onAlternarEntenderFluxo: () => void;
   modoConstrucao: boolean;
+  /** A leitura em lista numerada. Convive com Construir: é outra forma de ver o mesmo fluxo. */
+  modoPassos: boolean;
+  onModoPassos: (ligado: boolean) => void;
   onAlternarModo: () => void;
 }) {
   const [editandoNome, setEditandoNome] = useState(false);
@@ -89,6 +94,16 @@ export function Toolbar({
             onClick={() => !modoConstrucao && onAlternarModo()}
           >
             Construir
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={modoPassos}
+            className={`flow-toolbar-modo-btn${modoPassos ? " active" : ""}`}
+            title="Ler a automação como uma lista de passos, na ordem em que a pessoa é atendida"
+            onClick={() => onModoPassos(!modoPassos)}
+          >
+            Passos
           </button>
           <button
             type="button"

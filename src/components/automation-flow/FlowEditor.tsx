@@ -42,6 +42,7 @@ import { HistoricoExecucoes } from "./HistoricoExecucoes";
 import { HistoricoVersoes } from "./HistoricoVersoes";
 import { Simulador } from "./Simulador";
 import { Toolbar } from "./Toolbar";
+import { ListaDePassos } from "./ListaDePassos";
 import { nodeTypes } from "./nodes";
 import { IconClose, IconExpandir } from "@/components/icons";
 import {
@@ -128,6 +129,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * biblioteca, sem menu de contexto, sem botão "+", sem arrastar node. Útil pra revisar o fluxo
    * com alguém sem risco de mexer em nada sem querer. */
   const [modoConstrucao, setModoConstrucao] = useState(true);
+  const [modoPassos, setModoPassos] = useState(false);
+  /** Quantas execuções passaram por cada bloco. Só é buscado quando a lista de passos abre. */
+  const [contadores, setContadores] = useState<Record<string, number>>({});
 
   const historyRef = useRef<Snapshot[]>([{ nodes: rfNodes, edges: rfEdges }]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -544,6 +548,22 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
   /* ------------------------------------------------------------- derivados --- */
 
+  // Os contadores só interessam na lista de passos, e são uma consulta de agregação: buscar
+  // sempre encareceria o editor inteiro por um número que quase nunca está na tela.
+  useEffect(() => {
+    if (!modoPassos) return;
+    let vivo = true;
+    fetch(`/api/automacoes-fluxos/${fluxoId}/contadores`)
+      .then((r) => (r.ok ? r.json() : { porNo: {} }))
+      .then((dados: { porNo?: Record<string, number> }) => {
+        if (vivo) setContadores(dados.porNo ?? {});
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [modoPassos, fluxoId]);
+
   const domainNodesAtuais = useMemo(() => rfNodesToDomain(rfNodes), [rfNodes]);
   const domainEdgesAtuais = useMemo(() => rfEdgesToDomain(rfEdges), [rfEdges]);
   const problemas: ProblemaValidacao[] = useMemo(() => {
@@ -692,6 +712,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
         onAlternarEntenderFluxo={() => setEntenderFluxoAtivo((v) => !v)}
         modoConstrucao={modoConstrucao}
         onAlternarModo={() => setModoConstrucao((v) => !v)}
+        modoPassos={modoPassos}
+        onModoPassos={setModoPassos}
       />
 
       <div className="flow-body">
@@ -699,6 +721,21 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           <BlockLibrary aberta={libAberta} onFechar={() => setLibAberta((v) => !v)} onAdicionarBloco={(tipo) => adicionarBloco(tipo)} />
         ) : null}
 
+        {modoPassos ? (
+          <div className="flow-canvas passos-area">
+            <ListaDePassos
+              nodes={domainNodesAtuais}
+              edges={domainEdgesAtuais}
+              selecionadoId={selectedNodeIds[0] ?? null}
+              problemasPorNode={problemasPorNode}
+              contadores={contadores}
+              somenteLeitura={!modoConstrucao}
+              onSelecionar={(id) => setSelectedNodeIds([id])}
+              onAdicionar={(origemId, handleId, tipo) => adicionarBlocoConectado(tipo, origemId, handleId)}
+              onRemover={(id) => removerNodes([id])}
+            />
+          </div>
+        ) : (
         <div
           className={`flow-canvas${arrastandoSobreCanvas ? " flow-canvas-recebendo" : ""}`}
           onDrop={onDrop}
@@ -974,6 +1011,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               })()
             : null}
         </div>
+        )}
 
         <ConfigPanel
           fluxo={fluxo}

@@ -16716,3 +16716,273 @@ table.tbl .name-cell .r {
 .funil-auto-caixa input {
   margin-top: 2px;
 }
+
+/* ============================================================================
+   Lista de passos: o fluxo lido como conversa, 1, 2, 3.
+
+   O recuo dos ramos é o que carrega o sentido aqui: um passo mais à direita é o que acontece
+   DEPOIS de uma resposta específica, e não mais um passo na fila.
+   ============================================================================ */
+.passos-area {
+  overflow: auto;
+  padding: var(--space-4);
+  background: var(--surface-2);
+}
+
+.passos {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.passos-inicio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--verde, #16a34a);
+  border-radius: var(--radius-2);
+  padding: 11px 13px;
+}
+
+.passos-inicio-marca {
+  color: var(--verde, #16a34a);
+  font-size: 13px;
+}
+
+.passos-inicio strong {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.passos-inicio span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.passos-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.passos-contador {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  padding-left: 2px;
+}
+
+.passos-cartao {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  padding: 10px 10px 10px 0;
+}
+
+.passos-cartao.ativo {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--blue) 18%, transparent);
+}
+
+.passos-cartao.com-erro {
+  border-color: var(--danger);
+}
+
+.passos-cartao-corpo {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: none;
+  border: 0;
+  padding: 0 0 0 12px;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.passos-numero {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-1);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.passos-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.passos-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.passos-resumo {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.passos-erro {
+  font-size: 11px;
+  color: var(--danger);
+  line-height: 1.4;
+}
+
+.passos-remover {
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 6px;
+  align-self: flex-start;
+}
+
+.passos-remover:hover {
+  color: var(--danger);
+}
+
+.passos-seguinte {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.passos-ramos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: 16px;
+  padding-left: 14px;
+  border-left: 2px solid var(--border);
+}
+
+.passos-ramo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.passos-ramo-rotulo {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--blue);
+}
+
+.passos-volta {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding-left: 12px;
+}
+
+.passos-add-area {
+  position: relative;
+}
+
+.passos-add {
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-2);
+  padding: 9px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.passos-add:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.passos-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 320px;
+  max-width: 90vw;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  box-shadow: var(--shadow-2, 0 8px 24px rgba(0, 0, 0, 0.14));
+  padding: 8px;
+}
+
+.passos-menu-lista {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.passos-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-1);
+  padding: 7px 8px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.passos-menu-item:hover {
+  background: var(--surface-2);
+}
+
+.passos-menu-item strong {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.passos-menu-item span {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.passos-vazio {
+  max-width: 520px;
+  margin: var(--space-5) auto;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.passos-vazio strong {
+  display: block;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.passos-vazio p {
+  font-size: 12px;
+  line-height: 1.5;
+}
