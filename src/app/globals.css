@@ -17574,20 +17574,22 @@ table.tbl .name-cell .r {
  */
 .social-modelos {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--space-2);
-  margin-top: var(--space-2);
+  /* `auto-fit` e não `auto-fill`: com cinco modelos numa tela larga, `auto-fill` criava colunas
+     vazias e espremia o texto nas que tinham conteúdo. */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
 }
 
 .social-modelo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   text-align: left;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
-  padding: var(--space-2);
+  padding: var(--space-3);
   cursor: pointer;
   color: inherit;
   font: inherit;
@@ -17603,9 +17605,10 @@ table.tbl .name-cell .r {
 }
 
 .social-modelo span {
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 .social-modelo em {
@@ -17618,14 +17621,14 @@ table.tbl .name-cell .r {
 /* Cartão de conexão: o estado real de um canal, incluindo o que ainda não existe. */
 .social-conexoes {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-3);
 }
 
 .social-conexao {
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
-  padding: var(--space-2);
+  padding: var(--space-3);
   background: var(--surface);
 }
 
@@ -17650,17 +17653,17 @@ table.tbl .name-cell .r {
 
 .social-numeros {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
 }
 
 .social-numero {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
-  padding: var(--space-2);
+  padding: var(--space-3);
   background: var(--surface);
 }
 
@@ -17846,19 +17849,19 @@ table.tbl .name-cell .r {
 
 .social-grade {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-2);
-  margin-top: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
 }
 
 .social-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   text-align: left;
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
-  padding: var(--space-2);
+  padding: var(--space-3);
   background: var(--surface);
   color: inherit;
   font: inherit;
@@ -18415,4 +18418,160 @@ table.tbl .name-cell .r {
 
 .fauto-escolher-funil .input:hover {
   border-color: var(--border-strong);
+}
+
+/* ---------------------------------------------------- utilitários de gap -- */
+/*
+ * `mt8` e `mt16` estavam sendo USADOS em vinte arquivos e não existiam em lugar nenhum deste CSS.
+ * Classe inexistente não é erro em lugar nenhum: não quebra o build, não aparece no lint, e o
+ * resultado é só a margem que nunca acontece. Era essa a causa de tanta coisa parecer colada.
+ */
+.mt8 {
+  margin-top: var(--space-2);
+}
+
+.mt16 {
+  margin-top: var(--space-4);
+}
+
+/* -------------------------------------------------------------- tabelas -- */
+/*
+ * `.table` também estava sendo usada sem existir: as tabelas saíam sem padding, sem separador e
+ * sem alinhamento, com o texto encostado na borda do cartão e as colunas grudadas.
+ *
+ * Alinhamento à esquerda em tudo, menos números: número lido em coluna se compara pela direita,
+ * onde as casas se alinham. Cabeçalho em caixa alta e pequeno pra ele ser lido como rótulo e não
+ * disputar atenção com o conteúdo.
+ */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.table th {
+  text-align: left;
+  padding: 0 var(--space-3) var(--space-2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: middle;
+  color: var(--ink);
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: 0;
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: 0;
+}
+
+.table td .hint {
+  margin: 0;
+}
+
+/* ------------------------------------------------- módulo Instagram/TikTok -- */
+/*
+ * O respiro das telas do módulo, num lugar só.
+ *
+ * `.card` não tem padding próprio (a separação dele vem da sombra, não de espaço interno), e cada
+ * tela do produto resolve isso do seu jeito. Estas resolvem aqui: título, texto e tabela ganham a
+ * mesma margem interna, e um cartão nunca encosta no seguinte.
+ */
+.social-conteudo > .card,
+.social-conteudo > section.card {
+  padding: var(--space-4);
+}
+
+.social-conteudo > .card + .card {
+  margin-top: var(--space-4);
+}
+
+.social-conteudo .card > h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+/* O texto que explica a seção fica logo abaixo do título e longe do conteúdo: é o que faz o olho
+ * ler "título, explicação, conteúdo" em vez de três linhas soltas do mesmo peso. */
+.social-conteudo .card > h3 + .hint,
+.social-conteudo .card > .social-secao-topo + .hint {
+  margin: 0 0 var(--space-3);
+  max-width: 74ch;
+  line-height: 1.5;
+}
+
+.social-conteudo .card > .table,
+.social-conteudo .card > .social-modelos,
+.social-conteudo .card > .social-numeros,
+.social-conteudo .card > .social-conexoes,
+.social-conteudo .card > .social-pastas,
+.social-conteudo .card > .social-grade {
+  margin-top: var(--space-3);
+}
+
+/* Os cartões de dentro (modelo, conexão, número) ficam com a mesma altura numa linha, senão a
+ * grade vira um serrilhado de alturas diferentes. */
+.social-modelos,
+.social-conexoes,
+.social-grade {
+  align-items: stretch;
+}
+
+.social-modelo,
+.social-conexao,
+.social-card {
+  height: 100%;
+}
+
+/* O botão de um cartão de modelo desce pro rodapé dele: com o botão logo depois do texto, cada
+ * cartão tinha o botão numa altura diferente e a fileira ficava desalinhada. */
+.social-modelo .btn {
+  margin-top: auto;
+  align-self: stretch;
+}
+
+.social-conexao .btn,
+.social-conexao .badge {
+  margin-top: var(--space-2);
+}
+
+.social-conexao {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Formulário dentro de um cartão do módulo: sem a linha divisória de `.field`, que aqui separaria
+ * um campo do nada. */
+.social-conteudo .card .field {
+  padding: 0;
+  border-bottom: none;
+  margin-bottom: var(--space-3);
+}
+
+.social-conteudo .card .field:last-child {
+  margin-bottom: 0;
+}
+
+.social-conteudo .card .field .input {
+  width: 100%;
+  max-width: 380px;
+  box-sizing: border-box;
 }
