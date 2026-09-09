@@ -277,6 +277,13 @@ export async function continuarComResposta(params: {
     }
   }
 
+  // Bloco de espera com os dois caminhos: quem respondeu sai por "ok". Sem dizer isso aqui, a
+  // saída ficava indefinida e a escolha caía na PRIMEIRA aresta do bloco, que muitas vezes é a de
+  // "Não respondeu": a pessoa respondia e o fluxo a tratava como quem sumiu.
+  if (no.type === "aguardar" && !saida && temSaida(versao.edges, no.id, "ok")) {
+    saida = "ok";
+  }
+
   await continuarDeDepoisDe({ execucao, versao, noId: no.id, saida, contexto, responderComentario: params.responderComentario });
   return true;
 }

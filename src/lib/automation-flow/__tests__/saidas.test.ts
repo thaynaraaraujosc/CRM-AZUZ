@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { saidasDoNo } from "../resumo";
-import type { FlowNode } from "../types";
+import type { AguardarData, FlowNode } from "../types";
 
 function no(tipo: string, categoria: string, data: Record<string, unknown> = {}): FlowNode {
   return {
@@ -82,5 +82,27 @@ describe("saídas de um bloco", () => {
 
   it("bloco de fim não tem saída nenhuma", () => {
     expect(saidasDoNo(no("encerrar_fluxo", "fim"))).toEqual([]);
+  });
+});
+
+describe("espera com cronômetro que a resposta interrompe", () => {
+  function espera(data: AguardarData): FlowNode {
+    return { id: "e1", type: "aguardar", category: "espera", position: { x: 0, y: 0 }, data };
+  }
+
+  it("ganha os dois caminhos, com nome de gente", () => {
+    // É o "pausar 24 horas, mas seguir na hora se ele responder": o bloco termina de duas formas,
+    // então precisa de duas saídas. "ok"/"timeout" continuam sendo os handles pra não desligar as
+    // arestas de fluxos que já existem.
+    const saidas = saidasDoNo(espera({ modo: "horas", valor: 24, interromperSeResponder: true }));
+    expect(saidas.map((s) => s.handleId)).toEqual(["ok", "timeout"]);
+    expect(saidas[0].label).toContain("Respondeu");
+    expect(saidas[1].label).toContain("Não respondeu");
+  });
+
+  it("sem a marca, a espera tem um caminho só", () => {
+    const saidas = saidasDoNo(espera({ modo: "horas", valor: 24 }));
+    expect(saidas).toHaveLength(1);
+    expect(saidas[0].handleId).toBeUndefined();
   });
 });

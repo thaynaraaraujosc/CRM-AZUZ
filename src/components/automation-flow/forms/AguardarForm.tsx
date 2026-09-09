@@ -10,7 +10,11 @@ import type { AguardarData } from "@/lib/automation-flow/types";
  * segundo campo muda conforme a escolha, em vez de existirem todos ao mesmo tempo.
  */
 const ESCOLHAS: { valor: AguardarData["modo"]; label: string; ajuda: string }[] = [
-  { valor: "horas", label: "Um período de tempo", ajuda: "Segura o fluxo e continua sozinho quando o tempo passar." },
+  {
+    valor: "horas",
+    label: "Um período de tempo",
+    ajuda: "Segura o fluxo e continua sozinho quando o tempo passar. Dá pra interromper antes se o contato responder.",
+  },
   {
     valor: "ate_resposta",
     label: "A resposta do contato",
@@ -133,6 +137,37 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
 
       {ehDuracao ? (
         <>
+          {/*
+            O "pausar" do Kommo: cronômetro mais o evento que interrompe. Sem isto, uma espera de
+            24 horas segurava o lead as 24 horas inteiras mesmo com ele respondendo em dois minutos,
+            e a resposta dele ficava sem tratamento nenhum.
+          */}
+          <div className="toggle-row">
+            <span className="tl">Continuar antes se o contato responder</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!!data.interromperSeResponder}
+              aria-label="Continuar antes se o contato responder"
+              className={`toggle${data.interromperSeResponder ? " on" : ""}`}
+              onClick={() => onChange({ ...data, interromperSeResponder: !data.interromperSeResponder })}
+            >
+              <span className="knob" />
+            </button>
+          </div>
+          {data.interromperSeResponder ? (
+            <p className="hint">
+              O bloco passa a ter dois caminhos: <strong>Respondeu</strong>, seguido na hora em que
+              a mensagem dele chegar, e <strong>Não respondeu</strong>, seguido quando o tempo
+              acabar. Ligue cada um ao que deve acontecer em cada caso.
+            </p>
+          ) : (
+            <p className="hint">
+              Desligado, o fluxo espera o tempo inteiro e segue por um caminho só, mesmo que ele
+              responda antes.
+            </p>
+          )}
+
           <div className="toggle-row">
             <span className="tl">Contar só dias úteis</span>
             <button

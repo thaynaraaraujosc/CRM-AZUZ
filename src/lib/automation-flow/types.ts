@@ -491,6 +491,14 @@ export type AguardarData = {
   somenteExpediente?: boolean;
   /** Se definido, gera as saídas "ok"/"timeout" no FlowEdge.sourceHandle. */
   tempoMaximo?: { valor: number; unidade: string };
+  /**
+   * Espera o tempo, MAS segue na hora se o contato responder antes.
+   *
+   * É o "pausar até a mensagem recebida" com cronômetro: o bloco ganha os dois caminhos, um pra
+   * quem respondeu dentro do prazo e outro pra quem deixou o tempo acabar. Sem isto, uma espera de
+   * 24 horas segurava o fluxo as 24 horas inteiras mesmo com a pessoa respondendo em dois minutos.
+   */
+  interromperSeResponder?: boolean;
 };
 
 export type AdicionarEtiquetaData = { etiquetaNome: string };

@@ -121,11 +121,13 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
 
   if (node.type === "aguardar") {
     const data = node.data as AguardarData;
-    if (data.tempoMaximo) {
-      // Numa espera por resposta os dois caminhos têm nome de gente: é "respondeu" ou "não
-      // respondeu", não "ok" e "timeout". Os `handleId` continuam os mesmos pra não desligar as
-      // arestas de fluxos que já existem.
-      const esperandoResposta = data.modo === "ate_resposta";
+    // Dois caminhos sempre que a espera pode terminar de duas formas: porque a pessoa respondeu,
+    // ou porque o tempo acabou.
+    if (data.tempoMaximo || data.interromperSeResponder) {
+      // Os dois caminhos têm nome de gente: é "respondeu" ou "não respondeu", não "ok" e
+      // "timeout". Os `handleId` continuam os mesmos pra não desligar as arestas de fluxos que já
+      // existem.
+      const esperandoResposta = data.modo === "ate_resposta" || data.interromperSeResponder;
       return [
         { handleId: "ok", label: esperandoResposta ? "✓ Respondeu" : "✓ OK" },
         { handleId: "timeout", label: esperandoResposta ? "⏱ Não respondeu" : "⏱ Tempo esgotado" },
@@ -419,7 +421,12 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
         case "ate_horario":
           return "Até um horário específico";
         default:
-          return data.valor ? `Até ${data.valor} ${data.modo}` : "Sem tempo definido";
+          if (!data.valor) return "Sem tempo definido";
+          // O resumo do bloco no canvas precisa dizer que a espera pode acabar antes: sem isso, um
+          // "Até 24 horas" no desenho esconde justamente o que o bloco tem de diferente.
+          return data.interromperSeResponder
+            ? `Até ${data.valor} ${data.modo} ou até responder`
+            : `Até ${data.valor} ${data.modo}`;
       }
     }
     case "adicionar_etiqueta":

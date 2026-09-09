@@ -363,6 +363,17 @@ async function executarNo(params: {
             : "Bloco de espera sem tempo configurado.",
         };
       }
+      // "Espera 24 horas, mas segue na hora se ele responder antes." A espera passa a ser por
+      // EVENTO com prazo, e não por tempo puro: é a diferença entre segurar o lead as 24 horas
+      // inteiras e responder dois minutos depois de ele escrever.
+      if (data.interromperSeResponder) {
+        return {
+          tipo: "aguardar_evento",
+          evento: "resposta",
+          ate,
+          detalhe: `Esperando a resposta até ${ate.toLocaleString("pt-BR")}.`,
+        };
+      }
       return { tipo: "aguardar_tempo", ate, detalhe: `Esperando até ${ate.toLocaleString("pt-BR")}.` };
     }
 
