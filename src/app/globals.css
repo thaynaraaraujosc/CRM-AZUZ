@@ -17273,33 +17273,3 @@ table.tbl .name-cell .r {
   margin-top: var(--space-2);
 }
 
-/* Troca de visão dentro de Automações: por etapa do funil, ou a lista de robôs. É a MESMA coisa
-   vista de dois jeitos, e por isso mora numa troca de visão e não em duas abas: duas abas passavam
-   a ideia de dois sistemas de automação. */
-.auto-visao {
-  display: inline-flex;
-  gap: 4px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 3px;
-  margin-bottom: var(--space-3);
-}
-
-.auto-visao-btn {
-  background: none;
-  border: 0;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-/* `--ink` é o azul-marinho da identidade (#0b1533 no tema claro). Aqui NÃO serve `--navy`: no
-   tema claro essa variável vale branco, e o botão ativo sumiria no fundo. */
-.auto-visao-btn.on {
-  background: var(--ink);
-  color: var(--navy);
-}
