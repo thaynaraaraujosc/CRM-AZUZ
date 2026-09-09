@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { avaliarGrupoCondicoes } from "@/lib/automation-flow/motor";
+import { avaliarGrupoCondicoes } from "@/lib/automation-flow/avaliacao";
 import { iniciarFluxoComEstado } from "@/lib/automacoes/iniciar";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
 import {

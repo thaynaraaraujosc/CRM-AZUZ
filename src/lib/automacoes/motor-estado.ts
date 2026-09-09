@@ -1,4 +1,4 @@
-import { avaliarGrupoCondicoes } from "@/lib/automation-flow/motor";
+import { avaliarGrupoCondicoes } from "@/lib/automation-flow/avaliacao";
 import { rotuloCurto } from "@/lib/conversas/enviar-pergunta";
 import type {
   AdicionarEtiquetaData,

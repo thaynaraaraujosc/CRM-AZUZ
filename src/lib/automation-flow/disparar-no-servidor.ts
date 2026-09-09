@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { avaliarGatilho, executarFluxo, type EventoAutomacao, type Ligacoes } from "@/lib/automation-flow/motor";
+import { avaliarGatilho, type EventoAutomacao } from "@/lib/automation-flow/avaliacao";
 import { anotarNaLinhaDoTempo, marcarExecucaoDeAutomacao } from "@/lib/integracoes/instagram-eventos";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
-import { continuarComResposta, iniciarFluxoComEstado, motorNovoAtivo } from "@/lib/automacoes/iniciar";
+import { continuarComResposta, iniciarFluxoComEstado } from "@/lib/automacoes/iniciar";
 
 /**
  * Dispara as automações quando chega uma mensagem. Do lado do SERVIDOR, a partir do webhook.
@@ -189,10 +189,10 @@ async function dispararAutomacoes(params: {
       if (!primeiraVez) continue;
     }
 
-    // Fluxos com a chave ligada rodam no motor com estado: ele grava a posição a cada bloco e
-    // sabe esperar (por tempo ou por resposta), que é justamente o que o motor abaixo não sabe.
-    // Sem a chave, nada muda: o caminho antigo segue igual.
-    if (motorNovoAtivo(linha.configuracoes)) {
+    // Um motor só, o com estado. O antigo (síncrono, sem memória) foi removido: ele não sabia
+    // esperar, engolia as opções de uma pergunta e mantinha uma segunda lista de blocos que
+    // divergia da primeira a cada correção feita só de um lado.
+    {
       const fim = await iniciarFluxoComEstado({
         workspaceId,
         fluxoId: linha.id,
@@ -212,10 +212,11 @@ async function dispararAutomacoes(params: {
         console.error(`[automacao] fluxo ${linha.id} falhou no motor com estado:`, erro);
         return null;
       });
-      // `null` = fluxo sem versão publicada ou sem nada ligado no gatilho. Cair no motor antigo
-      // aqui seria rodar o RASCUNHO. Melhor não executar e deixar isso visível.
+      // `null` = fluxo sem versão publicada, ou sem nada ligado no gatilho. Executar o rascunho
+      // aqui seria mandar pro cliente o que alguém está editando agora. Não roda, e o aviso fica
+      // no log pra a causa aparecer.
       if (!fim) {
-        console.warn(`[automacao] fluxo ${linha.id} tem o motor novo ligado mas nenhuma versão publicada pra rodar`);
+        console.warn(`[automacao] fluxo ${linha.id} não tem versão publicada pra rodar`);
         continue;
       }
       await anotarNaLinhaDoTempo({
@@ -227,102 +228,8 @@ async function dispararAutomacoes(params: {
         dados: { fluxoId: linha.id },
       });
       await prisma.fluxoAutomacao.update({ where: { id: linha.id }, data: { execucoes: { increment: 1 } } }).catch(() => {});
-      console.log(`[automacao] fluxo "${linha.nome}" no motor com estado`, fim);
-      continue;
+      console.log(`[automacao] fluxo "${linha.nome}" executado`, fim);
     }
-
-    const mensagensParaEnviar: { canal: string; conteudo: string }[] = [];
-    const respostasDeComentario: string[] = [];
-    const contatosParaSalvar: Record<string, unknown>[] = [];
-    const movimentosDeFunil: { funilId: string; etapaTitulo: string }[] = [];
-
-    const ligacoes: Ligacoes = {
-      moverEtapa: (funilId, etapaTitulo) => movimentosDeFunil.push({ funilId, etapaTitulo }),
-      salvarContato: (_nome, dados) => contatosParaSalvar.push(dados),
-      atribuirAtendente: (_nome, atendente) => contatosParaSalvar.push({ responsavel: atendente }),
-      // Deixa de ser "simulada": o que o fluxo manda escrever entra na fila e sai de verdade
-      // logo abaixo.
-      registrarMensagemSimulada: (info) => mensagensParaEnviar.push(info),
-      // Responder o comentário só faz sentido quando FOI um comentário que disparou o fluxo. Em
-      // outro gatilho não existe comentário a que responder, e a ação é ignorada em silêncio em
-      // vez de falhar o fluxo inteiro.
-      responderComentario: (texto) => {
-        if (params.responderComentario) respostasDeComentario.push(texto);
-      },
-    };
-
-    let registro;
-    try {
-      registro = executarFluxo(fluxo, primeiraAresta.target, { contato }, ligacoes);
-    } catch (erro) {
-      console.error(`[automacao] fluxo ${linha.id} falhou:`, erro);
-      continue;
-    }
-
-    // A automação entra na linha do tempo do lead. Sem isso, o histórico mostrava a mensagem
-    // automática saindo do nada, sem dizer que foi um fluxo que a mandou.
-    await anotarNaLinhaDoTempo({
-      workspaceId,
-      contatoNome,
-      canal,
-      tipo: "automacao_iniciou",
-      descricao: `automação "${linha.nome}" começou`,
-      dados: { fluxoId: linha.id },
-    });
-
-    for (const texto of respostasDeComentario) {
-      await params.responderComentario?.(texto).catch((erro) =>
-        console.error(`[automacao] falha ao responder comentário:`, erro),
-      );
-    }
-
-    for (const dados of contatosParaSalvar) {
-      await prisma.contato
-        .update({ where: { workspaceId_nome: { workspaceId, nome: contatoNome } }, data: dados })
-        .catch((erro) => console.error(`[automacao] falha ao salvar contato:`, erro));
-    }
-
-    for (const movimento of movimentosDeFunil) {
-      await moverCardDeEtapa(workspaceId, contatoNome, movimento.funilId, movimento.etapaTitulo).catch((erro) =>
-        console.error(`[automacao] falha ao mover etapa:`, erro),
-      );
-      await anotarNaLinhaDoTempo({
-        workspaceId,
-        contatoNome,
-        canal,
-        tipo: "entrou_no_funil",
-        descricao: `entrou na etapa "${movimento.etapaTitulo}"`,
-        dados: { funilId: movimento.funilId },
-      });
-    }
-
-    for (const mensagem of mensagensParaEnviar) {
-      const resultado = await enviarTextoPeloCanal({ workspaceId, conversaNome: contatoNome, texto: mensagem.conteudo });
-      if (!resultado.enviado) {
-        console.error(`[automacao] mensagem do fluxo ${linha.id} não saiu: ${resultado.motivo}`);
-      }
-      await anotarNaLinhaDoTempo({
-        workspaceId,
-        contatoNome,
-        canal,
-        // Falha também é registrada: uma automação que não conseguiu falar com o lead precisa
-        // aparecer no histórico, senão o vendedor assume que a mensagem foi entregue.
-        tipo: resultado.enviado ? "crm_enviou_mensagem" : "crm_falhou_ao_enviar",
-        descricao: resultado.enviado
-          ? `CRM enviou: "${mensagem.conteudo.slice(0, 120)}"`
-          : `CRM não conseguiu enviar: ${resultado.motivo ?? "motivo desconhecido"}`,
-        dados: { fluxoId: linha.id },
-      });
-    }
-
-    await prisma.fluxoAutomacao
-      .update({ where: { id: linha.id }, data: { execucoes: { increment: 1 } } })
-      .catch(() => {});
-
-    console.log(`[automacao] fluxo "${linha.nome}" executado`, {
-      passos: registro.passos.length,
-      mensagens: mensagensParaEnviar.length,
-    });
   }
 }
 

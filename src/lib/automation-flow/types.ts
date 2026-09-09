@@ -573,11 +573,13 @@ export type ConfiguracoesFluxo = {
   naoIniciarSeJaNoFluxo?: boolean;
   cancelarExecucaoAnterior?: boolean;
   /**
-   * Liga o motor com estado (`src/lib/automacoes/motor-estado.ts`) para ESTE fluxo.
+   * Resquício da época em que existiam dois motores: a chave escolhia qual deles rodava o fluxo.
    *
-   * A chave é por fluxo de propósito: o motor novo é o único que sabe esperar (retomar por tempo
-   * ou por resposta), mas trocar todos os fluxos de uma vez arriscaria os que já funcionam. Com a
-   * chave desligada, nada muda: o fluxo continua no motor antigo.
+   * Continua no tipo só porque fluxos gravados ainda têm o campo no Json de configurações, e
+   * removê-lo do tipo faria o TypeScript reclamar de dado que existe no banco. Ninguém lê mais:
+   * o motor com estado é o único.
+   *
+   * @deprecated Não tem efeito nenhum.
    */
   motorNovo?: boolean;
 };

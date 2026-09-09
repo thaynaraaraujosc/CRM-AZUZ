@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { textoCasaComPalavras } from "@/lib/automation-flow/motor";
+import { textoCasaComPalavras } from "@/lib/automation-flow/avaliacao";
 
 /**
  * A regra de palavra-chave decide se uma automação dispara ou não. É o ponto onde um engano custa

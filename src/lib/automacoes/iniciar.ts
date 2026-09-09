@@ -22,24 +22,11 @@ import { publicarVersao, versaoAtualPublicada, versaoPorId, type VersaoPublicada
  * A porta de entrada do motor com estado: começar uma execução, continuar uma que esperava
  * resposta, e retomar as que esperavam o relógio.
  *
- * Enquanto a migração acontece, este caminho só vale pros fluxos com a chave `motorNovo` ligada.
- * Todo o resto continua no motor antigo, intocado: é a diferença entre "o novo motor está no ar"
- * e "os fluxos que já funcionavam pararam de funcionar".
+ * É o único caminho de execução. O motor síncrono que existia ao lado foi removido: ele não sabia
+ * esperar (por tempo ou por resposta) e mantinha a própria lista de blocos, que divergia desta a
+ * cada correção feita só de um lado.
  */
 
-/**
- * A chave por fluxo: agora LIGADA por padrão.
- *
- * Ela nasceu desligada pra não mexer no que já rodava. O primeiro teste real mostrou que isso
- * estava errado: com o motor antigo, um bloco de pergunta manda só o texto e engole as opções, e
- * qualquer espera descarta a execução. Ou seja, o padrão entregava a versão quebrada, e a que
- * funciona ficava atrás de um botão escondido no fim de um painel.
- *
- * Continua sendo uma chave: `motorNovo: false` volta pro motor antigo, explicitamente.
- */
-export function motorNovoAtivo(configuracoes: unknown): boolean {
-  return (configuracoes as ConfiguracoesFluxo | null | undefined)?.motorNovo !== false;
-}
 
 /** O bloco de gatilho e a primeira aresta que sai dele. Onde a execução realmente começa. */
 function primeiroNoDepoisDoGatilho(versao: VersaoPublicada): { gatilho: FlowNode | null; alvoId: string } | null {
