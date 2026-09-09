@@ -34,6 +34,16 @@ type ColunaResumo = { id: string; titulo: string; total?: number };
 type RoboResumo = { id: string; nome: string; status?: string };
 type CanalConectado = { canal: string; label: string; conectado: boolean; detalhe?: string | null };
 
+/**
+ * As fontes de lead que ESTA grade atende: as duas conexões de WhatsApp, e só.
+ *
+ * Instagram não entra porque tem aba própria, com gatilhos que só existem lá (comentário, story,
+ * menção) — deixá-lo aqui faria a pessoa montar um fluxo de Instagram nesta grade e depois ter que
+ * refazer. E-mail não entra porque o disparo por e-mail vive em Disparo em massa, não como fonte
+ * de lead de uma etapa do funil.
+ */
+const FONTES_DO_FUNIL = new Set(["whatsapp_oficial", "whatsapp_nao_oficial"]);
+
 const DIAS = [
   { valor: 1, label: "Seg" },
   { valor: 2, label: "Ter" },
@@ -212,7 +222,7 @@ export function AutomacaoDoFunil({
     fetch("/api/canais")
       .then((r) => (r.ok ? r.json() : []))
       .then((lista: CanalConectado[]) => {
-        if (vivo) setCanais(Array.isArray(lista) ? lista.filter((c) => c.conectado) : []);
+        if (vivo) setCanais(Array.isArray(lista) ? lista.filter((c) => c.conectado && FONTES_DO_FUNIL.has(c.canal)) : []);
       })
       .catch(() => {});
     return () => {
