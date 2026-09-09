@@ -56,6 +56,20 @@ model Contato {
   /// enchendo o funil de duplicata. O IGSID não muda enquanto a conta existir. O @ continua sendo
   /// gravado porque é o que a equipe lê e procura; o IGSID é o que o CRM compara.
   instagramId String?
+  /// Quantos seguidores a conta tem, quantas vezes o perfil foi visto como verificado, e a relação
+  /// de seguir nos dois sentidos.
+  ///
+  /// Vem do perfil que a Meta devolve pra quem MANDOU mensagem pra conta conectada, e só pra
+  /// esses: não é uma consulta livre a qualquer perfil do Instagram, que a API não permite. Fica
+  /// gravado porque a tela de contatos precisa ordenar e filtrar por isso sem uma chamada por
+  /// linha, e vazio quando a conta não concedeu a permissão desses campos.
+  igSeguidores      Int?
+  igVerificado      Boolean?
+  /// A pessoa segue a conta conectada.
+  igSegueVoce       Boolean?
+  /// A conta conectada segue a pessoa.
+  igVoceSegue       Boolean?
+  igPerfilAtualizado DateTime?
   /// Foto de perfil da pessoa, já baixada e guardada.
   ///
   /// Mora no CONTATO, não só na conversa, porque é a mesma pessoa em todo lugar: lista de

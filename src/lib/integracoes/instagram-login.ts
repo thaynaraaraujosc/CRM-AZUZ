@@ -419,6 +419,58 @@ export async function camposAssinadosNoInstagram(accessToken: string): Promise<s
   }
 }
 
+/** Os campos extras do perfil: o que a tela de contatos mostra além de nome e foto. */
+export type DadosExtrasDoPerfil = {
+  seguidores?: number;
+  verificado?: boolean;
+  /** A pessoa segue a conta conectada. */
+  segueVoce?: boolean;
+  /** A conta conectada segue a pessoa. */
+  voceSegue?: boolean;
+};
+
+/**
+ * Seguidores, selo de verificado e quem segue quem.
+ *
+ * Chamada SEPARADA da que busca nome e foto, e isso não é desperdício: na Graph, um campo que a
+ * conta não tem permissão de ver não é ignorado, ele invalida a requisição inteira (é a lição
+ * escrita em `buscarPerfilDeQuemMandou`, que já custou o @ e a foto de todo mundo uma vez). Pedir
+ * tudo junto faria uma conta sem acesso a `follower_count` perder também o essencial. Separado, o
+ * pior caso é ficar sem os extras.
+ *
+ * Devolve `null` quando não dá: é ausência, não zero. "0 seguidores" seria uma afirmação errada.
+ */
+export async function buscarDadosExtrasDoPerfil(
+  accessToken: string,
+  remetenteId: string,
+): Promise<DadosExtrasDoPerfil | null> {
+  const campos = "follower_count,is_verified_user,is_user_follow_business,is_business_follow_user";
+  try {
+    const resposta = await fetch(
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${remetenteId}?fields=${campos}&access_token=${accessToken}`,
+    );
+    const dados = (await resposta.json()) as {
+      follower_count?: number;
+      is_verified_user?: boolean;
+      is_user_follow_business?: boolean;
+      is_business_follow_user?: boolean;
+    } & ErroGraph;
+    if (!resposta.ok) {
+      // Silencioso de propósito: a ausência destes campos é comum e não é defeito.
+      console.log("[instagram] perfil sem os campos extras:", dados.error?.message ?? resposta.status);
+      return null;
+    }
+    return {
+      seguidores: dados.follower_count,
+      verificado: dados.is_verified_user,
+      segueVoce: dados.is_user_follow_business,
+      voceSegue: dados.is_business_follow_user,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Segunda tentativa de descobrir o @ de alguém: pela lista de conversas da conta.
  *

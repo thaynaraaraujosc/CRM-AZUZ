@@ -18575,3 +18575,396 @@ table.tbl .name-cell .r {
   max-width: 380px;
   box-sizing: border-box;
 }
+
+/* ============================================================== Instagram == */
+/*
+ * A caixa de entrada do Direct: lista, conversa e perfil.
+ *
+ * Três colunas porque são três perguntas diferentes: quem falou, o que foi dito, e quem é essa
+ * pessoa. A terceira é o que esta tela tem e a do WhatsApp não, e é ela que muda como se responde:
+ * alguém com mil seguidores que te segue não recebe a mesma mensagem de alguém que apareceu agora.
+ */
+.ig-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 280px;
+  gap: var(--space-3);
+  align-items: stretch;
+  height: calc(100vh - 190px);
+  min-height: 460px;
+}
+
+.ig-lista,
+.ig-conversa,
+.ig-perfil {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface-elevated);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.ig-vazio {
+  margin: auto;
+  padding: var(--space-4);
+  text-align: center;
+}
+
+/* ------------------------------------------------------- lista de conversas */
+.ig-busca {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ig-busca svg {
+  position: absolute;
+  left: calc(var(--space-3) + 10px);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.ig-busca .input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: 32px;
+}
+
+.ig-lista-itens {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.ig-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: none;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ig-item:hover {
+  background: var(--surface-hover);
+}
+
+.ig-item.on {
+  background: var(--blue-soft);
+}
+
+.ig-item-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ig-item-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.ig-item-topo strong {
+  font-size: 12.5px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ig-item-hora {
+  flex: none;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+/* Uma linha só: a prévia serve pra reconhecer a conversa, não pra ler a mensagem. */
+.ig-item-previa {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ig-nao-lidas {
+  flex: none;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ig-avatar {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--surface-2);
+}
+
+.ig-avatar-iniciais {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------- a conversa - */
+.ig-conversa-topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ig-conversa-topo strong {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.ig-conversa-topo span {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.ig-mensagens {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.ig-bolha {
+  max-width: 68%;
+  align-self: flex-start;
+  padding: 9px 12px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+
+/* A nossa mensagem à direita e em azul: é a convenção de toda conversa, e mudá-la aqui obrigaria a
+ * ler quem falou em vez de reconhecer pelo lado. */
+.ig-bolha.nossa {
+  align-self: flex-end;
+  background: var(--blue-soft);
+}
+
+.ig-bolha p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ig-bolha span {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.ig-escrever {
+  border-top: 1px solid var(--line-soft);
+  padding: var(--space-3);
+}
+
+.ig-escrever .hint {
+  margin: 0 0 var(--space-2);
+}
+
+/* Janela fechada: o aviso é o mais importante do rodapé, então ele não é um texto cinza a mais. */
+.ig-janela-fechada {
+  padding: 8px 10px;
+  border-radius: var(--radius-2);
+  background: var(--surface-2);
+  border-left: 3px solid var(--warning, #a16207);
+  line-height: 1.45;
+}
+
+.ig-escrever-linha {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.ig-escrever-linha .input {
+  flex: 1;
+  min-height: 44px;
+  max-height: 140px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+/* -------------------------------------------------------------- o perfil -- */
+.ig-perfil {
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+.ig-perfil-topo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ig-perfil-topo strong {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.ig-perfil-topo span {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.ig-perfil h4 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ig-perfil-numeros {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: var(--space-3);
+}
+
+.ig-perfil-numeros div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  text-align: center;
+}
+
+.ig-perfil-numeros strong {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.ig-perfil-numeros span {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+/* ------------------------------------------------------------- contatos --- */
+.ig-contatos-card {
+  padding: var(--space-4);
+}
+
+.ig-contatos-barra {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ig-contatos-barra .ig-busca {
+  flex: 1;
+  padding: 0;
+  border-bottom: none;
+}
+
+.ig-contatos-barra .ig-busca svg {
+  left: 10px;
+}
+
+/* A barra de ação em massa só aparece com alguém escolhido: um painel de ação sempre à vista, e
+ * quase sempre desabilitado, é ruído no lugar mais perigoso da tela. */
+.ig-massa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--blue);
+  border-radius: var(--radius-2);
+  background: var(--blue-soft);
+}
+
+.ig-massa strong {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.ig-massa .input {
+  width: 180px;
+}
+
+.ig-contato-nome {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.ig-contato-nome strong {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.ig-contato-nome .hint {
+  display: block;
+  margin: 0;
+  font-size: 11px;
+}
+
+@media (max-width: 1100px) {
+  .ig-layout {
+    grid-template-columns: 260px minmax(0, 1fr);
+    height: auto;
+  }
+
+  /* Numa tela estreita o perfil vira a última faixa, embaixo da conversa: escondê-lo tiraria a
+   * informação que faz esta tela existir. */
+  .ig-perfil {
+    grid-column: 1 / -1;
+  }
+}

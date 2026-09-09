@@ -27,6 +27,7 @@ import { CANAL_INSTAGRAM, contaCanalDaConexao } from "@/lib/integracoes/conta-ca
 import { decriptar } from "@/lib/integracoes/crypto";
 import {
   baixarFotoPerfil,
+  buscarDadosExtrasDoPerfil,
   buscarCapaDaMidia,
   permalinkDaUltimaMidia,
   buscarPerfilDeQuemMandou,
@@ -521,6 +522,30 @@ export async function POST(request: Request) {
         // A foto vai TAMBÉM pro contato. É a mesma pessoa no funil, na lista de contatos e no
         // painel do funil. Presa só à conversa, o funil mostrava iniciais enquanto a conversa
         // mostrava o rosto, e o vendedor não reconhecia que era o mesmo lead.
+        // Seguidores, verificado e quem segue quem. Chamada à parte da que traz nome e foto, e
+        // opcional: ver `buscarDadosExtrasDoPerfil`. Só vale a pena quando o perfil é novo ou está
+        // velho, senão seria uma chamada à Meta por mensagem recebida.
+        const perfilVelho =
+          !contato?.igPerfilAtualizado ||
+          Date.now() - contato.igPerfilAtualizado.getTime() > 24 * 60 * 60 * 1000;
+        if (contato?.id && remetenteId && perfilVelho && tokenDaConta) {
+          const extras = await buscarDadosExtrasDoPerfil(tokenDaConta, remetenteId).catch(() => null);
+          if (extras) {
+            await prisma.contato
+              .update({
+                where: { id: contato.id },
+                data: {
+                  igSeguidores: extras.seguidores,
+                  igVerificado: extras.verificado,
+                  igSegueVoce: extras.segueVoce,
+                  igVoceSegue: extras.voceSegue,
+                  igPerfilAtualizado: new Date(),
+                },
+              })
+              .catch(() => {});
+          }
+        }
+
         if (contato?.id && fotoUrl) {
           await prisma.contato
             .update({ where: { id: contato.id }, data: { fotoUrl } })

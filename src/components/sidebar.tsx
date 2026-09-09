@@ -17,6 +17,8 @@ import { useFunis } from "@/lib/funis-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import {
   IconAutomacoes,
+  IconInstagram,
+  IconWhatsApp,
   IconCalendar,
   IconConfiguracoes,
   IconContatos,
@@ -27,7 +29,6 @@ import {
   IconRelatorios,
   IconSparkle,
   IconTarefas,
-  IconConversas,
   IconTrafego,
 } from "@/components/icons";
 
@@ -57,9 +58,15 @@ const gestaoAtividadeHrefs = new Set(gestaoAtividadeItens.map((i) => i.href));
 
 export const navEntries: NavEntry[] = [
   { href: "/inicio", label: "Início", Icon: IconInicio },
-  // A tela atende WhatsApp, Instagram, TikTok e e-mail: chamar de "WhatsApp" no menu descrevia
-  // um canal só e escondia os outros três de quem procurava por eles.
-  { href: "/conversas", label: "Conversas", Icon: IconConversas },
+  // Duas caixas de entrada, uma por canal, e não mais uma só chamada "Conversas".
+  //
+  // Elas estavam juntas, e a mistura tinha um custo que só apareceu com as automações: quem atende
+  // WhatsApp e quem atende Instagram não fazem a mesma coisa, não respondem no mesmo tom e não têm
+  // as mesmas ferramentas (o Direct tem janela de 24 horas, story, comentário e um perfil com
+  // seguidores; o WhatsApp não tem nada disso). Uma lista só obrigava a filtrar por canal a cada
+  // visita pra fazer qualquer das duas coisas.
+  { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
+  { href: "/instagram", label: "Instagram", Icon: IconInstagram },
   { href: "/funil", label: "Funil", Icon: IconPipeline },
   { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
   { href: "/formularios", label: "Formulário", Icon: IconDoc },

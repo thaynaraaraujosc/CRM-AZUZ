@@ -111,14 +111,14 @@ const FILTROS_CONVERSA = [
  * querer "não lidas do Instagram". Com WhatsApp e Instagram ligados ao mesmo tempo, a lista mistura
  * os dois e fica difícil saber por onde a pessoa está falando.
  *
- * TikTok aparece desativado de propósito: o canal está anunciado no produto mas ainda não recebe
- * mensagem, e esconder a aba faria parecer que ele não existe.
+ * Instagram e TikTok saíram desta lista: o Instagram ganhou tela própria (Direct, story,
+ * comentário e o perfil da pessoa ao lado, coisas que não existem no WhatsApp), e o TikTok não
+ * recebe mensagem nenhuma. Um filtro por canal numa tela que atende um canal só é um controle que
+ * não controla nada.
  */
 const CANAIS_CONVERSA = [
-  { valor: "todos", label: "Todos os canais", emBreve: false },
+  { valor: "todos", label: "Todas as conexões", emBreve: false },
   { valor: "WhatsApp", label: "WhatsApp", emBreve: false },
-  { valor: "Instagram", label: "Instagram", emBreve: false },
-  { valor: "TikTok", label: "TikTok", emBreve: true },
 ] as const;
 
 const FORMATOS_IMAGEM = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -906,6 +906,10 @@ function ConversasPageInner() {
   const conversasFiltradas = conversas
     .filter((c) => {
       if (conversaEscondidaPeloWhatsapp(c)) return false;
+      // O Instagram tem tela própria agora, em /instagram: Direct, story e comentário, com o perfil
+      // da pessoa ao lado. Deixá-lo aqui também faria a mesma conversa aparecer em dois lugares,
+      // com dois conjuntos de ferramentas diferentes, e nenhum dos dois completo.
+      if (c.canal === "Instagram") return false;
       if (!mostrarArquivadas && c.arquivada) return false;
       if (mostrarArquivadas) return c.arquivada;
       if (filtroConversa === "nao-lidas" && (!c.naoLidas || lidas.has(c.id))) return false;
@@ -3655,8 +3659,8 @@ function ConversasPageInner() {
         />
       ) : null}
       <Topbar
-        title="Conversas"
-        sub="WhatsApp e Instagram: todas as conversas num só lugar"
+        title="WhatsApp"
+        sub="A caixa de entrada do WhatsApp, oficial e por QR Code"
         actions={
           <>
             <button
