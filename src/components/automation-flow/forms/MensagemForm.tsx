@@ -9,12 +9,18 @@ import { mapearVariaveis } from "@/lib/campanhas/variaveis";
 import { inserirTokenNoTexto } from "./variaveis";
 import { useFormularios } from "@/lib/formularios-context";
 
+/**
+ * Os canais deste construtor: WhatsApp, oficial ou por QR Code.
+ *
+ * Instagram ficou de fora de propósito, e não por esquecimento: ele terá aba própria, com gatilhos
+ * que só existem lá (comentário, story, menção). Deixá-lo aqui faria a pessoa montar um fluxo de
+ * Instagram neste construtor e depois ter que refazer.
+ *
+ * O canal escolhido aqui não decide por onde a mensagem sai: quem decide é a CONVERSA do contato.
+ * Ele serve pra a tela avisar o que aquele canal suporta, e pra o fluxo dizer pra que foi feito.
+ */
 const CANAIS: { valor: CanalMensagem; label: string }[] = [
-  { valor: "whatsapp", label: "WhatsApp" },
-  { valor: "instagram", label: "Instagram" },
-  { valor: "tiktok", label: "TikTok" },
-  { valor: "email", label: "E-mail" },
-  { valor: "interno", label: "Interno" },
+  { valor: "whatsapp", label: "WhatsApp (oficial ou QR Code)" },
 ];
 
 /**
