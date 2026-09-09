@@ -17,6 +17,7 @@ import type {
   AtualizarCampoData,
   EncerrarFluxoData,
   ExecutarRoboData,
+  ReagirMensagemData,
   DecisaoMultiplaData,
   IaClassificarData,
   FlowNode,
@@ -50,6 +51,7 @@ import { GenericForm } from "./forms/GenericForm";
 import { ExecutarRoboForm } from "./forms/ExecutarRoboForm";
 import { EncerrarFluxoForm } from "./forms/EncerrarFluxoForm";
 import { AtualizarCampoForm } from "./forms/AtualizarCampoForm";
+import { ReagirMensagemForm } from "./forms/ReagirMensagemForm";
 import { MensagemContatoForm } from "./forms/MensagemContatoForm";
 import { MensagemEmailForm } from "./forms/MensagemEmailForm";
 import { MensagemForm } from "./forms/MensagemForm";
@@ -86,6 +88,9 @@ function FormularioDoNode({
         onChange={(d) => onUpdateNodeData(node.id, d)}
       />
     );
+  }
+  if (node.type === "reagir_mensagem") {
+    return <ReagirMensagemForm data={node.data as ReagirMensagemData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
   }
   if (node.type === "encerrar_fluxo") {
     return <EncerrarFluxoForm data={node.data as EncerrarFluxoData} onChange={(d) => onUpdateNodeData(node.id, d)} />;

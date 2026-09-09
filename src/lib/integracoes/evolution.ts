@@ -350,3 +350,28 @@ export async function buscarMensagensDoChat(
   if (Array.isArray(dados?.records)) return dados.records;
   return [];
 }
+
+/**
+ * Reage a uma mensagem com um emoji, pelo número conectado.
+ *
+ * A `key` é o endereço da mensagem no WhatsApp: quem é a conversa, se a mensagem é nossa ou dela,
+ * e o id. Sem os três a Evolution não sabe em qual mensagem reagir, e a reação some sem erro.
+ *
+ * `fromMe: false` porque a automação reage à mensagem que o CONTATO mandou. Reagir à própria
+ * mensagem existe no WhatsApp, mas não é o que alguém quer numa automação de atendimento.
+ */
+export function enviarReacaoWhatsAppNaoOficial(
+  workspaceId: string,
+  numero: string,
+  mensagemId: string,
+  emoji: string,
+) {
+  return chamarEvolution(`/message/sendReaction/${nomeInstancia(workspaceId)}`, "POST", {
+    key: {
+      remoteJid: numero.includes("@") ? numero : `${numero.replace(/\D/g, "")}@s.whatsapp.net`,
+      fromMe: false,
+      id: mensagemId,
+    },
+    reaction: emoji,
+  });
+}

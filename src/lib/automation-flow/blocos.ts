@@ -794,6 +794,16 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     dataPadrao: () => ({ mensagem: "" }),
   },
   {
+    tipo: "reagir_mensagem",
+    categoria: "mensagem",
+    grupo: "mensagens",
+    label: "Reagir à mensagem",
+    descricao: "Responde com um emoji na última mensagem que o contato mandou.",
+    icone: "Heart",
+    corClasse: corDaCategoria("mensagem"),
+    dataPadrao: () => ({ emoji: "❤️" }),
+  },
+  {
     tipo: "nota_interna",
     categoria: "acao",
     grupo: "crm",

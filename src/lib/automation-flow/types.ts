@@ -99,6 +99,7 @@ export type FlowNodeType =
   | "enviar_notificacao"
   | "executar_robo"
   | "nota_interna"
+  | "reagir_mensagem"
   | "pausar_automacoes"
   | "cancelar_automacoes"
   | "chamar_webhook"
@@ -401,7 +402,10 @@ export type TipoComparacao =
   | "comeca_com"
   | "termina_com"
   | "numero"
-  | "qualquer";
+  | "qualquer"
+  /** Expressão regular. Validada antes de salvar e com orçamento de tempo na execução: ver
+   * `src/lib/automacoes/regex-seguro.ts`. */
+  | "regex";
 
 /** O que fazer quando a pessoa erra a resposta vezes demais. */
 export type AposTentativas = "outra_resposta" | "encerrar" | "humano";
@@ -436,6 +440,14 @@ export type NotificacaoInternaData = { paraEquipe?: string; mensagem: string };
  * anotação virar um aviso, e o time pararia de ler os avisos.
  */
 export type NotaInternaData = { texto: string };
+
+/**
+ * Reage com um emoji à última mensagem que o CONTATO mandou.
+ *
+ * À mensagem DELE, não à nossa: numa automação de atendimento é isso que faz sentido ("vi sua
+ * mensagem"), e reagir à própria mensagem pareceria o robô se elogiando.
+ */
+export type ReagirMensagemData = { emoji: string };
 
 /** Por que a automação parou. Aparece no histórico e é o que explica um lead que não avançou. */
 export type MotivoParada =

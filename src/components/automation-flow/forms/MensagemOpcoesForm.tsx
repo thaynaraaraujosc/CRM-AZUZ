@@ -19,6 +19,7 @@ const COMPARACOES: { valor: TipoComparacao; label: string }[] = [
   { valor: "comeca_com", label: "Começa com" },
   { valor: "termina_com", label: "Termina com" },
   { valor: "numero", label: "É o número" },
+  { valor: "regex", label: "Expressão regular (avançado)" },
   { valor: "qualquer", label: "Qualquer resposta (pega o resto)" },
 ];
 
@@ -29,6 +30,7 @@ const APOS_TENTATIVAS: { valor: AposTentativas; label: string }[] = [
 import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";
 import { IconClose } from "@/components/icons";
+import { validarRegex } from "@/lib/automacoes/regex-seguro";
 
 /**
  * Os canais deste construtor: WhatsApp, oficial ou por QR Code.
@@ -240,6 +242,21 @@ export function MensagemOpcoesForm({
                   onChange={(e) => atualizarOpcao(opcao.id, { valorComparado: e.target.value })}
                   aria-label={`Valor comparado da opção ${i + 1}`}
                 />
+              ) : null}
+              {opcao.comparacao === "regex" ? (
+                (() => {
+                  const checagem = validarRegex(opcao.valorComparado ?? "");
+                  return checagem.ok ? (
+                    <p className="hint mt8">
+                      Comparação sem acento e sem diferenciar maiúscula. A expressão é conferida
+                      antes de salvar e tem tempo limitado na execução.
+                    </p>
+                  ) : (
+                    <p className="hint mt8" style={{ color: "var(--danger)" }}>
+                      {checagem.motivo}
+                    </p>
+                  );
+                })()
               ) : null}
               {opcao.comparacao === "qualquer" ? (
                 <p className="hint mt8">

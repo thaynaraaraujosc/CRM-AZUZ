@@ -9,6 +9,7 @@ import {
   type OpcaoPergunta,
 } from "@/lib/conversas/enviar-pergunta";
 import { enviarMidiaPeloCanal, type TipoMidia } from "@/lib/conversas/enviar-midia";
+import { reagirAUltimaMensagem } from "@/lib/conversas/enviar-reacao";
 import { componentesParaMeta, resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarEmailOuFalhar } from "@/lib/email";
@@ -85,6 +86,8 @@ export type AcoesDoMotor = {
   escolherAtendente: (params: { equipe?: string; metodo?: string }) => Promise<ResultadoAcao>;
   /** Começa OUTRA automação pro mesmo contato. É o bloco "Executar outro robô". */
   executarRobo: (params: { contatoNome: string; fluxoId: string }) => Promise<ResultadoAcao>;
+  /** Reage com um emoji à última mensagem que o contato mandou. */
+  reagir: (params: { contatoNome: string; emoji: string }) => Promise<ResultadoAcao>;
   /** Registra uma nota no histórico do lead. Não manda nada pro cliente. */
   anotarNoLead: (params: { contatoNome: string; texto: string }) => Promise<ResultadoAcao>;
   /** Chama um endereço externo, com repetição em caso de falha temporária. */
@@ -550,6 +553,16 @@ export function acoesReais(params: {
       }
     },
 
+    async reagir({ contatoNome, emoji }) {
+      if (!emoji.trim()) return falha("O bloco não tem emoji escolhido.");
+      try {
+        const r = await reagirAUltimaMensagem({ workspaceId, conversaNome: contatoNome, emoji });
+        return r.enviado ? ok(`Reagiu com ${emoji}.`) : falha(`Não deu pra reagir: ${r.motivo ?? "motivo desconhecido"}`);
+      } catch (erro) {
+        return falha("Falha ao reagir.", mensagemDoErro(erro));
+      }
+    },
+
     async anotarNoLead({ contatoNome, texto }) {
       try {
         await anotarNaLinhaDoTempo({
@@ -768,6 +781,10 @@ export function acoesSecas(): AcoesDoMotor & { intencoes: string[] } {
     async escolherAtendente({ equipe }) {
       return registrar(`Escolheria um atendente${equipe ? ` da equipe ${equipe}` : ""}`);
     },
+    async reagir({ emoji }) {
+      return ok(`(simulação) reagiria com ${emoji}`);
+    },
+
     async anotarNoLead({ texto }) {
       return ok(`(simulação) anotaria no lead: "${texto.slice(0, 40)}"`);
     },

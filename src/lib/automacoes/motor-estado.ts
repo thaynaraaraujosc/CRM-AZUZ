@@ -1,6 +1,7 @@
 import { avaliarGrupoCondicoes } from "@/lib/automation-flow/avaliacao";
 import { rotuloCurto } from "@/lib/conversas/enviar-pergunta";
 import { somarMinutosUteis, type Expediente } from "@/lib/expediente";
+import { casaComRegex } from "./regex-seguro";
 import type {
   AdicionarEtiquetaData,
   AguardarData,
@@ -32,6 +33,7 @@ import type {
   MensagemBotoesData,
   MotivoParada,
   NotaInternaData,
+  ReagirMensagemData,
   OpcaoBotaoLista,
   TipoComparacao,
   MensagemContatoData,
@@ -386,6 +388,14 @@ async function executarNo(params: {
           ? `${envio.detalhe} Esperando a escolha até ${ate.toLocaleString("pt-BR")}.`
           : `${envio.detalhe} Esperando a escolha do contato.`,
       };
+    }
+
+    case "reagir_mensagem": {
+      const data = no.data as ReagirMensagemData;
+      const r = await acoes.reagir({ contatoNome: nome, emoji: data.emoji ?? "" });
+      // A reação é um detalhe da conversa, não o objetivo dela: falhar aqui não pode derrubar o
+      // fluxo. Fica registrado no histórico e segue.
+      return { tipo: "seguir", detalhe: r.detalhe };
     }
 
     case "nota_interna": {
@@ -1003,6 +1013,8 @@ function casaPorComparacao(limpa: string, opcao: OpcaoBotaoLista, comparacao: Ti
       const so = limpa.replace(/[^\d]/g, "");
       return !!so && so === alvo.replace(/[^\d]/g, "");
     }
+    case "regex":
+      return casaComRegex(limpa, opcao.valorComparado ?? "");
     // "Qualquer" pega o que sobrou. Fica por último na lista pra não engolir as outras: quem põe
     // uma opção dessas no meio está dizendo que dali pra baixo nada mais é alcançável.
     case "qualquer":

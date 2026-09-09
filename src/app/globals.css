@@ -17310,3 +17310,27 @@ table.tbl .name-cell .r {
 .expediente-horas .input {
   width: 110px;
 }
+
+/* Emojis de reação. Botões grandes o suficiente pra o dedo, num teclado que cabe na largura do
+   painel sem rolagem. */
+.reagir-rapidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reagir-emoji {
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+  line-height: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  cursor: pointer;
+}
+
+.reagir-emoji.on {
+  border-color: var(--blue);
+  background: color-mix(in srgb, var(--blue) 12%, var(--surface));
+}

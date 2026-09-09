@@ -396,6 +396,12 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     case "enviar_formulario": {
       return d.formularioOrigem === "externo" ? `Link externo${d.formularioUrlExterna ? `: ${d.formularioUrlExterna}` : ""}` : "Formulário interno";
     }
+    case "reagir_mensagem": {
+      return `Reage com ${d.emoji || "?"} na última mensagem do contato`;
+    }
+    case "nota_interna": {
+      return d.texto ? `Nota: ${truncar(String(d.texto))}` : "Nota sem texto";
+    }
     case "executar_robo": {
       return d.fluxoNome ? `Robô: ${d.fluxoNome}` : "Nenhum robô escolhido";
     }
