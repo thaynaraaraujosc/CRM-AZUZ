@@ -51,10 +51,17 @@ const CATEGORIAS_ORDEM: CategoriaCampo[] = ["Conversa", "Funil / Negócio", "Con
 
 const CAMPOS_SIM_NAO = new Set<CampoCondicao>(["respondeu", "recebeu_automacao", "em_outra_automacao", "possui_agendamento", "consentimento"]);
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+/**
+ * Os canais que uma condição pode comparar.
+ *
+ * TikTok saiu: não existe integração, então nenhuma conversa jamais tem esse canal, e a condição
+ * "canal é TikTok" seria um caminho do fluxo que nunca é seguido. É a mesma regra do botão falso,
+ * do lado da decisão: opção que não pode acontecer é pior que opção ausente, porque a pessoa monta
+ * um ramo inteiro em volta dela e fica esperando.
+ */
 const CANAIS = [
   { valor: "whatsapp", label: "WhatsApp" },
   { valor: "instagram", label: "Instagram" },
-  { valor: "tiktok", label: "TikTok" },
   { valor: "email", label: "E-mail" },
 ];
 

@@ -3656,7 +3656,7 @@ function ConversasPageInner() {
       ) : null}
       <Topbar
         title="Conversas"
-        sub="WhatsApp, Instagram e TikTok: todas as conversas num só lugar"
+        sub="WhatsApp e Instagram: todas as conversas num só lugar"
         actions={
           <>
             <button
