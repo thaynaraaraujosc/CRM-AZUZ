@@ -157,6 +157,13 @@ async function dispararAutomacoes(params: {
     const tipoAceito = tipoDoGatilhoQueCasa(params.tipoGatilho, noGatilhoDoFluxo?.type);
     if (!tipoAceito) continue;
 
+    // A etapa é a dona do gatilho quando existe um gatilho de etapa apontando pra este fluxo.
+    // Sem esta checagem, um fluxo com bloco de gatilho E linha em GatilhoEtapa dispararia DUAS
+    // vezes pro mesmo lead: o bloco por aqui, a etapa pelo outro caminho.
+    if (params.etapaId && (await etapaJaDisparaEsteFluxo(workspaceId, linha.id, params.etapaId))) {
+      continue;
+    }
+
     const evento = {
       tipo: tipoAceito as EventoAutomacao["tipo"],
       contatoNome,
@@ -286,4 +293,19 @@ async function moverCardDeEtapa(
       data: new Date().toISOString().slice(0, 10),
     },
   });
+}
+
+/**
+ * A etapa já executa este fluxo por conta própria?
+ *
+ * É a pergunta que separa "o gatilho mora no bloco" de "o gatilho mora na etapa". Com a linha em
+ * `GatilhoEtapa`, quem dispara é a etapa, e o bloco de gatilho vira só desenho: continua no canvas
+ * (pra dar pra voltar atrás) mas não aciona nada.
+ */
+async function etapaJaDisparaEsteFluxo(workspaceId: string, fluxoId: string, etapaId: string): Promise<boolean> {
+  const gatilho = await prisma.gatilhoEtapa.findFirst({
+    where: { workspaceId, fluxoId, etapaId, ativo: true },
+    select: { id: true },
+  });
+  return !!gatilho;
 }

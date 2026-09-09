@@ -174,6 +174,7 @@ export function AutomacaoDoFunil({
   const [escolhendoAcao, setEscolhendoAcao] = useState<string | null>(null);
   const [rascunho, setRascunho] = useState<Rascunho | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [criandoRobo, setCriandoRobo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -324,6 +325,35 @@ export function AutomacaoDoFunil({
       body: JSON.stringify({ ativo: !g.ativo }),
     }).catch(() => {});
     await recarregar();
+  }
+
+  /**
+   * Cria um robô vazio e já o deixa escolhido no gatilho.
+   *
+   * Não abre o editor na hora de propósito: o gatilho ainda não foi salvo, e sair da tela agora
+   * perderia o que ela acabou de configurar. Salva o gatilho primeiro, depois ela abre o robô
+   * pela lista, que é onde ele passa a estar.
+   */
+  async function criarRobo() {
+    if (!rascunho) return;
+    setCriandoRobo(true);
+    setErro(null);
+    try {
+      const resposta = await fetch("/api/funis/gatilhos/robo-novo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: `Robô de ${colunas.find((c) => c.id === rascunho.etapaId)?.titulo ?? "etapa"}` }),
+      });
+      if (!resposta.ok) throw new Error(String(resposta.status));
+      const robo = (await resposta.json()) as RoboResumo;
+      setRobos((atual) => [...atual, robo]);
+      setRascunho({ ...rascunho, fluxoId: robo.id });
+      setAviso(`"${robo.nome}" criado. Salve o gatilho e depois monte o robô na aba Automações.`);
+    } catch {
+      setErro("Não deu pra criar o robô. Tente de novo.");
+    } finally {
+      setCriandoRobo(false);
+    }
   }
 
   function mudarDados(patch: Partial<AcaoDados>) {
@@ -550,9 +580,12 @@ export function AutomacaoDoFunil({
                     </option>
                   ))}
                 </select>
+                <button type="button" className="fauto-add mt8" onClick={criarRobo} disabled={criandoRobo}>
+                  <span aria-hidden="true">+</span> {criandoRobo ? "Criando…" : "Criar um novo robô"}
+                </button>
                 <p className="hint mt8">
-                  O mesmo robô pode ser executado por várias etapas.{" "}
-                  <Link href="/automacoes?criar=1">Criar um novo robô</Link>
+                  O mesmo robô pode ser executado por várias etapas. O robô novo entra na lista
+                  aqui e também na aba Automações: é o mesmo registro, não uma cópia.
                 </p>
               </div>
             ) : null}
