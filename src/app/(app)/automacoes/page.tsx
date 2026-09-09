@@ -11,6 +11,7 @@ import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoNo } from "@/lib/automation-flow/resumo";
 import { HistoricoExecucoes } from "@/components/automation-flow/HistoricoExecucoes";
 import { NovaAutomacao } from "@/components/automacoes/NovaAutomacao";
+import { AutomacaoDoFunil } from "@/components/funil/AutomacaoDoFunil";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import type {
   CanalMensagem,
@@ -340,6 +341,15 @@ function AutomacoesPageInner() {
   const [novoErro, setNovoErro] = useState<string | null>(null);
   /** O assistente em passos. Substitui o "abre o canvas vazio e se vira". */
   const [assistenteAberto, setAssistenteAberto] = useState(false);
+  /**
+   * Duas formas de ver a MESMA coisa, na mesma aba.
+   *
+   * Antes eram duas abas ("Automações" e "Automatizar funil"), e duas abas passam a ideia de dois
+   * sistemas: foi o primeiro comentário de quem abriu a tela. São os mesmos robôs e os mesmos
+   * gatilhos; o que muda é olhar por etapa do funil ou por robô.
+   */
+  const [visao, setVisao] = useState<"etapas" | "robos">("etapas");
+  const [funilDaGrade, setFunilDaGrade] = useState<string>("");
 
   const modelosDisponiveis = useMemo(
     () => fluxos.filter((f) => f.modeloDemonstracao),
@@ -771,7 +781,70 @@ function AutomacoesPageInner() {
       />
 
       <AbasAutomacoes />
+
       <div className="content">
+        <div className="auto-visao" role="tablist" aria-label="Como ver as automações">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={visao === "etapas"}
+            className={`auto-visao-btn${visao === "etapas" ? " on" : ""}`}
+            onClick={() => setVisao("etapas")}
+          >
+            Por etapa do funil
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={visao === "robos"}
+            className={`auto-visao-btn${visao === "robos" ? " on" : ""}`}
+            onClick={() => setVisao("robos")}
+          >
+            Lista de robôs ({fluxos.filter((f) => !f.arquivada).length})
+          </button>
+        </div>
+      </div>
+
+      {visao === "etapas" ? (
+        <div className="content">
+          <section className="card">
+            <div className="field" style={{ maxWidth: 340 }}>
+              <label>Qual funil você quer automatizar</label>
+              <select
+                className="input"
+                value={funilDaGrade || funis[0]?.id || ""}
+                onChange={(e) => setFunilDaGrade(e.target.value)}
+              >
+                {funis.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </section>
+
+          {(() => {
+            const funilAberto = funis.find((f) => f.id === (funilDaGrade || funis[0]?.id));
+            if (!funilAberto) {
+              return (
+                <section className="card">
+                  <p className="hint">Nenhum funil criado ainda. Crie um em Funil pra automatizar as etapas.</p>
+                </section>
+              );
+            }
+            return (
+              <AutomacaoDoFunil
+                funilId={funilAberto.id}
+                funilNome={funilAberto.nome}
+                colunas={funilAberto.colunas.map((c) => ({ id: c.id, titulo: c.titulo, total: c.total }))}
+              />
+            );
+          })()}
+        </div>
+      ) : null}
+
+      <div className="content" hidden={visao !== "robos"}>
         {/* -------------------------- Barra compacta -------------------------- */}
         <div className="automacoes-bar">
           <div className="automacoes-bar-group">
