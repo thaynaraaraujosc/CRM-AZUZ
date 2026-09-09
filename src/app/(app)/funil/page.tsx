@@ -829,7 +829,9 @@ function FunilPageInner() {
         {modoAutomatizar && funilAtivo ? (
           <AutomacaoDoFunil
             funilId={funilAtivo.id}
-            colunas={funilAtivo.colunas.map((c) => ({ id: c.id, titulo: c.titulo }))}
+            funilNome={funilAtivo.nome}
+            colunas={funilAtivo.colunas.map((c) => ({ id: c.id, titulo: c.titulo, total: c.total }))}
+            onFechar={() => setModoAutomatizar(false)}
           />
         ) : (
         <div

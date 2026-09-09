@@ -16,17 +16,20 @@ import {
 } from "@/lib/funil/gatilhos-etapa-tipos";
 
 /**
- * A camada de automação DO FUNIL. Cada etapa mostra o que dispara sozinha, na mesma largura das
- * colunas do quadro.
+ * A camada de automação DO FUNIL, desenhada como uma GRADE.
  *
- * O ganho é enxergar: antes, saber quais etapas fazem algo sozinhas exigia abrir automação por
- * automação, porque o gatilho morava dentro do fluxo. Aqui a etapa é a dona, o fluxo é só o robô,
- * e o mesmo robô pode ser executado por várias etapas. Uma etapa também pode fazer coisas simples
- * (trocar o responsável, marcar uma tarefa) sem robô nenhum no meio.
+ * As etapas são as colunas, e cada gatilho ocupa uma célula da coluna da sua etapa. As linhas
+ * atravessam o quadro inteiro, e é isso que faz a leitura funcionar: dá pra correr o olho por
+ * uma linha e ver o que cada etapa faz naquele momento, e por uma coluna e ver tudo que uma
+ * etapa dispara. Uma lista solta por coluna não dá nenhuma das duas leituras.
+ *
+ * Célula vazia continua desenhada. É o espaço onde falta automação, e some se a grade
+ * "encolher" pra caber só o que existe.
  */
 
-type ColunaResumo = { id: string; titulo: string };
+type ColunaResumo = { id: string; titulo: string; total?: number };
 type RoboResumo = { id: string; nome: string; status?: string };
+type CanalConectado = { canal: string; label: string; conectado: boolean; detalhe?: string | null };
 
 const DIAS = [
   { valor: 1, label: "Seg" },
@@ -40,7 +43,6 @@ const DIAS = [
 
 const QUANDOS: QuandoGatilho[] = ["movido", "criado", "movido_ou_criado", "responsavel_alterado", "diariamente"];
 
-/** As ações que a etapa pode disparar, na ordem em que aparecem no seletor. */
 const ACOES: { tipo: TipoAcaoGatilho; descricao: string }[] = [
   { tipo: "robo", descricao: "Executa uma automação inteira, com mensagens, esperas e condições." },
   { tipo: "mensagem", descricao: "Manda um texto pelo canal da conversa do lead." },
@@ -50,6 +52,13 @@ const ACOES: { tipo: TipoAcaoGatilho; descricao: string }[] = [
   { tipo: "tarefa", descricao: "Cria uma tarefa no quadro, com prazo." },
   { tipo: "webhook", descricao: "Avisa um sistema de fora que o lead chegou aqui." },
 ];
+
+/**
+ * A barra colorida em cima de cada etapa. A etapa não guarda cor no banco, então a cor vem da
+ * POSIÇÃO e é sempre a mesma pra mesma etapa: serve pra separar as colunas de relance, não pra
+ * significar alguma coisa.
+ */
+const CORES_ETAPA = ["#3b82f6", "#ef4444", "#22c55e", "#eab308", "#06b6d4", "#a855f7", "#f97316"];
 
 /** Grupo novo com id próprio: o editor de condições usa o id pra saber qual subgrupo mexer. */
 const grupoVazio = (): GrupoCondicoes => ({
@@ -72,7 +81,7 @@ type Rascunho = {
   horaFim: string;
   horarioDiario: string;
   ativo: boolean;
-  /** Não é campo do gatilho: é o "rodar agora nos leads que já estão aqui" do Kommo. */
+  /** Não é campo do gatilho: é o "rodar agora nos leads que já estão aqui". */
   aplicarAosAtuais: boolean;
 };
 
@@ -111,50 +120,57 @@ function doGatilho(g: GatilhoEtapaVisao): Rascunho {
   };
 }
 
-/** A linha de baixo do cartão: "Seg, Ter de 10:00 às 19:00", ou nada quando vale sempre. */
-function resumoDaJanela(g: GatilhoEtapaVisao): string | null {
-  const dias = g.diasAtivos ?? [];
-  const temHora = g.horaInicio && g.horaFim;
-  if (!dias.length && !temHora) return null;
-  const nomes = dias.length ? DIAS.filter((d) => dias.includes(d.valor)).map((d) => d.label).join(", ") : "Todo dia";
-  return temHora ? `${nomes} de ${g.horaInicio} às ${g.horaFim}` : nomes;
+/** A linha cinza de cima do cartão: quando o gatilho dispara. */
+function linhaDoQuando(g: GatilhoEtapaVisao): string {
+  const base = QUANDO_ROTULO[g.quando];
+  return g.quando === "diariamente" && g.horarioDiario ? `Diariamente às ${g.horarioDiario}` : base;
 }
 
-/** O que o cartão escreve em negrito. É a ação, não o tipo dela. */
-function descricaoDaAcao(g: GatilhoEtapaVisao, colunas: ColunaResumo[]): string {
+/** A linha em negrito: o que ela faz. */
+function linhaDaAcao(g: GatilhoEtapaVisao, colunas: ColunaResumo[]): string {
   const dados = g.acaoDados ?? {};
   switch (g.tipoAcao ?? "robo") {
     case "robo":
       return `Executar robô: ${g.fluxoNome ?? "robô apagado"}`;
     case "responsavel":
-      return `Alterar responsável: ${dados.responsavel || "ninguém escolhido"}`;
+      return `Alterar responsável do lead: ${dados.responsavel || "ninguém escolhido"}`;
     case "etapa": {
       const destino = colunas.find((c) => c.id === dados.etapaDestinoId);
-      return `Mudar etapa: ${destino?.titulo ?? "etapa apagada"}`;
+      return `Mudar a etapa do lead: ${destino?.titulo ?? "etapa apagada"}`;
     }
     case "etiquetas": {
       const mais = dados.etiquetasAdicionar ?? [];
       const menos = dados.etiquetasRemover ?? [];
-      const partes = [mais.length ? `+${mais.join(", ")}` : "", menos.length ? `-${menos.join(", ")}` : ""];
+      const partes = [mais.length ? `+${mais.join(", ")}` : "", menos.length ? `−${menos.join(", ")}` : ""];
       return `Editar etiquetas: ${partes.filter(Boolean).join("  ") || "nada escolhido"}`;
     }
     case "tarefa":
-      return `Criar tarefa: ${dados.tarefaTitulo || "sem título"}`;
+      return `Adicionar uma tarefa: ${dados.tarefaTitulo || "sem título"}`;
     case "webhook":
-      return `Webhook: ${dados.webhookUrl || "sem endereço"}`;
+      return `Enviar um webhook: ${dados.webhookUrl || "sem endereço"}`;
     case "mensagem":
-      return `Enviar: ${(dados.mensagemTexto || "sem texto").slice(0, 60)}`;
+      return `Enviar mensagem: ${(dados.mensagemTexto || "sem texto").slice(0, 70)}`;
     default:
       return ACAO_ROTULO[g.tipoAcao ?? "robo"];
   }
 }
 
-/** Lista separada por vírgula vira array, e vice-versa. É como as etiquetas são digitadas. */
 const paraLista = (texto: string) => texto.split(",").map((t) => t.trim()).filter(Boolean);
 
-export function AutomacaoDoFunil({ funilId, colunas }: { funilId: string; colunas: ColunaResumo[] }) {
+export function AutomacaoDoFunil({
+  funilId,
+  funilNome,
+  colunas,
+  onFechar,
+}: {
+  funilId: string;
+  funilNome?: string;
+  colunas: ColunaResumo[];
+  onFechar?: () => void;
+}) {
   const [gatilhos, setGatilhos] = useState<GatilhoEtapaVisao[]>([]);
   const [robos, setRobos] = useState<RoboResumo[]>([]);
+  const [canais, setCanais] = useState<CanalConectado[]>([]);
   const [escolhendoAcao, setEscolhendoAcao] = useState<string | null>(null);
   const [rascunho, setRascunho] = useState<Rascunho | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -190,6 +206,12 @@ export function AutomacaoDoFunil({ funilId, colunas }: { funilId: string; coluna
         if (vivo) setRobos(lista.map((f) => ({ id: f.id, nome: f.nome, status: f.status })));
       })
       .catch(() => {});
+    fetch("/api/canais")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((lista: CanalConectado[]) => {
+        if (vivo) setCanais(Array.isArray(lista) ? lista.filter((c) => c.conectado) : []);
+      })
+      .catch(() => {});
     return () => {
       vivo = false;
     };
@@ -203,6 +225,15 @@ export function AutomacaoDoFunil({ funilId, colunas }: { funilId: string; coluna
     });
     return mapa;
   }, [gatilhos]);
+
+  /**
+   * Quantas linhas a grade tem. É a etapa com mais gatilhos, com um mínimo de 6 pra a grade não
+   * ficar espremida num funil que ainda não tem quase nada configurado.
+   */
+  const linhas = useMemo(() => {
+    const maior = colunas.reduce((max, c) => Math.max(max, porEtapa.get(c.id)?.length ?? 0), 0);
+    return Math.max(maior, 6);
+  }, [colunas, porEtapa]);
 
   function faltaAlgo(r: Rascunho): string | null {
     const d = r.acaoDados;
@@ -300,397 +331,447 @@ export function AutomacaoDoFunil({ funilId, colunas }: { funilId: string; coluna
     setRascunho({ ...rascunho, acaoDados: { ...rascunho.acaoDados, ...patch } });
   }
 
+  function abrirNovo(etapaId: string) {
+    setErro(null);
+    setAviso(null);
+    setRascunho(null);
+    setEscolhendoAcao(etapaId);
+  }
+
   return (
-    <div className="funil-auto">
-      <div className="funil-auto-grade">
-        {colunas.map((coluna) => {
-          const daEtapa = porEtapa.get(coluna.id) ?? [];
-          return (
-            <div key={coluna.id} className="funil-auto-col">
-              <div className="funil-auto-col-topo">{coluna.titulo}</div>
-
-              {daEtapa.map((g) => {
-                const janela = resumoDaJanela(g);
-                const temCondicao = (g.condicao?.regras?.length ?? 0) > 0 || (g.condicao?.subgrupos?.length ?? 0) > 0;
-                return (
-                  <div key={g.id} className={`funil-auto-cartao${g.ativo ? "" : " desligado"}`}>
-                    <button
-                      type="button"
-                      className="funil-auto-cartao-corpo"
-                      onClick={() => {
-                        setErro(null);
-                        setAviso(null);
-                        setEscolhendoAcao(null);
-                        setRascunho(doGatilho(g));
-                      }}
-                    >
-                      <span className="funil-auto-quando">
-                        <IconAutomacoes width={12} height={12} aria-hidden="true" />
-                        {QUANDO_ROTULO[g.quando]}
-                        {g.quando === "diariamente" && g.horarioDiario ? ` às ${g.horarioDiario}` : ""}
-                      </span>
-                      <span className="funil-auto-robo">{descricaoDaAcao(g, colunas)}</span>
-                      {temCondicao ? <span className="funil-auto-janela">Só pros leads que batem na condição</span> : null}
-                      {janela ? <span className="funil-auto-janela">{janela}</span> : null}
-                    </button>
-                    <div className="funil-auto-cartao-acoes">
-                      <button
-                        type="button"
-                        className="funil-auto-mini"
-                        onClick={() => alternarAtivo(g)}
-                        title={g.ativo ? "Desligar este gatilho" : "Ligar este gatilho"}
-                      >
-                        {g.ativo ? "Ligado" : "Desligado"}
-                      </button>
-                      <button
-                        type="button"
-                        className="funil-auto-mini"
-                        onClick={() => remover(g.id)}
-                        title="Remover este gatilho"
-                      >
-                        <IconClose width={10} height={10} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-
-              <button
-                type="button"
-                className="funil-auto-add"
-                onClick={() => {
-                  setErro(null);
-                  setAviso(null);
-                  setRascunho(null);
-                  setEscolhendoAcao(coluna.id);
-                }}
-              >
-                <span aria-hidden="true">+</span> Adicionar gatilho
-              </button>
-            </div>
-          );
-        })}
+    <div className="fauto">
+      <div className="fauto-topo">
+        <strong>{funilNome ?? "Automação do funil"}</strong>
+        {onFechar ? (
+          <button type="button" className="btn ghost" onClick={onFechar}>
+            Voltar
+          </button>
+        ) : null}
       </div>
 
-      {/* Escolher O QUE a etapa faz vem antes de configurar: é a pergunta que muda todo o resto
-          do painel, e misturá-la com os campos deixava a tela cheia de campos inúteis. */}
-      {escolhendoAcao ? (
-        <div className="funil-auto-painel">
-          <div className="funil-auto-painel-topo">
-            <strong>O que esta etapa faz?</strong>
-            <button type="button" className="funil-auto-mini" onClick={() => setEscolhendoAcao(null)}>
-              <IconClose width={11} height={11} />
-            </button>
-          </div>
-          <div className="funil-auto-acoes">
-            {ACOES.map((a) => (
-              <button
-                key={a.tipo}
-                type="button"
-                className="funil-auto-acao"
-                onClick={() => {
-                  setRascunho(rascunhoNovo(escolhendoAcao, a.tipo));
-                  setEscolhendoAcao(null);
-                }}
-              >
-                <strong>{ACAO_ROTULO[a.tipo]}</strong>
-                <span>{a.descricao}</span>
-              </button>
+      <div className="fauto-corpo">
+        <aside className="fauto-lado">
+          <h4>Fontes de lead</h4>
+          {canais.length ? (
+            canais.map((c) => (
+              <div key={c.canal} className="fauto-fonte">
+                <strong>{c.label}</strong>
+                <span>{c.detalhe || "Conectado"}</span>
+              </div>
+            ))
+          ) : (
+            <p className="hint">Nenhum canal conectado ainda.</p>
+          )}
+          <Link href="/integracoes" className="fauto-lado-link">
+            + Adicionar fonte
+          </Link>
+
+          <h4 className="mt8">Robôs</h4>
+          <p className="hint">
+            {robos.length
+              ? `${robos.length} ${robos.length > 1 ? "automações disponíveis" : "automação disponível"} pra executar a partir de uma etapa.`
+              : "Nenhuma automação criada ainda."}
+          </p>
+          <Link href="/automacoes" className="fauto-lado-link">
+            Abrir automações
+          </Link>
+        </aside>
+
+        <div className="fauto-grade">
+          <div className="fauto-cab" style={{ gridTemplateColumns: `repeat(${colunas.length}, minmax(240px, 1fr))` }}>
+            {colunas.map((coluna, i) => (
+              <div key={coluna.id} className="fauto-cab-cel">
+                <span className="fauto-cab-nome">{coluna.titulo}</span>
+                <span className="fauto-cab-barra" style={{ background: CORES_ETAPA[i % CORES_ETAPA.length] }} />
+                <span className="fauto-cab-sub">
+                  {(porEtapa.get(coluna.id)?.length ?? 0) > 0
+                    ? `${porEtapa.get(coluna.id)!.length} gatilho${porEtapa.get(coluna.id)!.length > 1 ? "s" : ""}`
+                    : "Sem automação"}
+                </span>
+              </div>
             ))}
           </div>
+
+          <div
+            className="fauto-linhas"
+            style={{ gridTemplateColumns: `repeat(${colunas.length}, minmax(240px, 1fr))` }}
+          >
+            {Array.from({ length: linhas }).map((_, linha) =>
+              colunas.map((coluna) => {
+                const gatilho = porEtapa.get(coluna.id)?.[linha];
+                return (
+                  <div key={`${coluna.id}-${linha}`} className="fauto-cel">
+                    {gatilho ? (
+                      <div className={`fauto-gat${gatilho.ativo ? "" : " desligado"}`}>
+                        <button
+                          type="button"
+                          className="fauto-gat-corpo"
+                          onClick={() => {
+                            setErro(null);
+                            setAviso(null);
+                            setEscolhendoAcao(null);
+                            setRascunho(doGatilho(gatilho));
+                          }}
+                        >
+                          <IconAutomacoes width={15} height={15} aria-hidden="true" />
+                          <span>
+                            <span className="fauto-gat-quando">{linhaDoQuando(gatilho)}</span>
+                            <span className="fauto-gat-acao">{linhaDaAcao(gatilho, colunas)}</span>
+                          </span>
+                        </button>
+                        <div className="fauto-gat-acoes">
+                          <button
+                            type="button"
+                            className="fauto-mini"
+                            onClick={() => alternarAtivo(gatilho)}
+                            title={gatilho.ativo ? "Desligar este gatilho" : "Ligar este gatilho"}
+                          >
+                            {gatilho.ativo ? "Ligado" : "Desligado"}
+                          </button>
+                          <button
+                            type="button"
+                            className="fauto-mini"
+                            onClick={() => remover(gatilho.id)}
+                            title="Remover este gatilho"
+                          >
+                            <IconClose width={10} height={10} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // A primeira célula vazia da coluna é a que convida a criar. As de baixo
+                      // ficam vazias mesmo: um "+" repetido em toda célula vira ruído.
+                      (porEtapa.get(coluna.id)?.length ?? 0) === linha && (
+                        <button type="button" className="fauto-add" onClick={() => abrirNovo(coluna.id)}>
+                          <span aria-hidden="true">+</span> Adicionar gatilho
+                        </button>
+                      )
+                    )}
+                  </div>
+                );
+              }),
+            )}
+          </div>
         </div>
-      ) : null}
 
-      {rascunho ? (
-        <div className="funil-auto-painel">
-          <div className="funil-auto-painel-topo">
-            <strong>{rascunho.id ? "Editar gatilho" : ACAO_ROTULO[rascunho.tipoAcao]}</strong>
-            <button type="button" className="funil-auto-mini" onClick={() => setRascunho(null)}>
-              <IconClose width={11} height={11} />
-            </button>
-          </div>
-
-          <div className="field">
-            <label>Etapa</label>
-            <select
-              className="input"
-              value={rascunho.etapaId}
-              onChange={(e) => setRascunho({ ...rascunho, etapaId: e.target.value })}
-            >
-              {colunas.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.titulo}
-                </option>
+        {escolhendoAcao ? (
+          <div className="fauto-painel">
+            <div className="fauto-painel-topo">
+              <strong>O que esta etapa faz?</strong>
+              <button type="button" className="fauto-mini" onClick={() => setEscolhendoAcao(null)}>
+                <IconClose width={11} height={11} />
+              </button>
+            </div>
+            <div className="fauto-acoes">
+              {ACOES.map((a) => (
+                <button
+                  key={a.tipo}
+                  type="button"
+                  className="fauto-acao"
+                  onClick={() => {
+                    setRascunho(rascunhoNovo(escolhendoAcao, a.tipo));
+                    setEscolhendoAcao(null);
+                  }}
+                >
+                  <strong>{ACAO_ROTULO[a.tipo]}</strong>
+                  <span>{a.descricao}</span>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
+        ) : null}
 
-          <div className="field">
-            <label>Executar</label>
-            <select
-              className="input"
-              value={rascunho.quando}
-              onChange={(e) => setRascunho({ ...rascunho, quando: e.target.value as QuandoGatilho })}
-            >
-              {QUANDOS.map((q) => (
-                <option key={q} value={q}>
-                  {QUANDO_ROTULO[q]}
-                </option>
-              ))}
-            </select>
-            {rascunho.quando === "diariamente" ? (
-              <>
-                <input
-                  type="time"
-                  className="input mt8"
-                  value={rascunho.horarioDiario}
-                  onChange={(e) => setRascunho({ ...rascunho, horarioDiario: e.target.value })}
-                />
-                <p className="hint mt8">
-                  Todo dia nessa hora, para cada lead que estiver nesta etapa. Serve pra cobrança e
-                  lembrete de quem está parado.
-                </p>
-              </>
-            ) : null}
-          </div>
+        {rascunho ? (
+          <div className="fauto-painel">
+            <div className="fauto-painel-topo">
+              <strong>{rascunho.id ? "Editar gatilho" : ACAO_ROTULO[rascunho.tipoAcao]}</strong>
+              <button type="button" className="fauto-mini" onClick={() => setRascunho(null)}>
+                <IconClose width={11} height={11} />
+              </button>
+            </div>
 
-          {rascunho.tipoAcao === "robo" ? (
             <div className="field">
-              <label>Robô</label>
+              <label>Etapa</label>
               <select
                 className="input"
-                value={rascunho.fluxoId}
-                onChange={(e) => setRascunho({ ...rascunho, fluxoId: e.target.value })}
+                value={rascunho.etapaId}
+                onChange={(e) => setRascunho({ ...rascunho, etapaId: e.target.value })}
               >
-                <option value="">Nenhum robô selecionado</option>
-                {robos.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.nome}
-                    {r.status === "publicado" ? "" : " (rascunho)"}
-                  </option>
-                ))}
-              </select>
-              <p className="hint mt8">
-                O mesmo robô pode ser executado por várias etapas.{" "}
-                <Link href="/automacoes?criar=1">Criar um novo robô</Link>
-              </p>
-            </div>
-          ) : null}
-
-          {rascunho.tipoAcao === "mensagem" ? (
-            <div className="field">
-              <label>Mensagem</label>
-              <textarea
-                className="input"
-                rows={4}
-                value={rascunho.acaoDados.mensagemTexto ?? ""}
-                onChange={(e) => mudarDados({ mensagemTexto: e.target.value })}
-                placeholder="Oi {primeiro_nome}, tudo bem?"
-              />
-              <p className="hint mt8">Aceita as mesmas variáveis dos blocos de mensagem.</p>
-            </div>
-          ) : null}
-
-          {rascunho.tipoAcao === "responsavel" ? (
-            <div className="field">
-              <label>Novo responsável</label>
-              <input
-                className="input"
-                value={rascunho.acaoDados.responsavel ?? ""}
-                onChange={(e) => mudarDados({ responsavel: e.target.value })}
-                placeholder="Nome de quem assume"
-              />
-            </div>
-          ) : null}
-
-          {rascunho.tipoAcao === "etapa" ? (
-            <div className="field">
-              <label>Mover para</label>
-              <select
-                className="input"
-                value={rascunho.acaoDados.etapaDestinoId ?? ""}
-                onChange={(e) => mudarDados({ etapaDestinoId: e.target.value })}
-              >
-                <option value="">Escolha a etapa</option>
                 {colunas.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.titulo}
                   </option>
                 ))}
               </select>
-              {rascunho.acaoDados.etapaDestinoId === rascunho.etapaId ? (
-                <p className="hint mt8" style={{ color: "var(--danger)" }}>
-                  A etapa de destino é a mesma da entrada. Isso faz o lead entrar de novo aqui, sem
-                  fim.
-                </p>
+            </div>
+
+            <div className="field">
+              <label>Executar</label>
+              <select
+                className="input"
+                value={rascunho.quando}
+                onChange={(e) => setRascunho({ ...rascunho, quando: e.target.value as QuandoGatilho })}
+              >
+                {QUANDOS.map((q) => (
+                  <option key={q} value={q}>
+                    {QUANDO_ROTULO[q]}
+                  </option>
+                ))}
+              </select>
+              {rascunho.quando === "diariamente" ? (
+                <>
+                  <input
+                    type="time"
+                    className="input mt8"
+                    value={rascunho.horarioDiario}
+                    onChange={(e) => setRascunho({ ...rascunho, horarioDiario: e.target.value })}
+                  />
+                  <p className="hint mt8">
+                    Todo dia nessa hora, para cada lead que estiver nesta etapa. Serve pra cobrança
+                    e lembrete de quem está parado.
+                  </p>
+                </>
               ) : null}
             </div>
-          ) : null}
 
-          {rascunho.tipoAcao === "etiquetas" ? (
-            <>
+            {rascunho.tipoAcao === "robo" ? (
               <div className="field">
-                <label>Acrescentar etiquetas</label>
-                <input
+                <label>Robô</label>
+                <select
                   className="input"
-                  value={(rascunho.acaoDados.etiquetasAdicionar ?? []).join(", ")}
-                  onChange={(e) => mudarDados({ etiquetasAdicionar: paraLista(e.target.value) })}
-                  placeholder="Separe por vírgula"
-                />
+                  value={rascunho.fluxoId}
+                  onChange={(e) => setRascunho({ ...rascunho, fluxoId: e.target.value })}
+                >
+                  <option value="">Nenhum robô selecionado</option>
+                  {robos.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.nome}
+                      {r.status === "publicado" ? "" : " (rascunho)"}
+                    </option>
+                  ))}
+                </select>
+                <p className="hint mt8">
+                  O mesmo robô pode ser executado por várias etapas.{" "}
+                  <Link href="/automacoes?criar=1">Criar um novo robô</Link>
+                </p>
               </div>
-              <div className="field">
-                <label>Tirar etiquetas</label>
-                <input
-                  className="input"
-                  value={(rascunho.acaoDados.etiquetasRemover ?? []).join(", ")}
-                  onChange={(e) => mudarDados({ etiquetasRemover: paraLista(e.target.value) })}
-                  placeholder="Separe por vírgula"
-                />
-              </div>
-            </>
-          ) : null}
+            ) : null}
 
-          {rascunho.tipoAcao === "tarefa" ? (
-            <>
+            {rascunho.tipoAcao === "mensagem" ? (
               <div className="field">
-                <label>Título da tarefa</label>
-                <input
+                <label>Mensagem</label>
+                <textarea
                   className="input"
-                  value={rascunho.acaoDados.tarefaTitulo ?? ""}
-                  onChange={(e) => mudarDados({ tarefaTitulo: e.target.value })}
-                  placeholder="Ligar para o lead"
+                  rows={4}
+                  value={rascunho.acaoDados.mensagemTexto ?? ""}
+                  onChange={(e) => mudarDados({ mensagemTexto: e.target.value })}
+                  placeholder="Oi {primeiro_nome}, tudo bem?"
                 />
+                <p className="hint mt8">Aceita as mesmas variáveis dos blocos de mensagem.</p>
               </div>
-              <div className="field">
-                <label>Responsável pela tarefa</label>
-                <input
-                  className="input"
-                  value={rascunho.acaoDados.tarefaResponsavel ?? ""}
-                  onChange={(e) => mudarDados({ tarefaResponsavel: e.target.value })}
-                  placeholder="Deixe vazio pra usar o responsável do lead"
-                />
-              </div>
-              <div className="field">
-                <label>Prazo (dias)</label>
-                <input
-                  type="number"
-                  min={0}
-                  className="input"
-                  value={rascunho.acaoDados.tarefaPrazoDias ?? 0}
-                  onChange={(e) => mudarDados({ tarefaPrazoDias: Number(e.target.value) })}
-                />
-                <p className="hint mt8">0 = para hoje.</p>
-              </div>
-            </>
-          ) : null}
+            ) : null}
 
-          {rascunho.tipoAcao === "webhook" ? (
-            <div className="field">
-              <label>Endereço</label>
-              <input
-                className="input"
-                value={rascunho.acaoDados.webhookUrl ?? ""}
-                onChange={(e) => mudarDados({ webhookUrl: e.target.value })}
-                placeholder="https://…"
-              />
-            </div>
-          ) : null}
+            {rascunho.tipoAcao === "responsavel" ? (
+              <div className="field">
+                <label>Novo responsável</label>
+                <input
+                  className="input"
+                  value={rascunho.acaoDados.responsavel ?? ""}
+                  onChange={(e) => mudarDados({ responsavel: e.target.value })}
+                  placeholder="Nome de quem assume"
+                />
+              </div>
+            ) : null}
 
-          <div className="field">
-            <label>Para todos os leads com</label>
-            {rascunho.condicao ? (
+            {rascunho.tipoAcao === "etapa" ? (
+              <div className="field">
+                <label>Mover para</label>
+                <select
+                  className="input"
+                  value={rascunho.acaoDados.etapaDestinoId ?? ""}
+                  onChange={(e) => mudarDados({ etapaDestinoId: e.target.value })}
+                >
+                  <option value="">Escolha a etapa</option>
+                  {colunas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.titulo}
+                    </option>
+                  ))}
+                </select>
+                {rascunho.acaoDados.etapaDestinoId === rascunho.etapaId ? (
+                  <p className="hint mt8" style={{ color: "var(--danger)" }}>
+                    A etapa de destino é a mesma da entrada. Isso faz o lead entrar de novo aqui,
+                    sem fim.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {rascunho.tipoAcao === "etiquetas" ? (
               <>
-                <CondicaoForm
-                  grupo={rascunho.condicao}
-                  onChange={(grupo) => setRascunho({ ...rascunho, condicao: grupo })}
+                <div className="field">
+                  <label>Acrescentar etiquetas</label>
+                  <input
+                    className="input"
+                    value={(rascunho.acaoDados.etiquetasAdicionar ?? []).join(", ")}
+                    onChange={(e) => mudarDados({ etiquetasAdicionar: paraLista(e.target.value) })}
+                    placeholder="Separe por vírgula"
+                  />
+                </div>
+                <div className="field">
+                  <label>Tirar etiquetas</label>
+                  <input
+                    className="input"
+                    value={(rascunho.acaoDados.etiquetasRemover ?? []).join(", ")}
+                    onChange={(e) => mudarDados({ etiquetasRemover: paraLista(e.target.value) })}
+                    placeholder="Separe por vírgula"
+                  />
+                </div>
+              </>
+            ) : null}
+
+            {rascunho.tipoAcao === "tarefa" ? (
+              <>
+                <div className="field">
+                  <label>Título da tarefa</label>
+                  <input
+                    className="input"
+                    value={rascunho.acaoDados.tarefaTitulo ?? ""}
+                    onChange={(e) => mudarDados({ tarefaTitulo: e.target.value })}
+                    placeholder="Ligar para o lead"
+                  />
+                </div>
+                <div className="field">
+                  <label>Responsável pela tarefa</label>
+                  <input
+                    className="input"
+                    value={rascunho.acaoDados.tarefaResponsavel ?? ""}
+                    onChange={(e) => mudarDados({ tarefaResponsavel: e.target.value })}
+                    placeholder="Deixe vazio pra usar o responsável do lead"
+                  />
+                </div>
+                <div className="field">
+                  <label>Prazo (dias)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="input"
+                    value={rascunho.acaoDados.tarefaPrazoDias ?? 0}
+                    onChange={(e) => mudarDados({ tarefaPrazoDias: Number(e.target.value) })}
+                  />
+                  <p className="hint mt8">0 = para hoje.</p>
+                </div>
+              </>
+            ) : null}
+
+            {rascunho.tipoAcao === "webhook" ? (
+              <div className="field">
+                <label>Endereço</label>
+                <input
+                  className="input"
+                  value={rascunho.acaoDados.webhookUrl ?? ""}
+                  onChange={(e) => mudarDados({ webhookUrl: e.target.value })}
+                  placeholder="https://…"
                 />
+              </div>
+            ) : null}
+
+            <div className="field">
+              <label>Para todos os leads com</label>
+              {rascunho.condicao ? (
+                <>
+                  <CondicaoForm
+                    grupo={rascunho.condicao}
+                    onChange={(grupo) => setRascunho({ ...rascunho, condicao: grupo })}
+                  />
+                  <button
+                    type="button"
+                    className="fauto-mini"
+                    onClick={() => setRascunho({ ...rascunho, condicao: null })}
+                  >
+                    Tirar a condição
+                  </button>
+                </>
+              ) : (
                 <button
                   type="button"
-                  className="funil-auto-mini"
-                  onClick={() => setRascunho({ ...rascunho, condicao: null })}
+                  className="fauto-add"
+                  onClick={() => setRascunho({ ...rascunho, condicao: grupoVazio() })}
                 >
-                  Tirar a condição
+                  <span aria-hidden="true">+</span> Adicionar uma condição
                 </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="funil-auto-add"
-                onClick={() => setRascunho({ ...rascunho, condicao: grupoVazio() })}
-              >
-                <span aria-hidden="true">+</span> Adicionar uma condição
+              )}
+              <p className="hint mt8">Sem condição, vale pra todo lead que entrar nesta etapa.</p>
+            </div>
+
+            <div className="field">
+              <label>Ativo</label>
+              <div className="fauto-dias">
+                {DIAS.map((d) => {
+                  const marcado = rascunho.diasAtivos.includes(d.valor);
+                  return (
+                    <button
+                      key={d.valor}
+                      type="button"
+                      className={`fauto-dia${marcado ? " on" : ""}`}
+                      onClick={() =>
+                        setRascunho({
+                          ...rascunho,
+                          diasAtivos: marcado
+                            ? rascunho.diasAtivos.filter((x) => x !== d.valor)
+                            : [...rascunho.diasAtivos, d.valor],
+                        })
+                      }
+                    >
+                      {d.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="fauto-horas">
+                <input
+                  type="time"
+                  className="input"
+                  value={rascunho.horaInicio}
+                  onChange={(e) => setRascunho({ ...rascunho, horaInicio: e.target.value })}
+                />
+                <span>às</span>
+                <input
+                  type="time"
+                  className="input"
+                  value={rascunho.horaFim}
+                  onChange={(e) => setRascunho({ ...rascunho, horaFim: e.target.value })}
+                />
+              </div>
+              <p className="hint mt8">
+                Sem dia e sem horário, o gatilho vale sempre. Fora da janela o lead entra na etapa
+                normalmente, só não dispara.
+              </p>
+            </div>
+
+            <label className="fauto-caixa">
+              <input
+                type="checkbox"
+                checked={rascunho.aplicarAosAtuais}
+                onChange={(e) => setRascunho({ ...rascunho, aplicarAosAtuais: e.target.checked })}
+              />
+              <span>Aplicar o gatilho aos leads que já estão nesta etapa</span>
+            </label>
+
+            {erro ? <p className="hint" style={{ color: "var(--danger)" }}>{erro}</p> : null}
+            {aviso ? <p className="hint">{aviso}</p> : null}
+
+            <div className="fauto-painel-fim">
+              <button type="button" className="btn primary" onClick={salvar} disabled={salvando}>
+                {salvando ? "Salvando…" : "Pronto"}
               </button>
-            )}
-            <p className="hint mt8">Sem condição, vale pra todo lead que entrar nesta etapa.</p>
-          </div>
-
-          <div className="field">
-            <label>Ativo</label>
-            <div className="funil-auto-dias">
-              {DIAS.map((d) => {
-                const marcado = rascunho.diasAtivos.includes(d.valor);
-                return (
-                  <button
-                    key={d.valor}
-                    type="button"
-                    className={`funil-auto-dia${marcado ? " on" : ""}`}
-                    onClick={() =>
-                      setRascunho({
-                        ...rascunho,
-                        diasAtivos: marcado
-                          ? rascunho.diasAtivos.filter((x) => x !== d.valor)
-                          : [...rascunho.diasAtivos, d.valor],
-                      })
-                    }
-                  >
-                    {d.label}
-                  </button>
-                );
-              })}
+              <button type="button" className="btn ghost" onClick={() => setRascunho(null)}>
+                Cancelar
+              </button>
             </div>
-            <div className="funil-auto-horas">
-              <input
-                type="time"
-                className="input"
-                value={rascunho.horaInicio}
-                onChange={(e) => setRascunho({ ...rascunho, horaInicio: e.target.value })}
-              />
-              <span>às</span>
-              <input
-                type="time"
-                className="input"
-                value={rascunho.horaFim}
-                onChange={(e) => setRascunho({ ...rascunho, horaFim: e.target.value })}
-              />
-            </div>
-            <p className="hint mt8">
-              Sem dia e sem horário, o gatilho vale sempre. Fora da janela o lead entra na etapa
-              normalmente, só não dispara.
-            </p>
           </div>
-
-          <label className="funil-auto-caixa">
-            <input
-              type="checkbox"
-              checked={rascunho.aplicarAosAtuais}
-              onChange={(e) => setRascunho({ ...rascunho, aplicarAosAtuais: e.target.checked })}
-            />
-            <span>Aplicar o gatilho aos leads que já estão nesta etapa</span>
-          </label>
-
-          {erro ? <p className="hint" style={{ color: "var(--danger)" }}>{erro}</p> : null}
-          {aviso ? <p className="hint">{aviso}</p> : null}
-
-          <div className="funil-auto-painel-fim">
-            <button type="button" className="btn" onClick={salvar} disabled={salvando}>
-              {salvando ? "Salvando…" : "Pronto"}
-            </button>
-            <button type="button" className="btn ghost" onClick={() => setRascunho(null)}>
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 }

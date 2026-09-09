@@ -16464,103 +16464,208 @@ table.tbl .name-cell .r {
 }
 
 /* ============================================================================
-   Automação do funil: a camada em que a ETAPA é dona do gatilho.
+   Automação do funil: a GRADE em que as etapas são as colunas.
 
-   Mesma largura de coluna do quadro (240px, flex 1 0) de propósito: a faixa tem que ficar
-   alinhada com as etapas, senão a leitura "esta automação é DESTA etapa" se perde.
+   As linhas atravessam o quadro inteiro de propósito. É isso que permite correr o olho por uma
+   linha e ver o que cada etapa faz naquele momento, e por uma coluna e ver tudo que uma etapa
+   dispara. Célula vazia continua desenhada: é o espaço onde falta automação.
    ============================================================================ */
-.funil-auto {
+.fauto {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fauto-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-3);
+}
+
+.fauto-topo strong {
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.fauto-corpo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 260px minmax(0, 1fr);
   gap: var(--space-3);
   align-items: start;
 }
 
-.funil-auto-grade {
-  display: flex;
-  gap: var(--space-3);
-  align-items: flex-start;
-  overflow-x: auto;
-  padding-bottom: 4px;
+/* ------------------------------------------------------------------ lado -- */
+.fauto-lado {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-3);
+  padding: var(--space-3);
 }
 
-.funil-auto-col {
-  flex: 1 0 240px;
-  min-width: 240px;
+.fauto-lado h4 {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+.fauto-fonte {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  padding: 8px 10px;
+  margin-bottom: 6px;
 }
 
-.funil-auto-col-topo {
+.fauto-fonte strong {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.fauto-fonte span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.fauto-lado-link {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--blue);
+  margin-top: 4px;
+}
+
+/* ----------------------------------------------------------------- grade -- */
+.fauto-grade {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-3);
+  overflow: auto;
+  background: var(--surface);
+}
+
+.fauto-cab {
+  display: grid;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.fauto-cab-cel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px 10px;
+  border-right: 1px solid var(--border);
+}
+
+.fauto-cab-cel:last-child {
+  border-right: 0;
+}
+
+.fauto-cab-nome {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* A barra colorida da etapa, como no topo do quadro de negócios. */
+.fauto-cab-barra {
+  height: 3px;
+  border-radius: 2px;
+}
+
+.fauto-cab-sub {
+  font-size: 11px;
   color: var(--text-muted);
-  padding: 0 2px 6px;
+}
+
+.fauto-linhas {
+  display: grid;
+}
+
+.fauto-cel {
+  min-height: 62px;
+  padding: 6px;
+  border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
 
-.funil-auto-cartao {
+/* --------------------------------------------------------------- gatilho -- */
+.fauto-gat {
+  height: 100%;
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 6px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--blue);
+  /* A faixa azul clara do gatilho. Fundo, não borda: é o que faz a automação saltar da grade
+     sem transformar cada célula numa caixa. */
+  background: color-mix(in srgb, var(--blue) 12%, var(--surface));
   border-radius: var(--radius-2);
   padding: 8px 8px 8px 10px;
 }
 
-/* Desligado continua visível, só apagado: sumir com ele faria parecer que foi apagado. */
-.funil-auto-cartao.desligado {
-  opacity: 0.55;
-  border-left-color: var(--border);
+.fauto-gat.desligado {
+  background: var(--surface-2);
+  opacity: 0.7;
 }
 
-.funil-auto-cartao-corpo {
+.fauto-gat-corpo {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  text-align: left;
+  align-items: flex-start;
+  gap: 8px;
   background: none;
   border: 0;
   padding: 0;
+  text-align: left;
   cursor: pointer;
   color: inherit;
   font: inherit;
+  min-width: 0;
 }
 
-.funil-auto-quando {
+.fauto-gat-corpo > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--navy);
+}
+
+.fauto-gat-corpo > span {
   display: flex;
-  align-items: center;
-  gap: 5px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fauto-gat-quando {
   font-size: 11px;
   color: var(--text-muted);
+  line-height: 1.3;
 }
 
-.funil-auto-robo {
+.fauto-gat-acao {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ink);
   line-height: 1.35;
 }
 
-.funil-auto-janela {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.funil-auto-cartao-acoes {
+.fauto-gat-acoes {
   display: flex;
   flex-direction: column;
   gap: 4px;
   align-items: flex-end;
 }
 
-.funil-auto-mini {
+.fauto-mini {
   background: none;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -16573,108 +16678,68 @@ table.tbl .name-cell .r {
   gap: 4px;
 }
 
-.funil-auto-mini:hover {
+.fauto-mini:hover {
   border-color: var(--blue);
   color: var(--blue);
 }
 
-.funil-auto-add {
+.fauto-add {
+  width: 100%;
+  height: 100%;
+  min-height: 46px;
   background: none;
   border: 1px dashed var(--border);
   border-radius: var(--radius-2);
-  padding: 9px 10px;
   font-size: 12px;
   color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
   justify-content: center;
+  gap: 6px;
 }
 
-.funil-auto-add:hover {
+.fauto-add:hover {
   border-color: var(--blue);
   color: var(--blue);
 }
 
-.funil-auto-painel {
-  width: 300px;
+/* ---------------------------------------------------------------- painel -- */
+.fauto-painel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  width: 340px;
+  max-width: 92vw;
+  overflow-y: auto;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-3);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.1);
   padding: var(--space-3);
-  position: sticky;
-  top: var(--space-3);
 }
 
-.funil-auto-painel-topo {
+.fauto-painel-topo {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-2);
 }
 
-.funil-auto-painel-fim {
+.fauto-painel-fim {
   display: flex;
   gap: 8px;
   margin-top: var(--space-2);
 }
 
-.funil-auto-dias {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.funil-auto-dia {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-1);
-  padding: 4px 8px;
-  font-size: 11px;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.funil-auto-dia.on {
-  background: var(--navy);
-  border-color: var(--navy);
-  color: #fff;
-}
-
-.funil-auto-horas {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.funil-auto-horas .input {
-  flex: 1;
-}
-
-/* Numa tela estreita o painel vai pra baixo da faixa: com 300px fixos ao lado, as colunas ficam
-   espremidas a ponto de o nome da etapa não caber. */
-@media (max-width: 900px) {
-  .funil-auto {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .funil-auto-painel {
-    width: auto;
-    position: static;
-  }
-}
-
-/* Seletor de "o que esta etapa faz". Uma pergunta por vez: escolher a ação antes de configurá-la
-   evita um painel cheio de campos que não valem pra ação escolhida. */
-.funil-auto-acoes {
+.fauto-acoes {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.funil-auto-acao {
+.fauto-acao {
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -16688,22 +16753,55 @@ table.tbl .name-cell .r {
   font: inherit;
 }
 
-.funil-auto-acao:hover {
+.fauto-acao:hover {
   border-color: var(--blue);
 }
 
-.funil-auto-acao strong {
+.fauto-acao strong {
   font-size: 12px;
   color: var(--ink);
 }
 
-.funil-auto-acao span {
+.fauto-acao span {
   font-size: 11px;
   color: var(--text-muted);
   line-height: 1.35;
 }
 
-.funil-auto-caixa {
+.fauto-dias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.fauto-dia {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.fauto-dia.on {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+.fauto-horas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.fauto-horas .input {
+  flex: 1;
+}
+
+.fauto-caixa {
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -16713,8 +16811,16 @@ table.tbl .name-cell .r {
   cursor: pointer;
 }
 
-.funil-auto-caixa input {
+.fauto-caixa input {
   margin-top: 2px;
+}
+
+/* Numa tela estreita a coluna da esquerda vai pra cima da grade: com 260px fixos ao lado, as
+   etapas ficam espremidas a ponto de o nome não caber. */
+@media (max-width: 900px) {
+  .fauto-corpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ============================================================================
