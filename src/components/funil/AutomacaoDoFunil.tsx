@@ -461,9 +461,11 @@ export function AutomacaoDoFunil({
                 <span className="fauto-cab-nome">{coluna.titulo}</span>
                 <span className="fauto-cab-barra" style={{ background: CORES_ETAPA[i % CORES_ETAPA.length] }} />
                 <span className="fauto-cab-sub">
-                  {(porEtapa.get(coluna.id)?.length ?? 0) > 0
-                    ? `${porEtapa.get(coluna.id)!.length} gatilho${porEtapa.get(coluna.id)!.length > 1 ? "s" : ""}`
-                    : "Sem automação"}
+                  {(porEtapa.get(coluna.id)?.length ?? 0) > 1
+                    ? `${porEtapa.get(coluna.id)!.length} gatilhos, nesta ordem`
+                    : (porEtapa.get(coluna.id)?.length ?? 0) === 1
+                      ? "1 gatilho"
+                      : "Sem automação"}
                 </span>
               </div>
             ))}
@@ -480,6 +482,15 @@ export function AutomacaoDoFunil({
                   <div key={`${coluna.id}-${linha}`} className="fauto-cel">
                     {gatilho ? (
                       <div className={`fauto-gat${gatilho.ativo ? "" : " desligado"}`}>
+                        {/* Quando a etapa tem mais de um gatilho, eles rodam NA ORDEM da coluna,
+                            um esperando o outro terminar. Sem o número, a ordem existia no
+                            servidor e não existia na tela: quem punha "enviar mensagem" e "executar
+                            robô" na mesma etapa não tinha como saber qual vinha primeiro. */}
+                        {(porEtapa.get(coluna.id)?.length ?? 0) > 1 ? (
+                          <span className="fauto-gat-ordem" title="Ordem em que este gatilho roda nesta etapa">
+                            {linha + 1}
+                          </span>
+                        ) : null}
                         <button
                           type="button"
                           className="fauto-gat-corpo"
