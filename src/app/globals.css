@@ -17334,3 +17334,90 @@ table.tbl .name-cell .r {
   border-color: var(--blue);
   background: color-mix(in srgb, var(--blue) 12%, var(--surface));
 }
+
+/* ============================================================================
+   "Adicionar próximo passo": o painel que abre pela direita no canvas.
+
+   Era um modal no meio da tela. Um modal esconde justamente o que a pessoa precisa ver enquanto
+   escolhe: de qual bloco a seta está saindo, e o que já vem antes.
+   ============================================================================ */
+.proximo-passo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  width: 320px;
+  max-width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.1);
+  padding: var(--space-3);
+}
+
+.proximo-passo-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.proximo-passo-topo strong {
+  display: block;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.proximo-passo-topo span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.proximo-passo-lista {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.proximo-passo-grupo {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: var(--space-2) 0 4px;
+}
+
+.proximo-passo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-2);
+  padding: 8px 9px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.proximo-passo-item:hover {
+  background: var(--surface-2);
+}
+
+.proximo-passo-item strong {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.proximo-passo-item span {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}

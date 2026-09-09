@@ -23,7 +23,7 @@ import "@xyflow/react/dist/style.css";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoNo, saidasDoNo } from "@/lib/automation-flow/resumo";
-import { nosDeFollowUp, sugestoesApos } from "@/lib/automation-flow/sugestoes";
+import { nosDeFollowUp } from "@/lib/automation-flow/sugestoes";
 import { validarFluxo } from "@/lib/automation-flow/validacao";
 import type { Funil } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
@@ -43,6 +43,7 @@ import { HistoricoVersoes } from "./HistoricoVersoes";
 import { Simulador } from "./Simulador";
 import { Toolbar } from "./Toolbar";
 import { ListaDePassos } from "./ListaDePassos";
+import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
 import { IconClose, IconExpandir } from "@/components/icons";
 import {
@@ -594,6 +595,18 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     };
   }, [modoPassos, fluxoId]);
 
+  /** De qual bloco e de qual saída o "+" foi clicado. Deriva fora do JSX: calcular dentro de uma
+   * função imediata no meio do render faz o lint (com razão) achar que estamos lendo valores que
+   * não deveriam ser lidos ali. */
+  const noDaAcaoRapida = useMemo(
+    () => (acaoRapida ? rfNodes.find((n) => n.id === acaoRapida.nodeId)?.data.flowNode : undefined),
+    [acaoRapida, rfNodes],
+  );
+  const saidaDaAcaoRapida = useMemo(
+    () => (noDaAcaoRapida ? saidasDoNo(noDaAcaoRapida).find((s) => s.handleId === acaoRapida?.handleId) : undefined),
+    [noDaAcaoRapida, acaoRapida],
+  );
+
   const domainNodesAtuais = useMemo(() => rfNodesToDomain(rfNodes), [rfNodes]);
   const domainEdgesAtuais = useMemo(() => rfEdgesToDomain(rfEdges), [rfEdges]);
   const problemas: ProblemaValidacao[] = useMemo(() => {
@@ -928,65 +941,20 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           ) : null}
 
           {acaoRapida ? (
-            <div className="modal-overlay" onClick={() => setAcaoRapida(null)}>
-              <div className="modal flow-escolher-gatilho" onClick={(e) => e.stopPropagation()}>
-                <div className="panel-h">
-                  <h4>O que acontece agora?</h4>
-                  <button
-                    type="button"
-                    className="modal-close-btn"
-                    aria-label="Fechar"
-                    onClick={() => setAcaoRapida(null)}
-                  >
-                    <IconClose width={13} height={13} />
-                  </button>
-                </div>
-                <div className="flow-escolher-gatilho-lista">
-                  <button
-                    type="button"
-                    className="flow-escolher-gatilho-item"
-                    onClick={() => {
-                      adicionarFollowUp(acaoRapida.nodeId, acaoRapida.handleId);
-                      setAcaoRapida(null);
-                    }}
-                  >
-                    <span className="n">Adicionar follow-up</span>
-                    <span className="r">Espera a resposta por 2 horas e, se não vier, manda uma cobrança.</span>
-                  </button>
-                  {sugestoesApos(
-                    rfNodes.find((n) => n.id === acaoRapida.nodeId)?.data.flowNode.type,
-                    rfNodes.find((n) => n.id === acaoRapida.nodeId)?.data.flowNode.category,
-                  ).map((tipo) => {
-                    const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
-                    if (!bloco) return null;
-                    return (
-                      <button
-                        type="button"
-                        key={tipo}
-                        className="flow-escolher-gatilho-item"
-                        onClick={() => {
-                          adicionarBlocoConectado(tipo, acaoRapida.nodeId, acaoRapida.handleId);
-                          setAcaoRapida(null);
-                        }}
-                      >
-                        <span className="n">{bloco.label}</span>
-                        <span className="r">{bloco.descricao}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <button
-                  type="button"
-                  className="btn ghost block"
-                  onClick={() => {
-                    setAcaoRapida(null);
-                    setLibAberta(true);
-                  }}
-                >
-                  Ver todas as ações
-                </button>
-              </div>
-            </div>
+            <PainelProximoPasso
+              tipoAnterior={noDaAcaoRapida?.type}
+              categoriaAnterior={noDaAcaoRapida?.category}
+              rotuloDaSaida={saidaDaAcaoRapida?.label || undefined}
+              onEscolher={(tipo) => {
+                adicionarBlocoConectado(tipo, acaoRapida.nodeId, acaoRapida.handleId);
+                setAcaoRapida(null);
+              }}
+              onFollowUp={() => {
+                adicionarFollowUp(acaoRapida.nodeId, acaoRapida.handleId);
+                setAcaoRapida(null);
+              }}
+              onFechar={() => setAcaoRapida(null)}
+            />
           ) : null}
 
           {menuContexto
