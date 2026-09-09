@@ -28,6 +28,8 @@ import type {
   IaClassificarData,
   IaResponderData,
   MensagemBotoesData,
+  OpcaoBotaoLista,
+  TipoComparacao,
   MensagemContatoData,
   MensagemEmailData,
   MensagemLocalizacaoData,
@@ -358,8 +360,19 @@ async function executarNo(params: {
         .filter((o) => o.rotulo?.trim())
         .map((o) => ({ id: o.id, rotulo: o.rotulo, url: o.url }));
       const envio = await acoes.perguntar({ contatoNome: nome, texto: preencher(data.texto ?? "", contato), opcoes });
-      if (!envio.ok) return { tipo: "erro", detalhe: envio.detalhe, erroTecnico: envio.erroTecnico };
-      return { tipo: "aguardar_evento", evento: "resposta", detalhe: `${envio.detalhe} Esperando a escolha do contato.` };
+      if (!envio.ok) return falhaDeEnvio(no, edges, envio);
+
+      // O prazo é o que faz a saída "Sem resposta" existir de verdade. Sem ele a pergunta espera
+      // pra sempre, e o caminho fica desenhado sem nunca acontecer.
+      const ate = data.esperaMinutos ? new Date(agora.getTime() + data.esperaMinutos * 60_000) : undefined;
+      return {
+        tipo: "aguardar_evento",
+        evento: "resposta",
+        ate,
+        detalhe: ate
+          ? `${envio.detalhe} Esperando a escolha até ${ate.toLocaleString("pt-BR")}.`
+          : `${envio.detalhe} Esperando a escolha do contato.`,
+      };
     }
 
     case "executar_robo": {
@@ -883,32 +896,87 @@ function prazoDaTarefa(data: CriarTarefaData, agora: Date): Date | undefined {
 export function saidaDaResposta(data: MensagemBotoesData, resposta: string): string | null {
   const opcoes = (data.opcoes ?? []).filter((o) => o.rotulo?.trim());
   if (!opcoes.length) return null;
-  const limpa = resposta.trim().toLowerCase();
+  const limpa = normalizar(resposta);
   if (!limpa) return null;
 
+  // Opções com comparação escolhida à mão vêm primeiro, na ordem em que a pessoa as escreveu: é
+  // ela quem decidiu como casar, e essa decisão ganha do casamento automático.
+  for (const opcao of opcoes) {
+    const comparacao = opcao.comparacao ?? "padrao";
+    if (comparacao === "padrao") continue;
+    if (casaPorComparacao(limpa, opcao, comparacao)) return opcao.id;
+  }
+
+  const padrao = opcoes.filter((o) => (o.comparacao ?? "padrao") === "padrao");
+  if (!padrao.length) return null;
+
+  // Número da posição: "1", " 1 ", "1." e afins.
   const porNumero = Number(limpa.replace(/[^\d]/g, ""));
   if (Number.isInteger(porNumero) && porNumero >= 1 && porNumero <= opcoes.length && /^\D*\d+\D*$/.test(limpa)) {
-    return opcoes[porNumero - 1].id;
+    const escolhida = opcoes[porNumero - 1];
+    if ((escolhida.comparacao ?? "padrao") === "padrao") return escolhida.id;
   }
+
   // O rótulo encurtado entra na comparação porque é ELE que a pessoa recebeu: botão do WhatsApp e
   // resposta rápida do Instagram cortam em 20 caracteres, e o clique volta com o texto cortado.
-  const exata = opcoes.find(
+  const exata = padrao.find(
     (o) =>
-      o.rotulo.trim().toLowerCase() === limpa ||
-      rotuloCurto(o.rotulo).toLowerCase() === limpa ||
-      (o.respostasAlternativas ?? []).some((r) => r.trim().toLowerCase() === limpa),
+      normalizar(o.rotulo) === limpa ||
+      normalizar(rotuloCurto(o.rotulo)) === limpa ||
+      (o.respostasAlternativas ?? []).some((r) => normalizar(r) === limpa),
   );
   if (exata) return exata.id;
-  const contida = opcoes.find((o) => limpa.includes(o.rotulo.trim().toLowerCase()));
+
+  const contida = padrao.find((o) => limpa.includes(normalizar(o.rotulo)));
   if (contida) return contida.id;
 
   // O contrário também acontece, e mais: a opção é "Sim, quero saber os valores" e a pessoa digita
   // só "sim". Vale quando a resposta é o COMEÇO do rótulo e uma opção só começa assim: com duas
   // opções começando igual ("Sim, quero" e "Sim, depois") não dá pra saber qual foi, e chutar
   // mandaria a pessoa pro ramo errado, que é pior do que cair em "outra resposta".
-  const comecam = opcoes.filter((o) => {
-    const rotulo = o.rotulo.trim().toLowerCase();
+  const comecam = padrao.filter((o) => {
+    const rotulo = normalizar(o.rotulo);
     return rotulo !== limpa && rotulo.startsWith(limpa) && /^[\wà-ü]+$/.test(limpa);
   });
   return comecam.length === 1 ? comecam[0].id : null;
+}
+
+/**
+ * Deixa a resposta comparável: sem espaço sobrando, tudo minúsculo e sem acento.
+ *
+ * Sem acento porque quem responde no celular escreve "orcamento" tanto quanto "orçamento", e
+ * tratar as duas como respostas diferentes joga a pessoa no caminho de erro por um detalhe de
+ * teclado.
+ */
+function normalizar(texto: string): string {
+  return texto
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/** As comparações escolhidas à mão na opção. */
+function casaPorComparacao(limpa: string, opcao: OpcaoBotaoLista, comparacao: TipoComparacao): boolean {
+  const alvo = normalizar(opcao.valorComparado ?? opcao.rotulo);
+  switch (comparacao) {
+    case "igual":
+      return limpa === alvo;
+    case "contem":
+      return limpa.includes(alvo);
+    case "comeca_com":
+      return limpa.startsWith(alvo);
+    case "termina_com":
+      return limpa.endsWith(alvo);
+    case "numero": {
+      const so = limpa.replace(/[^\d]/g, "");
+      return !!so && so === alvo.replace(/[^\d]/g, "");
+    }
+    // "Qualquer" pega o que sobrou. Fica por último na lista pra não engolir as outras: quem põe
+    // uma opção dessas no meio está dizendo que dali pra baixo nada mais é alcançável.
+    case "qualquer":
+      return true;
+    default:
+      return false;
+  }
 }

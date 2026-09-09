@@ -332,6 +332,17 @@ export type OpcaoBotaoLista = {
    */
   respostasAlternativas?: string[];
   /**
+   * COMO comparar o que a pessoa respondeu com esta opção.
+   *
+   * O padrão continua sendo o que sempre foi: número da posição, rótulo exato, rótulo cortado em
+   * 20 caracteres (é o que o botão do WhatsApp entrega) e as respostas alternativas. Escolher
+   * outra comparação é pra quando isso não basta: "contém" pra frase solta, "número" pra aceitar
+   * só o dígito, "qualquer" pra um caminho que pega tudo que sobrou.
+   */
+  comparacao?: TipoComparacao;
+  /** O que comparar, quando não é o próprio rótulo. Ex.: rótulo "Quero agendar", valor "1". */
+  valorComparado?: string;
+  /**
    * Botão de URL: abrir um endereço em vez de responder.
    *
    * Uma opção com URL não ramifica o fluxo. Quem clica sai pro site e não volta com resposta
@@ -354,8 +365,45 @@ export type MensagemBotoesData = {
   texto: string;
   opcoes: OpcaoBotaoLista[];
   formatoResposta?: FormatoResposta;
+  /**
+   * Quanto tempo esperar antes de seguir pelo caminho "não respondeu".
+   *
+   * Sem isto a pergunta esperava PRA SEMPRE, e a saída "Não respondeu" existia no desenho sem
+   * nunca acontecer: o pior tipo de defeito, porque parece configurado e só não dá a hora.
+   * Vazio = espera sem prazo, que continua sendo uma escolha válida pra quem não quer desistir.
+   */
+  esperaMinutos?: number;
+  /**
+   * Quantas respostas fora das opções são toleradas antes de desistir.
+   *
+   * É o que impede o "não entendi, digite 1, 2 ou 3" virar um laço sem fim com alguém do outro
+   * lado. A contagem é por execução, não por bloco: voltar pra mesma pergunta depois de errar
+   * continua contando.
+   */
+  tentativasMaximas?: number;
+  /** Pra onde ir quando as tentativas acabam. Só vale com `tentativasMaximas`. */
+  aposTentativas?: AposTentativas;
 };
 export type MensagemListaData = MensagemBotoesData;
+
+/**
+ * As formas de casar uma resposta com uma opção.
+ *
+ * "regex" fica de fora de propósito: uma expressão mal escrita trava a execução de todo mundo
+ * (o clássico catastrophic backtracking), e não há como validar isso na tela de forma confiável.
+ * "contém" e "começa com" resolvem o que quase todo mundo tentaria fazer com regex aqui.
+ */
+export type TipoComparacao =
+  | "padrao"
+  | "igual"
+  | "contem"
+  | "comeca_com"
+  | "termina_com"
+  | "numero"
+  | "qualquer";
+
+/** O que fazer quando a pessoa erra a resposta vezes demais. */
+export type AposTentativas = "outra_resposta" | "encerrar" | "humano";
 
 /** Bloco que começa outra automação pro mesmo contato. */
 export type ExecutarRoboData = { fluxoId?: string; fluxoNome?: string };

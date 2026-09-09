@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import type { ConfiguracoesFluxo, FlowEdge, FlowNode, MensagemBotoesData } from "@/lib/automation-flow/types";
+import type {
+  AposTentativas,
+  ConfiguracoesFluxo,
+  FlowEdge,
+  FlowNode,
+  MensagemBotoesData,
+} from "@/lib/automation-flow/types";
 
 import { acoesReais, type AcoesDoMotor } from "./acoes";
 import {
@@ -210,7 +216,43 @@ export async function continuarComResposta(params: {
     const porId = params.idDaOpcao && (dados.opcoes ?? []).some((o) => o.id === params.idDaOpcao) ? params.idDaOpcao : null;
     const escolhida = porId ?? saidaDaResposta(dados, params.texto);
     if (escolhida) {
+      // Acertou: zera o contador, senão um acerto depois de dois erros deixaria a pessoa a um
+      // erro de ser expulsa numa pergunta seguinte.
+      delete contexto[chaveTentativas(no.id)];
       saida = escolhida;
+    } else if (dados.tentativasMaximas && contarTentativa(contexto, no.id) >= dados.tentativasMaximas) {
+      // Errou vezes demais. É o que impede o "não entendi, digite 1, 2 ou 3" virar um laço sem
+      // fim com alguém do outro lado.
+      const destino = destinoAposTentativas(dados.aposTentativas);
+      if (destino === "encerrar") {
+        await registrarPasso({
+          execucaoId: execucao.id,
+          workspaceId: execucao.workspaceId,
+          noId: no.id,
+          noTipo: no.type,
+          titulo: no.titulo,
+          resultado: "ok",
+          detalhe: `${dados.tentativasMaximas} respostas fora das opções. Encerrando.`,
+        });
+        await encerrarExecucao({ execucaoId: execucao.id, situacao: "concluida" });
+        return true;
+      }
+      saida = temSaida(versao.edges, no.id, "tentativas_esgotadas") ? "tentativas_esgotadas" : undefined;
+      if (!saida) {
+        // Configurou o limite e não ligou o caminho. Encerrar é melhor do que continuar
+        // perguntando pra sempre, que é justamente o que o limite existe pra evitar.
+        await registrarPasso({
+          execucaoId: execucao.id,
+          workspaceId: execucao.workspaceId,
+          noId: no.id,
+          noTipo: no.type,
+          titulo: no.titulo,
+          resultado: "erro",
+          detalhe: `Acabaram as tentativas e o caminho "Errou demais" não está ligado a nada.`,
+        });
+        await encerrarExecucao({ execucaoId: execucao.id, situacao: "concluida" });
+        return true;
+      }
     } else if (temSaida(versao.edges, no.id, "outra_resposta")) {
       saida = "outra_resposta";
     } else {
@@ -276,7 +318,13 @@ export async function retomarEsperasVencidas(limite = 50): Promise<{ retomadas: 
         continue;
       }
 
-      const saida = temSaida(versao.edges, execucao.aguardandoNoId, "timeout") ? "timeout" : undefined;
+      // Qual saída o tempo esgotado usa depende do bloco. Numa espera é "timeout"; numa PERGUNTA
+      // é "não respondeu", que é o nome que a pessoa vê no desenho. Usar "timeout" nos dois faria
+      // a pergunta seguir por um caminho que não existe, e a execução morreria em silêncio.
+      const noParado = versao.nodes.find((n) => n.id === execucao.aguardandoNoId);
+      const ehPergunta = noParado?.type === "mensagem_botoes" || noParado?.type === "mensagem_lista";
+      const nomeDaSaida = ehPergunta ? "nao_respondeu" : "timeout";
+      const saida = temSaida(versao.edges, execucao.aguardandoNoId, nomeDaSaida) ? nomeDaSaida : undefined;
       await continuarDeDepoisDe({ execucao, versao, noId: execucao.aguardandoNoId, saida, contexto: execucao.contexto });
       retomadas++;
     } catch (erro) {
@@ -335,4 +383,27 @@ function temSaida(edges: FlowEdge[], noId: string, handle: string): boolean {
 /** Conta uma execução no contador que a lista de automações mostra. Falhar aqui não derruba nada. */
 export async function contarExecucao(fluxoId: string): Promise<void> {
   await prisma.fluxoAutomacao.update({ where: { id: fluxoId }, data: { execucoes: { increment: 1 } } }).catch(() => {});
+}
+
+/** Onde o contador de erros de cada pergunta mora dentro do contexto da execução. */
+function chaveTentativas(noId: string): string {
+  return `tentativas:${noId}`;
+}
+
+/**
+ * Soma mais um erro nesta pergunta e devolve o total.
+ *
+ * A contagem é por execução e por bloco: voltar pra mesma pergunta depois de errar continua
+ * contando, que é o que faz o limite valer no laço "não entendi, tente de novo".
+ */
+function contarTentativa(contexto: ContextoExecucaoPersistido, noId: string): number {
+  const chave = chaveTentativas(noId);
+  const atual = Number(contexto[chave] ?? 0) + 1;
+  contexto[chave] = atual;
+  return atual;
+}
+
+/** O padrão é seguir pelo caminho "Errou demais". Encerrar só quando ela pediu. */
+function destinoAposTentativas(escolha: AposTentativas | undefined): AposTentativas {
+  return escolha ?? "outra_resposta";
 }

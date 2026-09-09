@@ -2,7 +2,30 @@
 
 import { useRef } from "react";
 
-import type { CanalMensagem, FormatoResposta, MensagemBotoesData, OpcaoBotaoLista } from "@/lib/automation-flow/types";
+import type {
+  AposTentativas,
+  CanalMensagem,
+  FormatoResposta,
+  MensagemBotoesData,
+  OpcaoBotaoLista,
+  TipoComparacao,
+} from "@/lib/automation-flow/types";
+
+/** Como casar a resposta com esta opção. O padrão cobre quase tudo; o resto é pra casos difíceis. */
+const COMPARACOES: { valor: TipoComparacao; label: string }[] = [
+  { valor: "padrao", label: "Padrão (número, texto do botão ou alternativas)" },
+  { valor: "igual", label: "Exatamente igual a" },
+  { valor: "contem", label: "Contém" },
+  { valor: "comeca_com", label: "Começa com" },
+  { valor: "termina_com", label: "Termina com" },
+  { valor: "numero", label: "É o número" },
+  { valor: "qualquer", label: "Qualquer resposta (pega o resto)" },
+];
+
+const APOS_TENTATIVAS: { valor: AposTentativas; label: string }[] = [
+  { valor: "outra_resposta", label: "Seguir pelo caminho \"Errou demais\"" },
+  { valor: "encerrar", label: "Encerrar a automação" },
+];
 import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";
 import { IconClose } from "@/components/icons";
@@ -188,6 +211,36 @@ export function MensagemOpcoesForm({
               </button>
             </div>
             <div className="flow-opcao-alternativas">
+              <label>Como casar a resposta</label>
+              <select
+                className="input"
+                value={opcao.comparacao ?? "padrao"}
+                onChange={(e) => atualizarOpcao(opcao.id, { comparacao: e.target.value as TipoComparacao })}
+                aria-label={`Comparação da opção ${i + 1}`}
+              >
+                {COMPARACOES.map((c) => (
+                  <option key={c.valor} value={c.valor}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              {(opcao.comparacao ?? "padrao") !== "padrao" && opcao.comparacao !== "qualquer" ? (
+                <input
+                  className="input mt8"
+                  placeholder={`O que comparar (vazio = "${opcao.rotulo || "o rótulo"}")`}
+                  value={opcao.valorComparado ?? ""}
+                  onChange={(e) => atualizarOpcao(opcao.id, { valorComparado: e.target.value })}
+                  aria-label={`Valor comparado da opção ${i + 1}`}
+                />
+              ) : null}
+              {opcao.comparacao === "qualquer" ? (
+                <p className="hint mt8">
+                  Pega tudo que chegar. Deixe por último: as opções abaixo desta nunca são
+                  alcançadas.
+                </p>
+              ) : null}
+            </div>
+            <div className="flow-opcao-alternativas">
               <label>Endereço (deixa vazio pra ser um botão de resposta)</label>
               <input
                 className="input"
@@ -242,9 +295,67 @@ export function MensagemOpcoesForm({
           + Botão de URL
         </button>
         <p className="hint mt8">
-          Cada opção vira uma saída no bloco. Conecte ela a um próximo passo no canvas. As saídas &quot;Outra resposta&quot; e
-          &quot;Não respondeu&quot; já existem sempre.
+          Cada opção vira uma saída no bloco. Conecte ela a um próximo passo no canvas. A saída
+          &quot;Outra resposta&quot; existe sempre; &quot;Sem resposta&quot; e &quot;Errou
+          demais&quot; aparecem quando você configura prazo e tentativas abaixo.
         </p>
+      </div>
+
+      <div className="field">
+        <label>Esperar a resposta por</label>
+        <div className="funil-auto-horas">
+          <input
+            type="number"
+            min={0}
+            className="input"
+            value={data.esperaMinutos ?? ""}
+            placeholder="Sem prazo"
+            onChange={(e) =>
+              onChange({ ...data, esperaMinutos: e.target.value ? Number(e.target.value) : undefined })
+            }
+          />
+          <span>minutos</span>
+        </div>
+        <p className="hint mt8">
+          Vazio = espera pra sempre. Com prazo, aparece a saída &quot;Sem resposta&quot;, que é por
+          onde sai o follow-up de quem não respondeu.
+        </p>
+      </div>
+
+      <div className="field">
+        <label>Tolerar quantas respostas fora das opções</label>
+        <input
+          type="number"
+          min={0}
+          className="input"
+          value={data.tentativasMaximas ?? ""}
+          placeholder="Sem limite"
+          onChange={(e) =>
+            onChange({ ...data, tentativasMaximas: e.target.value ? Number(e.target.value) : undefined })
+          }
+        />
+        {data.tentativasMaximas ? (
+          <>
+            <select
+              className="input mt8"
+              value={data.aposTentativas ?? "outra_resposta"}
+              onChange={(e) => onChange({ ...data, aposTentativas: e.target.value as AposTentativas })}
+            >
+              {APOS_TENTATIVAS.map((a) => (
+                <option key={a.valor} value={a.valor}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+            <p className="hint mt8">
+              Depois de {data.tentativasMaximas} erro{data.tentativasMaximas > 1 ? "s" : ""}, o
+              fluxo para de repetir a pergunta. É o que impede o &quot;não entendi&quot; virar um
+              laço sem fim com alguém do outro lado. Acertar zera a contagem.
+            </p>
+          </>
+        ) : (
+          <p className="hint mt8">Vazio = repete a pergunta pra sempre enquanto a pessoa errar.</p>
+        )}
       </div>
     </div>
   );

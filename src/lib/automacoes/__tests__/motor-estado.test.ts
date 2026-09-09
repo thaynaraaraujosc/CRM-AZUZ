@@ -123,6 +123,43 @@ describe("pergunta com opções", () => {
     expect(saidaDaResposta(ambiguo, "sim")).toBeNull();
   });
 
+  it("ignora acento e caixa: quem responde no celular escreve dos dois jeitos", () => {
+    const acento: MensagemBotoesData = {
+      ...data,
+      opcoes: [{ id: "o1", rotulo: "Orçamento" }],
+    };
+    expect(saidaDaResposta(acento, "orcamento")).toBe("o1");
+    expect(saidaDaResposta(acento, "ORÇAMENTO")).toBe("o1");
+    expect(saidaDaResposta(acento, "  Orçamento  ")).toBe("o1");
+  });
+
+  it("comparação escolhida à mão ganha do casamento automático", () => {
+    const manual: MensagemBotoesData = {
+      ...data,
+      opcoes: [
+        { id: "o1", rotulo: "Agendar", comparacao: "contem", valorComparado: "marcar" },
+        { id: "o2", rotulo: "Outra coisa" },
+      ],
+    };
+    expect(saidaDaResposta(manual, "quero marcar um horário")).toBe("o1");
+    // "agendar" não casa mais: a opção passou a comparar por "marcar".
+    expect(saidaDaResposta(manual, "agendar")).toBeNull();
+  });
+
+  it("\"qualquer resposta\" pega o que sobrou", () => {
+    const pega: MensagemBotoesData = {
+      ...data,
+      opcoes: [
+        { id: "o1", rotulo: "Sim" },
+        { id: "resto", rotulo: "Qualquer outra", comparacao: "qualquer" },
+      ],
+    };
+    expect(saidaDaResposta(pega, "bom dia")).toBe("resto");
+    // A opção com comparação à mão vem antes, então "sim" também cai nela. É o preço de pôr um
+    // "qualquer" no meio, e o formulário avisa isso.
+    expect(saidaDaResposta(pega, "sim")).toBe("resto");
+  });
+
   it("número fora da lista não vira opção", () => {
     expect(saidaDaResposta(data, "7")).toBeNull();
   });

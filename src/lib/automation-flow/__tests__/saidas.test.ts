@@ -33,11 +33,11 @@ describe("saídas de um bloco", () => {
     expect(saidasDoNo(no("executar_robo", "acao")).map((s) => s.handleId)).toEqual([undefined]);
   });
 
-  it("pergunta continua com as saídas dela, sem caminho de falha", () => {
+  it("a pergunta tem uma saída por opção, mais outra resposta e falha", () => {
     const saidas = saidasDoNo(
       no("mensagem_botoes", "mensagem", { opcoes: [{ id: "o1", rotulo: "Sim" }] }),
     );
-    expect(saidas.map((s) => s.handleId)).toEqual(["o1", "outra_resposta", "nao_respondeu"]);
+    expect(saidas.map((s) => s.handleId)).toEqual(["o1", "outra_resposta", "falha"]);
   });
 
   it("botão de URL não vira saída: quem clica sai e não responde", () => {
@@ -49,10 +49,35 @@ describe("saídas de um bloco", () => {
         ],
       }),
     );
-    expect(saidas.map((s) => s.handleId)).toEqual(["o1", "outra_resposta", "nao_respondeu"]);
+    expect(saidas.map((s) => s.handleId)).toEqual(["o1", "outra_resposta", "falha"]);
     // A numeração segue a posição real na lista, não a posição depois de tirar os de URL: é o
     // número que o contato vê na mensagem.
     expect(saidas[0].label).toBe("1 · Falar com atendente");
+  });
+
+  it("a pergunta só oferece \"sem resposta\" quando tem prazo", () => {
+    const semPrazo = saidasDoNo(no("mensagem_botoes", "mensagem", { opcoes: [{ id: "o1", rotulo: "Sim" }] }));
+    expect(semPrazo.some((s) => s.handleId === "nao_respondeu")).toBe(false);
+
+    const comPrazo = saidasDoNo(
+      no("mensagem_botoes", "mensagem", { opcoes: [{ id: "o1", rotulo: "Sim" }], esperaMinutos: 30 }),
+    );
+    expect(comPrazo.some((s) => s.handleId === "nao_respondeu")).toBe(true);
+  });
+
+  it("a pergunta só oferece \"errou demais\" quando tem limite de tentativas", () => {
+    const semLimite = saidasDoNo(no("mensagem_botoes", "mensagem", { opcoes: [{ id: "o1", rotulo: "Sim" }] }));
+    expect(semLimite.some((s) => s.handleId === "tentativas_esgotadas")).toBe(false);
+
+    const comLimite = saidasDoNo(
+      no("mensagem_botoes", "mensagem", { opcoes: [{ id: "o1", rotulo: "Sim" }], tentativasMaximas: 3 }),
+    );
+    expect(comLimite.some((s) => s.handleId === "tentativas_esgotadas")).toBe(true);
+  });
+
+  it("a pergunta também tem caminho de falha no envio", () => {
+    const saidas = saidasDoNo(no("mensagem_botoes", "mensagem", { opcoes: [{ id: "o1", rotulo: "Sim" }] }));
+    expect(saidas.some((s) => s.handleId === "falha")).toBe(true);
   });
 
   it("bloco de fim não tem saída nenhuma", () => {
