@@ -1066,6 +1066,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       {execucoesAbertas ? <HistoricoExecucoes fluxoId={fluxoId} onFechar={() => setExecucoesAbertas(false)} /> : null}
       {historicoAberto ? (
         <HistoricoVersoes
+          fluxoId={fluxoId}
           versoes={fluxo.historicoVersoes}
           versaoAtual={fluxo.versaoAtual}
           onFechar={() => setHistoricoAberto(false)}

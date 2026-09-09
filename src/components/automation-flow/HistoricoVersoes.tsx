@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import type { VersaoFluxo } from "@/lib/automation-flow/types";
 import { IconClose } from "@/components/icons";
 
@@ -7,18 +9,43 @@ function formatarData(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
+/**
+ * As versões vêm do SERVIDOR, da mesma tabela que o motor executa.
+ *
+ * Antes vinham do Json guardado dentro do fluxo, que o editor mantinha por conta própria. As duas
+ * listas podiam divergir: o histórico mostrava uma versão e o cliente recebia outra. Ler do mesmo
+ * lugar que executa é o que faz "restaurar a versão 3" significar a mesma coisa nos dois lados.
+ */
 export function HistoricoVersoes({
+  fluxoId,
   versoes,
   versaoAtual,
   onFechar,
   onRestaurar,
 }: {
+  fluxoId: string;
+  /** O que o editor tem em mãos. Aparece enquanto o servidor responde, pra a lista não piscar. */
   versoes: VersaoFluxo[];
   versaoAtual: number;
   onFechar: () => void;
   onRestaurar: (versao: VersaoFluxo) => void;
 }) {
-  const ordenadas = [...versoes].sort((a, b) => b.versao - a.versao);
+  const [doServidor, setDoServidor] = useState<VersaoFluxo[] | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    fetch(`/api/automacoes-fluxos/${fluxoId}/versoes`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((lista: VersaoFluxo[] | null) => {
+        if (vivo && Array.isArray(lista)) setDoServidor(lista);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [fluxoId]);
+
+  const ordenadas = [...(doServidor ?? versoes)].sort((a, b) => b.versao - a.versao);
 
   return (
     <div className="flow-side-overlay" role="dialog" aria-label="Histórico de versões" onClick={onFechar}>
