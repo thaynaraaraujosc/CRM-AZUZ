@@ -51,7 +51,9 @@ function AutomacoesConteudo() {
       <AbasAutomacoes />
 
       <div className="content">
-        <div className="field" style={{ maxWidth: 340, padding: 0, marginBottom: "var(--space-3)" }}>
+        {/* O seletor respira do que vem antes e do que vem depois: o rótulo, o campo e o nome do
+            funil abaixo eram três coisas de pesos diferentes empilhadas com a mesma distância. */}
+        <div className="field" style={{ maxWidth: 340, padding: 0, marginBottom: "var(--space-5)" }}>
           <label>Qual funil você quer automatizar</label>
           <select
             className="input"

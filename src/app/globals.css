@@ -16596,22 +16596,31 @@ table.tbl .name-cell .r {
   min-height: 0;
 }
 
+/*
+ * O cabeçalho da grade e o que vem antes dele.
+ *
+ * Estava tudo com o mesmo respiro pequeno: o rótulo colado no seletor, o seletor colado no nome do
+ * funil, o nome colado na grade. Quatro coisas de importâncias diferentes empilhadas com a mesma
+ * distância viram um bloco só, e o olho não sabe onde uma termina e a outra começa. O espaço é o
+ * que faz a hierarquia aparecer sem precisar de linha, caixa ou cor.
+ */
 .fauto-topo {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: var(--space-3);
+  padding-bottom: var(--space-4);
 }
 
 .fauto-topo strong {
-  font-size: 15px;
+  font-size: 17px;
+  line-height: 1.25;
   color: var(--ink);
 }
 
 .fauto-corpo {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
-  gap: var(--space-3);
+  gap: var(--space-4);
   align-items: start;
 }
 
@@ -16620,7 +16629,7 @@ table.tbl .name-cell .r {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-3);
-  padding: var(--space-3);
+  padding: var(--space-4);
 }
 
 .fauto-lado h4 {
@@ -16629,18 +16638,18 @@ table.tbl .name-cell .r {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-3);
 }
 
 .fauto-fonte {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
-  padding: 8px 10px;
-  margin-bottom: 6px;
+  padding: 10px 12px;
+  margin-bottom: var(--space-2);
 }
 
 .fauto-fonte strong {
@@ -16655,6 +16664,7 @@ table.tbl .name-cell .r {
 
 .fauto-lado-link {
   display: inline-block;
+  margin-top: var(--space-2);
   font-size: 12px;
   color: var(--blue);
   margin-top: 4px;

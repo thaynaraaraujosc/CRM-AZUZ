@@ -519,7 +519,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     const novo = autoLayout(rfNodes, rfEdges);
     setRfNodes(novo);
     persist(novo, rfEdges);
-    requestAnimationFrame(() => fitView({ padding: 0.2, duration: 300 }));
+    requestAnimationFrame(() => centralizarTudo());
   }
 
   useEffect(() => {
@@ -665,6 +665,17 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * O piscar existe pelo mesmo motivo: num fluxo com vinte blocos parecidos, o que está no centro
    * da tela não é obviamente o que foi clicado.
    */
+  /**
+   * Enquadra o fluxo inteiro no meio da tela.
+   *
+   * `fitView` sem mais nada obedecia o piso de zoom do React Flow (0.5), e um fluxo maior que isso
+   * simplesmente não cabia: o enquadramento parava no limite e metade do desenho ficava fora da
+   * vista. Com `minZoom` liberado na chamada, "Centralizar" volta a significar o que promete.
+   */
+  function centralizarTudo() {
+    fitView({ duration: 300, padding: 0.2, minZoom: 0.05, maxZoom: 1.5 });
+  }
+
   function irParaONode(nodeId: string) {
     const alvo = rfNodes.find((n) => n.id === nodeId);
     if (!alvo) return;
@@ -1034,6 +1045,19 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             nodes={nodesComInicio}
             edges={edgesComInicio}
             nodeTypes={nodeTypes}
+            /*
+             * Zoom bem largo nos dois sentidos.
+             *
+             * O padrão do React Flow é de 0.5 a 2, e o piso de 0.5 era o defeito: "Centralizar"
+             * respeita esse limite, então um fluxo maior que a tela em 50% não cabia de jeito
+             * nenhum. O enquadramento parava no limite e o resto ficava pra fora, exatamente o
+             * sintoma de clicar em Centralizar e o desenho sumir.
+             *
+             * 0.05 deixa caber um fluxo de dezenas de blocos; 4 deixa ler o texto de um bloco
+             * sem apertar os olhos.
+             */
+            minZoom={0.05}
+            maxZoom={4}
             nodesDraggable={modoConstrucao}
             nodesConnectable={modoConstrucao}
             edgesFocusable={modoConstrucao}
@@ -1078,7 +1102,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               <ControlButton title="Diminuir zoom" aria-label="Diminuir zoom" onClick={() => zoomOut({ duration: 200 })}>
                 −
               </ControlButton>
-              <ControlButton title="Centralizar fluxo" aria-label="Centralizar fluxo" onClick={() => fitView({ duration: 300, padding: 0.2 })}>
+              <ControlButton title="Centralizar fluxo" aria-label="Centralizar fluxo" onClick={() => centralizarTudo()}>
                 <IconExpandir width={13} height={13} />
               </ControlButton>
             </Controls>
@@ -1107,7 +1131,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 >
                   {minimapaVisivel ? "Ocultar minimapa" : "Mostrar minimapa"}
                 </button>
-                <button type="button" className="btn ghost" onClick={() => setCenter(0, 0, { zoom: 1, duration: 300 })}>
+                <button type="button" className="btn ghost" onClick={() => centralizarTudo()}>
                   Centralizar
                 </button>
               </div>
