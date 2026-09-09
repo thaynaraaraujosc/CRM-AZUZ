@@ -18336,3 +18336,33 @@ table.tbl .name-cell .r {
   font-size: 10px;
   font-weight: 700;
 }
+
+/*
+ * O bloco pisca depois de alguém clicar num problema.
+ *
+ * Centralizar sozinho não basta: num fluxo com vinte blocos parecidos, o que está no meio da tela
+ * não é obviamente o que foi clicado. O anel pulsa três vezes e some, tempo suficiente pra o olho
+ * pegar e curto o bastante pra não virar ruído permanente.
+ */
+@keyframes flow-piscar {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.35);
+  }
+}
+
+.flow-node-piscando {
+  border-radius: var(--radius-2);
+  animation: flow-piscar 0.6s ease-in-out 3;
+}
+
+/* Quem prefere menos movimento na tela recebe o destaque parado, sem perder a informação. */
+@media (prefers-reduced-motion: reduce) {
+  .flow-node-piscando {
+    animation: none;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.35);
+  }
+}

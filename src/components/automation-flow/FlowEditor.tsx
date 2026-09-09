@@ -184,6 +184,9 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [historyLen, setHistoryLen] = useState(1);
   const salvandoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clipboardRef = useRef<DomainFlowNode[]>([]);
+  /** O bloco que está piscando agora, depois de alguém clicar num problema. */
+  const [nodePiscando, setNodePiscando] = useState<string | null>(null);
+  const piscarRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Fluxo que não está na lista: pede a lista de novo, uma vez, antes de dizer que não existe.
@@ -651,6 +654,33 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     setPainelGatilhoAberto(false);
   }
 
+  /**
+   * Leva a tela até um bloco e pisca nele.
+   *
+   * Clicar num problema tem que MOSTRAR o problema. Antes isto usava `fitView` com folga de 150%,
+   * e o resultado era enquadrar o bloco tão de longe que ele virava um pontinho: a tela mexia, e
+   * quem estava procurando continuava sem achar. `setCenter` num zoom de leitura resolve, porque o
+   * enquadramento passa a ser uma decisão e não uma consequência do tamanho do bloco.
+   *
+   * O piscar existe pelo mesmo motivo: num fluxo com vinte blocos parecidos, o que está no centro
+   * da tela não é obviamente o que foi clicado.
+   */
+  function irParaONode(nodeId: string) {
+    const alvo = rfNodes.find((n) => n.id === nodeId);
+    if (!alvo) return;
+    setSelectedNodeIds([nodeId]);
+
+    // O centro do bloco, não o canto: `position` é o canto superior esquerdo, e centralizar por ele
+    // deixa o bloco encostado na borda de cima em vez de no meio.
+    const largura = alvo.measured?.width ?? 280;
+    const altura = alvo.measured?.height ?? 120;
+    setCenter(alvo.position.x + largura / 2, alvo.position.y + altura / 2, { zoom: 1.1, duration: 400 });
+
+    setNodePiscando(nodeId);
+    if (piscarRef.current) clearTimeout(piscarRef.current);
+    piscarRef.current = setTimeout(() => setNodePiscando(null), 1800);
+  }
+
   function removerOpcaoAresta(nodeId: string, opcaoId: string) {
     const novoEdges = rfEdges.filter((e) => !(e.source === nodeId && e.sourceHandle === opcaoId));
     setRfEdges(novoEdges);
@@ -822,7 +852,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     () =>
       rfNodes.map((n) => ({
         ...n,
-        className: nodesRelacionados && !nodesRelacionados.has(n.id) ? "flow-node-apagado" : undefined,
+        className: [
+          nodesRelacionados && !nodesRelacionados.has(n.id) ? "flow-node-apagado" : "",
+          n.id === nodePiscando ? "flow-node-piscando" : "",
+        ]
+          .filter(Boolean)
+          .join(" ") || undefined,
         data: {
           ...n.data,
           problemas: problemasPorNode.get(n.id) ?? [],
@@ -833,7 +868,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onAdicionarApos: modoConstrucao ? (handleId: string | undefined) => setAcaoRapida({ nodeId: n.id, handleId }) : undefined,
         },
       })),
-    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis],
+    [rfNodes, problemasPorNode, saidasConectadasPorNode, entradasPorNode, ordemNarrativaPorNode, entenderFluxoAtivo, nodesRelacionados, modoConstrucao, funis, nodePiscando],
   );
   /**
    * De qual bloco o fluxo parte: o gatilho, ou o primeiro bloco sem nada chegando nele.
@@ -1304,12 +1339,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onRemoverOpcaoAresta={removerOpcaoAresta}
           onTrocarTipo={trocarTipoDoNode}
           onEditarGatilho={area === "social" ? () => setPainelGatilhoAberto(true) : undefined}
-          onSelecionarNode={(nodeId) => {
-            setSelectedNodeIds([nodeId]);
-            // Clicar num problema não pode só selecionar o node fora da vista. Centraliza a
-            // viewport nele, senão quem tem um fluxo grande não acha o que precisa corrigir.
-            requestAnimationFrame(() => fitView({ nodes: [{ id: nodeId }], duration: 300, padding: 1.5, maxZoom: 1 }));
-          }}
+          onSelecionarNode={irParaONode}
         />
       </div>
 

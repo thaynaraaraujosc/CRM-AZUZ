@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import {
   CAPACIDADES,
   blocoValeNoCanal,
@@ -117,6 +118,8 @@ describe("cada gatilho só na área onde ele acontece", () => {
       "instagram_mencao_story",
       "instagram_publicacao_compartilhada",
       "instagram_midia_recebida",
+      "instagram_reacao_recebida",
+      "instagram_resposta_comentario",
       "comentario_instagram",
     ] as const) {
       expect(blocoValeNaArea(tipo, "comercial")).toBe(false);
@@ -129,6 +132,14 @@ describe("cada gatilho só na área onde ele acontece", () => {
     expect(blocoValeNaArea("mensagem_modelo_whatsapp", "social")).toBe(false);
     expect(blocoValeNaArea("mensagem_email", "comercial")).toBe(true);
     expect(blocoValeNaArea("mensagem_email", "social")).toBe(false);
+  });
+
+  it("não deixa nenhum bloco de Instagram no construtor do funil", () => {
+    // A varredura completa, e não uma lista escrita à mão: bloco novo do grupo Instagram que
+    // esqueça de declarar o recurso que exige aparece aqui, e não na tela do cliente.
+    const doInstagram = BLOCOS_DISPONIVEIS.filter((b) => b.grupo === "instagram");
+    expect(doInstagram.length).toBeGreaterThan(0);
+    expect(doInstagram.filter((b) => blocoValeNaArea(b.tipo, "comercial"))).toEqual([]);
   });
 
   it("deixa as ações de CRM nas duas áreas", () => {

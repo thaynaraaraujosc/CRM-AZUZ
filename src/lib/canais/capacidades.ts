@@ -262,7 +262,10 @@ const RECURSO_EXIGIDO: Partial<Record<FlowNodeType, keyof CapacidadesCanal>> = {
   ocultar_comentario_instagram: "comentarios",
   comentario_instagram: "comentarios",
   instagram_resposta_comentario: "comentarios",
-  instagram_reacao_recebida: "reacao",
+  // O GATILHO de reação é um evento do Instagram, não a capacidade de reagir. O WhatsApp também
+  // reage, então mapeá-lo em "reacao" deixava este gatilho aparecer no construtor do funil, onde
+  // ele nunca dispara. Quem reage é `reagir_mensagem`, logo abaixo, e esse sim é "reacao".
+  instagram_reacao_recebida: "eventosProprios",
   instagram_midia_recebida: "eventosProprios",
   instagram_publicacao_compartilhada: "eventosProprios",
   instagram_story_respondido: "eventosProprios",
