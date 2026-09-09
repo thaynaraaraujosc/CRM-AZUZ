@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -42,6 +43,16 @@ type PatchFluxo = Partial<{
 
 type AutomationFlowContextValue = {
   fluxos: FluxoAutomacao[];
+  /** A lista já veio do servidor pelo menos uma vez. Antes disso, "não achei" não quer dizer nada. */
+  carregado: boolean;
+  /**
+   * Busca a lista de novo.
+   *
+   * Existe porque nem todo robô nasce por aqui: o botão "Criar um novo robô" da grade do funil cria
+   * direto no banco, por outra rota. Sem uma forma de recarregar, esse robô não existia pra esta
+   * tela até a página inteira ser recarregada, e abrir o editor dele dava "esse fluxo não existe".
+   */
+  recarregarFluxos: () => Promise<void>;
   criarFluxo: (dados: Partial<Omit<FluxoAutomacao, "id">> & { nome: string }) => FluxoAutomacao;
   /** Sempre escreve no rascunho (nodes/edges/configuracoes). Nunca mexe em `status`/versão publicada. */
   atualizarFluxo: (id: string, patch: PatchFluxo) => void;
@@ -100,13 +111,28 @@ function criarRemoto(fluxo: FluxoAutomacao) {
 export function AutomationFlowProvider({ children }: { children: ReactNode }) {
   const [fluxos, setFluxos] = useState<FluxoAutomacao[]>([]);
   const [execucoes, setExecucoes] = useState<RegistroExecucao[]>([]);
+  /**
+   * A lista já foi buscada pelo menos uma vez?
+   *
+   * Sem isso não dá pra distinguir "ainda não carregou" de "não existe", e quem abre o editor no
+   * meio da carga vê "esse fluxo não existe" no lugar de esperar meio segundo.
+   */
+  const [carregado, setCarregado] = useState(false);
+
+  const recarregar = useCallback(async () => {
+    const resposta = await fetch("/api/automacoes-fluxos", { cache: "no-store" });
+    if (!resposta.ok) throw new Error(`A lista de fluxos respondeu ${resposta.status}.`);
+    setFluxos((await resposta.json()) as FluxoAutomacao[]);
+    setCarregado(true);
+  }, []);
 
   useEffect(() => {
-    fetch("/api/automacoes-fluxos")
-      .then((r) => r.json())
-      .then((dados: FluxoAutomacao[]) => setFluxos(dados))
+    // Referência, não chamada: o `setState` fica dentro do `then`, fora do corpo do efeito. É o
+    // mesmo padrão usado no resto do CRM, e o que a regra do React 19 pede.
+    Promise.resolve()
+      .then(recarregar)
       .catch((erro) => console.error("Falha ao carregar fluxos de automação da API:", erro));
-  }, []);
+  }, [recarregar]);
 
   function tocarFluxo(id: string, atualizar: (f: FluxoAutomacao) => FluxoAutomacao) {
     let atualizado: FluxoAutomacao | undefined;
@@ -261,6 +287,8 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
     <AutomationFlowContext.Provider
       value={{
         fluxos,
+        carregado,
+        recarregarFluxos: recarregar,
         criarFluxo,
         atualizarFluxo,
         publicarFluxo,

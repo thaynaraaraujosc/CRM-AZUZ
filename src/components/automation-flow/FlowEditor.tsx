@@ -107,13 +107,15 @@ function explicacaoDoNo(flowNode: DomainFlowNode, funis: Funil[]): string {
 }
 
 function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
-  const { fluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo } = useAutomationFlows();
+  const { fluxos, carregado, recarregarFluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo } =
+    useAutomationFlows();
   const fluxo = fluxos.find((f) => f.id === fluxoId);
   // Fluxo sem área é comercial: é o que todo fluxo criado antes desta coluna é.
   const area = fluxo?.area ?? "comercial";
 
   const { screenToFlowPosition, fitView, setCenter, zoomIn, zoomOut } = useReactFlow();
   const { funis } = useFunis();
+
 
   /**
    * De qual etapa do funil este robô começa, quando ele começa de uma.
@@ -138,6 +140,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [rfEdges, setRfEdges] = useState<FlowRFEdge[]>(() => domainEdgesToRF(fluxo?.edges ?? []));
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [salvando, setSalvando] = useState(false);
+  /** Já pedimos a lista de novo por causa deste fluxo? Uma vez basta: mais que isso vira laço. */
+  const jaPediuListaRef = useRef(false);
+  /** A busca extra já terminou. Só depois dela "não achei" pode virar "não existe". */
+  const [desistiuDeAchar, setDesistiuDeAchar] = useState(false);
   /**
    * O que foi mexido e ainda NÃO foi gravado.
    *
@@ -178,6 +184,24 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [historyLen, setHistoryLen] = useState(1);
   const salvandoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clipboardRef = useRef<DomainFlowNode[]>([]);
+
+  /**
+   * Fluxo que não está na lista: pede a lista de novo, uma vez, antes de dizer que não existe.
+   *
+   * Nem todo robô nasce nesta tela. O "Criar um novo robô" da grade do funil cria direto no banco,
+   * por outra rota, e a lista do navegador foi buscada uma vez só, quando a página abriu. O robô
+   * recém-criado não estava nela, e abrir o editor dele dava "esse fluxo não existe (mais)" pra
+   * algo que tinha acabado de ser criado.
+   */
+  useEffect(() => {
+    if (fluxo || !carregado || jaPediuListaRef.current) return;
+    jaPediuListaRef.current = true;
+    recarregarFluxos()
+      .catch(() => {
+        /* falhou a busca: sobra o "não existe", que é a informação honesta que resta */
+      })
+      .finally(() => setDesistiuDeAchar(true));
+  }, [fluxo, carregado, recarregarFluxos]);
   const toastIdRef = useRef(0);
 
   function avisar(texto: string) {
@@ -904,7 +928,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   if (!fluxo) {
     return (
       <div className="flow-shell-empty">
-        <p>Esse fluxo não existe (mais).</p>
+        <p>{carregado && desistiuDeAchar ? "Esse fluxo não existe (mais)." : "Carregando o fluxo…"}</p>
       </div>
     );
   }

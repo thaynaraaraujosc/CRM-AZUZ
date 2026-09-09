@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { IconAutomacoes, IconClose } from "@/components/icons";
 import { CondicaoForm } from "@/components/automation-flow/forms/CondicaoForm";
+import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MigrarGatilhos } from "./MigrarGatilhos";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
 import {
@@ -180,6 +181,7 @@ export function AutomacaoDoFunil({
   onFechar?: () => void;
 }) {
   const router = useRouter();
+  const { recarregarFluxos } = useAutomationFlows();
   const [gatilhos, setGatilhos] = useState<GatilhoEtapaVisao[]>([]);
   const [robos, setRobos] = useState<RoboResumo[]>([]);
   const [canais, setCanais] = useState<CanalConectado[]>([]);
@@ -397,6 +399,9 @@ export function AutomacaoDoFunil({
       if (!resposta.ok) throw new Error(String(resposta.status));
       const robo = (await resposta.json()) as RoboResumo;
       setRobos((atual) => [...atual, robo]);
+      // O robô nasceu direto no banco, por esta rota. Sem avisar o resto da tela, ele não existe
+      // pro editor até a página inteira ser recarregada.
+      await recarregarFluxos().catch(() => {});
       setRascunho({ ...rascunho, fluxoId: robo.id });
       setAviso(`"${robo.nome}" criado. Salve o gatilho e depois monte o robô na aba Automações.`);
     } catch {
