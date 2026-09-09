@@ -310,8 +310,18 @@ export function AutomacaoDoFunil({
 
       await recarregar();
       const fluxoParaAbrir = rascunho.tipoAcao === "robo" ? rascunho.fluxoId : "";
+      const etapaDoGatilho = rascunho.etapaId;
       setRascunho(null);
       if (abrirFluxogramaDepois && fluxoParaAbrir) {
+        // O robô passa a saber de qual funil e de qual etapa ele é. Sem isso, abrir o fluxograma
+        // levava a um canvas que perguntava de novo "como esta automação deve começar?": a
+        // pergunta já tinha sido respondida aqui, na etapa, e responder duas vezes é o caminho
+        // curto pra o gatilho disparar duas vezes.
+        await fetch(`/api/automacoes-fluxos/${fluxoParaAbrir}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ funilId, etapaId: etapaDoGatilho }),
+        }).catch(() => {});
         router.push(`/automacoes/editor/${fluxoParaAbrir}`);
       }
     } catch {
@@ -329,8 +339,18 @@ export function AutomacaoDoFunil({
     await recarregar();
   }
 
-  /** Abre o fluxograma do robô de um gatilho já salvo, direto da grade. */
-  function abrirFluxograma(fluxoId: string) {
+  /**
+   * Abre o fluxograma do robô de um gatilho já salvo, direto da grade.
+   *
+   * Grava antes de qual funil e de qual etapa aquele robô é. É o que faz o canvas abrir sabendo
+   * quando ele começa, em vez de perguntar de novo uma coisa que já foi respondida aqui.
+   */
+  async function abrirFluxograma(fluxoId: string, etapaId: string) {
+    await fetch(`/api/automacoes-fluxos/${fluxoId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ funilId, etapaId }),
+    }).catch(() => {});
     router.push(`/automacoes/editor/${fluxoId}`);
   }
 
@@ -466,7 +486,7 @@ export function AutomacaoDoFunil({
                             <button
                               type="button"
                               className="fauto-mini"
-                              onClick={() => abrirFluxograma(gatilho.fluxoId!)}
+                              onClick={() => void abrirFluxograma(gatilho.fluxoId!, gatilho.etapaId)}
                               title="Abrir o fluxograma deste robô"
                             >
                               Gerenciar
@@ -619,7 +639,7 @@ export function AutomacaoDoFunil({
                     disabled={salvando}
                     onClick={() => void salvar(true)}
                   >
-                    Salvar e abrir o fluxograma
+                    Gerenciar
                   </button>
                 ) : null}
                 <p className="hint mt8">

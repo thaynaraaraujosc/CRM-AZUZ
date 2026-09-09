@@ -111,8 +111,28 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const fluxo = fluxos.find((f) => f.id === fluxoId);
   // Fluxo sem área é comercial: é o que todo fluxo criado antes desta coluna é.
   const area = fluxo?.area ?? "comercial";
+
   const { screenToFlowPosition, fitView, setCenter, zoomIn, zoomOut } = useReactFlow();
   const { funis } = useFunis();
+
+  /**
+   * De qual etapa do funil este robô começa, quando ele começa de uma.
+   *
+   * Quando existe, o gatilho NÃO mora no canvas: ele mora na etapa, e foi configurado lá (quando
+   * executar, em que dias, com que condição). Aqui se configura o resto: a mensagem, o que chega,
+   * o que fazer com a resposta. Perguntar "como esta automação deve começar?" de novo faria a
+   * pessoa responder duas vezes a mesma coisa, e dois gatilhos pro mesmo fluxo é como ele dispara
+   * em duplicidade.
+   */
+  const funilIdDoFluxo = fluxo?.funilId;
+  const etapaIdDoFluxo = fluxo?.etapaId;
+  const inicioNoFunil = useMemo(() => {
+    if (!funilIdDoFluxo || !etapaIdDoFluxo) return null;
+    const funil = funis.find((f) => f.id === funilIdDoFluxo);
+    const etapa = funil?.colunas.find((c) => c.id === etapaIdDoFluxo);
+    if (!funil || !etapa) return null;
+    return { funilNome: funil.nome, etapaTitulo: etapa.titulo };
+  }, [funilIdDoFluxo, etapaIdDoFluxo, funis]);
 
   const [rfNodes, setRfNodes] = useState<FlowRFNode[]>(() => domainNodesToRF(fluxo?.nodes ?? []));
   const [rfEdges, setRfEdges] = useState<FlowRFEdge[]>(() => domainEdgesToRF(fluxo?.edges ?? []));
@@ -900,6 +920,31 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             {minimapaVisivel ? (
               <MiniMap pannable zoomable nodeColor={(n) => CORES_CATEGORIA[String(n.type)] ?? "#94a3b8"} />
             ) : null}
+            {inicioNoFunil ? (
+              <Panel position="top-left">
+                {/* O começo e o fim ficam à vista o tempo todo, como no Kommo: quem abre um fluxo
+                    com quinze blocos precisa saber de onde ele parte sem procurar, e precisa de um
+                    jeito curto de fechar o caminho que acabou de montar. */}
+                <div className="flow-inicio-fim">
+                  <span className="flow-inicio-fim-chip">
+                    <strong>Início</strong>
+                    <span>
+                      Lead entra em “{inicioNoFunil.etapaTitulo}” · {inicioNoFunil.funilNome}
+                    </span>
+                  </span>
+                  {modoConstrucao ? (
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      title="Acrescenta um bloco de encerramento no canvas"
+                      onClick={() => adicionarBloco("encerrar_fluxo")}
+                    >
+                      + Encerrar fluxo
+                    </button>
+                  ) : null}
+                </div>
+              </Panel>
+            ) : null}
             <Panel position="top-right">
               <div style={{ display: "flex", gap: 8 }}>
                 <button
@@ -962,7 +1007,29 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             </div>
           ) : null}
 
-          {modoConstrucao && rfNodes.length === 0 && area !== "social" ? (
+          {modoConstrucao && rfNodes.length === 0 && area !== "social" && inicioNoFunil ? (
+            <div className="flow-inicio-vazio">
+              <div className="flow-inicio-etapa">
+                <span className="flow-inicio-etapa-selo">Início</span>
+                <div className="flow-inicio-etapa-corpo">
+                  <h4>Quando o lead entra em “{inicioNoFunil.etapaTitulo}”</h4>
+                  <p className="hint">
+                    {inicioNoFunil.funilNome}. Quando executar, os dias e a condição foram
+                    configurados na etapa, em Automatizar funil. Aqui você monta o que o robô faz.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn primary mt8"
+                    onClick={() => setAcaoRapida({ nodeId: "", handleId: undefined })}
+                  >
+                    + Adicionar primeiro passo
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {modoConstrucao && rfNodes.length === 0 && area !== "social" && !inicioNoFunil ? (
             <div className="flow-inicio-vazio">
               <p className="flow-inicio-vazio-titulo">Como esta automação deve começar?</p>
               <p className="flow-inicio-vazio-sub">Toda automação começa a partir de um gatilho.</p>
@@ -1041,11 +1108,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               area={area}
               rotuloDaSaida={saidaDaAcaoRapida?.label || undefined}
               onEscolher={(tipo) => {
-                adicionarBlocoConectado(tipo, acaoRapida.nodeId, acaoRapida.handleId);
+                // `nodeId` vazio = "primeiro passo" de um robô que começa na etapa do funil: não há
+                // bloco anterior a que conectar, então o passo entra solto no canvas.
+                if (acaoRapida.nodeId) adicionarBlocoConectado(tipo, acaoRapida.nodeId, acaoRapida.handleId);
+                else adicionarBloco(tipo, { x: 80, y: 80 });
                 setAcaoRapida(null);
               }}
               onFollowUp={() => {
-                adicionarFollowUp(acaoRapida.nodeId, acaoRapida.handleId);
+                if (acaoRapida.nodeId) adicionarFollowUp(acaoRapida.nodeId, acaoRapida.handleId);
                 setAcaoRapida(null);
               }}
               onFechar={() => setAcaoRapida(null)}

@@ -18080,3 +18080,65 @@ table.tbl .name-cell .r {
   background: var(--surface-active);
 }
 
+
+/* Início e fim à vista no canvas do robô de etapa. Quem abre um fluxo com quinze blocos precisa
+ * saber de onde ele parte sem procurar. */
+.flow-inicio-fim {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.flow-inicio-fim-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 11px;
+  border: 1px solid var(--blue);
+  border-radius: var(--radius-2);
+  background: var(--surface-elevated);
+}
+
+.flow-inicio-fim-chip strong {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--blue);
+}
+
+.flow-inicio-fim-chip span {
+  font-size: 11.5px;
+  color: var(--ink);
+}
+
+/* O cartão de início no canvas vazio: diz que o gatilho já foi configurado na etapa, e por isso a
+ * pergunta "como esta automação começa?" não aparece de novo aqui. */
+.flow-inicio-etapa {
+  width: 380px;
+  border: 1px solid var(--blue);
+  border-radius: var(--radius-3, 12px);
+  background: var(--surface-elevated);
+  overflow: hidden;
+  text-align: left;
+}
+
+.flow-inicio-etapa-selo {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--blue);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-bottom-right-radius: var(--radius-2);
+}
+
+.flow-inicio-etapa-corpo {
+  padding: var(--space-3);
+}
+
+.flow-inicio-etapa-corpo h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: var(--ink);
+}
