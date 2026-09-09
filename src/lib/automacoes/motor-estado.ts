@@ -1,5 +1,6 @@
 import { avaliarGrupoCondicoes } from "@/lib/automation-flow/avaliacao";
 import { rotuloCurto } from "@/lib/conversas/enviar-pergunta";
+import { somarMinutosUteis, type Expediente } from "@/lib/expediente";
 import type {
   AdicionarEtiquetaData,
   AguardarData,
@@ -27,7 +28,10 @@ import type {
   ExecutarRoboData,
   IaClassificarData,
   IaResponderData,
+  EncerrarFluxoData,
   MensagemBotoesData,
+  MotivoParada,
+  NotaInternaData,
   OpcaoBotaoLista,
   TipoComparacao,
   MensagemContatoData,
@@ -346,8 +350,17 @@ async function executarNo(params: {
           detalhe: ate ? `Esperando resposta até ${ate.toLocaleString("pt-BR")}.` : "Esperando a resposta do contato.",
         };
       }
-      const ate = calcularEspera(data, agora);
-      if (!ate) return { tipo: "erro", detalhe: "Bloco de espera sem tempo configurado." };
+      const ate = data.somenteExpediente
+        ? calcularEsperaUtil(data, agora, contexto)
+        : calcularEspera(data, agora);
+      if (!ate) {
+        return {
+          tipo: "erro",
+          detalhe: data.somenteExpediente
+            ? "Espera em horário de expediente, mas o expediente não tem nenhum dia aberto."
+            : "Bloco de espera sem tempo configurado.",
+        };
+      }
       return { tipo: "aguardar_tempo", ate, detalhe: `Esperando até ${ate.toLocaleString("pt-BR")}.` };
     }
 
@@ -373,6 +386,14 @@ async function executarNo(params: {
           ? `${envio.detalhe} Esperando a escolha até ${ate.toLocaleString("pt-BR")}.`
           : `${envio.detalhe} Esperando a escolha do contato.`,
       };
+    }
+
+    case "nota_interna": {
+      const data = no.data as NotaInternaData;
+      const texto = preencher(data.texto ?? "", contato).trim();
+      if (!texto) return { tipo: "erro", detalhe: "Nota sem texto." };
+      const r = await acoes.anotarNoLead({ contatoNome: nome, texto });
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
     }
 
     case "executar_robo": {
@@ -758,8 +779,18 @@ async function executarNo(params: {
       return { tipo: "encerrar", situacao: "concluida", detalhe: "Encaminhado pra atendimento humano." };
     }
 
-    case "encerrar_fluxo":
-      return { tipo: "encerrar", situacao: "concluida" };
+    case "encerrar_fluxo": {
+      const data = no.data as EncerrarFluxoData;
+      const rotulo = data.motivo ? MOTIVO_ROTULO[data.motivo] : null;
+      const observacao = data.observacao?.trim();
+      // O motivo vai pro histórico. Não muda o que acontece: explica POR QUE aquele lead parou,
+      // que é o que separa "deu tudo certo" de "ninguém respondeu" pra quem olhar depois.
+      return {
+        tipo: "encerrar",
+        situacao: "concluida",
+        detalhe: [rotulo, observacao].filter(Boolean).join(": ") || undefined,
+      };
+    }
 
     default:
       // Bloco que ainda não tem execução real. Segue em frente e diz isso no histórico, em vez de
@@ -980,3 +1011,41 @@ function casaPorComparacao(limpa: string, opcao: OpcaoBotaoLista, comparacao: Ti
       return false;
   }
 }
+
+/**
+ * A espera contando só o expediente.
+ *
+ * O expediente entra no CONTEXTO da execução, posto lá no início: o motor é síncrono e não pode
+ * ir ao banco no meio de um bloco. Sem expediente no contexto (execução antiga, ou workspace sem
+ * horário), cai na conta normal, que é melhor do que travar o fluxo.
+ */
+function calcularEsperaUtil(
+  data: AguardarData,
+  agora: Date,
+  contexto: ContextoExecucaoPersistido,
+): Date | null {
+  const expediente = contexto.expediente as Expediente | undefined;
+  if (!expediente?.dias) return calcularEspera(data, agora);
+
+  const minutos =
+    data.modo === "minutos"
+      ? (data.valor ?? 0)
+      : data.modo === "horas"
+        ? (data.valor ?? 0) * 60
+        : data.modo === "dias"
+          ? (data.valor ?? 0) * 24 * 60
+          : 0;
+  if (!minutos) return calcularEspera(data, agora);
+
+  return somarMinutosUteis(expediente, agora, minutos);
+}
+
+/** Como cada motivo de parada aparece no histórico. */
+const MOTIVO_ROTULO: Record<MotivoParada, string> = {
+  concluido: "Concluído",
+  transferido: "Transferido para atendimento humano",
+  sem_resposta: "Sem resposta",
+  erro: "Erro",
+  desqualificado: "Lead desqualificado",
+  outro: "Outro motivo",
+};

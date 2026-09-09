@@ -98,6 +98,7 @@ export type FlowNodeType =
   | "cancelar_agendamento"
   | "enviar_notificacao"
   | "executar_robo"
+  | "nota_interna"
   | "pausar_automacoes"
   | "cancelar_automacoes"
   | "chamar_webhook"
@@ -426,6 +427,24 @@ export type MensagemEmailData = {
   seSemEmail?: SeSemEmailModo;
 };
 export type NotificacaoInternaData = { paraEquipe?: string; mensagem: string };
+
+/**
+ * Nota no histórico do lead. NÃO é mensagem: o cliente não recebe nada.
+ *
+ * Existe separado da "notificação interna" porque são coisas diferentes: a notificação avisa
+ * alguém agora, a nota fica registrada pra quem abrir o lead depois. Misturar as duas faria toda
+ * anotação virar um aviso, e o time pararia de ler os avisos.
+ */
+export type NotaInternaData = { texto: string };
+
+/** Por que a automação parou. Aparece no histórico e é o que explica um lead que não avançou. */
+export type MotivoParada =
+  | "concluido"
+  | "transferido"
+  | "sem_resposta"
+  | "erro"
+  | "desqualificado"
+  | "outro";
 export type EnviarFormularioData = {
   formularioOrigem?: "interno" | "externo";
   formularioId?: string;
@@ -450,6 +469,14 @@ export type AguardarData = {
    * saber quais são faria a mensagem sair no dia errado. O campo fica pra não invalidar fluxo já
    * salvo com ele. */
   pularFeriados?: boolean;
+  /**
+   * Conta só o tempo DENTRO do expediente do workspace.
+   *
+   * "Pausar 2 horas úteis" às 17h20 de sexta não termina às 19h20 de sexta: termina às 9h20 de
+   * segunda. É a diferença entre um follow-up que chega no meio do atendimento e um que chega de
+   * madrugada. O horário vem de Configurações, um só pro workspace inteiro.
+   */
+  somenteExpediente?: boolean;
   /** Se definido, gera as saídas "ok"/"timeout" no FlowEdge.sourceHandle. */
   tempoMaximo?: { valor: number; unidade: string };
 };
@@ -551,7 +578,12 @@ export type EncaminharHumanoData = {
   tempoValor?: number;
   tempoUnidade?: string;
 };
-export type EncerrarFluxoData = { motivo?: string };
+/**
+ * Encerra a execução aqui. O `motivo` não muda o que acontece: ele explica no histórico POR QUE
+ * aquele lead parou, que é o que separa "deu tudo certo" de "ninguém respondeu" quando alguém for
+ * olhar depois.
+ */
+export type EncerrarFluxoData = { motivo?: MotivoParada; observacao?: string };
 
 /* -------------------------------------------------------------------------- */
 /* Nó e aresta genéricos                                                     */

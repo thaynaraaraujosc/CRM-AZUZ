@@ -794,6 +794,16 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     dataPadrao: () => ({ mensagem: "" }),
   },
   {
+    tipo: "nota_interna",
+    categoria: "acao",
+    grupo: "crm",
+    label: "Adicionar nota ao lead",
+    descricao: "Registra uma anotação no histórico. O cliente não recebe nada.",
+    icone: "StickyNote",
+    corClasse: corDaCategoria("acao"),
+    dataPadrao: () => ({ texto: "" }),
+  },
+  {
     tipo: "executar_robo",
     categoria: "acao",
     grupo: "crm",

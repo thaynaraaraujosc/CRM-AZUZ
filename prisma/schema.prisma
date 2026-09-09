@@ -246,6 +246,7 @@ model Workspace {
   respostasFormulario   RespostaFormulario[]
   fluxosAutomacao       FluxoAutomacao[]
   gatilhosEtapa         GatilhoEtapa[]
+  expediente            Expediente?
   documentos            Documento[]
   modelosPersonalizados ModeloPersonalizado[]
   integracoes           Integracao[]
@@ -1255,4 +1256,26 @@ model GatilhoEtapa {
 
   @@index([workspaceId, etapaId])
   @@index([workspaceId, funilId])
+}
+
+/**
+ * O horário de funcionamento do workspace. Uma linha por workspace.
+ * Existe pra ser reutilizado: pausa de automação, follow-up e gatilho de etapa precisam da mesma
+ * resposta pra "estamos abertos agora?". Sem um lugar só, cada um teria a própria configuração e
+ * elas divergiriam: o follow-up de duas horas dispararia às três da manhã enquanto o gatilho
+ * respeitava o comercial.
+ */
+model Expediente {
+  workspaceId String    @id
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  /// Por dia da semana: 1 = segunda … 7 = domingo. Dia ausente = fechado.
+  /// Formato: { "1": { "de": "08:00", "ate": "18:00" }, "6": { "de": "08:00", "ate": "12:00" } }
+  dias Json
+
+  /// Fuso do workspace. "America/Sao_Paulo" enquanto todo mundo é do Brasil, mas guardado porque
+  /// um cliente em outro fuso faria toda a conta de horário errar em silêncio.
+  fuso String @default("America/Sao_Paulo")
+
+  atualizadoEm DateTime @updatedAt
 }

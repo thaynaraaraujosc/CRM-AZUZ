@@ -170,7 +170,7 @@ function construirRecuperarLead(): FluxoAutomacao {
   nodes.push(no("rl-resp1", "alterar_responsavel", "acao", manterResp, "Manter responsável atual"));
   edges.push(aresta("rl-etq2", "rl-resp1"));
 
-  const fimSim: EncerrarFluxoData = { motivo: "Lead respondeu: fluxo de recuperação encerrado." };
+  const fimSim: EncerrarFluxoData = { observacao: "Lead respondeu: fluxo de recuperação encerrado." };
   nodes.push(no("rl-fim1", "encerrar_fluxo", "fim", fimSim));
   edges.push(aresta("rl-resp1", "rl-fim1"));
 
@@ -219,7 +219,7 @@ function construirRecuperarLead(): FluxoAutomacao {
   nodes.push(no("rl-tarefa1", "criar_tarefa", "acao", tarefaRecuperado));
   edges.push(aresta("rl-etq4", "rl-tarefa1"));
 
-  const fimRecuperado: EncerrarFluxoData = { motivo: "Lead recuperado após follow-up." };
+  const fimRecuperado: EncerrarFluxoData = { observacao: "Lead recuperado após follow-up." };
   nodes.push(no("rl-fim2", "encerrar_fluxo", "fim", fimRecuperado));
   edges.push(aresta("rl-tarefa1", "rl-fim2"));
 
@@ -235,7 +235,7 @@ function construirRecuperarLead(): FluxoAutomacao {
   nodes.push(no("rl-etq5", "adicionar_etiqueta", "acao", etqSemResposta));
   edges.push(aresta("rl-notif1", "rl-etq5"));
 
-  const fimSemResposta: EncerrarFluxoData = { motivo: "Lead permaneceu sem resposta." };
+  const fimSemResposta: EncerrarFluxoData = { observacao: "Lead permaneceu sem resposta." };
   nodes.push(no("rl-fim3", "encerrar_fluxo", "fim", fimSemResposta));
   edges.push(aresta("rl-etq5", "rl-fim3"));
 
@@ -388,7 +388,7 @@ function construirDistribuirLead(): FluxoAutomacao {
   nodes.push(no("dl-espera", "aguardar", "espera", esperaAtendimento, "Aguardar primeiro atendimento"));
   edges.push(aresta("dl-notif", "dl-espera"));
 
-  const fimOk: EncerrarFluxoData = { motivo: "Primeiro atendimento feito dentro do prazo." };
+  const fimOk: EncerrarFluxoData = { observacao: "Primeiro atendimento feito dentro do prazo." };
   nodes.push(no("dl-fim-ok", "encerrar_fluxo", "fim", fimOk));
   edges.push(aresta("dl-espera", "dl-fim-ok", "ok"));
 
@@ -412,7 +412,7 @@ function construirDistribuirLead(): FluxoAutomacao {
   );
   edges.push(aresta("dl-status", "dl-dist2"));
 
-  const fimTimeout: EncerrarFluxoData = { motivo: "Atendimento atrasado: escalado pro gestor." };
+  const fimTimeout: EncerrarFluxoData = { observacao: "Atendimento atrasado: escalado pro gestor." };
   nodes.push(no("dl-fim-timeout", "encerrar_fluxo", "fim", fimTimeout));
   edges.push(aresta("dl-dist2", "dl-fim-timeout"));
 
@@ -524,7 +524,7 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-sat-negocio", "criar_negocio", "acao", negocioRecompra, "Oportunidade de recompra"));
   edges.push(aresta("pv-sat-espera", "pv-sat-negocio"));
 
-  const fimSatisfeito: EncerrarFluxoData = { motivo: "Pós-venda concluído: cliente satisfeito." };
+  const fimSatisfeito: EncerrarFluxoData = { observacao: "Pós-venda concluído: cliente satisfeito." };
   nodes.push(no("pv-sat-fim", "encerrar_fluxo", "fim", fimSatisfeito));
   edges.push(aresta("pv-sat-negocio", "pv-sat-fim"));
 
@@ -545,7 +545,7 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-ajuda-pausa", "pausar_automacoes", "acao", {}));
   edges.push(aresta("pv-ajuda-encam", "pv-ajuda-pausa"));
 
-  const fimAjuda: EncerrarFluxoData = { motivo: "Encaminhado pro suporte humano." };
+  const fimAjuda: EncerrarFluxoData = { observacao: "Encaminhado pro suporte humano." };
   nodes.push(no("pv-ajuda-fim", "encerrar_fluxo", "fim", fimAjuda));
   edges.push(aresta("pv-ajuda-pausa", "pv-ajuda-fim"));
 
@@ -566,7 +566,7 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-insat-encam", "encaminhar_humano", "humano", encamInsat));
   edges.push(aresta("pv-insat-tarefa", "pv-insat-encam"));
 
-  const fimInsatisfeito: EncerrarFluxoData = { motivo: "Encerra mensagens automáticas: cliente insatisfeito segue com atendimento humano." };
+  const fimInsatisfeito: EncerrarFluxoData = { observacao: "Encerra mensagens automáticas: cliente insatisfeito segue com atendimento humano." };
   nodes.push(no("pv-insat-fim", "encerrar_fluxo", "fim", fimInsatisfeito));
   edges.push(aresta("pv-insat-encam", "pv-insat-fim"));
 
@@ -588,7 +588,7 @@ function construirPosVenda(): FluxoAutomacao {
   nodes.push(no("pv-naoresp-msg", "mensagem_texto", "mensagem", msgLembreteUnico));
   edges.push(aresta("pv-naoresp-espera", "pv-naoresp-msg"));
 
-  const fimNaoRespondeu: EncerrarFluxoData = { motivo: "Sem resposta após o lembrete único. Fluxo encerrado." };
+  const fimNaoRespondeu: EncerrarFluxoData = { observacao: "Sem resposta após o lembrete único. Fluxo encerrado." };
   nodes.push(no("pv-naoresp-fim", "encerrar_fluxo", "fim", fimNaoRespondeu));
   edges.push(aresta("pv-naoresp-msg", "pv-naoresp-fim"));
 
@@ -654,7 +654,7 @@ function construirBoasVindas(): FluxoAutomacao {
   nodes.push(no("bv-tarefa-recorrente", "criar_tarefa", "acao", tarefaRecorrente));
   edges.push(aresta("bv-etq-recorrente", "bv-tarefa-recorrente"));
 
-  const fimRecorrente: EncerrarFluxoData = { motivo: "Paciente recorrente encaminhado pro atendimento de retorno." };
+  const fimRecorrente: EncerrarFluxoData = { observacao: "Paciente recorrente encaminhado pro atendimento de retorno." };
   nodes.push(no("bv-fim-recorrente", "encerrar_fluxo", "fim", fimRecorrente));
   edges.push(aresta("bv-tarefa-recorrente", "bv-fim-recorrente"));
 
@@ -675,7 +675,7 @@ function construirBoasVindas(): FluxoAutomacao {
   nodes.push(no("bv-tarefa-novo", "criar_tarefa", "acao", tarefaNovo));
   edges.push(aresta("bv-etq-novo", "bv-tarefa-novo"));
 
-  const fimNovo: EncerrarFluxoData = { motivo: "Lead novo triado: tarefa criada pra equipe." };
+  const fimNovo: EncerrarFluxoData = { observacao: "Lead novo triado: tarefa criada pra equipe." };
   nodes.push(no("bv-fim-novo", "encerrar_fluxo", "fim", fimNovo));
   edges.push(aresta("bv-tarefa-novo", "bv-fim-novo"));
 
@@ -772,7 +772,7 @@ function construirAtendimentoToldos(): FluxoAutomacao {
     nodes.push(no(`at-tarefa-${i}`, "criar_tarefa", "acao", tarefaData));
     edges.push(aresta(`at-etq-${i}`, `at-tarefa-${i}`));
 
-    const fimData: EncerrarFluxoData = { motivo: `Caminho "${etiqueta}" concluído.` };
+    const fimData: EncerrarFluxoData = { observacao: `Caminho "${etiqueta}" concluído.` };
     nodes.push(no(`at-fim-${i}`, "encerrar_fluxo", "fim", fimData));
     edges.push(aresta(`at-tarefa-${i}`, `at-fim-${i}`));
   });

@@ -17273,3 +17273,40 @@ table.tbl .name-cell .r {
   margin-top: var(--space-2);
 }
 
+
+/* Horário de funcionamento. Um dia fechado é o dia AUSENTE, não um horário zerado: uma janela de
+   zero minuto nunca é verdadeira e a conta de "próxima abertura" nunca chegaria nela. */
+.expediente-dias {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.expediente-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.expediente-dia {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.expediente-horas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expediente-horas .input {
+  width: 110px;
+}

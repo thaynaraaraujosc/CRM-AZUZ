@@ -11,11 +11,13 @@ import {
   IconSwitch,
   IconWhatsApp,
   IconBell,
+  IconRelogio,
 } from "@/components/icons";
 
 export type CategoriaId =
   | "aparencia"
   | "notificacoes"
+  | "expediente"
   | "seguranca"
   | "etiquetas"
   | "importacao"
@@ -54,6 +56,7 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
     categorias: [
       { id: "aparencia", label: "Aparência", descricao: "Tema claro ou escuro.", Icon: IconImage },
       { id: "notificacoes", label: "Notificações", descricao: "Quando e como você é avisado.", Icon: IconBell },
+      { id: "expediente", label: "Horário de funcionamento", descricao: "Quando o CRM considera que vocês estão abertos.", Icon: IconRelogio },
       { id: "seguranca", label: "Segurança", descricao: "Autenticação, sessões e políticas de acesso.", Icon: IconEscudo },
       { id: "etiquetas", label: "Etiquetas", descricao: "Marcações usadas em contatos e automações.", Icon: IconErro },
       { id: "importacao", label: "Importação e exportação", descricao: "Trazer ou tirar dados do CRM.", Icon: IconImportar, emBreve: true },

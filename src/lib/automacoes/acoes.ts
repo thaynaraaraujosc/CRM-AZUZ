@@ -85,6 +85,8 @@ export type AcoesDoMotor = {
   escolherAtendente: (params: { equipe?: string; metodo?: string }) => Promise<ResultadoAcao>;
   /** Começa OUTRA automação pro mesmo contato. É o bloco "Executar outro robô". */
   executarRobo: (params: { contatoNome: string; fluxoId: string }) => Promise<ResultadoAcao>;
+  /** Registra uma nota no histórico do lead. Não manda nada pro cliente. */
+  anotarNoLead: (params: { contatoNome: string; texto: string }) => Promise<ResultadoAcao>;
   /** Chama um endereço externo, com repetição em caso de falha temporária. */
   chamarWebhook: (params: { url: string; corpo: Record<string, unknown> }) => Promise<ResultadoAcao>;
   /** Grava campos no contato (etiquetas, responsável, campo personalizado, valor…). */
@@ -548,6 +550,21 @@ export function acoesReais(params: {
       }
     },
 
+    async anotarNoLead({ contatoNome, texto }) {
+      try {
+        await anotarNaLinhaDoTempo({
+          workspaceId,
+          contatoNome,
+          canal: "CRM",
+          tipo: "nota",
+          descricao: texto,
+        });
+        return ok("Nota registrada no lead.");
+      } catch (erro) {
+        return falha("Falha ao registrar a nota.", mensagemDoErro(erro));
+      }
+    },
+
     async executarRobo({ contatoNome, fluxoId }) {
       if (!fluxoId) return falha("O bloco não tem robô escolhido.");
       const fluxo = await prisma.fluxoAutomacao.findFirst({
@@ -751,6 +768,10 @@ export function acoesSecas(): AcoesDoMotor & { intencoes: string[] } {
     async escolherAtendente({ equipe }) {
       return registrar(`Escolheria um atendente${equipe ? ` da equipe ${equipe}` : ""}`);
     },
+    async anotarNoLead({ texto }) {
+      return ok(`(simulação) anotaria no lead: "${texto.slice(0, 40)}"`);
+    },
+
     async executarRobo({ fluxoId }) {
       return ok(`(simulação) começaria o robô ${fluxoId}`);
     },

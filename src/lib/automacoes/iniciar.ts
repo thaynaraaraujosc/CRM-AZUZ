@@ -23,6 +23,7 @@ import { comportamentoForaDaJanela, dentroDaJanela, proximaAbertura } from "./ja
 import { podeIniciar } from "./limites";
 import { proximaAresta, rodarExecucao, saidaDaResposta, type FimDaRodada } from "./motor-estado";
 import { publicarVersao, versaoAtualPublicada, versaoPorId, type VersaoPublicada } from "./versoes";
+import { carregarExpediente } from "@/lib/expediente-servidor";
 
 /**
  * A porta de entrada do motor com estado: começar uma execução, continuar uma que esperava
@@ -116,6 +117,10 @@ export async function iniciarFluxoComEstado(params: {
     return { situacao: "cancelada", passos: 0, detalhe: "Fora do horário de funcionamento da automação." };
   }
 
+  // O expediente entra no contexto AQUI, uma vez. O motor é síncrono e não pode ir ao banco no
+  // meio de um bloco; a pausa "só em horário comercial" precisa dele pra fazer a conta.
+  const expediente = await carregarExpediente(params.workspaceId);
+
   const execucao = await criarExecucao({
     workspaceId: params.workspaceId,
     fluxoId: params.fluxoId,
@@ -124,7 +129,7 @@ export async function iniciarFluxoComEstado(params: {
     contatoNome: params.contatoNome,
     gatilho: params.gatilho,
     noInicialId: inicio.alvoId,
-    contexto: { contato: params.contato },
+    contexto: { contato: params.contato, expediente },
   });
 
   if (fora && comportamento === "aguardar") {

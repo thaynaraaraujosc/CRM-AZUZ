@@ -14,6 +14,8 @@ import type {
   DistribuirDisponibilidadeData,
   EncaminharEquipeData,
   EncaminharHumanoData,
+  AtualizarCampoData,
+  EncerrarFluxoData,
   ExecutarRoboData,
   DecisaoMultiplaData,
   IaClassificarData,
@@ -46,6 +48,8 @@ import { DecisaoMultiplaForm } from "./forms/DecisaoMultiplaForm";
 import { IaClassificarForm } from "./forms/IaClassificarForm";
 import { GenericForm } from "./forms/GenericForm";
 import { ExecutarRoboForm } from "./forms/ExecutarRoboForm";
+import { EncerrarFluxoForm } from "./forms/EncerrarFluxoForm";
+import { AtualizarCampoForm } from "./forms/AtualizarCampoForm";
 import { MensagemContatoForm } from "./forms/MensagemContatoForm";
 import { MensagemEmailForm } from "./forms/MensagemEmailForm";
 import { MensagemForm } from "./forms/MensagemForm";
@@ -82,6 +86,12 @@ function FormularioDoNode({
         onChange={(d) => onUpdateNodeData(node.id, d)}
       />
     );
+  }
+  if (node.type === "encerrar_fluxo") {
+    return <EncerrarFluxoForm data={node.data as EncerrarFluxoData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
+  }
+  if (node.type === "atualizar_campo") {
+    return <AtualizarCampoForm data={node.data as AtualizarCampoData} onChange={(d) => onUpdateNodeData(node.id, d)} />;
   }
   if (node.type === "executar_robo") {
     return (

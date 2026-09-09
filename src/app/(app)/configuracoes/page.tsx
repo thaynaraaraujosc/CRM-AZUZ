@@ -8,6 +8,7 @@ import { useConfiguracoes } from "@/lib/configuracoes-context";
 import { categoriaPorId, type CategoriaId } from "@/lib/configuracoes/estrutura";
 import { CategoriasNav } from "@/components/configuracoes/CategoriasNav";
 import { AparenciaSecao } from "@/components/configuracoes/AparenciaSecao";
+import { ExpedienteSecao } from "@/components/configuracoes/ExpedienteSecao";
 import { NotificacoesSecao } from "@/components/configuracoes/NotificacoesSecao";
 import { SegurancaSecao } from "@/components/configuracoes/SegurancaSecao";
 import { EtiquetasSecao } from "@/components/configuracoes/EtiquetasSecao";
@@ -73,6 +74,7 @@ function ConfiguracoesConteudo() {
           <div className="config-detalhe">
             {categoriaAtiva === "aparencia" ? <AparenciaSecao /> : null}
             {categoriaAtiva === "notificacoes" ? <NotificacoesSecao /> : null}
+            {categoriaAtiva === "expediente" ? <ExpedienteSecao /> : null}
             {categoriaAtiva === "seguranca" ? <SegurancaSecao /> : null}
             {categoriaAtiva === "etiquetas" ? <EtiquetasSecao /> : null}
             {categoriaAtiva === "whatsapp" ? <WhatsAppSecao /> : null}

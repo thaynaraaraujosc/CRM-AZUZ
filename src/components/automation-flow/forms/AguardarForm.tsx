@@ -159,6 +159,26 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
               <span className="knob" />
             </button>
           </div>
+          <div className="toggle-row">
+            <span className="tl">Contar só o horário de expediente</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!!data.somenteExpediente}
+              aria-label="Contar só o horário de expediente"
+              className={`toggle${data.somenteExpediente ? " on" : ""}`}
+              onClick={() => onChange({ ...data, somenteExpediente: !data.somenteExpediente })}
+            >
+              <span className="knob" />
+            </button>
+          </div>
+          {data.somenteExpediente ? (
+            <p className="hint">
+              &quot;2 horas&quot; às 17h20 de sexta não termina às 19h20: termina às 9h20 de
+              segunda. É a diferença entre um follow-up que chega no meio do atendimento e um que
+              chega de madrugada. O horário é o de Configurações, um só pro workspace.
+            </p>
+          ) : null}
           <p className="hint">
             Feriado não entra nessa conta: o CRM não tem calendário de feriados, e fingir que pula
             faria a mensagem sair no dia errado sem ninguém entender por quê.
