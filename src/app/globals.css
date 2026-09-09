@@ -10199,30 +10199,91 @@ button.camp-row:hover {
   margin-top: 6px;
 }
 
+/*
+ * Cada opção é um CARTÃO, não uma pilha de campos.
+ *
+ * Antes eram rótulo, seletor, endereço e alternativas empilhados com dois pixels entre eles e uma
+ * linha tracejada separando uma opção da outra. Numa pergunta de três opções davam quinze campos
+ * seguidos, e não havia como saber, batendo o olho, onde uma opção terminava e a outra começava.
+ * A moldura faz esse trabalho sem precisar de nenhuma explicação.
+ */
+.flow-opcao-bloco {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
 .flow-opcao-row {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  margin-bottom: 6px;
+  gap: 6px;
 }
 
-.flow-opcao-bloco {
-  padding-bottom: 8px;
-  margin-bottom: 8px;
-  border-bottom: 1px dashed var(--line-soft);
-}
-.flow-opcao-bloco:last-child {
-  border-bottom: none;
+/* O número da opção. É o mesmo que a pessoa do outro lado digita quando a conexão não entrega
+ * botão, então tê-lo aqui liga a configuração ao que chega no WhatsApp. */
+.flow-opcao-num {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 700;
 }
 
+/* Os ajustes finos, fechados por padrão: ver `temAjuste` no formulário. */
+.flow-opcao-avancado {
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--line-soft);
+  padding-top: var(--space-2);
+}
+
+.flow-opcao-avancado > summary {
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  list-style: none;
+}
+
+.flow-opcao-avancado > summary::-webkit-details-marker {
+  display: none;
+}
+
+.flow-opcao-avancado > summary::before {
+  content: "▸ ";
+  display: inline-block;
+  transition: transform var(--transition-fast);
+}
+
+.flow-opcao-avancado[open] > summary::before {
+  content: "▾ ";
+}
+
+.flow-opcao-avancado > summary:hover {
+  color: var(--ink);
+}
+
+/* Espaço de verdade entre um campo e o seguinte: era 2px, e 2px não separa nada. */
 .flow-opcao-alternativas {
-  margin-top: 2px;
+  margin-top: var(--space-3);
 }
+
 .flow-opcao-alternativas label {
   display: block;
   font-size: 10.5px;
-  color: var(--text-faint);
-  margin-bottom: 4px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  line-height: 1.35;
 }
 
 /* Seletor de "formato de resposta" (item 10). Mesmo visual do seletor de gatilho/ação rápida. */

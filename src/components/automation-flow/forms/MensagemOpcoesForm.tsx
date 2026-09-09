@@ -73,6 +73,23 @@ function previaMenuNumerado(texto: string, opcoes: OpcaoBotaoLista[]): string {
   return [texto || "(sem texto)", "", ...linhas, "", "Digite o número da opção."].join("\n");
 }
 
+/**
+ * A opção tem algum ajuste fora do padrão?
+ *
+ * Decide se o bloco "Ajustes desta opção" nasce aberto. Fechado por padrão porque, na maioria das
+ * perguntas, o que se configura é o TEXTO da opção e mais nada: os três campos de baixo abertos em
+ * cada uma transformavam uma pergunta de três opções em quinze campos empilhados, e o que importa
+ * (o texto) sumia no meio. Mas escondê-los de quem JÁ os usou seria pior ainda: nesse caso ele
+ * abre sozinho, com o ajuste à vista.
+ */
+function temAjuste(opcao: OpcaoBotaoLista): boolean {
+  return (
+    ((opcao.comparacao ?? "padrao") !== "padrao") ||
+    !!opcao.url?.trim() ||
+    (opcao.respostasAlternativas ?? []).length > 0
+  );
+}
+
 let contador = 0;
 function novoIdOpcao(): string {
   contador += 1;
@@ -200,6 +217,11 @@ export function MensagemOpcoesForm({
         {opcoes.map((opcao, i) => (
           <div className="flow-opcao-bloco" key={opcao.id}>
             <div className="flow-opcao-row">
+              {/* O número é o mesmo que a pessoa vê no menu numerado, e é por ele que ela responde
+                  quando a conexão não entrega botão. Ter o número aqui liga as duas telas. */}
+              <span className="flow-opcao-num" aria-hidden="true">
+                {i + 1}
+              </span>
               <input
                 className="input"
                 style={{ flex: 1 }}
@@ -224,6 +246,9 @@ export function MensagemOpcoesForm({
                 <IconClose width={13} height={13} />
               </button>
             </div>
+            <details className="flow-opcao-avancado" open={temAjuste(opcao)}>
+              <summary>Ajustes desta opção</summary>
+
             <div className="flow-opcao-alternativas">
               <label>Como casar a resposta</label>
               <select
@@ -307,6 +332,7 @@ export function MensagemOpcoesForm({
                 />
               </div>
             ) : null}
+            </details>
           </div>
         ))}
         <button
