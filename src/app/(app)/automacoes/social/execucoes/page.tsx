@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { Topbar } from "@/components/ui";
+import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import type { PainelExecucoesSociais } from "@/app/api/social/execucoes/route";
 
@@ -75,9 +76,11 @@ export default function ExecucoesSociaisPage() {
           </div>
         }
       />
-      <AbasSocial />
+      <AbasAutomacoes />
 
-      <div className="content">
+      <div className="content social-layout">
+        <AbasSocial />
+        <div className="social-conteudo">
         <section className="card">
           <h3>Execuções</h3>
           {carregando && !painel ? (
@@ -177,6 +180,7 @@ export default function ExecucoesSociaisPage() {
             </table>
           )}
         </section>
+        </div>
       </div>
     </>
   );

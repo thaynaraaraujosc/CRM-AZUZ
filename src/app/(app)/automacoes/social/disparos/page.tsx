@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { Topbar } from "@/components/ui";
+import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import type { JanelaDirect } from "@/app/api/social/janela/route";
 import { LIMITES } from "@/lib/templates/regras";
@@ -95,9 +96,11 @@ export default function DisparosSociaisPage() {
   return (
     <>
       <Topbar title="Disparos" sub="Mensagem pra quem escreveu no Direct nas últimas 24 horas" />
-      <AbasSocial />
+      <AbasAutomacoes />
 
-      <div className="content">
+      <div className="content social-layout">
+        <AbasSocial />
+        <div className="social-conteudo">
         <section className="card">
           <h3>Quem pode receber agora</h3>
           {!janela ? (
@@ -208,6 +211,7 @@ export default function DisparosSociaisPage() {
             </table>
           )}
         </section>
+        </div>
       </div>
     </>
   );

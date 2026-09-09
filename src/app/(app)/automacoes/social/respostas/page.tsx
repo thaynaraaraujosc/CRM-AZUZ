@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 import { Topbar } from "@/components/ui";
+import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import {
@@ -102,9 +103,11 @@ export default function RespostasAutomaticasPage() {
           </button>
         }
       />
-      <AbasSocial />
+      <AbasAutomacoes />
 
-      <div className="content">
+      <div className="content social-layout">
+        <AbasSocial />
+        <div className="social-conteudo">
         {editando && d ? (
           <section className="card" style={{ marginBottom: "var(--space-3)" }}>
             <h3>{editando.id ? "Editar resposta" : "Nova resposta"}</h3>
@@ -287,6 +290,7 @@ export default function RespostasAutomaticasPage() {
             </table>
           )}
         </section>
+        </div>
       </div>
     </>
   );

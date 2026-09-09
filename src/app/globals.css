@@ -17544,3 +17544,538 @@ table.tbl .name-cell .r {
   opacity: 0.8;
   line-height: 1.35;
 }
+
+/* Módulo Instagram e TikTok: menu à esquerda, conteúdo à direita. */
+.social-layout {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.social-conteudo {
+  min-width: 0;
+}
+
+.social-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: var(--space-3);
+}
+
+.social-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-2);
+  font-size: 12.5px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.social-menu-item:hover {
+  background: var(--surface-hover);
+}
+
+.social-menu-item.on {
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.social-menu-linha {
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  margin: var(--space-2) 6px;
+}
+
+/* Barra de busca e filtros, na ordem em que a pessoa pensa: procurar, filtrar, escolher a visão. */
+.social-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.social-busca {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+}
+
+.social-busca svg {
+  position: absolute;
+  left: 10px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.social-busca .input {
+  width: 100%;
+  padding-left: 30px;
+}
+
+.social-filtros > .input {
+  width: auto;
+  min-width: 150px;
+}
+
+.social-visao {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.social-visao .icon-btn.on {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.social-secao-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.social-secao-topo h3 {
+  margin: 0;
+}
+
+/* O contador ao lado do título, como no Kommo: diz o tamanho da lista antes de ela ser lida. */
+.social-contador {
+  display: inline-block;
+  min-width: 20px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.social-pastas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.social-pasta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  padding: 6px 8px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.social-pasta.on {
+  border-color: var(--blue);
+}
+
+.social-pasta strong {
+  font-size: 12px;
+}
+
+.social-pasta span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.social-pasta-abrir {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.social-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.social-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  padding: var(--space-2);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.social-card:hover {
+  border-color: var(--ink);
+}
+
+.social-card strong {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.social-card span,
+.social-card em {
+  font-size: 11px;
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+/* Liga/desliga na própria linha: o gesto mais frequente da lista não pode exigir abrir um menu. */
+.social-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.social-menu-opcoes {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 2px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface-elevated);
+  box-shadow: 0 8px 24px rgba(11, 21, 51, 0.12);
+}
+
+.social-menu-opcoes button {
+  text-align: left;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: var(--radius-1, 6px);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.social-menu-opcoes button:hover {
+  background: var(--surface-hover);
+}
+
+.social-menu-opcoes button.perigo {
+  color: var(--danger);
+}
+
+@media (max-width: 900px) {
+  .social-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .social-menu {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+/* Migalhas: onde a pessoa está dentro do módulo. */
+.social-migalhas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.social-migalhas strong {
+  color: var(--ink);
+}
+
+/* Os três caminhos pra começar uma automação. */
+.social-caminhos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+  max-width: 980px;
+  margin: var(--space-5) auto 0;
+}
+
+.social-caminho {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-3, 12px);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.social-caminho:hover {
+  border-color: var(--ink);
+}
+
+.social-caminho.destaque {
+  border-color: var(--blue);
+}
+
+/* Caminho que ainda não existe: visível e apagado, sem cursor de clique. A tela explica a ausência
+ * em vez de escondê-la, e sem prometer um botão que não faz nada. */
+.social-caminho.desativado {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.social-caminho.desativado:hover {
+  border-color: var(--border);
+}
+
+.social-caminho strong {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.social-caminho span:not(.social-caminho-selo) {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.social-caminho-selo {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.social-caminho-selo.em-breve {
+  background: var(--surface-hover);
+  color: var(--text-muted);
+}
+
+/* Painel de gatilho: abre pela esquerda, por cima do canvas. Enquanto se escolhe o gatilho, o que
+ * importa olhar é o desenho do fluxo à direita, e um modal no meio esconderia justamente isso. */
+.painel-gatilho {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 8;
+  width: 330px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-elevated);
+  border-right: 1px solid var(--border);
+  box-shadow: 6px 0 24px rgba(11, 21, 51, 0.08);
+}
+
+.painel-gatilho-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.painel-gatilho-topo strong {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.painel-gatilho-progresso {
+  padding: var(--space-3) var(--space-3) 0;
+}
+
+.painel-gatilho-progresso p {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.painel-gatilho-barra {
+  height: 3px;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  overflow: hidden;
+}
+
+.painel-gatilho-barra span {
+  display: block;
+  height: 100%;
+  background: var(--blue);
+  transition: width var(--transition-base);
+}
+
+.painel-gatilho-corpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3);
+}
+
+.painel-gatilho-canal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+}
+
+.painel-gatilho-canal strong {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.painel-gatilho-canal span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.painel-gatilho-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: var(--space-2);
+}
+
+.painel-gatilho-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.painel-gatilho-item:hover {
+  border-color: var(--ink);
+}
+
+.painel-gatilho-item.on {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+
+/* Gatilho que não existe: visível, apagado e com o motivo. Escondê-lo deixaria a pergunta sem
+ * resposta; oferecê-lo faria montar um fluxo em volta de um evento que nunca chega. */
+.painel-gatilho-item.indisponivel {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.painel-gatilho-item.indisponivel:hover {
+  border-color: var(--border);
+}
+
+.painel-gatilho-item strong {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.painel-gatilho-item span {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.painel-gatilho-rodape {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 1px solid var(--line-soft);
+}
+
+/* O nó vazio: o canvas de uma automação nova precisa dizer o que fazer primeiro, senão a tela em
+ * branco é uma parede. */
+.no-gatilho-vazio {
+  width: 320px;
+  border: 1px solid var(--blue);
+  border-radius: var(--radius-3, 12px);
+  background: var(--surface-elevated);
+  overflow: hidden;
+}
+
+.no-gatilho-vazio-selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  background: var(--blue);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-bottom-right-radius: var(--radius-2);
+}
+
+.no-gatilho-vazio-corpo {
+  padding: var(--space-3);
+}
+
+.no-gatilho-vazio-corpo h4 {
+  margin: 0 0 var(--space-2);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.no-gatilho-vazio-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-radius: var(--radius-2);
+  background: var(--surface-hover);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.no-gatilho-vazio-btn:hover {
+  background: var(--surface-active);
+}

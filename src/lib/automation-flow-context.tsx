@@ -33,6 +33,8 @@ type PatchFluxo = Partial<{
   funilId: string;
   etapaId: string;
   categoria: string;
+  /** Mover o robô de pasta. `null` devolve pra lista principal. */
+  pastaId: string | null;
   nodes: FlowNode[];
   edges: FlowEdge[];
   configuracoes: ConfiguracoesFluxo;
@@ -135,6 +137,7 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
       categoria: dados.categoria,
       // Comercial é o padrão porque é o que todo robô era até existir a área social.
       area: dados.area ?? "comercial",
+      pastaId: dados.pastaId ?? null,
       status: "rascunho",
       ativa: dados.ativa ?? false,
       nodes: dados.nodes ?? [],

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { Topbar } from "@/components/ui";
+import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { MODELOS_AZUZ, type ModeloAzuz } from "@/lib/social/modelos-azuz";
 import { LIMITES } from "@/lib/templates/regras";
@@ -83,9 +84,11 @@ export default function ModelosSociaisPage() {
           </Link>
         }
       />
-      <AbasSocial />
+      <AbasAutomacoes />
 
-      <div className="content">
+      <div className="content social-layout">
+        <AbasSocial />
+        <div className="social-conteudo">
         {aviso ? (
           <section className="card" style={{ marginBottom: "var(--space-3)" }}>
             <p className="hint">{aviso}</p>
@@ -152,6 +155,7 @@ export default function ModelosSociaisPage() {
             </table>
           )}
         </section>
+        </div>
       </div>
     </>
   );

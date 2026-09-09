@@ -925,3 +925,46 @@ export function IconEncaminhar(props: Props) {
     </svg>
   );
 }
+
+/** Menu de mais opções: os três pontinhos. Vertical, que é onde a mão procura numa linha de lista. */
+export function IconMaisOpcoes(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="5" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="12" cy="19" r="1" />
+    </svg>
+  );
+}
+
+/** Ver em lista: linhas com marcador. */
+export function IconLista(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M8 6h13M8 12h13M8 18h13" />
+      <path d="M3 6h.01M3 12h.01M3 18h.01" />
+    </svg>
+  );
+}
+
+/** Ver em grade: quatro quadrados. */
+export function IconGrade(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  );
+}
+
+/** Nova pasta: a pasta com um sinal de mais. */
+export function IconNovaPasta(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <path d="M12 11v5M9.5 13.5h5" />
+    </svg>
+  );
+}

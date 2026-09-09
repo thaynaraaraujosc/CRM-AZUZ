@@ -695,6 +695,8 @@ export type FluxoAutomacao = {
   /** "comercial" ou "social". Ver `AreaAutomacao` em `@/lib/canais/capacidades`. Opcional porque
    * todo fluxo anterior a esta coluna é comercial, e ausência significa exatamente isso. */
   area?: "comercial" | "social";
+  /** Pasta em que o robô está guardado. Ausente ou nulo = na raiz. */
+  pastaId?: string | null;
   status: "rascunho" | "publicado";
   ativa: boolean;
   /** Arquivamento é um estado próprio, distinto de "pausada": ver `arquivarFluxo`/`desarquivarFluxo` em automation-flow-context.tsx. Opcional pra não quebrar fluxos já existentes/seeds. */

@@ -211,6 +211,7 @@ export function ConfigPanel({
   onUpdateNodeData,
   onRemoverOpcaoAresta,
   onTrocarTipo,
+  onEditarGatilho,
   onSelecionarNode,
 }: {
   fluxo: FluxoAutomacao;
@@ -223,6 +224,8 @@ export function ConfigPanel({
   onRemoverOpcaoAresta: (nodeId: string, opcaoId: string) => void;
   /** Troca o tipo do bloco. É o que transforma uma mensagem de texto em pergunta com botões. */
   onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
+  /** Abre o painel de gatilho em etapas. Só existe na área social. */
+  onEditarGatilho?: () => void;
   onSelecionarNode: (nodeId: string) => void;
 }) {
   const [aba, setAba] = useState<"configurar" | "problemas">("configurar");
@@ -290,6 +293,15 @@ export function ConfigPanel({
             <div className="panel-h divided">
               <h4>Configuração</h4>
             </div>
+            {node.category === "gatilho" && fluxo?.area === "social" && onEditarGatilho ? (
+              // O gatilho social é configurado no painel em etapas, não num formulário solto: é lá
+              // que a escolha do evento e a do escopo aparecem uma de cada vez.
+              <div className="field">
+                <button type="button" className="btn" onClick={onEditarGatilho}>
+                  Trocar ou reconfigurar o gatilho
+                </button>
+              </div>
+            ) : null}
             <FormularioDoNode node={node} area={fluxo?.area ?? "comercial"} fluxoAtualId={fluxo?.id} onTrocarTipo={onTrocarTipo} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
             <div className="panel-h divided">
               <h4>O que este bloco fará</h4>

@@ -252,6 +252,7 @@ model Workspace {
   formularios           Formulario[]
   respostasFormulario   RespostaFormulario[]
   fluxosAutomacao       FluxoAutomacao[]
+  pastasAutomacao       PastaAutomacao[]
   gatilhosEtapa         GatilhoEtapa[]
   expediente            Expediente?
   documentos            Documento[]
@@ -551,6 +552,29 @@ model RespostaFormulario {
 // Motor de fluxo de automação (visual, nodes/edges): mesmo raciocínio de Formulario: os mutadores
 // de src/lib/automation-flow-context.tsx sempre recalculam nodes/edges/configuracoes/historicoVersoes
 // inteiros. Log de execução continua só em memória (nunca persistiu, sem mudança de comportamento).
+/// Pasta de automações. Uma lista com trinta robôs sem forma de agrupar é uma lista que ninguém
+/// lê: a pessoa perde mais tempo procurando "aquele do comentário" do que editando.
+///
+/// Só um nível, de propósito. Pasta dentro de pasta resolve um problema que ninguém tem aqui e
+/// cria outro que todo mundo tem: não achar mais onde as coisas foram parar. Apagar a pasta NÃO
+/// apaga os robôs (`onDelete: SetNull`): eles voltam pra raiz.
+model PastaAutomacao {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  nome String
+  /// "comercial" | "social": a pasta pertence a uma área, como o fluxo.
+  area String @default("social")
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  fluxos FluxoAutomacao[]
+
+  @@index([workspaceId, area])
+}
+
 model FluxoAutomacao {
   id String @id
 
@@ -563,6 +587,9 @@ model FluxoAutomacao {
   /// portanto, quais blocos fazem sentido oferecer no construtor. O padrão é comercial porque todo
   /// fluxo que já existe é comercial.
   area               String    @default("comercial")
+  /// Pasta em que o robô está guardado, quando está em alguma. Nulo = na raiz.
+  pastaId            String?
+  pasta              PastaAutomacao? @relation(fields: [pastaId], references: [id], onDelete: SetNull)
   // Texto livre: alguns fluxos de demonstração passam de 191 caracteres (VARCHAR padrão), por
   // isso @db.Text (mesmo motivo do `objetivo` abaixo).
   descricao          String?   @db.Text

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { Topbar } from "@/components/ui";
+import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useFunis } from "@/lib/funis-context";
 import type { ConexaoSocial } from "@/app/api/social/conexoes/route";
@@ -65,9 +66,11 @@ export default function ConexoesSociaisPage() {
   return (
     <>
       <Topbar title="Conexões" sub="O que está ligado, e onde caem os leads que chegam por aqui" />
-      <AbasSocial />
+      <AbasAutomacoes />
 
-      <div className="content">
+      <div className="content social-layout">
+        <AbasSocial />
+        <div className="social-conteudo">
         <section className="card">
           <h3>Canais</h3>
           <div className="social-conexoes mt8">
@@ -140,6 +143,7 @@ export default function ConexoesSociaisPage() {
 
           {aviso ? <p className="hint">{aviso}</p> : null}
         </section>
+        </div>
       </div>
     </>
   );

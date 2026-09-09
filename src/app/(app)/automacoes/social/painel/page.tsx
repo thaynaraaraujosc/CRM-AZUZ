@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { Topbar } from "@/components/ui";
+import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import type { PainelSocial } from "@/app/api/social/metricas/route";
@@ -83,9 +84,11 @@ export default function SocialPage() {
           </div>
         }
       />
-      <AbasSocial />
+      <AbasAutomacoes />
 
-      <div className="content">
+      <div className="content social-layout">
+        <AbasSocial />
+        <div className="social-conteudo">
         {painel && !painel.conectado ? (
           <section className="card" style={{ marginBottom: "var(--space-3)" }}>
             <strong>O Instagram não está conectado.</strong>
@@ -93,7 +96,7 @@ export default function SocialPage() {
               {painel.motivoDesconectado} Os números do CRM abaixo continuam valendo pro que já foi
               registrado.
             </p>
-            <Link className="btn primary mt8" href="/social/conexoes">
+            <Link className="btn primary mt8" href="/automacoes/social/conexoes">
               Ver conexões
             </Link>
           </section>
@@ -172,10 +175,11 @@ export default function SocialPage() {
               ? `${robos.length} robô${robos.length > 1 ? "s" : ""}, ${ligados.length} ligado${ligados.length === 1 ? "" : "s"}.`
               : "Nenhum robô ainda."}
           </p>
-          <Link className="btn mt8" href="/social/automacoes">
+          <Link className="btn mt8" href="/automacoes/social">
             Abrir automações
           </Link>
         </section>
+        </div>
       </div>
     </>
   );

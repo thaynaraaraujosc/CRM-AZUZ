@@ -43,6 +43,7 @@ import { HistoricoVersoes } from "./HistoricoVersoes";
 import { Simulador } from "./Simulador";
 import { Toolbar } from "./Toolbar";
 import { ListaDePassos } from "./ListaDePassos";
+import { PainelGatilho } from "./PainelGatilho";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
 import { IconClose, IconExpandir } from "@/components/icons";
@@ -126,6 +127,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [menuContexto, setMenuContexto] = useState<{ x: number; y: number; nodeId: string } | null>(null);
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
   const [escolherGatilhoAberto, setEscolherGatilhoAberto] = useState(false);
+  /** O painel de gatilho em etapas. Só existe na área social: ver `PainelGatilho`. */
+  const [painelGatilhoAberto, setPainelGatilhoAberto] = useState(false);
   const [acaoRapida, setAcaoRapida] = useState<{ nodeId: string; handleId: string | undefined } | null>(null);
   const [minimapaVisivel, setMinimapaVisivel] = useState(true);
   const [arrastandoSobreCanvas, setArrastandoSobreCanvas] = useState(false);
@@ -513,6 +516,56 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     persist(novoNodes, novoEdges);
   }
 
+  /**
+   * Grava o gatilho escolhido no painel em etapas.
+   *
+   * Troca o tipo do gatilho que já existe, em vez de criar um segundo: um fluxo tem UM começo, e
+   * dois blocos de gatilho no canvas fariam a automação parecer que dispara por dois caminhos.
+   * As arestas que saíam dele são preservadas quando o tipo não muda, porque trocar só o escopo
+   * ("qualquer publicação" → "esta publicação") não pode desmontar o fluxo já construído.
+   */
+  function salvarGatilhoSocial(tipo: FlowNodeType, data: Record<string, unknown>) {
+    const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
+    if (!bloco) return;
+    const existente = rfNodes.find((n) => n.data.flowNode.category === "gatilho");
+
+    if (!existente) {
+      const novoDomain: DomainFlowNode = {
+        id: novoIdNo(),
+        type: tipo,
+        category: bloco.categoria,
+        position: { x: 80, y: 80 },
+        data,
+      };
+      const novoNodes = [
+        ...rfNodes,
+        { id: novoDomain.id, type: novoDomain.category, position: novoDomain.position, data: { flowNode: novoDomain, problemas: [] } },
+      ];
+      setRfNodes(novoNodes);
+      persist(novoNodes, rfEdges);
+      setPainelGatilhoAberto(false);
+      return;
+    }
+
+    const mudouDeTipo = existente.data.flowNode.type !== tipo;
+    const novoNodes = rfNodes.map((n) =>
+      n.id === existente.id
+        ? {
+            ...n,
+            type: bloco.categoria,
+            data: { ...n.data, flowNode: { ...n.data.flowNode, type: tipo, category: bloco.categoria, data } },
+          }
+        : n,
+    );
+    // Trocar o TIPO do gatilho muda as saídas possíveis, então as arestas antigas não valem mais.
+    // Trocar só a configuração não mexe em nada do que já foi montado depois dele.
+    const novoEdges = mudouDeTipo ? rfEdges.filter((e) => e.source !== existente.id) : rfEdges;
+    setRfNodes(novoNodes);
+    setRfEdges(novoEdges);
+    persist(novoNodes, novoEdges);
+    setPainelGatilhoAberto(false);
+  }
+
   function removerOpcaoAresta(nodeId: string, opcaoId: string) {
     const novoEdges = rfEdges.filter((e) => !(e.source === nodeId && e.sourceHandle === opcaoId));
     setRfEdges(novoEdges);
@@ -889,7 +942,27 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             </div>
           ) : null}
 
-          {modoConstrucao && rfNodes.length === 0 ? (
+          {modoConstrucao && rfNodes.length === 0 && area === "social" ? (
+            <div className="flow-inicio-vazio">
+              {/* O cartão do gatilho vazio: o canvas em branco de uma automação nova precisa dizer
+                  o que fazer primeiro, senão a tela é uma parede. */}
+              <div className="no-gatilho-vazio">
+                <span className="no-gatilho-vazio-selo">Gatilho</span>
+                <div className="no-gatilho-vazio-corpo">
+                  <h4>Gatilho para acionar a automação</h4>
+                  <button
+                    type="button"
+                    className="no-gatilho-vazio-btn"
+                    onClick={() => setPainelGatilhoAberto(true)}
+                  >
+                    Adicionar gatilho +
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {modoConstrucao && rfNodes.length === 0 && area !== "social" ? (
             <div className="flow-inicio-vazio">
               <p className="flow-inicio-vazio-titulo">Como esta automação deve começar?</p>
               <p className="flow-inicio-vazio-sub">Toda automação começa a partir de um gatilho.</p>
@@ -897,6 +970,20 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 + Escolher gatilho
               </button>
             </div>
+          ) : null}
+
+          {painelGatilhoAberto ? (
+            <PainelGatilho
+              area={area}
+              tipoAtual={rfNodes.find((n) => n.data.flowNode.category === "gatilho")?.data.flowNode.type}
+              dataAtual={
+                rfNodes.find((n) => n.data.flowNode.category === "gatilho")?.data.flowNode.data as
+                  | Record<string, unknown>
+                  | undefined
+              }
+              onSalvar={salvarGatilhoSocial}
+              onFechar={() => setPainelGatilhoAberto(false)}
+            />
           ) : null}
 
           {escolherGatilhoAberto ? (
@@ -1029,6 +1116,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onUpdateNodeData={updateNodeData}
           onRemoverOpcaoAresta={removerOpcaoAresta}
           onTrocarTipo={trocarTipoDoNode}
+          onEditarGatilho={area === "social" ? () => setPainelGatilhoAberto(true) : undefined}
           onSelecionarNode={(nodeId) => {
             setSelectedNodeIds([nodeId]);
             // Clicar num problema não pode só selecionar o node fora da vista. Centraliza a
