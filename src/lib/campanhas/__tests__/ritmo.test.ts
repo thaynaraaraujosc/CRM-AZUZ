@@ -77,3 +77,23 @@ describe("previsão de duração", () => {
     expect(p.dias).toBe(5);
   });
 });
+
+describe("ritmo do Instagram", () => {
+  it("é ritmo de conversa, não de campanha", () => {
+    // Só dá pra falar com quem escreveu nas últimas 24h, então o público já nasce pequeno.
+    // Responder trinta pessoas em três minutos é uma equipe atenta; trinta em seis segundos é um
+    // robô, e é assim que uma conta comercial é sinalizada.
+    expect(RITMO.instagram.porMinuto).toBeLessThan(RITMO.whatsapp_oficial.porMinuto);
+    expect(RITMO.instagram.variacao).toBeGreaterThan(0);
+  });
+
+  it("não inventa cota diária que não existe", () => {
+    // Não há cota publicada porque não existe o caso "iniciar conversa com mil desconhecidos": ele
+    // é impossível por construção no Direct.
+    expect(RITMO.instagram.porDia).toBeNull();
+  });
+
+  it("explica o limite que realmente manda, que é a janela", () => {
+    expect(RITMO.instagram.explicacao).toContain("24 horas");
+  });
+});

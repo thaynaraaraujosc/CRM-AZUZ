@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
-import { CANAL_NAO_OFICIAL, CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
+import { CANAL_INSTAGRAM, CANAL_NAO_OFICIAL, CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import type { CanalCampanha } from "./ritmo";
 
 /**
@@ -30,8 +30,10 @@ export async function registrarEnvioNaConversa(params: {
 }): Promise<void> {
   if (params.canal === "email") return;
   try {
+    const instagram = params.canal === "instagram";
     const oficial = params.canal === "whatsapp_oficial";
-    const contaCanal = contaCanalDaConexao(oficial ? CANAL_OFICIAL : CANAL_NAO_OFICIAL, params.identificadorConexao);
+    const provedor = instagram ? CANAL_INSTAGRAM : oficial ? CANAL_OFICIAL : CANAL_NAO_OFICIAL;
+    const contaCanal = contaCanalDaConexao(provedor, params.identificadorConexao);
     const agora = new Date();
     await prisma.mensagemExtra.create({
       data: {
@@ -44,7 +46,8 @@ export async function registrarEnvioNaConversa(params: {
         hora: agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }),
         criadoEm: agora,
         status: "enviado",
-        canal: oficial ? null : CANAL_NAO_OFICIAL,
+        // Nulo só no oficial, por compatibilidade com o histórico anterior a esta coluna.
+        canal: oficial ? null : provedor,
         contaCanal,
         wamid: params.wamid ?? null,
         extras: {
@@ -56,7 +59,7 @@ export async function registrarEnvioNaConversa(params: {
     await upsertConversaAoReceberMensagem({
       workspaceId: params.workspaceId,
       nome: params.contatoNome,
-      canal: "WhatsApp",
+      canal: instagram ? "Instagram" : "WhatsApp",
       contato: params.destino,
       origem: "Direto",
       contarComoNaoLida: false,

@@ -123,6 +123,16 @@ export async function POST(request: Request) {
 
   // WhatsApp oficial fala com quem não escreveu primeiro: fora da janela de 24h a Meta só aceita
   // modelo aprovado. Recusar aqui evita uma campanha inteira de "falhou" com o código 131047.
+  // No Instagram só existe UM público legítimo, e é o servidor que impõe isso: a janela de 24
+  // horas. Aceitar "todos os contatos" aqui produziria uma campanha em que a esmagadora maioria
+  // das mensagens é recusada pela Meta, uma a uma, sujando a conta com erro previsível.
+  if (corpo.canal === "instagram" && corpo.audiencia?.modo !== "janela_instagram") {
+    return NextResponse.json(
+      { erro: "No Instagram o disparo só vale pra quem escreveu no Direct nas últimas 24 horas." },
+      { status: 400 },
+    );
+  }
+
   if (corpo.canal === "whatsapp_oficial" && !templateNome) {
     return NextResponse.json({ erro: "No WhatsApp API Oficial o disparo precisa de um template aprovado pela Meta." }, { status: 400 });
   }
@@ -160,7 +170,9 @@ export async function POST(request: Request) {
         erro:
           corpo.canal === "email"
             ? "Nenhum dos contatos selecionados tem e-mail cadastrado."
-            : "Nenhum dos contatos selecionados tem WhatsApp cadastrado.",
+            : corpo.canal === "instagram"
+              ? "Ninguém escreveu no Direct nas últimas 24 horas, ou os contatos ainda não têm o identificador do Instagram. Fora da janela o Instagram recusa a mensagem."
+              : "Nenhum dos contatos selecionados tem WhatsApp cadastrado.",
       },
       { status: 400 },
     );

@@ -9,7 +9,7 @@
  * gotejamento: uma mensagem por vez, por conexão, num intervalo constante.
  */
 
-export type CanalCampanha = "whatsapp_oficial" | "whatsapp_nao_oficial" | "email";
+export type CanalCampanha = "whatsapp_oficial" | "whatsapp_nao_oficial" | "email" | "instagram";
 
 export type RitmoCanal = {
   /** Quantas mensagens podem sair por minuto, numa mesma conexão. */
@@ -81,6 +81,27 @@ export const RITMO: Record<CanalCampanha, RitmoCanal> = {
    * assim entrega 5.000 mensagens em menos de uma hora. O limite que importa aqui é o do PLANO
    * contratado (o gratuito é 100 por dia), e esse a gente lê do provedor, não chuta.
    */
+  /**
+   * Instagram (Direct).
+   *
+   * O limite que manda aqui não é de velocidade: é de PERMISSÃO. Só dá pra falar com quem escreveu
+   * nas últimas 24 horas, então o público já nasce pequeno e conhecido. Não existe cota diária
+   * publicada porque não existe o caso de uso de "iniciar conversa com mil desconhecidos": ele é
+   * impossível por construção.
+   *
+   * 10 por minuto é ritmo de conversa, não de campanha. Responder trinta pessoas em três minutos é
+   * o comportamento de uma equipe atenta; responder trinta em seis segundos é o de um robô, e é
+   * assim que uma conta comercial é sinalizada.
+   */
+  instagram: {
+    porMinuto: 10,
+    porDia: null,
+    variacao: 0.2,
+    explicacao:
+      "O Instagram só deixa falar com quem escreveu nas últimas 24 horas. Não há modelo aprovado " +
+      "como no WhatsApp oficial: passou da janela, a mensagem é recusada.",
+  },
+
   email: {
     porMinuto: 100,
     porDia: null,

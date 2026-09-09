@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import type { ContatoParaVariaveis } from "./variaveis";
 import type { CanalCampanha } from "./ritmo";
 import type { Audiencia } from "./audiencia-tipos";
+import { pessoasNaJanela } from "@/lib/social/janela-direct";
 
 export type { Audiencia, ModoAudiencia } from "./audiencia-tipos";
 export { descreverAudiencia } from "./audiencia-tipos";
@@ -17,10 +18,17 @@ export { descreverAudiencia } from "./audiencia-tipos";
  * Só campos leves são lidos. Nunca `fotoUrl` (imagem em base64): um público de mil contatos
  * viraria dezenas de MB saindo do banco por prévia.
  */
-export type ContatoDaAudiencia = ContatoParaVariaveis & { nome: string; origem: string; etiquetas: unknown };
+export type ContatoDaAudiencia = ContatoParaVariaveis & {
+  nome: string;
+  origem: string;
+  etiquetas: unknown;
+  instagramId?: string | null;
+};
 
 const SELECAO_LEVE = {
   nome: true,
+  // O IGSID: é ele que o envio do Direct usa como destinatário, não o @.
+  instagramId: true,
   origem: true,
   etiquetas: true,
   sobrenome: true,
@@ -49,6 +57,19 @@ export async function resolverAudiencia(workspaceId: string, audiencia: Audienci
     const nomes = Array.from(new Set(cards.map((c) => c.nome)));
     if (!nomes.length) return [];
     return prisma.contato.findMany({ where: { ...base, nome: { in: nomes } }, select: SELECAO_LEVE, orderBy: { nome: "asc" } });
+  }
+
+  if (audiencia.modo === "janela_instagram") {
+    // O único público legítimo de um disparo por Direct. Quem está fora da janela não é
+    // "descartado por escolha": é gente pra quem a API simplesmente recusa a mensagem.
+    const pessoas = await pessoasNaJanela(workspaceId);
+    const nomes = Array.from(new Set(pessoas.map((p) => p.contatoNome)));
+    if (!nomes.length) return [];
+    return prisma.contato.findMany({
+      where: { ...base, OR: [{ nome: { in: nomes } }, { instagramId: { in: nomes } }] },
+      select: SELECAO_LEVE,
+      orderBy: { nome: "asc" },
+    });
   }
 
   if (audiencia.modo === "selecionados") {
@@ -86,7 +107,10 @@ export async function resolverAudiencia(workspaceId: string, audiencia: Audienci
 
 /** Destino de um contato num canal, ou `null` se ele não tem o dado. */
 export function destinoDoContato(contato: ContatoDaAudiencia, canal: CanalCampanha): string | null {
-  const bruto = canal === "email" ? contato.email : contato.whatsapp;
+  // No Instagram o destinatário é o IGSID, não o @: é o que a API do Direct aceita. Contato sem
+  // IGSID (cadastrado à mão, ou que nunca escreveu) fica de fora, e é o certo: não há pra onde
+  // mandar.
+  const bruto = canal === "email" ? contato.email : canal === "instagram" ? contato.instagramId : contato.whatsapp;
   const limpo = bruto?.trim();
   return limpo ? limpo : null;
 }

@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { enviarEmailOuFalhar } from "@/lib/email";
 import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 import { contaConectada, enviarPelaCloudApi, limiteDiarioDaConta, tratarErroEnvio } from "@/lib/integracoes/whatsapp-oficial";
+import { enviarDirectComRespostasRapidas } from "@/lib/integracoes/instagram-login";
+import { decriptar } from "@/lib/integracoes/crypto";
+import { dentroDaJanelaDirect } from "@/lib/social/janela-direct";
 import { RITMO, intervaloEntreEnvios, type CanalCampanha } from "./ritmo";
 import { componentesParaMeta, preencherVariaveis, type MapeamentoVariavel } from "./variaveis";
 import { registrarEnvioNaConversa } from "./registrar-envio";
@@ -32,6 +35,14 @@ const SEGUNDOS_POR_RODADA = 50;
 const CAMPANHAS_POR_RODADA = 5;
 
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * O motivo que aparece no relatório quando a janela do Direct fechou antes do envio.
+ *
+ * É texto e não código porque é o que a pessoa lê na tela de acompanhamento, e porque "a janela
+ * fechou" é uma explicação completa: não há o que tentar de novo.
+ */
+export const JANELA_FECHADA = "A janela de 24 horas fechou antes do envio: o Instagram não aceita mais mensagem para esta pessoa.";
 
 type Destinatario = {
   id: string;
@@ -65,6 +76,8 @@ async function enviadosNasUltimas24h(workspaceId: string, canal: string): Promis
 async function enviarUm(
   canal: CanalCampanha,
   workspaceId: string,
+  /** Chave da conversa. Só o Instagram usa, pra reconferir a janela de 24 horas. */
+  contatoNome: string,
   destino: string,
   corpo: string,
   assunto: string | null,
@@ -85,6 +98,29 @@ async function enviarUm(
       html: corpoDestaPessoa,
     });
     return undefined;
+  }
+
+  if (canal === "instagram") {
+    // A janela é reconferida imediatamente antes de enviar, e não só ao montar o público: entre
+    // uma coisa e outra passam minutos ou horas, e a janela de alguém fecha nesse meio. Sem isto,
+    // o fim de uma campanha seria uma sequência de recusas da Meta, cada uma contando como falha
+    // do CRM e sujando a conta com erro previsível.
+    if (!(await dentroDaJanelaDirect(workspaceId, contatoNome))) {
+      throw new Error(JANELA_FECHADA);
+    }
+
+    const integracao = await prisma.integracao.findUnique({
+      where: { workspaceId_provedor: { workspaceId, provedor: "meta_instagram" } },
+    });
+    if (!integracao?.accessTokenCriptografado || integracao.status !== "conectado") {
+      throw new Error("Instagram não está conectado.");
+    }
+    return enviarDirectComRespostasRapidas(
+      decriptar(integracao.accessTokenCriptografado),
+      destino,
+      corpoDestaPessoa,
+      [],
+    );
   }
 
   if (canal === "whatsapp_nao_oficial") {
@@ -161,6 +197,14 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
       porDia = (await limiteDiarioDaConta(conta)).porDia;
       identificadorConexao = conta.phoneNumberId;
     }
+  } else if (canal === "instagram") {
+    const integracao = await prisma.integracao.findUnique({
+      where: { workspaceId_provedor: { workspaceId: campanha.workspaceId, provedor: "meta_instagram" } },
+      select: { metadados: true },
+    });
+    // A conta conectada, pra a mensagem enviada aparecer na conversa certa quando o workspace
+    // tiver mais de uma. Mesmo papel do `phoneNumberId` no oficial.
+    identificadorConexao = (integracao?.metadados as { instagramContaId?: string } | null)?.instagramContaId ?? null;
   } else if (canal === "whatsapp_nao_oficial") {
     const integracao = await prisma.integracao.findUnique({
       where: { workspaceId_provedor: { workspaceId: campanha.workspaceId, provedor: "whatsapp_nao_oficial" } },
@@ -221,6 +265,7 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
       const idExterno = await enviarUm(
         canal,
         campanha.workspaceId,
+        proximo.contatoNome,
         proximo.destino,
         campanha.corpo,
         campanha.assunto,
@@ -250,7 +295,10 @@ async function processarCampanha(campanhaId: string, prazoFinal: number): Promis
       const mensagem = erro instanceof Error ? erro.message : "Falha ao enviar.";
       // Até 3 tentativas: falha de rede e provedor fora do ar passam, número inválido não melhora
       // com insistência: e cada nova tentativa consome cota que faz falta pra quem existe.
-      const desiste = proximo.tentativas + 1 >= 3;
+      //
+      // Janela fechada é a exceção: não é falha temporária nem erro de envio. É uma permissão que
+      // acabou e não volta. Insistir mais duas vezes só produziria duas recusas da Meta.
+      const desiste = mensagem === JANELA_FECHADA || proximo.tentativas + 1 >= 3;
       await prisma.campanhaDestinatario.update({
         where: { id: proximo.id },
         data: { status: desiste ? "falhou" : "pendente", erroMensagem: mensagem },
