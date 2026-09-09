@@ -73,13 +73,15 @@ export async function processarComentarioInstagram(params: {
   if (!primeiraVez) return;
 
   try {
-    // Vira contato de verdade no CRM. Sem duplicar quem já existe (a busca é por @, ignorando
-    // arroba e caixa).
+    // Vira contato de verdade no CRM, sem duplicar quem já existe. A busca é pelo IGSID primeiro
+    // (a chave que não muda) e pelo @ depois: quem comenta hoje e manda Direct amanhã com o @
+    // trocado precisa ser a MESMA pessoa no CRM, não duas.
     if (arroba) {
       await criarContatoPeloInstagramSeNaoExistir({
         workspaceId,
         nome: arroba,
         instagram: arroba,
+        instagramId: comentario.from?.id,
       }).catch((erro) => console.error("[instagram-comentarios] falha ao criar contato:", erro));
     }
 

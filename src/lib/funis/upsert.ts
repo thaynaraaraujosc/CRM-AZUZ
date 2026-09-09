@@ -21,6 +21,10 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   /** Conexão que originou o negócio. É o que faz o card sumir do funil quando aquele canal é
    * desconectado, e voltar quando ele reconecta (ver o campo no schema). */
   contaCanal?: string | null;
+  /** Funil escolhido pra este tipo de lead. Ausente = o primeiro funil do workspace, como sempre. */
+  funilId?: string | null;
+  /** Etapa escolhida. Ausente = a primeira etapa daquele funil. */
+  etapaId?: string | null;
 }) {
   const { workspaceId, contatoNome, ehGrupo = false, origem, contaCanal } = params;
 
@@ -47,11 +51,31 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   // funilAtivoId inicial em funis-context.tsx): o primeiro da lista, não um campo "principal"
   // dedicado (que não existe no schema). Workspace sem nenhum funil/etapa ainda: não há onde
   // colocar o lead: fica só como Contato, sem quebrar o recebimento da mensagem.
-  const funil = await prisma.funil.findFirst({
-    where: { workspaceId },
-    include: { etapas: { orderBy: { ordem: "asc" }, take: 1, include: { cards: { select: { ordem: true } } } } },
-  });
-  const primeiraEtapa = funil?.etapas[0];
+  //
+  // `funilId`/`etapaId` são o destino ESCOLHIDO, quando existe um. É o que permite lead de
+  // Instagram cair num funil próprio em vez de se misturar com o comercial. Sem escolha, ou com
+  // uma escolha que já não existe (funil apagado), cai de volta na convenção acima: nunca deixar
+  // o lead de fora do funil por causa de uma configuração desatualizada.
+  const etapaEscolhida = params.etapaId
+    ? await prisma.funilEtapa.findFirst({
+        where: { id: params.etapaId, funil: { workspaceId } },
+        include: { cards: { select: { ordem: true } } },
+      })
+    : null;
+
+  const funil = etapaEscolhida
+    ? null
+    : await prisma.funil.findFirst({
+        where: { workspaceId, ...(params.funilId ? { id: params.funilId } : {}) },
+        include: { etapas: { orderBy: { ordem: "asc" }, take: 1, include: { cards: { select: { ordem: true } } } } },
+      }) ??
+      // O funil escolhido sumiu: volta pro primeiro do workspace em vez de perder o lead.
+      (await prisma.funil.findFirst({
+        where: { workspaceId },
+        include: { etapas: { orderBy: { ordem: "asc" }, take: 1, include: { cards: { select: { ordem: true } } } } },
+      }));
+
+  const primeiraEtapa = etapaEscolhida ?? funil?.etapas[0];
   if (!primeiraEtapa) return null;
 
   // Lead novo entra no TOPO da coluna, não no fim. Como a listagem ordena por `ordem` crescente,

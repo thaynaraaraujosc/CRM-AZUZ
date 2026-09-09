@@ -49,6 +49,13 @@ model Contato {
   // resolve o username na primeira mensagem. É o equivalente do `whatsapp` pro outro canal: sem
   // ele, um lead vindo do Direct virava contato sem nenhuma forma de reencontrar a pessoa.
   instagram String?
+  /// IGSID: o identificador da pessoa dentro da conta conectada. É a chave ESTÁVEL do Instagram.
+  ///
+  /// O `instagram` acima é o @, e @ muda: a pessoa troca o nome de usuário e, deduplicando só por
+  /// ele, a mesma pessoa volta a entrar como lead novo, com card novo, perdendo o histórico e
+  /// enchendo o funil de duplicata. O IGSID não muda enquanto a conta existir. O @ continua sendo
+  /// gravado porque é o que a equipe lê e procura; o IGSID é o que o CRM compara.
+  instagramId String?
   /// Foto de perfil da pessoa, já baixada e guardada.
   ///
   /// Mora no CONTATO, não só na conversa, porque é a mesma pessoa em todo lugar: lista de

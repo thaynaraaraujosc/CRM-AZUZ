@@ -135,18 +135,52 @@ export async function criarContatoPeloInstagramSeNaoExistir(params: {
   workspaceId: string;
   nome: string;
   instagram: string;
+  /** IGSID de quem mandou. A chave estável do canal: ver `encontrarContatoDoInstagram`. */
+  instagramId?: string;
 }) {
-  const { workspaceId, nome, instagram } = params;
+  const { workspaceId, nome, instagram, instagramId } = params;
 
-  const porInstagram = await encontrarContatoPorInstagram(workspaceId, instagram);
-  if (porInstagram) return porInstagram;
+  const existente = await encontrarContatoDoInstagram({ workspaceId, arroba: instagram, instagramId });
+  if (existente) return existente;
 
   return upsertContato({
     workspaceId,
     nome,
-    dados: { instagram, criadoVia: "instagram" },
+    dados: { instagram, instagramId, criadoVia: "instagram" },
     origemPadrao: "Instagram",
   });
+}
+
+/**
+ * Acha a pessoa do Direct, na ordem certa: IGSID primeiro, @ depois.
+ *
+ * O @ muda. A pessoa troca o nome de usuário e, deduplicando só por ele, ela volta a entrar como
+ * lead NOVO: card novo no funil, histórico partido em dois, e o vendedor falando com alguém que
+ * ele já conhece sem saber disso. O IGSID não muda enquanto a conta existir, e é por isso que ele
+ * é o primeiro a ser consultado.
+ *
+ * Quando o casamento acontece pelo @ (contato antigo, gravado antes desta coluna existir), o IGSID
+ * é preenchido ali mesmo. Assim a próxima mensagem já cai no caminho estável, e a base se conserta
+ * sozinha conforme as pessoas voltam a escrever, sem migração.
+ */
+export async function encontrarContatoDoInstagram(params: {
+  workspaceId: string;
+  arroba?: string | null;
+  instagramId?: string | null;
+}) {
+  const { workspaceId, arroba, instagramId } = params;
+
+  if (instagramId) {
+    const porId = await prisma.contato.findFirst({ where: { workspaceId, instagramId } });
+    if (porId) return porId;
+  }
+
+  const porArroba = arroba ? await encontrarContatoPorInstagram(workspaceId, arroba) : null;
+  if (porArroba && instagramId && !porArroba.instagramId) {
+    // Conserta em silêncio: da próxima vez esta pessoa é achada pela chave que não muda.
+    return prisma.contato.update({ where: { id: porArroba.id }, data: { instagramId } });
+  }
+  return porArroba;
 }
 
 /** Busca por @ do Instagram ignorando arroba e caixa. "@Fulana" e "fulana" são a mesma pessoa. */

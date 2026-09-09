@@ -15,8 +15,9 @@ import { validarAssinaturaWebhook } from "@/lib/integracoes/meta";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { renomearConversa } from "@/lib/conversas/renomear";
 import { nomeAindaEhIdCru } from "@/lib/conversas/exibicao";
-import { criarContatoPeloInstagramSeNaoExistir, encontrarContatoPorInstagram } from "@/lib/contatos/upsert";
+import { criarContatoPeloInstagramSeNaoExistir, encontrarContatoDoInstagram } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
+import { destinoDoLeadSocial } from "@/lib/social/destino-lead";
 import {
   dispararAutomacoesDeEventoInstagram,
   dispararAutomacoesDeMensagemRecebida,
@@ -500,13 +501,20 @@ export async function POST(request: Request) {
       let contatoId: string | undefined;
       if (entrarNoFunil) {
         const arroba = chaveContato.replace(/^@/, "");
-        const contatoExistente = await encontrarContatoPorInstagram(integracaoDaConta.workspaceId, arroba);
+        // IGSID primeiro, @ depois: o @ muda quando a pessoa troca o nome de usuário, e casar só
+        // por ele faria a mesma pessoa voltar como lead novo, com card novo e histórico partido.
+        const contatoExistente = await encontrarContatoDoInstagram({
+          workspaceId: integracaoDaConta.workspaceId,
+          arroba,
+          instagramId: remetenteId,
+        });
         const contato =
           contatoExistente ??
           (await criarContatoPeloInstagramSeNaoExistir({
             workspaceId: integracaoDaConta.workspaceId,
             nome: chaveContato,
             instagram: arroba,
+            instagramId: remetenteId,
           }));
         contatoId = contato?.id;
 
@@ -522,11 +530,14 @@ export async function POST(request: Request) {
         // Mesma regra do WhatsApp: só quem ACABOU de ser criado entra no funil. Contato que já
         // existia mandar mensagem de novo não pode mexer na etapa em que o vendedor o deixou.
         if (!contatoExistente) {
+          const destino = await destinoDoLeadSocial(integracaoDaConta.workspaceId);
           await entrarNaPrimeiraEtapaComoNovoLead({
             workspaceId: integracaoDaConta.workspaceId,
             contatoNome: chaveContato,
             origem: "Instagram",
             contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
+            funilId: destino.funilId,
+            etapaId: destino.etapaId,
           });
         } else if (!ehEco) {
           // Contato que já tinha card: a ETAPA não se mexe (é decisão do vendedor), mas o card sobe
