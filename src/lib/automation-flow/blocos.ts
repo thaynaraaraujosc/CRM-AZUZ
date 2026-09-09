@@ -794,6 +794,16 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     dataPadrao: () => ({ mensagem: "" }),
   },
   {
+    tipo: "executar_robo",
+    categoria: "acao",
+    grupo: "crm",
+    label: "Executar outro robô",
+    descricao: "Começa outra automação pro mesmo contato e segue daqui.",
+    icone: "Bot",
+    corClasse: corDaCategoria("acao"),
+    dataPadrao: () => ({}),
+  },
+  {
     tipo: "pausar_automacoes",
     categoria: "acao",
     grupo: "crm",

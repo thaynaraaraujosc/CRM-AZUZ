@@ -24,6 +24,7 @@ import type {
   FlowEdge,
   FlowNode,
   EnviarFormularioData,
+  ExecutarRoboData,
   IaClassificarData,
   IaResponderData,
   MensagemBotoesData,
@@ -154,7 +155,7 @@ export async function rodarExecucao(params: {
     if (no.desativado) {
       resultado = { tipo: "seguir", detalhe: "Bloco desativado: pulado." };
     } else {
-      resultado = await executarNo({ no, contexto, acoes, agora, fluxoId: execucao.fluxoId });
+      resultado = await executarNo({ no, contexto, edges, acoes, agora, fluxoId: execucao.fluxoId });
     }
 
     await gravador.registrarPasso({
@@ -287,15 +288,36 @@ function fatorDaUnidade(unidade: string): number {
   return unidade.startsWith("min") ? 60_000 : unidade.startsWith("hor") ? 3_600_000 : 86_400_000;
 }
 
+/**
+ * O que fazer quando uma mensagem NÃO sai.
+ *
+ * Com um caminho "falha" ligado no bloco, o fluxo segue por ele: é o "Falha ao enviar a mensagem"
+ * do editor, e serve pra avisar o time, tentar outro canal ou marcar uma tarefa. Sem esse caminho,
+ * continua sendo erro e a execução para, que é o comportamento seguro: falhar em silêncio faria
+ * a automação parecer que entregou.
+ */
+function falhaDeEnvio(
+  no: FlowNode,
+  edges: FlowEdge[],
+  resultado: { detalhe: string; erroTecnico?: string },
+): ResultadoDoNo {
+  const temCaminho = edges.some((e) => e.source === no.id && e.sourceHandle === "falha");
+  return temCaminho
+    ? { tipo: "seguir", saida: "falha", detalhe: `Não enviou: ${resultado.detalhe}` }
+    : { tipo: "erro", detalhe: resultado.detalhe, erroTecnico: resultado.erroTecnico };
+}
+
 async function executarNo(params: {
   no: FlowNode;
   /** Qual fluxo está rodando: o bloco de parar automações precisa poupar a si mesmo. */
   fluxoId: string;
   contexto: ContextoExecucaoPersistido;
+  /** Pra saber se o bloco tem um caminho de falha ligado. */
+  edges: FlowEdge[];
   acoes: AcoesDoMotor;
   agora: Date;
 }): Promise<ResultadoDoNo> {
-  const { no, contexto, acoes, agora, fluxoId } = params;
+  const { no, contexto, acoes, agora, fluxoId, edges } = params;
   const contato = contatoDoContexto(contexto);
   const nome = contato.nome;
 
@@ -338,14 +360,23 @@ async function executarNo(params: {
       return { tipo: "aguardar_evento", evento: "resposta", detalhe: `${envio.detalhe} Esperando a escolha do contato.` };
     }
 
+    case "executar_robo": {
+      const data = no.data as ExecutarRoboData;
+      if (!data.fluxoId) return { tipo: "erro", detalhe: "O bloco não tem robô escolhido." };
+      const r = await acoes.executarRobo({ contatoNome: nome, fluxoId: data.fluxoId });
+      // O robô chamado corre por conta dele; este fluxo segue. Encerrar aqui obrigaria a pessoa a
+      // pôr o "Executar outro robô" sempre no fim, e o bloco serve justamente pra chamar um robô
+      // no meio (o de cobrança, o de qualificação) e continuar.
+      return r.ok ? { tipo: "seguir", detalhe: r.detalhe } : { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+    }
+
     case "mensagem_texto": {
       const data = no.data as { texto?: string; mensagem?: string; canal?: string };
       const texto = preencher((data.texto ?? data.mensagem ?? "").trim(), contato);
       if (!texto) return { tipo: "erro", detalhe: "Bloco de mensagem sem texto configurado." };
       const envio = await acoes.enviarTexto({ contatoNome: nome, texto, canal: data.canal });
-      return envio.ok
-        ? { tipo: "seguir", detalhe: envio.detalhe }
-        : { tipo: "erro", detalhe: envio.detalhe, erroTecnico: envio.erroTecnico };
+      if (envio.ok) return { tipo: "seguir", detalhe: envio.detalhe };
+      return falhaDeEnvio(no, edges, envio);
     }
 
     case "mensagem_imagem":
@@ -357,7 +388,7 @@ async function executarNo(params: {
       const tipo = TIPO_DE_MIDIA[no.type];
       const legenda = preencher(data.legenda ?? "", contato);
       const r = await acoes.enviarMidia({ contatoNome: nome, arquivoId: data.arquivoId, tipo, legenda });
-      if (!r.ok) return { tipo: "erro", detalhe: r.detalhe, erroTecnico: r.erroTecnico };
+      if (!r.ok) return falhaDeEnvio(no, edges, r);
       // O Direct do Instagram manda o anexo sozinho. A legenda vai numa segunda mensagem, senão
       // ela simplesmente não aparece pra quem recebe.
       if (legenda && contatoCanal(contexto) === "instagram") {

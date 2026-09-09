@@ -14,6 +14,7 @@ import type {
   DistribuirDisponibilidadeData,
   EncaminharEquipeData,
   EncaminharHumanoData,
+  ExecutarRoboData,
   DecisaoMultiplaData,
   IaClassificarData,
   FlowNode,
@@ -43,6 +44,7 @@ import { EncaminharHumanoForm } from "./forms/EncaminharHumanoForm";
 import { DecisaoMultiplaForm } from "./forms/DecisaoMultiplaForm";
 import { IaClassificarForm } from "./forms/IaClassificarForm";
 import { GenericForm } from "./forms/GenericForm";
+import { ExecutarRoboForm } from "./forms/ExecutarRoboForm";
 import { MensagemContatoForm } from "./forms/MensagemContatoForm";
 import { MensagemEmailForm } from "./forms/MensagemEmailForm";
 import { MensagemForm } from "./forms/MensagemForm";
@@ -59,10 +61,12 @@ const TIPOS_TAREFA_EVENTO = new Set(["tarefa_criada", "tarefa_concluida"]);
 
 function FormularioDoNode({
   node,
+  fluxoAtualId,
   onUpdateNodeData,
   onRemoverOpcaoAresta,
 }: {
   node: FlowNode;
+  fluxoAtualId?: string;
   onUpdateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
   onRemoverOpcaoAresta: (nodeId: string, opcaoId: string) => void;
 }) {
@@ -71,6 +75,15 @@ function FormularioDoNode({
     return (
       <ComentarioInstagramForm
         data={node.data as Parameters<typeof ComentarioInstagramForm>[0]["data"]}
+        onChange={(d) => onUpdateNodeData(node.id, d)}
+      />
+    );
+  }
+  if (node.type === "executar_robo") {
+    return (
+      <ExecutarRoboForm
+        data={node.data as ExecutarRoboData}
+        fluxoAtualId={fluxoAtualId}
         onChange={(d) => onUpdateNodeData(node.id, d)}
       />
     );
@@ -243,7 +256,7 @@ export function ConfigPanel({
             <div className="panel-h divided">
               <h4>Configuração</h4>
             </div>
-            <FormularioDoNode node={node} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
+            <FormularioDoNode node={node} fluxoAtualId={fluxo?.id} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
             <div className="panel-h divided">
               <h4>O que este bloco fará</h4>
             </div>

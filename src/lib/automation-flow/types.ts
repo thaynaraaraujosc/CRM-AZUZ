@@ -97,6 +97,7 @@ export type FlowNodeType =
   | "agendar_consulta"
   | "cancelar_agendamento"
   | "enviar_notificacao"
+  | "executar_robo"
   | "pausar_automacoes"
   | "cancelar_automacoes"
   | "chamar_webhook"
@@ -346,6 +347,9 @@ export type MensagemBotoesData = {
   formatoResposta?: FormatoResposta;
 };
 export type MensagemListaData = MensagemBotoesData;
+
+/** Bloco que começa outra automação pro mesmo contato. */
+export type ExecutarRoboData = { fluxoId?: string; fluxoNome?: string };
 export type MensagemModeloWhatsappData = { templateId: string; templateNome?: string; variaveis?: Record<string, string> };
 
 export type DestinatarioEmailModo = "contato_email" | "outro_campo" | "especifico" | "responsavel" | "campo_personalizado";

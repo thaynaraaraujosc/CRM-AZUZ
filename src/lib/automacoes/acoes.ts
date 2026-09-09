@@ -83,6 +83,8 @@ export type AcoesDoMotor = {
   pararOutrasAutomacoes: (params: { contatoNome: string; fluxoAtualId: string; modo: "pausar" | "cancelar" }) => Promise<ResultadoAcao>;
   /** Escolhe quem assume o atendimento. O nome escolhido volta no `detalhe`. */
   escolherAtendente: (params: { equipe?: string; metodo?: string }) => Promise<ResultadoAcao>;
+  /** Começa OUTRA automação pro mesmo contato. É o bloco "Executar outro robô". */
+  executarRobo: (params: { contatoNome: string; fluxoId: string }) => Promise<ResultadoAcao>;
   /** Chama um endereço externo, com repetição em caso de falha temporária. */
   chamarWebhook: (params: { url: string; corpo: Record<string, unknown> }) => Promise<ResultadoAcao>;
   /** Grava campos no contato (etiquetas, responsável, campo personalizado, valor…). */
@@ -546,6 +548,45 @@ export function acoesReais(params: {
       }
     },
 
+    async executarRobo({ contatoNome, fluxoId }) {
+      if (!fluxoId) return falha("O bloco não tem robô escolhido.");
+      const fluxo = await prisma.fluxoAutomacao.findFirst({
+        where: { id: fluxoId, workspaceId, arquivada: false },
+      });
+      if (!fluxo) return falha("Esse robô não existe mais.");
+      try {
+        // Import dentro da função de propósito: `iniciar.ts` importa este arquivo, e importar de
+        // volta no topo fecharia um ciclo entre os dois módulos.
+        const { iniciarFluxoComEstado } = await import("./iniciar");
+        const contato = await prisma.contato.findUnique({
+          where: { workspaceId_nome: { workspaceId, nome: contatoNome } },
+        });
+        const fim = await iniciarFluxoComEstado({
+          workspaceId,
+          fluxoId: fluxo.id,
+          gatilho: "outro_robo",
+          configuracoes: fluxo.configuracoes as never,
+          publicarSeFaltar: {
+            versao: Math.max(1, Number(fluxo.versaoAtual ?? 1)),
+            nodes: fluxo.nodes as never,
+            edges: fluxo.edges as never,
+            configuracoes: fluxo.configuracoes as never,
+          },
+          contatoNome,
+          contatoId: contato?.id ?? null,
+          contato: {
+            ...(contato ?? {}),
+            nome: contatoNome,
+            etiquetas: Array.isArray(contato?.etiquetas) ? (contato.etiquetas as string[]) : [],
+          },
+        });
+        if (!fim) return falha(`O robô "${fluxo.nome}" não tem versão publicada pra rodar.`);
+        return ok(`Robô "${fluxo.nome}" começou.`);
+      } catch (erro) {
+        return falha("Falha ao começar o outro robô.", mensagemDoErro(erro));
+      }
+    },
+
     async chamarWebhook({ url, corpo }) {
       if (!/^https?:\/\//i.test(url)) return falha("Endereço do webhook inválido.");
       // Três tentativas com espera crescente. Um endereço fora do ar por dois segundos é o caso
@@ -710,6 +751,10 @@ export function acoesSecas(): AcoesDoMotor & { intencoes: string[] } {
     async escolherAtendente({ equipe }) {
       return registrar(`Escolheria um atendente${equipe ? ` da equipe ${equipe}` : ""}`);
     },
+    async executarRobo({ fluxoId }) {
+      return ok(`(simulação) começaria o robô ${fluxoId}`);
+    },
+
     async chamarWebhook({ url }) {
       return registrar(`Chamaria o webhook ${url}`);
     },

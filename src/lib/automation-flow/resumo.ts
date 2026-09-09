@@ -39,6 +39,15 @@ export function temEntrada(categoria: FlowNodeCategory): boolean {
   return !CATEGORIAS_SEM_ENTRADA.includes(categoria);
 }
 
+/** Os envios que podem falhar de verdade e ganham caminho de falha. */
+const TIPOS_COM_FALHA = new Set<string>([
+  "mensagem_texto",
+  "mensagem_imagem",
+  "mensagem_video",
+  "mensagem_audio",
+  "mensagem_documento",
+]);
+
 /** Handles de saída do nó. Vazio pra blocos de fim, um só (sem rótulo) pro caso comum, vários nomeados pra quem ramifica. */
 export function saidasDoNo(node: FlowNode): SaidaNo[] {
   if (CATEGORIAS_SEM_SAIDA.includes(node.category)) return [];
@@ -64,6 +73,16 @@ export function saidasDoNo(node: FlowNode): SaidaNo[] {
       ...opcoes,
       { handleId: "outra_resposta", label: "Outra resposta" },
       { handleId: "nao_respondeu", label: "Não respondeu" },
+    ];
+  }
+
+  // Toda mensagem ganha um caminho de falha. É o "Falha ao enviar a mensagem" do editor: o envio
+  // pode não sair (canal caiu, número inválido, arquivo sumiu) e a automação precisa poder avisar
+  // alguém em vez de simplesmente parar.
+  if (TIPOS_COM_FALHA.has(node.type)) {
+    return [
+      { handleId: undefined, label: "Enviou" },
+      { handleId: "falha", label: "✕ Falha ao enviar a mensagem" },
     ];
   }
 
@@ -366,6 +385,9 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     }
     case "enviar_formulario": {
       return d.formularioOrigem === "externo" ? `Link externo${d.formularioUrlExterna ? `: ${d.formularioUrlExterna}` : ""}` : "Formulário interno";
+    }
+    case "executar_robo": {
+      return d.fluxoNome ? `Robô: ${d.fluxoNome}` : "Nenhum robô escolhido";
     }
     case "aguardar": {
       const data = node.data as AguardarData;
