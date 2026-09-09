@@ -137,6 +137,12 @@
   --primary-active: #1a44b8;
   --surface-secondary: var(--navy-raised);
   --surface-tertiary: var(--navy-raised-2);
+  /* `--surface-1`/`--surface-2` estavam sendo USADOS em dezenas de regras sem nunca terem sido
+     definidos. Var sem valor e sem fallback não pinta nada: o fundo simplesmente não aparecia, e
+     o hover de vários painéis não fazia nada. Como apontam pros mesmos valores de `--surface` e
+     `--surface-secondary`, os dois vocabulários não têm como divergir. */
+  --surface-1: var(--surface);
+  --surface-2: var(--surface-secondary);
   --border: var(--line);
   --border-strong: var(--line-strong);
   --text-primary: var(--ink);
@@ -17408,7 +17414,7 @@ table.tbl .name-cell .r {
 }
 
 .proximo-passo-item:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 
 .proximo-passo-item strong {
@@ -17420,4 +17426,79 @@ table.tbl .name-cell .r {
   font-size: 11px;
   color: var(--text-muted);
   line-height: 1.35;
+}
+
+/* ---------------------------------------------------------------- social -- */
+/*
+ * Módulo Social (Instagram). A identidade continua sendo a do CRM: azul-marinho, branco e cinzas
+ * neutros, com os mesmos tokens do resto do produto. Nada de degradê da rede social, nada de
+ * roxo/rosa emprestado: a tela é do CRM, o canal é só o assunto dela.
+ */
+.social-modelos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.social-modelo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  padding: var(--space-2);
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.social-modelo:hover {
+  border-color: var(--ink);
+}
+
+.social-modelo strong {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.social-modelo span {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.social-modelo em {
+  font-size: 10px;
+  font-style: normal;
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
+/* Cartão de conexão: o estado real de um canal, incluindo o que ainda não existe. */
+.social-conexoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-2);
+}
+
+.social-conexao {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  padding: var(--space-2);
+  background: var(--surface);
+}
+
+/* Canal sem integração escrita: fica visível e apagado, pra a tela poder explicar a ausência em
+ * vez de esconder. Escondido, a pergunta "cadê o TikTok?" não tem resposta em lugar nenhum. */
+.social-conexao.indisponivel {
+  opacity: 0.62;
+}
+
+.social-conexao h4 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--ink);
 }

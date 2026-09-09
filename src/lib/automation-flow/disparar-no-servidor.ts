@@ -4,6 +4,7 @@ import { anotarNaLinhaDoTempo, marcarExecucaoDeAutomacao } from "@/lib/integraco
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 import { continuarComResposta, iniciarFluxoComEstado } from "@/lib/automacoes/iniciar";
+import type { AreaAutomacao } from "@/lib/canais/capacidades";
 
 /**
  * Dispara as automações quando chega uma mensagem. Do lado do SERVIDOR, a partir do webhook.
@@ -145,8 +146,15 @@ async function dispararAutomacoes(params: {
     ...(params.etapaTitulo ? { etapaTitulo: params.etapaTitulo } : {}),
   };
 
+  const areaDoEvento = areaDoCanal(canal);
+
   for (const linha of linhas) {
     const fluxo = linha as unknown as FluxoAutomacao;
+
+    // Robô social não atende WhatsApp, robô comercial não atende Direct. Sem isto, um fluxo de
+    // "mensagem recebida" montado pro funil responderia também a quem escreve no Instagram, com
+    // uma conversa pensada pra outro canal.
+    if (!areaCombina(fluxo, areaDoEvento)) continue;
 
     // Um evento pode casar com mais de um bloco de gatilho. Uma mensagem que chega serve pra
     // "Mensagem recebida", pra "Palavra-chave recebida" (a filtragem por palavra é do próprio
@@ -177,9 +185,14 @@ async function dispararAutomacoes(params: {
 
     // O gatilho tem um canal escolhido no bloco; um fluxo de WhatsApp não pode responder no
     // Instagram só porque chegou mensagem de lá.
+    //
+    // A comparação normaliza os dois lados, e isso NÃO é preciosismo: os blocos de gatilho do
+    // Instagram guardam `canal: "Instagram"` com maiúscula, e a conversa chega em minúscula. Com
+    // a comparação crua, todo fluxo de Instagram criado pela biblioteca era descartado aqui, em
+    // silêncio: o gatilho existia, o evento chegava, e nada acontecia.
     const noGatilho = fluxo.nodes.find((n) => n.category === "gatilho");
     const canalDoFluxo = (noGatilho?.data as { canal?: string } | undefined)?.canal;
-    if (canal !== "CRM" && canalDoFluxo && canalDoFluxo !== canalDoGatilho(canal)) continue;
+    if (canal !== "CRM" && canalDoFluxo && !mesmoCanal(canalDoFluxo, canal)) continue;
 
     const primeiraAresta = fluxo.edges.find((e) => e.source === noGatilho?.id);
     if (!primeiraAresta) continue;
@@ -240,6 +253,25 @@ async function dispararAutomacoes(params: {
   }
 }
 
+/** De qual área é o evento. O canal da conversa é o que decide. Exportado pra teste: é decisão
+ * de roteamento, não detalhe interno, e errar aqui faz robô responder no canal errado. */
+export function areaDoCanal(canal: string): AreaAutomacao {
+  return canal === "Instagram" ? "social" : "comercial";
+}
+
+/**
+ * O fluxo atende eventos desta área?
+ *
+ * Fluxo SEM área é fluxo criado antes desta coluna existir, e aí a resposta é sim: mudar o
+ * comportamento de um robô que já está rodando na conta de alguém, por causa de um campo novo,
+ * seria quebrar automação em produção sem ninguém pedir. Quem decide nesses é o canal do bloco de
+ * gatilho, como sempre foi. Fluxo COM área declarada obedece a área, que é o ponto de ter o campo.
+ */
+export function areaCombina(fluxo: FluxoAutomacao, areaDoEvento: AreaAutomacao): boolean {
+  if (!fluxo.area) return true;
+  return fluxo.area === areaDoEvento;
+}
+
 /**
  * Que tipo de gatilho este evento consegue acionar neste fluxo.
  *
@@ -262,6 +294,17 @@ function tipoDoGatilhoQueCasa(tipoDoEvento: string, tipoDoBloco: string | undefi
 /** O gatilho guarda o canal em minúsculas ("whatsapp"/"instagram"); a conversa guarda o rótulo. */
 function canalDoGatilho(canalDaConversa: string): string {
   return canalDaConversa.toLowerCase();
+}
+
+/**
+ * O canal escrito no bloco de gatilho é o mesmo da conversa?
+ *
+ * Exportado pra teste porque é a comparação que já esteve errada: os blocos de Instagram gravam
+ * "Instagram" e a conversa chega como "instagram", e a diferença de uma letra maiúscula fazia o
+ * fluxo inteiro nunca disparar, sem erro em lugar nenhum.
+ */
+export function mesmoCanal(canalDoBloco: string, canalDaConversa: string): boolean {
+  return canalDoBloco.trim().toLowerCase() === canalDaConversa.trim().toLowerCase();
 }
 
 /** Move (ou cria) o card do contato na etapa pedida. */

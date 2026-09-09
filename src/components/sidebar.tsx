@@ -17,6 +17,7 @@ import { useFunis } from "@/lib/funis-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import {
   IconAutomacoes,
+  IconInstagram,
   IconCalendar,
   IconConfiguracoes,
   IconContatos,
@@ -68,6 +69,7 @@ export const navEntries: NavEntry[] = [
   { href: "/contatos", label: "Contatos", Icon: IconContatos },
   ...gestaoAtividadeItens,
   { href: "/automacoes", label: "Automações", Icon: IconAutomacoes },
+  { href: "/social", label: "Social", Icon: IconInstagram },
   { href: "/azuz-ia", label: "Azuz IA", Icon: IconSparkle },
   { href: "/configuracoes", label: "Configurações", Icon: IconConfiguracoes },
 ];

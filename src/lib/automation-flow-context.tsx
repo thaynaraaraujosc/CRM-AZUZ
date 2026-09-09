@@ -133,6 +133,8 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
       funilId: dados.funilId,
       etapaId: dados.etapaId,
       categoria: dados.categoria,
+      // Comercial é o padrão porque é o que todo robô era até existir a área social.
+      area: dados.area ?? "comercial",
       status: "rascunho",
       ativa: dados.ativa ?? false,
       nodes: dados.nodes ?? [],
