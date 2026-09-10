@@ -117,6 +117,31 @@
      de uma peça escura. */
   --shadow-preto: 0 1px 2px rgba(11, 21, 51, 0.28), 0 6px 16px rgba(11, 21, 51, 0.2);
 
+  /*
+   * ESCALA TIPOGRÁFICA. Doze tamanhos, e nenhum a mais sem uma razão escrita.
+   *
+   * Havia 31 tamanhos diferentes no CRM, com meio pixel espalhado: 12.5px em 77 lugares, 11.5px em
+   * 75, 10.5px em 43. Ninguém escolheu isso; foi cada tela ajustando o seu e o resultado é a
+   * sensação de que cada módulo é um sistema diferente. Diferença de meio pixel não comunica
+   * hierarquia nenhuma, só ruído.
+   *
+   * Os quatro primeiros são o corpo do produto (rótulo, texto, título de card). Do 16 pra cima são
+   * títulos e números grandes de painel. Se um valor novo for realmente necessário, ele entra AQUI,
+   * com o motivo, e não solto numa regra de uma tela só.
+   */
+  --texto-xs: 10px;
+  --texto-sm: 11px;
+  --texto-md: 12px;
+  --texto-base: 13px;
+  --texto-lg: 14px;
+  --titulo-sm: 16px;
+  --titulo-md: 18px;
+  --titulo-lg: 20px;
+  --titulo-xl: 24px;
+  --numero-sm: 32px;
+  --numero-md: 40px;
+  --numero-lg: 56px;
+
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -567,7 +592,7 @@ table {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3);
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
@@ -578,7 +603,7 @@ table {
 }
 
 .sb-workspace .l {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -636,7 +661,7 @@ table {
 
 .nav-badge-em-breve {
   margin-left: auto;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.03em;
   padding: var(--space-1) var(--space-2);
@@ -698,7 +723,7 @@ table {
 
 .nav-item-tag {
   margin-left: auto;
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.04em;
   color: var(--blue);
@@ -721,7 +746,7 @@ table {
   padding: var(--space-2) var(--space-2);
   border-radius: var(--radius-sm);
   color: var(--text-faint);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   transition: background 0.15s ease, color 0.15s ease;
   overflow: hidden;
@@ -770,7 +795,7 @@ table {
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.01em;
@@ -778,7 +803,7 @@ table {
 
 .sb-foot-chevron {
   color: var(--text-faint);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .sidebar.recolhida .sb-foot {
@@ -792,7 +817,7 @@ table {
 }
 
 .sb-foot .role {
-  font-size: 9.5px;
+  font-size: 10px;
   color: var(--text-faint);
 }
 
@@ -886,7 +911,7 @@ table {
   background: none;
   padding: var(--space-2) var(--space-3);
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: var(--fw-semibold);
   color: var(--text-muted);
   cursor: pointer;
@@ -917,7 +942,7 @@ table {
   font-size: var(--fs-body);
   font-weight: var(--fw-light);
   color: var(--text-muted);
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .top-actions {
@@ -1267,14 +1292,14 @@ table {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-md);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .avatar.xs {
   width: 24px;
   height: 24px;
   border-radius: var(--radius-sm);
-  font-size: 9.5px;
+  font-size: 10px;
 }
 
 .card {
@@ -1370,7 +1395,7 @@ table {
   justify-content: center;
   font-family: var(--display);
   font-weight: var(--fw-bold);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .auth-brand-name {
@@ -1401,7 +1426,7 @@ table {
   place-items: center;
   width: 46px;
   height: 46px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   border-radius: var(--radius-md);
   background: var(--surface-elevated);
   border: 1px solid var(--line-soft);
@@ -1411,7 +1436,7 @@ table {
 
 .auth-title {
   font-family: var(--display);
-  font-size: 21px;
+  font-size: 20px;
   font-weight: var(--fw-bold);
   letter-spacing: var(--track-tight);
   text-align: center;
@@ -1439,7 +1464,7 @@ table {
 
 .auth-erro {
   margin: 0 0 var(--space-3);
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--danger);
 }
 
@@ -1459,7 +1484,7 @@ table {
 
 .auth-rodape {
   margin: var(--space-5) 0 0;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--text-muted);
   text-align: center;
 }
@@ -1696,7 +1721,7 @@ table {
 }
 
 .pill {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.02em;
   padding: var(--space-1) var(--space-2);
@@ -1787,7 +1812,7 @@ table {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  margin-bottom: 7px;
+  margin-bottom: 8px;
 }
 
 /* Base de `.input` promovida de `.field .input` pra cá (item 51). Algumas telas usam o input fora
@@ -1799,7 +1824,7 @@ table {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3);
-  font-size: 12.5px;
+  font-size: 13px;
   font-family: inherit;
   color: var(--ink);
   line-height: 1.5;
@@ -2100,7 +2125,7 @@ a.timeline-conteudo:hover {
   border-radius: var(--radius-md);
   background: var(--navy-raised);
   border: 1px solid var(--line);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text-muted);
   cursor: pointer;
@@ -2147,7 +2172,7 @@ a.timeline-conteudo:hover {
 }
 
 .bar-col .lbl {
-  font-size: 9.5px;
+  font-size: 10px;
   color: var(--text-faint);
   font-weight: 600;
 }
@@ -2166,7 +2191,7 @@ a.timeline-conteudo:hover {
 }
 
 .funnel-row .fl {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   width: 88px;
   color: var(--text-muted);
@@ -2215,7 +2240,7 @@ a.timeline-conteudo:hover {
 
 .activity-row-link:hover {
   background: var(--blue-soft-2);
-  padding-left: 21px;
+  padding-left: 20px;
 }
 
 .activity-row .body {
@@ -2229,7 +2254,7 @@ a.timeline-conteudo:hover {
 }
 
 .activity-row .meta {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
 }
 
@@ -2246,7 +2271,7 @@ a.timeline-conteudo:hover {
    ganha fundo (`--surface-hover`) só ao passar o mouse, pra não empilhar caixinha atrás de caixinha
    junto com o card/painel que já envolve a barra de filtros inteira. */
 .fchip {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: var(--fw-medium);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
@@ -2275,7 +2300,7 @@ a.timeline-conteudo:hover {
 }
 
 .nova-pasta-input {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   padding: var(--space-2) var(--space-3);
   width: 160px;
@@ -2313,7 +2338,7 @@ a.timeline-conteudo:hover {
 
 table.tbl {
   width: 100%;
-  font-size: 12.5px;
+  font-size: 13px;
   border-collapse: separate;
   border-spacing: 0 6px;
 }
@@ -2379,7 +2404,7 @@ table.tbl tbody tr:hover td {
 }
 
 .stage-tag {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: var(--fw-semibold);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-xl);
@@ -2431,7 +2456,7 @@ table.tbl tbody tr:hover td {
 
 .leads-pill {
   display: inline-block;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: var(--fw-semibold);
   color: var(--ink);
   background: var(--navy);
@@ -2562,7 +2587,7 @@ table.tbl tbody tr:hover td {
    o número que a pessoa procura ao bater o olho na coluna. Passa a ser o ponto de maior contraste
    do cabeçalho: ciano cheio, número branco. */
 .kcol-h .c {
-  font-size: 11.5px;
+  font-size: 12px;
   color: #ffffff;
   font-weight: var(--fw-bold);
   background: var(--cyan);
@@ -2591,7 +2616,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: var(--fw-semibold);
   color: var(--text-muted);
   background: transparent;
@@ -2685,7 +2710,7 @@ table.tbl tbody tr:hover td {
 
 .lead-card .lname {
   font-family: var(--display);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: var(--fw-bold);
   letter-spacing: var(--track-snug);
   color: var(--ink-nome);
@@ -2726,7 +2751,7 @@ table.tbl tbody tr:hover td {
   border-radius: var(--radius-sm);
   background: var(--blue-soft);
   color: var(--blue);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -2771,7 +2796,7 @@ table.tbl tbody tr:hover td {
 /* Etiqueta de status/origem: metadado, o degrau mais discreto da linha da conversa. Mas legível.
    Estava em 9px, tamanho em que caixa alta com espaçamento vira ruído cinza. */
 .tag {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: var(--fw-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2788,7 +2813,7 @@ table.tbl tbody tr:hover td {
 }
 
 .days {
-  font-size: 9.5px;
+  font-size: 10px;
   color: var(--text-faint);
 }
 
@@ -2832,13 +2857,13 @@ table.tbl tbody tr:hover td {
 }
 
 .conv-card .ctime {
-  font-size: 9.5px;
+  font-size: 10px;
   color: var(--text-faint);
   flex: 0 0 auto;
 }
 
 .conv-card .cmsg {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
   line-height: 1.4;
   margin-bottom: 8px;
@@ -2894,7 +2919,7 @@ table.tbl tbody tr:hover td {
 /* Painel de detalhe (contato/negócio selecionado). Contorno neutro + elevação, não azul: o painel
    estar aberto não é uma "ação" (regra de cor da reestruturação de design, fase 1). */
 .open-conv {
-  margin-top: 18px;
+  margin-top: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
@@ -2948,7 +2973,7 @@ table.tbl tbody tr:hover td {
 }
 
 .open-conv-h .n {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -3115,7 +3140,7 @@ table.tbl tbody tr:hover td {
   position: absolute;
   top: 50%;
   left: 50%;
-  font-size: 34px;
+  font-size: 32px;
   transform: translate(-50%, -50%) scale(0);
   animation: coracao-pop 0.7s ease-out forwards;
   pointer-events: none;
@@ -3197,9 +3222,9 @@ table.tbl tbody tr:hover td {
 }
 
 .bubble-localizacao-link {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
-  margin-top: 3px;
+  margin-top: 4px;
   opacity: 0.9;
 }
 
@@ -3235,14 +3260,14 @@ table.tbl tbody tr:hover td {
   background: transparent;
   border: 1px dashed var(--line);
   color: var(--text-faint);
-  font-size: 10.5px;
+  font-size: 11px;
   text-align: center;
   max-width: 90%;
 }
 
 .bubble .tm {
   display: block;
-  font-size: 9px;
+  font-size: 10px;
   opacity: 0.6;
   margin-top: 4px;
 }
@@ -3362,7 +3387,7 @@ table.tbl tbody tr:hover td {
 }
 
 .chat-emoji-categoria {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -3481,7 +3506,7 @@ table.tbl tbody tr:hover td {
   border: none;
   background: var(--navy-raised-2);
   color: var(--text-muted);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   padding: var(--space-2) var(--space-3);
   border-radius: 999px;
@@ -3522,7 +3547,7 @@ table.tbl tbody tr:hover td {
   border-radius: 999px;
   background: var(--blue);
   color: var(--white);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: var(--fw-semibold);
   display: inline-flex;
   align-items: center;
@@ -3543,7 +3568,7 @@ table.tbl tbody tr:hover td {
   width: 100%;
   text-align: left;
   padding: var(--space-3) var(--space-4);
-  margin-bottom: 7px;
+  margin-bottom: 8px;
   background: var(--surface-elevated);
   border: 1px solid var(--line);
   border-left: 2px solid var(--line);
@@ -3579,7 +3604,7 @@ table.tbl tbody tr:hover td {
   border: none;
   background: none;
   color: var(--text-faint);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
   cursor: pointer;
   opacity: 0;
@@ -3667,7 +3692,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 /* Ordem de leitura da linha: 1) nome, 2) estado, 3) mensagem, 4) horário. Cada degrau muda peso,
@@ -3679,7 +3704,7 @@ table.tbl tbody tr:hover td {
   align-items: center;
   gap: var(--space-1);
   font-family: var(--display);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: var(--fw-bold);
   letter-spacing: var(--track-snug);
   color: var(--ink-nome);
@@ -3712,7 +3737,7 @@ table.tbl tbody tr:hover td {
 .wa-row .cmsg-texto {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: var(--fw-light);
   color: var(--text-muted);
   line-height: 1.45;
@@ -3780,8 +3805,8 @@ table.tbl tbody tr:hover td {
    falhou fica vermelho, porque é o único que a pessoa está procurando quando abre isto. */
 .execucao-passos {
   margin: 0;
-  padding-left: 18px;
-  font-size: 12.5px;
+  padding-left: 16px;
+  font-size: 13px;
   line-height: 1.7;
   color: var(--text-muted);
 }
@@ -3815,7 +3840,7 @@ table.tbl tbody tr:hover td {
 .contatos-ordenar .input {
   width: auto;
   min-width: 170px;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .origem-indicacao {
@@ -4078,7 +4103,7 @@ table.tbl tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 52px;
+  font-size: 56px;
 }
 
 .wa-email-toolbar {
@@ -4153,7 +4178,7 @@ table.tbl tbody tr:hover td {
 }
 
 .wa-historico-quando {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
 }
 
@@ -4161,7 +4186,7 @@ table.tbl tbody tr:hover td {
   margin: 0;
   padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -4212,7 +4237,7 @@ table.tbl tbody tr:hover td {
   background: #0f9d63;
   color: #fff;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 14px;
   padding: var(--space-3) var(--space-6);
   border-radius: 999px;
   box-shadow: var(--shadow-md);
@@ -4237,7 +4262,7 @@ table.tbl tbody tr:hover td {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-4);
-  margin-bottom: 26px;
+  margin-bottom: 28px;
 }
 
 .crm-live-tabs {
@@ -4294,13 +4319,13 @@ table.tbl tbody tr:hover td {
 }
 
 .crm-live-trofeu {
-  font-size: 30px;
+  font-size: 32px;
   display: block;
   margin-bottom: 6px;
 }
 
 .crm-live-vencedor-titulo {
-  font-size: 11.5px;
+  font-size: 12px;
   color: #a7adda;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -4309,13 +4334,13 @@ table.tbl tbody tr:hover td {
 }
 
 .crm-live-vencedor-nome {
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 700;
   margin: 0 0 var(--space-1);
 }
 
 .crm-live-vencedor-valor {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 800;
   color: #7d9bff;
   margin: 0;
@@ -4340,7 +4365,7 @@ table.tbl tbody tr:hover td {
 }
 
 .crm-live-kpi-l {
-  font-size: 11.5px;
+  font-size: 12px;
   color: #a7adda;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -4360,7 +4385,7 @@ table.tbl tbody tr:hover td {
 }
 
 .crm-live-kpi-sub {
-  font-size: 11.5px;
+  font-size: 12px;
   color: #a7adda;
   margin: var(--space-2) 0 0;
 }
@@ -4373,7 +4398,7 @@ table.tbl tbody tr:hover td {
 }
 
 .crm-live-motivos-titulo {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   margin: 0 0 var(--space-5);
 }
@@ -4429,7 +4454,7 @@ table.tbl tbody tr:hover td {
 }
 
 .crm-live-feed-titulo {
-  font-size: 11.5px;
+  font-size: 12px;
   color: #a7adda;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -4444,7 +4469,7 @@ table.tbl tbody tr:hover td {
   gap: var(--space-3);
   padding: var(--space-2) 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .crm-live-feed-item:last-child {
@@ -4476,7 +4501,7 @@ table.tbl tbody tr:hover td {
 }
 
 .crm-live-etapa-n {
-  font-size: 30px;
+  font-size: 32px;
   font-weight: 800;
   margin: 0 0 var(--space-1);
   font-family: var(--display, inherit);
@@ -4489,7 +4514,7 @@ table.tbl tbody tr:hover td {
 }
 
 .crm-live-etapa-valor {
-  font-size: 12.5px;
+  font-size: 13px;
   color: #7d9bff;
   font-weight: 700;
   margin: 0;
@@ -4550,12 +4575,12 @@ table.tbl tbody tr:hover td {
 }
 
 .vendor-row .n {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .vendor-row .r {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
   line-height: 1.45;
 }
@@ -4593,7 +4618,7 @@ table.tbl tbody tr:hover td {
 }
 
 .attach-chip .fn {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   flex: 0 0 auto;
 }
@@ -4637,7 +4662,7 @@ table.tbl tbody tr:hover td {
 .tc-meta {
   font-size: 11px;
   color: var(--text-faint);
-  margin-bottom: 9px;
+  margin-bottom: 8px;
 }
 
 .tc-r3 {
@@ -4650,7 +4675,7 @@ table.tbl tbody tr:hover td {
 .tc-val {
   font-family: var(--display);
   font-weight: 700;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--blue);
 }
 
@@ -4682,7 +4707,7 @@ table.tbl tbody tr:hover td {
 }
 
 .fsel {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
@@ -4740,7 +4765,7 @@ button.camp-row:hover {
 }
 
 .camp-sub {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
   margin-top: 1px;
 }
@@ -4794,7 +4819,7 @@ button.camp-row:hover {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3);
-  font-size: 11.5px;
+  font-size: 12px;
   box-shadow: var(--shadow-md);
   pointer-events: none;
   white-space: nowrap;
@@ -4808,7 +4833,7 @@ button.camp-row:hover {
   color: var(--acao-texto);
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-2);
-  font-size: 11.5px;
+  font-size: 12px;
   pointer-events: none;
   z-index: 200;
   box-shadow: var(--shadow-md);
@@ -4826,7 +4851,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -4846,7 +4871,7 @@ button.camp-row:hover {
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
   margin-bottom: 14px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -4857,7 +4882,7 @@ button.camp-row:hover {
 
 .badge-auto,
 .badge-manual {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -4899,7 +4924,7 @@ button.camp-row:hover {
 .stat-row .sv {
   font-family: var(--display);
   font-weight: 700;
-  font-size: 14.5px;
+  font-size: 14px;
   white-space: nowrap;
 }
 
@@ -4941,7 +4966,7 @@ button.camp-row:hover {
 }
 
 .prev-row .d {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
 }
 
@@ -4963,7 +4988,7 @@ button.camp-row:hover {
 }
 
 .auto-acao-icone {
-  font-size: 15px;
+  font-size: 14px;
   flex: 0 0 auto;
 }
 
@@ -5003,7 +5028,7 @@ button.camp-row:hover {
 .auto-kanban-card-h .titulo {
   flex: 1;
   min-width: 0;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -5038,7 +5063,7 @@ button.camp-row:hover {
 }
 
 .seg-chip {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
@@ -5067,11 +5092,11 @@ button.camp-row:hover {
 .aud-count .n {
   font-family: var(--display);
   font-weight: 700;
-  font-size: 22px;
+  font-size: 24px;
 }
 
 .aud-count .l {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
   font-weight: 600;
 }
@@ -5148,12 +5173,12 @@ button.camp-row:hover {
 }
 
 .broadcast-title {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .broadcast-meta {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
   margin-top: 2px;
 }
@@ -5180,7 +5205,7 @@ button.camp-row:hover {
 /* ---------------- Configurações / integrações ---------------- */
 
 .int-group {
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .int-group-h {
@@ -5207,14 +5232,14 @@ button.camp-row:hover {
 .plano-nome {
   font-family: var(--display);
   font-weight: 700;
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--blue);
 }
 
 .plano-desc {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
-  margin-top: 3px;
+  margin-top: 4px;
   max-width: 420px;
 }
 
@@ -5256,7 +5281,7 @@ button.camp-row:hover {
 .plano-cancelado-pill {
   display: inline-block;
   margin-left: 8px;
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -5347,7 +5372,7 @@ button.camp-row:hover {
 }
 
 .int-status {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-xl);
@@ -5417,7 +5442,7 @@ button.camp-row:hover {
   flex-direction: column;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: 26px;
+  margin-bottom: 28px;
 }
 
 .login-brand .mark {
@@ -5435,7 +5460,7 @@ button.camp-row:hover {
 }
 
 .login-brand .ws {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
   font-weight: 600;
   text-align: center;
@@ -5449,17 +5474,17 @@ button.camp-row:hover {
 }
 
 .lfield {
-  margin-bottom: 13px;
+  margin-bottom: 12px;
 }
 
 .lfield label {
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  margin-bottom: 7px;
+  margin-bottom: 8px;
 }
 
 .lfield .input {
@@ -5491,7 +5516,7 @@ button.camp-row:hover {
 }
 
 .login-row a {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--blue);
   font-weight: 600;
 }
@@ -5500,7 +5525,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
   cursor: pointer;
 }
@@ -5549,9 +5574,9 @@ button.camp-row:hover {
 
 .login-foot {
   text-align: center;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
-  margin-top: 18px;
+  margin-top: 16px;
   line-height: 1.6;
 }
 
@@ -5636,7 +5661,7 @@ button.camp-row:hover {
 
 .wa-contato-picker-numero {
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
 }
 
@@ -5705,7 +5730,7 @@ button.camp-row:hover {
 }
 
 .bubble-contato-nome {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -5752,12 +5777,12 @@ button.camp-row:hover {
 }
 
 .dropdown-item .n {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .dropdown-item .r {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
 }
 
@@ -5959,12 +5984,12 @@ button.camp-row:hover {
 
 /* O número de hoje é o que a pessoa procura ao abrir o mês. Maior que os outros, e branco. */
 .agenda-cell.hoje .agenda-daynum {
-  font-size: 15px;
+  font-size: 14px;
   color: #ffffff;
 }
 
 .agenda-evento {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--blue);
   background: var(--blue-soft);
@@ -5982,7 +6007,7 @@ button.camp-row:hover {
 }
 
 .agenda-evento-mais {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--text-faint);
   font-weight: 700;
 }
@@ -6020,7 +6045,7 @@ button.camp-row:hover {
 }
 
 .view-switch-lbl {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -6045,7 +6070,7 @@ button.camp-row:hover {
 }
 
 .doc-sidebar-h {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -6094,7 +6119,7 @@ button.camp-row:hover {
   border: none;
   background: none;
   text-align: left;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--blue);
   cursor: pointer;
@@ -6140,7 +6165,7 @@ button.camp-row:hover {
   border-radius: var(--radius-md);
   background: var(--navy-raised);
   border: 1px dashed var(--line);
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   cursor: pointer;
   overflow: hidden;
 }
@@ -6164,7 +6189,7 @@ button.camp-row:hover {
   background: none;
   font-family: var(--display);
   font-weight: 700;
-  font-size: 26px;
+  font-size: 24px;
   color: var(--ink);
   padding: 0;
   margin-bottom: 10px;
@@ -6175,7 +6200,7 @@ button.camp-row:hover {
 }
 
 .doc-byline {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
   margin-bottom: 20px;
 }
@@ -6267,7 +6292,7 @@ button.camp-row:hover {
 }
 
 .doc-menu-categoria {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -6320,7 +6345,7 @@ button.camp-row:hover {
 .doc-regua-marca {
   flex: 1 0 0;
   border-right: 1px solid var(--line);
-  font-size: 8.5px;
+  font-size: 10px;
   color: var(--text-faint);
   text-align: right;
   padding: var(--space-1) var(--space-1) 0 0;
@@ -6451,11 +6476,11 @@ button.camp-row:hover {
 .doc-regua-vertical-marca {
   flex: 1 0 0;
   border-bottom: 1px solid var(--line);
-  font-size: 7.5px;
+  font-size: 10px;
   color: var(--text-faint);
   writing-mode: vertical-rl;
   text-align: right;
-  padding: 0 0 3px 1px;
+  padding: 0 0 4px 1px;
   overflow: hidden;
 }
 
@@ -6572,21 +6597,21 @@ button.camp-row:hover {
  * impressão (documentos-export.ts) pra não divergir do que aparece aqui no editor.
  */
 .doc-body-rich h1 {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 700;
   line-height: 1.3;
   margin: 0.7em 0 0.35em;
 }
 
 .doc-body-rich h2 {
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1.35;
   margin: 0.65em 0 0.3em;
 }
 
 .doc-body-rich h3 {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.4;
   margin: 0.6em 0 0.25em;
@@ -6595,7 +6620,7 @@ button.camp-row:hover {
 /* "Subtítulo" no seletor de estilo. Menor que Título 3 e sem negrito total, pra marcar uma
    hierarquia clara abaixo dos três níveis de título. */
 .doc-body-rich h4 {
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 600;
   font-style: italic;
   color: #4a5268;
@@ -6632,7 +6657,7 @@ button.camp-row:hover {
    parar na impressão ou no PDF (só cabeçalho/rodapé/números inseridos pelo usuário podem aparecer lá). */
 .doc-page-numero-ui {
   text-align: center;
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
   padding-top: 6px;
 }
@@ -6655,7 +6680,7 @@ button.camp-row:hover {
   border: 1px dashed var(--line);
   background: var(--navy);
   color: var(--text-muted);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   padding: var(--space-2) var(--space-4);
   border-radius: 999px;
@@ -6771,7 +6796,7 @@ button.camp-row:hover {
 .doc-titulo-header-input {
   border: 1px solid transparent;
   background: none;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--ink);
   padding: var(--space-2) var(--space-2);
@@ -6800,7 +6825,7 @@ button.camp-row:hover {
 }
 
 .doc-estado-salvamento {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
   flex: 0 0 auto;
   white-space: nowrap;
@@ -6834,7 +6859,7 @@ button.camp-row:hover {
   gap: var(--space-1);
   padding: var(--space-1) var(--space-4);
   flex: 0 0 auto;
-  font-size: 12.5px;
+  font-size: 13px;
   overflow-x: auto;
   white-space: nowrap;
 }
@@ -6875,7 +6900,7 @@ button.camp-row:hover {
 }
 
 .doc-menu-atalho {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
   flex: 0 0 auto;
 }
@@ -6954,7 +6979,7 @@ button.camp-row:hover {
 }
 
 .doc-comentario-trecho {
-  font-size: 11.5px;
+  font-size: 12px;
   font-style: italic;
   color: var(--text-faint);
   border-left: 2px solid var(--blue-soft);
@@ -6963,7 +6988,7 @@ button.camp-row:hover {
 }
 
 .doc-comentario-texto {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
   margin: 0 0 var(--space-2);
 }
@@ -6996,11 +7021,11 @@ button.camp-row:hover {
 
 .doc-ajuda-lista {
   margin: var(--space-1) 0 0;
-  padding-left: 18px;
+  padding-left: 16px;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--muted, #666);
 }
 
@@ -7292,7 +7317,7 @@ button.camp-row:hover {
   display: flex;
   gap: var(--space-2);
   margin-top: 20px;
-  padding-top: 18px;
+  padding-top: 16px;
   border-top: 1px solid var(--line-soft);
 }
 
@@ -7382,7 +7407,7 @@ button.camp-row:hover {
   border: none;
   background: none;
   padding: var(--space-2) var(--space-1);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -7447,7 +7472,7 @@ button.camp-row:hover {
   text-align: left;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
   cursor: pointer;
 }
@@ -7522,7 +7547,7 @@ button.camp-row:hover {
   border-radius: var(--radius-md);
   padding: var(--space-2);
   text-align: center;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
   cursor: nwse-resize;
   margin-bottom: 12px;
@@ -7550,7 +7575,7 @@ button.camp-row:hover {
   background: none;
   text-align: left;
   padding: var(--space-2) var(--space-4);
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
   cursor: pointer;
 }
@@ -7621,14 +7646,14 @@ button.camp-row:hover {
 
 .form-scratch-title {
   display: block;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--ink);
 }
 
 .form-scratch-sub {
   display: block;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
   margin-top: 2px;
 }
@@ -7645,7 +7670,7 @@ button.camp-row:hover {
 }
 
 .form-link-h {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
   margin: 0 0 var(--space-2);
@@ -7666,7 +7691,7 @@ button.camp-row:hover {
   background: none;
   font-family: var(--display);
   font-weight: 700;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--ink);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
@@ -7744,7 +7769,7 @@ button.camp-row:hover {
   text-align: left;
   padding: var(--space-2) var(--space-2);
   border-radius: var(--radius-md);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -7923,7 +7948,7 @@ button.camp-row:hover {
 }
 
 .form-painel-secao-h {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -7975,7 +8000,7 @@ button.camp-row:hover {
   background: none;
   color: var(--text-faint);
   cursor: pointer;
-  font-size: 10.5px;
+  font-size: 11px;
   padding: var(--space-1) var(--space-1);
   border-radius: var(--radius-sm);
 }
@@ -7986,7 +8011,7 @@ button.camp-row:hover {
 }
 
 .form-logica-add-btn {
-  font-size: 11.5px;
+  font-size: 12px;
   padding: var(--space-2) var(--space-3);
 }
 
@@ -8077,7 +8102,7 @@ button.camp-row:hover {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-3);
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--ink);
   font-family: inherit;
@@ -8106,7 +8131,7 @@ button.camp-row:hover {
 
 .form-campo-prefixado > span {
   flex: 0 0 auto;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text-faint);
 }
@@ -8136,7 +8161,7 @@ button.camp-row:hover {
   border-radius: var(--radius-xl);
   background: var(--blue-soft);
   color: var(--blue);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -8155,7 +8180,7 @@ button.camp-row:hover {
   min-width: 90px;
   border: none;
   background: none;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
   padding: var(--space-1) 0;
 }
@@ -8206,7 +8231,7 @@ button.camp-row:hover {
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-muted);
   cursor: pointer;
@@ -8220,14 +8245,14 @@ button.camp-row:hover {
 
 .form-bloco-titulo {
   font-family: var(--display);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--ink);
   margin: var(--space-2) 0 0;
 }
 
 .form-bloco-texto {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--text-muted);
   margin: 0;
 }
@@ -8284,7 +8309,7 @@ button.camp-row:hover {
 }
 
 .form-pergunta-dica {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
   margin: 0 0 var(--space-2);
 }
@@ -8418,7 +8443,7 @@ button.camp-row:hover {
 .form-banner-corte-legenda {
   display: flex;
   justify-content: space-between;
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
   margin-top: 2px;
 }
@@ -8476,7 +8501,7 @@ button.camp-row:hover {
 
 .form-public-obrigado h2 {
   color: #ffffff;
-  font-size: 26px;
+  font-size: 24px;
   line-height: 1.35;
   margin: 0;
 }
@@ -8621,7 +8646,7 @@ button.camp-row:hover {
 }
 
 .wa-anexo-label {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.25;
 }
@@ -8726,7 +8751,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .wa-midia-miniaturas {
@@ -8775,7 +8800,7 @@ button.camp-row:hover {
   border-radius: 50%;
   background: #d64545;
   color: white;
-  font-size: 9px;
+  font-size: 10px;
   border: none;
   cursor: pointer;
   line-height: 1;
@@ -8983,7 +9008,7 @@ button.camp-row:hover {
 }
 
 .bubble-documento-meta {
-  font-size: 10.5px;
+  font-size: 11px;
   opacity: 0.75;
 }
 
@@ -9172,7 +9197,7 @@ button.camp-row:hover {
 }
 
 .flow-save-indicator {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
 }
 
@@ -9190,7 +9215,7 @@ button.camp-row:hover {
   border: none;
   background: none;
   color: var(--text-faint);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
@@ -9271,7 +9296,7 @@ button.camp-row:hover {
 }
 
 .flow-inicio-vazio-sub {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--text-faint);
   margin: 0 0 var(--space-2);
 }
@@ -9318,7 +9343,7 @@ button.camp-row:hover {
 }
 
 .flow-escolher-gatilho-item .r {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
 }
 
@@ -9364,7 +9389,7 @@ button.camp-row:hover {
 
 .flow-midia-dropzone p {
   margin: 0 0 var(--space-2);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .flow-midia-preview {
@@ -9378,7 +9403,7 @@ button.camp-row:hover {
 }
 
 .flow-midia-preview-icone {
-  font-size: 26px;
+  font-size: 24px;
   line-height: 1;
 }
 
@@ -9398,7 +9423,7 @@ button.camp-row:hover {
 }
 
 .flow-midia-preview-info .n {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
   word-break: break-word;
@@ -9410,7 +9435,7 @@ button.camp-row:hover {
 }
 
 .flow-midia-preview-legenda {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
   font-style: italic;
 }
@@ -9459,7 +9484,7 @@ button.camp-row:hover {
 }
 
 .flow-biblioteca-item-icone {
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1;
 }
 
@@ -9479,7 +9504,7 @@ button.camp-row:hover {
 }
 
 .flow-biblioteca-item-info .n {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
 }
@@ -9591,7 +9616,7 @@ button.camp-row:hover {
   border: none;
   background: none;
   text-align: left;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink);
   cursor: pointer;
@@ -9612,9 +9637,9 @@ button.camp-row:hover {
 }
 
 .wa-bolha-opcao {
-  padding: 7px 2px 0;
+  padding: 8px 2px 0;
   margin-top: 6px;
-  font-size: 12.5px;
+  font-size: 13px;
   text-align: center;
   opacity: 0.85;
   border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
@@ -9701,7 +9726,7 @@ button.camp-row:hover {
 }
 
 .flow-lib-bloco-label {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ink);
 }
@@ -9714,7 +9739,7 @@ button.camp-row:hover {
 }
 
 .flow-lib-bloco-desc {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -9809,7 +9834,7 @@ button.camp-row:hover {
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-xl);
@@ -9894,7 +9919,7 @@ button.camp-row:hover {
 
 .flow-node-pausado-badge {
   flex: 0 0 auto;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -9953,7 +9978,7 @@ button.camp-row:hover {
 }
 
 .flow-node-icon {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.3;
   /* O ícone é o indicador de cor do bloco, junto com a barra da esquerda. */
   color: var(--flow-cor-categoria, var(--text-muted));
@@ -9977,7 +10002,7 @@ button.camp-row:hover {
 .flow-node-label {
   display: block;
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -10017,7 +10042,7 @@ button.camp-row:hover {
   align-items: center;
   justify-content: flex-end;
   padding: var(--space-1) var(--space-4) var(--space-1) var(--space-2);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-sm);
@@ -10137,7 +10162,7 @@ button.camp-row:hover {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   z-index: 10;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 /* ---------------- Menu de contexto do nó ---------------- */
@@ -10179,7 +10204,7 @@ button.camp-row:hover {
   border: none;
   background: none;
   border-bottom: 2px solid transparent;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-faint);
   cursor: pointer;
@@ -10276,7 +10301,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -10306,7 +10331,7 @@ button.camp-row:hover {
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--navy-raised-2);
-  font-size: 11.5px;
+  font-size: 12px;
   cursor: pointer;
   margin-bottom: 6px;
 }
@@ -10441,7 +10466,7 @@ button.camp-row:hover {
 
 .flow-opcao-alternativas label {
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -10530,7 +10555,7 @@ button.camp-row:hover {
   background: var(--navy-raised);
   color: var(--text-muted);
   font-family: var(--body);
-  font-size: 11.5px;
+  font-size: 12px;
   white-space: pre-wrap;
   line-height: 1.5;
 }
@@ -10750,7 +10775,7 @@ button.camp-row:hover {
 }
 
 .filterbar-field label {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-faint);
   text-transform: uppercase;
@@ -10799,7 +10824,7 @@ button.camp-row:hover {
 }
 
 .kpi-personalizar-item .n {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
 }
 
@@ -10854,7 +10879,7 @@ button.camp-row:hover {
 }
 
 .funnel-step-label {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--ink);
 }
@@ -10893,7 +10918,7 @@ button.camp-row:hover {
   border: 1px dashed var(--line);
   border-radius: var(--radius-lg);
   color: var(--text-faint);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -10986,7 +11011,7 @@ button.camp-row:hover {
 }
 
 .wizard-secao-item .n {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
 }
 
@@ -10999,7 +11024,7 @@ button.camp-row:hover {
 
 .wizard-preview-secao h5 {
   font-family: var(--display);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   margin: 0 0 var(--space-2);
   color: var(--blue);
@@ -11014,7 +11039,7 @@ button.camp-row:hover {
 }
 
 .report-type-icon {
-  font-size: 22px;
+  font-size: 24px;
 }
 
 .report-type-actions {
@@ -11082,7 +11107,7 @@ button.camp-row:hover {
 
 .wa-resumo-nome {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--ink);
 }
@@ -11285,7 +11310,7 @@ button.camp-row:hover {
 }
 
 .jornada-recente-abrir .n {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
 }
@@ -11313,7 +11338,7 @@ button.camp-row:hover {
   border: 0;
   cursor: pointer;
   color: #e0a83c;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
 }
 
@@ -11378,12 +11403,12 @@ button.camp-row:hover {
 }
 
 .jornada-resumo-item .l {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  margin: 0 0 3px;
+  margin: 0 0 4px;
 }
 
 .jornada-resumo-item .v {
@@ -11489,7 +11514,7 @@ button.camp-row:hover {
 
 .wa-modal-header-desc {
   margin: var(--space-1) 0 0;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--text-faint);
 }
 
@@ -11507,7 +11532,7 @@ button.camp-row:hover {
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
@@ -11609,7 +11634,7 @@ button.camp-row:hover {
 }
 
 .wa-fundo-sub {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -11671,7 +11696,7 @@ button.camp-row:hover {
 }
 
 .wa-config-notif-desc {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
 }
 
@@ -11701,7 +11726,7 @@ button.camp-row:hover {
 
 .wa-config-confirmar-fechar p {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -11778,7 +11803,7 @@ button.camp-row:hover {
 
 .chat-audio-duracao {
   flex: 0 0 auto;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
@@ -11947,7 +11972,7 @@ button.camp-row:hover {
   border: 1px dashed var(--line);
   color: var(--text-faint);
   font-style: italic;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 /* Citação no formato do Direct: faixa clara com barra na lateral, miniatura à esquerda quando o
@@ -11956,7 +11981,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   padding: var(--space-2) var(--space-2);
   border-left: 3px solid var(--ink-nome);
   border-radius: var(--radius-sm);
@@ -11979,7 +12004,7 @@ button.camp-row:hover {
 
 .wa-citacao-autor {
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: var(--fw-semibold);
   color: var(--ink-nome);
 }
@@ -11998,7 +12023,7 @@ button.camp-row:hover {
 .wa-remetente-grupo {
   display: block;
   margin-bottom: 2px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--blue);
 }
@@ -12062,7 +12087,7 @@ button.camp-row:hover {
 .wa-dados-grupo-avatar {
   width: 84px;
   height: 84px;
-  font-size: 26px;
+  font-size: 24px;
   margin-bottom: 10px;
 }
 
@@ -12081,14 +12106,14 @@ button.camp-row:hover {
 
 .wa-dados-grupo-descricao {
   margin-top: 4px;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--text-faint);
   white-space: pre-wrap;
 }
 
 .wa-dados-grupo-criado {
   margin-top: 10px;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
 }
 
@@ -12116,7 +12141,7 @@ button.camp-row:hover {
 }
 
 .wa-dados-grupo-membros-count {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--text-faint);
 }
 
@@ -12134,7 +12159,7 @@ button.camp-row:hover {
 }
 
 .wa-participante-info .s {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
 }
 
@@ -12179,7 +12204,7 @@ button.camp-row:hover {
 }
 
 .chat-respondendo-preview {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -12282,7 +12307,7 @@ button.camp-row:hover {
 }
 
 .audio-player-duracao {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
 }
@@ -12298,7 +12323,7 @@ button.camp-row:hover {
   border: 1px solid var(--line);
   background: transparent;
   color: var(--text-muted);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -12428,7 +12453,7 @@ button.camp-row:hover {
   gap: var(--space-3);
   padding: var(--space-2) 0;
   border-bottom: 1px solid var(--line-soft);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .wa-msg-detalhes-item:last-child {
@@ -12489,7 +12514,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--blue);
   margin-bottom: 8px;
@@ -12508,14 +12533,14 @@ button.camp-row:hover {
   padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
   border-radius: var(--radius-xl);
   background: var(--navy);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .wa-contato-picker-tray-item .avatar {
   width: 20px;
   height: 20px;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .wa-contato-picker-tray-item button {
@@ -12569,7 +12594,7 @@ button.camp-row:hover {
 }
 
 .wa-contato-picker-card-linha {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -12620,7 +12645,7 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -12703,7 +12728,7 @@ button.camp-row:hover {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
@@ -12730,7 +12755,7 @@ button.camp-row:hover {
   border-radius: var(--radius-xl);
   background: var(--white);
   color: var(--blue);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 800;
 }
 
@@ -12748,7 +12773,7 @@ button.camp-row:hover {
   background: none;
   border: 0;
   padding: var(--space-2) var(--space-2);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-muted);
   cursor: pointer;
@@ -12757,7 +12782,7 @@ button.camp-row:hover {
 }
 
 .automacoes-count {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
   white-space: nowrap;
 }
@@ -12766,7 +12791,7 @@ button.camp-row:hover {
   background: none;
   border: 0;
   color: var(--blue);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   padding: var(--space-1) var(--space-1);
@@ -12844,7 +12869,7 @@ button.camp-row:hover {
 }
 
 .flow-filtros-sub {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-faint);
   margin: var(--space-2) 0 var(--space-1);
@@ -13236,7 +13261,7 @@ button.camp-row:hover {
    corpo normal. Antes o número era 20px e o rótulo 10,5px: perto demais pra um dizer "olhe aqui
    primeiro". */
 .inicio-stat-mini .n {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 700;
   line-height: var(--lh-tight);
   color: var(--ink);
@@ -13259,7 +13284,7 @@ button.camp-row:hover {
 }
 
 .inicio-stat-mini-obs {
-  margin-top: 3px;
+  margin-top: 4px;
   padding-top: 0;
   font-size: var(--fs-secondary);
   font-weight: var(--fw-regular);
@@ -13274,7 +13299,7 @@ button.camp-row:hover {
   gap: var(--space-1);
 }
 .inicio-stat-grande .n {
-  font-size: 38px;
+  font-size: 40px;
 }
 .inicio-stat-grande .r {
   font-size: var(--fs-body);
@@ -13368,7 +13393,7 @@ button.camp-row:hover {
 /* Etiqueta de estado: caixa alta e espaçamento de letra fazem ela ser lida como marcador, não como
    mais uma palavra da frase. */
 .central-dia-badge {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: var(--fw-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -13410,7 +13435,7 @@ button.camp-row:hover {
   gap: var(--space-3);
   font-size: var(--fs-caption);
   color: var(--text-faint);
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .central-dia-destaque {
@@ -13503,7 +13528,7 @@ button.camp-row:hover {
   border-bottom: none;
 }
 .central-dia-recomendacao .n {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
   margin: 0 0 2px;
@@ -13544,7 +13569,7 @@ button.camp-row:hover {
   border: 1px solid var(--line-soft);
 }
 .central-dia-concluido-row .n {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--ink);
   margin: 0;
@@ -13595,7 +13620,7 @@ button.camp-row:hover {
   min-width: 0;
 }
 .central-dia-organizar-info .n {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
   margin: 0;
@@ -13667,7 +13692,7 @@ button.camp-row:hover {
 }
 
 .config-nav-grupo-h {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -13685,7 +13710,7 @@ button.camp-row:hover {
   border-radius: var(--radius-md);
   background: none;
   border: 1px solid transparent;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -13723,7 +13748,7 @@ button.camp-row:hover {
   flex-wrap: wrap;
 }
 .config-cabecalho h3 {
-  margin: 0 0 3px;
+  margin: 0 0 4px;
   font-size: 16px;
   font-weight: 700;
   color: var(--ink);
@@ -13742,7 +13767,7 @@ button.camp-row:hover {
 }
 
 .config-bloco-titulo {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
   margin: 0 0 10px;
@@ -13765,7 +13790,7 @@ button.camp-row:hover {
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-faint);
   cursor: pointer;
@@ -13804,7 +13829,7 @@ button.camp-row:hover {
   background: var(--blue-soft-2);
 }
 .config-linha-clicavel .n {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
   margin: 0;
@@ -13830,7 +13855,7 @@ button.camp-row:hover {
 .config-tabela-notif th {
   text-align: left;
   padding: var(--space-2) var(--space-3);
-  font-size: 10.5px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--text-faint);
@@ -13872,7 +13897,7 @@ button.camp-row:hover {
   border-color: var(--blue);
 }
 .config-modelo-card .n {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
 }
@@ -13951,7 +13976,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
   cursor: pointer;
   margin-bottom: 6px;
@@ -13960,13 +13985,13 @@ button.camp-row:hover {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--space-1) var(--space-3);
-  padding-left: 22px;
+  padding-left: 20px;
 }
 .config-permissoes-item {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
   cursor: pointer;
 }
@@ -14018,7 +14043,7 @@ button.camp-row:hover {
 }
 .config-etiqueta-row .n {
   font-weight: 600;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
 }
 .config-etiqueta-row .r {
@@ -14111,7 +14136,7 @@ button.camp-row:hover {
   border-radius: var(--radius-md);
   background: var(--blue-soft-2);
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.6;
 }
 
@@ -14148,7 +14173,7 @@ button.camp-row:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 /* Barra de "alterações não salvas" */
@@ -14172,7 +14197,7 @@ button.camp-row:hover {
 .config-salvar-bar-ok {
   color: #0f9d63;
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 @media (max-width: 900px) {
@@ -15057,7 +15082,7 @@ button.camp-row:hover {
 
 .pagina-erro h1 {
   margin: 0;
-  font-size: 22px;
+  font-size: 24px;
 }
 
 .pagina-erro-texto {
@@ -15146,7 +15171,7 @@ button.camp-row:hover {
   height: 26px;
   display: grid;
   place-items: center;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
   color: var(--text-muted);
   background: transparent;
@@ -15523,7 +15548,7 @@ table.tbl .name-cell .r {
 
 .painel-conversa-topo .name-cell .n {
   font-family: var(--display);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: var(--fw-bold);
   letter-spacing: var(--track-snug);
   color: var(--ink);
@@ -15531,7 +15556,7 @@ table.tbl .name-cell .r {
 }
 
 .painel-conversa-topo .name-cell .s {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
   margin: var(--space-1) 0 0;
 }
@@ -15568,7 +15593,7 @@ table.tbl .name-cell .r {
 
 .preco-nome {
   font-family: var(--display);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: var(--fw-bold);
   letter-spacing: var(--track-tight);
   color: var(--ink);
@@ -15576,7 +15601,7 @@ table.tbl .name-cell .r {
 
 .preco-desc {
   margin: var(--space-2) 0 0;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: var(--lh-base);
   color: var(--text-muted);
 }
@@ -15605,8 +15630,8 @@ table.tbl .name-cell .r {
 }
 
 .preco-recursos {
-  margin-top: 22px;
-  padding-top: 18px;
+  margin-top: 20px;
+  padding-top: 16px;
   border-top: 1px solid var(--line-soft);
 }
 
@@ -15633,7 +15658,7 @@ table.tbl .name-cell .r {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
 }
 
@@ -15651,7 +15676,7 @@ table.tbl .name-cell .r {
 .limite-de-erro-aviso {
   margin: 0;
   padding: var(--space-2) var(--space-3);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
   background: var(--navy-raised);
   border-radius: var(--radius-md);
@@ -15680,7 +15705,7 @@ table.tbl .name-cell .r {
   border-radius: var(--radius-md);
   background: var(--surface-elevated);
   padding: var(--space-3) var(--space-4);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: var(--fw-semibold);
   color: var(--ink);
   transition: background var(--transition-fast), border-color var(--transition-fast),
@@ -15785,7 +15810,7 @@ table.tbl .name-cell .r {
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3);
-  font-size: 12.5px;
+  font-size: 13px;
   margin: 0 0 var(--space-3);
 }
 
@@ -15848,7 +15873,7 @@ table.tbl .name-cell .r {
   color: var(--ink);
 }
 .tpl-canal strong {
-  font-size: 12.5px;
+  font-size: 13px;
 }
 .tpl-canal span {
   font-size: 11px;
@@ -15934,7 +15959,7 @@ table.tbl .name-cell .r {
   padding: var(--space-2);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: var(--fw-medium);
   background: var(--surface-elevated);
 }
@@ -16022,7 +16047,7 @@ table.tbl .name-cell .r {
 }
 
 .disp-ig-conta strong {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .disp-ig-numeros {
@@ -16082,7 +16107,7 @@ table.tbl .name-cell .r {
   align-items: center;
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--line-soft);
-  font-size: 12.5px;
+  font-size: 13px;
   cursor: pointer;
 }
 .disp-contato:last-child {
@@ -16135,7 +16160,7 @@ table.tbl .name-cell .r {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding-top: 3px;
+  padding-top: 4px;
 }
 .disp-revisao dd {
   margin: 0;
@@ -16273,7 +16298,7 @@ table.tbl .name-cell .r {
 .disp-tabela {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 .disp-tabela th {
   text-align: left;
@@ -16425,7 +16450,7 @@ table.tbl .name-cell .r {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 .esqueleto {
@@ -16715,7 +16740,7 @@ table.tbl .name-cell .r {
   padding: 0 var(--space-3);
   border: 1px dashed var(--line-strong);
   border-radius: var(--radius-md);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-faint);
 }
 
@@ -16879,7 +16904,7 @@ table.tbl .name-cell .r {
 }
 
 .fauto-topo strong {
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.25;
   color: var(--ink);
 }
@@ -16911,7 +16936,7 @@ table.tbl .name-cell .r {
 .fauto-fonte {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
@@ -17161,12 +17186,12 @@ table.tbl .name-cell .r {
 .fauto-acao {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   text-align: left;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
-  padding: 9px 11px;
+  padding: 8px 12px;
   cursor: pointer;
   color: inherit;
   font: inherit;
@@ -17270,7 +17295,7 @@ table.tbl .name-cell .r {
   border: 1px solid var(--border);
   border-left: 3px solid var(--verde, #16a34a);
   border-radius: var(--radius-2);
-  padding: 11px 13px;
+  padding: 12px 12px;
 }
 
 .passos-inicio-marca {
@@ -17431,7 +17456,7 @@ table.tbl .name-cell .r {
   background: none;
   border: 1px dashed var(--border);
   border-radius: var(--radius-2);
-  padding: 9px;
+  padding: 8px;
   font-size: 12px;
   color: var(--text-muted);
   cursor: pointer;
@@ -17473,7 +17498,7 @@ table.tbl .name-cell .r {
   background: none;
   border: 0;
   border-radius: var(--radius-1);
-  padding: 7px 8px;
+  padding: 8px 8px;
   cursor: pointer;
   color: inherit;
   font: inherit;
@@ -17549,7 +17574,7 @@ table.tbl .name-cell .r {
 }
 
 .nova-auto-topo strong {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--ink);
 }
 
@@ -17580,7 +17605,7 @@ table.tbl .name-cell .r {
 .nova-auto-escolha {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   text-align: left;
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -17610,7 +17635,7 @@ table.tbl .name-cell .r {
 .nova-auto-resumo {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
@@ -17646,13 +17671,13 @@ table.tbl .name-cell .r {
   border-color: color-mix(in srgb, #0f9d63 30%, var(--border));
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .migrar-aviso-texto {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .migrar-aviso strong {
@@ -17668,7 +17693,7 @@ table.tbl .name-cell .r {
 
 .migrar-lista {
   margin: var(--space-2) 0 0;
-  padding-left: 18px;
+  padding-left: 16px;
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.6;
@@ -17812,7 +17837,7 @@ table.tbl .name-cell .r {
   background: none;
   border: 0;
   border-radius: var(--radius-2);
-  padding: 8px 9px;
+  padding: 8px 8px;
   cursor: pointer;
   color: inherit;
   font: inherit;
@@ -17872,7 +17897,7 @@ table.tbl .name-cell .r {
 }
 
 .social-modelo span {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
   line-height: 1.5;
   white-space: pre-wrap;
@@ -17927,7 +17952,7 @@ table.tbl .name-cell .r {
 .social-numero {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
   padding: var(--space-3);
@@ -17979,7 +18004,7 @@ table.tbl .name-cell .r {
   gap: 8px;
   padding: 8px 10px;
   border-radius: var(--radius-2);
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--text-muted);
   text-decoration: none;
 }
@@ -18026,7 +18051,7 @@ table.tbl .name-cell .r {
 
 .social-busca .input {
   width: 100%;
-  padding-left: 30px;
+  padding-left: 28px;
 }
 
 .social-filtros > .input {
@@ -18124,7 +18149,7 @@ table.tbl .name-cell .r {
 .social-card {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   text-align: left;
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
@@ -18140,7 +18165,7 @@ table.tbl .name-cell .r {
 }
 
 .social-card strong {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
 }
 
@@ -18156,7 +18181,7 @@ table.tbl .name-cell .r {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
   cursor: pointer;
 }
@@ -18178,7 +18203,7 @@ table.tbl .name-cell .r {
 
 .social-menu-opcoes button {
   text-align: left;
-  padding: 7px 9px;
+  padding: 8px 8px;
   border: 0;
   border-radius: var(--radius-1, 6px);
   background: none;
@@ -18281,7 +18306,7 @@ table.tbl .name-cell .r {
   position: absolute;
   top: var(--space-2);
   right: var(--space-2);
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 999px;
   background: var(--blue-soft);
   color: var(--blue);
@@ -18366,7 +18391,7 @@ table.tbl .name-cell .r {
 
 .painel-gatilho-canal strong {
   display: block;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
 }
 
@@ -18387,7 +18412,7 @@ table.tbl .name-cell .r {
   flex-direction: column;
   gap: 2px;
   text-align: left;
-  padding: 9px 10px;
+  padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
   background: var(--surface);
@@ -18417,7 +18442,7 @@ table.tbl .name-cell .r {
 }
 
 .painel-gatilho-item strong {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
 }
 
@@ -18448,11 +18473,11 @@ table.tbl .name-cell .r {
 .no-gatilho-vazio-selo {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 9px;
+  gap: 4px;
+  padding: 4px 8px;
   background: var(--blue);
   color: #ffffff;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   border-bottom-right-radius: var(--radius-2);
 }
@@ -18463,7 +18488,7 @@ table.tbl .name-cell .r {
 
 .no-gatilho-vazio-corpo h4 {
   margin: 0 0 var(--space-2);
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--ink);
 }
 
@@ -18479,7 +18504,7 @@ table.tbl .name-cell .r {
   background: var(--surface-hover);
   color: var(--ink);
   font: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -18494,7 +18519,7 @@ table.tbl .name-cell .r {
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
   background: var(--surface-elevated);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -18529,12 +18554,12 @@ table.tbl .name-cell .r {
 }
 
 .no-inicio-texto strong {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--success);
 }
 
 .no-inicio-texto span {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
@@ -18560,7 +18585,7 @@ table.tbl .name-cell .r {
   padding: 4px 10px;
   background: var(--blue);
   color: #ffffff;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   border-bottom-right-radius: var(--radius-2);
 }
@@ -18586,14 +18611,14 @@ table.tbl .name-cell .r {
 }
 
 .flow-pendencia-aviso {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--warning, #a16207);
 }
 
 .flow-pendencia .btn {
-  padding: 5px 12px;
-  font-size: 11.5px;
+  padding: 4px 12px;
+  font-size: 12px;
 }
 
 /* Ordem do gatilho dentro da etapa.
@@ -18713,7 +18738,7 @@ table.tbl .name-cell .r {
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .table th {
@@ -18962,7 +18987,7 @@ table.tbl .name-cell .r {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .ig-item-topo {
@@ -18973,7 +18998,7 @@ table.tbl .name-cell .r {
 }
 
 .ig-item-topo strong {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -18982,13 +19007,13 @@ table.tbl .name-cell .r {
 
 .ig-item-hora {
   flex: none;
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
 /* Uma linha só: a prévia serve pra reconhecer a conversa, não pra ler a mensagem. */
 .ig-item-previa {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -19002,7 +19027,7 @@ table.tbl .name-cell .r {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 5px;
+  padding: 0 4px;
   border-radius: 999px;
   background: var(--blue);
   color: #ffffff;
@@ -19044,7 +19069,7 @@ table.tbl .name-cell .r {
 }
 
 .ig-conversa-topo span {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -19060,7 +19085,7 @@ table.tbl .name-cell .r {
 .ig-bolha {
   max-width: 68%;
   align-self: flex-start;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border-radius: var(--radius-lg);
   background: var(--surface-2);
 }
@@ -19074,7 +19099,7 @@ table.tbl .name-cell .r {
 
 .ig-bolha p {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.45;
   color: var(--ink);
   white-space: pre-wrap;
@@ -19083,7 +19108,7 @@ table.tbl .name-cell .r {
 
 .ig-bolha span {
   display: block;
-  margin-top: 3px;
+  margin-top: 4px;
   font-size: 10px;
   color: var(--text-muted);
   text-align: right;
@@ -19131,7 +19156,7 @@ table.tbl .name-cell .r {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   text-align: center;
   padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--line-soft);
@@ -19144,7 +19169,7 @@ table.tbl .name-cell .r {
 }
 
 .ig-perfil-topo span {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -19234,12 +19259,12 @@ table.tbl .name-cell .r {
 .ig-contato-nome {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
 }
 
 .ig-contato-nome strong {
   display: block;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink);
 }
 

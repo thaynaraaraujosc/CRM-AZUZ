@@ -647,9 +647,7 @@ function TarefasContent() {
                       <span className="fs">{aberta.anexo.detalhe}</span>
                     </div>
                   ) : null}
-                  <button type="button" className="btn ghost block">
-                    + Anexar documento
-                  </button>
+                  {!aberta.anexo ? <p className="hint">Nenhum documento anexado.</p> : null}
                 </div>
 
                 {aberta.modelo ? (

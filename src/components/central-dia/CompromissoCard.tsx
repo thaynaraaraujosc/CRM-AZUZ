@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState } from "react";
 
 import type { CompromissoDia, StatusCompromisso } from "@/lib/central-dia/tipos";
@@ -43,12 +45,13 @@ export function CompromissoCard({ compromisso }: { compromisso: CompromissoDia }
             Confirmar
           </button>
         ) : null}
-        <button type="button" className="btn ghost">
-          Abrir agendamento
-        </button>
-        <button type="button" className="btn ghost">
-          Reagendar
-        </button>
+        {/* Link de verdade pra Agenda, onde o compromisso é aberto e remarcado arrastando.
+            Eram dois botões sem `onClick`: clicar não fazia nada, e "Reagendar" prometia um fluxo
+            de remarcação que não existe em lugar nenhum do produto. Botão que não faz nada é pior
+            que botão ausente, porque ensina a pessoa a desconfiar dos outros. */}
+        <Link className="btn ghost" href="/agenda">
+          Abrir na agenda
+        </Link>
         {status !== "Cancelado" && status !== "Concluído" ? (
           <button type="button" className="btn ghost" onClick={() => setStatus("Cancelado")}>
             Cancelar

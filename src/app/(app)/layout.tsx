@@ -8,7 +8,6 @@ import { NotificacoesPonte } from "@/components/notificacoes-ponte";
 import { Sidebar } from "@/components/sidebar";
 import { SessionProvider } from "@/components/session-provider";
 import { AgendaProvider } from "@/lib/agenda-context";
-import { AutomacoesProvider } from "@/lib/automacoes-context";
 import { AutomationFlowProvider } from "@/lib/automation-flow-context";
 import { BibliotecaDocumentosProvider } from "@/lib/biblioteca-documentos-context";
 import { CentralDiaProvider } from "@/lib/central-dia-context";
@@ -50,7 +49,6 @@ export default async function AppLayout({
         <EquipeProvider>
           <TarefasProvider>
             <AgendaProvider>
-              <AutomacoesProvider>
                 <AutomationFlowProvider>
                   <NotificacoesProvider>
                     <FormulariosProvider>
@@ -78,7 +76,6 @@ export default async function AppLayout({
                     </FormulariosProvider>
                   </NotificacoesProvider>
                 </AutomationFlowProvider>
-              </AutomacoesProvider>
             </AgendaProvider>
           </TarefasProvider>
         </EquipeProvider>

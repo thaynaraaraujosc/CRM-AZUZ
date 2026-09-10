@@ -395,6 +395,11 @@ export function Sidebar() {
                   aria-haspopup="true"
                   aria-expanded={gestaoAtividadeAberta}
                   title={recolhida ? "Inteligência comercial" : undefined}
+                  // O submenu só abria no `onMouseEnter` do <div> de fora. Quem navega por teclado
+                  // chegava neste botão com Tab, apertava Enter e nada acontecia: o menu inteiro de
+                  // Inteligência comercial era inalcançável sem mouse. O clique não atrapalha o
+                  // hover, ele só dá um segundo caminho pra mesma coisa.
+                  onClick={() => (gestaoAtividadeAberta ? setGestaoAtividadeAberta(false) : abrirGestaoAtividade())}
                 >
                   <IconRelatorios />
                   {!recolhida ? (

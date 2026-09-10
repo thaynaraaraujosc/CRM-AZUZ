@@ -252,6 +252,17 @@ export const REGRAS_COMENTARIO_INICIAIS: RegraComentario[] = [
  * coluna do Kanban, igual /funil. Apagar a etapa ou o funil apaga junto as
  * automações que só faziam sentido ali.
  */
+/**
+ * NÃO ESTÁ MAIS NO LAYOUT, e não deve voltar sem um motivo novo.
+ *
+ * Este Provider guardava automações em memória, semeadas com exemplos fixos, e nunca falou com a
+ * API. A tela do funil chamava `excluirAutomacoesDaEtapa`/`excluirAutomacoesDoFunil` daqui ao
+ * apagar uma etapa ou um funil: parecia que limpava as automações, e não limpava nada. A limpeza
+ * de verdade sempre veio do banco, por `onDelete: Cascade` em `GatilhoEtapa.etapa`.
+ *
+ * O arquivo continua exportando os TIPOS e as constantes de semente, que a migração e o
+ * `prisma/seed.ts` usam de verdade. Só o Provider virou peso morto.
+ */
 export function AutomacoesProvider({ children }: { children: ReactNode }) {
   const [automacoes, setAutomacoes] = useState<Automacao[]>(AUTOMACOES_INICIAIS);
   const [regrasComentario, setRegrasComentario] = useState<RegraComentario[]>(

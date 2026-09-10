@@ -7561,16 +7561,11 @@ function ConversasPageInner() {
                         <span className="fn">{tarefa.anexo.arquivo}</span>
                         <span className="fs">{tarefa.anexo.detalhe}</span>
                       </div>
-                      <button type="button" className="btn ghost block mt14">
-                        + Anexar outro documento
-                      </button>
                     </div>
                   ) : (
                     <div className="field">
                       <label>Anexo</label>
-                      <button type="button" className="btn ghost block">
-                        + Anexar documento
-                      </button>
+                      <p className="hint">Nenhum documento anexado.</p>
                     </div>
                   )}
                   <div className="field">

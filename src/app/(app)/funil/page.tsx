@@ -9,7 +9,6 @@ import { createPortal } from "react-dom";
 import { classeOrigem, type NegocioCard } from "@/lib/data";
 import { PainelConversa } from "@/components/conversas/PainelConversa";
 import { HOJE_ISO } from "@/lib/agenda-context";
-import { useAutomacoes } from "@/lib/automacoes-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
 import { useContatos } from "@/lib/contatos-context";
@@ -76,7 +75,6 @@ function FunilPageInner() {
     erroSincronizacao,
     limparErroSincronizacao,
   } = useFunis();
-  const { excluirAutomacoesDaEtapa, excluirAutomacoesDoFunil } = useAutomacoes();
   const { fluxos } = useAutomationFlows();
   const { contatos } = useContatos();
   const { conversas } = useConversas();
@@ -447,14 +445,15 @@ function FunilPageInner() {
 
   function excluirEtapa(colIndex: number) {
     if (!funilAtivo) return;
-    const etapa = funilAtivo.colunas[colIndex];
     setFunis((prev) =>
       prev.map((f) => {
         if (f.id !== funilAtivo.id) return f;
         return { ...f, colunas: f.colunas.filter((_, i) => i !== colIndex) };
       }),
     );
-    if (etapa) excluirAutomacoesDaEtapa(funilAtivo.id, etapa.id);
+    // Os gatilhos da etapa somem junto pelo BANCO: `GatilhoEtapa.etapa` tem `onDelete: Cascade`.
+    // Aqui havia uma chamada a `excluirAutomacoesDaEtapa`, do contexto de automações, que mexia
+    // num array de exemplo em memória e não tocava em nada real. Parecia que limpava.
   }
 
   return (
@@ -586,8 +585,10 @@ function FunilPageInner() {
                               `Excluir o funil "${funilAtivo.nome}"? Os negócios e as automações dele somem junto.`,
                             )
                           ) {
+                            // Etapas e gatilhos caem por cascade no banco (Funil → FunilEtapa →
+                            // GatilhoEtapa), então o aviso acima é verdade. A chamada que existia
+                            // aqui só limpava um array de exemplo no navegador.
                             excluirFunil(funilAtivo.id);
-                            excluirAutomacoesDoFunil(funilAtivo.id);
                           }
                           setConfigAberto(false);
                         }}

@@ -3,16 +3,28 @@
 import { useMemo, useState } from "react";
 
 import { useConfiguracoes } from "@/lib/configuracoes-context";
-import { contatos, funis } from "@/lib/data";
+import { useContatos } from "@/lib/contatos-context";
+import { useFunis } from "@/lib/funis-context";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { IconClose } from "@/components/icons";
 
 const CORES = ["#2e6bff", "#0f9d63", "#d8a400", "#d64545", "#8a3ffc", "#0891b2"];
 
-/** Etiquetas (item 26): a contagem "quantidade de contatos" é real (deriva de `contatos`/`funis`);
- * criar/mesclar/arquivar etiqueta novas fica em estado local (`configuracoes-context`). */
+/**
+ * Etiquetas: as que já estão em uso, contadas nos contatos e nos negócios do WORKSPACE.
+ *
+ * A contagem lia `contatos` e `funis` importados de `@/lib/data`, que são os dados de
+ * DEMONSTRAÇÃO do projeto: Paulo Lacerda, Lorena Bastos, um funil de exemplo. O comentário aqui
+ * afirmava que a contagem era real, e não era: um cliente pagante abria Configurações e via
+ * etiquetas de gente que não existe, com números que não eram dele. É o tipo de detalhe que
+ * derruba a confiança no produto inteiro em dez segundos.
+ *
+ * Agora vem dos contextos, que buscam da API do workspace de quem está logado.
+ */
 export function EtiquetasSecao() {
   const { estado, adicionarEtiqueta, removerEtiqueta } = useConfiguracoes();
+  const { contatos } = useContatos();
+  const { funis } = useFunis();
   const [busca, setBusca] = useState("");
   const [nomeNovo, setNomeNovo] = useState("");
   const [corNova, setCorNova] = useState(CORES[0]);
@@ -22,7 +34,7 @@ export function EtiquetasSecao() {
     contatos.forEach((c) => c.etiquetas?.forEach((e) => mapa.set(e, (mapa.get(e) ?? 0) + 1)));
     funis.forEach((f) => f.colunas.forEach((col) => col.cards.forEach((card) => card.etiquetas?.forEach((e) => mapa.set(e, (mapa.get(e) ?? 0) + 1)))));
     return mapa;
-  }, []);
+  }, [contatos, funis]);
 
   const todasEtiquetas = useMemo(() => {
     const doDados = [...contagemReal.keys()].map((nome) => ({ id: `real-${nome}`, nome, cor: CORES[nome.length % CORES.length], real: true }));
