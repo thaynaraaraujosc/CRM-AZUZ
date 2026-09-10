@@ -38,7 +38,6 @@ export function InstagramSecao() {
   }
 
   const receberMensagens = (integracao?.metadados?.receberMensagens as boolean | undefined) ?? true;
-  const entrarNoFunil = (integracao?.metadados?.entrarNoFunil as boolean | undefined) ?? true;
 
   return (
     <div className="config-secao">
@@ -121,18 +120,10 @@ export function InstagramSecao() {
               : "Mensagens do Instagram não são encaminhadas para o módulo de Conversas. A conta continua conectada, só o recebimento fica pausado."}
           </p>
 
-          <div className="toggle-row" style={{ padding: "10px 0" }}>
-            <span className="tl">Levar as conversas do Instagram para o funil</span>
-            <Toggle
-              defaultOn={entrarNoFunil}
-              label="Levar as conversas do Instagram para o funil"
-              onToggle={(on) => void salvarPreferencia("entrarNoFunil", on)}
-            />
-          </div>
-          <p className="hint">
-            {entrarNoFunil
-              ? "Quem manda Direct pela primeira vez vira contato e entra na primeira etapa do funil, igual ao WhatsApp."
-              : "O Direct funciona só como caixa de entrada: dá pra responder por Conversas sem gerar contato nem card no funil."}
+          <p className="hint mt8">
+            Quem manda Direct pela primeira vez vira contato, com @, foto e etiqueta, e não entra no
+            funil comercial: o funil é do WhatsApp. O acompanhamento do Instagram fica em Instagram
+            e em Automações &gt; Instagram e TikTok.
           </p>
         </div>
       ) : null}

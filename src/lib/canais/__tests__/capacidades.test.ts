@@ -5,6 +5,7 @@ import {
   CAPACIDADES,
   GRUPOS_DA_AREA,
   grupoValeNaArea,
+  grupoDeGatilhoValeNaArea,
   blocoValeNoCanal,
   canaisDisponiveis,
   blocoValeNaArea,
@@ -199,5 +200,52 @@ describe("o que cada área mostra na biblioteca", () => {
     for (const area of ["comercial", "social"] as const) {
       for (const grupo of GRUPOS_DA_AREA[area]) expect(existentes.has(grupo as never)).toBe(true);
     }
+  });
+});
+
+describe("gatilho de Direct na área social", () => {
+  it("aparece no Instagram e não aparece no funil comercial", () => {
+    expect(blocoValeNaArea("instagram_direct_recebido", "social")).toBe(true);
+    expect(blocoValeNaArea("instagram_direct_recebido", "comercial")).toBe(false);
+  });
+
+  it("existe na biblioteca, dentro do grupo do Instagram", () => {
+    const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === "instagram_direct_recebido");
+    expect(bloco?.grupo).toBe("instagram");
+    expect(bloco?.categoria).toBe("gatilho");
+  });
+
+  it("é o primeiro do grupo: é o evento mais comum do Direct", () => {
+    const doGrupo = BLOCOS_DISPONIVEIS.filter((b) => b.grupo === "instagram" && b.categoria === "gatilho");
+    expect(doGrupo[0]?.tipo).toBe("instagram_direct_recebido");
+  });
+
+  it("nenhum rótulo do grupo repete o sufixo (Instagram)", () => {
+    const doGrupo = BLOCOS_DISPONIVEIS.filter((b) => b.grupo === "instagram");
+    expect(doGrupo.filter((b) => b.label.includes("(Instagram)"))).toEqual([]);
+  });
+
+  it("a área social não oferece nenhum gatilho que não seja do Instagram", () => {
+    const gatilhosNoSocial = BLOCOS_DISPONIVEIS.filter(
+      (b) =>
+        b.categoria === "gatilho" &&
+        blocoValeNaArea(b.tipo, "social") &&
+        grupoValeNaArea(b.grupo, "social") &&
+        grupoDeGatilhoValeNaArea(b.grupo, "social"),
+    );
+    expect(gatilhosNoSocial.every((b) => b.grupo === "instagram")).toBe(true);
+    expect(gatilhosNoSocial.length).toBeGreaterThan(0);
+  });
+});
+
+describe("gatilho vem de onde faz sentido", () => {
+  it("no comercial não há restrição de grupo pro gatilho", () => {
+    expect(grupoDeGatilhoValeNaArea("gatilhos", "comercial")).toBe(true);
+    expect(grupoDeGatilhoValeNaArea("agenda", "comercial")).toBe(true);
+  });
+
+  it("no social o gatilho de agenda não é oferecido, mas a ação de agenda continua", () => {
+    expect(grupoDeGatilhoValeNaArea("agenda", "social")).toBe(false);
+    expect(grupoValeNaArea("agenda", "social")).toBe(true);
   });
 });

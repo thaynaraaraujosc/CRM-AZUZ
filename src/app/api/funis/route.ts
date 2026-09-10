@@ -5,7 +5,7 @@ import type { Funil } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
 import { prisma } from "@/lib/prisma";
-import { filtroConexaoDeNegocio, provedoresConectados } from "@/lib/integracoes/conta-canal";
+import { filtroConexaoDeNegocio, provedoresDeNegocio } from "@/lib/integracoes/conta-canal";
 
 /** GET lista os funis do workspace de quem está logado, com etapas e negócios, na ordem salva. */
 export async function GET() {
@@ -15,7 +15,7 @@ export async function GET() {
   // Mesmo filtro por conexão das conversas: negócio que nasceu de um canal desconectado some do
   // funil sem sair do banco, e volta inteiro se aquela conexão voltar (ver `conta-canal.ts`). Card
   // criado à mão tem `contaCanal` nulo e aparece sempre.
-  const provedores = await provedoresConectados(sessao.user.workspaceId);
+  const provedores = await provedoresDeNegocio(sessao.user.workspaceId);
   const linhas = await prisma.funil.findMany({
     where: { workspaceId: sessao.user.workspaceId },
     include: {
@@ -75,7 +75,7 @@ export async function PUT(request: Request) {
 
   const funis = (await request.json()) as Funil[];
 
-  const provedores = await provedoresConectados(workspaceId);
+  const provedores = await provedoresDeNegocio(workspaceId);
 
   const idsFunis = funis.map((f) => f.id);
   const idsEtapas = funis.flatMap((f) => f.colunas.map((c) => c.id));

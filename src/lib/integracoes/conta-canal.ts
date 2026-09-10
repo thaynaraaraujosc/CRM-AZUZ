@@ -112,19 +112,30 @@ export async function provedoresConectados(workspaceId: string): Promise<string[
       status: "conectado",
       provedor: { in: [CANAL_NAO_OFICIAL, CANAL_OFICIAL, CANAL_INSTAGRAM] },
     },
-    select: { provedor: true, metadados: true },
+    select: { provedor: true },
   });
-  return integracoes
-    .filter((i) => {
-      // "Levar as conversas do Instagram para o funil", desligado: os cards de origem Instagram
-      // somem do funil enquanto estiver assim. Some da TELA: o negócio continua no banco, com
-      // histórico, valor e etapa, e volta inteiro ao religar. É a mesma regra que já vale pra um
-      // número de WhatsApp desconectado.
-      if (i.provedor !== CANAL_INSTAGRAM) return true;
-      const metadados = (i.metadados as Record<string, unknown> | null) ?? {};
-      return metadados.entrarNoFunil !== false;
-    })
-    .map((i) => i.provedor);
+  return integracoes.map((i) => i.provedor);
+}
+
+/**
+ * Provedores cujos negócios aparecem no FUNIL COMERCIAL. É `provedoresConectados` menos o
+ * Instagram, sempre.
+ *
+ * O funil comercial é do WhatsApp. Instagram não entra, e isso não é mais uma preferência que se
+ * liga e desliga: era, e ter as duas coisas no mesmo quadro fazia o funil deixar de responder à
+ * pergunta que ele existe pra responder. Quem respondeu um story não está no mesmo momento de quem
+ * pediu orçamento, e o vendedor gastava o dia separando um do outro na mão.
+ *
+ * O acompanhamento do Instagram tem lugar próprio: caixa de entrada do Direct, aba de contatos com
+ * etiqueta e o painel de Automações > Instagram e TikTok, que conta evento e execução de robô.
+ *
+ * Cards de origem Instagram criados antes desta regra somem da TELA do funil, não do banco: o
+ * negócio continua com histórico, valor e etapa. É a mesma regra que já valia pra um número de
+ * WhatsApp desconectado, e é o que permite voltar atrás sem ter perdido nada.
+ */
+export async function provedoresDeNegocio(workspaceId: string): Promise<string[]> {
+  const provedores = await provedoresConectados(workspaceId);
+  return provedores.filter((p) => p !== CANAL_INSTAGRAM);
 }
 
 /**

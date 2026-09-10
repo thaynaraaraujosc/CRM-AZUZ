@@ -345,12 +345,100 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     corClasse: corDaCategoria("gatilho"),
     dataPadrao: () => ({ horario: "09:00", funilId: "", etapaId: "" }),
   },
+  /*
+   * ------------------------------------------------------------- instagram --
+   *
+   * O Instagram não é um WhatsApp com outro nome, e este grupo é escrito assim de propósito.
+   *
+   * No WhatsApp existe uma coisa só que acontece: chegou mensagem. Por isso o gatilho de lá é
+   * genérico e o resto é filtro. No Instagram o que acontece tem NOME: a pessoa comentou num reel,
+   * respondeu um story, mencionou o perfil, reagiu a uma mensagem, encaminhou uma publicação.
+   * Cada um desses é um momento diferente, com uma resposta diferente e um valor diferente.
+   * Amontoar tudo em "mensagem recebida" perde justamente a informação que faz a automação social
+   * valer a pena.
+   *
+   * Por isso a ordem aqui é a do EVENTO, não a alfabética, e está agrupada por onde acontece:
+   * primeiro o Direct, depois a publicação, depois o perfil. É a ordem em que a pessoa pensa
+   * quando vai montar o robô ("quando alguém me responder um story…").
+   *
+   * O rótulo não repete "(Instagram)". Nesta área não existe outro canal: o sufixo só ocupava
+   * espaço e empurrava o nome do evento pra fora do card.
+   */
+
+  // --- no Direct ---
+  {
+    tipo: "instagram_direct_recebido",
+    categoria: "gatilho",
+    grupo: "instagram",
+    label: "Mensagem no Direct",
+    descricao:
+      "Dispara quando chega uma mensagem de texto no Direct. Sem palavra configurada, qualquer mensagem serve.",
+    icone: "Instagram",
+    corClasse: corDaCategoria("gatilho"),
+    dataPadrao: () => ({
+      canal: "Instagram",
+      palavras: [] as string[],
+      modoPalavra: "qualquer",
+      ignorarAcentos: true,
+    }),
+  },
+  {
+    tipo: "instagram_story_respondido",
+    categoria: "gatilho",
+    grupo: "instagram",
+    label: "Resposta a um story seu",
+    descricao:
+      "Dispara quando alguém responde um story seu. A resposta chega no Direct, e é a pessoa mais quente que o Instagram entrega.",
+    icone: "Instagram",
+    corClasse: corDaCategoria("gatilho"),
+    dataPadrao: () => ({
+      canal: "Instagram",
+      palavras: [] as string[],
+      modoPalavra: "qualquer",
+      ignorarAcentos: true,
+    }),
+  },
+  {
+    tipo: "instagram_midia_recebida",
+    categoria: "gatilho",
+    grupo: "instagram",
+    label: "Foto, vídeo ou áudio no Direct",
+    descricao: "Dispara quando a pessoa manda mídia em vez de texto. Não tem palavra pra filtrar.",
+    icone: "Instagram",
+    corClasse: corDaCategoria("gatilho"),
+    dataPadrao: () => ({ canal: "Instagram" }),
+  },
+  {
+    tipo: "instagram_publicacao_compartilhada",
+    categoria: "gatilho",
+    grupo: "instagram",
+    label: "Publicação encaminhada pra você",
+    descricao:
+      "Dispara quando a pessoa encaminha uma publicação ou reel pelo Direct. Costuma vir com uma pergunta junto.",
+    icone: "Instagram",
+    corClasse: corDaCategoria("gatilho"),
+    dataPadrao: () => ({ canal: "Instagram" }),
+  },
+  {
+    tipo: "instagram_reacao_recebida",
+    categoria: "gatilho",
+    grupo: "instagram",
+    label: "Reação a uma mensagem sua",
+    descricao:
+      "Dispara quando alguém reage com emoji a uma mensagem sua no Direct. É sinal de leitura, não de resposta.",
+    icone: "Instagram",
+    corClasse: corDaCategoria("gatilho"),
+    dataPadrao: () => ({ canal: "Instagram" }),
+  },
+
+  // --- na publicação ---
   {
     tipo: "comentario_instagram",
     categoria: "gatilho",
     grupo: "instagram",
-    label: "Comentário no Instagram",
-    descricao: "Dispara quando alguém comenta numa publicação ou reel. Pode filtrar por palavra e por publicação.",
+    label: "Comentário numa publicação",
+    descricao:
+      "Dispara quando alguém comenta num post ou reel. Dá pra filtrar por palavra e restringir a uma publicação.",
     icone: "Instagram",
     corClasse: corDaCategoria("gatilho"),
     // `palavras` vazio = qualquer comentário dispara. `publicacaoId` vazio = qualquer publicação.
@@ -367,8 +455,8 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     tipo: "instagram_resposta_comentario",
     categoria: "gatilho",
     grupo: "instagram",
-    label: "Resposta a comentário (Instagram)",
-    descricao: "Dispara quando alguém responde a um comentário na sua publicação.",
+    label: "Resposta a um comentário",
+    descricao: "Dispara quando alguém responde a um comentário já existente na sua publicação.",
     icone: "Instagram",
     corClasse: corDaCategoria("gatilho"),
     dataPadrao: () => ({
@@ -379,57 +467,14 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
       publicacaoId: "",
     }),
   },
-  {
-    tipo: "instagram_midia_recebida",
-    categoria: "gatilho",
-    grupo: "instagram",
-    label: "Mídia recebida no Direct (Instagram)",
-    descricao: "Dispara quando a pessoa manda foto, vídeo ou áudio pelo Direct.",
-    icone: "Instagram",
-    corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({ canal: "Instagram" }),
-  },
-  {
-    tipo: "instagram_publicacao_compartilhada",
-    categoria: "gatilho",
-    grupo: "instagram",
-    label: "Publicação compartilhada (Instagram)",
-    descricao: "Dispara quando a pessoa encaminha uma publicação ou reel pelo Direct.",
-    icone: "Instagram",
-    corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({ canal: "Instagram" }),
-  },
-  {
-    tipo: "instagram_story_respondido",
-    categoria: "gatilho",
-    grupo: "instagram",
-    label: "Story respondido (Instagram)",
-    descricao: "Dispara quando alguém responde a um story seu pelo Direct.",
-    icone: "Instagram",
-    corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({
-      canal: "Instagram",
-      palavras: [] as string[],
-      modoPalavra: "qualquer",
-      ignorarAcentos: true,
-    }),
-  },
+
+  // --- no perfil ---
   {
     tipo: "instagram_mencao_story",
     categoria: "gatilho",
     grupo: "instagram",
-    label: "Menção em story (Instagram)",
-    descricao: "Dispara quando alguém marca seu perfil num story.",
-    icone: "Instagram",
-    corClasse: corDaCategoria("gatilho"),
-    dataPadrao: () => ({ canal: "Instagram" }),
-  },
-  {
-    tipo: "instagram_reacao_recebida",
-    categoria: "gatilho",
-    grupo: "instagram",
-    label: "Reação a mensagem (Instagram)",
-    descricao: "Dispara quando alguém reage a uma mensagem sua no Direct.",
+    label: "Menção do seu perfil num story",
+    descricao: "Dispara quando alguém marca seu @ num story. Serve pra agradecer ou repostar na hora.",
     icone: "Instagram",
     corClasse: corDaCategoria("gatilho"),
     dataPadrao: () => ({ canal: "Instagram" }),
@@ -891,8 +936,9 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     tipo: "responder_comentario_instagram",
     categoria: "acao",
     grupo: "instagram",
-    label: "Responder comentário (Instagram)",
-    descricao: "Responde publicamente o comentário que disparou a automação.",
+    label: "Responder o comentário",
+    descricao:
+      "Responde publicamente, embaixo do comentário que disparou a automação. Todo mundo vê, e é o que faz a publicação continuar viva.",
     icone: "Instagram",
     corClasse: corDaCategoria("acao"),
     dataPadrao: () => ({ texto: "" }),
@@ -901,8 +947,8 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     tipo: "ocultar_comentario_instagram",
     categoria: "acao",
     grupo: "instagram",
-    label: "Ocultar comentário (Instagram)",
-    descricao: "Esconde o comentário da publicação. Útil pra spam.",
+    label: "Ocultar o comentário",
+    descricao: "Esconde o comentário da publicação, sem avisar quem escreveu. É o que se faz com spam.",
     icone: "EyeOff",
     corClasse: corDaCategoria("acao"),
     dataPadrao: () => ({}),

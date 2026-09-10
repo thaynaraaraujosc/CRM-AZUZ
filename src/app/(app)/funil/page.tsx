@@ -480,7 +480,7 @@ function FunilPageInner() {
         </div>
       ) : null}
       <Topbar
-        title="Funil"
+        title="Funil comercial"
         sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} ${totalVisivel === 1 ? "negócio" : "negócios"} ${filtroAtivo ? (totalVisivel === 1 ? "encontrado" : "encontrados") : "no funil"}`}
         actions={
           <>

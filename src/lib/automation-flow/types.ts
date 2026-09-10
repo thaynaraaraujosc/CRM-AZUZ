@@ -22,6 +22,7 @@ export type FlowNodeCategory =
 
 export type FlowNodeType =
   // gatilho: Instagram (categoria própria: o canal tem eventos que nenhum outro tem)
+  | "instagram_direct_recebido"
   | "instagram_midia_recebida"
   | "instagram_publicacao_compartilhada"
   | "instagram_story_respondido"

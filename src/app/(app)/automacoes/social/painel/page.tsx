@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { Topbar } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
-import { useAutomationFlows } from "@/lib/automation-flow-context";
 import type { PainelSocial } from "@/app/api/social/metricas/route";
 
 /**
@@ -36,7 +35,6 @@ function Numero({ valor, label, ajuda }: { valor: number; label: string; ajuda?:
 }
 
 export default function SocialPage() {
-  const { fluxos } = useAutomationFlows();
   const [dias, setDias] = useState(7);
   // O período pedido viaja JUNTO com a resposta. Assim "carregando" é derivado (a resposta que
   // tenho não é do período que estou mostrando) em vez de ser um segundo estado que precisa ser
@@ -60,9 +58,6 @@ export default function SocialPage() {
 
   const carregando = resposta?.paraDias !== dias;
   const painel = resposta?.dados ?? null;
-
-  const robos = useMemo(() => fluxos.filter((f) => f.area === "social" && !f.arquivada), [fluxos]);
-  const ligados = robos.filter((f) => f.status === "publicado" && f.ativa);
 
   return (
     <>
@@ -171,13 +166,64 @@ export default function SocialPage() {
         <section className="card mt16">
           <h3>Seus robôs do Instagram</h3>
           <p className="hint">
-            {robos.length
-              ? `${robos.length} robô${robos.length > 1 ? "s" : ""}, ${ligados.length} ligado${ligados.length === 1 ? "" : "s"}.`
-              : "Nenhum robô ainda."}
+            O acompanhamento do Instagram é aqui, não no funil. Quem chega pelo Direct vira contato,
+            com @, foto e etiqueta, e não vira card: o funil comercial é do WhatsApp. Cada linha
+            abaixo é um robô, contado em execução de verdade nos últimos{" "}
+            {painel?.periodoDias ?? dias} dias.
           </p>
-          <Link className="btn mt8" href="/automacoes/social">
-            Abrir automações
-          </Link>
+
+          {painel?.robos.length ? (
+            <div className="tabela-rolavel mt16">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Robô</th>
+                    <th>Situação</th>
+                    <th className="num">Rodou</th>
+                    <th className="num">Em andamento</th>
+                    <th className="num">Erros</th>
+                    <th>Última vez</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {painel.robos.map((r) => (
+                    <tr key={r.id}>
+                      <td>
+                        <Link href={`/automacoes/editor/${r.id}`}>{r.nome}</Link>
+                      </td>
+                      <td>
+                        <span className={`badge ${r.ligado ? "badge-success" : "badge-neutral"}`}>
+                          {r.ligado ? "Ligado" : "Desligado"}
+                        </span>
+                      </td>
+                      <td className="num">{r.execucoes.toLocaleString("pt-BR")}</td>
+                      <td className="num">{r.emAndamento.toLocaleString("pt-BR")}</td>
+                      <td className="num">
+                        {r.erros ? <strong className="txt-erro">{r.erros}</strong> : "0"}
+                      </td>
+                      <td>{r.ultimaEm ? new Date(r.ultimaEm).toLocaleString("pt-BR") : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="hint mt8">
+              {carregando ? "Carregando…" : "Nenhum robô de Instagram ainda."}
+            </p>
+          )}
+
+          <div className="social-atalhos mt16">
+            <Link className="btn primary" href="/automacoes/social">
+              Abrir automações
+            </Link>
+            <Link className="btn" href="/automacoes/social/execucoes">
+              Ver execuções e erros
+            </Link>
+            <Link className="btn" href="/instagram/contatos">
+              Contatos do Instagram
+            </Link>
+          </div>
         </section>
         </div>
       </div>

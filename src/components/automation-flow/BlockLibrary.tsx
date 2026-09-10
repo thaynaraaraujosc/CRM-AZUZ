@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA, buscarBlocos, type BlocoDefinicao } from "@/lib/automation-flow/blocos";
-import { GRUPOS_DA_AREA, blocoValeNaArea, grupoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
+import {
+  GRUPOS_DA_AREA,
+  blocoValeNaArea,
+  grupoDeGatilhoValeNaArea,
+  grupoValeNaArea,
+  type AreaAutomacao,
+} from "@/lib/canais/capacidades";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
 
 /** Tipo MIME custom carregado no drag. O que a área do canvas lê no `onDrop`. */
@@ -62,7 +68,13 @@ export function BlockLibrary({
   // (lista interativa num robô de Instagram, comentário num robô de funil).
   const cabeAqui = useCallback(
     (b: BlocoDefinicao) =>
-      (iaDisponivel || !b.tipo.startsWith("ia_")) && grupoValeNaArea(b.grupo, area) && blocoValeNaArea(b.tipo, area),
+      (iaDisponivel || !b.tipo.startsWith("ia_")) &&
+      grupoValeNaArea(b.grupo, area) &&
+      blocoValeNaArea(b.tipo, area) &&
+      // Gatilho tem uma regra a mais: no Instagram ele só pode vir do grupo do Instagram. O grupo
+      // de agenda, por exemplo, entra na área pelas AÇÕES (criar tarefa), mas os gatilhos dele
+      // ("tarefa vencida") nunca disparariam um robô social.
+      (b.categoria !== "gatilho" || grupoDeGatilhoValeNaArea(b.grupo, area)),
     [iaDisponivel, area],
   );
 

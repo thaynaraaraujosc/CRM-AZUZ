@@ -525,6 +525,17 @@ export function resumoNo(node: FlowNode, funis?: Funil[]): string {
     case "palavra_chave": {
       return d.palavra ? `"${d.palavra}"` : "Sem palavra definida";
     }
+    // Os gatilhos do Instagram que aceitam filtro de palavra. O resumo mostra a palavra porque é a
+    // única coisa que diferencia dois blocos do mesmo tipo no canvas: sem ela, dois gatilhos de
+    // comentário ficam com o card idêntico e quem montou não sabe qual é qual.
+    case "instagram_direct_recebido":
+    case "instagram_story_respondido":
+    case "comentario_instagram":
+    case "instagram_resposta_comentario": {
+      const palavras = Array.isArray(d.palavras) ? (d.palavras as string[]).filter(Boolean) : [];
+      if (!palavras.length) return "Qualquer conteúdo";
+      return palavras.map((p) => `"${p}"`).join(", ");
+    }
     case "webhook_recebido": {
       return d.identificador ? `Identificador: ${d.identificador}` : "Qualquer webhook";
     }

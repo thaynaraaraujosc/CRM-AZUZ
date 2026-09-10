@@ -16,8 +16,6 @@ import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { renomearConversa } from "@/lib/conversas/renomear";
 import { nomeAindaEhIdCru } from "@/lib/conversas/exibicao";
 import { criarContatoPeloInstagramSeNaoExistir, encontrarContatoDoInstagram } from "@/lib/contatos/upsert";
-import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
-import { destinoDoLeadSocial } from "@/lib/social/destino-lead";
 import {
   dispararAutomacoesDeEventoInstagram,
   dispararAutomacoesDeMensagemRecebida,
@@ -491,16 +489,18 @@ export async function POST(request: Request) {
       const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: mensagem.mid } });
       if (jaExiste) continue;
 
-      // "Levar as conversas do Instagram para o funil" (Configurações > Integrações > Instagram
-      // Direct > Gerenciar). Desligado, o Direct fica valendo só como caixa de entrada: a conversa
-      // aparece em Conversas normalmente, mas ninguém vira contato nem card. Que é o caso de quem
-      // recebe muita mensagem que não é lead. Padrão ligado (`?? true`), igual ao WhatsApp: mensagem
-      // nova de gente nova é um lead até prova em contrário.
-      const entrarNoFunil =
-        (integracaoDaConta.metadados as { entrarNoFunil?: boolean } | null)?.entrarNoFunil ?? true;
-
+      // O Direct CRIA CONTATO e NÃO cria card no funil.
+      //
+      // Contato sim: é quem mandou mensagem, com @, foto, seguidores e etiqueta. É o que a aba
+      // Instagram > Contatos lista e o que a ação em massa usa. Sem ele o Direct seria uma caixa
+      // de entrada anônima.
+      //
+      // Card no funil não. O funil é comercial e é do WhatsApp: ver `provedoresDeNegocio`. Evento
+      // de Instagram é pontual (comentou, respondeu story, mencionou) e não é uma etapa de venda.
+      // Quando o Direct virar negócio de verdade, quem move pro funil é o robô, com o bloco de
+      // criar negócio, ou a pessoa, na ficha do contato. Nunca o webhook, por conta própria.
       let contatoId: string | undefined;
-      if (entrarNoFunil) {
+      {
         const arroba = chaveContato.replace(/^@/, "");
         // IGSID primeiro, @ depois: o @ muda quando a pessoa troca o nome de usuário, e casar só
         // por ele faria a mesma pessoa voltar como lead novo, com card novo e histórico partido.
@@ -552,24 +552,6 @@ export async function POST(request: Request) {
             .catch((erro) => console.error("[instagram] falha ao guardar a foto no contato:", erro));
         }
 
-        // Mesma regra do WhatsApp: só quem ACABOU de ser criado entra no funil. Contato que já
-        // existia mandar mensagem de novo não pode mexer na etapa em que o vendedor o deixou.
-        if (!contatoExistente) {
-          const destino = await destinoDoLeadSocial(integracaoDaConta.workspaceId);
-          await entrarNaPrimeiraEtapaComoNovoLead({
-            workspaceId: integracaoDaConta.workspaceId,
-            contatoNome: chaveContato,
-            origem: "Instagram",
-            contaCanal: contaCanalDaConexao(CANAL_INSTAGRAM, instagramContaId),
-            funilId: destino.funilId,
-            etapaId: destino.etapaId,
-          });
-        } else if (!ehEco) {
-          // Contato que já tinha card: a ETAPA não se mexe (é decisão do vendedor), mas o card sobe
-          // pro topo da coluna dele. Quem acabou de falar precisa estar visível sem rolar a coluna.
-          // Eco não conta: mensagem que a própria conta mandou não é novidade pra quem atende.
-          await subirCardParaOTopo(integracaoDaConta.workspaceId, chaveContato);
-        }
       }
 
       const criadoEm = evento.timestamp ? new Date(evento.timestamp) : new Date();

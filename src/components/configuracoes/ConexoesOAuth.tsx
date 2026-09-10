@@ -122,7 +122,6 @@ export function ConexaoInstagram() {
   // Padrão ligado nos dois: quem já tinha a conta conectada antes destes controles existirem não
   // pode perder mensagem nem lead só porque a chave ainda não estava gravada.
   const receberMensagens = (integracao?.metadados?.receberMensagens as boolean | undefined) ?? true;
-  const entrarNoFunil = (integracao?.metadados?.entrarNoFunil as boolean | undefined) ?? true;
 
   const ultimoEventoEm = integracao?.metadados?.ultimoEventoEm as string | undefined;
 
@@ -241,18 +240,6 @@ export function ConexaoInstagram() {
               receberMensagens
                 ? "As mensagens do Direct chegam na caixa de entrada, marcadas como Instagram."
                 : "A conta segue conectada, mas nenhuma mensagem nova do Direct entra no CRM. O que já chegou continua salvo."
-            }
-          />
-          <ToggleDaIntegracao
-            provedor="meta_instagram"
-            chave="entrarNoFunil"
-            valorAtual={entrarNoFunil}
-            aoSalvar={recarregar}
-            titulo="Levar as conversas do Instagram para o funil"
-            descricao={
-              entrarNoFunil
-                ? "Quem manda Direct pela primeira vez vira contato e entra na primeira etapa do funil, igual ao WhatsApp."
-                : "O Direct funciona só como caixa de entrada: você responde por Conversas, sem gerar contato nem card no funil."
             }
           />
         </div>

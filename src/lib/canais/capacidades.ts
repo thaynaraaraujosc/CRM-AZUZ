@@ -266,6 +266,11 @@ const RECURSO_EXIGIDO: Partial<Record<FlowNodeType, keyof CapacidadesCanal>> = {
   // reage, então mapeá-lo em "reacao" deixava este gatilho aparecer no construtor do funil, onde
   // ele nunca dispara. Quem reage é `reagir_mensagem`, logo abaixo, e esse sim é "reacao".
   instagram_reacao_recebida: "eventosProprios",
+  // "Mensagem no Direct" é o gatilho genérico visto pela área social. Marcado como evento próprio
+  // do Instagram não porque o Direct seja exclusivo, mas porque este BLOCO é: o funil já tem
+  // "Mensagem recebida" pro mesmo acontecimento, e ter os dois lá seria oferecer a mesma coisa
+  // duas vezes com nomes diferentes.
+  instagram_direct_recebido: "eventosProprios",
   instagram_midia_recebida: "eventosProprios",
   instagram_publicacao_compartilhada: "eventosProprios",
   instagram_story_respondido: "eventosProprios",
@@ -410,6 +415,28 @@ export const GRUPOS_DA_AREA: Record<AreaAutomacao, string[]> = {
 /** O grupo aparece nesta área? */
 export function grupoValeNaArea(grupo: string, area: AreaAutomacao): boolean {
   return GRUPOS_DA_AREA[area].includes(grupo);
+}
+
+/**
+ * De que grupo pode vir o GATILHO de cada área.
+ *
+ * O grupo "Agenda e tarefas" traz ação (criar tarefa, marcar consulta) e gatilho (tarefa vencida,
+ * cliente não compareceu) no mesmo saco. A ação é útil nas duas áreas; o gatilho, não: um robô de
+ * Instagram não começa porque uma tarefa venceu, começa porque alguém comentou. Sem esta regra, a
+ * biblioteca do Instagram oferecia sete gatilhos de agenda que, escolhidos, montariam um robô que
+ * nunca dispara — o botão falso que este arquivo existe pra impedir.
+ *
+ * No comercial não há restrição: lá o gatilho vem de onde fizer sentido.
+ */
+const GRUPO_DE_GATILHO_DA_AREA: Record<AreaAutomacao, string[] | null> = {
+  comercial: null,
+  social: ["instagram"],
+};
+
+/** O bloco de GATILHO pode ser oferecido nesta área? Ver `GRUPO_DE_GATILHO_DA_AREA`. */
+export function grupoDeGatilhoValeNaArea(grupo: string, area: AreaAutomacao): boolean {
+  const permitidos = GRUPO_DE_GATILHO_DA_AREA[area];
+  return permitidos === null || permitidos.includes(grupo);
 }
 
 /** Os canais daquela área que existem de verdade hoje. É o que a tela pode oferecer. */

@@ -39,12 +39,19 @@ export type RespostaAutomatica = {
 
 const GATILHO_DO_QUANDO: Record<QuandoResposta, FlowNodeType> = {
   comentario: "comentario_instagram",
-  direct: "mensagem_recebida",
+  direct: "instagram_direct_recebido",
   story: "instagram_story_respondido",
 };
 
+/*
+ * `mensagem_recebida` continua aqui, mapeado, e não é sobra: é o gatilho genérico do funil, e foi
+ * o que estas respostas automáticas usaram enquanto o bloco próprio do Direct não existia. Uma
+ * resposta salva antes da mudança abre pelo caminho certo por causa desta linha. Tirar seria
+ * quebrar o que já está no ar pra ganhar uma linha a menos.
+ */
 const QUANDO_DO_GATILHO: Partial<Record<FlowNodeType, QuandoResposta>> = {
   comentario_instagram: "comentario",
+  instagram_direct_recebido: "direct",
   mensagem_recebida: "direct",
   instagram_story_respondido: "story",
 };

@@ -67,7 +67,7 @@ export const navEntries: NavEntry[] = [
   // visita pra fazer qualquer das duas coisas.
   { href: "/conversas", label: "WhatsApp", Icon: IconWhatsApp },
   { href: "/instagram", label: "Instagram", Icon: IconInstagram },
-  { href: "/funil", label: "Funil", Icon: IconPipeline },
+  { href: "/funil", label: "Funil comercial", Icon: IconPipeline },
   { href: "/tarefas", label: "Tarefas", Icon: IconTarefas },
   { href: "/formularios", label: "Formulário", Icon: IconDoc },
   { href: "/agenda", label: "Agenda", Icon: IconCalendar },

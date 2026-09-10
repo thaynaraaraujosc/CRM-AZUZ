@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Topbar } from "@/components/ui";
-import { AbasInstagram } from "@/components/instagram/AbasInstagram";
 import { IconEnviar, IconSearch } from "@/components/icons";
 import type { ConversaInstagram } from "@/app/api/instagram/conversas/route";
 import type { MensagemInstagram } from "@/app/api/instagram/mensagens/route";
@@ -66,7 +65,20 @@ export default function InstagramConversasPage() {
 
   const carregarConversas = useCallback(async () => {
     const r = await fetch("/api/instagram/conversas", { cache: "no-store" });
-    setConversas(r.ok ? ((await r.json()) as ConversaInstagram[]) : []);
+    const lista = r.ok ? ((await r.json()) as ConversaInstagram[]) : [];
+    setConversas(lista);
+
+    /*
+     * Abre a primeira conversa sozinha.
+     *
+     * "Escolha uma conversa à esquerda" era um passo a mais pra chegar em algum lugar que a pessoa
+     * quase sempre queria: a conversa do topo é a mais recente, e é onde quem atende começa. O
+     * painel vazio ocupava dois terços da tela sem dizer nada.
+     *
+     * `?? ` e não atribuição direta: esta função roda de novo depois de cada envio, e sobrescrever
+     * ali jogaria a pessoa de volta pro topo no meio de uma resposta.
+     */
+    setAberta((atual) => atual ?? lista[0]?.nome ?? null);
   }, []);
 
   useEffect(() => {
@@ -171,7 +183,6 @@ export default function InstagramConversasPage() {
   return (
     <>
       <Topbar title="Instagram" sub="Direct, respostas a story e comentários" />
-      <AbasInstagram />
 
       <div className="content ig-layout">
         <aside className="ig-lista">

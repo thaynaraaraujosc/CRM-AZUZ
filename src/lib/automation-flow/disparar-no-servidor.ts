@@ -286,7 +286,12 @@ function tipoDoGatilhoQueCasa(tipoDoEvento: string, tipoDoBloco: string | undefi
   const equivalentes: Record<string, string[]> = {
     // "Lead respondeu" só vale quando a conversa já existia, mas o CRM não distingue isso hoje.
     // E deixar de fora seria pior: o bloco existe na biblioteca e nunca dispararia.
-    mensagem_recebida: ["palavra_chave", "lead_respondeu"],
+    //
+    // `instagram_direct_recebido` é o mesmo acontecimento visto pela área social: chegou mensagem.
+    // Ele existe como bloco separado porque na biblioteca do Instagram os gatilhos genéricos do
+    // funil não aparecem, e sem ele não haveria como montar um robô que responde um Direct comum.
+    // A filtragem por palavra é do próprio bloco, igual à de "Palavra-chave recebida".
+    mensagem_recebida: ["palavra_chave", "lead_respondeu", "instagram_direct_recebido"],
   };
   return equivalentes[tipoDoEvento]?.includes(tipoDoBloco) ? tipoDoBloco : null;
 }

@@ -18486,6 +18486,32 @@ table.tbl .name-cell .r {
   margin: 0;
 }
 
+/* Coluna de número: alinhada à direita e com dígito de largura fixa, pra que uma coluna de
+   contagens leia como coluna e não como uma pilha de números tortos. */
+.table th.num,
+.table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tabela larga em tela estreita rola sozinha, dentro da própria caixa. Sem isto ela empurra a
+   página inteira pro lado, que é o defeito que já apareceu duas vezes neste módulo. */
+.tabela-rolavel {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.txt-erro {
+  color: var(--danger);
+}
+
+/* Fileira de atalhos no fim de um cartão: quebra sozinha em telas estreitas em vez de estourar. */
+.social-atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 /* ------------------------------------------------- módulo Instagram/TikTok -- */
 /*
  * O respiro das telas do módulo, num lugar só.

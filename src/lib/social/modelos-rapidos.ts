@@ -194,7 +194,7 @@ export const MODELOS_SOCIAIS: ModeloSocial[] = [
       const nodes: FlowNode[] = [];
       const edges: FlowEdge[] = [];
 
-      nodes.push(no("dm-gatilho", "mensagem_recebida", "gatilho", { canal: "Instagram" }, "Mandou mensagem no Direct"));
+      nodes.push(no("dm-gatilho", "instagram_direct_recebido", "gatilho", { canal: "Instagram" }, "Mandou mensagem no Direct"));
 
       nodes.push(
         no("dm-pergunta", "mensagem_botoes", "mensagem", {

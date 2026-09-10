@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Topbar } from "@/components/ui";
-import { AbasInstagram } from "@/components/instagram/AbasInstagram";
 import { useRouter } from "next/navigation";
 
 import { IconMaisOpcoes, IconSearch } from "@/components/icons";
@@ -111,7 +110,6 @@ export default function InstagramContatosPage() {
   return (
     <>
       <Topbar title="Contatos do Instagram" sub="Quem chegou pelo Direct, por comentário ou por story" />
-      <AbasInstagram />
 
       <div className="content">
         <section className="card ig-contatos-card">

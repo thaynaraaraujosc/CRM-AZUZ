@@ -32,6 +32,29 @@ export type PainelSocial = {
     automacoesIniciadas: number;
   };
   instagram: ResultadoMetricas | null;
+  /**
+   * Um robô por linha, com o que ele fez no período. É o acompanhamento do Instagram.
+   *
+   * No WhatsApp, quem acompanha é o funil: o card anda de coluna e a etapa conta a história. O
+   * Direct não entra no funil comercial, então precisava de um lugar próprio pra responder "meu
+   * robô está funcionando?". Esta lista responde: quantas vezes rodou, quantas deram erro, quando
+   * foi a última. Tudo contado em `ExecucaoAutomacao`, que é linha de banco, não estimativa.
+   */
+  robos: RoboSocial[];
+};
+
+export type RoboSocial = {
+  id: string;
+  nome: string;
+  /** Publicado E ativo. É o que faz o robô responder de verdade. */
+  ligado: boolean;
+  execucoes: number;
+  /** Execuções que terminaram em erro. Zero é bom, e é diferente de "nunca rodou". */
+  erros: number;
+  /** Execuções ainda em andamento ou esperando resposta/tempo. */
+  emAndamento: number;
+  /** ISO da última vez que este robô começou. Nulo = não rodou no período. */
+  ultimaEm: string | null;
 };
 
 /** Tipos normalizados de `InstagramEvento` agrupados pelo que a pessoa quer contar. */
@@ -42,6 +65,9 @@ const GRUPOS = {
   mencoes: ["mencao_em_story"],
   reacoes: ["reacao_adicionada"],
 };
+
+/** Situações de `ExecucaoAutomacao` que ainda não terminaram. */
+const EM_ANDAMENTO = ["em_andamento", "aguardando_tempo", "aguardando_evento"];
 
 export async function GET(request: Request) {
   const sessao = await auth();
@@ -55,7 +81,7 @@ export async function GET(request: Request) {
   const ate = new Date();
   const desde = new Date(ate.getTime() - periodoDias * 24 * 60 * 60 * 1000);
 
-  const [eventos, leadsCriados, automacoesIniciadas, integracao] = await Promise.all([
+  const [eventos, leadsCriados, automacoesIniciadas, integracao, fluxosSociais, execucoes] = await Promise.all([
     prisma.instagramEvento.groupBy({
       by: ["tipo"],
       where: { workspaceId, criadoEm: { gte: desde } },
@@ -68,6 +94,17 @@ export async function GET(request: Request) {
     prisma.integracao.findUnique({
       where: { workspaceId_provedor: { workspaceId, provedor: "meta_instagram" } },
       select: { status: true, accessTokenCriptografado: true, erroMensagem: true },
+    }),
+    prisma.fluxoAutomacao.findMany({
+      where: { workspaceId, area: "social", arquivada: false },
+      select: { id: true, nome: true, status: true, ativa: true },
+      orderBy: { nome: "asc" },
+    }),
+    // As execuções do período, cruas. Agrupar aqui em memória em vez de fazer um groupBy por
+    // situação: são poucas linhas por workspace, e assim a última data sai da mesma leitura.
+    prisma.execucaoAutomacao.findMany({
+      where: { workspaceId, iniciadaEm: { gte: desde }, fluxo: { area: "social" } },
+      select: { fluxoId: true, situacao: true, iniciadaEm: true },
     }),
   ]);
 
@@ -106,6 +143,22 @@ export async function GET(request: Request) {
       automacoesIniciadas,
     },
     instagram,
+    robos: fluxosSociais.map((f) => {
+      const minhas = execucoes.filter((e) => e.fluxoId === f.id);
+      const ultima = minhas.reduce<Date | null>(
+        (maior, e) => (!maior || e.iniciadaEm > maior ? e.iniciadaEm : maior),
+        null,
+      );
+      return {
+        id: f.id,
+        nome: f.nome,
+        ligado: f.status === "publicado" && f.ativa,
+        execucoes: minhas.length,
+        erros: minhas.filter((e) => e.situacao === "erro").length,
+        emAndamento: minhas.filter((e) => EM_ANDAMENTO.includes(e.situacao)).length,
+        ultimaEm: ultima ? ultima.toISOString() : null,
+      };
+    }),
   };
 
   return NextResponse.json(painel, { headers: { "cache-control": "private, no-store" } });
