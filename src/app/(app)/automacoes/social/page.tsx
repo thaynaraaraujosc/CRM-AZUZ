@@ -8,7 +8,7 @@ import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
-import { blocoValeNaArea } from "@/lib/canais/capacidades";
+import { blocoValeNaArea, grupoDeGatilhoValeNaArea } from "@/lib/canais/capacidades";
 import { IconGrade, IconLista, IconMaisOpcoes, IconNovaPasta, IconSearch } from "@/components/icons";
 import type { PastaSalva } from "@/app/api/automacoes-pastas/route";
 import type { ConexaoSocial } from "@/app/api/social/conexoes/route";
@@ -17,9 +17,18 @@ import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 type Visao = "lista" | "grade";
 type FiltroStatus = "todos" | "ativo" | "inativo" | "rascunho";
 
-/** Os gatilhos que existem nesta área, pro filtro. Sai da mesma tabela que a biblioteca usa. */
+/**
+ * Os gatilhos que existem nesta área, pro filtro. Sai da mesma tabela que a biblioteca usa, e com
+ * o mesmo par de regras que ela: `blocoValeNaArea` diz se o bloco funciona no canal, e
+ * `grupoDeGatilhoValeNaArea` diz se aquele TIPO de gatilho existe aqui. Só com a primeira, o
+ * filtro oferecia "Lead entrou na etapa", "Tarefa criada", "Consulta agendada" e mais vinte
+ * gatilhos do funil que nenhum robô do Instagram pode ter.
+ */
 const GATILHOS_SOCIAIS = BLOCOS_DISPONIVEIS.filter(
-  (b) => b.categoria === "gatilho" && blocoValeNaArea(b.tipo, "social"),
+  (b) =>
+    b.categoria === "gatilho" &&
+    blocoValeNaArea(b.tipo, "social") &&
+    grupoDeGatilhoValeNaArea(b.grupo, "social"),
 );
 
 function dataCurta(iso?: string): string {

@@ -118,6 +118,7 @@ function FormularioDoNode({
     return (
       <ExecutarRoboForm
         data={node.data as ExecutarRoboData}
+        area={area}
         fluxoAtualId={fluxoAtualId}
         onChange={(d) => onUpdateNodeData(node.id, d)}
       />

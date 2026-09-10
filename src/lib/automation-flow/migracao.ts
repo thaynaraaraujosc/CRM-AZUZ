@@ -463,6 +463,10 @@ export function migrarRegraComentarioParaFluxo(regra: RegraComentario): FluxoAut
     id: regra.id,
     nome: `Comentário ${regra.canal}: "${regra.palavraChave}"`,
     categoria: "comentario",
+    // Regra de comentário do Instagram é robô SOCIAL. Sem isto ela nascia como comercial: sumia da
+    // lista de "Instagram e TikTok", onde é o lugar dela, e aparecia no seletor de robô da etapa do
+    // funil, onde nunca vai rodar porque o motor recusa por área.
+    area: regra.canal === "Instagram" ? "social" : "comercial",
     status: "publicado",
     ativa: regra.ativa,
     nodes,

@@ -32,7 +32,7 @@ import {
  */
 
 type ColunaResumo = { id: string; titulo: string; total?: number };
-type RoboResumo = { id: string; nome: string; status?: string };
+type RoboResumo = { id: string; nome: string; status?: string; area?: string };
 type CanalConectado = { canal: string; label: string; conectado: boolean; detalhe?: string | null };
 
 /**
@@ -218,7 +218,12 @@ export function AutomacaoDoFunil({
     fetch("/api/automacoes-fluxos")
       .then((r) => (r.ok ? r.json() : []))
       .then((lista: RoboResumo[]) => {
-        if (vivo) setRobos(lista.map((f) => ({ id: f.id, nome: f.nome, status: f.status })));
+        // O funil é comercial por definição, e um robô do Instagram escolhido aqui não roda: o
+        // motor recusa por área. Ele aparecia na lista mesmo assim, e escolher uma opção que nunca
+        // acontece é pior do que não ter a opção. Robô sem área é anterior à separação das duas e
+        // conta como comercial, igual ao resto do sistema.
+        const comerciais = lista.filter((f) => (f.area ?? "comercial") !== "social");
+        if (vivo) setRobos(comerciais.map((f) => ({ id: f.id, nome: f.nome, status: f.status })));
       })
       .catch(() => {});
     fetch("/api/canais")
