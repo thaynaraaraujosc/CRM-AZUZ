@@ -23,18 +23,28 @@ export async function GET() {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
   const workspaceId = sessao.user.workspaceId;
 
-  const [porContaCanal, visiveis, integracoes] = await Promise.all([
-    prisma.mensagemExtra.groupBy({
-      by: ["contaCanal", "canal"],
-      where: { workspaceId },
-      _count: { _all: true },
-    }),
-    contasCanalVisiveis(workspaceId),
-    prisma.integracao.findMany({
-      where: { workspaceId, provedor: { in: ["whatsapp_nao_oficial", "meta_whatsapp", "meta_instagram"] } },
-      select: { provedor: true, status: true, metadados: true },
-    }),
-  ]);
+  const [porContaCanal, visiveis, integracoes, conversasPorConta, todasAsConversas, cards] =
+    await Promise.all([
+      prisma.mensagemExtra.groupBy({
+        by: ["contaCanal", "canal"],
+        where: { workspaceId },
+        _count: { _all: true },
+      }),
+      contasCanalVisiveis(workspaceId),
+      prisma.integracao.findMany({
+        where: { workspaceId, provedor: { in: ["whatsapp_nao_oficial", "meta_whatsapp", "meta_instagram"] } },
+        select: { provedor: true, status: true, metadados: true },
+      }),
+      // A caixa de entrada lista CONVERSAS, não mensagens. Contar só mensagem responde a pergunta
+      // errada: dá pra ter toda mensagem visível e mesmo assim nenhuma conversa na tela.
+      prisma.conversa.groupBy({
+        by: ["contaCanal", "canal"],
+        where: { workspaceId },
+        _count: { _all: true },
+      }),
+      prisma.conversa.findMany({ where: { workspaceId }, select: { nome: true } }),
+      prisma.negocioCard.findMany({ where: { workspaceId }, select: { nome: true, contaCanal: true } }),
+    ]);
 
   const mensagens = porContaCanal.map((linha) => ({
     contaCanal: linha.contaCanal,
@@ -46,8 +56,39 @@ export async function GET() {
       visiveis.prefixosSemIdentificador.some((p) => linha.contaCanal?.startsWith(`${p}:`)),
   }));
 
+  const visivel = (contaCanal: string | null) =>
+    visiveis.contas.includes(contaCanal) ||
+    visiveis.prefixosSemIdentificador.some((p) => contaCanal?.startsWith(`${p}:`));
+
+  const conversas = conversasPorConta.map((linha) => ({
+    contaCanal: linha.contaCanal,
+    canal: linha.canal,
+    quantidade: linha._count._all,
+    apareceNaTela: visivel(linha.contaCanal),
+  }));
+
+  /*
+   * Negócio no funil sem conversa nenhuma no CRM.
+   *
+   * É a pergunta que o diagnóstico não respondia: "chegou no funil e não chegou no WhatsApp" tem
+   * duas causas possíveis e opostas. Ou a conversa existe e está escondida por filtro, ou ela nunca
+   * foi criada. As duas se parecem na tela e se consertam em lugares diferentes.
+   */
+  const nomesComConversa = new Set(todasAsConversas.map((c) => c.nome));
+  const negociosSemConversa = cards
+    .filter((c) => !nomesComConversa.has(c.nome))
+    .map((c) => ({ nome: c.nome, contaCanal: c.contaCanal }));
+
   return NextResponse.json(
     {
+      resumo: {
+        conversasNoBanco: todasAsConversas.length,
+        conversasQueAparecem: conversas.filter((c) => c.apareceNaTela).reduce((s, c) => s + c.quantidade, 0),
+        negociosNoFunil: cards.length,
+        negociosSemConversa: negociosSemConversa.length,
+      },
+      conversas,
+      negociosSemConversa,
       conexoes: integracoes.map((i) => {
         const m = (i.metadados as Record<string, unknown> | null) ?? {};
         return {
