@@ -206,6 +206,16 @@ export function AutomationFlowProvider({ children }: { children: ReactNode }) {
       return {
         ...f,
         status: "publicado",
+        // Na PRIMEIRA publicação, o robô já nasce ligado.
+        //
+        // Publicar e ativar eram dois passos, e o segundo não estava em lugar nenhum na cabeça de
+        // quem acabou de clicar em "Publicar": a tela dizia "Publicado", o aviso dizia "publicado
+        // com sucesso", e o robô nunca rodava porque o motor exige `ativa`. Era o caminho mais
+        // curto pra concluir que a automação do CRM não funciona.
+        //
+        // Republicar NÃO religa nada: quem pausou o robô de propósito e depois corrigiu o texto
+        // não quer que a correção o coloque no ar de volta sem avisar.
+        ativa: f.versaoAtual === 0 ? true : f.ativa,
         versaoAtual: novaVersao,
         publicadoEm: agora,
         publicadoPor: usuario,

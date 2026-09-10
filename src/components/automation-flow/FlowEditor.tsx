@@ -206,10 +206,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
   function avisar(texto: string) {
     const id = toastIdRef.current++;
-    // Idempotente de propósito: o updater do `setState` roda duas vezes no StrictMode do
-    // desenvolvimento, e o id vem de um ref que só incrementa uma. Sem esta guarda o mesmo aviso
-    // aparecia duplicado na tela toda vez.
-    setToasts((prev) => (prev.some((t) => t.id === id) ? prev : [...prev, { id, texto }]));
+    setToasts((prev) => [...prev, { id, texto }]);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4500);
   }
 
@@ -728,6 +725,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     // anterior ao que a pessoa acabou de digitar, e ela veria o texto novo na tela com o texto
     // velho rodando pros clientes.
     salvarAlteracoes();
+    // Lido ANTES do `setTimeout`: depois de publicar, `versaoAtual` já subiu e `ativa` já pode ter
+    // sido ligada, e o aviso passaria a descrever o depois em vez do antes.
+    const jaEstavaAtiva = fluxo?.ativa ?? false;
+    const primeiraPublicacao = (fluxo?.versaoAtual ?? 0) === 0;
     // setTimeout(0) garante que `publicarFluxo` (que lê o estado do contexto) já
     // enxerga o `atualizarFluxo` de cima. Os dois não podem rodar na mesma
     // atualização em lote do React.
@@ -736,8 +737,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       const erros = resultado.filter((p) => p.severidade === "erro");
       if (erros.length > 0) {
         avisar(`Não deu pra publicar: ${erros.length} problema(s). Veja a aba "Problemas" no painel à direita.`);
+      } else if (jaEstavaAtiva || primeiraPublicacao) {
+        avisar("Fluxo publicado e no ar.");
       } else {
-        avisar("Fluxo publicado com sucesso.");
+        // Republicar não religa um robô pausado de propósito. Dizer só "publicado com sucesso"
+        // aqui faria a pessoa esperar por uma execução que não vem.
+        avisar("Fluxo publicado, mas ele está pausado. Ligue no botão ao lado pra ele voltar a rodar.");
       }
     }, 0);
   }

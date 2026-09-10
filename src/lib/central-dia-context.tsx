@@ -178,10 +178,7 @@ export function CentralDiaProvider({ children }: { children: ReactNode }) {
 
   const avisar = useCallback((texto: string) => {
     const id = toastIdRef.current++;
-    // Idempotente de propósito: o updater do `setState` roda duas vezes no StrictMode do
-    // desenvolvimento, e o id vem de um ref que só incrementa uma. Sem esta guarda o mesmo aviso
-    // aparecia duplicado na tela toda vez.
-    setToasts((prev) => (prev.some((t) => t.id === id) ? prev : [...prev, { id, texto }]));
+    setToasts((prev) => [...prev, { id, texto }]);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
   }, []);
 
