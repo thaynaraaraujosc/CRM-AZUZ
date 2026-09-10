@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { CANAL_INSTAGRAM } from "@/lib/integracoes/conta-canal";
 
 /**
  * A janela de 24 horas do Direct.
@@ -41,9 +40,28 @@ export type PessoaNaJanela = {
 export async function pessoasNaJanela(workspaceId: string, agora = new Date()): Promise<PessoaNaJanela[]> {
   const desde = inicioDaJanela(agora);
 
+  // Quem é do Instagram sai da CONVERSA, não de um filtro na mensagem.
+  //
+  // `MensagemExtra.canal` nem sempre está preenchido: é uma coluna que nasceu depois, e mensagem
+  // gravada por outros caminhos (envio manual, disparo) marca a conexão em `contaCanal` e deixa
+  // `canal` nulo. Filtrar por ele descartava justamente as mensagens mais antigas da conversa. A
+  // conversa, essa sim, sempre diz de que canal ela é.
+  const conversas = await prisma.conversa.findMany({
+    where: { workspaceId, canal: "Instagram" },
+    select: { nome: true },
+  });
+  if (!conversas.length) return [];
+
   const recebidas = await prisma.mensagemExtra.groupBy({
     by: ["contato"],
-    where: { workspaceId, canal: CANAL_INSTAGRAM, tipo: "in", criadoEm: { gte: desde } },
+    where: {
+      workspaceId,
+      contato: { in: conversas.map((c) => c.nome) },
+      // "não é nossa" em vez de "é in": os dois caminhos que gravam mensagem recebida usam rótulos
+      // diferentes, e só o que SAI daqui é sempre marcado "out".
+      tipo: { not: "out" },
+      criadoEm: { gte: desde },
+    },
     _max: { criadoEm: true },
   });
 
@@ -76,9 +94,8 @@ export async function dentroDaJanelaDirect(
   const recebida = await prisma.mensagemExtra.findFirst({
     where: {
       workspaceId,
-      canal: CANAL_INSTAGRAM,
-      tipo: "in",
       contato: contatoNome,
+      tipo: { not: "out" },
       criadoEm: { gte: inicioDaJanela(agora) },
     },
     select: { id: true },

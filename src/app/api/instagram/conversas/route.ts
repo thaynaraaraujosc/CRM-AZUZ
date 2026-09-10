@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CANAL_INSTAGRAM } from "@/lib/integracoes/conta-canal";
 import { JANELA_HORAS } from "@/lib/social/janela-direct";
 
 /**
@@ -61,15 +60,17 @@ export async function GET() {
   // consultas agregadas em vez de duas por conversa: com 200 conversas isso seria 400 idas ao
   // banco pra montar uma lista.
   const [ultimas, ultimasRecebidas, contatos] = await Promise.all([
+    // Sem filtro por `canal` pelo mesmo motivo do endpoint de mensagens: a coluna nasceu depois e
+    // fica nula em boa parte do histórico. O nome da conversa já recorta certo.
     prisma.mensagemExtra.findMany({
-      where: { workspaceId, canal: CANAL_INSTAGRAM, contato: { in: nomes } },
+      where: { workspaceId, contato: { in: nomes } },
       orderBy: { criadoEm: "desc" },
       distinct: ["contato"],
       select: { contato: true, texto: true, criadoEm: true },
     }),
     prisma.mensagemExtra.groupBy({
       by: ["contato"],
-      where: { workspaceId, canal: CANAL_INSTAGRAM, tipo: "in", contato: { in: nomes } },
+      where: { workspaceId, tipo: { not: "out" }, contato: { in: nomes } },
       _max: { criadoEm: true },
     }),
     prisma.contato.findMany({
@@ -77,6 +78,7 @@ export async function GET() {
       select: {
         nome: true,
         instagram: true,
+        fotoUrl: true,
         igSeguidores: true,
         igVerificado: true,
         igSegueVoce: true,
@@ -100,7 +102,9 @@ export async function GET() {
       contato: c.contato,
       exibicao: c.nome,
       username: dados?.instagram ?? null,
-      fotoUrl: c.fotoUrl,
+      // A foto pode estar na conversa OU no contato: o webhook grava nos dois, mas conversa antiga
+      // (de antes disso) só tem no contato. Sem o segundo lugar, a lista aparecia só com iniciais.
+      fotoUrl: c.fotoUrl ?? dados?.fotoUrl ?? null,
       ultimaMensagem: ultima?.texto ?? null,
       ultimaEm: (ultima?.criadoEm ?? c.atualizadoEm)?.toISOString() ?? null,
       naoLidas: c.naoLidas ?? 0,

@@ -56,7 +56,9 @@ function Avatar({ nome, fotoUrl, tamanho = 38 }: { nome: string; fotoUrl: string
 export default function InstagramConversasPage() {
   const [conversas, setConversas] = useState<ConversaInstagram[] | null>(null);
   const [aberta, setAberta] = useState<string | null>(null);
-  const [mensagens, setMensagens] = useState<MensagemInstagram[] | null>(null);
+  // A resposta viaja com o nome da conversa: assim "carregando" é derivado (o que tenho não é da
+  // conversa aberta) em vez de um segundo estado que erra sozinho quando duas buscas se cruzam.
+  const [mensagens, setMensagens] = useState<{ de: string; lista: MensagemInstagram[] } | null>(null);
   const [busca, setBusca] = useState("");
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -79,15 +81,57 @@ export default function InstagramConversasPage() {
     fetch(`/api/instagram/mensagens?conversa=${encodeURIComponent(aberta)}`, { cache: "no-store" })
       .then((r) => (r.ok ? (r.json() as Promise<MensagemInstagram[]>) : []))
       .then((lista) => {
-        if (!cancelado) setMensagens(lista);
+        if (!cancelado) setMensagens({ de: aberta, lista });
       })
       .catch(() => {
-        if (!cancelado) setMensagens([]);
+        if (!cancelado) setMensagens({ de: aberta, lista: [] });
       });
     return () => {
       cancelado = true;
     };
   }, [aberta]);
+
+  /**
+   * Busca o perfil na Meta quando ele está faltando.
+   *
+   * Toda conversa anterior à coluna de perfil ficou sem foto e sem os números, e não dá pra
+   * preencher isso em lote: a Meta só responde sobre quem mandou mensagem pra conta, um por vez.
+   * Uma chamada por conversa ABERTA, e não por conversa listada, que seria uma por linha da caixa.
+   */
+  useEffect(() => {
+    if (!aberta) return;
+    const alvo = conversas?.find((c) => c.nome === aberta);
+    if (!alvo || (alvo.perfil?.seguidores != null && alvo.fotoUrl)) return;
+
+    let cancelado = false;
+    fetch("/api/instagram/perfil", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ conversa: aberta }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((dados: { fotoUrl?: string | null; username?: string | null; perfil?: ConversaInstagram["perfil"] } | null) => {
+        if (cancelado || !dados) return;
+        setConversas((atual) =>
+          (atual ?? []).map((c) =>
+            c.nome === aberta
+              ? {
+                  ...c,
+                  fotoUrl: dados.fotoUrl ?? c.fotoUrl,
+                  username: dados.username ?? c.username,
+                  perfil: dados.perfil ?? c.perfil,
+                }
+              : c,
+          ),
+        );
+      })
+      .catch(() => {
+        /* sem perfil a tela mostra traço, que já é o comportamento certo pra ausência */
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [aberta, conversas]);
 
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -115,7 +159,7 @@ export default function InstagramConversasPage() {
       const lista = await fetch(`/api/instagram/mensagens?conversa=${encodeURIComponent(aberta)}`, {
         cache: "no-store",
       }).then((res) => (res.ok ? (res.json() as Promise<MensagemInstagram[]>) : []));
-      setMensagens(lista);
+      setMensagens({ de: aberta, lista });
       await carregarConversas();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não deu pra enviar.");
@@ -185,12 +229,12 @@ export default function InstagramConversasPage() {
               </header>
 
               <div className="ig-mensagens">
-                {mensagens === null ? (
+                {mensagens?.de !== atual.nome ? (
                   <p className="hint">Carregando…</p>
-                ) : !mensagens.length ? (
+                ) : !mensagens.lista.length ? (
                   <p className="hint">Nenhuma mensagem nesta conversa.</p>
                 ) : (
-                  mensagens.map((m) => (
+                  mensagens.lista.map((m) => (
                     <div key={m.id} className={`ig-bolha${m.tipo === "out" ? " nossa" : ""}`}>
                       <p>{m.texto || "(anexo)"}</p>
                       <span>{m.hora}</span>

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CANAL_INSTAGRAM } from "@/lib/integracoes/conta-canal";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 import { dentroDaJanelaDirect } from "@/lib/social/janela-direct";
 import { registrarMensagemEnviada } from "@/lib/conversas/registrar-saida";
@@ -25,8 +24,11 @@ export async function GET(request: Request) {
   const conversa = new URL(request.url).searchParams.get("conversa");
   if (!conversa) return NextResponse.json({ erro: "Falta a conversa." }, { status: 400 });
 
+  // Sem filtro por `canal`: essa coluna nasceu depois e fica nula em mensagem gravada por outros
+  // caminhos (envio manual, disparo). Filtrar por ela sumia com metade da conversa. O nome da
+  // conversa já é único por workspace, então ele sozinho recorta certo.
   const mensagens = await prisma.mensagemExtra.findMany({
-    where: { workspaceId: sessao.user.workspaceId, canal: CANAL_INSTAGRAM, contato: conversa },
+    where: { workspaceId: sessao.user.workspaceId, contato: conversa },
     orderBy: { criadoEm: "asc" },
     take: 300,
     select: { id: true, tipo: true, texto: true, hora: true, criadoEm: true, extras: true },

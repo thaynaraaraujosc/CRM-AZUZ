@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Topbar } from "@/components/ui";
 import { AbasInstagram } from "@/components/instagram/AbasInstagram";
-import { IconSearch } from "@/components/icons";
+import { useRouter } from "next/navigation";
+
+import { IconMaisOpcoes, IconSearch } from "@/components/icons";
 import type { ContatoInstagram } from "@/app/api/instagram/contatos/route";
 
 function quando(iso: string): string {
@@ -39,7 +41,9 @@ function iniciais(nome: string): string {
  * em massa: o estrago de um clique errado numa seleção grande não tem desfazer.
  */
 export default function InstagramContatosPage() {
+  const router = useRouter();
   const [contatos, setContatos] = useState<ContatoInstagram[] | null>(null);
+  const [menuAberto, setMenuAberto] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set());
   const [etiqueta, setEtiqueta] = useState("");
@@ -185,6 +189,7 @@ export default function InstagramContatosPage() {
                   <th>Segue você</th>
                   <th>Etiquetas</th>
                   <th>Atualizado</th>
+                  <th aria-label="Ações" />
                 </tr>
               </thead>
               <tbody>
@@ -220,6 +225,46 @@ export default function InstagramContatosPage() {
                     <td>{c.segueVoce == null ? "—" : c.segueVoce ? "Sim" : "Não"}</td>
                     <td className="hint">{c.etiquetas.length ? c.etiquetas.join(", ") : "—"}</td>
                     <td className="hint">{quando(c.atualizadoEm)}</td>
+                    <td style={{ textAlign: "right", position: "relative" }}>
+                      <button
+                        type="button"
+                        className="icon-btn subtle"
+                        aria-label={`Ações de ${c.nome}`}
+                        onClick={() => setMenuAberto(menuAberto === c.id ? null : c.id)}
+                      >
+                        <IconMaisOpcoes width={14} height={14} />
+                      </button>
+                      {menuAberto === c.id ? (
+                        <div className="social-menu-opcoes" role="menu">
+                          <button type="button" onClick={() => router.push("/instagram")}>
+                            Abrir conversa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEscolhidos(new Set([c.id]));
+                              setMenuAberto(null);
+                            }}
+                          >
+                            Etiquetar só este
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // O @ é o que a pessoa procura no Instagram e cola em qualquer lugar.
+                              void navigator.clipboard?.writeText(`@${(c.username ?? c.nome).replace(/^@/, "")}`);
+                              setMenuAberto(null);
+                              setAviso("@ copiado.");
+                            }}
+                          >
+                            Copiar @
+                          </button>
+                          <button type="button" onClick={() => router.push(`/contatos?busca=${encodeURIComponent(c.nome)}`)}>
+                            Ver ficha no CRM
+                          </button>
+                        </div>
+                      ) : null}
+                    </td>
                   </tr>
                 ))}
               </tbody>
