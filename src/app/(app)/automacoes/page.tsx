@@ -1,12 +1,11 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import Link from "next/link";
 import { Topbar } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
-import { NovaAutomacao } from "@/components/automacoes/NovaAutomacao";
 import { AutomacaoDoFunil } from "@/components/funil/AutomacaoDoFunil";
 import { useFunis } from "@/lib/funis-context";
 
@@ -24,15 +23,12 @@ import { useFunis } from "@/lib/funis-context";
  * fizer falta, ele volta pra dentro desta tela, não pra uma segunda.
  */
 function AutomacoesConteudo() {
-  const router = useRouter();
   const params = useSearchParams();
   const { funis } = useFunis();
 
-  const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [funilEscolhido, setFunilEscolhido] = useState("");
 
   const funilParam = params.get("funil");
-  const etapaParam = params.get("etapa");
 
   // Por derivação, não por efeito: um seletor que abre vazio obriga a um clique que não decide
   // nada quando só existe um funil, que é o caso comum.
@@ -51,9 +47,13 @@ function AutomacoesConteudo() {
             <Link className="btn" href="/automacoes/execucoes">
               Execuções
             </Link>
-            <button type="button" className="btn primary" onClick={() => setAssistenteAberto(true)}>
+            {/* Vai pra tela de três caminhos, não direto pro assistente: o modelo AZUZ pronto é
+                o caminho com mais chance de dar certo pra quem nunca montou um robô, e ele não
+                cabe num diálogo pequeno. Montar do zero continua a um clique de distância, lá
+                dentro, com o mesmo assistente de sempre. */}
+            <Link className="btn primary" href="/automacoes/novo">
               + Nova automação
-            </button>
+            </Link>
           </>
         }
       />
@@ -96,17 +96,6 @@ function AutomacoesConteudo() {
         )}
       </div>
 
-      {assistenteAberto ? (
-        <NovaAutomacao
-          funilSugerido={funilParam ?? funil?.id}
-          etapaSugerida={etapaParam ?? undefined}
-          onCancelar={() => setAssistenteAberto(false)}
-          onCriado={(fluxoId) => {
-            setAssistenteAberto(false);
-            router.push(`/automacoes/editor/${fluxoId}`);
-          }}
-        />
-      ) : null}
     </>
   );
 }
