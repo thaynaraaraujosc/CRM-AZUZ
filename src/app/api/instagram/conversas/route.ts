@@ -79,6 +79,17 @@ export async function GET(request: Request) {
   ]);
   if (clienteJaTem(request, etag)) return naoModificado(etag);
 
+  /*
+   * `atualizadoEm` só serve pra ESCOLHER as 200, nunca pra ordenar o que a pessoa vê.
+   *
+   * A coluna é `@updatedAt`: ela muda a cada escrita na linha, seja ela qual for. Abrir a conversa
+   * (que zera o não lidas) contava como escrita, então a lista se reordenava por "última conversa
+   * que eu abri" em vez de "última mensagem que chegou". Era isso que fazia uma conversa das 21:36
+   * aparecer abaixo de uma das 17:27, e uma mensagem nova não subir pro topo.
+   *
+   * A ordem de verdade é aplicada depois, pela última mensagem de cada conversa. Aqui embaixo ela
+   * ainda é um recorte razoável pra pegar as 200 candidatas sem varrer o histórico inteiro.
+   */
   const conversas = await prisma.conversa.findMany({
     where: { workspaceId, canal: "Instagram", arquivada: false },
     orderBy: { atualizadoEm: "desc" },
@@ -159,6 +170,13 @@ export async function GET(request: Request) {
           }
         : null,
     };
+  });
+
+  // A ordem que a caixa de entrada mostra: mensagem mais recente em cima, sempre. Conversa sem
+  // mensagem nenhuma cai pro fim, porque `ultimaEm` é nulo e vira 0 na comparação.
+  lista.sort((a, b) => {
+    const quando = (iso: string | null) => (iso ? new Date(iso).getTime() : 0);
+    return quando(b.ultimaEm) - quando(a.ultimaEm);
   });
 
   return NextResponse.json(lista, { headers: cabecalhosComEtag(etag) });
