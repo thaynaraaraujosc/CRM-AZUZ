@@ -7,6 +7,11 @@ import type { Contato } from "@/lib/data";
  * depois (escolher público de um disparo, por exemplo), e duas cópias divergiriam na primeira
  * correção feita só de um lado.
  */
+/** A origem de quem é cadastrado à mão, hoje. */
+export const ORIGEM_MANUAL = "Salvo manualmente";
+/** O que ela era antes. Continua no banco de quem não rodou a renomeação. */
+export const ORIGEM_ANTIGA_MANUAL = "Indicação";
+
 export type OrdemContatos = "az" | "za" | "recentes" | "interacao";
 
 export const ORDENS: { valor: OrdemContatos; label: string }[] = [
@@ -29,7 +34,7 @@ export const ORDENS: { valor: OrdemContatos; label: string }[] = [
  *   em "Todos". Some do recorte, nunca da lista.
  */
 export function origemNoFiltro(origem: string): string {
-  if (origem === "Indicação") return "Salvo manualmente";
+  if (origem === ORIGEM_ANTIGA_MANUAL) return ORIGEM_MANUAL;
   return origem;
 }
 

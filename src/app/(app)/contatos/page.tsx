@@ -12,6 +12,7 @@ import { useTarefas } from "@/lib/tarefas-context";
 import { PAISES } from "@/lib/configuracoes/mock";
 import { IconClose, IconSearch, IconWhatsApp } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
+import { RenomearOrigem } from "@/components/contatos/RenomearOrigem";
 import { Timeline } from "@/components/timeline";
 import { gerarLinhaDoTempo } from "@/lib/timeline";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
@@ -398,6 +399,9 @@ function ContatosPageInner() {
             </div>
           </section>
         ) : null}
+
+        {/* Some sozinho quando não há mais nada com a origem antiga. */}
+        <RenomearOrigem aoRenomear={() => window.location.reload()} />
 
         <div className="contatos-barra">
           <ChipFilters options={filtrosContatos} initial={0} onChange={(v) => setFiltroOrigem(v)} />
