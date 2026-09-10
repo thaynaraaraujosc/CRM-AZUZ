@@ -4,6 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { tipoDoGatilhoDosNodes } from "@/lib/automacoes/gatilho-tipo";
 
 /** nodes/edges/configuracoes/historicoVersoes têm tipos TS ricos (genéricos, uniões) que o Prisma
  * não consegue casar estruturalmente com `InputJsonValue`. O valor em runtime já é JSON puro (veio
@@ -64,6 +65,7 @@ export async function POST(request: Request) {
       ativa: dados.ativa,
       arquivada: dados.arquivada ?? false,
       nodes: comoJson(dados.nodes),
+      gatilhoTipo: tipoDoGatilhoDosNodes(dados.nodes),
       edges: comoJson(dados.edges),
       versaoAtual: dados.versaoAtual,
       publicadoEm: dados.publicadoEm ? new Date(dados.publicadoEm) : null,

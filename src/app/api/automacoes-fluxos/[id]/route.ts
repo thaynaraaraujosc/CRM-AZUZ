@@ -4,6 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { tipoDoGatilhoDosNodes } from "@/lib/automacoes/gatilho-tipo";
 import { publicarVersao } from "@/lib/automacoes/versoes";
 
 function paraFluxo(linha: {
@@ -42,6 +43,9 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/automacoes
     data: {
       ...dados,
       nodes: dados.nodes as Prisma.InputJsonValue | undefined,
+      // Acompanha os `nodes` em todo salvamento: ver `tipoDoGatilhoDosNodes`. Quando o salvamento
+      // não mexe nos nodes, fica como está.
+      gatilhoTipo: dados.nodes === undefined ? undefined : tipoDoGatilhoDosNodes(dados.nodes),
       edges: dados.edges as Prisma.InputJsonValue | undefined,
       configuracoes: dados.configuracoes as Prisma.InputJsonValue | undefined,
       historicoVersoes: dados.historicoVersoes as Prisma.InputJsonValue | undefined,

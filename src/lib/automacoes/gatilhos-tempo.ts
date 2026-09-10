@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { ehVazio } from "../vazio";
+import { tipoDoGatilhoDosNodes } from "./gatilho-tipo";
 
 /**
  * Os gatilhos que dependem do RELÓGIO, não de alguém fazer alguma coisa.
@@ -33,9 +34,64 @@ type GatilhoDeTempo = (typeof TIPOS_DE_TEMPO)[number];
 /** Os que acontecem NUM horário. O resto mede tempo decorrido e é conferido a cada rodada. */
 const POR_HORA_DO_DIA = new Set<string>(["aniversario", "data_personalizada", "horario_programado", "tarefa_vencida"]);
 
+/**
+ * Preenche `gatilhoTipo` nos fluxos que ainda não têm.
+ *
+ * Roda dentro da varredura, e é o único momento em que ela lê `nodes` de um fluxo que talvez não
+ * interesse. Acontece UMA vez por fluxo: depois a coluna está lá e o filtro em SQL resolve.
+ *
+ * `select` explícito, e ele é o ponto de tudo. Ler a linha inteira traria `edges`, `configuracoes`
+ * e `historicoVersoes` junto, que é o histórico inteiro do fluxograma em Json. Aqui vêm três
+ * colunas, e só das que faltam.
+ *
+ * Teto de 200 por rodada: uma base com muitos fluxos se resolve em algumas batidas em vez de fazer
+ * uma delas ler tudo de uma vez.
+ */
+async function preencherGatilhoTipoQueFalta(): Promise<void> {
+  const semTipo = await prisma.fluxoAutomacao.findMany({
+    where: { status: "publicado", ativa: true, arquivada: false, gatilhoTipo: null },
+    select: { id: true, nodes: true },
+    take: 200,
+  });
+  if (!semTipo.length) return;
+
+  for (const linha of semTipo) {
+    // Fluxo sem bloco de gatilho recebe string VAZIA, não `null`: `null` continuaria voltando pra
+    // cá a cada rodada, e a leitura de `nodes` dele nunca pararia de acontecer. Vazio é a resposta
+    // "conferido, não tem", e ela também não casa com nenhum tipo de tempo.
+    await prisma.fluxoAutomacao
+      .update({ where: { id: linha.id }, data: { gatilhoTipo: tipoDoGatilhoDosNodes(linha.nodes) } })
+      .catch(() => {});
+  }
+}
+
 export async function rodarGatilhosDeTempo(agora = new Date()): Promise<{ disparados: number }> {
+  await preencherGatilhoTipoQueFalta().catch((erro) =>
+    console.error("[gatilhos-tempo] falha ao preencher gatilhoTipo:", erro),
+  );
+
+  /*
+   * O FILTRO ACONTECE EM SQL, e isso é a diferença entre esta varredura custar quase nada e custar
+   * caro pra sempre.
+   *
+   * Antes: `findMany({ where: { status, ativa, arquivada } })` sem `select`. Trazia TODOS os fluxos
+   * publicados de TODOS os workspaces, cada um com `nodes`, `edges`, `configuracoes` e
+   * `historicoVersoes` — quatro colunas Json, uma delas o histórico inteiro do fluxograma. A cada
+   * minuto, 43.200 vezes por mês, pra quase sempre concluir que nenhum tinha gatilho de relógio.
+   * E crescia a cada automação nova, que é exatamente como uma conta sobe sem ninguém entender por
+   * quê.
+   *
+   * Agora: o banco devolve só os fluxos que realmente têm gatilho de tempo, e só as três colunas
+   * usadas aqui. Numa conta sem nenhum gatilho desses, a resposta é zero linha.
+   */
   const fluxos = await prisma.fluxoAutomacao.findMany({
-    where: { status: "publicado", ativa: true, arquivada: false },
+    where: {
+      status: "publicado",
+      ativa: true,
+      arquivada: false,
+      gatilhoTipo: { in: [...TIPOS_DE_TEMPO] },
+    },
+    select: { id: true, workspaceId: true, nodes: true },
   });
   if (!fluxos.length) return { disparados: 0 };
 

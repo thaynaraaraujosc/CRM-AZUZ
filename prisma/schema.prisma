@@ -623,6 +623,22 @@ model FluxoAutomacao {
   arquivada          Boolean   @default(false)
   modeloDemonstracao Boolean   @default(false)
   objetivo           String?   @db.Text
+
+  /// O TIPO do bloco de gatilho deste fluxo, copiado de `nodes` pra uma coluna.
+  ///
+  /// Existe por causa de dinheiro. A varredura de gatilhos de relógio roda a cada minuto, pra
+  /// sempre, e precisava saber quais fluxos têm gatilho de tempo. Sem esta coluna, a única forma
+  /// era ler `nodes` de TODOS os fluxos publicados e procurar lá dentro: e ler a linha traz junto
+  /// `edges`, `configuracoes` e `historicoVersoes` (o histórico inteiro do fluxograma, em Json).
+  /// Eram quatro colunas pesadas saindo do banco 43.200 vezes por mês pra, quase sempre, concluir
+  /// que nada tinha a ver. E piorava a cada automação nova.
+  ///
+  /// Com a coluna, o filtro acontece em SQL e a esmagadora maioria das batidas lê ZERO linhas.
+  ///
+  /// Nulo = ainda não calculado. A própria varredura preenche na primeira vez que encontra um
+  /// nulo, então não precisa de migração à parte e fluxo novo se resolve sozinho.
+  gatilhoTipo        String?
+
   criadoEm           DateTime  @default(now())
   atualizadoEm       DateTime  @updatedAt
 
@@ -631,6 +647,9 @@ model FluxoAutomacao {
   /// tabela.
   versoes              VersaoAutomacao[]
   execucoesEmAndamento ExecucaoAutomacao[]
+
+  /// A varredura do cron: fluxos publicados e ativos com gatilho de relógio.
+  @@index([status, ativa, arquivada, gatilhoTipo])
 }
 
 // Editor de documentos (rich-text): mesmo raciocínio: páginas/comentários/versões/acessos/config

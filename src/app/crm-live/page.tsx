@@ -34,13 +34,23 @@ export default function CrmLivePage() {
 
   useEffect(() => {
     function carregar() {
+      // Só com a aba visível. Este painel é feito pra ficar numa TV, o dia todo, e sem esta
+      // checagem ele buscava o funil inteiro, as tarefas e a equipe a cada 30 segundos mesmo com a
+      // aba minimizada ou atrás de outra: 2.880 rodadas por dia, três consultas cada, pra ninguém
+      // ler. É o mesmo tipo de gasto que a tela de Conversas já tinha, e a correção é a mesma.
+      if (document.visibilityState !== "visible") return;
       fetch("/api/funis").then((r) => r.json()).then(setFunis).catch(() => {});
       fetch("/api/tarefas").then((r) => r.json()).then(setTarefas).catch(() => {});
       fetch("/api/equipe").then((r) => r.json()).then(setEquipe).catch(() => {});
     }
     carregar();
     const atualiza = setInterval(carregar, 30000);
-    return () => clearInterval(atualiza);
+    // Volta a atualizar assim que a aba reaparece, em vez de esperar os próximos 30 segundos.
+    document.addEventListener("visibilitychange", carregar);
+    return () => {
+      clearInterval(atualiza);
+      document.removeEventListener("visibilitychange", carregar);
+    };
   }, []);
 
   useEffect(() => {
