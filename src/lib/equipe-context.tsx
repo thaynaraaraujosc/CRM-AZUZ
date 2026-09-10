@@ -35,7 +35,7 @@ type EquipeContextValue = {
   membros: Membro[];
   /** Cria o convite: entra na lista já como `convitePendente`, sem senha e inativo até aceitar. */
   convidarMembro: (dados: NovoMembro) => Membro;
-  editarMembro: (id: string, dados: Partial<Membro>) => void;
+  editarMembro: (id: string, dados: Partial<Membro>, somenteLocal?: boolean) => void;
   alternarAtivo: (id: string) => void;
   removerMembro: (id: string) => void;
   /** Gera e salva uma senha nova pro membro, devolvendo o texto plano uma vez (ver rota). Pra
@@ -98,9 +98,16 @@ export function EquipeProvider({ children }: { children: ReactNode }) {
     return novo;
   }
 
-  function editarMembro(id: string, dados: Partial<Membro>) {
+  /**
+   * `somenteLocal` existe pra quem JÁ gravou por conta própria.
+   *
+   * A tela de Equipe grava o e-mail com um `fetch` dela, porque precisa da mensagem de erro do
+   * servidor ("já existe alguém com esse e-mail") em vez do silêncio de `atualizarRemoto`. Sem
+   * este parâmetro, atualizar o estado local dispararia um segundo PATCH com o mesmo valor.
+   */
+  function editarMembro(id: string, dados: Partial<Membro>, somenteLocal = false) {
     setMembros((prev) => prev.map((m) => (m.id === id ? { ...m, ...dados } : m)));
-    atualizarRemoto(id, dados);
+    if (!somenteLocal) atualizarRemoto(id, dados);
   }
 
   function alternarAtivo(id: string) {

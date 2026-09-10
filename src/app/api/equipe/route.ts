@@ -4,7 +4,7 @@ import type { Membro } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
-import { enviarEmail, templateConvite } from "@/lib/email";
+import { enviarEmailContandoFalha, templateConvite } from "@/lib/email";
 
 /** Linha do banco -> `Membro` do front. Formato de `permissoes` (JSON) e `ultimoAcesso` (Date ->
  * ISO string) mudam. */
@@ -79,12 +79,32 @@ export async function POST(request: Request) {
     },
   });
 
+  /*
+   * O link SEMPRE volta pra tela, e o resultado do e-mail volta junto.
+   *
+   * Antes, o envio era `await enviarEmail(...)`, que engole a falha e loga no servidor. O convite
+   * era criado, a tela mostrava "convite pendente", e ninguém tinha como saber que o e-mail não
+   * tinha saído: a pessoa convidada esperava um e-mail que nunca ia chegar, e quem convidou
+   * esperava que ela entrasse. É o pior tipo de defeito, o que se parece com sucesso.
+   *
+   * Agora a tela sabe as duas coisas, e tem o link pra mandar por WhatsApp de qualquer jeito. O
+   * link não é um plano B envergonhado: é o caminho que funciona mesmo com o e-mail configurado,
+   * porque convite por e-mail cai em spam com frequência.
+   */
   const link = `${process.env.APP_URL ?? "https://azuzcrm.com.br"}/convite/${id}`;
-  await enviarEmail({
+  const envio = await enviarEmailContandoFalha({
     to: dados.email,
     subject: `${sessao.user.workspaceNome ?? "Alguém"} te convidou pro CRM AZUZ`,
     html: templateConvite(dados.nome, sessao.user.workspaceNome ?? "o workspace", link),
   });
 
-  return NextResponse.json(paraMembro(linha), { status: 201 });
+  return NextResponse.json(
+    {
+      ...paraMembro(linha),
+      linkConvite: link,
+      emailEnviado: envio.ok,
+      motivoEmail: envio.ok ? undefined : envio.motivo,
+    },
+    { status: 201 },
+  );
 }

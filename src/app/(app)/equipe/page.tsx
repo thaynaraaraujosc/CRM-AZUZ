@@ -21,12 +21,19 @@ function classePapel(papel: string) {
 }
 
 export default function EquipePage() {
-  const { membros: equipe, alternarAtivo, removerMembro, resetarSenha } = useEquipe();
+  const { membros: equipe, alternarAtivo, removerMembro, resetarSenha, editarMembro } = useEquipe();
   const { colunas } = useTarefas();
   const { contatos } = useContatos();
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [senhaGerada, setSenhaGerada] = useState<string | null>(null);
   const [gerandoSenha, setGerandoSenha] = useState(false);
+  /** E-mail em edição. Nulo = mostrando, não editando. */
+  const [emailEdit, setEmailEdit] = useState<string | null>(null);
+  const [salvandoEmail, setSalvandoEmail] = useState(false);
+  const [avisoAcesso, setAvisoAcesso] = useState<string | null>(null);
+  /** Link do convite, depois de reenviar. É o que se manda por WhatsApp. */
+  const [linkConvite, setLinkConvite] = useState<string | null>(null);
+  const [reenviando, setReenviando] = useState(false);
 
   const membro = equipe.find((m) => m.nome === selecionado) ?? null;
   const tarefasDoMembro = membro
@@ -208,8 +215,120 @@ export default function EquipePage() {
                 </div>
                 <div className="field">
                   <label>E-mail cadastrado</label>
-                  <div className="input">{membro.email}</div>
+                  {emailEdit === null ? (
+                    <div className="equipe-email-linha">
+                      <div className="input">{membro.email}</div>
+                      <button type="button" className="btn ghost" onClick={() => setEmailEdit(membro.email)}>
+                        Editar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="equipe-email-linha">
+                      <input
+                        className="input"
+                        type="email"
+                        value={emailEdit}
+                        onChange={(e) => setEmailEdit(e.target.value)}
+                        aria-label="E-mail do membro"
+                      />
+                      <button
+                        type="button"
+                        className="btn primary"
+                        disabled={salvandoEmail || !emailEdit.trim()}
+                        onClick={async () => {
+                          setSalvandoEmail(true);
+                          setAvisoAcesso(null);
+                          try {
+                            const r = await fetch(`/api/equipe/${membro.id}`, {
+                              method: "PATCH",
+                              headers: { "content-type": "application/json" },
+                              body: JSON.stringify({ email: emailEdit.trim() }),
+                            });
+                            const dados = (await r.json()) as { erro?: string };
+                            if (!r.ok) throw new Error(dados.erro ?? "Não deu pra salvar.");
+                            // Só o estado local: o PATCH acima já gravou. Sem o `true`, o contexto
+                            // mandaria um segundo PATCH com o mesmo valor.
+                            editarMembro(membro.id, { email: emailEdit.trim().toLowerCase() }, true);
+                            setEmailEdit(null);
+                            setAvisoAcesso(
+                              membro.convitePendente
+                                ? "E-mail atualizado. Reenvie o convite pra ele chegar no endereço novo."
+                                : "E-mail atualizado. É por ele que a pessoa entra no CRM a partir de agora.",
+                            );
+                          } catch (e) {
+                            setAvisoAcesso(e instanceof Error ? e.message : "Não deu pra salvar.");
+                          } finally {
+                            setSalvandoEmail(false);
+                          }
+                        }}
+                      >
+                        {salvandoEmail ? "Salvando…" : "Salvar"}
+                      </button>
+                      <button type="button" className="btn ghost" onClick={() => setEmailEdit(null)} disabled={salvandoEmail}>
+                        Cancelar
+                      </button>
+                    </div>
+                  )}
+                  {avisoAcesso ? <p className="hint" style={{ padding: "8px 0 0" }}>{avisoAcesso}</p> : null}
                 </div>
+
+                {/* Convite pendente: o link é a informação mais útil da tela.
+                    E-mail de convite não chega por muitos motivos (provedor recusa, cai em spam,
+                    endereço errado), e sem o link a única saída era excluir e convidar de novo. */}
+                {membro.convitePendente ? (
+                  <div className="field">
+                    <label>Convite</label>
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={reenviando}
+                      onClick={async () => {
+                        setReenviando(true);
+                        setAvisoAcesso(null);
+                        try {
+                          const r = await fetch(`/api/equipe/${membro.id}/convite`, { method: "POST" });
+                          const dados = (await r.json()) as {
+                            linkConvite?: string;
+                            emailEnviado?: boolean;
+                            motivoEmail?: string;
+                            erro?: string;
+                          };
+                          if (!r.ok) throw new Error(dados.erro ?? "Não deu pra reenviar.");
+                          setLinkConvite(dados.linkConvite ?? null);
+                          setAvisoAcesso(
+                            dados.emailEnviado
+                              ? `E-mail de convite enviado para ${membro.email}. Se não chegar, confira o spam ou mande o link abaixo.`
+                              : `O e-mail NÃO saiu: ${dados.motivoEmail ?? "o provedor recusou."} Mande o link abaixo pela pessoa por WhatsApp.`,
+                          );
+                        } catch (e) {
+                          setAvisoAcesso(e instanceof Error ? e.message : "Não deu pra reenviar.");
+                        } finally {
+                          setReenviando(false);
+                        }
+                      }}
+                    >
+                      {reenviando ? "Reenviando…" : "Reenviar convite e pegar o link"}
+                    </button>
+
+                    {linkConvite ? (
+                      <div className="key-row" style={{ padding: "8px 0 0" }}>
+                        <div className="key-box">{linkConvite}</div>
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          onClick={() => navigator.clipboard?.writeText(linkConvite)}
+                        >
+                          Copiar
+                        </button>
+                      </div>
+                    ) : null}
+
+                    <p className="hint" style={{ padding: "8px 0 0" }}>
+                      Quem abrir esse link escolhe a própria senha e entra. O link não expira e
+                      reenviar não invalida o anterior.
+                    </p>
+                  </div>
+                ) : null}
                 <div className="field">
                   <label>Senha</label>
                   {membro.convitePendente ? (
