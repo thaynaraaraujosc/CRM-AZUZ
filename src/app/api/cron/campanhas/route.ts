@@ -35,12 +35,28 @@ export async function GET(request: Request) {
     return NextResponse.json({ erro: "Não autorizado" }, { status: 401 });
   }
 
-  const resultado = await rodarRodadaDeCampanhas();
-  // Uma falha nas automações não pode esconder o resultado das campanhas (nem o contrário): as
-  // duas tarefas são independentes e o relatório mostra as duas.
+  /*
+   * ORDEM IMPORTA, e ela é esta de propósito.
+   *
+   * As automações vêm PRIMEIRO. Antes vinham depois do disparo em massa, e isso era uma bomba
+   * armada: `rodarRodadaDeCampanhas` tem orçamento de 50 segundos dentro de um limite total de 60.
+   * Com campanha ativa, sobravam 10 segundos pra tudo mais, e a retomada das automações podia ser
+   * cortada no meio pela plataforma. O sintoma seria o pior possível: follow-up que não sai,
+   * silenciosamente, e só nos dias em que houvesse disparo rodando.
+   *
+   * Retomar automação é barato quando não há nada vencido (uma consulta por índice que volta
+   * vazia), então pôr na frente não atrasa campanha nenhuma na prática.
+   */
   const automacoes = await retomarEsperasVencidas().catch((erro) => {
     console.error("[cron] falha ao retomar automações:", erro);
     return { retomadas: 0, erros: 1 };
+  });
+
+  // Uma falha nas campanhas não pode esconder o resultado das automações (nem o contrário): as
+  // duas tarefas são independentes e o relatório mostra as duas.
+  const resultado = await rodarRodadaDeCampanhas().catch((erro) => {
+    console.error("[cron] falha na rodada de campanhas:", erro);
+    return { campanhas: 0 };
   });
 
   // Gatilhos de relógio (aniversário, lead parado, horário programado). Sai barato quando ninguém

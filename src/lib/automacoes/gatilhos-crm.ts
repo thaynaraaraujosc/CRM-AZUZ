@@ -1,5 +1,6 @@
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 import { dispararGatilhosDoLead } from "@/lib/funil/gatilhos-etapa";
+import { emSegundoPlano } from "./segundo-plano";
 
 /**
  * Os gatilhos que nascem de uma mudança no próprio CRM. E não de uma mensagem que chegou.
@@ -12,18 +13,19 @@ import { dispararGatilhosDoLead } from "@/lib/funil/gatilhos-etapa";
  * contato. Se der errado, o contato tem que ficar salvo do mesmo jeito.
  */
 function disparar(params: Parameters<typeof dispararAutomacoesDoCrm>[0]): void {
-  void dispararAutomacoesDoCrm(params).catch((erro) =>
-    console.error(`[automacao] gatilho ${params.tipoGatilho} falhou:`, erro instanceof Error ? erro.message : erro),
-  );
+  // `emSegundoPlano` e não `void promessa`: ver o comentário longo em `segundo-plano.ts`. Com
+  // `void`, a plataforma podia matar o disparo no instante em que a resposta HTTP saía, e a
+  // automação simplesmente não acontecia, sem erro em lugar nenhum.
+  emSegundoPlano(`gatilho ${params.tipoGatilho}`, () => dispararAutomacoesDoCrm(params));
 
   // O mesmo evento também acorda os gatilhos da ETAPA em que o lead está. É o que faz "quando
   // mudarem a etiqueta de alguém que está em Follow-up" existir de verdade, e não só na tela.
-  void dispararGatilhosDoLead({
-    workspaceId: params.workspaceId,
-    contatoNome: params.contatoNome,
-    tipoGatilho: params.tipoGatilho,
-  }).catch((erro) =>
-    console.error(`[gatilho-etapa] ${params.tipoGatilho} falhou:`, erro instanceof Error ? erro.message : erro),
+  emSegundoPlano(`gatilho de etapa ${params.tipoGatilho}`, () =>
+    dispararGatilhosDoLead({
+      workspaceId: params.workspaceId,
+      contatoNome: params.contatoNome,
+      tipoGatilho: params.tipoGatilho,
+    }),
   );
 }
 

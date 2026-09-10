@@ -1,29 +1,12 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { Topbar } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
-import type { PainelExecucoesSociais } from "@/app/api/social/execucoes/route";
-
-const SITUACAO_LABEL: Record<string, string> = {
-  em_andamento: "Rodando",
-  aguardando_tempo: "Esperando o relógio",
-  aguardando_evento: "Esperando a resposta",
-  concluida: "Concluída",
-  cancelada: "Cancelada",
-  erro: "Erro",
-};
-
-const RESULTADO_LABEL: Record<string, string> = {
-  ok: "feito",
-  condicao_falsa: "condição não bateu",
-  aguardando: "esperando",
-  erro: "erro",
-  pulado: "pulado",
-};
+import { TabelaExecucoes } from "@/components/automacoes/TabelaExecucoes";
+import type { PainelExecucoes } from "@/app/api/automacoes/execucoes/route";
 
 function quando(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR");
@@ -39,13 +22,12 @@ function quando(iso: string): string {
  */
 export default function ExecucoesSociaisPage() {
   const [soErros, setSoErros] = useState(false);
-  const [resposta, setResposta] = useState<{ paraErros: boolean; dados: PainelExecucoesSociais | null } | null>(null);
-  const [aberta, setAberta] = useState<string | null>(null);
+  const [resposta, setResposta] = useState<{ paraErros: boolean; dados: PainelExecucoes | null } | null>(null);
 
   useEffect(() => {
     let cancelado = false;
-    fetch(`/api/social/execucoes${soErros ? "?erros=1" : ""}`, { cache: "no-store" })
-      .then((r) => (r.ok ? (r.json() as Promise<PainelExecucoesSociais>) : null))
+    fetch(`/api/automacoes/execucoes?area=social${soErros ? "&erros=1" : ""}`, { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<PainelExecucoes>) : null))
       .then((dados) => {
         if (!cancelado) setResposta({ paraErros: soErros, dados });
       })
@@ -85,67 +67,11 @@ export default function ExecucoesSociaisPage() {
           <h3>Execuções</h3>
           {carregando && !painel ? (
             <p className="hint">Carregando…</p>
-          ) : !painel?.execucoes.length ? (
-            <p className="hint">
-              {soErros ? "Nenhuma execução com erro. É a notícia boa." : "Nenhuma execução ainda."}
-            </p>
           ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Quando</th>
-                  <th>Robô</th>
-                  <th>Contato</th>
-                  <th>Situação</th>
-                  <th aria-label="Passos" />
-                </tr>
-              </thead>
-              <tbody>
-                {painel.execucoes.map((e) => (
-                  // Duas linhas por execução (a linha e os passos abertos), então a chave vive no
-                  // Fragment: no `<>` sem chave o React reclama e reordena errado ao filtrar.
-                  <Fragment key={e.id}>
-                    <tr>
-                      <td className="hint">{quando(e.iniciadaEm)}</td>
-                      <td>
-                        <Link href={`/automacoes/editor/${e.fluxoId}`}>{e.fluxoNome}</Link>
-                      </td>
-                      <td>{e.contatoNome}</td>
-                      <td>
-                        <span className={`badge ${e.situacao === "erro" ? "badge-danger" : e.situacao === "concluida" ? "badge-success" : "badge-neutral"}`}>
-                          {SITUACAO_LABEL[e.situacao] ?? e.situacao}
-                        </span>
-                        {e.erroMensagem ? <p className="hint">{e.erroMensagem}</p> : null}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <button
-                          type="button"
-                          className="btn ghost"
-                          onClick={() => setAberta(aberta === e.id ? null : e.id)}
-                        >
-                          {aberta === e.id ? "Fechar" : `${e.passos.length} passos`}
-                        </button>
-                      </td>
-                    </tr>
-                    {aberta === e.id ? (
-                      <tr>
-                        <td colSpan={5}>
-                          <ol className="hint">
-                            {e.passos.map((p, i) => (
-                              <li key={`${e.id}-${i}`}>
-                                <strong>{p.titulo || p.noTipo}</strong> — {RESULTADO_LABEL[p.resultado] ?? p.resultado}
-                                {p.detalhe ? `: ${p.detalhe}` : ""}
-                              </li>
-                            ))}
-                            {!e.passos.length ? <li>Nenhum passo registrado.</li> : null}
-                          </ol>
-                        </td>
-                      </tr>
-                    ) : null}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
+            <TabelaExecucoes
+              execucoes={painel?.execucoes ?? []}
+              vazio={soErros ? "Nenhuma execução com erro. É a notícia boa." : "Nenhuma execução ainda."}
+            />
           )}
         </section>
 

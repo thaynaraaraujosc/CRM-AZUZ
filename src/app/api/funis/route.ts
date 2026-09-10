@@ -4,6 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { Funil } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
+import { emSegundoPlano } from "@/lib/automacoes/segundo-plano";
 import { prisma } from "@/lib/prisma";
 import { filtroConexaoDeNegocio, provedoresDeNegocio } from "@/lib/integracoes/conta-canal";
 
@@ -317,12 +318,14 @@ export async function PUT(request: Request) {
   }
 
   for (const criado of criadosParaGatilho) {
-    dispararGatilhosDaEtapa({
+    emSegundoPlano("gatilhos de card criado", () =>
+      dispararGatilhosDaEtapa({
       workspaceId,
       etapaId: criado.etapaId,
       contatoNome: criado.nome,
       evento: "criado",
-    }).catch((erro) => console.error("[funil] falha ao disparar gatilhos de card criado:", erro));
+      }),
+    );
   }
 
   return NextResponse.json({ ok: true });

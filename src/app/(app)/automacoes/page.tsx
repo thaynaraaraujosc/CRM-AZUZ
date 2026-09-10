@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import Link from "next/link";
 import { Topbar } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { NovaAutomacao } from "@/components/automacoes/NovaAutomacao";
@@ -43,9 +44,17 @@ function AutomacoesConteudo() {
         title="Automações"
         sub="O que cada etapa do funil faz sozinha quando um lead entra"
         actions={
-          <button type="button" className="btn primary" onClick={() => setAssistenteAberto(true)}>
-            + Nova automação
-          </button>
+          <>
+            {/* "Execuções" fica ao lado de "Nova automação" de propósito: é a resposta pra pergunta
+                que vem logo depois de criar um robô, que é "ele rodou?". Antes essa tela só existia
+                pro Instagram, e no funil não havia onde olhar. */}
+            <Link className="btn" href="/automacoes/execucoes">
+              Execuções
+            </Link>
+            <button type="button" className="btn primary" onClick={() => setAssistenteAberto(true)}>
+              + Nova automação
+            </button>
+          </>
         }
       />
       <AbasAutomacoes />

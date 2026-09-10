@@ -3776,6 +3776,24 @@ table.tbl tbody tr:hover td {
   min-width: 0;
 }
 
+/* Linha do tempo de uma execução: cada passo numa linha, com a hora à esquerda. O passo que
+   falhou fica vermelho, porque é o único que a pessoa está procurando quando abre isto. */
+.execucao-passos {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.execucao-passos li.erro {
+  color: var(--danger);
+}
+
+.execucao-passos li.erro strong {
+  color: var(--danger);
+}
+
 .contatos-barra {
   display: flex;
   flex-wrap: wrap;

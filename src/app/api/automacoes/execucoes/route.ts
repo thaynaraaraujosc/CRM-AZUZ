@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /**
- * O que os robôs do Instagram fizeram, e o que deu errado.
+ * O que os robôs fizeram, e o que deu errado. Serve as duas áreas.
  *
  * São DUAS listas, e isso não é organização: é a diferença entre duas falhas que se parecem na
  * tela e são opostas na causa.
@@ -18,7 +18,7 @@ import { prisma } from "@/lib/prisma";
  * Com uma lista só, a pergunta "por que o cliente não recebeu?" continuaria sem resposta na metade
  * dos casos.
  */
-export type ExecucaoSocial = {
+export type ExecucaoDetalhada = {
   id: string;
   fluxoId: string;
   fluxoNome: string;
@@ -28,6 +28,10 @@ export type ExecucaoSocial = {
   iniciadaEm: string;
   finalizadaEm: string | null;
   erroMensagem: string | null;
+  /** Até quando esta execução está parada esperando o relógio. Nulo = não está esperando tempo. */
+  aguardandoAte: string | null;
+  /** O bloco onde ela parou. É o "próximo passo" quando ela for acordada. */
+  noAtualId: string | null;
   passos: { noTipo: string; titulo: string | null; resultado: string; detalhe: string | null; criadoEm: string }[];
 };
 
@@ -40,8 +44,9 @@ export type EventoComErro = {
   criadoEm: string;
 };
 
-export type PainelExecucoesSociais = {
-  execucoes: ExecucaoSocial[];
+export type PainelExecucoes = {
+  execucoes: ExecucaoDetalhada[];
+  /** Só na área social: webhook que nem virou execução. Vazio no comercial. */
   eventosComErro: EventoComErro[];
 };
 
@@ -52,12 +57,14 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const soErros = url.searchParams.get("erros") === "1";
+  // `area` decide o recorte. Sem ela, comercial: é a área de quem chega por Automatizar funil.
+  const area = url.searchParams.get("area") === "social" ? "social" : "comercial";
   const limite = Math.min(Number(url.searchParams.get("limite") ?? 30) || 30, 100);
 
   const execucoes = await prisma.execucaoAutomacao.findMany({
     where: {
       workspaceId,
-      fluxo: { area: "social" },
+      fluxo: { area },
       ...(soErros ? { situacao: "erro" } : {}),
     },
     orderBy: { iniciadaEm: "desc" },
@@ -82,14 +89,19 @@ export async function GET(request: Request) {
     porExecucao.set(passo.execucaoId, lista);
   }
 
-  const eventosComErro = await prisma.instagramEvento.findMany({
-    where: { workspaceId, erro: { not: null } },
-    orderBy: { criadoEm: "desc" },
-    take: limite,
-    select: { id: true, tipo: true, contatoNome: true, texto: true, erro: true, criadoEm: true },
-  });
+  // Evento de webhook só existe no Instagram. No comercial a lista vem vazia em vez de a consulta
+  // rodar à toa.
+  const eventosComErro =
+    area === "social"
+      ? await prisma.instagramEvento.findMany({
+          where: { workspaceId, erro: { not: null } },
+          orderBy: { criadoEm: "desc" },
+          take: limite,
+          select: { id: true, tipo: true, contatoNome: true, texto: true, erro: true, criadoEm: true },
+        })
+      : [];
 
-  const painel: PainelExecucoesSociais = {
+  const painel: PainelExecucoes = {
     execucoes: execucoes.map((e) => ({
       id: e.id,
       fluxoId: e.fluxoId,
@@ -100,6 +112,8 @@ export async function GET(request: Request) {
       iniciadaEm: e.iniciadaEm.toISOString(),
       finalizadaEm: e.finalizadaEm?.toISOString() ?? null,
       erroMensagem: e.erroMensagem,
+      aguardandoAte: e.aguardandoAte?.toISOString() ?? null,
+      noAtualId: e.aguardandoNoId ?? e.noAtualId,
       passos: (porExecucao.get(e.id) ?? []).map((p) => ({
         noTipo: p.noTipo,
         titulo: p.titulo,

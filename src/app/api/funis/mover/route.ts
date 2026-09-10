@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { dispararGatilhosDaEtapa } from "@/lib/funil/gatilhos-etapa";
+import { emSegundoPlano } from "@/lib/automacoes/segundo-plano";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 import { aoSairDaEtapa } from "@/lib/automacoes/gatilhos-crm";
 
@@ -130,21 +131,25 @@ export async function POST(request: Request) {
     // Os gatilhos que moram NA ETAPA (o quadro "Automatizar" do funil). Rodam junto com os fluxos
     // que têm gatilho próprio, não no lugar deles: são duas formas de ligar a mesma automação, e
     // desligar uma não pode desligar a outra.
-    dispararGatilhosDaEtapa({
+    emSegundoPlano("gatilhos da etapa de destino", () =>
+      dispararGatilhosDaEtapa({
       workspaceId,
       etapaId,
       contatoNome: card.nome,
       evento: "movido",
-    }).catch((erro) => console.error("[funil] falha ao disparar gatilhos da etapa:", erro));
+      }),
+    );
 
     // "Saiu" dispara na etapa de ONDE ele saiu, não na de destino. Só aqui se sabe qual era.
     if (card.etapaId && card.etapaId !== etapaId) {
-      dispararGatilhosDaEtapa({
+      emSegundoPlano("gatilhos da etapa de saída", () =>
+        dispararGatilhosDaEtapa({
         workspaceId,
         etapaId: card.etapaId,
         contatoNome: card.nome,
         evento: "saiu",
-      }).catch((erro) => console.error("[funil] falha ao disparar gatilhos de saída:", erro));
+        }),
+      );
     }
   }
 
