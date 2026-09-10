@@ -11363,6 +11363,12 @@ button.camp-row:hover {
   align-items: start;
 }
 
+/* Nada escolhido: uma coluna só, e o convite a escolher vira uma faixa embaixo da lista em vez de
+   uma coluna reservada. */
+.jornada-layout-so-lista {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .jornada-painel-vazio {
   padding: var(--space-6) var(--space-5);
   text-align: center;
@@ -13752,6 +13758,33 @@ button.camp-row:hover {
   font-size: 16px;
   font-weight: 700;
   color: var(--ink);
+}
+
+/* Medida de leitura da frase que explica a categoria.
+   Sem teto, ela se estica pelos ~1300px do painel e vira uma linha só, fina e difícil de ler: o
+   olho perde onde a linha começa. Sessenta e poucos caracteres é onde texto corrido se lê bem. */
+.config-cabecalho .hint {
+  max-width: 68ch;
+}
+
+/* Campo dentro de um bloco de Configurações precisa de superfície própria.
+   `.input` e `.config-bloco` usam o MESMO token de fundo (`--navy-raised`), e a borda do campo é
+   transparente em repouso. Um dentro do outro, o campo simplesmente sumia: dava pra ver o texto do
+   horário e não dava pra ver que aquilo era editável. Vale pra toda a área de Configurações, não
+   só pro expediente. */
+.config-bloco .input,
+.config-bloco select.input,
+.config-bloco textarea.input {
+  background: var(--surface-elevated);
+  border-color: var(--line);
+}
+
+/* O botão que fecha a categoria: separado do último bloco, alinhado com ele à esquerda. */
+.config-acoes {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
 }
 .config-cabecalho-acoes {
   display: flex;
@@ -17718,13 +17751,22 @@ table.tbl .name-cell .r {
   gap: 8px;
 }
 
+/* Uma linha por dia, com teto de largura.
+   Sem o teto, o dia ficava colado na borda esquerda e as horas na direita, com uns setecentos
+   pixels de nada entre os dois: dava pra ler "Segunda" e não achar o horário dela sem correr o
+   olho pela tela toda. Com o teto, o par fica junto e a lista dos sete dias lê como uma tabela. */
 .expediente-linha {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
+  gap: var(--space-4);
+  max-width: 620px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.expediente-linha:last-child {
+  border-bottom: 0;
 }
 
 .expediente-dia {
@@ -17743,8 +17785,17 @@ table.tbl .name-cell .r {
   gap: 8px;
 }
 
+/* 110px cortava o horário: o campo de hora do Chrome mostra "08:00 AM" mais o ícone de relógio, e
+   o texto saía como "08:00 AN" com o M pela metade. */
 .expediente-horas .input {
-  width: 110px;
+  width: 132px;
+}
+
+/* "Fechado" ocupa o mesmo lugar que os dois campos ocupariam, pra coluna da direita não dançar
+   entre uma linha e outra. */
+.expediente-fechado {
+  min-width: 292px;
+  text-align: right;
 }
 
 /* Emojis de reação. Botões grandes o suficiente pra o dedo, num teclado que cabe na largura do

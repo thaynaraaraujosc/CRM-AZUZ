@@ -502,7 +502,16 @@ function JornadaClientePageInner() {
 
         <SecaoHistoricosRecentes recentes={historicosRecentes} contatos={contatos} onContinuar={selecionarContato} />
 
-        <div className={`jornada-layout${contato && painelMobileAberto ? " jornada-layout-aberta" : ""}`}>
+        {/* Sem contato escolhido, a lista fica com a largura inteira.
+            Com as duas colunas sempre no lugar, a tabela de sete colunas não cabia nos 620px que
+            sobravam e a última coluna ficava escondida atrás de uma barra de rolagem lateral,
+            enquanto o painel da direita mostrava só a frase "selecione um contato". Espaço
+            reservado pra um painel vazio custava a coluna que a lista precisava pra ser lida. */}
+        <div
+          className={`jornada-layout${contato ? "" : " jornada-layout-so-lista"}${
+            contato && painelMobileAberto ? " jornada-layout-aberta" : ""
+          }`}
+        >
           <div className="card jornada-lista">
             <div className="panel-h">
               <h4>

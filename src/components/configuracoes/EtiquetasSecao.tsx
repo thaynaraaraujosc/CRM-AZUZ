@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useConfiguracoes } from "@/lib/configuracoes-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
+import { contagem } from "@/lib/plural";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { IconClose } from "@/components/icons";
 
@@ -53,7 +54,7 @@ export function EtiquetasSecao() {
             <div className="config-etiqueta-row" key={e.id}>
               <span className="config-etiqueta-cor" style={{ background: e.cor }} />
               <span className="n">{e.nome}</span>
-              <span className="r">{contagemReal.get(e.nome) ?? 0} contatos</span>
+              <span className="r">{contagem(contagemReal.get(e.nome) ?? 0, "contato", "contatos")}</span>
               {!e.real ? (
                 <button type="button" className="remove-chip" aria-label={`Remover ${e.nome}`} onClick={() => removerEtiqueta(e.id)}>
                   <IconClose width={13} height={13} />

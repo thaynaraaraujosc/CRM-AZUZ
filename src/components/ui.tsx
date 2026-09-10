@@ -727,7 +727,14 @@ export function FilterBar({
           {filtrosAtivos.map((f) => (
             <span className="filterbar-chip" key={f.chave}>
               {f.label}: {f.opcoes.find((o) => o.valor === f.valor)?.label ?? f.valor}
-              <button type="button" onClick={() => onFiltroChange?.(f.chave, "Todos")}>
+              {/* O X do chip só tinha o desenho dentro: sem nome, quem usa leitor de tela ouvia
+                  "botão" e nada mais, e não dava pra saber QUAL filtro ele tira. */}
+              <button
+                type="button"
+                aria-label={`Tirar o filtro ${f.label}`}
+                title={`Tirar o filtro ${f.label}`}
+                onClick={() => onFiltroChange?.(f.chave, "Todos")}
+              >
                 <IconClose width={10} height={10} />
               </button>
             </span>

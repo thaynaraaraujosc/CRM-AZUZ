@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { EXPEDIENTE_PADRAO, type DiasDoExpediente, type Expediente } from "@/lib/expediente";
 
 /**
@@ -83,58 +84,70 @@ export function ExpedienteSecao() {
   if (carregando) return <p className="hint">Carregando…</p>;
 
   return (
-    <section className="card">
-      <div className="panel-h">
-        <h3>Horário de funcionamento</h3>
-        <p className="hint">
-          Usado pela pausa &quot;só em horário de expediente&quot;, pelo follow-up de quem não
-          respondeu e pela janela dos gatilhos de etapa. Um só, pra os três não divergirem.
+    /*
+      Mesma casca de todas as outras categorias de Configurações: `config-secao` +
+      `CabecalhoCategoria` + `config-bloco`.
+
+      Antes esta era a única que usava `card` + `panel-h`. E `panel-h` é uma linha com o título à
+      esquerda e a AÇÃO à direita: pôr a frase explicativa nela empurrava a justificativa pro canto
+      direito da tela, espremida e longe do título que ela explica. Duas linguagens visuais na
+      mesma tela, e a errada era a que tinha mais texto pra ler.
+    */
+    <div className="config-secao">
+      <CabecalhoCategoria
+        titulo="Horário de funcionamento"
+        descricao={'Usado pela pausa "só em horário de expediente", pelo follow-up de quem não respondeu e pela janela dos gatilhos de etapa. Um só, pra os três não divergirem.'}
+      />
+
+      <div className="config-bloco">
+        <div className="expediente-dias">
+          {DIAS.map((dia) => {
+            const faixa = expediente.dias[dia.chave];
+            return (
+              <div key={dia.chave} className="expediente-linha">
+                <label className="expediente-dia">
+                  <input type="checkbox" checked={!!faixa} onChange={() => alternarDia(dia.chave)} />
+                  <span>{dia.label}</span>
+                </label>
+                {faixa ? (
+                  <div className="expediente-horas">
+                    <input
+                      type="time"
+                      className="input"
+                      value={faixa.de}
+                      onChange={(e) => mudarHora(dia.chave, "de", e.target.value)}
+                      aria-label={`Abre ${dia.label}`}
+                    />
+                    <span>às</span>
+                    <input
+                      type="time"
+                      className="input"
+                      value={faixa.ate}
+                      onChange={(e) => mudarHora(dia.chave, "ate", e.target.value)}
+                      aria-label={`Fecha ${dia.label}`}
+                    />
+                  </div>
+                ) : (
+                  <span className="hint expediente-fechado">Fechado</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {erro ? (
+        <p className="hint" style={{ color: "var(--danger)" }}>
+          {erro}
         </p>
-      </div>
-
-      <div className="expediente-dias">
-        {DIAS.map((dia) => {
-          const faixa = expediente.dias[dia.chave];
-          return (
-            <div key={dia.chave} className="expediente-linha">
-              <label className="expediente-dia">
-                <input type="checkbox" checked={!!faixa} onChange={() => alternarDia(dia.chave)} />
-                <span>{dia.label}</span>
-              </label>
-              {faixa ? (
-                <div className="expediente-horas">
-                  <input
-                    type="time"
-                    className="input"
-                    value={faixa.de}
-                    onChange={(e) => mudarHora(dia.chave, "de", e.target.value)}
-                    aria-label={`Abre ${dia.label}`}
-                  />
-                  <span>às</span>
-                  <input
-                    type="time"
-                    className="input"
-                    value={faixa.ate}
-                    onChange={(e) => mudarHora(dia.chave, "ate", e.target.value)}
-                    aria-label={`Fecha ${dia.label}`}
-                  />
-                </div>
-              ) : (
-                <span className="hint">Fechado</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {erro ? <p className="hint" style={{ color: "var(--danger)" }}>{erro}</p> : null}
+      ) : null}
       {aviso ? <p className="hint">{aviso}</p> : null}
 
-      <div style={{ marginTop: "var(--space-3)" }}>
+      <div className="config-acoes">
         <button type="button" className="btn primary" onClick={salvar} disabled={salvando}>
           {salvando ? "Salvando…" : "Salvar expediente"}
         </button>
       </div>
-    </section>
+    </div>
   );
 }

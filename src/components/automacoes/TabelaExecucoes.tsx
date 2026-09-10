@@ -3,6 +3,7 @@
 import { Fragment, useState } from "react";
 import Link from "next/link";
 
+import { contagem } from "@/lib/plural";
 import type { ExecucaoDetalhada } from "@/app/api/automacoes/execucoes/route";
 
 const SITUACAO_LABEL: Record<string, string> = {
@@ -104,7 +105,7 @@ export function TabelaExecucoes({ execucoes, vazio }: { execucoes: ExecucaoDetal
                 </td>
                 <td style={{ textAlign: "right" }}>
                   <button type="button" className="btn ghost" onClick={() => setAberta(aberta === e.id ? null : e.id)}>
-                    {aberta === e.id ? "Fechar" : `${e.passos.length} passos`}
+                    {aberta === e.id ? "Fechar" : contagem(e.passos.length, "passo", "passos")}
                   </button>
                 </td>
               </tr>
