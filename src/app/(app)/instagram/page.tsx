@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Topbar } from "@/components/ui";
 import { IconEnviar, IconSearch } from "@/components/icons";
 import type { ConversaInstagram } from "@/app/api/instagram/conversas/route";
 import type { MensagemInstagram } from "@/app/api/instagram/mensagens/route";
+import { INTERVALO_POLLING_MS } from "@/lib/conversas/polling";
 
 function hora(iso: string | null): string {
   if (!iso) return "";
@@ -63,8 +64,38 @@ export default function InstagramConversasPage() {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
+  /*
+   * As versões que o servidor já confirmou, mandadas de volta em `If-None-Match` na batida
+   * seguinte. Quando nada mudou, a resposta é `304` sem corpo e o servidor nem consulta.
+   *
+   * É o que faz a atualização automática desta tela ser barata. Ver `src/lib/conversas/assinatura.ts`:
+   * foi uma tela igual a esta, perguntando de tempos em tempos e recebendo a lista inteira toda
+   * vez, que sozinha puxou ~1,9 TB do banco num mês.
+   */
+  const etagConversasRef = useRef<string | null>(null);
+  /* A conversa aberta, lida pelo temporizador. Um `ref` e não a dependência do efeito: com
+     `aberta` na lista, o intervalo seria destruído e recriado a cada troca de conversa, e a
+     contagem dos 10 segundos recomeçaria do zero toda vez. */
+  const abertaRef = useRef<string | null>(null);
+  /* Conversas cuja busca de perfil já foi tentada nesta sessão de tela.
+     Sem isto, um perfil que a Meta recusa (conta sem a permissão desses campos) seria pedido de
+     novo a cada vez que a lista se renova: uma chamada à Meta por batida, pra sempre receber a
+     mesma recusa. É chamada paga, e conta pro limite de requisições da conta. */
+  const perfilTentadoRef = useRef<Set<string>>(new Set());
+  const etagMensagensRef = useRef<{ de: string; etag: string } | null>(null);
+
   const carregarConversas = useCallback(async () => {
-    const r = await fetch("/api/instagram/conversas", { cache: "no-store" });
+    const r = await fetch("/api/instagram/conversas", {
+      // À mão, e não pelo cache do navegador: assim dá pra SABER que nada mudou e não mexer no
+      // estado. Deixar o navegador revalidar sozinho devolveria um 200 vindo do cache, e a tela
+      // re-renderizaria a cada batida sem nenhuma mensagem nova.
+      cache: "no-store",
+      headers: etagConversasRef.current ? { "if-none-match": etagConversasRef.current } : undefined,
+    });
+    if (r.status === 304) return;
+
+    const etag = r.headers.get("etag");
+    if (etag) etagConversasRef.current = etag;
     const lista = r.ok ? ((await r.json()) as ConversaInstagram[]) : [];
     setConversas(lista);
 
@@ -81,6 +112,25 @@ export default function InstagramConversasPage() {
     setAberta((atual) => atual ?? lista[0]?.nome ?? null);
   }, []);
 
+  const carregarMensagens = useCallback(async (conversa: string) => {
+    // O ETag guardado é de UMA conversa. Trocando de conversa ele não vale mais, e mandá-lo assim
+    // mesmo faria o servidor responder 304 sobre a conversa errada: a tela ficaria com as
+    // mensagens da anterior.
+    const guardado = etagMensagensRef.current;
+    const enviar = guardado?.de === conversa ? guardado.etag : null;
+
+    const r = await fetch(`/api/instagram/mensagens?conversa=${encodeURIComponent(conversa)}`, {
+      cache: "no-store",
+      headers: enviar ? { "if-none-match": enviar } : undefined,
+    });
+    if (r.status === 304) return;
+
+    const etag = r.headers.get("etag");
+    if (etag) etagMensagensRef.current = { de: conversa, etag };
+    const lista = r.ok ? ((await r.json()) as MensagemInstagram[]) : [];
+    setMensagens({ de: conversa, lista });
+  }, []);
+
   useEffect(() => {
     Promise.resolve()
       .then(carregarConversas)
@@ -88,20 +138,44 @@ export default function InstagramConversasPage() {
   }, [carregarConversas]);
 
   useEffect(() => {
+    // O `ref` acompanha a conversa aberta pelo efeito, não durante a renderização: escrever num
+    // ref no corpo do componente é proibido pelo React Compiler, e com razão.
+    abertaRef.current = aberta;
     if (!aberta) return;
-    let cancelado = false;
-    fetch(`/api/instagram/mensagens?conversa=${encodeURIComponent(aberta)}`, { cache: "no-store" })
-      .then((r) => (r.ok ? (r.json() as Promise<MensagemInstagram[]>) : []))
-      .then((lista) => {
-        if (!cancelado) setMensagens({ de: aberta, lista });
-      })
-      .catch(() => {
-        if (!cancelado) setMensagens({ de: aberta, lista: [] });
-      });
+    Promise.resolve()
+      .then(() => carregarMensagens(aberta))
+      .catch(() => setMensagens({ de: aberta, lista: [] }));
+  }, [aberta, carregarMensagens]);
+
+  /*
+   * Atualização automática: mensagem que chega pelo webhook aparece aqui sozinha.
+   *
+   * Três regras que existem por causa de custo, não de gosto:
+   *
+   * 1. **Só com a aba visível.** Aba de fundo não é lida por ninguém, e uma aba esquecida aberta
+   *    a noite toda seria a maior fonte de batida inútil que existe.
+   * 2. **O mesmo ritmo das outras telas** (`INTERVALO_POLLING_MS`, 10s). Ritmos diferentes fariam
+   *    a lista de conversas e as mensagens discordarem por alguns segundos.
+   * 3. **Com `If-None-Match`.** É o que transforma a batida num `304` de corpo vazio quando nada
+   *    mudou, que é o caso quase sempre.
+   *
+   * E uma batida imediata ao voltar pra aba, pra quem volta do Instagram não esperar 10 segundos
+   * pra ver o que chegou.
+   */
+  useEffect(() => {
+    function atualizar() {
+      if (document.visibilityState !== "visible") return;
+      carregarConversas().catch(() => {});
+      if (abertaRef.current) carregarMensagens(abertaRef.current).catch(() => {});
+    }
+
+    const intervalo = setInterval(atualizar, INTERVALO_POLLING_MS);
+    document.addEventListener("visibilitychange", atualizar);
     return () => {
-      cancelado = true;
+      clearInterval(intervalo);
+      document.removeEventListener("visibilitychange", atualizar);
     };
-  }, [aberta]);
+  }, [carregarConversas, carregarMensagens]);
 
   /**
    * Busca o perfil na Meta quando ele está faltando.
@@ -114,6 +188,8 @@ export default function InstagramConversasPage() {
     if (!aberta) return;
     const alvo = conversas?.find((c) => c.nome === aberta);
     if (!alvo || (alvo.perfil?.seguidores != null && alvo.fotoUrl)) return;
+    if (perfilTentadoRef.current.has(aberta)) return;
+    perfilTentadoRef.current.add(aberta);
 
     let cancelado = false;
     fetch("/api/instagram/perfil", {
@@ -168,10 +244,9 @@ export default function InstagramConversasPage() {
       const dados = (await r.json()) as { erro?: string };
       if (!r.ok) throw new Error(dados.erro ?? "Não deu pra enviar.");
       setTexto("");
-      const lista = await fetch(`/api/instagram/mensagens?conversa=${encodeURIComponent(aberta)}`, {
-        cache: "no-store",
-      }).then((res) => (res.ok ? (res.json() as Promise<MensagemInstagram[]>) : []));
-      setMensagens({ de: aberta, lista });
+      // Pelo mesmo caminho do polling: uma busca crua aqui deixaria o ETag guardado velho, e a
+      // batida seguinte pediria a conversa inteira de novo sem precisar.
+      await carregarMensagens(aberta);
       await carregarConversas();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não deu pra enviar.");

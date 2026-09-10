@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { JANELA_HORAS } from "@/lib/social/janela-direct";
+import { cabecalhosComEtag, clienteJaTem, montarEtag, naoModificado } from "@/lib/conversas/assinatura";
 
 /**
  * A caixa de entrada do Direct: as conversas do Instagram, com o perfil de cada pessoa.
@@ -34,10 +35,49 @@ export type ConversaInstagram = {
   } | null;
 };
 
-export async function GET() {
+/**
+ * A tela pergunta de 10 em 10 segundos, e quase sempre a resposta é "nada mudou".
+ *
+ * Montar esta lista custa quatro consultas, duas delas sobre a tabela de mensagens inteira. Repetir
+ * isso a cada batida, com uma aba aberta o dia todo, é exatamente o que produziu a conta de $123
+ * do Railway na tela de Conversas: ~1,9 TB saindo do banco num mês pra entregar, quase sempre, a
+ * mesma lista de novo. Ver `src/lib/conversas/assinatura.ts`.
+ *
+ * Então vem a pergunta barata antes da cara: duas agregações sobre índice, resposta em bytes. Se a
+ * assinatura for a mesma da última vez, sai um `304` sem corpo e as quatro consultas de baixo nem
+ * chegam a rodar.
+ *
+ * A assinatura combina as DUAS tabelas de propósito. `Conversa` pega conversa nova, arquivamento e
+ * não lidas; `MensagemExtra` pega mensagem nova e mudança de status, que reescreve a linha sem
+ * criar outra. Faltando qualquer um dos dois, existe uma mudança que a tela não veria.
+ */
+export async function GET(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
   const workspaceId = sessao.user.workspaceId;
+
+  const [resumoConversas, resumoMensagens] = await Promise.all([
+    prisma.conversa.aggregate({
+      where: { workspaceId, canal: "Instagram", arquivada: false },
+      _count: { _all: true },
+      _max: { atualizadoEm: true },
+    }),
+    prisma.mensagemExtra.aggregate({
+      where: { workspaceId },
+      _count: { _all: true },
+      _max: { criadoEm: true, atualizadoEm: true },
+    }),
+  ]);
+  const etag = montarEtag([
+    workspaceId,
+    "instagram",
+    resumoConversas._count._all,
+    resumoConversas._max.atualizadoEm,
+    resumoMensagens._count._all,
+    resumoMensagens._max.criadoEm,
+    resumoMensagens._max.atualizadoEm,
+  ]);
+  if (clienteJaTem(request, etag)) return naoModificado(etag);
 
   const conversas = await prisma.conversa.findMany({
     where: { workspaceId, canal: "Instagram", arquivada: false },
@@ -52,7 +92,7 @@ export async function GET() {
       contatoId: true,
     },
   });
-  if (!conversas.length) return NextResponse.json([], { headers: { "cache-control": "private, no-store" } });
+  if (!conversas.length) return NextResponse.json([], { headers: cabecalhosComEtag(etag) });
 
   const nomes = conversas.map((c) => c.nome);
 
@@ -121,5 +161,5 @@ export async function GET() {
     };
   });
 
-  return NextResponse.json(lista, { headers: { "cache-control": "private, no-store" } });
+  return NextResponse.json(lista, { headers: cabecalhosComEtag(etag) });
 }
