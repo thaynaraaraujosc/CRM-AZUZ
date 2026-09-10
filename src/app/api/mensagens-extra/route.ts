@@ -62,8 +62,8 @@ export async function GET(request: Request) {
 
   // Mesmo filtro por conexão das conversas. Mensagem de um número desconectado some da tela sem
   // sair do banco (ver `conta-canal.ts`).
-  const contas = await contasCanalVisiveis(sessao.user.workspaceId);
-  const where = { workspaceId: sessao.user.workspaceId, ...filtroContaCanal(contas) };
+  const visiveis = await contasCanalVisiveis(sessao.user.workspaceId);
+  const where = { workspaceId: sessao.user.workspaceId, ...filtroContaCanal(visiveis) };
 
   // A pergunta barata, ANTES da cara: dois MAX e um COUNT sobre índice, resposta em bytes.
   const resumo = await prisma.mensagemExtra.aggregate({
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
     sessao.user.workspaceId,
     // O recorte entra na assinatura: conectar/desconectar um canal muda o que a tela deve ver sem
     // mexer em mensagem nenhuma, e sem isto a tela continuaria com a lista antiga.
-    contas.join(","),
+    [...visiveis.contas, ...visiveis.prefixosSemIdentificador].join(","),
     resumo._count._all,
     resumo._max.criadoEm,
     resumo._max.atualizadoEm,

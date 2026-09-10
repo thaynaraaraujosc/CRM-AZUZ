@@ -14,9 +14,9 @@ export async function GET(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
-  const contas = await contasCanalVisiveis(sessao.user.workspaceId);
+  const visiveis = await contasCanalVisiveis(sessao.user.workspaceId);
   const provedores = await provedoresConectados(sessao.user.workspaceId);
-  const filtro = filtroContaCanal(contas);
+  const filtro = filtroContaCanal(visiveis);
 
   // Conversa do Instagram aparece enquanto o Instagram estiver conectado, tenha ela conexão
   // marcada ou não. Sem isto, uma conversa criada antes dessa coluna existir (ou sem o
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   ]);
   const etag = montarEtag([
     sessao.user.workspaceId,
-    contas.join(","),
+    [...visiveis.contas, ...visiveis.prefixosSemIdentificador].join(","),
     provedores.join(","),
     resumoConversas._count._all,
     resumoConversas._max.atualizadoEm,

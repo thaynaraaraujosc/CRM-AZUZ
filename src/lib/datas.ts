@@ -124,6 +124,36 @@ export function estimarMinutosAtras(raw: string): number {
  * mock usa). Aqui compara contra o instante real (`Date.now()`), porque não tem sentido nenhum
  * comparar um timestamp real de banco contra uma data fixa de demonstração.
  */
+/**
+ * O horário de uma conversa na caixa de entrada, com a semântica que todo mundo já conhece do
+ * WhatsApp: hora do dia se foi hoje, "Ontem" se foi ontem, a data daí pra trás.
+ *
+ * Substitui o tempo relativo puro ("16h", "7 dias") em Conversas por dois motivos.
+ *
+ * O primeiro é que "16h" é ambíguo: lido como "às 16 horas" ou como "16 horas atrás", e as duas
+ * leituras dão dias diferentes. O segundo é que `Math.round` em cima de dias transformava 36 horas
+ * em "2 dias", então uma mensagem de ontem à noite aparecia como anteontem.
+ *
+ * A comparação é por dia de CALENDÁRIO, não por blocos de 24 horas: às 00:30 de terça, uma
+ * mensagem das 23:50 de segunda é "Ontem", mesmo com quarenta minutos de diferença.
+ */
+export function rotuloDeConversa(data: Date, agora: Date = new Date()): string {
+  if (Number.isNaN(data.getTime())) return "-";
+
+  const inicioDoDia = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const dias = Math.round((inicioDoDia(agora) - inicioDoDia(data)) / 86_400_000);
+
+  // Futuro (relógio do servidor à frente do navegador) conta como hoje, em vez de virar "-1 dias".
+  if (dias <= 0) return data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  if (dias === 1) return "Ontem";
+
+  const mesmoAno = data.getFullYear() === agora.getFullYear();
+  return data.toLocaleDateString(
+    "pt-BR",
+    mesmoAno ? { day: "2-digit", month: "2-digit" } : { day: "2-digit", month: "2-digit", year: "2-digit" },
+  );
+}
+
 export function formatarTempoRelativoReal(data: Date): string {
   const diffMin = Math.round((Date.now() - data.getTime()) / 60000);
   if (diffMin <= 0) return "agora";

@@ -24,6 +24,13 @@ export function contaCanalDaConexao(provedor: string, identificador: string | nu
   return limpo ? `${provedor}:${limpo}` : null;
 }
 
+export type ContasVisiveis = {
+  /** Identificadores exatos das conexões ligadas. `null` representa o histórico sem marca. */
+  contas: (string | null)[];
+  /** Provedores ligados cujo identificador o CRM não conhece. Ver dentro da função. */
+  prefixosSemIdentificador: string[];
+};
+
 /**
  * As conexões cujas conversas devem aparecer agora. Só integrações CONECTADAS entram: é isso que
  * faz a caixa de entrada esvaziar ao desconectar sem nada ser apagado.
@@ -33,7 +40,7 @@ export function contaCanalDaConexao(provedor: string, identificador: string | nu
  * quando o QR Code está conectado. Sem essa regra, todo o histórico antigo ficaria invisível para
  * sempre depois desta mudança.
  */
-export async function contasCanalVisiveis(workspaceId: string): Promise<(string | null)[]> {
+export async function contasCanalVisiveis(workspaceId: string): Promise<ContasVisiveis> {
   const integracoes = await prisma.integracao.findMany({
     where: {
       workspaceId,
@@ -47,10 +54,27 @@ export async function contasCanalVisiveis(workspaceId: string): Promise<(string 
   });
 
   const contas: (string | null)[] = [];
+  /**
+   * Conexões LIGADAS cujo identificador o CRM não sabe.
+   *
+   * Acontece de verdade: a conexão está de pé e recebendo, mas os metadados não têm o
+   * `phoneNumberId` (ou o `numero`) gravado, porque foram escritos por um caminho antigo ou porque
+   * a chamada que os preenche falhou naquele momento. Sem isso registrado, o filtro exato não casa
+   * NADA daquela conexão e a caixa de entrada fica vazia enquanto os negócios continuam aparecendo
+   * no funil, que usa uma regra mais frouxa. Foi exatamente o que aconteceu: conversa nova no
+   * funil e nenhuma no WhatsApp.
+   *
+   * Nesse caso o certo é mostrar a conversa. Esconder tudo protege contra um problema que não
+   * existe (duas contas do mesmo provedor no mesmo workspace) e cria um que existe (a pessoa não vê
+   * a mensagem que acabou de chegar).
+   */
+  const prefixosSemIdentificador: string[] = [];
   for (const integracao of integracoes) {
     const metadados = (integracao.metadados as Record<string, unknown> | null) ?? {};
     if (integracao.provedor === "whatsapp_nao_oficial") {
-      contas.push(contaCanalDaConexao(CANAL_NAO_OFICIAL, metadados.numero as string | undefined));
+      const conta = contaCanalDaConexao(CANAL_NAO_OFICIAL, metadados.numero as string | undefined);
+      if (conta) contas.push(conta);
+      else prefixosSemIdentificador.push(CANAL_NAO_OFICIAL);
       // Histórico anterior a esta coluna. Ver comentário acima.
       contas.push(null);
     } else if (integracao.provedor === "meta_instagram") {
@@ -59,12 +83,19 @@ export async function contasCanalVisiveis(workspaceId: string): Promise<(string 
       // desconectado some. Nada é apagado, e religar traz tudo de volta, inclusive o que chegou
       // enquanto estava desligado.
       if (metadados.receberMensagens === false) continue;
-      contas.push(contaCanalDaConexao(CANAL_INSTAGRAM, metadados.instagramContaId as string | undefined));
+      const conta = contaCanalDaConexao(CANAL_INSTAGRAM, metadados.instagramContaId as string | undefined);
+      if (conta) contas.push(conta);
+      else prefixosSemIdentificador.push(CANAL_INSTAGRAM);
     } else {
-      contas.push(contaCanalDaConexao(CANAL_OFICIAL, metadados.phoneNumberId as string | undefined));
+      const conta = contaCanalDaConexao(CANAL_OFICIAL, metadados.phoneNumberId as string | undefined);
+      if (conta) contas.push(conta);
+      else prefixosSemIdentificador.push(CANAL_OFICIAL);
     }
   }
-  return contas.filter((c, i) => contas.indexOf(c) === i);
+  return {
+    contas: contas.filter((c, i) => contas.indexOf(c) === i),
+    prefixosSemIdentificador: [...new Set(prefixosSemIdentificador)],
+  };
 }
 
 /**
@@ -81,8 +112,11 @@ export async function contasCanalVisiveis(workspaceId: string): Promise<(string 
  * Lista vazia (nada conectado) devolve um filtro que não casa nada. Caixa de entrada vazia, que é
  * o comportamento certo.
  */
-export function filtroContaCanal(contas: (string | null)[]) {
-  if (!contas.length) return { contaCanal: { in: ["__nenhuma-conexao-ativa__"] } };
+export function filtroContaCanal(visiveis: ContasVisiveis) {
+  const { contas, prefixosSemIdentificador } = visiveis;
+  if (!contas.length && !prefixosSemIdentificador.length) {
+    return { contaCanal: { in: ["__nenhuma-conexao-ativa__"] } };
+  }
   const valores = contas.filter((c): c is string => c !== null);
   const incluiNulo = contas.includes(null);
   // `in` do Prisma não casa NULL, então NULL precisa de um ramo próprio no OR.
@@ -96,6 +130,10 @@ export function filtroContaCanal(contas: (string | null)[]) {
       ...(contas.some((c) => c?.startsWith(`${CANAL_INSTAGRAM}:`))
         ? [{ contaCanal: { startsWith: `${CANAL_INSTAGRAM}:` } }]
         : []),
+      // Conexão ligada cujo identificador o CRM não sabe: vale o provedor inteiro. É a mesma regra
+      // que o funil sempre usou pros negócios, e é o que faz as duas telas contarem a mesma
+      // história em vez de uma mostrar o card e a outra esconder a conversa.
+      ...prefixosSemIdentificador.map((prefixo) => ({ contaCanal: { startsWith: `${prefixo}:` } })),
     ],
   };
 }

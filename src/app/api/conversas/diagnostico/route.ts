@@ -41,7 +41,9 @@ export async function GET() {
     canal: linha.canal,
     quantidade: linha._count._all,
     // O veredito: esta linha aparece na tela hoje, ou está invisível?
-    apareceNaTela: visiveis.includes(linha.contaCanal),
+    apareceNaTela:
+      visiveis.contas.includes(linha.contaCanal) ||
+      visiveis.prefixosSemIdentificador.some((p) => linha.contaCanal?.startsWith(`${p}:`)),
   }));
 
   return NextResponse.json(
@@ -57,7 +59,8 @@ export async function GET() {
           instagramContaId: (m.instagramContaId as string) ?? null,
         };
       }),
-      contasVisiveis: visiveis,
+      contasVisiveis: visiveis.contas,
+      provedoresSemIdentificador: visiveis.prefixosSemIdentificador,
       mensagens,
       invisiveis: mensagens.filter((m) => !m.apareceNaTela),
     },

@@ -39,7 +39,7 @@ import { useConversas, type ConversaReal } from "@/lib/conversas-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useTarefas } from "@/lib/tarefas-context";
 import { useMotivosPerda } from "@/lib/motivos-perda";
-import { formatarTempoRelativoReal } from "@/lib/datas";
+import { rotuloDeConversa } from "@/lib/datas";
 import { estimarMinutosAtras, gerarLinhaDoTempo, type Evento } from "@/lib/timeline";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { Timeline } from "@/components/timeline";
@@ -982,7 +982,12 @@ function ConversasPageInner() {
       const quando = mensagens[i].criadoEm;
       if (quando) return quando;
     }
-    return 0;
+    // Sem mensagem CARREGADA ainda, vale o que o servidor disse sobre a última mensagem. Devolver
+    // zero aqui jogava pro fim da lista toda conversa cujas mensagens ainda não tinham chegado ao
+    // navegador, e o que estava embaixo dependia da ordem em que as buscas terminaram.
+    const conversa = conversas.find((c) => c.nome === nomeContato);
+    const doServidor = conversa?.ultimaMensagemEm ?? conversa?.atualizadoEm;
+    return doServidor ? new Date(doServidor).getTime() : 0;
   }
 
   const abertaCandidata = conversas.find((c) => c.id === selectedId) ?? conversas[0];
@@ -3951,7 +3956,15 @@ function ConversasPageInner() {
                         </span>
                       ) : null}
                     </span>
-                    <span className="ctime">{formatarTempoRelativoReal(new Date(c.atualizadoEm))}</span>
+                    {/* `ultimaMensagemEm`, NÃO `atualizadoEm`.
+                        O segundo sobe a cada escrita na linha da conversa: favoritar, mudar o
+                        status, a importação do histórico, o reparo das mensagens órfãs. Ele diz
+                        quando o REGISTRO foi mexido, não quando a última mensagem chegou, e era
+                        por isso que conversa de hoje aparecia com hora de ontem. Sem mensagem
+                        gravada ainda, a data do registro é o melhor que existe. */}
+                    <span className="ctime">
+                      {rotuloDeConversa(new Date(c.ultimaMensagemEm ?? c.atualizadoEm))}
+                    </span>
                   </span>
                   <span className="cmsg">
                     <span className="cmsg-texto">
@@ -7064,7 +7077,9 @@ function ConversasPageInner() {
                   <span className="wa-resumo-label">Origem</span>
                   <span className="wa-resumo-valor">{aberta.origem}</span>
                   <span className="wa-resumo-label">Última interação</span>
-                  <span className="wa-resumo-valor">{formatarTempoRelativoReal(new Date(aberta.atualizadoEm))}</span>
+                  <span className="wa-resumo-valor">
+                    {rotuloDeConversa(new Date(aberta.ultimaMensagemEm ?? aberta.atualizadoEm))}
+                  </span>
                   <span className="wa-resumo-label">Situação</span>
                   <span className="wa-resumo-valor">{aberta.status}</span>
                   <span className="wa-resumo-label">Próxima atividade</span>

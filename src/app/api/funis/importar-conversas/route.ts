@@ -35,9 +35,9 @@ export async function POST() {
 
   // Só conversas dos canais conectados agora: importar conversa de um canal desconectado criaria
   // um card que sumiria da tela no instante seguinte, pelo filtro do próprio funil.
-  const contas = await contasCanalVisiveis(workspaceId);
+  const visiveis = await contasCanalVisiveis(workspaceId);
   const conversas = await prisma.conversa.findMany({
-    where: { workspaceId, ehGrupo: false, arquivada: false, ...filtroContaCanal(contas) },
+    where: { workspaceId, ehGrupo: false, arquivada: false, ...filtroContaCanal(visiveis) },
     orderBy: { atualizadoEm: "desc" },
   });
 
