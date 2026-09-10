@@ -15644,6 +15644,17 @@ table.tbl .name-cell .r {
   background: var(--navy);
   border-radius: var(--radius-lg);
   padding: var(--space-4) var(--space-3);
+  /*
+   * A ALTURA INTEIRA do corpo do popup, e não os 300px de `.chat-body`.
+   *
+   * Este elemento também carrega a classe `.chat-body`, que existe pra caixas de conversa pequenas
+   * embutidas em outras telas e limita a 300px. A tela de Conversas já anulava isso pelo `.wa-main
+   * .chat-body`; o popup do funil não, e o resultado era a mancha branca: a conversa espremida em
+   * 300px dentro de um corpo de 480, com 180px de nada entre a última mensagem e o campo de
+   * escrever. Medido no navegador antes e depois.
+   */
+  max-height: none;
+  height: 100%;
 }
 
 /* Cabeçalho no formato do Direct: foto maior, nome forte, canal em linha leve embaixo. */
