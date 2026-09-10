@@ -60,9 +60,22 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
     entradasPorNo.get(e.target)!.push(e);
   });
 
-  // 1. Precisa de pelo menos um nó de gatilho.
+  /**
+   * Robô cujo gatilho mora na ETAPA do funil, não num bloco dentro do fluxo.
+   *
+   * É o caminho normal de quem cria a automação por "Automatizar funil": a etapa é a dona do
+   * gatilho, e o canvas só descreve o que o robô faz. O motor já trata esse caso desde sempre
+   * (`primeiroNoDepoisDoGatilho` em `src/lib/automacoes/iniciar.ts`: sem bloco de gatilho, começa
+   * pelo único nó em que ninguém entra). A validação é que não sabia disso e exigia um bloco de
+   * gatilho no canvas, então esses robôs nunca conseguiam ser publicados.
+   */
+  const gatilhoNaEtapa = Boolean(fluxo.funilId && fluxo.etapaId);
+
+  const raizes = nodes.filter((n) => (entradasPorNo.get(n.id)?.length ?? 0) === 0);
+
+  // 1. Precisa de pelo menos um nó de gatilho: só quando não é a etapa que dispara.
   const gatilhos = nodes.filter((n) => n.category === "gatilho");
-  if (gatilhos.length === 0) {
+  if (gatilhos.length === 0 && !gatilhoNaEtapa) {
     problemas.push({
       id: proximoIdProblema(),
       severidade: "erro",
@@ -71,17 +84,32 @@ export function validarFluxo(fluxo: FluxoAutomacao): ProblemaValidacao[] {
   }
 
   // 2. Raiz (sem entrada) que não é gatilho. Bloco solto no começo do fluxo.
-  nodes.forEach((n) => {
-    const temEntrada = (entradasPorNo.get(n.id)?.length ?? 0) > 0;
-    if (!temEntrada && n.category !== "gatilho") {
+  //
+  // Com o gatilho na etapa, UMA raiz é o começo legítimo do robô. Mais de uma é um problema de
+  // verdade, e do tipo que só aparece na hora de rodar: o motor não escolhe entre duas entradas,
+  // ele desiste e o robô não roda, sem dizer nada.
+  if (gatilhoNaEtapa && raizes.length > 1) {
+    raizes.forEach((n) => {
       problemas.push({
         id: proximoIdProblema(),
         severidade: "erro",
-        mensagem: `Bloco "${n.titulo ?? n.type}" não está conectado a nada antes dele.`,
+        mensagem: `O robô tem ${raizes.length} pontos de partida, e "${n.titulo ?? n.type}" é um deles. Ligue os blocos num começo só, senão ele não roda.`,
         nodeId: n.id,
       });
-    }
-  });
+    });
+  } else if (!gatilhoNaEtapa) {
+    nodes.forEach((n) => {
+      const temEntrada = (entradasPorNo.get(n.id)?.length ?? 0) > 0;
+      if (!temEntrada && n.category !== "gatilho") {
+        problemas.push({
+          id: proximoIdProblema(),
+          severidade: "erro",
+          mensagem: `Bloco "${n.titulo ?? n.type}" não está conectado a nada antes dele.`,
+          nodeId: n.id,
+        });
+      }
+    });
+  }
 
   // 3. Caminho pendurado: sem saída e não é um bloco de fim.
   nodes.forEach((n) => {

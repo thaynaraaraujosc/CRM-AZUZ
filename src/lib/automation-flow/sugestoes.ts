@@ -80,6 +80,8 @@ export function sugestoesApos(tipo: FlowNodeType | undefined, categoria: string 
 export function nosDeFollowUp(params: { horas: number; mensagem: string }): {
   espera: { tipo: FlowNodeType; data: Record<string, unknown> };
   mensagem: { tipo: FlowNodeType; data: Record<string, unknown> };
+  /** Fecha o caminho depois da cobrança. Ver o comentário abaixo. */
+  fim: { tipo: FlowNodeType; data: Record<string, unknown> };
   /** A saída da espera que leva à mensagem: só quem NÃO respondeu recebe o follow-up. */
   saidaDaEspera: string;
 } {
@@ -94,6 +96,14 @@ export function nosDeFollowUp(params: { horas: number; mensagem: string }): {
     mensagem: {
       tipo: "mensagem_texto",
       data: { canal: "whatsapp", texto: params.mensagem },
+    },
+    // A validação recusa publicar um caminho que termina no ar, e com razão: ninguém sabe o que
+    // acontece com o lead depois. Sem este bloco a receita pronta do produto gerava um fluxo que o
+    // próprio produto se recusava a publicar, e quem clicou em "Adicionar follow-up" só descobria
+    // isso lá na frente, ao tentar publicar.
+    fim: {
+      tipo: "encerrar_fluxo",
+      data: {},
     },
     saidaDaEspera: "timeout",
   };

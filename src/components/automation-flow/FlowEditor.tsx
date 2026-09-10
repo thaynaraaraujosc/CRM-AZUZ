@@ -206,7 +206,10 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
   function avisar(texto: string) {
     const id = toastIdRef.current++;
-    setToasts((prev) => [...prev, { id, texto }]);
+    // Idempotente de propósito: o updater do `setState` roda duas vezes no StrictMode do
+    // desenvolvimento, e o id vem de um ref que só incrementa uma. Sem esta guarda o mesmo aviso
+    // aparecia duplicado na tela toda vez.
+    setToasts((prev) => (prev.some((t) => t.id === id) ? prev : [...prev, { id, texto }]));
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4500);
   }
 
@@ -457,7 +460,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
     const defEspera = BLOCOS_DISPONIVEIS.find((b) => b.tipo === receita.espera.tipo);
     const defMensagem = BLOCOS_DISPONIVEIS.find((b) => b.tipo === receita.mensagem.tipo);
-    if (!defEspera || !defMensagem) return;
+    const defFim = BLOCOS_DISPONIVEIS.find((b) => b.tipo === receita.fim.tipo);
+    if (!defEspera || !defMensagem || !defFim) return;
 
     const espera: DomainFlowNode = {
       id: novoIdNo(),
@@ -478,8 +482,18 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       data: receita.mensagem.data,
     };
 
+    const fim: DomainFlowNode = {
+      id: novoIdNo(),
+      type: receita.fim.tipo,
+      category: defFim.categoria,
+      position: { x: mensagem.position.x, y: mensagem.position.y + 170 },
+      titulo: "Fim do follow-up",
+      data: receita.fim.data,
+    };
+
     const rfEspera: FlowRFNode = { id: espera.id, type: espera.category, position: espera.position, data: { flowNode: espera, problemas: [] } };
     const rfMensagem: FlowRFNode = { id: mensagem.id, type: mensagem.category, position: mensagem.position, data: { flowNode: mensagem, problemas: [] } };
+    const rfFim: FlowRFNode = { id: fim.id, type: fim.category, position: fim.position, data: { flowNode: fim, problemas: [] } };
 
     const seta = (source: string, target: string, sourceHandle?: string): FlowRFEdge => ({
       id: novoIdAresta(),
@@ -490,11 +504,12 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
     });
 
-    const novoNodes = [...rfNodes, rfEspera, rfMensagem];
+    const novoNodes = [...rfNodes, rfEspera, rfMensagem, rfFim];
     const novoEdges = [
       ...rfEdges,
       ...(nodeOrigemId ? [seta(nodeOrigemId, espera.id, handleId)] : []),
       seta(espera.id, mensagem.id, receita.saidaDaEspera),
+      seta(mensagem.id, fim.id),
     ];
     setRfNodes(novoNodes);
     setRfEdges(novoEdges);
