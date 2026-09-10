@@ -86,6 +86,10 @@ export function FunisProvider({ children }: { children: ReactNode }) {
     fetch("/api/funis")
       .then((r) => r.json())
       .then((dados: Funil[]) => {
+        // Marca a carga inicial como "veio do banco" pelo mesmo motivo que `recarregar()` faz:
+        // sem isto, abrir QUALQUER tela do CRM gravava o funil inteiro de volta sem ninguém ter
+        // editado nada. Era uma escrita por navegação, por usuário, com o JSON completo do funil.
+        vindoDoServidorRef.current = true;
         setFunis(dados);
         setFunilAtivoId((atual) => atual || dados[0]?.id || "");
         carregadoRef.current = true;

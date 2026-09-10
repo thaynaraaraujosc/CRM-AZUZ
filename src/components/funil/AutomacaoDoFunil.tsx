@@ -332,11 +332,11 @@ export function AutomacaoDoFunil({
         // levava a um canvas que perguntava de novo "como esta automação deve começar?": a
         // pergunta já tinha sido respondida aqui, na etapa, e responder duas vezes é o caminho
         // curto pra o gatilho disparar duas vezes.
-        await fetch(`/api/automacoes-fluxos/${fluxoParaAbrir}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ funilId, etapaId: etapaDoGatilho }),
-        }).catch(() => {});
+        // PATCH, não PUT: a rota `/api/automacoes-fluxos/[id]` só expõe PATCH e DELETE. Com PUT
+        // ela respondia 405 e o `.catch` engolia o erro em silêncio, então o robô nunca aprendia
+        // de qual funil/etapa ele é e o editor voltava a perguntar "como esta automação deve
+        // começar?": exatamente o caminho curto pro gatilho duplicado descrito acima.
+        await avisarFluxoDaEtapa(fluxoParaAbrir, etapaDoGatilho);
         router.push(`/automacoes/editor/${fluxoParaAbrir}`);
       }
     } catch {
@@ -355,17 +355,33 @@ export function AutomacaoDoFunil({
   }
 
   /**
+   * Diz ao robô de qual funil e de qual etapa ele é, antes de abrir o fluxograma.
+   *
+   * Se a gravação falhar, o editor abre perguntando de novo qual é o gatilho, e responder duas
+   * vezes é como um mesmo lead dispara duas vezes. Então a falha vira aviso na tela em vez de
+   * sumir num `catch` vazio.
+   */
+  async function avisarFluxoDaEtapa(fluxoId: string, etapaId: string) {
+    try {
+      const resposta = await fetch(`/api/automacoes-fluxos/${fluxoId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ funilId, etapaId }),
+      });
+      if (!resposta.ok) throw new Error(String(resposta.status));
+    } catch {
+      setErro("O robô abriu, mas não guardou de qual etapa ele é. Confira o gatilho lá dentro.");
+    }
+  }
+
+  /**
    * Abre o fluxograma do robô de um gatilho já salvo, direto da grade.
    *
    * Grava antes de qual funil e de qual etapa aquele robô é. É o que faz o canvas abrir sabendo
    * quando ele começa, em vez de perguntar de novo uma coisa que já foi respondida aqui.
    */
   async function abrirFluxograma(fluxoId: string, etapaId: string) {
-    await fetch(`/api/automacoes-fluxos/${fluxoId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ funilId, etapaId }),
-    }).catch(() => {});
+    await avisarFluxoDaEtapa(fluxoId, etapaId);
     router.push(`/automacoes/editor/${fluxoId}`);
   }
 

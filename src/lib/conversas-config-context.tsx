@@ -124,12 +124,21 @@ const ConfigConversasContext = createContext<ConfigConversasContextValue | null>
 export function ConfigConversasProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<ConfigConversas>(CONFIG_PADRAO);
   const hidratadoRef = useRef(false);
+  /**
+   * Serialização do que já está gravado no banco. Sem ela, `hidratadoRef` virava `true` no mesmo
+   * `.then` que chamava o `setState` da carga, então o efeito de salvar rodava logo depois e
+   * devolvia ao banco exatamente o que acabara de ler: uma escrita por navegação, em toda tela do
+   * CRM, sem ninguém ter mudado nada.
+   */
+  const ultimoSalvoRef = useRef<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`)
       .then((r) => r.json())
       .then((salvo: Partial<ConfigConversas>) => {
-        setConfig({ ...CONFIG_PADRAO, ...salvo });
+        const completo = { ...CONFIG_PADRAO, ...salvo };
+        setConfig(completo);
+        ultimoSalvoRef.current = JSON.stringify(completo);
         hidratadoRef.current = true;
       })
       .catch((erro) => console.error("Falha ao carregar config de conversas:", erro));
@@ -137,7 +146,10 @@ export function ConfigConversasProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hidratadoRef.current) return;
+    const corpo = JSON.stringify(config);
+    if (corpo === ultimoSalvoRef.current) return;
     const temporizador = setTimeout(() => {
+      ultimoSalvoRef.current = corpo;
       fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },

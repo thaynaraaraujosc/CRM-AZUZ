@@ -99,11 +99,19 @@ export function ConfiguracoesProvider({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<ConfiguracoesEstado>(ESTADO_PADRAO);
   const [categoriaSuja, setCategoriaSuja] = useState(false);
   const hidratadoRef = useRef(false);
+  /**
+   * Serialização do que já está gravado no banco. Sem ela, `hidratadoRef` virava `true` no mesmo
+   * `.then` que chamava o `setState` da carga, então o efeito de salvar rodava logo depois e
+   * devolvia ao banco exatamente o que acabara de ler: uma escrita por navegação, em toda tela do
+   * CRM, sem ninguém ter mudado nada.
+   */
+  const ultimoSalvoRef = useRef<string | null>(null);
 
   useEffect(() => {
     carregarEstado()
       .then((carregado) => {
         setEstado(carregado);
+        ultimoSalvoRef.current = JSON.stringify(carregado);
         hidratadoRef.current = true;
       })
       .catch((erro) => console.error("Falha ao carregar configurações:", erro));
@@ -111,7 +119,10 @@ export function ConfiguracoesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hidratadoRef.current) return;
+    const corpo = JSON.stringify(estado);
+    if (corpo === ultimoSalvoRef.current) return;
     const temporizador = setTimeout(() => {
+      ultimoSalvoRef.current = corpo;
       fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },

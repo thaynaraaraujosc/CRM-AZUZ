@@ -134,6 +134,13 @@ export function CentralDiaProvider({ children }: { children: ReactNode }) {
   const [atualizando, setAtualizando] = useState(false);
   const toastIdRef = useRef(0);
   const hidratadoRef = useRef(false);
+  /**
+   * Serialização do que já está gravado no banco. Sem ela, `hidratadoRef` virava `true` no mesmo
+   * `.then` que chamava o `setState` da carga, então o efeito de salvar rodava logo depois e
+   * devolvia ao banco exatamente o que acabara de ler: uma escrita por navegação, em toda tela do
+   * CRM, sem ninguém ter mudado nada.
+   */
+  const ultimoSalvoRef = useRef<string | null>(null);
 
   useEffect(() => {
     carregarEstado()
@@ -142,6 +149,12 @@ export function CentralDiaProvider({ children }: { children: ReactNode }) {
         setAdiados(carregado.adiados);
         setRecomendacoesIgnoradas(carregado.recomendacoesIgnoradas);
         setFiltrosState(carregado.filtros);
+        ultimoSalvoRef.current = JSON.stringify({
+          concluidos: carregado.concluidos,
+          adiados: carregado.adiados,
+          recomendacoesIgnoradas: carregado.recomendacoesIgnoradas,
+          filtros: carregado.filtros,
+        });
         hidratadoRef.current = true;
       })
       .catch((erro) => console.error("Falha ao carregar preferências da Central do Dia:", erro));
@@ -149,8 +162,11 @@ export function CentralDiaProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hidratadoRef.current) return;
+    const estado: EstadoPersistido = { concluidos, adiados, recomendacoesIgnoradas, filtros };
+    const corpo = JSON.stringify(estado);
+    if (corpo === ultimoSalvoRef.current) return;
     const temporizador = setTimeout(() => {
-      const estado: EstadoPersistido = { concluidos, adiados, recomendacoesIgnoradas, filtros };
+      ultimoSalvoRef.current = corpo;
       fetch(`/api/preferencias/${CHAVE_PREFERENCIA}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
