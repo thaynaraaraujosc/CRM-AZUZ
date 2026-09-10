@@ -540,6 +540,14 @@ export type ConvMensagem = {
   hora: string;
   /** Timestamp real de criação: usado pra calcular prazo de "apagar pra todos" e pra "Ver detalhes". Ausente em mensagens de exemplo (seed). */
   criadoEm?: number;
+  /**
+   * Por que a entrega falhou, com as palavras da Meta.
+   *
+   * A Meta aceita a mensagem na hora e só avisa da falha minutos depois, por webhook. Sem guardar
+   * o motivo, a bolha dizia "não enviada" sem dizer por quê, e quem usa o CRM concluía que a
+   * automação não funciona quando o que houve foi a janela de 24 horas fechando.
+   */
+  erroEnvio?: string;
   /** Presente quando a mensagem é um compartilhamento de localização. Mostra um mapa em vez de só texto. */
   localizacao?: { lat: number; lng: number; endereco?: string };
   /**

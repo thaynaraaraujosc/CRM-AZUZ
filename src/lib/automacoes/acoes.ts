@@ -119,7 +119,11 @@ export function acoesReais(params: {
         if (!r.enviado) return falha(`Não foi possível enviar: ${r.motivo ?? "motivo desconhecido"}`);
         // A mensagem entra na conversa. Sem isto quem abre a tela vê a resposta do cliente sem a
         // pergunta que a automação fez.
-        await registrarMensagemEnviada({ workspaceId, contatoNome, texto, origem: "automacao" });
+        // `wamid` junto: é o id que a Meta devolveu, e é por ele que o webhook de status acha esta
+        // bolha depois pra dizer "entregue", "lido" ou "FALHOU". Sem ele, a mensagem ficava com o
+        // tique de enviada pra sempre mesmo quando a entrega falhava minutos depois, e a tela
+        // dizia que a automação tinha mandado enquanto o celular da pessoa nunca recebia.
+        await registrarMensagemEnviada({ workspaceId, contatoNome, texto, wamid: r.wamid, origem: "automacao" });
         return ok(`Mensagem enviada: "${resumir(texto)}"`);
       } catch (erro) {
         return falha("Falha ao enviar a mensagem.", mensagemDoErro(erro));
@@ -138,6 +142,8 @@ export function acoesReais(params: {
           contatoNome,
           texto: r.formato === "numerado" ? textoNumerado(texto, opcoes) : texto,
           opcoes: r.formato === "numerado" ? undefined : opcoes.map((o) => o.rotulo),
+          // Ver o comentário do `wamid` no envio de texto acima.
+          wamid: r.wamid,
           origem: "automacao",
         });
         return ok(`Pergunta enviada (${NOME_DO_FORMATO[r.formato]})${r.observacao ? `: ${r.observacao}` : ""}.`);

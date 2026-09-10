@@ -2820,6 +2820,18 @@ table.tbl tbody tr:hover td {
 /* "chat" no canto do card do funil: diz o que o clique faz.
    Discreto em repouso e azul quando o mouse está no card, porque ele não é uma informação sobre o
    negócio (como a origem ou a data), é a legenda do gesto. */
+/* O motivo da falha de entrega, embaixo da bolha. Discreto mas legível: é a explicação de por que
+   a mensagem não chegou, e ela precisa caber em duas linhas sem esticar a bolha. */
+.msg-erro-motivo {
+  display: block;
+  max-width: 34ch;
+  margin-top: 2px;
+  color: var(--danger);
+  font-size: var(--texto-xs);
+  line-height: 1.35;
+  white-space: normal;
+}
+
 /* A linha de progresso da importação do histórico do WhatsApp: a frase à esquerda e o botão à
    direita, quebrando pra baixo quando a coluna aperta em vez de espremer o texto. */
 .wa-historico-linha {

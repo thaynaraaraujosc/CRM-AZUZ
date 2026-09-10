@@ -173,6 +173,31 @@ async function extrasDeMidia(
   }
 }
 
+/**
+ * Guarda, na própria mensagem, o motivo que a Meta deu pra falha de entrega.
+ *
+ * Lê e reescreve `extras` porque ele pode já ter conteúdo (mídia, botões) e uma escrita crua
+ * apagaria tudo. Falhar aqui não pode derrubar o processamento do webhook: o motivo é informação
+ * extra, não o evento em si.
+ */
+async function guardarMotivoDaFalha(workspaceId: string, wamid: string, motivo: string): Promise<void> {
+  if (!motivo.trim()) return;
+  try {
+    const mensagem = await prisma.mensagemExtra.findFirst({
+      where: { workspaceId, OR: [{ wamid }, { id: wamid }] },
+      select: { id: true, extras: true },
+    });
+    if (!mensagem) return;
+    const extras = (mensagem.extras as Record<string, unknown> | null) ?? {};
+    await prisma.mensagemExtra.update({
+      where: { id: mensagem.id },
+      data: { extras: { ...extras, erroEnvio: motivo } },
+    });
+  } catch (erro) {
+    console.error("[webhook whatsapp] falha ao guardar o motivo da falha de entrega:", erro);
+  }
+}
+
 /** Acha a integração DAQUELE número (não do workspace da sessão. Aqui não tem sessão nenhuma, quem
  * chama é a Meta). `metadados` é Json, então não dá pra filtrar `phoneNumberId` no `where` de forma
  * portável: filtra em memória, o custo é desprezível pro número de integrações ativas. */
@@ -312,7 +337,16 @@ export async function POST(request: Request) {
             casouPeloWamid: atualizadas.count > 0,
           });
           if (s.status === "failed" && s.errors?.length) {
-            console.error(`[webhook whatsapp] mensagem ${s.id} falhou:`, s.errors[0]?.code, s.errors[0]?.title);
+            const erroMeta = s.errors[0];
+            console.error(`[webhook whatsapp] mensagem ${s.id} falhou:`, erroMeta?.code, erroMeta?.title);
+            // O motivo também FICA GUARDADO, não só no log do servidor. Sem isso a bolha dizia
+            // "não enviada" sem dizer por quê, e o log fica num lugar que quem usa o CRM não abre.
+            // É a diferença entre "a automação não funciona" e "a janela de 24 horas fechou".
+            await guardarMotivoDaFalha(
+              integracao.workspaceId,
+              s.id ?? "",
+              [erroMeta?.title, erroMeta?.code ? `(código ${erroMeta.code})` : null].filter(Boolean).join(" "),
+            );
           }
         }
         continue;

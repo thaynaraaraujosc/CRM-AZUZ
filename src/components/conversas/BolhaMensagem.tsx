@@ -86,6 +86,14 @@ export function BolhaMensagem({
     <span className="tm">
       {msg.hora}
       {msg.tipo === "out" ? <StatusMensagemIcone status={msg.status} onTentarNovamente={onTentarNovamente} /> : null}
+      {/* O motivo da falha, com as palavras da Meta. A bolha dizia "não enviada" e não dizia por
+          quê, e o motivo é o que separa "a automação está quebrada" de "a janela de 24 horas
+          fechou". */}
+      {msg.tipo === "out" && msg.erroEnvio ? (
+        <span className="msg-erro-motivo" title={msg.erroEnvio}>
+          {msg.erroEnvio}
+        </span>
+      ) : null}
     </span>
   );
 

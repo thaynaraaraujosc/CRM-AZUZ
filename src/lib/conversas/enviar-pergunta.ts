@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 import { enviarDirectComRespostasRapidas } from "@/lib/integracoes/instagram-login";
-import { contaConectada, enviarPelaCloudApi } from "@/lib/integracoes/whatsapp-oficial";
+import { contaConectada, enviarPelaCloudApi, janelaDeAtendimentoAberta } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarTextoPeloCanal } from "./enviar-pelo-canal";
 
 /**
@@ -38,6 +38,15 @@ export type ResultadoPergunta = {
   motivo?: string;
   /** Por que não foi no formato interativo, quando não foi. Vai pro histórico. */
   observacao?: string;
+  /**
+   * O id que a Meta devolve no envio.
+   *
+   * É por ele que o webhook de status acha a bolha depois pra dizer "entregue", "lido" ou
+   * "FALHOU". Sem guardar, a mensagem ficava com o tique de enviada pra sempre mesmo quando a Meta
+   * avisava minutos depois que a entrega falhou: a tela dizia que a automação tinha mandado e o
+   * celular da pessoa nunca recebia. Nulo no QR Code, que não tem id equivalente.
+   */
+  wamid?: string | null;
 };
 
 /** Teto de caracteres do rótulo nos formatos interativos da Meta (botão, item de lista, resposta rápida). */
@@ -122,8 +131,24 @@ export async function enviarPerguntaPeloCanal(params: {
     const conta = await contaConectada(workspaceId);
     if (!conta) return { enviado: false, formato: "numerado", motivo: "WhatsApp não conectado" };
 
+    /*
+     * A JANELA DE 24 HORAS, conferida antes de tentar. Igual ao envio de texto.
+     *
+     * Faltava aqui, e a pergunta com botões é justamente o bloco que abre conversa. Fora da janela
+     * a Meta recusa texto livre e formato interativo, e a recusa chegava como erro técnico em
+     * inglês, difícil de ligar à causa. Aqui a explicação já vem certa e a chamada nem sai.
+     */
+    if (!(await janelaDeAtendimentoAberta(workspaceId, conversaNome))) {
+      return {
+        enviado: false,
+        formato: "numerado",
+        motivo:
+          "a janela de 24 horas do WhatsApp fechou. Fora dela a Meta só aceita modelo aprovado: troque este bloco por “Enviar modelo do WhatsApp” ou mova o envio pra dentro das 24 horas.",
+      };
+    }
+
     if (opcoes.length && opcoes.length <= 3 && !temBotaoDeUrl(opcoes)) {
-      await enviarPelaCloudApi(conta, conversa.contato, {
+      const wamid = await enviarPelaCloudApi(conta, conversa.contato, {
         type: "interactive",
         interactive: {
           type: "button",
@@ -133,11 +158,11 @@ export async function enviarPerguntaPeloCanal(params: {
           },
         },
       });
-      return { enviado: true, formato: "botoes" };
+      return { enviado: true, formato: "botoes", wamid };
     }
 
     if (opcoes.length && opcoes.length <= 10 && !temBotaoDeUrl(opcoes)) {
-      await enviarPelaCloudApi(conta, conversa.contato, {
+      const wamid = await enviarPelaCloudApi(conta, conversa.contato, {
         type: "interactive",
         interactive: {
           type: "list",
@@ -150,14 +175,18 @@ export async function enviarPerguntaPeloCanal(params: {
           },
         },
       });
-      return { enviado: true, formato: "lista", observacao: "mais de 3 opções: foi lista, não botões" };
+      return { enviado: true, formato: "lista", observacao: "mais de 3 opções: foi lista, não botões", wamid };
     }
 
-    await enviarPelaCloudApi(conta, conversa.contato, { type: "text", text: { body: textoNumerado(texto, opcoes) } });
+    const wamid = await enviarPelaCloudApi(conta, conversa.contato, {
+      type: "text",
+      text: { body: textoNumerado(texto, opcoes) },
+    });
     return {
       enviado: true,
       formato: "numerado",
       observacao: opcoes.length ? "mais de 10 opções: nenhum formato interativo cabe, foi menu numerado" : undefined,
+      wamid,
     };
   } catch (erro) {
     return { enviado: false, formato: "numerado", motivo: erro instanceof Error ? erro.message : "falha no envio" };

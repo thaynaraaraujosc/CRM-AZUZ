@@ -19,7 +19,19 @@ export async function enviarTextoPeloCanal(params: {
   workspaceId: string;
   conversaNome: string;
   texto: string;
-}): Promise<{ enviado: boolean; motivo?: string }> {
+}): Promise<{
+  enviado: boolean;
+  motivo?: string;
+  /**
+   * O id que a Meta devolve no envio.
+   *
+   * É por ele que o webhook de status acha a bolha depois pra dizer "entregue", "lido" ou
+   * "FALHOU". Sem guardar, a mensagem ficava com o tique de enviada pra sempre mesmo quando a Meta
+   * avisava minutos depois que a entrega falhou. Nulo no QR Code e no Instagram, que não têm id
+   * equivalente.
+   */
+  wamid?: string | null;
+}> {
   const { workspaceId, conversaNome, texto } = params;
   if (!texto.trim()) return { enviado: false, motivo: "mensagem vazia" };
 
@@ -87,8 +99,8 @@ export async function enviarTextoPeloCanal(params: {
       };
     }
 
-    await enviarPelaCloudApi(conta, conversa.contato, { type: "text", text: { body: texto } });
-    return { enviado: true };
+    const wamid = await enviarPelaCloudApi(conta, conversa.contato, { type: "text", text: { body: texto } });
+    return { enviado: true, wamid };
   } catch (erro) {
     return { enviado: false, motivo: erro instanceof Error ? erro.message : "falha no envio" };
   }
