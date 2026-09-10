@@ -2817,6 +2817,26 @@ table.tbl tbody tr:hover td {
   color: var(--text-faint);
 }
 
+/* "chat" no canto do card do funil: diz o que o clique faz.
+   Discreto em repouso e azul quando o mouse está no card, porque ele não é uma informação sobre o
+   negócio (como a origem ou a data), é a legenda do gesto. */
+.lead-card-chat {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: var(--track-wide);
+  text-transform: lowercase;
+  color: var(--text-faint);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.lead-card:hover .lead-card-chat {
+  color: var(--blue);
+  border-color: var(--blue);
+}
+
 .conv-card .cr1 {
   display: flex;
   align-items: center;
@@ -5412,8 +5432,21 @@ button.camp-row:hover {
   letter-spacing: 0.02em;
 }
 
+/*
+ * A frase que explica alguma coisa na tela.
+ *
+ * Ela NÃO tem recuo lateral próprio, e isso é o ponto.
+ *
+ * Tinha 16px de cada lado embutidos na classe, e como ela aparece em quase quinhentos lugares, esse
+ * recuo desalinhava a justificativa do título que ela explica em toda tela do CRM: o título
+ * começava numa margem e a frase logo abaixo começava dezesseis pixels adentro. Era pequeno demais
+ * pra alguém apontar o dedo e grande demais pra parecer arrumado.
+ *
+ * Quem manda no espaçamento lateral é o contêiner, como já é com todo o resto. O respiro de cima
+ * fica, porque uma frase colada no que vem antes dela é outro problema.
+ */
 .hint {
-  padding: var(--space-3) var(--space-4) 0;
+  padding: var(--space-3) 0 0;
   font-size: var(--fs-secondary);
   font-weight: var(--fw-light);
   color: var(--text-muted);

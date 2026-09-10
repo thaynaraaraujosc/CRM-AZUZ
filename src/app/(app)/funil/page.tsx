@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 
 import { classeOrigem, type NegocioCard } from "@/lib/data";
-import { PainelConversa } from "@/components/conversas/PainelConversa";
 import { HOJE_ISO } from "@/lib/agenda-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
@@ -105,7 +104,6 @@ function FunilPageInner() {
   /** Popup de resposta rápida: lê/grava na MESMA conversa que o WhatsApp usa (ver
    * src/lib/mensagens-extra-context.tsx): Funil e WhatsApp falam com o mesmo contato, então uma
    * mensagem mandada de um lugar aparece no outro. */
-  const [respostaRapidaContato, setRespostaRapidaContato] = useState<string | null>(null);
 
   const [importando, setImportando] = useState(false);
   const [reordenando, setReordenando] = useState(false);
@@ -165,24 +163,7 @@ function FunilPageInner() {
     }
   }
 
-  function abrirRespostaRapida(nomeContato: string) {
-    setRespostaRapidaContato(nomeContato);
-  }
 
-
-  const conversaDoContatoRapido = respostaRapidaContato
-    ? conversas.find((c) => c.nome === respostaRapidaContato)
-    : undefined;
-  const iniciaisContatoRapido =
-    conversaDoContatoRapido?.initials ??
-    (respostaRapidaContato
-      ? respostaRapidaContato
-          .split(" ")
-          .filter(Boolean)
-          .slice(0, 2)
-          .map((p) => p[0]?.toUpperCase())
-          .join("")
-      : "");
 
   function avisarAutomacao(texto: string) {
     const id = `toast-${proximoToastId.current++}`;
@@ -988,25 +969,22 @@ function FunilPageInner() {
                           e.dataTransfer.effectAllowed = "move";
                         }}
                         onDragEnd={() => setArrastando(null)}
-                        onDoubleClick={() =>
-                          router.push(
-                            `/conversas?contato=${encodeURIComponent(card.nome)}`,
-                          )
-                        }
-                        title="Clique duas vezes pra abrir a conversa no WhatsApp"
+                        // Um clique em QUALQUER ponto do card abre a conversa.
+                        //
+                        // Antes era clique duplo, e só o nome fazia alguma coisa com um clique só
+                        // (abria um mini-campo de resposta). Ou seja: o card inteiro parecia
+                        // clicável, quase todo ele não era, e o gesto que funcionava não estava
+                        // escrito em lugar nenhum. Arrastar continua intacto: arrastar dispara
+                        // `dragstart`, não `click`, então os dois gestos não se atrapalham.
+                        onClick={() => router.push(`/conversas?contato=${encodeURIComponent(card.nome)}`)}
+                        title="Abrir a conversa deste lead"
                         style={{ cursor: "grab" }}
                       >
                         <span className="lr1">
-                          <span
-                            className="lname lname-com-msg"
-                            title="Clique pra responder rapidinho"
-                            draggable={false}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              abrirRespostaRapida(card.nome);
-                            }}
-                          >
+                          {/* Sem clique próprio: o nome faz o mesmo que o resto do card, que é
+                              abrir a conversa. Ter um comportamento no nome e outro dois
+                              milímetros ao lado era a razão de ninguém achar a conversa. */}
+                          <span className="lname lname-com-msg" draggable={false}>
             {temMensagemNova ? <span className="msg-dot" aria-label="Mensagem nova" /> : null}
                             {(() => {
                               const contato = contatos.find((c) => c.nome === card.nome);
@@ -1069,6 +1047,11 @@ function FunilPageInner() {
                           </span>
                           <span className="days" title="Última movimentação deste negócio">
                             {rotuloDeAtividade(atividadePorNome.get(card.nome) ?? card.data)}
+                          </span>
+                          {/* Diz o que o clique faz. Card clicável sem nada escrito é card que
+                              ninguém clica. */}
+                          <span className="lead-card-chat" aria-hidden="true">
+                            chat
                           </span>
                           {card.statusFechamento === "ganho" ? (
                             <span className="stage-tag won" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><IconCheck width={11} height={11} /> Ganho</span>
@@ -1169,20 +1152,6 @@ function FunilPageInner() {
         </div>
       ) : null}
 
-      {respostaRapidaContato ? (
-        <PainelConversa
-          contatoNome={respostaRapidaContato}
-          canal={conversaDoContatoRapido?.canal}
-          initials={iniciaisContatoRapido}
-          etapaAtual={
-            funilAtivo?.colunas.find((coluna) =>
-              coluna.cards.some((card) => card.nome === respostaRapidaContato),
-            )?.titulo
-          }
-          fotoUrl={conversaDoContatoRapido?.fotoUrl}
-          aoFechar={() => setRespostaRapidaContato(null)}
-        />
-      ) : null}
     </>
   );
 }
