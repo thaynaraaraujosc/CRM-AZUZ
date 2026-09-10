@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { createPortal } from "react-dom";
 
@@ -19,6 +19,7 @@ import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-positio
 import { useMotivosPerda } from "@/lib/motivos-perda";
 import { IconAutomacoes } from "@/components/icons";
 import { AutomacaoDoFunil } from "@/components/funil/AutomacaoDoFunil";
+import { PainelConversa } from "@/components/conversas/PainelConversa";
 import { IconConfiguracoes } from "@/components/icons";
 import { ChipFilters, FloatingDropdown, Topbar } from "@/components/ui";
 import { IconCheck, IconClose, IconErro } from "@/components/icons";
@@ -59,7 +60,6 @@ export default function FunilPage() {
 }
 
 function FunilPageInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const {
     funis,
@@ -204,6 +204,8 @@ function FunilPageInner() {
   // Menu "Marcar como ganho/perdido": abre por card (⋮), grava statusFechamento/motivoPerda/
   // dataFechamento de verdade no NegocioCard (persiste via o mesmo PUT /api/funis que já sincroniza
   // o resto do kanban).
+  /** Conversa aberta em popup, sem sair do funil. Ver o clique no card. */
+  const [conversaAberta, setConversaAberta] = useState<string | null>(null);
   const [desfechoMenu, setDesfechoMenu] = useState<{ coluna: number; card: number; rect: DOMRect } | null>(null);
   const [motivoEscolhido, setMotivoEscolhido] = useState("");
 
@@ -969,14 +971,17 @@ function FunilPageInner() {
                           e.dataTransfer.effectAllowed = "move";
                         }}
                         onDragEnd={() => setArrastando(null)}
-                        // Um clique em QUALQUER ponto do card abre a conversa.
+                        // Um clique em QUALQUER ponto do card abre a conversa, aqui mesmo.
                         //
-                        // Antes era clique duplo, e só o nome fazia alguma coisa com um clique só
-                        // (abria um mini-campo de resposta). Ou seja: o card inteiro parecia
-                        // clicável, quase todo ele não era, e o gesto que funcionava não estava
-                        // escrito em lugar nenhum. Arrastar continua intacto: arrastar dispara
-                        // `dragstart`, não `click`, então os dois gestos não se atrapalham.
-                        onClick={() => router.push(`/conversas?contato=${encodeURIComponent(card.nome)}`)}
+                        // Antes era clique duplo pra ir pra tela de Conversas, e só o nome abria o
+                        // popup com um clique. O card inteiro parecia clicável, quase todo ele não
+                        // era, e o gesto que funcionava não estava escrito em lugar nenhum.
+                        //
+                        // Abre o popup, e não a outra tela, porque o dia a dia é olhar o funil,
+                        // atender e voltar a arrastar: trocar de tela a cada card quebra isso.
+                        // Arrastar continua intacto, porque arrastar dispara `dragstart`, não
+                        // `click`.
+                        onClick={() => setConversaAberta(card.nome)}
                         title="Abrir a conversa deste lead"
                         style={{ cursor: "grab" }}
                       >
@@ -1152,6 +1157,31 @@ function FunilPageInner() {
         </div>
       ) : null}
 
+      {conversaAberta ? (
+        <PainelConversa
+          contatoNome={conversaAberta}
+          canal={conversas.find((c) => c.nome === conversaAberta)?.canal}
+          initials={
+            conversas.find((c) => c.nome === conversaAberta)?.initials ??
+            conversaAberta
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((p) => p[0]?.toUpperCase())
+              .join("")
+          }
+          etapaAtual={
+            funilAtivo?.colunas.find((coluna) =>
+              coluna.cards.some((card) => card.nome === conversaAberta),
+            )?.titulo
+          }
+          fotoUrl={
+            conversas.find((c) => c.nome === conversaAberta)?.fotoUrl ??
+            contatos.find((c) => c.nome === conversaAberta)?.fotoUrl
+          }
+          aoFechar={() => setConversaAberta(null)}
+        />
+      ) : null}
     </>
   );
 }
