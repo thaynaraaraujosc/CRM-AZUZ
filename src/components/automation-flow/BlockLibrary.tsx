@@ -16,9 +16,13 @@ import type { FlowNodeType } from "@/lib/automation-flow/types";
 export const FLOW_DND_MIME = "application/x-flow-node-type";
 
 /**
- * "Mais usados": a lista dos seis blocos que aparecem em quase toda automação comercial. É fixa,
+ * "Mais usados": a lista dos seis blocos que aparecem em quase toda automação COMERCIAL. É fixa,
  * não calculada: não há execução por bloco registrada em quantidade suficiente pra ranquear, e uma
  * lista que muda de ordem sozinha faria a pessoa procurar de novo a cada visita.
+ *
+ * Não aparece no social, e não é só porque metade dela é de funil. É que a biblioteca do Instagram
+ * cabe inteira na tela: um atalho pro que já está logo abaixo só empurra o grupo do Instagram pra
+ * fora do primeiro olhar, que é justamente onde ele precisa estar.
  */
 const MAIS_USADOS: FlowNodeType[] = [
   "mensagem_texto",
@@ -98,8 +102,11 @@ export function BlockLibrary({
   const resultados = useMemo(() => buscarBlocos(busca).filter(cabeAqui), [busca, cabeAqui]);
   const buscando = busca.trim().length > 0;
   const maisUsados = useMemo(
-    () => MAIS_USADOS.map((tipo) => disponiveis.find((b) => b.tipo === tipo)).filter((b): b is BlocoDefinicao => !!b),
-    [disponiveis],
+    () =>
+      area === "social"
+        ? []
+        : MAIS_USADOS.map((tipo) => disponiveis.find((b) => b.tipo === tipo)).filter((b): b is BlocoDefinicao => !!b),
+    [disponiveis, area],
   );
 
   function alternarCategoria(id: string) {
@@ -174,7 +181,9 @@ export function BlockLibrary({
           />
         ) : (
           <>
-            <BlocoSecao titulo="Mais usados" blocos={maisUsados} onAdicionarBloco={onAdicionarBloco} />
+            {maisUsados.length ? (
+              <BlocoSecao titulo="Mais usados" blocos={maisUsados} onAdicionarBloco={onAdicionarBloco} />
+            ) : null}
             {gruposDaArea.map((grupo) => {
               const blocos = disponiveis.filter((b) => b.grupo === grupo.id);
               // Grupo vazio não aparece. "Follow-up" só ganha bloco quando o gerador entra; até lá,

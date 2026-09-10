@@ -187,10 +187,17 @@ describe("o que cada área mostra na biblioteca", () => {
     expect(grupoValeNaArea("instagram", "comercial")).toBe(false);
   });
 
-  it("as ações do CRM continuam nas duas", () => {
-    for (const grupo of ["crm", "mensagens", "aguardar", "decisoes", "encerramento"]) {
+  it("o que um robô faz em qualquer canal vale nas duas áreas", () => {
+    for (const grupo of ["mensagens", "aguardar", "decisoes", "followup", "humano", "encerramento"]) {
       expect(grupoValeNaArea(grupo, "comercial")).toBe(true);
       expect(grupoValeNaArea(grupo, "social")).toBe(true);
+    }
+  });
+
+  it("CRM e agenda são só do comercial: o Instagram não tem funil nem etapa", () => {
+    for (const grupo of ["crm", "agenda"]) {
+      expect(grupoValeNaArea(grupo, "comercial")).toBe(true);
+      expect(grupoValeNaArea(grupo, "social")).toBe(false);
     }
   });
 
@@ -244,8 +251,9 @@ describe("gatilho vem de onde faz sentido", () => {
     expect(grupoDeGatilhoValeNaArea("agenda", "comercial")).toBe(true);
   });
 
-  it("no social o gatilho de agenda não é oferecido, mas a ação de agenda continua", () => {
+  it("no social o gatilho só pode vir do Instagram", () => {
+    expect(grupoDeGatilhoValeNaArea("instagram", "social")).toBe(true);
     expect(grupoDeGatilhoValeNaArea("agenda", "social")).toBe(false);
-    expect(grupoValeNaArea("agenda", "social")).toBe(true);
+    expect(grupoDeGatilhoValeNaArea("gatilhos", "social")).toBe(false);
   });
 });

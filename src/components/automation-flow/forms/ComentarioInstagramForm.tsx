@@ -18,20 +18,29 @@ type Dados = {
   publicacaoId?: string;
 };
 
+/*
+ * Rótulo CURTO, explicação embaixo.
+ *
+ * Um `select` nativo não corta o texto com "…": ele simplesmente esconde o que passa da largura da
+ * caixa. Num painel estreito, "Contém uma das palavras (palavra inteira)" chegava na tela como
+ * "Contém uma das palavras (palavra intei", e a diferença entre as três opções ficava exatamente
+ * na parte escondida. O nome curto cabe; o `ajuda` logo abaixo diz o resto, com espaço pra quebrar
+ * em quantas linhas precisar.
+ */
 const MODOS: { valor: NonNullable<Dados["modoPalavra"]>; label: string; ajuda: string }[] = [
   {
     valor: "qualquer",
-    label: "Contém uma das palavras (palavra inteira)",
+    label: "Palavra inteira",
     ajuda: 'O mais usado. "quero" dispara em "eu quero", mas não em "querosene".',
   },
   {
     valor: "contem",
-    label: "Contém o texto em qualquer lugar",
+    label: "Em qualquer parte do texto",
     ajuda: 'Mais solto: "quero" também dispara em "querosene" e em "não quero".',
   },
   {
     valor: "exata",
-    label: "O comentário é exatamente a palavra",
+    label: "Texto exatamente igual",
     ajuda: 'Só dispara se a pessoa escrever apenas "GUIA", nada mais.',
   },
 ];
@@ -185,7 +194,7 @@ export function ComentarioInstagramForm({
                 <span className="ig-publicacao-info">
                   <strong>{NOME_TIPO[pub.tipo] ?? pub.tipo}</strong>
                   {pub.publicadoEm ? <em>{new Date(pub.publicadoEm).toLocaleDateString("pt-BR")}</em> : null}
-                  <span>{pub.legenda.slice(0, 60) || "Sem legenda"}</span>
+                  <span>{pub.legenda || "Sem legenda"}</span>
                 </span>
               </button>
             ))}

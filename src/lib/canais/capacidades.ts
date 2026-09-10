@@ -397,14 +397,23 @@ export const GRUPOS_DA_AREA: Record<AreaAutomacao, string[]> = {
     "integracoes",
     "encerramento",
   ],
+  /*
+   * O social é uma lista CURTA de propósito.
+   *
+   * O Instagram não tem funil, e por isso não tem etapa pra mover, negócio pra criar nem valor pra
+   * atualizar: o grupo "Ações do CRM" inteiro era dezesseis blocos que ou não fazem sentido ali ou
+   * levam o robô a mexer num quadro onde aquele contato nem está. "Agenda e tarefas" sai pela
+   * mesma razão.
+   *
+   * O que sobra é o que um robô de rede social realmente faz: reage a um evento do Instagram,
+   * responde, espera, decide, insiste, passa pra uma pessoa e termina.
+   */
   social: [
     "instagram",
     "mensagens",
     "aguardar",
     "decisoes",
     "followup",
-    "crm",
-    "agenda",
     "humano",
     "ia",
     "integracoes",

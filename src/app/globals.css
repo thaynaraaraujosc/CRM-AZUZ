@@ -10085,7 +10085,10 @@ button.camp-row:hover {
 /* ---------------- Painel de configuração (direita) ---------------- */
 
 .flow-config {
-  flex: 0 0 320px;
+  /* 360 e não 320: com 320 o rótulo de um select, o cartão de publicação e a linha de checkbox
+     ficavam cortados no mesmo painel. Quarenta pixels resolvem os três de uma vez, e o canvas ao
+     lado não sente a diferença. */
+  flex: 0 0 360px;
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--line);
@@ -10152,6 +10155,67 @@ button.camp-row:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  min-width: 0;
+}
+
+/*
+ * Regra de fecho do painel: NADA aqui dentro passa da largura dele.
+ *
+ * Um por um, o motivo de cada linha era um campo estourando: `box-sizing` porque padding e borda
+ * de um botão de largura 100% somavam por fora; `min-width: 0` porque item de flex e de grid não
+ * encolhe abaixo do próprio conteúdo sem isso, e o texto longo de dentro empurrava a caixa; e
+ * `overflow-wrap` porque um @ ou uma URL sem espaço não quebra sozinho em lugar nenhum.
+ */
+.flow-config-body *,
+.flow-config-body *::before,
+.flow-config-body *::after {
+  box-sizing: border-box;
+}
+
+.flow-config-body .field,
+.flow-config-body .flow-form > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.flow-config-body p,
+.flow-config-body label,
+.flow-config-body .hint {
+  overflow-wrap: anywhere;
+}
+
+/*
+ * A linha de checkbox do painel EMPILHA.
+ *
+ * `.toggle-row` nasceu nas telas de configuração, largas, onde rótulo à esquerda e controle à
+ * direita cabem lado a lado. Reusada num painel estreito, ela espremia o rótulo numa coluna de
+ * três palavras por linha e a explicação noutra, e nenhuma das duas era legível. Aqui a explicação
+ * desce pra baixo do rótulo, que é como um formulário se lê.
+ */
+.flow-config-body .toggle-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 0;
+  border-top: none;
+}
+
+.flow-config-body .toggle-row > label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.flow-config-body .toggle-row > label input[type="checkbox"] {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.flow-config-body .toggle-row .hint {
+  margin: 0;
 }
 
 .flow-form-label-row {
@@ -14448,6 +14512,9 @@ button.camp-row:hover {
 /* Grade de publicações: a escolha é visual porque ninguém reconhece um post por id numérico. */
 .ig-publicacoes {
   display: grid;
+  /* `minmax(0, 1fr)` e não `1fr`: a faixa padrão de um grid é `auto`, que nunca encolhe abaixo do
+     conteúdo, e uma legenda longa esticava a coluna inteira pra fora do painel. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
   max-height: 320px;
   overflow-y: auto;
@@ -14459,6 +14526,10 @@ button.camp-row:hover {
   align-items: center;
   gap: var(--space-3);
   width: 100%;
+  /* Sem `border-box`, o padding e a borda de um botão de largura 100% somavam por fora e o cartão
+     saía pela direita do painel, levando a legenda junto. */
+  box-sizing: border-box;
+  min-width: 0;
   padding: var(--space-2);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-md);
@@ -14492,6 +14563,9 @@ button.camp-row:hover {
   flex-direction: column;
   gap: var(--space-1);
   font-size: 12px;
+  /* Cresce pra ocupar o que sobra da miniatura e encolhe até caber: é o par que faz o `…` da
+     legenda aparecer no fim da linha em vez de a linha inteira vazar. */
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -14515,7 +14589,7 @@ button.camp-row:hover {
 .ig-publicacao-todas {
   font-size: 13px;
   font-weight: 600;
-  padding: var(--space-3) var(--space-2);
+  padding: var(--space-2) var(--space-1);
 }
 
 /* Etiqueta do tipo de conteúdo no cartão de publicação (Reel, Story, Carrossel). Discreta de
