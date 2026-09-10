@@ -52,6 +52,8 @@ export async function dispararAutomacoesDeEventoInstagram(params: {
   textoRecebido: string;
   /** Id da publicação, quando o evento vier de uma. Permite a automação valer só pra ela. */
   publicacaoId?: string;
+  /** Id do story respondido, quando a Meta o informa. Permite a automação valer só pra ele. */
+  storyId?: string;
   /** Trava contra disparo repetido: "comentario:<id>". */
   chaveEvento?: string;
   instagramUserId?: string;
@@ -102,6 +104,7 @@ async function dispararAutomacoes(params: {
   etapaId?: string;
   etapaTitulo?: string;
   publicacaoId?: string;
+  storyId?: string;
   chaveEvento?: string;
   instagramUserId?: string;
   responderComentario?: (texto: string) => Promise<void>;
@@ -180,6 +183,7 @@ async function dispararAutomacoes(params: {
       ...(params.funilId ? { funilId: params.funilId } : {}),
       ...(params.etapaId ? { etapaId: params.etapaId } : {}),
       ...(params.publicacaoId ? { publicacaoId: params.publicacaoId } : {}),
+      ...(params.storyId ? { storyId: params.storyId } : {}),
     };
     if (!avaliarGatilho(fluxo, evento)) continue;
 

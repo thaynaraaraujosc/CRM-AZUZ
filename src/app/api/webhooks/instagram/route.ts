@@ -954,6 +954,10 @@ export async function POST(request: Request) {
                     ? "instagram_publicacao_compartilhada"
                     : "instagram_midia_recebida",
             textoRecebido: texto,
+            // A qual story a pessoa respondeu. Permite a automação valer só pro story escolhido
+            // no editor. A Meta nem sempre manda o id; quando não manda, o gatilho vale pra
+            // qualquer story, que é o que acontecia antes deste campo existir.
+            ...(story?.id ? { storyId: story.id } : {}),
             chaveEvento: `mensagem:${mensagem.mid}`,
             instagramUserId: remetenteId,
           }).catch((erro) => console.error("[instagram] falha no gatilho específico:", erro));

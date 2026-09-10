@@ -132,7 +132,10 @@ export function avaliarGrupoCondicoes(grupo: GrupoCondicoes, contato: ContextoEx
 /* -------------------------------------------------------------------------- */
 
 function dentroDaJanela(fluxo: FluxoAutomacao, agora: Date): boolean {
-  const cfg = fluxo.configuracoes;
+  // `?? {}` e não `fluxo.configuracoes` direto: o tipo diz que o campo existe sempre, mas o que
+  // chega aqui vem do banco por um cast, e um fluxo gravado antes desta coluna traz nulo. Sem isto
+  // a leitura estoura e derruba a avaliação de TODOS os fluxos daquele disparo, não só o quebrado.
+  const cfg = fluxo.configuracoes ?? ({} as typeof fluxo.configuracoes);
   if (cfg.diasAtivos && cfg.diasAtivos.length > 0) {
     const dias = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"] as const;
     const diaAtual = dias[agora.getDay()];
@@ -217,12 +220,21 @@ export function avaliarGatilho(fluxo: FluxoAutomacao, evento: EventoAutomacao): 
     funilId?: string;
     etapaId?: string;
     publicacaoId?: string;
+    storyId?: string;
   } & ConfiguracaoDePalavras;
   if (data.funilId && evento.funilId && data.funilId !== evento.funilId) return false;
   if (data.etapaId && evento.etapaId && data.etapaId !== evento.etapaId) return false;
 
   // Automação de comentário pode valer só pra UMA publicação. Vazio = qualquer publicação.
   if (data.publicacaoId && evento.publicacaoId && data.publicacaoId !== evento.publicacaoId) return false;
+
+  // Mesma ideia pro story: a automação pode valer só pro story escolhido. Vazio = qualquer story,
+  // de qualquer dia, que é o padrão e continua sendo o comportamento de quem nunca abriu o campo.
+  //
+  // `evento.storyId` ausente NÃO descarta: a Meta nem sempre manda o id do story respondido, e
+  // tratar a ausência como "não é este" faria a automação parar de disparar em silêncio. Quando o
+  // id vem, ele decide; quando não vem, a automação roda, como rodava antes deste campo existir.
+  if (data.storyId && evento.storyId && data.storyId !== evento.storyId) return false;
 
   // Palavra configurada no gatilho: comentário ou mensagem só dispara se casar.
   const textoDoEvento = typeof evento.mensagem === "string" ? evento.mensagem : undefined;

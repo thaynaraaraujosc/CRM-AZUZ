@@ -14586,6 +14586,15 @@ button.camp-row:hover {
   white-space: nowrap;
 }
 
+/* Aviso de story que saiu do ar: o robô parou de disparar e a pessoa precisa ver isso antes de
+   publicar, não depois de reclamarem que não receberam. */
+.ig-story-aviso {
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
 .ig-publicacao-todas {
   font-size: 13px;
   font-weight: 600;

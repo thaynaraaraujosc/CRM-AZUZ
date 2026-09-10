@@ -388,14 +388,17 @@ export const BLOCOS_DISPONIVEIS: BlocoDefinicao[] = [
     grupo: "instagram",
     label: "Resposta a um story seu",
     descricao:
-      "Dispara quando alguém responde um story seu. A resposta chega no Direct, e é a pessoa mais quente que o Instagram entrega.",
+      "Dispara quando alguém responde um story seu. Vale pra qualquer story ou só pro que você escolher entre os que estão no ar.",
     icone: "Instagram",
     corClasse: corDaCategoria("gatilho"),
+    // `storyId` vazio = qualquer story, de qualquer dia. É o padrão porque é a automação que fica
+    // ligada pra sempre; escolher um story é o caso da campanha do dia, e dura o que o story durar.
     dataPadrao: () => ({
       canal: "Instagram",
       palavras: [] as string[],
       modoPalavra: "qualquer",
       ignorarAcentos: true,
+      storyId: "",
     }),
   },
   {

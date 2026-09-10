@@ -39,6 +39,7 @@ import { AtualizarStatusForm } from "./forms/AtualizarStatusForm";
 import { AtualizarValorForm } from "./forms/AtualizarValorForm";
 import { CancelarAgendamentoForm } from "./forms/CancelarAgendamentoForm";
 import { ComentarioInstagramForm } from "./forms/ComentarioInstagramForm";
+import { StoryRespondidoForm } from "./forms/StoryRespondidoForm";
 import { CondicaoForm } from "./forms/CondicaoForm";
 import { ConfiguracoesGeraisForm } from "./forms/ConfiguracoesGeraisForm";
 import { CriarTarefaForm } from "./forms/CriarTarefaForm";
@@ -84,6 +85,17 @@ function FormularioDoNode({
   /** Troca o tipo do bloco. É o que transforma uma mensagem de texto em pergunta com botões. */
   onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
 }) {
+  // Resposta a story: palavras, modo de comparação e a escolha de QUAL story, entre os que estão
+  // no ar agora. Formulário separado do de comentário porque a lista tem regra própria: story
+  // dura 24 horas e some sozinho.
+  if (node.type === "instagram_story_respondido") {
+    return (
+      <StoryRespondidoForm
+        data={node.data as Parameters<typeof StoryRespondidoForm>[0]["data"]}
+        onChange={(d) => onUpdateNodeData(node.id, d)}
+      />
+    );
+  }
   // Gatilhos de comentário do Instagram: palavras, modo de comparação e escolha da publicação.
   if (node.type === "comentario_instagram" || node.type === "instagram_resposta_comentario") {
     return (

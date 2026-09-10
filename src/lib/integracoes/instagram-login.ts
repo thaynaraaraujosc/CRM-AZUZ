@@ -624,6 +624,15 @@ export type PublicacaoInstagram = {
  * `thumbnail_url` só existe em vídeo/reel; em imagem e carrossel a capa é a própria `media_url`.
  * Por isso os dois campos são pedidos e o primeiro que existir é usado.
  */
+/** Um story no ar. Sem legenda: story não tem `caption`. */
+export type StoryInstagram = {
+  id: string;
+  tipo: string;
+  miniatura: string | null;
+  permalink: string | null;
+  publicadoEm: string | null;
+};
+
 export async function listarPublicacoesInstagram(
   accessToken: string,
   limite = 25,
@@ -651,6 +660,51 @@ export async function listarPublicacoesInstagram(
     id: item.id,
     tipo: item.media_type ?? "IMAGE",
     legenda: item.caption ?? "",
+    miniatura: item.thumbnail_url ?? item.media_url ?? null,
+    permalink: item.permalink ?? null,
+    publicadoEm: item.timestamp ?? null,
+  }));
+}
+
+/**
+ * Os stories ATIVOS da conta agora.
+ *
+ * `/me/stories` devolve só o que está no ar: o Instagram apaga o story do feed em 24 horas, e a
+ * Meta some com ele desta lista no mesmo instante. Não dá pra guardar isso no banco por isso
+ * mesmo, e é o comportamento certo: a pessoa escolhe o story de hoje pra automação de hoje.
+ *
+ * Um story em vídeo não tem `thumbnail_url` em toda conta, e `media_url` de story é uma URL
+ * assinada de vida curta. Serve pra mostrar a capa AGORA, no editor, que é exatamente o uso; não
+ * serve pra guardar.
+ *
+ * Conta sem story no ar devolve lista vazia, não erro. Quem chama trata os dois casos diferente:
+ * vazio é "poste um story"; erro é "a Meta recusou".
+ */
+export async function listarStoriesAtivos(accessToken: string): Promise<StoryInstagram[]> {
+  // Campos mínimos, de propósito: na Graph API um único campo sem permissão invalida a REQUISIÇÃO
+  // INTEIRA, não só aquele campo. Pedir "métricas do story junto" já custou, neste projeto, o @ e
+  // a foto de todo mundo de uma vez.
+  const campos = "id,media_type,media_url,thumbnail_url,permalink,timestamp";
+  const resposta = await fetch(
+    `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/stories?fields=${campos}`,
+    { headers: { authorization: `Bearer ${accessToken}` } },
+  );
+  const dados = (await resposta.json()) as {
+    data?: {
+      id: string;
+      media_type?: string;
+      media_url?: string;
+      thumbnail_url?: string;
+      permalink?: string;
+      timestamp?: string;
+    }[];
+  } & ErroGraph;
+  if (!resposta.ok) {
+    throw new Error(dados.error_message ?? dados.error?.message ?? `HTTP ${resposta.status}`);
+  }
+  return (dados.data ?? []).map((item) => ({
+    id: item.id,
+    tipo: item.media_type ?? "IMAGE",
     miniatura: item.thumbnail_url ?? item.media_url ?? null,
     permalink: item.permalink ?? null,
     publicadoEm: item.timestamp ?? null,
