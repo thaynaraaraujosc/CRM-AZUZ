@@ -363,6 +363,55 @@ export const CANAIS_DA_AREA: Record<AreaAutomacao, CanalId[]> = {
   social: ["instagram", "tiktok"],
 };
 
+/**
+ * Os grupos da biblioteca que cada área mostra, na ordem em que aparecem.
+ *
+ * Não é filtro de capacidade, é de ASSUNTO, e por isso mora aqui e não na tabela de canais: os
+ * gatilhos genéricos ("lead criado", "lead entrou na etapa") funcionariam tecnicamente num robô
+ * social, mas não é assim que se pensa uma automação de Instagram. Lá o começo é sempre um evento
+ * pontual da rede: alguém comentou, respondeu um story, mandou uma menção. Oferecer as duas
+ * famílias de gatilho na mesma tela faz a pessoa montar um robô de funil achando que montou um de
+ * Instagram.
+ *
+ * No social o grupo do Instagram vem PRIMEIRO, porque é por ele que toda automação daquela área
+ * começa. No comercial ele não aparece: aquele robô nunca recebe evento de Instagram.
+ */
+export const GRUPOS_DA_AREA: Record<AreaAutomacao, string[]> = {
+  comercial: [
+    "gatilhos",
+    "mensagens",
+    "aguardar",
+    "decisoes",
+    "followup",
+    "whatsapp",
+    "whatsapp_oficial",
+    "crm",
+    "agenda",
+    "humano",
+    "ia",
+    "integracoes",
+    "encerramento",
+  ],
+  social: [
+    "instagram",
+    "mensagens",
+    "aguardar",
+    "decisoes",
+    "followup",
+    "crm",
+    "agenda",
+    "humano",
+    "ia",
+    "integracoes",
+    "encerramento",
+  ],
+};
+
+/** O grupo aparece nesta área? */
+export function grupoValeNaArea(grupo: string, area: AreaAutomacao): boolean {
+  return GRUPOS_DA_AREA[area].includes(grupo);
+}
+
 /** Os canais daquela área que existem de verdade hoje. É o que a tela pode oferecer. */
 export function canaisDaArea(area: AreaAutomacao): CapacidadesCanal[] {
   return CANAIS_DA_AREA[area].map((id) => CAPACIDADES[id]).filter((c) => c.disponivel);

@@ -43,7 +43,6 @@ import { HistoricoVersoes } from "./HistoricoVersoes";
 import { Simulador } from "./Simulador";
 import { Toolbar } from "./Toolbar";
 import { ListaDePassos } from "./ListaDePassos";
-import { PainelGatilho } from "./PainelGatilho";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
 import { IconClose, IconExpandir } from "@/components/icons";
@@ -164,8 +163,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   const [menuContexto, setMenuContexto] = useState<{ x: number; y: number; nodeId: string } | null>(null);
   const [toasts, setToasts] = useState<{ id: number; texto: string }[]>([]);
   const [escolherGatilhoAberto, setEscolherGatilhoAberto] = useState(false);
-  /** O painel de gatilho em etapas. Só existe na área social: ver `PainelGatilho`. */
-  const [painelGatilhoAberto, setPainelGatilhoAberto] = useState(false);
   const [acaoRapida, setAcaoRapida] = useState<{ nodeId: string; handleId: string | undefined } | null>(null);
   const [minimapaVisivel, setMinimapaVisivel] = useState(true);
   const [arrastandoSobreCanvas, setArrastandoSobreCanvas] = useState(false);
@@ -605,53 +602,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
   }
 
   /**
-   * Grava o gatilho escolhido no painel em etapas.
+   * Enquadra o fluxo inteiro no meio da tela.
    *
-   * Troca o tipo do gatilho que já existe, em vez de criar um segundo: um fluxo tem UM começo, e
-   * dois blocos de gatilho no canvas fariam a automação parecer que dispara por dois caminhos.
-   * As arestas que saíam dele são preservadas quando o tipo não muda, porque trocar só o escopo
-   * ("qualquer publicação" → "esta publicação") não pode desmontar o fluxo já construído.
+   * `fitView` sem mais nada obedecia o piso de zoom do React Flow (0.5), e um fluxo maior que isso
+   * simplesmente não cabia: o enquadramento parava no limite e metade do desenho ficava fora da
+   * vista. Com `minZoom` liberado na chamada, "Centralizar" volta a significar o que promete.
    */
-  function salvarGatilhoSocial(tipo: FlowNodeType, data: Record<string, unknown>) {
-    const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
-    if (!bloco) return;
-    const existente = rfNodes.find((n) => n.data.flowNode.category === "gatilho");
-
-    if (!existente) {
-      const novoDomain: DomainFlowNode = {
-        id: novoIdNo(),
-        type: tipo,
-        category: bloco.categoria,
-        position: { x: 80, y: 80 },
-        data,
-      };
-      const novoNodes = [
-        ...rfNodes,
-        { id: novoDomain.id, type: novoDomain.category, position: novoDomain.position, data: { flowNode: novoDomain, problemas: [] } },
-      ];
-      setRfNodes(novoNodes);
-      persist(novoNodes, rfEdges);
-      setPainelGatilhoAberto(false);
-      return;
-    }
-
-    const mudouDeTipo = existente.data.flowNode.type !== tipo;
-    const novoNodes = rfNodes.map((n) =>
-      n.id === existente.id
-        ? {
-            ...n,
-            type: bloco.categoria,
-            data: { ...n.data, flowNode: { ...n.data.flowNode, type: tipo, category: bloco.categoria, data } },
-          }
-        : n,
-    );
-    // Trocar o TIPO do gatilho muda as saídas possíveis, então as arestas antigas não valem mais.
-    // Trocar só a configuração não mexe em nada do que já foi montado depois dele.
-    const novoEdges = mudouDeTipo ? rfEdges.filter((e) => e.source !== existente.id) : rfEdges;
-    setRfNodes(novoNodes);
-    setRfEdges(novoEdges);
-    persist(novoNodes, novoEdges);
-    setPainelGatilhoAberto(false);
+  function centralizarTudo() {
+    fitView({ duration: 300, padding: 0.2, minZoom: 0.05, maxZoom: 1.5 });
   }
 
   /**
@@ -665,17 +623,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * O piscar existe pelo mesmo motivo: num fluxo com vinte blocos parecidos, o que está no centro
    * da tela não é obviamente o que foi clicado.
    */
-  /**
-   * Enquadra o fluxo inteiro no meio da tela.
-   *
-   * `fitView` sem mais nada obedecia o piso de zoom do React Flow (0.5), e um fluxo maior que isso
-   * simplesmente não cabia: o enquadramento parava no limite e metade do desenho ficava fora da
-   * vista. Com `minZoom` liberado na chamada, "Centralizar" volta a significar o que promete.
-   */
-  function centralizarTudo() {
-    fitView({ duration: 300, padding: 0.2, minZoom: 0.05, maxZoom: 1.5 });
-  }
-
   function irParaONode(nodeId: string) {
     const alvo = rfNodes.find((n) => n.id === nodeId);
     if (!alvo) return;
@@ -1171,11 +1118,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 <span className="no-gatilho-vazio-selo">Gatilho</span>
                 <div className="no-gatilho-vazio-corpo">
                   <h4>Gatilho para acionar a automação</h4>
-                  <button
-                    type="button"
-                    className="no-gatilho-vazio-btn"
-                    onClick={() => setPainelGatilhoAberto(true)}
-                  >
+                  <button type="button" className="no-gatilho-vazio-btn" onClick={() => setLibAberta(true)}>
                     Adicionar gatilho +
                   </button>
                 </div>
@@ -1215,19 +1158,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             </div>
           ) : null}
 
-          {painelGatilhoAberto ? (
-            <PainelGatilho
-              area={area}
-              tipoAtual={rfNodes.find((n) => n.data.flowNode.category === "gatilho")?.data.flowNode.type}
-              dataAtual={
-                rfNodes.find((n) => n.data.flowNode.category === "gatilho")?.data.flowNode.data as
-                  | Record<string, unknown>
-                  | undefined
-              }
-              onSalvar={salvarGatilhoSocial}
-              onFechar={() => setPainelGatilhoAberto(false)}
-            />
-          ) : null}
 
           {escolherGatilhoAberto ? (
             <div className="modal-overlay" onClick={() => setEscolherGatilhoAberto(false)}>
@@ -1362,7 +1292,6 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           onUpdateNodeData={updateNodeData}
           onRemoverOpcaoAresta={removerOpcaoAresta}
           onTrocarTipo={trocarTipoDoNode}
-          onEditarGatilho={area === "social" ? () => setPainelGatilhoAberto(true) : undefined}
           onSelecionarNode={irParaONode}
         />
       </div>

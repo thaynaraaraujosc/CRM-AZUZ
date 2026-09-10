@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { IconClose } from "@/components/icons";
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blocos";
-import { blocoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
+import { blocoValeNaArea, grupoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { sugestoesApos } from "@/lib/automation-flow/sugestoes";
 import type { FlowNodeCategory, FlowNodeType } from "@/lib/automation-flow/types";
 
@@ -52,7 +52,10 @@ export function PainelProximoPasso({
 
   /** Gatilho não é "próximo passo": ele é o começo, e só pode existir um por fluxo. */
   const candidatos = useMemo(
-    () => BLOCOS_DISPONIVEIS.filter((b) => b.categoria !== "gatilho" && blocoValeNaArea(b.tipo, area)),
+    () =>
+      BLOCOS_DISPONIVEIS.filter(
+        (b) => b.categoria !== "gatilho" && grupoValeNaArea(b.grupo, area) && blocoValeNaArea(b.tipo, area),
+      ),
     [area],
   );
 

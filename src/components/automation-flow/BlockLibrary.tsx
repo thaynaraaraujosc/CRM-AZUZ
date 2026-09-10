@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA, buscarBlocos, type BlocoDefinicao } from "@/lib/automation-flow/blocos";
-import { blocoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
+import { GRUPOS_DA_AREA, blocoValeNaArea, grupoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
 
 /** Tipo MIME custom carregado no drag. O que a área do canvas lê no `onDrop`. */
@@ -61,8 +61,24 @@ export function BlockLibrary({
   // quando não há chave configurada; o bloco de canal some quando nenhum canal da área o entrega
   // (lista interativa num robô de Instagram, comentário num robô de funil).
   const cabeAqui = useCallback(
-    (b: BlocoDefinicao) => (iaDisponivel || !b.tipo.startsWith("ia_")) && blocoValeNaArea(b.tipo, area),
+    (b: BlocoDefinicao) =>
+      (iaDisponivel || !b.tipo.startsWith("ia_")) && grupoValeNaArea(b.grupo, area) && blocoValeNaArea(b.tipo, area),
     [iaDisponivel, area],
+  );
+
+  /**
+   * Os grupos na ordem da ÁREA, não na ordem fixa da biblioteca.
+   *
+   * No social o Instagram vem primeiro, porque é por ele que toda automação daquela área começa.
+   * Deixá-lo no meio da lista, entre "WhatsApp" e "Ações do CRM", fazia procurar o começo do robô
+   * onde ele não está.
+   */
+  const gruposDaArea = useMemo(
+    () =>
+      GRUPOS_DA_AREA[area]
+        .map((id) => GRUPOS_BIBLIOTECA.find((g) => g.id === id))
+        .filter((g): g is (typeof GRUPOS_BIBLIOTECA)[number] => !!g),
+    [area],
   );
 
   const disponiveis = useMemo(() => BLOCOS_DISPONIVEIS.filter(cabeAqui), [cabeAqui]);
@@ -90,7 +106,7 @@ export function BlockLibrary({
           ▶
         </button>
         <div className="flow-lib-recolhida-cats">
-          {GRUPOS_BIBLIOTECA.map((cat) => (
+          {gruposDaArea.map((cat) => (
             <button
               type="button"
               key={cat.id}
@@ -147,7 +163,7 @@ export function BlockLibrary({
         ) : (
           <>
             <BlocoSecao titulo="Mais usados" blocos={maisUsados} onAdicionarBloco={onAdicionarBloco} />
-            {GRUPOS_BIBLIOTECA.map((grupo) => {
+            {gruposDaArea.map((grupo) => {
               const blocos = disponiveis.filter((b) => b.grupo === grupo.id);
               // Grupo vazio não aparece. "Follow-up" só ganha bloco quando o gerador entra; até lá,
               // uma seção vazia só ocuparia espaço e faria a pessoa achar que faltou carregar algo.

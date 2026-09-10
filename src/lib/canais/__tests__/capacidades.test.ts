@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
+import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blocos";
 import {
   CAPACIDADES,
+  GRUPOS_DA_AREA,
+  grupoValeNaArea,
   blocoValeNoCanal,
   canaisDisponiveis,
   blocoValeNaArea,
@@ -161,5 +163,41 @@ describe("cada gatilho só na área onde ele acontece", () => {
   it("na área social só o Instagram entra enquanto o TikTok não existir", () => {
     expect(canaisDaArea("social").map((c) => c.id)).toEqual(["instagram"]);
     expect(canaisDaArea("comercial").map((c) => c.id)).toContain("whatsapp_oficial");
+  });
+});
+
+describe("o que cada área mostra na biblioteca", () => {
+  it("no social, o Instagram vem primeiro", () => {
+    // É por ele que toda automação daquela área começa. No meio da lista, entre "WhatsApp" e
+    // "Ações do CRM", procurar o começo do robô vira uma caçada.
+    expect(GRUPOS_DA_AREA.social[0]).toBe("instagram");
+  });
+
+  it("o social não oferece os gatilhos genéricos nem os grupos de WhatsApp", () => {
+    // "Lead criado" funcionaria tecnicamente num robô social, mas não é assim que se pensa uma
+    // automação de Instagram: lá o começo é sempre um evento pontual da rede. As duas famílias na
+    // mesma tela fazem alguém montar um robô de funil achando que montou um de Instagram.
+    for (const grupo of ["gatilhos", "whatsapp", "whatsapp_oficial"]) {
+      expect(grupoValeNaArea(grupo, "social")).toBe(false);
+    }
+  });
+
+  it("o comercial não oferece o grupo do Instagram", () => {
+    expect(grupoValeNaArea("instagram", "comercial")).toBe(false);
+  });
+
+  it("as ações do CRM continuam nas duas", () => {
+    for (const grupo of ["crm", "mensagens", "aguardar", "decisoes", "encerramento"]) {
+      expect(grupoValeNaArea(grupo, "comercial")).toBe(true);
+      expect(grupoValeNaArea(grupo, "social")).toBe(true);
+    }
+  });
+
+  it("todo grupo listado por área existe de verdade na biblioteca", () => {
+    // Um id escrito errado aqui apagaria o grupo inteiro da tela em silêncio.
+    const existentes = new Set(GRUPOS_BIBLIOTECA.map((g) => g.id));
+    for (const area of ["comercial", "social"] as const) {
+      for (const grupo of GRUPOS_DA_AREA[area]) expect(existentes.has(grupo as never)).toBe(true);
+    }
   });
 });
