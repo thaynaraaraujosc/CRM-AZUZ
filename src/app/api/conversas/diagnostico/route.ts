@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { contasCanalVisiveis } from "@/lib/integracoes/conta-canal";
 import { adotarMensagensOrfas } from "@/lib/conversas/adotar-orfas";
+import { chaveDeContato } from "@/lib/contatos/chave-nome";
 
 /**
  * Por que uma mensagem está no banco e não aparece na tela.
@@ -75,9 +76,16 @@ export async function GET() {
    * foi criada. As duas se parecem na tela e se consertam em lugares diferentes.
    */
   const nomesComConversa = new Set(todasAsConversas.map((c) => c.nome));
+  const chavesComConversa = new Map(todasAsConversas.map((c) => [chaveDeContato(c.nome), c.nome]));
   const negociosSemConversa = cards
     .filter((c) => !nomesComConversa.has(c.nome))
-    .map((c) => ({ nome: c.nome, contaCanal: c.contaCanal }));
+    .map((c) => ({
+      nome: c.nome,
+      contaCanal: c.contaCanal,
+      // A conversa existe com o nome escrito de outro jeito? É a diferença entre "a mensagem não
+      // chegou" e "chegou e o CRM não reconheceu que é a mesma pessoa".
+      conversaComOutroNome: chavesComConversa.get(chaveDeContato(c.nome)) ?? null,
+    }));
 
   return NextResponse.json(
     {

@@ -11,6 +11,7 @@ import { HOJE_ISO } from "@/lib/agenda-context";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
 import { useContatos } from "@/lib/contatos-context";
+import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { useConversas } from "@/lib/conversas-context";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
 import { VAZIO, ehVazio } from "@/lib/vazio";
@@ -87,8 +88,19 @@ function FunilPageInner() {
   const atividadePorNome = useMemo(
     // `ultimaMensagemEm` e não `atualizadoEm`: o segundo sobe por qualquer escrita na conversa, e
     // uma importação de contatos encostava em todas de uma vez. Deixando o funil inteiro com cara
-    // de recente. Sem mensagem gravada ainda, cai na data de criação do card.
-    () => new Map(conversas.map((c) => [c.nome, c.ultimaMensagemEm ?? null])),
+    // de recente.
+    //
+    // A chave é o nome NORMALIZADO (ver `chaveDeContato`), não o nome cru. O mesmo contato chega
+    // com o nome escrito de jeitos diferentes conforme o caminho, e comparar texto com texto fazia
+    // o card não achar a própria conversa: sem telefone, sem data, e a pessoa concluindo que a
+    // mensagem não tinha chegado.
+    () => new Map(conversas.map((c) => [chaveDeContato(c.nome), c.ultimaMensagemEm ?? null])),
+    [conversas],
+  );
+
+  /** A conversa daquele negócio, achada pelo nome normalizado. Ver `atividadePorNome`. */
+  const conversaPorNome = useMemo(
+    () => new Map(conversas.map((c) => [chaveDeContato(c.nome), c])),
     [conversas],
   );
   const { membros: equipe } = useEquipe();
@@ -955,7 +967,7 @@ function FunilPageInner() {
                     cabeçalho fica onde está. */}
                 <div className="kcol-cards">
                   {cardsVisiveis.map(({ card, cardIndex }) => {
-                    const conversaDoCard = conversas.find((c) => c.nome === card.nome);
+                    const conversaDoCard = conversaPorNome.get(chaveDeContato(card.nome));
                     const temMensagemNova = (conversaDoCard?.naoLidas ?? 0) > 0;
                     // "AD": lead veio de anúncio (Meta/Google Ads), não de contato direto/indicação.
                     const veioDeAnuncio = card.origem === "Meta Ads" || card.origem === "Google Ads";
@@ -981,7 +993,11 @@ function FunilPageInner() {
                         // atender e voltar a arrastar: trocar de tela a cada card quebra isso.
                         // Arrastar continua intacto, porque arrastar dispara `dragstart`, não
                         // `click`.
-                        onClick={() => setConversaAberta(card.nome)}
+                        // Abre pelo nome da CONVERSA quando ela existe, não pelo nome do card. Os
+                        // dois são a mesma pessoa mas nem sempre a mesma string, e as mensagens
+                        // estão guardadas sob o nome da conversa: abrir pelo do card mostrava o
+                        // popup vazio.
+                        onClick={() => setConversaAberta(conversaDoCard?.nome ?? card.nome)}
                         title="Abrir a conversa deste lead"
                         style={{ cursor: "grab" }}
                       >
@@ -1056,9 +1072,9 @@ function FunilPageInner() {
                               "Ontem" pra sempre, e amanhã continuaria. Data errada é pior que data
                               nenhuma num lugar onde a pessoa decide a quem ligar primeiro. Quando a
                               conversa existe, a data vem da última mensagem e está sempre certa. */}
-                          {atividadePorNome.get(card.nome) ? (
+                          {atividadePorNome.get(chaveDeContato(card.nome)) ? (
                             <span className="days" title="Última mensagem deste contato">
-                              {rotuloDeAtividade(atividadePorNome.get(card.nome))}
+                              {rotuloDeAtividade(atividadePorNome.get(chaveDeContato(card.nome)))}
                             </span>
                           ) : (
                             <span className="days" title="Ainda não há mensagem deste contato no CRM">
@@ -1172,9 +1188,9 @@ function FunilPageInner() {
       {conversaAberta ? (
         <PainelConversa
           contatoNome={conversaAberta}
-          canal={conversas.find((c) => c.nome === conversaAberta)?.canal}
+          canal={conversaPorNome.get(chaveDeContato(conversaAberta))?.canal}
           initials={
-            conversas.find((c) => c.nome === conversaAberta)?.initials ??
+            conversaPorNome.get(chaveDeContato(conversaAberta))?.initials ??
             conversaAberta
               .split(" ")
               .filter(Boolean)
@@ -1184,12 +1200,12 @@ function FunilPageInner() {
           }
           etapaAtual={
             funilAtivo?.colunas.find((coluna) =>
-              coluna.cards.some((card) => card.nome === conversaAberta),
+              coluna.cards.some((card) => chaveDeContato(card.nome) === chaveDeContato(conversaAberta)),
             )?.titulo
           }
           fotoUrl={
-            conversas.find((c) => c.nome === conversaAberta)?.fotoUrl ??
-            contatos.find((c) => c.nome === conversaAberta)?.fotoUrl
+            conversaPorNome.get(chaveDeContato(conversaAberta))?.fotoUrl ??
+            contatos.find((c) => chaveDeContato(c.nome) === chaveDeContato(conversaAberta))?.fotoUrl
           }
           aoFechar={() => setConversaAberta(null)}
         />

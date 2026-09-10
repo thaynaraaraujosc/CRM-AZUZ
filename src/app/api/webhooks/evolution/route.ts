@@ -226,7 +226,9 @@ export async function processarMensagemRecebida(
     }
   } else {
     contatoExistente = await encontrarContatoPorTelefone(workspaceId, waId);
-    chaveContato = contatoExistente?.nome ?? data.pushName ?? waId;
+    // `.trim()` no nome de perfil: ele chega do WhatsApp com espaço sobrando mais vezes do que se
+    // imagina, e um espaço invisível no fim fazia o CRM tratar a mesma pessoa como duas.
+    chaveContato = contatoExistente?.nome ?? data.pushName?.trim() ?? waId;
     const conversaExistente = await prisma.conversa.findUnique({
       where: { workspaceId_nome: { workspaceId, nome: chaveContato } },
       select: { fotoUrl: true },

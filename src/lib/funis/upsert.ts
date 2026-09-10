@@ -1,5 +1,27 @@
 import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
+import { chaveDeContato } from "@/lib/contatos/chave-nome";
+
+/**
+ * O negócio daquele contato, achado pelo nome NORMALIZADO.
+ *
+ * O banco compara texto com texto, e o mesmo contato chega com o nome escrito de jeitos diferentes
+ * conforme o caminho: espaço sobrando no fim, maiúsculas do nome de perfil, espaço duplo no meio.
+ * Buscar por igualdade exata fazia o CRM não achar o card que já existia (e criar outro) e não
+ * achar o card pra subir pro topo quando chegava mensagem.
+ *
+ * Faz uma busca ampla por igualdade exata primeiro, que é a barata e resolve o caso comum, e só
+ * cai pra varredura normalizada quando ela não acha nada. A varredura é limitada ao workspace.
+ */
+async function cardDoContato(workspaceId: string, contatoNome: string) {
+  const exato = await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome } });
+  if (exato) return exato;
+
+  const chave = chaveDeContato(contatoNome);
+  if (!chave) return null;
+  const candidatos = await prisma.negocioCard.findMany({ where: { workspaceId } });
+  return candidatos.find((c) => chaveDeContato(c.nome) === chave) ?? null;
+}
 
 /**
  * Coloca um lead recém-criado na primeira etapa (menor `ordem`, não pelo nome: o workspace pode
@@ -44,7 +66,11 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
   });
   if (conversa?.arquivada) return null;
 
-  const jaTemCard = await prisma.negocioCard.findFirst({ where: { workspaceId, nome: contatoNome } });
+  // Comparação pelo nome NORMALIZADO, não por texto exato. O mesmo contato chega com o nome
+  // escrito de jeitos diferentes conforme o caminho ("Thais " com espaço, "LUCAS ARANTES" em
+  // maiúsculas), e comparar cru fazia a mesma pessoa ganhar um segundo card a cada variação. Foi
+  // assim que a conta real chegou a 69 negócios no funil pra 35 conversas.
+  const jaTemCard = await cardDoContato(workspaceId, contatoNome);
   if (jaTemCard) return jaTemCard;
 
   // "Primeiro funil do workspace": mesma convenção já usada em outras telas (trafego/page.tsx,
@@ -120,10 +146,7 @@ export async function entrarNaPrimeiraEtapaComoNovoLead(params: {
  */
 export async function subirCardParaOTopo(workspaceId: string, contatoNome: string) {
   try {
-    const card = await prisma.negocioCard.findFirst({
-      where: { workspaceId, nome: contatoNome },
-      select: { id: true, etapaId: true, ordem: true },
-    });
+    const card = await cardDoContato(workspaceId, contatoNome);
     if (!card) return;
 
     const menor = await prisma.negocioCard.aggregate({

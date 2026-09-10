@@ -377,7 +377,9 @@ export async function POST(request: Request) {
         // cru): número totalmente novo ganha um Contato automaticamente, com o nome do perfil do
         // WhatsApp quando disponível.
         const contatoExistente = await encontrarContatoPorTelefone(integracao.workspaceId, waId);
-        const chaveContato = contatoExistente?.nome ?? nomePerfil ?? waId;
+        // `.trim()` no nome de perfil: ele chega da Meta com espaço sobrando mais vezes do que se
+        // imagina, e um espaço invisível no fim fazia o CRM tratar a mesma pessoa como duas.
+        const chaveContato = contatoExistente?.nome ?? nomePerfil?.trim() ?? waId;
         const contato =
           contatoExistente ??
           (await criarContatoPeloWhatsAppSeNaoExistir({
