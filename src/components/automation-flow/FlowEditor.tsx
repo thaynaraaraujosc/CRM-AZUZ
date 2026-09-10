@@ -232,6 +232,44 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * O histórico (desfazer/refazer) continua sendo empilhado: ele é local e existe justamente pra
    * consertar o passo anterior sem precisar descartar tudo.
    */
+  /**
+   * Avisa antes de perder o que não foi gravado.
+   *
+   * O editor não grava sozinho, de propósito (ver o comentário do `temPendencia`). O preço disso é
+   * que sair da tela apaga o trabalho, e sair da tela é um clique no menu lateral. Sem este aviso
+   * dava pra montar um robô inteiro e perder tudo sem nenhum sinal: F5, fechar aba ou um link do
+   * menu, todos silenciosos.
+   *
+   * `beforeunload` cobre recarregar e fechar. O ouvinte de clique na fase de captura cobre a
+   * navegação interna, que não passa por `beforeunload` porque não recarrega a página.
+   */
+  useEffect(() => {
+    if (!temPendencia) return;
+    function aoSair(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    function aoClicar(e: MouseEvent) {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      const alvo = e.target as HTMLElement | null;
+      const link = alvo?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!link) return;
+      const destino = link.getAttribute("href") ?? "";
+      if (!destino.startsWith("/") || link.target === "_blank") return;
+      if (destino === window.location.pathname) return;
+      if (!window.confirm("Você tem alterações não salvas neste robô. Sair mesmo assim?")) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+    window.addEventListener("beforeunload", aoSair);
+    document.addEventListener("click", aoClicar, true);
+    return () => {
+      window.removeEventListener("beforeunload", aoSair);
+      document.removeEventListener("click", aoClicar, true);
+    };
+  }, [temPendencia]);
+
   function persist(nodes: FlowRFNode[], edges: FlowRFEdge[]) {
     setTemPendencia(true);
     pushHistory(nodes, edges);
@@ -407,9 +445,14 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
    * vence, já ligadas. Não é um bloco novo nem um motor novo. É o par que a pessoa montaria à
    * mão, montado por ela.
    */
-  function adicionarFollowUp(nodeOrigemId: string, handleId: string | undefined) {
-    const origem = rfNodes.find((n) => n.id === nodeOrigemId);
-    if (!origem) return;
+  function adicionarFollowUp(nodeOrigemId: string | undefined, handleId: string | undefined) {
+    // `nodeOrigemId` vazio = follow-up como PRIMEIRO passo de um robô que começa na etapa do
+    // funil. Não há bloco anterior a que ligar, e o par entra solto no canvas, do mesmo jeito que
+    // `onEscolher` já fazia com um bloco avulso. Sem este caminho o botão "Adicionar follow-up"
+    // aparecia no primeiro passo e não fazia absolutamente nada.
+    const origem = nodeOrigemId ? rfNodes.find((n) => n.id === nodeOrigemId) : undefined;
+    if (nodeOrigemId && !origem) return;
+    const base = origem ? origem.position : { x: 80, y: 80 };
     const receita = nosDeFollowUp({ horas: 2, mensagem: "" });
 
     const defEspera = BLOCOS_DISPONIVEIS.find((b) => b.tipo === receita.espera.tipo);
@@ -420,7 +463,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       id: novoIdNo(),
       type: receita.espera.tipo,
       category: defEspera.categoria,
-      position: { x: origem.position.x, y: origem.position.y + 170 },
+      position: origem ? { x: base.x, y: base.y + 170 } : base,
       titulo: "Aguardar resposta",
       data: receita.espera.data,
     };
@@ -430,7 +473,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
       category: defMensagem.categoria,
       // Desloca pra direita: o follow-up sai pelo ramo do tempo esgotado, e empilhar os dois na
       // mesma coluna faria a mensagem parecer o caminho de quem respondeu.
-      position: { x: origem.position.x + 260, y: origem.position.y + 340 },
+      position: origem ? { x: base.x + 260, y: base.y + 340 } : { x: base.x + 260, y: base.y + 170 },
       titulo: "Follow-up",
       data: receita.mensagem.data,
     };
@@ -450,7 +493,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
     const novoNodes = [...rfNodes, rfEspera, rfMensagem];
     const novoEdges = [
       ...rfEdges,
-      seta(nodeOrigemId, espera.id, handleId),
+      ...(nodeOrigemId ? [seta(nodeOrigemId, espera.id, handleId)] : []),
       seta(espera.id, mensagem.id, receita.saidaDaEspera),
     ];
     setRfNodes(novoNodes);
@@ -1221,7 +1264,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 setAcaoRapida(null);
               }}
               onFollowUp={() => {
-                if (acaoRapida.nodeId) adicionarFollowUp(acaoRapida.nodeId, acaoRapida.handleId);
+                adicionarFollowUp(acaoRapida.nodeId, acaoRapida.handleId);
                 setAcaoRapida(null);
               }}
               onFechar={() => setAcaoRapida(null)}
