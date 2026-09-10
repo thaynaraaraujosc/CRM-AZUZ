@@ -73,7 +73,7 @@ export function EditorTemplate({
   aoFechar: () => void;
   aoSalvar: (salvo: TemplateSalvo, enviarParaAnalise: boolean) => Promise<void>;
 }) {
-  const canalPadrao = (canais.find((c) => c.conectado)?.canal ?? "whatsapp_oficial") as CanalTemplate;
+  const canalPadrao = (canais.find((c) => c.conectado && !c.emBreve)?.canal ?? "whatsapp_oficial") as CanalTemplate;
   const [r, setR] = useState<Rascunho>(() => rascunhoDe(template, canalPadrao));
   const [salvando, setSalvando] = useState<"salvar" | "analise" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -185,8 +185,14 @@ export function EditorTemplate({
 
           <div className="field">
             <label>Canal</label>
+            {/* Canal marcado "em breve" (hoje o e-mail) não aparece aqui: template só faz sentido
+                pra canal que dá pra usar, e um cartão desabilitado num campo obrigatório é um beco
+                sem saída. O cartão explicativo continua existindo no Disparo em massa, que é onde
+                a pergunta "cadê o e-mail?" aparece. */}
             <div className="tpl-canais">
-              {canais.map((c) => (
+              {canais
+                .filter((c) => !c.emBreve)
+                .map((c) => (
                 <button
                   key={c.canal}
                   type="button"
@@ -198,7 +204,7 @@ export function EditorTemplate({
                   <strong>{c.label}</strong>
                   <span>{c.conectado ? c.detalhe || "Conectado" : "Não conectado"}</span>
                 </button>
-              ))}
+                ))}
             </div>
             <p className="hint">{limites.explicacao}</p>
           </div>

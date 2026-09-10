@@ -10,6 +10,7 @@ import type { Audiencia, ModoAudiencia } from "@/lib/campanhas/audiencia-tipos";
 import type { CanalCampanha } from "@/lib/campanhas/ritmo";
 import { LIMITES } from "@/lib/templates/regras";
 import type { CanalDisponivel } from "@/app/api/canais/route";
+import type { JanelaDirect } from "@/app/api/social/janela/route";
 import type { TemplateSalvo } from "./EditorTemplate";
 import { PreviaMensagem } from "./PreviaMensagem";
 
@@ -72,6 +73,8 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
   /** Prévia junto com a "chave" (canal + público + variáveis) pra qual ela vale. Se a chave atual
    * for outra, a prévia está velha e a tela mostra "contando" até a nova chegar. */
   const [previaResp, setPreviaResp] = useState<{ chave: string; dados: Previa } | null>(null);
+  /** Elegibilidade do Instagram. Só buscada quando o canal é Instagram. */
+  const [janela, setJanela] = useState<JanelaDirect | null>(null);
 
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [corpoLivre, setCorpoLivre] = useState("");
@@ -98,6 +101,34 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       })
       .catch((e) => setErro(e instanceof Error ? e.message : "Falha ao carregar."));
   }, []);
+
+  // A janela é buscada ao escolher o Instagram e RE-buscada ao voltar pro passo do público: ela
+  // muda sozinha com o tempo (alguém escreve, alguém vence as 24 horas), e um número velho aqui
+  // seria a diferença entre "37 vão receber" e 37 falhas no relatório.
+  useEffect(() => {
+    let cancelado = false;
+    if (canal !== "instagram") {
+      // Fora de um efeito síncrono: o React Compiler proíbe `setState` direto no corpo do efeito,
+      // e a microtarefa é o jeito de dizer "isto é uma consequência, não a renderização".
+      Promise.resolve().then(() => {
+        if (!cancelado) setJanela(null);
+      });
+      return () => {
+        cancelado = true;
+      };
+    }
+    fetch("/api/social/janela", { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<JanelaDirect>) : null))
+      .then((d) => {
+        if (!cancelado) setJanela(d);
+      })
+      .catch(() => {
+        if (!cancelado) setJanela(null);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [canal, passo]);
 
   const limites = canal ? LIMITES[canal] : null;
   const templateEscolhido = templates.find((t) => t.id === templateId) ?? null;
@@ -149,6 +180,9 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
 
   const podeAvancar = (() => {
     if (passo === 0) return !!canal;
+    // No Instagram quem manda é a janela, não a prévia: o público não se escolhe, então avançar
+    // depende só de existir alguém dentro dela. Com zero elegíveis, o disparo não sai do lugar.
+    if (passo === 1 && canal === "instagram") return !!janela?.conectado && janela.total > 0;
     if (passo === 1) return !!previa && previa.receberao > 0 && !carregandoPrevia;
     if (passo === 2) {
       if (!limites) return false;
@@ -228,41 +262,129 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       {passo === 0 ? (
         <div className="disp-passo">
           <p className="hint">Por onde a mensagem sai. Só aparece o que está conectado neste workspace.</p>
+          {/* O Instagram é um canal como os outros AQUI. Ele tinha uma tela própria em
+              Instagram e TikTok → Disparos, que usava exatamente esta mesma API (`/api/campanhas`
+              com `canal: "instagram"`): eram duas telas pro mesmo backend. Disparo agora é um
+              lugar só, e o que muda por canal é o passo do público, não a página. */}
           <div className="disp-canais">
-            {/* O Instagram sai daqui e tem cartão próprio logo abaixo: o disparo dele obedece a
-                janela de 24 horas e por isso vive em Social → Disparos, não neste assistente. */}
-            {canais
-              .filter((c) => c.canal !== "instagram")
-              .map((c) => (
+            {canais.map((c) => (
               <button
                 key={c.canal}
                 type="button"
-                className={`tpl-canal${canal === c.canal ? " on" : ""}`}
+                className={`tpl-canal${canal === c.canal ? " on" : ""}${c.emBreve ? " disp-canal-indisponivel" : ""}`}
                 disabled={!c.conectado}
                 title={!c.conectado ? c.motivo : undefined}
                 onClick={() => {
-                  // O filtro acima já tirou o Instagram; o `as` é o que conta isso pro TypeScript,
-                  // que não consegue estreitar o tipo através do `.filter`.
                   setCanal(c.canal as CanalCampanha);
                   setTemplateId(null);
                   setVariaveis([]);
+                  // O Instagram tem um público só possível: quem está dentro da janela. Escolher
+                  // outro modo ali não é uma opção, é um erro esperando pra acontecer, então o modo
+                  // já vem certo. Sair do Instagram devolve o padrão de todo mundo.
+                  setAudiencia(c.canal === "instagram" ? { modo: "janela_instagram" } : { modo: "todos" });
                 }}
               >
                 <strong>{c.label}</strong>
-                <span>{c.conectado ? c.detalhe || "Conectado" : c.motivo}</span>
+                <span>
+                  {c.emBreve ? "Em breve" : c.conectado ? c.detalhe || "Conectado" : c.motivo}
+                </span>
               </button>
-              ))}
-            <div className="tpl-canal disp-canal-indisponivel" aria-disabled>
-              <strong>Instagram</strong>
-              <span>O Instagram só deixa falar com quem escreveu nas últimas 24 horas. O disparo dentro dessa janela fica em Social → Disparos.</span>
-            </div>
+            ))}
           </div>
           {canal ? <p className="hint">{LIMITES[canal].explicacao}</p> : null}
         </div>
       ) : null}
 
+      {/* --------------------------------------------- 2. Público, no Instagram
+          O Instagram não tem escolha de público, e essa é a informação principal da tela.
+          Só é possível falar com quem escreveu dentro da janela: etiqueta, funil e etapa não
+          mudam nada porque a Meta recusa o envio pra todo o resto. Oferecer os mesmos modos dos
+          outros canais aqui seria oferecer filtros que não filtram. */}
+      {passo === 1 && canal === "instagram" ? (
+        <div className="disp-passo">
+          {janela === null ? (
+            <p className="hint">Conferindo quem pode receber agora…</p>
+          ) : !janela.conectado ? (
+            <p className="modelo-erro">
+              O Instagram não está conectado. Conecte a conta em Configurações → Outras integrações.
+            </p>
+          ) : (
+            <>
+              <div className="disp-ig-conta">
+                <span className="hint">Instagram conectado</span>
+                <strong>{janela.conta ?? "conta conectada"}</strong>
+              </div>
+
+              <div className="disp-ig-numeros">
+                <div className="disp-ig-numero">
+                  <strong>{janela.totalContatos.toLocaleString("pt-BR")}</strong>
+                  <span>contatos do Instagram</span>
+                </div>
+                <div className="disp-ig-numero destaque">
+                  <strong>{janela.total.toLocaleString("pt-BR")}</strong>
+                  <span>elegíveis para receber agora</span>
+                </div>
+              </div>
+
+              <div className="disp-ig-regra">
+                <strong>Por que a diferença</strong>
+                <p className="hint mt8">
+                  O Instagram só deixa mandar mensagem pra quem escreveu pra você nas últimas{" "}
+                  {janela.janelaHoras} horas. É a janela de atendimento, e ela conta da ÚLTIMA
+                  mensagem da pessoa, não da sua. Responder alguém não reabre a janela dela.
+                </p>
+                <p className="hint mt8">
+                  Fora da janela a Meta recusa o envio, e não existe modelo aprovado pra retomar
+                  como no WhatsApp oficial. Por isso o público aqui não se escolhe: ele é quem
+                  está dentro da janela, e mais ninguém.
+                </p>
+                <p className="hint mt8">
+                  A janela é conferida DE NOVO na hora de enviar cada mensagem. Entre montar o
+                  disparo e ele chegar em alguém passam minutos, e a janela de uma pessoa pode ter
+                  fechado nesse meio: quem fechar fica marcado como &quot;janela fechada&quot;, não
+                  como erro.
+                </p>
+              </div>
+
+              {janela.total === 0 ? (
+                <p className="modelo-erro mt16">
+                  Ninguém escreveu nas últimas {janela.janelaHoras} horas, então não há pra quem
+                  mandar agora. Volte quando alguém responder um story ou mandar um Direct.
+                </p>
+              ) : (
+                <div className="disp-lista-contatos mt16">
+                  {janela.pessoas.map((p) => (
+                    <div key={p.contatoNome} className="disp-contato">
+                      <span aria-hidden="true">·</span>
+                      <span>{p.contatoNome}</span>
+                      <span className="hint">
+                        fecha {new Date(p.fechaEm).toLocaleString("pt-BR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  ))}
+                  {janela.total > janela.pessoas.length ? (
+                    <div className="disp-contato">
+                      <span aria-hidden="true">·</span>
+                      <span className="hint">
+                        e mais {(janela.total - janela.pessoas.length).toLocaleString("pt-BR")}.
+                      </span>
+                      <span />
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      ) : null}
+
       {/* ------------------------------------------------------------------ 2. Público */}
-      {passo === 1 && canal ? (
+      {passo === 1 && canal && canal !== "instagram" ? (
         <div className="disp-passo disp-duas-colunas">
           <div>
             <div className="disp-modos">

@@ -74,3 +74,44 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   return NextResponse.json({ erro: "Ação inválida." }, { status: 400 });
 }
+
+/**
+ * DELETE apaga o disparo do histórico.
+ *
+ * Apaga a CAMPANHA e as linhas de destinatário dela (`onDelete: Cascade` no schema). Não apaga, e
+ * não poderia apagar, as mensagens que já saíram: elas estão na conversa de cada pessoa, no CRM e
+ * no aparelho de quem recebeu. Sumir com o registro do disparo não desfaz o envio, e a tela diz
+ * isso antes de confirmar.
+ *
+ * Campanha VIVA não é apagada. Uma campanha "enviando" tem um worker rodando em cima dela: apagar
+ * a linha no meio disso deixaria o worker escrevendo num id que não existe mais, e o pedaço já
+ * enviado viraria mensagem sem registro nenhum. Quem quer parar uma campanha em andamento usa
+ * "cancelar" no PATCH acima, que é a ação feita pra isso; depois de cancelada, ela pode ser
+ * apagada normalmente.
+ */
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+  const { id } = await params;
+
+  // Pelo workspace da SESSÃO, nunca só pelo id da URL: id é adivinhável, e sem este filtro um
+  // cliente apagaria o histórico de outro.
+  const campanha = await prisma.campanha.findFirst({
+    where: { id, workspaceId: sessao.user.workspaceId },
+    select: { id: true, status: true },
+  });
+  if (!campanha) return NextResponse.json({ erro: "Disparo não encontrado." }, { status: 404 });
+
+  if (["agendada", "enviando", "pausada"].includes(campanha.status)) {
+    return NextResponse.json(
+      {
+        erro:
+          "Este disparo ainda está ativo. Cancele ele primeiro; depois de cancelado dá pra apagar do histórico.",
+      },
+      { status: 409 },
+    );
+  }
+
+  await prisma.campanha.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}

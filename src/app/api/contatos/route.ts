@@ -48,7 +48,7 @@ export async function POST(request: Request) {
      * "Formulário" aqui, sem afetar a origem de um contato já existente que responde de novo. */
     origemPadrao?: Contato["origem"];
   };
-  const { nome, dados = {}, origemPadrao = "Indicação" } = body;
+  const { nome, dados = {}, origemPadrao = "Salvo manualmente" } = body;
   if (!nome) {
     return NextResponse.json({ erro: "Campo obrigatório: nome" }, { status: 400 });
   }

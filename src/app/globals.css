@@ -3760,8 +3760,47 @@ table.tbl tbody tr:hover td {
   color: var(--ink);
 }
 
+/* Barra de filtros de Contatos: as chips à esquerda, o seletor de ordem à direita, e as duas
+   coisas quebram pra linhas separadas em tela estreita em vez de espremer uma na outra. */
+.contatos-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.contatos-ordenar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.contatos-ordenar .input {
+  width: auto;
+  min-width: 170px;
+  font-size: 12.5px;
+}
+
 .origem-indicacao {
   color: var(--text-faint);
+}
+
+/* Verde do WhatsApp, na mesma lógica das outras origens: a cor da própria plataforma. */
+.origem-whatsapp {
+  color: #128c7e;
+}
+
+:root:not([data-theme="light"]) .origem-whatsapp {
+  color: #25d366;
+}
+
+:root[data-theme="dark"] .origem-whatsapp {
+  color: #25d366;
 }
 
 .origem-formulario {
@@ -15941,6 +15980,62 @@ table.tbl .name-cell .r {
   flex-wrap: wrap;
   gap: var(--space-2);
 }
+/* Passo do público quando o canal é Instagram: conta conectada, os dois números e a regra. */
+.disp-ig-conta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.disp-ig-conta strong {
+  font-size: 15px;
+}
+
+.disp-ig-numeros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.disp-ig-numero {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+}
+
+.disp-ig-numero strong {
+  font-size: 24px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.disp-ig-numero span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* O número que decide: quem vai receber de verdade. */
+.disp-ig-numero.destaque {
+  border-color: var(--blue);
+}
+
+.disp-ig-numero.destaque strong {
+  color: var(--blue);
+}
+
+.disp-ig-regra {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
 .disp-lista-contatos {
   max-height: 260px;
   overflow-y: auto;
@@ -16048,6 +16143,63 @@ table.tbl .name-cell .r {
   gap: var(--space-5);
   flex-wrap: wrap;
   margin-top: var(--space-3);
+  /* As métricas viraram um <a> quando o menu de ações entrou no cartão: o cartão inteiro não podia
+     mais ser um link, porque um botão dentro de um <a> abre a página junto com o menu. */
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Título do disparo: o link que leva ao detalhe. Ocupa o espaço que sobra do bloco de ações. */
+.disp-item-titulo {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.disp-item-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.disp-menu-wrap {
+  position: relative;
+}
+
+/* Camada transparente que cobre a tela: um clique em qualquer lugar fecha o menu. É um <button>
+   e não uma <div> pra fechar também pelo teclado, sem precisar de um ouvinte global. */
+.disp-menu-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.disp-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 41;
+  min-width: 180px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+/* Ação destrutiva num menu: vermelha, e sempre a última da lista. */
+.dropdown-item.perigo {
+  color: var(--danger);
+}
+
+.dropdown-item.perigo:hover {
+  background: var(--danger-soft);
 }
 .disp-metrica {
   display: flex;

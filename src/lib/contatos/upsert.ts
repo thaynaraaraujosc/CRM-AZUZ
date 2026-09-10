@@ -27,7 +27,7 @@ export async function upsertContato(params: {
   dados?: Partial<Contato> & Record<string, unknown>;
   origemPadrao?: string;
 }) {
-  const { workspaceId, nome, dados = {}, origemPadrao = "Indicação" } = params;
+  const { workspaceId, nome, dados = {}, origemPadrao = "Salvo manualmente" } = params;
 
   const existente = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome } } });
   if (existente) {

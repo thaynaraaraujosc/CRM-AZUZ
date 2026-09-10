@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { emailConfigurado } from "@/lib/email";
 
 /**
  * Quais canais de envio este workspace tem de verdade, agora.
@@ -19,6 +18,17 @@ export type CanalDisponivel = {
   detalhe?: string | null;
   /** Por que não está disponível, quando não está. */
   motivo?: string;
+  /**
+   * O canal não é oferecido pra CAMPANHA, mesmo que a infraestrutura exista.
+   *
+   * É o caso do e-mail: o envio funciona (Resend, usado em redefinir senha, convite de equipe e no
+   * bloco "Enviar e-mail" das automações), mas campanha por e-mail não faz parte do produto hoje.
+   * Não tem descadastro, não tem domínio verificado por cliente, não tem tratamento de retorno.
+   * Oferecer o canal assim seria oferecer um jeito rápido de a conta ser marcada como spam.
+   *
+   * Marcado, e não escondido: a pergunta "cadê o e-mail?" merece resposta na tela.
+   */
+  emBreve?: boolean;
 };
 
 export async function GET() {
@@ -66,8 +76,12 @@ export async function GET() {
     {
       canal: "email",
       label: "E-mail",
-      conectado: emailConfigurado(),
-      motivo: emailConfigurado() ? undefined : "O envio de e-mail não está configurado no servidor.",
+      // `conectado: false` de propósito, mesmo com o Resend configurado: ver `emBreve` acima. O
+      // envio transacional continua funcionando normalmente; o que não existe é CAMPANHA por
+      // e-mail, e é isso que este cartão está dizendo.
+      conectado: false,
+      emBreve: true,
+      motivo: "Disparo por e-mail ainda não faz parte do produto.",
     },
   ];
   return NextResponse.json(canais, { headers: { "cache-control": "private, no-store" } });

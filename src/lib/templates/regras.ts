@@ -109,6 +109,20 @@ export const LIMITES: Record<CanalTemplate, LimitesDoCanal> = {
 
 export const CANAIS_TEMPLATE = Object.keys(LIMITES) as CanalTemplate[];
 
+/**
+ * Os canais que a TELA oferece hoje. `LIMITES` continua descrevendo os quatro.
+ *
+ * O e-mail sai daqui, e a distinção importa: o envio de e-mail funciona (é o mesmo Resend de
+ * redefinir senha, convite de equipe e do bloco "Enviar e-mail" das automações). O que não existe
+ * é o resto de uma operação de e-mail em massa: descadastro, domínio verificado por cliente,
+ * tratamento de retorno. Sem isso, oferecer template e campanha por e-mail é oferecer um caminho
+ * curto pra conta ser marcada como spam.
+ *
+ * `LIMITES.email` fica onde está de propósito: template de e-mail salvo antes desta mudança
+ * continua abrindo, validando e sendo lido normalmente. Some da lista de escolha, não do sistema.
+ */
+export const CANAIS_TEMPLATE_OFERECIDOS = CANAIS_TEMPLATE.filter((c) => c !== "email");
+
 /** Nome no formato que a Meta aceita: minúsculas, números e underscore. */
 export function normalizarNomeMeta(nome: string): string {
   return nome

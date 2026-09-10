@@ -9,21 +9,20 @@ import {
   IconDoc,
   IconRelatorios,
   IconTrafego,
-  IconInstagram,
-  IconConfiguracoes,
   IconEnviar,
 } from "@/components/icons";
 
 /**
  * Menu lateral do módulo Instagram e TikTok.
  *
- * Coluna à esquerda, e não mais uma fileira de abas: com sete destinos, a fileira virava uma
- * régua de rótulos onde nenhum se destaca, e o que a pessoa mais usa (a lista de automações)
- * ficava do mesmo tamanho de "Conexões", que se abre uma vez por mês.
- *
  * A ordem é a do trabalho, não a alfabética. Primeiro o que se faz todo dia: montar automação,
  * escrever resposta automática, guardar modelo. Depois, separado por uma linha, o que se
- * CONSULTA: painel, execuções, disparos e conexões.
+ * CONSULTA: painel e execuções.
+ *
+ * "Disparos" e "Conexões" saíram daqui, e nenhum dos dois foi apagado. Disparo é um só, em
+ * Automações → Disparo em massa, e sempre foi o mesmo backend. Conexão se administra em
+ * Configurações, e sempre foi lá que o token viveu. Duas telas pro mesmo assunto obrigam a pessoa
+ * a escolher por qual entrar, e a resposta certa nunca é óbvia.
  */
 const PRINCIPAIS = [
   { href: "/automacoes/social", label: "Automações", exato: true, Icon: IconAutomacoes },
@@ -34,8 +33,6 @@ const PRINCIPAIS = [
 const CONSULTA = [
   { href: "/automacoes/social/painel", label: "Painel", exato: false, Icon: IconTrafego },
   { href: "/automacoes/social/execucoes", label: "Execuções", exato: false, Icon: IconRelatorios },
-  { href: "/automacoes/social/disparos", label: "Disparos", exato: false, Icon: IconInstagram },
-  { href: "/automacoes/social/conexoes", label: "Conexões", exato: false, Icon: IconConfiguracoes },
 ] as const;
 
 function Item({

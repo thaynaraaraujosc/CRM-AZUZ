@@ -91,7 +91,7 @@ export default function SocialPage() {
               {painel.motivoDesconectado} Os números do CRM abaixo continuam valendo pro que já foi
               registrado.
             </p>
-            <Link className="btn primary mt8" href="/automacoes/social/conexoes">
+            <Link className="btn primary mt8" href="/configuracoes?categoria=integracoes">
               Ver conexões
             </Link>
           </section>

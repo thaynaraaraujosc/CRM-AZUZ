@@ -6,7 +6,7 @@ import { Topbar } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { EditorTemplate, type TemplateSalvo } from "@/components/automacoes/EditorTemplate";
 import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
-import { LIMITES, STATUS_LABEL, type CanalTemplate } from "@/lib/templates/regras";
+import { CANAIS_TEMPLATE_OFERECIDOS, LIMITES, STATUS_LABEL, type CanalTemplate } from "@/lib/templates/regras";
 import type { CanalDisponivel } from "@/app/api/canais/route";
 
 const BADGE_POR_STATUS: Record<string, string> = {
@@ -90,7 +90,7 @@ export default function TemplatesPage() {
         {aviso ? <div className="tpl-toast">{aviso}</div> : null}
 
         <div className="tpl-filtros">
-          {(["todos", ...Object.keys(LIMITES)] as ("todos" | CanalTemplate)[]).map((c) => (
+          {(["todos", ...CANAIS_TEMPLATE_OFERECIDOS] as ("todos" | CanalTemplate)[]).map((c) => (
             <button key={c} type="button" className={`pill${filtroCanal === c ? " on" : ""}`} onClick={() => setFiltroCanal(c)}>
               {c === "todos" ? "Todos" : LIMITES[c].label}
             </button>

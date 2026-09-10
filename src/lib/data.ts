@@ -28,20 +28,33 @@ export const today = "Quinta, 30 de julho de 2026";
 
 export type Canal = "WhatsApp" | "Instagram" | "TikTok";
 export type Etapa = "Novo" | "Qualificado" | "Proposta" | "Fechado";
+/**
+ * De onde o contato veio. É dado, não rótulo: filtro, automação, segmentação e relatório leem daqui.
+ *
+ * "Salvo manualmente" substituiu "Indicação" como origem de quem é cadastrado à mão. Indicação é
+ * uma afirmação sobre COMO a pessoa chegou (alguém indicou), e o CRM não tem como saber isso: ele
+ * só sabe que alguém digitou o nome num formulário. Dizer "indicação" era inventar um fato.
+ *
+ * "Indicação" continua no tipo de propósito: contato gravado antes desta mudança tem essa origem
+ * no banco, e tirá-la daqui faria aquelas linhas virarem valor inválido.
+ */
 export type Origem =
   | "Meta Ads"
   | "Google Ads"
+  | "WhatsApp"
   | "Instagram"
   | "TikTok"
+  | "Salvo manualmente"
   | "Indicação"
   | "Formulário";
 
 export const ORIGENS: Origem[] = [
   "Meta Ads",
   "Google Ads",
+  "WhatsApp",
   "Instagram",
   "TikTok",
-  "Indicação",
+  "Salvo manualmente",
   "Formulário",
 ];
 
@@ -59,8 +72,11 @@ export function classeOrigem(origem: string): string {
       return "origem-instagram";
     case "TikTok":
       return "origem-tiktok";
+    case "Salvo manualmente":
     case "Indicação":
       return "origem-indicacao";
+    case "WhatsApp":
+      return "origem-whatsapp";
     case "Formulário":
       return "origem-formulario";
     default:
@@ -286,12 +302,10 @@ export const contatos: Contato[] = [
 
 export const filtrosContatos = [
   "Todos",
-  "Meus leads",
-  "Meta Ads",
-  "Google Ads",
+  "WhatsApp",
   "Instagram",
   "TikTok",
-  "Indicação",
+  "Salvo manualmente",
 ];
 
 /* -------------------------------------------------------------------------- */

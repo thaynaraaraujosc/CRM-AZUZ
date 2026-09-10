@@ -2,7 +2,6 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 
 import { classeOrigem, filtrosContatos, type Canal } from "@/lib/data";
 import { useContatos } from "@/lib/contatos-context";
@@ -17,6 +16,7 @@ import { Timeline } from "@/components/timeline";
 import { gerarLinhaDoTempo } from "@/lib/timeline";
 import { rotuloDeAtividade } from "@/lib/funis/atividade";
 import { VAZIO, ehVazio } from "@/lib/vazio";
+import { ORDENS, ordenarContatos, origemNoFiltro, type OrdemContatos } from "@/lib/contatos/ordenacao";
 
 const CANAIS_PREFERIDOS = ["WhatsApp", "Instagram", "TikTok"] as const;
 
@@ -125,8 +125,6 @@ function CamposExtrasFieldset({
 
 function ContatosPageInner() {
   const searchParams = useSearchParams();
-  const { data: sessao } = useSession();
-  const nomeUsuario = sessao?.user?.name ?? "";
   const { contatos, criarContato, atualizarContato, excluirContato } = useContatos();
   const { conversas } = useConversas();
   /* "Última interação" era o campo `ultima`, uma string gravada como "Agora" quando o contato
@@ -152,6 +150,8 @@ function ContatosPageInner() {
   const [enderecoNovo, setEnderecoNovo] = useState("");
   const [extrasNovo, setExtrasNovo] = useState<CamposExtras>(CAMPOS_EXTRAS_VAZIOS);
   const [filtroOrigem, setFiltroOrigem] = useState(filtrosContatos[0]);
+  const [busca, setBusca] = useState("");
+  const [ordem, setOrdem] = useState<OrdemContatos>("az");
 
   const [editandoContato, setEditandoContato] = useState(false);
   const [emailEdit, setEmailEdit] = useState("");
@@ -210,11 +210,35 @@ function ContatosPageInner() {
 
   const contato = contatos.find((c) => c.nome === selecionado) ?? null;
 
-  const contatosFiltrados = contatos.filter((c) => {
-    if (filtroOrigem === "Todos") return true;
-    if (filtroOrigem === "Meus leads") return c.responsavel === nomeUsuario;
-    return c.origem === filtroOrigem;
-  });
+  /*
+   * Filtro por canal e BUSCA são independentes e se somam.
+   *
+   * Buscar "Maria" com o filtro em Instagram procura Maria só entre os contatos do Instagram; com
+   * o filtro em Todos, procura em todo mundo. O campo de busca existia na barra de cima mas não
+   * estava ligado a nada: era uma caixa que aceitava texto e não fazia diferença nenhuma.
+   *
+   * A busca olha nome, @ do Instagram, WhatsApp e e-mail. Telefone é comparado só por dígito, pra
+   * "9 8888-7777", "988887777" e "+55 11 98888-7777" acharem a mesma pessoa.
+   */
+  const contatosFiltrados = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    const digitos = termo.replace(/\D/g, "");
+
+    const filtrados = contatos.filter((c) => {
+      if (!(filtroOrigem === "Todos" || origemNoFiltro(c.origem) === filtroOrigem)) return false;
+      if (!termo) return true;
+
+      const campos = [c.nome, c.instagram, c.email].filter(Boolean).map((t) => String(t).toLowerCase());
+      if (campos.some((t) => t.includes(termo))) return true;
+
+      // Só compara telefone quando o termo TEM dígito: senão "ana" casaria com qualquer número,
+      // porque a string vazia está contida em tudo.
+      if (digitos && c.whatsapp && String(c.whatsapp).replace(/\D/g, "").includes(digitos)) return true;
+      return false;
+    });
+
+    return ordenarContatos(filtrados, ordem);
+  }, [contatos, filtroOrigem, busca, ordem]);
 
   function localizarNoFunilAtual(nomeContato: string) {
     for (const f of funis) {
@@ -262,15 +286,20 @@ function ContatosPageInner() {
       <Topbar
         title="Contatos"
         sub={
-          filtroOrigem === "Todos"
+          filtroOrigem === "Todos" && !busca.trim()
             ? `${contatos.length} contatos · visão 360° de cada lead`
-            : `${contatosFiltrados.length} de ${contatos.length} contatos · filtrado por ${filtroOrigem}`
+            : `${contatosFiltrados.length} de ${contatos.length} contatos`
         }
         actions={
           <>
             <label className="search">
               <IconSearch />
-              <input placeholder="Buscar contato…" aria-label="Buscar contato" />
+              <input
+                placeholder="Buscar nome, @, telefone ou e-mail…"
+                aria-label="Buscar contato"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+              />
             </label>
             <button
               type="button"
@@ -370,11 +399,19 @@ function ContatosPageInner() {
           </section>
         ) : null}
 
-        <ChipFilters
-          options={filtrosContatos}
-          initial={0}
-          onChange={(v) => setFiltroOrigem(v)}
-        />
+        <div className="contatos-barra">
+          <ChipFilters options={filtrosContatos} initial={0} onChange={(v) => setFiltroOrigem(v)} />
+          <label className="contatos-ordenar">
+            <span>Ordenar por</span>
+            <select className="input" value={ordem} onChange={(e) => setOrdem(e.target.value as OrdemContatos)}>
+              {ORDENS.map((o) => (
+                <option key={o.valor} value={o.valor}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
         <div className="mb14">
           <div className="table-wrap">
@@ -394,7 +431,7 @@ function ContatosPageInner() {
                   <tr>
                     <td colSpan={6}>
                       <p className="hint" style={{ padding: 17 }}>
-                        Nenhum contato nessa origem ainda.
+                        {busca.trim() ? "Nenhum contato encontrado com esse termo." : "Nenhum contato nessa origem ainda."}
                       </p>
                     </td>
                   </tr>
