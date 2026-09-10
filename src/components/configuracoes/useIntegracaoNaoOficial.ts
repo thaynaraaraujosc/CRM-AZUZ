@@ -1,12 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
-export type HistoricoSync = {
-  status: "em_andamento" | "pausado" | "concluido" | "erro";
-  totalChats: number | null;
-  chatsProcessados: number;
-  filaRestante: { remoteJid: string }[] | null;
-  erro?: string;
-};
+import type { HistoricoSync } from "@/lib/integracoes/historico-tipos";
+
+export type { HistoricoSync };
 
 export type StatusIntegracaoNaoOficial = {
   status: "desconectado" | "aguardando_qr" | "conectado" | "erro";
@@ -177,6 +173,18 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     }
   }
 
+  /** Devolve pra fila as conversas antigas que ficaram de fora da primeira leva. Nada é buscado de
+   * novo no celular: o relógio processa essas do mesmo jeito que processou as recentes. */
+  async function trazerConversasMaisAntigas() {
+    const resposta = await fetch("/api/integracoes/whatsapp-nao-oficial/sincronizar-historico", {
+      method: "PUT",
+    }).catch(() => null);
+    const dados = (await resposta?.json().catch(() => null)) as { historico?: HistoricoSync } | null;
+    if (dados?.historico) {
+      setEstado((prev) => (prev ? { ...prev, metadados: { ...prev.metadados, historico: dados.historico } } : prev));
+    }
+  }
+
   /** Cria a instância na Evolution (se ainda não existir) e busca o primeiro QR Code. Chamado
    * quando a pessoa clica em "Conectar"; depois disso, o polling e os eventos de webhook cuidam do
    * resto (QR renovado, confirmação de conectado). */
@@ -218,5 +226,6 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     erro,
     pausarSincronizacaoHistorico,
     retomarSincronizacaoHistorico,
+    trazerConversasMaisAntigas,
   };
 }

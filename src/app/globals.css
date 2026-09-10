@@ -2820,6 +2820,17 @@ table.tbl tbody tr:hover td {
 /* "chat" no canto do card do funil: diz o que o clique faz.
    Discreto em repouso e azul quando o mouse está no card, porque ele não é uma informação sobre o
    negócio (como a origem ou a data), é a legenda do gesto. */
+/* A linha de progresso da importação do histórico do WhatsApp: a frase à esquerda e o botão à
+   direita, quebrando pra baixo quando a coluna aperta em vez de espremer o texto. */
+.wa-historico-linha {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+
 /* Por qual conexão a conversa fala. Etiqueta de origem técnica, não de estado do atendimento:
    fica em cinza, sem cor de status, pra não competir com "Não respondido" e a etapa do funil. */
 .wa-conexao-tag {

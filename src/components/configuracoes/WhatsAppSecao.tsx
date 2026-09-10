@@ -58,12 +58,36 @@ function SincronizacaoHistoricoStatus({
   historico,
   onPausar,
   onRetomar,
+  onTrazerMaisAntigas,
 }: {
   historico: HistoricoSync;
   onPausar: () => void;
   onRetomar: () => void;
+  onTrazerMaisAntigas: () => void;
 }) {
-  if (historico.status === "concluido") return null;
+  const guardadas = historico.filaGuardada?.length ?? 0;
+
+  /*
+   * Terminou a primeira leva, e ainda há conversas antigas guardadas.
+   *
+   * Só as trinta mais recentes vêm sozinhas. Numa conta comercial o celular tem centenas, e trazer
+   * todas de enfiada já derrubou o CRM uma vez. As antigas ficam a um clique de distância, e o
+   * relógio importa em segundo plano do mesmo jeito.
+   */
+  if (historico.status === "concluido") {
+    if (!guardadas) return null;
+    return (
+      <div className="wa-historico-linha">
+        <p className="hint" style={{ margin: 0 }}>
+          As conversas recentes já estão aqui. Ainda há {guardadas} conversa
+          {guardadas > 1 ? "s" : ""} mais antiga{guardadas > 1 ? "s" : ""} no celular.
+        </p>
+        <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onTrazerMaisAntigas}>
+          Trazer as mais antigas
+        </button>
+      </div>
+    );
+  }
   if (historico.status === "erro") {
     return (
       <p className="hint" style={{ color: "var(--danger)", marginTop: 10 }}>
@@ -75,12 +99,12 @@ function SincronizacaoHistoricoStatus({
   const total = historico.totalChats;
   const pausado = historico.status === "pausado";
   return (
-    <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+    <div className="wa-historico-linha">
       <p className="hint" style={{ margin: 0 }}>
-        {pausado ? "Sincronização de histórico pausada" : "Trazendo o histórico de conversas do celular"}
+        {pausado ? "Importação do histórico pausada" : "Trazendo as conversas do celular"}
         {total != null ? `: ${historico.chatsProcessados} de ${total}` : "…"}
         {total != null ? "." : ""}
-        {!pausado ? " Pode continuar usando o CRM normal enquanto isso." : ""}
+        {!pausado ? " Pode fechar esta tela: ela continua sozinha." : ""}
       </p>
       <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={pausado ? onRetomar : onPausar}>
         {pausado ? "Retomar" : "Pausar"}
@@ -163,6 +187,7 @@ export function WhatsAppSecao() {
                 historico={naoOficial.estado.metadados.historico}
                 onPausar={naoOficial.pausarSincronizacaoHistorico}
                 onRetomar={naoOficial.retomarSincronizacaoHistorico}
+                onTrazerMaisAntigas={naoOficial.trazerConversasMaisAntigas}
               />
             ) : null}
           </div>

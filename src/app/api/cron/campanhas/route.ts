@@ -5,6 +5,8 @@ import { retomarEsperasVencidas } from "@/lib/automacoes/iniciar";
 import { rodarGatilhosDeTempo } from "@/lib/automacoes/gatilhos-tempo";
 import { rodarGatilhosDiarios } from "@/lib/funil/gatilhos-etapa";
 import { adotarOrfasDeTodosOsWorkspaces } from "@/lib/conversas/adotar-orfas";
+import { rodarHistoricosPendentes } from "@/lib/integracoes/historico-passo";
+import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 
 /**
  * Batida do relógio das campanhas.
@@ -23,6 +25,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(request: Request) {
+  const comecoDaRodada = Date.now();
+
   // Esta rota não passa pela checagem de sessão do `proxy.ts`. Não pode, o cron não faz login.
   // Então o segredo compartilhado é a ÚNICA defesa dela. Por isso ele é obrigatório: antes a
   // verificação só valia `if (segredo)`, e sem a variável configurada a rota ficava aberta pra
@@ -85,5 +89,31 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, adotadas: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas });
+  /*
+   * A importação do histórico do WhatsApp por QR Code, com a aba fechada.
+   *
+   * Ela existia só no navegador: andava enquanto a tela Configurações → WhatsApp estivesse aberta e
+   * parava no instante em que a pessoa saía dali, sem avisar. Conectar e não ver as conversas
+   * antigas aparecerem era exatamente isso.
+   *
+   * Vem por ÚLTIMO e com o tempo que sobrou, nunca mais que 8 segundos. Importar histórico é a
+   * tarefa menos urgente daqui: campanha e follow-up têm hora pra sair, conversa de meses atrás
+   * não. Se o minuto acabar no meio, o progresso já está gravado conversa a conversa e o próximo
+   * minuto continua de onde parou.
+   */
+  const gastos = Date.now() - comecoDaRodada;
+  const sobra = Math.min(8_000, 55_000 - gastos);
+  const historico =
+    sobra > 1_000
+      ? await rodarHistoricosPendentes({
+          limiteMs: sobra,
+          processarMensagem: (workspaceId, item) =>
+            processarMensagemRecebida(workspaceId, item, { permitirHistorico: true }).then(() => undefined),
+        }).catch((erro) => {
+          console.error("[cron] falha ao importar histórico do WhatsApp:", erro);
+          return { workspaces: 0, chats: 0 };
+        })
+      : { workspaces: 0, chats: 0 };
+
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico });
 }

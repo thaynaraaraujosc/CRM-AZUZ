@@ -296,7 +296,21 @@ export async function buscarNumeroConectado(workspaceId: string): Promise<string
   return owner.split("@")[0] ?? null;
 }
 
-export type ChatResumo = { remoteJid: string; ehGrupo: boolean; arquivada: boolean };
+export type ChatResumo = {
+  remoteJid: string;
+  ehGrupo: boolean;
+  arquivada: boolean;
+  /**
+   * Quando essa conversa teve movimento pela última vez, em milissegundos.
+   *
+   * É o que permite trazer as MAIS RECENTES primeiro em vez de uma ordem qualquer. Numa conta com
+   * centenas de conversas, a diferença entre importar as trinta que interessam e as trinta que o
+   * WhatsApp devolveu por acaso é a diferença entre a tela servir e não servir. Vale 0 quando a
+   * Evolution não manda a data: aí a conversa vai pro fim da fila, que é o lugar certo pra algo
+   * cuja idade a gente não sabe.
+   */
+  ultimaAtividade: number;
+};
 
 /**
  * Lista TODAS as conversas já existentes no celular conectado. Usado só pela sincronização de
@@ -307,6 +321,31 @@ export type ChatResumo = { remoteJid: string; ehGrupo: boolean; arquivada: boole
  * que permite processar em lotes pequenos e controlados. Endpoint ainda não validado contra a
  * instância de produção: o `.catch` de quem chama loga o erro real se o formato estiver errado.
  */
+/**
+ * A data da conversa, venha ela no campo que vier.
+ *
+ * Cada versão da Evolution devolve isso com um nome diferente, e o timestamp do Baileys é em
+ * SEGUNDOS enquanto o `updatedAt` é uma data ISO. Sem tratar os dois, a ordenação misturaria
+ * grandezas e a "mais recente" sairia errada.
+ */
+function instanteDoChat(c: {
+  updatedAt?: string | number;
+  lastMessageTimestamp?: number;
+  conversationTimestamp?: number;
+}): number {
+  const segundos = c.lastMessageTimestamp ?? c.conversationTimestamp;
+  if (typeof segundos === "number" && segundos > 0) {
+    // Timestamp em segundos vira milissegundos; se já vier grande demais, já está em ms.
+    return segundos < 1e12 ? segundos * 1000 : segundos;
+  }
+  if (typeof c.updatedAt === "number") return c.updatedAt;
+  if (typeof c.updatedAt === "string") {
+    const t = Date.parse(c.updatedAt);
+    if (!Number.isNaN(t)) return t;
+  }
+  return 0;
+}
+
 export async function buscarChats(workspaceId: string): Promise<ChatResumo[]> {
   const instancia = nomeInstancia(workspaceId);
   const dados = await chamarEvolution(`/chat/findChats/${instancia}`, "POST", {}).catch((erro) => {
@@ -316,12 +355,27 @@ export async function buscarChats(workspaceId: string): Promise<ChatResumo[]> {
   const lista: unknown[] = Array.isArray(dados) ? dados : [];
   return lista
     .map((item) => {
-      const c = item as { id?: string; remoteJid?: string; archived?: boolean; archive?: boolean };
+      const c = item as {
+        id?: string;
+        remoteJid?: string;
+        archived?: boolean;
+        archive?: boolean;
+        updatedAt?: string | number;
+        lastMessageTimestamp?: number;
+        conversationTimestamp?: number;
+      };
       const remoteJid = c.id ?? c.remoteJid;
       if (!remoteJid) return null;
-      return { remoteJid, ehGrupo: remoteJid.endsWith("@g.us"), arquivada: c.archived ?? c.archive ?? false };
+      return {
+        remoteJid,
+        ehGrupo: remoteJid.endsWith("@g.us"),
+        arquivada: c.archived ?? c.archive ?? false,
+        ultimaAtividade: instanteDoChat(c),
+      };
     })
-    .filter((c): c is ChatResumo => c !== null);
+    .filter((c): c is ChatResumo => c !== null)
+    // Mais recente primeiro. Quem consome corta as N primeiras e guarda o resto.
+    .sort((a, b) => b.ultimaAtividade - a.ultimaAtividade);
 }
 
 /**
