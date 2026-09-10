@@ -4,6 +4,7 @@ import { rodarRodadaDeCampanhas } from "@/lib/campanhas/worker";
 import { retomarEsperasVencidas } from "@/lib/automacoes/iniciar";
 import { rodarGatilhosDeTempo } from "@/lib/automacoes/gatilhos-tempo";
 import { rodarGatilhosDiarios } from "@/lib/funil/gatilhos-etapa";
+import { adotarOrfasDeTodosOsWorkspaces } from "@/lib/conversas/adotar-orfas";
 
 /**
  * Batida do relógio das campanhas.
@@ -73,5 +74,16 @@ export async function GET(request: Request) {
     return { gatilhos: 0, leads: 0 };
   });
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios });
+  // Mensagem gravada que não aparece na conversa: o CRM conserta sozinho, sem botão em lugar
+  // nenhum. Uma vez por hora basta, porque órfã NOVA não existe mais (o defeito que as criava está
+  // corrigido) e o que resta é histórico. Fora desse minuto a rodada nem consulta.
+  const orfas =
+    new Date().getUTCMinutes() === 7
+      ? await adotarOrfasDeTodosOsWorkspaces().catch((erro) => {
+          console.error("[cron] falha ao adotar mensagens órfãs:", erro);
+          return { workspaces: 0, adotadas: 0 };
+        })
+      : { workspaces: 0, adotadas: 0 };
+
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas });
 }

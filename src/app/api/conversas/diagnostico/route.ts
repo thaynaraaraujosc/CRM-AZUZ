@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { contasCanalVisiveis } from "@/lib/integracoes/conta-canal";
+import { adotarMensagensOrfas } from "@/lib/conversas/adotar-orfas";
 
 /**
  * Por que uma mensagem está no banco e não aparece na tela.
@@ -65,54 +66,15 @@ export async function GET() {
 }
 
 /**
- * Reparo: adota as mensagens órfãs, dando a elas a marca da conversa a que pertencem.
- *
- * Mensagem enviada pelo CRM nascia sem marca de conexão (o navegador não sabe por qual número a
- * conversa fala), então ficava gravada e invisível. A correção já vale pras novas; esta rota
- * conserta as que ficaram para trás.
- *
- * Só toca em mensagem cuja CONVERSA já tem dono. Conversa sem marca é histórico antigo do QR Code,
- * que deve mesmo continuar escondido enquanto aquela conexão não voltar. Adotar essas seria
- * ressuscitar na tela mensagens de um número desconectado.
+ * Reparo manual, pra suporte. O reparo de verdade roda sozinho pelo relógio (ver
+ * `adotarOrfasDeTodosOsWorkspaces`, chamado pelo cron): não há botão pra isso no produto, porque
+ * ninguém que compra um CRM deve precisar apertar um botão pra ver as próprias mensagens.
  */
 export async function POST() {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
-  const workspaceId = sessao.user.workspaceId;
 
-  const conversas = await prisma.conversa.findMany({
-    where: { workspaceId, contaCanal: { not: null } },
-    select: { nome: true, contaCanal: true },
-  });
-
-  let adotadas = 0;
-  for (const conversa of conversas) {
-    const { count } = await prisma.mensagemExtra.updateMany({
-      where: { workspaceId, contato: conversa.nome, contaCanal: null },
-      data: { contaCanal: conversa.contaCanal },
-    });
-    adotadas += count;
-  }
-
-  const aindaOrfas = await prisma.mensagemExtra.count({ where: { workspaceId, contaCanal: null } });
-
-  // Aproveita a passada pra copiar as fotos que já existem nas conversas para os contatos. É o que
-  // faz a mesma pessoa aparecer com o mesmo rosto no funil e na lista de contatos, sem esperar ela
-  // mandar mensagem de novo.
-  const comFoto = await prisma.conversa.findMany({
-    where: { workspaceId, fotoUrl: { not: null }, contatoId: { not: null } },
-    select: { contatoId: true, fotoUrl: true },
-  });
-  let fotosCopiadas = 0;
-  for (const conversa of comFoto) {
-    const { count } = await prisma.contato.updateMany({
-      // Só preenche quem está sem foto: uma foto escolhida à mão no contato não pode ser
-      // sobrescrita pela do canal.
-      where: { id: conversa.contatoId!, workspaceId, fotoUrl: null },
-      data: { fotoUrl: conversa.fotoUrl },
-    });
-    fotosCopiadas += count;
-  }
+  const { adotadas, aindaOrfas, fotosCopiadas } = await adotarMensagensOrfas(sessao.user.workspaceId);
 
   return NextResponse.json(
     {
