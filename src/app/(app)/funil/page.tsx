@@ -1050,9 +1050,21 @@ function FunilPageInner() {
                           <span className={`tag ${classeOrigem(card.origem)}`}>
                             {card.origem}
                           </span>
-                          <span className="days" title="Última movimentação deste negócio">
-                            {rotuloDeAtividade(atividadePorNome.get(card.nome) ?? card.data)}
-                          </span>
+                          {/* Só mostra data quando ela é REAL.
+                              `card.data` é uma string gravada quando o negócio nasceu ("Hoje",
+                              "Ontem") e nunca mais tocada: um card criado ontem seguia dizendo
+                              "Ontem" pra sempre, e amanhã continuaria. Data errada é pior que data
+                              nenhuma num lugar onde a pessoa decide a quem ligar primeiro. Quando a
+                              conversa existe, a data vem da última mensagem e está sempre certa. */}
+                          {atividadePorNome.get(card.nome) ? (
+                            <span className="days" title="Última mensagem deste contato">
+                              {rotuloDeAtividade(atividadePorNome.get(card.nome))}
+                            </span>
+                          ) : (
+                            <span className="days" title="Ainda não há mensagem deste contato no CRM">
+                              sem conversa
+                            </span>
+                          )}
                           {/* Diz o que o clique faz. Card clicável sem nada escrito é card que
                               ninguém clica. */}
                           <span className="lead-card-chat" aria-hidden="true">
