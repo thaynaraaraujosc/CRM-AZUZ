@@ -13,6 +13,7 @@ import { DadosWebhook } from "./DadosWebhook";
 import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
+import { mesmoNumero } from "@/lib/integracoes/numero-whatsapp";
 import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 
 /** O que aparece em "Em breve". Zapier, Make, Stripe e Mercado Pago saíram: não estão no plano. */
@@ -112,6 +113,20 @@ export function IntegracoesSecao() {
       .catch(() => setNaoOficialStatus(null));
   }, []);
 
+  /*
+   * O número de CADA conexão, e o aviso quando são o mesmo.
+   *
+   * O cartão da API oficial dizia só "Meta Business conectado" e nunca mostrava o número, enquanto
+   * o do QR Code mostrava. Com as duas ligadas não havia como saber qual número estava em cada
+   * uma, nem perceber a única configuração que dá problema de verdade: o MESMO número nos dois
+   * lados, com uma sessão brigando com a outra.
+   */
+  const numeroOficial = (whatsappMeta.integracao?.metadados?.numeroExibicao as string | undefined) ?? null;
+  const numeroQrCode = naoOficialStatus?.metadados?.numero ?? null;
+  const oficialLigada = whatsappMeta.integracao?.status === "conectado";
+  const qrCodeLigada = naoOficialStatus?.status === "conectado";
+  const numeroRepetido = oficialLigada && qrCodeLigada && mesmoNumero(numeroOficial, numeroQrCode);
+
   const [categoriaFiltro, setCategoriaFiltro] = useState("Todas");
   const appsFiltrados = APPS_EM_BREVE.filter((a) => categoriaFiltro === "Todas" || a.categoria === categoriaFiltro);
 
@@ -119,21 +134,39 @@ export function IntegracoesSecao() {
     <div className="config-secao">
       <CabecalhoCategoria titulo="Integrações e aplicativos" descricao="Conexões que já funcionam de verdade e uma prévia do que vem por aí." />
 
+      {numeroRepetido ? (
+        <p className="int-aviso-conflito">
+          As duas conexões de WhatsApp estão no MESMO número ({numeroOficial}). Elas disputam a
+          mesma sessão e uma vai derrubar a outra. Deixe a API oficial neste número e desconecte o
+          QR Code, ou escaneie o QR Code com outro aparelho e outro número.
+        </p>
+      ) : null}
+
       <div className="int-group">
         <p className="int-group-h">Prontas pra usar</p>
         <div className="card">
           <LinhaReal
             icone={<IconWhatsApp width={20} height={20} />}
             titulo="WhatsApp Business (API oficial)"
-            sub={whatsappMeta.integracao?.status === "conectado" ? "Meta Business conectado" : "Conecte via Meta Business Manager"}
-            conectado={whatsappMeta.integracao?.status === "conectado"}
+            sub={
+              oficialLigada
+                ? numeroOficial
+                  ? `Número conectado: ${numeroOficial}`
+                  : "Meta Business conectado"
+                : "Conecte via Meta Business Manager"
+            }
+            conectado={oficialLigada}
             painel={<ConexaoWhatsAppOficial />}
           />
           <LinhaReal
             icone={<IconWhatsApp width={20} height={20} />}
             titulo="WhatsApp via QR Code"
-            sub={naoOficialStatus?.status === "conectado" ? `Número conectado${naoOficialStatus.metadados?.numero ? `: ${naoOficialStatus.metadados.numero}` : ""}` : "Escaneia o QR Code, sem precisar de aprovação da Meta"}
-            conectado={naoOficialStatus?.status === "conectado"}
+            sub={
+              qrCodeLigada
+                ? `Número conectado${numeroQrCode ? `: ${numeroQrCode}` : ""}`
+                : "Escaneia o QR Code, sem precisar de aprovação da Meta"
+            }
+            conectado={qrCodeLigada}
             painel={
               <>
                 <ConexaoQrCode />

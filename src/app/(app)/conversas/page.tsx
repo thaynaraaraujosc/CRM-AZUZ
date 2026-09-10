@@ -22,6 +22,11 @@ import {
   type StatusMensagem,
 } from "@/lib/data";
 import { ehLinkDeMidia } from "@/lib/conversas/midia-mensagem";
+import {
+  conexaoDaConversa,
+  precisaDistinguirConexao,
+  ROTULO_CONEXAO,
+} from "@/lib/conversas/conexao-da-conversa";
 import { iniciaisExibidas, nomeExibido } from "@/lib/conversas/exibicao";
 import { BotoesConectarWhatsApp } from "@/components/configuracoes/BotoesConectarWhatsApp";
 import { BolhaMensagem } from "@/components/conversas/BolhaMensagem";
@@ -388,6 +393,7 @@ const CONVERSA_VAZIA: ConversaReal = {
   nome: "",
   initials: "?",
   canal: "WhatsApp",
+  contaCanal: null,
   contato: null,
   origem: "Direto",
   status: "Não respondido",
@@ -879,6 +885,10 @@ function ConversasPageInner() {
   } = useMensagensExtra();
 
   const atendentesDisponiveis = membrosEquipe.map((m) => m.nome);
+  /* As duas conexões de WhatsApp na mesma lista? Então cada conversa precisa dizer de qual é.
+     Sai da própria lista carregada, sem pedir nada a mais ao servidor. */
+  const distinguirConexao = precisaDistinguirConexao(conversas);
+
   const canaisDisponiveis = Array.from(new Set(conversas.map((c) => c.origem)));
 
   const naoOficialConectado = naoOficial.estado?.status === "conectado";
@@ -3965,6 +3975,16 @@ function ConversasPageInner() {
                     <span className="tag">
                       {encerradas.has(c.id) ? "Finalizado" : c.status}
                     </span>
+                    {/* Por qual conexão esta conversa fala. Só aparece quando as DUAS estão em uso
+                        na lista: com uma só, a etiqueta repetiria a mesma coisa em toda linha. */}
+                    {distinguirConexao && conexaoDaConversa(c.contaCanal) ? (
+                      <span
+                        className="tag wa-conexao-tag"
+                        title="A resposta sai por esta mesma conexão"
+                      >
+                        {ROTULO_CONEXAO[conexaoDaConversa(c.contaCanal)!]}
+                      </span>
+                    ) : null}
                     <span className={`tag ${classeOrigem(c.origem as Parameters<typeof classeOrigem>[0])}`}>
                       {c.origem}
                     </span>

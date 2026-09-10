@@ -2820,6 +2820,26 @@ table.tbl tbody tr:hover td {
 /* "chat" no canto do card do funil: diz o que o clique faz.
    Discreto em repouso e azul quando o mouse está no card, porque ele não é uma informação sobre o
    negócio (como a origem ou a data), é a legenda do gesto. */
+/* Por qual conexão a conversa fala. Etiqueta de origem técnica, não de estado do atendimento:
+   fica em cinza, sem cor de status, pra não competir com "Não respondido" e a etapa do funil. */
+.wa-conexao-tag {
+  color: var(--text-muted);
+  border-color: var(--line);
+  background: transparent;
+}
+
+/* Aviso de conflito entre as duas conexões de WhatsApp. Vermelho porque não é uma dica: enquanto
+   estiver assim, uma das duas sessões vai cair. */
+.int-aviso-conflito {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  color: var(--ink);
+  font-size: var(--fs-secondary);
+  line-height: var(--lh-base);
+}
+
 .lead-card-chat {
   font-size: 10px;
   font-weight: 700;
@@ -3777,11 +3797,20 @@ table.tbl tbody tr:hover td {
   font-weight: var(--fw-medium);
 }
 
+/* A fila de etiquetas de uma conversa.
+   `space-between` com duas etiquetas dava uma linha limpa; com três (situação, conexão e origem)
+   ele esticava as pontas e espremia o meio, e cada etiqueta quebrava no meio da palavra. Agora
+   elas ficam juntas à esquerda, com a linha inteira quebrando quando não couber, e nenhuma
+   etiqueta se parte. */
 .wa-row .cr3 {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  gap: 4px var(--space-2);
+}
+
+.wa-row .cr3 .tag {
+  white-space: nowrap;
 }
 
 .origem-meta {

@@ -10,6 +10,14 @@ export type ConversaReal = {
   nome: string;
   initials: string;
   canal: string;
+  /**
+   * Qual CONEXÃO é a dona desta conversa, no formato "provedor:identificador".
+   *
+   * É o que separa uma conversa que entrou pela API oficial de uma que entrou pelo QR Code, e o que
+   * decide por onde a resposta sai. A tela usa isso pra marcar a conversa quando as duas conexões
+   * de WhatsApp estão ligadas ao mesmo tempo. `null` é histórico anterior a esta coluna.
+   */
+  contaCanal: string | null;
   contato: string | null;
   origem: string;
   status: string;
