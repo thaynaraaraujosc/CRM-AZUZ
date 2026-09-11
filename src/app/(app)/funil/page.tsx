@@ -132,12 +132,26 @@ function FunilPageInner() {
     setImportando(true);
     try {
       const resposta = await fetch("/api/funis/importar-conversas", { method: "POST" });
-      const dados = (await resposta.json()) as { criados?: number; erro?: string };
-      if (!resposta.ok) throw new Error(dados.erro ?? "Não foi possível trazer as conversas.");
+      const dados = (await resposta.json()) as {
+        criados?: number;
+        conversasCriadas?: number;
+        semComoLigar?: string[];
+        erro?: string;
+      };
+      if (!resposta.ok) throw new Error(dados.erro ?? "Não foi possível alinhar funil e conversas.");
+      // Conta os DOIS sentidos: negócio que faltava no funil e conversa que faltava na caixa de
+      // entrada. Quem clica quer saber se ficou tudo igual dos dois lados.
+      const partes = [
+        dados.criados ? `${dados.criados} ${dados.criados === 1 ? "negócio criado" : "negócios criados"} no funil` : null,
+        dados.conversasCriadas
+          ? `${dados.conversasCriadas} ${dados.conversasCriadas === 1 ? "conversa criada" : "conversas criadas"} no WhatsApp`
+          : null,
+      ].filter(Boolean);
+      const semTelefone = dados.semComoLigar?.length ?? 0;
       avisarAutomacao(
-        dados.criados
-          ? `${dados.criados} ${dados.criados === 1 ? "conversa trazida" : "conversas trazidas"} pro funil.`
-          : "Todas as conversas já estão no funil.",
+        partes.length
+          ? `${partes.join(" e ")}.${semTelefone ? ` ${semTelefone} sem telefone ou Instagram, esses não dá pra abrir conversa.` : ""}`
+          : "Funil e conversas já estão iguais.",
       );
       // Recarrega do servidor: os cards novos foram criados lá, não aqui; sem isso a tela só
       // mostraria a mudança no próximo F5. Por `recarregar` (e não `setFunis`) pra tela não
@@ -534,10 +548,10 @@ function FunilPageInner() {
               type="button"
               className="btn terciario"
               disabled={importando}
-              title="Cria um negócio para cada conversa que ainda não tem um"
+              title="Deixa funil e conversas iguais: cria o negócio que falta no funil e a conversa que falta no WhatsApp"
               onClick={() => void importarConversas()}
             >
-              {importando ? "Trazendo…" : "+ Trazer conversas"}
+              {importando ? "Alinhando…" : "Alinhar com Conversas"}
             </button>
             <button
               type="button"

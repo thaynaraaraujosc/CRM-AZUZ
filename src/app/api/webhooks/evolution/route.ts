@@ -284,23 +284,6 @@ export async function processarMensagemRecebida(
       .catch((erro) => console.error("[evolution] falha ao guardar a foto no contato:", erro));
   }
 
-  // Só entra como lead novo no funil quando ALGUÉM DE FORA escreveu primeiro pra um contato que
-  // ainda não existia: mensagem que a própria pessoa manda do celular pra alguém (ex.: um
-  // contato pessoal) não deve virar negócio no funil sozinha.
-  if (!ehGrupo && !fromMe && !contatoExistente) {
-    await entrarNaPrimeiraEtapaComoNovoLead({
-      workspaceId,
-      contatoNome: chaveContato,
-      ehGrupo,
-      origem: "WhatsApp",
-      contaCanal,
-    });
-  } else if (!ehGrupo && !fromMe) {
-    // Contato que já tinha card: a ETAPA não se mexe, mas o card sobe pro topo da coluna. Quem
-    // acabou de falar precisa estar visível sem rolar a coluna inteira.
-    await subirCardParaOTopo(workspaceId, chaveContato);
-  }
-
   await prisma.mensagemExtra.create({
     data: {
       id: data.key.id,
@@ -349,6 +332,31 @@ export async function processarMensagemRecebida(
     descricaoGrupo,
     criacaoGrupo,
   });
+
+  // O negócio no funil vem DEPOIS da conversa, e essa ordem importa.
+  //
+  // Era o contrário, e qualquer falha entre os dois (a gravação da mensagem, a marcação de resposta
+  // de campanha) deixava o negócio criado e a conversa não. Na tela isso vira "conversei com a
+  // pessoa e a conversa não chegou", indistinguível de mensagem perdida. A conversa é o registro
+  // principal; o negócio é derivado dela.
+  //
+  // Só entra como lead novo no funil quando ALGUÉM DE FORA escreveu primeiro pra um contato que
+  // ainda não existia: mensagem que a própria pessoa manda do celular pra alguém (ex.: um
+  // contato pessoal) não deve virar negócio no funil sozinha.
+  if (!ehGrupo && !fromMe && !contatoExistente) {
+    await entrarNaPrimeiraEtapaComoNovoLead({
+      workspaceId,
+      contatoNome: chaveContato,
+      ehGrupo,
+      origem: "WhatsApp",
+      contaCanal,
+    });
+  } else if (!ehGrupo && !fromMe) {
+    // Contato que já tinha card: a ETAPA não se mexe, mas o card sobe pro topo da coluna. Quem
+    // acabou de falar precisa estar visível sem rolar a coluna inteira.
+    await subirCardParaOTopo(workspaceId, chaveContato);
+  }
+
 
   // `fromMe` é mensagem que saiu do próprio celular conectado (espelhada aqui). Não é uma pessoa
   // falando com você, e disparar automação nela faria o CRM responder a si mesmo. Grupo também

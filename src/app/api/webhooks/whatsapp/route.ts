@@ -422,21 +422,6 @@ export async function POST(request: Request) {
             whatsapp: waId,
           }));
 
-        // Regra de negócio: todo lead novo entra no funil pela primeira etapa. Contato que já
-        // existia (recebeu mensagem de novo) nunca é mexido de etapa aqui. Só o vendedor decide
-        // mover manualmente, mandar mensagem de novo não pode "resetar" onde ele estava.
-        if (!contatoExistente) {
-          await entrarNaPrimeiraEtapaComoNovoLead({
-            workspaceId: integracao.workspaceId,
-            contatoNome: chaveContato,
-            origem: "WhatsApp",
-            contaCanal: contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
-          });
-        } else {
-          // Contato que já tinha card: a ETAPA não se mexe, mas o card sobe pro topo da coluna.
-          // Quem acabou de falar precisa estar visível sem rolar a coluna inteira.
-          await subirCardParaOTopo(integracao.workspaceId, chaveContato);
-        }
         // Se esta pessoa recebeu um disparo em massa há pouco, esta mensagem é a resposta dele.
         await registrarRespostaDeCampanha(integracao.workspaceId, chaveContato);
 
@@ -499,6 +484,29 @@ export async function POST(request: Request) {
           origem: "Direto",
           contaCanal: contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
         });
+
+        // O negócio no funil vem DEPOIS da conversa, e essa ordem importa.
+        //
+        // Era o contrário, e qualquer falha entre os dois (a gravação da mensagem, a marcação de
+        // resposta de campanha) deixava o negócio criado e a conversa não. Na tela isso vira
+        // "conversei com a pessoa e a conversa não chegou", indistinguível de mensagem perdida. A
+        // conversa é o registro principal; o negócio é derivado dela.
+        //
+        // Regra de negócio: todo lead novo entra no funil pela primeira etapa. Contato que já
+        // existia (recebeu mensagem de novo) nunca é mexido de etapa aqui. Só o vendedor decide
+        // mover manualmente, mandar mensagem de novo não pode "resetar" onde ele estava.
+        if (!contatoExistente) {
+          await entrarNaPrimeiraEtapaComoNovoLead({
+            workspaceId: integracao.workspaceId,
+            contatoNome: chaveContato,
+            origem: "WhatsApp",
+            contaCanal: contaCanalDaConexao(CANAL_OFICIAL, phoneNumberId),
+          });
+        } else {
+          // Contato que já tinha card: a ETAPA não se mexe, mas o card sobe pro topo da coluna.
+          // Quem acabou de falar precisa estar visível sem rolar a coluna inteira.
+          await subirCardParaOTopo(integracao.workspaceId, chaveContato);
+        }
 
         await dispararAutomacoesDeMensagemRecebida({
           workspaceId: integracao.workspaceId,

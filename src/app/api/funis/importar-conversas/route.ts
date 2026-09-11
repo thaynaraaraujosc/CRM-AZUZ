@@ -1,77 +1,32 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { slugId } from "@/lib/ids";
-import { contasCanalVisiveis, filtroContaCanal } from "@/lib/integracoes/conta-canal";
+import { reconciliarFunilEConversas } from "@/lib/conversas/reconciliar";
 
 /**
- * Cria um negócio no funil para cada conversa que ainda não tem um.
+ * Põe funil e Conversas pra contar a mesma história, agora.
  *
- * Existe por dois motivos que se encontram no mesmo lugar:
+ * A regra é: quem está no funil está em Conversas, e quem está em Conversas está no funil. Este
+ * botão fazia só metade dela, criando negócio a partir de conversa; o outro sentido não existia.
  *
- * 1. Só quem escreve PELA PRIMEIRA VEZ entra no funil sozinho. Mandar mensagem de novo nunca pode
- *    mexer na etapa em que o vendedor deixou a pessoa. Quem já era contato antes de existir funil
- *    (ou antes de conectar o canal) ficava fora pra sempre, sem nenhuma forma de entrar em massa.
- * 2. Quem começa a usar o CRM com uma caixa de entrada cheia precisa de um jeito de puxar tudo pro
- *    funil de uma vez, em vez de abrir conversa por conversa.
- *
- * Nunca mexe em card existente: conversa que já tem negócio é pulada, esteja na etapa que estiver.
- * Grupo fica de fora: grupo não é um lead.
+ * Nunca mexe em registro existente e nunca apaga: só cria o lado que falta. Grupo fica de fora
+ * (grupo não é um lead) e conversa arquivada também (arquivar é dizer "isso não está em
+ * atendimento"). A mesma reconciliação roda sozinha pelo relógio, de hora em hora.
  */
 export async function POST() {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
-  const workspaceId = sessao.user.workspaceId;
 
-  const funil = await prisma.funil.findFirst({
-    where: { workspaceId },
-    include: { etapas: { orderBy: { ordem: "asc" }, take: 1 } },
+  // Os DOIS sentidos, não só conversa → negócio.
+  //
+  // Este botão criava negócio a partir de conversa e só. O caminho de volta não existia, então
+  // negócio sem conversa ficava assim pra sempre, e na tela isso vira "conversei com a pessoa e a
+  // conversa não chegou". A mesma reconciliação roda sozinha pelo relógio; aqui ela roda na hora,
+  // pra quem não quer esperar.
+  const resultado = await reconciliarFunilEConversas(sessao.user.workspaceId);
+  return NextResponse.json({
+    criados: resultado.cardsCriados,
+    conversasCriadas: resultado.conversasCriadas,
+    semComoLigar: resultado.semComoLigar,
   });
-  const primeiraEtapa = funil?.etapas[0];
-  if (!primeiraEtapa) {
-    return NextResponse.json({ erro: "Crie um funil com pelo menos uma etapa primeiro." }, { status: 400 });
-  }
-
-  // Só conversas dos canais conectados agora: importar conversa de um canal desconectado criaria
-  // um card que sumiria da tela no instante seguinte, pelo filtro do próprio funil.
-  const visiveis = await contasCanalVisiveis(workspaceId);
-  const conversas = await prisma.conversa.findMany({
-    where: { workspaceId, ehGrupo: false, arquivada: false, ...filtroContaCanal(visiveis) },
-    orderBy: { atualizadoEm: "desc" },
-  });
-
-  const jaTemCard = new Set(
-    (await prisma.negocioCard.findMany({ where: { workspaceId }, select: { nome: true } })).map((c) => c.nome),
-  );
-
-  const novos = conversas.filter((c) => !jaTemCard.has(c.nome));
-  if (!novos.length) return NextResponse.json({ criados: 0 });
-
-  // Mesma regra do lead que chega sozinho (ver `src/lib/funis/upsert.ts`): entra ACIMA do que já
-  // está na coluna, e dentro do lote a conversa mais recente vem primeiro. `novos` já chega
-  // ordenado da mais recente pra mais antiga, então basta ir subindo a partir da menor ordem.
-  const menorOrdem = await prisma.negocioCard.aggregate({
-    where: { etapaId: primeiraEtapa.id },
-    _min: { ordem: true },
-  });
-  let ordem = Math.min(menorOrdem._min.ordem ?? 0, 0) - novos.length;
-
-  await prisma.negocioCard.createMany({
-    data: novos.map((conversa) => ({
-      id: `${workspaceId}-${slugId(conversa.nome)}-${Date.now()}-${ordem}`,
-      etapaId: primeiraEtapa.id,
-      ordem: ordem++,
-      workspaceId,
-      nome: conversa.nome,
-      valor: "-",
-      origem: conversa.canal,
-      // Sem isto o card entraria sem dono e nunca sumiria ao desconectar o canal de onde veio.
-      contaCanal: conversa.contaCanal,
-      dias: "Hoje",
-      data: new Date().toISOString().slice(0, 10),
-    })),
-  });
-
-  return NextResponse.json({ criados: novos.length });
 }

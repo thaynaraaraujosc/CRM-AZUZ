@@ -7,6 +7,7 @@ import { rodarGatilhosDiarios } from "@/lib/funil/gatilhos-etapa";
 import { adotarOrfasDeTodosOsWorkspaces } from "@/lib/conversas/adotar-orfas";
 import { rodarHistoricosPendentes } from "@/lib/integracoes/historico-passo";
 import { padronizarNomesDeTodosOsWorkspaces } from "@/lib/funis/consolidar";
+import { reconciliarTodosOsWorkspaces } from "@/lib/conversas/reconciliar";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 
 /**
@@ -102,6 +103,17 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, renomeados: 0 };
 
+  // Funil e Conversas contando a mesma história: quem está num lado tem que estar no outro. Roda
+  // logo depois da padronização de nomes, de propósito: com os nomes já alinhados, a comparação
+  // acha o par certo em vez de criar registro repetido. Só CRIA o lado que falta, nunca apaga.
+  const reconciliacao =
+    new Date().getUTCMinutes() === 24
+      ? await reconciliarTodosOsWorkspaces().catch((erro) => {
+          console.error("[cron] falha ao reconciliar funil e conversas:", erro);
+          return { workspaces: 0, cardsCriados: 0, conversasCriadas: 0 };
+        })
+      : { workspaces: 0, cardsCriados: 0, conversasCriadas: 0 };
+
   /*
    * A importação do histórico do WhatsApp por QR Code, com a aba fechada.
    *
@@ -128,5 +140,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao });
 }
