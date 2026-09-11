@@ -43,7 +43,10 @@ export async function GET() {
         where: { workspaceId },
         _count: { _all: true },
       }),
-      prisma.conversa.findMany({ where: { workspaceId }, select: { nome: true } }),
+      prisma.conversa.findMany({
+        where: { workspaceId },
+        select: { nome: true, canal: true, ehGrupo: true },
+      }),
       prisma.negocioCard.findMany({ where: { workspaceId }, select: { nome: true, contaCanal: true } }),
     ]);
 
@@ -56,6 +59,34 @@ export async function GET() {
       visiveis.contas.includes(linha.contaCanal) ||
       visiveis.prefixosSemIdentificador.some((p) => linha.contaCanal?.startsWith(`${p}:`)),
   }));
+
+  /*
+   * A janela de 24 horas, do jeito que o CRM enxerga.
+   *
+   * A Meta recusa texto livre fora dela, e o CRM confere antes de tentar usando a última mensagem
+   * RECEBIDA que ele tem gravada. Quando os dois discordam (o CRM deixa passar e a Meta recusa), a
+   * causa está aqui: ou falta no CRM a mensagem que fecharia a conta, ou ela está gravada com
+   * outro nome de contato. Sem este quadro, esse desacordo é invisível.
+   */
+  const ultimasRecebidas = await prisma.mensagemExtra.groupBy({
+    by: ["contato"],
+    where: { workspaceId, tipo: "in" },
+    _max: { criadoEm: true },
+  });
+  const recebidaPorContato = new Map(ultimasRecebidas.map((m) => [m.contato, m._max.criadoEm]));
+  const JANELA_MS = 24 * 60 * 60 * 1000;
+  const janela = todasAsConversas
+    .filter((c) => !c.ehGrupo && c.canal !== "Instagram")
+    .map((c) => {
+      const ultima = recebidaPorContato.get(c.nome) ?? null;
+      return {
+        nome: c.nome,
+        ultimaRecebida: ultima?.toISOString() ?? null,
+        horasDesdeAUltima: ultima ? Math.round(((Date.now() - ultima.getTime()) / 3_600_000) * 10) / 10 : null,
+        crmAchaQueEstaAberta: Boolean(ultima && Date.now() - ultima.getTime() < JANELA_MS),
+      };
+    })
+    .sort((a, b) => (a.horasDesdeAUltima ?? 1e9) - (b.horasDesdeAUltima ?? 1e9));
 
   const visivel = (contaCanal: string | null) =>
     visiveis.contas.includes(contaCanal) ||
@@ -96,6 +127,7 @@ export async function GET() {
         negociosSemConversa: negociosSemConversa.length,
       },
       conversas,
+      janela,
       negociosSemConversa,
       conexoes: integracoes.map((i) => {
         const m = (i.metadados as Record<string, unknown> | null) ?? {};

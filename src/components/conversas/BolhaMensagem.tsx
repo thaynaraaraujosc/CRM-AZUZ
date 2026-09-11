@@ -83,18 +83,26 @@ export function BolhaMensagem({
 
   /** Hora + tiquinhos, o rodapé que toda bolha tem. */
   const rodape = (
-    <span className="tm">
-      {msg.hora}
-      {msg.tipo === "out" ? <StatusMensagemIcone status={msg.status} onTentarNovamente={onTentarNovamente} /> : null}
-      {/* O motivo da falha, com as palavras da Meta. A bolha dizia "não enviada" e não dizia por
-          quê, e o motivo é o que separa "a automação está quebrada" de "a janela de 24 horas
-          fechou". */}
+    <>
+      <span className="tm">
+        {msg.hora}
+        {msg.tipo === "out" ? <StatusMensagemIcone status={msg.status} onTentarNovamente={onTentarNovamente} /> : null}
+      </span>
+      {/*
+        O motivo da falha, com as palavras da Meta.
+        
+        FORA do `.tm`, e não dentro: `.tm` é a linha de hora e tiquinhos, um span em linha, e um
+        bloco de duas linhas dentro dele escapava por cima da bolha em vez de empurrar a altura.
+        Aqui ele é irmão, então a bolha cresce pra caber.
+        
+        O motivo é o que separa "a automação está quebrada" de "a janela de 24 horas fechou".
+      */}
       {msg.tipo === "out" && msg.erroEnvio ? (
         <span className="msg-erro-motivo" title={msg.erroEnvio}>
           {msg.erroEnvio}
         </span>
       ) : null}
-    </span>
+    </>
   );
 
   /**

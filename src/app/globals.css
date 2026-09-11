@@ -2824,12 +2824,23 @@ table.tbl tbody tr:hover td {
    a mensagem não chegou, e ela precisa caber em duas linhas sem esticar a bolha. */
 .msg-erro-motivo {
   display: block;
-  max-width: 34ch;
-  margin-top: 2px;
-  color: var(--danger);
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  /* Cor cheia mesmo dentro da bolha azul, onde o vermelho de sistema some. Sobre azul, branco
+     legível; a borda e o ícone de erro já dizem que é falha. */
+  color: #ffe3e3;
   font-size: var(--texto-xs);
+  font-weight: var(--fw-semibold);
   line-height: 1.35;
   white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Fora da bolha azul (mensagem recebida, prévia), o vermelho normal vale. */
+.bubble:not(.out) .msg-erro-motivo {
+  color: var(--danger);
+  border-top-color: var(--line);
 }
 
 /* A linha de progresso da importação do histórico do WhatsApp: a frase à esquerda e o botão à
