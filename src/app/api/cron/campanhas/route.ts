@@ -10,6 +10,7 @@ import { padronizarNomesDeTodosOsWorkspaces } from "@/lib/funis/consolidar";
 import { reconciliarTodosOsWorkspaces } from "@/lib/conversas/reconciliar";
 import { conferirCanalQrCodeDeTodosOsWorkspaces } from "@/lib/integracoes/saude-qrcode";
 import { corrigirDonosDeTodosOsWorkspaces } from "@/lib/conversas/dono-divergente";
+import { iniciarHistoricosQueFaltam } from "@/lib/integracoes/historico-whatsapp";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 
 /**
@@ -153,6 +154,14 @@ export async function GET(request: Request) {
    * não. Se o minuto acabar no meio, o progresso já está gravado conversa a conversa e o próximo
    * minuto continua de onde parou.
    */
+  // Quem já estava conectado antes do espelhamento existir nunca passou pelo momento em que a
+  // fila é criada, e por isso nunca espelhou conversa nenhuma: nada acontecia, para sempre, sem
+  // erro nenhum. Cria a fila pra quem falta, antes da rodada abaixo processá-la.
+  const espelhamentosIniciados = await iniciarHistoricosQueFaltam().catch((erro) => {
+    console.error("[cron] falha ao iniciar espelhamentos que faltavam:", erro);
+    return { iniciados: 0 };
+  });
+
   const gastos = Date.now() - comecoDaRodada;
   const sobra = Math.min(8_000, 55_000 - gastos);
   const historico =
@@ -167,5 +176,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos, espelhamentosIniciados });
 }

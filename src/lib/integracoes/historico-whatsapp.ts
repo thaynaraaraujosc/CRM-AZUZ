@@ -70,3 +70,35 @@ export async function iniciarHistoricoSeNecessario(workspaceId: string): Promise
     filaRestante: null,
   });
 }
+
+/**
+ * Começa o espelhamento nas conexões que já estavam ligadas antes disso existir.
+ *
+ * `iniciarHistoricoSeNecessario` só é chamado quando a conexão ABRE. Quem já estava conectado
+ * quando essa funcionalidade entrou nunca passou por esse momento, e por isso nunca espelhou
+ * conversa nenhuma: a fila jamais foi criada, então o relógio não tinha o que processar e o
+ * sintoma era simplesmente nada acontecer, para sempre, sem erro nenhum.
+ *
+ * A única saída era desconectar e ler o QR de novo, o que é pedir pro cliente consertar o produto.
+ * Esta passada cria a fila pra quem está conectado e nunca começou. Idempotente: quem já tem
+ * histórico (em andamento ou concluído) não é tocado.
+ */
+export async function iniciarHistoricosQueFaltam(): Promise<{ iniciados: number }> {
+  const conexoes = await prisma.integracao.findMany({
+    where: { provedor: "whatsapp_nao_oficial", status: "conectado" },
+    select: { workspaceId: true, metadados: true },
+  });
+  let iniciados = 0;
+  for (const conexao of conexoes) {
+    const metadados = (conexao.metadados as Record<string, unknown> | null) ?? {};
+    if (metadados.historico) continue;
+    await salvarHistorico(conexao.workspaceId, metadados, {
+      status: "em_andamento",
+      totalChats: null,
+      chatsProcessados: 0,
+      filaRestante: null,
+    }).catch((erro) => console.error(`[historico] falha ao iniciar no workspace ${conexao.workspaceId}:`, erro));
+    iniciados += 1;
+  }
+  return { iniciados };
+}

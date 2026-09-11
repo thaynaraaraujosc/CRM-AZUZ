@@ -10,6 +10,7 @@ import { registrarRespostaDeCampanha } from "@/lib/campanhas/resposta";
 import { CANAL_NAO_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { iniciarHistoricoSeNecessario } from "@/lib/integracoes/historico-whatsapp";
 import { registrarDescarte, registrarSinalDeVida } from "@/lib/integracoes/sinal-de-vida";
+import { chavesDaMensagem, desembrulharMensagem, extrairTextoDaMensagem } from "@/lib/integracoes/texto-da-mensagem";
 
 /** Formato de evento que a Evolution API manda pro webhook configurado na instância. Mesmo body
  * pra todo tipo de evento, o que muda é `event` e o formato de `data`. */
@@ -167,22 +168,15 @@ export async function processarMensagemRecebida(
   };
 
   const fromMe = data.key?.fromMe === true;
-  // Mídia sem legenda não tem "texto" nenhum no sentido normal. Mas precisa aparecer na conversa
-  // mesmo assim (era isso que fazia áudio/imagem recebido sumir sem deixar rastro: caía direto no
-  // "sem texto reconhecível" e era descartado). O conteúdo real do arquivo não vem no payload
-  // (mídia embutida em base64 foi desligada de propósito. Ver `configurarWebhook`), então por
-  // enquanto só o AVISO de que chegou mídia aparece na tela, sem o áudio/imagem em si tocável
-  // dentro do CRM; ainda dá pra abrir e ouvir/ver no próprio celular.
-  const texto =
-    data.message?.conversation ??
-    data.message?.extendedTextMessage?.text ??
-    (data.message?.audioMessage ? "🎤 Mensagem de voz" : undefined) ??
-    (data.message?.imageMessage ? (data.message.imageMessage.caption || "📷 Foto (veja no celular conectado)") : undefined) ??
-    (data.message?.videoMessage ? (data.message.videoMessage.caption || "🎬 Vídeo (veja no celular conectado)") : undefined) ??
-    (data.message?.documentMessage
-      ? (data.message.documentMessage.caption ?? `📄 Documento: ${data.message.documentMessage.fileName ?? "arquivo"}`)
-      : undefined) ??
-    (data.message?.stickerMessage ? "🩶 Figurinha (veja no celular conectado)" : undefined);
+  /*
+   * O conteúdo de verdade pode vir EMBRULHADO. Conversa com mensagens temporárias, foto de ver uma
+   * vez, documento com legenda e mensagem editada guardam o conteúdo um ou dois níveis mais fundo.
+   * O CRM lia só o nível de cima e descartava o resto em silêncio: como mensagem temporária é uma
+   * configuração de cada conversa, ligada pelo CONTATO do lado dele, o sintoma era chegar de uns e
+   * não chegar de outros, sem padrão nenhum. Ver `texto-da-mensagem.ts`.
+   */
+  const conteudo = desembrulharMensagem(data.message as Record<string, unknown> | undefined);
+  const texto = extrairTextoDaMensagem(data.message as Record<string, unknown> | undefined);
   const remoteJid = data.key?.remoteJid;
   // Grupo de WhatsApp: a Evolution/Baileys segue a convenção do próprio WhatsApp: `remoteJid`
   // termina em "@g.us" pra grupo (e é o JID do GRUPO, o mesmo pra qualquer participante que
@@ -196,7 +190,7 @@ export async function processarMensagemRecebida(
     // formato de evento diferente do esperado). Sem isso não dá pra ver pelos logs da Vercel por
     // que uma mensagem específica não apareceu no CRM.
     console.log("[webhook evolution] messages.upsert sem texto/waId/id reconhecível:", JSON.stringify(data).slice(0, 500));
-    await registrarDescarte(workspaceId, "sem texto reconhecível", Object.keys(data.message ?? {}).join(", ") || "sem conteúdo");
+    await registrarDescarte(workspaceId, "sem texto reconhecível", chavesDaMensagem(data.message as Record<string, unknown> | undefined));
     return;
   }
 
@@ -318,9 +312,9 @@ export async function processarMensagemRecebida(
         // propósito), só esse aviso de que existe. Guarda o suficiente pra buscar sob demanda (ver
         // GET /api/integracoes/whatsapp-nao-oficial/midia): hoje isso acontece automaticamente
         // assim que a conversa é aberta, não precisa mais de clique.
-        ...(data.message?.audioMessage
+        ...(conteudo?.audioMessage
           ? { midiaPendente: { remoteJid: remoteJid!, id: data.key.id, fromMe, tipo: "audio" as const } }
-          : data.message?.imageMessage
+          : conteudo?.imageMessage
             ? { midiaPendente: { remoteJid: remoteJid!, id: data.key.id, fromMe, tipo: "imagem" as const } }
             : {}),
       },
