@@ -9,6 +9,7 @@ import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { registrarRespostaDeCampanha } from "@/lib/campanhas/resposta";
 import { CANAL_NAO_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { iniciarHistoricoSeNecessario } from "@/lib/integracoes/historico-whatsapp";
+import { registrarDescarte, registrarSinalDeVida } from "@/lib/integracoes/sinal-de-vida";
 
 /** Formato de evento que a Evolution API manda pro webhook configurado na instância. Mesmo body
  * pra todo tipo de evento, o que muda é `event` e o formato de `data`. */
@@ -77,6 +78,10 @@ export async function POST(request: Request) {
 
   const evento = payload.event?.toLowerCase().replace(/_/g, ".");
 
+  // "A Evolution ainda está falando comigo." Sem esse rastro, "a mensagem não chegou" não tem como
+  // ser investigado: não dá pra saber se ninguém avisou ou se o aviso chegou e foi descartado.
+  await registrarSinalDeVida(workspaceId, evento ?? "desconhecido");
+
   if (evento === "qrcode.updated") {
     const qrDataUrl =
       (payload.data?.qrcode as { base64?: string } | undefined)?.base64 ??
@@ -121,6 +126,7 @@ export async function POST(request: Request) {
     // processar nada dele.
     if (mensagens.length > 20) {
       console.log(`[webhook evolution] lote de ${mensagens.length} mensagens descartado (parece sincronização de histórico, não mensagem ao vivo)`);
+      await registrarDescarte(workspaceId, "lote grande", `${mensagens.length} mensagens de uma vez`);
       return NextResponse.json({ ok: true });
     }
     for (const item of mensagens) {
@@ -190,11 +196,19 @@ export async function processarMensagemRecebida(
     // formato de evento diferente do esperado). Sem isso não dá pra ver pelos logs da Vercel por
     // que uma mensagem específica não apareceu no CRM.
     console.log("[webhook evolution] messages.upsert sem texto/waId/id reconhecível:", JSON.stringify(data).slice(0, 500));
+    await registrarDescarte(workspaceId, "sem texto reconhecível", Object.keys(data.message ?? {}).join(", ") || "sem conteúdo");
     return;
   }
 
   const timestampMs = (data.messageTimestamp ?? Math.floor(Date.now() / 1000)) * 1000;
-  if (!opcoes.permitirHistorico && Date.now() - timestampMs > IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS) return;
+  if (!opcoes.permitirHistorico && Date.now() - timestampMs > IDADE_MAXIMA_MENSAGEM_AO_VIVO_MS) {
+    await registrarDescarte(
+      workspaceId,
+      "mensagem antiga",
+      `${Math.round((Date.now() - timestampMs) / 60_000)} minutos atrás (tratada como sincronização de histórico)`,
+    );
+    return;
+  }
 
   const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: data.key.id } });
   if (jaExiste) return;

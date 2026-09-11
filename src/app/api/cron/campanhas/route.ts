@@ -8,6 +8,7 @@ import { adotarOrfasDeTodosOsWorkspaces } from "@/lib/conversas/adotar-orfas";
 import { rodarHistoricosPendentes } from "@/lib/integracoes/historico-passo";
 import { padronizarNomesDeTodosOsWorkspaces } from "@/lib/funis/consolidar";
 import { reconciliarTodosOsWorkspaces } from "@/lib/conversas/reconciliar";
+import { conferirCanalQrCodeDeTodosOsWorkspaces } from "@/lib/integracoes/saude-qrcode";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 
 /**
@@ -114,6 +115,19 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, cardsCriados: 0, conversasCriadas: 0 };
 
+  // O elo que fica FORA deste banco: o aviso de mensagem nova registrado do lado da Evolution.
+  // Se ele se perder (instância recriada, servidor restaurado, endereço do CRM mudado), o WhatsApp
+  // continua perfeito no celular, a conexão continua marcada como conectada, e nenhuma mensagem
+  // chega. Uma vez por hora o CRM pergunta pro outro lado o que ele tem registrado e conserta
+  // sozinho. Ninguém que compra um CRM deve precisar saber o que é isso pra receber as mensagens.
+  const canalQrCode =
+    new Date().getUTCMinutes() === 25
+      ? await conferirCanalQrCodeDeTodosOsWorkspaces().catch((erro) => {
+          console.error("[cron] falha ao conferir o canal do QR Code:", erro);
+          return { conferidos: 0, reparados: [] as string[] };
+        })
+      : { conferidos: 0, reparados: [] as string[] };
+
   /*
    * A importação do histórico do WhatsApp por QR Code, com a aba fechada.
    *
@@ -140,5 +154,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode });
 }

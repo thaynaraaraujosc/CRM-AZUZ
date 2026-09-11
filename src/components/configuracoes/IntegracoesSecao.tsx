@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 
 import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
 import { ConexaoQrCode } from "./ConexaoQrCode";
+import { SaudeQrCode } from "@/components/configuracoes/SaudeQrCode";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
 import { ConexaoInstagram, ConexaoMetaAds } from "./ConexoesOAuth";
 import { DadosWebhook } from "./DadosWebhook";
@@ -170,6 +171,9 @@ export function IntegracoesSecao() {
             painel={
               <>
                 <ConexaoQrCode />
+                {/* Por que a mensagem não chegou, e o conserto quando dá pra consertar sozinho.
+                    Só aparece quando há algo errado. Ver `saude-qrcode.ts`. */}
+                <SaudeQrCode />
                 {/* A limpeza morava só na categoria WhatsApp, que não está no menu. Ficava
                     inalcançável. Aqui ela está no canal de onde os dados vieram. */}
                 <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />

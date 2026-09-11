@@ -429,3 +429,48 @@ export function enviarReacaoWhatsAppNaoOficial(
     reaction: emoji,
   });
 }
+
+/**
+ * O endereço que a Evolution DEVERIA chamar quando chega mensagem neste workspace.
+ *
+ * Exposto porque é a peça que falta pra responder a pergunta mais cara de todas: "a mensagem
+ * chegou no meu celular e não chegou no CRM". Sem comparar este endereço com o que está registrado
+ * do outro lado, não dá pra distinguir "a Evolution não avisou" de "avisou e o CRM descartou", e
+ * as duas se parecem na tela.
+ */
+export function urlDeWebhookEsperada(): string {
+  return webhookUrl();
+}
+
+/** O webhook que a Evolution tem registrado pra este workspace agora, direto do servidor dela.
+ * `null` quando a instância não existe, não tem webhook, ou a Evolution não respondeu. */
+export async function buscarWebhookRegistrado(
+  workspaceId: string,
+): Promise<{ url: string | null; ativo: boolean; eventos: string[] } | null> {
+  const dados = await chamarEvolution(`/webhook/find/${nomeInstancia(workspaceId)}`, "GET").catch(() => null);
+  if (!dados) return null;
+  // A Evolution mudou o formato entre versões: ora devolve o objeto direto, ora embrulhado.
+  const alvo = (dados.webhook ?? dados) as { url?: string; enabled?: boolean; events?: string[] };
+  if (!alvo || typeof alvo !== "object") return null;
+  return {
+    url: alvo.url ?? null,
+    ativo: alvo.enabled !== false,
+    eventos: Array.isArray(alvo.events) ? alvo.events : [],
+  };
+}
+
+/** Estado da conexão na Evolution ("open", "close", "connecting"). `null` se a instância não
+ * existe nesse servidor ou ele não respondeu. É a verdade do outro lado, contra o `status` que o
+ * CRM guarda no banco: quando os dois discordam, quem manda é este. */
+export async function estadoDaInstancia(workspaceId: string): Promise<string | null> {
+  const estado = await chamarEvolution(`/instance/connectionState/${nomeInstancia(workspaceId)}`, "GET").catch(
+    () => null,
+  );
+  return (estado?.instance?.state as string | undefined) ?? null;
+}
+
+/** Registra o webhook de novo, sem precisar reconectar nem ler QR nenhum. Idempotente. */
+export async function reconfigurarWebhook(workspaceId: string): Promise<void> {
+  const instancia = nomeInstancia(workspaceId);
+  await Promise.all([configurarWebhook(instancia), desativarSincronizacaoDeHistorico(instancia)]);
+}

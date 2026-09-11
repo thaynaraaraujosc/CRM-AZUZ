@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { contasCanalVisiveis } from "@/lib/integracoes/conta-canal";
 import { adotarMensagensOrfas } from "@/lib/conversas/adotar-orfas";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
+import { conferirCanalQrCode } from "@/lib/integracoes/saude-qrcode";
 
 /**
  * Por que uma mensagem está no banco e não aparece na tela.
@@ -118,8 +119,13 @@ export async function GET() {
       conversaComOutroNome: chavesComConversa.get(chaveDeContato(c.nome)) ?? null,
     }));
 
+  // O elo que não fica neste banco: o aviso de mensagem nova registrado do lado da Evolution.
+  // Quando ele se perde, o WhatsApp segue perfeito no celular e nada chega aqui. Confere e repara.
+  const canalQrCode = await conferirCanalQrCode(workspaceId, { reparar: true }).catch(() => null);
+
   return NextResponse.json(
     {
+      canalQrCode,
       resumo: {
         conversasNoBanco: todasAsConversas.length,
         conversasQueAparecem: conversas.filter((c) => c.apareceNaTela).reduce((s, c) => s + c.quantidade, 0),
