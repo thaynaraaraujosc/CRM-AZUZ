@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -216,6 +216,57 @@ function FunilPageInner() {
   // Menu "Marcar como ganho/perdido": abre por card (⋮), grava statusFechamento/motivoPerda/
   // dataFechamento de verdade no NegocioCard (persiste via o mesmo PUT /api/funis que já sincroniza
   // o resto do kanban).
+  /**
+   * Negócios duplicados: o mesmo contato com mais de um card.
+   *
+   * Aconteceu porque o CRM comparava nome com nome e qualquer diferença de espaço ou maiúscula
+   * criava um card novo. O defeito está corrigido, mas o que já está no banco precisa de uma
+   * decisão de gente: juntar apaga card, e apagar o errado apaga trabalho de venda.
+   */
+  const [duplicados, setDuplicados] = useState<{ nome: string; saem: { id: string }[] }[]>([]);
+  const [juntando, setJuntando] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/funis/consolidar")
+      .then((r) => (r.ok ? r.json() : { plano: [] }))
+      .then((d: { plano?: { nome: string; saem: { id: string }[] }[] }) => {
+        if (vivo) setDuplicados(d.plano ?? []);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [funis]);
+
+  const cardsDuplicados = duplicados.reduce((soma, g) => soma + g.saem.length, 0);
+
+  async function juntarDuplicados() {
+    const lista = duplicados
+      .slice(0, 8)
+      .map((g) => `• ${g.nome}`)
+      .join("\n");
+    const resto = duplicados.length > 8 ? `\n…e mais ${duplicados.length - 8}.` : "";
+    const confirmado = window.confirm(
+      `Juntar ${cardsDuplicados} negócio(s) repetido(s)?\n\n` +
+        `De cada pessoa fica o negócio que está mais à frente no funil; os outros são apagados.\n\n${lista}${resto}`,
+    );
+    if (!confirmado) return;
+    setJuntando(true);
+    try {
+      const resposta = await fetch("/api/funis/consolidar", { method: "POST" });
+      const dados = (await resposta.json()) as { cardsRemovidos?: number; erro?: string };
+      if (!resposta.ok) throw new Error(dados.erro ?? String(resposta.status));
+      avisarAutomacao(`${dados.cardsRemovidos ?? 0} negócio(s) repetido(s) foram juntados.`);
+      setDuplicados([]);
+      await recarregarFunis();
+    } catch (erro) {
+      avisarAutomacao(erro instanceof Error ? erro.message : "Não deu pra juntar os negócios agora.");
+    } finally {
+      setJuntando(false);
+    }
+  }
+
   /** Conversa aberta em popup, sem sair do funil. Ver o clique no card. */
   const [conversaAberta, setConversaAberta] = useState<string | null>(null);
   const [desfechoMenu, setDesfechoMenu] = useState<{ coluna: number; card: number; rect: DOMRect } | null>(null);
@@ -497,6 +548,19 @@ function FunilPageInner() {
             >
               {reordenando ? "Reordenando…" : "↑ Mensagens recentes no topo"}
             </button>
+            {/* Só existe enquanto houver o que juntar, e some sozinho depois. Botão de manutenção
+                permanente dentro do produto é conta que o cliente paga. */}
+            {cardsDuplicados > 0 ? (
+              <button
+                type="button"
+                className="btn terciario"
+                disabled={juntando}
+                title="A mesma pessoa está em mais de um negócio. Fica o que está mais à frente no funil."
+                onClick={() => void juntarDuplicados()}
+              >
+                {juntando ? "Juntando…" : `Juntar ${cardsDuplicados} repetido(s)`}
+              </button>
+            ) : null}
             <button
               type="button"
               className="btn ghost"

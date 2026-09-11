@@ -6,6 +6,7 @@ import { rodarGatilhosDeTempo } from "@/lib/automacoes/gatilhos-tempo";
 import { rodarGatilhosDiarios } from "@/lib/funil/gatilhos-etapa";
 import { adotarOrfasDeTodosOsWorkspaces } from "@/lib/conversas/adotar-orfas";
 import { rodarHistoricosPendentes } from "@/lib/integracoes/historico-passo";
+import { padronizarNomesDeTodosOsWorkspaces } from "@/lib/funis/consolidar";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 
 /**
@@ -89,6 +90,18 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, adotadas: 0 };
 
+  // Nome do mesmo contato escrito de jeitos diferentes em contato, negócio e conversa. O defeito
+  // que gerava isso está corrigido, mas o que já está gravado precisa ser alinhado, senão o envio
+  // continua não achando a conversa daquela pessoa. Uma vez por hora, e só escreve em quem está
+  // fora do padrão: no estado normal a rodada lê e não escreve nada. Não apaga linha nenhuma.
+  const nomes =
+    new Date().getUTCMinutes() === 23
+      ? await padronizarNomesDeTodosOsWorkspaces().catch((erro) => {
+          console.error("[cron] falha ao padronizar nomes:", erro);
+          return { workspaces: 0, renomeados: 0 };
+        })
+      : { workspaces: 0, renomeados: 0 };
+
   /*
    * A importação do histórico do WhatsApp por QR Code, com a aba fechada.
    *
@@ -115,5 +128,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes });
 }
