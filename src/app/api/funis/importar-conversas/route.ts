@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { reconciliarFunilEConversas } from "@/lib/conversas/reconciliar";
+import { contarDesalinhados, reconciliarFunilEConversas } from "@/lib/conversas/reconciliar";
 
 /**
  * Põe funil e Conversas pra contar a mesma história, agora.
@@ -29,4 +29,11 @@ export async function POST() {
     conversasCriadas: resultado.conversasCriadas,
     semComoLigar: resultado.semComoLigar,
   });
+}
+
+/** Quantos estão fora de compasso agora. A tela usa pra só mostrar o botão quando há o que fazer. */
+export async function GET() {
+  const sessao = await auth();
+  if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+  return NextResponse.json(await contarDesalinhados(sessao.user.workspaceId));
 }

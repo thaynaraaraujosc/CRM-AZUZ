@@ -30,6 +30,27 @@ export type Reconciliacao = {
   semComoLigar: string[];
 };
 
+/**
+ * Quantos registros estão fora de compasso, sem consertar nada.
+ *
+ * Serve pra tela decidir se mostra o botão de alinhar. Botão de manutenção que fica na tela pra
+ * sempre é conta que o cliente paga: ele sugere que tem alguma coisa pra fazer quando não tem.
+ */
+export async function contarDesalinhados(workspaceId: string): Promise<{ total: number }> {
+  const [conversas, cards] = await Promise.all([
+    prisma.conversa.findMany({
+      where: { workspaceId, ehGrupo: false, arquivada: false },
+      select: { nome: true },
+    }),
+    prisma.negocioCard.findMany({ where: { workspaceId }, select: { nome: true } }),
+  ]);
+  const chavesComCard = new Set(cards.map((c) => chaveDeContato(c.nome)));
+  const chavesComConversa = new Set(conversas.map((c) => chaveDeContato(c.nome)));
+  const semCard = conversas.filter((c) => !chavesComCard.has(chaveDeContato(c.nome))).length;
+  const semConversa = cards.filter((c) => !chavesComConversa.has(chaveDeContato(c.nome))).length;
+  return { total: semCard + semConversa };
+}
+
 export async function reconciliarFunilEConversas(workspaceId: string): Promise<Reconciliacao> {
   const [conversas, cards, contatos, funil] = await Promise.all([
     prisma.conversa.findMany({

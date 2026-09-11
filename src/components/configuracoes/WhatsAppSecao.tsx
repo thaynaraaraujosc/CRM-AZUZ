@@ -7,6 +7,7 @@ import { ConexaoManualWhatsApp } from "./ConexaoManualWhatsApp";
 import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { useIntegracaoNaoOficial, type HistoricoSync } from "./useIntegracaoNaoOficial";
+import { ModeloDeRetomada } from "./ModeloDeRetomada";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { IconAlerta } from "@/components/icons";
 
@@ -190,6 +191,9 @@ export function WhatsAppSecao() {
                 onTrazerMaisAntigas={naoOficial.trazerConversasMaisAntigas}
               />
             ) : null}
+            {/* Só na conexão oficial: modelo aprovado é coisa da Cloud API. No QR Code não existe
+                janela de 24 horas nem modelo, então a escolha não teria o que fazer. */}
+            {metaConectada ? <ModeloDeRetomada /> : null}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

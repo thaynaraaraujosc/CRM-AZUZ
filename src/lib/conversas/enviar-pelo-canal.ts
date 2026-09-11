@@ -4,6 +4,7 @@ import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 import { enviarDirectInstagram } from "@/lib/integracoes/instagram-login";
 import { contaConectada, enviarPelaCloudApi, janelaDeAtendimentoAberta } from "@/lib/integracoes/whatsapp-oficial";
 import { dentroDaJanelaDirect } from "@/lib/social/janela-direct";
+import { enviarModeloDeRetomada } from "./retomada-envio";
 
 /**
  * Manda um texto pelo canal de uma conversa. Do lado do SERVIDOR.
@@ -92,10 +93,16 @@ export async function enviarTextoPeloCanal(params: {
      * letras, pra tela de execuções mostrar a saída em vez de um enigma.
      */
     if (!(await janelaDeAtendimentoAberta(workspaceId, conversaNome))) {
+      // Fora da janela, o CRM tenta o modelo de retomada que a pessoa escolheu UMA vez em
+      // Configurações. É o que faz o follow-up sair sozinho em vez de virar tarefa de quem usa:
+      // o follow-up existe pra falar com quem parou de responder, ou seja, ele nasce mirando o
+      // lado de fora da janela. Sem modelo escolhido, nada muda e o motivo é dito como antes.
+      const retomada = await enviarModeloDeRetomada({ workspaceId, conversaNome, destinatario: conversa.contato });
+      if (retomada) return retomada;
       return {
         enviado: false,
         motivo:
-          "a janela de 24 horas do WhatsApp fechou. Fora dela a Meta só aceita modelo aprovado: troque este bloco por “Enviar modelo do WhatsApp” ou mova o envio pra dentro das 24 horas.",
+          "a janela de 24 horas do WhatsApp fechou. Fora dela a Meta só aceita modelo aprovado. Escolha um modelo de retomada em Configurações → WhatsApp e o CRM passa a mandar sozinho nessas horas.",
       };
     }
 

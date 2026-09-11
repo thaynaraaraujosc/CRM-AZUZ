@@ -4,6 +4,7 @@ import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 import { enviarDirectComRespostasRapidas } from "@/lib/integracoes/instagram-login";
 import { contaConectada, enviarPelaCloudApi, janelaDeAtendimentoAberta } from "@/lib/integracoes/whatsapp-oficial";
 import { enviarTextoPeloCanal } from "./enviar-pelo-canal";
+import { enviarModeloDeRetomada } from "./retomada-envio";
 
 /**
  * Manda uma pergunta com opções pelo canal da conversa, no melhor formato que aquele canal
@@ -139,11 +140,26 @@ export async function enviarPerguntaPeloCanal(params: {
      * inglês, difícil de ligar à causa. Aqui a explicação já vem certa e a chamada nem sai.
      */
     if (!(await janelaDeAtendimentoAberta(workspaceId, conversaNome))) {
+      // Igual ao envio de texto: tenta o modelo de retomada escolhido uma vez em Configurações.
+      // A pergunta com botões perde os botões nesse caminho, porque modelo aprovado tem formato
+      // próprio. Melhor a conversa recomeçar sem botão do que não recomeçar.
+      const retomada = await enviarModeloDeRetomada({ workspaceId, conversaNome, destinatario: conversa.contato });
+      if (retomada) {
+        return {
+          enviado: retomada.enviado,
+          formato: "numerado",
+          motivo: retomada.motivo,
+          wamid: retomada.wamid,
+          observacao: retomada.enviado
+            ? "a janela de 24 horas estava fechada: foi o modelo de retomada, sem os botões"
+            : undefined,
+        };
+      }
       return {
         enviado: false,
         formato: "numerado",
         motivo:
-          "a janela de 24 horas do WhatsApp fechou. Fora dela a Meta só aceita modelo aprovado: troque este bloco por “Enviar modelo do WhatsApp” ou mova o envio pra dentro das 24 horas.",
+          "a janela de 24 horas do WhatsApp fechou. Fora dela a Meta só aceita modelo aprovado. Escolha um modelo de retomada em Configurações → WhatsApp e o CRM passa a mandar sozinho nessas horas.",
       };
     }
 

@@ -156,9 +156,10 @@ function FunilPageInner() {
       // Recarrega do servidor: os cards novos foram criados lá, não aqui; sem isso a tela só
       // mostraria a mudança no próximo F5. Por `recarregar` (e não `setFunis`) pra tela não
       // devolver num PUT o funil inteiro que o servidor acabou de escrever.
+      setDesalinhados(0);
       await recarregarFunis();
     } catch (erro) {
-      avisarAutomacao(erro instanceof Error ? erro.message : "Não foi possível trazer as conversas.");
+      avisarAutomacao(erro instanceof Error ? erro.message : "Não foi possível alinhar funil e conversas.");
     } finally {
       setImportando(false);
     }
@@ -254,6 +255,28 @@ function FunilPageInner() {
   }, [funis]);
 
   const cardsDuplicados = duplicados.reduce((soma, g) => soma + g.saem.length, 0);
+
+  /*
+   * Quantos registros estão fora de compasso entre funil e Conversas.
+   *
+   * O botão de alinhar só existe enquanto houver o que alinhar. Botão de manutenção parado na tela
+   * pra sempre sugere que tem alguma coisa pra fazer quando não tem, e quem comprou o CRM não
+   * deveria precisar pensar nisso: o alinhamento roda sozinho pelo relógio, isto aqui é só o atalho
+   * pra quem não quer esperar.
+   */
+  const [desalinhados, setDesalinhados] = useState(0);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/funis/importar-conversas")
+      .then((r) => (r.ok ? r.json() : { total: 0 }))
+      .then((d: { total?: number }) => {
+        if (vivo) setDesalinhados(d.total ?? 0);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [funis]);
 
   async function juntarDuplicados() {
     const lista = duplicados
@@ -543,16 +566,19 @@ function FunilPageInner() {
         sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} ${totalVisivel === 1 ? "negócio" : "negócios"} ${filtroAtivo ? (totalVisivel === 1 ? "encontrado" : "encontrados") : "no funil"}`}
         actions={
           <>
-            {/* Ação de apoio: usada de vez em quando, não deve competir com criar funil/etapa. */}
-            <button
-              type="button"
-              className="btn terciario"
-              disabled={importando}
-              title="Deixa funil e conversas iguais: cria o negócio que falta no funil e a conversa que falta no WhatsApp"
-              onClick={() => void importarConversas()}
-            >
-              {importando ? "Alinhando…" : "Alinhar com Conversas"}
-            </button>
+            {/* Só aparece quando há o que alinhar, e some sozinho depois. O alinhamento roda pelo
+                relógio de qualquer jeito; este botão é o atalho pra quem não quer esperar. */}
+            {desalinhados > 0 ? (
+              <button
+                type="button"
+                className="btn terciario"
+                disabled={importando}
+                title="Deixa funil e conversas iguais: cria o negócio que falta no funil e a conversa que falta no WhatsApp"
+                onClick={() => void importarConversas()}
+              >
+                {importando ? "Alinhando…" : `Alinhar ${desalinhados} com Conversas`}
+              </button>
+            ) : null}
             <button
               type="button"
               className="btn terciario"
