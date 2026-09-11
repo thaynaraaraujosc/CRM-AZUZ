@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { provedorDoCanal } from "@/lib/integracoes/conta-canal";
 
 /**
  * Devolve às conversas as mensagens que estão gravadas mas não aparecem.
@@ -19,6 +20,12 @@ import { prisma } from "@/lib/prisma";
  *   tela mensagem de um número desconectado;
  * - só preenche foto de contato que está sem foto, pra nunca sobrescrever uma escolhida à mão.
  */
+/** Os nomes de `canal` que pertencem a um provedor. `whatsapp_baileys` é o nome antigo do QR
+ * Code e ainda está gravado em mensagem de saída. */
+function canaisDoProvedor(provedor: string): string[] {
+  return ["whatsapp_baileys", provedor].filter((c) => provedorDoCanal(c) === provedorDoCanal(provedor));
+}
+
 export async function adotarMensagensOrfas(workspaceId: string): Promise<{
   adotadas: number;
   aindaOrfas: number;
@@ -31,8 +38,29 @@ export async function adotarMensagensOrfas(workspaceId: string): Promise<{
 
   let adotadas = 0;
   for (const conversa of conversas) {
+    const provedorDaConversa = conversa.contaCanal!.split(":")[0];
     const { count } = await prisma.mensagemExtra.updateMany({
-      where: { workspaceId, contato: conversa.nome, contaCanal: null },
+      where: {
+        workspaceId,
+        contato: conversa.nome,
+        contaCanal: null,
+        /*
+         * Nunca adotar mensagem que entrou por OUTRA conexão.
+         *
+         * Este era o defeito: a adoção copiava o dono da conversa pra dentro das mensagens sem
+         * olhar o `canal` de cada uma. Uma conversa que pertencia à API oficial carimbava como
+         * oficial mensagem que tinha chegado pelo QR Code. Enquanto as duas estavam ligadas
+         * ninguém via diferença; ao desconectar a oficial, essas mensagens sumiram da tela com o
+         * número que as recebeu ainda conectado.
+         *
+         * `canal` nulo continua sendo adotado: é a mensagem de saída gravada antes dessa coluna
+         * existir, que não diz de onde veio e é justamente o que esta função nasceu pra consertar.
+         */
+        OR: [
+          { canal: null },
+          { canal: { in: canaisDoProvedor(provedorDaConversa) } },
+        ],
+      },
       data: { contaCanal: conversa.contaCanal },
     });
     adotadas += count;

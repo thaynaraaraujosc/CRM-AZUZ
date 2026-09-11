@@ -6,6 +6,7 @@ import { contasCanalVisiveis } from "@/lib/integracoes/conta-canal";
 import { adotarMensagensOrfas } from "@/lib/conversas/adotar-orfas";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { conferirCanalQrCode } from "@/lib/integracoes/saude-qrcode";
+import { corrigirDonosDivergentes } from "@/lib/conversas/dono-divergente";
 
 /**
  * Por que uma mensagem está no banco e não aparece na tela.
@@ -119,6 +120,53 @@ export async function GET() {
       conversaComOutroNome: chavesComConversa.get(chaveDeContato(c.nome)) ?? null,
     }));
 
+  /*
+   * As ÚLTIMAS QUE CHEGARAM, uma a uma, com o veredito de cada uma.
+   *
+   * É a pergunta que a pessoa faz de verdade: "recebi no celular agora e não apareceu aqui".
+   * Contagem agregada não responde isso, porque some a mensagem específica dentro do total. Aqui
+   * cada linha diz se ela está gravada, se ELA aparece, se a CONVERSA dela aparece, e qual das
+   * duas coisas está barrando. Sem este quadro só restava adivinhar, e adivinhar já custou caro.
+   */
+  const ultimasMensagens = await prisma.mensagemExtra.findMany({
+    where: { workspaceId },
+    orderBy: { criadoEm: "desc" },
+    take: 12,
+    select: { contato: true, tipo: true, canal: true, contaCanal: true, criadoEm: true },
+  });
+  const donoDaConversa = new Map(todasAsConversas.map((c) => [c.nome, c]));
+  const conversasComDono = await prisma.conversa.findMany({
+    where: { workspaceId, nome: { in: ultimasMensagens.map((m) => m.contato) } },
+    select: { nome: true, contaCanal: true },
+  });
+  const contaDaConversa = new Map(conversasComDono.map((c) => [c.nome, c.contaCanal]));
+  const chegando = ultimasMensagens.map((m) => {
+    const mensagemAparece = visivel(m.contaCanal);
+    const temConversa = donoDaConversa.has(m.contato);
+    const conversaAparece = temConversa && visivel(contaDaConversa.get(m.contato) ?? null);
+    return {
+      contato: m.contato,
+      tipo: m.tipo,
+      quando: m.criadoEm?.toISOString() ?? null,
+      canal: m.canal,
+      contaCanal: m.contaCanal,
+      contaCanalDaConversa: contaDaConversa.get(m.contato) ?? null,
+      mensagemAparece,
+      conversaAparece,
+      veredito: !temConversa
+        ? "gravada, mas não existe conversa com esse nome"
+        : !conversaAparece
+          ? "gravada, mas a CONVERSA está marcada com uma conexão que não está ligada"
+          : !mensagemAparece
+            ? "gravada, mas a MENSAGEM está marcada com uma conexão que não está ligada"
+            : "aparece na tela",
+    };
+  });
+
+  // Mensagem que entrou por uma conexão e ficou marcada como sendo de outra: some da tela quando a
+  // outra é desconectada, com o número que a recebeu ainda conectado. Conserta antes de responder.
+  const donosCorrigidos = await corrigirDonosDivergentes(workspaceId).catch(() => null);
+
   // O elo que não fica neste banco: o aviso de mensagem nova registrado do lado da Evolution.
   // Quando ele se perde, o WhatsApp segue perfeito no celular e nada chega aqui. Confere e repara.
   const canalQrCode = await conferirCanalQrCode(workspaceId, { reparar: true }).catch(() => null);
@@ -126,6 +174,8 @@ export async function GET() {
   return NextResponse.json(
     {
       canalQrCode,
+      chegando,
+      donosCorrigidos,
       resumo: {
         conversasNoBanco: todasAsConversas.length,
         conversasQueAparecem: conversas.filter((c) => c.apareceNaTela).reduce((s, c) => s + c.quantidade, 0),

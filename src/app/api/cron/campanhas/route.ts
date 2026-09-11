@@ -9,6 +9,7 @@ import { rodarHistoricosPendentes } from "@/lib/integracoes/historico-passo";
 import { padronizarNomesDeTodosOsWorkspaces } from "@/lib/funis/consolidar";
 import { reconciliarTodosOsWorkspaces } from "@/lib/conversas/reconciliar";
 import { conferirCanalQrCodeDeTodosOsWorkspaces } from "@/lib/integracoes/saude-qrcode";
+import { corrigirDonosDeTodosOsWorkspaces } from "@/lib/conversas/dono-divergente";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 
 /**
@@ -92,6 +93,18 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, adotadas: 0 };
 
+  // Mensagem que entrou por uma conexão e ficou marcada como sendo de outra. Enquanto as duas
+  // estão ligadas ninguém vê diferença; ao desconectar uma, some da tela o que a outra recebeu.
+  // Roda logo depois da adoção de órfãs, que era o caminho que produzia a divergência. Só escreve
+  // em quem está divergente: no estado normal a rodada lê e não escreve nada.
+  const donos =
+    new Date().getUTCMinutes() === 8
+      ? await corrigirDonosDeTodosOsWorkspaces().catch((erro) => {
+          console.error("[cron] falha ao corrigir donos divergentes:", erro);
+          return { workspaces: 0, mensagensCorrigidas: 0, conversasCorrigidas: 0 };
+        })
+      : { workspaces: 0, mensagensCorrigidas: 0, conversasCorrigidas: 0 };
+
   // Nome do mesmo contato escrito de jeitos diferentes em contato, negócio e conversa. O defeito
   // que gerava isso está corrigido, mas o que já está gravado precisa ser alinhado, senão o envio
   // continua não achando a conversa daquela pessoa. Uma vez por hora, e só escreve em quem está
@@ -154,5 +167,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos });
 }

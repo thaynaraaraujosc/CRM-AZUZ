@@ -198,3 +198,40 @@ export function filtroConexaoDeNegocio(provedores: string[]) {
     ],
   };
 }
+
+/**
+ * O provedor que REALMENTE carregou uma mensagem, lido do `canal` dela.
+ *
+ * `canal` é escrito por quem recebeu/enviou e não mente: é o webhook da Evolution que grava
+ * `whatsapp_nao_oficial`, o da Meta que grava `meta_whatsapp`. Já `contaCanal` (a conexão dona) é
+ * copiado de um lado pro outro em vários caminhos, e é aí que ele se descola da verdade.
+ *
+ * `null` quando o canal não diz nada (mensagem antiga, ou saída gravada antes de existir a coluna).
+ */
+export function provedorDoCanal(canal: string | null | undefined): string | null {
+  if (!canal) return null;
+  const normalizado = canal.toLowerCase();
+  // `whatsapp_baileys` é o nome antigo do mesmo canal. Ele ainda está gravado em mensagem de saída.
+  if (normalizado === "whatsapp_baileys" || normalizado === CANAL_NAO_OFICIAL) return CANAL_NAO_OFICIAL;
+  if (normalizado === CANAL_OFICIAL) return CANAL_OFICIAL;
+  if (normalizado === CANAL_INSTAGRAM) return CANAL_INSTAGRAM;
+  // "WhatsApp" e "Instagram" (com maiúscula) são o rótulo da CONVERSA, não do provedor: não dá pra
+  // distinguir API oficial de QR Code por eles, então não afirmam nada.
+  return null;
+}
+
+/**
+ * O dono gravado contradiz o canal que carregou a mensagem?
+ *
+ * Este é o defeito que fazia mensagem chegar e sumir: uma mensagem que entrou pelo QR Code ficava
+ * marcada como sendo da API oficial. Enquanto as duas conexões estavam ligadas, ninguém via
+ * diferença. No instante em que a oficial foi desconectada, a mensagem sumiu da tela, embora o
+ * número que a recebeu continuasse conectado.
+ *
+ * Só afirma quando os DOIS lados dizem algo. Canal mudo ou dono vazio não é divergência.
+ */
+export function donoContradizOCanal(canal: string | null | undefined, contaCanal: string | null | undefined): boolean {
+  const provedor = provedorDoCanal(canal);
+  if (!provedor || !contaCanal) return false;
+  return !contaCanal.startsWith(`${provedor}:`);
+}
