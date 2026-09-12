@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { Topbar } from "@/components/ui";
 import { PLANOS, type PlanoId } from "@/lib/assinatura/planos";
+import { CriarContaCortesia } from "@/components/admin/CriarContaCortesia";
 
 type WorkspaceLinha = {
   id: string;
@@ -30,16 +31,21 @@ function formatarData(iso: string): string {
  * assinatura. Clicar numa linha abre o detalhe pra editar plano/acessos. */
 export default function AdminWorkspacesPage() {
   const [workspaces, setWorkspaces] = useState<WorkspaceLinha[] | null>(null);
+  // Muda quando uma conta nova é criada: é o que faz a lista abaixo se atualizar sozinha, sem a
+  // pessoa precisar recarregar a página pra ver o que acabou de criar.
+  const [versao, setVersao] = useState(0);
 
   useEffect(() => {
     fetch("/api/admin/workspaces")
       .then((r) => r.json())
       .then(setWorkspaces);
-  }, []);
+  }, [versao]);
 
   return (
     <div className="view">
       <Topbar title="Workspaces" sub={workspaces ? `${workspaces.length} empresas cadastradas` : undefined} />
+
+      <CriarContaCortesia aoCriar={() => setVersao((v) => v + 1)} />
 
       <div className="config-tabela-scroll" style={{ margin: "0 17px 17px" }}>
         <table className="config-tabela-notif">
