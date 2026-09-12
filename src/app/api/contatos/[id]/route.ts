@@ -4,6 +4,7 @@ import type { Contato } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { aoAtualizarContato } from "@/lib/automacoes/gatilhos-crm";
+import { somenteCamposDeContato } from "@/lib/contatos/campos-editaveis";
 
 function paraContato(linha: { etiquetas: unknown; [k: string]: unknown }): Contato {
   return {
@@ -28,11 +29,13 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/contatos/[
 
   const { count } = await prisma.contato.updateMany({
     where: { id, workspaceId: sessao.user.workspaceId },
-    data: { ...dados, etiquetas: dados.etiquetas ?? undefined },
+    // Lista fechada de campos: espalhar o corpo direto deixava o navegador gravar `workspaceId`
+    // (mover o contato pra outra empresa), `id` e `criadoEm`. Ver `campos-editaveis.ts`.
+    data: somenteCamposDeContato(dados),
   });
   if (count === 0) return NextResponse.json({ erro: "Contato não encontrado" }, { status: 404 });
 
-  const linha = await prisma.contato.findUniqueOrThrow({ where: { id } });
+  const linha = await prisma.contato.findFirstOrThrow({ where: { id, workspaceId: sessao.user.workspaceId } });
   aoAtualizarContato({ workspaceId: sessao.user.workspaceId, contatoNome: linha.nome, antes, depois: linha });
   return NextResponse.json(paraContato(linha));
 }

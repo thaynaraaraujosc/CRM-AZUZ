@@ -2,6 +2,15 @@ import { NextResponse } from "next/server";
 
 import type { RespostaFormulario } from "@/lib/formularios-context";
 import { prisma } from "@/lib/prisma";
+import {
+  POLITICAS,
+  TAMANHO_MAXIMO,
+  contarChamada,
+  corpoGrandeDemais,
+  ipDeQuemChamou,
+  respostaDeCorpoGrande,
+  respostaDeLimiteExcedido,
+} from "@/lib/seguranca/limite-de-uso";
 import { dispararGatilhosDoLead } from "@/lib/funil/gatilhos-etapa";
 import { dispararAutomacoesDoCrm } from "@/lib/automation-flow/disparar-no-servidor";
 
@@ -25,6 +34,14 @@ function nomeDeQuemRespondeu(valores: Record<string, string>): string | null {
 }
 
 export async function POST(request: Request, ctx: RouteContext<"/api/formularios/[id]/respostas">) {
+  // Rota PÚBLICA (o lead que responde não tem login). Sem limite, ela vira um jeito grátis de
+  // encher a base de um cliente de contato falso, e sem teto de tamanho um corpo gigante derruba o
+  // processo inteiro, não só esta chamada.
+  if (corpoGrandeDemais(request, TAMANHO_MAXIMO.formulario)) return respostaDeCorpoGrande();
+  const ip = await ipDeQuemChamou();
+  const limite = contarChamada(`formulario-publico:${ip}`, POLITICAS.formularioPublico);
+  if (!limite.permitido) return respostaDeLimiteExcedido(limite.esperarSegundos);
+
   const { id } = await ctx.params;
   const formulario = await prisma.formulario.findUnique({ where: { id }, select: { workspaceId: true } });
   if (!formulario) return NextResponse.json({ erro: "Formulário não encontrado" }, { status: 404 });

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { somenteCamposDeContato } from "@/lib/contatos/campos-editaveis";
 import { aoAtualizarContato, aoCriarContato } from "@/lib/automacoes/gatilhos-crm";
 import { slugId } from "@/lib/ids";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
@@ -27,13 +28,23 @@ export async function upsertContato(params: {
   dados?: Partial<Contato> & Record<string, unknown>;
   origemPadrao?: string;
 }) {
-  const { workspaceId, nome, dados = {}, origemPadrao = "Salvo manualmente" } = params;
+  const { workspaceId, nome, dados: recebidos = {}, origemPadrao = "Salvo manualmente" } = params;
+  /*
+   * Lista fechada de campos, antes de qualquer escrita.
+   *
+   * `...dados` era espalhado direto no `create`/`update`, DEPOIS de `workspaceId`, então um campo
+   * `workspaceId` vindo de fora simplesmente vencia. Esta função é chamada pela rota pública do
+   * formulário (`POST /api/formularios/[id]/contatos`, sem sessão nenhuma): quer dizer que alguém
+   * de fora, com o link de um formulário, movia um contato de uma empresa pra outra. Escrita
+   * cruzando workspaces, que é o que o isolamento existe pra impedir.
+   */
+  const dados = somenteCamposDeContato(recebidos as Record<string, unknown>);
 
   const existente = await prisma.contato.findUnique({ where: { workspaceId_nome: { workspaceId, nome } } });
   if (existente) {
     const atualizado = await prisma.contato.update({
       where: { workspaceId_nome: { workspaceId, nome } },
-      data: { ...dados, etiquetas: dados.etiquetas ?? undefined },
+      data: dados,
     });
     aoAtualizarContato({ workspaceId, contatoNome: nome, antes: existente, depois: atualizado });
     return atualizado;
@@ -53,7 +64,6 @@ export async function upsertContato(params: {
       ultima: "Agora",
       valor: "-",
       ...dados,
-      etiquetas: dados.etiquetas ?? undefined,
     },
   });
   aoCriarContato({ workspaceId, contatoNome: nome, contatoId: criado.id });

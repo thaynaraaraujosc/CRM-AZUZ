@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { formularioUsaCampo } from "@/lib/formularios/campos-do-formulario";
 
 /**
  * GET público (sem `auth()`) usado só por `/formulario-preview` pra popular a lista de
@@ -9,8 +10,15 @@ import { prisma } from "@/lib/prisma";
  */
 export async function GET(_request: Request, ctx: RouteContext<"/api/formularios/[id]/equipe-sugerida">) {
   const { id } = await ctx.params;
-  const formulario = await prisma.formulario.findUnique({ where: { id }, select: { workspaceId: true } });
+  const formulario = await prisma.formulario.findUnique({
+    where: { id },
+    select: { workspaceId: true, paginas: true },
+  });
   if (!formulario) return NextResponse.json({ erro: "Formulário não encontrado" }, { status: 404 });
+
+  // Só quando o formulário tem mesmo um campo de responsável. Mesma regra de `contatos-sugeridos`:
+  // rota pública não entrega a equipe de uma empresa pra quem só tem o link do formulário.
+  if (!formularioUsaCampo(formulario.paginas, "responsavel")) return NextResponse.json([]);
 
   const membros = await prisma.membro.findMany({
     where: { workspaceId: formulario.workspaceId, ativo: true },

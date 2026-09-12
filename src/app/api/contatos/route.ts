@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { Contato } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { somenteCamposDeContato } from "@/lib/contatos/campos-editaveis";
 import { aoAtualizarContato } from "@/lib/automacoes/gatilhos-crm";
 import { encontrarContatoPorTelefone, upsertContato } from "@/lib/contatos/upsert";
 
@@ -60,7 +61,9 @@ export async function POST(request: Request) {
   if (duplicataPorTelefone) {
     const linha = await prisma.contato.update({
       where: { id: duplicataPorTelefone.id },
-      data: { ...dados, etiquetas: dados.etiquetas ?? undefined },
+      // Lista fechada: espalhar o corpo deixava o navegador gravar `workspaceId` e mover o
+      // contato pra outra empresa. Ver `campos-editaveis.ts`.
+      data: somenteCamposDeContato(dados),
     });
     // Este caminho escreve direto, sem passar por `upsertContato`: então o disparo precisa estar
     // aqui também, senão uma edição que cai na mesclagem por telefone não acionaria nada.

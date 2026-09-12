@@ -53,6 +53,12 @@ export const POLITICAS = {
   custoExterno: { maximo: 30, janelaSegundos: 60 },
   /** Rotas autenticadas comuns: teto alto, só pra conter laço acidental ou raspagem. */
   padraoAutenticado: { maximo: 300, janelaSegundos: 60 },
+  /**
+   * Formulário público: quem chama é um lead de verdade, sem login, e o mesmo endereço pode ser um
+   * escritório inteiro. Generoso pra não barrar ninguém preenchendo, apertado o bastante pra que
+   * criar contato em massa na base de um cliente deixe de ser grátis.
+   */
+  formularioPublico: { maximo: 30, janelaSegundos: 300 },
 } as const satisfies Record<string, PoliticaDeLimite>;
 
 export type ResultadoDoLimite = {
@@ -84,6 +90,39 @@ export function contarChamada(chave: string, politica: PoliticaDeLimite): Result
   }
   return { permitido: true, esperarSegundos: 0 };
 }
+
+/**
+ * Teto de tamanho do corpo da requisição.
+ *
+ * Sem isto, qualquer rota aceita um JSON de dezenas de MB: o processo do Node trava tentando
+ * parsear e derruba o servidor inteiro, não só aquela chamada. Já aconteceu de verdade neste CRM
+ * pelo webhook da Evolution, e a defesa tinha ficado só lá.
+ *
+ * Confere o `content-length` ANTES de ler o corpo, que é o único momento em que dá pra recusar sem
+ * pagar o custo. Quem não manda o cabeçalho passa: o limite real de corpo sem tamanho declarado é
+ * da hospedagem, e recusar por ausência de cabeçalho quebraria cliente legítimo.
+ */
+export function corpoGrandeDemais(request: Request, maximoBytes: number): boolean {
+  const declarado = Number(request.headers.get("content-length") ?? 0);
+  return Number.isFinite(declarado) && declarado > maximoBytes;
+}
+
+/** Resposta padrão pra corpo acima do teto. */
+export function respostaDeCorpoGrande(): Response {
+  return new Response(JSON.stringify({ erro: "Conteúdo grande demais." }), {
+    status: 413,
+    headers: { "content-type": "application/json", "cache-control": "no-store" },
+  });
+}
+
+/** Tetos por tipo de rota. Anexo e foto passam por rotas que aceitam base64, e por isso são
+ * maiores; o resto do CRM manda JSON pequeno. */
+export const TAMANHO_MAXIMO = {
+  /** Formulário, cadastro, convite: campos de texto e nada mais. */
+  formulario: 256 * 1024,
+  /** JSON comum de tela autenticada. */
+  padrao: 1024 * 1024,
+} as const;
 
 /**
  * IP de quem chamou, atrás do proxy da hospedagem.

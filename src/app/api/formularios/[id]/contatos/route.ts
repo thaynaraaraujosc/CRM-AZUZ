@@ -2,7 +2,17 @@ import { NextResponse } from "next/server";
 
 import type { Contato } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
+import {
+  POLITICAS,
+  TAMANHO_MAXIMO,
+  contarChamada,
+  corpoGrandeDemais,
+  ipDeQuemChamou,
+  respostaDeCorpoGrande,
+  respostaDeLimiteExcedido,
+} from "@/lib/seguranca/limite-de-uso";
 import { slugId } from "@/lib/ids";
+import { somenteCamposDeContato } from "@/lib/contatos/campos-editaveis";
 
 function iniciais(nome: string) {
   return nome.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
@@ -21,6 +31,14 @@ function paraContato(linha: { etiquetas: unknown; [k: string]: unknown }): Conta
  * formulário (resolvido aqui, nunca enviado pelo cliente). Mesma semântica de upsert-por-nome.
  */
 export async function POST(request: Request, ctx: RouteContext<"/api/formularios/[id]/contatos">) {
+  // Rota PÚBLICA (o lead que responde não tem login). Sem limite, ela vira um jeito grátis de
+  // encher a base de um cliente de contato falso, e sem teto de tamanho um corpo gigante derruba o
+  // processo inteiro, não só esta chamada.
+  if (corpoGrandeDemais(request, TAMANHO_MAXIMO.formulario)) return respostaDeCorpoGrande();
+  const ip = await ipDeQuemChamou();
+  const limite = contarChamada(`formulario-publico:${ip}`, POLITICAS.formularioPublico);
+  if (!limite.permitido) return respostaDeLimiteExcedido(limite.esperarSegundos);
+
   const { id } = await ctx.params;
   const formulario = await prisma.formulario.findUnique({ where: { id }, select: { workspaceId: true } });
   if (!formulario) return NextResponse.json({ erro: "Formulário não encontrado" }, { status: 404 });
@@ -40,7 +58,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
   const linha = existente
     ? await prisma.contato.update({
         where: { workspaceId_nome: { workspaceId, nome } },
-        data: { ...dados, etiquetas: dados.etiquetas ?? undefined },
+        // Lista fechada: espalhar o corpo deixava o navegador gravar `workspaceId` e mover o
+      // contato pra outra empresa. Ver `campos-editaveis.ts`.
+      data: somenteCamposDeContato(dados),
       })
     : await prisma.contato.create({
         data: {
