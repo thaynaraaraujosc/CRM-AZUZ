@@ -25,8 +25,22 @@ export async function POST() {
   const workspaceId = sessao.user.workspaceId;
 
   try {
-    const { qrDataUrl } = await conectarWhatsAppNaoOficial(workspaceId);
+    const { qrDataUrl, avisoWebhook } = await conectarWhatsAppNaoOficial(workspaceId);
     const status = qrDataUrl ? "aguardando_qr" : "conectado";
+
+    // Mescla os metadados em vez de substituir. `metadados` é uma coluna Json que o Prisma troca
+    // inteira, e escrever só `{ qrDataUrl, numero }` apagava o progresso da importação de
+    // histórico e o sinal de vida do webhook a cada clique em "Conectar": a importação recomeçava
+    // do zero sem ninguém entender por quê.
+    const atual = await prisma.integracao.findUnique({
+      where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+      select: { metadados: true },
+    });
+    const metadados = {
+      ...((atual?.metadados as Record<string, unknown> | null) ?? {}),
+      qrDataUrl,
+      numero: null,
+    };
 
     await prisma.integracao.upsert({
       where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
@@ -35,16 +49,19 @@ export async function POST() {
         workspaceId,
         provedor: "whatsapp_nao_oficial",
         status,
-        metadados: { qrDataUrl, numero: null },
+        metadados,
+        erroMensagem: avisoWebhook ?? null,
       },
       update: {
         status,
-        metadados: { qrDataUrl, numero: null },
-        erroMensagem: null,
+        metadados,
+        // O aviso de que a conexão subiu SEM o registro do webhook. Sem isto, a tela dizia
+        // "conectado" enquanto nenhuma mensagem jamais chegaria, e nada contradizia isso.
+        erroMensagem: avisoWebhook ?? null,
       },
     });
 
-    return NextResponse.json({ ok: true, status, qrDataUrl });
+    return NextResponse.json({ ok: true, status, qrDataUrl, avisoWebhook: avisoWebhook ?? null });
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : "Falha ao conectar";
     await prisma.integracao.upsert({

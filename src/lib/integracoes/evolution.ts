@@ -67,7 +67,18 @@ export function validarTokenWebhook(tokenRecebido: string | null): boolean {
   return timingSafeEqual(bufRecebido, bufEsperado);
 }
 
-type RespostaQrCode = { qrDataUrl: string | null };
+type RespostaQrCode = {
+  qrDataUrl: string | null;
+  /**
+   * Presente quando a conexão subiu mas o aviso de mensagem nova NÃO pôde ser registrado.
+   *
+   * Os dois não podem ser tratados como a mesma coisa. Sem o aviso, o QR é lido, o celular recebe
+   * e a conexão fica "conectada" nas duas pontas, mas nenhuma mensagem chega ao CRM. Falhar a
+   * conexão inteira por causa disso seria pior (ninguém conseguiria nem conectar); esconder seria
+   * o que já acontecia. Então conecta, e conta.
+   */
+  avisoWebhook?: string;
+};
 
 const EVENTOS_WEBHOOK = ["QRCODE_UPDATED", "CONNECTION_UPDATE", "MESSAGES_UPSERT"];
 
@@ -91,7 +102,19 @@ async function configurarWebhook(instancia: string): Promise<void> {
       events: EVENTOS_WEBHOOK,
     },
   }).catch((erro) => {
-    console.error(`Falha ao configurar webhook da instância ${instancia}:`, erro);
+    /*
+     * LANÇA em vez de engolir.
+     *
+     * Esta chamada é o que faz a Evolution AVISAR o CRM a cada mensagem. Quando ela falha, tudo o
+     * mais parece perfeito: o QR é lido, o celular recebe, a conexão fica marcada como conectada
+     * nas duas pontas, e nenhuma mensagem chega aqui. Nunca. Engolir o erro num `console.error`
+     * significava que o único rastro dessa falha ficava num log que ninguém lê, enquanto a pessoa
+     * olhava pra uma tela que dizia "conectado".
+     *
+     * Quem chama decide o que fazer: hoje o erro é gravado na integração, pra aparecer na tela.
+     */
+    const detalhe = erro instanceof Error ? erro.message : String(erro);
+    throw new Error(`Não foi possível registrar o aviso de mensagem nova na instância ${instancia}: ${detalhe}`);
   });
 }
 
@@ -137,22 +160,36 @@ export async function conectarWhatsAppNaoOficial(workspaceId: string): Promise<R
         events: EVENTOS_WEBHOOK,
       },
     });
-    await Promise.all([configurarWebhook(instancia), desativarSincronizacaoDeHistorico(instancia)]);
+    const aviso = await prepararInstancia(instancia);
     const base64 = criada?.qrcode?.base64 ?? null;
-    return { qrDataUrl: base64 };
+    return { qrDataUrl: base64, avisoWebhook: aviso };
   }
 
-  await Promise.all([configurarWebhook(instancia), desativarSincronizacaoDeHistorico(instancia)]);
+  const aviso = await prepararInstancia(instancia);
 
   if (estadoAtual?.instance?.state === "open") {
-    return { qrDataUrl: null };
+    return { qrDataUrl: null, avisoWebhook: aviso };
   }
 
   // Instância existe mas não está conectada. Pede um QR novo (também reabre a conexão se tiver
   // caído).
   const conexao = await chamarEvolution(`/instance/connect/${instancia}`, "GET");
   const base64 = conexao?.base64 ?? conexao?.qrcode?.base64 ?? null;
-  return { qrDataUrl: base64 };
+  return { qrDataUrl: base64, avisoWebhook: aviso };
+}
+
+/** Registra o webhook e desliga a sincronização de histórico. Devolve o motivo quando o webhook
+ * não pôde ser registrado, em vez de derrubar a conexão inteira: ver `avisoWebhook`. */
+async function prepararInstancia(instancia: string): Promise<string | undefined> {
+  const [webhook] = await Promise.allSettled([
+    configurarWebhook(instancia),
+    desativarSincronizacaoDeHistorico(instancia),
+  ]);
+  if (webhook.status === "rejected") {
+    const erro = webhook.reason;
+    return erro instanceof Error ? erro.message : String(erro);
+  }
+  return undefined;
 }
 
 /** Pede pra Evolution encerrar a sessão desse workspace (equivalente a "sair" no WhatsApp Web).
@@ -348,11 +385,26 @@ function instanteDoChat(c: {
 
 export async function buscarChats(workspaceId: string): Promise<ChatResumo[]> {
   const instancia = nomeInstancia(workspaceId);
-  const dados = await chamarEvolution(`/chat/findChats/${instancia}`, "POST", {}).catch((erro) => {
-    console.error("[evolution] Falha ao buscar lista de conversas pra sincronização de histórico:", erro);
-    return null;
-  });
-  const lista: unknown[] = Array.isArray(dados) ? dados : [];
+  /*
+   * LANÇA quando a Evolution não responde, em vez de devolver lista vazia.
+   *
+   * Devolver `[]` numa falha era indistinguível de "esse celular não tem conversa nenhuma", e quem
+   * chama tratava lista vazia como fim da importação: em segundos ela era marcada como concluída,
+   * com zero conversa, sem erro em lugar nenhum e sem nunca mais tentar. O sintoma era "conectei e
+   * não veio nada", e nada no sistema contradizia isso.
+   */
+  const dados = await chamarEvolution(`/chat/findChats/${instancia}`, "POST", {});
+  // O formato varia entre versões da Evolution: ora a lista crua, ora embrulhada. Ler só o array
+  // cru fazia uma resposta perfeitamente válida virar "nenhuma conversa".
+  const lista: unknown[] = Array.isArray(dados)
+    ? dados
+    : Array.isArray(dados?.chats)
+      ? dados.chats
+      : Array.isArray(dados?.data)
+        ? dados.data
+        : Array.isArray(dados?.records)
+          ? dados.records
+          : [];
   return lista
     .map((item) => {
       const c = item as {

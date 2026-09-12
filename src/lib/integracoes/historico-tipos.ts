@@ -21,11 +21,32 @@ export type HistoricoSync = {
    * trabalhar são as de agora; estas ficam prontas pra entrar quando alguém pedir.
    */
   filaGuardada?: ChatNaFila[] | null;
+  /**
+   * Quantas vezes a lista de conversas voltou vazia.
+   *
+   * Existe por causa de uma falha que se parecia com sucesso: recém-conectada, a sessão do WhatsApp
+   * ainda não montou a lista de conversas do celular, e a primeira consulta volta vazia. O código
+   * gravava "fila vazia", e na rodada seguinte fila vazia virava `concluido`. Resultado: a
+   * importação terminava em segundos, com zero conversa, sem erro nenhum, e nunca mais tentava.
+   *
+   * Com o contador, vazio vira "tenta de novo no próximo minuto" até um teto. Só depois disso é
+   * que se conclui de verdade, e aí com o motivo escrito.
+   */
+  tentativasSemChats?: number;
   erro?: string;
 };
 
 /** Quantas conversas entram na primeira leva. Ver `filaGuardada`. */
 export const CHATS_NA_PRIMEIRA_LEVA = 30;
+
+/**
+ * Quantas rodadas esperar pela lista de conversas antes de desistir.
+ *
+ * O relógio roda de minuto em minuto, então isto é cerca de quinze minutos: tempo de sobra pra uma
+ * sessão recém-lida terminar de sincronizar a lista do celular, e pouco o bastante pra não ficar
+ * consultando pra sempre uma conta que realmente não tem conversa nenhuma.
+ */
+export const TENTATIVAS_MAXIMAS_SEM_CHATS = 15;
 
 /**
  * Separa a primeira leva das conversas guardadas.

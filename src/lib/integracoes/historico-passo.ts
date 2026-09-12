@@ -5,7 +5,7 @@ import {
   salvarHistorico,
   type HistoricoSync,
 } from "@/lib/integracoes/historico-whatsapp";
-import { separarPrimeiraLeva } from "@/lib/integracoes/historico-tipos";
+import { TENTATIVAS_MAXIMAS_SEM_CHATS, separarPrimeiraLeva } from "@/lib/integracoes/historico-tipos";
 
 /**
  * Um passo da importação do histórico do WhatsApp por QR Code.
@@ -58,12 +58,42 @@ export async function avancarHistorico(
     // antigas. Nenhuma mensagem é processada ainda.
     if (historico.filaRestante === null) {
       const chats = await buscarChats(workspaceId);
+
+      /*
+       * Lista vazia NÃO é fim da importação. É "ainda não chegou".
+       *
+       * Uma sessão recém-lida no QR Code demora pra montar a lista de conversas do celular, e a
+       * primeira consulta volta vazia com frequência. O código gravava fila vazia, e na rodada
+       * seguinte fila vazia virava `concluido`: a importação terminava em segundos, com zero
+       * conversa, sem erro nenhum, e nunca mais tentava. Era o "conectei e não veio nada".
+       *
+       * Agora vazio conta uma tentativa e deixa a fila como `null`, então o próximo minuto do
+       * relógio consulta de novo. Só depois do teto é que se conclui, e aí com o motivo escrito.
+       */
+      if (chats.length === 0) {
+        const tentativas = (historico.tentativasSemChats ?? 0) + 1;
+        historico =
+          tentativas >= TENTATIVAS_MAXIMAS_SEM_CHATS
+            ? {
+                ...historico,
+                status: "concluido",
+                totalChats: 0,
+                filaRestante: [],
+                tentativasSemChats: tentativas,
+                erro: "A Evolution não devolveu nenhuma conversa desse número depois de várias tentativas.",
+              }
+            : { ...historico, tentativasSemChats: tentativas, filaRestante: null };
+        await salvarHistorico(workspaceId, metadados, historico);
+        return { historico, chatsFeitos: 0 };
+      }
+
       const { primeiras, guardadas } = separarPrimeiraLeva(chats.map((c) => ({ remoteJid: c.remoteJid })));
       historico = {
         ...historico,
         totalChats: primeiras.length,
         filaRestante: primeiras,
         filaGuardada: guardadas,
+        tentativasSemChats: 0,
       };
       await salvarHistorico(workspaceId, metadados, historico);
       return { historico, chatsFeitos: 0 };
