@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { destinoExternoPermitido } from "@/lib/seguranca/destino-externo";
 import { enviarTextoPeloCanal } from "@/lib/conversas/enviar-pelo-canal";
 import { registrarMensagemEnviada } from "@/lib/conversas/registrar-saida";
 import {
@@ -624,7 +625,12 @@ export function acoesReais(params: {
     },
 
     async chamarWebhook({ url, corpo }) {
-      if (!/^https?:\/\//i.test(url)) return falha("Endereço do webhook inválido.");
+      // SSRF: a chamada sai de DENTRO da infraestrutura, com o acesso de rede que ela tem e o
+      // visitante não. Sem esta conferência, `http://169.254.169.254/` devolvia credencial da
+      // própria máquina, e um IP privado alcançava serviço interno nunca publicado. Ver
+      // `seguranca/destino-externo.ts`.
+      const destino = await destinoExternoPermitido(url);
+      if (!destino.permitido) return falha(destino.motivo);
       // Três tentativas com espera crescente. Um endereço fora do ar por dois segundos é o caso
       // comum, e sem repetição a automação perderia o evento em silêncio.
       let ultimoErro = "";

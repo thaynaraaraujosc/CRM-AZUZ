@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { auditar } from "@/lib/seguranca/auditoria";
 import {
   ErroConexao,
   finalizarConexaoWhatsapp,
@@ -52,6 +53,10 @@ export async function POST(request: Request) {
   if (sessao.user.papelTipo !== "admin" && !sessao.user.superAdmin) {
     return NextResponse.json({ erro: "Só administradores podem mexer nas conexões." }, { status: 403 });
   }
+
+  // Conectar e desconectar um canal muda por onde a empresa inteira fala com os clientes. Sem
+  // registro, "quem desconectou o WhatsApp?" não tinha resposta.
+  await auditar({ acao: "integracao.conectada", workspaceId: sessao.user.workspaceId, membroId: sessao.user.id, email: sessao.user.email, recurso: "meta_whatsapp" });
   const workspaceId = sessao.user.workspaceId;
 
   const { code, wabaId, phoneNumberId, businessId, pinExistente } = (await request.json()) as CorpoConectar;

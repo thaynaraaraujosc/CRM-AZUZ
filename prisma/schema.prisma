@@ -1360,3 +1360,40 @@ model Expediente {
 
   atualizadoEm DateTime @updatedAt
 }
+
+/// Registro de auditoria: quem fez o quê, em qual workspace, quando, e se deu certo.
+///
+/// Não existia nada disso. Quando alguém pergunta "quem desativou esse usuário?", "quem
+/// desconectou o WhatsApp?" ou "esse acesso foi mesmo da dona da conta?", a única resposta possível
+/// era não saber. Investigação de incidente depende de ter o registro ANTES do incidente.
+///
+/// O que NUNCA entra aqui: senha, token, cookie de sessão, corpo de mensagem. `detalhe` guarda
+/// contexto curto (o campo que mudou, o nome do recurso), nunca o valor sensível em si.
+model RegistroDeAuditoria {
+  id String @id @default(uuid())
+
+  /// Nulo em evento anterior à sessão existir (tentativa de login que falhou, por exemplo).
+  workspaceId String?
+  /// Quem fez. Nulo quando a ação falhou antes de identificar alguém.
+  membroId    String?
+  /// E-mail de quem tentou: sobrevive mesmo quando o membro não existe (login recusado).
+  email       String?
+
+  /// O que aconteceu, em chave estável: "login.sucesso", "membro.papel_alterado"...
+  acao    String
+  /// O recurso afetado, quando há um: id do membro, da integração, da campanha.
+  recurso String?
+  /// "ok" ou "recusado".
+  resultado String
+  /// Contexto curto pra investigação. Nunca valor sensível.
+  detalhe String? @db.Text
+
+  /// De onde veio. Ajuda a distinguir acesso da pessoa de acesso de outro lugar.
+  ip String?
+
+  criadoEm DateTime @default(now())
+
+  @@index([workspaceId, criadoEm])
+  @@index([acao, criadoEm])
+  @@index([email, criadoEm])
+}

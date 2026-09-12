@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { slugId } from "@/lib/ids";
 import { enviarEmailContandoFalha, templateConvite } from "@/lib/email";
 import { exigirAdmin, exigirSessao } from "@/lib/seguranca/sessao";
+import { auditar } from "@/lib/seguranca/auditoria";
 import { VALIDADE_CONVITE_MS, gerarTokenConvite, hashDoToken } from "@/lib/equipe/convite";
 
 /**
@@ -163,6 +164,15 @@ export async function POST(request: Request) {
    * link não é um plano B envergonhado: é o caminho que funciona mesmo com o e-mail configurado,
    * porque convite por e-mail cai em spam com frequência.
    */
+  await auditar({
+    acao: "membro.convidado",
+    workspaceId,
+    membroId: sessao.user.id,
+    email: sessao.user.email,
+    recurso: id,
+    detalhe: `papel ${dados.papelTipo}`,
+  });
+
   const link = `${process.env.APP_URL ?? "https://azuzcrm.com.br"}/convite/${id}?t=${token}`;
   const envio = await enviarEmailContandoFalha({
     to: email,

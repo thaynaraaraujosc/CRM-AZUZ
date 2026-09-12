@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { Membro } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin } from "@/lib/seguranca/sessao";
+import { auditar } from "@/lib/seguranca/auditoria";
 
 /**
  * Os campos que podem SAIR daqui. `senha` e `conviteTokenHash` ficam de fora: o hash da senha de
@@ -133,6 +134,17 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/equipe/[id
     return NextResponse.json({ erro: "Membro não encontrado" }, { status: 404 });
   }
 
+  // Só os NOMES dos campos alterados, nunca os valores: o registro serve pra investigar quem mexeu
+  // no quê, e guardar o conteúdo faria dele uma segunda cópia de dado pessoal.
+  await auditar({
+    acao: "membro.alterado",
+    workspaceId,
+    membroId: sessao.user.id,
+    email: sessao.user.email,
+    recurso: id,
+    detalhe: Object.keys(dados).join(", "),
+  });
+
   // Relê já filtrando pelo workspace: sem isso, um id de outra empresa que tivesse passado pelo
   // `updateMany` (não passa, mas a leitura não pode ser mais frouxa que a escrita) seria devolvido.
   const linha = await prisma.membro.findFirst({ where: { id, workspaceId }, select: CAMPOS_PUBLICOS });
@@ -157,5 +169,12 @@ export async function DELETE(_request: Request, ctx: RouteContext<"/api/equipe/[
   if (count === 0) {
     return NextResponse.json({ erro: "Membro não encontrado" }, { status: 404 });
   }
+  await auditar({
+    acao: "membro.excluido",
+    workspaceId,
+    membroId: sessao.user.id,
+    email: sessao.user.email,
+    recurso: id,
+  });
   return NextResponse.json({ ok: true });
 }

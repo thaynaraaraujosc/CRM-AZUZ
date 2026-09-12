@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
 import { conviteValido } from "@/lib/equipe/convite";
+import { auditar } from "@/lib/seguranca/auditoria";
 import { POLITICAS, contarChamada, ipDeQuemChamou, respostaDeLimiteExcedido } from "@/lib/seguranca/limite-de-uso";
 
 /**
@@ -79,5 +80,12 @@ export async function POST(request: Request, ctx: RouteContext<"/api/convite/[id
   });
   if (count === 0) return NextResponse.json(NAO_ENCONTRADO, { status: 404 });
 
+  await auditar({
+    acao: "convite.aceito",
+    workspaceId: membro!.workspaceId,
+    membroId: id,
+    email: membro!.email,
+    recurso: id,
+  });
   return NextResponse.json({ ok: true });
 }

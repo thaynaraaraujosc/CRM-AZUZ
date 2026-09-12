@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { auditar } from "@/lib/seguranca/auditoria";
 import { limparDadosDoWhatsApp } from "@/lib/integracoes/limpar-dados-whatsapp";
 
 /** POST desconecta a integração da Meta (`?provedor=`, default `meta_whatsapp`) do workspace de
@@ -15,6 +16,10 @@ export async function POST(request: Request) {
   if (sessao.user.papelTipo !== "admin" && !sessao.user.superAdmin) {
     return NextResponse.json({ erro: "Só administradores podem mexer nas conexões." }, { status: 403 });
   }
+
+  // Conectar e desconectar um canal muda por onde a empresa inteira fala com os clientes. Sem
+  // registro, "quem desconectou o WhatsApp?" não tinha resposta.
+  await auditar({ acao: "integracao.desconectada", workspaceId: sessao.user.workspaceId, membroId: sessao.user.id, email: sessao.user.email, recurso: "meta" });
 
   const provedor = new URL(request.url).searchParams.get("provedor") ?? "meta_whatsapp";
   // `limparDados` vem do clique de quem já confirmou na tela o que vai ser apagado. Nunca é o

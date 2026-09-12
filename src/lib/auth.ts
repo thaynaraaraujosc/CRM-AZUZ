@@ -6,6 +6,7 @@ import { POLITICAS, contarChamada, ipDeQuemChamou } from "@/lib/seguranca/limite
 
 import { prisma } from "@/lib/prisma";
 import { verificarTokenImpersonar } from "@/lib/admin/impersonar";
+import { auditar } from "@/lib/seguranca/auditoria";
 
 function ehSuperAdmin(email: string): boolean {
   return email.toLowerCase() === process.env.SUPERADMIN_EMAIL?.toLowerCase();
@@ -41,6 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!limite.permitido) {
           // O log registra o e-mail e o motivo. Nunca a senha tentada.
           console.warn(`[login] bloqueado por excesso de tentativas: ${email}`);
+          await auditar({ acao: "login.bloqueado_por_tentativas", resultado: "recusado", email });
           return null;
         }
 
@@ -56,10 +58,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
         if (!membro) {
           console.warn(`[login] recusado: nenhum membro com o e-mail ${email}.`);
+          await auditar({ acao: "login.recusado", resultado: "recusado", email, detalhe: "e-mail sem conta" });
           return null;
         }
         if (!membro.ativo) {
           console.warn(`[login] recusado: conta de ${email} está desativada.`);
+          await auditar({
+            acao: "login.recusado",
+            resultado: "recusado",
+            email,
+            workspaceId: membro.workspaceId,
+            membroId: membro.id,
+            detalhe: "conta desativada",
+          });
           return null;
         }
         if (!membro.senha) {
@@ -70,12 +81,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const senhaValida = await bcrypt.compare(senha, membro.senha);
         if (!senhaValida) {
           console.warn(`[login] recusado: senha incorreta para ${email}.`);
+          // "senha incorreta" no registro interno, nunca a senha tentada. O log de auditoria existe
+          // pra investigar acesso indevido; guardar a tentativa transformaria ele num depósito de
+          // senhas quase certas.
+          await auditar({
+            acao: "login.recusado",
+            resultado: "recusado",
+            email,
+            workspaceId: membro.workspaceId,
+            membroId: membro.id,
+            detalhe: "senha incorreta",
+          });
           return null;
         }
 
         // Fire-and-forget: não atrasa o login por causa disso; só alimenta a coluna "Último
         // acesso" em Configurações > Usuários.
         prisma.membro.update({ where: { id: membro.id }, data: { ultimoAcesso: new Date() } }).catch(() => {});
+        await auditar({ acao: "login.sucesso", email, workspaceId: membro.workspaceId, membroId: membro.id });
 
         return {
           id: membro.id,

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { auditar } from "@/lib/seguranca/auditoria";
 import { prisma } from "@/lib/prisma";
 import { RITMO, preverDuracao, type CanalCampanha } from "@/lib/campanhas/ritmo";
 import { resolverParametros, type MapeamentoVariavel } from "@/lib/campanhas/variaveis";
@@ -178,6 +179,38 @@ export async function POST(request: Request) {
     );
   }
 
+  /*
+   * Clique repetido não vira dois disparos.
+   *
+   * O id era `campanha-<workspace>-<agora em ms>`, então dois cliques a meio segundo de distância
+   * criavam duas campanhas idênticas e cada contato recebia a mesma mensagem duas vezes. Não é
+   * hipótese: botão que demora responde a um segundo clique, e a tela não tinha trava.
+   *
+   * A janela é curta de propósito. Mandar a MESMA mensagem pro MESMO público de novo mais tarde é
+   * uso legítimo (uma segunda leva, um reenvio combinado); o que não é legítimo é a repetição
+   * acidental dentro de segundos.
+   */
+  const JANELA_DUPLICATA_MS = 60_000;
+  const igualRecente = await prisma.campanha.findFirst({
+    where: {
+      workspaceId,
+      canal: corpo.canal,
+      titulo,
+      corpo: texto,
+      criadoEm: { gte: new Date(Date.now() - JANELA_DUPLICATA_MS) },
+    },
+    select: { id: true },
+  });
+  if (igualRecente) {
+    return NextResponse.json(
+      {
+        erro: "Esse mesmo disparo acabou de ser criado. Confira em Acompanhamento antes de mandar de novo.",
+        campanhaId: igualRecente.id,
+      },
+      { status: 409 },
+    );
+  }
+
   const id = `campanha-${workspaceId}-${Date.now()}`;
   const agendadaPara = corpo.agendadaPara ? new Date(corpo.agendadaPara) : new Date();
 
@@ -210,6 +243,17 @@ export async function POST(request: Request) {
       })),
     }),
   ]);
+
+  // Disparo em massa é ação crítica: muitos clientes recebem mensagem de uma vez, e o custo e a
+  // reputação do número são reais. Sem registro, não há como responder quem mandou.
+  await auditar({
+    acao: "campanha.criada",
+    workspaceId,
+    membroId: sessao.user.id,
+    email: sessao.user.email,
+    recurso: id,
+    detalhe: `${corpo.canal}, ${destinos.length} destinatário(s)`,
+  });
 
   // Previsão com a cota REAL da conta no WhatsApp oficial (lida da Meta), não um chute.
   let limiteDiario: number | null | undefined;

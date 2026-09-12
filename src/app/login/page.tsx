@@ -7,6 +7,24 @@ import Link from "next/link";
 
 import { IconEntrar } from "@/components/icons";
 
+/**
+ * Só deixa voltar pra um endereço DENTRO do CRM.
+ *
+ * `callbackUrl` vem da query string, e ela era seguida como veio. Bastava mandar pra alguém
+ * `.../login?callbackUrl=https://site-falso.com` pra que a pessoa, logo depois de digitar a senha
+ * de verdade, fosse levada a uma cópia da tela pedindo os dados outra vez. O link começa no
+ * domínio certo, que é o que torna esse golpe convincente.
+ *
+ * Caminho relativo passa; qualquer coisa com domínio, esquema ou `//` no começo (que o navegador
+ * lê como outro site) é descartada e a pessoa segue pro destino padrão.
+ */
+function destinoInternoSeguro(valor: string | null): string | null {
+  if (!valor) return null;
+  if (!valor.startsWith("/")) return null;
+  if (valor.startsWith("//") || valor.startsWith("/\\")) return null;
+  return valor;
+}
+
 export default function LoginPage() {
   return (
     <Suspense fallback={null}>
@@ -55,7 +73,7 @@ function LoginForm() {
     // callbackUrl (deep link, ex.: proxy mandou pra cá a partir de /admin/workspaces sem sessão)
     // tem prioridade; sem ela, super-admin cai direto no painel de admin, todo o resto vai pro
     // painel normal do workspace.
-    const callbackUrl = searchParams.get("callbackUrl");
+    const callbackUrl = destinoInternoSeguro(searchParams.get("callbackUrl"));
     if (callbackUrl) {
       router.push(callbackUrl);
     } else {
