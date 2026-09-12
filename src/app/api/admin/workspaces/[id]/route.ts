@@ -13,9 +13,29 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/admin/works
   const { id } = await ctx.params;
   const workspace = await prisma.workspace.findUnique({
     where: { id },
+    // Lista fechada nos dois pontos sensíveis. `membros: true` trazia o hash da senha de cada
+    // pessoa, e `integracoes: true` trazia os tokens criptografados da Meta. Mesmo numa tela de
+    // super-admin, o que não trafega não vaza: nem por log, nem por cache, nem por aba esquecida
+    // aberta. A tela precisa de quem é quem e do que está conectado, não dos segredos.
     include: {
-      membros: { orderBy: { criadoEm: "asc" } },
-      integracoes: true,
+      membros: {
+        orderBy: { criadoEm: "asc" },
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          papel: true,
+          papelTipo: true,
+          permissoes: true,
+          ativo: true,
+          convitePendente: true,
+          criadoEm: true,
+          ultimoAcesso: true,
+        },
+      },
+      integracoes: {
+        select: { id: true, provedor: true, status: true, erroMensagem: true, atualizadoEm: true },
+      },
       assinatura: true,
     },
   });

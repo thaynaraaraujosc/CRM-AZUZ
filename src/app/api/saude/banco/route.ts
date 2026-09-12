@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { POLITICAS, contarChamada, ipDeQuemChamou, respostaDeLimiteExcedido } from "@/lib/seguranca/limite-de-uso";
 
 /**
  * O banco está respondendo?
@@ -16,6 +17,13 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  // Pública por necessidade (a tela de login consulta antes de ter sessão) e, por isso mesmo, com
+  // limite: cada chamada bate no banco, e sem teto isso vira um jeito barato de pressionar o banco
+  // de fora.
+  const ip = await ipDeQuemChamou();
+  const limite = contarChamada(`saude-banco:${ip}`, POLITICAS.recuperacaoDeSenha);
+  if (!limite.permitido) return respostaDeLimiteExcedido(limite.esperarSegundos);
+
   try {
     await prisma.$queryRaw`SELECT 1`;
     return NextResponse.json({ ok: true });

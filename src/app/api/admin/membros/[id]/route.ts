@@ -25,7 +25,24 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/memb
   if (Object.keys(dados).length === 0) return NextResponse.json({ erro: "Nada para atualizar." }, { status: 400 });
 
   try {
-    const membro = await prisma.membro.update({ where: { id }, data: dados });
+    // Lista fechada de campos na RESPOSTA: `update` devolve a linha inteira, e ela inclui o hash
+    // da senha. Super-admin é gente de confiança e ainda assim não há motivo pra esse valor sair do
+    // servidor: o que não trafega não vaza por log, cache de proxy ou aba aberta.
+    const membro = await prisma.membro.update({
+      where: { id },
+      data: dados,
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        papel: true,
+        papelTipo: true,
+        ativo: true,
+        convitePendente: true,
+        workspaceId: true,
+        criadoEm: true,
+      },
+    });
     return NextResponse.json(membro);
   } catch {
     return NextResponse.json({ erro: "Membro não encontrado" }, { status: 404 });
