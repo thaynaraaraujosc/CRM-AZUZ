@@ -3,7 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-export function AceitarConviteForm({ id, email }: { id: string; email: string }) {
+/** `token` é o que autoriza o convite (ver `lib/equipe/convite.ts`). O id sozinho é adivinhável e
+ * não vale como autorização; ele só diz de quem é o convite. */
+export function AceitarConviteForm({ id, email, token }: { id: string; email: string; token: string }) {
   const router = useRouter();
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
@@ -26,7 +28,7 @@ export function AceitarConviteForm({ id, email }: { id: string; email: string })
 
     setCarregando(true);
     try {
-      const resposta = await fetch(`/api/convite/${id}`, {
+      const resposta = await fetch(`/api/convite/${encodeURIComponent(id)}?t=${encodeURIComponent(token)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ senha }),

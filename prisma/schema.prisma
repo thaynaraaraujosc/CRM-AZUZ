@@ -313,6 +313,15 @@ model Membro {
 
   ativo           Boolean @default(true)
   convitePendente Boolean @default(false)
+
+  // Convite: o link mandado por e-mail leva um token ALEATÓRIO, e aqui fica só o hash dele.
+  //
+  // Antes o link era `/convite/<id do membro>`, e o id é o slug do nome ("João Silva" →
+  // "joao-silva"). Quer dizer: adivinhável. Qualquer pessoa de fora que chutasse o nome de alguém
+  // com convite pendente definia a senha daquela conta e entrava no workspace. O id continua
+  // sendo o id; o que autoriza agora é o token, que não está em lugar nenhum além do link.
+  conviteTokenHash String?
+  conviteExpiraEm  DateTime?
   // Foto hoje é gravada como data URL (base64 inline). Pode ficar grande, então usa TEXT em vez
   // do VARCHAR padrão.
   foto            String? @db.Text

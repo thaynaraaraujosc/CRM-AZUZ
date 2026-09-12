@@ -46,6 +46,12 @@ async function trocarCodePorTokenDeNegocio(code: string, appId: string, appSecre
 export async function POST(request: Request) {
   const sessao = await auth();
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
+  // Conectar e desconectar um canal é ação de dono da conta: desconectar o WhatsApp derruba o
+  // atendimento da empresa inteira, e conectar outro número redireciona por onde as mensagens
+  // saem. Antes bastava estar logado, e qualquer membro comum fazia as duas coisas.
+  if (sessao.user.papelTipo !== "admin" && !sessao.user.superAdmin) {
+    return NextResponse.json({ erro: "Só administradores podem mexer nas conexões." }, { status: 403 });
+  }
   const workspaceId = sessao.user.workspaceId;
 
   const { code, wabaId, phoneNumberId, businessId, pinExistente } = (await request.json()) as CorpoConectar;

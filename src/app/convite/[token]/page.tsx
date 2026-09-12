@@ -3,26 +3,32 @@ import type { Metadata } from "next";
 
 import { prisma } from "@/lib/prisma";
 import { AceitarConviteForm } from "@/components/equipe/AceitarConviteForm";
+import { conviteValido } from "@/lib/equipe/convite";
 
 export const metadata: Metadata = { title: "Seu convite · CRM AZUZ" };
 
 /**
- * O que a pessoa convidada vê. Busca o convite real (`Membro.convitePendente`) direto no banco,
- * server-side, sem sessão nenhuma (quem está aqui ainda não tem login). `token` é o id do Membro
- * pendente, o mesmo usado no link mandado por e-mail em `POST /api/equipe`.
+ * O que a pessoa convidada vê. Busca o convite direto no banco, server-side, sem sessão nenhuma
+ * (quem está aqui ainda não tem login).
+ *
+ * O segmento da URL é o id do Membro, que é o slug do nome e portanto adivinhável. Quem autoriza é
+ * o token em `?t=`, conferido contra o hash guardado. Ver `lib/equipe/convite.ts`.
  */
 export default async function ConvitePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ t?: string }>;
 }) {
-  const { token } = await params;
+  const { token: id } = await params;
+  const { t } = await searchParams;
   const membro = await prisma.membro.findUnique({
-    where: { id: token },
+    where: { id },
     include: { workspace: { select: { nome: true } } },
   });
 
-  if (!membro || !membro.convitePendente) {
+  if (!conviteValido(membro, t)) {
     return (
       <div className="auth-page">
         <Link href="/" className="auth-brand">
@@ -32,8 +38,8 @@ export default async function ConvitePage({
         <div className="auth-card card">
           <h1 className="auth-title">Convite não encontrado</h1>
           <p className="auth-descricao">
-            Esse link de convite não existe mais ou já foi usado. Peça pra quem te convidou mandar
-            um novo.
+            Esse link de convite não existe mais, expirou ou já foi usado. Peça pra quem te
+            convidou mandar um novo.
           </p>
           <p className="auth-rodape">
             <Link href="/login">Ir pro login</Link>
@@ -43,7 +49,7 @@ export default async function ConvitePage({
     );
   }
 
-  const primeiroNome = membro.nome.split(" ")[0];
+  const primeiroNome = membro!.nome.split(" ")[0];
 
   return (
     <div className="auth-page">
@@ -54,10 +60,10 @@ export default async function ConvitePage({
       <div className="auth-card card">
         <h1 className="auth-title">Bem-vindo, {primeiroNome}</h1>
         <p className="auth-descricao">
-          Você foi convidado(a) pro CRM da <strong>{membro.workspace.nome}</strong> como{" "}
-          {membro.papel}. Crie sua senha pra começar a usar.
+          Você foi convidado(a) pro CRM da <strong>{membro!.workspace.nome}</strong> como{" "}
+          {membro!.papel}. Crie sua senha pra começar a usar.
         </p>
-        <AceitarConviteForm id={membro.id} email={membro.email} />
+        <AceitarConviteForm id={membro!.id} email={membro!.email} token={t ?? ""} />
       </div>
     </div>
   );
