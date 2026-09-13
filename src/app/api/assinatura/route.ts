@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { esquecerStatus } from "@/lib/assinatura/status-cache";
 import { PLANOS, ehPlanoValido } from "@/lib/assinatura/planos";
 import {
   cancelarAssinatura,
@@ -148,6 +149,9 @@ export async function POST(request: Request) {
       throw erroSalvar;
     }
 
+    // Pagou: o cache do paywall precisa esquecer o status antigo pra a pessoa entrar agora, não
+    // daqui a alguns segundos.
+    esquecerStatus(workspaceId);
     return NextResponse.json({ assinatura });
   } catch (erro) {
     const mensagemErro = erro instanceof Error ? erro.message : "Falha ao criar assinatura na Asaas.";

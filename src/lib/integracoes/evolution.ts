@@ -70,6 +70,15 @@ export function validarTokenWebhook(tokenRecebido: string | null): boolean {
 type RespostaQrCode = {
   qrDataUrl: string | null;
   /**
+   * O estado REAL da sessão na Evolution: "open", "connecting", "close".
+   *
+   * Existe porque quem chamava deduzia o status a partir da ausência de QR Code ("sem QR, logo
+   * está conectado"), e isso é falso sempre que a Evolution não devolve o código por qualquer
+   * outro motivo. O CRM marcava "conectado" sem ninguém ter lido nada, e a tela passava a mentir
+   * justamente no campo que a pessoa usa pra confiar no resto.
+   */
+  estado: string | null;
+  /**
    * Presente quando a conexão subiu mas o aviso de mensagem nova NÃO pôde ser registrado.
    *
    * Os dois não podem ser tratados como a mesma coisa. Sem o aviso, o QR é lido, o celular recebe
@@ -162,20 +171,23 @@ export async function conectarWhatsAppNaoOficial(workspaceId: string): Promise<R
     });
     const aviso = await prepararInstancia(instancia);
     const base64 = criada?.qrcode?.base64 ?? null;
-    return { qrDataUrl: base64, avisoWebhook: aviso };
+    // Instância acabou de nascer: ninguém leu QR nenhum ainda.
+    return { qrDataUrl: base64, estado: "close", avisoWebhook: aviso };
   }
 
   const aviso = await prepararInstancia(instancia);
 
   if (estadoAtual?.instance?.state === "open") {
-    return { qrDataUrl: null, avisoWebhook: aviso };
+    return { qrDataUrl: null, estado: "open", avisoWebhook: aviso };
   }
 
   // Instância existe mas não está conectada. Pede um QR novo (também reabre a conexão se tiver
-  // caído).
+  // caído). O estado volta junto: sem QR NÃO quer dizer conectado, quer dizer que a Evolution não
+  // mandou o código agora.
   const conexao = await chamarEvolution(`/instance/connect/${instancia}`, "GET");
   const base64 = conexao?.base64 ?? conexao?.qrcode?.base64 ?? null;
-  return { qrDataUrl: base64, avisoWebhook: aviso };
+  const estado = (conexao?.instance?.state as string | undefined) ?? (estadoAtual?.instance?.state as string | undefined) ?? "close";
+  return { qrDataUrl: base64, estado, avisoWebhook: aviso };
 }
 
 /** Registra o webhook e desliga a sincronização de histórico. Devolve o motivo quando o webhook

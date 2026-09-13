@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { esquecerStatus } from "@/lib/assinatura/status-cache";
 import { validarTokenWebhookAsaas } from "@/lib/integracoes/asaas";
 
 type PayloadAsaas = {
@@ -60,6 +61,9 @@ export async function POST(request: Request) {
     where: { id: assinatura.id },
     data: { status: novoStatus, ...(proximoVencimento ? { proximoVencimento } : {}) },
   });
+  // É por aqui que um pagamento confirmado destrava o CRM. Sem esquecer o cache, quem acabou de
+  // pagar continuaria vendo a tela de cobrança, que é a pior hora possível pra parecer quebrado.
+  esquecerStatus(assinatura.workspaceId);
 
   return NextResponse.json({ ok: true });
 }

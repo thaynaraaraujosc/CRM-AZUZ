@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { ehRotaPublica } from "@/lib/rotas-publicas";
 import { decidirAcesso } from "@/lib/assinatura/acesso";
+import { statusDaAssinatura } from "@/lib/assinatura/status-cache";
 
 /** Módulo do CRM que cada rota pertence, pro bloqueio de permissão (item 4 do pedido: "se eu
  * restringir Formulários/Automações/Configurações, o membro realmente não pode mexer"). Checa só
@@ -63,15 +63,14 @@ export default async function proxy(request: NextRequest) {
    * `/api`: o produto inteiro respondia a quem nunca pagou. A regra em si mora em
    * `lib/assinatura/acesso.ts`, com teste.
    */
-  const assinatura = await prisma.assinatura.findUnique({
-    where: { workspaceId: sessao.user.workspaceId },
-    select: { status: true },
-  });
   const decisao = decidirAcesso({
     pathname,
     superAdmin: sessao.user.superAdmin,
     papelTipo: sessao.user.papelTipo,
-    statusAssinatura: assinatura?.status ?? null,
+    // Com memória curta: o bloqueio agora vale também em `/api`, e sem cache isso virava uma
+    // consulta ao banco por requisição. O CRM faz muitas, e o produto inteiro ficou lento. Ver
+    // `status-cache.ts` pro que isso custa (poucos segundos de atraso ao destravar).
+    statusAssinatura: await statusDaAssinatura(sessao.user.workspaceId),
   });
   if (!decisao.liberado) {
     // API responde 402, nunca redirecionamento: um `fetch` que recebe redirecionamento pra página

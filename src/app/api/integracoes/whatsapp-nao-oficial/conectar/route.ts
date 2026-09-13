@@ -25,8 +25,16 @@ export async function POST() {
   const workspaceId = sessao.user.workspaceId;
 
   try {
-    const { qrDataUrl, avisoWebhook } = await conectarWhatsAppNaoOficial(workspaceId);
-    const status = qrDataUrl ? "aguardando_qr" : "conectado";
+    const { qrDataUrl, estado, avisoWebhook } = await conectarWhatsAppNaoOficial(workspaceId);
+    /*
+     * O status vem do ESTADO da sessão, não da ausência de QR Code.
+     *
+     * Era `qrDataUrl ? "aguardando_qr" : "conectado"`: sem código, logo conectado. Só que a
+     * Evolution deixa de mandar o código por vários motivos que não são conexão, e aí o CRM
+     * marcava "conectado" sem ninguém ter lido nada. A tela passava a mentir justamente no campo
+     * que a pessoa usa pra confiar em todo o resto.
+     */
+    const status = estado === "open" ? "conectado" : "aguardando_qr";
 
     // Mescla os metadados em vez de substituir. `metadados` é uma coluna Json que o Prisma troca
     // inteira, e escrever só `{ qrDataUrl, numero }` apagava o progresso da importação de

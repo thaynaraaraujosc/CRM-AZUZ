@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { esquecerStatus } from "@/lib/assinatura/status-cache";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
 import { slugId } from "@/lib/ids";
 import { PLANOS } from "@/lib/assinatura/planos";
@@ -129,6 +130,8 @@ export async function POST(request: Request) {
       },
     });
   });
+  // Nasce ativa: o cache do paywall precisa saber disso já na primeira requisição dela.
+  esquecerStatus(slug);
 
   await auditar({
     acao: "workspace.alterado",

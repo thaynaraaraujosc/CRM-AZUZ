@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { esquecerStatus } from "@/lib/assinatura/status-cache";
 import { cancelarAssinatura } from "@/lib/integracoes/asaas";
 
 export async function POST() {
@@ -23,6 +24,7 @@ export async function POST() {
       where: { workspaceId },
       data: { status: "cancelada", canceladaEm: new Date() },
     });
+    esquecerStatus(workspaceId);
     return NextResponse.json({ assinatura: atualizada });
   } catch (erro) {
     const mensagemErro = erro instanceof Error ? erro.message : "Falha ao cancelar assinatura na Asaas.";

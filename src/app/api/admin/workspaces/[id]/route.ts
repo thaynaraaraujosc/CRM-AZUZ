@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { esquecerStatus } from "@/lib/assinatura/status-cache";
 import { exigirSuperAdmin } from "@/lib/admin/guard";
 import { PLANOS } from "@/lib/assinatura/planos";
 
@@ -79,6 +80,8 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/work
     },
     update: { status },
   });
+  // O status mudou: o cache do paywall não pode continuar servindo o valor antigo.
+  esquecerStatus(workspaceId);
 
   return NextResponse.json({ assinatura });
 }

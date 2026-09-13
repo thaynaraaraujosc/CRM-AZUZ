@@ -98,6 +98,31 @@ export async function conferirCanalQrCode(
     reparado = conferido?.ativo === true && semToken(conferido.url) === semToken(esperado);
   }
 
+  /*
+   * O status gravado passa a seguir a verdade do outro lado.
+   *
+   * A tela dizia "conectado" com a sessão já derrubada: o CRM só atualiza esse campo quando a
+   * Evolution AVISA que caiu, e esse aviso se perde (instância recriada, servidor reiniciado,
+   * webhook fora do ar). Aí fica um "conectado" que não recebe mensagem nenhuma, e a pessoa passa
+   * a desconfiar de tudo que a tela mostra, com razão.
+   *
+   * Quem manda é o estado da Evolution, porque é lá que a sessão realmente vive. Só corrige quando
+   * ela respondeu: servidor fora do ar devolve `null`, e nesse caso mexer no status seria trocar
+   * uma informação velha por uma inventada.
+   */
+  if (estado && integracao) {
+    const deveriaSer = estado === "open" ? "conectado" : "desconectado";
+    if (integracao.status !== deveriaSer) {
+      await prisma.integracao
+        .update({
+          where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+          data: { status: deveriaSer },
+        })
+        .catch(() => {});
+      integracao.status = deveriaSer;
+    }
+  }
+
   const ultimoEventoEm = registro.ultimoEventoEm ?? null;
   const minutos = ultimoEventoEm
     ? Math.round(((Date.now() - Date.parse(ultimoEventoEm)) / 60_000) * 10) / 10
