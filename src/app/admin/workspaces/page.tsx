@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Topbar } from "@/components/ui";
 import { PLANOS, type PlanoId } from "@/lib/assinatura/planos";
 import { CriarContaCortesia } from "@/components/admin/CriarContaCortesia";
+import { MontarDemo } from "@/components/admin/MontarDemo";
 
 type WorkspaceLinha = {
   id: string;
@@ -46,6 +47,7 @@ export default function AdminWorkspacesPage() {
       <Topbar title="Workspaces" sub={workspaces ? `${workspaces.length} empresas cadastradas` : undefined} />
 
       <CriarContaCortesia aoCriar={() => setVersao((v) => v + 1)} />
+      <MontarDemo />
 
       <div className="config-tabela-scroll" style={{ margin: "0 17px 17px" }}>
         <table className="config-tabela-notif">

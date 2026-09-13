@@ -31,7 +31,10 @@ export type AcaoAuditada =
   | "campanha.criada"
   | "campanha.cancelada"
   | "dados.exportados"
-  | "workspace.alterado";
+  | "workspace.alterado"
+  // Remontar a conta de demonstracao APAGA e recria o workspace dela inteiro. Operacao
+  // destrutiva, ainda que num alvo inofensivo: fica registrada como qualquer outra.
+  | "demo.remontada";
 
 type Entrada = {
   acao: AcaoAuditada;
