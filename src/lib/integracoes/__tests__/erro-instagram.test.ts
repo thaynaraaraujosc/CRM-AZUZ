@@ -42,3 +42,23 @@ describe("explicarErroDoInstagram", () => {
     expect(explicarErroDoInstagram(desconhecido)).toBe(desconhecido);
   });
 });
+
+/**
+ * O segundo caso, que aparece ao RESPONDER e não ao conectar: "The requested user cannot be found".
+ *
+ * Acontece quando a conta conectada do Instagram muda. As conversas antigas continuam na tela (elas
+ * pertencem ao workspace, não à conexão), mas o identificador de cada pessoa é amarrado à conta que
+ * estava conectada quando a mensagem chegou. A frase da Meta sugere que a pessoa sumiu do
+ * Instagram, e manda quem lê investigar exatamente o lado errado.
+ */
+describe("erro ao responder no Direct", () => {
+  it("explica que a conversa é de outra conta conectada", () => {
+    const traduzido = explicarErroDoInstagram("(#100) The requested user cannot be found.");
+    expect(traduzido).toContain("outra conta do Instagram");
+    expect(traduzido).not.toContain("cannot be found");
+  });
+
+  it("reconhece a variação curta da frase", () => {
+    expect(explicarErroDoInstagram("user cannot be found")).toContain("outra conta do Instagram");
+  });
+});

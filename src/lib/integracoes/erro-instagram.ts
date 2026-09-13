@@ -34,6 +34,23 @@ export function explicarErroDoInstagram(mensagemDaMeta: string): string {
     );
   }
 
+  /*
+   * "The requested user cannot be found." ao RESPONDER.
+   *
+   * O identificador de quem escreveu é amarrado à conta do Instagram que estava conectada quando a
+   * mensagem chegou. Trocando a conta conectada, as conversas antigas continuam na tela (elas são
+   * do workspace, não da conexão) mas os identificadores delas deixam de valer, e a Meta responde
+   * que não encontra o usuário. A frase sugere que a pessoa sumiu do Instagram, o que não tem nada
+   * a ver e manda quem lê investigar o lado errado.
+   */
+  if (texto.includes("requested user cannot be found") || texto.includes("user cannot be found")) {
+    return (
+      "Essa conversa veio de outra conta do Instagram, que não é a que está conectada agora. " +
+      "O Instagram identifica cada pessoa por conta, então não dá pra responder por aqui. " +
+      "Reconecte a conta original, ou responda direto no aplicativo do Instagram."
+    );
+  }
+
   if (texto.includes("permission") && texto.includes("messaging")) {
     return (
       "Faltou a permissão de mensagens do Direct. Conecte de novo e deixe marcada a opção de " +

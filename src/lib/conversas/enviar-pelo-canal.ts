@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { enviarMensagemWhatsAppNaoOficial } from "@/lib/integracoes/evolution";
 import { enviarDirectInstagram } from "@/lib/integracoes/instagram-login";
+import { explicarErroDoInstagram } from "@/lib/integracoes/erro-instagram";
 import { contaConectada, enviarPelaCloudApi, janelaDeAtendimentoAberta } from "@/lib/integracoes/whatsapp-oficial";
 import { dentroDaJanelaDirect } from "@/lib/social/janela-direct";
 import { enviarModeloDeRetomada } from "./retomada-envio";
@@ -63,7 +64,14 @@ export async function enviarTextoPeloCanal(params: {
             "a janela de 24 horas do Instagram fechou. Só dá pra escrever até 24 horas depois da última mensagem da pessoa, e no Direct não existe modelo aprovado pra retomar.",
         };
       }
-      await enviarDirectInstagram(decriptar(integracao.accessTokenCriptografado), conversa.contato, texto);
+      try {
+        await enviarDirectInstagram(decriptar(integracao.accessTokenCriptografado), conversa.contato, texto);
+      } catch (erro) {
+        // A frase crua da Meta ("The requested user cannot be found") sugere que a pessoa sumiu do
+        // Instagram, o que não tem nada a ver com o que aconteceu. Ver `erro-instagram.ts`.
+        const cru = erro instanceof Error ? erro.message : "Falha ao enviar pelo Direct.";
+        return { enviado: false, motivo: explicarErroDoInstagram(cru) };
+      }
       return { enviado: true };
     }
 
