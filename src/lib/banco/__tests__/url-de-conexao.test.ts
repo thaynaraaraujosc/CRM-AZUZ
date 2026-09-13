@@ -47,6 +47,15 @@ describe("urlDeConexao", () => {
     expect(p.get("minimumIdle")).toBe("0");
   });
 
+  // Senha de banco e gerada por maquina e pode conter "?" e "@" literais. Cortar no primeiro "?"
+  // partia a URL no meio da senha: host e nome do banco viravam lixo codificado e a conexao caia
+  // inteira, sem mensagem que ligasse o sintoma a causa.
+  it("não se perde quando a senha tem ? e @ dentro", () => {
+    const url = urlDeConexao("mysql://root:p@ss?word@host.proxy.rlwy.net:12345/railway");
+    expect(url.startsWith("mariadb://root:p@ss?word@host.proxy.rlwy.net:12345/railway?")).toBe(true);
+    expect(parametros(url.slice(url.lastIndexOf("/railway?"))).get("minimumIdle")).toBe("0");
+  });
+
   it("preserva o que já vinha na URL e não duplica parâmetro", () => {
     const url = urlDeConexao(`${BASE}?ssl=true`);
     expect(parametros(url).get("ssl")).toBe("true");

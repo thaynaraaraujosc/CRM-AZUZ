@@ -56,8 +56,16 @@ export function urlDeConexao(databaseUrl: string): string {
   // O CLI do Prisma (`db push`/`migrate`) exige o prefixo `mysql://`, que é o provider declarado
   // no schema, mas o driver `@prisma/adapter-mariadb` só aceita `mariadb://`. Converter aqui faz
   // a mesma variável servir aos dois sem ninguém manter duas versões.
-  const [base, consulta = ""] = databaseUrl.replace(/^mysql:\/\//, "mariadb://").split("?");
-  const parametros = new URLSearchParams(consulta);
+  const url = databaseUrl.replace(/^mysql:\/\//, "mariadb://");
+
+  // O "?" que separa a query é o primeiro DEPOIS do último "@", e nunca o primeiro da string.
+  // Senha de banco é gerada por máquina e pode conter "?" e "@" literais; cortar no primeiro "?"
+  // partia a URL no meio da senha e transformava host e nome do banco em lixo codificado, o que
+  // derruba a conexão inteira sem dizer por quê.
+  const fimDoUsuario = url.lastIndexOf("@");
+  const inicioDaQuery = url.indexOf("?", fimDoUsuario === -1 ? 0 : fimDoUsuario);
+  const base = inicioDaQuery === -1 ? url : url.slice(0, inicioDaQuery);
+  const parametros = new URLSearchParams(inicioDaQuery === -1 ? "" : url.slice(inicioDaQuery + 1));
 
   const padroes: Record<string, string> = {
     connectionLimit: String(LIMITE_DE_CONEXOES),
