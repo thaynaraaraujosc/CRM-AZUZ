@@ -27,6 +27,18 @@ describe("rotas que dispensam sessão", () => {
     }
   });
 
+  /*
+   * Os documentos que a Meta exige pra revisar o App. Se qualquer um deles devolver redirecionamento
+   * pro login, o revisor da Meta vê uma tela de login no lugar do documento e reprova a submissão:
+   * o app fica preso em modo de desenvolvimento, e aí só conta convidada como testadora consegue
+   * conectar o Instagram. É o "meu cliente não consegue conectar" com outra roupa.
+   */
+  it("serve os documentos públicos que a Meta vai abrir na revisão", () => {
+    for (const rota of ["/politica-de-privacidade", "/termos", "/exclusao-de-dados"]) {
+      expect(ehRotaPublica(rota), `${rota} precisa abrir sem login`).toBe(true);
+    }
+  });
+
   it("abre qualquer cron novo que nasça na pasta", () => {
     // O caso do `/api/cron/campanhas`: nasceu depois da lista e ninguém lembrou de incluir. Sendo
     // prefixo, o próximo cron já nasce funcionando.

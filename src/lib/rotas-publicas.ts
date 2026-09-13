@@ -29,7 +29,12 @@ const PREFIXOS_PUBLICOS = [
   // públicas e já devolvem o mínimo.
   "/f",
   "/acesso-bloqueado",
+  // Os três documentos públicos que a Meta exige pra revisar o App: sem eles o app não sai do modo
+  // de desenvolvimento, e em modo de desenvolvimento só contas convidadas como testadoras
+  // conseguem conectar o Instagram. Que é o "meu cliente não consegue conectar".
   "/politica-de-privacidade",
+  "/termos",
+  "/exclusao-de-dados",
   "/api/auth",
   "/api/formularios",
   "/api/convite",
