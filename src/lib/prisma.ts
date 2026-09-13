@@ -1,7 +1,6 @@
 import { setDefaultResultOrder } from "node:dns";
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { urlDeConexao } from "@/lib/banco/url-de-conexao";
 
 // Node 18+ prioriza resultado IPv6 na resolução de DNS por padrão. Em redes onde a rota IPv6
 // pro host do banco não funciona direito, isso trava a conexão até estourar o timeout do pool
@@ -16,11 +15,25 @@ setDefaultResultOrder("ipv4first");
 const globalParaPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function criarPrismaClient() {
-  // Os parâmetros de pool e compressão vivem em `banco/url-de-conexao.ts`, com dois níveis de
-  // teste: um que confere a string montada e outro que ABRE conexão num banco de verdade. O
-  // segundo existe porque o primeiro sozinho já deixou passar um bug que derrubou o CRM: string
-  // bonita não prova nada, quem decide se ela presta é o driver e o servidor.
-  const adapter = new PrismaMariaDb(urlDeConexao(process.env.DATABASE_URL!));
+  // O CLI do Prisma (`db push`/`migrate`) exige o prefixo `mysql://` na `DATABASE_URL` (é o
+  // provider declarado no schema), mas o driver `@prisma/adapter-mariadb` só aceita `mariadb://`
+  //. Convertendo aqui, a mesma variável serve pros dois sem o usuário precisar manter duas versões.
+  let url = process.env.DATABASE_URL!.replace(/^mysql:\/\//, "mariadb://");
+  // Sem isso o driver `mariadb` abre um pool de até 10 conexões por padrão. O banco compartilhado
+  // (plano pequeno do Railway) tem um teto de conexões simultâneas bem menor que isso, e cada
+  // restart de container (deploy, crash-loop, `prisma db push` no boot) soma mais conexões em cima
+  // das que containers anteriores ainda não liberaram. Já aconteceu de estourar o limite do banco
+  // de verdade ("Too many connections", derrubando o site inteiro) só de reiniciar algumas vezes
+  // seguidas. Um teto baixo aqui é o suficiente pro tráfego de um workspace só.
+  url += url.includes("?") ? "&connectionLimit=3" : "?connectionLimit=3";
+  // `compress=true`: o servidor comprime (zlib) tudo que manda pra cá. O banco mora na Railway e a
+  // aplicação na Vercel, e a Railway cobra por gigabyte que SAI do banco. Foi a linha de $101 na
+  // fatura de setembro. Texto e JSON (que é o grosso do que trafega: mensagens, contatos, cards)
+  // encolhem de 3 a 5 vezes comprimidos. Custa CPU, que é a linha mais barata da conta (centavos),
+  // pra economizar tráfego, que é a mais cara. O driver `mariadb` e o MySQL 8+ falam esse
+  // protocolo sem configurar mais nada do lado do servidor.
+  url += "&compress=true";
+  const adapter = new PrismaMariaDb(url);
   return new PrismaClient({ adapter });
 }
 
