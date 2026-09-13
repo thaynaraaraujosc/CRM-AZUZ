@@ -23,8 +23,15 @@ export async function GET(request: Request) {
   // identificador gravado) caía na regra do WhatsApp e só apareceria com o QR Code conectado.
   // Ficava invisível em Conversas enquanto o negócio dela continuava no funil. Ver o card órfão
   // que apareceu na tela: o mesmo contato existindo num lugar e não no outro.
+  // Conversa do Direct anterior a esta coluna existir (`contaCanal` nulo) continua aparecendo
+  // enquanto o Instagram estiver conectado: ela nasceu quando havia UMA conexão só, então não
+  // mistura conta nenhuma. O que saiu daqui foi o `{ canal: "Instagram" }` solto, que mostrava
+  // também as conversas de OUTRA conta do Instagram e fazia duas contas conviverem na mesma lista.
   const where = provedores.includes("meta_instagram")
-    ? { workspaceId: sessao.user.workspaceId, OR: [...filtro.OR ?? [{ contaCanal: filtro.contaCanal }], { canal: "Instagram" }] }
+    ? {
+        workspaceId: sessao.user.workspaceId,
+        OR: [...(filtro.OR ?? [{ contaCanal: filtro.contaCanal }]), { canal: "Instagram", contaCanal: null }],
+      }
     : { workspaceId: sessao.user.workspaceId, ...filtro };
 
   // Igual à rota de mensagens: a pergunta barata antes da cara. Esta tela também é batida a cada

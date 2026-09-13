@@ -124,12 +124,18 @@ export function filtroContaCanal(visiveis: ContasVisiveis) {
     OR: [
       ...(valores.length ? [{ contaCanal: { in: valores } }] : []),
       ...(incluiNulo ? [{ contaCanal: null }] : []),
-      // Escape pros canais que não são WhatsApp. Ver o comentário acima. Só vale quando o
-      // Instagram está entre as contas visíveis: sem esta condição, o escape reintroduzia as
-      // conversas do Direct mesmo com o switch de exibição desligado, e o botão não fazia nada.
-      ...(contas.some((c) => c?.startsWith(`${CANAL_INSTAGRAM}:`))
-        ? [{ contaCanal: { startsWith: `${CANAL_INSTAGRAM}:` } }]
-        : []),
+      /*
+       * O escape do Instagram SAIU daqui.
+       *
+       * Ele casava qualquer conta (`startsWith "meta_instagram:"`) sempre que uma estivesse ligada.
+       * Trocando a conta conectada, as conversas da anterior continuavam na mesma lista que as da
+       * nova, sem nada dizendo qual era qual, e responder uma delas falha: o identificador de cada
+       * pessoa é amarrado à conta que recebeu a mensagem.
+       *
+       * Não há perda de proteção. Quando o CRM SABE o identificador, ele já está em `contas` e casa
+       * exato; quando NÃO sabe, `prefixosSemIdentificador` logo abaixo cobre o provedor inteiro,
+       * que era o caso real que motivou o escape.
+       */
       // Conexão ligada cujo identificador o CRM não sabe: vale o provedor inteiro. É a mesma regra
       // que o funil sempre usou pros negócios, e é o que faz as duas telas contarem a mesma
       // história em vez de uma mostrar o card e a outra esconder a conversa.

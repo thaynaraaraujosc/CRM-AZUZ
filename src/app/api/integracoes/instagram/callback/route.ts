@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import { explicarErroDoInstagram } from "@/lib/integracoes/erro-instagram";
 import { avisoDeContaOcupada, contaOcupadaPorOutroWorkspace } from "@/lib/integracoes/conta-ja-conectada";
+import { importarConversasRecentesDoInstagram } from "@/lib/integracoes/historico-instagram";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -101,6 +103,23 @@ export async function GET(request: Request) {
         metadados: metadadosFinal,
         erroMensagem: null,
       },
+    });
+
+    /*
+     * Traz as conversas recentes do Direct, DEPOIS de responder o redirecionamento.
+     *
+     * Sem isto a caixa de entrada ficava vazia até alguém escrever de novo, e quem acabou de
+     * conectar concluía, com razão, que não tinha funcionado. Roda em `after` porque a pessoa está
+     * esperando o navegador voltar pro CRM: segurar o redirecionamento por causa disso trocaria uma
+     * tela vazia por uma tela travada.
+     *
+     * Falhar aqui não desfaz a conexão, que está correta. Só não há histórico pra mostrar, e o que
+     * chegar a partir de agora entra normalmente pelo webhook.
+     */
+    after(async () => {
+      await importarConversasRecentesDoInstagram(workspaceId).catch((erro) =>
+        console.error("[instagram/callback] falha ao importar as conversas recentes:", erro),
+      );
     });
   } catch (erro) {
     const cru = erro instanceof Error ? erro.message : "Falha desconhecida ao conectar o Instagram.";

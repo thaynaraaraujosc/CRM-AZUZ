@@ -769,3 +769,75 @@ export function classificarErroMeta(mensagem: string): { motivo: MotivoFalhaMeta
   }
   return { motivo: "desconhecido", explicacao: mensagem };
 }
+
+export type ConversaRecenteInstagram = {
+  /** IGSID da outra pessoa. É a chave estável e o destinatário de um envio futuro. */
+  remetenteId: string;
+  username: string | null;
+  nome: string | null;
+  mensagens: { id: string; deMim: boolean; texto: string; quando: Date }[];
+};
+
+/**
+ * As conversas mais recentes do Direct, com as últimas mensagens de cada uma.
+ *
+ * Existe porque conectar o Instagram deixava a caixa de entrada VAZIA até alguém escrever de novo.
+ * Quem acabou de conectar olha para uma tela em branco e conclui, com razão, que não funcionou. O
+ * WhatsApp por QR Code já traz as conversas recentes ao conectar; não havia motivo pro Direct ser
+ * diferente, e a API da Meta entrega isso numa chamada só.
+ *
+ * Traz só TEXTO de propósito. Mídia antiga exigiria baixar arquivo por arquivo de conversas que a
+ * pessoa talvez nem abra, e foi assim que uma importação de histórico já derrubou o servidor. O que
+ * chegar daqui pra frente vem completo pelo webhook.
+ */
+export async function listarConversasRecentesInstagram(
+  accessToken: string,
+  contaConectadaId: string,
+  limite = 10,
+): Promise<ConversaRecenteInstagram[]> {
+  const campos = `participants,messages.limit(25){id,from,message,created_time}`;
+  const resposta = await fetch(
+    `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/me/conversations?fields=${campos}&limit=${limite}&access_token=${accessToken}`,
+  );
+  const dados = (await resposta.json()) as {
+    data?: {
+      participants?: { data?: { id?: string; username?: string; name?: string }[] };
+      messages?: { data?: { id?: string; from?: { id?: string }; message?: string; created_time?: string }[] };
+    }[];
+  } & ErroGraph;
+
+  if (!resposta.ok) {
+    throw new Error(
+      dados.error_message ?? dados.error?.message ?? `Falha ao listar as conversas do Direct (HTTP ${resposta.status}).`,
+    );
+  }
+
+  const conversas: ConversaRecenteInstagram[] = [];
+  for (const thread of dados.data ?? []) {
+    // A outra pessoa é quem não é a conta conectada. Numa conversa consigo mesma não sobra ninguém,
+    // e aí não há o que importar.
+    const outro = thread.participants?.data?.find((p) => p.id && p.id !== contaConectadaId);
+    if (!outro?.id) continue;
+
+    const mensagens = (thread.messages?.data ?? [])
+      .filter((m) => m.id && typeof m.message === "string" && m.message.trim())
+      .map((m) => ({
+        id: m.id!,
+        deMim: m.from?.id === contaConectadaId,
+        texto: m.message!.trim(),
+        quando: m.created_time ? new Date(m.created_time) : new Date(),
+      }))
+      // A Meta devolve da mais nova pra mais antiga. Gravar em ordem cronológica deixa a conversa
+      // legível e faz a "última mensagem" da lista ser a última de verdade.
+      .sort((a, b) => a.quando.getTime() - b.quando.getTime());
+
+    if (!mensagens.length) continue;
+    conversas.push({
+      remetenteId: outro.id,
+      username: outro.username ?? null,
+      nome: outro.name ?? null,
+      mensagens,
+    });
+  }
+  return conversas;
+}

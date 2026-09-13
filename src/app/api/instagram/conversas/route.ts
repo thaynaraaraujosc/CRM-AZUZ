@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { JANELA_HORAS } from "@/lib/social/janela-direct";
 import { cabecalhosComEtag, clienteJaTem, montarEtag, naoModificado } from "@/lib/conversas/assinatura";
+import { filtroDoDirect, whereDoDirect } from "@/lib/integracoes/filtro-instagram";
 
 /**
  * A caixa de entrada do Direct: as conversas do Instagram, com o perfil de cada pessoa.
@@ -56,9 +57,19 @@ export async function GET(request: Request) {
   if (!sessao) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
   const workspaceId = sessao.user.workspaceId;
 
+  /*
+   * Só as conversas da conta conectada AGORA.
+   *
+   * Trocando a conta do Instagram, as conversas da anterior ficavam misturadas com as da nova, na
+   * mesma lista, sem nada dizendo de qual era qual: e responder uma delas falha, porque o
+   * identificador de cada pessoa é amarrado à conta que recebeu a mensagem. Ver `filtro-instagram.ts`.
+   */
+  const filtro = await filtroDoDirect(workspaceId);
+  const daConta = whereDoDirect(filtro);
+
   const [resumoConversas, resumoMensagens] = await Promise.all([
     prisma.conversa.aggregate({
-      where: { workspaceId, canal: "Instagram", arquivada: false },
+      where: { workspaceId, canal: "Instagram", arquivada: false, ...daConta },
       _count: { _all: true },
       _max: { atualizadoEm: true },
     }),
@@ -71,6 +82,9 @@ export async function GET(request: Request) {
   const etag = montarEtag([
     workspaceId,
     "instagram",
+    // A conta conectada entra na assinatura: sem isso, trocar de conta devolvia `304` e a tela
+    // continuava mostrando a lista da conta anterior até alguém recarregar tudo.
+    filtro.tipo === "daConta" ? filtro.contaCanal : filtro.tipo,
     resumoConversas._count._all,
     resumoConversas._max.atualizadoEm,
     resumoMensagens._count._all,
@@ -91,7 +105,7 @@ export async function GET(request: Request) {
    * ainda é um recorte razoável pra pegar as 200 candidatas sem varrer o histórico inteiro.
    */
   const conversas = await prisma.conversa.findMany({
-    where: { workspaceId, canal: "Instagram", arquivada: false },
+    where: { workspaceId, canal: "Instagram", arquivada: false, ...daConta },
     orderBy: { atualizadoEm: "desc" },
     take: 200,
     select: {
