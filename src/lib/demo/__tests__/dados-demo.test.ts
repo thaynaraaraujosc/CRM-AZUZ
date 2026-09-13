@@ -100,6 +100,18 @@ describe("dados da demonstração", () => {
     expect(EMAIL_DEMO).toMatch(/@azuzcrm\.com\.br$/);
   });
 
+  /**
+   * A garantia que mais importa, porque isto vai pra video publico: celular brasileiro e
+   * `9` seguido de um digito de 6 a 9. Os daqui saem `9` seguido de `0`, que nao existe. Ninguem
+   * consegue ligar pro numero que aparecer na tela, nem por engano nem de proposito.
+   */
+  it("nenhum telefone pode existir de verdade", () => {
+    for (let i = 0; i < CONTATOS_DEMO.length; i += 1) {
+      const digitos = telefoneDemo(i).replace(/\D/g, "");
+      expect(digitos, `telefone ${telefoneDemo(i)} tem formato de numero real`).toMatch(/^119[0-5]/);
+    }
+  });
+
   it("os telefones seguem o bloco artificial e não se repetem", () => {
     const vistos = new Set<string>();
     for (let i = 0; i < CONTATOS_DEMO.length; i += 1) {
