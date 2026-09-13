@@ -12,6 +12,7 @@ import { conferirCanalQrCodeDeTodosOsWorkspaces } from "@/lib/integracoes/saude-
 import { corrigirDonosDeTodosOsWorkspaces } from "@/lib/conversas/dono-divergente";
 import { iniciarHistoricosQueFaltam } from "@/lib/integracoes/historico-whatsapp";
 import { removerGruposViradosContatoDeTodosOsWorkspaces } from "@/lib/integracoes/limpar-dados-whatsapp";
+import { conciliarAssinaturasPendentes } from "@/lib/assinatura/conciliar-pendentes";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 
 /**
@@ -94,6 +95,18 @@ export async function GET(request: Request) {
           return { workspaces: 0, adotadas: 0 };
         })
       : { workspaces: 0, adotadas: 0 };
+
+  // Quem pagou e continuou bloqueado pelo paywall porque o webhook da Asaas se perdeu. Uma vez por
+  // hora, porque é raro e cada conferência é uma chamada à Asaas. Não depende de a pessoa abrir
+  // tela nenhuma: quem foi barrado depois de pagar costuma simplesmente sumir, e a venda vai
+  // junto.
+  const assinaturas =
+    new Date().getUTCMinutes() === 23
+      ? await conciliarAssinaturasPendentes().catch((erro) => {
+          console.error("[cron] falha ao conciliar assinaturas:", erro);
+          return { conferidas: 0, corrigidas: 0 };
+        })
+      : { conferidas: 0, corrigidas: 0 };
 
   // Grupo do WhatsApp que virou contato e card de negócio por um erro antigo. A regra é do
   // produto, não do cliente: grupo aparece em Conversas e nunca vira lead. Era um botão em
@@ -188,5 +201,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados, assinaturas });
 }

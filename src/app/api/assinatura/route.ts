@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { esquecerStatus } from "@/lib/assinatura/status-cache";
+import { precisaConciliar, statusPelasCobrancas } from "@/lib/assinatura/conciliar";
 import { PLANOS, ehPlanoValido } from "@/lib/assinatura/planos";
 import {
   cancelarAssinatura,
@@ -24,6 +25,24 @@ export async function GET() {
 
   try {
     const cobrancas = assinatura.asaasSubscriptionId ? await listarCobrancas(assinatura.asaasSubscriptionId) : [];
+
+    // Concilia com o que a Asaas diz DE FATO, em vez de confiar só no webhook.
+    //
+    // Quem paga por boleto ou Pix nasce `pendente` e só é liberado quando o webhook chega. Se ele
+    // se perder (rede, deploy no segundo errado, token trocado no painel da Asaas), não há nova
+    // tentativa: a pessoa pagou, a Asaas registrou, e o CRM segue mostrando a tela de cobrança pra
+    // ela. Esta é justamente a tela que alguém nessa situação abre, então é aqui que o conserto
+    // tem mais chance de acontecer no momento em que importa.
+    const statusReal = statusPelasCobrancas(cobrancas);
+    if (precisaConciliar(assinatura.status, statusReal)) {
+      const atualizada = await prisma.assinatura.update({
+        where: { workspaceId: sessao.user.workspaceId },
+        data: { status: statusReal },
+      });
+      esquecerStatus(sessao.user.workspaceId);
+      return NextResponse.json({ assinatura: atualizada, cobrancas });
+    }
+
     return NextResponse.json({ assinatura, cobrancas });
   } catch {
     // Asaas fora do ar não pode derrubar a tela de Configurações. Mostra a assinatura salva sem
