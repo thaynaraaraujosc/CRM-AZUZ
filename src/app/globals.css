@@ -19464,25 +19464,56 @@ table.tbl .name-cell .r {
   --admin-ritmo: var(--space-5);
 }
 
-/* O recuo lateral de todo conteúdo do painel, inclusive o cabeçalho das telas. */
-.admin-view > .view > *,
+/*
+ * O recuo lateral de todo conteúdo do painel.
+ *
+ * `.topbar` fica de FORA: ele já traz o próprio `padding-inline` e o valor é o mesmo. A primeira
+ * versão desta folha zerava o do cabeçalho e aplicava o daqui, o que deu na conta errada: o título
+ * nascia 30px à esquerda de tudo que vinha abaixo dele. Título desalinhado do conteúdo é a
+ * primeira coisa que o olho pega ao abrir uma tela, e foi exatamente o que apareceu.
+ */
+.admin-view > .view > *:not(.topbar):not(.panel-h),
 .admin-view .admin-secao {
   padding-inline: var(--admin-gutter);
 }
 
-/* O cabeçalho traz o próprio recuo; não pode levar dois. */
-.admin-view > .view > .topbar,
-.admin-view > .view > .panel-h {
-  padding-inline: 0;
-}
-
 /* Respiro entre o cabeçalho da tela e o que vem abaixo. Antes era zero: o título ficava colado
-   no primeiro botão, e é a primeira coisa que salta aos olhos ao abrir a tela. */
+   no primeiro botão. */
 .admin-view > .view {
   display: flex;
   flex-direction: column;
   gap: var(--admin-ritmo);
   padding-block-end: var(--space-6);
+}
+
+/*
+ * Sem isto a tabela larga empurra a largura do container e o conteúdo vaza pela direita: item de
+ * flex nasce com `min-width: auto`, ou seja, se recusa a encolher abaixo do próprio conteúdo. Foi
+ * o que cortou os cartões da tela de Usuários no lado direito.
+ */
+.admin-view > .view > * {
+  min-width: 0;
+}
+
+/*
+ * O cabeçalho da tela, com mais ar em cima e a linha de apoio solta do título.
+ *
+ * Estava com o título colado no topo e o subtítulo grudado nele: as duas linhas liam como um
+ * bloco só. Altura e respiro são o que dá a um painel a aparência de coisa acabada, e custam
+ * apenas espaço.
+ */
+.admin-view > .view > .topbar {
+  padding-block: var(--space-6) var(--space-5);
+  align-items: flex-start;
+}
+
+.admin-view > .view > .topbar h1,
+.admin-view > .view > .topbar h2 {
+  margin-block-end: var(--space-1);
+}
+
+.admin-view > .view > .topbar .sub {
+  margin: 0;
 }
 
 /* Bloco de conteúdo do painel: cartão com ar por dentro e separação por fora. */
@@ -19635,4 +19666,40 @@ table.tbl .name-cell .r {
 .admin-view .admin-titulo-linha .hint {
   padding: 0;
   margin: 0;
+}
+
+/*
+ * Bloco informativo: fundo azul suave em vez de branco.
+ *
+ * Vem de uma referência que a Thaynara trouxe: o aviso que explica o que fazer aparece sobre um
+ * azul bem claro, e não num cartão branco igual a todos os outros. O ganho é de leitura, não de
+ * enfeite: numa tela onde tudo é branco sobre branco, o bloco que EXPLICA fica indistinguível do
+ * bloco que LISTA, e o olho tem que ler os dois pra descobrir qual é qual. O tom separa os dois
+ * papéis antes da primeira palavra.
+ *
+ * O tom sai de `--blue-soft`, que é o azul translúcido do próprio produto e já tem versão própria
+ * no tema escuro. Escolher um azul novo aqui criaria mais uma linguagem visual convivendo com as
+ * que já existem, que é justamente o que a unificação vinha resolvendo.
+ *
+ * Translúcido, e não cor chapada: assim ele funciona sobre qualquer superfície onde for colocado,
+ * clara ou escura, sem precisar de uma variante por contexto.
+ */
+.admin-view .admin-bloco-info {
+  background: var(--blue-soft);
+  border-color: transparent;
+}
+
+.admin-view .admin-bloco-info .config-bloco-titulo {
+  color: var(--ink);
+}
+
+/* A ação de dentro precisa continuar visível sobre o tom, então ganha fundo próprio. */
+.admin-view .admin-bloco-info .config-acoes {
+  border-top: none;
+  padding-block-start: var(--space-2);
+}
+
+.admin-view .admin-bloco-info .btn.ghost {
+  background: var(--surface);
+  border-color: var(--line);
 }

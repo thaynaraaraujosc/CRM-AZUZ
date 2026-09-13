@@ -66,7 +66,7 @@ export function MontarDemo() {
 
   if (pronto) {
     return (
-      <div className="admin-bloco config-bloco">
+      <div className="admin-bloco admin-bloco-info config-bloco">
         <p className="config-bloco-titulo">Conta de demonstração pronta</p>
         <p className="hint">
           {pronto.empresa}: {pronto.resumo.contatos} contatos, {pronto.resumo.conversas} conversas,{" "}
@@ -89,7 +89,7 @@ export function MontarDemo() {
 
   if (!aberto) {
     return (
-      <div className="admin-bloco config-bloco">
+      <div className="admin-bloco admin-bloco-info config-bloco">
         <p className="config-bloco-titulo">Conta de demonstração</p>
         <p className="hint">
           Empresa fictícia com contatos, conversas, funil, tarefas e negócios encerrados. Para gravar vídeo e
