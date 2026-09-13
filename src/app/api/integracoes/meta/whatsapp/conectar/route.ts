@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { avisoDeContaOcupada, contaOcupadaPorOutroWorkspace } from "@/lib/integracoes/conta-ja-conectada";
 import { auditar } from "@/lib/seguranca/auditoria";
 import {
   ErroConexao,
@@ -62,6 +63,23 @@ export async function POST(request: Request) {
   const { code, wabaId, phoneNumberId, businessId, pinExistente } = (await request.json()) as CorpoConectar;
   if (!wabaId || !phoneNumberId) {
     return NextResponse.json({ erro: "wabaId e phoneNumberId são obrigatórios" }, { status: 400 });
+  }
+
+  /*
+   * O MESMO número não pode alimentar dois workspaces.
+   *
+   * O webhook da Meta chega identificado pelo número, não pelo workspace, e o roteamento pega a
+   * primeira integração conectada com aquele identificador. Com duas, uma sempre ganha e a outra
+   * nunca recebe nada, dizendo "Conectado" o tempo todo. Mesma armadilha que o Instagram tinha.
+   */
+  const ocupado = await contaOcupadaPorOutroWorkspace({
+    provedor: "meta_whatsapp",
+    campo: "phoneNumberId",
+    identificador: phoneNumberId,
+    workspaceId: sessao.user.workspaceId,
+  });
+  if (ocupado) {
+    return NextResponse.json({ erro: avisoDeContaOcupada("WhatsApp", ocupado) }, { status: 409 });
   }
 
   const appId = process.env.META_APP_ID ?? process.env.NEXT_PUBLIC_META_APP_ID;

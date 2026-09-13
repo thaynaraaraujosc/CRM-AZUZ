@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { explicarErroDoInstagram } from "@/lib/integracoes/erro-instagram";
+import { avisoDeContaOcupada, contaOcupadaPorOutroWorkspace } from "@/lib/integracoes/conta-ja-conectada";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -42,6 +43,22 @@ export async function GET(request: Request) {
   try {
     const { accessToken, instagramContaId, expiraEm } = await trocarCodePorTokenInstagram(code, redirectUri);
     const perfil = await buscarPerfilInstagram(accessToken);
+
+    /*
+     * A MESMA conta do Instagram não pode alimentar dois workspaces.
+     *
+     * O webhook da Meta chega identificado pela conta, não pelo workspace, e o roteamento pega a
+     * primeira integração conectada com aquele identificador. Com duas, uma sempre ganha e a outra
+     * nunca recebe nada, dizendo "Conectado" o tempo todo. Recusar aqui, com o nome da empresa que
+     * já tem a conta, troca horas de investigação por uma frase.
+     */
+    const ocupada = await contaOcupadaPorOutroWorkspace({
+      provedor: "meta_instagram",
+      campo: "instagramContaId",
+      identificador: perfil.instagramContaId || instagramContaId,
+      workspaceId,
+    });
+    if (ocupada) throw new Error(avisoDeContaOcupada("Instagram", ocupada));
 
     // Assinatura dos eventos da conta. Autorizar no OAuth dá acesso, não assina webhook. Sem este
     // passo a conta fica "Conectada" e nenhuma mensagem do Direct chega (ver o comentário da
