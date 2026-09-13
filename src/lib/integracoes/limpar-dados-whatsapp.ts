@@ -139,3 +139,39 @@ export async function limparAnexosInvalidosInstagram(workspaceId: string): Promi
   }
   return corrigidas;
 }
+
+/**
+ * A mesma limpeza de grupos, em todo workspace, pelo relógio.
+ *
+ * Isto era um BOTÃO em Configurações, e botão de manutenção dentro do produto não é conserto: é
+ * uma conta que o cliente paga. Pior, obrigava cada pessoa a entender o que é "grupo virado
+ * contato" pra decidir se aperta. A regra é do produto, não dela: grupo do WhatsApp aparece em
+ * Conversas e NUNCA vira contato nem card de negócio. Os webhooks já garantem isso pro que chega
+ * agora; esta passada apaga o que ficou de trás, sozinha.
+ *
+ * No estado normal ela lê e não escreve nada.
+ */
+export async function removerGruposViradosContatoDeTodosOsWorkspaces(): Promise<{
+  workspaces: number;
+  contatos: number;
+  cards: number;
+}> {
+  // Só quem tem contato criado pelo WhatsApp pode ter o problema. Sem isso a rodada varreria todo
+  // workspace da plataforma à toa.
+  const comWhatsApp = await prisma.contato.groupBy({
+    by: ["workspaceId"],
+    where: { criadoVia: "whatsapp" },
+    _count: { _all: true },
+  });
+  let contatos = 0;
+  let cards = 0;
+  for (const linha of comWhatsApp) {
+    const r = await removerGruposViradosContato(linha.workspaceId).catch((erro) => {
+      console.error(`[grupos] falha no workspace ${linha.workspaceId}:`, erro);
+      return { contatos: 0, cards: 0 };
+    });
+    contatos += r.contatos;
+    cards += r.cards;
+  }
+  return { workspaces: comWhatsApp.length, contatos, cards };
+}

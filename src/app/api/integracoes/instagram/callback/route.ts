@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { explicarErroDoInstagram } from "@/lib/integracoes/erro-instagram";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -85,7 +86,10 @@ export async function GET(request: Request) {
       },
     });
   } catch (erro) {
-    const mensagem = erro instanceof Error ? erro.message : "Falha desconhecida ao conectar o Instagram.";
+    const cru = erro instanceof Error ? erro.message : "Falha desconhecida ao conectar o Instagram.";
+    // A frase da Meta manda "entrar no instagram.com e seguir as instruções", que é exatamente o
+    // que a pessoa acabou de fazer. Traduz pro que realmente resolve. Ver `erro-instagram.ts`.
+    const mensagem = explicarErroDoInstagram(cru);
     console.error("[instagram/callback] falha ao conectar:", erro);
     await prisma.integracao.upsert({
       where: { workspaceId_provedor: { workspaceId, provedor } },

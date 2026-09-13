@@ -11,6 +11,7 @@ import { reconciliarTodosOsWorkspaces } from "@/lib/conversas/reconciliar";
 import { conferirCanalQrCodeDeTodosOsWorkspaces } from "@/lib/integracoes/saude-qrcode";
 import { corrigirDonosDeTodosOsWorkspaces } from "@/lib/conversas/dono-divergente";
 import { iniciarHistoricosQueFaltam } from "@/lib/integracoes/historico-whatsapp";
+import { removerGruposViradosContatoDeTodosOsWorkspaces } from "@/lib/integracoes/limpar-dados-whatsapp";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 
 /**
@@ -94,6 +95,17 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, adotadas: 0 };
 
+  // Grupo do WhatsApp que virou contato e card de negócio por um erro antigo. A regra é do
+  // produto, não do cliente: grupo aparece em Conversas e nunca vira lead. Era um botão em
+  // Configurações, e botão de manutenção dentro do produto é conta que o cliente paga.
+  const grupos =
+    new Date().getUTCMinutes() === 9
+      ? await removerGruposViradosContatoDeTodosOsWorkspaces().catch((erro) => {
+          console.error("[cron] falha ao tirar grupos da carteira:", erro);
+          return { workspaces: 0, contatos: 0, cards: 0 };
+        })
+      : { workspaces: 0, contatos: 0, cards: 0 };
+
   // Mensagem que entrou por uma conexão e ficou marcada como sendo de outra. Enquanto as duas
   // estão ligadas ninguém vê diferença; ao desconectar uma, some da tela o que a outra recebeu.
   // Roda logo depois da adoção de órfãs, que era o caminho que produzia a divergência. Só escreve
@@ -176,5 +188,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos, espelhamentosIniciados });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados });
 }
