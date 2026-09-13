@@ -179,6 +179,29 @@ export function ConexaoInstagram() {
 
   return (
     <>
+      {/*
+        Os dois requisitos que a Meta impõe ANTES do clique, escritos onde a pessoa vai ler.
+
+        Sem isto, o caminho de quem não atende algum dos dois é: abrir o diálogo do Instagram,
+        aceitar todas as permissões, e cair numa página do próprio instagram.com com um erro em
+        inglês dizendo "entre no instagram.com e siga as instruções". O erro nem chega ao CRM (a
+        Meta interrompe antes de voltar pra cá), então não há nada que a gente possa traduzir
+        depois. A única defesa possível é avisar antes.
+      */}
+      {!conectado ? (
+        <div className="int-aviso-conflito" style={{ marginBottom: 10 }}>
+          <strong>Antes de conectar, confira duas coisas na conta do Instagram:</strong>
+          <br />
+          1. Ela precisa ser <b>Profissional</b> (Comercial ou Criador de conteúdo). Conta pessoal a
+          Meta recusa.
+          <br />
+          2. Enquanto o nosso app estiver em análise na Meta, só contas <b>convidadas como
+          testadoras</b> conseguem conectar. O convite é enviado pela AZUZ e precisa ser aceito no
+          Instagram, em Configurações → Apps e sites → Convites de testador. Aceitar as permissões
+          na janela de login não substitui isso: são duas aceitações diferentes, em lugares
+          diferentes.
+        </div>
+      ) : null}
       <PainelOAuth
         provedor="meta_instagram"
         href="/api/integracoes/instagram/conectar"
