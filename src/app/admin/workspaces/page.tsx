@@ -49,7 +49,7 @@ export default function AdminWorkspacesPage() {
       <CriarContaCortesia aoCriar={() => setVersao((v) => v + 1)} />
       <MontarDemo />
 
-      <div className="config-tabela-scroll" style={{ margin: "0 17px 17px" }}>
+      <div className="config-tabela-scroll">
         <table className="config-tabela-notif">
           <thead>
             <tr>

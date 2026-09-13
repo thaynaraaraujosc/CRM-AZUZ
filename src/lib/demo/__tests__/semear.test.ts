@@ -57,7 +57,7 @@ conditional("semearDemo num banco de verdade", () => {
 
   it("cria o workspace da demonstração", async () => {
     const ws = await prisma.workspace.findUnique({ where: { id: WORKSPACE_DEMO } });
-    expect(ws?.nome).toBe("Clínica Vitta");
+    expect(ws?.nome).toBe("Clínica Aurora");
   });
 
   // Sem assinatura ativa o paywall manda a demonstração pra tela de pagamento, que é o pior

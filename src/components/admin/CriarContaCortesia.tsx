@@ -52,7 +52,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
 
   if (criada) {
     return (
-      <div className="config-bloco" style={{ margin: "0 17px 17px" }}>
+      <div className="admin-bloco config-bloco">
         <p className="config-bloco-titulo">Conta criada e já liberada</p>
         <p className="hint">
           A empresa <strong>{criada.workspaceId}</strong> foi criada com a assinatura ativa, sem
@@ -84,7 +84,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
 
   if (!aberto) {
     return (
-      <div className="config-acoes" style={{ margin: "0 17px 17px" }}>
+      <div className="admin-acoes-topo">
         <button type="button" className="btn primary" onClick={() => setAberto(true)}>
           Criar conta de cortesia
         </button>
@@ -93,7 +93,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
   }
 
   return (
-    <form className="config-bloco" style={{ margin: "0 17px 17px" }} onSubmit={enviar}>
+    <form className="admin-bloco config-bloco" onSubmit={enviar}>
       <p className="config-bloco-titulo">Nova conta de cortesia</p>
       <p className="hint">
         Cria uma empresa nova com essa pessoa como administradora e a assinatura já ativa. Não gera

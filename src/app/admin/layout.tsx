@@ -19,7 +19,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     <SessionProvider>
       <div className="shell">
         <AdminSidebar />
-        <main className="main">{children}</main>
+        <main className="main admin-view">{children}</main>
       </div>
     </SessionProvider>
   );

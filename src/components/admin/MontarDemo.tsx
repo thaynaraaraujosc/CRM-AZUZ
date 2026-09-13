@@ -24,6 +24,10 @@ type Resultado = {
  * A confirmação escrita existe porque a operação APAGA. Ela apaga só a conta de demonstração (a
  * rota recusa qualquer outro alvo), mas um botão destrutivo que dispara no primeiro clique é um
  * hábito ruim de deixar num painel que também mexe em conta de cliente pagante.
+ *
+ * As classes seguem `CriarContaCortesia` (`config-bloco`, `field`, `input`, `config-acoes`), e não
+ * um conjunto próprio: a primeira versão inventou `card` e `label` solto, e o bloco saiu sem
+ * espaçamento nenhum, com o rótulo grudado no campo. Componente de painel herda o painel.
  */
 export function MontarDemo() {
   const [aberto, setAberto] = useState(false);
@@ -62,50 +66,56 @@ export function MontarDemo() {
 
   if (pronto) {
     return (
-      <section className="card">
-        <h2>Conta de demonstração pronta</h2>
-        <p className="sub">
-          {pronto.empresa} · {pronto.resumo.contatos} contatos, {pronto.resumo.conversas} conversas,{" "}
+      <div className="admin-bloco config-bloco">
+        <p className="config-bloco-titulo">Conta de demonstração pronta</p>
+        <p className="hint">
+          {pronto.empresa}: {pronto.resumo.contatos} contatos, {pronto.resumo.conversas} conversas,{" "}
           {pronto.resumo.mensagens} mensagens, {pronto.resumo.tarefas} tarefas e {pronto.resumo.fechados} negócios
-          encerrados.
+          encerrados. Todos os dados são fictícios: nenhum contato, telefone ou conversa de cliente real aparece
+          nessa conta.
         </p>
-        <p>
-          Entre com <strong>{pronto.email}</strong> e a senha que você acabou de definir. Todos os dados são
-          fictícios: nenhum contato, telefone ou conversa de cliente real aparece nessa conta.
-        </p>
-        <button type="button" className="btn ghost" onClick={() => setPronto(null)}>
-          Fechar
-        </button>
-      </section>
+        <div className="field">
+          <label htmlFor="demo-acesso">Entre com este e-mail e a senha que você definiu</label>
+          <input id="demo-acesso" className="input" readOnly value={pronto.email} />
+        </div>
+        <div className="config-acoes">
+          <button type="button" className="btn ghost" onClick={() => setPronto(null)}>
+            Fechar
+          </button>
+        </div>
+      </div>
     );
   }
 
   if (!aberto) {
     return (
-      <section className="card">
-        <h2>Conta de demonstração</h2>
-        <p className="sub">
+      <div className="admin-bloco config-bloco">
+        <p className="config-bloco-titulo">Conta de demonstração</p>
+        <p className="hint">
           Empresa fictícia com contatos, conversas, funil, tarefas e negócios encerrados. Para gravar vídeo e
           mostrar o produto sem expor dado de cliente.
         </p>
-        <button type="button" className="btn primary" onClick={() => setAberto(true)}>
-          Montar ou remontar
-        </button>
-      </section>
+        <div className="config-acoes">
+          <button type="button" className="btn ghost" onClick={() => setAberto(true)}>
+            Montar ou remontar
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <section className="card">
-      <h2>Montar conta de demonstração</h2>
-      <p className="sub">
+    <form className="admin-bloco config-bloco" onSubmit={enviar}>
+      <p className="config-bloco-titulo">Montar conta de demonstração</p>
+      <p className="hint">
         Isso apaga e recria a conta de demonstração do zero. Nenhuma outra conta é tocada.
       </p>
 
-      <form onSubmit={enviar}>
+      <div className="field">
         <label htmlFor="demo-senha">Senha de acesso da conta de demonstração</label>
         <input
           id="demo-senha"
+          className="input"
           type="password"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
@@ -114,38 +124,40 @@ export function MontarDemo() {
           autoComplete="new-password"
           placeholder="pelo menos 8 caracteres"
         />
+      </div>
 
-        <label htmlFor="demo-confirmar">
-          Escreva <strong>MONTAR</strong> para confirmar
-        </label>
+      <div className="field">
+        <label htmlFor="demo-confirmar">Escreva MONTAR para confirmar</label>
         <input
           id="demo-confirmar"
+          className="input"
           type="text"
           value={confirmacao}
           onChange={(e) => setConfirmacao(e.target.value)}
           autoComplete="off"
+          placeholder="MONTAR"
         />
+      </div>
 
-        {erro ? <p className="erro">{erro}</p> : null}
+      {erro ? <p className="auth-erro">{erro}</p> : null}
 
-        <div className="acoes">
-          <button type="submit" className="btn primary" disabled={salvando || !confirmado || senha.length < 8}>
-            {salvando ? "Montando..." : "Montar conta"}
-          </button>
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={() => {
-              setAberto(false);
-              setErro(null);
-              setConfirmacao("");
-            }}
-            disabled={salvando}
-          >
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </section>
+      <div className="config-acoes">
+        <button type="submit" className="btn primary" disabled={salvando || !confirmado || senha.length < 8}>
+          {salvando ? "Montando..." : "Montar conta"}
+        </button>
+        <button
+          type="button"
+          className="btn ghost"
+          onClick={() => {
+            setAberto(false);
+            setErro(null);
+            setConfirmacao("");
+          }}
+          disabled={salvando}
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
   );
 }

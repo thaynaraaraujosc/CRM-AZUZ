@@ -22,7 +22,7 @@
 
 export const WORKSPACE_DEMO = "demonstracao";
 export const EMAIL_DEMO = "demo@azuzcrm.com.br";
-export const EMPRESA_DEMO = "Clínica Vitta";
+export const EMPRESA_DEMO = "Clínica Aurora";
 
 /** Telefones da demonstração começam aqui e seguem em sequência. Ver o aviso no topo. */
 const TELEFONE_BASE = 8_800_001;

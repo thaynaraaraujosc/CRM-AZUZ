@@ -19444,3 +19444,195 @@ table.tbl .name-cell .r {
     grid-column: 1 / -1;
   }
 }
+
+/* ============================================================ */
+/* Painel de super-admin: espaçamento e ritmo                   */
+/* ============================================================ */
+
+/*
+ * O painel nasceu com `style={{ margin: "0 17px 17px" }}` repetido em cada bloco de cada tela. O
+ * 17 não vinha de lugar nenhum (a escala do produto é 4/8/12/16/20/28), então nada alinhava com
+ * nada: o título recuava num valor, o botão em outro, a tabela em um terceiro. O resultado era uma
+ * tela que parecia montada às pressas, que é exatamente o oposto do que um painel de administração
+ * precisa transmitir.
+ *
+ * Aqui a medida é uma só, declarada uma vez, e tudo dentro do painel a respeita.
+ */
+
+.admin-view {
+  --admin-gutter: var(--space-6);
+  --admin-ritmo: var(--space-5);
+}
+
+/* O recuo lateral de todo conteúdo do painel, inclusive o cabeçalho das telas. */
+.admin-view > .view > *,
+.admin-view .admin-secao {
+  padding-inline: var(--admin-gutter);
+}
+
+/* O cabeçalho traz o próprio recuo; não pode levar dois. */
+.admin-view > .view > .topbar,
+.admin-view > .view > .panel-h {
+  padding-inline: 0;
+}
+
+/* Respiro entre o cabeçalho da tela e o que vem abaixo. Antes era zero: o título ficava colado
+   no primeiro botão, e é a primeira coisa que salta aos olhos ao abrir a tela. */
+.admin-view > .view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--admin-ritmo);
+  padding-block-end: var(--space-6);
+}
+
+/* Bloco de conteúdo do painel: cartão com ar por dentro e separação por fora. */
+.admin-view .admin-bloco {
+  margin-inline: var(--admin-gutter);
+  padding-block: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.admin-view .admin-bloco .config-bloco-titulo {
+  padding: var(--space-4) var(--space-4) var(--space-1);
+}
+
+.admin-view .admin-bloco .hint {
+  padding-inline: var(--space-4);
+  padding-block-end: var(--space-2);
+  max-width: 68ch;
+}
+
+/* Botões separados. Estavam encostados um no outro, o que faz "Montar conta" e "Cancelar"
+   parecerem um controle só e convida ao clique errado numa ação destrutiva. */
+.admin-view .config-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+.admin-view .admin-bloco > .config-acoes:only-of-type {
+  border-top: none;
+}
+
+/* A ação principal da tela, solta acima do conteúdo. */
+.admin-view .admin-acoes-topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-inline: var(--admin-gutter);
+}
+
+/* Lista de cartões (tela de Usuários). */
+.admin-view .admin-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-inline: var(--admin-gutter);
+}
+
+/*
+ * A linha de empresa: nome e resumo precisavam de ar entre si e de altura de linha própria.
+ * Estavam empilhados sem respiro, e o nome (que é a informação que se procura ao varrer a lista)
+ * não se destacava do texto de apoio.
+ */
+.admin-view .admin-linha-empresa {
+  padding: var(--space-4) var(--space-5);
+}
+
+.admin-view .admin-linha-empresa strong {
+  display: block;
+  font-family: var(--display);
+  font-size: var(--fs-section-title);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+  letter-spacing: var(--track-tight);
+  margin-block-end: var(--space-1);
+}
+
+.admin-view .admin-linha-empresa .hint {
+  padding: 0;
+  margin: 0;
+}
+
+/*
+ * A tabela. Linha de 8px de altura interna espremia empresa, plano e status num bloco só, e era
+ * o ponto mais citado de "está feio": a coluna do nome encostava na de usuários.
+ */
+.admin-view .config-tabela-notif th,
+.admin-view .config-tabela-notif td {
+  padding: var(--space-3) var(--space-4);
+}
+
+.admin-view .config-tabela-notif th:first-child,
+.admin-view .config-tabela-notif td:first-child {
+  padding-inline-start: var(--space-5);
+}
+
+.admin-view .config-tabela-notif th:last-child,
+.admin-view .config-tabela-notif td:last-child {
+  padding-inline-end: var(--space-5);
+  text-align: right;
+}
+
+.admin-view .config-tabela-notif td:first-child {
+  color: var(--ink);
+  font-weight: var(--fw-bold);
+}
+
+.admin-view .config-tabela-scroll {
+  margin-inline: var(--admin-gutter);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Os cartões de número do Dashboard, com a mesma medida do resto. */
+.admin-view .grid.kpi4 {
+  padding-inline: var(--admin-gutter);
+  gap: var(--space-4);
+}
+
+@media (max-width: 720px) {
+  .admin-view {
+    --admin-gutter: var(--space-4);
+  }
+
+  .admin-view .config-tabela-notif th,
+  .admin-view .config-tabela-notif td {
+    padding: var(--space-3);
+  }
+}
+
+/*
+ * Nome da empresa e linha de apoio, na lista de Usuários.
+ *
+ * Estavam com 2px entre si e o nome em 13px: as duas linhas liam como um bloco só de texto cinza,
+ * e o nome, que é justamente o que se procura ao varrer a lista, não se destacava de nada.
+ */
+.admin-view .admin-titulo-linha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.admin-view .admin-titulo-linha > a {
+  font-family: var(--display);
+  font-size: var(--fs-section-title);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+  letter-spacing: var(--track-tight);
+}
+
+.admin-view .admin-titulo-linha > a:hover {
+  color: var(--blue);
+}
+
+.admin-view .admin-titulo-linha .hint {
+  padding: 0;
+  margin: 0;
+}

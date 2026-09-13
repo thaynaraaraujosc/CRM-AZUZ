@@ -72,7 +72,7 @@ export default function AdminDashboardPage() {
     <div className="view">
       <Topbar title="Painel de admin" sub="Visão geral de todos os workspaces da plataforma." />
 
-      {erro ? <p style={{ color: "var(--danger)", padding: "0 17px" }}>{erro}</p> : null}
+      {erro ? <p className="admin-secao" style={{ color: "var(--danger)" }}>{erro}</p> : null}
 
       {dados ? (
         <>
@@ -92,7 +92,7 @@ export default function AdminDashboardPage() {
           </div>
         </>
       ) : !erro ? (
-        <p style={{ padding: "0 17px", color: "var(--text-muted)" }}>Carregando…</p>
+        <p className="admin-secao" style={{ color: "var(--text-muted)" }}>Carregando…</p>
       ) : null}
     </div>
   );

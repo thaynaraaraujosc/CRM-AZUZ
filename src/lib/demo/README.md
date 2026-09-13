@@ -1,6 +1,6 @@
 # Conta de demonstração
 
-Uma empresa fictícia completa (Clínica Vitta) para mostrar o produto sem expor dado de cliente.
+Uma empresa fictícia completa (Clínica Aurora) para mostrar o produto sem expor dado de cliente.
 
 ## Por que existe
 

@@ -92,7 +92,7 @@ export default function AdminUsuariosPage() {
         sub={membros ? `${membros.length} contas em ${grupos.length} empresas` : undefined}
       />
 
-      <div className="field" style={{ padding: "0 17px 14px" }}>
+      <div className="admin-secao">
         <input
           className="input"
           style={{ width: "100%" }}
@@ -103,7 +103,7 @@ export default function AdminUsuariosPage() {
       </div>
 
       {senhaGerada ? (
-        <div className="field" style={{ padding: "0 17px 14px" }}>
+        <div className="admin-secao">
           <label>Senha nova gerada: copie agora, ela não aparece de novo</label>
           <div style={{ display: "flex", gap: 8 }}>
             <input className="input" style={{ width: "100%", fontFamily: "monospace" }} readOnly value={senhaGerada.senha} />
@@ -117,7 +117,7 @@ export default function AdminUsuariosPage() {
         </div>
       ) : null}
 
-      <div style={{ padding: "0 17px 17px", display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="admin-lista">
         {!membros ? (
           <p style={{ color: "var(--text-muted)" }}>Carregando…</p>
         ) : gruposFiltrados.length === 0 ? (
@@ -138,22 +138,18 @@ export default function AdminUsuariosPage() {
                     alignItems: "center",
                     justifyContent: "space-between",
                     gap: 12,
-                    padding: "13px 17px",
+                    padding: "var(--space-4) var(--space-5)",
                     background: "none",
                     border: "none",
                     cursor: "pointer",
                     textAlign: "left",
                   }}
                 >
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <Link
-                      href={`/admin/workspaces/${g.workspaceId}`}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ fontWeight: 700, fontSize: 13 }}
-                    >
+                  <div className="admin-titulo-linha">
+                    <Link href={`/admin/workspaces/${g.workspaceId}`} onClick={(e) => e.stopPropagation()}>
                       {g.workspaceNome}
                     </Link>
-                    <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
+                    <span className="hint">
                       Admin: {admin.nome} · {g.membros.length} {g.membros.length === 1 ? "membro" : "membros"}
                     </span>
                   </div>

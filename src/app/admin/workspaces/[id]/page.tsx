@@ -84,7 +84,7 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
     return (
       <div className="view">
         <Topbar title="Workspace" />
-        <p style={{ padding: "0 17px", color: "var(--text-muted)" }}>Carregando…</p>
+        <p className="admin-secao" style={{ color: "var(--text-muted)" }}>Carregando…</p>
       </div>
     );
   }
@@ -118,7 +118,7 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
             </select>
           </div>
         </div>
-        <p className="hint" style={{ padding: "0 17px 14px" }}>
+        <p className="hint admin-secao">
           Alterar aqui muda o status direto no banco. Não cria nem cancela cobrança na Asaas. Use só pra correção manual/cortesia.
         </p>
       </div>
@@ -126,7 +126,7 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
       <div className="config-bloco">
         <p className="config-bloco-titulo">Integrações conectadas</p>
         {workspace.integracoes.length === 0 ? (
-          <p className="hint" style={{ padding: "0 17px 14px" }}>Nenhuma integração conectada.</p>
+          <p className="hint admin-secao">Nenhuma integração conectada.</p>
         ) : (
           <div className="config-tabela-scroll">
             <table className="config-tabela-notif">
@@ -155,7 +155,7 @@ export default function AdminWorkspaceDetalhePage({ params }: { params: Promise<
         <p className="config-bloco-titulo">Membros ({workspace.membros.length})</p>
 
         {senhaGerada ? (
-          <div className="config-grid-2" style={{ padding: "0 17px 14px" }}>
+          <div className="config-grid-2 admin-secao">
             <div className="field" style={{ padding: 0, gridColumn: "1 / -1" }}>
               <label>Senha nova gerada: copie agora, ela não aparece de novo</label>
               <div style={{ display: "flex", gap: 8 }}>
