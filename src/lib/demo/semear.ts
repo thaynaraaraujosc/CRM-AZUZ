@@ -27,6 +27,17 @@ import {
  * tinha tocado num banco de verdade. Esta separação existe por causa disso.
  */
 
+/** Identificadores das conexões fictícias. Ficam aqui porque a marca gravada em cada conversa
+ *  precisa casar exatamente com o que a conexão declara, senão o filtro esconde tudo. */
+const CONTA_WHATSAPP_DEMO = "demo-whatsapp";
+const CONTA_INSTAGRAM_DEMO = "demo-instagram";
+
+function contaDoCanal(canal: "WhatsApp" | "Instagram"): string {
+  return canal === "WhatsApp"
+    ? `meta_whatsapp:${CONTA_WHATSAPP_DEMO}`
+    : `meta_instagram:${CONTA_INSTAGRAM_DEMO}`;
+}
+
 function horaDe(data: Date): string {
   return data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
@@ -53,6 +64,7 @@ export async function semearDemo(cliente: PrismaClient, senhaHash: string, agora
       await tx.funilEtapa.deleteMany({ where: noDemo });
       await tx.funil.deleteMany({ where: noDemo });
       await tx.contato.deleteMany({ where: noDemo });
+      await tx.integracao.deleteMany({ where: noDemo });
 
       await tx.workspace.upsert({
         where: { id: WORKSPACE_DEMO },
@@ -93,6 +105,41 @@ export async function semearDemo(cliente: PrismaClient, senhaHash: string, agora
           convitePendente: false,
         },
         update: { senha: senhaHash, ativo: true, convitePendente: false, workspaceId: WORKSPACE_DEMO },
+      });
+
+      /*
+       * As conexões de canal da demonstração.
+       *
+       * Sem isto a caixa de entrada ESCONDE toda conversa de WhatsApp: a tela só mostra conversa
+       * de canal conectado, e uma demonstração sem conexão nenhuma abria vazia, com aviso de
+       * "conecte um canal". A tela principal do produto, a que mais aparece numa venda e no vídeo,
+       * era justamente a que não dava pra mostrar.
+       *
+       * `accessTokenCriptografado` fica NULO de propósito, e isso é o que torna a conexão segura:
+       * todo trabalho automático que fala com a Meta pula conexão sem token (ver a rota de saúde
+       * do WhatsApp). Então a demonstração aparece conectada na tela e nunca dispara uma chamada
+       * de verdade, nem gera erro no log, nem consome cota de API.
+       */
+      await tx.integracao.create({
+        data: {
+          id: `integracao-wa-${WORKSPACE_DEMO}`,
+          workspaceId: WORKSPACE_DEMO,
+          provedor: "meta_whatsapp",
+          status: "conectado",
+          accessTokenCriptografado: null,
+          metadados: { phoneNumberId: CONTA_WHATSAPP_DEMO, numero: "(11) 90880-0000", demonstracao: true },
+        },
+      });
+
+      await tx.integracao.create({
+        data: {
+          id: `integracao-ig-${WORKSPACE_DEMO}`,
+          workspaceId: WORKSPACE_DEMO,
+          provedor: "meta_instagram",
+          status: "conectado",
+          accessTokenCriptografado: null,
+          metadados: { instagramContaId: CONTA_INSTAGRAM_DEMO, usuario: "clinicaaurora", demonstracao: true },
+        },
       });
 
       // Funil e etapas.
@@ -143,6 +190,9 @@ export async function semearDemo(cliente: PrismaClient, senhaHash: string, agora
             contato: contato.canal === "WhatsApp" ? whatsapp : `@${contato.nome.split(" ")[0].toLowerCase()}`,
             origem: contato.origem,
             status: "Respondido",
+            // Sem a marca da conexão dona, o filtro da caixa de entrada não reivindica a conversa
+            // e ela fica gravada e invisível.
+            contaCanal: contaDoCanal(contato.canal),
           },
         });
 
@@ -159,6 +209,7 @@ export async function semearDemo(cliente: PrismaClient, senhaHash: string, agora
               hora: horaDe(quando),
               criadoEm: quando,
               canal: contato.canal,
+              contaCanal: contaDoCanal(contato.canal),
               status: mensagem.de === "empresa" ? "lida" : null,
             },
           });

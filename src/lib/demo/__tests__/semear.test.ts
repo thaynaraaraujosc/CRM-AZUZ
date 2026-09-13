@@ -134,6 +134,46 @@ conditional("semearDemo num banco de verdade", () => {
   });
 
   /**
+   * O defeito que a Thaynara pegou usando a demonstração: sem conexão semeada, a caixa de entrada
+   * ESCONDE toda conversa de WhatsApp, porque a tela só mostra conversa de canal conectado. A
+   * demonstração abria vazia, com aviso de "conecte um canal", justamente na tela que mais aparece
+   * numa venda e no vídeo.
+   */
+  it("deixa os dois canais conectados, senão a caixa de entrada abre vazia", async () => {
+    const integracoes = await prisma.integracao.findMany({
+      where: { workspaceId: WORKSPACE_DEMO, status: "conectado" },
+      select: { provedor: true, accessTokenCriptografado: true },
+    });
+    const provedores = integracoes.map((i) => i.provedor).sort();
+    expect(provedores).toEqual(["meta_instagram", "meta_whatsapp"]);
+
+    // O que torna a conexão fictícia segura: sem token, todo trabalho automático que fala com a
+    // Meta pula esta conexão. A demonstração nunca dispara chamada de verdade.
+    for (const i of integracoes) expect(i.accessTokenCriptografado).toBeNull();
+  });
+
+  /**
+   * A marca da conexão dona precisa casar EXATAMENTE com o que a conexão declara. Se divergir, o
+   * filtro não reivindica a conversa e ela fica gravada e invisível: o mesmo sintoma de antes,
+   * só que mais difícil de achar, porque a tela diz que está tudo conectado.
+   */
+  it("as conversas carregam a marca da conexão que as reivindica", async () => {
+    const conversas = await prisma.conversa.findMany({
+      where: { workspaceId: WORKSPACE_DEMO },
+      select: { canal: true, contaCanal: true },
+    });
+    for (const c of conversas) {
+      const esperado = c.canal === "WhatsApp" ? "meta_whatsapp:demo-whatsapp" : "meta_instagram:demo-instagram";
+      expect(c.contaCanal, `conversa de canal ${c.canal}`).toBe(esperado);
+    }
+
+    const semMarca = await prisma.mensagemExtra.count({
+      where: { workspaceId: WORKSPACE_DEMO, contaCanal: null },
+    });
+    expect(semMarca).toBe(0);
+  });
+
+  /**
    * Remontar é o uso normal, não a exceção: é o que devolve a conta ao estado inicial depois de
    * cada demonstração. Se duplicasse em vez de substituir, na terceira demonstração a tela estaria
    * com 36 contatos repetidos.
