@@ -228,6 +228,27 @@ function parseSubCampanha(sub: string): { leads: number; investido: number } {
 }
 export { parseSubCampanha };
 
+/**
+ * O caminho de volta de `parseSubCampanha`.
+ *
+ * As campanhas viajam do servidor pra tela com leads e investimento DENTRO DE UMA FRASE (`sub`),
+ * e a tela extrai os números de volta com expressão regular. É frágil por natureza: quem monta a
+ * frase de um jeito e quem lê de outro produz zero na tela, sem erro nenhum. Foi o que aconteceu
+ * na primeira versão do Google Ads, onde `3,5 leads` virava `5 leads` porque a regex pega só a
+ * parte depois da vírgula.
+ *
+ * Por isso quem monta a frase usa esta função, e existe teste que confere o ida e volta. Leads
+ * vêm arredondados de propósito: o Google conta conversão fracionada, e "3,5 leads" não é número
+ * que se mostre pra cliente nem que a leitura saiba interpretar.
+ */
+export function formatarSubCampanha(leads: number, investido: number): string {
+  const arredondado = Math.round(leads);
+  return `${arredondado} lead${arredondado === 1 ? "" : "s"} · R$ ${investido.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} investidos`;
+}
+
 /** Investimento total em tráfego pago = soma do investido em todas as campanhas ativas
  * (conectadas via Meta Ads: `GET /api/integracoes/meta/ads/campanhas`). */
 export function calcularInvestimentoTrafego(campanhas: Campanha[]): Metrica<Campanha> {

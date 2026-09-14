@@ -184,6 +184,8 @@ function cabecalhos(accessToken: string): Record<string, string> {
   };
 }
 
+export type LinhaCampanhaGoogle = LinhaGaql;
+
 export type CampanhaGoogle = {
   id: string;
   nome: string;
@@ -206,13 +208,32 @@ export function deMicros(valor: string | number | null | undefined): number {
 
 type LinhaGaql = {
   campaign?: { id?: string; name?: string };
+  segments?: { date?: string; conversionActionCategory?: string };
   metrics?: {
     costMicros?: string;
     conversions?: number;
     conversionsValue?: number;
-    allConversions?: number;
   };
 };
+
+/**
+ * As categorias de conversão que o Google trata como VENDA, e não como lead.
+ *
+ * A tela de Tráfego tem duas colunas diferentes, "Leads" e "Vendas", e no Meta elas vêm de eventos
+ * diferentes (`lead` e `purchase`). No Google tudo chega como `conversions`, e a diferença está na
+ * categoria da ação de conversão. Sem esta separação, as duas colunas mostrariam o mesmo número, e
+ * o custo por venda ficaria idêntico ao custo por lead: dois indicadores dizendo a mesma coisa,
+ * um deles errado.
+ *
+ * O que não está aqui conta como lead. É a escolha conservadora: uma categoria nova do Google cai
+ * em "lead", que é o significado da maioria esmagadora das conversões de quem usa o CRM, em vez de
+ * inflar a receita de vendas com evento que não é compra.
+ */
+const CATEGORIAS_DE_VENDA = new Set(["PURCHASE", "STORE_SALE", "SUBSCRIBE_PAID"]);
+
+export function ehVenda(categoria: string | null | undefined): boolean {
+  return CATEGORIAS_DE_VENDA.has((categoria ?? "").toUpperCase());
+}
 
 /**
  * As campanhas de uma conta, com investimento e conversões dos últimos 30 dias.
@@ -226,9 +247,15 @@ export async function buscarCampanhas(params: {
   customerId: string;
 }): Promise<CampanhaGoogle[]> {
   const customerId = params.customerId.replace(/\D/g, "");
+  /*
+   * `segments.conversion_action_category` é o que separa lead de venda. Ele MULTIPLICA as linhas:
+   * a resposta passa a ter uma linha por dia POR CATEGORIA, e o custo se repete em todas elas.
+   * Somar o custo de todas somaria o mesmo gasto várias vezes, e é por isso que o custo é somado
+   * uma vez por dia, na primeira linha daquele dia (ver `chaveDoDia` abaixo).
+   */
   const consulta = `
-    SELECT campaign.id, campaign.name, metrics.cost_micros, metrics.conversions,
-           metrics.conversions_value
+    SELECT campaign.id, campaign.name, segments.date, segments.conversion_action_category,
+           metrics.cost_micros, metrics.conversions, metrics.conversions_value
     FROM campaign
     WHERE segments.date DURING LAST_30_DAYS AND campaign.status != 'REMOVED'
   `;
@@ -245,29 +272,7 @@ export async function buscarCampanhas(params: {
 
   // `searchStream` devolve um ARRAY de blocos, cada um com suas linhas, e não um objeto único.
   const blocos = (await resposta.json()) as { results?: LinhaGaql[] }[];
-  const porCampanha = new Map<string, CampanhaGoogle>();
-
-  for (const bloco of blocos ?? []) {
-    for (const linha of bloco.results ?? []) {
-      const id = linha.campaign?.id;
-      if (!id) continue;
-      // A consulta traz uma linha por DIA. Somar aqui é o que transforma 30 linhas numa campanha.
-      const atual = porCampanha.get(id) ?? {
-        id,
-        nome: linha.campaign?.name ?? "Campanha sem nome",
-        investido: 0,
-        leads: 0,
-        vendas: 0,
-        receita: 0,
-      };
-      atual.investido += deMicros(linha.metrics?.costMicros);
-      atual.leads += Number(linha.metrics?.conversions ?? 0);
-      atual.receita += Number(linha.metrics?.conversionsValue ?? 0);
-      porCampanha.set(id, atual);
-    }
-  }
-
-  return [...porCampanha.values()];
+  return somarLinhas((blocos ?? []).flatMap((bloco) => bloco.results ?? []));
 }
 
 /** As contas de anúncio que o usuário autorizado consegue acessar. Usado logo depois de conectar,
@@ -284,4 +289,52 @@ export async function listarContasAcessiveis(accessToken: string): Promise<strin
   const dados = (await resposta.json()) as { resourceNames?: string[] };
   // Vem como "customers/1234567890"; interessa só o número.
   return (dados.resourceNames ?? []).map((nome) => nome.split("/")[1]).filter(Boolean);
+}
+
+/**
+ * Junta as linhas cruas do Google numa campanha por campanha.
+ *
+ * Fica separado da chamada de rede de propósito: é aqui que mora a aritmética que engana (custo
+ * repetido por categoria, venda misturada com lead, micros), e teste que precisa de rede não é
+ * teste que se roda.
+ */
+export function somarLinhas(linhas: LinhaGaql[]): CampanhaGoogle[] {
+  const porCampanha = new Map<string, CampanhaGoogle>();
+  // Custo já contado para este par campanha+dia. O Google repete o mesmo gasto em cada categoria
+  // de conversão do dia; somar todas multiplicaria o investimento pelo número de categorias.
+  const diasComCustoContado = new Set<string>();
+
+  for (const linha of linhas) {
+    const id = linha.campaign?.id;
+    if (!id) continue;
+
+    const atual = porCampanha.get(id) ?? {
+      id,
+      nome: linha.campaign?.name ?? "Campanha sem nome",
+      investido: 0,
+      leads: 0,
+      vendas: 0,
+      receita: 0,
+    };
+
+    const chaveDoDia = `${id}|${linha.segments?.date ?? ""}`;
+    if (!diasComCustoContado.has(chaveDoDia)) {
+      diasComCustoContado.add(chaveDoDia);
+      atual.investido += deMicros(linha.metrics?.costMicros);
+    }
+
+    const conversoes = Number(linha.metrics?.conversions ?? 0);
+    if (ehVenda(linha.segments?.conversionActionCategory)) {
+      atual.vendas += conversoes;
+      // Receita só de venda: valor de conversão de um formulário preenchido é valor ESTIMADO de
+      // lead, e somá-lo à receita faria o ROAS contar dinheiro que ninguém recebeu.
+      atual.receita += Number(linha.metrics?.conversionsValue ?? 0);
+    } else {
+      atual.leads += conversoes;
+    }
+
+    porCampanha.set(id, atual);
+  }
+
+  return [...porCampanha.values()];
 }

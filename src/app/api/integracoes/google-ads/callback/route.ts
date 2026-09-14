@@ -21,9 +21,14 @@ import {
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * `integracaoErro`, e nao `erro`: e o nome que o `useIntegracaoMeta` le da URL pra mostrar a
+ * mensagem depois do redirect. Com qualquer outro nome a explicacao chega na barra de endereco e
+ * some da tela, que e o mesmo que nao explicar nada.
+ */
 function voltarPraTrafego(origem: string, erro?: string): NextResponse {
   const destino = new URL("/trafego", origem);
-  if (erro) destino.searchParams.set("erro", erro);
+  if (erro) destino.searchParams.set("integracaoErro", erro);
   return NextResponse.redirect(destino);
 }
 
@@ -75,11 +80,12 @@ export async function GET(request: Request) {
     }
 
     const provedor = "google_ads";
-    const metadados = {
-      contaId: contas[0],
-      contasDisponiveis: contas,
-      refreshTokenCriptografado: encriptar(tokens.refreshToken),
-    };
+    /*
+     * `metadados` VAI PRA TELA: o `GET /api/integracoes/meta?provedor=` devolve esse campo inteiro
+     * pro navegador. Token ali dentro, mesmo criptografado, é segredo entregue a quem não precisa
+     * dele. O refresh token vai na coluna própria, que nenhuma rota de leitura seleciona.
+     */
+    const metadados = { contaId: contas[0], contasDisponiveis: contas };
 
     await prisma.integracao.upsert({
       where: { workspaceId_provedor: { workspaceId: estado.workspaceId, provedor } },
@@ -89,6 +95,7 @@ export async function GET(request: Request) {
         provedor,
         status: "conectado",
         accessTokenCriptografado: encriptar(tokens.accessToken),
+        refreshTokenCriptografado: encriptar(tokens.refreshToken),
         expiraEm: tokens.expiraEm,
         metadados,
         erroMensagem: null,
@@ -96,6 +103,7 @@ export async function GET(request: Request) {
       update: {
         status: "conectado",
         accessTokenCriptografado: encriptar(tokens.accessToken),
+        refreshTokenCriptografado: encriptar(tokens.refreshToken),
         expiraEm: tokens.expiraEm,
         metadados,
         erroMensagem: null,

@@ -8,6 +8,7 @@ import { IconClose } from "@/components/icons";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { useIntegracaoMeta } from "@/components/configuracoes/useIntegracaoMeta";
+import { useGoogleAds } from "@/components/trafego/useGoogleAds";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { ChartCard, FunnelSteps } from "@/components/charts";
 import {
@@ -33,12 +34,21 @@ type ColunaOrdenavel = "nome" | "investido" | "leads" | "vendas" | "cpl" | "roas
  * O nome da plataforma de uma campanha.
  *
  * Antes era `plataforma === "M" ? "Meta Ads" : "Google Ads"`, o que rotulava como Google Ads
- * qualquer coisa que nao fosse Meta, inclusive o que o CRM nao sabe identificar. Google Ads nao
- * tem integracao aqui, entao nenhuma campanha real pode vir dele: a tela estava afirmando uma
- * origem que nao existe.
+ * qualquer coisa que nao fosse Meta, inclusive o que o CRM nao sabe identificar. Agora o Google
+ * tem integracao propria, entao "G" quer dizer Google Ads DE VERDADE; o que nao for nenhum dos
+ * dois continua sendo "Outra", porque afirmar uma origem que o CRM nao sabe e o defeito original.
  */
 function rotuloPlataforma(plataforma: string): string {
-  return plataforma === "M" ? "Meta Ads" : "Outra";
+  if (plataforma === "M") return "Meta Ads";
+  if (plataforma === "G") return "Google Ads";
+  return "Outra";
+}
+
+/** O nome que a barra de filtro mostra pra letra guardada no estado. */
+function rotuloDoFiltro(valor: string): string {
+  if (valor === "M") return "Meta Ads";
+  if (valor === "G") return "Google Ads";
+  return "Todas";
 }
 
 export default function TrafegoPage() {
@@ -71,9 +81,26 @@ export default function TrafegoPage() {
       .catch((erro) => console.error("Falha ao carregar campanhas do Meta Ads:", erro));
   }, [adsIntegracao?.status]);
 
-  // Google Ads não tem integração própria ainda. Só entra campanha de verdade (Meta Ads
-  // conectado). Sem conexão nenhuma, a lista fica vazia (não mais um mock inteiro).
-  const campanhas = campanhasReais ?? [];
+  const { statusGoogle, campanhasGoogle, desconectando: googleDesconectando, desconectar: desconectarGoogle } = useGoogleAds();
+
+  /*
+   * Os dois canais na MESMA lista, e não em duas tabelas.
+   *
+   * Investimento, custo por lead, custo por venda e ROAS só querem dizer alguma coisa somando o
+   * que a empresa gastou em toda parte. Separar em duas tabelas obrigaria quem olha a somar de
+   * cabeça pra saber quanto custou um cliente, que é a única pergunta que essa tela existe pra
+   * responder. A coluna "Plataforma" e o filtro é que separam, quando alguém quiser separar.
+   *
+   * Só entra campanha de verdade: sem nenhuma conexão a lista fica vazia (não mais um mock).
+   */
+  const campanhas = useMemo(
+    () => [...(campanhasReais ?? []), ...campanhasGoogle],
+    [campanhasReais, campanhasGoogle],
+  );
+
+  // O filtro por Google Ads só existe quando o canal existe. Opção que devolve vazio SEMPRE faz
+  // quem escolhe concluir que não houve investimento, e não que o canal não está ligado.
+  const mostrarGoogle = statusGoogle.disponivel;
 
   const campanhasFiltradas = useMemo(
     () =>
@@ -141,9 +168,18 @@ export default function TrafegoPage() {
   const origensComDados = ORIGENS.map((origem: Origem) => {
     const leadsOrigem = contatos.filter((c) => c.origem === origem).length;
     const vendasOrigem = todosOsCards(funis).filter((card) => card.origem === origem && card.statusFechamento === "ganho").length;
+    /*
+     * Investimento só existe pra origem que tem campanha ligada. "Google Ads" fica em `null`
+     * (traço na tela) enquanto o canal não estiver conectado: zero ali diria "anunciou e não
+     * gastou", que é afirmação, e não ausência de dado.
+     */
+    const plataformaDaOrigem = origem === "Meta Ads" ? "M" : origem === "Google Ads" ? "G" : null;
+    const temConexao = plataformaDaOrigem === "M" || (plataformaDaOrigem === "G" && statusGoogle.status === "conectado");
     const investimentoOrigem =
-      origem === "Meta Ads"
-        ? campanhas.filter((c) => c.plataforma === "M").reduce((s, c) => s + parseSubCampanha(c.sub).investido, 0)
+      plataformaDaOrigem && temConexao
+        ? campanhas
+            .filter((c) => c.plataforma === plataformaDaOrigem)
+            .reduce((s, c) => s + parseSubCampanha(c.sub).investido, 0)
         : null;
     return { origem, leadsOrigem, vendasOrigem, investimentoOrigem };
   });
@@ -158,9 +194,7 @@ export default function TrafegoPage() {
       opcoes: [
         { valor: "Todas", label: "Todas" },
         { valor: "M", label: "Meta Ads" },
-        // Google Ads saiu daqui: nao existe integracao propria, entao filtrar por ele devolvia
-        // vazio SEMPRE. Opcao que nunca funciona e pior que opcao ausente, porque quem escolhe
-        // conclui que nao ha investimento, e nao que o canal nao esta ligado.
+        ...(mostrarGoogle ? [{ valor: "G", label: "Google Ads" }] : []),
       ],
     },
   ];
@@ -189,6 +223,25 @@ export default function TrafegoPage() {
               Conectar Meta Ads
             </a>
           )}
+          {mostrarGoogle ? (
+            statusGoogle.status === "conectado" ? (
+              <>
+                <span className="hint">Google Ads conectado: conta {statusGoogle.contaId ?? "—"}</span>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => void desconectarGoogle()}
+                  disabled={googleDesconectando}
+                >
+                  {googleDesconectando ? "Desconectando…" : "Desconectar Google Ads"}
+                </button>
+              </>
+            ) : (
+              <a className="btn ghost" href="/api/integracoes/google-ads/conectar">
+                Conectar Google Ads
+              </a>
+            )
+          ) : null}
           <Link className="btn primary" href="/relatorios?tipo=trafego">
             Gerar relatório de tráfego
           </Link>
@@ -196,13 +249,26 @@ export default function TrafegoPage() {
       </div>
 
       <div className="content trafego-view">
+        {/*
+          Conexão quebrada precisa DIZER que quebrou. Quando o cliente remove o acesso do CRM na
+          conta Google dele, não há conserto automático: sem este aviso a tela mostraria campanha
+          nenhuma, e a leitura natural seria "não investi nada".
+        */}
+        {mostrarGoogle && statusGoogle.status === "erro" ? (
+          <div className="card mb14">
+            <div className="dados-nao-conectados trafego-vazio">
+              <strong>A conexão com o Google Ads parou de funcionar.</strong>
+              <span>{statusGoogle.erroMensagem ?? "Conecte de novo para voltar a ler as campanhas."}</span>
+            </div>
+          </div>
+        ) : null}
         <FilterBar
           periodo={periodo}
           onPeriodoChange={setPeriodo}
           principalLabel="Plataforma"
-          principalValor={plataformaFiltro === "M" ? "Meta Ads" : "Todas"}
-          principalOpcoes={["Todas", "Meta Ads"]}
-          onPrincipalChange={(v) => setPlataformaFiltro(v === "Meta Ads" ? "M" : "Todas")}
+          principalValor={rotuloDoFiltro(plataformaFiltro)}
+          principalOpcoes={mostrarGoogle ? ["Todas", "Meta Ads", "Google Ads"] : ["Todas", "Meta Ads"]}
+          onPrincipalChange={(v) => setPlataformaFiltro(v === "Meta Ads" ? "M" : v === "Google Ads" ? "G" : "Todas")}
           filtros={filtros}
           onFiltroChange={(chave, valor) => {
             if (chave === "plataforma") setPlataformaFiltro(valor);
@@ -224,7 +290,11 @@ export default function TrafegoPage() {
         {campanhas.length === 0 ? (
           <div className="card mb14">
             <div className="dados-nao-conectados trafego-vazio">
-              <strong>Conecte o Meta Ads para ver esta tela com dados.</strong>
+              <strong>
+                {mostrarGoogle
+                  ? "Conecte o Meta Ads ou o Google Ads para ver esta tela com dados."
+                  : "Conecte o Meta Ads para ver esta tela com dados."}
+              </strong>
               <span>
                 Investimento, custo por lead, custo por venda e ROAS saem das suas campanhas. Sem a
                 conexão não há o que calcular, então os números ficam de fora em vez de aparecerem
@@ -337,8 +407,9 @@ export default function TrafegoPage() {
             </table>
           </div>
           <p className="hint trafego-aviso">
-            Vendas e ROAS vêm das conversões atribuídas pelo Meta Ads. Leads qualificados e custo por
-            venda entram aqui quando a negociação puder ser ligada à campanha de origem no back-end.
+            Vendas e ROAS vêm das conversões atribuídas pela própria plataforma de anúncio. Leads
+            qualificados e custo por venda entram aqui quando a negociação puder ser ligada à
+            campanha de origem no back-end.
           </p>
         </div>
 

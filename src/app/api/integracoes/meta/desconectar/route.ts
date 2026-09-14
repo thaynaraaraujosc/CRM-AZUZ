@@ -17,11 +17,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ erro: "Só administradores podem mexer nas conexões." }, { status: 403 });
   }
 
-  // Conectar e desconectar um canal muda por onde a empresa inteira fala com os clientes. Sem
-  // registro, "quem desconectou o WhatsApp?" não tinha resposta.
-  await auditar({ acao: "integracao.desconectada", workspaceId: sessao.user.workspaceId, membroId: sessao.user.id, email: sessao.user.email, recurso: "meta" });
-
   const provedor = new URL(request.url).searchParams.get("provedor") ?? "meta_whatsapp";
+
+  // Conectar e desconectar um canal muda por onde a empresa inteira fala com os clientes. Sem
+  // registro, "quem desconectou o WhatsApp?" não tinha resposta. O recurso é o PROVEDOR, e não a
+  // palavra "meta": esta rota desconecta WhatsApp, Instagram, Meta Ads e Google Ads, e um registro
+  // que diz "meta" pra todos não responde qual canal caiu.
+  await auditar({ acao: "integracao.desconectada", workspaceId: sessao.user.workspaceId, membroId: sessao.user.id, email: sessao.user.email, recurso: provedor });
   // `limparDados` vem do clique de quem já confirmou na tela o que vai ser apagado. Nunca é o
   // padrão, porque é irreversível. Só faz sentido pro canal de WhatsApp (Ads/Instagram não
   // espelham conversa nenhuma pro CRM).
