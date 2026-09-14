@@ -1,7 +1,14 @@
 import { randomBytes } from "node:crypto";
 
 import { prisma } from "@/lib/prisma";
-import { apagarDoR2, chaveDeArquivo, guardarNoR2, lerDoR2, r2Configurado } from "@/lib/armazenamento/r2";
+import {
+  apagarDoR2,
+  chaveDeArquivo,
+  guardarNoR2,
+  lerDoR2,
+  r2Configurado,
+  urlAssinadaDoR2,
+} from "@/lib/armazenamento/r2";
 
 /**
  * Onde o conteúdo de um anexo passa a morar.
@@ -106,6 +113,25 @@ export async function lerArquivo(valor: string): Promise<{ conteudo: Buffer; mim
   if (ehReferenciaR2(valor)) return lerDoR2(chaveDaReferencia(valor));
   if (ehDataUrl(valor)) return partesDaDataUrl(valor);
   return null;
+}
+
+/**
+ * Um endereço temporário que baixa o arquivo direto do R2, quando isso for possível.
+ *
+ * Devolve `null` pro formato antigo (o anexo embutido em base64 na própria mensagem): ali não há
+ * arquivo em lugar nenhum pra apontar, o conteúdo ESTÁ no banco, e a única entrega possível é o
+ * servidor mandar os bytes. Por isso quem chama precisa continuar sabendo servir do jeito antigo —
+ * os dois formatos convivem, como o resto deste arquivo.
+ *
+ * Ver `urlAssinadaDoR2` pro porquê disto existir: é o que tira a mídia da conta de tráfego da
+ * Vercel e põe na da Cloudflare, que não cobra saída.
+ */
+export function urlDiretaDoArquivo(
+  valor: string,
+  opcoes: { validadeSegundos?: number; nomeParaBaixar?: string } = {},
+): string | null {
+  if (!ehReferenciaR2(valor) || !r2Configurado()) return null;
+  return urlAssinadaDoR2(chaveDaReferencia(valor), opcoes);
 }
 
 /** Apaga o arquivo e o registro dele. Silencioso pra valores do formato antigo: não há o que apagar. */

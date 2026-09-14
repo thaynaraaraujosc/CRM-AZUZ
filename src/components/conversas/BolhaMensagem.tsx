@@ -310,7 +310,13 @@ export function BolhaMensagem({
         {chrome}
         <a
           className="bubble-documento-cartao"
-          href={msg.documento.url}
+          /*
+            `baixar` faz o servidor pedir ao R2 que o arquivo venha como download, com este nome.
+            O atributo `download` abaixo continua valendo pro formato antigo (anexo servido pelo
+            próprio CRM); pro arquivo que vem do R2 ele é ignorado, porque é outro domínio, e sem
+            o `baixar` o documento abriria numa aba sem nome nenhum.
+          */
+          href={`${msg.documento.url}${msg.documento.nome ? `&baixar=${encodeURIComponent(msg.documento.nome)}` : ""}`}
           download={msg.documento.nome}
           target="_blank"
           rel="noopener noreferrer"

@@ -169,6 +169,114 @@ async function chamar(params: {
   });
 }
 
+/**
+ * Codificação de URL do jeito que a AWS exige na assinatura.
+ *
+ * `encodeURIComponent` deixa passar `!`, `'`, `(`, `)` e `*`, que o SigV4 manda escapar. Um único
+ * caractere diferente muda o hash e o R2 recusa com `SignatureDoesNotMatch`, sem dizer qual.
+ */
+function codificarParaAssinatura(valor: string): string {
+  return encodeURIComponent(valor).replace(
+    /[!'()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
+/**
+ * Tira do nome do arquivo o que não pode ir num cabeçalho HTTP.
+ *
+ * O nome vem de um arquivo que alguém de fora mandou pelo WhatsApp. Aspas e quebras de linha ali
+ * dentro sairiam do valor e virariam outra coisa no cabeçalho — é o mesmo tipo de brecha de quem
+ * monta SQL com texto colado.
+ */
+function nomeSeguroParaCabecalho(nome: string): string {
+  return nome.replace(/[\r\n"\\]/g, "").slice(0, 200) || "arquivo";
+}
+
+/**
+ * Um endereço temporário que baixa o arquivo DIRETO do R2, sem passar pelo servidor.
+ *
+ * POR QUE ISTO EXISTE, e é a diferença entre duas contas bem distintas:
+ *
+ * Servir o arquivo pela função (ler do R2 pra dentro dela e devolver os bytes) faz cada byte
+ * atravessar a Vercel duas vezes — entrando e saindo — e a Vercel cobra por isso (Fast Origin
+ * Transfer). Na conta de setembro de 2026 foram 142 GB, quase quinze dólares, com UMA pessoa
+ * usando o CRM: o custo cresce com o tamanho do arquivo e com quantas vezes ele é aberto, o que é
+ * exatamente o padrão de uso de um CRM, onde a mesma foto é vista o dia inteiro.
+ *
+ * Com a URL assinada, a função devolve um redirecionamento de algumas centenas de bytes e o
+ * navegador busca o arquivo na Cloudflare, que NÃO cobra saída de dados. O trabalho sai da conta
+ * cara e vai pra conta que é de graça, sem mudar o que a pessoa vê.
+ *
+ * A SEGURANÇA NÃO AFROUXA, e o ponto é este: o bucket continua fechado. Ninguém baixa nada sem uma
+ * assinatura, e a assinatura só é emitida depois que a rota confere a sessão e o dono do arquivo.
+ * O endereço é longo, impossível de adivinhar e VENCE — por isso a validade é curta. É autorização
+ * com prazo, e não arquivo aberto na internet.
+ */
+export function urlAssinadaDoR2(
+  chave: string,
+  opcoes: { validadeSegundos?: number; nomeParaBaixar?: string } = {},
+): string {
+  const validadeSegundos = opcoes.validadeSegundos ?? 600;
+  const conf = exigirConfiguracao();
+  const caminho = caminhoDoObjeto(conf.bucket, chave);
+  const host = new URL(conf.endpoint).host;
+
+  const agora = new Date();
+  const dataHora = agora.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const dia = dataHora.slice(0, 8);
+  const escopo = `${dia}/${REGIAO}/${SERVICO}/aws4_request`;
+
+  /*
+   * Aqui a assinatura vai na QUERY, e não no cabeçalho `Authorization`: é o que permite que um
+   * `<img src>` ou um `<audio src>` funcionem sozinhos, sem o navegador precisar mandar cabeçalho
+   * nenhum. Os parâmetros entram em ordem alfabética porque o R2 refaz a mesma string do lado
+   * dele; a ordem não é cosmética.
+   */
+  const parametros: [string, string][] = [
+    ["X-Amz-Algorithm", "AWS4-HMAC-SHA256"],
+    ["X-Amz-Credential", `${conf.accessKeyId}/${escopo}`],
+    ["X-Amz-Date", dataHora],
+    ["X-Amz-Expires", String(validadeSegundos)],
+    ["X-Amz-SignedHeaders", "host"],
+  ];
+
+  /*
+   * O que faz o documento BAIXAR em vez de abrir numa aba.
+   *
+   * O atributo `download` de um link só vale pra arquivo do mesmo domínio, e depois do
+   * redirecionamento o arquivo passa a vir da Cloudflare. Sem isto, clicar em "baixar" num PDF
+   * abriria o PDF e ainda perderia o nome original — um jeito discreto de piorar o produto pra
+   * economizar na conta.
+   *
+   * O R2 aceita o cabeçalho pedido pela própria URL, e ele entra na assinatura como qualquer
+   * outro parâmetro.
+   */
+  if (opcoes.nomeParaBaixar) {
+    parametros.push([
+      "response-content-disposition",
+      `attachment; filename="${nomeSeguroParaCabecalho(opcoes.nomeParaBaixar)}"`,
+    ]);
+  }
+  const query = parametros
+    .map(([nome, valor]) => `${codificarParaAssinatura(nome)}=${codificarParaAssinatura(valor)}`)
+    .sort()
+    .join("&");
+
+  // `UNSIGNED-PAYLOAD` porque numa URL assinada não há corpo pra cobrir: quem assina o conteúdo é
+  // quem grava, não quem lê.
+  const requisicaoCanonica = ["GET", caminho, query, `host:${host}\n`, "host", "UNSIGNED-PAYLOAD"].join("\n");
+  const aAssinar = ["AWS4-HMAC-SHA256", dataHora, escopo, sha256(requisicaoCanonica)].join("\n");
+
+  const chaveData = hmac(`AWS4${conf.secretAccessKey}`, dia);
+  const chaveRegiao = hmac(chaveData, REGIAO);
+  const chaveServico = hmac(chaveRegiao, SERVICO);
+  const chaveAssinatura = hmac(chaveServico, "aws4_request");
+  const assinatura = createHmac("sha256", chaveAssinatura).update(aAssinar).digest("hex");
+
+  return `${conf.endpoint}${caminho}?${query}&X-Amz-Signature=${assinatura}`;
+}
+
 /** Grava o arquivo e devolve a chave usada. A chave é o que fica guardado no banco no lugar do base64. */
 export async function guardarNoR2(params: {
   chave: string;
