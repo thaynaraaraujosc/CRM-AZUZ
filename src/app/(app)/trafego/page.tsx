@@ -29,6 +29,18 @@ type ColunaOrdenavel = "nome" | "investido" | "leads" | "vendas" | "cpl" | "roas
  * conectados" em vez de número inventado. Inclusive a lista de campanhas
  * fica vazia até o Meta Ads ser conectado (antes mostrava mock inteiro).
  */
+/**
+ * O nome da plataforma de uma campanha.
+ *
+ * Antes era `plataforma === "M" ? "Meta Ads" : "Google Ads"`, o que rotulava como Google Ads
+ * qualquer coisa que nao fosse Meta, inclusive o que o CRM nao sabe identificar. Google Ads nao
+ * tem integracao aqui, entao nenhuma campanha real pode vir dele: a tela estava afirmando uma
+ * origem que nao existe.
+ */
+function rotuloPlataforma(plataforma: string): string {
+  return plataforma === "M" ? "Meta Ads" : "Outra";
+}
+
 export default function TrafegoPage() {
   const { funis } = useFunis();
   const { contatos } = useContatos();
@@ -146,7 +158,9 @@ export default function TrafegoPage() {
       opcoes: [
         { valor: "Todas", label: "Todas" },
         { valor: "M", label: "Meta Ads" },
-        { valor: "G", label: "Google Ads" },
+        // Google Ads saiu daqui: nao existe integracao propria, entao filtrar por ele devolvia
+        // vazio SEMPRE. Opcao que nunca funciona e pior que opcao ausente, porque quem escolhe
+        // conclui que nao ha investimento, e nao que o canal nao esta ligado.
       ],
     },
   ];
@@ -186,9 +200,9 @@ export default function TrafegoPage() {
           periodo={periodo}
           onPeriodoChange={setPeriodo}
           principalLabel="Plataforma"
-          principalValor={plataformaFiltro === "M" ? "Meta Ads" : plataformaFiltro === "G" ? "Google Ads" : "Todas"}
-          principalOpcoes={["Todas", "Meta Ads", "Google Ads"]}
-          onPrincipalChange={(v) => setPlataformaFiltro(v === "Meta Ads" ? "M" : v === "Google Ads" ? "G" : "Todas")}
+          principalValor={plataformaFiltro === "M" ? "Meta Ads" : "Todas"}
+          principalOpcoes={["Todas", "Meta Ads"]}
+          onPrincipalChange={(v) => setPlataformaFiltro(v === "Meta Ads" ? "M" : "Todas")}
           filtros={filtros}
           onFiltroChange={(chave, valor) => {
             if (chave === "plataforma") setPlataformaFiltro(valor);
@@ -201,16 +215,24 @@ export default function TrafegoPage() {
           viewKey="trafego"
         />
 
+        {/*
+          Sem campanha conectada, mostrar SO o aviso.
+          Antes o aviso aparecia e os seis indicadores vinham logo abaixo, todos zerados. Dizia a
+          mesma coisa duas vezes, e a segunda vez dizia errado: zero parece numero apurado, e quem
+          olha conclui que investiu e nao teve retorno, em vez de que nada esta conectado.
+        */}
         {campanhas.length === 0 ? (
           <div className="card mb14">
-            <div className="dados-nao-conectados" style={{ padding: 17 }}>
-              Você ainda não possui dados suficientes para gerar este indicador. Conecte o Meta Ads
-              (botão acima) pra ver investimento, leads e ROAS reais aqui. Google Ads ainda não tem
-              integração própria no CRM.
+            <div className="dados-nao-conectados trafego-vazio">
+              <strong>Conecte o Meta Ads para ver esta tela com dados.</strong>
+              <span>
+                Investimento, custo por lead, custo por venda e ROAS saem das suas campanhas. Sem a
+                conexão não há o que calcular, então os números ficam de fora em vez de aparecerem
+                zerados.
+              </span>
             </div>
           </div>
-        ) : null}
-
+        ) : (
         <div className="grid kpi6">
           <KpiCard label="Investido" value={investido.label} formula={investido.formula} />
           <KpiCard label="Leads" value={leads.label} formula={leads.formula} href="/funil" />
@@ -223,10 +245,11 @@ export default function TrafegoPage() {
           <KpiCard label="Custo / venda" value={formatarMoeda(custoPorVenda)} />
           <KpiCard label="ROAS" value={roas.label} formula={roas.formula} />
         </div>
+        )}
 
         <ChartCard title="Funil de tráfego">
           {funilSteps.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>Crie um funil com etapas pra ver essa visão aqui.</p>
+            <p className="hint trafego-aviso">Crie um funil com etapas pra ver essa visão aqui.</p>
           ) : (
             <FunnelSteps etapas={funilSteps} />
           )}
@@ -278,7 +301,7 @@ export default function TrafegoPage() {
                 {linhasCampanha.length === 0 ? (
                   <tr>
                     <td colSpan={8}>
-                      <p className="hint" style={{ padding: 17 }}>Nenhuma campanha com esses filtros.</p>
+                      <p className="hint trafego-aviso">Nenhuma campanha com esses filtros.</p>
                     </td>
                   </tr>
                 ) : null}
@@ -292,7 +315,7 @@ export default function TrafegoPage() {
                         aria-label={`Selecionar ${c.nome}`}
                       />
                     </td>
-                    <td>{c.plataforma === "M" ? "Meta Ads" : "Google Ads"}</td>
+                    <td>{rotuloPlataforma(c.plataforma)}</td>
                     <td>
                       <button
                         type="button"
@@ -313,7 +336,7 @@ export default function TrafegoPage() {
               </tbody>
             </table>
           </div>
-          <p className="hint" style={{ padding: "0 17px 14px" }}>
+          <p className="hint trafego-aviso">
             Vendas e ROAS vêm das conversões atribuídas pelo Meta Ads. Leads qualificados e custo por
             venda entram aqui quando a negociação puder ser ligada à campanha de origem no back-end.
           </p>
@@ -327,10 +350,10 @@ export default function TrafegoPage() {
                 Fechar <IconClose width={11} height={11} />
               </button>
             </div>
-            <div style={{ padding: 17 }}>
+            <div className="trafego-detalhe-corpo">
               <div className="stat-row">
                 <span className="sl">Plataforma</span>
-                <span className="sv">{campanhaDetalhe.plataforma === "M" ? "Meta Ads" : "Google Ads"}</span>
+                <span className="sv">{rotuloPlataforma(campanhaDetalhe.plataforma)}</span>
               </div>
               <div className="stat-row">
                 <span className="sl">Investimento</span>
@@ -384,7 +407,16 @@ export default function TrafegoPage() {
                     <td>{o.origem}</td>
                     <td>{o.leadsOrigem}</td>
                     <td>{o.vendasOrigem}</td>
-                    <td>{o.investimentoOrigem !== null ? formatarMoeda(o.investimentoOrigem) : "Dados não conectados"}</td>
+                    {/*
+                      Traco, e nao "Dados nao conectados" escrito em cada linha.
+                      Investimento so existe pra origem que veio de campanha paga; nas outras (site,
+                      indicacao, WhatsApp) nao ha o que investir, entao nao e falta de conexao, e
+                      ausencia legitima. Repetir uma frase de erro linha a linha fazia a tabela
+                      parecer quebrada e empurrava as colunas de numero pra fora do alinhamento.
+                    */}
+                    <td className="trafego-sem-valor">
+                      {o.investimentoOrigem !== null ? formatarMoeda(o.investimentoOrigem) : "—"}
+                    </td>
                   </tr>
                 ))}
               </tbody>

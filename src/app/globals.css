@@ -19703,3 +19703,46 @@ table.tbl .name-cell .r {
   background: var(--surface);
   border-color: var(--line);
 }
+
+/* ============================================================ */
+/* Tráfego: espaçamento e estados sem dado                      */
+/* ============================================================ */
+
+/*
+ * A tela usava `style={{ padding: 17 }}` escrito na mão em cinco lugares, o mesmo 17 do painel de
+ * admin, que não pertence à escala do produto (4/8/12/16/20/28). Cada aviso recuava num valor
+ * diferente do bloco vizinho.
+ */
+.trafego-view .trafego-aviso {
+  padding: var(--space-4) var(--space-5);
+  margin: 0;
+}
+
+.trafego-view .trafego-detalhe-corpo {
+  padding: var(--space-4) var(--space-5);
+}
+
+/*
+ * O estado sem conexão. Vira o único conteúdo da área (os indicadores zerados saíram), então
+ * precisa explicar o que fazer em vez de só constatar a falta.
+ */
+.trafego-view .trafego-vazio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  max-width: 68ch;
+}
+
+.trafego-view .trafego-vazio strong {
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--fs-section-title);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-tight);
+}
+
+/* Célula de investimento inexistente: traço discreto, alinhado com os números da coluna. */
+.trafego-view .trafego-sem-valor {
+  font-variant-numeric: tabular-nums;
+}
