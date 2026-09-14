@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   assinarState,
+  cabecalhosParaTeste,
   deMicros,
   ehVenda,
   googleAdsConfigurado,
@@ -57,17 +58,16 @@ describe("deMicros", () => {
 });
 
 describe("googleAdsConfigurado", () => {
-  it("é verdadeiro com as quatro variáveis", () => {
+  it("é verdadeiro com as três variáveis obrigatórias", () => {
     expect(googleAdsConfigurado()).toBe(true);
   });
 
   // A regra que evita repor na tela o problema que acabou de sair dela: sem configuração, a opção
   // não aparece. Nada de botão que não funciona.
-  it("é falso se faltar qualquer uma", () => {
+  it("é falso se faltar qualquer uma das obrigatórias", () => {
     for (const chave of [
       "GOOGLE_ADS_CLIENT_ID",
       "GOOGLE_ADS_CLIENT_SECRET",
-      "GOOGLE_ADS_DEVELOPER_TOKEN",
       "GOOGLE_ADS_LOGIN_CUSTOMER_ID",
     ]) {
       const guardado = process.env[chave];
@@ -75,6 +75,47 @@ describe("googleAdsConfigurado", () => {
       expect(googleAdsConfigurado(), `sem ${chave}`).toBe(false);
       process.env[chave] = guardado;
     }
+  });
+
+  /**
+   * O teste que destrava a instalação nova.
+   *
+   * Em 10/09/2026 o Google tirou o token de desenvolvedor da decisão de acesso: quem manda agora é
+   * o projeto do Google Cloud que gerou as credenciais OAuth, e o pedido de nível saiu da Central
+   * de API da MCC. Quem monta a integração hoje NÃO CONSEGUE MAIS obter um token — a tela que o
+   * emitia agora avisa que serve pra outra API.
+   *
+   * Exigir a variável deixaria a integração invisível pra sempre, esperando um valor que não
+   * existe mais, e sem nada na tela explicando isso. Foi exatamente o que aconteceu: a Thaynara
+   * passou por quatro telas do Google atrás de um campo que tinha sido removido quatro dias antes.
+   */
+  it("continua verdadeiro sem o token de desenvolvedor, que o Google não emite mais", () => {
+    delete process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
+    expect(googleAdsConfigurado()).toBe(true);
+  });
+});
+
+/**
+ * O cabeçalho que some.
+ *
+ * Hoje o `developer-token` é IGNORADO pelos servidores do Google, e o próprio Google avisou que
+ * numa versão futura ele passa a ser RECUSADO. Mandar a chave com valor vazio seria o pior dos
+ * dois mundos: não ajuda agora e quebra depois. Então ou vai com valor, ou não vai.
+ */
+describe("cabeçalhos da chamada", () => {
+  it("não manda developer-token quando não há token configurado", () => {
+    delete process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
+    expect(cabecalhosParaTeste("token-de-acesso")).not.toHaveProperty("developer-token");
+  });
+
+  it("manda o developer-token de quem ainda tem um", () => {
+    expect(cabecalhosParaTeste("token-de-acesso")["developer-token"]).toBe("token-de-teste");
+  });
+
+  // Continua obrigatório, e continua sem hífen: o Google recusa este cabeçalho com hífen, e o
+  // painel mostra o número COM hífen. É o erro de digitação que vira 401 sem explicação.
+  it("manda a MCC só com dígitos", () => {
+    expect(cabecalhosParaTeste("token-de-acesso")["login-customer-id"]).toBe("6922394762");
   });
 });
 

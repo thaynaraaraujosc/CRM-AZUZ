@@ -8,19 +8,26 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * qualquer campanha que não fosse Meta era rotulada como dele. Esses rótulos foram removidos; este
  * arquivo é o que permite trazê-los de volta com dado real atrás.
  *
- * TRÊS COISAS SÃO NECESSÁRIAS, e é diferente da Meta, que pede só um app:
+ * DUAS COISAS SÃO NECESSÁRIAS, e é diferente da Meta, que pede só um app:
  *
  * 1. `GOOGLE_ADS_CLIENT_ID` e `GOOGLE_ADS_CLIENT_SECRET`: credenciais OAuth do projeto no Google
- *    Cloud. É por elas que o cliente autoriza o CRM a ler a conta dele.
- * 2. `GOOGLE_ADS_DEVELOPER_TOKEN`: identifica o SISTEMA (o CRM), não o cliente. Vai num cabeçalho
- *    próprio em toda chamada, junto com o token do cliente. Sem ele o Google recusa tudo.
- * 3. `GOOGLE_ADS_LOGIN_CUSTOMER_ID`: a conta de administrador (MCC) da Azuz, sem hífen. É o que
+ *    Cloud. É por elas que o cliente autoriza o CRM a ler a conta dele — e, desde setembro de
+ *    2026, é o PROJETO DO CLOUD que gerou essas credenciais que carrega o nível de acesso à API.
+ *    Credencial tirada de outro projeto do Cloud é recusada mesmo estando correta.
+ * 2. `GOOGLE_ADS_LOGIN_CUSTOMER_ID`: a conta de administrador (MCC) da Azuz, sem hífen. É o que
  *    diz ao Google "estou agindo como esta agência", e é obrigatório quando se lê conta de
  *    cliente em vez da própria.
  *
- * SEM AS QUATRO VARIÁVEIS, A INTEGRAÇÃO NÃO APARECE NA TELA. Não é botão desabilitado nem aviso de
- * "em breve": some. A tela de Tráfego acabou de ser limpa de opção que não funciona, e seria
- * incoerente repor o mesmo problema pelo outro lado. Ver `googleAdsConfigurado`.
+ * O TOKEN DE DESENVOLVEDOR NÃO ESTÁ MAIS NESSA LISTA. Em 10/09/2026 o Google tirou o token de
+ * desenvolvedor da decisão de acesso e moveu o pedido de nível ("Exploração", "Básico") da Central
+ * de API da MCC pra página da Google Ads API no Google Cloud. O cabeçalho virou opcional e é
+ * IGNORADO pelos servidores, e o Google avisou que vai passar a RECUSÁ-LO numa versão futura — por
+ * isso ele só é enviado se a variável existir, e nunca é exigido. Instalação nova não tem um, e
+ * exigir um faria a integração ficar invisível esperando algo que não se consegue mais obter.
+ *
+ * SEM AS TRÊS VARIÁVEIS OBRIGATÓRIAS, A INTEGRAÇÃO NÃO APARECE NA TELA. Não é botão desabilitado
+ * nem aviso de "em breve": some. A tela de Tráfego acabou de ser limpa de opção que não funciona,
+ * e seria incoerente repor o mesmo problema pelo outro lado. Ver `googleAdsConfigurado`.
  */
 
 /** Versão da API. Fixa de propósito: o Google descontinua versão antiga em prazo conhecido, e
@@ -32,8 +39,9 @@ const ESCOPO = "https://www.googleapis.com/auth/adwords";
 export type ConfiguracaoGoogleAds = {
   clientId: string;
   clientSecret: string;
-  developerToken: string;
   loginCustomerId: string;
+  /** Vazio na instalação nova, e tudo bem: ver o cabeçalho deste arquivo. */
+  developerToken: string;
 };
 
 function configuracao(): ConfiguracaoGoogleAds | null {
@@ -43,8 +51,10 @@ function configuracao(): ConfiguracaoGoogleAds | null {
   // Sem hífen: o Google aceita só dígitos neste cabeçalho, e o painel mostra o número COM hífen
   // (692-239-4762). Tirar aqui evita que a diferença vire um 401 sem explicação.
   const loginCustomerId = (process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID ?? "").replace(/\D/g, "");
-  if (!clientId || !clientSecret || !developerToken || !loginCustomerId) return null;
-  return { clientId, clientSecret, developerToken, loginCustomerId };
+  // `developerToken` NÃO entra nesta checagem: é opcional desde 10/09/2026, e exigi-lo deixaria a
+  // integração invisível pra sempre esperando um valor que o Google não emite mais.
+  if (!clientId || !clientSecret || !loginCustomerId) return null;
+  return { clientId, clientSecret, loginCustomerId, developerToken };
 }
 
 /**
@@ -63,8 +73,8 @@ function exigirConfiguracao(): ConfiguracaoGoogleAds {
   const conf = configuracao();
   if (!conf) {
     throw new Error(
-      "Google Ads não configurado. Faltam GOOGLE_ADS_CLIENT_ID, GOOGLE_ADS_CLIENT_SECRET, " +
-        "GOOGLE_ADS_DEVELOPER_TOKEN ou GOOGLE_ADS_LOGIN_CUSTOMER_ID.",
+      "Google Ads não configurado. Faltam GOOGLE_ADS_CLIENT_ID, GOOGLE_ADS_CLIENT_SECRET " +
+        "ou GOOGLE_ADS_LOGIN_CUSTOMER_ID.",
     );
   }
   return conf;
@@ -172,16 +182,28 @@ export async function renovarAccessToken(refreshToken: string): Promise<TokensGo
   });
 }
 
-/** Cabeçalhos de toda chamada à API. O token do desenvolvedor identifica o CRM; o
- *  `login-customer-id` diz que a leitura é feita pela MCC da agência. */
+/**
+ * Cabeçalhos de toda chamada à API.
+ *
+ * `login-customer-id` diz que a leitura é feita pela MCC da agência, e continua obrigatório.
+ *
+ * `developer-token` só vai se existir. Hoje ele é ignorado pelos servidores do Google, e numa
+ * versão futura passa a ser RECUSADO: mandar um cabeçalho vazio seria o pior dos dois mundos,
+ * porque não ajuda agora e quebra depois.
+ */
 function cabecalhos(accessToken: string): Record<string, string> {
   const conf = exigirConfiguracao();
   return {
     authorization: `Bearer ${accessToken}`,
-    "developer-token": conf.developerToken,
     "login-customer-id": conf.loginCustomerId,
     "content-type": "application/json",
+    ...(conf.developerToken ? { "developer-token": conf.developerToken } : {}),
   };
+}
+
+/** Exposto só pro teste: é o cabeçalho que some ou aparece conforme a variável. */
+export function cabecalhosParaTeste(accessToken: string): Record<string, string> {
+  return cabecalhos(accessToken);
 }
 
 export type LinhaCampanhaGoogle = LinhaGaql;
