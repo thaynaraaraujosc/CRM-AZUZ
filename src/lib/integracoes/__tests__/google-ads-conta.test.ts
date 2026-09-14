@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { precisaRenovar } from "../google-ads-conta";
+import { mensagemDeAutorizacaoPerdida, precisaRenovar } from "../google-ads-conta";
 
 /**
  * A diferença entre o Google e a Meta que derruba a integração no dia seguinte.
@@ -29,5 +29,38 @@ describe("precisaRenovar", () => {
 
   it("não renova à toa quem ainda tem tempo de sobra", () => {
     expect(precisaRenovar(new Date("2026-09-14T12:30:00Z"), agora)).toBe(false);
+  });
+});
+
+/**
+ * A frase que a pessoa lê quando a conexão morre.
+ *
+ * Tem data marcada pra acontecer: enquanto a tela de permissão OAuth estiver em "Testes", o Google
+ * mata todo refresh token em SETE DIAS. O que volta é `invalid_grant`, seco. Sem tradução, a tela
+ * mostraria "Google Ads conectado" e nenhuma campanha, e quem olha conclui que não investiu nada
+ * em vez de que a autorização venceu.
+ */
+describe("mensagemDeAutorizacaoPerdida", () => {
+  it("diz o que fazer quando o token de sete dias vence", () => {
+    const frase = mensagemDeAutorizacaoPerdida("invalid_grant");
+    expect(frase).toContain("Conectar Google Ads");
+  });
+
+  it("dá a mesma saída quando o cliente revoga o acesso", () => {
+    // Causas diferentes, conserto idêntico: reconectar.
+    for (const causa of ["Token has been expired or revoked.", "invalid_grant: token revoked"]) {
+      expect(mensagemDeAutorizacaoPerdida(causa), causa).toContain("Conectar Google Ads");
+    }
+  });
+
+  it("não engole um motivo que não seja de autorização", () => {
+    // Inventar "reconecte" pra uma falha de rede mandaria a pessoa refazer algo que estava certo.
+    const frase = mensagemDeAutorizacaoPerdida("servidor do Google fora do ar");
+    expect(frase).toContain("servidor do Google fora do ar");
+    expect(frase).not.toContain("Conectar Google Ads");
+  });
+
+  it("aguenta recusa sem mensagem nenhuma", () => {
+    expect(mensagemDeAutorizacaoPerdida("")).toContain("motivo não informado");
   });
 });

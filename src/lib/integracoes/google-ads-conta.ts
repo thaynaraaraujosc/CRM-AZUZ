@@ -48,7 +48,27 @@ export async function contaDoWorkspace(workspaceId: string): Promise<ContaGoogle
 
   if (!integracao.refreshTokenCriptografado) return null;
 
-  const tokens = await renovarAccessToken(decriptar(integracao.refreshTokenCriptografado));
+  /*
+   * Renovação que falha é conexão MORTA, e precisa dizer isso na tela.
+   *
+   * O caso concreto, e ele tem data: enquanto a tela de permissão OAuth estiver em "Testes", o
+   * Google mata todo refresh token em SETE DIAS. A conexão feita hoje para de funcionar na semana
+   * que vem, e o que volta é um `invalid_grant` seco. Sem este tratamento a tela continuaria
+   * dizendo "Google Ads conectado" e mostrando campanha nenhuma, e a leitura natural de quem olha
+   * é "não investi nada", não "a autorização venceu".
+   *
+   * O mesmo vale quando o cliente remove o acesso do CRM na conta Google dele: não há conserto
+   * automático possível, e o único caminho é reconectar. Então o que a tela precisa é DIZER isso.
+   */
+  let tokens;
+  try {
+    tokens = await renovarAccessToken(decriptar(integracao.refreshTokenCriptografado));
+  } catch (erro) {
+    const causa = erro instanceof Error ? erro.message : "";
+    await marcarErro(workspaceId, mensagemDeAutorizacaoPerdida(causa));
+    return null;
+  }
+
   await prisma.integracao.update({
     where: { workspaceId_provedor: { workspaceId, provedor: "google_ads" } },
     data: {
@@ -58,6 +78,20 @@ export async function contaDoWorkspace(workspaceId: string): Promise<ContaGoogle
     },
   });
   return { accessToken: tokens.accessToken, customerId: contaId };
+}
+
+/**
+ * Traduz a recusa do Google pra uma frase que diz o que fazer.
+ *
+ * `invalid_grant` é o que o Google devolve tanto pro token de sete dias que venceu quanto pro
+ * acesso que o cliente revogou. São causas diferentes com o mesmo conserto — reconectar — e a
+ * frase precisa dizer o conserto, porque "invalid_grant" na tela não ajuda ninguém.
+ */
+export function mensagemDeAutorizacaoPerdida(causa: string): string {
+  if (/invalid_grant|expired|revoked/i.test(causa)) {
+    return "A autorização do Google venceu ou foi removida. Clique em Conectar Google Ads para autorizar de novo.";
+  }
+  return `Não foi possível renovar a autorização do Google: ${causa || "motivo não informado"}.`;
 }
 
 /**
