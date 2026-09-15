@@ -1182,14 +1182,15 @@ table {
   box-shadow: none;
 }
 
-/* FANTASMA: sem borda e sem fundo em repouso — só ganha corpo no hover.
-   Ele estava idêntico ao botão secundário (branco com borda), e dois botões iguais com nomes
-   diferentes não são duas variantes, são uma repetida. A hierarquia agora é: primário índigo,
-   escuro quase preto, secundário branco com borda, fantasma sem nada. */
+/* FANTASMA: cinza claro preenchido, com borda.
+   Ele era transparente, e botão sem fundo não parece botão: vira texto que por acaso responde ao
+   clique, e quem usa não descobre que dá pra clicar. Todo botão do CRM tem corpo — o que muda
+   entre as variantes é o PESO, não a existência. A hierarquia fica: escuro (principal), índigo
+   (acento), branco com borda (secundário), cinza claro (fantasma). */
 .btn.ghost {
-  background: transparent;
-  border-color: transparent;
-  color: var(--text-muted);
+  background: #f1f2f5;
+  border-color: var(--line);
+  color: var(--ink);
   box-shadow: none;
 }
 .btn.secondary {
@@ -1200,10 +1201,10 @@ table {
 }
 
 .btn.ghost:hover {
-  background: var(--surface-active);
-  border-color: transparent;
+  background: #e7e9ee;
+  border-color: var(--line-strong);
   color: var(--ink);
-  box-shadow: none;
+  box-shadow: var(--shadow-xs);
 }
 .btn.secondary:hover {
   background: var(--surface-active);
@@ -1237,9 +1238,10 @@ table {
   background: var(--gray-300);
 }
 
-/* Sem corpo nenhum: só texto. Pra ação que não deve nem parecer botão. */
+/* O mais leve da escala, e ainda assim COM CORPO: cinza bem claro, sem borda. Era transparente, e
+   nenhum botão do CRM é transparente — botão sem fundo não se anuncia como clicável. */
 .btn.plano {
-  background: transparent;
+  background: #f6f7f9;
   border-color: transparent;
   color: var(--text-muted);
   box-shadow: none;
