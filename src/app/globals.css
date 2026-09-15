@@ -86,9 +86,13 @@
   /* Bordas organizam, não são protagonistas: mas precisam ser vistas. A 8% ela sumia sobre branco
      e o card ficava sem começo nem fim. `--line-strong` é pro que precisa de recorte de verdade:
      card dentro de card, cabeçalho de tabela, item destacado. */
-  --line: rgba(11, 21, 51, 0.1);
-  --line-soft: rgba(11, 21, 51, 0.06);
-  --line-strong: rgba(11, 21, 51, 0.18);
+  --line: rgba(11, 21, 51, 0.14);
+  /* TRES BORDAS, com papel definido. A queixa era que as linhas somem: a mais clara estava em 6%
+     de opacidade, invisivel em tela comum. A regra agora e: `soft` separa coisas do mesmo grupo
+     (linha entre itens de uma lista), a padrao desenha o contorno de um objeto (card, input), e
+     `strong` marca divisa estrutural (sidebar, cabecalho de tabela, rodape de modal). */
+  --line-soft: rgba(11, 21, 51, 0.08);
+  --line-strong: rgba(11, 21, 51, 0.22);
 
   /* Preto neutro no lugar do marinho: o texto parava de ser preto e puxava azul, o que somado ao
      piso marinho fazia a interface inteira ter temperatura de marca em vez de neutralidade. */
@@ -137,9 +141,15 @@
      largo e quase transparente. É essa combinação que faz a peça parecer pousada numa superfície.
      uma sombra só, difusa, faz o elemento parecer que está boiando. */
   --shadow-xs: 0 1px 2px rgba(11, 21, 51, 0.05);
-  --shadow-sm: 0 1px 2px rgba(11, 21, 51, 0.06), 0 2px 6px rgba(11, 21, 51, 0.04);
-  --shadow-md: 0 1px 3px rgba(11, 21, 51, 0.07), 0 6px 16px rgba(11, 21, 51, 0.05);
-  --shadow-lg: 0 2px 6px rgba(11, 21, 51, 0.06), 0 24px 56px rgba(11, 21, 51, 0.12);
+  /* ESCADA DE ELEVACAO. Cada degrau tem DUAS sombras: uma curta e fechada, que faz o contato do
+     objeto com a superficie, e uma longa e difusa, que da a distancia. Sombra de uma camada so
+     parece adesivo; duas parecem objeto. A luz vem de cima, entao o deslocamento e sempre no Y.
+     Os valores sao contidos de proposito: o efeito premium vem de precisao, nao de sombra pesada. */
+  --shadow-xs: 0 1px 1px rgba(11, 21, 51, 0.04);
+  --shadow-sm: 0 1px 2px rgba(11, 21, 51, 0.06), 0 1px 3px rgba(11, 21, 51, 0.05);
+  --shadow-md: 0 2px 4px rgba(11, 21, 51, 0.05), 0 8px 20px rgba(11, 21, 51, 0.07);
+  --shadow-lg: 0 4px 8px rgba(11, 21, 51, 0.05), 0 18px 40px rgba(11, 21, 51, 0.10);
+  --shadow-xl: 0 8px 16px rgba(11, 21, 51, 0.06), 0 40px 80px rgba(11, 21, 51, 0.16);
   --shadow-hover: 0 2px 4px rgba(11, 21, 51, 0.07), 0 10px 24px rgba(11, 21, 51, 0.07);
   /* Sombra do botão preto: precisa nascer da própria cor dele, senão vira um borrão cinza embaixo
      de uma peça escura. */
@@ -346,10 +356,13 @@
   --info: #5b8cff;
   --info-soft: rgba(91, 140, 255, 0.14);
 
+  /* Mesma escada de duas camadas do tema claro, com opacidades maiores: sobre fundo escuro a
+     sombra precisa ser mais funda pra ser percebida. */
   --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.36);
-  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.34), 0 1px 3px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.36), 0 8px 20px rgba(0, 0, 0, 0.44);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.4), 0 18px 40px rgba(0, 0, 0, 0.52);
+  --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.44), 0 40px 80px rgba(0, 0, 0, 0.6);
   --shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.42);
 
   /* O MESMO marinho do tema claro. Cheguei a clarear pra ele se destacar do fundo quase preto, e
@@ -20164,4 +20177,252 @@ table.tbl .name-cell .r {
 .kpi-perda .n,
 .kpi-perda .l {
   color: var(--danger);
+}
+
+/* ==========================================================================
+   AMOSTRA DO SISTEMA VISUAL  ·  /amostra
+   Vitrine de todos os elementos da linguagem, em todos os estados. Existe porque refatoração
+   visual é a única parte do projeto que teste nenhum confere: o build diz que o CSS compila e não
+   diz nada sobre estar bonito. Aprovar aqui, uma vez, custa menos que descobrir errado em vinte
+   telas.
+   ========================================================================== */
+.amostra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.amostra-secao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--line-soft);
+}
+.amostra-secao:last-child { border-bottom: none; }
+
+.amostra-secao h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.amostra-nota {
+  margin: -4px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-faint);
+  max-width: 68ch;
+}
+
+.amostra-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.amostra-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--space-3);
+}
+.amostra-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+
+/* -------------------------------------------------- os cinco planos, lado a lado
+   É a peça central da página: os cinco níveis juntos, na mesma cor, provando que a separação vem
+   de sombra, borda e contato — e não de pintar cada um de um tom diferente. */
+.amostra-plano {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-elevated);
+  min-height: 92px;
+}
+.amostra-plano strong {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.amostra-plano span {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+.amostra-n0 { background: var(--navy); box-shadow: none; border: none; }
+.amostra-n1 { border: 1px solid var(--line-soft); }
+.amostra-n2 { border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.amostra-n3 { border: 1px solid var(--line); box-shadow: var(--shadow-md); }
+.amostra-n4 { border: 1px solid var(--line); box-shadow: var(--shadow-lg); }
+
+/* -------------------------------------------------- abas */
+.amostra-aba {
+  padding: var(--space-2) var(--space-4);
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+.amostra-aba:hover { border-color: var(--line-strong); color: var(--ink); }
+/* A aba ativa é MARINHO CHEIO, não azul pastel: ela é a única de contraste alto da fila, e por isso
+   se acha de relance sem precisar comparar com as vizinhas. */
+.amostra-aba.ativa {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+/* -------------------------------------------------- selos */
+.amostra-selo {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--navy-raised-2);
+  color: var(--text-muted);
+}
+.amostra-selo-acento { background: var(--blue-soft-2); border-color: var(--blue); color: var(--blue); }
+.amostra-selo-ok { background: var(--success-soft); border-color: var(--success); color: var(--success); }
+.amostra-selo-erro { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+
+/* -------------------------------------------------- tipografia
+   Sete papéis, um por linha, pra diferença de peso e cor ser lida de uma vez. */
+.amostra-tipo { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3); }
+.amostra-tipo p { margin: 0; }
+.amostra-t-page {
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+.amostra-t-secao {
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+}
+.amostra-t-card { font-size: 14px; font-weight: 700; color: var(--ink); }
+.amostra-t-corpo { font-size: 14px; line-height: 1.65; color: var(--text-muted); max-width: 66ch; }
+.amostra-t-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+.amostra-t-apoio { font-size: 12.5px; line-height: 1.6; color: var(--text-faint); }
+
+/* -------------------------------------------------- conversa
+   Recebida em branco com borda; enviada em marinho cheio com texto branco. A diferença é de
+   CONTRASTE, e não de dois tons quase iguais — de longe já se sabe quem falou. */
+.amostra-chat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: var(--navy-raised-2);
+}
+.amostra-balao {
+  position: relative;
+  max-width: min(78%, 520px);
+  padding: 10px 14px 20px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  border-radius: var(--radius-lg);
+}
+.amostra-balao-recebida {
+  align-self: flex-start;
+  background: var(--surface-elevated);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-bottom-left-radius: 6px;
+  box-shadow: var(--shadow-xs);
+}
+.amostra-balao-enviada {
+  align-self: flex-end;
+  background: var(--ink);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+  box-shadow: var(--shadow-sm);
+}
+.amostra-hora {
+  position: absolute;
+  right: 12px;
+  bottom: 6px;
+  font-size: 10.5px;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.amostra-tabela-caixa { padding: 0; overflow: hidden; }
+
+/* -------------------------------------------------- modal
+   O elemento mais alto do sistema: véu escuro, sombra funda, cabeçalho e rodapé com divisa própria.
+   Nunca deve parecer só mais um card. */
+.amostra-veu {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 21, 51, 0.44);
+  backdrop-filter: blur(2px);
+  z-index: 80;
+}
+.amostra-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(460px, calc(100vw - 32px));
+  background: var(--surface-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  z-index: 81;
+  overflow: hidden;
+}
+.amostra-modal-h {
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+.amostra-modal-h h4 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.amostra-modal-corpo { padding: var(--space-5); }
+.amostra-modal-corpo p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+.amostra-modal-f {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--line-soft);
+  background: var(--navy-raised-2);
 }
