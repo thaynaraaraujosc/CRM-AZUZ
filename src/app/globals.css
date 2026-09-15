@@ -37,8 +37,14 @@
      porque a superficie atras dele e mais escura.
      Eu tinha deixado piso e card os dois brancos, e por isso nada se separava de nada. */
   --navy: #f6f7f9;
-  --navy-raised: #ffffff;
-  --navy-raised-2: #f1f2f5;
+  /* `--navy-raised` VOLTOU A SER CINZA, e isto e correcao de um estrago meu. Eu apontei ele pra
+     branco quando o menu virou branco, sem reparar que OUTRAS 79 REGRAS usavam este token esperando
+     cinza claro: busca, cabecalho do app, lista de conversas, card de automacao, seletor de data,
+     linha par de tabela. Todas ficaram brancas sobre branco de uma vez.
+     O menu agora declara o proprio branco, entao o token volta ao papel de sempre: a superficie
+     cinza clara que AGRUPA. */
+  --navy-raised: #f4f5f8;
+  --navy-raised-2: #eceef3;
   --navy-deep: #f6f7f9;
   /* Superfície que se destaca por ficar ACIMA das outras. Card sobre coluna, popover sobre
      página. É branca como `--navy`, mas o nome diz a intenção: quem usa este token está dizendo
@@ -947,6 +953,7 @@ table {
   flex: 0 0 auto;
 }
 
+/* Cabecalho da tela: branco sobre o piso cinza, com divisa propria. */
 .topbar {
   display: flex;
   align-items: center;
@@ -954,6 +961,7 @@ table {
   gap: var(--space-4);
   padding: var(--space-4) var(--space-6);
   border-bottom: 1px solid var(--line);
+  background: #fff;
   flex: 0 0 auto;
 }
 
@@ -1405,14 +1413,13 @@ table {
   font-size: 10px;
 }
 
+/* O CARD: branco sobre o piso cinza, com borda visivel e sombra de contato.
+   Antes a borda era `--line-soft` (o fio mais claro do sistema) sobre um piso tambem branco: duas
+   superficies iguais separadas por um fio quase invisivel. Com o piso cinza, o card existe porque
+   a superficie atras dele e mais escura — e a borda passa a ser o corte exato, nao a unica pista. */
 .card {
-  /* Branco sobre o piso off-white: a separação vem da borda, não de mais um tom de cinza. Com o
-     card cinza, piso, corpo e campo eram três cinzas quase idênticos empilhados. A origem da
-     sensação de caixa dentro de caixa. */
-/* O card se separa por SOMBRA, não por traço: a borda vira um fio quase transparente, só pra dar
-     o corte exato onde a sombra sozinha ficaria vaga. */
   background: var(--surface-elevated);
-  border: 1px solid var(--line-soft);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
 }
@@ -2454,20 +2461,23 @@ table.tbl {
    sozinhas. Com fundo e divisória, ele competia com as próprias linhas. */
 table.tbl th {
   text-align: left;
-  font-size: 10px;
-  font-weight: var(--fw-medium);
+  font-size: 10.5px;
+  font-weight: 700;
   letter-spacing: var(--track-wide);
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--text-muted);
   padding: var(--space-1) var(--space-4) var(--space-2);
   white-space: nowrap;
 }
 
 /* Cada linha é uma faixa: fundo cinza claro, cantos arredondados nas pontas, e nada de divisória:
    o espaço entre elas (`border-spacing`) faz a separação. */
+/* A faixa da linha e CINZA sobre o card branco, e o hover a levanta pra branco.
+   Ela usava `--navy-raised`, que virou branco quando o piso do sistema mudou: linha branca sobre
+   card branco, com hover tambem branco — a tabela inteira sem faixa e sem resposta ao mouse. */
 table.tbl td {
   padding: var(--space-4) var(--space-4);
-  background: var(--navy-raised);
+  background: var(--navy-raised-2);
   border-top: 1px solid transparent;
   border-bottom: 1px solid transparent;
   vertical-align: middle;
@@ -3261,9 +3271,11 @@ table.tbl tbody tr:hover td {
 /* Recebida: superfície cinza clara, sem contorno. Era branca com borda: sobre o fundo branco da
    conversa, a bolha só existia por causa do traço, e uma conversa longa virava uma pilha de
    retângulos vazados. */
+/* RECEBIDA: cinza claro com borda. Ela usava `--navy-raised`, que virou branco quando o piso do
+   sistema mudou — balao branco sobre area de conversa branca, visivel so pela sombra. */
 .bubble.in {
-  background: var(--navy-raised);
-  border: 1px solid transparent;
+  background: var(--navy-raised-2);
+  border: 1px solid var(--line);
   color: var(--ink);
   align-self: flex-start;
   border-bottom-left-radius: 5px;
@@ -3359,9 +3371,13 @@ table.tbl tbody tr:hover td {
  * horário e os tiquinhos sobem de opacidade aqui dentro (`.tm` a 0,6 cairia abaixo do legível), e
  * por isso o texto é branco puro e não translúcido.
  */
+/* ENVIADA: marinho cheio com texto branco. Era o azul de acento, que agora e o indigo; usa-lo aqui
+   punha uma area grande de cor de destaque na tela mais usada do produto e roubava a forca do
+   proprio acento. A diferenca entre quem falou passa a ser de CONTRASTE — claro contra escuro —
+   que se le de longe sem comparar. */
 .bubble.out {
-  background: var(--blue);
-  color: var(--white);
+  background: var(--acao);
+  color: #fff;
   align-self: flex-end;
   border-bottom-right-radius: 5px;
   /* Igual ao `.bubble.in`: o coração da curtida e o botão "⋮" são posicionados em relação ao
