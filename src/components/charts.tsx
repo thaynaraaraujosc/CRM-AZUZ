@@ -189,7 +189,18 @@ export function FunnelSteps({ etapas, onClickEtapa }: { etapas: EtapaFunilVisual
                 </span>
               </div>
               <div className="funnel-step-track">
-                <div className="funnel-step-fill" style={{ width: `${largura}%` }} />
+                {/*
+                  A cor da barra diz ONDE SE PERDE GENTE, e é a única coisa que este gráfico existe
+                  pra mostrar. Seis barras do mesmo tom são seis números que precisam ser lidos um
+                  a um; com a queda marcada em cor, o gargalo salta antes da leitura.
+                  A primeira etapa não tem anterior, então não tem queda: fica neutra em vez de
+                  fingir uma retenção de 100%.
+                */}
+                <div
+                  className="funnel-step-fill"
+                  data-retencao={i === 0 ? "inicio" : percentualAnterior >= 70 ? "boa" : percentualAnterior >= 40 ? "atencao" : "critica"}
+                  style={{ width: `${largura}%` }}
+                />
               </div>
             </Wrapper>
             {i > 0 ? (
