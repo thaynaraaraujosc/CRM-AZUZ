@@ -3,21 +3,21 @@
 import { useEffect, useState } from "react";
 
 import { CabecalhoCategoria } from "@/components/configuracoes/CabecalhoCategoria";
+import { IconInstagram, IconWhatsApp } from "@/components/icons";
 
 type Resposta = { link: string; temNumero: boolean; numero: string | null };
 
 /**
  * Onde a pessoa pega o link que faz o rastreamento do Google funcionar.
  *
- * POR QUE ISTO É UM LINK E NÃO UM SCRIPT. O código do clique do Google só existe no navegador, na
- * página em que a pessoa caiu — e quando ela vai pro WhatsApp, esse código morre. Alguma coisa
- * precisa existir no site pra segurar essa informação. Entre pedir pra instalar um script e pedir
- * pra trocar o endereço de um botão, a segunda é a única que a maioria dos clientes vai conseguir
- * fazer: trocar link de botão é coisa de Wix e WordPress, sem programador e sem risco de quebrar
- * a página.
+ * POR QUE É UM LINK E NÃO UM SCRIPT. O código do clique do Google só existe no navegador, na página
+ * em que a pessoa caiu — e quando ela vai pro WhatsApp, esse código morre. Alguma coisa precisa
+ * existir no site pra segurar a informação. Entre pedir pra instalar um script e pedir pra trocar o
+ * endereço de um botão, só a segunda a maioria dos clientes vai conseguir fazer.
  *
- * A TELA DIZ O QUE JÁ FUNCIONA SEM NADA. A parte da Meta não precisa deste link nem de coisa
- * nenhuma, e quem chega aqui precisa saber disso antes de achar que tem trabalho a fazer.
+ * A TELA É UMA COMPARAÇÃO, e a ordem é essa de propósito: primeiro o que JÁ FUNCIONA sem fazer
+ * nada, depois o que exige uma ação. Quem abre esta tela precisa sair sabendo que metade do
+ * trabalho já está feita, senão a impressão é de que nada funciona até ela configurar tudo.
  */
 export function RastreamentoSecao() {
   const [dados, setDados] = useState<Resposta | null>(null);
@@ -43,66 +43,91 @@ export function RastreamentoSecao() {
   }
 
   return (
-    <>
+    <div className="config-secao">
       <CabecalhoCategoria
         titulo="Rastreamento de anúncios"
-        descricao="Saber de qual anúncio veio cada lead, e devolver a venda pra plataforma."
+        descricao="Saber de qual anúncio veio cada lead — e devolver a venda para a plataforma, para que ela procure mais gente parecida."
       />
 
-      <div className="config-bloco">
-        <h4>Anúncios da Meta</h4>
-        <p className="hint">
-          Já está funcionando, e não precisa de nada. Quando alguém clica num anúncio do Facebook ou
-          do Instagram e cai na sua conversa, a Meta manda junto de qual anúncio a pessoa veio — e o
-          CRM guarda isso no contato automaticamente.
-        </p>
+      <div className="rastreio-canais">
+        <div className="rastreio-canal rastreio-canal-pronto">
+          <div className="rastreio-canal-h">
+            <span className="rastreio-canal-icones">
+              <IconWhatsApp width={18} height={18} />
+              <IconInstagram width={18} height={18} />
+            </span>
+            <span className="rastreio-selo rastreio-selo-ativo">Funcionando</span>
+          </div>
+          <h4>Anúncios da Meta</h4>
+          <p>
+            Não precisa de nada. Quando alguém clica num anúncio do Facebook ou do Instagram e cai na
+            sua conversa, a Meta informa de qual anúncio a pessoa veio, e o CRM guarda no contato.
+          </p>
+        </div>
+
+        <div className="rastreio-canal">
+          <div className="rastreio-canal-h">
+            <span className="rastreio-canal-icones rastreio-google">G</span>
+            <span className="rastreio-selo">Um passo</span>
+          </div>
+          <h4>Anúncios do Google</h4>
+          <p>
+            A pessoa clica no anúncio, passa pelo seu site e só depois vai pro WhatsApp. Nesse pulo a
+            informação do anúncio se perde — a menos que o botão do site aponte para o seu link.
+          </p>
+        </div>
       </div>
 
       <div className="config-bloco">
-        <h4>Anúncios do Google</h4>
-        <p className="hint">
-          O Google é diferente: a pessoa clica no anúncio, passa pelo seu site, e só depois vai pro
-          WhatsApp. Nesse pulo a informação do anúncio se perde. Pra não perder, o botão de WhatsApp
-          do site precisa apontar pra este endereço em vez de apontar direto pro WhatsApp:
-        </p>
-
+        <p className="config-bloco-titulo">Seu link de rastreamento</p>
         {dados ? (
           <>
-            <div className="field">
-              <label htmlFor="link-rastreado">Seu link</label>
-              <input id="link-rastreado" className="input" readOnly value={dados.link} onFocus={(e) => e.currentTarget.select()} />
-            </div>
-            <div className="config-acoes">
+            <div className="rastreio-link-linha">
+              <input
+                id="link-rastreado"
+                className="input rastreio-link-campo"
+                readOnly
+                value={dados.link}
+                aria-label="Seu link de rastreamento"
+                onFocus={(e) => e.currentTarget.select()}
+              />
               <button type="button" className="btn primary" onClick={() => void copiar()}>
-                {copiado ? "Copiado!" : "Copiar link"}
+                {copiado ? "Copiado" : "Copiar"}
               </button>
             </div>
-
-            {!dados.temNumero ? (
-              <p className="hint" style={{ color: "var(--danger)" }}>
-                Conecte um WhatsApp antes de usar este link. Sem número conectado ele não tem pra
-                onde mandar quem clicar.
+            {dados.temNumero ? (
+              <p className="hint rastreio-nota">
+                Quem clicar cai no seu WhatsApp <strong>{dados.numero}</strong>, exatamente como
+                antes. A diferença é que o CRM passa a saber de qual campanha a pessoa veio.
               </p>
             ) : (
-              <p className="hint">
-                Quem clicar cai no seu WhatsApp ({dados.numero}), como antes. A diferença é que o CRM
-                passa a saber de qual campanha a pessoa veio.
+              <p className="hint rastreio-nota rastreio-nota-alerta">
+                Conecte um WhatsApp antes de usar este link. Sem número conectado ele não tem para
+                onde mandar quem clicar.
               </p>
             )}
           </>
         ) : (
-          <p className="hint">Carregando…</p>
+          <p className="hint rastreio-nota">Carregando…</p>
         )}
       </div>
 
-      <div className="config-bloco admin-bloco-info">
-        <h4>Onde colar</h4>
-        <p className="hint">
-          No site, procure o botão ou link de WhatsApp e troque o endereço dele por esse. No Wix, no
-          WordPress e no Shopify isso é um campo de texto na edição do botão — não precisa mexer em
-          código. Se você tiver mais de um botão na página, troque todos.
-        </p>
+      <div className="config-bloco rastreio-passos">
+        <p className="config-bloco-titulo">Como instalar, em três passos</p>
+        <ol>
+          <li>
+            <strong>Copie o link acima.</strong>
+          </li>
+          <li>
+            <strong>Abra o editor do seu site</strong> e encontre o botão ou link de WhatsApp.
+          </li>
+          <li>
+            <strong>Troque o endereço dele por esse.</strong> No Wix, no WordPress e no Shopify isso
+            é um campo de texto na edição do botão — não é preciso mexer em código. Se houver mais de
+            um botão na página, troque todos.
+          </li>
+        </ol>
       </div>
-    </>
+    </div>
   );
 }

@@ -94,9 +94,16 @@ export function IconRelatorios(props: Props) {
   );
 }
 
+/**
+ * O raio das automações, preenchido e amarelo.
+ *
+ * Era um contorno na cor do texto, igual a todos os outros ícones do menu. Automação é a parte do
+ * produto que trabalha sozinha, e o amarelo dá a ela a única marca de cor do menu — o que ajuda a
+ * achar o item de relance, sem precisar ler.
+ */
 export function IconAutomacoes(props: Props) {
   return (
-    <svg {...base} {...props}>
+    <svg viewBox="0 0 24 24" fill="#F5B301" {...props}>
       <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" />
     </svg>
   );
@@ -218,18 +225,46 @@ export function IconCalendar(props: Props) {
 
 /* --- Marcas de canal (usam as cores oficiais das plataformas) --- */
 
+/**
+ * A marca do WhatsApp, e não uma bolha verde qualquer.
+ *
+ * Era um balão liso sem o fone dentro: lido de longe parecia um ícone genérico de mensagem, e o
+ * canal mais importante do produto merecia ser reconhecido de imediato. O fone é o que faz a marca
+ * ser a marca.
+ */
 export function IconWhatsApp(props: Props) {
   return (
     <svg viewBox="0 0 24 24" fill="#25D366" {...props}>
-      <path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.3c1.4.8 3.1 1.3 4.8 1.3 5.5 0 10-4.5 10-10S17.5 2 12 2z" />
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.83 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.7 8.23-8.24 8.23Z" />
+      <path d="M16.56 14.13c-.25-.13-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.14.16-.29.18-.53.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.71-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.35-.77-1.84-.2-.48-.41-.42-.56-.43h-.48c-.16 0-.43.06-.65.31-.22.24-.86.84-.86 2.05s.88 2.38 1 2.54c.12.17 1.73 2.65 4.2 3.71.59.25 1.04.4 1.4.52.59.19 1.12.16 1.55.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.11-.22-.17-.47-.29Z" />
     </svg>
   );
 }
 
+/**
+ * A marca do Instagram.
+ *
+ * Era um quadrado rosa arredondado, sem lente e sem flash: não era o logo, era a silhueta dele. O
+ * degradê é da própria marca (é assim que o Instagram se apresenta), e é a única exceção à regra do
+ * produto de evitar degradê — aqui ele não é enfeite nosso, é a identidade de outra empresa.
+ *
+ * O id do degradê é fixo de propósito: o ícone aparece em vários lugares da mesma página, e gerar
+ * um id novo a cada renderização encheria o documento de definições idênticas.
+ */
 export function IconInstagram(props: Props) {
   return (
-    <svg viewBox="0 0 24 24" fill="#E1306C" {...props}>
-      <rect x="2" y="2" width="20" height="20" rx="6" />
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <defs>
+        <linearGradient id="azuz-ig" x1="2" y1="22" x2="22" y2="2" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#FEDA75" />
+          <stop offset="0.35" stopColor="#FA7E1E" />
+          <stop offset="0.6" stopColor="#D62976" />
+          <stop offset="1" stopColor="#962FBF" />
+        </linearGradient>
+      </defs>
+      <rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.4" stroke="url(#azuz-ig)" strokeWidth="2" />
+      <circle cx="12" cy="12" r="4.1" stroke="url(#azuz-ig)" strokeWidth="2" />
+      <circle cx="17.3" cy="6.7" r="1.3" fill="url(#azuz-ig)" />
     </svg>
   );
 }
