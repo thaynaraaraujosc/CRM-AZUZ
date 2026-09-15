@@ -286,8 +286,13 @@
      faz uma interface parecer template, e glow é exatamente a "sensação tecnológica barata" que o
      produto não quer. O ciano passa a apontar pro azul da marca (accent único) e o glow vira
      `none`: quem já referencia esses nomes continua funcionando, só deixa de brilhar. */
-  --cyan: #2e6bff;
-  --cyan-soft: rgba(46, 107, 255, 0.1);
+  /* CIANO DE VERDADE. O token existia com o mesmo valor do azul, ou seja, nao era ciano nenhum —
+     pedir "usa o ciano" nao mudava nada na tela. Agora sao tres degraus do mesmo tom: a borda
+     forte, o preenchimento claro e o texto legivel sobre ele. */
+  --cyan: #0e9bb8;
+  --cyan-strong: #07758c;
+  --cyan-soft: #e3f6fa;
+  --cyan-soft-2: #f1fbfd;
   --glow-accent: none;
 
   /* Textura do piso (quadriculado de fundo do shell). Precisa de token porque a linha é escura no
@@ -14016,10 +14021,13 @@ button.camp-row:hover {
   border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
 }
+/* Aba inativa tambem e botao: sem corpo ela vira texto e a pessoa nao percebe que ha outras abas
+   pra clicar. Cinza claro em repouso, branco quando selecionada. */
 .config-abas button {
   padding: var(--space-2) var(--space-3);
-  background: none;
-  border: none;
+  background: #f1f2f5;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   border-bottom: 2px solid transparent;
   font-size: 13px;
   font-weight: 600;
@@ -20328,11 +20336,35 @@ table.tbl .name-cell .r {
 
 /* Cada plano muda SUPERFICIE e SOMBRA ao mesmo tempo, e nao so a espessura da borda. Com cinco
    retangulos brancos variando de fio, os niveis liam como um so — que era exatamente a queixa. */
-.amostra-n0 { background: #f5f5f8; box-shadow: none; border: 1px solid transparent; }
-.amostra-n1 { background: #fafafc; border: 1px solid var(--line-soft); box-shadow: none; }
-.amostra-n2 { background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
-.amostra-n3 { background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-md); }
-.amostra-n4 { background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-xl); }
+/* Os planos usam CIANO em degraus: quanto mais alto o nivel, mais forte a borda e mais claro o
+   preenchimento — o objeto vai "subindo" em direcao ao branco enquanto o contorno ganha peso. A
+   cor aqui nao e enfeite: ela e o que deixa a escada legivel de relance, sem ler os rotulos. */
+.amostra-n0 {
+  background: var(--cyan-soft);
+  border: 1px solid var(--cyan-soft);
+  box-shadow: none;
+}
+.amostra-n1 {
+  background: var(--cyan-soft-2);
+  border: 1px solid #bce8f1;
+  box-shadow: none;
+}
+.amostra-n2 {
+  background: #fff;
+  border: 1px solid #8fd8e6;
+  box-shadow: var(--shadow-sm);
+}
+.amostra-n3 {
+  background: #fff;
+  border: 1px solid var(--cyan);
+  box-shadow: var(--shadow-md);
+}
+.amostra-n4 {
+  background: #fff;
+  border: 2px solid var(--cyan-strong);
+  box-shadow: var(--shadow-xl);
+}
+.amostra-plano strong { color: var(--cyan-strong); }
 
 /* -------------------------------------------------- abas */
 .amostra-aba {
