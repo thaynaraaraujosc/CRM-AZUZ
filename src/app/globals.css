@@ -32,8 +32,8 @@
    * um bloco cinza está dizendo "isto contém coisas".
    */
   --navy: #ffffff;
-  --navy-raised: #f1f4fa;
-  --navy-raised-2: #e6ebf5;
+  --navy-raised: #ffffff;
+  --navy-raised-2: #f3f5fa;
   --navy-deep: #ffffff;
   /* Superfície que se destaca por ficar ACIMA das outras. Card sobre coluna, popover sobre
      página. É branca como `--navy`, mas o nome diz a intenção: quem usa este token está dizendo
@@ -51,7 +51,7 @@
      deixa de ser um bloco de cor solto e vira parte de uma moldura. E os painéis brancos ganham
      recorte.
      Pra voltar ao branco é só esta linha: `--canvas: #ffffff`. */
-  --canvas: #0b1533;
+  --canvas: #ffffff;
 
   /* Azul da marca: daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
@@ -73,9 +73,14 @@
      dar referência ao olho. Com a interface inteira em marinho. Menu, tinta, conversa aberta: a
      referência existe, e o tom oficial da marca é o certo.
      Branco sobre #0b1533 fica em 18:1, muito acima do mínimo de 4,5:1. */
-  --acao: #0b1533;
-  --acao-hover: #16224a;
-  --acao-active: #060c1f;
+  /* AÇÃO PRINCIPAL EM AZUL, e não em marinho.
+     O botão principal era marinho quase preto — a mesma cor do texto. Num layout branco isso faz o
+     botão parecer um bloco de texto grosso em vez de a coisa em que se clica. As referências
+     (painéis e telas de plano) usam todas o azul cheio com texto branco, e é o que separa
+     "a ação" de "o conteúdo" sem precisar de mais nada. */
+  --acao: #2e6bff;
+  --acao-hover: #1f4fd8;
+  --acao-active: #1741b8;
   --acao-texto: #ffffff;
 
   /* Bordas organizam, não são protagonistas: mas precisam ser vistas. A 8% ela sumia sobre branco
