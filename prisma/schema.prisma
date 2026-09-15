@@ -93,10 +93,88 @@ model Contato {
   conversas          Conversa[]
   execucoesAutomacao ExecucaoAutomacao[]
 
+  origemDoLead OrigemDoLead?
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
   @@unique([workspaceId, nome])
+}
+
+/// De onde o lead veio, com precisão suficiente pra devolver o desfecho à plataforma de anúncio.
+///
+/// POR QUE ISTO EXISTE. O `origem` do contato é texto escolhido a dedo ("Google Ads", "Instagram")
+/// e serve pra leitura humana. Ele não serve pra nada do que o tráfego precisa: não diz QUAL
+/// campanha, não diz qual anúncio, e principalmente não carrega o CÓDIGO DO CLIQUE — sem o qual o
+/// Google e a Meta não conseguem ligar a venda de volta ao anúncio que a produziu.
+///
+/// O QUE ISTO DESTRAVA. Hoje o anúncio só enxerga até "preencheu formulário" ou "mandou mensagem",
+/// e por isso otimiza pra produzir esse evento barato. Guardando o código do clique grudado no
+/// lead, o CRM pode depois avisar a plataforma "aquele clique virou uma venda de R$ 4.800" — e o
+/// leilão passa a caçar quem compra em vez de quem clica.
+///
+/// TABELA SEPARADA, e não colunas no `Contato`, por três motivos: a maioria dos contatos nunca vai
+/// ter origem rastreada (entrou pela agenda, por indicação, na mão) e engordaria a linha à toa;
+/// são dados de natureza diferente, que nascem juntos e nunca mais mudam; e um dia o mesmo contato
+/// pode ter mais de um toque (viu um anúncio, sumiu, voltou por outro), e aí é só tirar o
+/// `@@unique` daqui em vez de reescrever o `Contato`.
+///
+/// NADA AQUI É ESCRITO PELO NAVEGADOR SEM CONFERÊNCIA. O `workspaceId` vem sempre da sessão ou do
+/// webhook que recebeu o evento, nunca do corpo da requisição: é o mesmo cuidado do resto do CRM.
+model OrigemDoLead {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  contatoId String  @unique
+  contato   Contato @relation(fields: [contatoId], references: [id], onDelete: Cascade)
+
+  /// "google" | "meta". Quem vai receber a conversão de volta. Decide qual API é chamada na
+  /// devolução, e por isso é separado do nome da campanha.
+  plataforma String
+
+  /// O CÓDIGO DO CLIQUE. É a peça central: sem ele a devolução só pode ser feita casando telefone
+  /// ou e-mail, que acerta menos.
+  cliqueId String? @db.Text
+
+  /// Que tipo de código é o de cima: "gclid" e "wbraid"/"gbraid" no Google, "fbclid" e
+  /// "ctwa_clid" na Meta. Eles NÃO são intercambiáveis — cada um entra num campo diferente na hora
+  /// de devolver a conversão, e mandar no campo errado faz a plataforma aceitar e ignorar.
+  tipoDoClique String?
+
+  campanhaId    String?
+  campanhaNome  String?
+  /// Grupo de anúncios (Google) ou conjunto de anúncios (Meta). Mesmo papel, nome diferente.
+  conjuntoId    String?
+  conjuntoNome  String?
+  anuncioId     String?
+  anuncioNome   String?
+  /// Só Google, e só rede de pesquisa: a palavra que a pessoa realmente digitou.
+  palavraChave  String?
+
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmContent  String?
+  utmTerm     String?
+
+  /// Onde a pessoa caiu, quando passou por um site antes de virar conversa.
+  paginaEntrada String? @db.Text
+
+  /// Por onde o CRM ficou sabendo: "formulario" | "whatsapp" | "instagram" | "manual". Guardado
+  /// porque a confiabilidade de cada caminho é diferente, e na hora de explicar um número
+  /// estranho a primeira pergunta é sempre "de onde veio esse dado".
+  caminho String
+
+  /// Tudo que chegou, do jeito que chegou. Parâmetro novo que a plataforma inventar continua
+  /// gravado mesmo sem coluna própria, e um lead mal atribuído pode ser investigado depois em vez
+  /// de virar mistério.
+  bruto Json?
+
+  criadoEm DateTime @default(now())
+
+  @@index([workspaceId, plataforma])
+  @@index([workspaceId, campanhaId])
 }
 
 // Uma "conversa" (thread de atendimento por canal). Nasce sozinha quando chega a primeira
@@ -253,6 +331,7 @@ model Workspace {
   // workspaceId. Nenhuma é consultada a partir do Workspace no código (sempre se busca o modelo
   // filho direto, filtrado por workspaceId): só formalizam a relação nos dois lados do schema.
   contatos              Contato[]
+  origensDeLead         OrigemDoLead[]
   compromissos          Compromisso[]
   tarefaEtapas          TarefaEtapa[]
   tarefaCards           TarefaCard[]
