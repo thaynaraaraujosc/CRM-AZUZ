@@ -177,6 +177,44 @@ model OrigemDoLead {
   @@index([workspaceId, campanhaId])
 }
 
+/// Um clique em anúncio que ainda não virou lead.
+///
+/// A PONTE ENTRE O SITE E A CONVERSA. O código do clique do Google só existe no navegador, na
+/// página em que a pessoa caiu. Quando ela sai dali e vai pro WhatsApp, esse código morre: a
+/// conversa começa do zero, sem nenhuma ligação com o anúncio que a trouxe. É o buraco que faz o
+/// Google enxergar "alguém clicou no botão" e nunca "aquele clique virou uma venda de R$ 4.800".
+///
+/// COMO A PONTE FUNCIONA. O botão de WhatsApp do site aponta pro CRM em vez de apontar direto pro
+/// WhatsApp. O CRM guarda aqui o que veio do anúncio, inventa um código curto, e manda a pessoa
+/// pro WhatsApp com esse código dentro da mensagem pronta. Quando a mensagem chega, o CRM lê o
+/// código, acha esta linha e transforma tudo numa `OrigemDoLead` colada no contato.
+///
+/// POR QUE É TABELA SEPARADA E TEMPORÁRIA. No instante do clique não existe lead nenhum: não há
+/// nome, não há telefone, não há contato. Só existe um clique à espera. A maioria destas linhas
+/// nunca vira nada (a pessoa clicou e desistiu), e por isso elas expiram sozinhas em vez de
+/// engordar o banco para sempre.
+model CliqueRastreado {
+  id          String    @id
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  /// O código curto que viaja dentro da mensagem pronta do WhatsApp. Curto de propósito: ele
+  /// aparece pra quem vai mandar a mensagem, e um código comprido convida a pessoa a apagar.
+  codigo String @unique
+
+  /// A origem inteira, do jeito que `lerOrigemDaUrl` devolveu. Fica como JSON porque é transitória:
+  /// só vira coluna de verdade quando o clique encontra um lead e vira `OrigemDoLead`.
+  dados Json
+
+  /// Quando o código foi encontrado numa mensagem. Preenchido uma vez só: o mesmo código não pode
+  /// atribuir dois leads diferentes, senão uma mensagem encaminhada roubaria a origem de outra.
+  consumidoEm DateTime?
+
+  criadoEm DateTime @default(now())
+
+  @@index([workspaceId, criadoEm])
+}
+
 // Uma "conversa" (thread de atendimento por canal). Nasce sozinha quando chega a primeira
 // mensagem de um contato novo por um webhook conectado (WhatsApp oficial, WhatsApp via QR/Baileys
 // ou Instagram). As mensagens em si continuam em `MensagemExtra`, casadas pelo mesmo `nome`: essa
@@ -332,6 +370,7 @@ model Workspace {
   // filho direto, filtrado por workspaceId): só formalizam a relação nos dois lados do schema.
   contatos              Contato[]
   origensDeLead         OrigemDoLead[]
+  cliquesRastreados     CliqueRastreado[]
   compromissos          Compromisso[]
   tarefaEtapas          TarefaEtapa[]
   tarefaCards           TarefaCard[]

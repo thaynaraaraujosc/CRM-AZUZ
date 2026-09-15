@@ -52,6 +52,11 @@ const PREFIXOS_PUBLICOS = [
   // A defesa mora dentro da rota e não some por estar aqui: id aleatório de 16 bytes, assinatura
   // HMAC do id (`?a=`) conferida antes de tocar no banco, e validade de 15 minutos.
   "/api/anexos/publico",
+
+  // O link rastreado que fica no botão de WhatsApp do site do cliente. Quem clica nele é um
+  // visitante do site de outra empresa: não tem conta no CRM, nunca vai ter, e exigir sessão
+  // transformaria o botão de WhatsApp numa tela de login. É público por definição.
+  "/ir",
 ];
 
 /** Caminhos exatos: sem nada abaixo deles. */

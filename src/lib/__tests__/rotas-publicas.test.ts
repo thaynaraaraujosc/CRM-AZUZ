@@ -121,6 +121,10 @@ describe("anexo assinado que os canais buscam de fora", () => {
     // imagem: a mensagem de mídia não chegava, e sem erro em lugar nenhum, porque do lado do CRM
     // o envio tinha sido aceito.
     expect(ehRotaPublica("/api/anexos/publico/abc123.jpg")).toBe(true);
+    // O link rastreado do botão de WhatsApp. Quem clica é visitante do site de outra empresa: não
+    // tem conta no CRM e nunca vai ter. Exigir sessão transformaria o botão numa tela de login,
+    // e o lead se perderia antes de existir.
+    expect(ehRotaPublica("/ir/clinica-aurora")).toBe(true);
     expect(ehRotaPublica("/api/anexos/publico/abc123")).toBe(true);
   });
 
