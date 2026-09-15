@@ -16,6 +16,7 @@ import { WhatsAppSecao } from "@/components/configuracoes/WhatsAppSecao";
 import { InstagramSecao } from "@/components/configuracoes/InstagramSecao";
 import { AzuzIaSecao } from "@/components/configuracoes/AzuzIaSecao";
 import { IntegracoesSecao } from "@/components/configuracoes/IntegracoesSecao";
+import { RastreamentoSecao } from "@/components/configuracoes/RastreamentoSecao";
 import { ImportacaoSecao } from "@/components/configuracoes/ImportacaoSecao";
 import { PlanoSecao } from "@/components/configuracoes/PlanoSecao";
 
@@ -80,6 +81,7 @@ function ConfiguracoesConteudo() {
             {categoriaAtiva === "whatsapp" ? <WhatsAppSecao /> : null}
             {categoriaAtiva === "instagram" ? <InstagramSecao /> : null}
             {categoriaAtiva === "azuz-ia" ? <AzuzIaSecao /> : null}
+            {categoriaAtiva === "rastreamento" ? <RastreamentoSecao /> : null}
             {categoriaAtiva === "integracoes" ? <IntegracoesSecao /> : null}
             {categoriaAtiva === "importacao" ? <ImportacaoSecao /> : null}
             {categoriaAtiva === "plano" ? <PlanoSecao /> : null}

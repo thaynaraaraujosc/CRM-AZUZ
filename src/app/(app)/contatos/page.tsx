@@ -12,6 +12,7 @@ import { useTarefas } from "@/lib/tarefas-context";
 import { PAISES } from "@/lib/configuracoes/mock";
 import { IconClose, IconSearch, IconWhatsApp } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
+import { OrigemDoLead } from "@/components/contatos/OrigemDoLead";
 import { RenomearOrigem } from "@/components/contatos/RenomearOrigem";
 import { Timeline } from "@/components/timeline";
 import { gerarLinhaDoTempo } from "@/lib/timeline";
@@ -541,6 +542,8 @@ function ContatosPageInner() {
                 Fechar <IconClose width={11} height={11} />
               </span>
             </div>
+
+            {contato.id ? <OrigemDoLead contatoId={contato.id} /> : null}
 
             {confirmandoExclusao ? (
               <div className="field" style={{ background: "var(--danger-soft)", borderRadius: "var(--radius-md)", padding: 12, margin: "0 17px 14px" }}>

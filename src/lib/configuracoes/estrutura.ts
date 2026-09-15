@@ -25,6 +25,7 @@ export type CategoriaId =
   | "whatsapp"
   | "instagram"
   | "integracoes"
+  | "rastreamento"
   | "plano";
 
 type IconeCategoria = ComponentType<SVGProps<SVGSVGElement>>;
@@ -90,6 +91,7 @@ export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [
          Instagram, caixa de e-mail competiria com o Gmail que o cliente já tem aberto, e enviar em
          nome do domínio de cada cliente exige SPF/DKIM/DMARC por cliente. Errar isso manda o
          e-mail dele pro spam, e a culpa cai no CRM. */
+      { id: "rastreamento", label: "Rastreamento de anúncios", descricao: "De qual anúncio veio cada lead.", Icon: IconSwitch },
       { id: "integracoes", label: "Outras integrações", descricao: "Conexões com outras ferramentas.", Icon: IconSwitch },
     ],
   },
