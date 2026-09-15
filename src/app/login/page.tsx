@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { IconEntrar } from "@/components/icons";
+import { ROTA_INICIAL } from "@/lib/rota-inicial";
 
 /**
  * Só deixa voltar pra um endereço DENTRO do CRM.
@@ -78,7 +79,7 @@ function LoginForm() {
       router.push(callbackUrl);
     } else {
       const sessao = await fetch("/api/auth/session").then((r) => r.json());
-      router.push(sessao?.user?.superAdmin ? "/admin" : "/inicio");
+      router.push(sessao?.user?.superAdmin ? "/admin" : ROTA_INICIAL);
     }
     router.refresh();
   }

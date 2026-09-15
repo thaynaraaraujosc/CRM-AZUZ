@@ -5,13 +5,31 @@
    ========================================================================== */
 
 :root {
-  /* Quatro níveis, com degraus grandes o bastante pra serem percebidos. Antes o piso, o corpo do
-     card e a área interna ficavam dentro de 2% de luminosidade um do outro. Tecnicamente
-     diferentes, visualmente o mesmo plano. */
-  --navy: #ffffff;
-  --navy-raised: #f5f6f8;
-  --navy-raised-2: #eceef2;
-  --navy-deep: #ffffff;
+  /*
+   * A ESCADA DE SUPERFÍCIES, e por que ela mudou.
+   *
+   * Estava assim: piso branco, bloco quase branco, cartão branco de novo. Três degraus dentro de
+   * 4% de luminosidade — tecnicamente diferentes, visualmente o mesmo plano. O resultado era uma
+   * tela em que nada se destaca de nada, e a impressão de "tudo da mesma cor".
+   *
+   * A única parte do CRM que não tinha esse problema era o funil, e a razão é que ali existe um
+   * degrau de verdade: a coluna é cinza, o cartão é branco e tem sombra. O cartão FLUTUA sobre a
+   * coluna, e é isso que dá a sensação de profundidade.
+   *
+   * Agora essa mesma receita vale pro sistema inteiro:
+   *
+   *   --navy          piso do conteúdo    cinza claro   (era branco)
+   *   --navy-raised   caixa/seção/coluna  cinza médio   (era quase branco)
+   *   --surface-elevated  cartão, botão, campo   BRANCO puro, com sombra
+   *
+   * Regra de leitura, e ela é a decisão de design: o que AGRUPA é cinza; o que se pode CLICAR,
+   * LER ou EDITAR é branco e flutua. Um bloco branco sobre cinza está dizendo "isto é uma coisa";
+   * um bloco cinza está dizendo "isto contém coisas".
+   */
+  --navy: #eef1f6;
+  --navy-raised: #e4e9f1;
+  --navy-raised-2: #d9e0ea;
+  --navy-deep: #eef1f6;
   /* Superfície que se destaca por ficar ACIMA das outras. Card sobre coluna, popover sobre
      página. É branca como `--navy`, mas o nome diz a intenção: quem usa este token está dizendo
      "isto flutua", e por isso vem acompanhado de sombra. */
@@ -429,17 +447,20 @@ table {
 
 /* ---------------- App shell ---------------- */
 
-/* Reestruturação visual (redesign): "painéis flutuantes" com respiro entre si sobre o `--canvas`,
-   em vez do layout anterior (sidebar e área principal grudadas, só separadas por uma borda de 1px).
-   `gap`+`padding` no `.shell` cria o respiro; sidebar e `.main` viram cartões com cantos
-   arredondados e sombra próprios, cada um a sua própria "caixinha". */
+/* PAINÉIS ENCOSTADOS, E NÃO FLUTUANDO.
+   O desenho anterior separava menu e conteúdo com um vão sobre o `--canvas`, e cada um virava um
+   cartão arredondado. Isso custa duas coisas: o vão come largura útil em tela pequena, e a moldura
+   escura em volta compete com o conteúdo justamente numa ferramenta em que se passa o dia inteiro.
+   Agora os dois ocupam a janela inteira e a separação é feita por SUPERFÍCIE e uma linha de 1px —
+   o menu é levemente mais recuado que o corpo. É o mesmo princípio de um editor ou de um cliente de
+   e-mail: a hierarquia se lê pelo tom, sem precisar de espaço vazio pra marcar a divisa. */
 .shell {
   position: relative;
   display: flex;
   height: 100vh;
   overflow: hidden;
-  gap: var(--space-4);
-  padding: var(--space-4);
+  gap: 0;
+  padding: 0;
   background: var(--canvas);
 }
 
@@ -484,9 +505,10 @@ table {
   width: 216px;
   flex: 0 0 auto;
   background: var(--navy-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
+  border: none;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
   color: var(--ink);
   padding: var(--space-5) var(--space-4);
   display: flex;
@@ -610,7 +632,11 @@ table {
   gap: var(--space-2);
   padding: var(--space-2) var(--space-2);
   border-radius: var(--radius-md);
-  color: var(--text-muted);
+  /* O item de primeiro nível é o mais escuro do menu, e o subitem (um funil dentro de "Funil
+     comercial") fica claramente mais claro. Antes eram 64% e 54% de opacidade — dez pontos, que o
+     olho não separa: os dois níveis liam como um só, e a lista parecia uma sequência plana em vez
+     de uma árvore. */
+  color: var(--ink-nome);
   font-size: 13px;
   font-weight: var(--fw-medium);
   letter-spacing: var(--track-snug);
@@ -807,11 +833,9 @@ table {
   display: flex;
   flex-direction: column;
   background: var(--navy);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  /* Corta `.app-header`/`.content` nos cantos arredondados do painel. Nenhum dos dois rola sozinho
-     (quem rola é o `.content` por dentro, via `overflow: auto` próprio), então não afeta scroll. */
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -19915,5 +19939,59 @@ table.tbl .name-cell .r {
   .kpi:hover {
     transform: none;
     transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------ contato: painel lateral
+   O detalhe do contato era uma seção no FIM da página. Clicar numa linha no meio de uma lista longa
+   não mudava nada na tela visível, e cabia à pessoa descobrir que havia algo lá embaixo — coisa que
+   quem acabou de comprar o CRM não vai fazer. Agora ele entra pela direita, sobre a lista. */
+.contato-veu {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 21, 51, 0.32);
+  z-index: 60;
+  animation: contato-veu-entra 0.16s ease-out;
+}
+
+.contato-painel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(460px, 100vw);
+  margin-top: 0;
+  border: none;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--surface-elevated);
+  box-shadow: -12px 0 32px rgba(11, 21, 51, 0.18);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 61;
+  animation: contato-painel-entra 0.18s ease-out;
+}
+
+/* O cabeçalho acompanha a rolagem: com a ficha aberta e rolada, o nome de quem se está lendo e o
+   botão de fechar saíam da tela. */
+.contato-painel .open-conv-h {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+@keyframes contato-veu-entra {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes contato-painel-entra {
+  from { transform: translateX(16px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contato-veu,
+  .contato-painel {
+    animation: none;
   }
 }

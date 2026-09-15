@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ROTA_INICIAL } from "@/lib/rota-inicial";
 
 /**
  * Ações de "resolver o acesso de alguém" que qualquer tela do painel de admin que lista membros
@@ -30,7 +31,7 @@ export function useAcoesMembro() {
     try {
       const resposta = await fetch(`/api/admin/membros/${membroId}/impersonar`, { method: "POST" }).then((r) => r.json());
       await signIn("impersonar", { membroId: resposta.membroId, token: resposta.token, redirect: false });
-      router.push("/inicio");
+      router.push(ROTA_INICIAL);
       router.refresh();
     } finally {
       setCarregandoId(null);

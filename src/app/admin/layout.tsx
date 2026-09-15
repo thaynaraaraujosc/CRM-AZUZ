@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { SessionProvider } from "@/components/session-provider";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { ROTA_INICIAL } from "@/lib/rota-inicial";
 
 /**
  * Layout do painel de super-admin. Fora do grupo `(app)` de propósito: aquele layout monta uma
@@ -13,7 +14,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
  */
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const sessao = await auth();
-  if (!sessao?.user.superAdmin) redirect("/inicio");
+  if (!sessao?.user.superAdmin) redirect(ROTA_INICIAL);
 
   return (
     <SessionProvider>

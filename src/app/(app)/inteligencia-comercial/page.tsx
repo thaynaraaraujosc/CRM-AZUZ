@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ROTA_INICIAL } from "@/lib/rota-inicial";
 
 /**
  * A Visão geral foi incorporada à página "Início". Não faz sentido ter
@@ -12,7 +13,7 @@ import { useRouter } from "next/navigation";
 export default function InteligenciaComercialRedirect() {
   const router = useRouter();
   useEffect(() => {
-    router.replace("/inicio");
+    router.replace(ROTA_INICIAL);
   }, [router]);
   return null;
 }

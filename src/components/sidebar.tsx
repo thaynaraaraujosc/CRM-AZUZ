@@ -24,7 +24,6 @@ import {
   IconContatos,
   IconDoc,
   IconEquipe,
-  IconInicio,
   IconPipeline,
   IconRelatorios,
   IconSparkle,
@@ -57,7 +56,6 @@ export const gestaoAtividadeItens: NavEntry[] = [
 const gestaoAtividadeHrefs = new Set(gestaoAtividadeItens.map((i) => i.href));
 
 export const navEntries: NavEntry[] = [
-  { href: "/inicio", label: "Início", Icon: IconInicio },
   // Duas caixas de entrada, uma por canal, e não mais uma só chamada "Conversas".
   //
   // Elas estavam juntas, e a mistura tinha um custo que só apareceu com as automações: quem atende

@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { ehRotaPublica } from "@/lib/rotas-publicas";
 import { decidirAcesso } from "@/lib/assinatura/acesso";
 import { statusDaAssinatura } from "@/lib/assinatura/status-cache";
+import { ROTA_INICIAL } from "@/lib/rota-inicial";
 
 /** Módulo do CRM que cada rota pertence, pro bloqueio de permissão (item 4 do pedido: "se eu
  * restringir Formulários/Automações/Configurações, o membro realmente não pode mexer"). Checa só
@@ -49,7 +50,7 @@ export default async function proxy(request: NextRequest) {
   // autenticado, só não tem permissão pra essa área).
   const rotaDeAdmin = pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/api/admin/");
   if (rotaDeAdmin && !sessao.user.superAdmin) {
-    return NextResponse.redirect(new URL("/inicio", request.url));
+    return NextResponse.redirect(new URL(ROTA_INICIAL, request.url));
   }
 
   /*
@@ -93,7 +94,7 @@ export default async function proxy(request: NextRequest) {
     const rotaBase = "/" + pathname.split("/")[1];
     const permissaoNecessaria = ROTA_PERMISSAO[rotaBase];
     if (permissaoNecessaria && !sessao.user.permissoes.includes(permissaoNecessaria)) {
-      return NextResponse.redirect(new URL("/inicio", request.url));
+      return NextResponse.redirect(new URL(ROTA_INICIAL, request.url));
     }
   }
 

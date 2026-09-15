@@ -7,6 +7,7 @@ import Link from "next/link";
 
 import { PLANOS } from "@/lib/assinatura/planos";
 import { motivoDoBloqueio } from "@/lib/assinatura/acesso";
+import { ROTA_INICIAL } from "@/lib/rota-inicial";
 
 type FormaPagamento = "CREDIT_CARD" | "PIX" | "BOLETO";
 
@@ -51,7 +52,7 @@ export default function AssinaturaPage() {
   // Assinatura já ativa: não faz sentido continuar nesta tela. Acontece quando o pagamento é
   // confirmado numa aba e a pessoa volta pra esta em outra.
   useEffect(() => {
-    if (status === "ativa") router.replace("/inicio");
+    if (status === "ativa") router.replace(ROTA_INICIAL);
   }, [status, router]);
 
   async function pagar(e: FormEvent) {
@@ -88,7 +89,7 @@ export default function AssinaturaPage() {
       // dois casos, quem decide se libera é o servidor, não esta tela.
       const novo = dados?.assinatura?.status ?? null;
       setStatus(novo);
-      if (novo === "ativa") router.replace("/inicio");
+      if (novo === "ativa") router.replace(ROTA_INICIAL);
     } catch {
       setErro("Falha de conexão. Tente de novo em instantes.");
     } finally {

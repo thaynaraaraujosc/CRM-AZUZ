@@ -495,8 +495,16 @@ function ContatosPageInner() {
           </div>
         </div>
 
+        {/*
+          PAINEL LATERAL, e não uma seção no fim da página.
+          Antes o detalhe do contato era renderizado ABAIXO da tabela: clicar numa linha no meio de
+          uma lista longa não mudava nada na tela visível, e a pessoa precisava descobrir sozinha
+          que havia algo lá embaixo. Quem compra o CRM não vai descobrir. O véu escurece a lista e
+          fecha ao clique, que é o comportamento que todo mundo já espera de um painel.
+        */}
+        {contato ? <div className="contato-veu" onClick={() => setSelecionado(null)} aria-hidden="true" /> : null}
         {contato ? (
-          <section className="open-conv">
+          <section className="open-conv contato-painel" role="dialog" aria-label={`Contato ${contato.nome}`}>
             <div className="open-conv-h">
               <div className="avatar">{contato.initials}</div>
               <div>

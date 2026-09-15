@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ROTA_INICIAL } from "@/lib/rota-inicial";
 
 /**
  * Página não encontrada, com a cara do produto.
@@ -15,7 +16,7 @@ export default function NaoEncontrada() {
       <p className="pagina-erro-texto">
         O endereço pode ter mudado, ou o link que te trouxe até aqui está desatualizado.
       </p>
-      <Link className="btn" href="/inicio">
+      <Link className="btn" href={ROTA_INICIAL}>
         Voltar para o início
       </Link>
     </main>
