@@ -452,6 +452,7 @@ export function KpiCard({
   delta,
   formula,
   href,
+  tom,
 }: {
   label: string;
   value: string;
@@ -460,6 +461,16 @@ export function KpiCard({
   /** Fórmula exibida no tooltip nativo (title) ao passar o mouse. */
   formula?: string;
   href?: string;
+  /**
+   * A cor do quadro, e ela precisa SIGNIFICAR alguma coisa.
+   *
+   * `acento` é o indicador que a tela existe pra mostrar (receita, conversão, total); `perda` é o
+   * número que dói (negócios perdidos, motivo de perda). O resto fica branco.
+   *
+   * Pintar todos de azul seria o mesmo que não pintar nenhum: se tudo é destaque, nada é. Por isso
+   * o padrão é branco e a cor é exceção.
+   */
+  tom?: "acento" | "perda";
 }) {
   const conteudo = (
     <>
@@ -476,7 +487,7 @@ export function KpiCard({
     return (
       <Link
         href={href}
-        className="card kpi kpi-clickable"
+        className={`card kpi kpi-clickable${tom ? ` kpi-${tom}` : ""}`}
         title={title}
         style={{ display: "block", textDecoration: "none", cursor: "pointer" }}
       >
@@ -486,7 +497,7 @@ export function KpiCard({
   }
 
   return (
-    <div className="card kpi" title={title}>
+    <div className={`card kpi${tom ? ` kpi-${tom}` : ""}`} title={title}>
       {conteudo}
     </div>
   );

@@ -18,18 +18,23 @@
    *
    * Agora essa mesma receita vale pro sistema inteiro:
    *
-   *   --navy          piso do conteúdo    cinza claro   (era branco)
-   *   --navy-raised   caixa/seção/coluna  cinza médio   (era quase branco)
-   *   --surface-elevated  cartão, botão, campo   BRANCO puro, com sombra
+   *   --navy              piso do conteúdo        BRANCO — é a superfície de trabalho
+   *   --navy-raised       caixa/seção/coluna      cinza claro, só pra AGRUPAR
+   *   --surface-elevated  cartão, botão, campo    branco, com sombra
+   *
+   * A primeira tentativa deixou o piso cinza também, e o resultado foi pior que o problema: sem
+   * branco nenhum a tela inteira virou uma superfície fosca só, e o produto envelheceu dez anos.
+   * O branco é o que dá a sensação de limpo e atual; o cinza serve pra dizer "isto aqui é um
+   * grupo", e não pra cobrir a tela.
    *
    * Regra de leitura, e ela é a decisão de design: o que AGRUPA é cinza; o que se pode CLICAR,
    * LER ou EDITAR é branco e flutua. Um bloco branco sobre cinza está dizendo "isto é uma coisa";
    * um bloco cinza está dizendo "isto contém coisas".
    */
-  --navy: #eef1f6;
-  --navy-raised: #e4e9f1;
-  --navy-raised-2: #d9e0ea;
-  --navy-deep: #eef1f6;
+  --navy: #ffffff;
+  --navy-raised: #f1f4fa;
+  --navy-raised-2: #e6ebf5;
+  --navy-deep: #ffffff;
   /* Superfície que se destaca por ficar ACIMA das outras. Card sobre coluna, popover sobre
      página. É branca como `--navy`, mas o nome diz a intenção: quem usa este token está dizendo
      "isto flutua", e por isso vem acompanhado de sombra. */
@@ -696,23 +701,37 @@ table {
   padding: var(--space-2);
 }
 
+/* Passar o mouse ACENDE o item em branco, com sombra — em vez de escurecer num cinza a mais.
+   O menu já é levemente cinza, então o branco é o que sobe; um cinza sobre cinza não se percebe,
+   e era o que fazia a navegação inteira parecer sem resposta ao toque. */
 .nav-item:hover {
-  background: var(--surface-active);
+  background: var(--surface-elevated);
   color: var(--ink);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Selecionado sobre o marinho: branco cheio, peso maior e um véu claro por baixo. A distância pro
    inativo é de tinta E de peso, não só de fundo: é o que permite achar o item ativo de relance
    numa lista de doze. A barra azul da esquerda (`::before`) continua sendo a marca principal. */
+/* O item ativo é AZUL, não branco.
+   Era branco com peso maior — o mesmo branco do hover, e por isso "onde estou" e "onde o mouse
+   está" ficavam idênticos. Fundo azul claro com texto e ícone azuis resolve os dois de uma vez: o
+   hover levanta em branco, o ativo se pinta. É o padrão de todo menu de aplicativo moderno, e é o
+   que as referências mostram. */
 .nav-item.active {
-  background: var(--surface-elevated);
-  color: var(--ink);
+  background: var(--blue-soft-2);
+  color: var(--blue);
   font-weight: var(--fw-semibold);
   box-shadow: none;
 }
 
+.nav-item.active:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
 .nav-item.active svg {
-  color: var(--ink);
+  color: var(--blue);
 }
 
 .nav-item-whatsapp:hover {
@@ -19994,4 +20013,36 @@ table.tbl .name-cell .r {
   .contato-painel {
     animation: none;
   }
+}
+
+/* ------------------------------------------------------------------ indicadores com tom
+   Fundo claro da cor + borda da MESMA cor, mais escura. O número herda a cor, e é ele que o olho
+   procura. Só dois indicadores por tela ganham tom: o que a tela existe pra mostrar e o que dói.
+   Se tudo é destaque, nada é. */
+.kpi-acento {
+  background: var(--blue-soft-2);
+  border-color: var(--blue);
+}
+.kpi-acento::before {
+  opacity: 1;
+}
+.kpi-acento .n {
+  color: var(--blue);
+}
+.kpi-acento .l {
+  color: var(--blue);
+  opacity: 0.85;
+}
+
+.kpi-perda {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+.kpi-perda::before {
+  background: var(--danger);
+  opacity: 1;
+}
+.kpi-perda .n,
+.kpi-perda .l {
+  color: var(--danger);
 }

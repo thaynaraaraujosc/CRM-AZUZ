@@ -128,8 +128,8 @@ function PerformanceVendasPageInner() {
 
         <div className="grid kpi4">
           <KpiCard label="Total de negociações encerradas" value={String(totalOportunidades)} />
-          <KpiCard label="Taxa de conversão" value={taxaConversao.label} formula={taxaConversao.formula} />
-          <KpiCard label="Receita" value={valorVendido.label} formula={valorVendido.formula} />
+          <KpiCard label="Taxa de conversão" value={taxaConversao.label} formula={taxaConversao.formula} tom="acento" />
+          <KpiCard label="Receita" value={valorVendido.label} formula={valorVendido.formula} tom="acento" />
           <KpiCard label="Ticket médio" value={ticketMedio.label} formula={ticketMedio.formula} />
           <KpiCard
             label="Meta do período"
@@ -141,6 +141,7 @@ function PerformanceVendasPageInner() {
             value={valorPerdido.label}
             sub={`Principal motivo: ${motivoPrincipal.motivo}`}
             href="/motivos-perda"
+            tom="perda"
           />
         </div>
 

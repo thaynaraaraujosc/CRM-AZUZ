@@ -117,8 +117,8 @@ export default function AtividadesVendasPage() {
         {grupo === "Atendimento" ? (
           <>
             <div className="grid kpi4">
-              <KpiCard label="Leads recebidos" value={String(leadsRecebidos)} href="/conversas" />
-              <KpiCard label="Leads atendidos" value={String(leadsAtendidos)} href="/conversas" />
+              <KpiCard label="Leads recebidos" value={String(leadsRecebidos)} href="/conversas" tom="acento" />
+              <KpiCard label="Leads atendidos" value={String(leadsAtendidos)} href="/conversas" tom="acento" />
               <KpiCard
                 label="Leads sem resposta"
                 value={leadsSemResposta.label}
