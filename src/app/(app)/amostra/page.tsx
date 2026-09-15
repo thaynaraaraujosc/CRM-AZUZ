@@ -65,7 +65,7 @@ export default function AmostraPage() {
           <p className="amostra-nota">Seis variantes. Cada uma com repouso, hover, foco e desabilitado.</p>
           <div className="amostra-linha">
             <button type="button" className="btn primary">Primário</button>
-            <button type="button" className="btn escuro">Escuro</button>
+            <button type="button" className="btn acento">Acento</button>
             <button type="button" className="btn">Secundário</button>
             <button type="button" className="btn ghost">Fantasma</button>
             <button type="button" className="btn danger">Perigo</button>

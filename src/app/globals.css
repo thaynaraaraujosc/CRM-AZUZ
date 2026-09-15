@@ -31,10 +31,15 @@
    * LER ou EDITAR é branco e flutua. Um bloco branco sobre cinza está dizendo "isto é uma coisa";
    * um bloco cinza está dizendo "isto contém coisas".
    */
-  --navy: #ffffff;
+  /* A SEPARACAO DO AZUZ FLOW, que e a referencia definitiva porque e o produto da propria casa.
+     Nele o piso do conteudo e CINZA CLARO e os cards sao BRANCOS por cima. E dai que vem a
+     separacao: o card nao precisa de borda grossa nem de sombra pesada pra existir, ele existe
+     porque a superficie atras dele e mais escura.
+     Eu tinha deixado piso e card os dois brancos, e por isso nada se separava de nada. */
+  --navy: #f6f7f9;
   --navy-raised: #ffffff;
-  --navy-raised-2: #f5f5f8;
-  --navy-deep: #ffffff;
+  --navy-raised-2: #f1f2f5;
+  --navy-deep: #f6f7f9;
   /* Superfície que se destaca por ficar ACIMA das outras. Card sobre coluna, popover sobre
      página. É branca como `--navy`, mas o nome diz a intenção: quem usa este token está dizendo
      "isto flutua", e por isso vem acompanhado de sombra. */
@@ -80,9 +85,12 @@
      botão parecer um bloco de texto grosso em vez de a coisa em que se clica. As referências
      (painéis e telas de plano) usam todas o azul cheio com texto branco, e é o que separa
      "a ação" de "o conteúdo" sem precisar de mais nada. */
-  --acao: #5b6cf5;
-  --acao-hover: #4a5ae8;
-  --acao-active: #3d4cd1;
+  /* Botao principal ESCURO, como no Flow. O indigo continua existindo como acento (item ativo,
+     foco, link, indicador), mas a acao principal e quase preta: num painel de trabalho o escuro
+     tem mais forca que qualquer cor e nao compete com os estados coloridos. */
+  --acao: #131c31;
+  --acao-hover: #222d46;
+  --acao-active: #0a1120;
   --acao-texto: #ffffff;
 
   /* Bordas organizam, não são protagonistas: mas precisam ser vistas. A 8% ela sumia sobre branco
@@ -537,7 +545,7 @@ table {
   /* Superficie propria, um degrau abaixo do conteudo. Menu branco encostado em conteudo branco
      nao se separa: sobra um fio de 1px como unica divisa entre duas areas grandes, e o hover
      branco nao tem de onde subir. */
-  background: #fafafb;
+  background: #ffffff;
   border: none;
   border-right: 1px solid var(--line);
   border-radius: 0;
@@ -746,20 +754,22 @@ table {
    está" ficavam idênticos. Fundo azul claro com texto e ícone azuis resolve os dois de uma vez: o
    hover levanta em branco, o ativo se pinta. É o padrão de todo menu de aplicativo moderno, e é o
    que as referências mostram. */
+/* Item ativo como no Flow: preenchimento claro, texto ESCURO e forte, e uma barra da cor da marca
+   colada na esquerda. A barra e o que marca "voce esta aqui" sem precisar pintar o item inteiro. */
 .nav-item.active {
-  background: var(--blue-soft-2);
-  color: var(--blue);
-  font-weight: var(--fw-semibold);
+  background: #eef1f6;
+  color: var(--ink);
+  font-weight: 700;
   box-shadow: none;
 }
 
 .nav-item.active:hover {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: #e6eaf1;
+  color: var(--ink);
 }
 
 .nav-item.active svg {
-  color: var(--blue);
+  color: var(--ink);
 }
 
 .nav-item-whatsapp:hover {
@@ -1042,6 +1052,11 @@ table {
   overflow: auto;
   padding: var(--space-5) var(--space-6) var(--space-6);
   background: var(--navy);
+}
+/* Cabecalho branco sobre o piso cinza, com divisa propria — o mesmo desenho do Flow. */
+.topbar {
+  background: #fff;
+  border-bottom: 1px solid var(--line);
 }
 
 /* ---------------- Primitivos ---------------- */
@@ -20486,17 +20501,20 @@ table.tbl .name-cell .r {
    clara: índigo é a ação que o produto QUER que você faça; o escuro é uma ação igualmente
    importante, mas neutra — a que não está sendo empurrada.
    Quase preto, e não marinho: marinho ao lado do índigo puxa os dois pro azul e some a diferença. */
-.btn.escuro {
-  background: #17181f;
-  border-color: #17181f;
+/* ACENTO EM INDIGO. Com o botao principal virando escuro (como no Flow), o indigo deixa de ser a
+   acao principal e passa a ser o convite: o botao que o produto quer que a pessoa clique numa tela
+   onde ja existe outra acao escura. Os dois lado a lado se distinguem de longe. */
+.btn.acento {
+  background: var(--blue);
+  border-color: var(--blue);
   color: #fff;
   box-shadow: var(--shadow-sm);
 }
-.btn.escuro:hover {
-  background: #262831;
-  border-color: #262831;
+.btn.acento:hover {
+  background: #4a5ae8;
+  border-color: #4a5ae8;
   box-shadow: var(--shadow-md);
 }
-.btn.escuro:active {
-  background: #0f1017;
+.btn.acento:active {
+  background: #3d4cd1;
 }
