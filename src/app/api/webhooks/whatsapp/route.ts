@@ -7,6 +7,7 @@ import { META_GRAPH_URL, normalizarNumeroBrasileiro, validarAssinaturaWebhook } 
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
+import { aplicarOrigemPelaMensagem, aplicarOrigemPelaReferenciaDaMeta } from "@/lib/rastreio/aplicar";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
 import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
 import { registrarRespostaDeCampanha } from "@/lib/campanhas/resposta";
@@ -83,6 +84,24 @@ type PayloadWhatsApp = {
           audio?: MidiaWhatsApp;
           video?: MidiaWhatsApp;
           document?: MidiaWhatsApp;
+          /**
+           * De qual anúncio a pessoa veio, quando o clique foi num anúncio de Click-to-WhatsApp.
+           *
+           * A Meta manda isto SÓ NA PRIMEIRA mensagem da conversa, e nunca mais. É a única
+           * oportunidade de saber a origem desse lead: não há chamada na Graph API que devolva
+           * isso depois, nem campo no banco que permita reconstruir. Ignorar aqui é perder pra
+           * sempre.
+           *
+           * `ctwa_clid` é o equivalente do `gclid` pra quem foi do anúncio direto pra conversa, e
+           * é ele que permite devolver a venda pra Meta lá na frente.
+           */
+          referral?: {
+            source_id?: string;
+            source_type?: string;
+            ad_id?: string;
+            ctwa_clid?: string;
+            headline?: string;
+          };
         }[];
         /** `statuses`: confirmação de entrega/leitura de mensagem que NÓS mandamos. */
         statuses?: {
@@ -446,6 +465,36 @@ export async function POST(request: Request) {
         const texto = mensagem.text?.body ?? textoDoBotao ?? midia?.caption ?? RÓTULO_POR_TIPO[mensagem.type] ?? "[Mensagem não suportada]";
         if (midia && !temMidiaBaixada) {
           console.error(`Falha ao baixar mídia (${mensagem.type}) da mensagem ${mensagem.id}. Caiu no rótulo em texto.`);
+        }
+
+        /*
+         * De onde esta pessoa veio.
+         *
+         * É o único instante em que dá pra saber. Antes daqui existem duas metades soltas — um
+         * clique guardado sem pessoa e uma pessoa sem clique — e depois daqui a informação some:
+         * a segunda mensagem já não traz marca nenhuma, e nada no banco permite reconstruir isso
+         * depois.
+         *
+         * Dois caminhos, e eles não competem: a Meta manda a referência do anúncio sozinha quando
+         * o clique veio de um anúncio de Click-to-WhatsApp, e o código curto cobre o caso em que a
+         * pessoa passou por um site antes (onde a marca é do Google e a Meta não sabe de nada).
+         *
+         * Nenhum dos dois pode interromper o que vem abaixo. A mensagem tem que ser gravada e
+         * aparecer na tela mesmo que a atribuição falhe: origem é o acessório, conversa é o
+         * essencial. As duas funções tratam o próprio erro e nunca lançam.
+         */
+        if (contato?.id) {
+          await aplicarOrigemPelaReferenciaDaMeta(prisma, {
+            workspaceId: integracao.workspaceId,
+            contatoId: contato.id,
+            referencia: mensagem.referral,
+            caminho: "whatsapp",
+          });
+          await aplicarOrigemPelaMensagem(prisma, {
+            workspaceId: integracao.workspaceId,
+            contatoId: contato.id,
+            mensagem: texto,
+          });
         }
 
         await prisma.mensagemExtra.create({

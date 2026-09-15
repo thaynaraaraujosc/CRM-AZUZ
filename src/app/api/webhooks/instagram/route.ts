@@ -16,6 +16,7 @@ import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { renomearConversa } from "@/lib/conversas/renomear";
 import { nomeAindaEhIdCru } from "@/lib/conversas/exibicao";
 import { criarContatoPeloInstagramSeNaoExistir, encontrarContatoDoInstagram } from "@/lib/contatos/upsert";
+import { aplicarOrigemPelaReferenciaDaMeta } from "@/lib/rastreio/aplicar";
 import {
   dispararAutomacoesDeEventoInstagram,
   dispararAutomacoesDeMensagemRecebida,
@@ -109,6 +110,9 @@ type PayloadInstagram = {
       sender?: { id: string };
       recipient?: { id: string };
       timestamp?: number;
+      /** A Meta manda a referência do anúncio ora aqui, ora dentro de `message`. Os dois lugares
+       *  são lidos porque o formato varia por tipo de anúncio, e ler só um perde metade. */
+      referral?: { source_id?: string; source_type?: string; ad_id?: string; ctwa_clid?: string; headline?: string };
       message?: {
         mid: string;
         text?: string;
@@ -130,6 +134,9 @@ type PayloadInstagram = {
         /** `true` quando a mensagem foi enviada PELA conta conectada. Inclusive de fora do CRM,
          * respondendo pelo app do Instagram. É o que permite o histórico ficar completo. */
         is_echo?: boolean;
+        /** De qual anúncio veio, quando o Direct começou por um clique num anúncio. Só na
+         *  primeira mensagem, e nunca mais. */
+        referral?: { source_id?: string; source_type?: string; ad_id?: string; ctwa_clid?: string; headline?: string };
       };
       /** Curtida (ou descurtida) numa mensagem que já existe. Evento próprio, não vem dentro de
        * `message`. `mid` aponta pra mensagem reagida; `action` diz se foi curtir ou desfazer. */
@@ -518,6 +525,27 @@ export async function POST(request: Request) {
             instagramId: remetenteId,
           }));
         contatoId = contato?.id;
+
+        /*
+         * De qual anúncio esta pessoa veio.
+         *
+         * A Meta manda a referência SÓ quando o Direct começou por um clique num anúncio, e SÓ na
+         * primeira mensagem. Não há chamada na Graph API que devolva isso depois: ignorar aqui é
+         * perder a origem desse lead pra sempre.
+         *
+         * É o caminho que faz o rastreamento valer pra quem compra o CRM e nunca vai abrir o
+         * código do próprio site — não depende de link trocado nem de nada instalado em lugar
+         * nenhum. Nunca lança, e não pode interromper a gravação da mensagem: origem é o
+         * acessório, conversa é o essencial.
+         */
+        if (contatoId) {
+          await aplicarOrigemPelaReferenciaDaMeta(prisma, {
+            workspaceId: integracaoDaConta.workspaceId,
+            contatoId,
+            referencia: evento.referral ?? mensagem?.referral,
+            caminho: "instagram",
+          });
+        }
 
         // A foto vai TAMBÉM pro contato. É a mesma pessoa no funil, na lista de contatos e no
         // painel do funil. Presa só à conversa, o funil mostrava iniciais enquanto a conversa
