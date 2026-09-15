@@ -20137,15 +20137,12 @@ table.tbl .name-cell .r {
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-/* O fio de cor no topo. Um só, fino, na cor da marca: é o que dá identidade ao quadro sem encher
-   a tela de cor. */
-.kpi::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 2px;
-  background: var(--blue);
-  opacity: 0.55;
+/* O QUADRO NO FORMATO DO NIVEL 1: preenchimento claro e borda da mesma familia, sem faixa de cor
+   no topo. A faixa era um risco colorido colado na borda superior — recurso de painel antigo, e a
+   primeira coisa que datava a tela. Aqui a cor esta no corpo inteiro do quadro, de forma calma. */
+.kpi {
+  background: var(--cyan-soft-2);
+  border-color: #bce8f1;
 }
 
 .kpi:hover {
@@ -20224,33 +20221,27 @@ table.tbl .name-cell .r {
    O quadro preenchido de azul clarinho e exatamente o "candy": ele pinta area grande com cor fraca,
    o que lava a tela e ainda por cima nao destaca — porque cor fraca em area grande tem menos forca
    que cor forte em area pequena. Aqui a cor vai pro numero e pra faixa, que e onde o olho cai. */
+/* O indicador de destaque: mesmo desenho, um degrau mais forte de ciano. */
 .kpi-acento {
-  background: #fff;
-  border-color: var(--line);
-}
-.kpi-acento::before {
-  background: var(--blue);
-  height: 3px;
+  background: var(--cyan-soft);
+  border-color: #8fd8e6;
 }
 .kpi-acento::before {
   opacity: 1;
 }
 .kpi-acento .n {
-  color: var(--blue);
+  color: var(--cyan-strong);
 }
 .kpi-acento .l {
   color: var(--text-faint);
 }
 
+/* O numero que doi: mesma logica, na familia do vermelho. */
 .kpi-perda {
-  background: #fff;
-  border-color: var(--line);
+  background: #fdeeee;
+  border-color: #f0b8b6;
 }
-.kpi-perda::before {
-  background: var(--danger);
-  opacity: 1;
-  height: 3px;
-}
+
 .kpi-perda .n { color: var(--danger); }
 .kpi-perda .l { color: var(--text-faint); }
 
