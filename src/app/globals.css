@@ -152,11 +152,11 @@
      objeto com a superficie, e uma longa e difusa, que da a distancia. Sombra de uma camada so
      parece adesivo; duas parecem objeto. A luz vem de cima, entao o deslocamento e sempre no Y.
      Os valores sao contidos de proposito: o efeito premium vem de precisao, nao de sombra pesada. */
-  --shadow-xs: 0 1px 1px rgba(16, 17, 23, 0.04);
-  --shadow-sm: 0 1px 2px rgba(16, 17, 23, 0.06), 0 1px 3px rgba(16, 17, 23, 0.05);
-  --shadow-md: 0 2px 4px rgba(16, 17, 23, 0.05), 0 8px 20px rgba(16, 17, 23, 0.07);
-  --shadow-lg: 0 4px 8px rgba(16, 17, 23, 0.05), 0 18px 40px rgba(16, 17, 23, 0.10);
-  --shadow-xl: 0 8px 16px rgba(16, 17, 23, 0.06), 0 40px 80px rgba(16, 17, 23, 0.16);
+  --shadow-xs: 0 1px 2px rgba(16, 17, 23, 0.05);
+  --shadow-sm: 0 1px 2px rgba(16, 17, 23, 0.08), 0 2px 4px rgba(16, 17, 23, 0.06);
+  --shadow-md: 0 2px 4px rgba(16, 17, 23, 0.08), 0 10px 20px rgba(16, 17, 23, 0.10);
+  --shadow-lg: 0 4px 8px rgba(16, 17, 23, 0.08), 0 22px 40px rgba(16, 17, 23, 0.16);
+  --shadow-xl: 0 10px 20px rgba(16, 17, 23, 0.10), 0 48px 80px rgba(16, 17, 23, 0.26);
   --shadow-hover: 0 2px 4px rgba(16, 17, 23, 0.07), 0 10px 24px rgba(16, 17, 23, 0.07);
   /* Sombra do botão preto: precisa nascer da própria cor dele, senão vira um borrão cinza embaixo
      de uma peça escura. */
@@ -534,7 +534,10 @@ table {
 .sidebar {
   width: 216px;
   flex: 0 0 auto;
-  background: var(--navy-raised);
+  /* Superficie propria, um degrau abaixo do conteudo. Menu branco encostado em conteudo branco
+     nao se separa: sobra um fio de 1px como unica divisa entre duas areas grandes, e o hover
+     branco nao tem de onde subir. */
+  background: #fafafb;
   border: none;
   border-right: 1px solid var(--line);
   border-radius: 0;
@@ -1053,11 +1056,14 @@ table {
   font-weight: var(--fw-semibold);
   font-size: var(--fs-button);
   letter-spacing: var(--track-snug);
-  padding: var(--space-3) var(--space-4);
+  padding: 9px var(--space-4);
   border-radius: var(--radius-md);
-  border: 1px solid transparent;
-  background: transparent;
+  /* O botao BASE e o secundario: branco com borda visivel. Era transparente com borda
+     transparente, ou seja, texto solto no branco — nao parecia botao nenhum. */
+  border: 1px solid var(--line-strong);
+  background: #fff;
   color: var(--ink);
+  box-shadow: var(--shadow-xs);
   white-space: nowrap;
   cursor: pointer;
   transition: background var(--transition-fast), border-color var(--transition-fast),
@@ -1068,7 +1074,8 @@ table {
    já era quase branco (nada acontecia) e no tema escuro clareava o fundo escuro na direção errada.
    Agora cada variante diz o próprio hover. */
 .btn:hover {
-  background: var(--surface-hover);
+  background: var(--surface-active);
+  border-color: #b9b9c4;
 }
 
 .btn:active {
@@ -1080,9 +1087,19 @@ table {
   outline-offset: 2px;
 }
 
-.btn:disabled {
+/* Desabilitado vira CINZA, e nao a cor da variante desbotada. Com opacidade o botao primario
+   virava lavanda — mais chamativo que o proprio primario ao lado, que e o oposto do que
+   "desabilitado" precisa comunicar. */
+.btn:disabled,
+.btn.primary:disabled,
+.btn.escuro:disabled,
+.btn.danger:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  background: #f2f2f5;
+  border-color: #e4e4e9;
+  color: #a6a8b2;
+  box-shadow: none;
+  opacity: 1;
   filter: none;
   transform: none;
 }
@@ -1150,9 +1167,16 @@ table {
   box-shadow: none;
 }
 
-/* Segundo nível: branco com borda e sombra mínima. É a sombra que faz ele parecer um objeto
-   pousado sobre a página em vez de um retângulo desenhado nela. */
-.btn.ghost,
+/* FANTASMA: sem borda e sem fundo em repouso — só ganha corpo no hover.
+   Ele estava idêntico ao botão secundário (branco com borda), e dois botões iguais com nomes
+   diferentes não são duas variantes, são uma repetida. A hierarquia agora é: primário índigo,
+   escuro quase preto, secundário branco com borda, fantasma sem nada. */
+.btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  box-shadow: none;
+}
 .btn.secondary {
   background: var(--surface-elevated);
   border-color: var(--line-strong);
@@ -1160,10 +1184,15 @@ table {
   box-shadow: var(--shadow-xs);
 }
 
-.btn.ghost:hover,
+.btn.ghost:hover {
+  background: var(--surface-active);
+  border-color: transparent;
+  color: var(--ink);
+  box-shadow: none;
+}
 .btn.secondary:hover {
-  background: var(--navy-raised);
-  border-color: var(--gray-400);
+  background: var(--surface-active);
+  border-color: #b9b9c4;
   box-shadow: var(--shadow-sm);
 }
 
@@ -1213,17 +1242,21 @@ table {
 }
 
 /* Variações novas (item 50): "discreto" já existe como `.btn.ghost`; faltavam perigo e link. */
+/* PERIGO: vermelho CHEIO com texto branco. Era rosa-claro com texto vermelho — pastel, e um botão
+   que apaga dado precisa parecer o que é. Destrutivo discreto é armadilha. */
 .btn.danger,
 .btn.destructive {
-  background: var(--danger-soft);
-  border-color: transparent;
-  color: var(--danger);
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
 }
 .btn.danger:hover,
 .btn.destructive:hover {
-  background: var(--danger);
-  border-color: var(--danger);
-  color: var(--white);
+  background: #a82722;
+  border-color: #a82722;
+  color: #fff;
+  box-shadow: var(--shadow-md);
 }
 
 .btn.link {
@@ -1867,12 +1900,16 @@ table {
    de um `.field` (busca, filtro solto) e ficavam sem nenhum estilo, só a borda nativa do navegador. */
 /* Campo preenchido, com a borda quase invisível: quem define o campo é a superfície, não o
    contorno. Uma tela com dez contornos cinza parados é a definição de wireframe. */
+/* CAMPO COM BORDA DE VERDADE.
+   Era `border: 1px solid transparent` sobre fundo claro: invisivel por construcao. Num formulario
+   isso vira texto solto com um risco embaixo — a pessoa nao sabe onde clicar, e o controle
+   desaparece dentro da pagina. Campo precisa parecer campo em repouso, nao so no foco. */
 .input {
-  background: var(--navy-raised);
-  border: 1px solid transparent;
+  background: #fff;
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
-  font-size: 13px;
+  padding: 9px var(--space-3);
+  font-size: 13.5px;
   font-family: inherit;
   color: var(--ink);
   line-height: 1.5;
@@ -20158,9 +20195,17 @@ table.tbl .name-cell .r {
    Fundo claro da cor + borda da MESMA cor, mais escura. O número herda a cor, e é ele que o olho
    procura. Só dois indicadores por tela ganham tom: o que a tela existe pra mostrar e o que dói.
    Se tudo é destaque, nada é. */
+/* Fundo BRANCO com faixa e numero coloridos, e nao preenchimento pastel.
+   O quadro preenchido de azul clarinho e exatamente o "candy": ele pinta area grande com cor fraca,
+   o que lava a tela e ainda por cima nao destaca — porque cor fraca em area grande tem menos forca
+   que cor forte em area pequena. Aqui a cor vai pro numero e pra faixa, que e onde o olho cai. */
 .kpi-acento {
-  background: var(--blue-soft-2);
-  border-color: var(--blue);
+  background: #fff;
+  border-color: var(--line);
+}
+.kpi-acento::before {
+  background: var(--blue);
+  height: 3px;
 }
 .kpi-acento::before {
   opacity: 1;
@@ -20169,22 +20214,20 @@ table.tbl .name-cell .r {
   color: var(--blue);
 }
 .kpi-acento .l {
-  color: var(--blue);
-  opacity: 0.85;
+  color: var(--text-faint);
 }
 
 .kpi-perda {
-  background: var(--danger-soft);
-  border-color: var(--danger);
+  background: #fff;
+  border-color: var(--line);
 }
 .kpi-perda::before {
   background: var(--danger);
   opacity: 1;
+  height: 3px;
 }
-.kpi-perda .n,
-.kpi-perda .l {
-  color: var(--danger);
-}
+.kpi-perda .n { color: var(--danger); }
+.kpi-perda .l { color: var(--text-faint); }
 
 /* ==========================================================================
    AMOSTRA DO SISTEMA VISUAL  ·  /amostra
@@ -20204,7 +20247,7 @@ table.tbl .name-cell .r {
   flex-direction: column;
   gap: var(--space-3);
   padding-bottom: var(--space-5);
-  border-bottom: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line);
 }
 .amostra-secao:last-child { border-bottom: none; }
 
@@ -20266,11 +20309,13 @@ table.tbl .name-cell .r {
   color: var(--text-faint);
 }
 
-.amostra-n0 { background: var(--navy); box-shadow: none; border: none; }
-.amostra-n1 { border: 1px solid var(--line-soft); }
-.amostra-n2 { border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
-.amostra-n3 { border: 1px solid var(--line); box-shadow: var(--shadow-md); }
-.amostra-n4 { border: 1px solid var(--line); box-shadow: var(--shadow-lg); }
+/* Cada plano muda SUPERFICIE e SOMBRA ao mesmo tempo, e nao so a espessura da borda. Com cinco
+   retangulos brancos variando de fio, os niveis liam como um so — que era exatamente a queixa. */
+.amostra-n0 { background: #f5f5f8; box-shadow: none; border: 1px solid transparent; }
+.amostra-n1 { background: #fafafc; border: 1px solid var(--line-soft); box-shadow: none; }
+.amostra-n2 { background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.amostra-n3 { background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-md); }
+.amostra-n4 { background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-xl); }
 
 /* -------------------------------------------------- abas */
 .amostra-aba {
@@ -20305,9 +20350,11 @@ table.tbl .name-cell .r {
   background: var(--navy-raised-2);
   color: var(--text-muted);
 }
-.amostra-selo-acento { background: var(--blue-soft-2); border-color: var(--blue); color: var(--blue); }
-.amostra-selo-ok { background: var(--success-soft); border-color: var(--success); color: var(--success); }
-.amostra-selo-erro { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+/* Selo cheio, com texto branco: o pastel de fundo claro com texto colorido some no branco da
+   pagina e foi justamente o que gerou a queixa de "candy". */
+.amostra-selo-acento { background: var(--blue); border-color: var(--blue); color: #fff; }
+.amostra-selo-ok { background: var(--success); border-color: var(--success); color: #fff; }
+.amostra-selo-erro { background: var(--danger); border-color: var(--danger); color: #fff; }
 
 /* -------------------------------------------------- tipografia
    Sete papéis, um por linha, pra diferença de peso e cor ser lida de uma vez. */
