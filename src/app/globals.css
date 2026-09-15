@@ -33,7 +33,7 @@
    */
   --navy: #ffffff;
   --navy-raised: #ffffff;
-  --navy-raised-2: #f3f5fa;
+  --navy-raised-2: #f5f5f8;
   --navy-deep: #ffffff;
   /* Superfície que se destaca por ficar ACIMA das outras. Card sobre coluna, popover sobre
      página. É branca como `--navy`, mas o nome diz a intenção: quem usa este token está dizendo
@@ -55,9 +55,11 @@
 
   /* Azul da marca: daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
-  --blue: #2e6bff;
-  --blue-soft: rgba(46, 107, 255, 0.14);
-  --blue-soft-2: rgba(46, 107, 255, 0.07);
+  /* INDIGO, copiado das referencias. O azul-real anterior (#2e6bff) e mais saturado e puxa a tela
+     inteira pro azul quando usado em area; o indigo aguenta ser usado cheio num botao sem gritar. */
+  --blue: #5b6cf5;
+  --blue-soft: #e8eafe;
+  --blue-soft-2: #f1f2fe;
   /* Azul mais escuro que --blue. Usado onde o azul vibrante padrão fica claro demais pra servir
      de "ligado"/confirmação (ex.: toggle ativo). */
   --blue-strong: #1d4fd1;
@@ -78,21 +80,26 @@
      botão parecer um bloco de texto grosso em vez de a coisa em que se clica. As referências
      (painéis e telas de plano) usam todas o azul cheio com texto branco, e é o que separa
      "a ação" de "o conteúdo" sem precisar de mais nada. */
-  --acao: #2e6bff;
-  --acao-hover: #1f4fd8;
-  --acao-active: #1741b8;
+  --acao: #5b6cf5;
+  --acao-hover: #4a5ae8;
+  --acao-active: #3d4cd1;
   --acao-texto: #ffffff;
 
   /* Bordas organizam, não são protagonistas: mas precisam ser vistas. A 8% ela sumia sobre branco
      e o card ficava sem começo nem fim. `--line-strong` é pro que precisa de recorte de verdade:
      card dentro de card, cabeçalho de tabela, item destacado. */
-  --line: rgba(11, 21, 51, 0.14);
+  /* CINZA NEUTRO, e nao marinho diluido. Toda a escada de cinza do CRM era `rgba(11, 21, 51, x)`:
+     azul de baixa opacidade. Somado, isso punha um veu azul sobre a tela inteira — a sensacao de
+     "lavado" e "candy" que nenhuma quantidade de branco resolvia, porque o problema nao era a
+     falta de branco, era o tom de TUDO que nao era branco. Nas referencias o cinza e neutro e so o
+     destaque tem cor. */
+  --line: #e4e4e9;
   /* TRES BORDAS, com papel definido. A queixa era que as linhas somem: a mais clara estava em 6%
      de opacidade, invisivel em tela comum. A regra agora e: `soft` separa coisas do mesmo grupo
      (linha entre itens de uma lista), a padrao desenha o contorno de um objeto (card, input), e
      `strong` marca divisa estrutural (sidebar, cabecalho de tabela, rodape de modal). */
-  --line-soft: rgba(11, 21, 51, 0.08);
-  --line-strong: rgba(11, 21, 51, 0.22);
+  --line-soft: #eeeef2;
+  --line-strong: #d2d2da;
 
   /* Preto neutro no lugar do marinho: o texto parava de ser preto e puxava azul, o que somado ao
      piso marinho fazia a interface inteira ter temperatura de marca em vez de neutralidade. */
@@ -110,8 +117,8 @@
   --white: #ffffff;
   /* Secundário sobe de 58% pra 64%; terciário, de 46% pra 54%. Cinza claro fica reservado pra
      informação de fato acessória (data, contador, rodapé), não pra conteúdo que se lê. */
-  --text-muted: rgba(11, 21, 51, 0.64);
-  --text-faint: rgba(11, 21, 51, 0.54);
+  --text-muted: #5c5f6b;
+  --text-faint: #83868f;
 
   /* Arial no produto INTEIRO: landing, telas de entrada e app.
      Ela é a única fonte que está instalada em Mac, Windows, Android e Linux ao mesmo tempo, então é
@@ -140,17 +147,17 @@
   /* Duas camadas em cada sombra: um contato curto e escuro logo abaixo do elemento, e um halo
      largo e quase transparente. É essa combinação que faz a peça parecer pousada numa superfície.
      uma sombra só, difusa, faz o elemento parecer que está boiando. */
-  --shadow-xs: 0 1px 2px rgba(11, 21, 51, 0.05);
+  --shadow-xs: 0 1px 2px rgba(16, 17, 23, 0.05);
   /* ESCADA DE ELEVACAO. Cada degrau tem DUAS sombras: uma curta e fechada, que faz o contato do
      objeto com a superficie, e uma longa e difusa, que da a distancia. Sombra de uma camada so
      parece adesivo; duas parecem objeto. A luz vem de cima, entao o deslocamento e sempre no Y.
      Os valores sao contidos de proposito: o efeito premium vem de precisao, nao de sombra pesada. */
-  --shadow-xs: 0 1px 1px rgba(11, 21, 51, 0.04);
-  --shadow-sm: 0 1px 2px rgba(11, 21, 51, 0.06), 0 1px 3px rgba(11, 21, 51, 0.05);
-  --shadow-md: 0 2px 4px rgba(11, 21, 51, 0.05), 0 8px 20px rgba(11, 21, 51, 0.07);
-  --shadow-lg: 0 4px 8px rgba(11, 21, 51, 0.05), 0 18px 40px rgba(11, 21, 51, 0.10);
-  --shadow-xl: 0 8px 16px rgba(11, 21, 51, 0.06), 0 40px 80px rgba(11, 21, 51, 0.16);
-  --shadow-hover: 0 2px 4px rgba(11, 21, 51, 0.07), 0 10px 24px rgba(11, 21, 51, 0.07);
+  --shadow-xs: 0 1px 1px rgba(16, 17, 23, 0.04);
+  --shadow-sm: 0 1px 2px rgba(16, 17, 23, 0.06), 0 1px 3px rgba(16, 17, 23, 0.05);
+  --shadow-md: 0 2px 4px rgba(16, 17, 23, 0.05), 0 8px 20px rgba(16, 17, 23, 0.07);
+  --shadow-lg: 0 4px 8px rgba(16, 17, 23, 0.05), 0 18px 40px rgba(16, 17, 23, 0.10);
+  --shadow-xl: 0 8px 16px rgba(16, 17, 23, 0.06), 0 40px 80px rgba(16, 17, 23, 0.16);
+  --shadow-hover: 0 2px 4px rgba(16, 17, 23, 0.07), 0 10px 24px rgba(16, 17, 23, 0.07);
   /* Sombra do botão preto: precisa nascer da própria cor dele, senão vira um borrão cinza embaixo
      de uma peça escura. */
   --shadow-preto: 0 1px 2px rgba(11, 21, 51, 0.28), 0 6px 16px rgba(11, 21, 51, 0.2);
@@ -218,8 +225,8 @@
      opacidade solta. `--surface-hover`/`--surface-active` são o fundo padrão de qualquer linha/
      item interativo (linha de tabela, opção de dropdown, item de menu) nos estados hover/pressed. */
   --gray-50: rgba(11, 21, 51, 0.025);
-  --gray-100: rgba(11, 21, 51, 0.04);
-  --gray-200: rgba(11, 21, 51, 0.07);
+  --gray-100: rgba(16, 17, 23, 0.04);
+  --gray-200: rgba(16, 17, 23, 0.07);
   --gray-300: rgba(11, 21, 51, 0.11);
   --gray-400: rgba(11, 21, 51, 0.17);
   --gray-500: rgba(11, 21, 51, 0.28);
@@ -229,7 +236,7 @@
   --gray-900: #0b1533;
 
   --surface-hover: rgba(11, 21, 51, 0.035);
-  --surface-active: rgba(11, 21, 51, 0.06);
+  --surface-active: #f4f4f7;
 
   /* Peso + altura de linha. Hierarquia deve vir de tamanho+peso+espaçamento juntos, não só do
      tamanho (`--fs-*` abaixo). `--lh-tight` pra títulos/números grandes, `--lh-base` pro resto. */
@@ -1382,7 +1389,7 @@ table {
   --surface-elevated: #ffffff;
 
   --line: rgba(11, 21, 51, 0.1);
-  --line-soft: rgba(11, 21, 51, 0.06);
+  --line-soft: rgba(16, 17, 23, 0.06);
   --line-strong: rgba(11, 21, 51, 0.18);
 
   /* A TINTA ESTRUTURAL DO CRM. Texto, ícone e todo elemento que antes era preto.
@@ -20425,4 +20432,24 @@ table.tbl .name-cell .r {
   padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--line-soft);
   background: var(--navy-raised-2);
+}
+
+/* ------------------------------------------------------------------ botão escuro
+   O "Get started" preto das referências. Ele existe ao lado do índigo, e a divisão de papel é
+   clara: índigo é a ação que o produto QUER que você faça; o escuro é uma ação igualmente
+   importante, mas neutra — a que não está sendo empurrada.
+   Quase preto, e não marinho: marinho ao lado do índigo puxa os dois pro azul e some a diferença. */
+.btn.escuro {
+  background: #17181f;
+  border-color: #17181f;
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.btn.escuro:hover {
+  background: #262831;
+  border-color: #262831;
+  box-shadow: var(--shadow-md);
+}
+.btn.escuro:active {
+  background: #0f1017;
 }
