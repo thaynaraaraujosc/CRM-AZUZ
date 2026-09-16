@@ -155,6 +155,20 @@
   --radius-lg: 16px;
   --radius-xl: 22px;
 
+  /* Nomes antigos que as telas de Automações, Social e Instagram ainda usam. Eles nunca foram
+     definidos: `border-radius: var(--radius-2)` sem fallback não resolve, e o navegador descarta a
+     declaração inteira — por isso aquelas telas estavam de canto quadrado enquanto o resto do CRM
+     já era arredondado. Em vez de sair reescrevendo 37 declarações espalhadas, os nomes viram
+     apelido da escala atual. Assim a tela volta pro padrão e continua seguindo o token se ele
+     mudar. Nada aqui é cor nova: é a mesma escala com outro nome. */
+  --radius-1: var(--radius-sm);
+  --radius-2: var(--radius-md);
+  --radius-3: var(--radius-lg);
+  --shadow-2: var(--shadow-md);
+  --verde: var(--success);
+  --muted: var(--text-muted);
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
   /* Sombras quase apagadas de propósito: profundidade agora vem de superfície + borda + contraste.
      Card não pode parecer flutuando trinta pixels acima da página. `--shadow-lg` continua forte o
      bastante só onde há sobreposição real (modal, popover): ali a sombra informa camada. */
@@ -5639,6 +5653,18 @@ button.camp-row:hover {
   line-height: var(--lh-base);
 }
 
+/* `.n` é o nome/título dentro de um item de lista, e aparece em 171 lugares. Só existiam versões
+   com escopo (`.kpi .n`, `.name-cell .n`, `.wa-email-drag .n` ...): quem usava `.n` fora de um
+   desses contextos ficava com peso e cor de texto corrido, indistinguível do `.hint` cinza logo
+   abaixo. Esta é a regra base, e toda regra com escopo continua ganhando dela por especificidade
+   (0,2,0 contra 0,1,0), então nada do que já estava ajustado muda. A cor vem de `--ink`, que as
+   superfícies escuras já invertem pra branco dentro delas. */
+.n {
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
 /* ---------------- Login / convite ---------------- */
 
 .login-screen {
@@ -7323,6 +7349,9 @@ button.camp-row:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* Peso e cor vêm da regra base de `.n`. Aqui só o tamanho: o nome do documento é o título do
+     card, um degrau acima do corpo. */
+  font-size: var(--texto-lg);
 }
 
 .doc-lista-acoes-btn {
@@ -7360,6 +7389,19 @@ button.camp-row:hover {
   margin-bottom: 4px;
 }
 
+/* O modelo sem prévia em HTML cai neste ícone. Sem posicionamento ele encostava na quina de cima
+   à esquerda de uma folha branca de 140px, parecendo sobra de renderização. Centrado, lê como
+   "modelo em branco". */
+.doc-modelo-thumb > .doc-modelo-icone {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0;
+  color: var(--text-faint);
+}
+
 /* Galeria de modelos reformulada: miniatura real (o próprio HTML do modelo, escalado), categoria e ações no hover. */
 .doc-modelo-card-rica {
   padding: 0;
@@ -7368,6 +7410,9 @@ button.camp-row:hover {
 
 .doc-modelo-card-rica .n {
   padding: 0 12px;
+  font-size: var(--texto-base);
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .doc-modelo-card-rica .hint {
@@ -17378,8 +17423,10 @@ table.tbl .name-cell .r {
   width: 100%;
   height: 100%;
   min-height: 46px;
-  background: none;
-  border: 1px dashed var(--border);
+  /* Botão de adicionar não fica com fundo transparente: sem superfície ele some no card e vira
+     um contorno solto. O tracejado continua sendo o sinal de "aqui ainda não tem nada". */
+  background: var(--navy-raised);
+  border: 1px dashed var(--line-strong);
   border-radius: var(--radius-2);
   font-size: 12px;
   color: var(--text-muted);
@@ -17391,6 +17438,7 @@ table.tbl .name-cell .r {
 }
 
 .fauto-add:hover {
+  background: var(--blue-soft-2);
   border-color: var(--blue);
   color: var(--blue);
 }
@@ -17722,8 +17770,8 @@ table.tbl .name-cell .r {
 
 .passos-add {
   width: 100%;
-  background: none;
-  border: 1px dashed var(--border);
+  background: var(--navy-raised);
+  border: 1px dashed var(--line-strong);
   border-radius: var(--radius-2);
   padding: 8px;
   font-size: 12px;
@@ -17732,6 +17780,7 @@ table.tbl .name-cell .r {
 }
 
 .passos-add:hover {
+  background: var(--blue-soft-2);
   border-color: var(--blue);
   color: var(--blue);
 }
