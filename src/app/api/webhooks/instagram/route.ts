@@ -349,7 +349,26 @@ export async function POST(request: Request) {
       const integracaoDaConta = todasConectadas.find(
         (i) => (i.metadados as { instagramContaId?: string } | null)?.instagramContaId === instagramContaId,
       );
-      if (!integracaoDaConta) continue;
+      /*
+       * O PONTO CEGO QUE ESTE LOG FECHA.
+       *
+       * Se o id da conta que a Meta manda no evento nao casar com o que ficou guardado na conexao,
+       * a mensagem era descartada aqui em silencio absoluto: nada no banco, nada no log, e a tela
+       * seguindo "Conectado". Do lado de fora isso e indistinguivel de "a Meta nao entregou" — e as
+       * duas causas levam a caminhos opostos (uma e reconectar, a outra e esperar aprovacao).
+       *
+       * O descarte continua certo: mensagem de conta que nao e deste CRM nao pode entrar. O que
+       * estava errado era ele ser mudo. O log mostra os dois ids pra comparacao direta.
+       */
+      if (!integracaoDaConta) {
+        console.error(
+          `[instagram] evento descartado: nenhuma conexao com instagramContaId="${instagramContaId}". ` +
+            `Conectadas: ${todasConectadas
+              .map((i) => (i.metadados as { instagramContaId?: string } | null)?.instagramContaId ?? "sem-id")
+              .join(", ") || "nenhuma"}`,
+        );
+        continue;
+      }
 
       // "Receber mensagens do Instagram no CRM" (Configurações > Integrações > Instagram e
       // Facebook): desligado não desconecta a conta, só para de trazer mensagem nova pra
