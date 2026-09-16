@@ -7473,6 +7473,9 @@ button.camp-row:hover {
   animation: modal-fade-in var(--transition-base);
 }
 
+/* O modal e o elemento MAIS ALTO do sistema, e a sombra precisa dizer isso. Ele usava a mesma
+   `--shadow-lg` de um popover: sobre o veu escurecido a diferenca sumia, e o modal lia como mais um
+   card — que e exatamente o que ele nao pode parecer. */
 .modal {
   background: var(--surface-elevated);
   border: 1px solid var(--line);
@@ -7481,7 +7484,7 @@ button.camp-row:hover {
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-xl);
   animation: modal-scale-in var(--transition-base);
 }
 
