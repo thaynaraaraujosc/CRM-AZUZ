@@ -25,9 +25,12 @@ function GraficoCrescimento({ crescimento }: { crescimento: Overview["cresciment
 
   return (
     <div className="card" style={{ padding: 17 }}>
-      <p className="panel-h" style={{ padding: 0, marginBottom: 14 }}>
+      {/* `div`, não `p`: `<h4>` dentro de `<p>` é aninhamento inválido, e o navegador fecha o
+          parágrafo sozinho antes do título. O HTML que o servidor manda e o que o navegador monta
+          deixam de bater, o React acusa erro de hidratação e o painel quebra na abertura. */}
+      <div className="panel-h" style={{ padding: 0, marginBottom: 14 }}>
         <h4>Novos workspaces (6 meses)</h4>
-      </p>
+      </div>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 120 }}>
         {crescimento.map((c) => {
           const [ano, mes] = c.mes.split("-");
