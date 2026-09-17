@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import { useEquipe } from "@/lib/equipe-context";
 import { PLANOS, type PlanoId } from "@/lib/assinatura/planos";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { IconCheck } from "@/components/icons";
@@ -70,7 +69,6 @@ function formatarData(iso: string | null): string {
  * traz o estado salvo + histórico de cobranças ao vivo; assinar/trocar de plano e cancelar chamam
  * as rotas que falam com a Asaas de verdade (sandbox por padrão, ver ASAAS_ENV). */
 export function PlanoSecao() {
-  const { membros: equipe } = useEquipe();
 
   const [carregando, setCarregando] = useState(true);
   const [assinatura, setAssinatura] = useState<Assinatura | null>(null);
@@ -201,7 +199,7 @@ export function PlanoSecao() {
   if (carregando) {
     return (
       <div className="config-secao">
-        <CabecalhoCategoria titulo="Plano e cobrança" descricao="Seu plano atual, uso e forma de pagamento." />
+        <CabecalhoCategoria titulo="Plano e cobrança" descricao="Seu plano atual, armazenamento e forma de pagamento." />
         <p className="config-bloco-titulo">Carregando…</p>
       </div>
     );
@@ -212,7 +210,7 @@ export function PlanoSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="Plano e cobrança" descricao="Seu plano atual, uso e forma de pagamento." />
+      <CabecalhoCategoria titulo="Plano e cobrança" descricao="Seu plano atual, armazenamento e forma de pagamento." />
 
       <div className="plano-card">
         <div>
@@ -225,7 +223,9 @@ export function PlanoSecao() {
               ? "Sem novas cobranças: acesso até o fim do período já pago."
               : assinatura?.status === "atrasada"
                 ? "Última cobrança não foi paga. Regularize pra manter o acesso."
-                : "Cobrança mensal via Asaas."}
+                : assinatura?.proximoVencimento
+                  ? `Cobrança mensal via Asaas · próxima em ${formatarData(assinatura.proximoVencimento)}`
+                  : "Cobrança mensal via Asaas."}
           </p>
         </div>
         {infoPlanoAtual ? (
@@ -236,36 +236,15 @@ export function PlanoSecao() {
         ) : null}
       </div>
 
-      <div className="config-bloco">
-        <p className="config-bloco-titulo">Uso</p>
-        <div className="config-grid-2">
+      {/* O bloco "Uso" saiu: usuários, recursos e ciclo repetiam o que o card do plano logo abaixo
+          já diz com mais clareza ("o que está incluído"), e a data da próxima cobrança subiu pra
+          linha do plano. O armazenamento fica, e agora como bloco próprio: ele não é resumo do
+          plano, é o único lugar que mostra quanto espaço resta e que oferece mover pra nuvem o
+          anexo que ainda estiver gravado dentro do banco. */}
+      {armazenamento?.configurado ? (
+        <div className="config-bloco">
+          <p className="config-bloco-titulo">Armazenamento de arquivos</p>
           <div className="field">
-            <label>Usuários</label>
-            <p className="r">{equipe.length} de 10 incluídos</p>
-          </div>
-          <div className="field">
-            <label>Recursos</label>
-            <p className="r">
-              Funis, WhatsApp/Instagram/TikTok, Automações, Azuz IA{" "}
-              <span className="nav-badge-em-breve" style={{ marginLeft: 0 }}>Em breve</span>, Relatórios
-            </p>
-          </div>
-          <div className="field">
-            <label>Próxima cobrança</label>
-            <p className="r">
-              {formatarData(assinatura?.proximoVencimento ?? null)}
-              {infoPlanoAtual ? ` · ${formatarMoeda(infoPlanoAtual.valor)}` : ""}
-            </p>
-          </div>
-          <div className="field">
-            <label>Ciclo</label>
-            <p className="r">Mensal</p>
-          </div>
-        </div>
-
-        {armazenamento?.configurado ? (
-          <div className="field" style={{ marginTop: 16 }}>
-            <label>Armazenamento de arquivos</label>
             <div className="armazenamento-barra">
               <div
                 className={`armazenamento-barra-preenchida${armazenamento.percentual >= 80 ? " cheia" : ""}`}
@@ -292,8 +271,8 @@ export function PlanoSecao() {
               </p>
             ) : null}
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {/* Card do plano na linguagem das referências de preço: preço grande primeiro, recursos com
           marca de conferido, ação preta ocupando a largura. Um plano só: não invento os três
