@@ -76,6 +76,28 @@ export async function GET() {
       LIMIT 10`,
   );
 
+  // Quanto ainda está gravado em base64 DENTRO da linha da mensagem, por workspace.
+  //
+  // O botão que move isso pro R2 vive nas Configurações de cada workspace e só enxerga o de quem
+  // está logado. Então o dono da plataforma não tinha como saber se sobrou coisa nos workspaces
+  // dos clientes: a tela dizia "nada pendente" pra quem olhasse, e a pergunta ficava sem resposta.
+  // Aqui a conta é cross-tenant, que é o ponto deste painel.
+  //
+  // `JSON_SEARCH` é varredura, não índice. Por isso esta consulta mora numa rota de admin chamada
+  // à mão, e não num laço automático: rodar isso a cada minuto sairia mais caro que o problema que
+  // ela mede. `LENGTH(extras)` dá o peso real da coluna, que é o que interessa pra fatura.
+  const anexos = await prisma.$queryRawUnsafe<{ workspaceId: string; nome: string | null; linhas: bigint | number; bytes: bigint | number }[]>(
+    `SELECT m.workspaceId AS workspaceId, w.nome AS nome,
+            COUNT(*) AS linhas, SUM(LENGTH(m.extras)) AS bytes
+       FROM MensagemExtra m
+       LEFT JOIN Workspace w ON w.id = m.workspaceId
+      WHERE m.extras IS NOT NULL
+        AND JSON_SEARCH(m.extras, 'one', 'data:%') IS NOT NULL
+      GROUP BY m.workspaceId, w.nome
+      ORDER BY SUM(LENGTH(m.extras)) DESC`,
+  );
+  const anexosBytes = anexos.reduce((soma, l) => soma + numero(l.bytes), 0);
+
   const uptime = numero(s.Uptime) || 1;
   const enviados = numero(s.Bytes_sent);
   const consultas = numero(s.Com_select) || 1;
@@ -111,6 +133,19 @@ export async function GET() {
       memoria: {
         bufferPoolConfigurado: legivel(Number(v.innodb_buffer_pool_size ?? 0)),
         bufferPoolEmUso: legivel(numero(s.Innodb_buffer_pool_bytes_data)),
+      },
+
+      // Anexo antigo ainda dentro do banco. Cada byte daqui sai do MySQL toda vez que a tela de
+      // Conversas daquele workspace é carregada do zero, e é cobrado como egresso.
+      anexosNoBanco: {
+        mensagens: anexos.reduce((soma, l) => soma + numero(l.linhas), 0),
+        tamanho: legivel(anexosBytes),
+        porWorkspace: anexos.map((l) => ({
+          workspaceId: l.workspaceId,
+          nome: l.nome ?? "(sem nome)",
+          mensagens: numero(l.linhas),
+          tamanho: legivel(numero(l.bytes)),
+        })),
       },
 
       // Teto de sanidade: nenhuma consulta devolve mais do que a tabela inteira ocupa.

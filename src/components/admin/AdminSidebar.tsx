@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
-import { IconConfiguracoes, IconContatos, IconEquipe, IconInicio } from "@/components/icons";
+import { IconConfiguracoes, IconContatos, IconEquipe, IconInicio, IconRelatorios } from "@/components/icons";
 
 const ITENS = [
   { href: "/admin", label: "Dashboard", Icon: IconInicio },
   { href: "/admin/workspaces", label: "Workspaces", Icon: IconContatos },
   { href: "/admin/usuarios", label: "Usuários", Icon: IconEquipe },
+  { href: "/admin/banco", label: "Custo do banco", Icon: IconRelatorios },
 ];
 
 /** Sidebar do painel de super-admin. Deliberadamente sem nenhuma das dependências de contexto da
