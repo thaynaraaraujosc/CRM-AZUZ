@@ -10,8 +10,8 @@ import {
   IconInicio,
   IconPipeline,
   IconRelatorios,
-  IconSparkle,
 } from "@/components/icons";
+import { PilulaDeOferta } from "@/components/landing/PilulaDeOferta";
 import { RevelarAoRolar } from "@/components/landing/RevelarAoRolar";
 import { PLANOS } from "@/lib/assinatura/planos";
 
@@ -21,38 +21,95 @@ export const metadata: Metadata = {
     "O CRM que centraliza WhatsApp, Instagram, funil de vendas, automações e IA num painel só. Experimente o CRM AZUZ.",
 };
 
-const RECURSOS = [
+/**
+ * A faixa logo abaixo do herói.
+ *
+ * A referência põe números aqui ("+30 MIL ALUNOS", "+400 AULAS PRÁTICAS"). O CRM não tem número
+ * desse tamanho pra mostrar, e inventar um na página que vende o produto seria mentira dita no
+ * lugar mais caro possível. Então a faixa fica, porque o gesto tipográfico é bom, e o conteúdo
+ * passa a ser o que é verdade hoje e dá pra conferir. Quando houver volume real, troque por número.
+ */
+const PROVAS = [
+  { forte: "API oficial", resto: "da Meta, não robô de navegador" },
+  { forte: "Usuários ilimitados", resto: "sem cobrar por assento" },
+  { forte: "Ativação imediata", resto: "assim que o pagamento confirma" },
+];
+
+/**
+ * Por perfil de negócio, no formato de linhas numeradas da referência.
+ *
+ * O bloco de seis cards dizia o que o produto TEM. Isto diz o que ele resolve pra quem está lendo,
+ * que é a pergunta que a pessoa realmente faz. Cada linha aponta pro pilar que atende aquele
+ * perfil: o nome do pilar é etiqueta, não link, porque não existe página de recurso pra abrir e
+ * botão que não leva a lugar nenhum é enfeite.
+ */
+const PERFIS = [
   {
-    icon: <IconConversas />,
-    titulo: "WhatsApp e Instagram unificados",
-    descricao: "Toda conversa do time num só lugar, sem trocar de app nem perder histórico.",
+    titulo: "Você vive dentro do WhatsApp",
+    sub: "A conversa é o seu balcão.",
+    descricao:
+      "Toda conversa do time numa caixa só, com histórico que não se perde quando alguém sai de férias ou troca de celular.",
+    pilar: "Conversas",
   },
   {
-    icon: <IconPipeline />,
-    titulo: "Funil visual",
-    descricao: "Arraste negócios entre etapas, veja onde cada venda travou e por quê.",
+    titulo: "Você investe em anúncio",
+    sub: "E quer saber o que voltou.",
+    descricao:
+      "Cada lead chega com a campanha, o conjunto e o anúncio que trouxe ele. Google e Meta, inclusive quem veio direto pro WhatsApp.",
+    pilar: "Tráfego",
   },
   {
-    icon: <IconAutomacoes />,
-    titulo: "Automações sem código",
-    descricao: "Monte fluxos de follow-up, distribuição de leads e cobrança sem escrever nada.",
+    titulo: "Você tem equipe vendendo",
+    sub: "E precisa enxergar o time.",
+    descricao:
+      "Funil visual com valor por negócio, responsável por lead e o que travou em cada etapa. Sem planilha paralela.",
+    pilar: "Funil",
   },
   {
-    icon: <IconSparkle />,
-    titulo: "Azuz IA",
-    descricao: "Um assistente que já conhece os dados do seu negócio e responde na hora.",
-  },
-  {
-    icon: <IconAcoes />,
-    titulo: "Listas de transmissão",
-    descricao: "Segmente sua base e dispare campanhas por WhatsApp, Instagram e SMS.",
-  },
-  {
-    icon: <IconRelatorios />,
-    titulo: "Relatórios de verdade",
-    descricao: "CPL, ROAS, atribuição e performance de vendas. Sem planilha manual.",
+    titulo: "Seu dia some no repetitivo",
+    sub: "Você responde a mesma coisa toda hora.",
+    descricao:
+      "Follow-up, distribuição de lead e resposta de primeira mensagem rodando sozinhos, montados sem escrever código.",
+    pilar: "Automações",
   },
 ];
+
+/**
+ * Os quatro pilares, em cards grandes. Cada um ganha um campo de cor próprio, como na referência:
+ * é o que separa os pilares de um olhar só, antes de ler qualquer palavra. Cor contida, sem neon:
+ * a página é escura e um campo saturado demais vira luminoso em vez de caro.
+ */
+const PILARES = [
+  {
+    nome: "Conversas",
+    titulo: "Atender",
+    descricao: "WhatsApp e Instagram na mesma caixa de entrada, com o time inteiro dentro.",
+    marcas: ["WhatsApp oficial", "Instagram Direct", "Histórico", "Etiquetas"],
+    cor: "azul",
+  },
+  {
+    nome: "Funil",
+    titulo: "Vender",
+    descricao: "Arraste o negócio entre etapas e veja onde a venda parou, com valor em reais.",
+    marcas: ["Etapas", "Valor por negócio", "Responsável", "Motivo de perda"],
+    cor: "verde",
+  },
+  {
+    nome: "Automações",
+    titulo: "Repetir",
+    descricao: "O follow-up que você esquece, rodando sozinho, montado sem escrever código.",
+    marcas: ["Gatilhos", "Espera", "Disparo em massa", "Modelos"],
+    cor: "ambar",
+  },
+  {
+    nome: "Tráfego",
+    titulo: "Medir",
+    descricao: "De qual anúncio veio cada lead, e quanto cada campanha devolveu em venda.",
+    marcas: ["Google Ads", "Meta Ads", "Origem do lead", "ROAS"],
+    cor: "roxo",
+  },
+];
+
 
 const FUNIL_ETAPAS = [
   { nome: "Novo", cards: [{ nome: "Marcos Aurélio", valor: "R$ 890" }, { nome: "Fernando Lima", valor: "R$ 640" }] },
@@ -91,6 +148,9 @@ export default function LandingPage() {
         <style>{`[data-revelar] { opacity: 1 !important; transform: none !important; }`}</style>
       </noscript>
       <RevelarAoRolar />
+      <PilulaDeOferta
+        preco={PLANOS.completo.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+      />
       <style>{`
         .lp-root {
           /* Paleta da landing: preto, branco e cinzas. Ela tem tokens próprios porque é pré-login
@@ -193,7 +253,164 @@ export default function LandingPage() {
            carrossel. */
         [data-revelar="esquerda"] { transform: translate3d(-26px, 18px, 0); }
         [data-revelar="direita"] { transform: translate3d(26px, 18px, 0); }
+        /* O deslocamento lateral só vale onde há margem pra ele. Em tela estreita os 26px jogam o
+           quadro pra fora da borda enquanto ele está escondido, e o que era ritmo vira um empurrão
+           na largura da página. Ali ele sobe, e só. */
+        @media (max-width: 900px) {
+          [data-revelar="esquerda"],
+          [data-revelar="direita"] { transform: translate3d(0, 18px, 0); }
+        }
         .lp-shell { position: relative; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+        /* ---- Faixa de provas, logo abaixo do herói ------------------------------------------ */
+        .lp-provas {
+          display: flex; flex-wrap: wrap; justify-content: center;
+          gap: 10px 40px; margin: 8px auto 0; max-width: 900px;
+          padding-top: 22px; border-top: 1px solid var(--lp-line);
+        }
+        .lp-prova {
+          margin: 0; font-size: 11px; font-weight: 400; letter-spacing: 0.14em;
+          text-transform: uppercase; color: var(--lp-muted); opacity: 0.75;
+        }
+        .lp-prova strong { font-weight: 600; color: var(--lp-ink); opacity: 1; }
+
+        /* ---- Por perfil, em linhas numeradas ------------------------------------------------ */
+        .lp-perfis { margin: 132px 0 0; }
+        .lp-perfis-topo {
+          display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; align-items: start;
+          margin-bottom: 64px;
+        }
+        .lp-perfis-topo p {
+          margin: 6px 0 0; font-size: 16px; font-weight: 300; line-height: 1.65;
+          color: var(--lp-muted); max-width: 420px;
+        }
+        .lp-perfis-lista { list-style: none; margin: 0; padding: 0; }
+        /* A divisória fina entre as linhas é o que faz o bloco ler como índice editorial em vez de
+           lista de itens. Só entre, nunca no topo nem no pé: linha solta na borda vira moldura. */
+        .lp-perfil {
+          display: grid;
+          grid-template-columns: 42px minmax(210px, 1fr) minmax(0, 1.5fr) auto;
+          gap: 28px; align-items: start;
+          padding: 34px 0; border-top: 1px solid var(--lp-line);
+        }
+        .lp-perfil:last-child { border-bottom: 1px solid var(--lp-line); }
+        .lp-perfil-n {
+          font-size: 11px; font-weight: 500; letter-spacing: 0.1em;
+          color: var(--lp-muted); opacity: 0.5; padding-top: 5px;
+        }
+        .lp-perfil-quem h3 {
+          margin: 0; font-family: var(--display); font-weight: 300;
+          font-size: 25px; line-height: 1.2; letter-spacing: -0.02em; color: var(--lp-ink);
+        }
+        .lp-perfil-quem p {
+          margin: 7px 0 0; font-size: 13.5px; font-weight: 300; color: var(--lp-muted); opacity: 0.8;
+        }
+        .lp-perfil-desc {
+          margin: 4px 0 0; font-size: 15px; font-weight: 300; line-height: 1.65; color: var(--lp-muted);
+        }
+        /* Etiqueta, não botão: não existe página de recurso pra abrir, e botão que não leva a lugar
+           nenhum é enfeite. O pilar aqui informa onde aquilo mora dentro do produto. */
+        .lp-perfil-pilar {
+          justify-self: end; white-space: nowrap; padding: 7px 15px; border-radius: 999px;
+          border: 1px solid var(--lp-line-forte); background: var(--lp-superficie);
+          font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+          color: var(--lp-ink); margin-top: 3px;
+        }
+
+        /* ---- Pilares em cards grandes ------------------------------------------------------- */
+        .lp-pilares {
+          display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin: 120px 0 0;
+        }
+        .lp-pilar {
+          position: relative; overflow: hidden; isolation: isolate;
+          min-height: 290px; padding: 26px; border-radius: 22px;
+          border: 1px solid var(--lp-line); background: var(--lp-superficie);
+          display: flex; flex-direction: column;
+        }
+        /* O campo de cor de cada pilar. Fica atrás de tudo, preso ao canto, e é contido de
+           propósito: num fundo escuro um campo saturado vira luminoso, e a página deixa de parecer
+           cara na mesma hora. */
+        .lp-pilar::before {
+          content: ""; position: absolute; inset: 0; z-index: -1;
+          /* Duas fontes de luz, das duas quinas de cima, em vez de uma mancha centrada que ficava
+             quase toda fora do card e aparecia só como borrão na borda. A cor precisa ser vista
+             pra separar os pilares num olhar só — que é o trabalho dela aqui. */
+          background:
+            radial-gradient(ellipse 90% 70% at 12% -10%, var(--campo), transparent 62%),
+            radial-gradient(ellipse 70% 60% at 95% 4%, var(--campo), transparent 66%);
+          opacity: 0.34;
+        }
+        /* Uma aresta de luz na quina de cima, da cor do pilar: é o que faz o card parecer recortado
+           em vez de pintado. */
+        .lp-pilar { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--campo) 34%, transparent); }
+        .lp-pilar-azul { --campo: #2e6bff; }
+        .lp-pilar-verde { --campo: #10a37f; }
+        .lp-pilar-ambar { --campo: #c9761b; }
+        .lp-pilar-roxo { --campo: #7b5cff; }
+        .lp-pilar-nome {
+          display: flex; align-items: center; gap: 9px; margin: 0;
+          font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+          color: var(--lp-ink); opacity: 0.85;
+        }
+        .lp-pilar-ponto {
+          width: 7px; height: 7px; border-radius: 999px; background: var(--campo);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--campo) 26%, transparent);
+        }
+        .lp-pilar-titulo {
+          margin: auto 0 0; font-family: var(--display); font-weight: 300;
+          font-size: 46px; line-height: 1; letter-spacing: -0.03em; color: var(--lp-ink);
+        }
+        .lp-pilar-desc {
+          margin: 12px 0 18px; font-size: 14.5px; font-weight: 300; line-height: 1.6;
+          color: var(--lp-muted); max-width: 40ch;
+        }
+        .lp-pilar-marcas {
+          list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 7px;
+        }
+        .lp-pilar-marcas li {
+          padding: 6px 12px; border-radius: 999px;
+          border: 1px solid var(--lp-line-forte); background: rgba(0, 0, 0, 0.22);
+          font-size: 12px; font-weight: 400; color: var(--lp-ink);
+        }
+
+        /* ---- Pílula de oferta que acompanha a rolagem --------------------------------------- */
+        .lp-oferta {
+          position: fixed; z-index: 40; left: 50%; bottom: 22px;
+          display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 7px;
+          border-radius: 999px; border: 1px solid var(--lp-line-forte);
+          background: rgba(10, 14, 26, 0.86); backdrop-filter: blur(14px);
+          box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.9);
+          /* Sai de cena pra baixo em vez de só apagar: some junto com a borda da tela, que é de
+             onde ela veio. E some do caminho do teclado enquanto está escondida, pra a tecla Tab
+             não parar num botão invisível. */
+          transform: translate(-50%, 130%); opacity: 0; visibility: hidden;
+          transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s ease,
+                      visibility 0s linear 0.4s;
+        }
+        .lp-oferta-visivel {
+          transform: translate(-50%, 0); opacity: 1; visibility: visible;
+          transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s ease,
+                      visibility 0s linear 0s;
+        }
+        .lp-oferta-selo {
+          padding: 0 12px 0 10px; font-size: 12.5px; font-weight: 600; color: var(--lp-ink);
+          white-space: nowrap;
+        }
+        .lp-oferta-link {
+          padding: 10px 18px; border-radius: 999px; background: var(--lp-oceano); color: #fff;
+          font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+          text-decoration: none; white-space: nowrap;
+          transition: background 0.16s ease;
+        }
+        .lp-oferta-link:hover { background: #1f57e0; }
+        .lp-oferta-fechar {
+          width: 30px; height: 30px; border-radius: 999px; border: 0; cursor: pointer;
+          background: transparent; color: var(--lp-muted); font-size: 17px; line-height: 1;
+        }
+        .lp-oferta-fechar:hover { background: var(--lp-superficie); color: var(--lp-ink); }
+        /* O rodapé abre espaço pra pílula: sem isto ela cobre a última linha da página, que é
+           justamente onde fica a informação legal. */
+        .lp-footer { padding-bottom: 76px; }
 
         /* Header flutuante: uma faixa branca destacada do topo, com borda fina, em vez de colada
            na borda da janela. É o que dá a leitura de "aplicação", não de site. */
@@ -302,17 +519,11 @@ export default function LandingPage() {
         /* Segundo tom da manchete: a continuação recua em vez de disputar. Na referência a
            primeira linha vem em branco cheio e a seguinte em cinza, e é isso que faz a frase ter
            começo e desdobramento em vez de ser um bloco só de texto grande. */
-        .lp-h1 .lp-h1-eco { color: rgba(255, 255, 255, 0.42); }
-        .lp-h1 span {
-          /* A metade destacada da frase volta a ter cor. Num título de 76px em fundo escuro, é o
-             que faz o olho parar na parte que importa antes de ler a frase inteira. Gradiente e
-             não chapado: dá a leitura de luz atravessando o texto, que é o traço tecnológico que
-             a página pedia, sem acender nada. */
-          background: linear-gradient(100deg, var(--lp-oceano-claro), var(--lp-oceano));
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
-        }
+        /* O segundo tom vale em qualquer título, não só no do herói: é o gesto, não um caso.
+           Cor SÓLIDA, não branco transparente: com alfa, a aurora azul do fundo atravessava a
+           letra e a linha saía azul saturada — virava uma palavra colorida em vez de uma
+           continuação que recua, que é o oposto do efeito. */
+        .lp-h1-eco { color: #8a91a6; }
         .lp-sub {
           font-size: 18px; font-weight: 300; color: var(--lp-muted);
           max-width: 620px; margin: 0 auto 40px;
@@ -398,32 +609,11 @@ export default function LandingPage() {
         /* --- Respiro entre blocos --- */
         .lp-section-head { text-align: center; margin: 132px auto 48px; max-width: 620px; }
         .lp-eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lp-faint); margin-bottom: 14px; }
-        .lp-h2 { font-family: var(--display); font-weight: 700; font-size: clamp(28px, 4vw, 44px); line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 14px; text-wrap: balance; }
+        /* Mesmo peso leve da manchete. Em 700 o h2 brigava com o h1 em 300 logo acima e a página
+           parecia ter duas tipografias diferentes convivendo. */
+        .lp-h2 { font-family: var(--display); font-weight: 300; font-size: clamp(28px, 4vw, 46px); line-height: 1.1; letter-spacing: -0.028em; margin-bottom: 14px; text-wrap: balance; }
         .lp-section-head p { font-size: 16px; color: var(--lp-muted); line-height: 1.6; }
 
-        .lp-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(266px, 1fr)); gap: 14px; }
-        .lp-feature {
-          border: 1px solid var(--lp-line); border-radius: 16px; padding: 26px 24px 28px;
-          background: var(--lp-superficie);
-          transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease,
-            background 0.18s ease;
-        }
-        /* No hover o cartão sobe 2px e a borda pega o azul. Deslocamento pequeno e uma cor só: é o
-           bastante pra dizer "isto responde", que é a leitura que se quer num produto de software. */
-        .lp-feature:hover {
-          border-color: rgba(46, 107, 255, 0.55);
-          background: var(--lp-superficie-2);
-          transform: translateY(-2px);
-          box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.9);
-        }
-        .lp-feature-icon {
-          width: 38px; height: 38px; border-radius: 11px; margin-bottom: 18px;
-          background: rgba(46, 107, 255, 0.16); border: 1px solid rgba(46, 107, 255, 0.34);
-          color: var(--lp-oceano-claro); display: flex; align-items: center; justify-content: center;
-        }
-        .lp-feature-icon svg { width: 17px; height: 17px; }
-        .lp-feature h3 { font-family: var(--display); font-size: 15.5px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.015em; }
-        .lp-feature p { font-size: 13.5px; color: var(--lp-muted); line-height: 1.6; }
 
         .lp-pricing {
           max-width: 460px; margin: 132px auto 0; text-align: center; padding: 44px 36px 38px;
@@ -448,6 +638,37 @@ export default function LandingPage() {
 
         .lp-footer { text-align: center; margin-top: 132px; padding: 28px 0 44px; font-size: 12px; color: var(--lp-faint); border-top: 1px solid var(--lp-line); }
 
+        @media (max-width: 900px) {
+          /* As quatro colunas da linha numerada viram duas, com a descrição ocupando a largura
+             inteira embaixo. Em 390px a grade original somava mais de 400px só nas colunas fixas:
+             o texto saía pela direita, uma palavra por linha, e o defeito não aparecia como
+             rolagem horizontal porque o container cortava. */
+          .lp-perfis-topo { grid-template-columns: 1fr; gap: 20px; margin-bottom: 40px; }
+          .lp-perfil {
+            grid-template-columns: 30px 1fr auto;
+            grid-template-areas: "n quem pilar" ". desc desc";
+            gap: 14px 16px; padding: 26px 0;
+          }
+          .lp-perfil-n { grid-area: n; }
+          .lp-perfil-quem { grid-area: quem; }
+          .lp-perfil-pilar { grid-area: pilar; align-self: start; }
+          .lp-perfil-desc { grid-area: desc; margin-top: 4px; }
+          .lp-pilares { grid-template-columns: 1fr; }
+          .lp-pilar { min-height: 0; }
+          .lp-pilar-titulo { margin-top: 26px; font-size: 38px; }
+          .lp-provas { gap: 8px 24px; }
+        }
+        @media (max-width: 520px) {
+          /* A etiqueta do pilar desce pra baixo do título: lado a lado com ele, em 390px, sobra
+             espaço demais pra ela e de menos pro nome do perfil. */
+          .lp-perfil {
+            grid-template-columns: 26px 1fr;
+            grid-template-areas: "n quem" ". desc" ". pilar";
+          }
+          .lp-perfil-pilar { justify-self: start; margin-top: 12px; }
+          .lp-perfis { margin-top: 92px; }
+          .lp-pilares { margin-top: 84px; }
+        }
         @media (max-width: 860px) {
           .lp-hero { padding-top: 72px; }
           .lp-frame-wrap { margin-top: 56px; }
@@ -507,7 +728,6 @@ export default function LandingPage() {
             transform: none;
             transition: none;
           }
-          .lp-feature:hover { transform: none; }
         }
       `}</style>
 
@@ -573,6 +793,14 @@ export default function LandingPage() {
 
             <span className="lp-meta-canto esq">WhatsApp · Instagram · Meta Ads · Google Ads</span>
             <span className="lp-meta-canto dir">Feito no Brasil</span>
+          </section>
+
+          <section className="lp-provas" data-revelar="">
+            {PROVAS.map((p) => (
+              <p key={p.forte} className="lp-prova">
+                <strong>{p.forte}</strong> {p.resto}
+              </p>
+            ))}
           </section>
 
           <section className="lp-frame-wrap" data-revelar="esquerda">
@@ -731,15 +959,55 @@ export default function LandingPage() {
             <p>Da primeira mensagem até o pós-venda, sem sair do CRM.</p>
           </section>
 
-          <section className="lp-features" data-revelar="">
-            {RECURSOS.map((r) => (
-              <div key={r.titulo} className="lp-feature">
-                <div className="lp-feature-icon">{r.icon}</div>
-                <h3>{r.titulo}</h3>
-                <p>{r.descricao}</p>
-              </div>
+          {/* Os quatro pilares em cards grandes, cada um com seu campo de cor. */}
+          <section className="lp-pilares" data-revelar="">
+            {PILARES.map((pilar) => (
+              <article key={pilar.nome} className={`lp-pilar lp-pilar-${pilar.cor}`}>
+                <p className="lp-pilar-nome">
+                  <span className="lp-pilar-ponto" aria-hidden />
+                  {pilar.nome}
+                </p>
+                <h3 className="lp-pilar-titulo">{pilar.titulo}</h3>
+                <p className="lp-pilar-desc">{pilar.descricao}</p>
+                <ul className="lp-pilar-marcas">
+                  {pilar.marcas.map((m) => (
+                    <li key={m}>{m}</li>
+                  ))}
+                </ul>
+              </article>
             ))}
           </section>
+
+          {/* Por perfil de negócio, em linhas numeradas. A grade acima diz o que o produto tem;
+              esta parte diz o que ele resolve pra quem está lendo. */}
+          <section className="lp-perfis" data-revelar="">
+            <div className="lp-perfis-topo">
+              <h2 className="lp-h2">
+                Seja qual for o seu negócio,
+                <br />
+                <span className="lp-h1-eco">já tem um caminho pronto</span>
+              </h2>
+              <p>
+                Você não precisa montar processo do zero. O CRM já vem com o caminho que
+                resolve o problema que você tem hoje.
+              </p>
+            </div>
+
+            <ol className="lp-perfis-lista">
+              {PERFIS.map((perfil, i) => (
+                <li key={perfil.titulo} className="lp-perfil">
+                  <span className="lp-perfil-n">{String(i + 1).padStart(2, "0")}</span>
+                  <div className="lp-perfil-quem">
+                    <h3>{perfil.titulo}</h3>
+                    <p>{perfil.sub}</p>
+                  </div>
+                  <p className="lp-perfil-desc">{perfil.descricao}</p>
+                  <span className="lp-perfil-pilar">{perfil.pilar}</span>
+                </li>
+              ))}
+            </ol>
+          </section>
+
 
           <section className="lp-pricing" data-revelar="">
             <p className="lp-pricing-tag">Plano único</p>
