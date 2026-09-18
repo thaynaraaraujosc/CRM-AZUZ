@@ -12,6 +12,7 @@ import {
   IconRelatorios,
   IconSparkle,
 } from "@/components/icons";
+import { RevelarAoRolar } from "@/components/landing/RevelarAoRolar";
 import { PLANOS } from "@/lib/assinatura/planos";
 
 export const metadata: Metadata = {
@@ -83,6 +84,13 @@ const FUNIL_ETAPAS = [
 export default function LandingPage() {
   return (
     <div className="lp-root">
+      {/* O estado escondido vem do próprio CSS, não de uma classe posta por script: marcar o
+          <html> antes da hidratação fazia o React acusar divergência entre o HTML do servidor e o
+          do navegador. Quem não tem JavaScript recupera tudo pelo <noscript> abaixo. */}
+      <noscript>
+        <style>{`[data-revelar] { opacity: 1 !important; transform: none !important; }`}</style>
+      </noscript>
+      <RevelarAoRolar />
       <style>{`
         .lp-root {
           /* Paleta da landing: preto, branco e cinzas. Ela tem tokens próprios porque é pré-login
@@ -155,14 +163,36 @@ export default function LandingPage() {
           from { opacity: 0; transform: translateY(14px); }
           to { opacity: 1; transform: none; }
         }
-        .lp-badge, .lp-h1, .lp-sub, .lp-cta-row, .lp-microcopy, .lp-frame-wrap {
+        .lp-badge, .lp-h1, .lp-sub, .lp-cta-row, .lp-microcopy {
           animation: lp-entrar 0.62s cubic-bezier(0.22, 0.61, 0.36, 1) both;
         }
         .lp-h1 { animation-delay: 0.06s; }
         .lp-sub { animation-delay: 0.12s; }
         .lp-cta-row { animation-delay: 0.18s; }
         .lp-microcopy { animation-delay: 0.24s; }
-        .lp-frame-wrap { animation-delay: 0.3s; }
+
+        /* Revelação ao rolar. A cascata acima cobre só o topo: tudo abaixo da dobra terminava de
+           animar antes de a pessoa chegar lá, e da segunda tela em diante o site era uma imagem
+           comprida e parada. Aqui cada peça entra quando ela chega na tela.
+           Escondido por padrão no CSS, revelado por JavaScript. Quem tem JavaScript desligado
+           recupera tudo pelo <noscript> no começo da página, e o próprio componente revela tudo de
+           uma vez se o navegador não tiver IntersectionObserver ou se algo travar. Página de venda
+           invisível é o pior erro possível aqui, então há três saídas. */
+        [data-revelar] {
+          opacity: 0;
+          transform: translateY(22px);
+          transition: opacity 0.7s cubic-bezier(0.22, 0.61, 0.36, 1),
+                      transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+        [data-revelar].lp-revelado {
+          opacity: 1;
+          transform: none;
+        }
+        /* Os três quadros do produto entram alternando o lado. Tratamento idêntico três vezes
+           seguidas lia como repetição; um deslocamento lateral pequeno dá ritmo sem virar
+           carrossel. */
+        [data-revelar="esquerda"] { transform: translate3d(-26px, 18px, 0); }
+        [data-revelar="direita"] { transform: translate3d(26px, 18px, 0); }
         .lp-shell { position: relative; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
         /* Header flutuante: uma faixa branca destacada do topo, com borda fina, em vez de colada
@@ -405,6 +435,13 @@ export default function LandingPage() {
             opacity: 1;
             transform: none;
           }
+          [data-revelar],
+          [data-revelar="esquerda"],
+          [data-revelar="direita"] {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
           .lp-feature:hover { transform: none; }
         }
       `}</style>
@@ -444,8 +481,11 @@ export default function LandingPage() {
               <span className="lp-dot" aria-hidden />
               Plataforma completa de vendas
             </span>
-            <h1 className="lp-h1">
-              O CRM que roda <span>o comercial</span> da sua empresa do início ao fim
+            {/* `text-wrap: balance` distribui as linhas por igual, e o `nowrap` no destaque impede
+                que "o comercial" racha no meio — era o que deixava um "o" azul órfão no fim da
+                primeira linha. */}
+            <h1 className="lp-h1" style={{ textWrap: "balance" }}>
+              O CRM que roda <span style={{ whiteSpace: "nowrap" }}>o comercial</span> da sua empresa do início ao fim
             </h1>
             <p className="lp-sub">
               WhatsApp, Instagram, funil de vendas, automações e IA num painel só. Sem
@@ -462,7 +502,7 @@ export default function LandingPage() {
             <p className="lp-microcopy">Ativação imediata após a confirmação do pagamento.</p>
           </section>
 
-          <section className="lp-frame-wrap">
+          <section className="lp-frame-wrap" data-revelar="esquerda">
             <div className="lp-frame">
               <div className="lp-frame-bar">
                 <span className="lp-frame-dot" />
@@ -533,7 +573,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          <section className="lp-frame-wrap">
+          <section className="lp-frame-wrap" data-revelar="direita">
             <div className="lp-frame">
               <div className="lp-frame-bar">
                 <span className="lp-frame-dot" />
@@ -564,7 +604,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          <section className="lp-frame-wrap">
+          <section className="lp-frame-wrap" data-revelar="esquerda">
             <div className="lp-frame">
               <div className="lp-frame-bar">
                 <span className="lp-frame-dot" />
@@ -612,13 +652,13 @@ export default function LandingPage() {
             </div>
           </section>
 
-          <section className="lp-section-head">
+          <section className="lp-section-head" data-revelar="">
             <p className="lp-eyebrow">Tudo integrado</p>
             <h2 className="lp-h2">Um painel só pro seu time inteiro</h2>
             <p>Da primeira mensagem até o pós-venda, sem sair do CRM.</p>
           </section>
 
-          <section className="lp-features">
+          <section className="lp-features" data-revelar="">
             {RECURSOS.map((r) => (
               <div key={r.titulo} className="lp-feature">
                 <div className="lp-feature-icon">{r.icon}</div>
@@ -628,7 +668,7 @@ export default function LandingPage() {
             ))}
           </section>
 
-          <section className="lp-pricing">
+          <section className="lp-pricing" data-revelar="">
             <p className="lp-pricing-tag">Plano único</p>
             <p className="lp-price">
               {PLANOS.completo.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}

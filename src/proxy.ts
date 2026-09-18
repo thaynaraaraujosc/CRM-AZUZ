@@ -102,5 +102,16 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  /**
+   * `marca` está de fora junto com os caminhos internos do Next porque `public/` é, por definição,
+   * conteúdo público: são os arquivos da marca, servidos antes de qualquer login.
+   *
+   * Sem essa exclusão, `GET /marca/logo-azuz.jpg` de quem não está logado caía na regra geral e
+   * levava 307 pra `/login`. O estrago não era só o arquivo não abrir: o otimizador de imagem do
+   * Next busca o arquivo local por HTTP, recebia o redirecionamento em vez dos bytes, não
+   * conseguia identificar o tipo e devolvia 400. Resultado: a logo do cabeçalho não aparecia na
+   * landing pra NENHUM visitante — ou seja, exatamente para todo mundo que ainda não é cliente, na
+   * única página que existe pra vender o produto. E sem erro visível: só um espaço vazio.
+   */
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|marca/).*)"],
 };
