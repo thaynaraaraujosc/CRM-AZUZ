@@ -29,3 +29,25 @@ Contraste de cor: usar o **Color Contrast Checker** do Figma. (Havia uma quarta 
 - Componente copiado de fora precisa passar pelos tokens do `globals.css` antes de entrar. Caso
   contrário o CRM volta a ter várias linguagens visuais convivendo, que foi o problema que a
   unificação do renderizador de mensagens acabou de resolver.
+
+# Quando publicar: por entrega, não por commit
+
+Todo push na `main` dispara um build de produção na Vercel, e build é a maior linha de uso da
+fatura: **8.320 minutos de CPU = $20,96** no ciclo de 15/08 a 14/09 de 2026. No mesmo período
+houve **390 commits na `main`** (74 num único dia). Não era muito trabalho: era o mesmo trabalho
+fatiado fino demais na hora de publicar. Para comparação, atender 683 mil requisições no mesmo
+ciclo custou **$0,24**. Servir o CRM é praticamente de graça; compilá-lo é que não é.
+
+O `scripts/pular-build.mjs` já impede que branch de trabalho vire build — só a `main` compila. Mas
+essa proteção não serve de nada se cada commit for imediatamente mesclado na `main`, que é
+exatamente o que vinha acontecendo.
+
+**A regra, decidida pela Thaynara em 18/09/2026:**
+
+- Trabalhe e commite à vontade em `claude/pronto-cvdtz4`. Push nessa branch não gasta build.
+- Só leve para a `main` quando a **entrega estiver fechada e verificada** (tsc, testes e build
+  passando). Uma entrega pode conter vários commits.
+- Alvo: de 1 a 3 builds por dia, não de 20 a 70.
+
+O custo aceito dessa escolha: uma correção pode levar algumas horas até estar no ar. Foi uma
+decisão consciente, não um descuido — não "otimize" voltando a publicar por commit.
