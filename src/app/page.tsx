@@ -218,43 +218,91 @@ export default function LandingPage() {
         }
         .lp-brand { font-family: var(--display); font-weight: 700; font-size: 15.5px; letter-spacing: -0.01em; white-space: nowrap; }
         .lp-nav-actions { display: flex; gap: 6px; align-items: center; }
+        /* Botão em pílula no formato da referência: caixa alta, letra espaçada, muito respiro
+           lateral, e um selo redondo com a seta no fim. O selo é o detalhe que faz o botão parecer
+           desenhado em vez de gerado — e é o mesmo gesto repetido em toda a página deles. */
         .lp-btn {
-          font-family: var(--body); font-weight: 600; font-size: 13.5px; cursor: pointer;
-          border-radius: 999px; padding: 10px 18px; text-decoration: none; display: inline-flex;
-          align-items: center; gap: 7px; border: 1px solid transparent;
-          transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+          font-family: var(--body); font-weight: 500; font-size: 12px; cursor: pointer;
+          letter-spacing: 0.12em; text-transform: uppercase;
+          border-radius: 999px; padding: 13px 14px 13px 26px; text-decoration: none;
+          display: inline-flex; align-items: center; gap: 14px; border: 1px solid transparent;
+          transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
           white-space: nowrap;
         }
+        /* O selo: círculo de borda fina com a seta dentro. Vem por CSS pra nenhuma frase da página
+           precisar carregar um caractere de enfeite. */
+        .lp-btn::after {
+          content: "↗";
+          display: inline-flex; align-items: center; justify-content: center;
+          width: 26px; height: 26px; border-radius: 999px;
+          border: 1px solid currentColor; opacity: 0.55;
+          font-size: 11px; line-height: 1;
+          transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+        .lp-btn:hover::after { opacity: 1; transform: translate(1px, -1px); }
         .lp-btn-ghost { color: var(--lp-ink); border-color: transparent; background: transparent; }
         .lp-btn-ghost:hover { background: var(--lp-superficie); }
         .lp-btn-primary {
           color: #ffffff; background: var(--lp-oceano);
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 10px 26px -12px rgba(46, 107, 255, 0.9);
+          /* Sem halo azul. O brilho em volta era o único efeito "de banner" que restava na página,
+             e brigava com a sobriedade que o resto passou a ter. Fica só o fio de luz na aresta de
+             cima, que dá volume ao botão sem acender nada. */
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 8px 20px -14px rgba(0, 0, 0, 0.8);
         }
         .lp-btn-primary:hover { background: #1f57e0; }
-        /* A seta é do botão, não do texto: entra por CSS pra nenhuma frase da página mudar. */
-        .lp-btn-primary::after { content: "→"; font-size: 13px; line-height: 1; }
-        .lp-btn-linha { color: var(--lp-ink); border-color: var(--lp-line-forte); background: var(--lp-superficie); }
-        .lp-btn-linha:hover { background: var(--lp-superficie-2); }
+        .lp-btn-primary::after { border-color: rgba(255, 255, 255, 0.55); opacity: 0.85; }
+        .lp-btn-primary:hover::after { border-color: #ffffff; }
+        /* Secundário só de contorno, sem preenchimento: na referência o par de botões é um cheio e
+           um vazado, e é esse contraste que diz qual é a ação principal. */
+        .lp-btn-linha { color: var(--lp-ink); border-color: var(--lp-line-forte); background: transparent; }
+        .lp-btn-linha:hover { background: var(--lp-superficie); border-color: var(--lp-ink); }
 
+        /* Sobrancelha: risco curto + rótulo em caixa alta bem espaçada, sem cápsula em volta.
+           A pílula com fundo e borda competia com os botões logo abaixo (três cápsulas empilhadas
+           na mesma coluna) e roubava o primeiro olhar, que pertence à manchete. Aqui ela vira o
+           que é: uma etiqueta discreta anunciando o assunto. */
         .lp-badge {
-          display: inline-flex; align-items: center; gap: 8px; margin: 0 auto 30px;
-          padding: 7px 15px 7px 11px; border-radius: 999px; border: 1px solid var(--lp-line);
-          background: var(--lp-superficie); font-size: 11.5px; font-weight: 600; color: var(--lp-muted);
-          letter-spacing: 0.04em; text-transform: uppercase;
+          display: inline-flex; align-items: center; gap: 12px; margin: 0 auto 26px;
+          font-size: 11px; font-weight: 500; color: var(--lp-muted);
+          letter-spacing: 0.22em; text-transform: uppercase;
+        }
+        .lp-badge::before {
+          content: ""; width: 26px; height: 1px; background: var(--lp-line-forte);
         }
         .lp-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--lp-oceano-claro); animation: lp-pulse 2.4s ease-in-out infinite; }
         @keyframes lp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 
-        .lp-hero { text-align: center; padding: 104px 0 0; }
-        .lp-h1 {
-          font-family: var(--display); font-weight: 700;
-          /* Título grande de verdade, com entrelinha fechada e tracking negativo. É daí que vem
-             a presença da referência, não de cor nem de efeito. */
-          font-size: clamp(38px, 6.6vw, 76px); line-height: 1.03; letter-spacing: -0.035em;
-          max-width: 940px; margin: 0 auto 22px;
-          text-wrap: balance;
+        .lp-hero { position: relative; text-align: center; padding: 124px 0 44px; }
+
+        /* Metadados nos cantos, em caixa alta miúda e bem espaçada. Na referência eles aparecem em
+           todo herói ("AGO · 2026" num canto, a cidade no outro) e fazem um trabalho específico:
+           ocupam a margem, dão escala ao vazio e passam a sensação de peça composta em vez de
+           texto centralizado solto no meio do nada. */
+        .lp-meta-canto {
+          position: absolute; bottom: 0;
+          font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase;
+          color: var(--lp-muted); opacity: 0.55; pointer-events: none;
         }
+        .lp-meta-canto.esq { left: 4px; }
+        .lp-meta-canto.dir { right: 4px; }
+        @media (max-width: 780px) { .lp-meta-canto { display: none; } }
+        .lp-h1 {
+          font-family: var(--display);
+          /* PESO LEVE, e é essa a mudança que mais importa. A referência inteira é construída em
+             títulos enormes e finos: o tamanho é que dá presença, não a gordura da letra. Em 700 o
+             mesmo texto lê como anúncio de promoção; em 300 lê como marca cara. Só funciona porque
+             o tamanho sobe junto — leve e pequeno some. */
+          font-weight: 300;
+          font-size: clamp(38px, 5.6vw, 72px); line-height: 1.06; letter-spacing: -0.03em;
+          /* Largura generosa de propósito: com 980px cada metade da frase quebrava em duas e a
+             manchete virava um bloco de quatro linhas que comia a dobra inteira. O <br> já decide
+             onde a frase vira; a largura só precisa deixar cada metade caber na linha dela. */
+          max-width: 1180px; margin: 0 auto 26px;
+        }
+        /* Segundo tom da manchete: a continuação recua em vez de disputar. Na referência a
+           primeira linha vem em branco cheio e a seguinte em cinza, e é isso que faz a frase ter
+           começo e desdobramento em vez de ser um bloco só de texto grande. */
+        .lp-h1 .lp-h1-eco { color: rgba(255, 255, 255, 0.42); }
         .lp-h1 span {
           /* A metade destacada da frase volta a ter cor. Num título de 76px em fundo escuro, é o
              que faz o olho parar na parte que importa antes de ler a frase inteira. Gradiente e
@@ -266,8 +314,9 @@ export default function LandingPage() {
           color: transparent;
         }
         .lp-sub {
-          font-size: 17px; color: var(--lp-muted); max-width: 580px; margin: 0 auto 34px;
-          line-height: 1.55; text-wrap: pretty;
+          font-size: 18px; font-weight: 300; color: var(--lp-muted);
+          max-width: 620px; margin: 0 auto 40px;
+          line-height: 1.6; text-wrap: pretty;
         }
         .lp-cta-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 18px; }
         .lp-cta-row .lp-btn { padding: 13px 26px; font-size: 14px; }
@@ -412,7 +461,23 @@ export default function LandingPage() {
           .lp-header-inner { padding: 8px 8px 8px 14px; }
           .lp-mark { width: 22px; height: 22px; border-radius: 7px; }
           .lp-brand { font-size: 14px; }
-          .lp-nav-actions .lp-btn { padding: 9px 13px; font-size: 12.5px; }
+          /* O botão do cabeçalho perde o selo redondo e a caixa alta espaçada aqui. Eles são o
+             acabamento da referência no desktop, mas custam largura: com os dois ligados, "Criar
+             conta" saía pela direita da tela em 390px e a faixa do header ficava cortada. Selo e
+             espaçamento continuam valendo nos botões grandes do corpo da página, que têm a linha
+             inteira pra eles. */
+          .lp-nav-actions .lp-btn {
+            padding: 9px 14px; font-size: 12px;
+            letter-spacing: 0.04em; text-transform: none; gap: 0;
+          }
+          .lp-nav-actions .lp-btn::after { display: none; }
+          /* A sobrancelha também encosta nas bordas nessa largura: o risco sai e o texto encolhe. */
+          .lp-badge { font-size: 10px; letter-spacing: 0.14em; }
+          .lp-badge::before { display: none; }
+          /* Os dois botões do herói viram um por linha, largos: lado a lado ficariam apertados
+             demais pra um alvo de toque. */
+          .lp-cta-row { flex-direction: column; align-items: stretch; padding: 0 8px; }
+          .lp-cta-row .lp-btn { justify-content: center; }
         }
         @media (max-width: 720px) {
           .lp-header-inner { padding-left: 18px; }
@@ -484,8 +549,13 @@ export default function LandingPage() {
             {/* `text-wrap: balance` distribui as linhas por igual, e o `nowrap` no destaque impede
                 que "o comercial" racha no meio — era o que deixava um "o" azul órfão no fim da
                 primeira linha. */}
-            <h1 className="lp-h1" style={{ textWrap: "balance" }}>
-              O CRM que roda <span style={{ whiteSpace: "nowrap" }}>o comercial</span> da sua empresa do início ao fim
+            {/* Duas frases, dois tons: a primeira afirma, a segunda completa e recua. É o gesto
+                tipográfico que a referência repete em todo herói. O <br> é assumido porque a
+                quebra aqui é decisão de composição, não acidente de largura. */}
+            <h1 className="lp-h1">
+              O CRM que roda o comercial
+              <br />
+              <span className="lp-h1-eco">da sua empresa, do início ao fim</span>
             </h1>
             <p className="lp-sub">
               WhatsApp, Instagram, funil de vendas, automações e IA num painel só. Sem
@@ -500,6 +570,9 @@ export default function LandingPage() {
               </Link>
             </div>
             <p className="lp-microcopy">Ativação imediata após a confirmação do pagamento.</p>
+
+            <span className="lp-meta-canto esq">WhatsApp · Instagram · Meta Ads · Google Ads</span>
+            <span className="lp-meta-canto dir">Feito no Brasil</span>
           </section>
 
           <section className="lp-frame-wrap" data-revelar="esquerda">
