@@ -30,9 +30,9 @@ export const metadata: Metadata = {
  * passa a ser o que é verdade hoje e dá pra conferir. Quando houver volume real, troque por número.
  */
 const PROVAS = [
-  { forte: "API oficial", resto: "da Meta, não robô de navegador" },
-  { forte: "Usuários ilimitados", resto: "sem cobrar por assento" },
-  { forte: "Ativação imediata", resto: "assim que o pagamento confirma" },
+  { forte: "API oficial", resto: "da Meta" },
+  { forte: "Usuários ilimitados", resto: "no mesmo preço" },
+  { forte: "Ativação imediata", resto: "após o pagamento" },
 ];
 
 /**
@@ -263,13 +263,19 @@ export default function LandingPage() {
         .lp-shell { position: relative; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
         /* ---- Faixa de provas, logo abaixo do herói ------------------------------------------ */
+        /* A faixa não encosta mais no rodapé do herói. Eram três blocos de letra miúda em caixa
+           alta empilhados sem folga — os metadados dos cantos, o fio e as provas — e de longe isso
+           lia como um parágrafo só, apertado. O espaço é o que separa um assunto do outro. */
         .lp-provas {
-          display: flex; flex-wrap: wrap; justify-content: center;
-          gap: 10px 40px; margin: 8px auto 0; max-width: 900px;
-          padding-top: 22px; border-top: 1px solid var(--lp-line);
+          /* Grade de três colunas iguais, não linha que quebra. Em flex a faixa caía como dois
+             itens em cima e um embaixo, deslocado, e o desequilíbrio dependia do comprimento das
+             frases: mudar uma palavra remontava tudo. Na grade ela é simétrica por construção. */
+          display: grid; grid-template-columns: repeat(3, 1fr); align-items: baseline;
+          gap: 14px 24px; margin: 56px auto 0; max-width: 940px;
+          padding-top: 30px; border-top: 1px solid var(--lp-line);
         }
         .lp-prova {
-          margin: 0; font-size: 11px; font-weight: 400; letter-spacing: 0.14em;
+          margin: 0; text-align: center; font-size: 11px; font-weight: 400; letter-spacing: 0.14em;
           text-transform: uppercase; color: var(--lp-muted); opacity: 0.75;
         }
         .lp-prova strong { font-weight: 600; color: var(--lp-ink); opacity: 1; }
@@ -479,17 +485,14 @@ export default function LandingPage() {
            na mesma coluna) e roubava o primeiro olhar, que pertence à manchete. Aqui ela vira o
            que é: uma etiqueta discreta anunciando o assunto. */
         .lp-badge {
-          display: inline-flex; align-items: center; gap: 12px; margin: 0 auto 26px;
+          display: inline-flex; align-items: center; gap: 12px; margin: 0 auto 44px;
           font-size: 11px; font-weight: 500; color: var(--lp-muted);
           letter-spacing: 0.22em; text-transform: uppercase;
-        }
-        .lp-badge::before {
-          content: ""; width: 26px; height: 1px; background: var(--lp-line-forte);
         }
         .lp-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--lp-oceano-claro); animation: lp-pulse 2.4s ease-in-out infinite; }
         @keyframes lp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 
-        .lp-hero { position: relative; text-align: center; padding: 124px 0 44px; }
+        .lp-hero { position: relative; text-align: center; padding: 124px 0 104px; }
 
         /* Metadados nos cantos, em caixa alta miúda e bem espaçada. Na referência eles aparecem em
            todo herói ("AGO · 2026" num canto, a cidade no outro) e fazem um trabalho específico:
@@ -510,11 +513,16 @@ export default function LandingPage() {
              mesmo texto lê como anúncio de promoção; em 300 lê como marca cara. Só funciona porque
              o tamanho sobe junto — leve e pequeno some. */
           font-weight: 300;
-          font-size: clamp(38px, 5.6vw, 72px); line-height: 1.06; letter-spacing: -0.03em;
+          font-size: clamp(40px, 6.2vw, 84px); line-height: 1.08; letter-spacing: -0.03em;
           /* Largura generosa de propósito: com 980px cada metade da frase quebrava em duas e a
              manchete virava um bloco de quatro linhas que comia a dobra inteira. O <br> já decide
              onde a frase vira; a largura só precisa deixar cada metade caber na linha dela. */
-          max-width: 1180px; margin: 0 auto 26px;
+          /* O título escapa da largura do container. Ele está dentro de uma coluna de 1120px, e em
+             84px a segunda frase não cabia ali: quebrava em três linhas e deixava "fim" sozinho na
+             última. As margens negativas alargam só ele, mantendo o centro. O min() com vw é o que
+             impede de estourar a tela em monitor estreito. */
+          max-width: none;
+          margin: 0 calc(50% - min(650px, 46vw)) 38px;
         }
         /* Segundo tom da manchete: a continuação recua em vez de disputar. Na referência a
            primeira linha vem em branco cheio e a seguinte em cinza, e é isso que faz a frase ter
@@ -526,15 +534,15 @@ export default function LandingPage() {
         .lp-h1-eco { color: #8a91a6; }
         .lp-sub {
           font-size: 18px; font-weight: 300; color: var(--lp-muted);
-          max-width: 620px; margin: 0 auto 40px;
+          max-width: 620px; margin: 0 auto 52px;
           line-height: 1.6; text-wrap: pretty;
         }
-        .lp-cta-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 18px; }
+        .lp-cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 26px; }
         .lp-cta-row .lp-btn { padding: 13px 26px; font-size: 14px; }
         .lp-microcopy { font-size: 12.5px; color: var(--lp-faint); }
 
         /* --- Telas de produto --- */
-        .lp-frame-wrap { margin: 84px 0 0; }
+        .lp-frame-wrap { margin: 116px 0 0; }
         .lp-frame {
           max-width: 940px; margin: 0 auto; border-radius: 18px; overflow: hidden;
           background: var(--lp-bg-2);
@@ -656,7 +664,7 @@ export default function LandingPage() {
           .lp-pilares { grid-template-columns: 1fr; }
           .lp-pilar { min-height: 0; }
           .lp-pilar-titulo { margin-top: 26px; font-size: 38px; }
-          .lp-provas { gap: 8px 24px; }
+          .lp-provas { grid-template-columns: 1fr; gap: 10px; }
         }
         @media (max-width: 520px) {
           /* A etiqueta do pilar desce pra baixo do título: lado a lado com ele, em 390px, sobra
