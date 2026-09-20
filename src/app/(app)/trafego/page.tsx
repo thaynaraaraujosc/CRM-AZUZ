@@ -9,6 +9,7 @@ import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
 import { useIntegracaoMeta } from "@/components/configuracoes/useIntegracaoMeta";
 import { useGoogleAds } from "@/components/trafego/useGoogleAds";
+import { acharNoCrm, normalizarNome, usePorCampanha } from "@/components/trafego/usePorCampanha";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { ChartCard, FunnelSteps } from "@/components/charts";
 import {
@@ -82,6 +83,7 @@ export default function TrafegoPage() {
   }, [adsIntegracao?.status]);
 
   const { statusGoogle, campanhasGoogle, desconectando: googleDesconectando, desconectar: desconectarGoogle } = useGoogleAds();
+  const { linhasDoCrm, leadsSemCampanha } = usePorCampanha();
 
   /*
    * Os dois canais na MESMA lista, e não em duas tabelas.
@@ -93,10 +95,37 @@ export default function TrafegoPage() {
    *
    * Só entra campanha de verdade: sem nenhuma conexão a lista fica vazia (não mais um mock).
    */
-  const campanhas = useMemo(
-    () => [...(campanhasReais ?? []), ...campanhasGoogle],
-    [campanhasReais, campanhasGoogle],
-  );
+  const campanhas = useMemo(() => {
+    const daPlataforma = [...(campanhasReais ?? []), ...campanhasGoogle];
+
+    /*
+     * Campanha que o CRM conhece e a plataforma não devolveu.
+     *
+     * Sem isto a tabela inteira dependia de haver uma conexão de anúncio ativa: um cliente que usa
+     * o link de rastreamento mas nunca conectou o Google Ads via a lista vazia, mesmo tendo dezenas
+     * de leads com campanha identificada guardados no banco. O dado existia e ninguém mostrava.
+     *
+     * Entram sem investimento, porque investimento só a plataforma sabe. Leads, vendas e receita
+     * são reais; o que falta fica em branco em vez de virar zero — zero afirma que não se gastou
+     * nada, e não é isso que se sabe.
+     */
+    const jaNaPlataforma = new Set(
+      daPlataforma.map((c) => `${c.plataforma === "M" ? "meta" : "google"}|${normalizarNome(c.nome)}`),
+    );
+    const soDoCrm: Campanha[] = linhasDoCrm
+      .filter((l) => !jaNaPlataforma.has(`${l.plataforma}|${normalizarNome(l.campanhaNome)}`))
+      .map((l) => ({
+        plataforma: l.plataforma === "meta" ? "M" : "G",
+        nome: l.campanhaNome,
+        sub: `${l.leads} leads · R$ 0`,
+        roas: "—",
+        barra: 0,
+        vendas: l.vendas,
+        semPlataforma: true,
+      }));
+
+    return [...daPlataforma, ...soDoCrm];
+  }, [campanhasReais, campanhasGoogle, linhasDoCrm]);
 
   // O filtro por Google Ads só existe quando o canal existe. Opção que devolve vazio SEMPRE faz
   // quem escolhe concluir que não houve investimento, e não que o canal não está ligado.
@@ -117,7 +146,41 @@ export default function TrafegoPage() {
       const { leads, investido } = parseSubCampanha(c.sub);
       const roasNum = Number(c.roas.replace(",", ".").replace("x", "")) || 0;
       const cpl = leads > 0 ? investido / leads : 0;
-      return { ...c, leads, investido, cpl, roasNum, vendas: c.vendas ?? 0 };
+      /*
+       * O mesmo par de colunas, contado duas vezes por fontes diferentes.
+       *
+       * A plataforma conta o que acontece dentro dela: clique, conversa iniciada, formulário
+       * nativo. O CRM conta o que aconteceu depois: o lead virou contato, andou no funil, fechou.
+       * Os dois números quase nunca batem, e a diferença é exatamente a informação que falta pra
+       * decidir onde investir — plataforma dizendo 40 leads e CRM tendo 12 não é erro de conta, é
+       * o custo real de aquisição aparecendo.
+       *
+       * Por isso nenhum dos dois substitui o outro na tabela: ficam lado a lado.
+       */
+      const crm = acharNoCrm(linhasDoCrm, c);
+      // Linha que só o CRM conhece: a plataforma não foi consultada (ou não devolveu esta
+      // campanha), então investimento, CPL e ROAS são DESCONHECIDOS, não zero. A diferença
+      // importa: zero afirma que não se gastou nada, e afirmar isso sobre a campanha de alguém é
+      // pior do que não dizer nada.
+      const semPlataforma = (c as Campanha & { semPlataforma?: boolean }).semPlataforma === true;
+      const receitaCrm = crm?.receita ?? 0;
+      const leadsCrm = crm?.leads ?? 0;
+      return {
+        ...c,
+        leads,
+        investido,
+        cpl,
+        roasNum,
+        vendas: c.vendas ?? 0,
+        leadsCrm,
+        vendasCrm: crm?.vendas ?? 0,
+        receitaCrm,
+        // ROAS de verdade: receita que o FUNIL registrou dividida pelo que a PLATAFORMA cobrou.
+        // Só a plataforma sabe o gasto e só o CRM sabe a venda; é o cruzamento que produz o número.
+        roasCrm: investido > 0 ? receitaCrm / investido : 0,
+        cplCrm: leadsCrm > 0 ? investido / leadsCrm : 0,
+        semPlataforma,
+      };
     });
     const chave = (l: (typeof linhas)[number]) =>
       ordenarPor === "nome" ? l.nome : ordenarPor === "roas" ? l.roasNum : l[ordenarPor];
@@ -128,7 +191,7 @@ export default function TrafegoPage() {
       return ordemDesc ? -cmp : cmp;
     });
     return linhas;
-  }, [campanhasFiltradas, ordenarPor, ordemDesc]);
+  }, [campanhasFiltradas, ordenarPor, ordemDesc, linhasDoCrm]);
 
   function alternarOrdenacao(col: ColunaOrdenavel) {
     if (ordenarPor === col) setOrdemDesc((v) => !v);
@@ -365,12 +428,15 @@ export default function TrafegoPage() {
                   <th style={{ cursor: "pointer" }} onClick={() => alternarOrdenacao("roas")}>
                     ROAS {ordenarPor === "roas" ? (ordemDesc ? "↓" : "↑") : ""}
                   </th>
+                  <th className="trafego-col-crm">Leads no CRM</th>
+                  <th className="trafego-col-crm">Vendas no CRM</th>
+                  <th className="trafego-col-crm">ROAS real</th>
                 </tr>
               </thead>
               <tbody>
                 {linhasCampanha.length === 0 ? (
                   <tr>
-                    <td colSpan={8}>
+                    <td colSpan={11}>
                       <p className="hint trafego-aviso">Nenhuma campanha com esses filtros.</p>
                     </td>
                   </tr>
@@ -396,20 +462,48 @@ export default function TrafegoPage() {
                       </button>
                       {c.pausada ? <span className="tag" style={{ marginLeft: 8 }}>pausada</span> : null}
                     </td>
-                    <td>{formatarMoeda(c.investido)}</td>
-                    <td>{c.leads}</td>
-                    <td>{c.vendas}</td>
-                    <td>{formatarMoeda(c.cpl)}</td>
-                    <td>{c.roas}</td>
+                    <td>{c.semPlataforma ? "—" : formatarMoeda(c.investido)}</td>
+                    <td>{c.semPlataforma ? "—" : c.leads}</td>
+                    <td>{c.semPlataforma ? "—" : c.vendas}</td>
+                    <td>{c.semPlataforma ? "—" : formatarMoeda(c.cpl)}</td>
+                    <td>{c.semPlataforma ? "—" : c.roas}</td>
+                    <td className="trafego-col-crm">
+                      {c.leadsCrm}
+                      {c.leadsCrm > 0 && !c.semPlataforma ? (
+                        <span className="trafego-cpl-crm">{formatarMoeda(c.cplCrm)}/lead</span>
+                      ) : null}
+                    </td>
+                    <td className="trafego-col-crm">{c.vendasCrm}</td>
+                    <td className="trafego-col-crm">
+                      {c.receitaCrm > 0 ? (
+                        <>
+                          {/* ROAS só existe com os dois lados: receita daqui e gasto de lá. Sem o
+                              gasto, mostra só a receita — que é verdade — e omite a divisão. */}
+                          {c.semPlataforma ? "—" : `${c.roasCrm.toFixed(2).replace(".", ",")}x`}
+                          <span className="trafego-cpl-crm">{formatarMoeda(c.receitaCrm)}</span>
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <p className="hint trafego-aviso">
-            Vendas e ROAS vêm das conversões atribuídas pela própria plataforma de anúncio. Leads
-            qualificados e custo por venda entram aqui quando a negociação puder ser ligada à
-            campanha de origem no back-end.
+            As colunas à esquerda são o que a <strong>plataforma de anúncio</strong> informa: ela só
+            enxerga o que acontece dentro dela. As três da direita são o que o <strong>CRM</strong>{" "}
+            registrou de verdade — lead que virou contato e negócio marcado como ganho no funil. O
+            ROAS real cruza os dois: receita do seu funil dividida pelo que a plataforma cobrou.
+            {leadsSemCampanha > 0 ? (
+              <>
+                {" "}
+                {leadsSemCampanha}{" "}
+                {leadsSemCampanha === 1 ? "lead veio de anúncio mas sem" : "leads vieram de anúncio mas sem"}{" "}
+                identificação de campanha, então não aparecem em nenhuma linha.
+              </>
+            ) : null}
           </p>
         </div>
 

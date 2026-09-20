@@ -19937,6 +19937,28 @@ table.tbl .name-cell .r {
    Dois canais lado a lado, porque a informação aqui é uma COMPARAÇÃO: um já funciona sozinho, o
    outro pede uma ação. Empilhados em blocos iguais, os dois pareciam duas tarefas pendentes, e a
    pessoa saía achando que nada funcionava até configurar tudo. */
+/* ---- Colunas do CRM na tabela de campanhas ---------------------------------------------------
+   Elas convivem com as colunas da plataforma na MESMA tabela, e sem marcação ninguém sabe qual
+   número veio de onde: duas colunas chamadas "Leads" lado a lado, com valores diferentes, parecem
+   erro de conta. A faixa de fundo e o fio à esquerda dizem "daqui pra direita é o CRM". */
+.trafego-col-crm {
+  background: var(--navy-raised-2);
+  white-space: nowrap;
+}
+th.trafego-col-crm:first-of-type,
+td.trafego-col-crm:first-of-type {
+  border-left: 2px solid var(--cyan);
+}
+/* O número de apoio embaixo do principal: custo por lead e receita. Menor e mais claro, porque é
+   contexto do número de cima, não um dado concorrendo com ele. */
+.trafego-cpl-crm {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--texto-sm);
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
 .rastreio-canais {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
