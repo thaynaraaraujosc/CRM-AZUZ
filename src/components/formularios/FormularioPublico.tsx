@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   MENSAGEM_FINAL_PADRAO,
@@ -133,21 +133,62 @@ function registrarRespostaPublica(formularioId: string, valores: Record<string, 
  * existir, com origem "Formulário") ou funde os dados informados num já existente, no workspace do
  * formulário (ver src/app/api/formularios/[id]/contatos/). Usado tanto pelo submit do formulário
  * quanto pelas `Ligacoes` (`salvarContato`/`atribuirAtendente`) do motor de automações. */
-function salvarDadosContatoPublico(formularioId: string, nome: string, dados: Record<string, unknown>) {
+/**
+ * As marcas que o anúncio deixou na URL em que o lead abriu o formulário.
+ *
+ * Lido UMA vez, no carregamento, e guardado: se a página trocar a query depois (um roteador, um
+ * passo do formulário, um filtro), o que importa é o endereço por onde a pessoa entrou.
+ *
+ * Só as chaves que interessam. Mandar a query inteira pro servidor seria carregar qualquer coisa
+ * que um terceiro resolvesse pendurar no link, e isso acabaria gravado no banco como origem.
+ */
+const CHAVES_DE_ANUNCIO = [
+  "gclid", "wbraid", "gbraid", "fbclid",
+  "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term",
+  "campaignid", "adgroupid", "creative", "keyword", "matchtype",
+];
+
+function lerMarcasDaUrl(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const busca = new URLSearchParams(window.location.search);
+  const marcas: Record<string, string> = {};
+  for (const chave of CHAVES_DE_ANUNCIO) {
+    const valor = busca.get(chave);
+    if (valor) marcas[chave] = valor.slice(0, 512);
+  }
+  return marcas;
+}
+
+function salvarDadosContatoPublico(
+  formularioId: string,
+  nome: string,
+  dados: Record<string, unknown>,
+  marcasDaUrl?: Record<string, string>,
+) {
   if (!nome) return Promise.resolve();
   return fetch(`/api/formularios/${formularioId}/contatos`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nome, dados, origemPadrao: "Formulário" }),
+    body: JSON.stringify({
+      nome,
+      dados,
+      origemPadrao: "Formulário",
+      marcasDaUrl,
+      paginaEntrada: typeof window === "undefined" ? undefined : window.location.href.slice(0, 1000),
+    }),
   }).catch((erro) => console.error("Falha ao salvar contato público:", erro));
 }
 
 /** Cria ou atualiza o contato de verdade a partir das perguntas mapeadas pro CRM. Mesmo efeito de
  * `useContatos().criarContato`, mas em runtime puro (sem Provider), via API real. */
-function salvarContatoPublico(formularioId: string, dadosMapeados: Record<string, string>) {
+function salvarContatoPublico(
+  formularioId: string,
+  dadosMapeados: Record<string, string>,
+  marcasDaUrl?: Record<string, string>,
+) {
   const nome = dadosMapeados.nome;
   if (!nome) return Promise.resolve();
-  return salvarDadosContatoPublico(formularioId, nome, dadosMapeados);
+  return salvarDadosContatoPublico(formularioId, nome, dadosMapeados, marcasDaUrl);
 }
 
 /** Campos de uma página que devem aparecer, respeitando `oculta` e `logica` (mostrar_se/ocultar_se). */
@@ -205,6 +246,14 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
   const [paginaIndice, setPaginaIndice] = useState(0);
   const [erros, setErros] = useState<Record<string, string>>({});
   const [enviado, setEnviado] = useState(false);
+  /* As marcas do anúncio, capturadas uma vez logo depois de montar.
+     Num ref, e não num estado, porque elas nunca mudam e nada na tela depende delas: guardar num
+     estado provocaria uma renderização a mais sem nenhum efeito visível. A escrita fica no efeito
+     (não no corpo da renderização) porque o React não garante quantas vezes o corpo roda. */
+  const marcasDaUrl = useRef<Record<string, string>>({});
+  useEffect(() => {
+    marcasDaUrl.current = lerMarcasDaUrl();
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -281,7 +330,7 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
         }
       }
     }
-    await salvarContatoPublico(formulario.id, dadosMapeados);
+    await salvarContatoPublico(formulario.id, dadosMapeados, marcasDaUrl.current);
 
     const nomeContato = dadosMapeados.nome || `Resposta ${new Date().toLocaleString("pt-BR")}`;
     const integracoes = formulario.integracoes;

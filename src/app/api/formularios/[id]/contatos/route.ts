@@ -13,6 +13,7 @@ import {
 } from "@/lib/seguranca/limite-de-uso";
 import { slugId } from "@/lib/ids";
 import { somenteCamposDeContato } from "@/lib/contatos/campos-editaveis";
+import { aplicarOrigemPelaUrl } from "@/lib/rastreio/aplicar";
 
 function iniciais(nome: string) {
   return nome.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
@@ -48,8 +49,11 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
     nome: string;
     dados?: Partial<Contato> & Record<string, unknown>;
     origemPadrao?: Contato["origem"];
+    /** Os parâmetros da URL em que o lead preencheu o formulário (gclid, fbclid, utm_*). */
+    marcasDaUrl?: Record<string, string>;
+    paginaEntrada?: string;
   };
-  const { nome, dados = {}, origemPadrao = "Formulário" } = body;
+  const { nome, dados = {}, origemPadrao = "Formulário", marcasDaUrl, paginaEntrada } = body;
   if (!nome) {
     return NextResponse.json({ erro: "Campo obrigatório: nome" }, { status: 400 });
   }
@@ -77,6 +81,23 @@ export async function POST(request: Request, ctx: RouteContext<"/api/formularios
           etiquetas: dados.etiquetas ?? undefined,
         },
       });
+
+  /*
+   * A origem do anúncio, quando a pessoa chegou por um.
+   *
+   * Depois de o contato existir, e sem segurar a resposta: se a atribuição falhar, o lead está
+   * criado do mesmo jeito. A regra de primeiro toque mora dentro de `aplicarOrigemPelaUrl`, então
+   * responder o formulário duas vezes não troca o anúncio a que o lead pertence.
+   *
+   * `workspaceId` sai do formulário, nunca do corpo da requisição: esta rota é pública, e aceitar
+   * workspace do navegador deixaria qualquer um plantar origem na base de outra empresa.
+   */
+  await aplicarOrigemPelaUrl(prisma, {
+    workspaceId,
+    contatoId: linha.id,
+    marcas: marcasDaUrl,
+    paginaEntrada,
+  });
 
   return NextResponse.json(paraContato(linha), { status: existente ? 200 : 201 });
 }

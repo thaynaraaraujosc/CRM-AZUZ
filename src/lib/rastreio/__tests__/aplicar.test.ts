@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-import { aplicarOrigemPelaMensagem, aplicarOrigemPelaReferenciaDaMeta } from "../aplicar";
+import { aplicarOrigemPelaMensagem, aplicarOrigemPelaReferenciaDaMeta, aplicarOrigemPelaUrl } from "../aplicar";
 import { marcarMensagem } from "../codigo";
 
 /**
@@ -238,5 +238,91 @@ conditional("aplicarOrigemPelaReferenciaDaMeta", () => {
       caminho: "whatsapp",
     });
     expect(r).toEqual({ atribuido: false, motivo: "sem-codigo" });
+  });
+});
+
+/**
+ * O caminho do formulário: a pessoa clica no anúncio, cai na página e preenche.
+ *
+ * É o caminho que estava furado. Aqui não há código curto pra costurar nem referência da Meta pra
+ * ler: as marcas chegam direto na URL, porque quem preenche É quem clicou.
+ */
+conditional("aplicarOrigemPelaUrl", () => {
+  beforeEach(async () => {
+    await prisma.origemDoLead.deleteMany({ where: { workspaceId: { in: [WS, OUTRO_WS] } } });
+    await prepararWorkspace(WS);
+  });
+
+  it("guarda campanha e palavra-chave quando a URL traz o gclid", async () => {
+    const contatoId = await criarContato("form-com-gclid", WS);
+    const r = await aplicarOrigemPelaUrl(prisma, {
+      workspaceId: WS,
+      contatoId,
+      marcas: {
+        gclid: "EAIaIQobChM-form",
+        utm_campaign: "Implantes · Setembro",
+        keyword: "implante dentario",
+      },
+      paginaEntrada: "https://cliente.com.br/orcamento",
+    });
+    expect(r.atribuido).toBe(true);
+
+    const origem = await prisma.origemDoLead.findUnique({ where: { contatoId } });
+    expect(origem?.plataforma).toBe("google");
+    expect(origem?.tipoDoClique).toBe("gclid");
+    expect(origem?.cliqueId).toBe("EAIaIQobChM-form");
+    expect(origem?.utmCampaign).toBe("Implantes · Setembro");
+    // `caminho` é o que separa este lead dos que vieram por conversa, na hora de somar por canal.
+    expect(origem?.caminho).toBe("formulario");
+  });
+
+  it("nao inventa origem pra visita organica", async () => {
+    const contatoId = await criarContato("form-organico", WS);
+    const r = await aplicarOrigemPelaUrl(prisma, {
+      workspaceId: WS,
+      contatoId,
+      marcas: { utm_source: "newsletter" },
+    });
+    // UTM sozinha não é prova de anúncio: origem inventada contamina justamente o número que a
+    // tela de Tráfego existe pra mostrar.
+    expect(r.atribuido).toBe(false);
+    expect(await prisma.origemDoLead.findUnique({ where: { contatoId } })).toBeNull();
+  });
+
+  it("nao faz nada quando a URL vem limpa", async () => {
+    const contatoId = await criarContato("form-sem-marca", WS);
+    const r = await aplicarOrigemPelaUrl(prisma, { workspaceId: WS, contatoId, marcas: {} });
+    expect(r.atribuido).toBe(false);
+    expect(await prisma.origemDoLead.findUnique({ where: { contatoId } })).toBeNull();
+  });
+
+  it("primeiro toque manda: responder de novo nao troca o anuncio", async () => {
+    const contatoId = await criarContato("form-dois-envios", WS);
+    await aplicarOrigemPelaUrl(prisma, {
+      workspaceId: WS,
+      contatoId,
+      marcas: { gclid: "primeiro-clique" },
+    });
+    const r = await aplicarOrigemPelaUrl(prisma, {
+      workspaceId: WS,
+      contatoId,
+      marcas: { gclid: "segundo-clique" },
+    });
+    expect(r).toEqual({ atribuido: false, motivo: "ja-tem-origem" });
+
+    const origem = await prisma.origemDoLead.findUnique({ where: { contatoId } });
+    expect(origem?.cliqueId).toBe("primeiro-clique");
+  });
+
+  it("le fbclid como Meta, nao como Google", async () => {
+    const contatoId = await criarContato("form-fbclid", WS);
+    await aplicarOrigemPelaUrl(prisma, {
+      workspaceId: WS,
+      contatoId,
+      marcas: { fbclid: "IwAR-teste" },
+    });
+    const origem = await prisma.origemDoLead.findUnique({ where: { contatoId } });
+    expect(origem?.plataforma).toBe("meta");
+    expect(origem?.tipoDoClique).toBe("fbclid");
   });
 });

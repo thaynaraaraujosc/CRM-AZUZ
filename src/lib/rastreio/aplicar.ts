@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { lerCodigoDaMensagem } from "@/lib/rastreio/codigo";
-import type { OrigemCapturada } from "@/lib/rastreio/origem";
+import { lerOrigemDaUrl, type OrigemCapturada } from "@/lib/rastreio/origem";
 
 /**
  * Fecha o ciclo: a mensagem chegou, o clique estava guardado, o lead ganha origem.
@@ -153,6 +153,78 @@ export async function aplicarOrigemPelaReferenciaDaMeta(
     return { atribuido: true };
   } catch (erro) {
     console.error("[rastreio] falha ao atribuir pela referência da Meta:", erro);
+    return { atribuido: false, motivo: "falha" };
+  }
+}
+
+/**
+ * O terceiro caminho: a pessoa clica no anúncio, cai numa página e preenche um formulário.
+ *
+ * Era o buraco do conjunto. O clique do Google no WhatsApp já era coberto pelo link rastreado, e o
+ * clique da Meta pra conversa vem pronto no webhook — mas quem chegava por formulário virava um
+ * contato com origem "Formulário" e nada mais. O `gclid` estava ali na URL, na frente, e ninguém
+ * lia. Lead que entra sem marca entra sem origem para sempre: não dá pra recuperar depois.
+ *
+ * Aqui não há código curto pra costurar nem referência da Meta pra ler. As marcas chegam direto,
+ * porque quem responde o formulário É a pessoa que clicou: não existe o intervalo entre o clique e
+ * a conversa que os outros dois caminhos precisam atravessar.
+ *
+ * `workspaceId` vem do formulário, nunca do navegador — mesma regra dos outros dois.
+ *
+ * NUNCA LANÇA, pela mesma razão dos outros: o lead precisa ser criado mesmo que a atribuição falhe.
+ */
+export async function aplicarOrigemPelaUrl(
+  cliente: PrismaClient,
+  params: {
+    workspaceId: string;
+    contatoId: string;
+    /** Os parâmetros da URL em que a pessoa preencheu o formulário. */
+    marcas: Record<string, string> | null | undefined;
+    /** O endereço da página, só pra registro. */
+    paginaEntrada?: string;
+  },
+): Promise<ResultadoDaAtribuicao> {
+  if (!params.marcas || Object.keys(params.marcas).length === 0) {
+    return { atribuido: false, motivo: "sem-codigo" };
+  }
+
+  const origem = lerOrigemDaUrl(new URLSearchParams(params.marcas), params.paginaEntrada);
+  // Sem marca de anúncio nenhuma: visita orgânica. Não é erro, e inventar origem aqui contaminaria
+  // justamente o número que a tela de Tráfego existe pra mostrar.
+  if (!origem) return { atribuido: false, motivo: "sem-codigo" };
+
+  try {
+    const jaTem = await cliente.origemDoLead.findUnique({ where: { contatoId: params.contatoId } });
+    if (jaTem) return { atribuido: false, motivo: "ja-tem-origem" };
+
+    await cliente.origemDoLead.create({
+      data: {
+        id: `origem-${randomBytes(12).toString("hex")}`,
+        workspaceId: params.workspaceId,
+        contatoId: params.contatoId,
+        plataforma: origem.plataforma,
+        cliqueId: origem.cliqueId,
+        tipoDoClique: origem.tipoDoClique,
+        campanhaId: texto(origem.campanhaId),
+        campanhaNome: texto(origem.campanhaNome),
+        conjuntoId: texto(origem.conjuntoId),
+        conjuntoNome: texto(origem.conjuntoNome),
+        anuncioId: texto(origem.anuncioId),
+        anuncioNome: texto(origem.anuncioNome),
+        palavraChave: texto(origem.palavraChave),
+        utmSource: texto(origem.utmSource),
+        utmMedium: texto(origem.utmMedium),
+        utmCampaign: texto(origem.utmCampaign),
+        utmContent: texto(origem.utmContent),
+        utmTerm: texto(origem.utmTerm),
+        paginaEntrada: origem.paginaEntrada ?? null,
+        caminho: "formulario",
+        bruto: (origem.bruto ?? {}) as Prisma.InputJsonValue,
+      },
+    });
+    return { atribuido: true, campanhaNome: texto(origem.campanhaNome) ?? undefined };
+  } catch (erro) {
+    console.error("[rastreio] falha ao atribuir pela URL do formulário:", erro);
     return { atribuido: false, motivo: "falha" };
   }
 }

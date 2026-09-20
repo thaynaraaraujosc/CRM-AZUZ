@@ -76,6 +76,23 @@ export function RastreamentoSecao() {
             informação do anúncio se perde — a menos que o botão do site aponte para o seu link.
           </p>
         </div>
+
+        {/* O terceiro caminho. Ele não tem passo nenhum pra quem manda o anúncio direto pro
+            formulário, e é por isso que aparece como pronto: o Google e a Meta já penduram o código
+            do clique no endereço final, e o formulário agora lê. */}
+        <div className="rastreio-canal rastreio-canal-pronto">
+          <div className="rastreio-canal-h">
+            <span className="rastreio-canal-icones rastreio-google">F</span>
+            <span className="rastreio-selo rastreio-selo-ativo">Funcionando</span>
+          </div>
+          <h4>Formulários do CRM</h4>
+          <p>
+            Se o seu anúncio leva direto pra um formulário do CRM, não precisa de nada: o código do
+            clique vem no endereço e o formulário guarda sozinho. Se ele leva pra uma página sua que
+            só depois mostra o formulário, o link pro formulário precisa carregar o que veio no
+            endereço — é esse pulo que apaga a informação.
+          </p>
+        </div>
       </div>
 
       <div className="config-bloco">
