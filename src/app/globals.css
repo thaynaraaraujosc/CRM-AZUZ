@@ -19959,6 +19959,23 @@ td.trafego-col-crm:first-of-type {
   color: var(--text-faint);
 }
 
+/* Os dois números da devolução de vendas. Lado a lado e grandes: é o resultado do recurso, não
+   uma linha de detalhe. */
+.rastreio-conversoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  margin: 0 0 var(--space-3);
+  font-size: var(--texto-lg);
+  color: var(--text-muted);
+}
+.rastreio-conversoes strong {
+  font-size: var(--titulo-md);
+  font-weight: 700;
+  color: var(--ink);
+  margin-right: 4px;
+}
+
 .rastreio-canais {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

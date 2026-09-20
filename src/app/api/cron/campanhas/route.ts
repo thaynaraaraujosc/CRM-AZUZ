@@ -13,6 +13,8 @@ import { corrigirDonosDeTodosOsWorkspaces } from "@/lib/conversas/dono-divergent
 import { iniciarHistoricosQueFaltam } from "@/lib/integracoes/historico-whatsapp";
 import { removerGruposViradosContatoDeTodosOsWorkspaces } from "@/lib/integracoes/limpar-dados-whatsapp";
 import { conciliarAssinaturasPendentes } from "@/lib/assinatura/conciliar-pendentes";
+import { prisma } from "@/lib/prisma";
+import { devolverConversoesDeTodosOsWorkspaces } from "@/lib/rastreio/devolver-conversao";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 
 /**
@@ -108,6 +110,24 @@ export async function GET(request: Request) {
         })
       : { conferidas: 0, corrigidas: 0 };
 
+  /*
+   * Devolver pro Google as vendas que o funil fechou.
+   *
+   * Duas vezes por hora, e não a cada minuto: o Google não entrega mais rápido por receber mais
+   * cedo, e a consulta varre os leads pendentes de cada workspace conectado — trabalho que não
+   * precisa disputar o minuto com o disparo de campanha, que é o que tem hora marcada.
+   *
+   * Minuto 17 e 47 de propósito, longe das outras tarefas periódicas: duas varreduras caindo na
+   * mesma batida somariam os dois tempos dentro do limite de 60 segundos da função.
+   */
+  const conversoes =
+    [17, 47].includes(new Date().getUTCMinutes())
+      ? await devolverConversoesDeTodosOsWorkspaces(prisma).catch((erro) => {
+          console.error("[cron] falha ao devolver conversões:", erro);
+          return { workspaces: 0, enviadas: 0, falhas: 0 };
+        })
+      : { workspaces: 0, enviadas: 0, falhas: 0 };
+
   // Grupo do WhatsApp que virou contato e card de negócio por um erro antigo. A regra é do
   // produto, não do cliente: grupo aparece em Conversas e nunca vira lead. Era um botão em
   // Configurações, e botão de manutenção dentro do produto é conta que o cliente paga.
@@ -201,5 +221,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados, assinaturas });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados, assinaturas, conversoes });
 }

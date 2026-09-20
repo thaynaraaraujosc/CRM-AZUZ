@@ -360,3 +360,188 @@ export function somarLinhas(linhas: LinhaGaql[]): CampanhaGoogle[] {
 
   return [...porCampanha.values()];
 }
+
+/* ==============================================================================================
+ * DEVOLVER A VENDA PRA PLATAFORMA
+ *
+ * Até aqui o caminho era de mão única: o Google manda a pessoa, o CRM anota de qual anúncio ela
+ * veio, e o Google nunca fica sabendo se ela comprou. Pra ele todo mundo que clicou é igual, então
+ * o algoritmo otimiza pra conseguir mais CLIQUES, não mais clientes.
+ *
+ * O que fecha o circuito é mandar de volta o mesmo código de clique junto do valor da venda. Aí o
+ * Google passa a procurar gente parecida com quem pagou, e não com quem clicou.
+ * ============================================================================================ */
+
+/** O nome da ação de conversão que o CRM cria na conta do cliente. Fixo: é por ele que a busca
+ *  reencontra a ação já existente e evita criar uma segunda. */
+export const NOME_DA_CONVERSAO = "Venda · CRM AZUZ";
+
+type RespostaDeBusca = { results?: { conversionAction?: { resourceName?: string } }[] }[];
+
+/**
+ * Garante que existe onde receber a venda, e devolve o endereço disso.
+ *
+ * O Google não aceita conversão solta: ela precisa apontar pra uma "ação de conversão" que já
+ * exista dentro da conta. Ela não vem pronta, e pedir pro dono de uma clínica criar uma no painel
+ * do Google Ads é pedir o que ele não vai fazer — então o CRM cria.
+ *
+ * PROCURA ANTES DE CRIAR, e é isso que torna a operação segura de repetir: chamada mil vezes, ela
+ * cria no máximo uma. Sem essa busca, cada rodada do cron encheria a conta do cliente de ações
+ * duplicadas com o mesmo nome, e os relatórios dele ficariam impossíveis de ler.
+ */
+export async function garantirAcaoDeConversao(params: {
+  accessToken: string;
+  customerId: string;
+}): Promise<{ ok: true; resourceName: string } | { ok: false; erro: string }> {
+  const customerId = params.customerId.replace(/\D/g, "");
+
+  try {
+    const busca = await fetch(
+      `https://googleads.googleapis.com/${VERSAO}/customers/${customerId}/googleAds:searchStream`,
+      {
+        method: "POST",
+        headers: cabecalhos(params.accessToken),
+        body: JSON.stringify({
+          query: `SELECT conversion_action.resource_name FROM conversion_action
+                  WHERE conversion_action.name = '${NOME_DA_CONVERSAO.replace(/'/g, "\\'")}'
+                    AND conversion_action.status != 'REMOVED'`,
+        }),
+      },
+    );
+    if (busca.ok) {
+      const blocos = (await busca.json()) as RespostaDeBusca;
+      const achado = blocos?.flatMap((b) => b.results ?? []).find((r) => r.conversionAction?.resourceName);
+      if (achado?.conversionAction?.resourceName) {
+        return { ok: true, resourceName: achado.conversionAction.resourceName };
+      }
+    }
+
+    const criacao = await fetch(
+      `https://googleads.googleapis.com/${VERSAO}/customers/${customerId}/conversionActions:mutate`,
+      {
+        method: "POST",
+        headers: cabecalhos(params.accessToken),
+        body: JSON.stringify({
+          operations: [
+            {
+              create: {
+                name: NOME_DA_CONVERSAO,
+                // UPLOAD_CLICKS é o tipo que aceita conversão enviada por API a partir de um
+                // gclid. Os outros tipos são medidos pelo próprio Google e recusam upload.
+                type: "UPLOAD_CLICKS",
+                category: "PURCHASE",
+                status: "ENABLED",
+                // Cada venda vale o que o funil registrou, não um valor fixo. `alwaysUseDefaultValue`
+                // ligado faria toda venda valer o mesmo, e o algoritmo perderia justamente a
+                // diferença entre o cliente de R$ 300 e o de R$ 30.000.
+                valueSettings: { defaultValue: 0, alwaysUseDefaultValue: false },
+                // Conta como conversão uma vez por clique. "MANY_PER_CLICK" faria uma recompra do
+                // mesmo cliente inflar a campanha que trouxe ele na primeira vez.
+                countingType: "ONE_PER_CLICK",
+              },
+            },
+          ],
+        }),
+      },
+    );
+    const corpo = (await criacao.json()) as {
+      results?: { resourceName?: string }[];
+      error?: { message?: string };
+    };
+    if (!criacao.ok) {
+      return { ok: false, erro: corpo?.error?.message ?? `HTTP ${criacao.status}` };
+    }
+    const resourceName = corpo.results?.[0]?.resourceName;
+    if (!resourceName) return { ok: false, erro: "O Google aceitou a criação mas não devolveu o endereço da ação." };
+    return { ok: true, resourceName };
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : "Falha de rede" };
+  }
+}
+
+export type ConversaoParaEnviar = {
+  /** O código do clique, do jeito que foi capturado. */
+  cliqueId: string;
+  /** Qual dos três: decide EM QUAL CAMPO ele entra, e mandar no errado faz o Google aceitar e descartar. */
+  tipoDoClique: string | null;
+  /** Quando a venda foi fechada. */
+  quando: Date;
+  valor: number;
+};
+
+export type ResultadoDaConversao = { indice: number; erro: string };
+
+/**
+ * Manda as vendas de volta pro Google.
+ *
+ * `gclid`, `wbraid` e `gbraid` vão em CAMPOS DIFERENTES. Eles se parecem e é tentador tratar os
+ * três como a mesma coisa, mas o Google aceita a chamada e descarta o dado em silêncio quando o
+ * código vai no campo errado — a pior falha possível, porque parece sucesso.
+ *
+ * `partialFailure` ligado: uma venda recusada (clique velho demais, código inválido) não pode
+ * derrubar as outras vinte da mesma rodada.
+ */
+export async function enviarConversoes(params: {
+  accessToken: string;
+  customerId: string;
+  acaoDeConversao: string;
+  conversoes: ConversaoParaEnviar[];
+}): Promise<{ ok: true; falhas: ResultadoDaConversao[] } | { ok: false; erro: string }> {
+  if (params.conversoes.length === 0) return { ok: true, falhas: [] };
+  const customerId = params.customerId.replace(/\D/g, "");
+
+  const operacoes = params.conversoes.map((c) => {
+    const tipo = (c.tipoDoClique ?? "gclid").toLowerCase();
+    const campoDoClique =
+      tipo === "wbraid" ? { wbraid: c.cliqueId } : tipo === "gbraid" ? { gbraid: c.cliqueId } : { gclid: c.cliqueId };
+    return {
+      ...campoDoClique,
+      conversionAction: params.acaoDeConversao,
+      conversionDateTime: dataParaGoogle(c.quando),
+      conversionValue: c.valor,
+      currencyCode: "BRL",
+    };
+  });
+
+  try {
+    const resposta = await fetch(
+      `https://googleads.googleapis.com/${VERSAO}/customers/${customerId}:uploadClickConversions`,
+      {
+        method: "POST",
+        headers: cabecalhos(params.accessToken),
+        body: JSON.stringify({ conversions: operacoes, partialFailure: true }),
+      },
+    );
+    const corpo = (await resposta.json()) as {
+      partialFailureError?: { message?: string; details?: unknown[] };
+      error?: { message?: string };
+    };
+    if (!resposta.ok) return { ok: false, erro: corpo?.error?.message ?? `HTTP ${resposta.status}` };
+
+    // O erro parcial vem como UMA mensagem cobrindo o lote. Sem o detalhamento por índice não dá
+    // pra saber qual linha caiu, então a mensagem inteira é guardada em todas as que não deram
+    // certo — melhor uma pista grosseira do que nenhuma.
+    const falhas: ResultadoDaConversao[] = corpo.partialFailureError?.message
+      ? [{ indice: -1, erro: corpo.partialFailureError.message }]
+      : [];
+    return { ok: true, falhas };
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : "Falha de rede" };
+  }
+}
+
+/**
+ * O formato de data que o Google exige: "aaaa-mm-dd hh:mm:ss+hh:mm", com fuso explícito.
+ *
+ * Sem o fuso ele recusa. Com o fuso errado ele aceita e joga a venda no dia errado, o que
+ * desalinha a conversão do clique que a produziu.
+ */
+function dataParaGoogle(quando: Date, fuso = "-03:00"): string {
+  const deslocamento = Number(fuso.slice(0, 3)) * 60 + Number(fuso.slice(0, 1) + fuso.slice(4, 6));
+  const local = new Date(quando.getTime() + deslocamento * 60_000);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${local.getUTCFullYear()}-${p(local.getUTCMonth() + 1)}-${p(local.getUTCDate())} ` +
+    `${p(local.getUTCHours())}:${p(local.getUTCMinutes())}:${p(local.getUTCSeconds())}${fuso}`
+  );
+}

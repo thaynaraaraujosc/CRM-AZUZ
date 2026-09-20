@@ -6,6 +6,12 @@ import { CabecalhoCategoria } from "@/components/configuracoes/CabecalhoCategori
 import { IconInstagram, IconWhatsApp } from "@/components/icons";
 
 type Resposta = { link: string; temNumero: boolean; numero: string | null };
+type Conversoes = {
+  googleConectado: boolean;
+  enviadas: number;
+  aguardandoVenda: number;
+  ultimoErro: string | null;
+};
 
 /**
  * Onde a pessoa pega o link que faz o rastreamento do Google funcionar.
@@ -21,6 +27,7 @@ type Resposta = { link: string; temNumero: boolean; numero: string | null };
  */
 export function RastreamentoSecao() {
   const [dados, setDados] = useState<Resposta | null>(null);
+  const [conversoes, setConversoes] = useState<Conversoes | null>(null);
   const [copiado, setCopiado] = useState(false);
 
   useEffect(() => {
@@ -28,6 +35,11 @@ export function RastreamentoSecao() {
       .then((r) => (r.ok ? r.json() : null))
       .then(setDados)
       .catch((erro) => console.error("Falha ao carregar o link de rastreamento:", erro));
+
+    fetch("/api/rastreio/conversoes")
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setConversoes)
+      .catch((erro) => console.error("Falha ao carregar o estado das conversões:", erro));
   }, []);
 
   async function copiar() {
@@ -46,7 +58,7 @@ export function RastreamentoSecao() {
     <div className="config-secao">
       <CabecalhoCategoria
         titulo="Rastreamento de anúncios"
-        descricao="Saber de qual anúncio veio cada lead — e devolver a venda para a plataforma, para que ela procure mais gente parecida."
+        descricao="Saber de qual anúncio veio cada lead, e devolver a venda para a plataforma de anúncio, para que ela procure mais gente parecida com quem compra."
       />
 
       <div className="rastreio-canais">
@@ -126,6 +138,46 @@ export function RastreamentoSecao() {
           </>
         ) : (
           <p className="hint rastreio-nota">Carregando…</p>
+        )}
+      </div>
+
+      {/* A prestação de contas da devolução de vendas. Ela roda sozinha, no servidor, sem ninguém
+          pedir — e recurso que roda escondido e não mostra resultado é indistinguível de recurso
+          quebrado. Estes números são o que separa "está funcionando" de "parece que não faz nada". */}
+      <div className="config-bloco">
+        <p className="config-bloco-titulo">Vendas devolvidas para o Google</p>
+        {conversoes === null ? (
+          <p className="hint rastreio-nota">Carregando…</p>
+        ) : !conversoes.googleConectado ? (
+          <p className="hint rastreio-nota">
+            Conecte o Google Ads em <strong>Outras integrações</strong> para que o CRM possa avisar
+            o Google quando um lead vira venda. Sem isso ele continua otimizando para conseguir
+            cliques, e não clientes.
+          </p>
+        ) : (
+          <>
+            <p className="rastreio-conversoes">
+              <span>
+                <strong>{conversoes.enviadas}</strong>{" "}
+                {conversoes.enviadas === 1 ? "venda devolvida" : "vendas devolvidas"}
+              </span>
+              <span>
+                <strong>{conversoes.aguardandoVenda}</strong>{" "}
+                {conversoes.aguardandoVenda === 1 ? "lead esperando fechar" : "leads esperando fechar"}
+              </span>
+            </p>
+            <p className="hint rastreio-nota">
+              Quando você marca um negócio como <strong>ganho</strong> no funil, o CRM avisa o Google
+              qual clique gerou aquela venda e quanto ela valeu. O envio acontece sozinho, em até
+              meia hora. Na primeira vez, o CRM cria na sua conta do Google Ads uma conversão
+              chamada <strong>“Venda · CRM AZUZ”</strong> — é ela que recebe esses valores.
+            </p>
+            {conversoes.ultimoErro ? (
+              <p className="hint rastreio-nota rastreio-nota-alerta">
+                O Google recusou o último envio: {conversoes.ultimoErro}
+              </p>
+            ) : null}
+          </>
         )}
       </div>
 

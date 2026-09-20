@@ -6,6 +6,7 @@ import {
   deMicros,
   ehVenda,
   googleAdsConfigurado,
+  enviarConversoes,
   somarLinhas,
   urlDeAutorizacao,
   verificarState,
@@ -265,5 +266,86 @@ describe("ehVenda", () => {
   it("aguenta categoria ausente", () => {
     expect(ehVenda(null)).toBe(false);
     expect(ehVenda(undefined)).toBe(false);
+  });
+});
+
+/**
+ * O envio da conversão, prendendo os dois erros que o Google NÃO reclama.
+ *
+ * Ele aceita a chamada e descarta o dado em silêncio quando o código de clique vai no campo
+ * errado, e joga a venda no dia errado quando a data vem sem fuso. Os dois parecem sucesso na
+ * resposta e só aparecem semanas depois, como campanha que "não converte".
+ */
+describe("enviarConversoes", () => {
+  const original = globalThis.fetch;
+  let enviado: { conversions: Record<string, unknown>[]; partialFailure?: boolean } | null = null;
+
+  beforeEach(() => {
+    enviado = null;
+    globalThis.fetch = (async (_url: string, init?: { body?: string }) => {
+      enviado = JSON.parse(init?.body ?? "{}");
+      return { ok: true, status: 200, json: async () => ({}) };
+    }) as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = original;
+  });
+
+  async function enviarUm(tipoDoClique: string | null) {
+    await enviarConversoes({
+      accessToken: "t",
+      customerId: "123-456-7890",
+      acaoDeConversao: "customers/1/conversionActions/9",
+      conversoes: [{ cliqueId: "CODIGO", tipoDoClique, quando: new Date("2026-09-20T15:30:00Z"), valor: 3200 }],
+    });
+    return enviado!.conversions[0];
+  }
+
+  it("gclid vai no campo gclid", async () => {
+    const c = await enviarUm("gclid");
+    expect(c.gclid).toBe("CODIGO");
+    expect(c.wbraid).toBeUndefined();
+    expect(c.gbraid).toBeUndefined();
+  });
+
+  it("wbraid vai no campo wbraid, nao no gclid", async () => {
+    const c = await enviarUm("wbraid");
+    expect(c.wbraid).toBe("CODIGO");
+    expect(c.gclid).toBeUndefined();
+  });
+
+  it("gbraid vai no campo gbraid, nao no gclid", async () => {
+    const c = await enviarUm("gbraid");
+    expect(c.gbraid).toBe("CODIGO");
+    expect(c.gclid).toBeUndefined();
+  });
+
+  it("tipo desconhecido cai em gclid, que e o caso esmagadoramente mais comum", async () => {
+    const c = await enviarUm(null);
+    expect(c.gclid).toBe("CODIGO");
+  });
+
+  it("a data leva fuso explicito e esta no horario de Brasilia", async () => {
+    const c = await enviarUm("gclid");
+    // 15:30 UTC = 12:30 em Brasília (-03:00).
+    expect(c.conversionDateTime).toBe("2026-09-20 12:30:00-03:00");
+  });
+
+  it("manda valor e moeda, e pede falha parcial", async () => {
+    const c = await enviarUm("gclid");
+    expect(c.conversionValue).toBe(3200);
+    expect(c.currencyCode).toBe("BRL");
+    expect(enviado!.partialFailure).toBe(true);
+  });
+
+  it("lote vazio nao chama a rede", async () => {
+    const r = await enviarConversoes({
+      accessToken: "t",
+      customerId: "1",
+      acaoDeConversao: "x",
+      conversoes: [],
+    });
+    expect(r).toEqual({ ok: true, falhas: [] });
+    expect(enviado).toBeNull();
   });
 });

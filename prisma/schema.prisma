@@ -173,8 +173,23 @@ model OrigemDoLead {
 
   criadoEm DateTime @default(now())
 
+  /// Quando a venda deste lead foi devolvida pra plataforma de anúncio.
+  ///
+  /// EXISTE PRA NÃO MANDAR DUAS VEZES. O Google conta cada upload como uma conversão nova: o mesmo
+  /// negócio enviado em duas rodadas vira duas vendas no relatório dele, e o algoritmo passa a
+  /// achar que aquela campanha rende o dobro do que rende. Mandar de novo é pior do que não mandar.
+  ///
+  /// Nulo = ainda não foi. É o que a rodada do cron procura.
+  conversaoEnviadaEm DateTime?
+
+  /// A última recusa da plataforma, quando houve. Sem isto, um lead que o Google recusa some: a
+  /// rodada tenta, falha, e ninguém fica sabendo por quê.
+  conversaoErro String? @db.Text
+
   @@index([workspaceId, plataforma])
   @@index([workspaceId, campanhaId])
+  /// A consulta da rodada de devolução: o que ainda não foi enviado, por workspace.
+  @@index([workspaceId, conversaoEnviadaEm])
 }
 
 /// Um clique em anúncio que ainda não virou lead.
