@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { CabecalhoCategoria } from "@/components/configuracoes/CabecalhoCategoria";
@@ -150,9 +151,10 @@ export function RastreamentoSecao() {
           <p className="hint rastreio-nota">Carregando…</p>
         ) : !conversoes.googleConectado ? (
           <p className="hint rastreio-nota">
-            Conecte o Google Ads em <strong>Outras integrações</strong> para que o CRM possa avisar
-            o Google quando um lead vira venda. Sem isso ele continua otimizando para conseguir
-            cliques, e não clientes.
+            Conecte o Google Ads em{" "}
+            <Link href="/configuracoes?categoria=integracoes">Integrações e aplicativos</Link> para
+            que o CRM possa avisar o Google quando um lead vira venda. Sem isso ele continua
+            otimizando para conseguir cliques, e não clientes.
           </p>
         ) : (
           <>

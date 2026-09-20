@@ -9,7 +9,8 @@ import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
 import { ConexaoQrCode } from "./ConexaoQrCode";
 import { SaudeQrCode } from "@/components/configuracoes/SaudeQrCode";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
-import { ConexaoInstagram, ConexaoMetaAds } from "./ConexoesOAuth";
+import { ConexaoInstagram, ConexaoMetaAds, ConexaoGoogleAds } from "./ConexoesOAuth";
+import { useStatusGoogleAds } from "@/components/trafego/useGoogleAds";
 import { DadosWebhook } from "./DadosWebhook";
 import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
@@ -20,7 +21,6 @@ import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 /** O que aparece em "Em breve". Zapier, Make, Stripe e Mercado Pago saíram: não estão no plano. */
 type AppFuturo = { nome: string; descricao: string; categoria: string };
 const APPS_EM_BREVE: AppFuturo[] = [
-  { nome: "Google Ads", descricao: "Traga essa origem pro painel de Tráfego.", categoria: "Marketing" },
   { nome: "TikTok Ads", descricao: "Traga essa origem pro painel de Tráfego.", categoria: "Marketing" },
   { nome: "Mensagens do TikTok", descricao: "Receba lead de comentário automaticamente.", categoria: "Comunicação" },
   { nome: "Google Agenda", descricao: "Sincronize compromissos com sua agenda pessoal.", categoria: "Agenda" },
@@ -103,6 +103,10 @@ export function IntegracoesSecao() {
   const whatsappMeta = useIntegracaoMeta("meta_whatsapp");
   const instagram = useIntegracaoMeta("meta_instagram");
   const metaAds = useIntegracaoMeta("meta_ads");
+  // O Google tem um estado a mais que a Meta: `disponivel` diz se esta instalação tem o token
+  // de desenvolvedor aprovado. Sem isso a linha inteira não é desenhada — botão que leva a um
+  // 503 é pior que botão nenhum.
+  const { statusGoogle } = useStatusGoogleAds();
 
   // Status do WhatsApp não oficial (Evolution API) direto aqui, sem polling: só pra mostrar o
   // estado atual ao abrir a tela. Falha em silêncio (serviço fora do ar não pode quebrar essa tela).
@@ -194,6 +198,32 @@ export function IntegracoesSecao() {
             conectado={metaAds.integracao?.status === "conectado"}
             painel={<ConexaoMetaAds />}
           />
+          {statusGoogle.disponivel ? (
+            <LinhaReal
+              icone={<span className="rastreio-canal-icones rastreio-google">G</span>}
+              titulo="Google Ads"
+              sub={
+                statusGoogle.status === "conectado"
+                  ? "Lê suas campanhas e devolve as vendas fechadas pro Google"
+                  : "Conecte pra ver essa origem no Tráfego e devolver as vendas"
+              }
+              conectado={statusGoogle.status === "conectado"}
+              painel={<ConexaoGoogleAds />}
+            />
+          ) : null}
+          {/* Por que o Google Ads pode não estar na lista acima, e só pra quem administra.
+              O cliente não pode ver linha desligada — foi o "Google Ads" decorativo que saiu
+              daqui. Mas quem cuida da instalação precisa saber que a ausência tem causa e
+              conserto, senão o diagnóstico vira "o CRM não integra com o Google", que é falso. */}
+          {!statusGoogle.disponivel && sessao?.user?.superAdmin ? (
+            <p className="hint" style={{ padding: "10px 14px", margin: 0 }}>
+              <b>Google Ads não aparece nesta instalação.</b> A integração existe e está pronta, mas
+              ela só é desenhada quando <code>GOOGLE_ADS_CLIENT_ID</code>,{" "}
+              <code>GOOGLE_ADS_CLIENT_SECRET</code> e <code>GOOGLE_ADS_LOGIN_CUSTOMER_ID</code>{" "}
+              estiverem definidas no servidor. Enquanto faltar alguma, nenhum cliente vê o botão —
+              de propósito: botão que leva a erro é pior que botão nenhum.
+            </p>
+          ) : null}
         </div>
       </div>
 

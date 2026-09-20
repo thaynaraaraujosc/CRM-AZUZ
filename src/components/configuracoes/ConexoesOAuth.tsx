@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Toggle } from "@/components/ui";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { IconAlerta } from "@/components/icons";
+import { useStatusGoogleAds } from "@/components/trafego/useGoogleAds";
 
 /**
  * Conexão do Instagram e do Meta Ads como painel. Mesmo motivo de `ConexaoQrCode` e
@@ -283,5 +284,58 @@ export function ConexaoMetaAds() {
       rotuloConectado={conta ? `Conectado • ${conta}` : "Conta de anúncios conectada"}
       rotuloDesconectar="Desconectar Meta Ads"
     />
+  );
+}
+
+/**
+ * Conexão do Google Ads.
+ *
+ * Não usa o `PainelOAuth` porque o Google não é uma integração da Meta: o status vem de outra rota
+ * (`/api/integracoes/google-ads/status`) e tem um estado a mais, o `disponivel`. Quem chama é
+ * responsável por não desenhar nada quando ele é `false` — ver `IntegracoesSecao`.
+ *
+ * O texto diz o que essa conexão faz A MAIS que a da Meta, e é a parte que importa: o CRM devolve
+ * a venda pro Google. É essa devolução que faz o Google parar de otimizar por clique e começar a
+ * procurar gente parecida com quem comprou de verdade.
+ */
+export function ConexaoGoogleAds() {
+  const { statusGoogle, desconectando, desconectar } = useStatusGoogleAds();
+  const conectado = statusGoogle.status === "conectado";
+
+  if (conectado) {
+    return (
+      <>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <p className="int-sub" style={{ margin: 0 }}>
+            {statusGoogle.contaId ? `Conectado • conta ${statusGoogle.contaId}` : "Conta de anúncios conectada"}
+          </p>
+          <button type="button" className="btn danger" onClick={() => void desconectar()} disabled={desconectando}>
+            {desconectando ? "Desconectando…" : "Desconectar Google Ads"}
+          </button>
+        </div>
+        {statusGoogle.erroMensagem ? (
+          <p className="hint" style={{ color: "var(--danger)", margin: "6px 0 0" }}>
+            <IconAlerta width={12} height={12} aria-hidden="true" /> O Google recusou a última
+            chamada: {statusGoogle.erroMensagem}
+          </p>
+        ) : null}
+        <p className="hint" style={{ margin: "6px 0 0" }}>
+          Quando um negócio é marcado como <b>ganho</b> no funil, o CRM avisa o Google qual clique
+          gerou aquela venda. Os números dessa devolução ficam em <b>Rastreamento de anúncios</b>.
+        </p>
+      </>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+      <p className="hint" style={{ margin: 0 }}>
+        Autoriza o CRM a ler suas campanhas e a devolver as vendas fechadas pro Google. Sem copiar
+        token nenhum.
+      </p>
+      <a href="/api/integracoes/google-ads/conectar" className="btn primary" style={{ flex: "0 0 auto" }}>
+        Autorizar
+      </a>
+    </div>
   );
 }
