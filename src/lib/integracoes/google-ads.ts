@@ -460,13 +460,26 @@ export async function garantirAcaoDeConversao(params: {
 }
 
 export type ConversaoParaEnviar = {
-  /** O código do clique, do jeito que foi capturado. */
-  cliqueId: string;
+  /** O código do clique, quando existe. Sem ele, a conversão depende dos identificadores abaixo. */
+  cliqueId: string | null;
   /** Qual dos três: decide EM QUAL CAMPO ele entra, e mandar no errado faz o Google aceitar e descartar. */
   tipoDoClique: string | null;
   /** Quando a venda foi fechada. */
   quando: Date;
   valor: number;
+  /**
+   * E-mail e telefone embaralhados. É o que permite o Google reencontrar a pessoa quando o código
+   * do clique não chegou — o caso que cresce a cada ano com as restrições de privacidade.
+   */
+  identificadores?: { hashedEmail?: string; hashedPhoneNumber?: string }[];
+  /**
+   * Identificador único do negócio, pra deduplicação.
+   *
+   * Se o site do cliente também dispara a tag do Google pra mesma venda, o Google conta DUAS: uma
+   * do site e uma daqui. Com o mesmo identificador nas duas ele entende que é o mesmo evento e
+   * conta uma. Sem isso, o relatório dele infla e o algoritmo investe em cima do número inflado.
+   */
+  idDoNegocio?: string;
 };
 
 export type ResultadoDaConversao = { indice: number; erro: string };
@@ -492,14 +505,23 @@ export async function enviarConversoes(params: {
 
   const operacoes = params.conversoes.map((c) => {
     const tipo = (c.tipoDoClique ?? "gclid").toLowerCase();
-    const campoDoClique =
-      tipo === "wbraid" ? { wbraid: c.cliqueId } : tipo === "gbraid" ? { gbraid: c.cliqueId } : { gclid: c.cliqueId };
+    // Sem código de clique a conversão vai só com os identificadores: é exatamente o caso que as
+    // Conversões Aprimoradas existem pra cobrir. Mandar o campo vazio faria o Google recusar.
+    const campoDoClique = !c.cliqueId
+      ? {}
+      : tipo === "wbraid"
+        ? { wbraid: c.cliqueId }
+        : tipo === "gbraid"
+          ? { gbraid: c.cliqueId }
+          : { gclid: c.cliqueId };
     return {
       ...campoDoClique,
       conversionAction: params.acaoDeConversao,
       conversionDateTime: dataParaGoogle(c.quando),
       conversionValue: c.valor,
       currencyCode: "BRL",
+      ...(c.identificadores?.length ? { userIdentifiers: c.identificadores } : {}),
+      ...(c.idDoNegocio ? { orderId: c.idDoNegocio } : {}),
     };
   });
 
@@ -544,4 +566,48 @@ function dataParaGoogle(quando: Date, fuso = "-03:00"): string {
     `${local.getUTCFullYear()}-${p(local.getUTCMonth() + 1)}-${p(local.getUTCDate())} ` +
     `${p(local.getUTCHours())}:${p(local.getUTCMinutes())}:${p(local.getUTCSeconds())}${fuso}`
   );
+}
+
+/**
+ * Desfaz uma venda que o funil marcou como ganha e depois deixou de ser.
+ *
+ * Sem isto, negócio cancelado continua contando pro Google pra sempre: ele segue achando que
+ * aquela campanha vendeu, e continua investindo em cima de receita que não existiu. É o tipo de
+ * erro que não aparece em lugar nenhum — o relatório fica bonito e o dinheiro vai embora.
+ *
+ * O Google faz isso por `orderId`, não pelo código do clique. É por isso que o identificador do
+ * negócio é enviado junto de toda conversão: sem ele guardado lá, não existe como voltar atrás.
+ */
+export async function estornarConversoes(params: {
+  accessToken: string;
+  customerId: string;
+  acaoDeConversao: string;
+  estornos: { idDoNegocio: string; quando: Date }[];
+}): Promise<{ ok: true } | { ok: false; erro: string }> {
+  if (params.estornos.length === 0) return { ok: true };
+  const customerId = params.customerId.replace(/\D/g, "");
+
+  try {
+    const resposta = await fetch(
+      `https://googleads.googleapis.com/${VERSAO}/customers/${customerId}:uploadConversionAdjustments`,
+      {
+        method: "POST",
+        headers: cabecalhos(params.accessToken),
+        body: JSON.stringify({
+          conversionAdjustments: params.estornos.map((e) => ({
+            conversionAction: params.acaoDeConversao,
+            adjustmentType: "RETRACTION",
+            adjustmentDateTime: dataParaGoogle(e.quando),
+            orderId: e.idDoNegocio,
+          })),
+          partialFailure: true,
+        }),
+      },
+    );
+    const corpo = (await resposta.json()) as { error?: { message?: string } };
+    if (!resposta.ok) return { ok: false, erro: corpo?.error?.message ?? `HTTP ${resposta.status}` };
+    return { ok: true };
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : "Falha de rede" };
+  }
 }

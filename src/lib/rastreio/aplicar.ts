@@ -32,6 +32,46 @@ function texto(valor: unknown): string | null {
 }
 
 /**
+ * Registra o toque, tenha ele ganhado a atribuição ou não.
+ *
+ * SEMPRE, e é esse o ponto. `OrigemDoLead` guarda um toque por contato — o primeiro — porque é ele
+ * que recebe o crédito da venda quando a conversão volta pro Google. Mas o segundo, o terceiro e o
+ * quarto anúncio em que a pessoa encostou não deixavam rastro nenhum: eram descartados na hora,
+ * sem nunca chegar ao banco.
+ *
+ * O prejuízo era invisível e caro. A pessoa vê um anúncio da Meta, não compra, depois pesquisa no
+ * Google e fecha: com primeiro toque só, a Meta leva tudo e o Google parece inútil. Quem olha a
+ * tela desliga a campanha que estava alimentando a outra.
+ *
+ * Nunca lança, como tudo neste arquivo: é registro de apoio, e não pode atrapalhar a conversa nem
+ * a atribuição principal.
+ */
+async function registrarToque(
+  cliente: PrismaClient,
+  dados: {
+    workspaceId: string;
+    contatoId: string;
+    plataforma: string;
+    cliqueId?: string | null;
+    tipoDoClique?: string | null;
+    campanhaId?: string | null;
+    campanhaNome?: string | null;
+    anuncioId?: string | null;
+    anuncioNome?: string | null;
+    caminho: string;
+    primeiro: boolean;
+  },
+): Promise<void> {
+  try {
+    await cliente.toqueDeAnuncio.create({
+      data: { id: `toque-${randomBytes(12).toString("hex")}`, ...dados },
+    });
+  } catch (erro) {
+    console.error("[rastreio] falha ao registrar o toque:", erro);
+  }
+}
+
+/**
  * Procura o código na mensagem e, achando, cola a origem no contato.
  *
  * `workspaceId` vem de quem recebeu o webhook, nunca da mensagem. Sem isso, bastaria alguém
@@ -68,6 +108,21 @@ export async function aplicarOrigemPelaMensagem(
     // Primeiro toque manda. Quem já tem origem não é sobrescrito: o anúncio que trouxe a pessoa
     // pela primeira vez é o que merece o crédito, e não o último link em que ela clicou.
     const jaTem = await cliente.origemDoLead.findUnique({ where: { contatoId: params.contatoId } });
+
+    await registrarToque(cliente, {
+      workspaceId: params.workspaceId,
+      contatoId: params.contatoId,
+      plataforma: origem.plataforma,
+      cliqueId: origem.cliqueId,
+      tipoDoClique: origem.tipoDoClique,
+      campanhaId: texto(origem.campanhaId),
+      campanhaNome: texto(origem.campanhaNome),
+      anuncioId: texto(origem.anuncioId),
+      anuncioNome: texto(origem.anuncioNome),
+      caminho: "whatsapp",
+      primeiro: !jaTem,
+    });
+
     if (jaTem) {
       await cliente.cliqueRastreado.update({ where: { codigo }, data: { consumidoEm: new Date() } });
       return { atribuido: false, motivo: "ja-tem-origem" };
@@ -131,6 +186,19 @@ export async function aplicarOrigemPelaReferenciaDaMeta(
 
   try {
     const jaTem = await cliente.origemDoLead.findUnique({ where: { contatoId: params.contatoId } });
+
+    await registrarToque(cliente, {
+      workspaceId: params.workspaceId,
+      contatoId: params.contatoId,
+      plataforma: "meta",
+      cliqueId: clique,
+      tipoDoClique: clique ? "ctwa_clid" : null,
+      anuncioId,
+      anuncioNome: texto(ref?.headline),
+      caminho: params.caminho,
+      primeiro: !jaTem,
+    });
+
     if (jaTem) return { atribuido: false, motivo: "ja-tem-origem" };
 
     await cliente.origemDoLead.create({
@@ -195,6 +263,21 @@ export async function aplicarOrigemPelaUrl(
 
   try {
     const jaTem = await cliente.origemDoLead.findUnique({ where: { contatoId: params.contatoId } });
+
+    await registrarToque(cliente, {
+      workspaceId: params.workspaceId,
+      contatoId: params.contatoId,
+      plataforma: origem.plataforma,
+      cliqueId: origem.cliqueId,
+      tipoDoClique: origem.tipoDoClique,
+      campanhaId: texto(origem.campanhaId),
+      campanhaNome: texto(origem.campanhaNome),
+      anuncioId: texto(origem.anuncioId),
+      anuncioNome: texto(origem.anuncioNome),
+      caminho: "formulario",
+      primeiro: !jaTem,
+    });
+
     if (jaTem) return { atribuido: false, motivo: "ja-tem-origem" };
 
     await cliente.origemDoLead.create({

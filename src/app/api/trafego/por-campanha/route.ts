@@ -31,6 +31,14 @@ type LinhaPorCampanha = {
   leads: number;
   vendas: number;
   receita: number;
+  /**
+   * Vendas em que esta campanha ENCOSTOU sem levar o crédito.
+   *
+   * O caso que o primeiro toque esconde: a pessoa vê o anúncio da Meta, não compra, depois
+   * pesquisa no Google e fecha. A Meta aparece com zero venda e parece inútil — e desligá-la
+   * derrubaria a campanha do Google junto, porque era ela que estava alimentando.
+   */
+  vendasAssistidas: number;
 };
 
 /** "R$ 2.100,50" -> 2100.5. Mesma regra de `metrics.ts`, pra os dois números baterem na tela. */
@@ -81,6 +89,25 @@ export async function GET() {
     vendaPorNome.set(card.nome, atual);
   }
 
+  /*
+   * Os toques que NÃO ganharam a atribuição, dos contatos que compraram.
+   *
+   * Consultado à parte porque é outra pergunta: `OrigemDoLead` responde "quem trouxe", e isto
+   * responde "quem participou". Juntar as duas numa consulta só faria a segunda contaminar a
+   * primeira, e o número de leads da campanha passaria a contar gente que ela não trouxe.
+   */
+  const nomesQueCompraram = new Set(
+    [...vendaPorNome.keys()].filter((nome) => (vendaPorNome.get(nome)?.vendas ?? 0) > 0),
+  );
+  const contatosQueCompraram = contatos.filter((c) => nomesQueCompraram.has(c.nome)).map((c) => c.id);
+  const assistencias =
+    contatosQueCompraram.length === 0
+      ? []
+      : await prisma.toqueDeAnuncio.findMany({
+          where: { workspaceId, contatoId: { in: contatosQueCompraram }, primeiro: false },
+          select: { contatoId: true, plataforma: true, campanhaId: true, campanhaNome: true },
+        });
+
   const porCampanha = new Map<string, LinhaPorCampanha>();
   let leadsSemCampanha = 0;
 
@@ -105,6 +132,7 @@ export async function GET() {
         leads: 0,
         vendas: 0,
         receita: 0,
+        vendasAssistidas: 0,
       } satisfies LinhaPorCampanha);
 
     linha.leads += 1;
@@ -114,6 +142,41 @@ export async function GET() {
       linha.receita += venda.receita;
     }
     porCampanha.set(chave, linha);
+  }
+
+  /*
+   * Uma assistência por campanha POR VENDA, não por toque.
+   *
+   * A pessoa pode ter clicado quatro vezes no mesmo anúncio antes de comprar. Contar cada clique
+   * faria uma campanha parecer ter participado de quatro vendas quando participou de uma — o
+   * mesmo erro de inflar que o resto deste arquivo evita em toda parte.
+   */
+  const jaContado = new Set<string>();
+  for (const toque of assistencias) {
+    const nome = toque.campanhaNome ?? null;
+    if (!nome && !toque.campanhaId) continue;
+    const plataforma = toque.plataforma === "meta" ? "meta" : "google";
+    const chave = `${plataforma}|${toque.campanhaId ?? nome}`;
+    const chaveDaVenda = `${chave}|${toque.contatoId}`;
+    if (jaContado.has(chaveDaVenda)) continue;
+    jaContado.add(chaveDaVenda);
+
+    const linha = porCampanha.get(chave);
+    // Campanha que só aparece como assistente (nunca trouxe lead nenhum) também entra na tabela:
+    // esconder ela seria repetir, por outro caminho, o problema que esta coluna existe pra expor.
+    if (linha) {
+      linha.vendasAssistidas += 1;
+    } else {
+      porCampanha.set(chave, {
+        plataforma,
+        campanhaId: toque.campanhaId,
+        campanhaNome: nome ?? `#${toque.campanhaId}`,
+        leads: 0,
+        vendas: 0,
+        receita: 0,
+        vendasAssistidas: 1,
+      });
+    }
   }
 
   const linhas = [...porCampanha.values()].sort((a, b) => b.leads - a.leads);

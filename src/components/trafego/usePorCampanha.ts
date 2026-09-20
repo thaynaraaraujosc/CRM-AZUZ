@@ -9,6 +9,8 @@ export type LinhaPorCampanha = {
   leads: number;
   vendas: number;
   receita: number;
+  /** Vendas em que a campanha encostou sem levar o crédito do primeiro toque. */
+  vendasAssistidas: number;
 };
 
 /**

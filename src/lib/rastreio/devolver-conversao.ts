@@ -1,9 +1,11 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import {
   enviarConversoes,
+  estornarConversoes,
   garantirAcaoDeConversao,
   type ConversaoParaEnviar,
 } from "@/lib/integracoes/google-ads";
+import { identificadoresDoContato } from "@/lib/rastreio/identificadores";
 import { contaDoWorkspace } from "@/lib/integracoes/google-ads-conta";
 
 /**
@@ -81,45 +83,65 @@ async function devolverDeUmWorkspace(
     where: {
       workspaceId,
       plataforma: "google",
-      cliqueId: { not: null },
       conversaoEnviadaEm: null,
     },
     select: { id: true, contatoId: true, cliqueId: true, tipoDoClique: true },
     take: POR_RODADA * 4,
   });
-  if (pendentes.length === 0) return { enviadas: 0, falhas: 0 };
 
-  const contatos = await prisma.contato.findMany({
+  const contatos = pendentes.length === 0 ? [] : await prisma.contato.findMany({
     where: { workspaceId, id: { in: pendentes.map((p) => p.contatoId) } },
-    select: { id: true, nome: true },
+    // E-mail e telefone entram aqui pra virar identificador embaralhado: é o que permite o Google
+    // reencontrar a pessoa quando o código do clique não chegou.
+    select: { id: true, nome: true, email: true, whatsapp: true },
   });
   const nomePorContato = new Map(contatos.map((c) => [c.id, c.nome]));
+  const dadosPorContato = new Map(contatos.map((c) => [c.id, c]));
 
   // Só negócio GANHO vira conversão. Lead que ainda não fechou continua pendente e será tentado de
   // novo quando fechar — é justamente pra isso que a marca de enviado fica vazia até lá.
-  const ganhos = await prisma.negocioCard.findMany({
+  const ganhos = nomePorContato.size === 0 ? [] : await prisma.negocioCard.findMany({
     where: {
       workspaceId,
       statusFechamento: "ganho",
       nome: { in: [...nomePorContato.values()] },
     },
-    select: { nome: true, valor: true, dataFechamento: true },
+    select: { id: true, nome: true, valor: true, dataFechamento: true },
   });
-  const vendaPorNome = new Map<string, { valor: number; quando: Date }>();
+  const vendaPorNome = new Map<string, { valor: number; quando: Date; idDoNegocio: string }>();
   for (const card of ganhos) {
     const anterior = vendaPorNome.get(card.nome);
     const valor = valorEmNumero(card.valor);
     // Mesmo cliente com mais de um negócio ganho: vale o de maior valor. Somar os dois atribuiria
     // ao anúncio uma receita que ele não produziu sozinho.
     if (!anterior || valor > anterior.valor) {
-      vendaPorNome.set(card.nome, { valor, quando: card.dataFechamento ?? new Date() });
+      vendaPorNome.set(card.nome, {
+        valor,
+        quando: card.dataFechamento ?? new Date(),
+        idDoNegocio: card.id,
+      });
     }
   }
 
   const aEnviar: { id: string; conversao: ConversaoParaEnviar }[] = [];
   for (const pendente of pendentes) {
     const venda = vendaPorNome.get(nomePorContato.get(pendente.contatoId) ?? "");
-    if (!venda || !pendente.cliqueId) continue;
+    if (!venda) continue;
+
+    const contato = dadosPorContato.get(pendente.contatoId);
+    const identificadores = contato ? identificadoresDoContato(contato) : [];
+
+    /*
+     * Precisa de PELO MENOS um jeito de o Google reconhecer a pessoa: o código do clique ou um
+     * identificador embaralhado. Sem nenhum dos dois não há o que mandar, e insistir só gastaria
+     * chamada pra receber recusa.
+     *
+     * Antes daqui o lead sem código era descartado. Agora ele passa quando o contato tem e-mail ou
+     * telefone — que é justamente o caso do lead de iPhone, de bloqueador, ou de link
+     * compartilhado, em que o código nunca chegou mas a pessoa comprou do mesmo jeito.
+     */
+    if (!pendente.cliqueId && identificadores.length === 0) continue;
+
     aEnviar.push({
       id: pendente.id,
       conversao: {
@@ -127,13 +149,33 @@ async function devolverDeUmWorkspace(
         tipoDoClique: pendente.tipoDoClique,
         quando: venda.quando,
         valor: venda.valor,
+        identificadores: identificadores.length ? identificadores : undefined,
+        idDoNegocio: venda.idDoNegocio,
       },
     });
     if (aEnviar.length >= POR_RODADA) break;
   }
-  if (aEnviar.length === 0) return { enviadas: 0, falhas: 0 };
+  /*
+   * Há estorno pendente mesmo sem venda nova pra mandar?
+   *
+   * Esta pergunta precisa vir ANTES de desistir da rodada. Na primeira versão o estorno só rodava
+   * depois de um envio bem-sucedido — então um negócio revertido num mês em que não entrou venda
+   * nenhuma nova ficava contando pro Google indefinidamente, que é exatamente o estrago que o
+   * estorno existe pra evitar.
+   */
+  const temEstorno =
+    (await prisma.origemDoLead.count({
+      where: {
+        workspaceId,
+        conversaoEnviadaEm: { not: null },
+        conversaoEstornadaEm: null,
+        conversaoNegocioId: { not: null },
+      },
+    })) > 0;
 
-  const conta = await contaDoWorkspace(workspaceId);
+  if (aEnviar.length === 0 && !temEstorno) return { enviadas: 0, falhas: 0 };
+
+  const conta = await contaDoWorkspace(workspaceId, prisma);
   if (!conta) return { enviadas: 0, falhas: 0 };
 
   const acao = await garantirAcaoDeConversao({
@@ -142,11 +184,18 @@ async function devolverDeUmWorkspace(
   });
   if (!acao.ok) {
     console.error(`[conversao] ${workspaceId}: sem ação de conversão — ${acao.erro}`);
-    await prisma.origemDoLead.updateMany({
-      where: { id: { in: aEnviar.map((a) => a.id) } },
-      data: { conversaoErro: acao.erro.slice(0, 1000) },
-    });
+    if (aEnviar.length > 0) {
+      await prisma.origemDoLead.updateMany({
+        where: { id: { in: aEnviar.map((a) => a.id) } },
+        data: { conversaoErro: acao.erro.slice(0, 1000) },
+      });
+    }
     return { enviadas: 0, falhas: aEnviar.length };
+  }
+
+  if (aEnviar.length === 0) {
+    const sos = await estornarOQueDeixouDeSerGanho(prisma, workspaceId, conta, acao.resourceName);
+    return { enviadas: sos, falhas: 0 };
   }
 
   const envio = await enviarConversoes({
@@ -173,10 +222,83 @@ async function devolverDeUmWorkspace(
    * é o estrago que não tem desfazer. O erro fica gravado na linha pra poder ser investigado.
    */
   const erro = envio.falhas[0]?.erro ?? null;
-  await prisma.origemDoLead.updateMany({
-    where: { id: { in: aEnviar.map((a) => a.id) } },
-    data: { conversaoEnviadaEm: new Date(), conversaoErro: erro ? erro.slice(0, 1000) : null },
+  const agora = new Date();
+  // Uma atualização por linha, e não um `updateMany`, porque cada uma guarda QUAL negócio foi
+  // enviado — é essa chave que permite desfazer depois.
+  await Promise.all(
+    aEnviar.map((a) =>
+      prisma.origemDoLead.update({
+        where: { id: a.id },
+        data: {
+          conversaoEnviadaEm: agora,
+          conversaoNegocioId: a.conversao.idDoNegocio ?? null,
+          conversaoErro: erro ? erro.slice(0, 1000) : null,
+        },
+      }),
+    ),
+  );
+
+  const estornadas = await estornarOQueDeixouDeSerGanho(prisma, workspaceId, conta, acao.resourceName);
+  return { enviadas: aEnviar.length + estornadas, falhas: erro ? 1 : 0 };
+}
+
+/**
+ * Desfaz no Google as vendas que o funil desmarcou.
+ *
+ * Negócio marcado como ganho e depois revertido — cliente desistiu, pagamento não entrou, foi
+ * clique errado — continuava contando pro Google PARA SEMPRE. Ele seguia achando que aquela
+ * campanha vendeu, e investindo em cima de uma receita que não existiu. O erro não aparece em
+ * lugar nenhum: o relatório fica bonito e o dinheiro vai embora.
+ *
+ * Roda junto do envio, na mesma rodada, porque depende da mesma conta e da mesma ação de conversão
+ * já resolvidas — repetir esse trabalho numa rodada separada seria pagar duas vezes pelo mesmo.
+ */
+async function estornarOQueDeixouDeSerGanho(
+  prisma: PrismaClient,
+  workspaceId: string,
+  conta: { accessToken: string; customerId: string },
+  acaoDeConversao: string,
+): Promise<number> {
+  const enviadas = await prisma.origemDoLead.findMany({
+    where: {
+      workspaceId,
+      conversaoEnviadaEm: { not: null },
+      conversaoEstornadaEm: null,
+      conversaoNegocioId: { not: null },
+    },
+    select: { id: true, conversaoNegocioId: true },
+    take: POR_RODADA,
+  });
+  if (enviadas.length === 0) return 0;
+
+  const ids = enviadas.map((e) => e.conversaoNegocioId!).filter(Boolean);
+  const aindaGanhos = await prisma.negocioCard.findMany({
+    where: { workspaceId, id: { in: ids }, statusFechamento: "ganho" },
+    select: { id: true },
+  });
+  const continuaGanho = new Set(aindaGanhos.map((c) => c.id));
+
+  // Deixou de ser ganho, ou o card sumiu de vez: nos dois casos a venda que foi enviada não vale
+  // mais. Card apagado conta igual — o que importa pro Google é que aquela receita não existe.
+  const paraEstornar = enviadas.filter((e) => !continuaGanho.has(e.conversaoNegocioId!));
+  if (paraEstornar.length === 0) return 0;
+
+  const agora = new Date();
+  const resultado = await estornarConversoes({
+    accessToken: conta.accessToken,
+    customerId: conta.customerId,
+    acaoDeConversao,
+    estornos: paraEstornar.map((e) => ({ idDoNegocio: e.conversaoNegocioId!, quando: agora })),
   });
 
-  return { enviadas: aEnviar.length, falhas: erro ? 1 : 0 };
+  if (!resultado.ok) {
+    console.error(`[conversao] ${workspaceId}: estorno recusado — ${resultado.erro}`);
+    return 0;
+  }
+
+  await prisma.origemDoLead.updateMany({
+    where: { id: { in: paraEstornar.map((e) => e.id) } },
+    data: { conversaoEstornadaEm: agora },
+  });
+  return paraEstornar.length;
 }

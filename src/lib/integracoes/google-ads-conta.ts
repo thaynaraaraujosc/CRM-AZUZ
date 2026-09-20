@@ -1,3 +1,4 @@
+import type { PrismaClient } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { decriptar, encriptar } from "@/lib/integracoes/crypto";
 import { renovarAccessToken } from "@/lib/integracoes/google-ads";
@@ -33,8 +34,17 @@ export type ContaGoogleAds = { accessToken: string; customerId: string };
  * Devolve `null` quando não há conexão utilizável, em vez de lançar: quem chama é rota de tela, e
  * "não conectado" é resposta normal, não falha.
  */
-export async function contaDoWorkspace(workspaceId: string): Promise<ContaGoogleAds | null> {
-  const integracao = await prisma.integracao.findUnique({
+export async function contaDoWorkspace(
+  workspaceId: string,
+  /**
+   * O cliente do banco. Opcional: quem chama de uma rota usa o compartilhado, e quem chama da
+   * rodada do cron passa o dele. Existe pra esta função poder ser exercitada em teste contra o
+   * banco de teste — sem isso, todo o caminho de devolução de conversão ficaria sem cobertura
+   * justamente na parte que mexe com dinheiro.
+   */
+  cliente: Pick<PrismaClient, "integracao"> = prisma,
+): Promise<ContaGoogleAds | null> {
+  const integracao = await cliente.integracao.findUnique({
     where: { workspaceId_provedor: { workspaceId, provedor: "google_ads" } },
   });
   if (!integracao || integracao.status !== "conectado") return null;
@@ -69,7 +79,7 @@ export async function contaDoWorkspace(workspaceId: string): Promise<ContaGoogle
     return null;
   }
 
-  await prisma.integracao.update({
+  await cliente.integracao.update({
     where: { workspaceId_provedor: { workspaceId, provedor: "google_ads" } },
     data: {
       accessTokenCriptografado: encriptar(tokens.accessToken),

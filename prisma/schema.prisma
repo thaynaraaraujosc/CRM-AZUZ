@@ -94,6 +94,7 @@ model Contato {
   execucoesAutomacao ExecucaoAutomacao[]
 
   origemDoLead OrigemDoLead?
+  toquesDeAnuncio ToqueDeAnuncio[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -186,10 +187,69 @@ model OrigemDoLead {
   /// rodada tenta, falha, e ninguém fica sabendo por quê.
   conversaoErro String? @db.Text
 
+  /// Qual negócio foi enviado como venda deste lead.
+  ///
+  /// É a chave do estorno. O Google desfaz uma conversão pelo identificador do pedido, não pelo
+  /// código do clique — então sem guardar aqui o que foi mandado, um negócio que deixa de ser
+  /// ganho continua contando pra ele PARA SEMPRE, e a campanha segue recebendo crédito por uma
+  /// receita que não existiu. É também o que deduplica contra a tag do site.
+  conversaoNegocioId String?
+
+  /// Quando o estorno foi aceito. Nulo = a venda ainda vale.
+  conversaoEstornadaEm DateTime?
+
   @@index([workspaceId, plataforma])
   @@index([workspaceId, campanhaId])
   /// A consulta da rodada de devolução: o que ainda não foi enviado, por workspace.
   @@index([workspaceId, conversaoEnviadaEm])
+}
+
+/// TODO anúncio em que a pessoa encostou antes de comprar, e não só o primeiro.
+///
+/// POR QUE EXISTE SEPARADO DE `OrigemDoLead`. Aquela guarda UMA origem por contato, a do primeiro
+/// toque, e é ela que recebe o crédito da venda quando a conversão volta pro Google. Isso está
+/// certo pra devolver conversão — só dá pra apontar um clique — e está errado pra entender o
+/// caminho que a pessoa fez.
+///
+/// O caso real: a pessoa vê um anúncio da Meta, não compra, depois pesquisa no Google, clica e
+/// fecha. Com primeiro toque só, a Meta leva tudo e o Google não leva nada; com último toque só,
+/// o contrário. Os dois modelos escondem que foram DOIS anúncios trabalhando juntos, e quem olha
+/// a tela conclui que uma das campanhas não serve pra nada e desliga a que estava alimentando a
+/// outra.
+///
+/// Aqui cada toque vira uma linha. Nada é sobrescrito e nada é somado: a tela é que escolhe como
+/// ler — quem trouxe, quem fechou, quem participou.
+model ToqueDeAnuncio {
+  id String @id
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  contatoId String
+  contato   Contato @relation(fields: [contatoId], references: [id], onDelete: Cascade)
+
+  plataforma   String
+  cliqueId     String? @db.Text
+  tipoDoClique String?
+
+  campanhaId   String?
+  campanhaNome String?
+  anuncioId    String?
+  anuncioNome  String?
+
+  /// Igual ao de `OrigemDoLead`: por onde o CRM ficou sabendo deste toque.
+  caminho String
+
+  /// Se este foi o toque que ganhou a atribuição. Guardado em vez de deduzido pela data porque
+  /// dois toques no mesmo instante existem (mensagem encaminhada, clique duplo) e a tela não pode
+  /// ficar decidindo desempate por conta própria.
+  primeiro Boolean @default(false)
+
+  criadoEm DateTime @default(now())
+
+  @@index([workspaceId, contatoId])
+  @@index([workspaceId, campanhaId])
+  @@index([workspaceId, criadoEm])
 }
 
 /// Um clique em anúncio que ainda não virou lead.
@@ -385,6 +445,7 @@ model Workspace {
   // filho direto, filtrado por workspaceId): só formalizam a relação nos dois lados do schema.
   contatos              Contato[]
   origensDeLead         OrigemDoLead[]
+  toquesDeAnuncio       ToqueDeAnuncio[]
   cliquesRastreados     CliqueRastreado[]
   compromissos          Compromisso[]
   tarefaEtapas          TarefaEtapa[]

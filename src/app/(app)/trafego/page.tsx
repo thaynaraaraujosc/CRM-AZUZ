@@ -175,6 +175,7 @@ export default function TrafegoPage() {
         leadsCrm,
         vendasCrm: crm?.vendas ?? 0,
         receitaCrm,
+        assistidas: crm?.vendasAssistidas ?? 0,
         // ROAS de verdade: receita que o FUNIL registrou dividida pelo que a PLATAFORMA cobrou.
         // Só a plataforma sabe o gasto e só o CRM sabe a venda; é o cruzamento que produz o número.
         roasCrm: investido > 0 ? receitaCrm / investido : 0,
@@ -473,7 +474,17 @@ export default function TrafegoPage() {
                         <span className="trafego-cpl-crm">{formatarMoeda(c.cplCrm)}/lead</span>
                       ) : null}
                     </td>
-                    <td className="trafego-col-crm">{c.vendasCrm}</td>
+                    <td className="trafego-col-crm">
+                      {c.vendasCrm}
+                      {c.assistidas > 0 ? (
+                        <span
+                          className="trafego-cpl-crm"
+                          title="Vendas em que esta campanha participou sem ter trazido o lead"
+                        >
+                          +{c.assistidas} assistida{c.assistidas === 1 ? "" : "s"}
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="trafego-col-crm">
                       {c.receitaCrm > 0 ? (
                         <>
@@ -495,7 +506,10 @@ export default function TrafegoPage() {
             As colunas à esquerda são o que a <strong>plataforma de anúncio</strong> informa: ela só
             enxerga o que acontece dentro dela. As três da direita são o que o <strong>CRM</strong>{" "}
             registrou de verdade — lead que virou contato e negócio marcado como ganho no funil. O
-            ROAS real cruza os dois: receita do seu funil dividida pelo que a plataforma cobrou.
+            ROAS real cruza os dois: receita do seu funil dividida pelo que a plataforma cobrou.{" "}
+            <strong>Assistida</strong> é venda em que a campanha participou sem ter trazido o lead —
+            a pessoa viu o anúncio, não comprou, e voltou por outro caminho. Desligar uma campanha
+            com muitas assistidas costuma derrubar junto a que estava fechando.
             {leadsSemCampanha > 0 ? (
               <>
                 {" "}

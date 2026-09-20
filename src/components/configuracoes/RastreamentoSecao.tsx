@@ -177,6 +177,15 @@ export function RastreamentoSecao() {
                 O Google recusou o último envio: {conversoes.ultimoErro}
               </p>
             ) : null}
+            {/* A Meta não entra aqui, e a tela diz isso em vez de omitir. Omitir faria parecer que
+                a devolução cobre os dois canais, que é o tipo de promessa pela metade que já
+                existiu nesta tela antes. */}
+            <p className="hint rastreio-nota">
+              <strong>Só para o Google por enquanto.</strong> A Meta exige uma permissão de anúncios
+              que ainda não foi liberada para este app. Enquanto isso, o lead que vem do Facebook e
+              do Instagram continua sendo rastreado normalmente — o que não acontece é a venda
+              voltar para lá.
+            </p>
           </>
         )}
       </div>
