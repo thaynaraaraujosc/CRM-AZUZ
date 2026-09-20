@@ -480,6 +480,14 @@ export type ConversaoParaEnviar = {
    * conta uma. Sem isso, o relatório dele infla e o algoritmo investe em cima do número inflado.
    */
   idDoNegocio?: string;
+  /**
+   * O que a pessoa escolheu no aviso de cookies do site, quando o site informou.
+   *
+   * Nulo não é o mesmo que "negou": nulo é "não se sabe", que é o caso da esmagadora maioria dos
+   * sites brasileiros hoje. Mandar "concedido" nesses casos seria afirmar um consentimento que
+   * ninguém deu — então o campo simplesmente não vai.
+   */
+  consentimento?: "concedido" | "negado" | null;
 };
 
 export type ResultadoDaConversao = { indice: number; erro: string };
@@ -522,6 +530,14 @@ export async function enviarConversoes(params: {
       currencyCode: "BRL",
       ...(c.identificadores?.length ? { userIdentifiers: c.identificadores } : {}),
       ...(c.idDoNegocio ? { orderId: c.idDoNegocio } : {}),
+      ...(c.consentimento
+        ? {
+            consent: {
+              adUserData: c.consentimento === "concedido" ? "GRANTED" : "DENIED",
+              adPersonalization: c.consentimento === "concedido" ? "GRANTED" : "DENIED",
+            },
+          }
+        : {}),
     };
   });
 

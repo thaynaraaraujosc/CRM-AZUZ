@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { gerarCodigo, marcarMensagem } from "@/lib/rastreio/codigo";
-import { lerOrigemDaUrl } from "@/lib/rastreio/origem";
+import { lerConsentimento, lerOrigemDaUrl } from "@/lib/rastreio/origem";
 
 /**
  * A ponte entre o site do cliente e a conversa no WhatsApp.
@@ -85,7 +85,12 @@ export async function GET(request: Request, contexto: { params: Promise<{ slug: 
           id: `clique-${randomBytes(12).toString("hex")}`,
           workspaceId: workspace.id,
           codigo,
-          dados: origem as unknown as Prisma.InputJsonValue,
+          // O consentimento viaja junto do clique: ele é lido AQUI, na página em que a pessoa
+          // estava, e não existe mais quando a conversa começa do outro lado.
+          dados: {
+            ...origem,
+            consentimento: lerConsentimento(url.searchParams),
+          } as unknown as Prisma.InputJsonValue,
         },
       });
       mensagem = marcarMensagem(mensagemBase, codigo);

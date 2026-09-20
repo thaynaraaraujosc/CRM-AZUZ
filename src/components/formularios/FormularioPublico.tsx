@@ -146,6 +146,9 @@ const CHAVES_DE_ANUNCIO = [
   "gclid", "wbraid", "gbraid", "fbclid",
   "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term",
   "campaignid", "adgroupid", "creative", "keyword", "matchtype",
+  // O que a pessoa escolheu no aviso de cookies do site, quando o site informa. O CRM não tem
+  // banner próprio: ele só carrega adiante o que vier.
+  "consent", "consentimento", "gcs",
 ];
 
 function lerMarcasDaUrl(): Record<string, string> {

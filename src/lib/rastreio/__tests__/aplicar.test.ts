@@ -326,3 +326,62 @@ conditional("aplicarOrigemPelaUrl", () => {
     expect(origem?.tipoDoClique).toBe("fbclid");
   });
 });
+
+/**
+ * O consentimento do aviso de cookies.
+ *
+ * O CRM não tem banner e não pergunta nada: ele só carrega adiante o que o site do cliente
+ * informar. O que estes testes prendem é que ele NÃO INVENTA — "não se sabe" nunca pode virar
+ * "aceitou", porque afirmar consentimento que não houve é o erro que custa caro.
+ */
+conditional("consentimento no caminho do formulário", () => {
+  beforeEach(async () => {
+    await prisma.origemDoLead.deleteMany({ where: { workspaceId: WS } });
+    await prepararWorkspace(WS);
+  });
+
+  it("guarda concedido quando o site informa que a pessoa aceitou", async () => {
+    const contatoId = await criarContato("consent-sim", WS);
+    await aplicarOrigemPelaUrl(prisma, {
+      workspaceId: WS,
+      contatoId,
+      marcas: { gclid: "g1", consent: "1" },
+    });
+    const origem = await prisma.origemDoLead.findUnique({ where: { contatoId } });
+    expect(origem?.consentimento).toBe("concedido");
+  });
+
+  it("guarda negado quando a pessoa recusou", async () => {
+    const contatoId = await criarContato("consent-nao", WS);
+    await aplicarOrigemPelaUrl(prisma, {
+      workspaceId: WS,
+      contatoId,
+      marcas: { gclid: "g2", consent: "denied" },
+    });
+    const origem = await prisma.origemDoLead.findUnique({ where: { contatoId } });
+    expect(origem?.consentimento).toBe("negado");
+  });
+
+  it("le o formato do Modo de Consentimento do Google", async () => {
+    const contatoId = await criarContato("consent-gcs", WS);
+    await aplicarOrigemPelaUrl(prisma, {
+      workspaceId: WS,
+      contatoId,
+      marcas: { gclid: "g3", gcs: "G101" },
+    });
+    const origem = await prisma.origemDoLead.findUnique({ where: { contatoId } });
+    // O terceiro caractere é o de dados publicitários: 0 = negado.
+    expect(origem?.consentimento).toBe("negado");
+  });
+
+  it("fica NULO quando o site nao informa nada, e nao vira aceito", async () => {
+    const contatoId = await criarContato("consent-mudo", WS);
+    await aplicarOrigemPelaUrl(prisma, {
+      workspaceId: WS,
+      contatoId,
+      marcas: { gclid: "g4" },
+    });
+    const origem = await prisma.origemDoLead.findUnique({ where: { contatoId } });
+    expect(origem?.consentimento).toBeNull();
+  });
+});

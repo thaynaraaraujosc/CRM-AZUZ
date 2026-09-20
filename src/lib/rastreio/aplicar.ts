@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { lerCodigoDaMensagem } from "@/lib/rastreio/codigo";
-import { lerOrigemDaUrl, type OrigemCapturada } from "@/lib/rastreio/origem";
+import { lerConsentimento, lerOrigemDaUrl, type OrigemCapturada } from "@/lib/rastreio/origem";
 
 /**
  * Fecha o ciclo: a mensagem chegou, o clique estava guardado, o lead ganha origem.
@@ -104,6 +104,10 @@ export async function aplicarOrigemPelaMensagem(
 
     const origem = comoOrigem(clique.dados);
     if (!origem) return { atribuido: false, motivo: "falha" };
+    // Guardado junto do clique lá em `/ir/[slug]`, porque é lá que ele existe: quando a conversa
+    // começa, a página em que a pessoa escolheu já ficou pra trás.
+    const consentimentoDoClique =
+      (clique.dados as { consentimento?: string } | null)?.consentimento ?? null;
 
     // Primeiro toque manda. Quem já tem origem não é sobrescrito: o anúncio que trouxe a pessoa
     // pela primeira vez é o que merece o crédito, e não o último link em que ela clicou.
@@ -149,6 +153,7 @@ export async function aplicarOrigemPelaMensagem(
         utmContent: texto(origem.utmContent),
         utmTerm: texto(origem.utmTerm),
         paginaEntrada: origem.paginaEntrada ?? null,
+        consentimento: consentimentoDoClique,
         caminho: "whatsapp",
         bruto: (origem.bruto ?? {}) as Prisma.InputJsonValue,
       },
@@ -256,7 +261,9 @@ export async function aplicarOrigemPelaUrl(
     return { atribuido: false, motivo: "sem-codigo" };
   }
 
-  const origem = lerOrigemDaUrl(new URLSearchParams(params.marcas), params.paginaEntrada);
+  const busca = new URLSearchParams(params.marcas);
+  const origem = lerOrigemDaUrl(busca, params.paginaEntrada);
+  const consentimento = lerConsentimento(busca);
   // Sem marca de anúncio nenhuma: visita orgânica. Não é erro, e inventar origem aqui contaminaria
   // justamente o número que a tela de Tráfego existe pra mostrar.
   if (!origem) return { atribuido: false, motivo: "sem-codigo" };
@@ -301,6 +308,7 @@ export async function aplicarOrigemPelaUrl(
         utmContent: texto(origem.utmContent),
         utmTerm: texto(origem.utmTerm),
         paginaEntrada: origem.paginaEntrada ?? null,
+        consentimento,
         caminho: "formulario",
         bruto: (origem.bruto ?? {}) as Prisma.InputJsonValue,
       },

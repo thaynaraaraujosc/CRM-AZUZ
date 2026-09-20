@@ -181,10 +181,17 @@ export function RastreamentoSecao() {
                 a devolução cobre os dois canais, que é o tipo de promessa pela metade que já
                 existiu nesta tela antes. */}
             <p className="hint rastreio-nota">
-              <strong>Só para o Google por enquanto.</strong> A Meta exige uma permissão de anúncios
-              que ainda não foi liberada para este app. Enquanto isso, o lead que vem do Facebook e
-              do Instagram continua sendo rastreado normalmente — o que não acontece é a venda
-              voltar para lá.
+              <strong>Meta:</strong> o envio já existe, mas a permissão de anúncios só vale para
+              quem tem cargo no app da Meta enquanto a análise não sair. Na prática, funciona na sua
+              conta e ainda não nas dos seus clientes.
+            </p>
+            {/* O consentimento não é decisão do CRM: ele nasce no site do cliente. A tela explica
+                isso em vez de oferecer um botão que não teria o que ligar. */}
+            <p className="hint rastreio-nota">
+              <strong>Aviso de cookies:</strong> se o site tiver um, ele pode informar ao CRM o que
+              a pessoa escolheu — basta o link carregar <code>consent=1</code> ou{" "}
+              <code>consent=0</code>. O CRM repassa essa escolha junto da venda. Sem banner no site,
+              nada muda: a escolha fica como <em>não informada</em>, que é o padrão hoje.
             </p>
           </>
         )}

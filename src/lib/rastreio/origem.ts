@@ -110,3 +110,28 @@ export function lerOrigemDoEndereco(endereco: string): OrigemCapturada | null {
     return null;
   }
 }
+
+/**
+ * Lê o que a pessoa escolheu no aviso de cookies, quando o site informa.
+ *
+ * O CRM não tem banner e não tem como perguntar: essa escolha acontece no site do cliente. O que
+ * dá pra fazer é ACEITAR o sinal quando ele chega — pendurado no link de rastreamento ou no
+ * endereço do formulário — e repassar junto da conversão.
+ *
+ * Aceita os dois jeitos de escrever que aparecem na prática: o parâmetro explícito (`consent=1`)
+ * e o formato do Google (`gcs=G111`, em que o terceiro caractere diz se o uso publicitário foi
+ * concedido). Não inventa nada: o que não vier reconhecido vira `null`, que quer dizer
+ * "não se sabe" — e é diferente de "negou".
+ */
+export function lerConsentimento(parametros: URLSearchParams): "concedido" | "negado" | null {
+  const explicito = (parametros.get("consent") ?? parametros.get("consentimento") ?? "").trim().toLowerCase();
+  if (["1", "true", "sim", "granted", "concedido"].includes(explicito)) return "concedido";
+  if (["0", "false", "nao", "não", "denied", "negado"].includes(explicito)) return "negado";
+
+  // `gcs` é o formato que o Google usa no Modo de Consentimento: "G1" seguido de um dígito por
+  // finalidade. O terceiro caractere é o de dados publicitários.
+  const gcs = (parametros.get("gcs") ?? "").trim().toUpperCase();
+  if (/^G1[01][01]$/.test(gcs)) return gcs[2] === "1" ? "concedido" : "negado";
+
+  return null;
+}

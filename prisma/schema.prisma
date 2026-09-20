@@ -198,6 +198,18 @@ model OrigemDoLead {
   /// Quando o estorno foi aceito. Nulo = a venda ainda vale.
   conversaoEstornadaEm DateTime?
 
+  /// O que a pessoa escolheu no aviso de cookies do site por onde ela entrou.
+  ///
+  /// "concedido" | "negado" | null (não se sabe).
+  ///
+  /// NÃO É O CRM QUE DECIDE ISSO. A escolha acontece no site do cliente, num banner que o CRM não
+  /// controla e muitas vezes nem existe. O que o CRM faz é ACEITAR o sinal quando ele vem e
+  /// repassar junto da conversão — sem inventar um "aceitou" que ninguém deu, porque afirmar
+  /// consentimento que não houve é pior do que admitir que não se sabe.
+  ///
+  /// Nulo é o caso normal hoje e não é erro: quer dizer que o site não informou.
+  consentimento String?
+
   @@index([workspaceId, plataforma])
   @@index([workspaceId, campanhaId])
   /// A consulta da rodada de devolução: o que ainda não foi enviado, por workspace.

@@ -6,6 +6,8 @@ import {
   type ConversaoParaEnviar,
 } from "@/lib/integracoes/google-ads";
 import { identificadoresDoContato } from "@/lib/rastreio/identificadores";
+import { enviarConversoesMeta, resolverDataset } from "@/lib/integracoes/meta-conversoes";
+import { decriptar } from "@/lib/integracoes/crypto";
 import { contaDoWorkspace } from "@/lib/integracoes/google-ads-conta";
 
 /**
@@ -51,27 +53,145 @@ export async function devolverConversoesDeTodosOsWorkspaces(
 ): Promise<ResultadoDaDevolucao> {
   const resultado: ResultadoDaDevolucao = { workspaces: 0, enviadas: 0, falhas: 0 };
 
-  // Só quem tem Google Ads ligado. A consulta começa pela integração, e não pelos leads, porque
+  // Só quem tem a plataforma ligada. A consulta começa pela integração, e não pelos leads, porque
   // sem conexão não há pra onde mandar: varrer leads de workspace desconectado é trabalho jogado
   // fora a cada minuto.
   const conectados = await prisma.integracao.findMany({
-    where: { provedor: "google_ads", status: "conectado" },
-    select: { workspaceId: true },
+    where: { provedor: { in: ["google_ads", "meta_ads"] }, status: "conectado" },
+    select: { workspaceId: true, provedor: true },
   });
 
-  for (const { workspaceId } of conectados) {
+  for (const { workspaceId, provedor } of conectados) {
     try {
-      const enviou = await devolverDeUmWorkspace(prisma, workspaceId);
+      const enviou =
+        provedor === "google_ads"
+          ? await devolverDeUmWorkspace(prisma, workspaceId)
+          : await devolverParaMeta(prisma, workspaceId);
       resultado.workspaces += 1;
       resultado.enviadas += enviou.enviadas;
       resultado.falhas += enviou.falhas;
     } catch (erro) {
       // Um workspace com problema não pode parar a fila dos outros.
-      console.error(`[conversao] falha no workspace ${workspaceId}:`, erro);
+      console.error(`[conversao] falha no workspace ${workspaceId} (${provedor}):`, erro);
     }
   }
 
   return resultado;
+}
+
+/**
+ * O mesmo circuito, do lado da Meta.
+ *
+ * Separado do Google e não unificado porque as duas plataformas recebem coisas diferentes: o
+ * Google recebe conversão por clique e aceita ajuste (estorno); a Meta recebe EVENTO num dataset e
+ * não tem estorno equivalente — lá a correção é mandar um evento de reembolso, que é outra
+ * conversa. Forçar as duas no mesmo caminho esconderia essa diferença e produziria um dos dois
+ * comportamentos errado.
+ *
+ * ENQUANTO A REVISÃO DA META NÃO PASSAR, isto falha pra todo cliente que não tenha cargo no app —
+ * e o erro fica gravado na linha e aparece na tela, em vez de sumir.
+ */
+async function devolverParaMeta(
+  prisma: PrismaClient,
+  workspaceId: string,
+): Promise<{ enviadas: number; falhas: number }> {
+  const pendentes = await prisma.origemDoLead.findMany({
+    where: { workspaceId, plataforma: "meta", conversaoEnviadaEm: null },
+    select: { id: true, contatoId: true, cliqueId: true },
+    take: POR_RODADA * 4,
+  });
+  if (pendentes.length === 0) return { enviadas: 0, falhas: 0 };
+
+  const contatos = await prisma.contato.findMany({
+    where: { workspaceId, id: { in: pendentes.map((p) => p.contatoId) } },
+    select: { id: true, nome: true, email: true, whatsapp: true },
+  });
+  const porId = new Map(contatos.map((c) => [c.id, c]));
+
+  const ganhos =
+    contatos.length === 0
+      ? []
+      : await prisma.negocioCard.findMany({
+          where: { workspaceId, statusFechamento: "ganho", nome: { in: contatos.map((c) => c.nome) } },
+          select: { id: true, nome: true, valor: true, dataFechamento: true },
+        });
+  const vendaPorNome = new Map<string, { valor: number; quando: Date; idDoNegocio: string }>();
+  for (const card of ganhos) {
+    const anterior = vendaPorNome.get(card.nome);
+    const valor = valorEmNumero(card.valor);
+    if (!anterior || valor > anterior.valor) {
+      vendaPorNome.set(card.nome, { valor, quando: card.dataFechamento ?? new Date(), idDoNegocio: card.id });
+    }
+  }
+
+  const aEnviar: { id: string; conversao: Parameters<typeof enviarConversoesMeta>[0]["conversoes"][number] }[] = [];
+  for (const pendente of pendentes) {
+    const contato = porId.get(pendente.contatoId);
+    const venda = contato ? vendaPorNome.get(contato.nome) : undefined;
+    if (!venda || !contato) continue;
+    // Sem nenhum jeito de a Meta reconhecer a pessoa não há o que mandar.
+    if (!pendente.cliqueId && !contato.email && !contato.whatsapp) continue;
+    aEnviar.push({
+      id: pendente.id,
+      conversao: {
+        ctwaClid: pendente.cliqueId,
+        email: contato.email,
+        telefone: contato.whatsapp,
+        quando: venda.quando,
+        valor: venda.valor,
+        idDoNegocio: venda.idDoNegocio,
+      },
+    });
+    if (aEnviar.length >= POR_RODADA) break;
+  }
+  if (aEnviar.length === 0) return { enviadas: 0, falhas: 0 };
+
+  const integracao = await prisma.integracao.findUnique({
+    where: { workspaceId_provedor: { workspaceId, provedor: "meta_ads" } },
+    select: { accessTokenCriptografado: true, metadados: true },
+  });
+  const adAccountId = (integracao?.metadados as { adAccountId?: string } | null)?.adAccountId;
+  if (!integracao?.accessTokenCriptografado || !adAccountId) return { enviadas: 0, falhas: 0 };
+  const accessToken = decriptar(integracao.accessTokenCriptografado);
+
+  const dataset = await resolverDataset({ accessToken, adAccountId });
+  if (!dataset.ok) {
+    console.error(`[conversao] ${workspaceId}: sem dataset na Meta — ${dataset.erro}`);
+    await prisma.origemDoLead.updateMany({
+      where: { id: { in: aEnviar.map((a) => a.id) } },
+      data: { conversaoErro: dataset.erro.slice(0, 1000) },
+    });
+    return { enviadas: 0, falhas: aEnviar.length };
+  }
+
+  const envio = await enviarConversoesMeta({
+    accessToken,
+    datasetId: dataset.dataset.id,
+    conversoes: aEnviar.map((a) => a.conversao),
+  });
+  if (!envio.ok) {
+    console.error(`[conversao] ${workspaceId}: Meta recusou — ${envio.erro}`);
+    await prisma.origemDoLead.updateMany({
+      where: { id: { in: aEnviar.map((a) => a.id) } },
+      data: { conversaoErro: envio.erro.slice(0, 1000) },
+    });
+    return { enviadas: 0, falhas: aEnviar.length };
+  }
+
+  const agora = new Date();
+  await Promise.all(
+    aEnviar.map((a) =>
+      prisma.origemDoLead.update({
+        where: { id: a.id },
+        data: {
+          conversaoEnviadaEm: agora,
+          conversaoNegocioId: a.conversao.idDoNegocio,
+          conversaoErro: null,
+        },
+      }),
+    ),
+  );
+  return { enviadas: aEnviar.length, falhas: 0 };
 }
 
 async function devolverDeUmWorkspace(
@@ -85,7 +205,7 @@ async function devolverDeUmWorkspace(
       plataforma: "google",
       conversaoEnviadaEm: null,
     },
-    select: { id: true, contatoId: true, cliqueId: true, tipoDoClique: true },
+    select: { id: true, contatoId: true, cliqueId: true, tipoDoClique: true, consentimento: true },
     take: POR_RODADA * 4,
   });
 
@@ -151,6 +271,10 @@ async function devolverDeUmWorkspace(
         valor: venda.valor,
         identificadores: identificadores.length ? identificadores : undefined,
         idDoNegocio: venda.idDoNegocio,
+        consentimento:
+          pendente.consentimento === "concedido" || pendente.consentimento === "negado"
+            ? pendente.consentimento
+            : null,
       },
     });
     if (aEnviar.length >= POR_RODADA) break;
