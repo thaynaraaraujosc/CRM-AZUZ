@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import {
+  aplicarAjustesDaInstancia,
   buscarWebhookRegistrado,
   estadoDaInstancia,
   reconfigurarWebhook,
@@ -96,6 +97,22 @@ export async function conferirCanalQrCode(
     await reconfigurarWebhook(workspaceId).catch(() => {});
     const conferido = await buscarWebhookRegistrado(workspaceId).catch(() => null);
     reparado = conferido?.ativo === true && semToken(conferido.url) === semToken(esperado);
+  }
+
+  /*
+   * Os ajustes da instância são reaplicados junto, sempre que a conexão está de pé.
+   *
+   * O que está em jogo aqui é `groupsIgnore`. Com ele ligado, a Evolution não entrega mensagem de
+   * grupo — e não entrega em silêncio: não há erro, não há descarte, não há nada no CRM que denuncie
+   * a falta. O grupo simplesmente não existe deste lado, e a conclusão de quem usa é que o CRM não
+   * suporta grupo.
+   *
+   * O ajuste já era feito na conexão, mas só nela: uma instância que ficou com o valor errado
+   * precisava de um QR Code novo pra voltar ao normal. Reaplicar aqui é barato (uma chamada) e
+   * torna o conserto automático.
+   */
+  if (integracao?.status === "conectado") {
+    await aplicarAjustesDaInstancia(workspaceId).catch(() => {});
   }
 
   /*

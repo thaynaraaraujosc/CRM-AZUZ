@@ -127,12 +127,28 @@ async function configurarWebhook(instancia: string): Promise<void> {
   });
 }
 
-/** Desliga a sincronização do histórico inteiro do celular ao conectar. Sem isso, a primeira
- * conexão (ou reconexão) traz TODAS as mensagens que já existiam no WhatsApp de quem escaneou o QR
- * (no caso real que motivou isso, mais de 41 mil mensagens de uma vez), o que trava o CRM tentando
- * importar tudo. Chamado numa etapa própria, separada da criação, pelo mesmo motivo do webhook
- * acima: o campo inline em `/instance/create` não é confiável em toda versão/instalação. */
-async function desativarSincronizacaoDeHistorico(instancia: string): Promise<void> {
+/**
+ * Os ajustes da instância na Evolution.
+ *
+ * `syncFullHistory: false` desliga a sincronização do histórico inteiro do celular ao conectar.
+ * Sem isso, a primeira conexão (ou reconexão) traz TODAS as mensagens que já existiam no WhatsApp
+ * de quem escaneou o QR (no caso real que motivou isso, mais de 41 mil mensagens de uma vez), o que
+ * trava o CRM tentando importar tudo.
+ *
+ * `groupsIgnore: false` é o que faz mensagem de GRUPO chegar. Quando ele está ligado, a Evolution
+ * nem entrega o evento, e o CRM não tem como saber: não há erro, não há descarte, não há nada —
+ * o grupo simplesmente não existe do lado de cá. É por isso que esta função deixou de ser privada
+ * e de rodar só na conexão: uma instância que ficou com o ajuste errado precisava de um QR Code
+ * novo pra voltar ao normal, o que é caro demais pra um ajuste de uma linha.
+ *
+ * Chamada numa etapa própria, separada da criação, pelo mesmo motivo do webhook acima: o campo
+ * inline em `/instance/create` não é confiável em toda versão/instalação.
+ */
+export async function aplicarAjustesDaInstancia(workspaceId: string): Promise<void> {
+  return ajustesDaInstancia(nomeInstancia(workspaceId));
+}
+
+async function ajustesDaInstancia(instancia: string): Promise<void> {
   await chamarEvolution(`/settings/set/${instancia}`, "POST", {
     rejectCall: false,
     groupsIgnore: false,
@@ -195,7 +211,7 @@ export async function conectarWhatsAppNaoOficial(workspaceId: string): Promise<R
 async function prepararInstancia(instancia: string): Promise<string | undefined> {
   const [webhook] = await Promise.allSettled([
     configurarWebhook(instancia),
-    desativarSincronizacaoDeHistorico(instancia),
+    ajustesDaInstancia(instancia),
   ]);
   if (webhook.status === "rejected") {
     const erro = webhook.reason;
@@ -373,7 +389,7 @@ export type ChatResumo = {
  * Lista TODAS as conversas já existentes no celular conectado. Usado só pela sincronização de
  * histórico sob demanda (ver `POST .../sincronizar-historico`), nunca pelo fluxo normal de
  * mensagem ao vivo. Diferente do `syncFullHistory` da Evolution (desligado de propósito, ver
- * `desativarSincronizacaoDeHistorico`: foi o que floodou o banco com 41 mil mensagens de uma vez
+ * `ajustesDaInstancia`: foi o que floodou o banco com 41 mil mensagens de uma vez
  * numa conexão real): aqui é o CRM que PEDE a lista, em vez da Evolution EMPURRAR tudo sozinha, o
  * que permite processar em lotes pequenos e controlados. Endpoint ainda não validado contra a
  * instância de produção: o `.catch` de quem chama loga o erro real se o formato estiver errado.
@@ -544,5 +560,5 @@ export async function estadoDaInstancia(workspaceId: string): Promise<string | n
 /** Registra o webhook de novo, sem precisar reconectar nem ler QR nenhum. Idempotente. */
 export async function reconfigurarWebhook(workspaceId: string): Promise<void> {
   const instancia = nomeInstancia(workspaceId);
-  await Promise.all([configurarWebhook(instancia), desativarSincronizacaoDeHistorico(instancia)]);
+  await Promise.all([configurarWebhook(instancia), ajustesDaInstancia(instancia)]);
 }

@@ -68,12 +68,42 @@
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
   /* INDIGO, copiado das referencias. O azul-real anterior (#2e6bff) e mais saturado e puxa a tela
      inteira pro azul quando usado em area; o indigo aguenta ser usado cheio num botao sem gritar. */
-  --blue: #5b6cf5;
-  --blue-soft: #e8eafe;
-  --blue-soft-2: #f1f2fe;
+  /* ---------------------------------------------------------------------------
+     A MARCA AZUZ: duas cores, e o papel de cada uma.
+
+     Navy #002037 é a cor dominante e a tinta. Dourado #D2A366 é ACENTO, e só em detalhe: cursor da
+     logo, botão, marcador, filete.
+
+     A regra "texto sobre o dourado é sempre navy, nunca branco" não é só estética, é a leitura
+     correta dos números: navy sobre dourado dá 7,3:1, e branco sobre dourado dá 2,3:1 — reprovado.
+
+     E há uma consequência que o guia não precisa dizer mas a medição diz: DOURADO SOBRE FUNDO CLARO
+     TAMBÉM DÁ 2,3:1. Ou seja, no tema claro o dourado não pode ser texto, link nem ícone fino. Ele
+     preenche (botão, filete, marcador) e o que vai por cima dele é navy. Quem precisar de acento
+     legível no claro usa o navy, que dá 16,6:1 sobre branco.
+
+     No tema escuro a relação se inverte: o dourado chega a 8,6:1 sobre o fundo e vira acento de
+     texto; o navy cai pra 1,19:1 e deixa de servir como cor de frente — lá ele é superfície.
+
+     Aposentados por decisão da marca: #0B1533, #031017, #2E6BFF, o ciano e os cinzas antigos.
+     --------------------------------------------------------------------------- */
+  --navy-marca: #002037;
+  --ouro: #D2A366;
+  --ouro-hover: #c08f4e;
+  --ouro-active: #b07f3f;
+  /* Dourado rebaixado, pra fundo de marcador e filete fino. Nunca pra texto. */
+  --ouro-soft: #f7efe3;
+
+  /* `--blue` deixou de ser azul: ele é o token de ACENTO do CRM (item selecionado, foco, link,
+     indicador), e o acento legível da marca no tema claro é o navy. O nome fica por enquanto
+     porque 400 e poucas regras o referenciam; renomear tudo é uma mudança mecânica que merece
+     commit próprio, e misturá-la com a troca de identidade esconderia as duas. */
+  --blue: #002037;
+  --blue-soft: #e6ebef;
+  --blue-soft-2: #f2f5f7;
   /* Azul mais escuro que --blue. Usado onde o azul vibrante padrão fica claro demais pra servir
      de "ligado"/confirmação (ex.: toggle ativo). */
-  --blue-strong: #1d4fd1;
+  --blue-strong: #001726;
 
   /* AZUL MARINHO: a cor da ação principal: botão "Salvar", chip de filtro ligado, passo atual do
      assistente, aviso. Antes esses elementos eram quase-pretos (`--ink`), e o resultado é que a
@@ -94,10 +124,12 @@
   /* Botao principal ESCURO, como no Flow. O indigo continua existindo como acento (item ativo,
      foco, link, indicador), mas a acao principal e quase preta: num painel de trabalho o escuro
      tem mais forca que qualquer cor e nao compete com os estados coloridos. */
-  --acao: #131c31;
-  --acao-hover: #222d46;
-  --acao-active: #0a1120;
-  --acao-texto: #ffffff;
+  /* A AÇÃO PRINCIPAL PASSA A SER DOURADA, com texto navy. É o único lugar em que o dourado ocupa
+     área no tema claro, e é exatamente o uso que a marca prevê ("acento... botão"). */
+  --acao: #D2A366;
+  --acao-hover: #c08f4e;
+  --acao-active: #b07f3f;
+  --acao-texto: #002037;
 
   /* Bordas organizam, não são protagonistas: mas precisam ser vistas. A 8% ela sumia sobre branco
      e o card ficava sem começo nem fim. `--line-strong` é pro que precisa de recorte de verdade:
@@ -121,7 +153,7 @@
      Era #09090b (preto neutro). Passa a ser o azul marinho da marca: sobre branco fica em 18:1 de
      contraste, bem acima do mínimo, e a interface inteira ganha a temperatura da identidade sem
      precisar pintar área grande de cor. */
-  --ink: #0b1533;
+  --ink: #002037;
   /* Tinta de nome próprio: grafite, não preto. Numa lista longa, preto puro repetido em toda linha
      pesa: cada nome vira um bloco escuro e o olho não descansa. Um passo abaixo mantém o nome
      dominante sem transformar a lista num paredão. Título de página segue em `--ink`. */
@@ -134,13 +166,20 @@
   --text-muted: #5c5f6b;
   --text-faint: #83868f;
 
-  /* Arial no produto INTEIRO: landing, telas de entrada e app.
-     Ela é a única fonte que está instalada em Mac, Windows, Android e Linux ao mesmo tempo, então é
-     a que mais se aproxima de "todo mundo vê exatamente a mesma coisa" sem hospedar arquivo. As
-     outras que testamos dependiam do aparelho: San Francisco só existe na Apple, Helvetica Neue
-     também. Quando a fonte muda de aparelho pra aparelho, o produto tem caras diferentes conforme
-     quem abre: que é justamente o que não se quer. */
-  --pilha-sistema: Arial, Helvetica, sans-serif;
+  /* HELVETICA NEUE, a fonte da marca.
+
+     A escolha anterior era Arial sozinha, pelo argumento de que ela existe em Mac, Windows, Android
+     e Linux ao mesmo tempo, e portanto "todo mundo vê a mesma coisa". O argumento é verdadeiro e
+     perde pra marca: a Helvetica Neue é a fonte da AZUZ, e a própria marca declara Arial como
+     reserva. Na prática o produto fica com a fonte certa em Mac e iOS, e com a reserva da marca no
+     resto — que é exatamente o que o guia manda fazer, e não um acidente.
+
+     Pesos da marca: título em Light 300, texto em Regular 400, etiqueta em Medium 500 caixa alta. */
+  --pilha-sistema: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* Pesos da marca, pra não ficarem espalhados como números soltos pelo arquivo. */
+  --peso-titulo: 300;
+  --peso-texto: 400;
+  --peso-etiqueta: 500;
   --display: var(--pilha-sistema);
   --body: var(--pilha-sistema);
 
@@ -309,7 +348,7 @@
   /* CIANO DE VERDADE. O token existia com o mesmo valor do azul, ou seja, nao era ciano nenhum —
      pedir "usa o ciano" nao mudava nada na tela. Agora sao tres degraus do mesmo tom: a borda
      forte, o preenchimento claro e o texto legivel sobre ele. */
-  --cyan: #0e9bb8;
+  --cyan: #002037;
   --cyan-strong: #07758c;
   --cyan-soft: #e3f6fa;
   --cyan-soft-2: #f1fbfd;
@@ -352,12 +391,14 @@
   --navy-deep: #09090b;
   --canvas: #08080a;
 
-  --blue: #5b8cff;
-  --blue-soft: rgba(91, 140, 255, 0.18);
-  --blue-soft-2: rgba(91, 140, 255, 0.09);
+  /* No escuro o acento é o DOURADO: 8,6:1 sobre o fundo, legível como texto e como ícone. O navy
+     não serve aqui (1,19:1 sobre o fundo escuro) — lá ele é superfície, não cor de frente. */
+  --blue: #D2A366;
+  --blue-soft: rgba(210, 163, 102, 0.18);
+  --blue-soft-2: rgba(210, 163, 102, 0.09);
 
-  --cyan: #5b8cff;
-  --cyan-soft: rgba(91, 140, 255, 0.14);
+  --cyan: #D2A366;
+  --cyan-soft: rgba(210, 163, 102, 0.14);
   --glow-accent: none;
 
   --grid-line: rgba(255, 255, 255, 0.03);
@@ -409,10 +450,10 @@
      estava errado: o tom da marca é um só, e mudar de tom entre os temas faz o CRM parecer dois
      produtos. O que separa o marinho do fundo aqui não é a luminosidade. É a BORDA clara que as
      superfícies de ação ganham no escuro (ver `:root[data-theme="dark"] .btn.primary` abaixo). */
-  --acao: #0b1533;
-  --acao-hover: #16224a;
-  --acao-active: #060c1f;
-  --acao-texto: #ffffff;
+  --acao: #D2A366;
+  --acao-hover: #c08f4e;
+  --acao-active: #b07f3f;
+  --acao-texto: #002037;
 }
 
 /* Estes três passaram a ter FUNDO marinho (`--acao`) nos dois temas, então o texto é branco nos
@@ -2729,10 +2770,11 @@ table.tbl tbody tr:hover td {
   font-variant-numeric: tabular-nums;
 }
 
-/* No tema escuro o ciano clareia pra se separar do fundo, e aí branco sobre ele cai pra 3,2:1.
-   O número passa a ser marinho, que sobre o mesmo ciano dá 5,7:1. */
+/* No tema escuro o acento clareia pra se separar do fundo, e aí branco sobre ele não contrasta.
+   O número passa a ser o navy da marca, que sobre o dourado dá 7,3:1 — e é a regra da marca:
+   texto sobre o dourado é sempre navy. */
 :root[data-theme="dark"] .kcol-h .c {
-  color: var(--acao);
+  color: var(--navy-marca);
 }
 
 /* Marinho sobre a coluna escura é marinho sobre marinho: a régua sumiria. No tema escuro quem
@@ -3146,8 +3188,8 @@ table.tbl tbody tr:hover td {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-4) var(--space-4);
-  background: var(--acao);
-  border-bottom: 1px solid var(--acao);
+  background: var(--navy-marca);
+  border-bottom: 1px solid var(--navy-marca);
 
   --ink: #ffffff;
   --ink-nome: #ffffff;
@@ -3385,12 +3427,15 @@ table.tbl tbody tr:hover td {
  * horário e os tiquinhos sobem de opacidade aqui dentro (`.tm` a 0,6 cairia abaixo do legível), e
  * por isso o texto é branco puro e não translúcido.
  */
-/* ENVIADA: marinho cheio com texto branco. Era o azul de acento, que agora e o indigo; usa-lo aqui
-   punha uma area grande de cor de destaque na tela mais usada do produto e roubava a forca do
-   proprio acento. A diferenca entre quem falou passa a ser de CONTRASTE — claro contra escuro —
-   que se le de longe sem comparar. */
+/* ENVIADA: NAVY DA MARCA cheio, com texto branco (16,6:1).
+   Ela seguia `--acao`, que era marinho. Quando a acao principal virou DOURADA, seguir esse token
+   levaria o balao junto: texto branco sobre dourado da 2,3:1 — ilegivel — e, pior, espalharia a cor
+   de acento pela tela mais usada do produto, que e exatamente o que a marca manda nao fazer
+   ("dourado: acento, so em detalhe").
+   Entao o balao passa a apontar pro navy diretamente. A diferenca entre quem falou continua sendo
+   de CONTRASTE — claro contra escuro — que se le de longe sem comparar. */
 .bubble.out {
-  background: var(--acao);
+  background: var(--navy-marca);
   color: #fff;
   align-self: flex-end;
   border-bottom-right-radius: 5px;
@@ -3897,9 +3942,9 @@ table.tbl tbody tr:hover td {
  * saber que está sobre marinho.
  */
 .wa-row.active {
-  background: var(--acao);
-  border-color: var(--acao);
-  border-left-color: var(--acao);
+  background: var(--navy-marca);
+  border-color: var(--navy-marca);
+  border-left-color: var(--navy-marca);
   box-shadow: var(--shadow-sm);
 
   --ink: #ffffff;
@@ -3929,7 +3974,7 @@ table.tbl tbody tr:hover td {
    marinho quase some. */
 .wa-row.active .wa-unread-badge {
   background: #ffffff;
-  color: var(--acao);
+  color: var(--navy-marca);
 }
 
 /* Etiquetas de estado (NOVO, QUALIFICADO, FECHADO…) dentro do cartão aberto: fundo claro
@@ -6240,8 +6285,8 @@ button.camp-row:hover {
    acha-se sem procurar. Os tokens são invertidos pra dentro, como na barra lateral e no topo da
    conversa, senão as etiquetas de evento (azul sobre azul claro) sumiriam sobre o marinho. */
 .agenda-cell.hoje {
-  background: var(--acao);
-  border-color: var(--acao);
+  background: var(--navy-marca);
+  border-color: var(--navy-marca);
 
   --ink: #ffffff;
   --text-muted: rgba(255, 255, 255, 0.78);
@@ -8835,10 +8880,13 @@ button.camp-row:hover {
   color: #ffffff;
 }
 
+/* Botão branco sobre a tela colorida de agradecimento. O texto segue o NAVY, e não `--acao`:
+   desde que a ação virou dourada, `--acao` sobre branco daria 2,3:1. O dourado não é cor de texto
+   em fundo claro — ele preenche. */
 .form-obrigado-botao {
   background: #ffffff;
   border-color: #ffffff;
-  color: var(--acao);
+  color: var(--navy-marca);
   font-weight: var(--fw-semibold);
 }
 
