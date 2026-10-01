@@ -13,7 +13,7 @@ import {
 } from "@/components/icons";
 
 /**
- * Menu lateral do módulo Instagram e TikTok.
+ * Menu lateral do módulo Instagram.
  *
  * A ordem é a do trabalho, não a alfabética. Primeiro o que se faz todo dia: montar automação,
  * escrever resposta automática, guardar modelo. Depois, separado por uma linha, o que se
@@ -60,7 +60,7 @@ function Item({
 export function AbasSocial() {
   const pathname = usePathname() ?? "";
   return (
-    <nav className="social-menu" aria-label="Seções de Instagram e TikTok">
+    <nav className="social-menu" aria-label="Seções do Instagram">
       {PRINCIPAIS.map((i) => (
         <Item key={i.href} {...i} pathname={pathname} />
       ))}

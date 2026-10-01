@@ -123,7 +123,7 @@ export function InstagramSecao() {
           <p className="hint mt8">
             Quem manda Direct pela primeira vez vira contato, com @, foto e etiqueta, e não entra no
             funil comercial: o funil é do WhatsApp. O acompanhamento do Instagram fica em Instagram
-            e em Automações &gt; Instagram e TikTok.
+            e em Automações &gt; Instagram.
           </p>
         </div>
       ) : null}

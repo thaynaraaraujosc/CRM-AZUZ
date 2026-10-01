@@ -21,8 +21,6 @@ import type { StatusIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 /** O que aparece em "Em breve". Zapier, Make, Stripe e Mercado Pago saíram: não estão no plano. */
 type AppFuturo = { nome: string; descricao: string; categoria: string };
 const APPS_EM_BREVE: AppFuturo[] = [
-  { nome: "TikTok Ads", descricao: "Traga essa origem pro painel de Tráfego.", categoria: "Marketing" },
-  { nome: "Mensagens do TikTok", descricao: "Receba lead de comentário automaticamente.", categoria: "Comunicação" },
   { nome: "Google Agenda", descricao: "Sincronize compromissos com sua agenda pessoal.", categoria: "Agenda" },
   { nome: "Gmail", descricao: "Envie e receba e-mails direto do CRM.", categoria: "Comunicação" },
   { nome: "Outlook", descricao: "Sincronize sua caixa de entrada corporativa.", categoria: "Comunicação" },

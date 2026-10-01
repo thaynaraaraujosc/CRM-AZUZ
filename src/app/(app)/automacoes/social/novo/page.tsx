@@ -49,7 +49,7 @@ export default function NovaAutomacaoSocialPage() {
 
   return (
     <>
-      <Topbar title="Criar automação" sub="Instagram e TikTok" />
+      <Topbar title="Criar automação" sub="Instagram" />
       <AbasAutomacoes />
 
       <div className="content">

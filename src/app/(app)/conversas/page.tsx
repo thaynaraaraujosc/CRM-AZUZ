@@ -670,10 +670,18 @@ function ConversasPageInner() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIdInicializado, setSelectedIdInicializado] = useState(false);
   if (!selectedIdInicializado && conversas.length > 0) {
-    const nomeContato = searchParams.get("contato");
-    const encontrada = nomeContato ? conversas.find((c) => c.nome === nomeContato) : null;
-    setSelectedId((encontrada ?? conversas[0]).id);
-    setSelectedIdInicializado(true);
+    // Só conversas DESTA tela entram na escolha inicial. O Instagram tem tela própria, e a lista
+    // daqui o exclui — mas a conversa ABERTA era resolvida na lista completa, então bastava o
+    // primeiro item do banco ser do Direct (ou alguém chegar com `?contato=` de um perfil do
+    // Instagram) pra tela do WhatsApp abrir uma conversa de Instagram do lado direito, com o
+    // cabeçalho dizendo "Instagram" e os botões errados embaixo.
+    const desta = conversas.filter((c) => c.canal !== "Instagram");
+    if (desta.length > 0) {
+      const nomeContato = searchParams.get("contato");
+      const encontrada = nomeContato ? desta.find((c) => c.nome === nomeContato) : null;
+      setSelectedId((encontrada ?? desta[0]).id);
+      setSelectedIdInicializado(true);
+    }
   }
   const [infoAberto, setInfoAberto] = useState(false);
   const [abaInfo, setAbaInfo] = useState<
@@ -1005,7 +1013,10 @@ function ConversasPageInner() {
     return doServidor ? new Date(doServidor).getTime() : 0;
   }
 
-  const abertaCandidata = conversas.find((c) => c.id === selectedId) ?? conversas[0];
+  // A mesma regra da lista, aplicada à conversa aberta: o que não é desta tela não abre aqui.
+  const conversasDestaTela = conversas.filter((c) => c.canal !== "Instagram");
+  const abertaCandidata =
+    conversasDestaTela.find((c) => c.id === selectedId) ?? conversasDestaTela[0];
   const aberta =
     abertaCandidata && !conversaEscondidaPeloWhatsapp(abertaCandidata) ? abertaCandidata : CONVERSA_VAZIA;
 
@@ -7400,7 +7411,6 @@ function ConversasPageInner() {
                   >
                     <option value="WhatsApp">WhatsApp</option>
                     <option value="Instagram">Instagram</option>
-                    <option value="TikTok">TikTok</option>
                   </select>
                 ) : (
                   <div className="input">{canalPreferidoContato}</div>

@@ -19,7 +19,7 @@ import { rotuloDeAtividade } from "@/lib/funis/atividade";
 import { VAZIO, ehVazio } from "@/lib/vazio";
 import { ORDENS, ordenarContatos, origemNoFiltro, type OrdemContatos } from "@/lib/contatos/ordenacao";
 
-const CANAIS_PREFERIDOS = ["WhatsApp", "Instagram", "TikTok"] as const;
+const CANAIS_PREFERIDOS = ["WhatsApp", "Instagram"] as const;
 
 export default function ContatosPage() {
   return (

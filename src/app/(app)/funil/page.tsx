@@ -29,7 +29,6 @@ import { SeletorDeData } from "@/components/seletor-de-data";
 
 const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Instagram",
-  "TikTok",
   "Meta Ads",
   "Google Ads",
   "Indicação",

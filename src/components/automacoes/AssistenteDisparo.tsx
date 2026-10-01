@@ -263,7 +263,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
         <div className="disp-passo">
           <p className="hint">Por onde a mensagem sai. Só aparece o que está conectado neste workspace.</p>
           {/* O Instagram é um canal como os outros AQUI. Ele tinha uma tela própria em
-              Instagram e TikTok → Disparos, que usava exatamente esta mesma API (`/api/campanhas`
+              Instagram → Disparos, que usava exatamente esta mesma API (`/api/campanhas`
               com `canal: "instagram"`): eram duas telas pro mesmo backend. Disparo agora é um
               lugar só, e o que muda por canal é o passo do público, não a página. */}
           <div className="disp-canais">

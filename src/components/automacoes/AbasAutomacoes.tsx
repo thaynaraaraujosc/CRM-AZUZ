@@ -11,7 +11,7 @@ import { usePathname } from "next/navigation";
  * gatilhos. Agora é uma entrada só, e a escolha de olhar por etapa ou por robô virou uma troca de
  * visão dentro da própria tela, onde ela não parece outro produto.
  *
- * "Instagram e TikTok" entra aqui pelo mesmo raciocínio, e não como item separado no menu lateral:
+ * "Instagram" entra aqui pelo mesmo raciocínio, e não como item separado no menu lateral:
  * automação de rede social é automação. Ter uma entrada própria no menu principal recriaria a
  * impressão de dois produtos que a unificação das abas acabou de desfazer.
  *
@@ -25,7 +25,7 @@ import { usePathname } from "next/navigation";
  */
 const ABAS = [
   { href: "/automacoes", label: "Automatizar funil", exato: true },
-  { href: "/automacoes/social", label: "Instagram e TikTok", exato: false },
+  { href: "/automacoes/social", label: "Instagram", exato: false },
   { href: "/automacoes/templates", label: "Templates", exato: false },
   { href: "/automacoes/disparos", label: "Disparo em massa", exato: false },
 ] as const;

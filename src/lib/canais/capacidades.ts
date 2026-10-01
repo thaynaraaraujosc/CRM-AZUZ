@@ -2,8 +2,8 @@
  * O que cada canal REALMENTE entrega.
  *
  * Esta tabela existe pra impedir um defeito específico e caro: oferecer na tela um recurso que o
- * canal não tem. Botão clicável no Direct do Instagram não existe; reação por e-mail não existe;
- * TikTok não tem integração nenhuma hoje. Quando o construtor mostra esses blocos assim mesmo, a
+ * canal não tem. Botão clicável no Direct do Instagram não existe, reação por e-mail não existe.
+ * Quando o construtor mostra esses blocos assim mesmo, a
  * pessoa monta o fluxo inteiro em volta de um passo que nunca vai acontecer, e o erro só aparece
  * com o lead do outro lado esperando.
  *
@@ -19,7 +19,7 @@
 import type { FlowNodeType } from "@/lib/automation-flow/types";
 
 /** Os canais que o CRM conhece. Nível de CONEXÃO, não de conversa. */
-export type CanalId = "whatsapp_oficial" | "whatsapp_qrcode" | "instagram" | "tiktok" | "email";
+export type CanalId = "whatsapp_oficial" | "whatsapp_qrcode" | "instagram" | "email";
 
 /**
  * Como o disparo em massa se comporta no canal.
@@ -178,34 +178,6 @@ export const CAPACIDADES: Record<CanalId, CapacidadesCanal> = {
     disparo: "so_na_janela",
   },
 
-  tiktok: {
-    id: "tiktok",
-    label: "TikTok",
-    resumo: "Sem integração. A API de mensagens do TikTok não é aberta como a da Meta.",
-    // Deliberado: o canal é DECLARADO e marcado como indisponível, em vez de ser escondido. Assim a
-    // tela pode dizer por que ele não está lá, o que é honesto, sem oferecer um botão que não faz
-    // nada. O dia em que o aplicativo for aprovado, isto vira `true` e o resto já está escrito.
-    disponivel: false,
-    motivoIndisponivel:
-      "Não existe integração com o TikTok. O acesso a mensagens e comentários depende de aplicativo aprovado caso a caso pela plataforma, e ainda não temos.",
-    texto: false,
-    imagem: false,
-    video: false,
-    audio: false,
-    documento: false,
-    botoes: 0,
-    nomeDoBotao: "",
-    lista: 0,
-    menuNumerado: false,
-    reacao: false,
-    comentarios: false,
-    eventosProprios: false,
-    modeloAprovado: false,
-    ehEmail: false,
-    janelaHoras: null,
-    janelaExplicacao: "",
-    disparo: "nao",
-  },
 
   email: {
     id: "email",
@@ -353,8 +325,7 @@ export function canalDaConexao(contaCanal: string | null | undefined): CanalId |
 /* -------------------------------------------------------------------------- */
 
 /**
- * As duas áreas de automação: comercial (funil, WhatsApp, e-mail) e social (Instagram, e um dia
- * TikTok).
+ * As duas áreas de automação: comercial (funil, WhatsApp, e-mail) e social (Instagram).
  *
  * São áreas, NÃO motores. O motor é o mesmo, as execuções são as mesmas, o versionamento é o
  * mesmo. O que muda é o conjunto de canais em jogo, e portanto o conjunto de blocos que faz
@@ -365,7 +336,7 @@ export type AreaAutomacao = "comercial" | "social";
 
 export const CANAIS_DA_AREA: Record<AreaAutomacao, CanalId[]> = {
   comercial: ["whatsapp_oficial", "whatsapp_qrcode", "email"],
-  social: ["instagram", "tiktok"],
+  social: ["instagram"],
 };
 
 /**

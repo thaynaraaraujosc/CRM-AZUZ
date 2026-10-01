@@ -38,7 +38,7 @@ import {
 } from "@/lib/jornada-recentes";
 import { ReportWizard } from "@/components/report-wizard";
 
-const CANAIS: Canal[] = ["WhatsApp", "Instagram", "TikTok"];
+const CANAIS: Canal[] = ["WhatsApp", "Instagram"];
 const ESTADOS: EstadoCicloDeVida[] = ["Novo lead", "Em atendimento", "Em negociação", "Cliente", "Perdido"];
 
 const CLASSE_ESTADO: Record<EstadoCicloDeVida, string> = {
@@ -372,7 +372,7 @@ function JornadaClientePageInner() {
   const resumo = contato ? calcularResumoJornada(contato, eventos, { funis, conversas }) : null;
 
   const filtroDefs: { chave: string; label: string; opcoes: string[] }[] = [
-    { chave: "origem", label: "Origem", opcoes: ["Todos", "Meta Ads", "Google Ads", "Instagram", "TikTok", "Indicação"] },
+    { chave: "origem", label: "Origem", opcoes: ["Todos", "Meta Ads", "Google Ads", "Instagram", "Indicação"] },
     { chave: "canal", label: "Canal", opcoes: ["Todos", ...CANAIS] },
     { chave: "etapa", label: "Etapa", opcoes: ["Todos", "Novo", "Qualificado", "Proposta", "Fechado"] },
     { chave: "funil", label: "Funil", opcoes: ["Todos", ...funis.map((f) => f.nome)] },

@@ -50,7 +50,7 @@ function gatilhoDoFluxo(fluxo: FluxoAutomacao): string {
 }
 
 /**
- * Automações do Instagram e do TikTok.
+ * Automações do Instagram.
  *
  * Mesma lista, mesmo editor e mesmo motor dos robôs do funil: o que separa os dois é a `area` do
  * fluxo, que decide quais gatilhos e quais blocos existem na tela. Um robô daqui move o lead no
@@ -136,7 +136,7 @@ export default function AutomacoesSociaisPage() {
   return (
     <>
       <Topbar
-        title="Instagram e TikTok"
+        title="Instagram"
         sub="Robôs que respondem comentário, Direct, story e menção"
         actions={
           <button type="button" className="btn primary" onClick={() => router.push("/automacoes/social/novo")}>

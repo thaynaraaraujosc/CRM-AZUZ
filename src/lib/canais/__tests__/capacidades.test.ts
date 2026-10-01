@@ -64,21 +64,6 @@ describe("nada de botão falso", () => {
   });
 });
 
-describe("TikTok declarado e indisponível", () => {
-  it("fica fora da lista de conexões oferecidas", () => {
-    expect(CAPACIDADES.tiktok.disponivel).toBe(false);
-    expect(canaisDisponiveis().map((c) => c.id)).not.toContain("tiktok");
-  });
-
-  it("diz por que não está lá, em vez de sumir sem explicação", () => {
-    expect(CAPACIDADES.tiktok.motivoIndisponivel).toBeTruthy();
-  });
-
-  it("recusa qualquer bloco enquanto não houver integração", () => {
-    expect(blocoValeNoCanal("mensagem_texto", "tiktok")).toBe(false);
-  });
-});
-
 describe("janela de envio", () => {
   it("avisa quando a espera passa das 24 horas do Instagram", () => {
     expect(esperaCabeNaJanela("instagram", 120).cabe).toBe(true);
@@ -161,7 +146,7 @@ describe("cada gatilho só na área onde ele acontece", () => {
     expect(ressalvaDoBloco("mensagem_texto", "comercial")).toBeNull();
   });
 
-  it("na área social só o Instagram entra enquanto o TikTok não existir", () => {
+  it("a área social é só do Instagram", () => {
     expect(canaisDaArea("social").map((c) => c.id)).toEqual(["instagram"]);
     expect(canaisDaArea("comercial").map((c) => c.id)).toContain("whatsapp_oficial");
   });

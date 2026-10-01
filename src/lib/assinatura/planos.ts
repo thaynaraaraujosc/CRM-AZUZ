@@ -15,7 +15,7 @@ export const PLANOS: Record<PlanoId, { nome: string; valor: number; recursos: st
     // constante alimenta a tela e a rota que cria a assinatura, justamente pra nunca cobrar
     // diferente do que foi mostrado. Só mensal por enquanto.
     valor: 197,
-    recursos: ["Funis ilimitados", "WhatsApp/Instagram/TikTok", "Automações", "Azuz IA", "Usuários ilimitados"],
+    recursos: ["Funis ilimitados", "WhatsApp e Instagram", "Automações", "Azuz IA", "Usuários ilimitados"],
   },
 };
 
