@@ -642,7 +642,20 @@ export type ConvMensagem = {
    * texto de aviso apareceu na hora. Guarda o suficiente pra buscar o conteúdo de verdade sob
    * demanda (ver `GET /api/integracoes/whatsapp-nao-oficial/midia`), só quando a pessoa clicar pra
    * carregar. Some assim que carregado (o campo específico do tipo, ex. `audio`, passa a existir). */
-  midiaPendente?: { remoteJid: string; id: string; fromMe: boolean; tipo: "audio" | "imagem" };
+  midiaPendente?: {
+    remoteJid: string;
+    id: string;
+    fromMe: boolean;
+    tipo: "audio" | "imagem" | "documento" | "figurinha";
+    /** Só pra documento: o nome do arquivo, que o webhook conhece e a busca da mídia não devolve. */
+    nome?: string;
+    /** Só pra documento: o tipo do arquivo informado pelo WhatsApp, usado quando a Evolution não
+     *  devolve `mimetype` junto do conteúdo. */
+    mimetype?: string;
+  };
+  /** Figurinha recebida. Bolha própria porque figurinha não é foto: vai pequena e sem moldura,
+   *  como no WhatsApp. */
+  figurinha?: { url: string };
 };
 
 export type Conversa = {

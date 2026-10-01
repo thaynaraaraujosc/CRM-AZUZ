@@ -9278,6 +9278,24 @@ button.camp-row:hover {
   background: black;
 }
 
+/* Figurinha do WhatsApp.
+   Ela não usa balão: no aplicativo de verdade a figurinha flutua sobre o fundo da conversa, sem
+   fundo nem borda. Desenhá-la dentro do balão comum daria uma caixa colorida grande em volta de um
+   desenho pequeno, que é exatamente o contrário do que a figurinha é. */
+.bubble-figurinha {
+  background: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  max-width: 140px;
+}
+
+.bubble-figurinha-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  display: block;
+}
+
 .bubble-documento {
   max-width: 68%;
 }

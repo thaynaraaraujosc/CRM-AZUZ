@@ -160,7 +160,7 @@ export async function processarMensagemRecebida(
       audioMessage?: unknown;
       imageMessage?: { caption?: string };
       videoMessage?: { caption?: string };
-      documentMessage?: { caption?: string; fileName?: string };
+      documentMessage?: { caption?: string; fileName?: string; mimetype?: string };
       stickerMessage?: unknown;
     };
     messageTimestamp?: number;
@@ -177,6 +177,9 @@ export async function processarMensagemRecebida(
    */
   const conteudo = desembrulharMensagem(data.message as Record<string, unknown> | undefined);
   const texto = extrairTextoDaMensagem(data.message as Record<string, unknown> | undefined);
+  // O documento é o único tipo cujos metadados (nome e formato) só existem no evento: a busca da
+  // mídia devolve o conteúdo, não o nome do arquivo.
+  const documento = (conteudo?.documentMessage ?? {}) as { fileName?: string; mimetype?: string };
   const remoteJid = data.key?.remoteJid;
   // Grupo de WhatsApp: a Evolution/Baileys segue a convenção do próprio WhatsApp: `remoteJid`
   // termina em "@g.us" pra grupo (e é o JID do GRUPO, o mesmo pra qualquer participante que
@@ -316,7 +319,23 @@ export async function processarMensagemRecebida(
           ? { midiaPendente: { remoteJid: remoteJid!, id: data.key.id, fromMe, tipo: "audio" as const } }
           : conteudo?.imageMessage
             ? { midiaPendente: { remoteJid: remoteJid!, id: data.key.id, fromMe, tipo: "imagem" as const } }
-            : {}),
+            : conteudo?.stickerMessage
+              ? { midiaPendente: { remoteJid: remoteJid!, id: data.key.id, fromMe, tipo: "figurinha" as const } }
+              : conteudo?.documentMessage
+                ? {
+                    midiaPendente: {
+                      remoteJid: remoteJid!,
+                      id: data.key.id,
+                      fromMe,
+                      tipo: "documento" as const,
+                      // O nome e o tipo do arquivo só existem AQUI, no evento. A busca da mídia
+                      // devolve o conteúdo, não o nome — sem guardar agora, o documento chegaria
+                      // na tela como "arquivo" sem extensão.
+                      nome: documento.fileName,
+                      mimetype: documento.mimetype,
+                    },
+                  }
+                : {}),
       },
     },
   });

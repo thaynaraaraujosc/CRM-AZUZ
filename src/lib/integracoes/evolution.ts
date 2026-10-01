@@ -317,7 +317,7 @@ export async function buscarFotoPerfil(workspaceId: string, jidOuNumero: string)
  * loga o erro real se o nome/formato estiver errado. */
 export async function buscarMidiaBase64(
   workspaceId: string,
-  chave: { remoteJid: string; id: string; fromMe: boolean; tipo: "audio" | "imagem" },
+  chave: { remoteJid: string; id: string; fromMe: boolean; tipo: "audio" | "imagem" | "documento" | "figurinha" },
 ): Promise<{ base64: string; mimetype: string } | null> {
   const instancia = nomeInstancia(workspaceId);
   const dados = await chamarEvolution(`/chat/getBase64FromMediaMessage/${instancia}`, "POST", {
@@ -329,7 +329,15 @@ export async function buscarMidiaBase64(
   if (!dados?.base64) return null;
   // Sem `mimetype` na resposta, o fallback precisa bater com o tipo pedido. Um áudio servido como
   // `data:audio/ogg` dentro de uma tag `<img>` (ou vice-versa) simplesmente não renderiza nada.
-  const fallback = chave.tipo === "imagem" ? "image/jpeg" : "audio/ogg";
+  // Figurinha do WhatsApp é WebP (muitas são animadas, e o WebP anima; PNG não).
+  const fallback =
+    chave.tipo === "imagem"
+      ? "image/jpeg"
+      : chave.tipo === "figurinha"
+        ? "image/webp"
+        : chave.tipo === "documento"
+          ? "application/octet-stream"
+          : "audio/ogg";
   return { base64: dados.base64, mimetype: dados.mimetype ?? dados.mimeType ?? fallback };
 }
 

@@ -1939,7 +1939,17 @@ function ConversasPageInner() {
     if (!msg.midiaPendente || !msg.id) return;
     const contatoNome = aberta.nome;
     setMidiasCarregando((prev) => new Set(prev).add(msg.id!));
-    const { remoteJid, id, fromMe, tipo } = msg.midiaPendente;
+    const { remoteJid, id, fromMe, tipo, nome, mimetype } = msg.midiaPendente;
+    /* A mensagem de falha fala do que a pessoa está esperando ver. "Não consegui carregar essa
+       mídia" obriga quem lê a olhar a conversa pra descobrir o que era. */
+    const avisoDeFalha =
+      tipo === "audio"
+        ? "⚠️ Não consegui carregar esse áudio. Ouça no celular conectado."
+        : tipo === "imagem"
+          ? "⚠️ Não consegui carregar essa imagem. Veja no celular conectado."
+          : tipo === "figurinha"
+            ? "⚠️ Não consegui carregar essa figurinha. Veja no celular conectado."
+            : "⚠️ Não consegui carregar esse documento. Veja no celular conectado.";
     fetch(
       `/api/integracoes/whatsapp-nao-oficial/midia?remoteJid=${encodeURIComponent(remoteJid)}&id=${encodeURIComponent(id)}&fromMe=${fromMe}&tipo=${tipo}`,
     )
@@ -1955,24 +1965,38 @@ function ConversasPageInner() {
             imagens: [{ url: dados.dataUrl, nome: "imagem.jpg", tamanho: 0 }],
             midiaPendente: undefined,
           });
-        } else {
+        } else if (dados.dataUrl && tipo === "figurinha") {
           atualizarMensagem(contatoNome, msg.id!, {
-            texto:
-              tipo === "audio"
-                ? "⚠️ Não consegui carregar esse áudio. Ouça no celular conectado."
-                : "⚠️ Não consegui carregar essa imagem. Veja no celular conectado.",
+            figurinha: { url: dados.dataUrl },
+            // O texto era o aviso de reserva ("Figurinha (veja no celular conectado)"), que deixa
+            // de fazer sentido no instante em que a figurinha aparece de verdade.
+            texto: "",
             midiaPendente: undefined,
           });
+        } else if (dados.dataUrl && tipo === "documento") {
+          const nomeArquivo = nome ?? "arquivo";
+          const extensao = nomeArquivo.includes(".")
+            ? nomeArquivo.split(".").pop()!.toUpperCase()
+            : (mimetype ?? "").split("/").pop()?.toUpperCase() || "ARQUIVO";
+          atualizarMensagem(contatoNome, msg.id!, {
+            documento: {
+              url: dados.dataUrl,
+              nome: nomeArquivo,
+              // O tamanho real não vem na busca da mídia. Zero aqui faz a bolha mostrar só o
+              // formato, em vez de inventar um número.
+              tamanho: 0,
+              formato: extensao,
+              origem: "computador",
+            },
+            texto: "",
+            midiaPendente: undefined,
+          });
+        } else {
+          atualizarMensagem(contatoNome, msg.id!, { texto: avisoDeFalha, midiaPendente: undefined });
         }
       })
       .catch(() => {
-        atualizarMensagem(contatoNome, msg.id!, {
-          texto:
-            tipo === "audio"
-              ? "⚠️ Não consegui carregar esse áudio. Ouça no celular conectado."
-              : "⚠️ Não consegui carregar essa imagem. Veja no celular conectado.",
-          midiaPendente: undefined,
-        });
+        atualizarMensagem(contatoNome, msg.id!, { texto: avisoDeFalha, midiaPendente: undefined });
       })
       .finally(() => {
         setMidiasCarregando((prev) => {
@@ -1981,6 +2005,32 @@ function ConversasPageInner() {
           return next;
         });
       });
+  }
+
+  /**
+   * Reconstrói o bilhete de mídia das mensagens ANTIGAS.
+   *
+   * Figurinha e documento só passaram a deixar bilhete (`midiaPendente`) depois desta mudança. O
+   * que já estava no banco ficou com o texto de reserva e mais nada — e continuaria como texto
+   * para sempre, mesmo com o resto funcionando.
+   *
+   * Dá pra recuperar sem mexer no banco porque tudo que a busca precisa já existe: o `id` da
+   * mensagem é a própria chave do WhatsApp, `fromMe` sai do tipo da bolha, e o `remoteJid` se monta
+   * a partir do contato da conversa (em grupo ele já É o JID; fora de grupo é o telefone).
+   */
+  function bilheteDeMensagemAntiga(msg: ConvMensagem): ConvMensagem["midiaPendente"] | null {
+    if (msg.midiaPendente || msg.figurinha || msg.documento || !msg.id) return null;
+    const contato = aberta.contato;
+    if (!contato) return null;
+    const remoteJid = aberta.ehGrupo ? contato : `${contato.replace(/\D/g, "")}@s.whatsapp.net`;
+    const base = { remoteJid, id: msg.id, fromMe: msg.tipo === "out" };
+
+    if (msg.texto.startsWith("🩶 Figurinha") || msg.texto.startsWith("🤍 Figurinha")) {
+      return { ...base, tipo: "figurinha" as const };
+    }
+    const doc = msg.texto.match(/^📄 Documento: (.+)$/);
+    if (doc) return { ...base, tipo: "documento" as const, nome: doc[1] };
+    return null;
   }
 
   // Carrega mídia pendente (áudio recebido) automaticamente assim que ela aparece na conversa
@@ -1993,9 +2043,13 @@ function ConversasPageInner() {
     const id = setTimeout(() => {
       const mensagens = mensagensExtraPorContato[aberta.nome] ?? [];
       for (const msg of mensagens) {
-        if (msg.midiaPendente && msg.id && !midiasCarregando.has(msg.id)) {
+        if (!msg.id || midiasCarregando.has(msg.id)) continue;
+        if (msg.midiaPendente) {
           carregarMidiaPendente(msg);
+          continue;
         }
+        const recuperado = bilheteDeMensagemAntiga(msg);
+        if (recuperado) carregarMidiaPendente({ ...msg, midiaPendente: recuperado });
       }
     }, 0);
     return () => clearTimeout(id);

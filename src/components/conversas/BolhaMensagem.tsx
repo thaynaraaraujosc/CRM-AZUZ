@@ -303,6 +303,20 @@ export function BolhaMensagem({
     );
   }
 
+  // ----------------------------------------------------------------- figurinha
+  /* Figurinha não é foto: no WhatsApp ela aparece pequena, sem moldura e sem fundo de balão. Tratá-la
+     como imagem comum daria um balão grande com um desenho minúsculo esticado dentro. */
+  if (msg.figurinha) {
+    return (
+      <div {...abrir("bubble-figurinha")}>
+        {chrome}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="bubble-figurinha-img" src={msg.figurinha.url} alt="Figurinha" />
+        {rodape}
+      </div>
+    );
+  }
+
   // ----------------------------------------------------------------- documento
   if (msg.documento) {
     return (
@@ -338,14 +352,22 @@ export function BolhaMensagem({
   }
 
   // ------------------------------------------------- mídia ainda sendo buscada
-  if (msg.midiaPendente?.tipo === "audio" || msg.midiaPendente?.tipo === "imagem") {
-    const ehAudio = msg.midiaPendente.tipo === "audio";
+  if (msg.midiaPendente) {
+    const pendente = msg.midiaPendente.tipo;
+    const rotuloCarregando =
+      pendente === "audio"
+        ? "Carregando áudio…"
+        : pendente === "imagem"
+          ? "Carregando imagem…"
+          : pendente === "figurinha"
+            ? "Carregando figurinha…"
+            : "Carregando documento…";
     return (
       <div {...abrir("")}>
         {chrome}
         <span className="wa-carregar-midia">
           <span className="wa-participante-foto-carregando" />
-          {ehAudio ? "Carregando áudio…" : "Carregando imagem…"}
+          {rotuloCarregando}
         </span>
         <span className="tm">{msg.hora}</span>
       </div>
