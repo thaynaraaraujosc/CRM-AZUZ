@@ -17,6 +17,8 @@ export type RegistroDeWebhook = {
   ultimoEventoEm?: string;
   ultimoEvento?: string;
   ultimoDescarte?: { motivo: string; em: string; detalhe?: string };
+  /** A última mensagem que chegou e FOI GRAVADA, e em qual conversa. O contrário do descarte. */
+  ultimaMensagem?: { conversa: string; em: string; grupo: boolean };
 };
 
 const INTERVALO_SINAL_MS = 60 * 1000;
@@ -90,6 +92,33 @@ export async function registrarDescarte(
     workspaceId,
     provedor,
     { ...atual.webhook, ultimoDescarte: { motivo, em: new Date().toISOString(), ...(detalhe ? { detalhe } : {}) } },
+    atual.metadados,
+  );
+}
+
+/**
+ * "Chegou, e o CRM gravou — nesta conversa." A metade que faltava do rastro.
+ *
+ * Só havia registro de FALHA (o descarte). Então quando alguém dizia "a mensagem não chegou" e não
+ * havia descarte nenhum, as duas explicações possíveis continuavam empatadas: ou a Evolution não
+ * chamou, ou chamou, o CRM gravou direitinho, e a mensagem foi parar numa conversa com outro nome
+ * — invisível pra quem procurava pelo nome do cliente. Essa segunda é bem mais comum do que
+ * parece, porque a conversa é identificada por nome.
+ *
+ * Guarda só a última, e no mesmo lugar do resto: é um rastro pra investigar, não um histórico.
+ */
+export async function registrarMensagemGravada(
+  workspaceId: string,
+  conversa: string,
+  grupo: boolean,
+  provedor = "whatsapp_nao_oficial",
+) {
+  const atual = await lerRegistro(workspaceId, provedor);
+  if (!atual) return;
+  await gravar(
+    workspaceId,
+    provedor,
+    { ...atual.webhook, ultimaMensagem: { conversa, em: new Date().toISOString(), grupo } },
     atual.metadados,
   );
 }

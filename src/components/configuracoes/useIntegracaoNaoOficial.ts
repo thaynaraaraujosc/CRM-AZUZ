@@ -185,6 +185,24 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     }
   }
 
+  /**
+   * Busca a lista de conversas do celular DE NOVO e remonta a fila.
+   *
+   * Diferente de `trazerConversasMaisAntigas`, que só devolve pra fila o que já estava guardado:
+   * esta pergunta pro celular outra vez. É o caminho pra conversa que nunca entrou na fila nenhuma
+   * — grupo antigo, conversa criada depois da importação ter terminado — aparecer sem precisar que
+   * alguém escreva nela de novo, e sem ler o QR Code outra vez.
+   */
+  async function reimportarConversas() {
+    const resposta = await fetch("/api/integracoes/whatsapp-nao-oficial/sincronizar-historico/reimportar", {
+      method: "POST",
+    }).catch(() => null);
+    const dados = (await resposta?.json().catch(() => null)) as { historico?: HistoricoSync } | null;
+    if (dados?.historico) {
+      setEstado((prev) => (prev ? { ...prev, metadados: { ...prev.metadados, historico: dados.historico } } : prev));
+    }
+  }
+
   /** Cria a instância na Evolution (se ainda não existir) e busca o primeiro QR Code. Chamado
    * quando a pessoa clica em "Conectar"; depois disso, o polling e os eventos de webhook cuidam do
    * resto (QR renovado, confirmação de conectado). */
@@ -227,5 +245,6 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     pausarSincronizacaoHistorico,
     retomarSincronizacaoHistorico,
     trazerConversasMaisAntigas,
+    reimportarConversas,
   };
 }

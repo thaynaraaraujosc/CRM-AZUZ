@@ -102,3 +102,38 @@ export async function iniciarHistoricosQueFaltam(): Promise<{ iniciados: number 
   }
   return { iniciados };
 }
+
+/**
+ * Roda a importação DE NOVO, buscando a lista de conversas do celular outra vez.
+ *
+ * O buraco que isto fecha: só as 30 conversas mais recentes vinham sozinhas, e as outras ficavam
+ * em `filaGuardada`, atrás do botão "Trazer as mais antigas". Mas esse botão só existe enquanto
+ * sobrou algo guardado. Quando a importação terminava com a fila vazia — ou terminou antes de um
+ * grupo existir, ou antes de o CRM saber tratar grupo — não havia NENHUM caminho de volta: a
+ * conversa antiga só apareceria se alguém escrevesse nela de novo. O único escape era desconectar
+ * e ler o QR Code outra vez, que é pedir pra cliente consertar o produto.
+ *
+ * `filaRestante: null` é o que diz "ainda não busquei a lista": o próximo passo consulta a
+ * Evolution de novo (`buscarChats`, que traz grupo e pessoa) e remonta a fila do zero.
+ *
+ * REPETIR NÃO DUPLICA NADA. Mensagem já gravada é reconhecida pelo id do WhatsApp e ignorada antes
+ * de qualquer escrita; contato e conversa são upsert por chave. E importação não conta como não
+ * lida nem dispara automação, então rodar de novo não enche a tela de badge falso nem manda
+ * resposta automática pra conversa encerrada.
+ */
+export async function reimportarHistorico(workspaceId: string): Promise<HistoricoSync> {
+  const metadados = await lerMetadados(workspaceId);
+  const anterior = metadados.historico as HistoricoSync | undefined;
+  const historico: HistoricoSync = {
+    status: "em_andamento",
+    totalChats: null,
+    // Preserva a contagem do que já passou: o número na tela não pode voltar a zero e dar a
+    // impressão de que o trabalho anterior foi perdido.
+    chatsProcessados: anterior?.chatsProcessados ?? 0,
+    filaRestante: null,
+    filaGuardada: [],
+    tentativasSemChats: 0,
+  };
+  await salvarHistorico(workspaceId, metadados, historico);
+  return historico;
+}

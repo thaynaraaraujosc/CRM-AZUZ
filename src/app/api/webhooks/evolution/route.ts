@@ -10,7 +10,7 @@ import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { registrarRespostaDeCampanha } from "@/lib/campanhas/resposta";
 import { CANAL_NAO_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { iniciarHistoricoSeNecessario } from "@/lib/integracoes/historico-whatsapp";
-import { registrarDescarte, registrarSinalDeVida } from "@/lib/integracoes/sinal-de-vida";
+import { registrarDescarte, registrarMensagemGravada, registrarSinalDeVida } from "@/lib/integracoes/sinal-de-vida";
 import { decidirSobreLote } from "@/lib/integracoes/lote-de-mensagens";
 import { chavesDaMensagem, desembrulharMensagem, extrairTextoDaMensagem } from "@/lib/integracoes/texto-da-mensagem";
 
@@ -154,8 +154,24 @@ export async function POST(request: Request) {
       await registrarDescarte(workspaceId, decisao.motivo, decisao.detalhe);
       return NextResponse.json({ ok: true });
     }
+    /*
+     * UMA MENSAGEM COM ERRO NÃO DERRUBA AS OUTRAS, E NÃO SOME EM SILÊNCIO.
+     *
+     * Sem este `try`, qualquer exceção no meio do laço fazia a rota responder 500: a mensagem que
+     * falhou era perdida, as seguintes do mesmo lote nunca eram processadas, e não ficava rastro
+     * nenhum no CRM — nem gravada, nem descartada. "Chegou no celular e não chegou aqui", sem nada
+     * em lugar algum para investigar, que é o pior estado possível.
+     *
+     * O erro vira um descarte com a mensagem dele, que é o que aparece na tela de Configurações.
+     */
     for (const item of decisao.mensagens) {
-      await processarMensagemRecebida(workspaceId, item);
+      try {
+        await processarMensagemRecebida(workspaceId, item);
+      } catch (erro) {
+        const motivo = erro instanceof Error ? erro.message : String(erro);
+        console.error("[webhook evolution] falha ao processar uma mensagem do lote:", erro);
+        await registrarDescarte(workspaceId, "erro ao processar", motivo.slice(0, 300)).catch(() => {});
+      }
     }
     return NextResponse.json({ ok: true });
   }
@@ -383,13 +399,22 @@ export async function processarMensagemRecebida(
     contato: ehGrupo ? remoteJid : waId,
     contatoId: contato?.id,
     origem: "Direto",
-    contarComoNaoLida: !fromMe,
+    // Mensagem IMPORTADA não é "não lida". Isto não olhava `permitirHistorico`, então cada
+    // mensagem antiga trazida do celular somava +1 no contador: a importação terminava com
+    // centenas de "não lidas" que ninguém deixou de ler, e o único jeito de limpar era abrir
+    // conversa por conversa. É o mesmo motivo que já está escrito no campo, em `upsert.ts`.
+    contarComoNaoLida: !fromMe && !opcoes.permitirHistorico,
     ehGrupo,
     participantesGrupo,
     fotoUrl,
     descricaoGrupo,
     criacaoGrupo,
   });
+
+  // "Chegou, e foi gravada NESTA conversa." Sem isto, "a mensagem não chegou" e "a mensagem chegou
+  // e foi parar numa conversa com outro nome" eram indistinguíveis na tela — e a segunda é comum,
+  // porque a conversa é identificada por nome. Ver `registrarMensagemGravada`.
+  await registrarMensagemGravada(workspaceId, chaveContato, ehGrupo).catch(() => {});
 
   // O negócio no funil vem DEPOIS da conversa, e essa ordem importa.
   //
@@ -419,7 +444,19 @@ export async function processarMensagemRecebida(
   // `fromMe` é mensagem que saiu do próprio celular conectado (espelhada aqui). Não é uma pessoa
   // falando com você, e disparar automação nela faria o CRM responder a si mesmo. Grupo também
   // fica de fora: automação num grupo escreveria pra todo mundo de uma vez.
-  if (!fromMe && !ehGrupo) {
+  /*
+   * AUTOMAÇÃO NÃO DISPARA EM MENSAGEM IMPORTADA.
+   *
+   * Automação é reação a alguém falando com você AGORA. Numa importação de histórico ela estaria
+   * reagindo a mensagem de semanas atrás — e reagir, aqui, quer dizer MANDAR MENSAGEM pro cliente.
+   * Reimportar o histórico dispararia uma enxurrada de respostas automáticas para conversas
+   * encerradas há muito tempo, do lado de fora, onde não tem como desfazer.
+   *
+   * Até aqui isso não tinha acontecido só porque a importação roda uma vez e mensagem já gravada é
+   * ignorada antes de chegar aqui. Passa a ser uma regra explícita porque agora a importação pode
+   * ser rodada de novo, de propósito.
+   */
+  if (!fromMe && !ehGrupo && !opcoes.permitirHistorico) {
     await dispararAutomacoesDeMensagemRecebida({
       workspaceId,
       contatoNome: chaveContato,

@@ -60,11 +60,13 @@ function SincronizacaoHistoricoStatus({
   onPausar,
   onRetomar,
   onTrazerMaisAntigas,
+  onReimportar,
 }: {
   historico: HistoricoSync;
   onPausar: () => void;
   onRetomar: () => void;
   onTrazerMaisAntigas: () => void;
+  onReimportar: () => void;
 }) {
   const guardadas = historico.filaGuardada?.length ?? 0;
 
@@ -75,16 +77,34 @@ function SincronizacaoHistoricoStatus({
    * todas de enfiada já derrubou o CRM uma vez. As antigas ficam a um clique de distância, e o
    * relógio importa em segundo plano do mesmo jeito.
    */
+  /*
+   * TERMINOU, E AINDA ASSIM PRECISA DE UM CAMINHO DE VOLTA.
+   *
+   * Antes esta tela não mostrava nada quando a fila guardada estava vazia, e não havia nenhum jeito
+   * de rodar a importação de novo: conversa que nunca entrou na fila — grupo antigo, conversa que
+   * passou a existir depois que a importação acabou — só apareceria se alguém escrevesse nela outra
+   * vez. O único escape era desconectar e ler o QR Code de novo, que é pedir pra cliente consertar
+   * o produto.
+   *
+   * Os dois botões fazem coisas diferentes, e é por isso que são dois: "Trazer as mais antigas"
+   * devolve pra fila o que já estava guardado aqui; "Buscar conversas que faltam" pergunta pro
+   * celular outra vez e remonta a fila do zero. Repetir não duplica nada (ver `reimportarHistorico`).
+   */
   if (historico.status === "concluido") {
-    if (!guardadas) return null;
     return (
       <div className="wa-historico-linha">
         <p className="hint" style={{ margin: 0 }}>
-          As conversas recentes já estão aqui. Ainda há {guardadas} conversa
-          {guardadas > 1 ? "s" : ""} mais antiga{guardadas > 1 ? "s" : ""} no celular.
+          {guardadas
+            ? `As conversas recentes já estão aqui. Ainda há ${guardadas} conversa${guardadas > 1 ? "s" : ""} mais antiga${guardadas > 1 ? "s" : ""} no celular.`
+            : "As conversas do celular já foram trazidas. Se faltar algum grupo ou conversa antiga, busque de novo."}
         </p>
-        <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onTrazerMaisAntigas}>
-          Trazer as mais antigas
+        {guardadas ? (
+          <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onTrazerMaisAntigas}>
+            Trazer as mais antigas
+          </button>
+        ) : null}
+        <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onReimportar}>
+          Buscar conversas que faltam
         </button>
       </div>
     );
@@ -189,6 +209,7 @@ export function WhatsAppSecao() {
                 onPausar={naoOficial.pausarSincronizacaoHistorico}
                 onRetomar={naoOficial.retomarSincronizacaoHistorico}
                 onTrazerMaisAntigas={naoOficial.trazerConversasMaisAntigas}
+                onReimportar={naoOficial.reimportarConversas}
               />
             ) : null}
             {/* Só na conexão oficial: modelo aprovado é coisa da Cloud API. No QR Code não existe

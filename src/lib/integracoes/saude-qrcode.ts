@@ -34,6 +34,8 @@ export type SaudeQrCode = {
   ultimoEventoEm: string | null;
   minutosDesdeOUltimoEvento: number | null;
   ultimoDescarte: RegistroDeWebhook["ultimoDescarte"] | null;
+  /** A última mensagem que chegou e FOI gravada, e em qual conversa. */
+  ultimaMensagem: RegistroDeWebhook["ultimaMensagem"] | null;
   diagnostico: string;
 };
 
@@ -138,7 +140,20 @@ export async function conferirCanalQrCode(
    * ela respondeu: servidor fora do ar devolve `null`, e nesse caso mexer no status seria trocar
    * uma informação velha por uma inventada.
    */
-  if (opcoes.reparar && estado && integracao) {
+  /*
+   * ESTA GRAVAÇÃO NÃO É CONSERTO, e por isso ela acontece mesmo sem `reparar`.
+   *
+   * Eu tinha trancado ela junto com as outras duas, e isso foi um erro com consequência grave: o
+   * status gravado é o que decide quais conversas APARECEM (`contasCanalVisiveis` só considera
+   * integração "conectado"; sem nenhuma, o filtro não casa nada e a caixa de entrada fica
+   * inteiramente vazia). Com o status defasado em "desconectado", a mensagem continua sendo
+   * gravada pelo webhook e simplesmente não aparece pra ninguém, até o cron passar.
+   *
+   * A diferença em relação ao que ficou trancado: reconfigurar o webhook e reaplicar os ajustes
+   * MUDAM o outro lado; corrigir os donos REESCREVE mensagem já gravada. Isto aqui só anota o que
+   * a Evolution acabou de responder. É cache de uma observação, não alteração de comportamento.
+   */
+  if (estado && integracao) {
     const deveriaSer = estado === "open" ? "conectado" : "desconectado";
     if (integracao.status !== deveriaSer) {
       await prisma.integracao
@@ -167,6 +182,7 @@ export async function conferirCanalQrCode(
     ultimoEventoEm,
     minutosDesdeOUltimoEvento: minutos,
     ultimoDescarte: registro.ultimoDescarte ?? null,
+    ultimaMensagem: registro.ultimaMensagem ?? null,
     diagnostico: explicarSaude({
       statusNoCrm: integracao?.status ?? null,
       estadoNaEvolution: estado,

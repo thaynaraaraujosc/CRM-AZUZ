@@ -9,6 +9,8 @@ type Saude = {
   diagnostico: string;
   /** A última mensagem que CHEGOU e o CRM jogou fora, com o motivo. */
   ultimoDescarte: { motivo: string; em: string; detalhe?: string } | null;
+  /** A última mensagem que CHEGOU e foi gravada, e em qual conversa. */
+  ultimaMensagem: { conversa: string; em: string; grupo: boolean } | null;
 };
 
 /**
@@ -25,6 +27,7 @@ type Saude = {
 export function SaudeQrCode() {
   const [saude, setSaude] = useState<Saude | null>(null);
   const [descarteRecente, setDescarteRecente] = useState<Saude["ultimoDescarte"]>(null);
+  const [mensagemRecente, setMensagemRecente] = useState<Saude["ultimaMensagem"]>(null);
 
   useEffect(() => {
     fetch("/api/integracoes/whatsapp-nao-oficial/saude")
@@ -38,8 +41,11 @@ export function SaudeQrCode() {
         // "É recente?" é decidido aqui, quando o dado chega — e não na renderização, porque ler o
         // relógio durante o render é impuro: o mesmo componente daria respostas diferentes a cada
         // re-render.
+        const recente = (em: string | undefined) => Boolean(em) && Date.now() - Date.parse(em!) < 24 * 60 * 60 * 1000;
         const d = dados.ultimoDescarte;
-        setDescarteRecente(d && Date.now() - Date.parse(d.em) < 24 * 60 * 60 * 1000 ? d : null);
+        setDescarteRecente(d && recente(d.em) ? d : null);
+        const m = dados.ultimaMensagem;
+        setMensagemRecente(m && recente(m.em) ? m : null);
       })
       .catch(() => setSaude(null));
   }, []);
@@ -58,13 +64,31 @@ export function SaudeQrCode() {
    * hoje e só assustaria quem abrisse a tela.
    */
   const saudavel = saude.webhookCerto && !saude.reparado && (saude.minutosDesdeOUltimoEvento ?? 0) <= 60;
-  if (saudavel && !descarteRecente) return null;
+  if (saudavel && !descarteRecente && !mensagemRecente) return null;
 
   return (
     <>
       {saudavel ? null : (
         <p className={saude.reparado ? "hint" : "int-aviso-conflito"}>{saude.diagnostico}</p>
       )}
+      {/*
+        * "CHEGOU E FOI GRAVADA AQUI."
+        *
+        * Esta linha existe por causa de um empate que a tela não conseguia desfazer: sem descarte
+        * nenhum e sem a mensagem na conversa esperada, "a Evolution não chamou" e "o CRM gravou,
+        * só não onde você procurou" ficavam igualmente possíveis. A segunda é comum, porque a
+        * conversa é identificada por NOME: a mensagem pode ter sido arquivada sob o número, ou sob
+        * um nome de perfil diferente do que está na sua lista — e aí ela existe, mas você não
+        * acha. Dizer EM QUAL conversa a última mensagem caiu responde isso de um olhar.
+        */}
+      {mensagemRecente ? (
+        <p className="hint">
+          Última mensagem recebida e gravada em{" "}
+          <strong>{mensagemRecente.conversa}</strong>
+          {mensagemRecente.grupo ? " (grupo)" : ""}, em{" "}
+          {new Date(mensagemRecente.em).toLocaleString("pt-BR")}.
+        </p>
+      ) : null}
       {descarteRecente ? (
         <p className="hint">
           Última mensagem recebida e descartada:{" "}
