@@ -70,7 +70,18 @@ export function explicarSaude(dados: {
   return "Conexão saudável: o WhatsApp está avisando o CRM normalmente.";
 }
 
-/** Confere (e conserta, quando `reparar`) o elo entre a Evolution e este CRM. */
+/**
+ * Confere o elo entre a Evolution e este CRM. CONSERTA apenas com `reparar: true`.
+ *
+ * Sem `reparar` nada é escrito: nem o webhook é reconfigurado, nem os ajustes da instância são
+ * reaplicados, nem o status gravado é corrigido. Isso é o contrato, não um detalhe. Quem só quer
+ * OLHAR o diagnóstico (a tela de Configurações, aberta dezenas de vezes por dia) não pode acionar
+ * conserto nenhum de carona: "abri uma tela e o CRM mudou de comportamento" é exatamente o que
+ * faz alguém parar de confiar no que vê e evitar olhar.
+ *
+ * O conserto vive no relógio (`conferirCanalQrCodeDeTodosOsWorkspaces`, de hora em hora), que é
+ * onde ele sempre devia estar: acontece sem ninguém pedir e sem depender de alguém abrir nada.
+ */
 export async function conferirCanalQrCode(
   workspaceId: string,
   opcoes: { reparar?: boolean } = {},
@@ -111,7 +122,7 @@ export async function conferirCanalQrCode(
    * precisava de um QR Code novo pra voltar ao normal. Reaplicar aqui é barato (uma chamada) e
    * torna o conserto automático.
    */
-  if (integracao?.status === "conectado") {
+  if (opcoes.reparar && integracao?.status === "conectado") {
     await aplicarAjustesDaInstancia(workspaceId).catch(() => {});
   }
 
@@ -127,7 +138,7 @@ export async function conferirCanalQrCode(
    * ela respondeu: servidor fora do ar devolve `null`, e nesse caso mexer no status seria trocar
    * uma informação velha por uma inventada.
    */
-  if (estado && integracao) {
+  if (opcoes.reparar && estado && integracao) {
     const deveriaSer = estado === "open" ? "conectado" : "desconectado";
     if (integracao.status !== deveriaSer) {
       await prisma.integracao

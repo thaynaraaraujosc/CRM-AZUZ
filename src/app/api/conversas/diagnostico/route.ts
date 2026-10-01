@@ -6,7 +6,6 @@ import { contasCanalVisiveis } from "@/lib/integracoes/conta-canal";
 import { adotarMensagensOrfas } from "@/lib/conversas/adotar-orfas";
 import { chaveDeContato } from "@/lib/contatos/chave-nome";
 import { conferirCanalQrCode } from "@/lib/integracoes/saude-qrcode";
-import { corrigirDonosDivergentes } from "@/lib/conversas/dono-divergente";
 
 /**
  * Por que uma mensagem está no banco e não aparece na tela.
@@ -163,19 +162,22 @@ export async function GET() {
     };
   });
 
-  // Mensagem que entrou por uma conexão e ficou marcada como sendo de outra: some da tela quando a
-  // outra é desconectada, com o número que a recebeu ainda conectado. Conserta antes de responder.
-  const donosCorrigidos = await corrigirDonosDivergentes(workspaceId).catch(() => null);
-
-  // O elo que não fica neste banco: o aviso de mensagem nova registrado do lado da Evolution.
-  // Quando ele se perde, o WhatsApp segue perfeito no celular e nada chega aqui. Confere e repara.
-  const canalQrCode = await conferirCanalQrCode(workspaceId, { reparar: true }).catch(() => null);
+  /*
+   * DIAGNÓSTICO NÃO CONSERTA. Este GET reconfigurava o webhook na Evolution e reescrevia a conexão
+   * dona de mensagens já gravadas, só por ter sido aberto. Um diagnóstico que altera o sistema não
+   * serve pra diagnosticar: na próxima vez que alguém olha, o que ele vê já é consequência da vez
+   * anterior, e não sobra como saber o que era o defeito.
+   *
+   * Os dois consertos continuam acontecendo sozinhos, de hora em hora, em todo workspace: a
+   * correção de dono no minuto 8 e a conferência do canal no minuto 25 do cron. Nenhum deles
+   * dependia de alguém abrir isto.
+   */
+  const canalQrCode = await conferirCanalQrCode(workspaceId, { reparar: false }).catch(() => null);
 
   return NextResponse.json(
     {
       canalQrCode,
       chegando,
-      donosCorrigidos,
       resumo: {
         conversasNoBanco: todasAsConversas.length,
         conversasQueAparecem: conversas.filter((c) => c.apareceNaTela).reduce((s, c) => s + c.quantidade, 0),
