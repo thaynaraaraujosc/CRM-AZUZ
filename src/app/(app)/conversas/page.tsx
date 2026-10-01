@@ -703,6 +703,23 @@ function ConversasPageInner() {
   const [rowMenuAberto, setRowMenuAberto] = useState<string | null>(null);
   const [rowMenuRect, setRowMenuRect] = useState<DOMRect | null>(null);
   const [mostrarArquivadas, setMostrarArquivadas] = useState(false);
+  const [filtroAberto, setFiltroAberto] = useState(false);
+  const [filtroRect, setFiltroRect] = useState<DOMRect | null>(null);
+
+  /* O que o botão de filtro mostra. "Tudo" + "Todas as conexões" é o estado neutro e não vira
+     rótulo: só o que desvia do padrão aparece, pra a pessoa saber por que a lista está do jeito
+     que está sem precisar abrir o menu. */
+  const filtroAtivo = mostrarArquivadas || filtroConversa !== "tudo" || canalAba !== "todos";
+  const resumoDoFiltro = [
+    mostrarArquivadas
+      ? "Arquivadas"
+      : filtroConversa !== "tudo"
+        ? FILTROS_CONVERSA.find((f) => f.valor === filtroConversa)?.label
+        : null,
+    canalAba !== "todos" ? CANAIS_CONVERSA.find((c) => c.valor === canalAba)?.label : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   function ehFavorita(c: { id: string; favorita?: boolean }) {
     return favoritasOverride[c.id] ?? c.favorita ?? false;
@@ -3790,33 +3807,57 @@ function ConversasPageInner() {
                 onChange={(e) => setBuscaConversa(e.target.value)}
               />
             </label>
+            {/* Um botão no lugar de duas fileiras de chips.
+                As fileiras ocupavam espaço o tempo todo pra um controle que quase ninguém mexe:
+                a esmagadora maioria das visitas é pra ler a lista como ela vem. O rótulo mostra o
+                filtro ativo quando existe um, porque o perigo de esconder filtro atrás de botão é
+                a pessoa não entender por que a lista está curta. */}
+            <button
+              type="button"
+              className={`wa-filtro-botao${filtroAtivo ? " active" : ""}`}
+              aria-expanded={filtroAberto}
+              onClick={(e) => {
+                setFiltroRect(e.currentTarget.getBoundingClientRect());
+                setFiltroAberto((v) => !v);
+              }}
+            >
+              {filtroAtivo ? `Filtro · ${resumoDoFiltro}` : "Filtro"}
+            </button>
           </div>
-          <div className="wa-list-filters">
+          <FloatingDropdown
+            anchorRect={filtroAberto ? filtroRect : null}
+            onClose={() => setFiltroAberto(false)}
+            width={240}
+          >
+            <p className="dropdown-titulo">Mostrar</p>
             {FILTROS_CONVERSA.map((f) => (
               <button
                 type="button"
                 key={f.valor}
-                className={`wa-filter-chip${!mostrarArquivadas && filtroConversa === f.valor ? " active" : ""}`}
-                aria-pressed={!mostrarArquivadas && filtroConversa === f.valor}
+                className={`dropdown-item${!mostrarArquivadas && filtroConversa === f.valor ? " active" : ""}`}
+                style={{ width: "100%", textAlign: "left" }}
                 onClick={() => {
                   setFiltroConversa(f.valor);
                   setMostrarArquivadas(false);
+                  setFiltroAberto(false);
                 }}
               >
-                {f.label}
+                <span className="n">{f.label}</span>
               </button>
             ))}
             <button
               type="button"
-              className={`wa-filter-chip${mostrarArquivadas ? " active" : ""}`}
-              aria-pressed={mostrarArquivadas}
-              onClick={() => setMostrarArquivadas((v) => !v)}
+              className={`dropdown-item${mostrarArquivadas ? " active" : ""}`}
+                style={{ width: "100%", textAlign: "left" }}
+              onClick={() => {
+                setMostrarArquivadas(true);
+                setFiltroAberto(false);
+              }}
             >
-              Arquivadas ({conversas.filter((c) => c.arquivada).length})
+              <span className="n">Arquivadas ({conversas.filter((c) => c.arquivada).length})</span>
             </button>
-          </div>
 
-          <div className="wa-list-filters">
+            <p className="dropdown-titulo">Conexão</p>
             {CANAIS_CONVERSA.map((canal) => {
               const quantidade =
                 canal.valor === "todos"
@@ -3826,19 +3867,39 @@ function ConversasPageInner() {
                 <button
                   type="button"
                   key={canal.valor}
-                  className={`wa-filter-chip${canalAba === canal.valor ? " active" : ""}`}
-                  aria-pressed={canalAba === canal.valor}
+                  className={`dropdown-item${canalAba === canal.valor ? " active" : ""}`}
+                style={{ width: "100%", textAlign: "left" }}
                   disabled={canal.emBreve}
                   title={canal.emBreve ? "Ainda não disponível" : undefined}
-                  onClick={() => setCanalAba(canal.valor)}
+                  onClick={() => {
+                    setCanalAba(canal.valor);
+                    setFiltroAberto(false);
+                  }}
                 >
-                  {canal.label}
-                  {canal.emBreve ? " · em breve" : quantidade > 0 ? ` (${quantidade})` : ""}
+                  <span className="n">
+                    {canal.label}
+                    {canal.emBreve ? " · em breve" : quantidade > 0 ? ` (${quantidade})` : ""}
+                  </span>
                 </button>
               );
             })}
-          </div>
 
+            {filtroAtivo ? (
+              <button
+                type="button"
+                className="dropdown-item dropdown-item-limpar"
+                style={{ width: "100%", textAlign: "left" }}
+                onClick={() => {
+                  setFiltroConversa("tudo");
+                  setMostrarArquivadas(false);
+                  setCanalAba("todos");
+                  setFiltroAberto(false);
+                }}
+              >
+                <span className="n">Limpar filtro</span>
+              </button>
+            ) : null}
+          </FloatingDropdown>
           <div className="wa-list-rows">
           {/* Contatos que ainda não têm conversa. A caixa de busca sempre prometeu "ou começar uma
               nova conversa" e não cumpria: o único jeito de iniciar uma era pelo participante de um
