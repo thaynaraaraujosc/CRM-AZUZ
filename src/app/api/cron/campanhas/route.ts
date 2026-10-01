@@ -15,6 +15,7 @@ import { removerGruposViradosContatoDeTodosOsWorkspaces } from "@/lib/integracoe
 import { conciliarAssinaturasPendentes } from "@/lib/assinatura/conciliar-pendentes";
 import { prisma } from "@/lib/prisma";
 import { devolverConversoesDeTodosOsWorkspaces } from "@/lib/rastreio/devolver-conversao";
+import { renovarTokensDoInstagram } from "@/lib/integracoes/renovar-tokens";
 import { processarMensagemRecebida } from "@/app/api/webhooks/evolution/route";
 
 /**
@@ -109,6 +110,22 @@ export async function GET(request: Request) {
           return { conferidas: 0, corrigidas: 0 };
         })
       : { conferidas: 0, corrigidas: 0 };
+
+  /*
+   * Renovação do token do Instagram: uma vez por hora, no minuto 11.
+   *
+   * O token vale 60 dias e a renovação acontece com 10 dias de folga, então de hora em hora é
+   * folgado demais pro que a tarefa precisa — e é por isso que serve: ela só consulta integrações
+   * perto de vencer, e na esmagadora maioria das rodadas não acha nenhuma e sai numa consulta só.
+   * O barato aqui é não precisar de um cron novo.
+   */
+  const tokensInstagram =
+    new Date().getUTCMinutes() === 11
+      ? await renovarTokensDoInstagram(prisma).catch((erro) => {
+          console.error("[cron] falha ao renovar tokens do Instagram:", erro);
+          return { renovados: 0, falharam: 0 };
+        })
+      : { renovados: 0, falharam: 0 };
 
   /*
    * Devolver pro Google as vendas que o funil fechou.
@@ -221,5 +238,5 @@ export async function GET(request: Request) {
         })
       : { workspaces: 0, chats: 0 };
 
-  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados, assinaturas, conversoes });
+  return NextResponse.json({ ok: true, ...resultado, automacoes, porTempo, diarios, orfas, historico, nomes, reconciliacao, canalQrCode, donos, grupos, espelhamentosIniciados, assinaturas, conversoes, tokensInstagram });
 }

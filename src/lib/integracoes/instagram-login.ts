@@ -841,3 +841,44 @@ export async function listarConversasRecentesInstagram(
   }
   return conversas;
 }
+
+/**
+ * Renova o token de longa duração do Instagram.
+ *
+ * POR QUE ISTO PRECISA EXISTIR. O token que sai do login vale 60 dias e nada o renovava. No
+ * sexagésimo primeiro dia tudo que depende dele para ao mesmo tempo, e de um jeito que não parece
+ * um token morto: a miniatura do story some, a prévia do reel some, o anexo não aparece, a foto de
+ * perfil para de atualizar. Nenhuma dessas telas diz "token expirado" — elas só ficam mais pobres,
+ * e a conclusão de quem usa é "o Instagram quebrou".
+ *
+ * A Meta exige duas condições pra renovar: o token tem que estar VÁLIDO ainda (token morto não se
+ * renova, só se refaz pelo login) e ter pelo menos 24 horas de vida. Por isso a renovação é
+ * antecipada, com folga de dias, e não no dia do vencimento.
+ */
+export async function renovarTokenInstagram(
+  accessToken: string,
+): Promise<{ accessToken: string; expiraEm: Date | null } | null> {
+  const resposta = await fetch(
+    `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${accessToken}`,
+  ).catch((erro) => {
+    console.error("[instagram] Falha de rede ao renovar o token:", erro);
+    return null;
+  });
+  if (!resposta) return null;
+
+  const dados = (await resposta.json().catch(() => null)) as
+    | ({ access_token?: string; expires_in?: number } & ErroGraph)
+    | null;
+  if (!resposta.ok || !dados?.access_token) {
+    console.error(
+      "[instagram] Renovação de token recusada:",
+      dados?.error_message ?? dados?.error?.message ?? resposta.status,
+    );
+    return null;
+  }
+
+  return {
+    accessToken: dados.access_token,
+    expiraEm: dados.expires_in ? new Date(Date.now() + dados.expires_in * 1000) : null,
+  };
+}

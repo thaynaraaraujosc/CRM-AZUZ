@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { Modal } from "@/components/ui";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
+import type { Funil } from "@/lib/data";
 
 /**
  * Transferir um negócio: responsável, funil e etapa: numa janela só, usada em todo o CRM.
@@ -23,6 +24,16 @@ import { useFunis } from "@/lib/funis-context";
  * Trocar de funil não troca o vendedor, e trocar o vendedor não move o negócio. Amarrar as duas
  * coisas obrigaria a inventar um funil por vendedor, que não é como o comercial funciona.
  */
+/** Em que funil/etapa o card está. Fora do componente pra não recriar a função a cada render. */
+function acharLocal(funis: Funil[], cardId: string): { funilId: string; etapaId: string } {
+  for (const funil of funis) {
+    for (const coluna of funil.colunas) {
+      if (coluna.cards.some((c) => c.id === cardId)) return { funilId: funil.id, etapaId: coluna.id };
+    }
+  }
+  return { funilId: funis[0]?.id ?? "", etapaId: "" };
+}
+
 export function TransferirNegocio({
   cardId,
   nomeDoNegocio,
@@ -37,15 +48,14 @@ export function TransferirNegocio({
   const { funis, moverNegocio } = useFunis();
   const { membros: equipe } = useEquipe();
 
-  /** Onde o negócio está agora. Ponto de partida dos seletores. */
-  const localAtual = useMemo(() => {
-    for (const funil of funis) {
-      for (const coluna of funil.colunas) {
-        if (coluna.cards.some((c) => c.id === cardId)) return { funilId: funil.id, etapaId: coluna.id };
-      }
-    }
-    return { funilId: funis[0]?.id ?? "", etapaId: "" };
-  }, [funis, cardId]);
+  /** Onde o negócio está agora. Ponto de partida dos seletores.
+   *
+   * Sem `useMemo` de propósito. O resultado é usado pra inicializar dois `useState` logo abaixo, e
+   * o compilador do React recusa o arquivo inteiro quando uma memorização manual alimenta estado
+   * ("Existing memoization could not be preserved"): o componente deixa de ser otimizado, que é o
+   * oposto do que o `useMemo` pretendia. O laço é curto — a lista de funis de um workspace — e o
+   * compilador memoriza sozinho. */
+  const localAtual = acharLocal(funis, cardId);
 
   const [funilId, setFunilId] = useState(localAtual.funilId);
   const [etapaId, setEtapaId] = useState(localAtual.etapaId);
