@@ -38,9 +38,33 @@ export async function POST(request: Request) {
     console.error("Falha ao encerrar sessão na Evolution API (seguindo para desconectar localmente):", erro);
   });
 
+  /*
+   * O RASTRO DE WEBHOOK SOBREVIVE AO DESCONECTAR.
+   *
+   * `metadados` é uma coluna Json: o Prisma a substitui INTEIRA, não mescla campo a campo. Escrever
+   * `{ qrDataUrl, numero }` apagava tudo o mais que vivia ali, e junto ia o `webhook` — o registro
+   * de "a Evolution falou comigo às tal hora" e "chegou uma mensagem e o CRM descartou por este
+   * motivo". É o único rastro que responde "por que essa mensagem não apareceu", e ele era
+   * destruído exatamente no momento em que alguém, sem conseguir receber mensagem, desconecta e
+   * reconecta pra tentar consertar. A informação de que mais se precisava sumia junto com a
+   * tentativa de resolver. `atualizarStatus`, no webhook, já mescla por este mesmo motivo.
+   *
+   * `historico` continua sendo apagado de propósito: a importação é do celular que estava
+   * conectado, e quem conectar depois pode ser outro número. Reimportar sem desconectar agora tem
+   * caminho próprio ("Buscar conversas que faltam").
+   */
+  const atual = await prisma.integracao.findUnique({
+    where: { workspaceId_provedor: { workspaceId, provedor: "whatsapp_nao_oficial" } },
+    select: { metadados: true },
+  });
+  const webhook = ((atual?.metadados as Record<string, unknown> | null) ?? {}).webhook;
+
   await prisma.integracao.updateMany({
     where: { workspaceId, provedor: "whatsapp_nao_oficial" },
-    data: { status: "desconectado", metadados: { qrDataUrl: null, numero: null } },
+    data: {
+      status: "desconectado",
+      metadados: { qrDataUrl: null, numero: null, ...(webhook ? { webhook } : {}) },
+    },
   });
 
   // Sem isso, o espelho do WhatsApp (contatos, cards no funil, pendências no Início, conversa
