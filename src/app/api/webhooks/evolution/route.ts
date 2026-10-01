@@ -11,6 +11,7 @@ import { registrarRespostaDeCampanha } from "@/lib/campanhas/resposta";
 import { CANAL_NAO_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
 import { iniciarHistoricoSeNecessario } from "@/lib/integracoes/historico-whatsapp";
 import { registrarDescarte, registrarSinalDeVida } from "@/lib/integracoes/sinal-de-vida";
+import { decidirSobreLote } from "@/lib/integracoes/lote-de-mensagens";
 import { chavesDaMensagem, desembrulharMensagem, extrairTextoDaMensagem } from "@/lib/integracoes/texto-da-mensagem";
 
 /** Formato de evento que a Evolution API manda pro webhook configurado na instância. Mesmo body
@@ -62,6 +63,34 @@ async function atualizarStatus(
  * servidor inteiro, não só essa rota). */
 const TAMANHO_MAXIMO_PAYLOAD_BYTES = 256 * 1024;
 
+/**
+ * Anota o descarte de um payload que é grande demais pra ser lido.
+ *
+ * O problema: pra saber de QUEM é a mensagem, o CRM precisa do campo `instance`, que está dentro do
+ * corpo — e o motivo de rejeitar este payload é justamente não lê-lo (um JSON de vários MB já
+ * derrubou o servidor inteiro ao ser parseado). O endereço do webhook é um só pra todos, com um
+ * token que não diz nada sobre workspace, então não há de onde tirar o dono sem tocar no corpo.
+ *
+ * A saída é ler um PEDAÇO limitado: 2 KB do começo, onde a Evolution põe `event` e `instance`, e
+ * achar o nome da instância por texto, sem parsear JSON nenhum. Se não achar, fica só o log. O que
+ * não pode voltar a acontecer é o CRM responder "ok" pra uma mensagem que ele jogou fora e não
+ * deixar rastro em lugar nenhum: era isso que tornava "não chegou" impossível de investigar.
+ */
+async function registrarDescartePelaInstancia(request: Request, motivo: string, detalhe: string) {
+  try {
+    const leitor = request.body?.getReader();
+    if (!leitor) return;
+    const { value } = await leitor.read();
+    await leitor.cancel().catch(() => {});
+    const inicio = new TextDecoder().decode(value?.slice(0, 2048) ?? new Uint8Array());
+    const instancia = inicio.match(/"instance"\s*:\s*"([^"]+)"/)?.[1];
+    const workspaceId = instancia ? workspaceIdDaInstancia(instancia) : null;
+    if (workspaceId) await registrarDescarte(workspaceId, motivo, detalhe);
+  } catch {
+    // Anotar é o melhor esforço: nunca pode virar um erro em cima de um payload já rejeitado.
+  }
+}
+
 export async function POST(request: Request) {
   const token = new URL(request.url).searchParams.get("token");
   if (!validarTokenWebhook(token)) {
@@ -71,6 +100,11 @@ export async function POST(request: Request) {
   const tamanho = Number(request.headers.get("content-length") ?? 0);
   if (tamanho > TAMANHO_MAXIMO_PAYLOAD_BYTES) {
     console.log(`[webhook evolution] payload de ${tamanho} bytes rejeitado (provavelmente mídia embutida, não deveria vir mais)`);
+    // Registra o descarte. Era um dos dois lugares em que a mensagem morria em silêncio: a
+    // Evolution recebia `200 OK`, nada era gravado, e não havia como saber que tinha chegado.
+    // Só dá pra anotar depois de resolver o workspace, que depende de ler o corpo: aqui ainda não
+    // temos nenhum dos dois, então a anotação vai pelo caminho do token, que é por instância.
+    await registrarDescartePelaInstancia(request, "payload grande", `${tamanho} bytes (provavelmente mídia embutida)`);
     return NextResponse.json({ ok: true });
   }
 
@@ -110,28 +144,17 @@ export async function POST(request: Request) {
   }
 
   if (evento === "messages.upsert") {
-    // A Evolution normalmente manda uma mensagem só, já achatada, direto em `data`: mas
-    // dependendo da versão/config ela pode repassar o formato bruto do Baileys
-    // (`{ messages: [...], type: "notify" | "append" | ... }`). Trata os dois pra não descartar
-    // tudo silenciosamente se vier no formato que a gente não esperava. `type` diferente de
-    // "notify" (quando presente) é sincronização de histórico ao conectar, não mensagem ao vivo:
-    // nem entra na função de processar (ver guarda de idade da mensagem lá dentro pro caso desse
-    // campo não vir, que foi o que floodou o banco na primeira conexão: a Evolution manda TODO o
-    // histórico do celular pelo mesmo evento, sem marcar `type` de jeito nenhum).
-    const bruto = payload.data as { messages?: unknown[]; type?: string };
-    if (bruto?.type && bruto.type !== "notify") return NextResponse.json({ ok: true });
-    const mensagens = Array.isArray(bruto?.messages) ? bruto.messages : [payload.data];
-    // Trava de segurança: mensagem ao vivo chega uma de cada vez (ou em rajadas bem pequenas).
-    // Um lote grande num evento só só acontece em sincronização de histórico (o `syncFullHistory`
-    // desligado na instância já devia impedir isso, mas essa é a última linha de defesa caso o
-    // servidor Evolution não honre essa configuração). Loga e descarta o lote inteiro, sem tentar
-    // processar nada dele.
-    if (mensagens.length > 20) {
-      console.log(`[webhook evolution] lote de ${mensagens.length} mensagens descartado (parece sincronização de histórico, não mensagem ao vivo)`);
-      await registrarDescarte(workspaceId, "lote grande", `${mensagens.length} mensagens de uma vez`);
+    // Processar ou descartar, e por quê: ver `decidirSobreLote`. Em resumo, o `type` do evento
+    // deixou de ser motivo de descarte (no Baileys, "append" é como chega mensagem de GRUPO, não
+    // histórico), e quem segura sincronização de histórico são o tamanho do lote e a idade de cada
+    // mensagem — as duas travas que de fato funcionam.
+    const decisao = decidirSobreLote(payload.data as { messages?: unknown[]; type?: string });
+    if (decisao.acao === "descartar") {
+      console.log(`[webhook evolution] lote descartado: ${decisao.motivo} — ${decisao.detalhe}`);
+      await registrarDescarte(workspaceId, decisao.motivo, decisao.detalhe);
       return NextResponse.json({ ok: true });
     }
-    for (const item of mensagens) {
+    for (const item of decisao.mensagens) {
       await processarMensagemRecebida(workspaceId, item);
     }
     return NextResponse.json({ ok: true });

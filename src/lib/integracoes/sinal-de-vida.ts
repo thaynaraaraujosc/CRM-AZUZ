@@ -56,8 +56,21 @@ export async function registrarSinalDeVida(workspaceId: string, evento: string, 
   );
 }
 
-/** "Chegou, e o CRM jogou fora, por este motivo." O contrário do sinal de vida: sempre grava,
- * porque descarte é raro e é justamente o que se procura quando uma mensagem some. */
+/**
+ * "Chegou, e o CRM jogou fora, por este motivo." O contrário do sinal de vida: é o rastro que se
+ * procura quando uma mensagem some, então grava sempre que o motivo é NOVO.
+ *
+ * O MESMO motivo repetido dentro de um minuto não grava de novo. Isso existe por causa de uma
+ * rajada real: numa reconexão, a Evolution reenvia mensagem antiga em sequência, e cada uma é
+ * descartada pela trava de idade. Gravar uma por uma seria uma escrita no banco por mensagem
+ * repetida, no exato momento em que o servidor está ocupado reconectando — e sem ganho nenhum de
+ * informação, porque a segunda linha diria o mesmo que a primeira.
+ *
+ * Um motivo DIFERENTE sempre grava, mesmo dentro do minuto: é informação nova, e é justamente ela
+ * que se procura.
+ */
+const INTERVALO_MESMO_DESCARTE_MS = 60 * 1000;
+
 export async function registrarDescarte(
   workspaceId: string,
   motivo: string,
@@ -66,6 +79,13 @@ export async function registrarDescarte(
 ) {
   const atual = await lerRegistro(workspaceId, provedor);
   if (!atual) return;
+  const anterior = atual.webhook.ultimoDescarte;
+  if (
+    anterior?.motivo === motivo &&
+    Date.now() - Date.parse(anterior.em) < INTERVALO_MESMO_DESCARTE_MS
+  ) {
+    return;
+  }
   await gravar(
     workspaceId,
     provedor,
