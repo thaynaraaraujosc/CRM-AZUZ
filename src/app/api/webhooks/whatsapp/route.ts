@@ -4,9 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { guardarMidiasDosExtras } from "@/lib/armazenamento/midia";
 import { decriptar } from "@/lib/integracoes/crypto";
 import { META_GRAPH_URL, normalizarNumeroBrasileiro, validarAssinaturaWebhook } from "@/lib/integracoes/meta";
+import { resolverPessoaDoTelefone } from "@/lib/conversas/identidade";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { CANAL_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
-import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
+import { criarContatoPeloWhatsAppSeNaoExistir } from "@/lib/contatos/upsert";
 import { aplicarOrigemPelaMensagem, aplicarOrigemPelaReferenciaDaMeta } from "@/lib/rastreio/aplicar";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
 import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
@@ -426,13 +427,16 @@ export async function POST(request: Request) {
         const jaExiste = await prisma.mensagemExtra.findUnique({ where: { id: mensagem.id } });
         if (jaExiste) continue;
 
-        // Casa com um Contato já existente pelo telefone (comparação normalizada, não `contains`
-        // cru): número totalmente novo ganha um Contato automaticamente, com o nome do perfil do
-        // WhatsApp quando disponível.
-        const contatoExistente = await encontrarContatoPorTelefone(integracao.workspaceId, waId);
-        // `.trim()` no nome de perfil: ele chega da Meta com espaço sobrando mais vezes do que se
-        // imagina, e um espaço invisível no fim fazia o CRM tratar a mesma pessoa como duas.
-        const chaveContato = contatoExistente?.nome ?? nomePerfil?.trim() ?? waId;
+        // Casa pelo TELEFONE, nunca pelo nome de perfil solto: dois números com o mesmo nome de
+        // exibição viravam uma conversa só, com as mensagens das duas pessoas intercaladas. Ver
+        // `resolverPessoaDoTelefone`. Aqui só chega mensagem recebida (a Meta não espelha envio
+        // do celular), então o nome de perfil é de fato da outra pessoa.
+        const pessoa = await resolverPessoaDoTelefone({
+          workspaceId: integracao.workspaceId,
+          telefone: waId,
+          nomeDoPerfil: nomePerfil,
+        });
+        const { nome: chaveContato, contatoExistente } = pessoa;
         const contato =
           contatoExistente ??
           (await criarContatoPeloWhatsAppSeNaoExistir({

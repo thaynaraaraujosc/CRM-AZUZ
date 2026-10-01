@@ -127,6 +127,34 @@ export async function criarContatoPeloWhatsAppSeNaoExistir(params: {
   const porTelefone = await encontrarContatoPorTelefone(workspaceId, whatsapp);
   if (porTelefone) return porTelefone;
 
+  /*
+   * NUNCA ROUBAR O NÚMERO DE UM CONTATO QUE JÁ EXISTE.
+   *
+   * `upsertContato` casa por nome e grava `dados` por cima. Então chamar aqui com um nome já usado
+   * e um telefone diferente APAGAVA o telefone do contato antigo e colava o novo: o cliente de
+   * antes perdia o número, e as duas pessoas passavam a dividir a mesma conversa (a camada de
+   * mensagens é indexada por nome, ver `src/lib/conversas/identidade.ts`). Foi assim que uma
+   * conversa de cliente "sumiu" depois de chegar mensagem de outro.
+   *
+   * Quem decide a identidade é `resolverPessoaDoTelefone`, e ele já evita entregar um nome
+   * ocupado. Esta checagem é a segunda tranca, na função que de fato escreve: perda de dado real
+   * de cliente não pode depender de um único acerto lá em cima.
+   */
+  const homonimo = await prisma.contato.findUnique({
+    where: { workspaceId_nome: { workspaceId, nome } },
+    select: { id: true, whatsapp: true },
+  });
+  if (homonimo?.whatsapp) {
+    const mesmoNumero =
+      normalizarTelefoneParaComparacao(homonimo.whatsapp) === normalizarTelefoneParaComparacao(whatsapp);
+    if (!mesmoNumero) {
+      console.error(
+        `[contatos] "${nome}" já é de outro número; não sobrescrevi o telefone do contato existente.`,
+      );
+      return prisma.contato.findUnique({ where: { id: homonimo.id } });
+    }
+  }
+
   return upsertContato({
     workspaceId,
     nome,

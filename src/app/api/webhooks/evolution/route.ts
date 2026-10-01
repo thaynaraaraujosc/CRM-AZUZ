@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { validarTokenWebhook, workspaceIdDaInstancia, buscarNumeroConectado, buscarInfoGrupo, buscarFotoPerfil } from "@/lib/integracoes/evolution";
-import { criarContatoPeloWhatsAppSeNaoExistir, encontrarContatoPorTelefone } from "@/lib/contatos/upsert";
+import { criarContatoPeloWhatsAppSeNaoExistir } from "@/lib/contatos/upsert";
 import { entrarNaPrimeiraEtapaComoNovoLead, subirCardParaOTopo } from "@/lib/funis/upsert";
 import { dispararAutomacoesDeMensagemRecebida } from "@/lib/automation-flow/disparar-no-servidor";
+import { resolverPessoaDoTelefone } from "@/lib/conversas/identidade";
 import { upsertConversaAoReceberMensagem } from "@/lib/conversas/upsert";
 import { registrarRespostaDeCampanha } from "@/lib/campanhas/resposta";
 import { CANAL_NAO_OFICIAL, contaCanalDaConexao } from "@/lib/integracoes/conta-canal";
@@ -236,10 +237,17 @@ export async function processarMensagemRecebida(
       criacaoGrupo = info?.criacao;
     }
   } else {
-    contatoExistente = await encontrarContatoPorTelefone(workspaceId, waId);
-    // `.trim()` no nome de perfil: ele chega do WhatsApp com espaço sobrando mais vezes do que se
-    // imagina, e um espaço invisível no fim fazia o CRM tratar a mesma pessoa como duas.
-    chaveContato = contatoExistente?.nome ?? data.pushName?.trim() ?? waId;
+    // Quem é a thread sai do TELEFONE, não do nome de perfil: ver `resolverPessoaDoTelefone`.
+    // `fromMe` manda `nomeDoPerfil: null` de propósito. Nesse evento o `pushName` é o nome do MEU
+    // perfil (espelhamento do celular), e usá-lo arquivava toda mensagem que eu mandava pra um
+    // número novo debaixo do nome do próprio negócio, fundindo cliente com cliente.
+    const pessoa = await resolverPessoaDoTelefone({
+      workspaceId,
+      telefone: waId,
+      nomeDoPerfil: fromMe ? null : data.pushName,
+    });
+    chaveContato = pessoa.nome;
+    contatoExistente = pessoa.contatoExistente;
     const conversaExistente = await prisma.conversa.findUnique({
       where: { workspaceId_nome: { workspaceId, nome: chaveContato } },
       select: { fotoUrl: true },

@@ -24,7 +24,7 @@ export function NotificacoesPonte() {
       for (const c of conversas) {
         const antes = anterior.get(c.id) ?? 0;
         if (c.naoLidas > antes) {
-          notificarNovaMensagem(c.nome);
+          notificarNovaMensagem(c.nome, c.canal);
         }
       }
     }

@@ -11,9 +11,11 @@ import {
 /** Preferências (banco real, ver src/app/api/preferencias/): chave desse blob na tabela `Preferencia`. */
 const CHAVE_PREFERENCIA = "notificacoes";
 
+/* A preferência de "tarefa nova" saiu junto com o módulo de Tarefas: sem nada que crie tarefa, o
+ * toggle em Configurações era um botão decorativo, e o aviso nunca podia disparar. Linhas antigas
+ * da tabela `Preferencia` com essa chave são simplesmente ignoradas na leitura. */
 type PrefsNotificacoes = {
   notificacoesAtivas: boolean;
-  notificarNovaTarefa: boolean;
 };
 
 export type ItemNotificacao = { titulo: string; meta: string; lida: boolean };
@@ -23,14 +25,10 @@ type NotificacoesContextValue = {
   naoLidas: number;
   notificacoesAtivas: boolean;
   alternarNotificacoes: () => void;
-  notificarNovaTarefa: boolean;
-  alternarNotificarNovaTarefa: () => void;
   marcarTodasLidas: () => void;
   /** Dispara quando chega mensagem nova de verdade no WhatsApp. Ver `NotificacoesPonte`, que
    * detecta isso comparando o `naoLidas` real de `conversas-context.tsx` a cada nova busca. */
-  notificarNovaMensagem: (nomeContato: string) => void;
-  /** Dispara ao criar uma tarefa nova de verdade (ver `tarefas/page.tsx`). */
-  notificarNovaTarefaCriada: (titulo: string) => void;
+  notificarNovaMensagem: (nomeContato: string, canal: string) => void;
   toasts: { id: string; texto: string }[];
 };
 
@@ -67,7 +65,6 @@ function tocarSinal() {
 export function NotificacoesProvider({ children }: { children: ReactNode }) {
   const [itens, setItens] = useState<ItemNotificacao[]>([]);
   const [notificacoesAtivas, setNotificacoesAtivas] = useState(true);
-  const [notificarNovaTarefa, setNotificarNovaTarefa] = useState(true);
   const [toasts, setToasts] = useState<{ id: string; texto: string }[]>([]);
   const [proximoToastId, setProximoToastId] = useState(0);
 
@@ -76,7 +73,6 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       .then((r) => r.json())
       .then((dados: Partial<PrefsNotificacoes>) => {
         if (dados.notificacoesAtivas !== undefined) setNotificacoesAtivas(dados.notificacoesAtivas);
-        if (dados.notificarNovaTarefa !== undefined) setNotificarNovaTarefa(dados.notificarNovaTarefa);
       })
       .catch((erro) => console.error("Falha ao carregar preferências de notificações:", erro));
   }, []);
@@ -87,7 +83,6 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         notificacoesAtivas,
-        notificarNovaTarefa,
         ...patch,
       }),
     }).catch((erro) => console.error("Falha ao salvar preferências de notificações:", erro));
@@ -99,14 +94,6 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     setNotificacoesAtivas((prev) => {
       const proximo = !prev;
       salvarRemoto({ notificacoesAtivas: proximo });
-      return proximo;
-    });
-  }
-
-  function alternarNotificarNovaTarefa() {
-    setNotificarNovaTarefa((prev) => {
-      const proximo = !prev;
-      salvarRemoto({ notificarNovaTarefa: proximo });
       return proximo;
     });
   }
@@ -125,26 +112,22 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     }, 4000);
   }
 
-  function notificarNovaMensagem(nomeContato: string) {
+  /**
+   * O canal vem da conversa, não fixo no texto. O aviso dizia "no WhatsApp" para TODA mensagem,
+   * então uma mensagem de Direct aparecia como `@fulano mandou uma mensagem no WhatsApp`: um
+   * rótulo simplesmente errado, que ainda fazia parecer que a mensagem tinha caído no canal errado.
+   */
+  function notificarNovaMensagem(nomeContato: string, canal: string) {
     setItens((prev) => [
       {
-        titulo: `${nomeContato} mandou uma mensagem no WhatsApp`,
+        titulo: `${nomeContato} mandou uma mensagem no ${canal}`,
         meta: "agora",
         lida: false,
       },
       ...prev,
     ]);
     if (!notificacoesAtivas) return;
-    adicionarToast(`Nova mensagem de ${nomeContato} no WhatsApp`);
-  }
-
-  function notificarNovaTarefaCriada(titulo: string) {
-    setItens((prev) => [
-      { titulo: `Nova tarefa: ${titulo}`, meta: "agora", lida: false },
-      ...prev,
-    ]);
-    if (!notificarNovaTarefa) return;
-    adicionarToast(`Nova tarefa criada: ${titulo}`);
+    adicionarToast(`Nova mensagem de ${nomeContato} no ${canal}`);
   }
 
   return (
@@ -154,11 +137,8 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
         naoLidas,
         notificacoesAtivas,
         alternarNotificacoes,
-        notificarNovaTarefa,
-        alternarNotificarNovaTarefa,
         marcarTodasLidas,
         notificarNovaMensagem,
-        notificarNovaTarefaCriada,
         toasts,
       }}
     >
