@@ -47,8 +47,8 @@ export type GrupoConfig = {
 
 /**
  * Estrutura enxuta: só configurações realmente globais da conta ficam aqui. O que já tem módulo
- * próprio no menu principal (Funis e etapas → /funil; usuários/equipes/campos/automações/agenda →
- * /equipe, /automacoes, /agenda) saiu daqui de vez (eram redundantes com o módulo real, não só uma
+ * próprio no menu principal (Funis e etapas → /funil; usuários/equipes/campos/automações →
+ * /equipe, /automacoes) saiu daqui de vez (eram redundantes com o módulo real, não só uma
  * segunda navegação pro mesmo lugar).
  */
 export const GRUPOS_CONFIGURACOES: GrupoConfig[] = [

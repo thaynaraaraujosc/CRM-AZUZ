@@ -37,7 +37,6 @@ import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useConversas, type ConversaReal } from "@/lib/conversas-context";
 import { useEquipe } from "@/lib/equipe-context";
-import { useTarefas } from "@/lib/tarefas-context";
 import { useMotivosPerda } from "@/lib/motivos-perda";
 import { rotuloDeConversa } from "@/lib/datas";
 import { estimarMinutosAtras, gerarLinhaDoTempo, type Evento } from "@/lib/timeline";
@@ -48,7 +47,7 @@ import {
   useBibliotecaDocumentos,
   CATEGORIAS_DOCUMENTO,
 } from "@/lib/biblioteca-documentos-context";
-import { HOJE_ISO } from "@/lib/agenda-context";
+import { HOJE_ISO } from "@/lib/hoje";
 import { useFunis } from "@/lib/funis-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
@@ -544,7 +543,6 @@ function ConversasPageInner() {
   } = useConversas();
   const { membros: membrosEquipe } = useEquipe();
   const motivosPerdaBase = useMotivosPerda();
-  const { colunas: tarefas } = useTarefas();
   const { fluxos } = useAutomationFlows();
   const { config, atualizarConfig, fundoDaConversa } = useConfigConversas();
   const [configConversasAberto, setConfigConversasAberto] = useState(false);
@@ -1042,15 +1040,6 @@ function ConversasPageInner() {
     idConversaAnteriorRef.current = aberta.id;
     setLimiteMensagensVisiveis(200);
   }
-  // `Conversa` real não carrega mais uma "tarefa vinculada" embutida (ver plano). Placeholder
-  // vazio mantém `tarefa.*` funcionando em todo o resto do arquivo, mostrando "sem tarefa" sempre.
-  const tarefa = {
-    data: "",
-    oQueFazer: "",
-    valor: "",
-    responsavel: "",
-    anexo: null as { arquivo: string; detalhe: string } | null,
-  };
   const localizacao = localizarNoFunil(funis, aberta.nome);
 
   const contatoDaConversa = contatos.find((c) => c.nome === aberta.nome) ?? null;
@@ -1112,7 +1101,6 @@ function ConversasPageInner() {
   // precisa sobreviver a recarregar a página e ser a mesma pra qualquer pessoa da equipe.
   const [coracaoAnimando, setCoracaoAnimando] = useState<string | null>(null);
   const [erroCurtir, setErroCurtir] = useState<string | null>(null);
-  const [tarefaAberta, setTarefaAberta] = useState(false);
   const [emailsEnviados, setEmailsEnviados] = useState<
     {
       id: string;
@@ -1813,7 +1801,6 @@ function ConversasPageInner() {
     setTrocandoResponsavel(false);
     setCoracaoAnimando(null);
     setErroCurtir(null);
-    setTarefaAberta(false);
     setEmailModalAberto(false);
     setNotaTexto("");
     setResultadoMenuAberto(false);
@@ -1877,7 +1864,7 @@ function ConversasPageInner() {
   const eventosTimelineContato: Evento[] = contatoDaConversa
     ? gerarLinhaDoTempo(
         contatoDaConversa.id,
-        { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis },
+        { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, funis },
         eventosExtrasTimeline,
       )
     : eventosExtrasTimeline.slice().sort((a, b) => a.minutosAtras - b.minutosAtras);
@@ -5872,11 +5859,6 @@ function ConversasPageInner() {
                             desc: "Avisa quando alguém da equipe te menciona numa anotação.",
                           },
                           {
-                            chave: "notificacaoTarefa",
-                            label: "Notificação de tarefa",
-                            desc: "Avisa quando uma tarefa vinculada à conversa vence.",
-                          },
-                          {
                             chave: "previaMensagens",
                             label: "Prévia da mensagem",
                             desc: "Mostra o começo do texto na notificação.",
@@ -7082,10 +7064,6 @@ function ConversasPageInner() {
                   </span>
                   <span className="wa-resumo-label">Situação</span>
                   <span className="wa-resumo-valor">{aberta.status}</span>
-                  <span className="wa-resumo-label">Próxima atividade</span>
-                  <span className="wa-resumo-valor">
-                    {tarefaAberta || tarefa.oQueFazer ? `${tarefa.oQueFazer} · ${tarefa.data}` : "Nenhuma agendada"}
-                  </span>
                 </div>
                 {(contatoDaConversa?.etiquetas ?? []).length > 0 ? (
                   <div className="wa-resumo-etiquetas">
@@ -7102,16 +7080,6 @@ function ConversasPageInner() {
                 <h4>Ações rápidas</h4>
               </div>
               <div className="wa-acoes-rapidas">
-                <button
-                  type="button"
-                  className="wa-acao-rapida"
-                  onClick={() => {
-                    setAbaInfo("atividades");
-                    setTarefaAberta(true);
-                  }}
-                >
-                  <IconCheck width={13} height={13} /> Criar tarefa
-                </button>
                 <button
                   type="button"
                   className="wa-acao-rapida"
@@ -7556,78 +7524,12 @@ function ConversasPageInner() {
                 <button
                   type="button"
                   className="btn ghost"
-                  style={{ flex: "1 1 140px" }}
-                  onClick={() => setTarefaAberta((v) => !v)}
-                >
-                  {tarefaAberta ? "Fechar tarefa" : "+ Adicionar tarefa"}
-                </button>
-                <button
-                  type="button"
-                  className="btn ghost"
                   style={{ flex: "1 1 140px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                   onClick={abrirEmailModal}
                 >
                   <IconEmail width={13} height={13} /> Disparar e-mail
                 </button>
               </div>
-
-              {tarefaAberta ? (
-                <>
-                  <div className="panel-h divided">
-                    <h4>Tarefa</h4>
-                  </div>
-                  <div className="field">
-                    <label>Data da tarefa</label>
-                    <div className="input">{tarefa.data}</div>
-                  </div>
-                  <div className="field">
-                    <label>O que fazer</label>
-                    <div className="input">{tarefa.oQueFazer}</div>
-                  </div>
-                  <div className="field">
-                    <label>Valor combinado</label>
-                    <div className="input">{tarefa.valor}</div>
-                  </div>
-                  {tarefa.anexo ? (
-                    <div className="field">
-                      <label>Anexo</label>
-                      <div className="attach-chip">
-                        <IconDoc />
-                        <span className="fn">{tarefa.anexo.arquivo}</span>
-                        <span className="fs">{tarefa.anexo.detalhe}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="field">
-                      <label>Anexo</label>
-                      <p className="hint">Nenhum documento anexado.</p>
-                    </div>
-                  )}
-                  <div className="field">
-                    <label>Atribuir tarefa para</label>
-                    <div className="input">{tarefa.responsavel}</div>
-                  </div>
-
-                  <div className="toggle-row">
-                    <span className="tl">Avisar por WhatsApp perto do vencimento</span>
-                    <Toggle defaultOn label="Avisar por WhatsApp perto do vencimento" />
-                  </div>
-                  <div className="toggle-row">
-                    <span className="tl">Mostrar essa tarefa no portal do cliente</span>
-                    <Toggle defaultOn label="Mostrar essa tarefa no portal do cliente" />
-                  </div>
-
-                  <div className="section-foot">
-                    <button
-                      type="button"
-                      className="btn primary block"
-                      onClick={salvarAtribuicao}
-                    >
-                      Salvar tarefa
-                    </button>
-                  </div>
-                </>
-              ) : null}
 
               {emailsDaConversa.length > 0 ? (
                 <>
@@ -8124,19 +8026,9 @@ function ConversasPageInner() {
               <IconClose width={12} height={12} />
             </button>
           </div>
-          {tarefa.anexo ? (
-            <div className="field" style={{ padding: "10px 0" }}>
-              <div className="attach-chip">
-                <IconDoc />
-                <span className="fn">{tarefa.anexo.arquivo}</span>
-                <span className="fs">{tarefa.anexo.detalhe}</span>
-              </div>
-            </div>
-          ) : (
-            <p className="hint" style={{ padding: "10px 0" }}>
-              Nenhuma mídia trocada nessa conversa ainda.
-            </p>
-          )}
+          <p className="hint" style={{ padding: "10px 0" }}>
+            Nenhuma mídia trocada nessa conversa ainda.
+          </p>
         </div>
       ) : null}
 

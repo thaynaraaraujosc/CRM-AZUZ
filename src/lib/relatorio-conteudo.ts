@@ -1,6 +1,5 @@
 import {
   type Campanha,
-  type ColunaTarefas,
   type Contato,
   type ConvMensagem,
   type Funil,
@@ -53,7 +52,7 @@ export const TIPOS_RELATORIO: { tipo: TipoRelatorio; nome: string; descricao: st
   {
     tipo: "atividades",
     nome: "Relatório de atividades",
-    descricao: "Atendimento, tarefas e interações da equipe",
+    descricao: "Atendimento e interações da equipe",
     icone: "✅",
   },
   {
@@ -72,7 +71,7 @@ export const TIPOS_RELATORIO: { tipo: TipoRelatorio; nome: string; descricao: st
 
 /** Dado real do workspace logado. Sempre fornecido por quem monta o relatório (`ReportWizard`),
  * que já tem tudo isso via `useFunis`/`useContatos`/`useEquipe`/`useConversas`/`useMensagensExtra`/
- * `useTarefas` + a busca de campanhas reais do Meta Ads (mesmo padrão de `trafego/page.tsx`). Sem
+ * a busca de campanhas reais do Meta Ads (mesmo padrão de `trafego/page.tsx`). Sem
  * default fictício: cada seção usa só o que vier aqui. */
 export type DadosRelatorio = {
   funis: Funil[];
@@ -80,7 +79,6 @@ export type DadosRelatorio = {
   equipe: Membro[];
   conversas: ConversaReal[];
   mensagensPorContato: Record<string, ConvMensagem[]>;
-  tarefas: ColunaTarefas[];
   campanhas: Campanha[];
 };
 
@@ -330,18 +328,6 @@ function secaoAtendimento(ctx: ContextoRelatorio): SecaoRelatorio {
   };
 }
 
-function secaoTarefas(ctx: ContextoRelatorio): SecaoRelatorio {
-  const todas = ctx.dados.tarefas.flatMap((c) => c.cards);
-  return {
-    titulo: "Tarefas",
-    linhas: [
-      { label: "Criadas", value: String(todas.length) },
-      { label: "Concluídas", value: String(todas.filter((t) => t.concluida).length) },
-      { label: "Atrasadas", value: String(todas.filter((t) => t.atrasada).length) },
-    ],
-  };
-}
-
 function secaoInteracoes(ctx: ContextoRelatorio): SecaoRelatorio {
   const { conversas, mensagensPorContato } = ctx.dados;
   const mensagensDe = (nome: string) => mensagensPorContato[nome] ?? [];
@@ -357,16 +343,6 @@ function secaoInteracoes(ctx: ContextoRelatorio): SecaoRelatorio {
   };
 }
 
-function secaoAlertas(ctx: ContextoRelatorio): SecaoRelatorio {
-  const atrasadas = ctx.dados.tarefas.find((c) => c.titulo === "Atrasadas")?.cards.length ?? 0;
-  return {
-    titulo: "Alertas",
-    observacao:
-      atrasadas > 0
-        ? `${atrasadas} tarefa(s) atrasada(s) no período. Consulte a Inteligência comercial para ação imediata.`
-        : "Nenhum alerta no período.",
-  };
-}
 
 function secaoDadosCliente(ctx: ContextoRelatorio): SecaoRelatorio {
   const contato = ctx.dados.contatos.find((c) => c.id === ctx.contatoId);
@@ -393,11 +369,10 @@ function secaoResumoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
     contatos: dados.contatos,
     conversas: dados.conversas,
     mensagensPorContato: dados.mensagensPorContato,
-    tarefas: dados.tarefas,
     funis: dados.funis,
   };
   const eventos = gerarLinhaDoTempo(contato.id, fontesTimeline);
-  const resumo = calcularResumoJornada(contato, eventos, { funis: dados.funis, tarefas: dados.tarefas, conversas: dados.conversas });
+  const resumo = calcularResumoJornada(contato, eventos, { funis: dados.funis, conversas: dados.conversas });
   return {
     titulo: "Resumo da jornada",
     linhas: [
@@ -410,7 +385,6 @@ function secaoResumoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
       { label: "Ticket médio", value: resumo.ticketMedio ?? "Ainda não ocorreu" },
       { label: "Última compra", value: resumo.ultimaCompra ? dataParaDocumento(resumo.ultimaCompra) : "Ainda não ocorreu" },
       { label: "Última interação", value: dataParaDocumento(resumo.ultimaInteracao) },
-      { label: "Próxima ação", value: resumo.proximaAcao ?? "Nenhuma pendente" },
     ],
   };
 }
@@ -422,7 +396,6 @@ function secaoJornadaCliente(ctx: ContextoRelatorio): SecaoRelatorio {
     contatos: dados.contatos,
     conversas: dados.conversas,
     mensagensPorContato: dados.mensagensPorContato,
-    tarefas: dados.tarefas,
     funis: dados.funis,
   });
   return {
@@ -472,22 +445,6 @@ function secaoComprasCliente(ctx: ContextoRelatorio): SecaoRelatorio {
   };
 }
 
-function secaoAtividadesCliente(ctx: ContextoRelatorio): SecaoRelatorio {
-  const { dados } = ctx;
-  const contato = dados.contatos.find((c) => c.id === ctx.contatoId);
-  if (!contato) return { titulo: "Atividades", observacao: "Nenhum contato selecionado." };
-  const doContato = dados.tarefas.flatMap((c) => c.cards).filter((t) => t.contato === contato.nome);
-  if (doContato.length === 0) return { titulo: "Atividades", observacao: "Nenhuma tarefa registrada pra esse contato." };
-  return {
-    titulo: "Atividades",
-    tabela: {
-      colunas: ["Tarefa", "Responsável", "Data", "Situação"],
-      linhas: doContato
-        .slice(0, limiteLinhas(ctx))
-        .map((t) => [t.titulo, t.responsavel.nome, dataParaDocumento(t.data), t.concluida ? "Concluída" : t.atrasada ? "Atrasada" : "Pendente"]),
-    },
-  };
-}
 
 export const SECOES_POR_TIPO: Record<TipoRelatorio, DefinicaoSecao[]> = {
   executivo: [
@@ -497,7 +454,6 @@ export const SECOES_POR_TIPO: Record<TipoRelatorio, DefinicaoSecao[]> = {
     { id: "trafego", titulo: "Tráfego", gerar: secaoTrafego },
     { id: "performance", titulo: "Performance", gerar: secaoPerformance },
     { id: "perdas", titulo: "Perdas", gerar: secaoPerdasResumo },
-    { id: "alertas", titulo: "Alertas", gerar: secaoAlertas },
     { id: "conclusoes", titulo: "Conclusões", gerar: secaoConclusoes },
   ],
   vendas: [
@@ -514,7 +470,6 @@ export const SECOES_POR_TIPO: Record<TipoRelatorio, DefinicaoSecao[]> = {
   ],
   atividades: [
     { id: "atendimento", titulo: "Atendimento", gerar: secaoAtendimento },
-    { id: "tarefas", titulo: "Tarefas", gerar: secaoTarefas },
     { id: "interacoes", titulo: "Interações", gerar: secaoInteracoes },
   ],
   cliente: [
@@ -523,7 +478,6 @@ export const SECOES_POR_TIPO: Record<TipoRelatorio, DefinicaoSecao[]> = {
     { id: "jornada-cliente", titulo: "Linha do tempo", gerar: secaoJornadaCliente },
     { id: "negociacoes-cliente", titulo: "Negociações", gerar: secaoNegociacoesCliente },
     { id: "compras-cliente", titulo: "Compras", gerar: secaoComprasCliente },
-    { id: "atividades-cliente", titulo: "Atividades", gerar: secaoAtividadesCliente },
   ],
   personalizado: [],
 };

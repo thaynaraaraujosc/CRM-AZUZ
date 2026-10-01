@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import type { ColunaTarefas, Funil, Membro, NegocioCard } from "@/lib/data";
+import type { Funil, Membro, NegocioCard } from "@/lib/data";
 import { IconTrofeu } from "@/components/icons";
 import {
   calcularDistribuicaoMotivosPerda,
@@ -22,25 +22,23 @@ function parseValor(raw: string): number {
 
 /**
  * Telão pra projetar no escritório (aberto numa aba separada, sem sidebar): busca os dados
- * direto das rotas reais (`/api/funis`, `/api/tarefas`, `/api/equipe`) porque essa página fica
+ * direto das rotas reais (`/api/funis`, `/api/equipe`) porque essa página fica
  * fora do grupo `(app)` e não tem os providers de contexto. Atualiza sozinha a cada 30s, sem
  * botão de "simular venda": tudo aqui é o estado real do workspace no momento.
  */
 export default function CrmLivePage() {
   const [tela, setTela] = useState<"finalizadas" | "andamento">("finalizadas");
   const [funis, setFunis] = useState<Funil[] | null>(null);
-  const [tarefas, setTarefas] = useState<ColunaTarefas[] | null>(null);
   const [equipe, setEquipe] = useState<Membro[] | null>(null);
 
   useEffect(() => {
     function carregar() {
       // Só com a aba visível. Este painel é feito pra ficar numa TV, o dia todo, e sem esta
-      // checagem ele buscava o funil inteiro, as tarefas e a equipe a cada 30 segundos mesmo com a
+      // checagem ele buscava o funil inteiro e a equipe a cada 30 segundos mesmo com a
       // aba minimizada ou atrás de outra: 2.880 rodadas por dia, três consultas cada, pra ninguém
       // ler. É o mesmo tipo de gasto que a tela de Conversas já tinha, e a correção é a mesma.
       if (document.visibilityState !== "visible") return;
       fetch("/api/funis").then((r) => r.json()).then(setFunis).catch(() => {});
-      fetch("/api/tarefas").then((r) => r.json()).then(setTarefas).catch(() => {});
       fetch("/api/equipe").then((r) => r.json()).then(setEquipe).catch(() => {});
     }
     carregar();
@@ -60,7 +58,7 @@ export default function CrmLivePage() {
     return () => clearInterval(intervalo);
   }, []);
 
-  const carregando = !funis || !tarefas || !equipe;
+  const carregando = !funis || !equipe;
   const cards: NegocioCard[] = funis ? todosOsCards(funis) : [];
   const ganhas = cards.filter((c) => c.statusFechamento === "ganho");
   const perdidas = cards.filter((c) => c.statusFechamento === "perdido");
@@ -88,11 +86,6 @@ export default function CrmLivePage() {
     valor: formatarMoeda(coluna.cards.reduce((s, c) => s + parseValor(c.valor), 0)),
   }));
   const valoresEmAndamento = abertas.reduce((s, c) => s + parseValor(c.valor), 0);
-
-  const feedTarefas = (tarefas ?? [])
-    .flatMap((c) => c.cards)
-    .filter((t) => !t.concluida)
-    .slice(0, 5);
 
   const limites = top3Motivos.reduce<number[]>((acc, m) => {
     const anterior = acc.length > 0 ? acc[acc.length - 1] : 0;
@@ -218,21 +211,6 @@ export default function CrmLivePage() {
               <p className="crm-live-kpi-l">Valores em andamento</p>
               <p className="crm-live-kpi-n">{formatarMoeda(valoresEmAndamento)}</p>
               <p className="crm-live-kpi-sub">Faturamento potencial da operação</p>
-            </div>
-            <div className="crm-live-feed">
-              <p className="crm-live-feed-titulo">Feed de tarefas</p>
-              {feedTarefas.length === 0 ? (
-                <p style={{ color: "#9aa4c2", padding: "8px 0" }}>Nenhuma tarefa pendente no momento.</p>
-              ) : (
-                feedTarefas.map((t) => (
-                  <div className="crm-live-feed-item" key={t.id}>
-                    <span className="crm-live-feed-texto">
-                      <b>{t.titulo}</b> · {t.responsavel.nome}
-                    </span>
-                    <span className="crm-live-feed-quando">{t.data}</span>
-                  </div>
-                ))
-              )}
             </div>
           </div>
 

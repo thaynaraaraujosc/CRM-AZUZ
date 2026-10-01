@@ -1,19 +1,18 @@
 /**
  * Linha do tempo unificada de um contato. Deriva eventos reais a partir dos
- * dados que já existem em cada módulo (conversas, tarefas, funil), em vez de
+ * dados que já existem em cada módulo (conversas, funil), em vez de
  * manter uma lista de eventos separada e hardcoded.
  *
  * Conversas/mensagens (`fontes.conversas`/`fontes.mensagensPorContato`) já vêm do banco de
  * verdade (`useConversas()`/`useMensagensExtra()`). `MensagemExtra.criadoEm` é timestamp real,
- * então essa parte da timeline ordena por relógio de verdade, não heurística. Tarefas/funil ainda
- * só têm strings de exibição de data (`estimarMinutosAtras()` segue fazendo o parse melhor-esforço
- * pra essas). Negociação ganha/perdida vem de `NegocioCard.statusFechamento` de verdade (grava no
+ * então essa parte da timeline ordena por relógio de verdade, não heurística. O funil ainda
+ * só tem strings de exibição de data (`estimarMinutosAtras()` segue fazendo o parse melhor-esforço
+ * pra ele). Negociação ganha/perdida vem de `NegocioCard.statusFechamento` de verdade (grava no
  * Funil quando alguém marca "Marcar como ganho/perdido". Ver `src/app/(app)/funil/page.tsx`).
  */
 
 import {
   type Canal,
-  type ColunaTarefas,
   type Contato,
   type ConvMensagem,
   type Funil,
@@ -30,8 +29,6 @@ export type EventoTipo =
   | "mensagem_recebida"
   | "mensagem_enviada"
   | "sistema"
-  | "tarefa_criada"
-  | "tarefa_concluida"
   | "entrou_etapa"
   | "negociacao_perdida"
   | "negociacao_fechada"
@@ -43,8 +40,6 @@ export const EVENTO_LABELS: Record<EventoTipo, string> = {
   mensagem_recebida: "Mensagem recebida",
   mensagem_enviada: "Mensagem enviada",
   sistema: "Automação / sistema",
-  tarefa_criada: "Tarefa",
-  tarefa_concluida: "Tarefa concluída",
   entrou_etapa: "Mudança de etapa",
   negociacao_perdida: "Negociação perdida",
   negociacao_fechada: "Negociação fechada",
@@ -84,8 +79,6 @@ export const EVENTO_CATEGORIA: Record<EventoTipo, CategoriaEvento> = {
   mensagem_recebida: "Conversas",
   mensagem_enviada: "Conversas",
   sistema: "Automações",
-  tarefa_criada: "Atividades",
-  tarefa_concluida: "Atividades",
   entrou_etapa: "Funil",
   negociacao_perdida: "Negociações",
   negociacao_fechada: "Compras",
@@ -107,7 +100,7 @@ export type Evento = {
    * fechado que `Contato.origem` (`Origem`, usado nos filtros de Contatos/Funil). */
   origem?: string;
   responsavel?: string;
-  link?: { modulo: "conversa" | "tarefa" | "funil" | "perdas"; href: string };
+  link?: { modulo: "conversa" | "funil" | "perdas"; href: string };
 };
 
 /** Sentinela usado quando não dá pra estimar. Cai no fim da timeline. */
@@ -144,16 +137,15 @@ type FontesTimeline = {
   /** Mensagens reais por contato (chave = `Conversa.nome`/`Contato.nome`), mesmo dicionário que
    * `useMensagensExtra()` expõe. */
   mensagensPorContato: Record<string, ConvMensagem[]>;
-  tarefas: ColunaTarefas[];
   funis: Funil[];
 };
 
 /**
- * Gera a linha do tempo de um contato cruzando conversas, tarefas, funil e
+ * Gera a linha do tempo de um contato cruzando conversas, funil e
  * negociações perdidas: todas ligadas pelo mesmo `id`/nome, sem duplicar
  * dado nenhum: cada evento é derivado, nunca copiado. `fontes` é sempre
  * explícito (sem default): cada chamador já tem os providers reais
- * (`useContatos`/`useConversas`/`useMensagensExtra`/`useFunis`/`useTarefas`) disponíveis.
+ * (`useContatos`/`useConversas`/`useMensagensExtra`/`useFunis`) disponíveis.
  */
 export function gerarLinhaDoTempo(
   contatoId: string,
@@ -222,37 +214,6 @@ export function gerarLinhaDoTempo(
       });
     }
   });
-
-  for (const coluna of fontes.tarefas) {
-    for (const t of coluna.cards) {
-      if (t.contato !== contato.nome) continue;
-      eventos.push({
-        id: `${t.id}-criada`,
-        contatoId,
-        tipo: "tarefa_criada",
-        titulo: t.titulo,
-        descricao: t.descricao,
-        quando: t.data,
-        minutosAtras: estimarMinutosAtras(t.data),
-        responsavel: t.responsavel.nome,
-        link: { modulo: "tarefa", href: `/tarefas?id=${t.id}` },
-      });
-      if (t.concluida) {
-        eventos.push({
-          id: `${t.id}-concluida`,
-          contatoId,
-          tipo: "tarefa_concluida",
-          titulo: `Tarefa concluída: ${t.titulo}`,
-          quando: t.data,
-          // Sem data real de conclusão, assume a mesma referência da tarefa
-          // mas um pouco mais recente (concluída depois de criada).
-          minutosAtras: Math.max(0, estimarMinutosAtras(t.data) - 5),
-          responsavel: t.responsavel.nome,
-          link: { modulo: "tarefa", href: `/tarefas?id=${t.id}` },
-        });
-      }
-    }
-  }
 
   for (const funil of fontes.funis) {
     for (const coluna of funil.colunas) {
@@ -340,7 +301,6 @@ export type ResumoJornada = {
   ticketMedio: string | null;
   ultimaCompra: string | null;
   ultimaInteracao: string;
-  proximaAcao: string | null;
 };
 
 /**
@@ -354,7 +314,7 @@ export type ResumoJornada = {
 export function calcularResumoJornada(
   contato: Contato,
   eventos: Evento[],
-  fontes: Pick<FontesTimeline, "funis" | "tarefas" | "conversas">,
+  fontes: Pick<FontesTimeline, "funis" | "conversas">,
 ): ResumoJornada {
   const eventosReais = eventos.slice(0, -1); // o último é sempre o sentinela "contato_criado"
   const primeiraEntradaEvento = eventosReais[eventosReais.length - 1] ?? null;
@@ -381,11 +341,6 @@ export function calcularResumoJornada(
   // Casamento por `nome`, mesmo motivo documentado em `gerarLinhaDoTempo`.
   const conversaDoContato = fontes.conversas.find((c) => c.nome === contato.nome);
 
-  const tarefasDoContato = fontes.tarefas
-    .flatMap((c) => c.cards)
-    .filter((t) => t.contato === contato.nome && !t.concluida);
-  const proximaTarefa = tarefasDoContato.find((t) => !t.atrasada) ?? tarefasDoContato[0] ?? null;
-
   return {
     primeiraEntrada: primeiraEntradaEvento?.quando ?? null,
     origem: contato.origem,
@@ -400,7 +355,6 @@ export function calcularResumoJornada(
         : null,
     ultimaCompra: ultimaCompraEvento?.quando ?? null,
     ultimaInteracao: contato.ultima,
-    proximaAcao: proximaTarefa ? `${proximaTarefa.titulo} · ${proximaTarefa.data}` : null,
   };
 }
 

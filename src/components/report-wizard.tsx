@@ -12,7 +12,6 @@ import { useConversas } from "@/lib/conversas-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
-import { useTarefas } from "@/lib/tarefas-context";
 import { PERIODO_PADRAO, PeriodoPicker, periodoLabel, type PeriodoValor } from "@/components/ui";
 import { IconAlerta, IconCheck, IconClose, IconRelogio } from "@/components/icons";
 import {
@@ -103,7 +102,6 @@ export function ReportWizard({
   const { membros: equipe } = useEquipe();
   const { conversas } = useConversas();
   const { mensagensExtraPorContato } = useMensagensExtra();
-  const { colunas: tarefas } = useTarefas();
   const [campanhasReais, setCampanhasReais] = useState<Campanha[]>([]);
   const [etapa, setEtapa] = useState(0);
   const [tipo, setTipo] = useState<TipoRelatorio>(configuracaoInicial?.tipo ?? tipoInicial);
@@ -209,7 +207,6 @@ export function ReportWizard({
       equipe,
       conversas,
       mensagensPorContato: mensagensExtraPorContato,
-      tarefas,
       campanhas: campanhasReais,
     },
   };
@@ -235,7 +232,6 @@ export function ReportWizard({
     equipe,
     conversas,
     mensagensExtraPorContato,
-    tarefas,
     campanhasReais,
   ]);
 

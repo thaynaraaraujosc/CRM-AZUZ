@@ -1,18 +1,15 @@
 /**
  * Deriva os "itens do dia" a partir de dados que já existem em outros módulos do CRM (conversas,
- * tarefas, funis, fluxos de automação): a Central do Dia nunca guarda o próprio estado de negócio,
- * só agrega e prioriza. As únicas exceções são "Agenda de hoje" (o CRM ainda não tem um módulo de
- * compromissos com hora/local/modalidade: só derivava datas de tarefas) e "Recomendações", que são
- * regras locais mockadas (não é IA de verdade), ambas comentadas como tal.
+ * funis, fluxos de automação): a Central do Dia nunca guarda o próprio estado de negócio, só agrega
+ * e prioriza. A exceção é "Recomendações", que são regras locais mockadas (não é IA de verdade).
  */
 
-import type { ColunaTarefas, Funil, TaskCard, ConvMensagem } from "@/lib/data";
-import type { Compromisso } from "@/lib/agenda-context";
+import type { Funil, ConvMensagem } from "@/lib/data";
 import type { ConversaReal } from "@/lib/conversas-context";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
 import { validarFluxo } from "@/lib/automation-flow/validacao";
 import { formatarTempoRelativoReal } from "@/lib/datas";
-import type { AcaoItemDia, CompromissoDia, ItemDia, RecomendacaoDia, StatusCompromisso } from "./tipos";
+import type { AcaoItemDia, CompromissoDia, ItemDia, RecomendacaoDia } from "./tipos";
 
 /** Converte "9 min" / "1h" / "4 dias" em minutos. Só pra comparar/ordenar, nunca mostrado direto. */
 export function tempoParaMinutos(tempo: string): number {
@@ -63,43 +60,11 @@ export function itensDeConversas(
           acoesSecundarias: [
             acaoAbrirConversa(c.nome),
             { label: "Transferir", onClick: () => {} },
-            { label: "Criar tarefa", onClick: () => {} },
           ],
           extra: { canal: c.canal, initials: c.initials, naoLidas: c.naoLidas },
         } satisfies ItemDia,
       ];
     });
-}
-
-/** Tarefas atrasadas (coluna "Atrasadas") e as de hoje/próximas. Mesma fonte usada em Tarefas/Agenda. */
-export function itensDeTarefas(colunas: ColunaTarefas[]): ItemDia[] {
-  const itens: ItemDia[] = [];
-  colunas.forEach((coluna) => {
-    if (coluna.titulo === "Concluídas") return;
-    coluna.cards.forEach((t: TaskCard) => {
-      const atrasada = coluna.titulo === "Atrasadas" || !!t.atrasada;
-      const prioridade = atrasada ? "urgente" : t.urgencia === "Alta" ? "atencao" : "oportunidade";
-      itens.push({
-        id: `tarefa-${t.id}`,
-        modulo: "tarefa",
-        tipo: atrasada ? "Tarefa atrasada" : `Tarefa · ${coluna.titulo}`,
-        titulo: t.titulo,
-        descricao: t.descricao,
-        responsavel: t.responsavel.nome,
-        horario: t.data,
-        prioridade,
-        motivo: atrasada ? "Tarefa vencida" : undefined,
-        acaoPrincipal: { label: "Abrir", href: "/tarefas" },
-        acoesSecundarias: [
-          { label: "Concluir", onClick: () => {} },
-          { label: "Reatribuir", onClick: () => {} },
-          { label: "Adiar", onClick: () => {} },
-        ],
-        extra: { coluna: coluna.titulo, urgencia: t.urgencia, modelo: t.modelo },
-      });
-    });
-  });
-  return itens;
 }
 
 /** Negócios parados (dias ≥ 3) e sem etiqueta/etapa recente. Reaproveita o mesmo regex de "dias" já
@@ -128,8 +93,7 @@ export function itensDeLeads(funis: Funil[]): ItemDia[] {
             acaoPrincipal: { label: "Abrir lead", href: "/funil" },
             acoesSecundarias: [
               { label: "Atribuir responsável", onClick: () => {} },
-              { label: "Criar tarefa", onClick: () => {} },
-              { label: "Fazer follow-up", onClick: () => {} },
+                { label: "Fazer follow-up", onClick: () => {} },
               { label: "Marcar como perdido", onClick: () => {} },
             ],
             extra: { etapa: coluna.titulo, funil: funil.nome, origem: card.origem, valor: card.valor },
@@ -177,32 +141,6 @@ export function itensDeAutomacoes(fluxos: FluxoAutomacao[]): ItemDia[] {
       });
     });
   return itens;
-}
-
-const STATUS_POR_ORIGEM: Record<Compromisso["status"], StatusCompromisso> = {
-  agendado: "Aguardando confirmação",
-  concluido: "Concluído",
-  cancelado: "Cancelado",
-};
-
-/**
- * Compromissos de um dia específico, no formato que a seção "Agenda de hoje" espera. Deriva do
- * `AgendaContext` (agendamentos manuais + os que vêm de tarefas com data, via `compromissosDeTarefas`)
- * em vez do mock hardcoded que existia antes (`COMPROMISSOS_HOJE_MOCK`). Front-end apenas: os status
- * mapeados são só uma aproximação (o CRM ainda não tem confirmação de presença de verdade).
- */
-export function compromissosDoDia(compromissos: Compromisso[], dataIso: string): CompromissoDia[] {
-  return compromissos
-    .filter((c) => c.dataIso === dataIso && c.status !== "cancelado")
-    .map((c) => ({
-      id: c.id,
-      horario: c.hora || "-",
-      contato: c.contato,
-      tipo: c.tipo,
-      responsavel: c.responsavel,
-      local: c.local ?? (c.origem === "tarefa" ? "Vinculado a uma tarefa" : "Não informado"),
-      status: STATUS_POR_ORIGEM[c.status],
-    }));
 }
 
 /** Recomendações: regras locais mockadas (nunca IA real), derivadas de contagens simples sobre os

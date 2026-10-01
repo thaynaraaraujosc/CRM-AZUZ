@@ -1650,7 +1650,6 @@ export const TIPOS_ACAO_AUTOMACAO: { tipo: TipoAcaoAutomacao; label: string }[] 
   { tipo: "audio", label: "Enviar áudio" },
   { tipo: "enviar_formulario", label: "Enviar formulário" },
   { tipo: "lembrete", label: "Criar lembrete" },
-  { tipo: "tarefa", label: "Criar tarefa com prazo" },
   { tipo: "mover_funil", label: "Mover lead pra outra etapa / funil" },
   { tipo: "atribuir_responsavel", label: "Atribuir a um atendente da equipe" },
   { tipo: "adicionar_etiqueta", label: "Adicionar etiqueta ao contato" },

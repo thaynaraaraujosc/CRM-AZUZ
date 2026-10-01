@@ -7,7 +7,6 @@ import { MainShell } from "@/components/main-shell";
 import { NotificacoesPonte } from "@/components/notificacoes-ponte";
 import { Sidebar } from "@/components/sidebar";
 import { SessionProvider } from "@/components/session-provider";
-import { AgendaProvider } from "@/lib/agenda-context";
 import { AutomationFlowProvider } from "@/lib/automation-flow-context";
 import { BibliotecaDocumentosProvider } from "@/lib/biblioteca-documentos-context";
 import { CentralDiaProvider } from "@/lib/central-dia-context";
@@ -21,7 +20,6 @@ import { FormulariosProvider } from "@/lib/formularios-context";
 import { FunisProvider } from "@/lib/funis-context";
 import { MensagensExtraProvider } from "@/lib/mensagens-extra-context";
 import { NotificacoesProvider } from "@/lib/notificacoes-context";
-import { TarefasProvider } from "@/lib/tarefas-context";
 
 /**
  * Porta de entrada do CRM. Nenhuma tela interna renderiza sem sessão.
@@ -47,8 +45,6 @@ export default async function AppLayout({
       <ContatosProvider>
       <ConversasProvider>
         <EquipeProvider>
-          <TarefasProvider>
-            <AgendaProvider>
                 <AutomationFlowProvider>
                   <NotificacoesProvider>
                     <FormulariosProvider>
@@ -76,8 +72,6 @@ export default async function AppLayout({
                     </FormulariosProvider>
                   </NotificacoesProvider>
                 </AutomationFlowProvider>
-            </AgendaProvider>
-          </TarefasProvider>
         </EquipeProvider>
       </ConversasProvider>
       </ContatosProvider>

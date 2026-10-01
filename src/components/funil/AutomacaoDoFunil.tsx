@@ -61,7 +61,6 @@ const ACOES: { tipo: TipoAcaoGatilho; descricao: string }[] = [
   { tipo: "responsavel", descricao: "Passa o lead pra outra pessoa do time." },
   { tipo: "etapa", descricao: "Move o lead pra outra etapa assim que entrar nesta." },
   { tipo: "etiquetas", descricao: "Acrescenta ou tira etiquetas do contato." },
-  { tipo: "tarefa", descricao: "Cria uma tarefa no quadro, com prazo." },
   { tipo: "webhook", descricao: "Avisa um sistema de fora que o lead chegou aqui." },
 ];
 
@@ -156,8 +155,6 @@ function linhaDaAcao(g: GatilhoEtapaVisao, colunas: ColunaResumo[]): string {
       const partes = [mais.length ? `+${mais.join(", ")}` : "", menos.length ? `−${menos.join(", ")}` : ""];
       return `Editar etiquetas: ${partes.filter(Boolean).join("  ") || "nada escolhido"}`;
     }
-    case "tarefa":
-      return `Adicionar uma tarefa: ${dados.tarefaTitulo || "sem título"}`;
     case "webhook":
       return `Enviar um webhook: ${dados.webhookUrl || "sem endereço"}`;
     case "mensagem":
@@ -266,7 +263,6 @@ export function AutomacaoDoFunil({
     if (r.tipoAcao === "etiquetas" && !d.etiquetasAdicionar?.length && !d.etiquetasRemover?.length) {
       return "Diga ao menos uma etiqueta pra acrescentar ou tirar.";
     }
-    if (r.tipoAcao === "tarefa" && !d.tarefaTitulo?.trim()) return "Escreva o título da tarefa.";
     if (r.tipoAcao === "webhook" && !d.webhookUrl?.trim()) return "Informe o endereço do webhook.";
     if (r.tipoAcao === "mensagem" && !d.mensagemTexto?.trim()) return "Escreva a mensagem.";
     if (r.quando === "diariamente" && !r.horarioDiario) return "Escolha a hora da varredura diária.";
@@ -646,7 +642,7 @@ export function AutomacaoDoFunil({
                 onChange={(e) => setRascunho({ ...rascunho, quando: e.target.value as QuandoGatilho })}
               >
                 {/* Agrupado por categoria, como no Kommo: a lista corrida não deixa ver que
-                    "movido para esta etapa" e "quando uma tarefa for concluída" são coisas de
+                    "movido para esta etapa" e "quando um formulário for enviado" são coisas de
                     naturezas diferentes. */}
                 {CATEGORIAS_GATILHO.map((categoria) => (
                   <optgroup key={categoria.titulo} label={categoria.titulo}>
@@ -779,40 +775,6 @@ export function AutomacaoDoFunil({
                     onChange={(e) => mudarDados({ etiquetasRemover: paraLista(e.target.value) })}
                     placeholder="Separe por vírgula"
                   />
-                </div>
-              </>
-            ) : null}
-
-            {rascunho.tipoAcao === "tarefa" ? (
-              <>
-                <div className="field">
-                  <label>Título da tarefa</label>
-                  <input
-                    className="input"
-                    value={rascunho.acaoDados.tarefaTitulo ?? ""}
-                    onChange={(e) => mudarDados({ tarefaTitulo: e.target.value })}
-                    placeholder="Ligar para o lead"
-                  />
-                </div>
-                <div className="field">
-                  <label>Responsável pela tarefa</label>
-                  <input
-                    className="input"
-                    value={rascunho.acaoDados.tarefaResponsavel ?? ""}
-                    onChange={(e) => mudarDados({ tarefaResponsavel: e.target.value })}
-                    placeholder="Deixe vazio pra usar o responsável do lead"
-                  />
-                </div>
-                <div className="field">
-                  <label>Prazo (dias)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    className="input"
-                    value={rascunho.acaoDados.tarefaPrazoDias ?? 0}
-                    onChange={(e) => mudarDados({ tarefaPrazoDias: Number(e.target.value) })}
-                  />
-                  <p className="hint mt8">0 = para hoje.</p>
                 </div>
               </>
             ) : null}

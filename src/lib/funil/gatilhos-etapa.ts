@@ -82,19 +82,6 @@ async function executarAcaoDireta(params: {
       return acoes.salvarContato({ contatoNome, dados: { etiquetas: finais } });
     }
 
-    case "tarefa": {
-      if (!dados.tarefaTitulo?.trim()) return { ok: false, detalhe: "Gatilho sem título de tarefa." };
-      const dias = Number(dados.tarefaPrazoDias ?? 0);
-      const prazo = new Date();
-      if (dias > 0) prazo.setDate(prazo.getDate() + dias);
-      return acoes.criarTarefa({
-        contatoNome,
-        titulo: dados.tarefaTitulo,
-        responsavel: dados.tarefaResponsavel,
-        prazo,
-      });
-    }
-
     case "webhook": {
       if (!dados.webhookUrl?.trim()) return { ok: false, detalhe: "Gatilho sem endereço de webhook." };
       return acoes.chamarWebhook({

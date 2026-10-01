@@ -8,7 +8,6 @@ import { useContatos } from "@/lib/contatos-context";
 import { useConversas } from "@/lib/conversas-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useFunis } from "@/lib/funis-context";
-import { useTarefas } from "@/lib/tarefas-context";
 import { PAISES } from "@/lib/configuracoes/mock";
 import { IconClose, IconSearch, IconWhatsApp } from "@/components/icons";
 import { ChipFilters, Topbar } from "@/components/ui";
@@ -140,7 +139,6 @@ function ContatosPageInner() {
   );
   const { mensagensExtraPorContato } = useMensagensExtra();
   const { funis } = useFunis();
-  const { colunas: tarefas } = useTarefas();
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [novoContatoAberto, setNovoContatoAberto] = useState(
     () => searchParams.get("novoContato") === "1",
@@ -713,7 +711,6 @@ function ContatosPageInner() {
                 contatos,
                 conversas,
                 mensagensPorContato: mensagensExtraPorContato,
-                tarefas,
                 funis,
               })}
             />

@@ -15,7 +15,7 @@ import type { GrupoCondicoes } from "@/lib/automation-flow/types";
  * que a etapa oferece e o servidor nunca aciona é pior do que não ter o gatilho, porque a pessoa
  * monta a automação e fica esperando.
  *
- * Os que NÃO são de entrada na etapa (etiqueta, campo, tarefa, mensagem) valem pro lead que
+ * Os que NÃO são de entrada na etapa (etiqueta, campo, mensagem) valem pro lead que
  * estiver NAQUELA etapa no momento do evento. É assim que a etapa continua sendo a dona: "quando
  * mudarem a etiqueta de alguém que está em Follow-up, faça X".
  */
@@ -32,23 +32,19 @@ export type QuandoGatilho =
   // Programados
   | "diariamente"
   // Ações
-  | "formulario_enviado"
-  | "tarefa_criada"
-  | "tarefa_concluida";
+  | "formulario_enviado";
 
 /**
  * O que a etapa faz quando o gatilho bate.
  *
  * "robo" executa um fluxo inteiro. Os outros são ações diretas, sem robô no meio: é assim que uma
- * etapa troca o responsável ou marca uma tarefa sozinha, sem obrigar a criar um fluxo de um passo
- * só pra isso.
+ * etapa troca o responsável sozinha, sem obrigar a criar um fluxo de um passo só pra isso.
  */
 export type TipoAcaoGatilho =
   | "robo"
   | "responsavel"
   | "etapa"
   | "etiquetas"
-  | "tarefa"
   | "webhook"
   | "mensagem";
 
@@ -57,7 +53,6 @@ export const ACAO_ROTULO: Record<TipoAcaoGatilho, string> = {
   responsavel: "Alterar responsável do lead",
   etapa: "Mudar a etapa do lead",
   etiquetas: "Editar etiquetas",
-  tarefa: "Adicionar uma tarefa",
   webhook: "Enviar um webhook",
   mensagem: "Enviar mensagem",
 };
@@ -71,10 +66,6 @@ export type AcaoDados = {
   /** etiquetas */
   etiquetasAdicionar?: string[];
   etiquetasRemover?: string[];
-  /** tarefa */
-  tarefaTitulo?: string;
-  tarefaResponsavel?: string;
-  tarefaPrazoDias?: number;
   /** webhook */
   webhookUrl?: string;
   /** mensagem */
@@ -112,8 +103,6 @@ export const QUANDO_ROTULO: Record<QuandoGatilho, string> = {
   campo_alterado: "Quando um campo for alterado",
   diariamente: "Diariamente",
   formulario_enviado: "Quando um formulário for enviado",
-  tarefa_criada: "Quando uma tarefa for criada",
-  tarefa_concluida: "Quando uma tarefa for concluída",
 };
 
 /** As categorias do menu, na ordem em que aparecem. É a organização do Kommo. */
@@ -132,7 +121,7 @@ export const CATEGORIAS_GATILHO: { titulo: string; quandos: QuandoGatilho[] }[] 
     ],
   },
   { titulo: "Gatilhos programados", quandos: ["diariamente"] },
-  { titulo: "Gatilhos baseados em ações", quandos: ["formulario_enviado", "tarefa_criada", "tarefa_concluida"] },
+  { titulo: "Gatilhos baseados em ações", quandos: ["formulario_enviado"] },
 ];
 
 /**
@@ -148,8 +137,6 @@ export const EVENTO_DO_QUANDO: Partial<Record<QuandoGatilho, string>> = {
   etiqueta_removida: "etiqueta_removida",
   campo_alterado: "campo_alterado",
   formulario_enviado: "formulario_preenchido",
-  tarefa_criada: "tarefa_criada",
-  tarefa_concluida: "tarefa_concluida",
 };
 
 /**

@@ -15,7 +15,6 @@ import { useConversas } from "@/lib/conversas-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
-import { useTarefas } from "@/lib/tarefas-context";
 import { IconClose, IconSearch, IconStar } from "@/components/icons";
 import { FloatingDropdown } from "@/components/ui";
 import { Timeline } from "@/components/timeline";
@@ -50,13 +49,12 @@ const CLASSE_ESTADO: Record<EstadoCicloDeVida, string> = {
   Perdido: "stage-tag",
 };
 
-type ColunaOpcional = "primeiraEntrada" | "ultimaCompra" | "valorAcumulado" | "proximaAtividade" | "situacao";
+type ColunaOpcional = "primeiraEntrada" | "ultimaCompra" | "valorAcumulado" | "situacao";
 
 const COLUNAS_OPCIONAIS: { chave: ColunaOpcional; label: string }[] = [
   { chave: "primeiraEntrada", label: "Primeira entrada" },
   { chave: "ultimaCompra", label: "Última compra" },
   { chave: "valorAcumulado", label: "Valor acumulado" },
-  { chave: "proximaAtividade", label: "Próxima atividade" },
   { chave: "situacao", label: "Situação" },
 ];
 
@@ -87,7 +85,6 @@ function JornadaClientePageInner() {
   const { conversas } = useConversas();
   const { mensagensExtraPorContato } = useMensagensExtra();
   const { funis } = useFunis();
-  const { colunas: tarefas } = useTarefas();
   const { membros: equipe } = useEquipe();
 
   const [busca, setBusca] = useState(searchParams.get("busca") ?? "");
@@ -231,7 +228,7 @@ function JornadaClientePageInner() {
         if (filtros.ativo === "Inativo" && ativo) return false;
       }
       if (filtros.primeiraEntrada !== "Todos") {
-        const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis });
+        const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, funis });
         const primeiro = eventos[eventos.length - 2];
         const dias = primeiro ? primeiro.minutosAtras / 1440 : null;
         if (filtros.primeiraEntrada === "Últimos 7 dias" && (dias === null || dias > 7)) return false;
@@ -249,8 +246,8 @@ function JornadaClientePageInner() {
     if (colunasVisiveis.size === 0) return new Map<string, ResumoJornada>();
     const mapa = new Map<string, ResumoJornada>();
     for (const c of filtrados) {
-      const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis });
-      mapa.set(c.id, calcularResumoJornada(c, eventos, { funis, tarefas, conversas }));
+      const eventos = gerarLinhaDoTempo(c.id, { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, funis });
+      mapa.set(c.id, calcularResumoJornada(c, eventos, { funis, conversas }));
     }
     return mapa;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -367,12 +364,12 @@ function JornadaClientePageInner() {
   const eventos = contato
     ? gerarLinhaDoTempo(
         contato.id,
-        { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, tarefas, funis },
+        { contatos, conversas, mensagensPorContato: mensagensExtraPorContato, funis },
         anotacoes[contato.id] ?? [],
       )
     : [];
   const estado = contato ? inferirEstadoCicloDeVida(contato, funis) : null;
-  const resumo = contato ? calcularResumoJornada(contato, eventos, { funis, tarefas, conversas }) : null;
+  const resumo = contato ? calcularResumoJornada(contato, eventos, { funis, conversas }) : null;
 
   const filtroDefs: { chave: string; label: string; opcoes: string[] }[] = [
     { chave: "origem", label: "Origem", opcoes: ["Todos", "Meta Ads", "Google Ads", "Instagram", "TikTok", "Indicação"] },
@@ -620,7 +617,6 @@ function JornadaClientePageInner() {
                             {colunasVisiveis.has("primeiraEntrada") ? <td>{resumoLinha?.primeiraEntrada ?? "Não disponível"}</td> : null}
                             {colunasVisiveis.has("ultimaCompra") ? <td>{resumoLinha?.ultimaCompra ?? "Ainda não ocorreu"}</td> : null}
                             {colunasVisiveis.has("valorAcumulado") ? <td>{resumoLinha?.receitaAcumulada ?? "Ainda não ocorreu"}</td> : null}
-                            {colunasVisiveis.has("proximaAtividade") ? <td>{resumoLinha?.proximaAcao ?? "Nenhuma"}</td> : null}
                             {colunasVisiveis.has("situacao") ? (
                               <td>
                                 <span className={CLASSE_ESTADO[inferirEstadoCicloDeVida(c, funis)]}>
@@ -698,9 +694,6 @@ function JornadaClientePageInner() {
                 <Link className="btn ghost" href={`/contatos`}>
                   Abrir contato
                 </Link>
-                <Link className="btn ghost" href="/tarefas">
-                  Criar tarefa
-                </Link>
                 <button type="button" className="btn ghost" onClick={() => setNotaAberta((v) => !v)}>
                   Adicionar anotação
                 </button>
@@ -741,7 +734,6 @@ function JornadaClientePageInner() {
                 <ResumoItem label="Ticket médio" value={resumo.ticketMedio} vazio="Ainda não ocorreu" />
                 <ResumoItem label="Última compra" value={resumo.ultimaCompra} vazio="Ainda não ocorreu" />
                 <ResumoItem label="Última interação" value={resumo.ultimaInteracao} />
-                <ResumoItem label="Próxima ação" value={resumo.proximaAcao} vazio="Nenhuma pendente" />
               </div>
 
               <div className="panel-h divided">

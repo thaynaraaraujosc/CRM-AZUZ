@@ -5,7 +5,6 @@ import { useState } from "react";
 
 import { useContatos } from "@/lib/contatos-context";
 import { useEquipe } from "@/lib/equipe-context";
-import { useTarefas } from "@/lib/tarefas-context";
 import { IconClose } from "@/components/icons";
 import { PERMISSOES_POR_MODULO } from "@/lib/configuracoes/permissoes";
 import { Toggle, Topbar } from "@/components/ui";
@@ -22,7 +21,6 @@ function classePapel(papel: string) {
 
 export default function EquipePage() {
   const { membros: equipe, alternarAtivo, removerMembro, resetarSenha, editarMembro } = useEquipe();
-  const { colunas } = useTarefas();
   const { contatos } = useContatos();
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [senhaGerada, setSenhaGerada] = useState<string | null>(null);
@@ -36,11 +34,6 @@ export default function EquipePage() {
   const [reenviando, setReenviando] = useState(false);
 
   const membro = equipe.find((m) => m.nome === selecionado) ?? null;
-  const tarefasDoMembro = membro
-    ? colunas
-        .flatMap((coluna) => coluna.cards)
-        .filter((t) => t.responsavel.nome === membro.nome)
-    : [];
   const leadsDoMembro = membro
     ? contatos.filter((c) => c.responsavel === membro.nome)
     : [];
@@ -383,20 +376,6 @@ export default function EquipePage() {
 
               <div>
                 <div className="panel-h">
-                  <h4>Tarefas atribuídas</h4>
-                </div>
-                {tarefasDoMembro.length === 0 ? (
-                  <p className="hint">Nenhuma tarefa atribuída no momento.</p>
-                ) : (
-                  tarefasDoMembro.map((t) => (
-                    <div className="stat-row" key={t.id}>
-                      <span className="sl">{t.titulo}</span>
-                      <span className="sv">{t.data}</span>
-                    </div>
-                  ))
-                )}
-
-                <div className="panel-h divided">
                   <h4>Leads atribuídos</h4>
                 </div>
                 {leadsDoMembro.length === 0 ? (

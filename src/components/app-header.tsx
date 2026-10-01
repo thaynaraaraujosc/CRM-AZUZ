@@ -10,7 +10,6 @@ import { useCentralDia } from "@/lib/central-dia-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useNotificacoes } from "@/lib/notificacoes-context";
-import { useTarefas } from "@/lib/tarefas-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { IconBell, IconSearch } from "@/components/icons";
 import { navEntries } from "@/components/sidebar";
@@ -26,7 +25,6 @@ function normaliza(texto: string) {
 
 function useSearchIndex(): SearchResult[] {
   const { contatos } = useContatos();
-  const { colunas: tarefas } = useTarefas();
   const { membros: equipe } = useEquipe();
   return useMemo(() => {
     const results: SearchResult[] = [];
@@ -36,20 +34,11 @@ function useSearchIndex(): SearchResult[] {
     contatos.forEach((c) =>
       results.push({ label: c.nome, sub: `Contato · ${c.origem}`, href: "/contatos" }),
     );
-    tarefas.forEach((coluna) =>
-      coluna.cards.forEach((t) =>
-        results.push({
-          label: t.titulo,
-          sub: `Tarefa · ${t.contato}`,
-          href: "/tarefas",
-        }),
-      ),
-    );
     equipe.forEach((m) =>
       results.push({ label: m.nome, sub: `Equipe · ${m.papel}`, href: "/equipe" }),
     );
     return results;
-  }, [contatos, tarefas, equipe]);
+  }, [contatos, equipe]);
 }
 
 function GlobalSearch() {

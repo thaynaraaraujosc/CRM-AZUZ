@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 
 import { classeOrigem, type NegocioCard } from "@/lib/data";
-import { HOJE_ISO } from "@/lib/agenda-context";
+import { HOJE_ISO } from "@/lib/hoje";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { useFunis } from "@/lib/funis-context";
 import { useContatos } from "@/lib/contatos-context";
