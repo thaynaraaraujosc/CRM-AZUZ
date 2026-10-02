@@ -65,6 +65,62 @@ export async function upsertConversaAoReceberMensagem(params: {
     descricaoGrupo,
     criacaoGrupo,
   } = params;
+
+  /*
+   * ENFEITE NÃO PODE DERRUBAR A MENSAGEM.
+   *
+   * Foto de perfil, lista de participantes e descrição do grupo são decoração: a conversa funciona
+   * inteira sem os três. Mesmo assim, qualquer um deles fazendo a escrita falhar levava junto a
+   * CONVERSA e, com ela, a mensagem — a rota do webhook estourava e nada chegava ao CRM.
+   *
+   * Foi exatamente o que aconteceu, e por meses: `Conversa.fotoUrl` estava declarada sem
+   * `@db.Text`, virava VARCHAR(191) no MySQL, e a URL de foto do WhatsApp (CDN da Meta, com token
+   * de assinatura na query) não cabia. Toda conversa nova, de pessoa e de grupo, morria com "the
+   * provided value is too long for the column's type", e a importação de histórico junto. A coluna
+   * foi corrigida — mas o tipo de uma coluna decorativa não pode ser a única coisa entre o cliente
+   * e a mensagem dele. Se algum desses campos impedir a gravação, por qualquer motivo, a conversa
+   * entra sem enfeite e a mensagem chega.
+   */
+  const semEnfeite = { workspaceId, nome, canal, contato, origem, contatoId, contarComoNaoLida, ehGrupo, contaCanal };
+  try {
+    await gravarConversa({ ...semEnfeite, participantesGrupo, fotoUrl, descricaoGrupo, criacaoGrupo });
+  } catch (erro) {
+    console.error(`[conversas] falha ao gravar "${nome}" com foto/participantes; regravando sem eles:`, erro);
+    await gravarConversa(semEnfeite);
+  }
+}
+
+/** A escrita em si. Separada só pra poder ser repetida sem os campos decorativos (ver acima). */
+async function gravarConversa(params: {
+  workspaceId: string;
+  nome: string;
+  canal: string;
+  contato?: string;
+  origem?: string;
+  contatoId?: string;
+  contarComoNaoLida: boolean;
+  ehGrupo: boolean;
+  contaCanal?: string | null;
+  participantesGrupo?: { nome: string; telefone: string }[];
+  fotoUrl?: string | null;
+  descricaoGrupo?: string | null;
+  criacaoGrupo?: Date | null;
+}) {
+  const {
+    workspaceId,
+    nome,
+    canal,
+    contato,
+    origem,
+    contatoId,
+    contarComoNaoLida,
+    contaCanal,
+    ehGrupo,
+    participantesGrupo,
+    fotoUrl,
+    descricaoGrupo,
+    criacaoGrupo,
+  } = params;
   await prisma.conversa.upsert({
     where: { workspaceId_nome: { workspaceId, nome } },
     create: {

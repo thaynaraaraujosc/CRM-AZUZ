@@ -342,7 +342,15 @@ model Conversa {
   // Foto de perfil real (do WhatsApp). Grupo ou contato individual, buscada na Evolution API
   // (`buscarFotoPerfil`) quando a conversa é vista pela primeira vez. Null até a busca ter sucesso
   // (WhatsApp sem foto definida, ou busca falhou): nesse caso a tela cai pras iniciais como antes.
-  fotoUrl            String?
+  //
+  // `@db.Text` NÃO É DETALHE: sem ele o MySQL cria a coluna como VARCHAR(191), e a URL de foto do
+  // WhatsApp (CDN da Meta, com token de assinatura na query) passa disso com folga. O efeito não
+  // era "conversa sem foto": era a gravação da conversa INTEIRA falhar, com
+  // "The provided value for the column is too long for the column's type. Column: fotoUrl" — ou
+  // seja, nenhuma conversa nova entrava no CRM, nem de pessoa nem de grupo, e nenhuma importação
+  // de histórico terminava. `Contato.fotoUrl` sempre foi Text; era só esta que estava de fora, e
+  // foi por isso que o funil mostrava o rosto e Conversas mostrava as iniciais.
+  fotoUrl            String?   @db.Text
   // Descrição do grupo (texto livre configurado no WhatsApp) e data real de criação DO GRUPO no
   // WhatsApp: não confundir com `criadoEm` abaixo, que é quando essa linha nasceu NESTE banco.
   // Ambos exibidos no painel "Dados do grupo" (clicar no cabeçalho da conversa), separado do painel
