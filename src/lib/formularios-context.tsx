@@ -22,6 +22,7 @@ export type TipoCampoFormulario =
   | "email"
   | "cpf"
   | "cnpj"
+  | "cep"
   | "url"
   | "senha"
   // data
@@ -69,6 +70,7 @@ export const TIPOS_CAMPO_FORMULARIO: {
   { tipo: "email", label: "E-mail", categoria: "texto" },
   { tipo: "cpf", label: "CPF", categoria: "texto" },
   { tipo: "cnpj", label: "CNPJ", categoria: "texto" },
+  { tipo: "cep", label: "CEP", categoria: "texto" },
   { tipo: "url", label: "URL", categoria: "texto" },
   { tipo: "senha", label: "Senha", categoria: "texto" },
   { tipo: "data", label: "Data", categoria: "data" },
@@ -251,7 +253,65 @@ export type TemaFormulario = {
   fundoArquivo?: string;
   layout: "coluna-unica" | "duas-colunas";
   larguraFixa: boolean;
+  /**
+   * Como quem responde vê o formulário: todas as perguntas da página de uma vez, ou UMA POR VEZ,
+   * com barra de progresso. Opcional: formulário salvo antes da opção existir continua completo.
+   */
+  exibicao?: "completo" | "uma-por-vez";
+  /**
+   * AS QUATRO OPÇÕES ABAIXO SÓ ESCONDEM COM `false`.
+   *
+   * Sem valor definido, mostram — e isso não é detalhe: são centenas de formulários já gravados,
+   * de clientes reais, e um padrão invertido mudaria a cara de todos eles de uma vez, no ar, sem
+   * ninguém ter pedido. `undefined` tem que continuar significando exatamente o que o formulário
+   * faz hoje.
+   */
+  /** A barra de progresso e o "Página 2 de 4". Num formulário curto de contato, aquilo é ruído
+   *  entre o título e a primeira pergunta. */
+  mostrarPaginas?: boolean;
+  /** O NOME do formulário para quem responde. O nome serve pra achar o formulário na lista da
+   *  agência, e nem sempre é o que faz sentido a pessoa ler antes da primeira pergunta. */
+  mostrarNome?: boolean;
+  /** O título acima das perguntas. Nasceu separado de `mostrarPaginas` porque esconder a barra de
+   *  progresso e esconder o título são dois pedidos diferentes. */
+  mostrarTitulo?: boolean;
+  /** O número antes de cada pergunta ("1. NOME"). Num contato curto, a pergunta sozinha fica mais
+   *  limpa. */
+  numerarPerguntas?: boolean;
 };
+
+/*
+ * As quatro perguntas de exibição, em função em vez de `!== false` espalhado pela tela.
+ *
+ * Toda vez que alguém escreve `tema.mostrarTitulo` direto num `if`, `undefined` vira "esconder" —
+ * e aí um formulário antigo, que nunca escolheu nada, perde o título sozinho. A função carrega o
+ * padrão num lugar só, e quem lê não precisa lembrar da regra.
+ */
+
+/** O formulário mostra as páginas e o progresso? Sim, a não ser que tenham escondido. */
+export function mostraPaginas(tema: Pick<TemaFormulario, "mostrarPaginas">): boolean {
+  return tema.mostrarPaginas !== false;
+}
+
+/** O título acima das perguntas aparece? Sem valor definido, aparece. */
+export function mostraTitulo(tema: Pick<TemaFormulario, "mostrarTitulo">): boolean {
+  return tema.mostrarTitulo !== false;
+}
+
+/** O nome do formulário aparece pra quem responde? Sem valor definido, aparece. */
+export function mostraNome(tema: Pick<TemaFormulario, "mostrarNome">): boolean {
+  return tema.mostrarNome !== false;
+}
+
+/** As perguntas são numeradas? Sem valor definido, são. */
+export function numeraPerguntas(tema: Pick<TemaFormulario, "numerarPerguntas">): boolean {
+  return tema.numerarPerguntas !== false;
+}
+
+/** Uma pergunta por vez? Só quando foi escolhido: o padrão é a página inteira. */
+export function umaPerguntaPorVez(tema: Pick<TemaFormulario, "exibicao">): boolean {
+  return tema.exibicao === "uma-por-vez";
+}
 
 export type StatusFormulario = "rascunho" | "publicado";
 

@@ -612,7 +612,10 @@ export function PerguntaVisualizacao({
   return (
     <div className="form-pergunta-enunciado-bloco" style={estiloBloco}>
       <p className="form-pergunta-enunciado">
-        {indice}. {pergunta.rotulo || "Pergunta sem título"}
+        {/* `0` quer dizer SEM NÚMERO. Antes era `{indice}.` seco, e como a tela pública passava 0
+            pra toda pergunta, todo formulário compartilhado mostrava "0. NOME" em cada linha. */}
+        {indice > 0 ? `${indice}. ` : ""}
+        {pergunta.rotulo || "Pergunta sem título"}
         {pergunta.obrigatoria ? <span className="form-pergunta-asterisco"> *</span> : null}
       </p>
       {pergunta.descricao ? <p className="form-pergunta-dica">{pergunta.descricao}</p> : null}

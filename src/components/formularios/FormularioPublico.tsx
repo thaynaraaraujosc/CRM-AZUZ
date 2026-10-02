@@ -6,6 +6,10 @@ import {
   MENSAGEM_FINAL_PADRAO,
   TIPOS_LAYOUT,
   condicaoBate,
+  mostraNome,
+  mostraPaginas,
+  mostraTitulo,
+  numeraPerguntas,
   migrarFormulario,
   type Formulario,
   type PaginaFormulario,
@@ -279,6 +283,25 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
   const paginasAtivas = useMemo(() => (formulario ? paginasVisiveis(formulario, valores) : []), [formulario, valores]);
   const pagina = paginasAtivas[paginaIndice] ?? null;
   const camposDaPagina = useMemo(() => (pagina ? perguntasVisiveis(pagina, valores) : []), [pagina, valores]);
+  /*
+   * O NÚMERO DE CADA PERGUNTA.
+   *
+   * A tela pública passava `indice={0}` pra todas, e o rótulo imprimia o número seco: todo
+   * formulário compartilhado mostrava "0. NOME" em cada linha, pra todo lead que abrisse o link.
+   *
+   * A contagem continua de uma página pra outra ("4." abre a segunda página depois de três
+   * perguntas) e pula os blocos de layout (título, texto, imagem), que não são perguntas e não
+   * entram na conta.
+   */
+  const numeroDe = useMemo(() => {
+    const ehPergunta = (q: { tipo: string }) => !TIPOS_LAYOUT.includes(q.tipo as (typeof TIPOS_LAYOUT)[number]);
+    let contagem = paginasAtivas
+      .slice(0, paginaIndice)
+      .reduce((soma, p) => soma + perguntasVisiveis(p, valores).filter(ehPergunta).length, 0);
+    const mapa = new Map<string, number>();
+    for (const q of camposDaPagina) if (ehPergunta(q)) mapa.set(q.id, ++contagem);
+    return mapa;
+  }, [paginasAtivas, paginaIndice, camposDaPagina, valores]);
   const ehUltimaPagina = paginaIndice >= paginasAtivas.length - 1;
 
   function mudarValor(perguntaId: string, valor: string) {
@@ -435,15 +458,15 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
           // eslint-disable-next-line @next/next/no-img-element -- URL livre informada pelo usuário
           <img src={tema.bannerUrl} alt="" className="form-public-banner" style={estiloDoBanner(tema)} />
         ) : null}
-        <h2>{formulario.nome}</h2>
+        {mostraNome(tema) ? <h2>{formulario.nome}</h2> : null}
         {formulario.descricao ? <p className="hint" style={{ marginBottom: 6 }}>{formulario.descricao}</p> : null}
 
-        {paginasAtivas.length > 1 ? (
+        {paginasAtivas.length > 1 && mostraPaginas(tema) ? (
           <p className="hint" style={{ margin: "8px 0" }}>
             Página {paginaIndice + 1} de {paginasAtivas.length}
           </p>
         ) : null}
-        {pagina?.titulo ? <h4 style={{ margin: "6px 0 10px" }}>{pagina.titulo}</h4> : null}
+        {pagina?.titulo && mostraTitulo(tema) ? <h4 style={{ margin: "6px 0 10px" }}>{pagina.titulo}</h4> : null}
         {pagina?.descricao ? <p className="hint" style={{ marginBottom: 10 }}>{pagina.descricao}</p> : null}
 
         {/* Formulário publicado sem nenhuma pergunta visível mostrava título e botão "Enviar", e
@@ -460,7 +483,7 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
             <div key={pergunta.id} className={pergunta.largura === "metade" ? "form-campo-metade" : "form-campo-total"}>
               <PerguntaVisualizacao
                 pergunta={pergunta}
-                indice={0}
+                indice={numeraPerguntas(tema) ? (numeroDe.get(pergunta.id) ?? 0) : 0}
                 interativo
                 valor={valores[pergunta.id] ?? pergunta.valorPadrao ?? ""}
                 onMudarValor={(v) => mudarValor(pergunta.id, v)}
