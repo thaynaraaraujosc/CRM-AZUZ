@@ -94,9 +94,20 @@ function SincronizacaoHistoricoStatus({
     return (
       <div className="wa-historico-linha">
         <p className="hint" style={{ margin: 0 }}>
-          {guardadas
-            ? `As conversas recentes já estão aqui. Ainda há ${guardadas} conversa${guardadas > 1 ? "s" : ""} mais antiga${guardadas > 1 ? "s" : ""} no celular.`
-            : "As conversas do celular já foram trazidas. Se faltar algum grupo ou conversa antiga, busque de novo."}
+          {/*
+            * NÃO DIZER "JÁ FORAM TRAZIDAS" QUANDO NÃO VEIO NADA.
+            *
+            * `concluido` com zero conversa é o desfecho de "a sessão do WhatsApp não devolveu a
+            * lista do celular a tempo". A tela afirmava sucesso nesse caso, e era a afirmação mais
+            * enganosa possível: a pessoa não vê conversa nenhuma, o CRM diz que trouxe tudo, e a
+            * conclusão razoável passa a ser que o produto está quebrado em algum lugar que ninguém
+            * mostra. Zero conversa é um resultado a declarar, não a esconder.
+            */}
+          {!historico.totalChats
+            ? "Não veio nenhuma conversa do celular nesta tentativa. Costuma ser a sessão do WhatsApp que ainda não terminou de montar a lista; buscar de novo resolve."
+            : guardadas
+              ? `As conversas recentes já estão aqui. Ainda há ${guardadas} conversa${guardadas > 1 ? "s" : ""} mais antiga${guardadas > 1 ? "s" : ""} no celular.`
+              : "As conversas do celular já foram trazidas. Se faltar algum grupo ou conversa antiga, busque de novo."}
         </p>
         {guardadas ? (
           <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onTrazerMaisAntigas}>

@@ -411,10 +411,21 @@ export async function processarMensagemRecebida(
     criacaoGrupo,
   });
 
-  // "Chegou, e foi gravada NESTA conversa." Sem isto, "a mensagem não chegou" e "a mensagem chegou
-  // e foi parar numa conversa com outro nome" eram indistinguíveis na tela — e a segunda é comum,
-  // porque a conversa é identificada por nome. Ver `registrarMensagemGravada`.
-  await registrarMensagemGravada(workspaceId, chaveContato, ehGrupo).catch(() => {});
+  /*
+   * "Chegou pelo webhook, e foi gravada NESTA conversa." Sem isto, "a mensagem não chegou" e "a
+   * mensagem chegou e foi parar numa conversa com outro nome" eram indistinguíveis na tela — e a
+   * segunda é comum, porque a conversa é identificada por nome.
+   *
+   * SÓ PRA MENSAGEM AO VIVO, e isso é correção de um erro meu. Sem o `!permitirHistorico`, a
+   * importação de histórico gravava este registro a cada mensagem trazida — e cada gravação
+   * reescreve a coluna `metadados` inteira. Com 200 mensagens por conversa e dezenas de conversas,
+   * eram milhares de escritas na mesma linha, competindo com a gravação do próprio progresso da
+   * importação. Além de lento, não media nada do que esta linha existe pra medir: a pergunta aqui
+   * é "a Evolution está entregando mensagem nova?", e importação não responde isso.
+   */
+  if (!opcoes.permitirHistorico) {
+    await registrarMensagemGravada(workspaceId, chaveContato, ehGrupo).catch(() => {});
+  }
 
   // O negócio no funil vem DEPOIS da conversa, e essa ordem importa.
   //

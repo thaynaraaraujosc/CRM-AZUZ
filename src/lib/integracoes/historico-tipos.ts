@@ -33,8 +33,21 @@ export type HistoricoSync = {
    * que se conclui de verdade, e aí com o motivo escrito.
    */
   tentativasSemChats?: number;
+  /**
+   * Quando esta importação foi (re)começada. Serve de carência pro recomeço automático.
+   *
+   * Uma importação que termina sem conversa nenhuma pode ser recomeçada (ver `precisaTentarDeNovo`),
+   * e sem carência o relógio recomeçaria de minuto em minuto, para sempre, numa conta cujo celular
+   * realmente não vai devolver lista nenhuma. Com ela, o recomeço automático é raro e o conserto
+   * continua acontecendo sozinho; conectar na mão não espera carência, porque aí foi alguém que
+   * pediu.
+   */
+  reiniciadoEm?: string;
   erro?: string;
 };
+
+/** Carência entre recomeços AUTOMÁTICOS da importação. Ver `reiniciadoEm`. */
+export const ESPERA_ENTRE_REINICIOS_MS = 6 * 60 * 60 * 1000;
 
 /** Quantas conversas entram na primeira leva. Ver `filaGuardada`. */
 export const CHATS_NA_PRIMEIRA_LEVA = 30;

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { HistoricoSync } from "./historico-tipos";
+import { ESPERA_ENTRE_REINICIOS_MS, type HistoricoSync } from "./historico-tipos";
 
 /**
  * Progresso da sincronização de histórico sob demanda (ver `POST
@@ -57,18 +57,56 @@ export async function trazerMaisAntigas(workspaceId: string): Promise<HistoricoS
   return atualizado;
 }
 
-/** Chamado assim que a conexão abre pela primeira vez. Não faz nada se esse workspace já tem uma
- * sincronização (em andamento ou já concluída) registrada, pra uma reconexão comum (celular caiu e
- * voltou) não reprocessar o histórico inteiro de novo. */
+/**
+ * Chamado assim que a conexão abre. Garante que CONECTAR sempre traga as conversas recentes.
+ *
+ * A regra antiga era "não faz nada se já existe qualquer histórico registrado", pra uma reconexão
+ * comum (celular caiu e voltou) não reprocessar tudo de novo. A intenção estava certa, mas ela
+ * também travava o caso em que a importação anterior NÃO TROUXE NADA: uma sessão recém-lida demora
+ * pra montar a lista de conversas do celular, e quando ela esgota as tentativas a importação fica
+ * gravada como "concluída com zero conversa". Daí em diante, reconectar não tentava de novo —
+ * nunca. O CRM ficava permanentemente sem as conversas do celular, e a única coisa que aparecia
+ * era mensagem nova, uma a uma, conforme alguém escrevesse.
+ *
+ * Agora uma tentativa que acabou SEM CONVERSA NENHUMA (ou em erro) não conta como feita: conectar
+ * recomeça. É isso que faz "desconectei e reconectei" trazer as conversas recentes de novo,
+ * independentemente de quando foi a última tentativa. Uma importação que trouxe conversa de
+ * verdade continua intocada, que é o que evita reprocessar tudo a cada queda de sinal.
+ */
 export async function iniciarHistoricoSeNecessario(workspaceId: string): Promise<void> {
   const metadados = await lerMetadados(workspaceId);
-  if (metadados.historico) return;
+  if (!precisaTentarDeNovo(metadados.historico as HistoricoSync | undefined)) return;
   await salvarHistorico(workspaceId, metadados, {
     status: "em_andamento",
     totalChats: null,
     chatsProcessados: 0,
     filaRestante: null,
+    reiniciadoEm: new Date().toISOString(),
   });
+}
+
+/**
+ * Vale (re)começar a importação deste workspace?
+ *
+ * Sim quando nunca houve nenhuma, quando a anterior falhou, e quando ela terminou sem trazer
+ * conversa nenhuma — os três casos em que o celular ficou de fora do CRM. Não quando há uma em
+ * andamento/pausada (seria atropelar o progresso) nem quando uma concluída trouxe conversa de
+ * verdade (seria reprocessar tudo a cada reconexão).
+ *
+ * Pura, e separada, porque é a decisão que mantinha a conexão presa pra sempre sem conversa nenhuma.
+ */
+export function precisaTentarDeNovo(
+  historico: HistoricoSync | undefined | null,
+  opcoes: { respeitarEspera?: boolean; agora?: number } = {},
+): boolean {
+  if (!historico) return true;
+  const vazia = historico.status === "erro" || (historico.status === "concluido" && !historico.totalChats);
+  if (!vazia) return false;
+  // Conectar é ação de alguém: não espera carência. O relógio espera, pra não ficar recomeçando de
+  // minuto em minuto numa conta cujo celular não vai devolver lista nenhuma.
+  if (!opcoes.respeitarEspera) return true;
+  const desde = historico.reiniciadoEm ? Date.parse(historico.reiniciadoEm) : 0;
+  return (opcoes.agora ?? Date.now()) - desde >= ESPERA_ENTRE_REINICIOS_MS;
 }
 
 /**
@@ -91,12 +129,16 @@ export async function iniciarHistoricosQueFaltam(): Promise<{ iniciados: number 
   let iniciados = 0;
   for (const conexao of conexoes) {
     const metadados = (conexao.metadados as Record<string, unknown> | null) ?? {};
-    if (metadados.historico) continue;
+    // Mesma regra do `connection.update`, mas COM carência: uma importação que terminou sem
+    // conversa nenhuma é recomeçada aqui também, senão a conexão ficaria presa pra sempre sem as
+    // conversas do celular e sem ninguém pra apertar nada. Ver `precisaTentarDeNovo`.
+    if (!precisaTentarDeNovo(metadados.historico as HistoricoSync | undefined, { respeitarEspera: true })) continue;
     await salvarHistorico(conexao.workspaceId, metadados, {
       status: "em_andamento",
       totalChats: null,
       chatsProcessados: 0,
       filaRestante: null,
+      reiniciadoEm: new Date().toISOString(),
     }).catch((erro) => console.error(`[historico] falha ao iniciar no workspace ${conexao.workspaceId}:`, erro));
     iniciados += 1;
   }
@@ -133,6 +175,7 @@ export async function reimportarHistorico(workspaceId: string): Promise<Historic
     filaRestante: null,
     filaGuardada: [],
     tentativasSemChats: 0,
+    reiniciadoEm: new Date().toISOString(),
   };
   await salvarHistorico(workspaceId, metadados, historico);
   return historico;
