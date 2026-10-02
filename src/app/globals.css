@@ -20707,3 +20707,85 @@ td.trafego-col-crm:first-of-type {
 .btn.acento:active {
   background: #3d4cd1;
 }
+
+/* ---------------------------------------------------------------------------------------------
+   UMA PERGUNTA POR VEZ.
+   O componente veio do AZUZ FORMULÁRIOS junto com o modo; estas regras vieram depois, e sem elas
+   ele subiu sem estilo nenhum: a barra de progresso era um texto solto e a pergunta não tinha
+   tamanho próprio. Porte de componente sem porte de folha de estilo é meio porte.
+   --------------------------------------------------------------------------------------------- */
+
+/* A barra diz quanto falta, e a pergunta nova entra de baixo, devagar. */
+.form-passo-progresso {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-2) 0 var(--space-4);
+}
+
+.form-passo-progresso-texto {
+  flex: none;
+  font-size: var(--fs-secondary);
+  color: var(--text-muted);
+  /* Números de mesma largura: sem isto o "3 de 10" dança no lugar a cada passo. */
+  font-variant-numeric: tabular-nums;
+}
+
+.form-passo-progresso-trilho {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.form-passo-progresso-barra {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width var(--transition-base);
+}
+
+.form-passo {
+  animation: form-passo-entra 260ms ease-out;
+}
+
+/* Uma pergunta sozinha na tela pede mais corpo que uma numa lista de dez. */
+.form-public-card.uma-por-vez .form-pergunta-enunciado {
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.form-passo-dica {
+  margin: 6px 0 0;
+  text-align: center;
+}
+
+@keyframes form-passo-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Quem pediu menos movimento no sistema não recebe a entrada animada. */
+@media (prefers-reduced-motion: reduce) {
+  .form-passo {
+    animation: none;
+  }
+
+  .form-passo-progresso-barra {
+    transition: none;
+  }
+}
+
+/* Páginas escondidas: sem a linha de progresso entre os dois, a primeira pergunta ficava colada
+   no título do formulário. */
+.form-passo-area.sem-paginas,
+.form-public-campos.sem-paginas {
+  margin-top: 16px;
+}

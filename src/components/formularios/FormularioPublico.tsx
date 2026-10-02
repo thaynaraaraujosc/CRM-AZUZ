@@ -40,6 +40,9 @@ export function classesDoCartao(tema: TemaFormulario): string {
     tema.temaEscuro ? "tema-escuro" : "",
     tema.layout === "duas-colunas" ? "duas-colunas" : "",
     !tema.larguraFixa ? "tela-cheia" : "",
+    // Sem esta classe no cartão, a regra que dá mais corpo à pergunta sozinha na tela
+    // (`.form-public-card.uma-por-vez .form-pergunta-enunciado`) não casa com nada.
+    tema.exibicao === "uma-por-vez" ? "uma-por-vez" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -536,7 +539,7 @@ export function FormularioPublico({
           </p>
         ) : null}
 
-        <div className="form-public-campos">
+        <div className={`form-public-campos${mostraPaginas(tema) ? "" : " sem-paginas"}`}>
           {camposDaPagina.map((pergunta) => (
             <div key={pergunta.id} className={pergunta.largura === "metade" ? "form-campo-metade" : "form-campo-total"}>
               <PerguntaVisualizacao
