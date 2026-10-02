@@ -50,7 +50,7 @@ import {
 import { HOJE_ISO } from "@/lib/hoje";
 import { useFunis } from "@/lib/funis-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
-import { aplicarMencoes } from "@/lib/conversas/mencoes";
+import { aplicarMencoes, filtrarParticipantes, inserirMencao, mencaoEmDigitacao } from "@/lib/conversas/mencoes";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
 import {
   useConfigConversas,
@@ -784,6 +784,18 @@ function ConversasPageInner() {
   const [midiasAberto, setMidiasAberto] = useState(false);
   const [midiasPos, setMidiasPos] = useState<{ x: number; y: number } | null>(null);
   const midiasRef = useRef<HTMLDivElement>(null);
+  /*
+   * GRUPO ABERTO SEM LISTA DE PARTICIPANTES: BUSCA AGORA.
+   *
+   * O conserto no webhook preenche a lista quando chega mensagem NOVA naquele grupo. Grupo parado —
+   * que é a maioria, a qualquer momento — continuava mostrando "0 participantes" indefinidamente,
+   * e não havia nada que a pessoa pudesse fazer além de esperar alguém escrever. Abrir o grupo é o
+   * momento natural de perguntar.
+   *
+   * Uma vez por grupo por sessão: o `ref` segura os já tentados, pra uma busca que falhou (grupo do
+   * qual o número saiu, Evolution fora do ar) não virar uma chamada a cada clique.
+   */
+  const gruposJaConsultados = useRef<Set<string>>(new Set());
   const [participantesAberto, setParticipantesAberto] = useState(false);
   const [participantesPos, setParticipantesPos] = useState<{ x: number; y: number } | null>(null);
   const participantesRef = useRef<HTMLDivElement>(null);
@@ -1021,6 +1033,22 @@ function ConversasPageInner() {
   const aberta =
     abertaCandidata && !conversaEscondidaPeloWhatsapp(abertaCandidata) ? abertaCandidata : CONVERSA_VAZIA;
 
+  // Grupo aberto e ainda sem lista de participantes: pergunta à Evolution agora. Ver o comentário
+  // de `gruposJaConsultados`, lá em cima, pro motivo de isto existir.
+  useEffect(() => {
+    const vazia = !aberta.participantesGrupo?.length;
+    if (!aberta.ehGrupo || !vazia || gruposJaConsultados.current.has(aberta.id)) return;
+    gruposJaConsultados.current.add(aberta.id);
+    fetch(`/api/conversas/${encodeURIComponent(aberta.id)}/participantes`, { method: "POST" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((dados: { participantesGrupo?: unknown[] } | null) => {
+        // Só recarrega quando veio gente: sem isso seria uma volta inteira na lista de conversas
+        // pra não mudar nada na tela.
+        if (dados?.participantesGrupo?.length) recarregarConversas();
+      })
+      .catch((erro) => console.error("Falha ao buscar participantes do grupo:", erro));
+  }, [aberta.id, aberta.ehGrupo, aberta.participantesGrupo?.length, recarregarConversas]);
+
   // Busca a foto de TODAS as conversas de WhatsApp sem uma salva ainda. Não só a aberta. Sem isso
   // a foto só aparecia (e sumia de novo, ao trocar de conversa e voltar) porque cada abertura
   // buscava de novo em vez de ficar resolvido pra sempre; rodando uma vez pra lista inteira aqui,
@@ -1153,6 +1181,9 @@ function ConversasPageInner() {
   >({});
   const [notaTexto, setNotaTexto] = useState("");
   const [mensagemTexto, setMensagemTexto] = useState("");
+  // Onde está o cursor dentro da caixa. Guardado porque a menção depende da POSIÇÃO: `@` no meio da
+  // frase é menção, dentro de um e-mail não é, e só o cursor distingue os dois.
+  const [cursorMensagem, setCursorMensagem] = useState(0);
 
   /* ---------------------------------------------------------------------- */
   /* Áudio: gravação real (getUserMedia + MediaRecorder), prévia e player   */
@@ -3215,6 +3246,34 @@ function ConversasPageInner() {
   const sugerirAutomacoes = mensagemTexto.startsWith("//");
   const sugerirRespostas = !sugerirAutomacoes && mensagemTexto.startsWith("/");
 
+  /*
+   * MARCAR ALGUÉM NO GRUPO COM `@`, igual no WhatsApp.
+   *
+   * Sem isto só dava pra digitar o número na mão — e é exatamente isso que faz a menção chegar do
+   * outro lado como número em vez de nome. A lista sai dos participantes do grupo; o que é inserido
+   * no texto é o TELEFONE, que é o que o WhatsApp entende, e a exibição faz a volta pro nome
+   * (`aplicarMencoes`). Só em grupo: marcar alguém numa conversa de duas pessoas não quer dizer nada.
+   */
+  const mencaoAberta = aberta.ehGrupo ? mencaoEmDigitacao(mensagemTexto, cursorMensagem) : null;
+  const participantesSugeridos = mencaoAberta
+    ? filtrarParticipantes(aberta.participantesGrupo, mencaoAberta.busca)
+    : [];
+
+  function escolherMencao(participante: { nome: string; telefone: string }) {
+    if (!mencaoAberta) return;
+    const { texto, cursor } = inserirMencao(mensagemTexto, mencaoAberta.inicio, cursorMensagem, participante);
+    setMensagemTexto(texto);
+    setCursorMensagem(cursor);
+    // Devolve o foco e põe o cursor depois da menção, pra pessoa continuar escrevendo sem ter que
+    // clicar de novo no campo.
+    requestAnimationFrame(() => {
+      const campo = mensagemInputRef.current;
+      if (!campo) return;
+      campo.focus();
+      campo.setSelectionRange(cursor, cursor);
+    });
+  }
+
   /** Botão único "Registrar resultado": abre o menu com as 5 opções (seção 14 do pedido). */
   function abrirMenuResultado(rect: DOMRect) {
     setResultadoMenuRect(rect);
@@ -4619,8 +4678,20 @@ function ConversasPageInner() {
                     rows={1}
                     placeholder="Digite uma mensagem... (/ para respostas rápidas, // para automações)"
                     value={mensagemTexto}
-                    onChange={(e) => setMensagemTexto(e.target.value)}
+                    onChange={(e) => {
+                      setMensagemTexto(e.target.value);
+                      setCursorMensagem(e.target.selectionStart ?? e.target.value.length);
+                    }}
+                    onKeyUp={(e) => setCursorMensagem(e.currentTarget.selectionStart ?? 0)}
+                    onClick={(e) => setCursorMensagem(e.currentTarget.selectionStart ?? 0)}
                     onKeyDown={(e) => {
+                      // Com a lista de menção aberta, Enter escolhe a primeira em vez de enviar:
+                      // enviar "@ra" pela metade é o erro que o seletor existe pra evitar.
+                      if (e.key === "Enter" && participantesSugeridos.length) {
+                        e.preventDefault();
+                        escolherMencao(participantesSugeridos[0]);
+                        return;
+                      }
                       if (e.key !== "Enter") return;
                       const quebrarLinha = config.teclaEnterEnvia
                         ? e.shiftKey
@@ -4634,6 +4705,22 @@ function ConversasPageInner() {
                   />
                 </div>
               )}
+              {participantesSugeridos.length ? (
+                <div className="chat-sugestoes">
+                  {participantesSugeridos.map((p) => (
+                    <button
+                      type="button"
+                      key={p.telefone}
+                      className="dropdown-item"
+                      style={{ width: "100%", textAlign: "left" }}
+                      onClick={() => escolherMencao(p)}
+                    >
+                      <span className="n">{p.nome}</span>
+                      {p.nome === p.telefone ? null : <span className="s"> {p.telefone}</span>}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               {sugerirRespostas ? (
                 <div className="chat-sugestoes">
                   {respostasDoFunil.length === 0 ? (

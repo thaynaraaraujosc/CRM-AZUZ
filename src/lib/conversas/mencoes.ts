@@ -40,3 +40,56 @@ export function aplicarMencoes(texto: string, participantes: ParticipanteGrupo[]
     return nome ? `@${nome}` : original;
   });
 }
+
+/**
+ * O que o `@` que está sendo digitado procura, e quem ele acha.
+ *
+ * Marcar alguém num grupo é o gesto mais comum do WhatsApp e não existia aqui: só dava pra digitar
+ * o número na mão, que é justamente o que faz a menção aparecer como número do outro lado.
+ *
+ * `null` quando não há menção em curso. Isso é o normal: o `@` só abre a lista quando está
+ * começando uma palavra (depois de espaço ou no início), para que um e-mail digitado no meio da
+ * frase não vire um seletor de pessoas na cara de quem escreve.
+ */
+export function mencaoEmDigitacao(texto: string, posicaoDoCursor: number): { busca: string; inicio: number } | null {
+  const ate = texto.slice(0, posicaoDoCursor);
+  // `[^\s@]*` depois do @: a busca não atravessa espaço (acabou a menção) nem outro @.
+  const casou = ate.match(/(?:^|\s)@([^\s@]*)$/);
+  if (!casou) return null;
+  return { busca: casou[1].toLowerCase(), inicio: posicaoDoCursor - casou[1].length - 1 };
+}
+
+/** Os participantes que casam com o que está sendo digitado depois do `@`. Busca por nome E por
+ *  telefone, porque quem não tem nome salvo aparece pelo número e precisa ser encontrável assim. */
+export function filtrarParticipantes(
+  participantes: ParticipanteGrupo[] | null | undefined,
+  busca: string,
+): ParticipanteGrupo[] {
+  if (!participantes?.length) return [];
+  if (!busca) return participantes.slice(0, 8);
+  const alvo = busca.toLowerCase();
+  return participantes
+    .filter((p) => p.nome.toLowerCase().includes(alvo) || p.telefone.includes(alvo))
+    .slice(0, 8);
+}
+
+/**
+ * Troca a menção em digitação pelo TELEFONE de quem foi escolhido, que é o formato que o WhatsApp
+ * entende. Quem lê vê o nome: é `aplicarMencoes` que faz essa volta na exibição.
+ */
+export function inserirMencao(
+  texto: string,
+  inicio: number,
+  posicaoDoCursor: number,
+  participante: ParticipanteGrupo,
+): { texto: string; cursor: number } {
+  // Normaliza pro formato canônico (DDI + DDD + 9). Um participante cujo telefone tenha vindo sem
+  // DDI geraria uma menção que o WhatsApp não resolve pra pessoa nenhuma — e que `aplicarMencoes`
+  // também não conseguiria casar de volta na exibição.
+  const numero = normalizarTelefoneParaComparacao(participante.telefone) || participante.telefone.replace(/\D/g, "");
+  const marca = `@${numero} `;
+  return {
+    texto: texto.slice(0, inicio) + marca + texto.slice(posicaoDoCursor),
+    cursor: inicio + marca.length,
+  };
+}
