@@ -64,6 +64,10 @@ export function SaudeQrCode() {
    * hoje e só assustaria quem abrisse a tela.
    */
   const saudavel = saude.webhookCerto && !saude.reparado && (saude.minutosDesdeOUltimoEvento ?? 0) <= 60;
+  // Chegou mensagem DEPOIS do erro: ele é passado, não estado atual. Ver o comentário abaixo.
+  const jaSuperado = Boolean(
+    descarteRecente && mensagemRecente && Date.parse(mensagemRecente.em) > Date.parse(descarteRecente.em),
+  );
   if (saudavel && !descarteRecente && !mensagemRecente) return null;
 
   return (
@@ -91,10 +95,23 @@ export function SaudeQrCode() {
       ) : null}
       {descarteRecente ? (
         <p className="hint">
-          Última mensagem recebida e descartada:{" "}
+          {/*
+            * ERRO VELHO NÃO PODE PARECER ERRO DE AGORA.
+            *
+            * O descarte fica gravado até acontecer outro: ele é "o último", não "o atual". Então um
+            * erro já corrigido continuava na tela, com a mesma cara de problema em curso, e a
+            * leitura natural de quem olhava era "continua quebrado" — inclusive depois de o
+            * conserto ter subido. A tela virava motivo de desconfiança em vez de informação.
+            *
+            * Quando chegou mensagem DEPOIS dele, o próprio sistema já respondeu: aquele erro ficou
+            * para trás. É a comparação entre os dois carimbos que diz isso, e é só o que a tela
+            * precisa dizer também.
+            */}
+          {jaSuperado ? "Houve um erro antes, já superado: " : "Última mensagem recebida e descartada: "}
           <strong>{descarteRecente.motivo}</strong>
           {descarteRecente.detalhe ? ` — ${descarteRecente.detalhe}` : ""}, em{" "}
           {new Date(descarteRecente.em).toLocaleString("pt-BR")}.
+          {jaSuperado ? " Depois dele o CRM voltou a gravar mensagem normalmente." : ""}
         </p>
       ) : null}
     </>

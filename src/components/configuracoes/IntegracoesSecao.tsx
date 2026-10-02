@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { IconInstagram, IconWhatsApp, IconCalendar } from "@/components/icons";
 import { ConexaoQrCode } from "./ConexaoQrCode";
 import { SaudeQrCode } from "@/components/configuracoes/SaudeQrCode";
+import { ImportarConversas } from "@/components/configuracoes/ImportarConversas";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
 import { ConexaoInstagram, ConexaoMetaAds, ConexaoGoogleAds } from "./ConexoesOAuth";
 import { useStatusGoogleAds } from "@/components/trafego/useGoogleAds";
@@ -176,6 +177,18 @@ export function IntegracoesSecao() {
                 {/* Por que a mensagem não chegou, e o conserto quando dá pra consertar sozinho.
                     Só aparece quando há algo errado. Ver `saude-qrcode.ts`. */}
                 <SaudeQrCode />
+                {/* Pelo mesmo motivo da limpeza logo abaixo: o progresso da importação e o botão
+                    "Buscar conversas que faltam" só existiam na categoria WhatsApp, fora do menu.
+                    Quem não estava recebendo as conversas do celular não tinha como pedir pra
+                    buscar de novo, nem como ver em que pé estava. Aqui se chega clicando. */}
+                <ImportarConversas
+                  historico={naoOficialStatus?.metadados?.historico}
+                  aoMudar={(historico) =>
+                    setNaoOficialStatus((prev) =>
+                      prev ? { ...prev, metadados: { ...prev.metadados, historico } } : prev,
+                    )
+                  }
+                />
                 {/* A limpeza morava só na categoria WhatsApp, que não está no menu. Ficava
                     inalcançável. Aqui ela está no canal de onde os dados vieram. */}
                 <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />

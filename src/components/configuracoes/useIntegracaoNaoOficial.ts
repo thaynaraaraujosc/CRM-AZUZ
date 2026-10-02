@@ -203,6 +203,17 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     }
   }
 
+  /**
+   * Guarda o progresso novo da importação, devolvido por quem mexeu nela (`ImportarConversas`).
+   *
+   * As chamadas em si vivem lá, e não aqui, porque precisam existir também no painel de
+   * Integrações: a categoria "WhatsApp" das Configurações não está no menu, só se chega nela por
+   * URL, então os botões de importação ficavam inalcançáveis pra quem mais precisava deles.
+   */
+  function aplicarHistorico(historico: HistoricoSync) {
+    setEstado((prev) => (prev ? { ...prev, metadados: { ...prev.metadados, historico } } : prev));
+  }
+
   /** Cria a instância na Evolution (se ainda não existir) e busca o primeiro QR Code. Chamado
    * quando a pessoa clica em "Conectar"; depois disso, o polling e os eventos de webhook cuidam do
    * resto (QR renovado, confirmação de conectado). */
@@ -245,6 +256,7 @@ export function useIntegracaoNaoOficial(intervaloMs = 4000) {
     pausarSincronizacaoHistorico,
     retomarSincronizacaoHistorico,
     trazerConversasMaisAntigas,
+    aplicarHistorico,
     reimportarConversas,
   };
 }

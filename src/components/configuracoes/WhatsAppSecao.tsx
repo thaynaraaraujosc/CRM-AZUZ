@@ -6,7 +6,8 @@ import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { ConexaoManualWhatsApp } from "./ConexaoManualWhatsApp";
 import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
-import { useIntegracaoNaoOficial, type HistoricoSync } from "./useIntegracaoNaoOficial";
+import { ImportarConversas } from "./ImportarConversas";
+import { useIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 import { ModeloDeRetomada } from "./ModeloDeRetomada";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { IconAlerta } from "@/components/icons";
@@ -48,99 +49,6 @@ function SaudeConexaoOficial({ metadados }: { metadados: Record<string, unknown>
           Última verificação: {new Date(verificado).toLocaleString("pt-BR")}
         </p>
       ) : null}
-    </div>
-  );
-}
-
-/** Progresso da sincronização de histórico sob demanda (ver `sincronizar-historico/route.ts`).
- * "Sincronizando conversas antigas: 34 de 180" enquanto roda, some sozinho quando termina. Tem um
- * botão de pausar/retomar: dá controle pra usuária caso desconfie que está pesando na conexão. */
-function SincronizacaoHistoricoStatus({
-  historico,
-  onPausar,
-  onRetomar,
-  onTrazerMaisAntigas,
-  onReimportar,
-}: {
-  historico: HistoricoSync;
-  onPausar: () => void;
-  onRetomar: () => void;
-  onTrazerMaisAntigas: () => void;
-  onReimportar: () => void;
-}) {
-  const guardadas = historico.filaGuardada?.length ?? 0;
-
-  /*
-   * Terminou a primeira leva, e ainda há conversas antigas guardadas.
-   *
-   * Só as trinta mais recentes vêm sozinhas. Numa conta comercial o celular tem centenas, e trazer
-   * todas de enfiada já derrubou o CRM uma vez. As antigas ficam a um clique de distância, e o
-   * relógio importa em segundo plano do mesmo jeito.
-   */
-  /*
-   * TERMINOU, E AINDA ASSIM PRECISA DE UM CAMINHO DE VOLTA.
-   *
-   * Antes esta tela não mostrava nada quando a fila guardada estava vazia, e não havia nenhum jeito
-   * de rodar a importação de novo: conversa que nunca entrou na fila — grupo antigo, conversa que
-   * passou a existir depois que a importação acabou — só apareceria se alguém escrevesse nela outra
-   * vez. O único escape era desconectar e ler o QR Code de novo, que é pedir pra cliente consertar
-   * o produto.
-   *
-   * Os dois botões fazem coisas diferentes, e é por isso que são dois: "Trazer as mais antigas"
-   * devolve pra fila o que já estava guardado aqui; "Buscar conversas que faltam" pergunta pro
-   * celular outra vez e remonta a fila do zero. Repetir não duplica nada (ver `reimportarHistorico`).
-   */
-  if (historico.status === "concluido") {
-    return (
-      <div className="wa-historico-linha">
-        <p className="hint" style={{ margin: 0 }}>
-          {/*
-            * NÃO DIZER "JÁ FORAM TRAZIDAS" QUANDO NÃO VEIO NADA.
-            *
-            * `concluido` com zero conversa é o desfecho de "a sessão do WhatsApp não devolveu a
-            * lista do celular a tempo". A tela afirmava sucesso nesse caso, e era a afirmação mais
-            * enganosa possível: a pessoa não vê conversa nenhuma, o CRM diz que trouxe tudo, e a
-            * conclusão razoável passa a ser que o produto está quebrado em algum lugar que ninguém
-            * mostra. Zero conversa é um resultado a declarar, não a esconder.
-            */}
-          {!historico.totalChats
-            ? "Não veio nenhuma conversa do celular nesta tentativa. Costuma ser a sessão do WhatsApp que ainda não terminou de montar a lista; buscar de novo resolve."
-            : guardadas
-              ? `As conversas recentes já estão aqui. Ainda há ${guardadas} conversa${guardadas > 1 ? "s" : ""} mais antiga${guardadas > 1 ? "s" : ""} no celular.`
-              : "As conversas do celular já foram trazidas. Se faltar algum grupo ou conversa antiga, busque de novo."}
-        </p>
-        {guardadas ? (
-          <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onTrazerMaisAntigas}>
-            Trazer as mais antigas
-          </button>
-        ) : null}
-        <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onReimportar}>
-          Buscar conversas que faltam
-        </button>
-      </div>
-    );
-  }
-  if (historico.status === "erro") {
-    return (
-      <p className="hint" style={{ color: "var(--danger)", marginTop: 10 }}>
-        <IconAlerta width={12} height={12} aria-hidden="true" /> Não consegui terminar de trazer o histórico de conversas ({historico.erro ?? "erro desconhecido"}).
-        As mensagens novas continuam chegando normal.
-      </p>
-    );
-  }
-  const total = historico.totalChats;
-  const pausado = historico.status === "pausado";
-  return (
-    <div className="wa-historico-linha">
-      <p className="hint" style={{ margin: 0 }}>
-        {pausado ? "Importação do histórico pausada" : "Trazendo as conversas do celular"}
-        {total != null ? `: ${historico.chatsProcessados} de ${total}` : "…"}
-        {total != null ? "." : ""}
-        {!pausado ? " Pode fechar esta tela: ela continua sozinha." : ""}
-      </p>
-      <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={pausado ? onRetomar : onPausar}>
-        {pausado ? "Retomar" : "Pausar"}
-      </button>
     </div>
   );
 }
@@ -215,12 +123,9 @@ export function WhatsAppSecao() {
               <SaudeConexaoOficial metadados={integracao.metadados as Record<string, unknown>} />
             ) : null}
             {!metaConectada && naoOficial.estado?.metadados?.historico ? (
-              <SincronizacaoHistoricoStatus
+              <ImportarConversas
                 historico={naoOficial.estado.metadados.historico}
-                onPausar={naoOficial.pausarSincronizacaoHistorico}
-                onRetomar={naoOficial.retomarSincronizacaoHistorico}
-                onTrazerMaisAntigas={naoOficial.trazerConversasMaisAntigas}
-                onReimportar={naoOficial.reimportarConversas}
+                aoMudar={naoOficial.aplicarHistorico}
               />
             ) : null}
             {/* Só na conexão oficial: modelo aprovado é coisa da Cloud API. No QR Code não existe
