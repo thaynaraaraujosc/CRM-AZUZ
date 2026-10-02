@@ -346,6 +346,11 @@ export type Formulario = {
     funilId?: string;
     etapaTitulo?: string;
     responsavelPadrao?: string;
+    /** Pixel da Meta e tag do Google: o formulário avisa a campanha que virou lead. Guardados aqui
+     *  porque `integracoes` NUNCA sai pela rota pública — a página do formulário lê do banco, no
+     *  servidor, e manda pro navegador só os dois identificadores. Ver `/f/[id]`. */
+    pixelMeta?: string;
+    tagGoogle?: string;
   };
   /** Histórico de fotografias tiradas a cada publicação. Mais recente por último. */
   versoes: VersaoFormulario[];

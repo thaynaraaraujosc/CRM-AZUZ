@@ -10,6 +10,7 @@ import {
   mostraPaginas,
   mostraTitulo,
   numeraPerguntas,
+  umaPerguntaPorVez,
   migrarFormulario,
   type Formulario,
   type PaginaFormulario,
@@ -17,6 +18,11 @@ import {
   type TemaFormulario,
 } from "@/lib/formularios-context";
 import { PerguntaVisualizacao } from "@/components/campo-resposta";
+import { FormularioUmaPorVez } from "@/components/formularios/formulario-uma-por-vez";
+import { erroDaPergunta } from "@/lib/formularios/passo-a-passo";
+import type { Rastreamento } from "@/lib/formularios/rastreamento";
+import { valoresDoEndereco } from "@/lib/formularios/preencher-endereco";
+import type { EnderecoDoCep } from "@/lib/formularios/documentos";
 import { IconCadeado, IconCheck } from "@/components/icons";
 
 type OpcaoNome = { id: string; nome: string };
@@ -209,13 +215,6 @@ function perguntasVisiveis(pagina: PaginaFormulario, valores: Record<string, str
   });
 }
 
-function perguntaEhObrigatoria(pergunta: PerguntaFormulario, valores: Record<string, string>): boolean {
-  if (pergunta.obrigatoria) return true;
-  if (pergunta.logica?.modo === "obrigatorio_se" && pergunta.logica.regras.length > 0) {
-    return pergunta.logica.regras.some((r) => condicaoBate(r.operador, valores[r.campoId], r.valor));
-  }
-  return false;
-}
 
 /** Páginas que devem aparecer, respeitando a condição de exibição de cada uma. */
 function paginasVisiveis(formulario: Formulario, valores: Record<string, string>): PaginaFormulario[] {
@@ -241,7 +240,42 @@ function paginasVisiveis(formulario: Formulario, valores: Record<string, string>
  * `id` e `chave` chegam por parâmetro, não lidos da URL aqui dentro, porque cada rota os obtém de
  * um jeito: a pré-visualização por query string (`?id=`), a pública pelo caminho (`/f/[id]`).
  */
-export function FormularioPublico({ id, chave }: { id: string | null; chave: string | null }) {
+type JanelaComRastreio = Window & {
+  fbq?: (...args: unknown[]) => void;
+  gtag?: (...args: unknown[]) => void;
+};
+
+/**
+ * Avisa o pixel da Meta e a tag do Google que a pessoa virou lead.
+ *
+ * Os scripts em si são carregados pela página `/f/[id]`, e só quando o formulário tem os ids. A
+ * PRÉVIA não carrega nada, de propósito: quem está montando o formulário não pode virar lead no
+ * próprio pixel e sujar a audiência da campanha.
+ */
+function marcarLead(rastreamento: Rastreamento | undefined) {
+  if (typeof window === "undefined" || !rastreamento) return;
+  const janela = window as JanelaComRastreio;
+  if (rastreamento.pixelMeta && janela.fbq) janela.fbq("track", "Lead");
+  if (rastreamento.tagGoogle && janela.gtag) {
+    janela.gtag("event", "generate_lead");
+    // Com rótulo (`AW-123/abc`) é a conversão do Google Ads: é ela que a campanha conta.
+    if (rastreamento.tagGoogle.includes("/")) {
+      janela.gtag("event", "conversion", { send_to: rastreamento.tagGoogle });
+    }
+  }
+}
+
+export function FormularioPublico({
+  id,
+  chave,
+  rastreamento,
+}: {
+  id: string | null;
+  chave: string | null;
+  /** Lido no SERVIDOR pela página `/f/[id]` e passado pra cá. O navegador recebe só os dois
+   *  identificadores, nunca o resto das integrações (funil, etapa, responsável). */
+  rastreamento?: Rastreamento;
+}) {
   // Carregados só depois de montar (não no initializer do useState). Essa página é pré-renderizada
   // no servidor sem `id` disponível; ler direto no initializer faria o HTML da primeira renderização
   // no cliente divergir do HTML do servidor (hydration mismatch).
@@ -309,24 +343,31 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
     setErros((prev) => (prev[perguntaId] ? { ...prev, [perguntaId]: "" } : prev));
   }
 
+  /**
+   * O CEP achou o endereço: preenche rua, bairro, cidade e estado DO FORMULÁRIO INTEIRO, não só da
+   * página aberta, e limpa o erro de quem estava marcado como faltando. Preencher só a página
+   * atual deixaria o endereço pela metade quando os campos estão espalhados em páginas diferentes.
+   */
+  function preencherEndereco(endereco: EnderecoDoCep) {
+    const todas = formulario?.paginas.flatMap((p) => p.perguntas) ?? [];
+    const novos = valoresDoEndereco(todas, endereco);
+    if (Object.keys(novos).length === 0) return;
+    setValores((prev) => ({ ...prev, ...novos }));
+    setErros((prev) => {
+      const limpos = { ...prev };
+      for (const id of Object.keys(novos)) delete limpos[id];
+      return limpos;
+    });
+  }
+
   function validarPaginaAtual(): boolean {
     const proximosErros: Record<string, string> = {};
+    // A MESMA conferência do modo uma pergunta por vez (`erroDaPergunta`, em `passo-a-passo.ts`).
+    // Duas cópias da validação é como os dois modos passam a discordar: um aceita o CPF
+    // 111.111.111-11 e o outro não, e ninguém entende por quê.
     for (const pergunta of camposDaPagina) {
-      if (TIPOS_LAYOUT.includes(pergunta.tipo)) continue;
-      const valor = valores[pergunta.id]?.trim() ?? "";
-      if (perguntaEhObrigatoria(pergunta, valores) && !valor) {
-        proximosErros[pergunta.id] = "Campo obrigatório.";
-        continue;
-      }
-      if (valor && pergunta.regex) {
-        try {
-          if (!new RegExp(pergunta.regex).test(valor)) {
-            proximosErros[pergunta.id] = "Formato inválido.";
-          }
-        } catch {
-          // regex configurada errada no builder. Não trava o envio do cliente por causa disso.
-        }
-      }
+      const erro = erroDaPergunta(pergunta, valores);
+      if (erro) proximosErros[pergunta.id] = erro;
     }
     setErros(proximosErros);
     return Object.keys(proximosErros).length === 0;
@@ -378,6 +419,9 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
       window.location.href = formulario.paginaFinal.urlRedirecionamento;
       return;
     }
+    // A campanha precisa saber que virou lead: sem este evento, o anúncio só sabe que alguém abriu
+    // a página, e a otimização do Meta/Google fica cega justamente no que importa.
+    marcarLead(rastreamento);
     setEnviado(true);
   }
 
@@ -461,6 +505,20 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
         {mostraNome(tema) ? <h2>{formulario.nome}</h2> : null}
         {formulario.descricao ? <p className="hint" style={{ marginBottom: 6 }}>{formulario.descricao}</p> : null}
 
+        {/* Dois jeitos de mostrar o MESMO formulário: a página inteira, ou uma pergunta por vez.
+            A validação dos dois é a mesma função (`erroDaPergunta`), de propósito — duas cópias é
+            como os dois modos passam a discordar sobre o que é um CPF válido. */}
+        {umaPerguntaPorVez(tema) ? (
+          <FormularioUmaPorVez
+            formulario={formulario}
+            valores={valores}
+            onMudarValor={mudarValor}
+            onEnviar={enviar}
+            responsaveis={responsaveisOpcoes}
+            aoAcharEndereco={preencherEndereco}
+          />
+        ) : (
+          <>
         {paginasAtivas.length > 1 && mostraPaginas(tema) ? (
           <p className="hint" style={{ margin: "8px 0" }}>
             Página {paginaIndice + 1} de {paginasAtivas.length}
@@ -490,6 +548,7 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
                 erro={erros[pergunta.id]}
                 contatosDisponiveis={contatosOpcoes}
                 responsaveisDisponiveis={responsaveisOpcoes}
+                aoAcharEndereco={preencherEndereco}
               />
             </div>
           ))}
@@ -507,6 +566,8 @@ export function FormularioPublico({ id, chave }: { id: string | null; chave: str
             </button>
           </div>
         ) : null}
+          </>
+        )}
       </div>
     </div>
   );

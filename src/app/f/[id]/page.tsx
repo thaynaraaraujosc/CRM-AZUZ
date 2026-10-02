@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 
 import { prisma } from "@/lib/prisma";
 import { FormularioPublico } from "@/components/formularios/FormularioPublico";
+import { idDaTagGoogle, rastreamentoDoFormulario } from "@/lib/formularios/rastreamento";
 
 /**
  * A página que o link compartilhado abre. `/f/<id>`, opcionalmente com `?chave=` quando o
@@ -57,5 +59,44 @@ export default async function FormularioPublicoPage({
 }) {
   const { id } = await params;
   const { chave } = await searchParams;
-  return <FormularioPublico id={id} chave={chave ?? null} />;
+
+  /*
+   * O PIXEL E A TAG SÃO LIDOS AQUI, NO SERVIDOR.
+   *
+   * `GET /api/formularios/[id]` não devolve `integracoes` de propósito — ali estão o funil, a etapa
+   * e o responsável padrão, que são configuração interna da empresa e não têm por que chegar ao
+   * navegador de um lead. Lendo do banco nesta página e passando só os dois identificadores de
+   * campanha, o pixel funciona sem abrir o resto.
+   *
+   * Só em formulário PUBLICADO: um rascunho sendo testado não pode gerar evento de lead e sujar a
+   * audiência da campanha.
+   */
+  const linha = await prisma.formulario
+    .findUnique({ where: { id }, select: { status: true, integracoes: true } })
+    .catch(() => null);
+  const rastreamento =
+    linha?.status === "publicado" ? rastreamentoDoFormulario(linha.integracoes) : { pixelMeta: null, tagGoogle: null };
+
+  return (
+    <>
+      {rastreamento.pixelMeta ? (
+        <Script id="pixel-meta" strategy="afterInteractive">
+          {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${rastreamento.pixelMeta}');fbq('track','PageView');`}
+        </Script>
+      ) : null}
+      {rastreamento.tagGoogle ? (
+        <>
+          <Script
+            id="gtag-src"
+            strategy="afterInteractive"
+            src={`https://www.googletagmanager.com/gtag/js?id=${idDaTagGoogle(rastreamento.tagGoogle)}`}
+          />
+          <Script id="tag-google" strategy="afterInteractive">
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${idDaTagGoogle(rastreamento.tagGoogle)}');`}
+          </Script>
+        </>
+      ) : null}
+      <FormularioPublico id={id} chave={chave ?? null} rastreamento={rastreamento} />
+    </>
+  );
 }

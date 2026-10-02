@@ -1739,6 +1739,65 @@ function PainelDesign({
             </button>
           </div>
         </div>
+        <div className="field">
+          <label>Como quem responde vê</label>
+          <div className="filters-row" style={{ margin: 0 }}>
+            <button
+              type="button"
+              className={`fchip${formulario.tema.exibicao === "uma-por-vez" ? "" : " active"}`}
+              onClick={() => atualizarTema({ exibicao: "completo" })}
+            >
+              Página inteira
+            </button>
+            <button
+              type="button"
+              className={`fchip${formulario.tema.exibicao === "uma-por-vez" ? " active" : ""}`}
+              onClick={() => atualizarTema({ exibicao: "uma-por-vez" })}
+            >
+              Uma pergunta por vez
+            </button>
+          </div>
+        </div>
+        {/*
+          * O QUE APARECE PRA QUEM RESPONDE.
+          *
+          * Os quatro só ESCONDEM: sem valor gravado, tudo aparece — que é como estão os
+          * formulários já publicados. Por isso o estado ligado é `!== false`, e não `=== true`:
+          * formulário antigo não pode mudar de cara sozinho só porque a opção passou a existir.
+          */}
+        <div className="field">
+          <label>Mostrar pra quem responde</label>
+          <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className={`fchip${formulario.tema.mostrarNome !== false ? " active" : ""}`}
+              onClick={() => atualizarTema({ mostrarNome: formulario.tema.mostrarNome === false })}
+            >
+              Nome do formulário
+            </button>
+            <button
+              type="button"
+              className={`fchip${formulario.tema.mostrarTitulo !== false ? " active" : ""}`}
+              onClick={() => atualizarTema({ mostrarTitulo: formulario.tema.mostrarTitulo === false })}
+            >
+              Título da página
+            </button>
+            <button
+              type="button"
+              className={`fchip${formulario.tema.mostrarPaginas !== false ? " active" : ""}`}
+              onClick={() => atualizarTema({ mostrarPaginas: formulario.tema.mostrarPaginas === false })}
+            >
+              Contagem de páginas
+            </button>
+            <button
+              type="button"
+              className={`fchip${formulario.tema.numerarPerguntas !== false ? " active" : ""}`}
+              onClick={() => atualizarTema({ numerarPerguntas: formulario.tema.numerarPerguntas === false })}
+            >
+              Numerar perguntas
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 17 }}>
@@ -1803,6 +1862,42 @@ function PainelDesign({
               </option>
             ))}
           </select>
+        </div>
+
+        {/*
+          * MEDIÇÃO DE ANÚNCIO.
+          *
+          * Sem isto, a campanha só sabe que alguém ABRIU a página; ela não sabe quem respondeu, e é
+          * justamente o lead que o Meta e o Google usam pra procurar mais gente parecida. O evento
+          * só dispara em formulário publicado: um rascunho sendo testado não pode sujar a audiência.
+          *
+          * Os dois ficam dentro de `integracoes`, que nunca sai pela rota pública. É a página do
+          * formulário que lê do banco, no servidor, e manda pro navegador só esses identificadores.
+          */}
+        <div className="field">
+          <label htmlFor="pixel-meta">Pixel da Meta</label>
+          <input
+            id="pixel-meta"
+            className="input"
+            style={{ width: "100%" }}
+            placeholder="Só os números, ex.: 1234567890"
+            value={formulario.integracoes?.pixelMeta ?? ""}
+            onChange={(e) => atualizarIntegracoes({ pixelMeta: e.target.value.trim() || undefined })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="tag-google">Tag do Google</label>
+          <input
+            id="tag-google"
+            className="input"
+            style={{ width: "100%" }}
+            placeholder="G-XXXXXXX, AW-123456789 ou AW-123456789/AbC-D_e"
+            value={formulario.integracoes?.tagGoogle ?? ""}
+            onChange={(e) => atualizarIntegracoes({ tagGoogle: e.target.value.trim() || undefined })}
+          />
+          <p className="hint" style={{ marginTop: 6 }}>
+            Com o rótulo depois da barra, a resposta conta como conversão no Google Ads.
+          </p>
         </div>
       </div>
 

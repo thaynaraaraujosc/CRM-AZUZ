@@ -3,6 +3,12 @@
 import { useRef, useState } from "react";
 
 import { aplicarMascara, type PerguntaFormulario } from "@/lib/formularios-context";
+import {
+  MASCARA_PADRAO,
+  buscarEnderecoDoCep,
+  somenteDigitos,
+  type EnderecoDoCep,
+} from "@/lib/formularios/documentos";
 import { IconAnexo, IconClose, IconDoc, IconImage, IconMic, IconStar, IconVideoCam } from "@/components/icons";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import { AreaDeUpload } from "@/components/area-de-upload";
@@ -171,6 +177,75 @@ function CampoAssinatura({
  * travado (linha da pergunta no construtor). Quando interativo, `valor`/`onMudarValor` controlam o
  * campo de verdade: sem isso a submissão pública não tem como capturar o que foi digitado.
  */
+/**
+ * O campo de CEP que PREENCHE O ENDEREÇO SOZINHO.
+ *
+ * Oito dígitos digitados e o formulário completa rua, bairro, cidade e estado. Sem isso, quem
+ * responde digita o endereço inteiro à mão no celular — é onde as pessoas desistem no meio — e o
+ * que chega vem escrito de cinco jeitos diferentes, o que estraga qualquer lista depois.
+ *
+ * A busca não repete o mesmo CEP a cada tecla: sem essa trava, apagar e redigitar um dígito dispara
+ * uma consulta por tecla.
+ */
+function CampoCep({
+  pergunta,
+  disabled,
+  interativo,
+  valor,
+  onMudarValor,
+  aoAcharEndereco,
+}: {
+  pergunta: PerguntaFormulario;
+  disabled: boolean;
+  interativo: boolean;
+  valor: string;
+  onMudarValor?: (valor: string) => void;
+  aoAcharEndereco?: (endereco: EnderecoDoCep) => void;
+}) {
+  const ultimoBuscado = useRef("");
+  const [buscando, setBuscando] = useState(false);
+  const [semResultado, setSemResultado] = useState(false);
+
+  async function aoDigitar(bruto: string) {
+    const formatado = aplicarMascara(bruto, pergunta.mascara || MASCARA_PADRAO.cep);
+    onMudarValor?.(formatado);
+
+    const digitos = somenteDigitos(formatado);
+    if (digitos.length !== 8) {
+      setSemResultado(false);
+      return;
+    }
+    if (digitos === ultimoBuscado.current) return;
+    ultimoBuscado.current = digitos;
+
+    setBuscando(true);
+    const endereco = await buscarEnderecoDoCep(digitos);
+    setBuscando(false);
+    setSemResultado(!endereco);
+    if (endereco) aoAcharEndereco?.(endereco);
+  }
+
+  return (
+    <>
+      <input
+        className="input form-resposta-campo"
+        style={{ width: "100%" }}
+        type="text"
+        inputMode="numeric"
+        placeholder={pergunta.placeholder || "00000-000"}
+        disabled={disabled}
+        {...(interativo
+          ? { value: valor, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void aoDigitar(e.target.value) }
+          : {})}
+      />
+      {buscando ? <p className="form-pergunta-ajuda">Buscando o endereço…</p> : null}
+      {semResultado ? (
+        <p className="form-pergunta-ajuda">Não achamos esse CEP. Pode preencher o endereço na mão.</p>
+      ) : null}
+    </>
+  );
+}
+
 export function CampoResposta({
   pergunta,
   interativo = false,
@@ -178,6 +253,7 @@ export function CampoResposta({
   onMudarValor,
   contatosDisponiveis = [],
   responsaveisDisponiveis = [],
+  aoAcharEndereco,
 }: {
   pergunta: PerguntaFormulario;
   interativo?: boolean;
@@ -185,6 +261,8 @@ export function CampoResposta({
   onMudarValor?: (valor: string) => void;
   contatosDisponiveis?: PessoaOpcao[];
   responsaveisDisponiveis?: PessoaOpcao[];
+  /** O CEP achou o endereço: quem desenha o formulário decide o que preencher com ele. */
+  aoAcharEndereco?: (endereco: EnderecoDoCep) => void;
 }) {
   const disabled = !interativo || pergunta.somenteLeitura;
   function aoMudar(v: string) {
@@ -384,6 +462,17 @@ export function CampoResposta({
           {...props}
         />
       );
+    case "cep":
+      return (
+        <CampoCep
+          pergunta={pergunta}
+          disabled={disabled}
+          interativo={interativo}
+          valor={valor}
+          onMudarValor={onMudarValor}
+          aoAcharEndereco={aoAcharEndereco}
+        />
+      );
     case "url":
       return (
         <input
@@ -574,6 +663,7 @@ export function PerguntaVisualizacao({
   erro,
   contatosDisponiveis,
   responsaveisDisponiveis,
+  aoAcharEndereco,
 }: {
   pergunta: PerguntaFormulario;
   indice: number;
@@ -583,6 +673,7 @@ export function PerguntaVisualizacao({
   erro?: string;
   contatosDisponiveis?: PessoaOpcao[];
   responsaveisDisponiveis?: PessoaOpcao[];
+  aoAcharEndereco?: (endereco: EnderecoDoCep) => void;
 }) {
   const ehLayout = pergunta.tipo === "titulo" || pergunta.tipo === "texto_bloco" || pergunta.tipo === "divisor" || pergunta.tipo === "espacamento" || pergunta.tipo === "imagem_bloco";
 
@@ -626,6 +717,7 @@ export function PerguntaVisualizacao({
         onMudarValor={onMudarValor}
         contatosDisponiveis={contatosDisponiveis}
         responsaveisDisponiveis={responsaveisDisponiveis}
+        aoAcharEndereco={aoAcharEndereco}
       />
       {pergunta.textoAjuda ? <p className="form-pergunta-ajuda">{pergunta.textoAjuda}</p> : null}
       {erro ? <p className="form-pergunta-erro">{erro}</p> : null}
