@@ -263,11 +263,32 @@ export async function processarMensagemRecebida(
     // grupo virar uma conversa nova toda vez que o nome mudasse).
     const conversaExistente = await prisma.conversa.findFirst({
       where: { workspaceId, contato: remoteJid, ehGrupo: true },
-      select: { nome: true, fotoUrl: true },
+      select: { nome: true, fotoUrl: true, participantesGrupo: true },
     });
     if (conversaExistente) {
       chaveContato = conversaExistente.nome;
       fotoUrlExistente = conversaExistente.fotoUrl;
+      /*
+       * GRUPO SEM LISTA DE PARTICIPANTES TENTA DE NOVO.
+       *
+       * A busca dos dados do grupo só acontecia quando a conversa era criada. Se ela falhasse ali
+       * — ou se a Evolution devolvesse o nome sem a lista, que é o comum — o grupo ficava com zero
+       * participantes PARA SEMPRE: "Grupo · 0 participantes" no cabeçalho, painel de participantes
+       * vazio, e menção a alguém aparecendo como número cru, porque não havia nome pra casar.
+       *
+       * Agora, enquanto a lista estiver vazia, cada mensagem nova é uma chance de preenchê-la. Uma
+       * chamada a mais só no grupo que ainda não tem a lista; assim que ela entra, para.
+       * O NOME NÃO É MEXIDO: ele já identifica a thread, e trocá-lo partiria a conversa em duas.
+       */
+      const jaTemLista = Array.isArray(conversaExistente.participantesGrupo)
+        ? conversaExistente.participantesGrupo.length > 0
+        : false;
+      if (!jaTemLista) {
+        const info = await buscarInfoGrupo(workspaceId, remoteJid!);
+        participantesGrupo = info?.participantes;
+        descricaoGrupo = info?.descricao;
+        criacaoGrupo = info?.criacao;
+      }
     } else {
       const info = await buscarInfoGrupo(workspaceId, remoteJid!);
       chaveContato = info?.nome ?? waId;

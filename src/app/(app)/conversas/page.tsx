@@ -50,6 +50,7 @@ import {
 import { HOJE_ISO } from "@/lib/hoje";
 import { useFunis } from "@/lib/funis-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
+import { aplicarMencoes } from "@/lib/conversas/mencoes";
 import { normalizarTelefoneParaComparacao } from "@/lib/telefone";
 import {
   useConfigConversas,
@@ -4390,8 +4391,14 @@ function ConversasPageInner() {
                   onTentarNovamente={
                     msg.status === "erro" && msg.id ? () => tentarNovamenteMensagem(msg.id!) : undefined
                   }
-                  renderizarTexto={(texto) =>
-                    texto.length > 500 && !mensagensExpandidas.has(chave) ? (
+                  renderizarTexto={(textoCru) => {
+                    // Menção vira NOME antes de qualquer outra coisa. O WhatsApp grava a menção
+                    // como telefone cru (`@87600555651`) e troca pelo nome só na hora de exibir;
+                    // aqui, além de aparecer o número, o detector de telefone pendurava "WhatsApp"
+                    // e "Ligar" ao lado — citar alguém da conversa virava um convite a ligar pra
+                    // essa pessoa. Ver `aplicarMencoes`.
+                    const texto = aplicarMencoes(textoCru, aberta.participantesGrupo);
+                    return texto.length > 500 && !mensagensExpandidas.has(chave) ? (
                       <>
                         {renderizarTextoComLinks(texto.slice(0, 500))}…{" "}
                         <button
@@ -4404,8 +4411,8 @@ function ConversasPageInner() {
                       </>
                     ) : (
                       renderizarTextoComLinks(texto)
-                    )
-                  }
+                    );
+                  }}
                 />
                 </LimiteDeErro>
               );

@@ -104,3 +104,53 @@ describe("chavesDaMensagem", () => {
     expect(chavesDaMensagem(null)).toBe("sem conteúdo");
   });
 });
+
+/**
+ * MENSAGEM DE EMPRESA (API oficial da Meta).
+ *
+ * "Quando uma empresa manda alguma coisa pra gente, não está chegando no CRM." Elas quase nunca
+ * mandam `conversation`: mandam template aprovado, texto com botões, menu de lista ou o formato
+ * interativo novo. Nenhum estava mapeado, então a mensagem não tinha texto aos olhos do CRM e caía
+ * no descarte "sem texto reconhecível" — recebida no celular, invisível aqui.
+ */
+describe("extrairTextoDaMensagem: mensagem de empresa", () => {
+  it("lê o template aprovado (hydratedTemplate)", () => {
+    const m = { templateMessage: { hydratedTemplate: { hydratedContentText: "Seu pedido #123 foi enviado." } } };
+
+    expect(extrairTextoDaMensagem(m)).toBe("Seu pedido #123 foi enviado.");
+  });
+
+  it("lê o formato antigo de template (fourRowTemplate)", () => {
+    const m = { templateMessage: { fourRowTemplate: { content: "Confirme sua consulta." } } };
+
+    expect(extrairTextoDaMensagem(m)).toBe("Confirme sua consulta.");
+  });
+
+  it("lê texto com botões", () => {
+    expect(extrairTextoDaMensagem({ buttonsMessage: { contentText: "Deseja confirmar?" } })).toBe("Deseja confirmar?");
+  });
+
+  it("lê menu de lista", () => {
+    expect(extrairTextoDaMensagem({ listMessage: { title: "Escolha um horário" } })).toBe("Escolha um horário");
+  });
+
+  it("lê o formato interativo novo, com corpo em objeto separado", () => {
+    const m = { interactiveMessage: { body: { text: "Avalie seu atendimento" }, footer: { text: "Equipe" } } };
+
+    expect(extrairTextoDaMensagem(m)).toBe("Avalie seu atendimento");
+  });
+
+  it("lê a mensagem de empresa mesmo embrulhada em conversa temporária", () => {
+    const m = {
+      ephemeralMessage: { message: { templateMessage: { hydratedTemplate: { hydratedContentText: "Oi!" } } } },
+    };
+
+    expect(extrairTextoDaMensagem(m)).toBe("Oi!");
+  });
+
+  // Formato novo que ninguém mapeou ainda tem que CONTINUAR caindo no descarte, com as chaves
+  // registradas: é assim que ele é descoberto sem adivinhação. Silenciar aqui seria pior.
+  it("formato desconhecido continua sem texto, pra ser registrado no descarte", () => {
+    expect(extrairTextoDaMensagem({ formatoQueNaoExiste: { algo: "x" } })).toBeNull();
+  });
+});

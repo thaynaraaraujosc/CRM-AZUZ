@@ -293,19 +293,58 @@ export async function buscarInfoGrupo(workspaceId: string, groupJid: string): Pr
   const descricao: string | null = dados.desc ?? dados.description ?? null;
   const criacaoSegundos: number | undefined = dados.creation ?? dados.subjectTime;
   const criacao = criacaoSegundos ? new Date(criacaoSegundos * 1000) : null;
-  const participantesBrutos: unknown[] = Array.isArray(dados.participants) ? dados.participants : [];
-  const participantes = participantesBrutos
+  const participantes = normalizarParticipantes(Array.isArray(dados.participants) ? dados.participants : []);
+
+  /*
+   * A LISTA DE PARTICIPANTES TEM UM SEGUNDO ENDEREÇO.
+   *
+   * `findGroupInfos` devolve o nome do grupo de forma confiável, mas nem toda versão da Evolution
+   * inclui `participants` na mesma resposta. O resultado era o grupo entrar com nome certo e NENHUM
+   * participante — "Grupo · 0 participantes" no cabeçalho, painel de participantes vazio, e a
+   * menção a alguém aparecendo como número cru porque não havia nome nenhum pra casar.
+   *
+   * Quando a lista não vem junto, pergunta no endpoint dedicado. Falhar aqui não invalida o resto:
+   * o grupo com nome e sem lista é melhor que grupo nenhum.
+   */
+  const participantesFinais = participantes.length
+    ? participantes
+    : await buscarParticipantesDoGrupo(workspaceId, groupJid);
+
+  if (!nome && !participantesFinais.length) return null;
+  return { nome: nome ?? groupJid.split("@")[0], descricao, criacao, participantes: participantesFinais };
+}
+
+/** A lista de participantes pelo endpoint dedicado. Ver o motivo em `buscarInfoGrupo`. */
+async function buscarParticipantesDoGrupo(
+  workspaceId: string,
+  groupJid: string,
+): Promise<{ nome: string; telefone: string }[]> {
+  const instancia = nomeInstancia(workspaceId);
+  const dados = await chamarEvolution(
+    `/group/participants/${instancia}?groupJid=${encodeURIComponent(groupJid)}`,
+    "GET",
+  ).catch(() => null);
+  const lista: unknown[] = Array.isArray(dados)
+    ? dados
+    : Array.isArray(dados?.participants)
+      ? dados.participants
+      : [];
+  return normalizarParticipantes(lista);
+}
+
+/** De `{ id, pushName }` (ou as variações que cada versão usa) pro par { nome, telefone } que o CRM
+ *  guarda. Sem nome, o telefone fica no lugar dele: é o que o próprio WhatsApp Web mostra pra quem
+ *  está fora da agenda. */
+function normalizarParticipantes(brutos: unknown[]): { nome: string; telefone: string }[] {
+  return brutos
     .map((p) => {
-      const item = p as { id?: string; jid?: string; pushName?: string; name?: string };
+      const item = p as { id?: string; jid?: string; pushName?: string; name?: string; notify?: string };
       const jid = item.id ?? item.jid;
       const telefone = jid?.split("@")[0];
       if (!telefone) return null;
-      return { nome: item.pushName ?? item.name ?? telefone, telefone };
+      return { nome: item.pushName ?? item.name ?? item.notify ?? telefone, telefone };
     })
     .filter((p): p is { nome: string; telefone: string } => p !== null);
-
-  if (!nome && !participantes.length) return null;
-  return { nome: nome ?? groupJid.split("@")[0], descricao, criacao, participantes };
 }
 
 /** Busca a URL da foto de perfil (grupo OU pessoa) de um JID/número. Chamado uma vez, quando a

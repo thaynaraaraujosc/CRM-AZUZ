@@ -86,6 +86,22 @@ export function extrairTextoDaMensagem(message: Mensagem): string | null {
       `📄 Documento: ${texto(dentro("documentMessage")?.fileName) ?? "arquivo"}`
     );
   }
+  /*
+   * MENSAGEM DE EMPRESA (API oficial da Meta) — era descartada inteira.
+   *
+   * Quando uma empresa escreve pra gente pela API oficial, ela quase nunca manda `conversation`:
+   * manda `templateMessage` (o template aprovado), `buttonsMessage`/`listMessage` (texto com
+   * botões ou menu) ou `interactiveMessage` (o formato novo, com corpo e rodapé separados). Nada
+   * disso estava mapeado aqui, então a mensagem não tinha texto aos olhos do CRM e caía no
+   * descarte "sem texto reconhecível" — a pessoa recebia no celular e não via nada no CRM.
+   *
+   * O conteúdo de verdade está sempre num `*Text` dentro do corpo, só que em profundidade e com
+   * nome diferente em cada formato. Em vez de repetir dez `??`, procuramos o texto do corpo nas
+   * posições conhecidas.
+   */
+  const textoDeEmpresa = textoDeMensagemDeEmpresa(m, texto);
+  if (textoDeEmpresa) return textoDeEmpresa;
+
   if (dentro("stickerMessage")) return "🩶 Figurinha (veja no celular conectado)";
   if (dentro("locationMessage") || dentro("liveLocationMessage")) return "📍 Localização (veja no celular conectado)";
   if (dentro("contactMessage") || dentro("contactsArrayMessage")) return "👤 Contato (veja no celular conectado)";
@@ -94,6 +110,49 @@ export function extrairTextoDaMensagem(message: Mensagem): string | null {
   }
 
   return null;
+}
+
+/**
+ * O texto de uma mensagem mandada por empresa (template, botões, lista, interativa).
+ *
+ * Cada formato guarda o corpo num lugar diferente, e as versões da API trocam de nome entre si
+ * (`hydratedContentText` virou `text`; `fourRowTemplate` virou `hydratedTemplate`). Por isso a
+ * busca é por POSIÇÃO CONHECIDA e não por um nome só: um formato novo que não seja encontrado volta
+ * `null` e cai no descarte, que é onde ele fica registrado com as chaves que vieram — e aí dá pra
+ * mapear sem adivinhar. Ver `chavesDaMensagem`.
+ */
+function textoDeMensagemDeEmpresa(
+  m: Record<string, unknown>,
+  texto: (campo: unknown) => string | null,
+): string | null {
+  const obj = (valor: unknown) => (valor && typeof valor === "object" ? (valor as Record<string, unknown>) : undefined);
+
+  const template = obj(m.templateMessage);
+  const corpoTemplate =
+    obj(template?.hydratedTemplate) ?? obj(template?.hydratedFourRowTemplate) ?? obj(template?.fourRowTemplate);
+  const interativa = obj(m.interactiveMessage) ?? obj(m.interactiveResponseMessage);
+  const botoes = obj(m.buttonsMessage);
+  const lista = obj(m.listMessage);
+
+  return (
+    // Template: o corpo aprovado pela Meta.
+    texto(corpoTemplate?.hydratedContentText) ??
+    texto(corpoTemplate?.content) ??
+    // Texto com botões: o `contentText` é o que a pessoa lê; `text` é o formato antigo.
+    texto(botoes?.contentText) ??
+    texto(botoes?.text) ??
+    // Menu de opções.
+    texto(lista?.description) ??
+    texto(lista?.title) ??
+    // Formato interativo novo: corpo e rodapé em objetos separados.
+    texto(obj(interativa?.body)?.text) ??
+    texto(obj(interativa?.header)?.title) ??
+    // Resposta da pessoa a um menu interativo.
+    texto(obj(interativa?.nativeFlowResponseMessage)?.name) ??
+    // Formato antigo de template, ainda em uso por algumas contas.
+    texto(obj(m.highlyStructuredMessage)?.hydratedHsm) ??
+    null
+  );
 }
 
 /** O que veio, quando não deu pra achar texto. Vai pro registro de descarte, que é o que permite

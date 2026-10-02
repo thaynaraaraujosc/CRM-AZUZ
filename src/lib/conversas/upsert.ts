@@ -148,7 +148,10 @@ async function gravarConversa(params: {
       ...(contatoId ? { contatoId } : {}),
       // Conversa criada antes desta coluna existir ganha dono na primeira mensagem nova.
       ...(contaCanal ? { contaCanal } : {}),
-      ...(participantesGrupo ? { participantesGrupo } : {}),
+      // Lista VAZIA não sobrescreve uma lista boa. `[]` é um valor verdadeiro em JavaScript, então
+      // uma busca que voltou sem participantes apagava os que já estavam guardados — o grupo perdia
+      // a lista que tinha custado a chegar, e voltava a mostrar "0 participantes".
+      ...(participantesGrupo?.length ? { participantesGrupo } : {}),
       ...(fotoUrl ? { fotoUrl } : {}),
       ...(descricaoGrupo ? { descricaoGrupo } : {}),
       ...(criacaoGrupo ? { criacaoGrupo } : {}),
