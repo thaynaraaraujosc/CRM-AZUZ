@@ -62,7 +62,11 @@
      deixa de ser um bloco de cor solto e vira parte de uma moldura. E os painéis brancos ganham
      recorte.
      Pra voltar ao branco é só esta linha: `--canvas: #ffffff`. */
-  --canvas: #ffffff;
+  /* O fundo da aplicação é um cinza de um degrau, não branco. Com tudo branco, painel branco
+     encostado em fundo branco não se separa e sobra um fio de 1px como única divisa entre duas
+     áreas grandes — que é exatamente o "traçado" que a gente está tirando. Com o fundo um pouco
+     mais escuro, o painel branco sobe sozinho e a borda deixa de ser necessária. */
+  --canvas: #eef1f5;
 
   /* Azul da marca: daqui pra frente ACCENT, não superfície: ação principal, item selecionado,
      foco, link, indicador. Nunca preencher área grande só pra "parecer tecnológico". */
@@ -384,12 +388,18 @@
    é uma diferença de luz. Não um traço. Era marinho; agora é preto neutro, pela mesma razão do
    tema claro: a cor da marca vive no accent, não na superfície. */
 :root[data-theme="dark"] {
-  --navy: #17171a;
-  --navy-raised: #121214;
-  --navy-raised-2: #202024;
-  --surface-elevated: #1e1e22;
-  --navy-deep: #09090b;
-  --canvas: #08080a;
+  /* O ESCURO É O NOSSO AZUL, NÃO UM CINZA QUALQUER.
+     Era uma escada de quase-pretos neutros (#17171a, #08080a): um tema escuro genérico, sem
+     relação nenhuma com a identidade. Agora as superfícies saem todas do navy da marca
+     (#002037), do mais fundo pro mais alto. O branco de texto fica em 17:1 sobre o navy, bem
+     acima do mínimo de 4,5:1 — no escuro a identidade entra como SUPERFÍCIE, e o dourado
+     continua sendo a cor de frente (ver `--blue` logo abaixo). */
+  --canvas: #000D17;
+  --navy-deep: #001322;
+  --navy-raised: #001A2C;
+  --navy: #002037;
+  --navy-raised-2: #002B49;
+  --surface-elevated: #003053;
 
   /* No escuro o acento é o DOURADO: 8,6:1 sobre o fundo, legível como texto e como ícone. O navy
      não serve aqui (1,19:1 sobre o fundo escuro) — lá ele é superfície, não cor de frente. */
@@ -608,12 +618,34 @@ table {
 .sidebar {
   width: 216px;
   flex: 0 0 auto;
-  /* Superficie propria, um degrau abaixo do conteudo. Menu branco encostado em conteudo branco
-     nao se separa: sobra um fio de 1px como unica divisa entre duas areas grandes, e o hover
-     branco nao tem de onde subir. */
-  background: #ffffff;
+  /*
+   * O MENU É MARINHO, NOS DOIS TEMAS.
+   *
+   * Era branco encostado em conteúdo branco, separado por um fio de 1px — e esse fio era a única
+   * divisa entre duas áreas grandes. Em marinho o menu se separa por si, a borda sai, e a
+   * identidade aparece na parte da tela que está sempre visível, em vez de só em detalhes.
+   *
+   * Os TOKENS são redefinidos aqui dentro, e não cada regra filha uma a uma. Os itens do menu já
+   * usam `--ink`, `--text-muted`, `--surface-elevated`: trocando o significado deles no escopo do
+   * menu, tudo que está dentro acompanha de uma vez. Pintar o fundo e sair caçando regra por regra
+   * é como se esquece uma e ela fica texto marinho sobre marinho.
+   */
+  background: var(--navy-marca);
+  --ink: #ffffff;
+  --ink-nome: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.74);
+  --text-faint: rgba(255, 255, 255, 0.58);
+  --line: rgba(255, 255, 255, 0.12);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --surface-elevated: rgba(255, 255, 255, 0.1);
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  --surface-active: rgba(255, 255, 255, 0.14);
+  --gray-900: #ffffff;
+  --gray-800: rgba(255, 255, 255, 0.86);
+  --gray-700: rgba(255, 255, 255, 0.72);
+  --gray-600: rgba(255, 255, 255, 0.58);
   border: none;
-  border-right: 1px solid var(--line);
+  border-right: none;
   border-radius: 0;
   box-shadow: none;
   color: var(--ink);
@@ -822,20 +854,27 @@ table {
    que as referências mostram. */
 /* Item ativo como no Flow: preenchimento claro, texto ESCURO e forte, e uma barra da cor da marca
    colada na esquerda. A barra e o que marca "voce esta aqui" sem precisar pintar o item inteiro. */
+/* Sobre o marinho, o preenchimento claro do item ativo viraria texto branco sobre quase-branco.
+   O ativo passa a ser um véu claro com a barra DOURADA na esquerda: a marca marcando "você está
+   aqui", e o contraste do texto continua sendo branco sobre marinho. */
 .nav-item.active {
-  background: #eef1f6;
-  color: var(--ink);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
   font-weight: 700;
   box-shadow: none;
 }
 
 .nav-item.active:hover {
-  background: #e6eaf1;
-  color: var(--ink);
+  background: rgba(255, 255, 255, 0.17);
+  color: #ffffff;
+}
+
+.nav-item.active::before {
+  background: var(--ouro);
 }
 
 .nav-item.active svg {
-  color: var(--ink);
+  color: var(--ouro);
 }
 
 .nav-item-whatsapp:hover {
@@ -3688,9 +3727,11 @@ table.tbl tbody tr:hover td {
   display: flex;
   flex-direction: column;
   margin: var(--space-3) var(--space-3) var(--space-3) var(--space-3);
-  border: 1px solid var(--line);
+  /* Painel branco sobre o fundo cinza, SEM borda: com o fundo um degrau mais escuro, o branco já
+     se destaca sozinho e o traçado só poluía. */
+  border: none;
   border-radius: var(--radius-xl);
-  background: var(--navy-raised);
+  background: var(--surface-elevated);
 }
 
 .wa-list-rows {
@@ -3874,11 +3915,15 @@ table.tbl tbody tr:hover td {
   text-align: left;
   padding: var(--space-3) var(--space-4);
   margin-bottom: 8px;
-  background: var(--surface-elevated);
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--line);
+  /* Cartão cinza DENTRO do painel branco, sem traçado. A hierarquia passa a ser de superfície
+     (fundo cinza → painel branco → cartão cinza claro) em vez de linha: é o que tira o aspecto de
+     formulário e deixa a lista respirar. `--navy-raised-2` porque ele é cinza no claro e marinho
+     levantado no escuro: a mesma intenção, sem precisar de uma regra por tema. */
+  background: var(--navy-raised-2);
+  border: none;
+  border-left: 2px solid transparent;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-xs);
+  box-shadow: none;
   cursor: pointer;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
