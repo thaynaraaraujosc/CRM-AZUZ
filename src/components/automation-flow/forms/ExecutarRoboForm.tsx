@@ -53,7 +53,7 @@ export function ExecutarRoboForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Robô</label>
+        <label>{traduzir("Robô")}</label>
         <select
           className="input"
           value={data.fluxoId ?? ""}

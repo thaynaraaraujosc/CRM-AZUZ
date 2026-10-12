@@ -68,15 +68,15 @@ function CamposExtrasFieldset({
   return (
     <div className="config-grid-2">
       <div className="field">
-        <label>Sobrenome</label>
+        <label>{traduzir("Sobrenome")}</label>
         <input className="input" value={valores.sobrenome} onChange={(e) => onChange({ sobrenome: e.target.value })} />
       </div>
       <div className="field">
-        <label>Empresa</label>
+        <label>{traduzir("Empresa")}</label>
         <input className="input" value={valores.empresa} onChange={(e) => onChange({ empresa: e.target.value })} />
       </div>
       <div className="field">
-        <label>Cargo</label>
+        <label>{traduzir("Cargo")}</label>
         <input className="input" value={valores.cargo} onChange={(e) => onChange({ cargo: e.target.value })} />
       </div>
       <div className="field">
@@ -84,7 +84,7 @@ function CamposExtrasFieldset({
         <input className="input" value={valores.telefoneFixo} onChange={(e) => onChange({ telefoneFixo: e.target.value })} />
       </div>
       <div className="field">
-        <label>Cidade</label>
+        <label>{traduzir("Cidade")}</label>
         <input className="input" value={valores.cidade} onChange={(e) => onChange({ cidade: e.target.value })} />
       </div>
       <div className="field">
@@ -92,7 +92,7 @@ function CamposExtrasFieldset({
         <input className="input" value={valores.estado} onChange={(e) => onChange({ estado: e.target.value })} />
       </div>
       <div className="field">
-        <label>País</label>
+        <label>{traduzir("País")}</label>
         <select className="input" value={valores.pais} onChange={(e) => onChange({ pais: e.target.value })}>
           <option value="">{traduzir("Selecione…")}</option>
           {PAISES.map((p) => (
@@ -103,7 +103,7 @@ function CamposExtrasFieldset({
         </select>
       </div>
       <div className="field">
-        <label>Canal preferido</label>
+        <label>{traduzir("Canal preferido")}</label>
         <select className="input" value={valores.canalPreferido} onChange={(e) => onChange({ canalPreferido: e.target.value })}>
           <option value="">{traduzir("Selecione…")}</option>
           {CANAIS_PREFERIDOS.map((c) => (
@@ -114,12 +114,12 @@ function CamposExtrasFieldset({
         </select>
       </div>
       <div className="field">
-        <label>Melhor horário pra contato</label>
+        <label>{traduzir("Melhor horário pra contato")}</label>
         <input
           className="input"
           value={valores.melhorHorario}
           onChange={(e) => onChange({ melhorHorario: e.target.value })}
-          placeholder="Ex.: Tardes, depois das 14h"
+          placeholder={traduzir("Ex.: Tardes, depois das 14h")}
         />
       </div>
     </div>
@@ -287,11 +287,14 @@ function ContatosPageInner() {
   return (
     <>
       <Topbar
-        title="Contatos"
+        title={traduzir("Contatos")}
         sub={
           filtroOrigem === "Todos" && !busca.trim()
-            ? `${contatos.length} contatos · visão 360° de cada lead`
-            : `${contatosFiltrados.length} de ${contatos.length} contatos`
+            ? traduzir("{total} contatos · visão 360° de cada lead", { total: contatos.length })
+            : traduzir("{filtrados} de {total} contatos", {
+                filtrados: contatosFiltrados.length,
+                total: contatos.length,
+              })
         }
         actions={
           <>
@@ -335,7 +338,7 @@ function ContatosPageInner() {
               </span>
             </div>
             <div className="field">
-              <label>Nome</label>
+              <label>{traduzir("Nome")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
@@ -346,7 +349,7 @@ function ContatosPageInner() {
               />
             </div>
             <div className="field">
-              <label>E-mail</label>
+              <label>{traduzir("E-mail")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
@@ -379,7 +382,7 @@ function ContatosPageInner() {
               />
             </div>
             <div className="field">
-              <label>Endereço</label>
+              <label>{traduzir("Endereço")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
@@ -424,12 +427,12 @@ function ContatosPageInner() {
             <table className="tbl contatos-tbl">
               <thead>
                 <tr>
-                  <th>Nome</th>
-                  <th>Origem</th>
+                  <th>{traduzir("Nome")}</th>
+                  <th>{traduzir("Origem")}</th>
                   <th>{traduzir("Etapa")}</th>
-                  <th>Responsável</th>
-                  <th>Última interação</th>
-                  <th>Valor</th>
+                  <th>{traduzir("Responsável")}</th>
+                  <th>{traduzir("Última interação")}</th>
+                  <th>{traduzir("Valor")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -571,7 +574,7 @@ function ContatosPageInner() {
             ) : null}
 
             <div className="field">
-              <label>Funil</label>
+              <label>{traduzir("Funil")}</label>
               <div className="input">
                 {noFunil ? noFunil.funil : "Ainda não entrou em nenhum funil"}
               </div>
@@ -581,21 +584,21 @@ function ContatosPageInner() {
               <div className="input">{noFunil ? noFunil.etapa : "-"}</div>
             </div>
             <div className="field">
-              <label>Origem</label>
+              <label>{traduzir("Origem")}</label>
               <div className="input">{contato.origem}</div>
             </div>
             <div className="field">
-              <label>Responsável</label>
+              <label>{traduzir("Responsável")}</label>
               <div className="input">{contato.responsavel}</div>
             </div>
             <div className="field">
-              <label>Valor</label>
+              <label>{traduzir("Valor")}</label>
               <div className="input">{contato.valor}</div>
             </div>
             {editandoContato ? (
               <>
                 <div className="field">
-                  <label>E-mail</label>
+                  <label>{traduzir("E-mail")}</label>
                   <input
                     className="input"
                     style={{ width: "100%" }}
@@ -625,7 +628,7 @@ function ContatosPageInner() {
                   />
                 </div>
                 <div className="field">
-                  <label>Endereço</label>
+                  <label>{traduzir("Endereço")}</label>
                   <input
                     className="input"
                     style={{ width: "100%" }}
@@ -647,7 +650,7 @@ function ContatosPageInner() {
             ) : (
               <>
                 <div className="field">
-                  <label>E-mail</label>
+                  <label>{traduzir("E-mail")}</label>
                   <div className="input">{contato.email || "-"}</div>
                 </div>
                 <div className="field">
@@ -659,20 +662,20 @@ function ContatosPageInner() {
                   <div className="input">{contato.nascimento || "-"}</div>
                 </div>
                 <div className="field">
-                  <label>Endereço</label>
+                  <label>{traduzir("Endereço")}</label>
                   <div className="input">{contato.endereco || "-"}</div>
                 </div>
                 <div className="config-grid-2">
                   <div className="field">
-                    <label>Sobrenome</label>
+                    <label>{traduzir("Sobrenome")}</label>
                     <div className="input">{contato.sobrenome || "-"}</div>
                   </div>
                   <div className="field">
-                    <label>Empresa</label>
+                    <label>{traduzir("Empresa")}</label>
                     <div className="input">{contato.empresa || "-"}</div>
                   </div>
                   <div className="field">
-                    <label>Cargo</label>
+                    <label>{traduzir("Cargo")}</label>
                     <div className="input">{contato.cargo || "-"}</div>
                   </div>
                   <div className="field">
@@ -680,7 +683,7 @@ function ContatosPageInner() {
                     <div className="input">{contato.telefoneFixo || "-"}</div>
                   </div>
                   <div className="field">
-                    <label>Cidade</label>
+                    <label>{traduzir("Cidade")}</label>
                     <div className="input">{contato.cidade || "-"}</div>
                   </div>
                   <div className="field">
@@ -688,15 +691,15 @@ function ContatosPageInner() {
                     <div className="input">{contato.estado || "-"}</div>
                   </div>
                   <div className="field">
-                    <label>País</label>
+                    <label>{traduzir("País")}</label>
                     <div className="input">{contato.pais || "-"}</div>
                   </div>
                   <div className="field">
-                    <label>Canal preferido</label>
+                    <label>{traduzir("Canal preferido")}</label>
                     <div className="input">{contato.canalPreferido || "-"}</div>
                   </div>
                   <div className="field">
-                    <label>Melhor horário pra contato</label>
+                    <label>{traduzir("Melhor horário pra contato")}</label>
                     <div className="input">{contato.melhorHorario || "-"}</div>
                   </div>
                 </div>

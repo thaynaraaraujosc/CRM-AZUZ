@@ -39,7 +39,7 @@ function AutomacoesConteudo() {
   return (
     <>
       <Topbar
-        title="Automações"
+        title={traduzir("Automações")}
         sub={traduzir("O que cada etapa do funil faz sozinha quando um lead entra")}
         actions={
           <>
@@ -47,7 +47,7 @@ function AutomacoesConteudo() {
                 que vem logo depois de criar um robô, que é "ele rodou?". Antes essa tela só existia
                 pro Instagram, e no funil não havia onde olhar. */}
             <Link className="btn" href="/automacoes/execucoes">
-              Execuções
+              {traduzir("Execuções")}
             </Link>
             {/* Vai pra tela de três caminhos, não direto pro assistente: o modelo AZUZ pronto é
                 o caminho com mais chance de dar certo pra quem nunca montou um robô, e ele não

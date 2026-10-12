@@ -32,7 +32,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
         <label>{traduzir("Qual agendamento cancelar?")}</label>
         <select className="input" value={data.criterio} onChange={(e) => onChange({ ...data, criterio: e.target.value as CriterioAgendamento })}>
           {CRITERIOS.map((c) => (
-            <option key={c.valor} value={c.valor}>{c.label}</option>
+            <option key={c.valor} value={c.valor}>{traduzir(c.label)}</option>
           ))}
         </select>
       </div>
@@ -51,7 +51,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
 
       {data.criterio === "responsavel" ? (
         <div className="field">
-          <label>Responsável</label>
+          <label>{traduzir("Responsável")}</label>
           <select className="input" value={data.responsavel ?? ""} onChange={(e) => onChange({ ...data, responsavel: e.target.value })}>
             <option value="">{traduzir("Selecione…")}</option>
             {equipe.map((m) => (
@@ -77,10 +77,10 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
       {data.enviarMensagem ? (
         <>
           <div className="field">
-            <label>Canal</label>
+            <label>{traduzir("Canal")}</label>
             <select className="input" value={data.canalMensagem ?? "whatsapp"} onChange={(e) => onChange({ ...data, canalMensagem: e.target.value })}>
               <option value="whatsapp">WhatsApp</option>
-              <option value="email">E-mail</option>
+              <option value="email">{traduzir("E-mail")}</option>
             </select>
           </div>
           <div className="field">
@@ -102,7 +102,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
             </div>
           ) : (
             <div className="field">
-              <label>Mensagem</label>
+              <label>{traduzir("Mensagem")}</label>
               <textarea
                 className="input"
                 style={{ width: "100%", minHeight: 70, resize: "vertical" }}

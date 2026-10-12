@@ -111,7 +111,7 @@ export default function InstagramContatosPage() {
 
   return (
     <>
-      <Topbar title="Contatos do Instagram" sub={traduzir("Quem chegou pelo Direct, por comentário ou por story")} />
+      <Topbar title={traduzir("Contatos do Instagram")} sub={traduzir("Quem chegou pelo Direct, por comentário ou por story")} />
 
       <div className="content">
         <section className="card ig-contatos-card">
@@ -166,7 +166,7 @@ export default function InstagramContatosPage() {
           {aviso ? <p className="hint">{aviso}</p> : null}
 
           {contatos === null ? (
-            <p className="hint mt16">Carregando…</p>
+            <p className="hint mt16">{traduzir("Carregando…")}</p>
           ) : !visiveis.length ? (
             <p className="hint mt16">
               {contatos.length ? "Ninguém com esse nome." : "Nenhum contato veio do Instagram ainda."}
@@ -183,11 +183,11 @@ export default function InstagramContatosPage() {
                       aria-label={traduzir("Escolher todos")}
                     />
                   </th>
-                  <th>Nome</th>
-                  <th>Seguidores</th>
+                  <th>{traduzir("Nome")}</th>
+                  <th>{traduzir("Seguidores")}</th>
                   <th>{traduzir("Verificado")}</th>
                   <th>{traduzir("Segue você")}</th>
-                  <th>Etiquetas</th>
+                  <th>{traduzir("Etiquetas")}</th>
                   <th>{traduzir("Atualizado")}</th>
                   <th aria-label={traduzir("Ações")} />
                 </tr>

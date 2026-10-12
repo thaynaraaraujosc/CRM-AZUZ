@@ -111,13 +111,13 @@ export default function SocialPage() {
             <p className="hint mt8">{traduzir("Carregando…")}</p>
           ) : painel ? (
             <div className="social-numeros mt8">
-              <Numero valor={painel.crm.directs} label="Mensagens no Direct" />
-              <Numero valor={painel.crm.comentarios} label="Comentários" />
-              <Numero valor={painel.crm.storiesRespondidos} label="Respostas a story" />
-              <Numero valor={painel.crm.mencoes} label="Menções em story" />
-              <Numero valor={painel.crm.reacoes} label="Reações recebidas" />
-              <Numero valor={painel.crm.leadsCriados} label="Leads criados pelo Instagram" />
-              <Numero valor={painel.crm.automacoesIniciadas} label="Automações sociais iniciadas" />
+              <Numero valor={painel.crm.directs} label={traduzir("Mensagens no Direct")} />
+              <Numero valor={painel.crm.comentarios} label={traduzir("Comentários")} />
+              <Numero valor={painel.crm.storiesRespondidos} label={traduzir("Respostas a story")} />
+              <Numero valor={painel.crm.mencoes} label={traduzir("Menções em story")} />
+              <Numero valor={painel.crm.reacoes} label={traduzir("Reações recebidas")} />
+              <Numero valor={painel.crm.leadsCriados} label={traduzir("Leads criados pelo Instagram")} />
+              <Numero valor={painel.crm.automacoesIniciadas} label={traduzir("Automações sociais iniciadas")} />
             </div>
           ) : (
             <p className="hint mt8">{traduzir("Não deu pra carregar agora.")}</p>
@@ -136,10 +136,10 @@ export default function SocialPage() {
             {painel.instagram?.perfil ? (
               <div className="social-numeros mt8">
                 {typeof painel.instagram.perfil.seguidores === "number" ? (
-                  <Numero valor={painel.instagram.perfil.seguidores} label="Seguidores" />
+                  <Numero valor={painel.instagram.perfil.seguidores} label={traduzir("Seguidores")} />
                 ) : null}
                 {typeof painel.instagram.perfil.publicacoes === "number" ? (
-                  <Numero valor={painel.instagram.perfil.publicacoes} label="Publicações" />
+                  <Numero valor={painel.instagram.perfil.publicacoes} label={traduzir("Publicações")} />
                 ) : null}
                 {painel.instagram.metricas.map((m) => (
                   <Numero key={m.chave} valor={m.valor} label={m.label} ajuda={m.ajuda} />

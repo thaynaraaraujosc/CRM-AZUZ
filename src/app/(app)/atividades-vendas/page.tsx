@@ -63,7 +63,7 @@ export default function AtividadesVendasPage() {
       <div className="topbar">
         <div>
           <div className="topbar-title-row">
-            <h2>Atividades</h2>
+            <h2>{traduzir("Atividades")}</h2>
           </div>
           <p className="sub">{traduzir("Como a equipe está se comportando. Atendimento e interações")}</p>
         </div>

@@ -6134,7 +6134,7 @@ function ConversasPageInner() {
                           <Toggle
                             key={`nav-${configRascunho.notificacaoNavegador}`}
                             defaultOn={configRascunho.notificacaoNavegador}
-                            label="Notificação do navegador"
+                            label={traduzir("Notificação do navegador")}
                             onToggle={(v) =>
                               setConfigRascunho((prev) => ({ ...prev, notificacaoNavegador: v }))
                             }
@@ -6225,7 +6225,7 @@ function ConversasPageInner() {
                         <Toggle
                           key={`download-${configRascunho.downloadAutomatico}`}
                           defaultOn={configRascunho.downloadAutomatico}
-                          label="Download automático de mídias"
+                          label={traduzir("Download automático de mídias")}
                           onToggle={(v) =>
                             setConfigRascunho((prev) => ({ ...prev, downloadAutomatico: v }))
                           }
@@ -6264,7 +6264,7 @@ function ConversasPageInner() {
                         <Toggle
                           key={`links-${configRascunho.previaLinks}`}
                           defaultOn={configRascunho.previaLinks}
-                          label="Prévia de links"
+                          label={traduzir("Prévia de links")}
                           onToggle={(v) => setConfigRascunho((prev) => ({ ...prev, previaLinks: v }))}
                         />
                       </div>
@@ -6273,7 +6273,7 @@ function ConversasPageInner() {
                         <Toggle
                           key={`autoplay-${configRascunho.autoplayVideos}`}
                           defaultOn={configRascunho.autoplayVideos}
-                          label="Reprodução automática de vídeos"
+                          label={traduzir("Reprodução automática de vídeos")}
                           onToggle={(v) => setConfigRascunho((prev) => ({ ...prev, autoplayVideos: v }))}
                         />
                       </div>
@@ -7202,7 +7202,7 @@ function ConversasPageInner() {
             <div className="chat-emoji-picker">
               {EMOJI_CATEGORIAS.map((cat) => (
                 <div key={cat.titulo}>
-                  <p className="chat-emoji-categoria">{cat.titulo}</p>
+                  <p className="chat-emoji-categoria">{traduzir(cat.titulo)}</p>
                   <div className="chat-emoji-grid">
                     {cat.emojis.map((emoji, i) => (
                       <button

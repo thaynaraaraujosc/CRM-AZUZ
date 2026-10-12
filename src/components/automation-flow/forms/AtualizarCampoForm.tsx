@@ -84,7 +84,7 @@ export function AtualizarCampoForm({
       </div>
 
       <div className="field">
-        <label>Valor</label>
+        <label>{traduzir("Valor")}</label>
         <input
           className="input"
           value={data.valor ?? ""}

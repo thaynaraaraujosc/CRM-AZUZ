@@ -71,7 +71,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
 
       {data.filtroModo === "responsavel" ? (
         <div className="field">
-          <label>Responsável</label>
+          <label>{traduzir("Responsável")}</label>
           <select className="input" value={data.responsavel ?? ""} onChange={(e) => onChange({ ...data, responsavel: e.target.value })}>
             <option value="">{traduzir("Selecione…")}</option>
             {equipe.map((m) => (
@@ -85,7 +85,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
 
       {data.filtroModo === "equipe" ? (
         <div className="field">
-          <label>Equipe</label>
+          <label>{traduzir("Equipe")}</label>
           <select className="input" value={data.equipe ?? ""} onChange={(e) => onChange({ ...data, equipe: e.target.value })}>
             <option value="">{traduzir("Selecione…")}</option>
             {equipes.map((nome) => (
@@ -99,7 +99,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
 
       {data.filtroModo === "funil" ? (
         <div className="field">
-          <label>Funil</label>
+          <label>{traduzir("Funil")}</label>
           <select className="input" value={data.funilId ?? ""} onChange={(e) => onChange({ ...data, funilId: e.target.value })}>
             <option value="">{traduzir("Selecione…")}</option>
             {funis.map((f) => (

@@ -70,9 +70,9 @@ export function TabelaExecucoes({ execucoes, vazio }: { execucoes: ExecucaoDetal
         <thead>
           <tr>
             <th>{traduzir("Começou")}</th>
-            <th>Robô</th>
+            <th>{traduzir("Robô")}</th>
             <th>Contato</th>
-            <th>Situação</th>
+            <th>{traduzir("Situação")}</th>
             <th>{traduzir("Esperando até")}</th>
             <th aria-label={traduzir("Passos")} />
           </tr>

@@ -13,7 +13,7 @@ export function AparenciaSecao() {
       <CabecalhoCategoria titulo={traduzir("Aparência")} descricao={traduzir("Tema claro ou escuro.")} />
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Tema</p>
+        <p className="config-bloco-titulo">{traduzir("Tema")}</p>
         <ThemeToggle />
       </div>
     </div>

@@ -186,7 +186,7 @@ export function EditorTemplate({
           </div>
 
           <div className="field">
-            <label>Canal</label>
+            <label>{traduzir("Canal")}</label>
             {/* Canal marcado "em breve" (hoje o e-mail) não aparece aqui: template só faz sentido
                 pra canal que dá pra usar, e um cartão desabilitado num campo obrigatório é um beco
                 sem saída. O cartão explicativo continua existindo no Disparo em massa, que é onde
@@ -203,7 +203,7 @@ export function EditorTemplate({
                   title={!c.conectado ? c.motivo : template ? "O canal não muda depois de criado; duplique se precisar." : undefined}
                   onClick={() => setR((a) => ({ ...a, canal: c.canal, botoes: LIMITES[c.canal].botoesMaximo ? a.botoes : [] }))}
                 >
-                  <strong>{c.label}</strong>
+                  <strong>{traduzir(c.label)}</strong>
                   <span>{c.conectado ? c.detalhe || "Conectado" : "Não conectado"}</span>
                 </button>
                 ))}
@@ -228,7 +228,7 @@ export function EditorTemplate({
               ) : null}
               {limites.exigeIdioma ? (
                 <div className="field">
-                  <label>Idioma</label>
+                  <label>{traduzir("Idioma")}</label>
                   <select className="input" value={r.idioma} onChange={(e) => setR((a) => ({ ...a, idioma: e.target.value }))} disabled={!editavelNaMeta}>
                     {IDIOMAS.map((i) => (
                       <option key={i.valor} value={i.valor}>
@@ -243,13 +243,13 @@ export function EditorTemplate({
 
           {limites.exigeAssunto ? (
             <div className="field">
-              <label>Assunto</label>
+              <label>{traduzir("Assunto")}</label>
               <input className="input" value={r.assunto} onChange={(e) => setR((a) => ({ ...a, assunto: e.target.value }))} />
             </div>
           ) : null}
 
           <div className="field">
-            <label>Mensagem</label>
+            <label>{traduzir("Mensagem")}</label>
             <textarea
               ref={corpoRef}
               className="input tpl-corpo"

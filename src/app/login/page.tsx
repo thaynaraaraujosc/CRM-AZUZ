@@ -102,12 +102,12 @@ function LoginForm() {
         {/* O rótulo continua no HTML, escondido por CSS: o campo precisa dele pra leitor de tela,
             mesmo com o placeholder dizendo a mesma coisa visualmente. */}
         <div className="field">
-          <label htmlFor="email">E-mail</label>
+          <label htmlFor="email">{traduzir("E-mail")}</label>
           <input
             id="email"
             type="email"
             className="input"
-            placeholder="E-mail"
+            placeholder={traduzir("E-mail")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required

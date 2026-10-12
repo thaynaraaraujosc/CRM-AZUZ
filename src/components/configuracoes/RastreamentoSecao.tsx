@@ -140,7 +140,7 @@ export function RastreamentoSecao() {
             )}
           </>
         ) : (
-          <p className="hint rastreio-nota">Carregando…</p>
+          <p className="hint rastreio-nota">{traduzir("Carregando…")}</p>
         )}
       </div>
 
@@ -150,7 +150,7 @@ export function RastreamentoSecao() {
       <div className="config-bloco">
         <p className="config-bloco-titulo">{traduzir("Vendas devolvidas para o Google")}</p>
         {conversoes === null ? (
-          <p className="hint rastreio-nota">Carregando…</p>
+          <p className="hint rastreio-nota">{traduzir("Carregando…")}</p>
         ) : !conversoes.googleConectado ? (
           <p className="hint rastreio-nota">
             Conecte o Google Ads em{" "}

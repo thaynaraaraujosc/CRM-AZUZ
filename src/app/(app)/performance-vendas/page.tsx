@@ -92,7 +92,7 @@ function PerformanceVendasPageInner() {
       <div className="topbar">
         <div>
           <div className="topbar-title-row">
-            <h2>Performance</h2>
+            <h2>{traduzir("Performance")}</h2>
           </div>
           <p className="sub">{traduzir("Desempenho e conversão da equipe no período")}</p>
         </div>
@@ -238,7 +238,7 @@ function PerformanceVendasPageInner() {
 
         <div className="card">
           <div className="panel-h">
-            <h4>Motivos de perda</h4>
+            <h4>{traduzir("Motivos de perda")}</h4>
             <Link href="/motivos-perda" className="link">
               {traduzir("Ver análise completa de perdas →")}
             </Link>

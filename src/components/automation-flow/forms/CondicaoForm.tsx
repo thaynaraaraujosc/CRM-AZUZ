@@ -129,7 +129,7 @@ export function CondicaoForm({
 
     if (CAMPOS_SIM_NAO.has(regra.campo)) {
       return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
           <option value="">{traduzir("Selecione…")}</option>
           <option value="sim">{traduzir("Sim")}</option>
           <option value="nao">{traduzir("Não")}</option>
@@ -138,7 +138,7 @@ export function CondicaoForm({
     }
     if (regra.campo === "canal") {
       return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
           <option value="">{traduzir("Selecione…")}</option>
           {CANAIS.map((c) => (
             <option key={c.valor} value={c.valor}>
@@ -150,7 +150,7 @@ export function CondicaoForm({
     }
     if (regra.campo === "etiqueta") {
       return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
           <option value="">{traduzir("Selecione…")}</option>
           {etiquetas.map((nome) => (
             <option key={nome} value={nome}>
@@ -162,7 +162,7 @@ export function CondicaoForm({
     }
     if (regra.campo === "funil") {
       return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
           <option value="">{traduzir("Selecione…")}</option>
           {funis.map((f) => (
             <option key={f.id} value={f.nome}>
@@ -174,7 +174,7 @@ export function CondicaoForm({
     }
     if (regra.campo === "etapa") {
       return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
           <option value="">{traduzir("Selecione…")}</option>
           {etapas.map((titulo) => (
             <option key={titulo} value={titulo}>
@@ -186,7 +186,7 @@ export function CondicaoForm({
     }
     if (regra.campo === "responsavel") {
       return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
           <option value="">{traduzir("Selecione…")}</option>
           {membros.map((m) => (
             <option key={m.id} value={m.nome}>
@@ -198,7 +198,7 @@ export function CondicaoForm({
     }
     if (regra.campo === "equipe") {
       return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
           <option value="">{traduzir("Selecione…")}</option>
           {equipes.map((nome) => (
             <option key={nome} value={nome}>
@@ -210,7 +210,7 @@ export function CondicaoForm({
     }
     if (regra.campo === "dia_semana") {
       return (
-        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
+        <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")}>
           <option value="">{traduzir("Selecione…")}</option>
           {DIAS_SEMANA.map((d) => (
             <option key={d} value={d}>
@@ -221,12 +221,12 @@ export function CondicaoForm({
       );
     }
     if (regra.campo === "horario" || regra.campo === "horario_ultima_mensagem") {
-      return <input className="input" type="time" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor" />;
+      return <input className="input" type="time" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")} />;
     }
     if (regra.campo === "data_ultima_conversa") {
       return <SeletorDeData valor={regra.valor ?? ""} onChange={onChangeValor} curto />;
     }
-    return <input className="input" placeholder="Valor" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor" />;
+    return <input className="input" placeholder={traduzir("Valor")} value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label={traduzir("Valor")} />;
   }
 
   return (

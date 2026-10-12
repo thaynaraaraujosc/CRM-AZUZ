@@ -74,7 +74,7 @@ function RelatoriosPageInner() {
 
   return (
     <>
-      <Topbar title="Relatórios" sub={traduzir("Escolha o tipo de relatório. O conteúdo e os filtros você ajusta no assistente")} />
+      <Topbar title={traduzir("Relatórios")} sub={traduzir("Escolha o tipo de relatório. O conteúdo e os filtros você ajusta no assistente")} />
 
       <div className="content">
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 14 }}>
@@ -121,7 +121,7 @@ function RelatoriosPageInner() {
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>Nome</th>
+                  <th>{traduzir("Nome")}</th>
                   <th>{traduzir("Tipo")}</th>
                   <th>Contato</th>
                   <th>{traduzir("Período")}</th>

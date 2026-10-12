@@ -89,7 +89,7 @@ function CondicaoNode({ data }: NodeProps<CondicaoRFNode>) {
             className="input"
             value={regra.valor ?? ""}
             onChange={(e) => onMudar({ valor: e.target.value })}
-            placeholder="Valor"
+            placeholder={traduzir("Valor")}
           />
         ) : null}
       </div>

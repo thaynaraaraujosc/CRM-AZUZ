@@ -74,8 +74,8 @@ export default function AmostraPage() {
             <button type="button" className="btn primary" disabled>{traduzir("Desabilitado")}</button>
           </div>
           <div className="amostra-linha">
-            <button type="button" className="btn primary sm">Pequeno</button>
-            <button type="button" className="btn sm">Pequeno</button>
+            <button type="button" className="btn primary sm">{traduzir("Pequeno")}</button>
+            <button type="button" className="btn sm">{traduzir("Pequeno")}</button>
           </div>
         </section>
 
@@ -87,7 +87,7 @@ export default function AmostraPage() {
           </p>
           <div className="amostra-grid-2">
             <div className="field">
-              <label htmlFor="a-nome">Nome</label>
+              <label htmlFor="a-nome">{traduzir("Nome")}</label>
               <input id="a-nome" className="input" placeholder="Clínica Aurora" />
             </div>
             <div className="field">
@@ -118,7 +118,7 @@ export default function AmostraPage() {
           <div className="amostra-linha">
             <span className="amostra-selo">{traduzir("Neutro")}</span>
             <span className="amostra-selo amostra-selo-acento">{traduzir("Ativo")}</span>
-            <span className="amostra-selo amostra-selo-ok">Conectado</span>
+            <span className="amostra-selo amostra-selo-ok">{traduzir("Conectado")}</span>
             <span className="amostra-selo amostra-selo-erro">{traduzir("Perdido")}</span>
           </div>
         </section>
@@ -198,7 +198,7 @@ export default function AmostraPage() {
                 {traduzir("Cancelar")}
               </button>
               <button type="button" className="btn danger" onClick={() => setModalAberto(false)}>
-                Desconectar
+                {traduzir("Desconectar")}
               </button>
             </div>
           </div>

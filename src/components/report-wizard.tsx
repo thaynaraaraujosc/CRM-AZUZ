@@ -479,7 +479,7 @@ export function ReportWizard({
               ) : (
                 <>
                   <div className="field">
-                    <label>Funil</label>
+                    <label>{traduzir("Funil")}</label>
                     <select
                       className="input"
                       value={funilFiltro}
@@ -488,7 +488,7 @@ export function ReportWizard({
                         invalidarPrevia();
                       }}
                     >
-                      <option value="Todos">Todos</option>
+                      <option value="Todos">{traduzir("Todos")}</option>
                       {funis.map((f) => (
                         <option key={f.id} value={f.nome}>
                           {f.nome}
@@ -497,7 +497,7 @@ export function ReportWizard({
                     </select>
                   </div>
                   <div className="field">
-                    <label>Responsável</label>
+                    <label>{traduzir("Responsável")}</label>
                     <select
                       className="input"
                       value={responsavelFiltro}
@@ -506,7 +506,7 @@ export function ReportWizard({
                         invalidarPrevia();
                       }}
                     >
-                      <option value="Todos">Todos</option>
+                      <option value="Todos">{traduzir("Todos")}</option>
                       {equipe.map((m) => (
                         <option key={m.id} value={m.nome}>
                           {m.nome}

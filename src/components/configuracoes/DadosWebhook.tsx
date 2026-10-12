@@ -106,7 +106,7 @@ export function DadosWebhook() {
   }, []);
 
   if (erro) return <p className="hint" style={{ color: "var(--danger)" }}><IconAlerta width={12} height={12} aria-hidden="true" /> {erro}</p>;
-  if (!dados) return <p className="hint">Carregando…</p>;
+  if (!dados) return <p className="hint">{traduzir("Carregando…")}</p>;
 
   return (
     <div className="config-bloco">

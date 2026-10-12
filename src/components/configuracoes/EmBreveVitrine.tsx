@@ -3,6 +3,7 @@
 import type { ComponentType, ReactNode, SVGProps } from "react";
 
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Vitrine "Em breve" reutilizável: mesmo padrão visual de `/azuz-ia` (item desativado por decisão
  * de produto, não limitação técnica: mostra que a categoria existe, sem dar acesso a um formulário
@@ -18,6 +19,7 @@ export function EmBreveVitrine({
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
   texto: ReactNode;
 }) {
+  const { t: traduzir } = useIdioma();
   return (
     <div className="config-secao">
       <CabecalhoCategoria titulo={titulo} descricao={descricao} />
@@ -39,7 +41,7 @@ export function EmBreveVitrine({
             <Icon width={26} height={26} />
           </div>
           <span className="nav-badge-em-breve" style={{ marginLeft: 0, marginBottom: 10, display: "inline-block" }}>
-            Em breve
+            {traduzir("Em breve")}
           </span>
           <p className="hint" style={{ fontSize: 13, lineHeight: 1.6 }}>
             {texto}

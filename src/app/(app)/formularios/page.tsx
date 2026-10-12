@@ -797,7 +797,7 @@ export default function FormulariosPage() {
                   );
                 })}
               <button type="button" className="btn block" style={{ background: formularioAberto.tema.corBotao, color: "#fff", marginTop: 10 }} disabled>
-                Enviar
+                {traduzir("Enviar")}
               </button>
             </div>
           </>
@@ -895,7 +895,7 @@ function PainelPagina({
                     style={{ flex: 1 }}
                     value={pagina.condicao.valor ?? ""}
                     onChange={(e) => onAtualizar({ condicao: { ...pagina.condicao!, valor: e.target.value } })}
-                    placeholder="Valor"
+                    placeholder={traduzir("Valor")}
                   />
                 ) : null}
               </div>
@@ -1631,7 +1631,7 @@ function PainelDesign({
           <h4>{traduzir("Personalização visual")}</h4>
         </div>
         <div className="field">
-          <label>Tema</label>
+          <label>{traduzir("Tema")}</label>
           <div className="filters-row" style={{ margin: 0 }}>
             <button type="button" className={`fchip${!formulario.tema.temaEscuro ? " active" : ""}`} onClick={() => trocarTema(false)}>
               {traduzir("Claro")}

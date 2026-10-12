@@ -563,7 +563,7 @@ function FunilPageInner() {
         </div>
       ) : null}
       <Topbar
-        title="Funil comercial"
+        title={traduzir("Funil comercial")}
         sub={`${funilAtivo?.nome ?? ""} · ${totalVisivel} ${totalVisivel === 1 ? "negócio" : "negócios"} ${filtroAtivo ? (totalVisivel === 1 ? "encontrado" : "encontrados") : "no funil"}`}
         actions={
           <>
@@ -574,7 +574,7 @@ function FunilPageInner() {
                 type="button"
                 className="btn terciario"
                 disabled={importando}
-                title="Deixa funil e conversas iguais: cria o negócio que falta no funil e a conversa que falta no WhatsApp"
+                title={traduzir("Deixa funil e conversas iguais: cria o negócio que falta no funil e a conversa que falta no WhatsApp")}
                 onClick={() => void importarConversas()}
               >
                 {importando ? "Alinhando…" : `Alinhar ${desalinhados} com Conversas`}
@@ -584,7 +584,7 @@ function FunilPageInner() {
               type="button"
               className="btn terciario"
               disabled={reordenando}
-              title="Coloca quem mandou mensagem mais recentemente no topo de cada coluna, sem mudar ninguém de etapa"
+              title={traduzir("Coloca quem mandou mensagem mais recentemente no topo de cada coluna, sem mudar ninguém de etapa")}
               onClick={() => void reordenarPorAtividade()}
             >
               {reordenando ? "Reordenando…" : "↑ Mensagens recentes no topo"}
@@ -596,7 +596,7 @@ function FunilPageInner() {
                 type="button"
                 className="btn terciario"
                 disabled={juntando}
-                title="A mesma pessoa está em mais de um negócio. Fica o que está mais à frente no funil."
+                title={traduzir("A mesma pessoa está em mais de um negócio. Fica o que está mais à frente no funil.")}
                 onClick={() => void juntarDuplicados()}
               >
                 {juntando ? "Juntando…" : `Juntar ${cardsDuplicados} repetido(s)`}
@@ -845,7 +845,7 @@ function FunilPageInner() {
               />
             </div>
             <div className="field">
-              <label>Origem</label>
+              <label>{traduzir("Origem")}</label>
               <ChipFilters
                 options={ORIGENS_NEGOCIO}
                 initial={ORIGENS_NEGOCIO.indexOf(origemNegocio)}

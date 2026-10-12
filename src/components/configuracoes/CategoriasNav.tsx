@@ -19,7 +19,7 @@ export function CategoriasNav({
   const termo = busca.trim().toLowerCase();
 
   return (
-    <nav className="config-nav" aria-label="Categorias de configuração">
+    <nav className="config-nav" aria-label={traduzir("Categorias de configuração")}>
       <input
         className="input config-nav-busca"
         placeholder={traduzir("Buscar configuração…")}
@@ -36,7 +36,7 @@ export function CategoriasNav({
         if (categoriasFiltradas.length === 0) return null;
         return (
           <div className="config-nav-grupo" key={grupo.titulo}>
-            <p className="config-nav-grupo-h">{grupo.titulo}</p>
+            <p className="config-nav-grupo-h">{traduzir(grupo.titulo)}</p>
             {categoriasFiltradas.map((cat) => (
               <button
                 type="button"
@@ -46,8 +46,8 @@ export function CategoriasNav({
                 aria-pressed={ativa === cat.id}
               >
                 <cat.Icon width={16} height={16} aria-hidden="true" />
-                <span>{cat.label}</span>
-                {cat.emBreve ? <span className="nav-badge-em-breve" style={{ marginLeft: "auto" }}>Em breve</span> : null}
+                <span>{traduzir(cat.label)}</span>
+                {cat.emBreve ? <span className="nav-badge-em-breve" style={{ marginLeft: "auto" }}>{traduzir("Em breve")}</span> : null}
               </button>
             ))}
           </div>

@@ -102,7 +102,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
         <select className="input" value={data.destinoModo} onChange={(e) => onChange({ ...data, destinoModo: e.target.value as DestinoEnvioContato })}>
           <option value="conversa_atual">{traduzir("Contato atual da conversa")}</option>
           <option value="atendente">{traduzir("Atendente específico")}</option>
-          <option value="equipe">Equipe</option>
+          <option value="equipe">{traduzir("Equipe")}</option>
           <option value="numero">{traduzir("Número específico")}</option>
         </select>
       </div>
@@ -121,7 +121,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
 
       {data.destinoModo === "equipe" ? (
         <div className="field">
-          <label>Equipe</label>
+          <label>{traduzir("Equipe")}</label>
           <select className="input" value={data.destinoEquipe ?? ""} onChange={(e) => onChange({ ...data, destinoEquipe: e.target.value })}>
             <option value="">{traduzir("Selecione…")}</option>
             {equipes.map((nome) => (

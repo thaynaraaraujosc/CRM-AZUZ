@@ -148,7 +148,7 @@ export function OrganizarMeuDia({
               <div key={item.id} className={`central-dia-organizar-item${destacado ? " is-atual" : ""}`}>
                 <span className="central-dia-organizar-ordem">{i + 1}</span>
                 <div className="central-dia-organizar-info">
-                  <p className="n">{item.titulo}</p>
+                  <p className="n">{traduzir(item.titulo)}</p>
                   <p className="r">
                     {MODULO_LABEL[item.modulo]} · {TEMPO_ESTIMADO[item.modulo]} estimado ·{" "}
                     {item.prioridade === "urgente" ? "Urgente" : item.prioridade === "atencao" ? "Precisa de atenção" : "Oportunidade"}

@@ -47,7 +47,7 @@ export default function ExecucoesSociaisPage() {
   return (
     <>
       <Topbar
-        title="Execuções"
+        title={traduzir("Execuções")}
         sub={traduzir("O que os robôs do Instagram fizeram, e o que deu errado")}
         actions={
           <div className="social-periodo">
@@ -66,9 +66,9 @@ export default function ExecucoesSociaisPage() {
         <AbasSocial />
         <div className="social-conteudo">
         <section className="card">
-          <h3>Execuções</h3>
+          <h3>{traduzir("Execuções")}</h3>
           {carregando && !painel ? (
-            <p className="hint">Carregando…</p>
+            <p className="hint">{traduzir("Carregando…")}</p>
           ) : (
             <TabelaExecucoes
               execucoes={painel?.execucoes ?? []}

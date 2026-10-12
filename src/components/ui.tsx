@@ -369,6 +369,7 @@ export function ChipFilters({
   initial?: number;
   onChange?: (option: string, index: number) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [selected, setSelected] = useState(initial);
   return (
     <div className="filters-row">
@@ -383,7 +384,7 @@ export function ChipFilters({
             onChange?.(option, i);
           }}
         >
-          {option}
+          {traduzir(option)}
         </button>
       ))}
     </div>

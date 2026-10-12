@@ -184,7 +184,7 @@ export function MensagemMidiaForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Canal</label>
+        <label>{traduzir("Canal")}</label>
         <select
           className="input"
           value={data.canal ?? canais[0]?.valor ?? "whatsapp"}

@@ -16,7 +16,7 @@ export default function AzuzIaPage() {
   return (
     <>
       <Topbar
-        title="Azuz IA"
+        title={traduzir("Azuz IA")}
         sub="Sua assistente dentro do CRM. Pergunta qualquer coisa sobre leads, tarefas ou funil"
       />
 
@@ -38,7 +38,7 @@ export default function AzuzIaPage() {
             <IconSparkle width={26} height={26} />
           </div>
           <span className="nav-badge-em-breve" style={{ marginLeft: 0, marginBottom: 10, display: "inline-block" }}>
-            Em breve
+            {traduzir("Em breve")}
           </span>
           <h2 style={{ fontFamily: "var(--display)", fontSize: 20, margin: "6px 0 10px" }}>
             {traduzir("Azuz IA está em desenvolvimento")}

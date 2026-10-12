@@ -157,7 +157,7 @@ export function NovaAutomacao({
             {!semGatilho ? (
               <>
                 <div className="field">
-                  <label>Funil</label>
+                  <label>{traduzir("Funil")}</label>
                   <select
                     className="input"
                     value={funilId}
