@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { ConexaoManualWhatsApp } from "./ConexaoManualWhatsApp";
 import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
+import { LimparDemonstracao } from "./LimparDemonstracao";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { ImportarConversas } from "./ImportarConversas";
 import { useSession } from "next-auth/react";
@@ -210,6 +211,11 @@ export function WhatsAppSecao() {
             com OUTRO canal já conectado. Foi o que aconteceu ao conectar a API oficial por cima do
             QR Code: e era exatamente aí que o botão sumia, sem forma nenhuma de limpar. */}
         <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />
+
+        {/* Só renderiza dentro da conta de demonstração (o próprio componente confere). Fica
+            aqui, junto da outra limpeza, porque é o mesmo tipo de decisão: tirar do CRM o que
+            não deve aparecer numa gravação. */}
+        <LimparDemonstracao aoLimpar={() => window.location.reload()} />
       </div>
     </div>
   );
