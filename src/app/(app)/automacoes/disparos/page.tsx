@@ -170,14 +170,8 @@ export default function DisparosPage() {
               <p>
                 <strong>{aExcluir.titulo}</strong>
               </p>
-              <p className="hint mt8">
-                O registro deste disparo sai do histórico pra sempre, junto com a lista de quem
-                recebeu e o que aconteceu com cada pessoa. Não dá pra desfazer.
-              </p>
-              <p className="hint mt8">
-                As mensagens que já saíram NÃO voltam: elas continuam nas conversas e no aparelho de
-                quem recebeu. Some o registro, não o envio.
-              </p>
+              <p className="hint mt8">{traduzir("O registro deste disparo sai do histórico pra sempre, junto com a lista de quem recebeu e o que aconteceu com cada pessoa. Não dá pra desfazer.")}</p>
+              <p className="hint mt8">{traduzir("As mensagens que já saíram NÃO voltam: elas continuam nas conversas e no aparelho de quem recebeu. Some o registro, não o envio.")}</p>
               <div className="modal-acoes">
                 <button type="button" className="btn" onClick={() => setAExcluir(null)} disabled={excluindo}>
                   {traduzir("Cancelar")}

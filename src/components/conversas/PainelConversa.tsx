@@ -571,10 +571,7 @@ export function PainelConversa({
                 <button type="button" className="btn ghost block" onClick={() => setTransferindo(true)}>
                   {traduzir("Transferir de funil")}
                 </button>
-                <p className="hint" style={{ margin: "8px 0 0" }}>
-                  Arrastar o card no funil atrás desta janela também move. E nesse caminho a
-                  mudança passa pelas automações de entrada da etapa.
-                </p>
+                <p className="hint" style={{ margin: "8px 0 0" }}>{traduzir("Arrastar o card no funil atrás desta janela também move. E nesse caminho a mudança passa pelas automações de entrada da etapa.")}</p>
               </>
             ) : null}
 

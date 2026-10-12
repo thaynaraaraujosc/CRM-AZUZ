@@ -19,6 +19,7 @@ import { useIdioma } from "@/lib/idioma-context";
 /** Semáforo de qualidade que a Meta atribui ao número. Cai pra amarelo/vermelho quando as pessoas
  * bloqueiam/denunciam, e vermelho por tempo demais leva a restrição de envio. */
 function SaudeConexaoOficial({ metadados }: { metadados: Record<string, unknown> }) {
+  const { t: traduzir } = useIdioma();
   const qualidade = metadados.qualityRating as string | undefined;
   const limite = metadados.limiteEnvio as string | undefined;
   const verificado = metadados.ultimaVerificacaoSaude as string | undefined;
@@ -37,9 +38,7 @@ function SaudeConexaoOficial({ metadados }: { metadados: Record<string, unknown>
       ) : null}
       {pinPendente ? (
         <p className="hint" style={{ color: "var(--danger)", margin: 0 }}>
-          <IconAlerta width={12} height={12} aria-hidden="true" /> Este número já tinha sido registrado antes com outro PIN. Informe o PIN antigo pra
-          concluir o registro na Cloud API.
-        </p>
+          <IconAlerta width={12} height={12} aria-hidden="true" />{traduzir("Este número já tinha sido registrado antes com outro PIN. Informe o PIN antigo pra concluir o registro na Cloud API.")}</p>
       ) : null}
       {qualidade ? (
         <p className="hint" style={{ margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
@@ -143,10 +142,7 @@ export function WhatsAppSecao() {
             <div className="card" style={{ padding: 14 }}>
               <div>
                 <p className="int-title" style={{ margin: 0 }}>{traduzir("Conectar com a API oficial (Meta)")}</p>
-                <p className="hint" style={{ margin: "4px 0 0" }}>
-                  Abre o cadastro da própria Meta aqui dentro. Cria (ou conecta) sua conta do
-                  WhatsApp Business sem sair do CRM e sem copiar token nenhum.
-                </p>
+                <p className="hint" style={{ margin: "4px 0 0" }}>{traduzir("Abre o cadastro da própria Meta aqui dentro. Cria (ou conecta) sua conta do WhatsApp Business sem sair do CRM e sem copiar token nenhum.")}</p>
               </div>
               <EmbeddedSignupWhatsApp />
               {/* Saída pra quem já tem a conta criada, e SÓ pro superadmin — mesma regra de
@@ -161,10 +157,7 @@ export function WhatsAppSecao() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <div>
                   <p className="int-title" style={{ margin: 0 }}>{traduzir("Conectar com a API não oficial (QR Code)")}</p>
-                  <p className="hint" style={{ margin: "4px 0 0" }}>
-                    Escaneia como o WhatsApp Web. Não passa pela verificação de negócio da Meta,
-                    e o número corre risco de ser banido por violar os termos de uso do WhatsApp.
-                  </p>
+                  <p className="hint" style={{ margin: "4px 0 0" }}>{traduzir("Escaneia como o WhatsApp Web. Não passa pela verificação de negócio da Meta, e o número corre risco de ser banido por violar os termos de uso do WhatsApp.")}</p>
                 </div>
                 {!painelNaoOficialAberto ? (
                   <button

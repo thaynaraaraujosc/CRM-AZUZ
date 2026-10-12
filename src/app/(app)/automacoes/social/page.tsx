@@ -141,9 +141,7 @@ export default function AutomacoesSociaisPage() {
         title="Instagram"
         sub={traduzir("Robôs que respondem comentário, Direct, story e menção")}
         actions={
-          <button type="button" className="btn primary" onClick={() => router.push("/automacoes/social/novo")}>
-            + Criar automação
-          </button>
+          <button type="button" className="btn primary" onClick={() => router.push("/automacoes/social/novo")}>{traduzir("+ Criar automação")}</button>
         }
       />
       <AbasAutomacoes />

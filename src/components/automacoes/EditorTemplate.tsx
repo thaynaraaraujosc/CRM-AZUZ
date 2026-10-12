@@ -278,9 +278,7 @@ export function EditorTemplate({
                   const limpo = (nome ?? "").trim().replace(/[^a-zA-Z0-9_]/g, "");
                   if (limpo) inserirNoCorpo(`{{${limpo}}}`);
                 }}
-              >
-                + Variável personalizada
-              </button>
+              >{traduzir("+ Variável personalizada")}</button>
               <span className="hint tpl-contagem">{contagemCorpo}</span>
             </div>
           </div>
@@ -343,9 +341,7 @@ export function EditorTemplate({
                   </div>
                 ))}
                 {r.botoes.length < limites.botoesMaximo ? (
-                  <button type="button" className="pill" onClick={() => setR((a) => ({ ...a, botoes: [...a.botoes, { texto: "" }] }))} disabled={!editavelNaMeta}>
-                    + Adicionar botão
-                  </button>
+                  <button type="button" className="pill" onClick={() => setR((a) => ({ ...a, botoes: [...a.botoes, { texto: "" }] }))} disabled={!editavelNaMeta}>{traduzir("+ Adicionar botão")}</button>
                 ) : null}
               </div>
             </div>

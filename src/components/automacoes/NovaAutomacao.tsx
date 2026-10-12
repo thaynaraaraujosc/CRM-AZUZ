@@ -228,10 +228,7 @@ export function NovaAutomacao({
                   </optgroup>
                 ))}
               </select>
-              <p className="hint mt8">
-                Vai valer sempre. Dias da semana, horário e condição você ajusta depois, na aba
-                Automatizar funil.
-              </p>
+              <p className="hint mt8">{traduzir("Vai valer sempre. Dias da semana, horário e condição você ajusta depois, na aba Automatizar funil.")}</p>
             </div>
 
             <div className="nova-auto-resumo">

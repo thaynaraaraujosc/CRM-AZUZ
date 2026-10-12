@@ -187,9 +187,7 @@ export function ConfiguracoesGeraisForm({
             </option>
           ))}
         </select>
-        <p className="hint">
-          A contagem usa o histórico de execuções, que só existe com as esperas de verdade ligadas.
-        </p>
+        <p className="hint">{traduzir("A contagem usa o histórico de execuções, que só existe com as esperas de verdade ligadas.")}</p>
       </div>
 
       {cfg.limiteExecucao === "no_maximo" ? (

@@ -43,11 +43,7 @@ export default function AzuzIaPage() {
           <h2 style={{ fontFamily: "var(--display)", fontSize: 20, margin: "6px 0 10px" }}>
             {traduzir("Azuz IA está em desenvolvimento")}
           </h2>
-          <p className="hint" style={{ fontSize: 13, lineHeight: 1.6 }}>
-            Estamos trabalhando pra trazer uma assistente que entende os dados reais do seu
-            workspace (leads, conversas, tarefas e funil) e responde suas perguntas na hora. Em
-            breve ela estará disponível por aqui.
-          </p>
+          <p className="hint" style={{ fontSize: 13, lineHeight: 1.6 }}>{traduzir("Estamos trabalhando pra trazer uma assistente que entende os dados reais do seu workspace (leads, conversas, tarefas e funil) e responde suas perguntas na hora. Em breve ela estará disponível por aqui.")}</p>
         </div>
       </div>
     </>

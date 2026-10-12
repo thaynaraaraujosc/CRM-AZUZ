@@ -318,10 +318,7 @@ export default function EquipePage() {
                       </div>
                     ) : null}
 
-                    <p className="hint" style={{ padding: "8px 0 0" }}>
-                      Quem abrir esse link escolhe a própria senha e entra. O link não expira e
-                      reenviar não invalida o anterior.
-                    </p>
+                    <p className="hint" style={{ padding: "8px 0 0" }}>{traduzir("Quem abrir esse link escolhe a própria senha e entra. O link não expira e reenviar não invalida o anterior.")}</p>
                   </div>
                 ) : null}
                 <div className="field">
@@ -353,9 +350,7 @@ export default function EquipePage() {
                       >
                         {gerandoSenha ? "Gerando…" : "Gerar nova senha"}
                       </button>
-                      <p className="hint" style={{ padding: "8px 0 0" }}>
-                        A senha antiga não pode ser mostrada (é guardada de forma irreversível). Gerar uma nova substitui a atual. Repasse pra pessoa.
-                      </p>
+                      <p className="hint" style={{ padding: "8px 0 0" }}>{traduzir("A senha antiga não pode ser mostrada (é guardada de forma irreversível). Gerar uma nova substitui a atual. Repasse pra pessoa.")}</p>
                     </>
                   )}
                 </div>

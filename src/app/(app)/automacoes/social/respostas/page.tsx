@@ -164,11 +164,7 @@ export default function RespostasAutomaticasPage() {
                   })
                 }
               />
-              <p className="hint">
-                Separe por vírgula. Vazio = qualquer mensagem daquele tipo dispara. A comparação é
-                por palavra inteira e ignora acento, então &quot;quero&quot; não dispara em
-                &quot;não quero&quot;.
-              </p>
+              <p className="hint">{traduzir("Separe por vírgula. Vazio = qualquer mensagem daquele tipo dispara. A comparação é por palavra inteira e ignora acento, então &quot;quero&quot; não dispara em &quot;não quero&quot;.")}</p>
             </div>
 
             <div className="field">
@@ -192,10 +188,7 @@ export default function RespostasAutomaticasPage() {
                   placeholder="Chamei você no Direct 💙"
                   onChange={(e) => setEditando({ ...editando, dados: { ...d, respostaPublica: e.target.value } })}
                 />
-                <p className="hint">
-                  É o que aparece pra quem está lendo os comentários, e costuma ser o que faz a
-                  próxima pessoa comentar também.
-                </p>
+                <p className="hint">{traduzir("É o que aparece pra quem está lendo os comentários, e costuma ser o que faz a próxima pessoa comentar também.")}</p>
               </div>
             ) : null}
 

@@ -79,10 +79,7 @@ export default function ExecucoesSociaisPage() {
 
         <section className="card mt16">
           <h3>{traduzir("Eventos que nem chegaram a virar execução")}</h3>
-          <p className="hint">
-            O webhook chegou e falhou antes de qualquer robô rodar: token vencido, permissão que a
-            conta perdeu, comentário sem autor. Quando o erro está aqui, o defeito não está no fluxo.
-          </p>
+          <p className="hint">{traduzir("O webhook chegou e falhou antes de qualquer robô rodar: token vencido, permissão que a conta perdeu, comentário sem autor. Quando o erro está aqui, o defeito não está no fluxo.")}</p>
           {!painel?.eventosComErro.length ? (
             <p className="hint mt8">{traduzir("Nenhum. Tudo que chegou foi processado.")}</p>
           ) : (

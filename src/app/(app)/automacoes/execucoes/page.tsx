@@ -62,10 +62,7 @@ export default function ExecucoesDoFunilPage() {
           <div className="disp-item-cabecalho">
             <div>
               <h3>{traduzir("Execuções")}</h3>
-              <p className="hint">
-                Abra uma execução pra ver a linha do tempo: o que rodou, o que esperou e o motivo
-                exato de qualquer falha, com a resposta do canal.
-              </p>
+              <p className="hint">{traduzir("Abra uma execução pra ver a linha do tempo: o que rodou, o que esperou e o motivo exato de qualquer falha, com a resposta do canal.")}</p>
             </div>
             <Link className="btn" href="/automacoes">
               {traduzir("Voltar pras automações")}

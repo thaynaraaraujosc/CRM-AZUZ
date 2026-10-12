@@ -324,10 +324,7 @@ function ContatosPageInner() {
             <div className="open-conv-h">
               <div>
                 <p className="n">{traduzir("Novo contato")}</p>
-                <p className="s">
-                  Esses dados também podem ser preenchidos depois, direto na
-                  conversa dele no WhatsApp
-                </p>
+                <p className="s">{traduzir("Esses dados também podem ser preenchidos depois, direto na conversa dele no WhatsApp")}</p>
               </div>
               <span
                 className="close"

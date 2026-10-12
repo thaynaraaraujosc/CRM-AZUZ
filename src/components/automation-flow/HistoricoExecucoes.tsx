@@ -94,10 +94,7 @@ export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onF
           {!execucoes && !erro ? <p className="hint">{traduzir("Carregando…")}</p> : null}
 
           {execucoes && execucoes.length === 0 ? (
-            <p className="hint">
-              Esse fluxo ainda não rodou pra ninguém. O histórico só existe para os fluxos com as
-              esperas de verdade ligadas, nas Configurações gerais.
-            </p>
+            <p className="hint">{traduzir("Esse fluxo ainda não rodou pra ninguém. O histórico só existe para os fluxos com as esperas de verdade ligadas, nas Configurações gerais.")}</p>
           ) : null}
 
           {(execucoes ?? []).map((execucao) => {

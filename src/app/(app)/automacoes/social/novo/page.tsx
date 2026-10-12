@@ -69,10 +69,7 @@ export default function NovaAutomacaoSocialPage() {
               <span className="social-caminho-selo">{traduzir("Mais rápido")}</span>
               <IconDoc width={26} height={26} aria-hidden="true" />
               <strong>{traduzir("Começar com um modelo")}</strong>
-              <span>
-                Um robô inteiro já montado, feito só de gatilhos e blocos que existem no Instagram.
-                Você troca o texto e publica.
-              </span>
+              <span>{traduzir("Um robô inteiro já montado, feito só de gatilhos e blocos que existem no Instagram. Você troca o texto e publica.")}</span>
             </button>
 
             <button type="button" className="social-caminho" onClick={doZero}>
@@ -85,10 +82,7 @@ export default function NovaAutomacaoSocialPage() {
               <span className="social-caminho-selo em-breve">{traduzir("Em breve")}</span>
               <IconSparkle width={26} height={26} aria-hidden="true" />
               <strong>{traduzir("Descrever pra IA montar")}</strong>
-              <span>
-                Escrever o que você quer e receber a automação pronta. Ainda não está de pé, e por
-                isso está desligado em vez de aberto e sem nada atrás.
-              </span>
+              <span>{traduzir("Escrever o que você quer e receber a automação pronta. Ainda não está de pé, e por isso está desligado em vez de aberto e sem nada atrás.")}</span>
             </div>
           </div>
         ) : (
@@ -99,9 +93,7 @@ export default function NovaAutomacaoSocialPage() {
                 {traduzir("Voltar")}
               </button>
             </div>
-            <p className="hint">
-              Todos nascem como rascunho. Leia, troque o texto e publique quando estiver do seu jeito.
-            </p>
+            <p className="hint">{traduzir("Todos nascem como rascunho. Leia, troque o texto e publique quando estiver do seu jeito.")}</p>
             <div className="social-modelos">
               {MODELOS_SOCIAIS.map((m) => (
                 <button key={m.id} type="button" className="social-modelo" onClick={() => doModelo(m.id)}>

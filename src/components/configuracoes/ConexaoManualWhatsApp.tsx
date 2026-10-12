@@ -69,21 +69,12 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
           <>
             <p className="int-title" style={{ margin: 0 }}>{traduzir("Conectado! Guarde este PIN:")}</p>
             <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: 4, margin: "8px 0" }}>{pin}</p>
-            <p className="hint" style={{ margin: 0 }}>
-              É o PIN de verificação em duas etapas do seu número na Meta. Ele não aparece de novo.
-              Anote agora num lugar seguro.
-            </p>
+            <p className="hint" style={{ margin: 0 }}>{traduzir("É o PIN de verificação em duas etapas do seu número na Meta. Ele não aparece de novo. Anote agora num lugar seguro.")}</p>
           </>
         ) : pinPendente ? (
-          <p className="hint" style={{ margin: 0 }}>
-            Conectado. O número já estava registrado na Meta com um PIN anterior, então esse passo
-            ficou pendente: informe o PIN antigo aqui pra completar, se precisar reenviá-lo.
-          </p>
+          <p className="hint" style={{ margin: 0 }}>{traduzir("Conectado. O número já estava registrado na Meta com um PIN anterior, então esse passo ficou pendente: informe o PIN antigo aqui pra completar, se precisar reenviá-lo.")}</p>
         ) : (
-          <p className="hint" style={{ margin: 0 }}>
-            Conectado. Seu número usa o app do WhatsApp Business, que já vem registrado na Meta.
-            Por isso não há PIN a guardar.
-          </p>
+          <p className="hint" style={{ margin: 0 }}>{traduzir("Conectado. Seu número usa o app do WhatsApp Business, que já vem registrado na Meta. Por isso não há PIN a guardar.")}</p>
         )}
       </div>
     );

@@ -68,10 +68,7 @@ export function LimparDadosWhatsApp({ aoLimpar }: { aoLimpar?: () => void }) {
       <button type="button" className="btn ghost" onClick={limpar} disabled={limpando}>
         {limpando ? "Limpando…" : traduzir("Limpar dados do WhatsApp anterior")}
       </button>
-      <p className="hint" style={{ margin: "6px 0 0" }}>
-        Remove as conversas, contatos e cards de funil que sobraram de um WhatsApp já desconectado,
-        pra não se misturarem com o próximo número que você conectar.
-      </p>
+      <p className="hint" style={{ margin: "6px 0 0" }}>{traduzir("Remove as conversas, contatos e cards de funil que sobraram de um WhatsApp já desconectado, pra não se misturarem com o próximo número que você conectar.")}</p>
       {erro ? (
         <p className="hint" style={{ color: "var(--danger)", marginTop: 6 }}><IconAlerta width={12} height={12} aria-hidden="true" /> {erro}</p>
       ) : null}

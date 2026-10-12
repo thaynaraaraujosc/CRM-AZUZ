@@ -167,6 +167,7 @@ function LogicaCanvasInner({
   camposAnteriores: PerguntaFormulario[];
   onAtualizar: (patch: Partial<PerguntaFormulario>) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const logicaAtual: LogicaCampo = pergunta.logica ?? { modo: "mostrar_se", regras: [] };
   const [posicoesCustom, setPosicoesCustom] = useState<Record<string, { x: number; y: number }>>({});
 
@@ -233,9 +234,7 @@ function LogicaCanvasInner({
         <Background gap={16} />
         <Controls showInteractive={false} />
         <Panel position="top-left">
-          <button type="button" className="btn ghost form-logica-add-btn" onClick={adicionarCondicao}>
-            + Adicionar condição
-          </button>
+          <button type="button" className="btn ghost form-logica-add-btn" onClick={adicionarCondicao}>{traduzir("+ Adicionar condição")}</button>
         </Panel>
       </ReactFlow>
     </div>

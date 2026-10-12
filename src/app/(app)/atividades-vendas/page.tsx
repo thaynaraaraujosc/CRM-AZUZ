@@ -120,10 +120,7 @@ export default function AtividadesVendasPage() {
               <div className="panel-h">
                 <h4>{traduzir("Tempo de primeira resposta por responsável")}</h4>
               </div>
-              <div className="dados-nao-conectados" style={{ margin: 17 }}>
-                Dados não conectados: o CRM ainda não rastreia qual responsável atendeu cada
-                mensagem, então não dá pra medir tempo de resposta por pessoa ainda.
-              </div>
+              <div className="dados-nao-conectados" style={{ margin: 17 }}>{traduzir("Dados não conectados: o CRM ainda não rastreia qual responsável atendeu cada mensagem, então não dá pra medir tempo de resposta por pessoa ainda.")}</div>
             </div>
           </>
         ) : null}

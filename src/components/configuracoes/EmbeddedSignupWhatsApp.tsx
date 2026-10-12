@@ -256,9 +256,7 @@ export function EmbeddedSignupWhatsApp({
   if (!appId || !configId) {
     return (
       <p className="hint" style={{ color: "var(--danger)", marginTop: 10 }}>
-        <IconAlerta width={12} height={12} aria-hidden="true" /> Conexão com a API oficial ainda não configurada no servidor (falta NEXT_PUBLIC_META_APP_ID
-        e/ou NEXT_PUBLIC_META_CONFIG_ID).
-      </p>
+        <IconAlerta width={12} height={12} aria-hidden="true" />{traduzir("Conexão com a API oficial ainda não configurada no servidor (falta NEXT_PUBLIC_META_APP_ID e/ou NEXT_PUBLIC_META_CONFIG_ID).")}</p>
     );
   }
 
@@ -267,10 +265,7 @@ export function EmbeddedSignupWhatsApp({
       <div style={{ marginTop: 10 }}>
         <p className="int-title" style={{ margin: 0 }}>{traduzir("Conectado! Guarde este PIN:")}</p>
         <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: 4, margin: "8px 0" }}>{pin}</p>
-        <p className="hint" style={{ margin: 0 }}>
-          É o PIN de verificação em duas etapas do seu número na Meta. Ele não aparece de novo.
-          Anote agora num lugar seguro.
-        </p>
+        <p className="hint" style={{ margin: 0 }}>{traduzir("É o PIN de verificação em duas etapas do seu número na Meta. Ele não aparece de novo. Anote agora num lugar seguro.")}</p>
       </div>
     );
   }

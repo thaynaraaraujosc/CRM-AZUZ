@@ -77,9 +77,7 @@ export function AtualizarCampoForm({
           ) : null}
         </select>
         {!personalizados.length ? (
-          <p className="hint mt8">
-            Nenhum campo personalizado criado ainda. Você cria em Configurações, e ele aparece aqui.
-          </p>
+          <p className="hint mt8">{traduzir("Nenhum campo personalizado criado ainda. Você cria em Configurações, e ele aparece aqui.")}</p>
         ) : null}
       </div>
 

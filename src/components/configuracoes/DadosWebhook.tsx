@@ -86,10 +86,7 @@ function LimparAnexosInstagram() {
       <button type="button" className="btn ghost" onClick={limpar} disabled={rodando}>
         {rodando ? "Limpando…" : traduzir("Limpar anexos quebrados do Instagram")}
       </button>
-      <p className="hint" style={{ margin: "6px 0 0" }}>
-        Tira das conversas os cards de arquivo que apareceram como “html · 669 KB”. O texto das
-        mensagens é preservado.
-      </p>
+      <p className="hint" style={{ margin: "6px 0 0" }}>{traduzir("Tira das conversas os cards de arquivo que apareceram como “html · 669 KB”. O texto das mensagens é preservado.")}</p>
     </div>
   );
 }
@@ -127,9 +124,7 @@ export function DadosWebhook() {
         <LinhaCopiavel rotulo={traduzir("Token de verificação (os dois usam o mesmo)")} valor={dados.tokenVerificacao} />
       ) : (
         <p className="hint" style={{ color: "var(--danger)", margin: "10px 0 0" }}>
-          <IconAlerta width={12} height={12} aria-hidden="true" /> Este servidor está sem o token de verificação configurado (`META_WEBHOOK_VERIFY_TOKEN`).
-          Enquanto ele não existir, a Meta não consegue cadastrar webhook nenhum.
-        </p>
+          <IconAlerta width={12} height={12} aria-hidden="true" />{traduzir("Este servidor está sem o token de verificação configurado (`META_WEBHOOK_VERIFY_TOKEN`). Enquanto ele não existir, a Meta não consegue cadastrar webhook nenhum.")}</p>
       )}
     </div>
   );

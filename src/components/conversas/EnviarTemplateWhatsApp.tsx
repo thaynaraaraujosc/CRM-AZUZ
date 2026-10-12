@@ -144,20 +144,14 @@ export function EnviarTemplateWhatsApp({
         </>
       }
     >
-      <p className="hint">
-        O WhatsApp só deixa você falar primeiro com um modelo aprovado. Depois que a pessoa
-        responder, a conversa fica livre por 24 horas.
-      </p>
+      <p className="hint">{traduzir("O WhatsApp só deixa você falar primeiro com um modelo aprovado. Depois que a pessoa responder, a conversa fica livre por 24 horas.")}</p>
 
       {erro ? <p className="modelo-erro">{erro}</p> : null}
 
       {templates === null ? (
         <p className="hint">{traduzir("Carregando seus modelos…")}</p>
       ) : aprovados.length === 0 ? (
-        <p className="hint">
-          Você ainda não tem nenhum modelo aprovado. Crie um no Gerenciador do WhatsApp (Modelos de
-          mensagem): a aprovação costuma sair em minutos.
-        </p>
+        <p className="hint">{traduzir("Você ainda não tem nenhum modelo aprovado. Crie um no Gerenciador do WhatsApp (Modelos de mensagem): a aprovação costuma sair em minutos.")}</p>
       ) : (
         <div className="modelo-lista">
           {aprovados.map((t) => (
