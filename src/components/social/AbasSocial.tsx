@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { SVGProps } from "react";
 
+import { useIdioma } from "@/lib/idioma-context";
 import {
   IconAutomacoes,
   IconDoc,
@@ -48,19 +49,21 @@ function Item({
   Icon: (props: SVGProps<SVGSVGElement>) => React.ReactElement;
   pathname: string;
 }) {
+  const { t } = useIdioma();
   const ativo = exato ? pathname === href : pathname.startsWith(href);
   return (
     <Link href={href} className={`social-menu-item${ativo ? " on" : ""}`} aria-current={ativo ? "page" : undefined}>
       <Icon width={15} height={15} />
-      <span>{label}</span>
+      <span>{t(label)}</span>
     </Link>
   );
 }
 
 export function AbasSocial() {
+  const { t } = useIdioma();
   const pathname = usePathname() ?? "";
   return (
-    <nav className="social-menu" aria-label="Seções do Instagram">
+    <nav className="social-menu" aria-label={t("Seções do Instagram")}>
       {PRINCIPAIS.map((i) => (
         <Item key={i.href} {...i} pathname={pathname} />
       ))}

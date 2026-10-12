@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Topbar } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
+import { useIdioma } from "@/lib/idioma-context";
 import type { PainelSocial } from "@/app/api/social/metricas/route";
 
 /**
@@ -25,16 +26,18 @@ const PERIODOS = [
 ];
 
 function Numero({ valor, label, ajuda }: { valor: number; label: string; ajuda?: string }) {
+  const { t, localeNumero } = useIdioma();
   return (
     <div className="social-numero">
-      <strong>{valor.toLocaleString("pt-BR")}</strong>
-      <span>{label}</span>
-      {ajuda ? <em>{ajuda}</em> : null}
+      <strong>{valor.toLocaleString(localeNumero)}</strong>
+      <span>{t(label)}</span>
+      {ajuda ? <em>{t(ajuda)}</em> : null}
     </div>
   );
 }
 
 export default function SocialPage() {
+  const { t, localeNumero } = useIdioma();
   const [dias, setDias] = useState(7);
   // O período pedido viaja JUNTO com a resposta. Assim "carregando" é derivado (a resposta que
   // tenho não é do período que estou mostrando) em vez de ser um segundo estado que precisa ser
@@ -62,8 +65,8 @@ export default function SocialPage() {
   return (
     <>
       <Topbar
-        title="Social"
-        sub="Instagram: o que chegou, o que os robôs fizeram e o que a Meta informa"
+        title={t("Social")}
+        sub={t("Instagram: o que chegou, o que os robôs fizeram e o que a Meta informa")}
         actions={
           <div className="social-periodo">
             {PERIODOS.map((p) => (
@@ -73,7 +76,7 @@ export default function SocialPage() {
                 className={`seg-chip${dias === p.dias ? " on" : ""}`}
                 onClick={() => setDias(p.dias)}
               >
-                {p.label}
+                {t(p.label)}
               </button>
             ))}
           </div>
@@ -86,25 +89,26 @@ export default function SocialPage() {
         <div className="social-conteudo">
         {painel && !painel.conectado ? (
           <section className="card" style={{ marginBottom: "var(--space-3)" }}>
-            <strong>O Instagram não está conectado.</strong>
+            <strong>{t("O Instagram não está conectado.")}</strong>
             <p className="hint mt8">
-              {painel.motivoDesconectado} Os números do CRM abaixo continuam valendo pro que já foi
-              registrado.
+              {painel.motivoDesconectado}{" "}
+              {t("Os números do CRM abaixo continuam valendo pro que já foi registrado.")}
             </p>
             <Link className="btn primary mt8" href="/configuracoes?categoria=integracoes">
-              Ver conexões
+              {t("Ver conexões")}
             </Link>
           </section>
         ) : null}
 
         <section className="card">
-          <h3>O que o CRM registrou</h3>
+          <h3>{t("O que o CRM registrou")}</h3>
           <p className="hint">
-            Contado neste banco, nos últimos {painel?.periodoDias ?? dias} dias. É exato: cada
-            número aqui é uma linha que existe.
+            {t("Contado neste banco, nos últimos {dias} dias. É exato: cada número aqui é uma linha que existe.", {
+              dias: painel?.periodoDias ?? dias,
+            })}
           </p>
           {carregando && !painel ? (
-            <p className="hint mt8">Carregando…</p>
+            <p className="hint mt8">{t("Carregando…")}</p>
           ) : painel ? (
             <div className="social-numeros mt8">
               <Numero valor={painel.crm.directs} label="Mensagens no Direct" />
@@ -116,16 +120,17 @@ export default function SocialPage() {
               <Numero valor={painel.crm.automacoesIniciadas} label="Automações sociais iniciadas" />
             </div>
           ) : (
-            <p className="hint mt8">Não deu pra carregar agora.</p>
+            <p className="hint mt8">{t("Não deu pra carregar agora.")}</p>
           )}
         </section>
 
         {painel?.conectado ? (
           <section className="card mt16">
-            <h3>O que o Instagram informa</h3>
+            <h3>{t("O que o Instagram informa")}</h3>
             <p className="hint">
-              Vem da API da Meta. Depende do tipo da conta e das permissões concedidas, então pode
-              faltar item: o que ela recusa aparece abaixo, com o motivo dela.
+              {t(
+                "Vem da API da Meta. Depende do tipo da conta e das permissões concedidas, então pode faltar item: o que ela recusa aparece abaixo, com o motivo dela.",
+              )}
             </p>
 
             {painel.instagram?.perfil ? (
@@ -143,33 +148,33 @@ export default function SocialPage() {
             ) : null}
 
             {painel.instagram?.perfilErro ? (
-              <p className="hint mt8">Perfil: {painel.instagram.perfilErro}</p>
+              <p className="hint mt8">{t("Perfil: {erro}", { erro: painel.instagram.perfilErro })}</p>
             ) : null}
 
             {painel.instagram?.recusadas.length ? (
               <div className="mt8">
-                <p className="hint">Não disponíveis nesta conta:</p>
+                <p className="hint">{t("Não disponíveis nesta conta:")}</p>
                 <ul className="hint">
                   {painel.instagram.recusadas.map((r) => (
                     <li key={r.chave}>
-                      <strong>{r.label}</strong>: {r.motivo}
+                      <strong>{t(r.label)}</strong>: {r.motivo}
                     </li>
                   ))}
                 </ul>
               </div>
             ) : null}
 
-            {!painel.instagram ? <p className="hint mt8">Não deu pra falar com a Meta agora.</p> : null}
+            {!painel.instagram ? <p className="hint mt8">{t("Não deu pra falar com a Meta agora.")}</p> : null}
           </section>
         ) : null}
 
         <section className="card mt16">
-          <h3>Seus robôs do Instagram</h3>
+          <h3>{t("Seus robôs do Instagram")}</h3>
           <p className="hint">
-            O acompanhamento do Instagram é aqui, não no funil. Quem chega pelo Direct vira contato,
-            com @, foto e etiqueta, e não vira card: o funil comercial é do WhatsApp. Cada linha
-            abaixo é um robô, contado em execução de verdade nos últimos{" "}
-            {painel?.periodoDias ?? dias} dias.
+            {t(
+              "O acompanhamento do Instagram é aqui, não no funil. Quem chega pelo Direct vira contato, com @, foto e etiqueta, e não vira card: o funil comercial é do WhatsApp. Cada linha abaixo é um robô, contado em execução de verdade nos últimos {dias} dias.",
+              { dias: painel?.periodoDias ?? dias },
+            )}
           </p>
 
           {painel?.robos.length ? (
@@ -177,12 +182,12 @@ export default function SocialPage() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Robô</th>
-                    <th>Situação</th>
-                    <th className="num">Rodou</th>
-                    <th className="num">Em andamento</th>
-                    <th className="num">Erros</th>
-                    <th>Última vez</th>
+                    <th>{t("Robô")}</th>
+                    <th>{t("Situação")}</th>
+                    <th className="num">{t("Rodou")}</th>
+                    <th className="num">{t("Em andamento")}</th>
+                    <th className="num">{t("Erros")}</th>
+                    <th>{t("Última vez")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -193,15 +198,15 @@ export default function SocialPage() {
                       </td>
                       <td>
                         <span className={`badge ${r.ligado ? "badge-success" : "badge-neutral"}`}>
-                          {r.ligado ? "Ligado" : "Desligado"}
+                          {r.ligado ? t("Ligado") : t("Desligado")}
                         </span>
                       </td>
-                      <td className="num">{r.execucoes.toLocaleString("pt-BR")}</td>
-                      <td className="num">{r.emAndamento.toLocaleString("pt-BR")}</td>
+                      <td className="num">{r.execucoes.toLocaleString(localeNumero)}</td>
+                      <td className="num">{r.emAndamento.toLocaleString(localeNumero)}</td>
                       <td className="num">
                         {r.erros ? <strong className="txt-erro">{r.erros}</strong> : "0"}
                       </td>
-                      <td>{r.ultimaEm ? new Date(r.ultimaEm).toLocaleString("pt-BR") : "—"}</td>
+                      <td>{r.ultimaEm ? new Date(r.ultimaEm).toLocaleString(localeNumero) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -209,19 +214,19 @@ export default function SocialPage() {
             </div>
           ) : (
             <p className="hint mt8">
-              {carregando ? "Carregando…" : "Nenhum robô de Instagram ainda."}
+              {carregando ? t("Carregando…") : t("Nenhum robô de Instagram ainda.")}
             </p>
           )}
 
           <div className="social-atalhos mt16">
             <Link className="btn primary" href="/automacoes/social">
-              Abrir automações
+              {t("Abrir automações")}
             </Link>
             <Link className="btn" href="/automacoes/social/execucoes">
-              Ver execuções e erros
+              {t("Ver execuções e erros")}
             </Link>
             <Link className="btn" href="/instagram/contatos">
-              Contatos do Instagram
+              {t("Contatos do Instagram")}
             </Link>
           </div>
         </section>

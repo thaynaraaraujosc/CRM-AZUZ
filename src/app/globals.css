@@ -1047,6 +1047,42 @@ table {
   flex: 0 0 auto;
 }
 
+/* Chave PT/EN do cabecalho. Dois segmentos colados, o ativo preenchido: o estado precisa ser
+   legivel de relance, inclusive numa gravacao de tela comprimida. */
+.seletor-idioma {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.seletor-idioma button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.seletor-idioma button + button {
+  border-left: 1px solid var(--border);
+}
+
+.seletor-idioma button:hover {
+  color: var(--text);
+}
+
+.seletor-idioma button.ativo {
+  background: var(--brand);
+  color: #fff;
+}
+
 /* Cabecalho da tela: branco sobre o piso cinza, com divisa propria. */
 .topbar {
   display: flex;
