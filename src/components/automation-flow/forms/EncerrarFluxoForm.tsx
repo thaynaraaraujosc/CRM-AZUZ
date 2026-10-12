@@ -38,7 +38,7 @@ export function EncerrarFluxoForm({
         >
           {MOTIVOS.map((m) => (
             <option key={m.valor} value={m.valor}>
-              {m.label}
+              {traduzir(m.label)}
             </option>
           ))}
         </select>

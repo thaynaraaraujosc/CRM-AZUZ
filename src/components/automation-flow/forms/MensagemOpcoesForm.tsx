@@ -264,7 +264,7 @@ export function MensagemOpcoesForm({
               >
                 {COMPARACOES.map((c) => (
                   <option key={c.valor} value={c.valor}>
-                    {c.label}
+                    {traduzir(c.label)}
                   </option>
                 ))}
               </select>
@@ -418,7 +418,7 @@ export function MensagemOpcoesForm({
             >
               {APOS_TENTATIVAS.map((a) => (
                 <option key={a.valor} value={a.valor}>
-                  {a.label}
+                  {traduzir(a.label)}
                 </option>
               ))}
             </select>

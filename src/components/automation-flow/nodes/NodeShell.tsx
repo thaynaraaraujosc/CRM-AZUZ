@@ -98,7 +98,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
         </span>
         <span className="flow-node-textos">
           <span className="flow-node-categoria">{NOME_CATEGORIA[flowNode.category]}</span>
-          <span className="flow-node-label">{flowNode.titulo || bloco?.label || flowNode.type}</span>
+          <span className="flow-node-label">{flowNode.titulo || (bloco?.label ? traduzir(bloco.label) : flowNode.type)}</span>
         </span>
         {flowNode.desativado ? <span className="flow-node-pausado-badge">{traduzir("Pausado")}</span> : null}
         {temErro || temAviso ? (
@@ -153,7 +153,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                 className={`flow-node-handle-row${corBifurcacao ? ` is-bifurcacao-${corBifurcacao}` : ""}${ehOpcaoDePergunta ? " is-opcao-pergunta" : ""}`}
                 key={chave}
               >
-                <span className="flow-handle-label">{s.label}</span>
+                <span className="flow-handle-label">{traduzir(s.label)}</span>
                 {!conectada && onAdicionarApos ? (
                   <button
                     type="button"

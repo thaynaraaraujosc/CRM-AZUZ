@@ -38,7 +38,7 @@ export function VariavelDropdown({ onEscolher }: { onEscolher: (token: string) =
               setAberto(false);
             }}
           >
-            <span className="n">{v.label}</span>
+            <span className="n">{traduzir(v.label)}</span>
             <span className="r">{v.token}</span>
           </button>
         ))}

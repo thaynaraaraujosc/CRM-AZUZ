@@ -170,7 +170,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
         >
           {PRIORIDADES.map((p) => (
             <option key={p.valor} value={p.valor}>
-              {p.label}
+              {traduzir(p.label)}
             </option>
           ))}
         </select>

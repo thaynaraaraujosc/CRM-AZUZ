@@ -142,7 +142,7 @@ export function ComentarioInstagramForm({
         >
           {MODOS.map((m) => (
             <option key={m.valor} value={m.valor}>
-              {m.label}
+              {traduzir(m.label)}
             </option>
           ))}
         </select>

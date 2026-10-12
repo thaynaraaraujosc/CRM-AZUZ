@@ -37,7 +37,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
         >
           {MODOS.map((m) => (
             <option key={m.valor} value={m.valor}>
-              {m.label}
+              {traduzir(m.label)}
             </option>
           ))}
         </select>

@@ -70,7 +70,7 @@ export function DecisaoMultiplaForm({
         >
           {CAMPOS.map((c) => (
             <option key={c.valor} value={c.valor}>
-              {c.label}
+              {traduzir(c.label)}
             </option>
           ))}
         </select>
@@ -98,7 +98,7 @@ export function DecisaoMultiplaForm({
         >
           {OPERADORES.map((o) => (
             <option key={o.valor} value={o.valor}>
-              {o.label}
+              {traduzir(o.label)}
             </option>
           ))}
         </select>

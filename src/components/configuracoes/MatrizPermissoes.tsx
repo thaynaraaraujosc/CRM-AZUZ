@@ -53,7 +53,7 @@ export function MatrizPermissoes({
             {modulo.permissoes.map((p) => (
               <label key={p.id} className="config-permissoes-item">
                 <input type="checkbox" checked={set.has(p.id)} onChange={() => alternar(p.id)} />
-                {p.label}
+                {traduzir(p.label)}
               </label>
             ))}
           </div>

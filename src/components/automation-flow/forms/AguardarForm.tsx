@@ -61,7 +61,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
         >
           {ESCOLHAS.map((e) => (
             <option key={e.valor} value={e.valor}>
-              {e.label}
+              {traduzir(e.label)}
             </option>
           ))}
         </select>
@@ -90,7 +90,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
             >
               {UNIDADES.map((u) => (
                 <option key={u.valor} value={u.valor}>
-                  {u.label}
+                  {traduzir(u.label)}
                 </option>
               ))}
             </select>
@@ -125,7 +125,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
             >
               {UNIDADES.map((u) => (
                 <option key={u.valor} value={u.valor}>
-                  {u.label}
+                  {traduzir(u.label)}
                 </option>
               ))}
             </select>

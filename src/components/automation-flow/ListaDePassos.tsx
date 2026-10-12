@@ -134,8 +134,8 @@ export function ListaDePassos({
                     setMenuEm(null);
                   }}
                 >
-                  <strong>{b.label}</strong>
-                  <span>{b.descricao}</span>
+                  <strong>{traduzir(b.label)}</strong>
+                  <span>{traduzir(b.descricao)}</span>
                 </button>
               ))}
               {blocosDoMenu.length === 0 ? <p className="hint">{traduzir("Nada com esse nome.")}</p> : null}
@@ -221,7 +221,7 @@ export function ListaDePassos({
               const alvo = aresta ? porId.get(aresta.target) : undefined;
               return (
                 <div key={saida.handleId} className="passos-ramo">
-                  <div className="passos-ramo-rotulo">{saida.label}</div>
+                  <div className="passos-ramo-rotulo">{traduzir(saida.label)}</div>
                   {alvo ? (
                     renderarPasso(alvo, profundidade + 1)
                   ) : (

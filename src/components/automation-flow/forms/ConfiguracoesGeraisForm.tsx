@@ -87,7 +87,7 @@ export function ConfiguracoesGeraisForm({
               aria-pressed={(cfg.diasAtivos ?? []).includes(d.valor)}
               onClick={() => alternarDia(d.valor)}
             >
-              {d.label}
+              {traduzir(d.label)}
             </button>
           ))}
         </div>
@@ -183,7 +183,7 @@ export function ConfiguracoesGeraisForm({
         >
           {LIMITES.map((l) => (
             <option key={l.valor} value={l.valor}>
-              {l.label}
+              {traduzir(l.label)}
             </option>
           ))}
         </select>

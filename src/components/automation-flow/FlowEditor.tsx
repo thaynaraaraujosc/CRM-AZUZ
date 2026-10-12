@@ -1252,8 +1252,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                           setEscolherGatilhoAberto(false);
                         }}
                       >
-                        <span className="n">{bloco.label}</span>
-                        <span className="r">{bloco.descricao}</span>
+                        <span className="n">{traduzir(bloco.label)}</span>
+                        <span className="r">{traduzir(bloco.descricao)}</span>
                       </button>
                     );
                   })}

@@ -92,7 +92,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
         {CAMPOS_COMPARTILHAVEIS.map((c) => (
           <label key={c.valor} className="hint" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
             <input type="checkbox" checked={(data.camposCompartilhados ?? []).includes(c.valor)} onChange={() => alternarCampo(c.valor)} />
-            {c.label}
+            {traduzir(c.label)}
           </label>
         ))}
       </div>
