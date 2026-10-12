@@ -2258,4 +2258,7 @@ export const TRADUCOES_EN: Record<string, string> = {
   "WhatsApp Business (API oficial da Meta)": "WhatsApp Business (Meta's official API)",
   "É o número": "It is the number",
   "Último agendamento criado": "Last booking created",
+
+  // ---- Convite de membro ----
+  "Voltar pra equipe": "Back to the team",
 };
