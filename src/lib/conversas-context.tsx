@@ -125,7 +125,30 @@ export function ConversasProvider({ children }: { children: ReactNode }) {
     const intervalo = setInterval(() => {
       if (document.visibilityState === "visible") recarregar();
     }, INTERVALO_POLLING_MS);
-    return () => clearInterval(intervalo);
+
+    /*
+     * VOLTAR PRA ABA BUSCA NA HORA, e é isto que tirava a necessidade de recarregar a página.
+     *
+     * A batida acima é pulada enquanto a aba está em segundo plano — o que está certo, não faz
+     * sentido gastar requisição com ninguém olhando. O problema era a volta: nada disparava ao
+     * reativar a aba, então quem voltava ficava olhando uma tela velha até a próxima batida. E
+     * pior: o navegador ESTRANGULA `setInterval` em aba de fundo (chega a parar de vez), então
+     * essa espera não era de segundos — podia ser de minutos. Daí a sensação de que só recarregar
+     * resolvia, e recarregar a página inteira gasta muito mais do que esta busca.
+     */
+    function aoVoltarPraAba() {
+      if (document.visibilityState === "visible") recarregar();
+    }
+    document.addEventListener("visibilitychange", aoVoltarPraAba);
+    // `focus` também: trocar de JANELA (não de aba) não dispara `visibilitychange` em todo
+    // navegador, e alternar entre o CRM e o WhatsApp Web é exatamente isso.
+    window.addEventListener("focus", aoVoltarPraAba);
+
+    return () => {
+      clearInterval(intervalo);
+      document.removeEventListener("visibilitychange", aoVoltarPraAba);
+      window.removeEventListener("focus", aoVoltarPraAba);
+    };
   }, []);
 
   function marcarComoLida(id: string) {
