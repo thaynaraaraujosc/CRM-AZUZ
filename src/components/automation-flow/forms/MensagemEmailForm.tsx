@@ -72,7 +72,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
       </div>
 
       <div className="field">
-        <label>Assunto</label>
+        <label>{traduzir("Assunto")}</label>
         <input className="input" value={data.assunto} onChange={(e) => onChange({ ...data, assunto: e.target.value })} />
       </div>
 

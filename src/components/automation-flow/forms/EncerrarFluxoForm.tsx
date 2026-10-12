@@ -45,7 +45,7 @@ export function EncerrarFluxoForm({
       </div>
 
       <div className="field">
-        <label>Observação</label>
+        <label>{traduzir("Observação")}</label>
         <input
           className="input"
           value={data.observacao ?? ""}

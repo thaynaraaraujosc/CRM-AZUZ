@@ -91,7 +91,7 @@ export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onF
         <div className="flow-side-body">
           {erro ? <p className="flow-problema erro">{erro}</p> : null}
 
-          {!execucoes && !erro ? <p className="hint">Carregando…</p> : null}
+          {!execucoes && !erro ? <p className="hint">{traduzir("Carregando…")}</p> : null}
 
           {execucoes && execucoes.length === 0 ? (
             <p className="hint">

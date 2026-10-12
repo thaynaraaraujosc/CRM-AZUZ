@@ -104,7 +104,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
       </p>
 
       <div className="field">
-        <label htmlFor="cortesia-empresa">Nome da empresa</label>
+        <label htmlFor="cortesia-empresa">{traduzir("Nome da empresa")}</label>
         <input
           id="cortesia-empresa"
           className="input"
@@ -128,7 +128,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
       </div>
 
       <div className="field">
-        <label htmlFor="cortesia-email">E-mail</label>
+        <label htmlFor="cortesia-email">{traduzir("E-mail")}</label>
         <input
           id="cortesia-email"
           className="input"

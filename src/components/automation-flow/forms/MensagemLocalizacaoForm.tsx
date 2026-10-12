@@ -66,7 +66,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
             <input className="input" placeholder={traduzir("Ex.: Sede")} value={data.nomeLocal ?? ""} onChange={(e) => onChange({ ...data, nomeLocal: e.target.value })} />
           </div>
           <div className="field">
-            <label>Endereço</label>
+            <label>{traduzir("Endereço")}</label>
             <input className="input" value={data.endereco ?? ""} onChange={(e) => onChange({ ...data, endereco: e.target.value })} />
           </div>
           <div className="field" style={{ display: "flex", gap: 8 }}>
@@ -85,7 +85,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
           </div>
           <div className="field" style={{ display: "flex", gap: 8 }}>
             <div style={{ flex: 1 }}>
-              <label>Cidade</label>
+              <label>{traduzir("Cidade")}</label>
               <input className="input" style={{ width: "100%" }} value={data.cidade ?? ""} onChange={(e) => onChange({ ...data, cidade: e.target.value })} />
             </div>
             <div style={{ flex: 1 }}>

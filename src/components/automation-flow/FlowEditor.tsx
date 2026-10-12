@@ -1194,7 +1194,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           {modoConstrucao && rfNodes.length === 0 && area !== "social" && inicioNoFunil ? (
             <div className="flow-inicio-vazio">
               <div className="flow-inicio-etapa">
-                <span className="flow-inicio-etapa-selo">Início</span>
+                <span className="flow-inicio-etapa-selo">{traduzir("Início")}</span>
                 <div className="flow-inicio-etapa-corpo">
                   <h4>Quando o lead entra em “{inicioNoFunil.etapaTitulo}”</h4>
                   <p className="hint">

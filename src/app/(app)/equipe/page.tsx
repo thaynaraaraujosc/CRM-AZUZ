@@ -43,7 +43,7 @@ export default function EquipePage() {
   return (
     <>
       <Topbar
-        title="Equipe"
+        title={traduzir("Equipe")}
         sub={`${equipe.length} pessoas · controle de acesso por papel`}
         actions={
           <Link className="btn primary" href="/equipe/convidar">
@@ -58,8 +58,8 @@ export default function EquipePage() {
             <table className="tbl equipe-tbl">
               <thead>
                 <tr>
-                  <th>Nome</th>
-                  <th>Papel</th>
+                  <th>{traduzir("Nome")}</th>
+                  <th>{traduzir("Papel")}</th>
                   <th>{traduzir("Leads atribuídos")}</th>
                   <th>{traduzir("O que enxerga")}</th>
                   <th>{traduzir("Ativo")}</th>
@@ -313,7 +313,7 @@ export default function EquipePage() {
                           className="btn ghost"
                           onClick={() => navigator.clipboard?.writeText(linkConvite)}
                         >
-                          Copiar
+                          {traduzir("Copiar")}
                         </button>
                       </div>
                     ) : null}
@@ -325,14 +325,14 @@ export default function EquipePage() {
                   </div>
                 ) : null}
                 <div className="field">
-                  <label>Senha</label>
+                  <label>{traduzir("Senha")}</label>
                   {membro.convitePendente ? (
                     <span className="pill">{traduzir("Ainda não definida: convite pendente")}</span>
                   ) : senhaGerada ? (
                     <div className="key-row" style={{ padding: 0 }}>
                       <div className="key-box">{senhaGerada}</div>
                       <button type="button" className="btn ghost" onClick={() => navigator.clipboard?.writeText(senhaGerada)}>
-                        Copiar
+                        {traduzir("Copiar")}
                       </button>
                       <button type="button" className="btn ghost" onClick={() => setSenhaGerada(null)}>
                         {traduzir("Fechar")}

@@ -89,9 +89,9 @@ export function FiltrosBar() {
         <FloatingDropdown anchorRect={anchorRect} align="right" onClose={() => setAberto(false)} width={280}>
           <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
             <div className="field">
-              <label>Responsável</label>
+              <label>{traduzir("Responsável")}</label>
               <select className="input" value={filtros.responsavel} onChange={(e) => setFiltros({ responsavel: e.target.value })}>
-                <option value="Todos">Todos</option>
+                <option value="Todos">{traduzir("Todos")}</option>
                 {equipe.map((m) => (
                   <option key={m.id} value={m.nome}>
                     {m.nome}
@@ -100,9 +100,9 @@ export function FiltrosBar() {
               </select>
             </div>
             <div className="field">
-              <label>Funil</label>
+              <label>{traduzir("Funil")}</label>
               <select className="input" value={filtros.funil} onChange={(e) => setFiltros({ funil: e.target.value })}>
-                <option value="Todos">Todos</option>
+                <option value="Todos">{traduzir("Todos")}</option>
                 {funis.map((f) => (
                   <option key={f.id} value={f.nome}>
                     {f.nome}

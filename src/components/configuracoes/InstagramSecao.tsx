@@ -59,7 +59,7 @@ export function InstagramSecao() {
       ) : null}
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Conexão</p>
+        <p className="config-bloco-titulo">{traduzir("Conexão")}</p>
 
         {!conectado ? (
           <a

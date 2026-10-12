@@ -95,7 +95,7 @@ export default function MotivosPerdaPage() {
       <div className="topbar">
         <div>
           <div className="topbar-title-row">
-            <h2>Motivos de perda</h2>
+            <h2>{traduzir("Motivos de perda")}</h2>
           </div>
           <p className="sub">{traduzir("Análise completa: a única página com o detalhamento inteiro de perdas")}</p>
         </div>
@@ -231,11 +231,11 @@ export default function MotivosPerdaPage() {
             <thead>
               <tr>
                 <th>{traduzir("Negociação")}</th>
-                <th>Responsável</th>
+                <th>{traduzir("Responsável")}</th>
                 <th>{traduzir("Motivo")}</th>
                 <th>{traduzir("Etapa")}</th>
-                <th>Origem</th>
-                <th>Valor</th>
+                <th>{traduzir("Origem")}</th>
+                <th>{traduzir("Valor")}</th>
                 <th>{traduzir("Data")}</th>
               </tr>
             </thead>

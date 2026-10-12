@@ -275,7 +275,7 @@ export default function InstagramConversasPage() {
 
           <div className="ig-lista-itens">
             {conversas === null ? (
-              <p className="hint ig-vazio">Carregando…</p>
+              <p className="hint ig-vazio">{traduzir("Carregando…")}</p>
             ) : !visiveis.length ? (
               <p className="hint ig-vazio">
                 {conversas.length ? "Ninguém com esse nome." : "Nenhuma conversa do Direct ainda."}
@@ -318,7 +318,7 @@ export default function InstagramConversasPage() {
 
               <div className="ig-mensagens">
                 {mensagens?.de !== atual.nome ? (
-                  <p className="hint">Carregando…</p>
+                  <p className="hint">{traduzir("Carregando…")}</p>
                 ) : !mensagens.lista.length ? (
                   <p className="hint">{traduzir("Nenhuma mensagem nesta conversa.")}</p>
                 ) : (
@@ -356,7 +356,7 @@ export default function InstagramConversasPage() {
                     className="btn primary"
                     disabled={!atual.dentroDaJanela || enviando || !texto.trim()}
                     onClick={enviar}
-                    aria-label="Enviar"
+                    aria-label={traduzir("Enviar")}
                   >
                     <IconEnviar width={14} height={14} />
                   </button>
@@ -382,7 +382,7 @@ export default function InstagramConversasPage() {
               <div className="ig-perfil-numeros">
                 <div>
                   <strong>{numero(atual.perfil?.seguidores ?? null)}</strong>
-                  <span>Seguidores</span>
+                  <span>{traduzir("Seguidores")}</span>
                 </div>
                 <div>
                   <strong>{atual.perfil?.verificado == null ? "—" : atual.perfil.verificado ? "Sim" : "Não"}</strong>

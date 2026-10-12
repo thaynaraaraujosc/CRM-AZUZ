@@ -18,7 +18,7 @@ export function DistribuirDisponibilidadeForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Equipe</label>
+        <label>{traduzir("Equipe")}</label>
         <select className="input" value={data.equipeNome ?? ""} onChange={(e) => onChange({ ...data, equipeNome: e.target.value })}>
           <option value="">{traduzir("Selecione uma equipe…")}</option>
           {equipes.map((nome) => (

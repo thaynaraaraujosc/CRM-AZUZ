@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 import { IconNovaConta } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 export default function CadastroPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const [empresa, setEmpresa] = useState("");
   const [nome, setNome] = useState("");
@@ -67,12 +69,12 @@ export default function CadastroPage() {
         <p className="auth-sub">Cadastre sua empresa e comece a usar o CRM hoje.</p>
 
         <div className="field">
-          <label htmlFor="empresa">Nome da empresa</label>
+          <label htmlFor="empresa">{traduzir("Nome da empresa")}</label>
           <input
             id="empresa"
             type="text"
             className="input"
-            placeholder="Nome da empresa"
+            placeholder={traduzir("Nome da empresa")}
             value={empresa}
             onChange={(e) => setEmpresa(e.target.value)}
             required
@@ -93,12 +95,12 @@ export default function CadastroPage() {
         </div>
 
         <div className="field">
-          <label htmlFor="email">E-mail</label>
+          <label htmlFor="email">{traduzir("E-mail")}</label>
           <input
             id="email"
             type="email"
             className="input"
-            placeholder="E-mail"
+            placeholder={traduzir("E-mail")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -107,12 +109,12 @@ export default function CadastroPage() {
         </div>
 
         <div className="field">
-          <label htmlFor="senha">Senha</label>
+          <label htmlFor="senha">{traduzir("Senha")}</label>
           <input
             id="senha"
             type="password"
             className="input"
-            placeholder="Senha"
+            placeholder={traduzir("Senha")}
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             required
@@ -124,7 +126,7 @@ export default function CadastroPage() {
         {erro && <p className="auth-erro">{erro}</p>}
 
         <button type="submit" className={`btn primary block${carregando ? " loading" : ""}`} disabled={carregando}>
-          Criar conta
+          {traduzir("Criar conta")}
         </button>
 
         <p className="auth-rodape">

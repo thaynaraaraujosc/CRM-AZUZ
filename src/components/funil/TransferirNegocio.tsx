@@ -115,7 +115,7 @@ export function TransferirNegocio({
       }
     >
       <div className="field">
-        <label>Responsável</label>
+        <label>{traduzir("Responsável")}</label>
         <select className="input" value={responsavel} onChange={(e) => setResponsavel(e.target.value)}>
           <option value="">{traduzir("Sem responsável")}</option>
           {equipe.map((membro) => (
@@ -127,7 +127,7 @@ export function TransferirNegocio({
       </div>
 
       <div className="field">
-        <label>Funil</label>
+        <label>{traduzir("Funil")}</label>
         <select className="input" value={funilId} onChange={(e) => trocarFunil(e.target.value)}>
           {funis.map((funil) => (
             <option key={funil.id} value={funil.id}>

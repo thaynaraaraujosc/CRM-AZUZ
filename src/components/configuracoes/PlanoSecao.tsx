@@ -202,7 +202,7 @@ export function PlanoSecao() {
     return (
       <div className="config-secao">
         <CabecalhoCategoria titulo={traduzir("Plano e cobrança")} descricao={traduzir("Seu plano atual, armazenamento e forma de pagamento.")} />
-        <p className="config-bloco-titulo">Carregando…</p>
+        <p className="config-bloco-titulo">{traduzir("Carregando…")}</p>
       </div>
     );
   }
@@ -318,11 +318,11 @@ export function PlanoSecao() {
           </div>
 
           <div className="field">
-            <label>Forma de pagamento</label>
+            <label>{traduzir("Forma de pagamento")}</label>
             <select className="input" style={{ width: "100%" }} value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value as FormaPagamento)}>
-              <option value="CREDIT_CARD">Cartão de crédito</option>
+              <option value="CREDIT_CARD">{traduzir("Cartão de crédito")}</option>
               <option value="PIX">PIX</option>
-              <option value="BOLETO">Boleto</option>
+              <option value="BOLETO">{traduzir("Boleto")}</option>
             </select>
           </div>
 
@@ -365,7 +365,7 @@ export function PlanoSecao() {
                   <input className="input" style={{ width: "100%" }} value={numeroEndereco} onChange={(e) => setNumeroEndereco(e.target.value)} required />
                 </div>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
-                  <label>Telefone</label>
+                  <label>{traduzir("Telefone")}</label>
                   <input className="input" style={{ width: "100%" }} value={telefone} onChange={(e) => setTelefone(e.target.value)} required />
                 </div>
               </div>
@@ -396,8 +396,8 @@ export function PlanoSecao() {
             <thead>
               <tr>
                 <th>{traduzir("Vencimento")}</th>
-                <th>Valor</th>
-                <th>Status</th>
+                <th>{traduzir("Valor")}</th>
+                <th>{traduzir("Status")}</th>
                 <th>{traduzir("Fatura")}</th>
               </tr>
             </thead>

@@ -115,7 +115,7 @@ export default function RespostasAutomaticasPage() {
             <h3>{editando.id ? "Editar resposta" : "Nova resposta"}</h3>
 
             <div className="field mt8">
-              <label>Nome</label>
+              <label>{traduzir("Nome")}</label>
               <input
                 className="input"
                 value={d.nome}
@@ -236,9 +236,9 @@ export default function RespostasAutomaticasPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Nome</th>
+                  <th>{traduzir("Nome")}</th>
                   <th>{traduzir("Quando")}</th>
-                  <th>Situação</th>
+                  <th>{traduzir("Situação")}</th>
                   <th aria-label={traduzir("Ações")} />
                 </tr>
               </thead>
@@ -265,7 +265,7 @@ export default function RespostasAutomaticasPage() {
                         <button
                           type="button"
                           className="btn ghost"
-                          title="Este fluxo tem passos que esta tela não sabe representar. Editar aqui apagaria o resto."
+                          title={traduzir("Este fluxo tem passos que esta tela não sabe representar. Editar aqui apagaria o resto.")}
                           onClick={() => router.push(`/automacoes/editor/${fluxo.id}`)}
                         >
                           {traduzir("Abrir no construtor")}

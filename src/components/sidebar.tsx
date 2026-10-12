@@ -353,11 +353,11 @@ export function Sidebar() {
                 <h4>{traduzir("Quem está logado agora")}</h4>
               </div>
               <div className="field">
-                <label>Nome</label>
+                <label>{traduzir("Nome")}</label>
                 <div className="input">{currentUser.name}</div>
               </div>
               <div className="field">
-                <label>E-mail</label>
+                <label>{traduzir("E-mail")}</label>
                 <div className="input">{currentUser.email}</div>
               </div>
               <div className="field">
@@ -391,7 +391,7 @@ export function Sidebar() {
                   style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
                   aria-haspopup="true"
                   aria-expanded={gestaoAtividadeAberta}
-                  title={recolhida ? "Inteligência comercial" : undefined}
+                  title={recolhida ? traduzir("Inteligência comercial") : undefined}
                   // O submenu só abria no `onMouseEnter` do <div> de fora. Quem navega por teclado
                   // chegava neste botão com Tab, apertava Enter e nada acontecia: o menu inteiro de
                   // Inteligência comercial era inalcançável sem mouse. O clique não atrapalha o
@@ -485,8 +485,8 @@ export function Sidebar() {
                       style={{ width: "100%", textAlign: "left" }}
                       title={traduzir("Abre numa aba nova: telão pra projetar no escritório")}
                     >
-                      <span className="n">{item.label}</span>
-                      <span className="r">TV</span>
+                      <span className="n">{traduzir(item.label)}</span>
+                      <span className="r">{traduzir("TV")}</span>
                     </a>
                   );
                 }
@@ -501,7 +501,7 @@ export function Sidebar() {
                     style={{ width: "100%", textAlign: "left" }}
                     onClick={() => setGestaoAtividadeAberta(false)}
                   >
-                    <span className="n">{item.label}</span>
+                    <span className="n">{traduzir(item.label)}</span>
                     {subAtivo ? <span className="r">●</span> : null}
                   </Link>
                 );

@@ -41,7 +41,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
       </div>
 
       <div className="field">
-        <label>Título</label>
+        <label>{traduzir("Título")}</label>
         <input
           className="input"
           placeholder={traduzir("Ex.: Retornar contato")}
@@ -61,7 +61,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
       </div>
 
       <div className="field">
-        <label>Responsável</label>
+        <label>{traduzir("Responsável")}</label>
         <select
           className="input"
           value={data.modoResponsavel ?? "atual"}
@@ -89,7 +89,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
 
       {data.modoResponsavel === "equipe" ? (
         <div className="field">
-          <label>Equipe</label>
+          <label>{traduzir("Equipe")}</label>
           <select className="input" value={data.equipe ?? ""} onChange={(e) => onChange({ ...data, equipe: e.target.value })}>
             <option value="">{traduzir("Selecione…")}</option>
             {equipes.map((nome) => (

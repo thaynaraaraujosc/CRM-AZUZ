@@ -286,7 +286,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                   setAudiencia(c.canal === "instagram" ? { modo: "janela_instagram" } : { modo: "todos" });
                 }}
               >
-                <strong>{c.label}</strong>
+                <strong>{traduzir(c.label)}</strong>
                 <span>
                   {c.emBreve ? "Em breve" : c.conectado ? c.detalhe || "Conectado" : c.motivo}
                 </span>
@@ -422,7 +422,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
 
             {audiencia.modo === "origem" ? (
               <div className="field">
-                <label>Origem</label>
+                <label>{traduzir("Origem")}</label>
                 <select className="input" value={audiencia.valor ?? ""} onChange={(e) => setAudiencia({ modo: "origem", valor: e.target.value })}>
                   <option value="">{traduzir("Escolha…")}</option>
                   {(opcoes?.origens ?? []).map((o) => (
@@ -473,7 +473,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
 
             {audiencia.modo === "selecionados" ? (
               <div className="field">
-                <label>Contatos</label>
+                <label>{traduzir("Contatos")}</label>
                 <input className="input" placeholder={traduzir("Buscar pelo nome…")} value={busca} onChange={(e) => setBusca(e.target.value)} />
                 <div className="disp-lista-contatos">
                   {contatosFiltrados.map((c) => {
@@ -575,12 +575,12 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
               <>
                 {limites.exigeAssunto ? (
                   <div className="field">
-                    <label>Assunto</label>
+                    <label>{traduzir("Assunto")}</label>
                     <input className="input" value={assuntoLivre} onChange={(e) => setAssuntoLivre(e.target.value)} />
                   </div>
                 ) : null}
                 <div className="field">
-                  <label>Mensagem</label>
+                  <label>{traduzir("Mensagem")}</label>
                   <textarea
                     className="input tpl-corpo"
                     rows={5}
@@ -680,7 +680,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       {passo === 4 && canal ? (
         <div className="disp-passo disp-duas-colunas">
           <dl className="disp-revisao">
-            <dt>Canal</dt>
+            <dt>{traduzir("Canal")}</dt>
             <dd>{canalLabel}</dd>
             <dt>{traduzir("Destinatários")}</dt>
             <dd>{previa?.receberao ?? "…"} contatos{previa?.semDestino.length ? ` (${previa.semDestino.length} sem destino ficam de fora)` : ""}</dd>

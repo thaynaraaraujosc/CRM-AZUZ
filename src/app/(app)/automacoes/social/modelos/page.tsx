@@ -130,7 +130,7 @@ export default function ModelosSociaisPage() {
         <section className="card mt16">
           <h3>{traduzir("Meus modelos")}</h3>
           {meus === null ? (
-            <p className="hint">Carregando…</p>
+            <p className="hint">{traduzir("Carregando…")}</p>
           ) : !meus.length ? (
             <p className="hint">
               {traduzir("Nenhum ainda. Copie um da AZUZ acima, ou crie do zero no editor de templates.")}
@@ -139,8 +139,8 @@ export default function ModelosSociaisPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Nome</th>
-                  <th>Mensagem</th>
+                  <th>{traduzir("Nome")}</th>
+                  <th>{traduzir("Mensagem")}</th>
                 </tr>
               </thead>
               <tbody>

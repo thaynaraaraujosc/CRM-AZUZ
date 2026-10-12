@@ -67,7 +67,7 @@ export function MensagemForm({
     <div className="flow-form">
       {temCanal ? (
         <div className="field">
-          <label>Canal</label>
+          <label>{traduzir("Canal")}</label>
           <select
             className="input"
             value={String(d.canal ?? canais[0]?.valor ?? "whatsapp")}
@@ -112,7 +112,7 @@ export function MensagemForm({
 
       {temTemplateId ? (
         <div className="field">
-          <label>Modelo aprovado</label>
+          <label>{traduzir("Modelo aprovado")}</label>
           <input
             className="input"
             placeholder={traduzir("ID do modelo no WhatsApp Business")}
@@ -130,13 +130,13 @@ export function MensagemForm({
       ) : null}
       {temTelefone ? (
         <div className="field">
-          <label>Telefone</label>
+          <label>{traduzir("Telefone")}</label>
           <input className="input" value={String(d.telefone ?? "")} onChange={(e) => set({ telefone: e.target.value })} />
         </div>
       ) : null}
       {temEndereco ? (
         <div className="field">
-          <label>Endereço</label>
+          <label>{traduzir("Endereço")}</label>
           <input className="input" value={String(d.endereco ?? "")} onChange={(e) => set({ endereco: e.target.value })} />
         </div>
       ) : null}
@@ -150,7 +150,7 @@ export function MensagemForm({
 
       {temAssunto ? (
         <div className="field">
-          <label>Assunto</label>
+          <label>{traduzir("Assunto")}</label>
           <input className="input" value={String(d.assunto ?? "")} onChange={(e) => set({ assunto: e.target.value })} />
         </div>
       ) : null}

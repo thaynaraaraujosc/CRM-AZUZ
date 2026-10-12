@@ -120,7 +120,7 @@ export function SegurancaSecao() {
               <input className="input" type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder={traduzir("Confirme sua senha")} />
             </div>
             <div className="field">
-              <label>Novo e-mail</label>
+              <label>{traduzir("Novo e-mail")}</label>
               <input className="input" type="email" value={novoEmail} onChange={(e) => setNovoEmail(e.target.value)} placeholder="novo@email.com" />
             </div>
             {erroEmail ? <p style={{ gridColumn: "1 / -1", color: "var(--danger)", fontSize: 12.5 }}>{erroEmail}</p> : null}
@@ -140,7 +140,7 @@ export function SegurancaSecao() {
       <div className="config-bloco">
         <p className="config-bloco-titulo">{traduzir("Sessões ativas")}</p>
         {sessoes === null ? (
-          <p className="hint">Carregando…</p>
+          <p className="hint">{traduzir("Carregando…")}</p>
         ) : (
           <div className="config-lista-linhas">
             {sessoes.map((s) => (

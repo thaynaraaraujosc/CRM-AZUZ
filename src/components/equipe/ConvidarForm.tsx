@@ -86,7 +86,7 @@ export function ConvidarForm() {
           <h4>{traduzir("Dados")}</h4>
         </div>
         <div className="field">
-          <label>Nome</label>
+          <label>{traduzir("Nome")}</label>
           <input className="input" style={{ width: "100%" }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder={traduzir("Nome completo")} />
         </div>
         <div className="field">
@@ -101,7 +101,7 @@ export function ConvidarForm() {
           />
         </div>
         <div className="field">
-          <label>Papel</label>
+          <label>{traduzir("Papel")}</label>
           <RadioList options={opcoesPapel} initial={OPCAO_PERSONALIZADO} bare onChange={selecionarFuncao} />
           {ehPersonalizado ? (
             <input

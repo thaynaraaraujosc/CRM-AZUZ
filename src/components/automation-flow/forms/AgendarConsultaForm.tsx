@@ -31,7 +31,7 @@ export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaD
       </div>
 
       <div className="field">
-        <label>Profissional</label>
+        <label>{traduzir("Profissional")}</label>
         <select className="input" value={data.profissional ?? ""} onChange={(e) => onChange({ ...data, profissional: e.target.value })}>
           <option value="">{traduzir("Selecione…")}</option>
           {equipe.map((m) => (
@@ -53,7 +53,7 @@ export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaD
       </div>
 
       <div className="field">
-        <label>Observação</label>
+        <label>{traduzir("Observação")}</label>
         <textarea
           className="input"
           style={{ width: "100%", minHeight: 50, resize: "vertical" }}

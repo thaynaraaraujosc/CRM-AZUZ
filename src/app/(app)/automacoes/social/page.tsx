@@ -154,7 +154,7 @@ export default function AutomacoesSociaisPage() {
         <div className="social-conteudo">
           {instagram && !instagram.conectado ? (
             <section className="card" style={{ marginBottom: "var(--space-3)" }}>
-              <strong>O Instagram não está conectado.</strong>
+              <strong>{traduzir("O Instagram não está conectado.")}</strong>
               <p className="hint mt8">
                 {instagram.motivo} Dá pra montar os robôs aqui, mas nenhum gatilho vai acontecer.
               </p>
@@ -257,7 +257,7 @@ export default function AutomacoesSociaisPage() {
           <section className="card mt16">
             <div className="social-secao-topo">
               <h3>
-                Automações <span className="social-contador">{visiveis.length}</span>
+                {traduzir("Automações")} <span className="social-contador">{visiveis.length}</span>
               </h3>
             </div>
 
@@ -293,8 +293,8 @@ export default function AutomacoesSociaisPage() {
                     <th>{traduzir("Gatilho")}</th>
                     <th>{traduzir("Criado")}</th>
                     <th>{traduzir("Última publicação")}</th>
-                    <th>Execuções</th>
-                    <th>Situação</th>
+                    <th>{traduzir("Execuções")}</th>
+                    <th>{traduzir("Situação")}</th>
                     <th aria-label={traduzir("Ações")} />
                   </tr>
                 </thead>

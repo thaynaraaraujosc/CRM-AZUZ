@@ -83,7 +83,7 @@ export function ExpedienteSecao() {
     }
   }
 
-  if (carregando) return <p className="hint">Carregando…</p>;
+  if (carregando) return <p className="hint">{traduzir("Carregando…")}</p>;
 
   return (
     /*

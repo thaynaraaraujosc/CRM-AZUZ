@@ -248,7 +248,7 @@ export function IntegracoesSecao() {
       {sessao?.user?.superAdmin ? <DadosWebhook /> : null}
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Em breve</p>
+        <p className="config-bloco-titulo">{traduzir("Em breve")}</p>
         <div className="filters-row mb14">
           {CATEGORIAS.map((c) => (
             <button type="button" key={c} className={`fchip${categoriaFiltro === c ? " active" : ""}`} onClick={() => setCategoriaFiltro(c)}>
@@ -261,12 +261,12 @@ export function IntegracoesSecao() {
             <div className="config-canal-card" key={a.nome}>
               <div className="config-canal-card-h">
                 <span className="n">{a.nome}</span>
-                <span className="int-status off">Em breve</span>
+                <span className="int-status off">{traduzir("Em breve")}</span>
               </div>
               <p className="r">{a.descricao}</p>
               <div className="config-canal-card-acoes">
                 <button type="button" className="btn ghost" disabled>
-                  Em breve
+                  {traduzir("Em breve")}
                 </button>
               </div>
             </div>

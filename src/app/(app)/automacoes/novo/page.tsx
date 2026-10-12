@@ -114,7 +114,7 @@ export default function NovaAutomacaoComercialPage() {
       <div className="content">
         <nav className="social-migalhas" aria-label={traduzir("Onde você está")}>
           <button type="button" className="link" onClick={() => router.push("/automacoes")}>
-            Automações
+            {traduzir("Automações")}
           </button>
           <span aria-hidden="true">›</span>
           <strong>{traduzir("Nova automação")}</strong>
@@ -145,7 +145,7 @@ export default function NovaAutomacaoComercialPage() {
             </button>
 
             <div className="social-caminho desativado" aria-disabled="true">
-              <span className="social-caminho-selo em-breve">Em breve</span>
+              <span className="social-caminho-selo em-breve">{traduzir("Em breve")}</span>
               <IconSparkle width={26} height={26} aria-hidden="true" />
               <strong>{traduzir("Descrever pra IA montar")}</strong>
               <span>

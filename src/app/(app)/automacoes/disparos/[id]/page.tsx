@@ -142,13 +142,13 @@ export default function DetalheDisparoPage() {
       <div className="content">
         {erro ? <p className="modelo-erro">{erro}</p> : null}
         {!campanha ? (
-          <p className="hint">Carregando…</p>
+          <p className="hint">{traduzir("Carregando…")}</p>
         ) : (
           <div className="disp-detalhe">
             <div className="card disp-detalhe-resumo">
               <div className="disp-item-cabecalho">
                 <div>
-                  <strong>Situação</strong>
+                  <strong>{traduzir("Situação")}</strong>
                   <span className="hint">
                     Agendado para {formatarData(campanha.agendadaPara)}
                     {campanha.iniciadaEm ? ` · começou ${formatarData(campanha.iniciadaEm)}` : ""}
@@ -195,7 +195,7 @@ export default function DetalheDisparoPage() {
                   <tr>
                     <th>Contato</th>
                     <th>{traduzir("Destino")}</th>
-                    <th>Situação</th>
+                    <th>{traduzir("Situação")}</th>
                     <th>{traduzir("Quando")}</th>
                     <th>{traduzir("Detalhe")}</th>
                   </tr>

@@ -56,7 +56,7 @@ export function AceitarConviteForm({ id, email, token }: { id: string; email: st
   return (
     <form onSubmit={handleSubmit}>
       <div className="field">
-        <label htmlFor="email">E-mail</label>
+        <label htmlFor="email">{traduzir("E-mail")}</label>
         <input id="email" className="input" type="email" defaultValue={email} readOnly />
       </div>
 

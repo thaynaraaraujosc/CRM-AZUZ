@@ -313,7 +313,7 @@ export function PainelConversa({
               type="button"
               className={`gear-btn${dadosAberto ? " active" : ""}`}
               aria-pressed={dadosAberto}
-              title="Dados do contato"
+              title={traduzir("Dados do contato")}
               onClick={() => setDadosAberto((v) => !v)}
             >
               <IconConfiguracoes width={15} height={15} />
@@ -406,11 +406,11 @@ export function PainelConversa({
                 <span className="wa-anexo-icone wa-anexo-icone-localizacao">
                   <IconLocalizacao width={17} height={17} />
                 </span>
-                <span className="wa-anexo-label">Localização</span>
+                <span className="wa-anexo-label">{traduzir("Localização")}</span>
               </button>
               {respostasRapidas.length ? (
                 <div className="painel-conversa-respostas">
-                  <p className="hint" style={{ margin: "6px 0 4px" }}>Respostas rápidas</p>
+                  <p className="hint" style={{ margin: "6px 0 4px" }}>{traduzir("Respostas rápidas")}</p>
                   {respostasRapidas.map((r) => (
                     <button
                       key={r.id}
@@ -431,7 +431,7 @@ export function PainelConversa({
             <button
               type="button"
               className="chat-mais-btn"
-              aria-label="Anexar"
+              aria-label={traduzir("Anexar")}
               aria-expanded={maisAberto}
               onClick={() => setMaisAberto((v) => !v)}
             >
@@ -454,7 +454,7 @@ export function PainelConversa({
             <button
               type="button"
               className="chat-mic-btn chat-send-btn"
-              aria-label="Enviar"
+              aria-label={traduzir("Enviar")}
               disabled={enviando || !texto.trim()}
               onClick={() => void enviarTexto()}
             >
@@ -491,7 +491,7 @@ export function PainelConversa({
           justamente enquanto a pessoa lia pra responder. */}
       {dadosAberto ? (
         <aside className="painel-conversa-dados" onClick={(e) => e.stopPropagation()}>
-          <div className="wa-info-tabs" role="tablist" aria-label="Painel do contato">
+          <div className="wa-info-tabs" role="tablist" aria-label={traduzir("Painel do contato")}>
             {(
               [
                 { id: "contato", label: "Contato" },
@@ -517,7 +517,7 @@ export function PainelConversa({
             {aba === "contato" ? (
               <>
                 <div className="field">
-                  <label>Nome</label>
+                  <label>{traduzir("Nome")}</label>
                   <input className="input" value={nomeEdit} disabled />
                 </div>
                 <div className="field">
@@ -525,11 +525,11 @@ export function PainelConversa({
                   <input className="input" value={whatsappEdit} onChange={(e) => setWhatsappEdit(e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>E-mail</label>
+                  <label>{traduzir("E-mail")}</label>
                   <input className="input" value={emailEdit} onChange={(e) => setEmailEdit(e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>Empresa</label>
+                  <label>{traduzir("Empresa")}</label>
                   <input className="input" value={empresaEdit} onChange={(e) => setEmpresaEdit(e.target.value)} />
                 </div>
                 <button type="button" className="btn primary block" onClick={salvarDados}>
@@ -545,15 +545,15 @@ export function PainelConversa({
                   <div className="input">{etapaAtual ?? "Fora do funil"}</div>
                 </div>
                 <div className="field">
-                  <label>Origem</label>
+                  <label>{traduzir("Origem")}</label>
                   <div className="input">{contato?.origem ?? canal ?? "-"}</div>
                 </div>
                 <div className="field">
-                  <label>Responsável</label>
+                  <label>{traduzir("Responsável")}</label>
                   <div className="input">{contato?.responsavel ?? "Sem responsável"}</div>
                 </div>
                 <div className="field">
-                  <label>Etiquetas</label>
+                  <label>{traduzir("Etiquetas")}</label>
                   {/* Etiquetas como pastilhas, não como texto separado por vírgula: é assim que
                       elas aparecem no resto do CRM, e o atendente reconhece pela cor/forma. */}
                   <div className="painel-etiquetas">

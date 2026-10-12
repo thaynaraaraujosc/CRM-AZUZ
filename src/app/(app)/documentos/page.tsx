@@ -349,7 +349,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
   return (
     <>
       <Topbar
-        title="Documentos"
+        title={traduzir("Documentos")}
         sub={traduzir("Crie, edite e organize documentos de texto. Com páginas, formatação e histórico")}
       />
       <div className="content">
@@ -375,7 +375,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
           >
             <option value="edicao">{traduzir("Última edição")}</option>
             <option value="criacao">{traduzir("Criação")}</option>
-            <option value="nome">Nome</option>
+            <option value="nome">{traduzir("Nome")}</option>
           </select>
         </div>
 
@@ -386,7 +386,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
             </div>
 
             <div className="filters-row mb14" style={{ padding: "0 16px" }}>
-              <button type="button" className={`fchip${abaModelos === "todos" ? " active" : ""}`} onClick={() => setAbaModelos("todos")}>Todos</button>
+              <button type="button" className={`fchip${abaModelos === "todos" ? " active" : ""}`} onClick={() => setAbaModelos("todos")}>{traduzir("Todos")}</button>
               <button type="button" className={`fchip${abaModelos === "recomendados" ? " active" : ""}`} onClick={() => setAbaModelos("recomendados")}>{traduzir("Recomendados")}</button>
               <button type="button" className={`fchip${abaModelos === "recentes" ? " active" : ""}`} onClick={() => setAbaModelos("recentes")}>{traduzir("Recentes")}</button>
               <button type="button" className={`fchip${abaModelos === "favoritos" ? " active" : ""}`} onClick={() => setAbaModelos("favoritos")}>{traduzir("Favoritos")}</button>
@@ -598,7 +598,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                 <button
                   type="button"
                   className="modal-close-btn doc-lista-acoes-btn"
-                  aria-label="Mais ações"
+                  aria-label={traduzir("Mais ações")}
                   onClick={(e) => {
                     setAcaoRect(e.currentTarget.getBoundingClientRect());
                     setAcaoAbertaId(acaoAbertaId === d.id ? null : d.id);
@@ -740,6 +740,7 @@ function MenuTopo({
   onFechar: () => void;
   itens: ("sep" | ItemMenu)[];
 }) {
+  const { t: traduzir } = useIdioma();
   const btnRef = useRef<HTMLButtonElement>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
   return (
@@ -783,7 +784,7 @@ function MenuTopo({
                 onFechar();
               }}
             >
-              <span className="n">{item.label}</span>
+              <span className="n">{traduzir(item.label)}</span>
               {item.atalho ? <span className="doc-menu-atalho">{item.atalho}</span> : null}
             </button>
           ),
@@ -2665,7 +2666,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             onClick={() => setPainelLateralAberto((v) => !v)}
             style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
           >
-            <IconAlignJustify width={14} height={14} /> Painel
+            <IconAlignJustify width={14} height={14} /> {traduzir("Painel")}
           </button>
           <button type="button" className="btn ghost" onClick={() => setComentariosAberto((v) => !v)} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <IconConversas width={14} height={14} /> Comentários{doc.comentarios.filter((c) => !c.resolvido).length > 0 ? ` (${doc.comentarios.filter((c) => !c.resolvido).length})` : ""}
@@ -2740,7 +2741,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
 
             <p className="doc-menu-categoria">{traduzir("Mídia")}</p>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirImagem}>
-              <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconImage width={13} height={13} /> Imagem</span>
+              <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconImage width={13} height={13} /> {traduzir("Imagem")}</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => inserirNaPagina('<span style="border:1px solid #999;border-radius:6px;padding:4px 8px;display:inline-flex;align-items:center;gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg> arquivo.pdf</span>')}>
               <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconAnexo width={13} height={13} /> {traduzir("Arquivo")}</span>
@@ -2766,7 +2767,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <span className="n">⤓ Quebra de página</span>
             </button>
 
-            <p className="doc-menu-categoria">Documentos</p>
+            <p className="doc-menu-categoria">{traduzir("Documentos")}</p>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => setCabecalhoRodapeAberto("cabecalho")}>
               <span className="n">⬒ Cabeçalho</span>
             </button>
@@ -2832,7 +2833,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             style={{ width: "100%", textAlign: "left" }}
             onClick={copiarFormatacao}
             onDoubleClick={colarFormatacao}
-            title="Clique pra copiar a formatação, clique duas vezes num trecho selecionado pra colar"
+            title={traduzir("Clique pra copiar a formatação, clique duas vezes num trecho selecionado pra colar")}
           >
             <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconPaint width={13} height={13} /> {traduzir("Copiar formatação")}</span>
           </button>
@@ -3025,7 +3026,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         ) : comentariosAberto ? (
           <aside className="doc-comentarios-painel">
             <div className="panel-h">
-              <h4>Comentários</h4>
+              <h4>{traduzir("Comentários")}</h4>
               <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setComentariosAberto(false)}><IconClose width={12} height={12} /></button>
             </div>
             {doc.comentarios.length === 0 ? (
@@ -3047,7 +3048,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                         if (texto) responderComentario(id, c.id, texto);
                       }}
                     >
-                      Responder
+                      {traduzir("Responder")}
                     </button>
                     <button type="button" className="link" onClick={() => resolverComentario(id, c.id)}>
                       {c.resolvido ? "Reabrir" : "Resolver"}
@@ -3060,7 +3061,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         ) : painelLateralAberto ? (
           <aside className="doc-lateral-painel">
             <div className="panel-h">
-              <h4>Painel</h4>
+              <h4>{traduzir("Painel")}</h4>
               <button type="button" className="modal-close-btn" aria-label={traduzir("Recolher painel")} onClick={() => setPainelLateralAberto(false)}><IconClose width={12} height={12} /></button>
             </div>
             <div className="doc-painel-tabs">
@@ -4531,7 +4532,7 @@ function MenuContextoTexto({
       style={{ left: pos.x + ajuste.x, top: pos.y + ajuste.y }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <button type="button" onClick={onCopiar} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconCopy width={13} height={13} /> Copiar</button>
+      <button type="button" onClick={onCopiar} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconCopy width={13} height={13} /> {traduzir("Copiar")}</button>
       <button type="button" onClick={onRecortar} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconCut width={13} height={13} /> {traduzir("Recortar")}</button>
       <button type="button" onClick={onColar} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconPaste width={13} height={13} /> {traduzir("Colar")}</button>
       <div className="doc-context-menu-sep" />

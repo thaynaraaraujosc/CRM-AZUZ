@@ -133,7 +133,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                   <input className="input" value={nome} onChange={(e) => setNome(e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>Origem</label>
+                  <label>{traduzir("Origem")}</label>
                   <input className="input" value={origem} onChange={(e) => setOrigem(e.target.value)} />
                 </div>
                 <div className="field">

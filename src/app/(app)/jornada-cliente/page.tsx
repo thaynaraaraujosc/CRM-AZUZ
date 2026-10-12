@@ -394,7 +394,7 @@ function JornadaClientePageInner() {
       <div className="topbar">
         <div>
           <div className="topbar-title-row">
-            <h2>Jornada do cliente</h2>
+            <h2>{traduzir("Jornada do cliente")}</h2>
           </div>
           <p className="sub">{traduzir("A jornada completa de um contato. Desde a primeira entrada até a última interação")}</p>
         </div>
@@ -543,7 +543,7 @@ function JornadaClientePageInner() {
                         onChange={() => alternarColuna(c.chave)}
                         style={{ marginRight: 8 }}
                       />
-                      <span className="n">{c.label}</span>
+                      <span className="n">{traduzir(c.label)}</span>
                     </label>
                   ))}
                 </FloatingDropdown>
@@ -551,7 +551,7 @@ function JornadaClientePageInner() {
             </div>
 
             {buscando ? (
-              <p className="hint" style={{ padding: 17 }}>Carregando…</p>
+              <p className="hint" style={{ padding: 17 }}>{traduzir("Carregando…")}</p>
             ) : ordenados.length === 0 ? (
               <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhum contato encontrado.")}</p>
             ) : (
@@ -574,7 +574,7 @@ function JornadaClientePageInner() {
                           </th>
                         ))}
                         {COLUNAS_OPCIONAIS.filter((c) => colunasVisiveis.has(c.chave)).map((c) => (
-                          <th key={c.chave}>{c.label}</th>
+                          <th key={c.chave}>{traduzir(c.label)}</th>
                         ))}
                       </tr>
                     </thead>
@@ -727,7 +727,7 @@ function JornadaClientePageInner() {
 
               <div className="jornada-resumo-grid">
                 <ResumoItem label={traduzir("Primeira entrada")} value={resumo.primeiraEntrada} vazio="Não disponível" />
-                <ResumoItem label="Origem" value={resumo.origem} />
+                <ResumoItem label={traduzir("Origem")} value={resumo.origem} />
                 <ResumoItem label={traduzir("Canal inicial")} value={resumo.canalInicial} vazio="Não disponível" />
                 <ResumoItem label={traduzir("Tempo até 1ª resposta")} value={resumo.tempoAtePrimeiraResposta} vazio="Não disponível" />
                 <ResumoItem label={traduzir("Negociações")} value={String(resumo.quantidadeNegociacoes)} />
@@ -735,7 +735,7 @@ function JornadaClientePageInner() {
                 <ResumoItem label={traduzir("Receita acumulada")} value={resumo.receitaAcumulada} vazio="Ainda não ocorreu" />
                 <ResumoItem label={traduzir("Ticket médio")} value={resumo.ticketMedio} vazio="Ainda não ocorreu" />
                 <ResumoItem label={traduzir("Última compra")} value={resumo.ultimaCompra} vazio="Ainda não ocorreu" />
-                <ResumoItem label="Última interação" value={resumo.ultimaInteracao} />
+                <ResumoItem label={traduzir("Última interação")} value={resumo.ultimaInteracao} />
               </div>
 
               <div className="panel-h divided">
@@ -876,7 +876,7 @@ function SecaoHistoricosRecentes({
               <th>{traduzir("Última visualização")}</th>
               <th>{traduzir("Última interação registrada")}</th>
               <th>{traduzir("Etapa")}</th>
-              <th>Responsável</th>
+              <th>{traduzir("Responsável")}</th>
               <th></th>
             </tr>
           </thead>

@@ -79,7 +79,7 @@ export default function DisparosPage() {
         {aviso ? <div className="tpl-toast">{aviso}</div> : null}
 
         {campanhas === null ? (
-          <p className="hint">Carregando…</p>
+          <p className="hint">{traduzir("Carregando…")}</p>
         ) : campanhas.length === 0 ? (
           <div className="card tpl-vazio">
             <strong>{traduzir("Nenhum disparo ainda.")}</strong>

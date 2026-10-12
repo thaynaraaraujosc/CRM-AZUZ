@@ -54,7 +54,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
 
       {data.destino === "equipe" ? (
         <div className="field">
-          <label>Equipe</label>
+          <label>{traduzir("Equipe")}</label>
           <select className="input" value={data.equipeNome ?? ""} onChange={(e) => onChange({ ...data, equipeNome: e.target.value })}>
             <option value="">{traduzir("Selecionar equipe…")}</option>
             {equipes.map((nome) => (
@@ -91,7 +91,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
       {data.moverFunil ? (
         <>
           <div className="field">
-            <label>Funil</label>
+            <label>{traduzir("Funil")}</label>
             <select className="input" value={data.funilId ?? ""} onChange={(e) => onChange({ ...data, funilId: e.target.value, etapaTitulo: "" })}>
               <option value="">{traduzir("Selecione um funil…")}</option>
               {funis.map((f) => (

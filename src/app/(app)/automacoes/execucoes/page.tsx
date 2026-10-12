@@ -42,7 +42,7 @@ export default function ExecucoesDoFunilPage() {
   return (
     <>
       <Topbar
-        title="Execuções"
+        title={traduzir("Execuções")}
         sub={traduzir("O que cada robô do funil fez, lead por lead, passo por passo")}
         actions={
           <div className="social-periodo">
@@ -61,7 +61,7 @@ export default function ExecucoesDoFunilPage() {
         <section className="card" style={{ padding: "var(--space-4)" }}>
           <div className="disp-item-cabecalho">
             <div>
-              <h3>Execuções</h3>
+              <h3>{traduzir("Execuções")}</h3>
               <p className="hint">
                 Abra uma execução pra ver a linha do tempo: o que rodou, o que esperou e o motivo
                 exato de qualquer falha, com a resposta do canal.
@@ -73,7 +73,7 @@ export default function ExecucoesDoFunilPage() {
           </div>
 
           {carregando && !painel ? (
-            <p className="hint mt8">Carregando…</p>
+            <p className="hint mt8">{traduzir("Carregando…")}</p>
           ) : (
             <TabelaExecucoes
               execucoes={painel?.execucoes ?? []}

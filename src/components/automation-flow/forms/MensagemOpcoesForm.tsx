@@ -146,7 +146,7 @@ export function MensagemOpcoesForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Canal</label>
+        <label>{traduzir("Canal")}</label>
         <select
           className="input"
           value={data.canal ?? canais[0]?.valor}
@@ -180,7 +180,7 @@ export function MensagemOpcoesForm({
           <label style={{ marginBottom: 0 }}>{traduzir("Formato de resposta")}</label>
           <span
             className="hint"
-            title="Alguns recursos interativos dependem do provedor e do tipo de conexão configurado."
+            title={traduzir("Alguns recursos interativos dependem do provedor e do tipo de conexão configurado.")}
           >
             ⓘ compatibilidade
           </span>
@@ -197,7 +197,7 @@ export function MensagemOpcoesForm({
               <span className="r">{f.desc}</span>
               <span
                 className={`flow-formato-compat${f.compatibilidade === "Compatibilidade ampla" ? " ampla" : ""}`}
-                title="Alguns recursos interativos dependem do provedor e do tipo de conexão configurado."
+                title={traduzir("Alguns recursos interativos dependem do provedor e do tipo de conexão configurado.")}
               >
                 {f.compatibilidade}
               </span>

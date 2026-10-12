@@ -1,3 +1,7 @@
+"use client";
+
+import { useIdioma } from "@/lib/idioma-context";
+
 /**
  * O que aparece ENTRE o clique e a tela nova.
  *
@@ -10,9 +14,10 @@
  * em vez de uma pausa sem explicação.
  */
 export default function Carregando() {
+  const { t: traduzir } = useIdioma();
   return (
     <div className="tela-carregando" aria-busy="true" aria-live="polite">
-      <span className="sr-only">Carregando…</span>
+      <span className="sr-only">{traduzir("Carregando…")}</span>
 
       <div className="tela-carregando-topo">
         <span className="esqueleto esqueleto-titulo" />

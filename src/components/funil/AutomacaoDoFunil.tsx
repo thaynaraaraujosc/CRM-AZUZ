@@ -461,7 +461,7 @@ export function AutomacaoDoFunil({
           {canais.length ? (
             canais.map((c) => (
               <div key={c.canal} className="fauto-fonte">
-                <strong>{c.label}</strong>
+                <strong>{traduzir(c.label)}</strong>
                 <span>{c.detalhe || "Conectado"}</span>
               </div>
             ))
@@ -674,7 +674,7 @@ export function AutomacaoDoFunil({
 
             {rascunho.tipoAcao === "robo" ? (
               <div className="field">
-                <label>Robô</label>
+                <label>{traduzir("Robô")}</label>
                 <select
                   className="input"
                   value={rascunho.fluxoId}
@@ -710,7 +710,7 @@ export function AutomacaoDoFunil({
 
             {rascunho.tipoAcao === "mensagem" ? (
               <div className="field">
-                <label>Mensagem</label>
+                <label>{traduzir("Mensagem")}</label>
                 <textarea
                   className="input"
                   rows={4}
@@ -724,7 +724,7 @@ export function AutomacaoDoFunil({
 
             {rascunho.tipoAcao === "responsavel" ? (
               <div className="field">
-                <label>Novo responsável</label>
+                <label>{traduzir("Novo responsável")}</label>
                 <input
                   className="input"
                   value={rascunho.acaoDados.responsavel ?? ""}
@@ -783,7 +783,7 @@ export function AutomacaoDoFunil({
 
             {rascunho.tipoAcao === "webhook" ? (
               <div className="field">
-                <label>Endereço</label>
+                <label>{traduzir("Endereço")}</label>
                 <input
                   className="input"
                   value={rascunho.acaoDados.webhookUrl ?? ""}

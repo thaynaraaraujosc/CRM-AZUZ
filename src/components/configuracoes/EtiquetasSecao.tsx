@@ -47,7 +47,7 @@ export function EtiquetasSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="Etiquetas" descricao={traduzir("Marcações usadas em contatos, negócios e automações.")} />
+      <CabecalhoCategoria titulo={traduzir("Etiquetas")} descricao={traduzir("Marcações usadas em contatos, negócios e automações.")} />
 
       <div className="config-bloco">
         <input className="input" style={{ width: "100%", marginBottom: 12 }} placeholder={traduzir("Buscar etiqueta…")} value={busca} onChange={(e) => setBusca(e.target.value)} />

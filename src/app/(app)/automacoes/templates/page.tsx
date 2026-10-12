@@ -100,7 +100,7 @@ export default function TemplatesPage() {
         </div>
 
         {templates === null ? (
-          <p className="hint">Carregando…</p>
+          <p className="hint">{traduzir("Carregando…")}</p>
         ) : visiveis.length === 0 ? (
           <div className="card tpl-vazio">
             <strong>{traduzir("Nenhum template ainda.")}</strong>

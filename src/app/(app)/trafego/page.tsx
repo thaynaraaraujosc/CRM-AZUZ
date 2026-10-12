@@ -270,7 +270,7 @@ export default function TrafegoPage() {
       <div className="topbar">
         <div>
           <div className="topbar-title-row">
-            <h2>Tráfego</h2>
+            <h2>{traduzir("Tráfego")}</h2>
           </div>
           <p className="sub">{traduzir("Da aquisição de leads até a receita atribuída às campanhas")}</p>
         </div>
@@ -553,7 +553,7 @@ export default function TrafegoPage() {
                 <span className="sv">{campanhaDetalhe.roas}</span>
               </div>
               <div className="stat-row">
-                <span className="sl">Status</span>
+                <span className="sl">{traduzir("Status")}</span>
                 <span className="sv">{campanhaDetalhe.pausada ? "Pausada" : "Ativa"}</span>
               </div>
               <Link
@@ -576,7 +576,7 @@ export default function TrafegoPage() {
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>Origem</th>
+                  <th>{traduzir("Origem")}</th>
                   <th>{traduzir("Leads")}</th>
                   <th>{traduzir("Vendas")}</th>
                   <th>{traduzir("Investimento")}</th>
