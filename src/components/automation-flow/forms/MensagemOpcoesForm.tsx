@@ -286,10 +286,7 @@ export function MensagemOpcoesForm({
                 (() => {
                   const checagem = validarRegex(opcao.valorComparado ?? "");
                   return checagem.ok ? (
-                    <p className="hint mt8">
-                      Comparação sem acento e sem diferenciar maiúscula. A expressão é conferida
-                      antes de salvar e tem tempo limitado na execução.
-                    </p>
+                    <p className="hint mt8">{traduzir("Comparação sem acento e sem diferenciar maiúscula. A expressão é conferida antes de salvar e tem tempo limitado na execução.")}</p>
                   ) : (
                     <p className="hint mt8" style={{ color: "var(--danger)" }}>
                       {checagem.motivo}
@@ -298,10 +295,7 @@ export function MensagemOpcoesForm({
                 })()
               ) : null}
               {opcao.comparacao === "qualquer" ? (
-                <p className="hint mt8">
-                  Pega tudo que chegar. Deixe por último: as opções abaixo desta nunca são
-                  alcançadas.
-                </p>
+                <p className="hint mt8">{traduzir("Pega tudo que chegar. Deixe por último: as opções abaixo desta nunca são alcançadas.")}</p>
               ) : null}
             </div>
             <div className="flow-opcao-alternativas">
@@ -353,16 +347,12 @@ export function MensagemOpcoesForm({
           type="button"
           className="btn ghost block mt8"
           onClick={() => onChange({ ...data, opcoes: [...opcoes, { id: novoIdOpcao(), rotulo: "" }] })}
-        >
-          + Botão de ação
-        </button>
+        >{traduzir("+ Botão de ação")}</button>
         <button
           type="button"
           className="btn ghost block mt8"
           onClick={() => onChange({ ...data, opcoes: [...opcoes, { id: novoIdOpcao(), rotulo: "", url: "https://" }] })}
-        >
-          + Botão de URL
-        </button>
+        >{traduzir("+ Botão de URL")}</button>
         <p className="hint mt8">
           <b>{traduzir("O que cada conexão entrega:")}</b> no WhatsApp oficial, até 3 opções viram botões e de 4 a
           10 viram lista. Na conexão por QR Code não existe botão confiável, então a pergunta sai

@@ -88,10 +88,7 @@ export function ListaDePassos({
     return (
       <div className="passos-vazio">
         <strong>{traduzir("Não dá pra ler este fluxo como lista.")}</strong>
-        <p>
-          Ou ele não tem gatilho nenhum, ou tem mais de um bloco solto sem nada entrando. Abra o
-          modo Construir, ligue os blocos soltos e volte aqui.
-        </p>
+        <p>{traduzir("Ou ele não tem gatilho nenhum, ou tem mais de um bloco solto sem nada entrando. Abra o modo Construir, ligue os blocos soltos e volte aqui.")}</p>
       </div>
     );
   }

@@ -2977,7 +2977,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                 <div className="doc-page-numero-ui" aria-hidden="true">Página {indice + 1} de {paginasLocais.length}</div>
               </div>
               <div className="doc-page-fim">
-                <button type="button" className="doc-page-fim-btn" onClick={novaPaginaAposAtiva}>+ Adicionar página</button>
+                <button type="button" className="doc-page-fim-btn" onClick={novaPaginaAposAtiva}>{traduzir("+ Adicionar página")}</button>
                 <button type="button" className="doc-page-fim-btn doc-page-fim-apagar" disabled={paginasLocais.length <= 1} onClick={excluirPaginaAtiva} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                   <IconLixeira width={13} height={13} /> {traduzir("Apagar essa página")}
                 </button>
@@ -3360,9 +3360,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setCabecalhoRodapeAberto(null)}><IconClose width={12} height={12} /></button>
             </div>
             <div style={{ padding: 20 }}>
-              <p className="hint" style={{ marginTop: 0 }}>
-                O que você escrever aqui se repete em todas as páginas do documento. Na tela, na impressão e no PDF.
-              </p>
+              <p className="hint" style={{ marginTop: 0 }}>{traduzir("O que você escrever aqui se repete em todas as páginas do documento. Na tela, na impressão e no PDF.")}</p>
               <div
                 ref={cabecalhoRodapeEditRef}
                 className="input doc-cabecalho-rodape-editor"
@@ -3598,9 +3596,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               {traduzir("Convidar")}
             </button>
           </div>
-          <p className="hint" style={{ marginBottom: 10 }}>
-            O convite fica registrado aqui. O envio real de e-mail depende de um serviço de e-mail conectado ao CRM.
-          </p>
+          <p className="hint" style={{ marginBottom: 10 }}>{traduzir("O convite fica registrado aqui. O envio real de e-mail depende de um serviço de e-mail conectado ao CRM.")}</p>
           {doc.pessoasAcesso.length > 0 ? (
             <div className="mb14">
               <p className="doc-sidebar-h">{traduzir("Pessoas com acesso")}</p>
@@ -3660,9 +3656,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               const nome = window.prompt("Nome dessa versão (opcional):") ?? undefined;
               salvarVersao(id, nome);
             }}
-          >
-            + Salvar versão atual
-          </button>
+          >{traduzir("+ Salvar versão atual")}</button>
           {doc.versoes.length === 0 ? (
             <p className="hint">{traduzir("Nenhuma versão salva ainda.")}</p>
           ) : (
@@ -3729,9 +3723,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             />
             {traduzir("Linha divisória entre colunas")}
           </label>
-          <p className="hint" style={{ marginTop: 10 }}>
-            Aplica ao documento inteiro (todas as páginas). Colunas de verdade via CSS. Sem tabela.
-          </p>
+          <p className="hint" style={{ marginTop: 10 }}>{traduzir("Aplica ao documento inteiro (todas as páginas). Colunas de verdade via CSS. Sem tabela.")}</p>
           <button type="button" className="btn primary block" onClick={() => setColunasAberto(false)}>
             {traduzir("Aplicar")}
           </button>
@@ -3771,10 +3763,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               />
             </div>
           ) : null}
-          <p className="hint" style={{ marginBottom: 10 }}>
-            Usa o tamanho, a orientação e as margens já configurados no documento. O arquivo é gerado de verdade
-            e baixado direto: não abre a janela de impressão.
-          </p>
+          <p className="hint" style={{ marginBottom: 10 }}>{traduzir("Usa o tamanho, a orientação e as margens já configurados no documento. O arquivo é gerado de verdade e baixado direto: não abre a janela de impressão.")}</p>
           <button type="button" className="btn primary block" disabled={gerandoPdf} onClick={confirmarExportarPdf}>
             {gerandoPdf ? "Gerando PDF…" : "Baixar PDF"}
           </button>
@@ -4115,9 +4104,7 @@ function PainelImagem({
           className="doc-img-resize-alca"
           title={traduzir("Arraste pra redimensionar (ou use as alças nos cantos da imagem)")}
           onMouseDown={onIniciarRedimensionar}
-        >
-          ⤡ Arrastar pra redimensionar
-        </div>
+        >{traduzir("⤡ Arrastar pra redimensionar")}</div>
       ) : null}
 
       <div className="field">

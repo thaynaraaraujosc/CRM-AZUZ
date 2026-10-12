@@ -333,10 +333,7 @@ export default function InstagramConversasPage() {
 
               <footer className="ig-escrever">
                 {!atual.dentroDaJanela ? (
-                  <p className="hint ig-janela-fechada">
-                    A janela de 24 horas fechou. O Instagram só deixa responder quem escreveu nas
-                    últimas 24 horas, e não existe modelo aprovado como no WhatsApp oficial.
-                  </p>
+                  <p className="hint ig-janela-fechada">{traduzir("A janela de 24 horas fechou. O Instagram só deixa responder quem escreveu nas últimas 24 horas, e não existe modelo aprovado como no WhatsApp oficial.")}</p>
                 ) : (
                   <p className="hint">
                     Dá pra responder até {new Date(atual.janelaFechaEm ?? "").toLocaleString("pt-BR")}.
@@ -393,10 +390,7 @@ export default function InstagramConversasPage() {
                   <span>{traduzir("Segue você")}</span>
                 </div>
               </div>
-              <p className="hint">
-                Vem do perfil que a Meta devolve pra quem escreveu pra sua conta. Quando a conta não
-                concede esses campos, eles aparecem como traço em vez de zero.
-              </p>
+              <p className="hint">{traduzir("Vem do perfil que a Meta devolve pra quem escreveu pra sua conta. Quando a conta não concede esses campos, eles aparecem como traço em vez de zero.")}</p>
             </>
           )}
         </aside>

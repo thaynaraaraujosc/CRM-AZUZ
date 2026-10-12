@@ -74,10 +74,7 @@ export function RastreamentoSecao() {
             <span className="rastreio-selo rastreio-selo-ativo">{traduzir("Funcionando")}</span>
           </div>
           <h4>{traduzir("Anúncios da Meta")}</h4>
-          <p>
-            Não precisa de nada. Quando alguém clica num anúncio do Facebook ou do Instagram e cai na
-            sua conversa, a Meta informa de qual anúncio a pessoa veio, e o CRM guarda no contato.
-          </p>
+          <p>{traduzir("Não precisa de nada. Quando alguém clica num anúncio do Facebook ou do Instagram e cai na sua conversa, a Meta informa de qual anúncio a pessoa veio, e o CRM guarda no contato.")}</p>
         </div>
 
         <div className="rastreio-canal">
@@ -86,10 +83,7 @@ export function RastreamentoSecao() {
             <span className="rastreio-selo">{traduzir("Um passo")}</span>
           </div>
           <h4>{traduzir("Anúncios do Google")}</h4>
-          <p>
-            A pessoa clica no anúncio, passa pelo seu site e só depois vai pro WhatsApp. Nesse pulo a
-            informação do anúncio se perde — a menos que o botão do site aponte para o seu link.
-          </p>
+          <p>{traduzir("A pessoa clica no anúncio, passa pelo seu site e só depois vai pro WhatsApp. Nesse pulo a informação do anúncio se perde — a menos que o botão do site aponte para o seu link.")}</p>
         </div>
 
         {/* O terceiro caminho. Ele não tem passo nenhum pra quem manda o anúncio direto pro
@@ -133,10 +127,7 @@ export function RastreamentoSecao() {
                 antes. A diferença é que o CRM passa a saber de qual campanha a pessoa veio.
               </p>
             ) : (
-              <p className="hint rastreio-nota rastreio-nota-alerta">
-                Conecte um WhatsApp antes de usar este link. Sem número conectado ele não tem para
-                onde mandar quem clicar.
-              </p>
+              <p className="hint rastreio-nota rastreio-nota-alerta">{traduzir("Conecte um WhatsApp antes de usar este link. Sem número conectado ele não tem para onde mandar quem clicar.")}</p>
             )}
           </>
         ) : (

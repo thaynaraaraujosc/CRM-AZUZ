@@ -201,9 +201,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                 <div className="flow-sim-continuar">
                   <p className="n">Fluxo parado numa espera ({esperaData?.modo ?? "tempo"}).</p>
                   <div className="flow-sim-opcoes">
-                    <button type="button" className="btn ghost" disabled={ocupado} onClick={() => seguirPor(undefined)}>
-                      ⏭ Avançar o tempo
-                    </button>
+                    <button type="button" className="btn ghost" disabled={ocupado} onClick={() => seguirPor(undefined)}>{traduzir("⏭ Avançar o tempo")}</button>
                     {esperaData?.tempoMaximo ? (
                       <button type="button" className="btn ghost" disabled={ocupado} onClick={() => seguirPor("timeout")}>
                         {traduzir("Simular tempo esgotado")}

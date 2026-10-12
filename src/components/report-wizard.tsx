@@ -760,9 +760,7 @@ export function ReportWizard({
                       className="btn ghost"
                       disabled={paginaAtualPrevia <= 1}
                       onClick={() => setPaginaAtualPrevia((p) => p - 1)}
-                    >
-                      ← Página anterior
-                    </button>
+                    >{traduzir("← Página anterior")}</button>
                     <span className="hint">
                       Página {paginaAtualPrevia} de {totalPaginasPrevia}
                     </span>
@@ -785,10 +783,7 @@ export function ReportWizard({
                     title={traduzir("Pré-visualização do relatório")}
                     style={{ width: "100%", height: 420, border: "1px solid var(--line)", borderRadius: 10 }}
                   />
-                  <p className="hint">
-                    Essa é a prévia real. O mesmo arquivo que será baixado, com zoom e navegação de página do
-                    próprio visualizador de PDF do navegador.
-                  </p>
+                  <p className="hint">{traduzir("Essa é a prévia real. O mesmo arquivo que será baixado, com zoom e navegação de página do próprio visualizador de PDF do navegador.")}</p>
 
                   <div className="filters-row" style={{ margin: 0 }}>
                     <button type="button" className="btn ghost" onClick={() => irParaEtapa(2)}>
@@ -812,10 +807,7 @@ export function ReportWizard({
           {etapa === 5 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {!aprovado ? (
-                <p className="hint">
-                  O relatório ainda não foi aprovado. Volte em &quot;Pré-visualização&quot; e gere/aprove a prévia
-                  primeiro.
-                </p>
+                <p className="hint">{traduzir("O relatório ainda não foi aprovado. Volte em &quot;Pré-visualização&quot; e gere/aprove a prévia primeiro.")}</p>
               ) : (
                 <>
                   <div className="card" style={{ padding: 14 }}>

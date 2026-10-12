@@ -621,7 +621,7 @@ function FunilPageInner() {
                 title={traduzir("Deixa funil e conversas iguais: cria o negócio que falta no funil e a conversa que falta no WhatsApp")}
                 onClick={() => void importarConversas()}
               >
-                {importando ? "Alinhando…" : `Alinhar ${desalinhados} com Conversas`}
+                {importando ? traduzir("Alinhando…") : traduzir("Alinhar {n} com Conversas", { n: desalinhados })}
               </button>
             ) : null}
             <button
@@ -631,7 +631,7 @@ function FunilPageInner() {
               title={traduzir("Coloca quem mandou mensagem mais recentemente no topo de cada coluna, sem mudar ninguém de etapa")}
               onClick={() => void reordenarPorAtividade()}
             >
-              {reordenando ? "Reordenando…" : "↑ Mensagens recentes no topo"}
+              {reordenando ? traduzir("Reordenando…") : traduzir("↑ Mensagens recentes no topo")}
             </button>
             {/* Só existe enquanto houver o que juntar, e some sozinho depois. Botão de manutenção
                 permanente dentro do produto é conta que o cliente paga. */}
@@ -651,7 +651,7 @@ function FunilPageInner() {
               className="btn ghost"
               onClick={() => setNovaEtapaAberta((v) => !v)}
             >
-              {novaEtapaAberta ? "Cancelar" : "+ Criar nova etapa"}
+              {novaEtapaAberta ? traduzir("Cancelar") : traduzir("+ Criar nova etapa")}
             </button>
             {/* Ação principal da página. */}
             <button
@@ -659,14 +659,14 @@ function FunilPageInner() {
               className="btn primary"
               onClick={() => setNovoFunilAberto((v) => !v)}
             >
-              {novoFunilAberto ? "Cancelar" : "+ Novo funil"}
+              {novoFunilAberto ? traduzir("Cancelar") : traduzir("+ Novo funil")}
             </button>
             <button
               type="button"
               className={`btn ghost${filtroAberto || filtroAtivo ? " active" : ""}`}
               onClick={() => setFiltroAberto((v) => !v)}
             >
-              {filtroAberto ? "Fechar filtro" : "+ Filtrar"}
+              {filtroAberto ? traduzir("Fechar filtro") : traduzir("+ Filtrar")}
             </button>
             {/* Troca o quadro de negócios pelo quadro de AUTOMAÇÃO: as mesmas colunas, mostrando
                 o que cada etapa dispara sozinha em vez dos cards. */}
@@ -676,7 +676,7 @@ function FunilPageInner() {
               onClick={() => setModoAutomatizar((v) => !v)}
               title={traduzir("Ver e configurar o que cada etapa dispara sozinha")}
             >
-              {modoAutomatizar ? traduzir("Ver negócios") : "Automatizar"}
+              {modoAutomatizar ? traduzir("Ver negócios") : traduzir("Automatizar")}
             </button>
             {funilAtivo ? (
               <div className="dropdown-anchor">
@@ -1226,9 +1226,7 @@ function FunilPageInner() {
                               {rotuloDeAtividade(atividadePorNome.get(chaveDeContato(card.nome)))}
                             </span>
                           ) : (
-                            <span className="days" title={traduzir("Ainda não há mensagem deste contato no CRM")}>
-                              sem conversa
-                            </span>
+                            <span className="days" title={traduzir("Ainda não há mensagem deste contato no CRM")}>{traduzir("sem conversa")}</span>
                           )}
                           {/* Diz o que o clique faz. Card clicável sem nada escrito é card que
                               ninguém clica. */}
@@ -1269,9 +1267,7 @@ function FunilPageInner() {
                     type="button"
                     className="btn ghost block"
                     onClick={() => reabrirNegocio(desfechoMenu.coluna, desfechoMenu.card)}
-                  >
-                    ↺ Reabrir negócio
-                  </button>
+                  >{traduzir("↺ Reabrir negócio")}</button>
                 </div>
               );
             }

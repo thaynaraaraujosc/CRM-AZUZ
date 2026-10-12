@@ -183,18 +183,14 @@ export function MensagemForm({
             type="button"
             className="btn ghost block"
             onClick={() => onTrocarTipo(node.id, "mensagem_botoes", virarPergunta(d, { rotulo: "" }))}
-          >
-            + Botão de ação
-          </button>
+          >{traduzir("+ Botão de ação")}</button>
           <button
             type="button"
             className="btn ghost block mt8"
             onClick={() =>
               onTrocarTipo(node.id, "mensagem_botoes", virarPergunta(d, { rotulo: "", url: "https://" }))
             }
-          >
-            + Botão de URL
-          </button>
+          >{traduzir("+ Botão de URL")}</button>
           <p className="hint mt8">
             {traduzir("Com botão, a mensagem vira uma pergunta: ela para e espera a escolha do contato.")}
           </p>

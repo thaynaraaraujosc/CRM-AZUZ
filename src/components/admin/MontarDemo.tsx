@@ -93,10 +93,7 @@ export function MontarDemo() {
     return (
       <div className="admin-bloco admin-bloco-info config-bloco">
         <p className="config-bloco-titulo">{traduzir("Conta de demonstração")}</p>
-        <p className="hint">
-          Empresa fictícia com contatos, conversas, funil, tarefas e negócios encerrados. Para gravar vídeo e
-          mostrar o produto sem expor dado de cliente.
-        </p>
+        <p className="hint">{traduzir("Empresa fictícia com contatos, conversas, funil, tarefas e negócios encerrados. Para gravar vídeo e mostrar o produto sem expor dado de cliente.")}</p>
         <div className="config-acoes">
           <button type="button" className="btn ghost" onClick={() => setAberto(true)}>
             {traduzir("Montar ou remontar")}
@@ -109,9 +106,7 @@ export function MontarDemo() {
   return (
     <form className="admin-bloco config-bloco" onSubmit={enviar}>
       <p className="config-bloco-titulo">{traduzir("Montar conta de demonstração")}</p>
-      <p className="hint">
-        Isso apaga e recria a conta de demonstração do zero. Nenhuma outra conta é tocada.
-      </p>
+      <p className="hint">{traduzir("Isso apaga e recria a conta de demonstração do zero. Nenhuma outra conta é tocada.")}</p>
 
       <div className="field">
         <label htmlFor="demo-senha">{traduzir("Senha de acesso da conta de demonstração")}</label>

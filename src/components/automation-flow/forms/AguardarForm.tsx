@@ -164,10 +164,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
               acabar. Ligue cada um ao que deve acontecer em cada caso.
             </p>
           ) : (
-            <p className="hint">
-              Desligado, o fluxo espera o tempo inteiro e segue por um caminho só, mesmo que ele
-              responda antes.
-            </p>
+            <p className="hint">{traduzir("Desligado, o fluxo espera o tempo inteiro e segue por um caminho só, mesmo que ele responda antes.")}</p>
           )}
 
           <div className="toggle-row">
@@ -216,10 +213,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
               chega de madrugada. O horário é o de Configurações, um só pro workspace.
             </p>
           ) : null}
-          <p className="hint">
-            Feriado não entra nessa conta: o CRM não tem calendário de feriados, e fingir que pula
-            faria a mensagem sair no dia errado sem ninguém entender por quê.
-          </p>
+          <p className="hint">{traduzir("Feriado não entra nessa conta: o CRM não tem calendário de feriados, e fingir que pula faria a mensagem sair no dia errado sem ninguém entender por quê.")}</p>
         </>
       ) : null}
     </div>

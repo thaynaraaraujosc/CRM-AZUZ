@@ -186,10 +186,7 @@ export function StoryRespondidoForm({
         </p>
 
         {escolhidoSumiu ? (
-          <p className="hint ig-story-aviso">
-            O story escolhido saiu do ar: passou das 24 horas. Enquanto ele estiver assim, este robô
-            não dispara. Escolha um story de agora, ou volte pra qualquer story.
-          </p>
+          <p className="hint ig-story-aviso">{traduzir("O story escolhido saiu do ar: passou das 24 horas. Enquanto ele estiver assim, este robô não dispara. Escolha um story de agora, ou volte pra qualquer story.")}</p>
         ) : null}
 
         <div className="ig-publicacoes">
@@ -211,9 +208,7 @@ export function StoryRespondidoForm({
           ) : stories === null ? (
             <p className="hint">{traduzir("Carregando seus stories…")}</p>
           ) : stories.length === 0 ? (
-            <p className="hint">
-              Nenhum story seu está no ar agora. Poste um e abra este campo de novo pra escolher.
-            </p>
+            <p className="hint">{traduzir("Nenhum story seu está no ar agora. Poste um e abra este campo de novo pra escolher.")}</p>
           ) : (
             stories.map((story) => (
               <button
@@ -239,10 +234,7 @@ export function StoryRespondidoForm({
         </div>
 
         {data.storyId && escolhido ? (
-          <p className="hint">
-            O robô vale só pra quem responder este story. Quando ele sair do ar, daqui a menos de 24
-            horas, o robô para de disparar sozinho.
-          </p>
+          <p className="hint">{traduzir("O robô vale só pra quem responder este story. Quando ele sair do ar, daqui a menos de 24 horas, o robô para de disparar sozinho.")}</p>
         ) : null}
       </div>
     </div>

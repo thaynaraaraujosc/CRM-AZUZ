@@ -5279,9 +5279,7 @@ function ConversasPageInner() {
                       setVideoFim(videoSelecionado.duracao);
                       setVideoMudo(false);
                     }}
-                  >
-                    ↩ Desfazer edição
-                  </button>
+                  >{traduzir("↩ Desfazer edição")}</button>
                 </div>
 
                 {videoErro ? (
@@ -6376,10 +6374,7 @@ function ConversasPageInner() {
                   </span>
                   <span className="wa-modal-header-textos">
                     <p className="wa-modal-header-titulo">{traduzir("Enviar contato")}</p>
-                    <p className="wa-modal-header-desc">
-                      Escolha um contato do CRM ou crie um novo para compartilhar nesta
-                      conversa.
-                    </p>
+                    <p className="wa-modal-header-desc">{traduzir("Escolha um contato do CRM ou crie um novo para compartilhar nesta conversa.")}</p>
                   </span>
                   <button
                     type="button"
@@ -6934,10 +6929,7 @@ function ConversasPageInner() {
                     <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
                       <p className="n">{traduzir("Apagar mensagem")}</p>
                     </div>
-                    <p className="hint" style={{ marginBottom: 16 }}>
-                      Apagar esta mensagem somente para você? As outras pessoas ainda poderão
-                      visualizá-la.
-                    </p>
+                    <p className="hint" style={{ marginBottom: 16 }}>{traduzir("Apagar esta mensagem somente para você? As outras pessoas ainda poderão visualizá-la.")}</p>
                     <div className="section-foot">
                       <button
                         type="button"
@@ -6980,11 +6972,7 @@ function ConversasPageInner() {
                     <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
                       <p className="n">{traduzir("Apagar pra todos")}</p>
                     </div>
-                    <p className="hint" style={{ marginBottom: 16 }}>
-                      Apaga esta mensagem pra quem visualizar essa conversa no CRM. Não recolhe a
-                      mensagem do lado do contato no WhatsApp. Isso depende de um recurso que a
-                      integração conectada ainda não oferece.
-                    </p>
+                    <p className="hint" style={{ marginBottom: 16 }}>{traduzir("Apaga esta mensagem pra quem visualizar essa conversa no CRM. Não recolhe a mensagem do lado do contato no WhatsApp. Isso depende de um recurso que a integração conectada ainda não oferece.")}</p>
                     <div className="section-foot">
                       <button
                         type="button"
@@ -7088,10 +7076,7 @@ function ConversasPageInner() {
                 <div className="open-conv-h" style={{ padding: 0, marginBottom: 10 }}>
                   <p className="n">{traduzir("Excluir essa gravação?")}</p>
                 </div>
-                <p className="hint" style={{ marginBottom: 16 }}>
-                  Essa gravação tem mais de 20 segundos. Ao excluir, o áudio não vai ser enviado
-                  e não dá pra desfazer.
-                </p>
+                <p className="hint" style={{ marginBottom: 16 }}>{traduzir("Essa gravação tem mais de 20 segundos. Ao excluir, o áudio não vai ser enviado e não dá pra desfazer.")}</p>
                 <div className="section-foot">
                   <button
                     type="button"
@@ -7789,9 +7774,7 @@ function ConversasPageInner() {
                   className="btn ghost block mt14"
                   onClick={salvarAnotacao}
                   disabled={!notaTexto.trim()}
-                >
-                  + Salvar anotação
-                </button>
+                >{traduzir("+ Salvar anotação")}</button>
               </div>
               <div style={{ padding: "14px 17px" }}>
                 <Timeline eventos={eventosTimelineContato} />
@@ -8504,9 +8487,7 @@ function ConversasPageInner() {
             className="btn primary block"
             onClick={criarRespostaRapida}
             disabled={!novaRespostaTitulo.trim() || !novaRespostaTexto.trim()}
-          >
-            + Criar nova resposta rápida
-          </button>
+          >{traduzir("+ Criar nova resposta rápida")}</button>
 
           <div className="panel-h" style={{ padding: "14px 0 8px" }}>
             <h4>{traduzir("Salvas")}</h4>

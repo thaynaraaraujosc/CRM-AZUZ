@@ -67,16 +67,10 @@ export function ModeloDeRetomada() {
   return (
     <div className="config-bloco">
       <p className="config-bloco-titulo">{traduzir("Retomar conversa depois de 24 horas")}</p>
-      <p className="hint">
-        Passadas 24 horas sem resposta da pessoa, o WhatsApp só entrega modelo aprovado. Escolha um
-        aqui e as automações passam a usá-lo sozinhas nessa hora, em vez de parar.
-      </p>
+      <p className="hint">{traduzir("Passadas 24 horas sem resposta da pessoa, o WhatsApp só entrega modelo aprovado. Escolha um aqui e as automações passam a usá-lo sozinhas nessa hora, em vez de parar.")}</p>
 
       {modelos.length === 0 ? (
-        <p className="hint">
-          Você ainda não tem nenhum modelo aprovado pela Meta. Crie um em Automações → Templates e
-          volte aqui depois que ele for aprovado.
-        </p>
+        <p className="hint">{traduzir("Você ainda não tem nenhum modelo aprovado pela Meta. Crie um em Automações → Templates e volte aqui depois que ele for aprovado.")}</p>
       ) : (
         <div className="field mt8">
           <label htmlFor="modelo-retomada">{traduzir("Modelo usado na retomada")}</label>

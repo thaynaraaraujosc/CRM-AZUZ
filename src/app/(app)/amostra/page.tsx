@@ -188,10 +188,7 @@ export default function AmostraPage() {
               <h4>{traduzir("Desconectar o Google Ads?")}</h4>
             </div>
             <div className="amostra-modal-corpo">
-              <p>
-                As campanhas param de aparecer na tela de Tráfego. Nenhum lead, contato ou conversa é
-                apagado, e você pode reconectar quando quiser.
-              </p>
+              <p>{traduzir("As campanhas param de aparecer na tela de Tráfego. Nenhum lead, contato ou conversa é apagado, e você pode reconectar quando quiser.")}</p>
             </div>
             <div className="amostra-modal-f">
               <button type="button" className="btn ghost" onClick={() => setModalAberto(false)}>

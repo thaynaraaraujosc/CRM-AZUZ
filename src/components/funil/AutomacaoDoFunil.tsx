@@ -664,10 +664,7 @@ export function AutomacaoDoFunil({
                     value={rascunho.horarioDiario}
                     onChange={(e) => setRascunho({ ...rascunho, horarioDiario: e.target.value })}
                   />
-                  <p className="hint mt8">
-                    Todo dia nessa hora, para cada lead que estiver nesta etapa. Serve pra cobrança
-                    e lembrete de quem está parado.
-                  </p>
+                  <p className="hint mt8">{traduzir("Todo dia nessa hora, para cada lead que estiver nesta etapa. Serve pra cobrança e lembrete de quem está parado.")}</p>
                 </>
               ) : null}
             </div>
@@ -701,10 +698,7 @@ export function AutomacaoDoFunil({
                     {traduzir("Gerenciar")}
                   </button>
                 ) : null}
-                <p className="hint mt8">
-                  O mesmo robô pode ser executado por várias etapas. O robô novo entra na lista
-                  aqui e também na aba Automações: é o mesmo registro, não uma cópia.
-                </p>
+                <p className="hint mt8">{traduzir("O mesmo robô pode ser executado por várias etapas. O robô novo entra na lista aqui e também na aba Automações: é o mesmo registro, não uma cópia.")}</p>
               </div>
             ) : null}
 
@@ -750,10 +744,7 @@ export function AutomacaoDoFunil({
                   ))}
                 </select>
                 {rascunho.acaoDados.etapaDestinoId === rascunho.etapaId ? (
-                  <p className="hint mt8" style={{ color: "var(--danger)" }}>
-                    A etapa de destino é a mesma da entrada. Isso faz o lead entrar de novo aqui,
-                    sem fim.
-                  </p>
+                  <p className="hint mt8" style={{ color: "var(--danger)" }}>{traduzir("A etapa de destino é a mesma da entrada. Isso faz o lead entrar de novo aqui, sem fim.")}</p>
                 ) : null}
               </div>
             ) : null}
@@ -860,10 +851,7 @@ export function AutomacaoDoFunil({
                   onChange={(e) => setRascunho({ ...rascunho, horaFim: e.target.value })}
                 />
               </div>
-              <p className="hint mt8">
-                Sem dia e sem horário, o gatilho vale sempre. Fora da janela o lead entra na etapa
-                normalmente, só não dispara.
-              </p>
+              <p className="hint mt8">{traduzir("Sem dia e sem horário, o gatilho vale sempre. Fora da janela o lead entra na etapa normalmente, só não dispara.")}</p>
             </div>
 
             <label className="fauto-caixa">

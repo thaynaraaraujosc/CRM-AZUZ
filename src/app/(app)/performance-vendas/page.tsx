@@ -121,10 +121,7 @@ function PerformanceVendasPageInner() {
 
         {totalOportunidades === 0 ? (
           <div className="card mb14">
-            <div className="dados-nao-conectados" style={{ padding: 17 }}>
-              Você ainda não possui dados suficientes para gerar este indicador. Marque negócios
-              como ganhos/perdidos no Funil pra ver a performance aqui.
-            </div>
+            <div className="dados-nao-conectados" style={{ padding: 17 }}>{traduzir("Você ainda não possui dados suficientes para gerar este indicador. Marque negócios como ganhos/perdidos no Funil pra ver a performance aqui.")}</div>
           </div>
         ) : null}
 
@@ -218,10 +215,7 @@ function PerformanceVendasPageInner() {
           }
         >
           {serieDiaria.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>
-              Ainda sem movimento suficiente pra traçar uma evolução. O gráfico aparece assim que
-              houver negócios criados/fechados em mais de um dia.
-            </p>
+            <p className="hint" style={{ padding: 17 }}>{traduzir("Ainda sem movimento suficiente pra traçar uma evolução. O gráfico aparece assim que houver negócios criados/fechados em mais de um dia.")}</p>
           ) : (
             <LineChart
               series={[

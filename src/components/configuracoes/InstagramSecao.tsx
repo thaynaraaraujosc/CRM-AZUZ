@@ -69,10 +69,7 @@ export function InstagramSecao() {
           >
             <div>
               <p className="int-title" style={{ margin: 0 }}>{traduzir("Conectar Instagram")}</p>
-              <p className="hint" style={{ margin: "4px 0 0" }}>
-                Autoriza o CRM a acessar sua conta profissional do Instagram. Sem precisar copiar
-                token nenhum.
-              </p>
+              <p className="hint" style={{ margin: "4px 0 0" }}>{traduzir("Autoriza o CRM a acessar sua conta profissional do Instagram. Sem precisar copiar token nenhum.")}</p>
             </div>
             <span className="btn primary">{traduzir("Conectar")}</span>
           </a>

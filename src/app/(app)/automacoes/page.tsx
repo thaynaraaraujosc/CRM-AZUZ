@@ -53,9 +53,7 @@ function AutomacoesConteudo() {
                 o caminho com mais chance de dar certo pra quem nunca montou um robô, e ele não
                 cabe num diálogo pequeno. Montar do zero continua a um clique de distância, lá
                 dentro, com o mesmo assistente de sempre. */}
-            <Link className="btn primary" href="/automacoes/novo">
-              + Nova automação
-            </Link>
+            <Link className="btn primary" href="/automacoes/novo">{traduzir("+ Nova automação")}</Link>
           </>
         }
       />

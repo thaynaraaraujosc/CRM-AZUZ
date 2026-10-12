@@ -257,9 +257,7 @@ export default function FormulariosPage() {
             </p>
             {formularios.length === 0 ? (
               <div className="card">
-                <p className="hint" style={{ padding: 24, textAlign: "center" }}>
-                  Nenhum formulário ainda: clique em &quot;Criar formulário do zero&quot; acima pra criar o primeiro.
-                </p>
+                <p className="hint" style={{ padding: 24, textAlign: "center" }}>{traduzir("Nenhum formulário ainda: clique em &quot;Criar formulário do zero&quot; acima pra criar o primeiro.")}</p>
               </div>
             ) : (
               <div className="lista-cartoes">
@@ -312,9 +310,7 @@ export default function FormulariosPage() {
       ) : (
         <>
           <div className="form-builder-topbar">
-            <button type="button" className="btn ghost" onClick={voltarParaLista}>
-              ← Formulários
-            </button>
+            <button type="button" className="btn ghost" onClick={voltarParaLista}>{traduzir("← Formulários")}</button>
             <input
               className="form-builder-nome-input"
               value={formularioAberto.nome}
@@ -475,9 +471,7 @@ export default function FormulariosPage() {
               ) : (
                 <div className="card">
                   {respostas.length === 0 ? (
-                    <p className="hint" style={{ padding: 24, textAlign: "center" }}>
-                      Nenhuma resposta ainda. Publique o formulário e compartilhe o link: as respostas caem aqui.
-                    </p>
+                    <p className="hint" style={{ padding: 24, textAlign: "center" }}>{traduzir("Nenhuma resposta ainda. Publique o formulário e compartilhe o link: as respostas caem aqui.")}</p>
                   ) : (
                     respostas.map((r) => (
                       <div className="int-row" key={r.id} style={{ cursor: "pointer" }} onClick={() => setRespostaAbertaId(r.id)}>
@@ -571,9 +565,7 @@ export default function FormulariosPage() {
                         setPaginaAtivaId(novaId);
                         setCampoSelecionadoId(null);
                       }}
-                    >
-                      + Adicionar página
-                    </button>
+                    >{traduzir("+ Adicionar página")}</button>
                   </div>
                 </div>
 
@@ -1023,9 +1015,7 @@ function PainelCampo({
             type="button"
             className="btn ghost block"
             onClick={() => onAtualizar({ opcoes: [...(pergunta.opcoes ?? []), `Opção ${(pergunta.opcoes?.length ?? 0) + 1}`] })}
-          >
-            + Adicionar opção
-          </button>
+          >{traduzir("+ Adicionar opção")}</button>
         </SecaoPainel>
       ) : null}
 
@@ -1436,10 +1426,7 @@ function CampoImagem({
         </p>
       ) : null}
       {!erro && naoCarregou ? (
-        <p className="hint" style={{ color: "var(--danger)" }}>
-          A imagem foi enviada mas não está sendo entregue. Envie de novo; se repetir, o problema é
-          no armazenamento.
-        </p>
+        <p className="hint" style={{ color: "var(--danger)" }}>{traduzir("A imagem foi enviada mas não está sendo entregue. Envie de novo; se repetir, o problema é no armazenamento.")}</p>
       ) : null}
       <p className="hint">
         PNG, JPG, WEBP ou GIF, até 2 MB.
@@ -1812,9 +1799,7 @@ function PainelDesign({
         <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
           <h4>{traduzir("Integrações")}</h4>
         </div>
-        <p className="hint" style={{ marginTop: 0 }}>
-          Toda resposta enviada vira automaticamente um negócio no funil/etapa escolhidos e dispara automações com gatilho &quot;Formulário preenchido&quot;.
-        </p>
+        <p className="hint" style={{ marginTop: 0 }}>{traduzir("Toda resposta enviada vira automaticamente um negócio no funil/etapa escolhidos e dispara automações com gatilho &quot;Formulário preenchido&quot;.")}</p>
         <div className="field">
           <label>{traduzir("Funil de destino")}</label>
           <select
@@ -1914,9 +1899,7 @@ function PainelDesign({
           <h4>{traduzir("Histórico de versões")}</h4>
         </div>
         {formulario.versoes.length === 0 ? (
-          <p className="hint" style={{ marginTop: 0 }}>
-            Toda vez que você publicar o formulário, uma versão fica salva aqui. Dá pra voltar pra ela depois.
-          </p>
+          <p className="hint" style={{ marginTop: 0 }}>{traduzir("Toda vez que você publicar o formulário, uma versão fica salva aqui. Dá pra voltar pra ela depois.")}</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {[...formulario.versoes].reverse().map((v) => (

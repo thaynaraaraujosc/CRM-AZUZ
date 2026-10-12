@@ -43,10 +43,7 @@ export function ReagirMensagemForm({
           placeholder={traduzir("Ou cole outro emoji")}
           maxLength={8}
         />
-        <p className="hint mt8">
-          Reage à última mensagem que o contato mandou. Se ele ainda não escreveu nada, não há a que
-          reagir e o passo é registrado como não feito, sem derrubar o fluxo.
-        </p>
+        <p className="hint mt8">{traduzir("Reage à última mensagem que o contato mandou. Se ele ainda não escreveu nada, não há a que reagir e o passo é registrado como não feito, sem derrubar o fluxo.")}</p>
       </div>
     </div>
   );

@@ -361,11 +361,7 @@ export default function TrafegoPage() {
                   ? "Conecte o Meta Ads ou o Google Ads para ver esta tela com dados."
                   : traduzir("Conecte o Meta Ads para ver esta tela com dados.")}
               </strong>
-              <span>
-                Investimento, custo por lead, custo por venda e ROAS saem das suas campanhas. Sem a
-                conexão não há o que calcular, então os números ficam de fora em vez de aparecerem
-                zerados.
-              </span>
+              <span>{traduzir("Investimento, custo por lead, custo por venda e ROAS saem das suas campanhas. Sem a conexão não há o que calcular, então os números ficam de fora em vez de aparecerem zerados.")}</span>
             </div>
           </div>
         ) : (
@@ -563,10 +559,7 @@ export default function TrafegoPage() {
               >
                 {traduzir("Ver leads dessa plataforma →")}
               </Link>
-              <p className="hint" style={{ marginTop: 10 }}>
-                Evolução no período, anúncios individuais e motivos de perda por campanha entram aqui
-                quando o back-end ligar cada negociação à campanha que a originou.
-              </p>
+              <p className="hint" style={{ marginTop: 10 }}>{traduzir("Evolução no período, anúncios individuais e motivos de perda por campanha entram aqui quando o back-end ligar cada negociação à campanha que a originou.")}</p>
             </div>
           </div>
         ) : null}

@@ -71,10 +71,7 @@ export function ExecutarRoboForm({
             </option>
           ))}
         </select>
-        <p className="hint mt8">
-          O robô escolhido começa pro mesmo contato, e este fluxo continua no próximo passo. Ele
-          precisa estar publicado pra rodar.
-        </p>
+        <p className="hint mt8">{traduzir("O robô escolhido começa pro mesmo contato, e este fluxo continua no próximo passo. Ele precisa estar publicado pra rodar.")}</p>
       </div>
     </div>
   );

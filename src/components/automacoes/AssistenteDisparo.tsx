@@ -307,9 +307,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
           {janela === null ? (
             <p className="hint">{traduzir("Conferindo quem pode receber agora…")}</p>
           ) : !janela.conectado ? (
-            <p className="modelo-erro">
-              O Instagram não está conectado. Conecte a conta em Configurações → Outras integrações.
-            </p>
+            <p className="modelo-erro">{traduzir("O Instagram não está conectado. Conecte a conta em Configurações → Outras integrações.")}</p>
           ) : (
             <>
               <div className="disp-ig-conta">
@@ -335,11 +333,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                   {janela.janelaHoras} horas. É a janela de atendimento, e ela conta da ÚLTIMA
                   mensagem da pessoa, não da sua. Responder alguém não reabre a janela dela.
                 </p>
-                <p className="hint mt8">
-                  Fora da janela a Meta recusa o envio, e não existe modelo aprovado pra retomar
-                  como no WhatsApp oficial. Por isso o público aqui não se escolhe: ele é quem
-                  está dentro da janela, e mais ninguém.
-                </p>
+                <p className="hint mt8">{traduzir("Fora da janela a Meta recusa o envio, e não existe modelo aprovado pra retomar como no WhatsApp oficial. Por isso o público aqui não se escolhe: ele é quem está dentro da janela, e mais ninguém.")}</p>
                 <p className="hint mt8">
                   A janela é conferida DE NOVO na hora de enviar cada mensagem. Entre montar o
                   disparo e ele chegar em alguém passam minutos, e a janela de uma pessoa pode ter

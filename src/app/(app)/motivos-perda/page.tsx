@@ -122,10 +122,7 @@ export default function MotivosPerdaPage() {
 
         {totalPerdas === 0 ? (
           <div className="card mb14">
-            <div className="dados-nao-conectados" style={{ padding: 17 }}>
-              Você ainda não possui dados suficientes para gerar este indicador. Marque negócios
-              como &quot;perdido&quot; no Funil (com motivo) pra ver a análise aqui.
-            </div>
+            <div className="dados-nao-conectados" style={{ padding: 17 }}>{traduzir("Você ainda não possui dados suficientes para gerar este indicador. Marque negócios como &quot;perdido&quot; no Funil (com motivo) pra ver a análise aqui.")}</div>
           </div>
         ) : null}
 
@@ -211,9 +208,7 @@ export default function MotivosPerdaPage() {
             )}
           </ChartCard>
           <ChartCard title={traduzir("Produtos ou serviços mais afetados")}>
-            <div className="dados-nao-conectados">
-              Dados não conectados: cadastre produtos/serviços nas negociações pra ver essa análise aqui.
-            </div>
+            <div className="dados-nao-conectados">{traduzir("Dados não conectados: cadastre produtos/serviços nas negociações pra ver essa análise aqui.")}</div>
           </ChartCard>
         </div>
 

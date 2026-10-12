@@ -77,9 +77,7 @@ export function FunisSecao() {
               setFunis((prev) => [...prev, { id, nome: "Novo funil", colunas: [] }]);
               setFunilAbertoId(id);
             }}
-          >
-            + Novo funil
-          </button>
+          >{traduzir("+ Novo funil")}</button>
         }
       />
 
