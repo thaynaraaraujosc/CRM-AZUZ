@@ -200,7 +200,7 @@ export function MensagemMidiaForm({
       </div>
 
       <div className="field">
-        <label>Origem do arquivo</label>
+        <label>{traduzir("Origem do arquivo")}</label>
         <div className="flow-midia-origem">
           <button
             type="button"
@@ -319,7 +319,7 @@ export function MensagemMidiaForm({
             <input
               className="input"
               style={{ width: "100%" }}
-              placeholder="Pesquisar arquivo…"
+              placeholder={traduzir("Pesquisar arquivo…")}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />

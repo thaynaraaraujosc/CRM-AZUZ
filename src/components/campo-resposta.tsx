@@ -243,7 +243,7 @@ function CampoCep({
       />
       {buscando ? <p className="form-pergunta-ajuda">{traduzir("Buscando o endereço…")}</p> : null}
       {semResultado ? (
-        <p className="form-pergunta-ajuda">Não achamos esse CEP. Pode preencher o endereço na mão.</p>
+        <p className="form-pergunta-ajuda">{traduzir("Não achamos esse CEP. Pode preencher o endereço na mão.")}</p>
       ) : null}
     </>
   );

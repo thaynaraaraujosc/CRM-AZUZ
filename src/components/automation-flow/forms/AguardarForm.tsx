@@ -44,7 +44,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
   return (
     <div className="flow-form">
       <div className="field">
-        <label>O que você quer aguardar?</label>
+        <label>{traduzir("O que você quer aguardar?")}</label>
         <select
           className="input"
           value={escolhida}
@@ -114,7 +114,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
                   tempoMaximo: { valor: Number(e.target.value) || 1, unidade: data.tempoMaximo?.unidade ?? "horas" },
                 })
               }
-              aria-label="Prazo máximo de espera"
+              aria-label={traduzir("Prazo máximo de espera")}
             />
             <select
               className="input"
@@ -159,8 +159,8 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
           </div>
           {data.interromperSeResponder ? (
             <p className="hint">
-              O bloco passa a ter dois caminhos: <strong>Respondeu</strong>, seguido na hora em que
-              a mensagem dele chegar, e <strong>Não respondeu</strong>, seguido quando o tempo
+              {traduzir("O bloco passa a ter dois caminhos:")} <strong>Respondeu</strong>, seguido na hora em que
+              a mensagem dele chegar, e <strong>{traduzir("Não respondeu")}</strong>, seguido quando o tempo
               acabar. Ligue cada um ao que deve acontecer em cada caso.
             </p>
           ) : (
@@ -184,12 +184,12 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
             </button>
           </div>
           <div className="toggle-row">
-            <span className="tl">Não cair em fim de semana</span>
+            <span className="tl">{traduzir("Não cair em fim de semana")}</span>
             <button
               type="button"
               role="switch"
               aria-checked={!!data.pularFinaisDeSemana}
-              aria-label="Não cair em fim de semana"
+              aria-label={traduzir("Não cair em fim de semana")}
               className={`toggle${data.pularFinaisDeSemana ? " on" : ""}`}
               onClick={() => onChange({ ...data, pularFinaisDeSemana: !data.pularFinaisDeSemana })}
             >

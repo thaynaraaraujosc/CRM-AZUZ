@@ -62,7 +62,7 @@ export function DecisaoMultiplaForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>O que você quer verificar?</label>
+        <label>{traduzir("O que você quer verificar?")}</label>
         <select
           className="input"
           value={data.campo}

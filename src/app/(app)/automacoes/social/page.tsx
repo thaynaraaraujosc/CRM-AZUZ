@@ -175,7 +175,7 @@ export default function AutomacoesSociaisPage() {
             <select className="input" value={status} onChange={(e) => setStatus(e.target.value as FiltroStatus)}>
               <option value="todos">Status: todos</option>
               <option value="ativo">{traduzir("Ligadas")}</option>
-              <option value="inativo">Pausadas</option>
+              <option value="inativo">{traduzir("Pausadas")}</option>
               <option value="rascunho">Rascunhos</option>
             </select>
 
@@ -213,10 +213,10 @@ export default function AutomacoesSociaisPage() {
           <section className="card">
             <div className="social-secao-topo">
               <h3>
-                Pastas <span className="social-contador">{pastas.length}</span>
+                {traduzir("Pastas")} <span className="social-contador">{pastas.length}</span>
               </h3>
               <button type="button" className="btn ghost" onClick={novaPasta}>
-                <IconNovaPasta width={14} height={14} aria-hidden="true" /> Nova pasta
+                <IconNovaPasta width={14} height={14} aria-hidden="true" /> {traduzir("Nova pasta")}
               </button>
             </div>
 

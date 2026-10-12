@@ -98,7 +98,7 @@ export function OrganizarMeuDia({
     <Drawer
       aberto={aberto}
       onFechar={onFechar}
-      titulo="Organizar meu dia"
+      titulo={traduzir("Organizar meu dia")}
       subtitulo={emExecucao ? "Modo execução: siga a sequência sugerida" : "Sequência sugerida a partir do que precisa de atenção hoje"}
       rodape={
         emExecucao ? (

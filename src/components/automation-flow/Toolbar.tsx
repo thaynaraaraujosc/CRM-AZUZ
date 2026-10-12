@@ -132,7 +132,7 @@ export function Toolbar({
             title={traduzir("Ler a automação como uma lista de passos, na ordem em que a pessoa é atendida")}
             onClick={() => onModoPassos(!modoPassos)}
           >
-            Passos
+            {traduzir("Passos")}
           </button>
           <button
             type="button"
@@ -152,7 +152,7 @@ export function Toolbar({
           ↷
         </button>
         <button type="button" className="btn ghost" disabled={!modoConstrucao} onClick={onOrganizarAutomaticamente}>
-          Organizar automaticamente
+          {traduzir("Organizar automaticamente")}
         </button>
         <button
           type="button"

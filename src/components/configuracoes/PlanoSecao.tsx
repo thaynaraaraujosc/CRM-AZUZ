@@ -201,7 +201,7 @@ export function PlanoSecao() {
   if (carregando) {
     return (
       <div className="config-secao">
-        <CabecalhoCategoria titulo="Plano e cobrança" descricao="Seu plano atual, armazenamento e forma de pagamento." />
+        <CabecalhoCategoria titulo={traduzir("Plano e cobrança")} descricao="Seu plano atual, armazenamento e forma de pagamento." />
         <p className="config-bloco-titulo">Carregando…</p>
       </div>
     );
@@ -212,7 +212,7 @@ export function PlanoSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="Plano e cobrança" descricao="Seu plano atual, armazenamento e forma de pagamento." />
+      <CabecalhoCategoria titulo={traduzir("Plano e cobrança")} descricao="Seu plano atual, armazenamento e forma de pagamento." />
 
       <div className="plano-card">
         <div>
@@ -283,7 +283,7 @@ export function PlanoSecao() {
         <div className="preco-card">
           <div className="preco-topo">
             <span className="preco-nome">AZUZ CRM {PLANOS.completo.nome}</span>
-            {assinatura?.status === "ativa" ? <span className="pill on">Plano atual</span> : null}
+            {assinatura?.status === "ativa" ? <span className="pill on">{traduzir("Plano atual")}</span> : null}
           </div>
           <p className="preco-desc">Tudo que o CRM faz, sem limite de funil e sem cobrar por usuário.</p>
           <p className="preco-valor">
@@ -298,7 +298,7 @@ export function PlanoSecao() {
             {assinatura?.status === "ativa" ? "Atualizar forma de pagamento" : "Assinar plano"}
           </button>
           <div className="preco-recursos">
-            <span className="preco-recursos-titulo">O que está incluído</span>
+            <span className="preco-recursos-titulo">{traduzir("O que está incluído")}</span>
             <ul>
               {PLANOS.completo.recursos.map((r) => (
                 <li key={r}>
@@ -334,7 +334,7 @@ export function PlanoSecao() {
           {formaPagamento === "CREDIT_CARD" ? (
             <>
               <div className="field">
-                <label>Número do cartão</label>
+                <label>{traduzir("Número do cartão")}</label>
                 <input className="input" style={{ width: "100%" }} inputMode="numeric" placeholder="0000 0000 0000 0000" value={numeroCartao} onChange={(e) => setNumeroCartao(e.target.value)} required />
               </div>
               <div className="field">
@@ -361,7 +361,7 @@ export function PlanoSecao() {
                   <input className="input" style={{ width: "100%" }} placeholder="00000-000" value={cep} onChange={(e) => setCep(e.target.value)} required />
                 </div>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
-                  <label>Número do endereço</label>
+                  <label>{traduzir("Número do endereço")}</label>
                   <input className="input" style={{ width: "100%" }} value={numeroEndereco} onChange={(e) => setNumeroEndereco(e.target.value)} required />
                 </div>
                 <div className="field" style={{ padding: 0, flex: 1 }}>

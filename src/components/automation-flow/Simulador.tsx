@@ -191,7 +191,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                     {/* Manda um texto que de propósito não bate com opção nenhuma: é assim que dá
                         pra ver o que acontece quando a pessoa responde qualquer outra coisa. */}
                     <button type="button" className="btn ghost" disabled={ocupado} onClick={() => responder("(qualquer outra coisa)")}>
-                      Outra resposta
+                      {traduzir("Outra resposta")}
                     </button>
                   </div>
                 </div>
@@ -215,7 +215,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
 
               {estado.intencoes.length > 0 ? (
                 <>
-                  <p className="n mt14">O que teria acontecido de verdade</p>
+                  <p className="n mt14">{traduzir("O que teria acontecido de verdade")}</p>
                   <ul className="flow-sim-log">
                     {estado.intencoes.map((linha, i) => (
                       <li key={i}>{linha}</li>

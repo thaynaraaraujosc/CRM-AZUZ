@@ -138,7 +138,7 @@ export default function MotivosPerdaPage() {
           />
           <KpiCard label="Quantidade perdida" value={String(perdasFiltradas.length)} />
           <KpiCard
-            label="Principal motivo"
+            label={traduzir("Principal motivo")}
             value={motivoPrincipal.motivo}
             sub={totalPerdas > 0 ? `${motivoPrincipal.valor.toFixed(0)}% das perdas` : undefined}
             formula={motivoPrincipal.formula}
@@ -210,7 +210,7 @@ export default function MotivosPerdaPage() {
               <BarList items={porOrigem.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
             )}
           </ChartCard>
-          <ChartCard title="Produtos ou serviços mais afetados">
+          <ChartCard title={traduzir("Produtos ou serviços mais afetados")}>
             <div className="dados-nao-conectados">
               Dados não conectados: cadastre produtos/serviços nas negociações pra ver essa análise aqui.
             </div>

@@ -1,6 +1,14 @@
 "use client";
 
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { useIdioma } from "@/lib/idioma-context";
+
+/** O aviso que fica no lugar do que falhou. Componente à parte porque a barreira é classe, e
+ * hook só vale dentro de função: é aqui que o idioma consegue entrar. */
+function AvisoDeFalha() {
+  const { t: traduzir } = useIdioma();
+  return <p className="limite-de-erro-aviso">{traduzir("Não foi possível mostrar este item.")}</p>;
+}
 
 /**
  * Barreira de erro: impede que a falha de UMA parte da tela derrube a tela inteira.
@@ -44,7 +52,7 @@ export class LimiteDeErro extends Component<Props, Estado> {
     if (!this.state.falhou) return this.props.children;
     return (
       this.props.aoFalhar ?? (
-        <p className="limite-de-erro-aviso">Não foi possível mostrar este item.</p>
+        <AvisoDeFalha />
       )
     );
   }

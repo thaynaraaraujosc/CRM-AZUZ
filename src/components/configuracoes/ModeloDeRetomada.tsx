@@ -87,7 +87,7 @@ export function ModeloDeRetomada() {
             disabled={salvando}
             onChange={(e) => void salvar(e.target.value)}
           >
-            <option value="">Não retomar: parar e avisar o motivo</option>
+            <option value="">{traduzir("Não retomar: parar e avisar o motivo")}</option>
             {modelos.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.nome}

@@ -363,7 +363,7 @@ export default function FormulariosPage() {
                 {traduzir("Compartilhar")}
               </button>
               <button type="button" className="btn ghost" onClick={() => setPreviewAberto(true)}>
-                Pré-visualizar
+                {traduzir("Pré-visualizar")}
               </button>
               <button
                 type="button"
@@ -756,7 +756,7 @@ export default function FormulariosPage() {
           )
         : null}
 
-      <Modal aberto={previewAberto} onFechar={() => setPreviewAberto(false)} titulo="Pré-visualização" largura={900}>
+      <Modal aberto={previewAberto} onFechar={() => setPreviewAberto(false)} titulo={traduzir("Pré-visualização")} largura={900}>
         {formularioAberto && paginaAtiva ? (
           <>
             <div className="filters-row mb14">
@@ -988,14 +988,14 @@ function PainelCampo({
             </div>
             <label className="hint" style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <input type="checkbox" checked={pergunta.obrigatoria} onChange={(e) => onAtualizar({ obrigatoria: e.target.checked })} />
-              Obrigatório
+              {traduzir("Obrigatório")}
             </label>
           </>
         ) : null}
       </SecaoPainel>
 
       {comOpcoes ? (
-        <SecaoPainel titulo="Opções">
+        <SecaoPainel titulo={traduzir("Opções")}>
           {(pergunta.opcoes ?? []).map((op, i) => (
             <div className="filters-row" key={i} style={{ marginBottom: 6 }}>
               <input
@@ -1071,7 +1071,7 @@ function PainelCampo({
               ) : null}
               {comRegex ? (
                 <div className="field">
-                  <label>Padrão (regex)</label>
+                  <label>{traduzir("Padrão (regex)")}</label>
                   <input
                     className="input"
                     style={{ width: "100%" }}
@@ -1184,7 +1184,7 @@ function PainelCampo({
             </label>
             <label className="hint" style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <input type="checkbox" checked={pergunta.oculta} onChange={(e) => onAtualizar({ oculta: e.target.checked })} />
-              Oculto
+              {traduzir("Oculto")}
             </label>
           </SecaoPainel>
 
@@ -1459,8 +1459,8 @@ function PreviaDesign({ formulario }: { formulario: Formulario }) {
   const perguntas = primeira?.perguntas ?? [];
 
   return (
-    <aside className="form-design-previa" aria-label="Prévia do formulário">
-      <p className="form-painel-secao-h">Prévia</p>
+    <aside className="form-design-previa" aria-label={traduzir("Prévia do formulário")}>
+      <p className="form-painel-secao-h">{traduzir("Prévia")}</p>
       {/* A moldura repete o `.form-public-page` da tela real: o cartão flutua sobre o fundo da
           página, e é esse contraste que dá a leitura de "página", não de "caixa". */}
       <div className="form-design-previa-moldura">
@@ -1627,7 +1627,7 @@ function PainelDesign({
 
       <div className="card" style={{ padding: 17 }}>
         <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
-          <h4>Personalização visual</h4>
+          <h4>{traduzir("Personalização visual")}</h4>
         </div>
         <div className="field">
           <label>Tema</label>
@@ -1690,7 +1690,7 @@ function PainelDesign({
                justamente a parte sem nada, porque em foto de equipe o assunto está em cima e em
                foto de produto sobre mesa está embaixo. */
             <div className="field" style={{ padding: 0, marginTop: 10 }}>
-              <label>Parte da imagem que aparece</label>
+              <label>{traduzir("Parte da imagem que aparece")}</label>
               <input
                 type="range"
                 min={0}
@@ -1699,7 +1699,7 @@ function PainelDesign({
                 value={formulario.tema.bannerPosicao ?? 50}
                 onChange={(e) => atualizarTema({ bannerPosicao: Number(e.target.value) })}
                 className="form-banner-corte"
-                aria-label="Parte da imagem que aparece na faixa"
+                aria-label={traduzir("Parte da imagem que aparece na faixa")}
               />
               <div className="form-banner-corte-legenda">
                 <span>Topo</span>
@@ -1801,7 +1801,7 @@ function PainelDesign({
               className={`fchip${formulario.tema.numerarPerguntas !== false ? " active" : ""}`}
               onClick={() => atualizarTema({ numerarPerguntas: formulario.tema.numerarPerguntas === false })}
             >
-              Numerar perguntas
+              {traduzir("Numerar perguntas")}
             </button>
           </div>
         </div>
@@ -1882,7 +1882,7 @@ function PainelDesign({
           * formulário que lê do banco, no servidor, e manda pro navegador só esses identificadores.
           */}
         <div className="field">
-          <label htmlFor="pixel-meta">Pixel da Meta</label>
+          <label htmlFor="pixel-meta">{traduzir("Pixel da Meta")}</label>
           <input
             id="pixel-meta"
             className="input"

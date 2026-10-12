@@ -84,7 +84,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
             </select>
           </div>
           <div className="field">
-            <label>Origem da mensagem</label>
+            <label>{traduzir("Origem da mensagem")}</label>
             <select className="input" value={data.origemMensagem ?? "criar_agora"} onChange={(e) => onChange({ ...data, origemMensagem: e.target.value as OrigemMensagemCancelamento })}>
               <option value="modelo">{traduzir("Mensagem pronta")}</option>
               <option value="criar_agora">{traduzir("Criar mensagem agora")}</option>

@@ -98,7 +98,7 @@ export function ComentarioInstagramForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Palavras que disparam</label>
+        <label>{traduzir("Palavras que disparam")}</label>
         <div className="ig-palavras">
           {palavras.map((palavra) => (
             <span key={palavra} className="ig-palavra-chip">

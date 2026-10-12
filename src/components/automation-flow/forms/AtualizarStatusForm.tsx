@@ -15,7 +15,7 @@ export function AtualizarStatusForm({ data, onChange }: { data: AtualizarStatusD
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Novo status</label>
+        <label>{traduzir("Novo status")}</label>
         <select className="input" value={data.status} onChange={(e) => onChange({ ...data, status: e.target.value })}>
           <option value="">{traduzir("Selecione…")}</option>
           {STATUS.map((s) => (

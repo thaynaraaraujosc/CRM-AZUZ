@@ -145,7 +145,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       </div>
 
       <div className="field">
-        <label>PIN de verificação em duas etapas (só se o número já tiver um)</label>
+        <label>{traduzir("PIN de verificação em duas etapas (só se o número já tiver um)")}</label>
         <input
           className="input"
           type="text"

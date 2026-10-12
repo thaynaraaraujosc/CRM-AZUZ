@@ -463,7 +463,7 @@ export function FormularioPublico({
           <h2>
             <IconCadeado width={16} height={16} aria-hidden="true" /> {traduzir("Este link precisa de uma senha")}
           </h2>
-          <p className="hint">Peça o link completo (com a chave de acesso) pra quem te enviou.</p>
+          <p className="hint">{traduzir("Peça o link completo (com a chave de acesso) pra quem te enviou.")}</p>
         </div>
       </div>
     );

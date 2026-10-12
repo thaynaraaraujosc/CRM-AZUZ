@@ -116,7 +116,7 @@ export function StoryRespondidoForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Palavras que disparam</label>
+        <label>{traduzir("Palavras que disparam")}</label>
         <div className="ig-palavras">
           {palavras.map((palavra) => (
             <span key={palavra} className="ig-palavra-chip">
@@ -200,7 +200,7 @@ export function StoryRespondidoForm({
           >
             <span className="ig-publicacao-info">
               <strong>Qualquer story, de qualquer dia</strong>
-              <span>O robô fica valendo pra sempre, inclusive pros stories de amanhã.</span>
+              <span>{traduzir("O robô fica valendo pra sempre, inclusive pros stories de amanhã.")}</span>
             </span>
           </button>
 

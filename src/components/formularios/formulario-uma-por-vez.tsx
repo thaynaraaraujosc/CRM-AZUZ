@@ -248,7 +248,7 @@ export function PreviaUmaPorVez({ formulario }: { formulario: Formulario }) {
 
       {passos.length > 1 ? (
         <div className="previa-setas">
-          <button type="button" onClick={() => setIndice(Math.max(0, atual - 1))} disabled={atual === 0} aria-label="Pergunta anterior">
+          <button type="button" onClick={() => setIndice(Math.max(0, atual - 1))} disabled={atual === 0} aria-label={traduzir("Pergunta anterior")}>
             ‹
           </button>
           <span>
@@ -258,7 +258,7 @@ export function PreviaUmaPorVez({ formulario }: { formulario: Formulario }) {
             type="button"
             onClick={() => setIndice(Math.min(passos.length - 1, atual + 1))}
             disabled={atual >= passos.length - 1}
-            aria-label="Próxima pergunta"
+            aria-label={traduzir("Próxima pergunta")}
           >
             ›
           </button>

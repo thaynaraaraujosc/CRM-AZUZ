@@ -131,7 +131,7 @@ export function NovaAutomacao({
         {passo === "onde" ? (
           <>
             <div className="field">
-              <label>O que dispara essa automação</label>
+              <label>{traduzir("O que dispara essa automação")}</label>
               <div className="nova-auto-escolhas">
                 <button
                   type="button"
@@ -139,7 +139,7 @@ export function NovaAutomacao({
                   onClick={() => setSemGatilho(false)}
                 >
                   <strong>Uma etapa do funil</strong>
-                  <span>O lead entra na etapa e a automação começa. É o caso mais comum.</span>
+                  <span>{traduzir("O lead entra na etapa e a automação começa. É o caso mais comum.")}</span>
                 </button>
                 <button
                   type="button"

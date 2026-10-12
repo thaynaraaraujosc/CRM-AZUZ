@@ -68,7 +68,7 @@ function ConfiguracoesConteudo() {
 
   return (
     <>
-      <Topbar title="Configurações" sub="Painel administrativo do workspace: escolha uma categoria ao lado" />
+      <Topbar title="Configurações" sub={traduzir("Painel administrativo do workspace: escolha uma categoria ao lado")} />
 
       <div className="content">
         <div className="config-layout">

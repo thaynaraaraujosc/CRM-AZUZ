@@ -166,7 +166,7 @@ export function ConfiguracoesGeraisForm({
       </div>
 
       <div className="field">
-        <label>Prioridade</label>
+        <label>{traduzir("Prioridade")}</label>
         <select className="input" value={cfg.prioridade ?? "normal"} onChange={(e) => onChangeConfiguracoes({ prioridade: e.target.value as ConfiguracoesFluxo["prioridade"] })}>
           <option value="baixa">{traduzir("Baixa")}</option>
           <option value="normal">{traduzir("Normal")}</option>
@@ -206,12 +206,12 @@ export function ConfiguracoesGeraisForm({
       ) : null}
 
       <div className="toggle-row">
-        <span className="tl">Não iniciar se já estiver nesse fluxo</span>
+        <span className="tl">{traduzir("Não iniciar se já estiver nesse fluxo")}</span>
         <button
           type="button"
           role="switch"
           aria-checked={!!cfg.naoIniciarSeJaNoFluxo}
-          aria-label="Não iniciar se já estiver nesse fluxo"
+          aria-label={traduzir("Não iniciar se já estiver nesse fluxo")}
           className={`toggle${cfg.naoIniciarSeJaNoFluxo ? " on" : ""}`}
           onClick={() => onChangeConfiguracoes({ naoIniciarSeJaNoFluxo: !cfg.naoIniciarSeJaNoFluxo })}
         >

@@ -363,7 +363,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
           <label className="search" style={{ marginLeft: "auto", width: 240 }}>
             <IconSearch />
             <input
-              placeholder="Pesquisar por nome…"
+              placeholder={traduzir("Pesquisar por nome…")}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -393,7 +393,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
               <button type="button" className={`fchip${abaModelos === "meus" ? " active" : ""}`} onClick={() => setAbaModelos("meus")}>Meus modelos ({modelosPersonalizados.length})</button>
               <label className="search" style={{ marginLeft: "auto", width: 220 }}>
                 <IconSearch />
-                <input placeholder="Pesquisar modelos…" value={buscaModelo} onChange={(e) => setBuscaModelo(e.target.value)} />
+                <input placeholder={traduzir("Pesquisar modelos…")} value={buscaModelo} onChange={(e) => setBuscaModelo(e.target.value)} />
               </label>
             </div>
 
@@ -3170,15 +3170,15 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   <select className="input" value={doc.config.tamanho} onChange={(e) => atualizarConfigPagina(id, { tamanho: e.target.value as TamanhoPapel })}>
                     <option value="A4">A4</option>
                     <option value="Carta">{traduzir("Carta")}</option>
-                    <option value="Ofício">Ofício</option>
-                    <option value="Personalizado">Personalizado</option>
+                    <option value="Ofício">{traduzir("Ofício")}</option>
+                    <option value="Personalizado">{traduzir("Personalizado")}</option>
                   </select>
                 </div>
                 <div className="field">
-                  <label>Orientação</label>
+                  <label>{traduzir("Orientação")}</label>
                   <div className="filters-row" style={{ margin: 0 }}>
                     <button type="button" className={`fchip${doc.config.orientacao === "retrato" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "retrato" })}>Retrato</button>
-                    <button type="button" className={`fchip${doc.config.orientacao === "paisagem" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "paisagem" })}>Paisagem</button>
+                    <button type="button" className={`fchip${doc.config.orientacao === "paisagem" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "paisagem" })}>{traduzir("Paisagem")}</button>
                   </div>
                 </div>
                 <div className="field">
@@ -3292,7 +3292,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <p className="n">{traduzir("Contagem")}</p>
             <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setContagemAberta(false)}><IconClose width={12} height={12} /></button>
           </div>
-          <div className="stat-row"><span className="sl">Palavras</span><span className="sv">{contagem.palavras}</span></div>
+          <div className="stat-row"><span className="sl">{traduzir("Palavras")}</span><span className="sv">{contagem.palavras}</span></div>
           <div className="stat-row"><span className="sl">{traduzir("Caracteres")}</span><span className="sv">{contagem.caracteres}</span></div>
           <div className="stat-row"><span className="sl">Páginas</span><span className="sv">{contagem.paginas}</span></div>
         </div>
@@ -3311,7 +3311,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <div className="stat-row"><span className="sl">{traduzir("Autor")}</span><span className="sv">{doc.autor}</span></div>
           <div className="stat-row"><span className="sl">{traduzir("Criado em")}</span><span className="sv">{formatarQuando(doc.criadoEm)}</span></div>
           <div className="stat-row"><span className="sl">Última edição</span><span className="sv">{formatarQuando(doc.atualizadoEm)}</span></div>
-          <div className="stat-row"><span className="sl">Palavras</span><span className="sv">{contagem.palavras}</span></div>
+          <div className="stat-row"><span className="sl">{traduzir("Palavras")}</span><span className="sv">{contagem.palavras}</span></div>
         </div>
       ) : null}
 
@@ -3437,7 +3437,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               </div>
               <div className="field">
                 <label>{traduzir("Descrição")}</label>
-                <input className="input" style={{ width: "100%" }} value={descricaoNovoModelo} onChange={(e) => setDescricaoNovoModelo(e.target.value)} placeholder="Pra que serve esse modelo" />
+                <input className="input" style={{ width: "100%" }} value={descricaoNovoModelo} onChange={(e) => setDescricaoNovoModelo(e.target.value)} placeholder={traduzir("Pra que serve esse modelo")} />
               </div>
               <div className="field">
                 <label>{traduzir("Categoria")}</label>
@@ -3489,14 +3489,14 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             <select className="input" style={{ width: "100%" }} value={doc.config.tamanho} onChange={(e) => atualizarConfigPagina(id, { tamanho: e.target.value as TamanhoPapel })}>
               <option value="A4">A4</option>
               <option value="Carta">{traduzir("Carta")}</option>
-              <option value="Ofício">Ofício</option>
+              <option value="Ofício">{traduzir("Ofício")}</option>
             </select>
           </div>
           <div className="field">
-            <label>Orientação</label>
+            <label>{traduzir("Orientação")}</label>
             <div className="filters-row" style={{ margin: 0 }}>
               <button type="button" className={`fchip${doc.config.orientacao === "retrato" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "retrato" })}>Retrato</button>
-              <button type="button" className={`fchip${doc.config.orientacao === "paisagem" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "paisagem" })}>Paisagem</button>
+              <button type="button" className={`fchip${doc.config.orientacao === "paisagem" ? " active" : ""}`} onClick={() => atualizarConfigPagina(id, { orientacao: "paisagem" })}>{traduzir("Paisagem")}</button>
             </div>
           </div>
           <div className="field">
@@ -3579,9 +3579,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               value={novaPermissaoAcesso}
               onChange={(e) => setNovaPermissaoAcesso(e.target.value as PermissaoAcesso)}
             >
-              <option value="visualizar">Pode ver</option>
-              <option value="comentar">Pode comentar</option>
-              <option value="editar">Pode editar</option>
+              <option value="visualizar">{traduzir("Pode ver")}</option>
+              <option value="comentar">{traduzir("Pode comentar")}</option>
+              <option value="editar">{traduzir("Pode editar")}</option>
             </select>
             <button
               type="button"
@@ -3602,7 +3602,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           </p>
           {doc.pessoasAcesso.length > 0 ? (
             <div className="mb14">
-              <p className="doc-sidebar-h">Pessoas com acesso</p>
+              <p className="doc-sidebar-h">{traduzir("Pessoas com acesso")}</p>
               {doc.pessoasAcesso.map((p) => (
                 <div className="stat-row" key={p.email}>
                   <span className="sl">{p.email} · {p.permissao}</span>
@@ -3751,7 +3751,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             {doc.titulo} · {paginasLocais.length} página(s) · {doc.config.tamanho} {doc.config.orientacao}
           </p>
           <div className="field">
-            <label>O que exportar</label>
+            <label>{traduzir("O que exportar")}</label>
             <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
               <button type="button" className={`fchip${escopoExportar === "todas" ? " active" : ""}`} onClick={() => setEscopoExportar("todas")}>Todas as páginas</button>
               <button type="button" className={`fchip${escopoExportar === "atual" ? " active" : ""}`} onClick={() => setEscopoExportar("atual")}>Só a página atual</button>
@@ -4078,7 +4078,7 @@ function PainelImagem({
       <div className="field">
         <label>Unidade</label>
         <div className="filters-row" style={{ margin: 0 }}>
-          <button type="button" className={`fchip${unidadeTamanho === "px" ? " active" : ""}`} onClick={() => setUnidadeTamanho("px")}>Pixels</button>
+          <button type="button" className={`fchip${unidadeTamanho === "px" ? " active" : ""}`} onClick={() => setUnidadeTamanho("px")}>{traduzir("Pixels")}</button>
           <button type="button" className={`fchip${unidadeTamanho === "cm" ? " active" : ""}`} onClick={() => setUnidadeTamanho("cm")}>{traduzir("Centímetros")}</button>
           <button type="button" className={`fchip${unidadeTamanho === "%" ? " active" : ""}`} onClick={() => setUnidadeTamanho("%")}>% da página</button>
         </div>
@@ -4130,14 +4130,14 @@ function PainelImagem({
       </div>
 
       <div className="field">
-        <label>Posição no texto</label>
+        <label>{traduzir("Posição no texto")}</label>
         <div className="filters-row" style={{ margin: 0, flexWrap: "wrap" }}>
           <button type="button" className="fchip" onClick={() => mudarPosicao("inline")}>{traduzir("Em linha")}</button>
           <button type="button" className="fchip" onClick={() => mudarPosicao("quebrar")}>Quebrar texto</button>
           <button type="button" className="fchip" onClick={() => mudarPosicao("acima-abaixo")}>{traduzir("Acima/abaixo")}</button>
           <button type="button" className="fchip" onClick={() => mudarPosicao("atras")}>{traduzir("Atrás do texto")}</button>
           <button type="button" className="fchip" onClick={() => mudarPosicao("frente")}>{traduzir("Na frente")}</button>
-          <button type="button" className="fchip" onClick={() => mudarPosicao("fixa")}>Posição fixa (arrastável)</button>
+          <button type="button" className="fchip" onClick={() => mudarPosicao("fixa")}>{traduzir("Posição fixa (arrastável)")}</button>
         </div>
         {imagem.style.position === "absolute" ? (
           <p className="hint" style={{ marginTop: 6 }}>Arraste a imagem ou use as setas do teclado pra mover (Shift+seta move mais rápido).</p>
@@ -4246,7 +4246,7 @@ function PainelImagem({
       <div className="field">
         <label>{traduzir("Efeitos")}</label>
         <div className="filters-row" style={{ margin: 0 }}>
-          <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("pb")}>Preto e branco</button>
+          <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("pb")}>{traduzir("Preto e branco")}</button>
           <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("sepia")}>Sépia</button>
           <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("nenhum")}>{traduzir("Nenhum")}</button>
         </div>

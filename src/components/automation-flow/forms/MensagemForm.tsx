@@ -85,7 +85,7 @@ export function MensagemForm({
 
       {temFormularioOrigem ? (
         <div className="field">
-          <label>Origem do formulário</label>
+          <label>{traduzir("Origem do formulário")}</label>
           <select
             className="input"
             value={String(d.formularioOrigem ?? "interno")}
@@ -143,7 +143,7 @@ export function MensagemForm({
 
       {temParaEquipe ? (
         <div className="field">
-          <label>Para a equipe</label>
+          <label>{traduzir("Para a equipe")}</label>
           <input className="input" value={String(d.paraEquipe ?? "")} onChange={(e) => set({ paraEquipe: e.target.value })} />
         </div>
       ) : null}

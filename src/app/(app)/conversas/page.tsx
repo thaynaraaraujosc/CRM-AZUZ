@@ -6573,7 +6573,7 @@ function ConversasPageInner() {
                       ) : (
                         <>
                           <div className="field">
-                            <label>Nome *</label>
+                            <label>{traduzir("Nome *")}</label>
                             <input
                               className="input"
                               style={{ width: "100%" }}

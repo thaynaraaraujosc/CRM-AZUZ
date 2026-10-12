@@ -31,7 +31,7 @@ export function StatusMensagemIcone({
       <span className="msg-status msg-status-erro">
         <span
           className="msg-status-icone"
-          title="Não enviada: toque para tentar de novo"
+          title={traduzir("Não enviada: toque para tentar de novo")}
           aria-label={traduzir("Mensagem não enviada")}
         >
           <IconErro width={13} height={13} />

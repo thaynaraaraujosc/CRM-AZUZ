@@ -121,7 +121,7 @@ export default function DetalheDisparoPage() {
             </Link>
             {podePausar ? (
               <button type="button" className="btn ghost" disabled={ocupado} onClick={() => void controlar("pausar")}>
-                Pausar
+                {traduzir("Pausar")}
               </button>
             ) : null}
             {podeRetomar ? (

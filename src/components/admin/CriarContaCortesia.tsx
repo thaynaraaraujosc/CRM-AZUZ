@@ -73,7 +73,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
             funciona do mesmo jeito.
           </p>
         ) : (
-          <p className="hint">O e-mail com o convite também foi enviado.</p>
+          <p className="hint">{traduzir("O e-mail com o convite também foi enviado.")}</p>
         )}
         <div className="config-acoes">
           <button type="button" className="btn ghost" onClick={() => setCriada(null)}>

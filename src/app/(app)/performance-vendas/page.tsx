@@ -186,7 +186,7 @@ function PerformanceVendasPageInner() {
                 <span className="sv">{pessoaDetalhe.vendidas}</span>
               </div>
               <div className="stat-row">
-                <span className="sl">Perdas</span>
+                <span className="sl">{traduzir("Perdas")}</span>
                 <span className="sv">{pessoaDetalhe.perdidas}</span>
               </div>
               <div className="stat-row">

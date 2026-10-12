@@ -48,7 +48,7 @@ export default function ExecucoesSociaisPage() {
     <>
       <Topbar
         title="Execuções"
-        sub="O que os robôs do Instagram fizeram, e o que deu errado"
+        sub={traduzir("O que os robôs do Instagram fizeram, e o que deu errado")}
         actions={
           <div className="social-periodo">
             <button type="button" className={`seg-chip${soErros ? "" : " on"}`} onClick={() => setSoErros(false)}>

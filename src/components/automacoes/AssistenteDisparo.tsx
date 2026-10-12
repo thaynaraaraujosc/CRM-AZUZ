@@ -231,7 +231,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
     <Modal
       aberto
       onFechar={aoFechar}
-      titulo="Novo disparo em massa"
+      titulo={traduzir("Novo disparo em massa")}
       largura={920}
       rodape={
         <>
@@ -263,7 +263,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       {/* ------------------------------------------------------------------ 1. Canal */}
       {passo === 0 ? (
         <div className="disp-passo">
-          <p className="hint">Por onde a mensagem sai. Só aparece o que está conectado neste workspace.</p>
+          <p className="hint">{traduzir("Por onde a mensagem sai. Só aparece o que está conectado neste workspace.")}</p>
           {/* O Instagram é um canal como os outros AQUI. Ele tinha uma tela própria em
               Instagram → Disparos, que usava exatamente esta mesma API (`/api/campanhas`
               com `canal: "instagram"`): eram duas telas pro mesmo backend. Disparo agora é um
@@ -329,7 +329,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
               </div>
 
               <div className="disp-ig-regra">
-                <strong>Por que a diferença</strong>
+                <strong>{traduzir("Por que a diferença")}</strong>
                 <p className="hint mt8">
                   O Instagram só deixa mandar mensagem pra quem escreveu pra você nas últimas{" "}
                   {janela.janelaHoras} horas. É a janela de atendimento, e ela conta da ÚLTIMA

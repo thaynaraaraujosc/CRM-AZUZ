@@ -245,7 +245,7 @@ export function ConfigPanel({
   const { funis } = useFunis();
 
   return (
-    <aside className="flow-config" aria-label="Painel de configuração">
+    <aside className="flow-config" aria-label={traduzir("Painel de configuração")}>
       <div className="flow-config-tabs">
         <button type="button" className={`flow-tab${aba === "configurar" ? " on" : ""}`} onClick={() => setAba("configurar")}>
           {traduzir("Configurar")}
@@ -293,7 +293,7 @@ export function ConfigPanel({
                 />
               </div>
               <div className="field">
-                <label>Observação (só pra sua equipe)</label>
+                <label>{traduzir("Observação (só pra sua equipe)")}</label>
                 <textarea
                   className="input"
                   style={{ width: "100%", minHeight: 50, resize: "vertical" }}
@@ -307,7 +307,7 @@ export function ConfigPanel({
             </div>
             <FormularioDoNode node={node} area={fluxo?.area ?? "comercial"} fluxoAtualId={fluxo?.id} onTrocarTipo={onTrocarTipo} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
             <div className="panel-h divided">
-              <h4>O que este bloco fará</h4>
+              <h4>{traduzir("O que este bloco fará")}</h4>
             </div>
             <div className="flow-form">
               <p className="hint flow-resumo-natural">{resumoNaturalNo(node, funis)}</p>

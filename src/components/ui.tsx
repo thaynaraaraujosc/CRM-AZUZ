@@ -272,7 +272,7 @@ export function PeriodoPicker({
           </button>
         ))}
         <div style={{ padding: "8px 12px 12px", borderTop: "1px solid var(--line)" }}>
-          <p className="hint" style={{ margin: "6px 0" }}>Ou personalize no calendário:</p>
+          <p className="hint" style={{ margin: "6px 0" }}>{traduzir("Ou personalize no calendário:")}</p>
           <div style={{ display: "flex", gap: 6 }}>
             <SeletorDeData valor={de} onChange={setDe} curto className="seletor-data-largo" />
             <SeletorDeData valor={ate} onChange={setAte} curto className="seletor-data-largo" />
@@ -589,7 +589,7 @@ export function FilterBar({
   return (
     <div>
       <div className="filterbar">
-        <PeriodoPicker label="Período" value={periodo} onChange={onPeriodoChange} />
+        <PeriodoPicker label={traduzir("Período")} value={periodo} onChange={onPeriodoChange} />
 
         {principalOpcoes && principalOpcoes.length > 0 ? (
           <>

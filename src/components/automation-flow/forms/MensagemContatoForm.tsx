@@ -98,12 +98,12 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
       </div>
 
       <div className="field">
-        <label>Para quem enviar?</label>
+        <label>{traduzir("Para quem enviar?")}</label>
         <select className="input" value={data.destinoModo} onChange={(e) => onChange({ ...data, destinoModo: e.target.value as DestinoEnvioContato })}>
           <option value="conversa_atual">{traduzir("Contato atual da conversa")}</option>
           <option value="atendente">{traduzir("Atendente específico")}</option>
           <option value="equipe">Equipe</option>
-          <option value="numero">Número específico</option>
+          <option value="numero">{traduzir("Número específico")}</option>
         </select>
       </div>
 
@@ -133,7 +133,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
 
       {data.destinoModo === "numero" ? (
         <div className="field">
-          <label>Número (com DDD)</label>
+          <label>{traduzir("Número (com DDD)")}</label>
           <input className="input" placeholder="Ex.: (62) 99999-0000" value={data.destinoNumero ?? ""} onChange={(e) => onChange({ ...data, destinoNumero: e.target.value })} />
         </div>
       ) : null}

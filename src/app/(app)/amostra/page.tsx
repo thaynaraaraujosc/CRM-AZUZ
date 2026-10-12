@@ -41,7 +41,7 @@ export default function AmostraPage() {
       <div className="content amostra">
         {/* ------------------------------------------------------------ elevação */}
         <section className="amostra-secao">
-          <h3>Níveis de profundidade</h3>
+          <h3>{traduzir("Níveis de profundidade")}</h3>
           <p className="amostra-nota">
             {traduzir("Cinco planos. Cada um se reconhece por sombra e borda, não por cor diferente.")}
           </p>
@@ -66,11 +66,11 @@ export default function AmostraPage() {
           <h3>{traduzir("Botões")}</h3>
           <p className="amostra-nota">Seis variantes. Cada uma com repouso, hover, foco e desabilitado.</p>
           <div className="amostra-linha">
-            <button type="button" className="btn primary">Primário</button>
+            <button type="button" className="btn primary">{traduzir("Primário")}</button>
             <button type="button" className="btn acento">{traduzir("Acento")}</button>
             <button type="button" className="btn">Secundário</button>
             <button type="button" className="btn ghost">{traduzir("Fantasma")}</button>
-            <button type="button" className="btn danger">Perigo</button>
+            <button type="button" className="btn danger">{traduzir("Perigo")}</button>
             <button type="button" className="btn primary" disabled>{traduzir("Desabilitado")}</button>
           </div>
           <div className="amostra-linha">
@@ -93,8 +93,8 @@ export default function AmostraPage() {
             <div className="field">
               <label htmlFor="a-sel">{traduzir("Etapa")}</label>
               <select id="a-sel" className="input" defaultValue="novo">
-                <option value="novo">Novo lead</option>
-                <option value="prop">Proposta</option>
+                <option value="novo">{traduzir("Novo lead")}</option>
+                <option value="prop">{traduzir("Proposta")}</option>
               </select>
             </div>
           </div>

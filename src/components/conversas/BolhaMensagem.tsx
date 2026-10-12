@@ -74,7 +74,7 @@ export function BolhaMensagem({
    * que saiu: clicar não faria nada e só geraria a expectativa de que faria.
    */
   const opcoesEnviadas = msg.botoes?.length ? (
-    <div className="wa-bolha-opcoes" aria-label="Opções enviadas com esta mensagem">
+    <div className="wa-bolha-opcoes" aria-label={traduzir("Opções enviadas com esta mensagem")}>
       {msg.botoes.map((rotulo, i) => (
         <span className="wa-bolha-opcao" key={`${rotulo}-${i}`}>
           {rotulo}

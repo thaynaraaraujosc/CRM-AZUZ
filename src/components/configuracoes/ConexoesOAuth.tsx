@@ -79,6 +79,7 @@ function ToggleDaIntegracao({
   descricao: string;
   aoSalvar: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [erro, setErro] = useState(false);
 
   async function alternar(ligado: boolean) {
@@ -107,7 +108,7 @@ function ToggleDaIntegracao({
       <p className="hint" style={{ margin: "4px 0 0" }}>{descricao}</p>
       {erro ? (
         <p className="hint" style={{ color: "var(--danger)", margin: "4px 0 0" }}>
-          <IconAlerta width={12} height={12} aria-hidden="true" /> Não foi possível salvar essa preferência. Tente de novo.
+          <IconAlerta width={12} height={12} aria-hidden="true" /> {traduzir("Não foi possível salvar essa preferência. Tente de novo.")}
         </p>
       ) : null}
     </div>

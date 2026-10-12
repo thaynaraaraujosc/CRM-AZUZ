@@ -44,6 +44,7 @@ function useSearchIndex(): SearchResult[] {
 }
 
 function GlobalSearch() {
+  const { t: traduzir } = useIdioma();
   const index = useSearchIndex();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -62,8 +63,8 @@ function GlobalSearch() {
       <label className="search">
         <IconSearch />
         <input
-          placeholder="Pesquisar no CRM…"
-          aria-label="Pesquisar no CRM"
+          placeholder={traduzir("Pesquisar no CRM…")}
+          aria-label={traduzir("Pesquisar no CRM")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={(e) => {

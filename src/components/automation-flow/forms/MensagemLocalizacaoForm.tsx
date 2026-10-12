@@ -34,7 +34,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Origem da localização</label>
+        <label>{traduzir("Origem da localização")}</label>
         <select className="input" value={data.origem} onChange={(e) => onChange({ ...data, origem: e.target.value as OrigemLocalizacao })}>
           <option value="salva">{traduzir("Localização salva")}</option>
           <option value="workspace">{traduzir("Localização do workspace")}</option>
@@ -71,7 +71,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
           </div>
           <div className="field" style={{ display: "flex", gap: 8 }}>
             <div style={{ flex: 1 }}>
-              <label>Número</label>
+              <label>{traduzir("Número")}</label>
               <input className="input" style={{ width: "100%" }} value={data.numero ?? ""} onChange={(e) => onChange({ ...data, numero: e.target.value })} />
             </div>
             <div style={{ flex: 1 }}>
@@ -115,7 +115,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
 
       {preview ? (
         <div className="field">
-          <label>Pré-visualização</label>
+          <label>{traduzir("Pré-visualização")}</label>
           <div className="hint" style={{ border: "1px solid var(--line-soft)", borderRadius: 8, padding: 10 }}>
             <strong>
             <IconLocalizacao width={13} height={13} aria-hidden="true" /> {preview.nome}

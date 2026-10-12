@@ -509,7 +509,7 @@ export function AutomacaoDoFunil({
                             servidor e não existia na tela: quem punha "enviar mensagem" e "executar
                             robô" na mesma etapa não tinha como saber qual vinha primeiro. */}
                         {(porEtapa.get(coluna.id)?.length ?? 0) > 1 ? (
-                          <span className="fauto-gat-ordem" title="Ordem em que este gatilho roda nesta etapa">
+                          <span className="fauto-gat-ordem" title={traduzir("Ordem em que este gatilho roda nesta etapa")}>
                             {linha + 1}
                           </span>
                         ) : null}
@@ -588,7 +588,7 @@ export function AutomacaoDoFunil({
         {escolhendoAcao ? (
           <div className="fauto-painel">
             <div className="fauto-painel-topo">
-              <strong>O que esta etapa faz?</strong>
+              <strong>{traduzir("O que esta etapa faz?")}</strong>
               <button type="button" className="fauto-mini" onClick={() => setEscolhendoAcao(null)}>
                 <IconClose width={11} height={11} />
               </button>
@@ -794,7 +794,7 @@ export function AutomacaoDoFunil({
             ) : null}
 
             <div className="field">
-              <label>Para todos os leads com</label>
+              <label>{traduzir("Para todos os leads com")}</label>
               {rascunho.condicao ? (
                 <>
                   <CondicaoForm

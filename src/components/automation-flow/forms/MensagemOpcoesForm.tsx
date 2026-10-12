@@ -212,7 +212,7 @@ export function MensagemOpcoesForm({
 
       {formatoAtual === "menu_numerado" && opcoes.length > 0 ? (
         <div className="field">
-          <label>Prévia (como o contato veria em texto puro)</label>
+          <label>{traduzir("Prévia (como o contato veria em texto puro)")}</label>
           <pre className="flow-menu-numerado-previa">{previaMenuNumerado(data.texto, opcoes)}</pre>
         </div>
       ) : null}
@@ -326,7 +326,7 @@ export function MensagemOpcoesForm({
             </div>
             {formatoAtual === "menu_numerado" && !opcao.url?.trim() ? (
               <div className="flow-opcao-alternativas">
-                <label>Outras respostas aceitas</label>
+                <label>{traduzir("Outras respostas aceitas")}</label>
                 <input
                   className="input"
                   placeholder={`ex.: número ${i + 1}, opcao ${i + 1}, ${(opcao.rotulo || "palavra-chave").toLowerCase()}`}
@@ -364,7 +364,7 @@ export function MensagemOpcoesForm({
           + Botão de URL
         </button>
         <p className="hint mt8">
-          <b>O que cada conexão entrega:</b> no WhatsApp oficial, até 3 opções viram botões e de 4 a
+          <b>{traduzir("O que cada conexão entrega:")}</b> no WhatsApp oficial, até 3 opções viram botões e de 4 a
           10 viram lista. Na conexão por QR Code não existe botão confiável, então a pergunta sai
           como menu numerado (&quot;1 - …&quot;, &quot;2 - …&quot;) e a pessoa responde digitando o
           número. Os dois casos funcionam: o casamento da resposta aceita o número e o texto.

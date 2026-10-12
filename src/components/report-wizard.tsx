@@ -451,7 +451,7 @@ export function ReportWizard({
           {etapa === 1 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <PeriodoPicker
-                label="Período"
+                label={traduzir("Período")}
                 value={periodo}
                 onChange={(v) => {
                   setPeriodo(v);
@@ -523,7 +523,7 @@ export function ReportWizard({
           {etapa === 2 ? (
             <div>
               <div className="field" style={{ marginBottom: 14 }}>
-                <label>Nível de detalhe</label>
+                <label>{traduzir("Nível de detalhe")}</label>
                 <div className="filters-row">
                   <button
                     type="button"
@@ -623,7 +623,7 @@ export function ReportWizard({
               ) : null}
 
               <div className="field">
-                <label>Orientação</label>
+                <label>{traduzir("Orientação")}</label>
                 <div className="filters-row">
                   <button
                     type="button"
@@ -643,7 +643,7 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Paisagem
+                    {traduzir("Paisagem")}
                   </button>
                 </div>
               </div>
@@ -709,7 +709,7 @@ export function ReportWizard({
               </label>
 
               <div className="field">
-                <label>Observações (opcional)</label>
+                <label>{traduzir("Observações (opcional)")}</label>
                 <textarea
                   className="input"
                   style={{ width: "100%", minHeight: 60 }}
@@ -782,7 +782,7 @@ export function ReportWizard({
                   <iframe
                     key={previaUrl}
                     src={`${previaUrl}#page=${paginaAtualPrevia}&toolbar=1&view=FitH`}
-                    title="Pré-visualização do relatório"
+                    title={traduzir("Pré-visualização do relatório")}
                     style={{ width: "100%", height: 420, border: "1px solid var(--line)", borderRadius: 10 }}
                   />
                   <p className="hint">
@@ -836,7 +836,7 @@ export function ReportWizard({
 
                   {status === "gerando" ? (
                     <p className="hint" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <IconRelogio width={12} height={12} /> Preparando arquivo…
+                      <IconRelogio width={12} height={12} /> {traduzir("Preparando arquivo…")}
                     </p>
                   ) : null}
                   {status === "sucesso" ? (
@@ -864,7 +864,7 @@ export function ReportWizard({
                     Voltar e editar
                   </button>
                   <button type="button" className="btn ghost block" disabled title={traduzir("Ainda não disponível nesta versão")}>
-                    Programar envio (indisponível: recurso em desenvolvimento)
+                    {traduzir("Programar envio (indisponível: recurso em desenvolvimento)")}
                   </button>
                 </>
               )}

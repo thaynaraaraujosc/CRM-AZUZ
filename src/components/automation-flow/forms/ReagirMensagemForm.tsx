@@ -40,7 +40,7 @@ export function ReagirMensagemForm({
           className="input mt8"
           value={data.emoji ?? ""}
           onChange={(e) => onChange({ ...data, emoji: e.target.value })}
-          placeholder="Ou cole outro emoji"
+          placeholder={traduzir("Ou cole outro emoji")}
           maxLength={8}
         />
         <p className="hint mt8">

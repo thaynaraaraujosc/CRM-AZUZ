@@ -132,7 +132,7 @@ export function CondicaoForm({
         <select className="input" value={regra.valor ?? ""} onChange={(e) => onChangeValor(e.target.value)} aria-label="Valor">
           <option value="">{traduzir("Selecione…")}</option>
           <option value="sim">Sim</option>
-          <option value="nao">Não</option>
+          <option value="nao">{traduzir("Não")}</option>
         </select>
       );
     }
@@ -278,7 +278,7 @@ export function CondicaoForm({
             className="input"
             value={regra.operador}
             onChange={(e) => atualizarRegra(regra.id, { operador: e.target.value as OperadorCondicao })}
-            aria-label="Operador"
+            aria-label={traduzir("Operador")}
           >
             {OPERADORES.map((o) => (
               <option key={o.valor} value={o.valor}>

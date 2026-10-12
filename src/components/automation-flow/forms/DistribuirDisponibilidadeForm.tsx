@@ -37,7 +37,7 @@ export function DistribuirDisponibilidadeForm({
           onChange={(e) => onChange({ ...data, modo: e.target.value as ModoDistribuicao })}
         >
           <option value="round_robin">{traduzir("Em revezamento (round-robin)")}</option>
-          <option value="menos_ocupado">Pro atendente com menos leads no momento</option>
+          <option value="menos_ocupado">{traduzir("Pro atendente com menos leads no momento")}</option>
         </select>
       </div>
     </div>

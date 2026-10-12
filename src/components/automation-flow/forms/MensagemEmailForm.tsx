@@ -24,7 +24,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
         <label>{traduzir("Destinatário")}</label>
         <select className="input" value={data.destinatarioModo} onChange={(e) => onChange({ ...data, destinatarioModo: e.target.value as DestinatarioEmailModo })}>
           <option value="contato_email">{traduzir("E-mail do contato deste fluxo")}</option>
-          <option value="outro_campo">Outro campo de e-mail do contato</option>
+          <option value="outro_campo">{traduzir("Outro campo de e-mail do contato")}</option>
           <option value="especifico">{traduzir("E-mail específico")}</option>
           <option value="responsavel">Responsável do lead</option>
           <option value="campo_personalizado">{traduzir("Campo personalizado")}</option>

@@ -7,6 +7,7 @@ import { resumoIndicaIncompleto, resumoNo, saidasDoNo, temEntrada } from "@/lib/
 import type { FlowNodeCategory } from "@/lib/automation-flow/types";
 import { useFunis } from "@/lib/funis-context";
 import type { FlowRFNode } from "../utils";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   IconAlerta,
   IconAutomacoes,
@@ -53,6 +54,7 @@ const NOME_CATEGORIA: Record<FlowNodeCategory, string> = {
  * então não faz sentido duplicar esse JSX 8 vezes.
  */
 export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
+  const { t: traduzir } = useIdioma();
   const { flowNode, problemas, saidasConectadas, caminhosConvergindo, ordemNarrativa, explicacao, onAdicionarApos } = data;
   const { funis } = useFunis();
   const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === flowNode.type);
@@ -98,7 +100,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
           <span className="flow-node-categoria">{NOME_CATEGORIA[flowNode.category]}</span>
           <span className="flow-node-label">{flowNode.titulo || bloco?.label || flowNode.type}</span>
         </span>
-        {flowNode.desativado ? <span className="flow-node-pausado-badge">Pausado</span> : null}
+        {flowNode.desativado ? <span className="flow-node-pausado-badge">{traduzir("Pausado")}</span> : null}
         {temErro || temAviso ? (
           <span
             className="flow-node-warn"
@@ -156,7 +158,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
                   <button
                     type="button"
                     className="flow-node-add-inline"
-                    title="O que acontece agora?"
+                    title={traduzir("O que acontece agora?")}
                     onClick={(e) => {
                       e.stopPropagation();
                       onAdicionarApos(s.handleId);
@@ -182,7 +184,7 @@ export function NodeShell({ id, data, selected }: NodeProps<FlowRFNode>) {
             <button
               type="button"
               className="flow-node-add-btn"
-              title="O que acontece agora?"
+              title={traduzir("O que acontece agora?")}
               onClick={(e) => {
                 e.stopPropagation();
                 onAdicionarApos(undefined);

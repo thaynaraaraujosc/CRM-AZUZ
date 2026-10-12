@@ -61,7 +61,7 @@ export default function EquipePage() {
                   <th>Nome</th>
                   <th>Papel</th>
                   <th>{traduzir("Leads atribuídos")}</th>
-                  <th>O que enxerga</th>
+                  <th>{traduzir("O que enxerga")}</th>
                   <th>{traduzir("Ativo")}</th>
                 </tr>
               </thead>
@@ -361,7 +361,7 @@ export default function EquipePage() {
                 </div>
 
                 <div className="panel-h divided">
-                  <h4>O que ela pode ver</h4>
+                  <h4>{traduzir("O que ela pode ver")}</h4>
                 </div>
                 {membro.permissoes.length === 0 ? (
                   <p className="hint">

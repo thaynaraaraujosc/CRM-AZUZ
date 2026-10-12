@@ -40,7 +40,7 @@ function AutomacoesConteudo() {
     <>
       <Topbar
         title="Automações"
-        sub="O que cada etapa do funil faz sozinha quando um lead entra"
+        sub={traduzir("O que cada etapa do funil faz sozinha quando um lead entra")}
         actions={
           <>
             {/* "Execuções" fica ao lado de "Nova automação" de propósito: é a resposta pra pergunta
