@@ -65,8 +65,8 @@ export default function CadastroPage() {
         <span className="auth-selo" aria-hidden="true">
           <IconNovaConta width={20} height={20} />
         </span>
-        <h1 className="auth-title">Crie sua conta</h1>
-        <p className="auth-sub">Cadastre sua empresa e comece a usar o CRM hoje.</p>
+        <h1 className="auth-title">{traduzir("Crie sua conta")}</h1>
+        <p className="auth-sub">{traduzir("Cadastre sua empresa e comece a usar o CRM hoje.")}</p>
 
         <div className="field">
           <label htmlFor="empresa">{traduzir("Nome da empresa")}</label>
@@ -82,12 +82,12 @@ export default function CadastroPage() {
         </div>
 
         <div className="field">
-          <label htmlFor="nome">Seu nome</label>
+          <label htmlFor="nome">{traduzir("Seu nome")}</label>
           <input
             id="nome"
             type="text"
             className="input"
-            placeholder="Seu nome"
+            placeholder={traduzir("Seu nome")}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             required
@@ -130,7 +130,7 @@ export default function CadastroPage() {
         </button>
 
         <p className="auth-rodape">
-          Já possui conta? <Link href="/login">Entrar</Link>
+          {traduzir("Já possui conta?")} <Link href="/login">{traduzir("Entrar")}</Link>
         </p>
       </form>
     </div>

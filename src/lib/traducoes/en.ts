@@ -2032,4 +2032,17 @@ export const TRADUCOES_EN: Record<string, string> = {
   "está vazio": "is empty",
   "foi preenchido": "was filled in",
   "Áudio": "Audio",
+
+  // ---- Cadastro, entrada e dicas da barra de formatação ----
+  "Cadastre sua empresa e comece a usar o CRM hoje.": "Register your company and start using the CRM today.",
+  "Crie sua conta": "Create your account",
+  "Entrar": "Sign in",
+  "H Título": "H Heading",
+  "I Itálico": "I Italic",
+  "Já possui conta?": "Already have an account?",
+  "N Negrito": "B Bold",
+  "Não possui conta?": "Don't have an account?",
+  "Selecione um trecho de texto e use &quot;Inserir → Comentário&quot; pra comentar.": "Select a passage of text and use &quot;Insert → Comment&quot; to comment on it.",
+  "Seu nome": "Your name",
+  "Só tem efeito visível quando a posição não é &quot;Em linha&quot;.": "Only has a visible effect when the position is not &quot;Inline&quot;.",
 };
