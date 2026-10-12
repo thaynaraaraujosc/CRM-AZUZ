@@ -2,6 +2,7 @@
 
 import { IconSparkle } from "@/components/icons";
 import { Topbar } from "@/components/ui";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Azuz IA desativada temporariamente (decisão de produto, não limitação técnica: o backend real
@@ -11,6 +12,7 @@ import { Topbar } from "@/components/ui";
  * de volta pelo chat (a rota de API não precisa de nenhuma mudança).
  */
 export default function AzuzIaPage() {
+  const { t: traduzir } = useIdioma();
   return (
     <>
       <Topbar
@@ -39,7 +41,7 @@ export default function AzuzIaPage() {
             Em breve
           </span>
           <h2 style={{ fontFamily: "var(--display)", fontSize: 20, margin: "6px 0 10px" }}>
-            Azuz IA está em desenvolvimento
+            {traduzir("Azuz IA está em desenvolvimento")}
           </h2>
           <p className="hint" style={{ fontSize: 13, lineHeight: 1.6 }}>
             Estamos trabalhando pra trazer uma assistente que entende os dados reais do seu

@@ -75,12 +75,12 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
               <input className="input" style={{ width: "100%" }} value={data.numero ?? ""} onChange={(e) => onChange({ ...data, numero: e.target.value })} />
             </div>
             <div style={{ flex: 1 }}>
-              <label>Complemento</label>
+              <label>{traduzir("Complemento")}</label>
               <input className="input" style={{ width: "100%" }} value={data.complemento ?? ""} onChange={(e) => onChange({ ...data, complemento: e.target.value })} />
             </div>
           </div>
           <div className="field">
-            <label>Bairro</label>
+            <label>{traduzir("Bairro")}</label>
             <input className="input" value={data.bairro ?? ""} onChange={(e) => onChange({ ...data, bairro: e.target.value })} />
           </div>
           <div className="field" style={{ display: "flex", gap: 8 }}>
@@ -94,7 +94,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
             </div>
           </div>
           <div className="field">
-            <label>CEP</label>
+            <label>{traduzir("CEP")}</label>
             <input className="input" value={data.cep ?? ""} onChange={(e) => onChange({ ...data, cep: e.target.value })} />
           </div>
         </>

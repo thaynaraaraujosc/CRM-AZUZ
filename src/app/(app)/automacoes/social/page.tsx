@@ -166,7 +166,7 @@ export default function AutomacoesSociaisPage() {
               <IconSearch width={14} height={14} aria-hidden="true" />
               <input
                 className="input"
-                placeholder="Buscar por automações"
+                placeholder={traduzir("Buscar por automações")}
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
               />
@@ -289,13 +289,13 @@ export default function AutomacoesSociaisPage() {
               <table className="table social-tabela">
                 <thead>
                   <tr>
-                    <th>Automação</th>
+                    <th>{traduzir("Automação")}</th>
                     <th>Gatilho</th>
                     <th>Criado</th>
                     <th>Última publicação</th>
                     <th>Execuções</th>
                     <th>Situação</th>
-                    <th aria-label="Ações" />
+                    <th aria-label={traduzir("Ações")} />
                   </tr>
                 </thead>
                 <tbody>
@@ -336,7 +336,7 @@ export default function AutomacoesSociaisPage() {
                         {menuAberto === f.id ? (
                           <div className="social-menu-opcoes" role="menu">
                             <button type="button" onClick={() => router.push(`/automacoes/editor/${f.id}`)}>
-                              Abrir
+                              {traduzir("Abrir")}
                             </button>
                             <button
                               type="button"

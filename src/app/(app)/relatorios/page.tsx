@@ -125,7 +125,7 @@ function RelatoriosPageInner() {
                   <th>Tipo</th>
                   <th>Contato</th>
                   <th>Período</th>
-                  <th>Autor</th>
+                  <th>{traduzir("Autor")}</th>
                   <th>Data</th>
                   <th>Páginas</th>
                   <th>Formato</th>

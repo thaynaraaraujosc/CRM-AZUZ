@@ -230,6 +230,7 @@ export function PeriodoPicker({
   value: PeriodoValor;
   onChange: (v: PeriodoValor) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [de, setDe] = useState(value.tipo === "personalizado" ? value.de : "");
@@ -283,7 +284,7 @@ export function PeriodoPicker({
               setAberto(false);
             }}
           >
-            Aplicar período
+            {traduzir("Aplicar período")}
           </button>
         </div>
       </FloatingDropdown>
@@ -674,7 +675,7 @@ export function FilterBar({
                       checked={!!compararAnterior}
                       onChange={(e) => onCompararChange(e.target.checked)}
                     />
-                    Comparar com o período anterior
+                    {traduzir("Comparar com o período anterior")}
                   </label>
                 ) : null}
                 <div className="filterbar-foot">

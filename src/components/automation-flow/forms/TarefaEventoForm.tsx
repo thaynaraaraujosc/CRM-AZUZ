@@ -45,7 +45,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
 
       {data.filtroModo === "categoria" ? (
         <div className="field">
-          <label>Categoria</label>
+          <label>{traduzir("Categoria")}</label>
           <select className="input" value={data.categoria ?? ""} onChange={(e) => onChange({ ...data, categoria: e.target.value })}>
             <option value="">{traduzir("Selecione…")}</option>
             {CATEGORIAS_TAREFA.map((c) => (

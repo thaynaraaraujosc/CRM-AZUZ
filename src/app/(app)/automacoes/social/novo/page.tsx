@@ -68,7 +68,7 @@ export default function NovaAutomacaoSocialPage() {
             <button type="button" className="social-caminho destaque" onClick={() => setEscolhendoModelo(true)}>
               <span className="social-caminho-selo">Mais rápido</span>
               <IconDoc width={26} height={26} aria-hidden="true" />
-              <strong>Começar com um modelo</strong>
+              <strong>{traduzir("Começar com um modelo")}</strong>
               <span>
                 Um robô inteiro já montado, feito só de gatilhos e blocos que existem no Instagram.
                 Você troca o texto e publica.

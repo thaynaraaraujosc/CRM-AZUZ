@@ -31,6 +31,7 @@ function PainelOAuth({
   rotuloConectado: string;
   rotuloDesconectar: string;
 }) {
+  const { t: traduzir } = useIdioma();
   const { integracao, desconectando, desconectar } = useIntegracaoMeta(provedor);
   const conectado = integracao?.status === "conectado";
 
@@ -49,7 +50,7 @@ function PainelOAuth({
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
       <p className="hint" style={{ margin: 0 }}>{descricao}</p>
       <a href={href} className="btn primary" style={{ flex: "0 0 auto" }}>
-        Autorizar
+        {traduzir("Autorizar")}
       </a>
     </div>
   );
@@ -337,7 +338,7 @@ export function ConexaoGoogleAds() {
         token nenhum.
       </p>
       <a href="/api/integracoes/google-ads/conectar" className="btn primary" style={{ flex: "0 0 auto" }}>
-        Autorizar
+        {traduzir("Autorizar")}
       </a>
     </div>
   );

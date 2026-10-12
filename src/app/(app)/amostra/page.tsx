@@ -63,11 +63,11 @@ export default function AmostraPage() {
 
         {/* ------------------------------------------------------------ botões */}
         <section className="amostra-secao">
-          <h3>Botões</h3>
+          <h3>{traduzir("Botões")}</h3>
           <p className="amostra-nota">Seis variantes. Cada uma com repouso, hover, foco e desabilitado.</p>
           <div className="amostra-linha">
             <button type="button" className="btn primary">Primário</button>
-            <button type="button" className="btn acento">Acento</button>
+            <button type="button" className="btn acento">{traduzir("Acento")}</button>
             <button type="button" className="btn">Secundário</button>
             <button type="button" className="btn ghost">Fantasma</button>
             <button type="button" className="btn danger">Perigo</button>
@@ -81,7 +81,7 @@ export default function AmostraPage() {
 
         {/* ------------------------------------------------------------ campos */}
         <section className="amostra-secao">
-          <h3>Campos</h3>
+          <h3>{traduzir("Campos")}</h3>
           <p className="amostra-nota">
             Fundo branco, borda perceptível em repouso. O azul aparece só no foco.
           </p>
@@ -117,7 +117,7 @@ export default function AmostraPage() {
           </div>
           <div className="amostra-linha">
             <span className="amostra-selo">Neutro</span>
-            <span className="amostra-selo amostra-selo-acento">Ativo</span>
+            <span className="amostra-selo amostra-selo-acento">{traduzir("Ativo")}</span>
             <span className="amostra-selo amostra-selo-ok">Conectado</span>
             <span className="amostra-selo amostra-selo-erro">{traduzir("Perdido")}</span>
           </div>
@@ -164,7 +164,7 @@ export default function AmostraPage() {
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>Campanha</th>
+                  <th>{traduzir("Campanha")}</th>
                   <th>{traduzir("Investimento")}</th>
                   <th>{traduzir("Leads")}</th>
                   <th>{traduzir("Custo / lead")}</th>
@@ -173,7 +173,7 @@ export default function AmostraPage() {
               <tbody>
                 <tr><td>Implantes · Setembro</td><td>R$ 4.820,00</td><td>38</td><td>R$ 126,84</td></tr>
                 <tr><td>Clareamento · Institucional</td><td>R$ 1.240,00</td><td>12</td><td>R$ 103,33</td></tr>
-                <tr><td>Avaliação gratuita</td><td>R$ 960,00</td><td>21</td><td>R$ 45,71</td></tr>
+                <tr><td>{traduzir("Avaliação gratuita")}</td><td>R$ 960,00</td><td>21</td><td>R$ 45,71</td></tr>
               </tbody>
             </table>
           </div>
@@ -195,7 +195,7 @@ export default function AmostraPage() {
             </div>
             <div className="amostra-modal-f">
               <button type="button" className="btn ghost" onClick={() => setModalAberto(false)}>
-                Cancelar
+                {traduzir("Cancelar")}
               </button>
               <button type="button" className="btn danger" onClick={() => setModalAberto(false)}>
                 Desconectar

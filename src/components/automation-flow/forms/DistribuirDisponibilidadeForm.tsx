@@ -2,6 +2,7 @@
 
 import type { DistribuirDisponibilidadeData, ModoDistribuicao } from "@/lib/automation-flow/types";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Ação "Distribuir por disponibilidade": como escolher entre os atendentes da equipe. */
 export function DistribuirDisponibilidadeForm({
@@ -11,6 +12,7 @@ export function DistribuirDisponibilidadeForm({
   data: DistribuirDisponibilidadeData;
   onChange: (novo: DistribuirDisponibilidadeData) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const equipes = useEquipesDisponiveis();
 
   return (
@@ -28,7 +30,7 @@ export function DistribuirDisponibilidadeForm({
       </div>
 
       <div className="field">
-        <label>Como distribuir</label>
+        <label>{traduzir("Como distribuir")}</label>
         <select
           className="input"
           value={data.modo ?? "round_robin"}

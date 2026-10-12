@@ -9,6 +9,7 @@ import { useFunis } from "@/lib/funis-context";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { BarList, ChartCard } from "@/components/charts";
 import { calcularLeadsAguardando } from "@/lib/metrics";
+import { useIdioma } from "@/lib/idioma-context";
 
 const GRUPOS = ["Atendimento", "Interações"] as const;
 type Grupo = (typeof GRUPOS)[number];
@@ -23,6 +24,7 @@ type Grupo = (typeof GRUPOS)[number];
  * inventado.
  */
 export default function AtividadesVendasPage() {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const { membros: equipe } = useEquipe();
   const { conversas } = useConversas();
@@ -63,7 +65,7 @@ export default function AtividadesVendasPage() {
           <div className="topbar-title-row">
             <h2>Atividades</h2>
           </div>
-          <p className="sub">Como a equipe está se comportando. Atendimento e interações</p>
+          <p className="sub">{traduzir("Como a equipe está se comportando. Atendimento e interações")}</p>
         </div>
       </div>
 

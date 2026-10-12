@@ -105,7 +105,7 @@ export function NovaAutomacao({
         {passo === "nome" ? (
           <>
             <div className="field">
-              <label>Como você vai chamar essa automação</label>
+              <label>{traduzir("Como você vai chamar essa automação")}</label>
               <input
                 className="input"
                 value={nome}
@@ -122,7 +122,7 @@ export function NovaAutomacao({
                 Continuar
               </button>
               <button type="button" className="btn ghost" onClick={onCancelar}>
-                Cancelar
+                {traduzir("Cancelar")}
               </button>
             </div>
           </>

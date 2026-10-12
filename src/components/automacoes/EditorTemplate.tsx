@@ -14,6 +14,7 @@ import {
 } from "@/lib/templates/regras";
 import type { CanalDisponivel } from "@/app/api/canais/route";
 import { PreviaMensagem } from "./PreviaMensagem";
+import { useIdioma } from "@/lib/idioma-context";
 
 export type TemplateSalvo = {
   id: string;
@@ -73,6 +74,7 @@ export function EditorTemplate({
   aoFechar: () => void;
   aoSalvar: (salvo: TemplateSalvo, enviarParaAnalise: boolean) => Promise<void>;
 }) {
+  const { t: traduzir } = useIdioma();
   const canalPadrao = (canais.find((c) => c.conectado && !c.emBreve)?.canal ?? "whatsapp_oficial") as CanalTemplate;
   const [r, setR] = useState<Rascunho>(() => rascunhoDe(template, canalPadrao));
   const [salvando, setSalvando] = useState<"salvar" | "analise" | null>(null);
@@ -138,7 +140,7 @@ export function EditorTemplate({
       rodape={
         <>
           <button type="button" className="btn ghost" onClick={aoFechar}>
-            Cancelar
+            {traduzir("Cancelar")}
           </button>
           <button
             type="button"
@@ -213,7 +215,7 @@ export function EditorTemplate({
             <div className="tpl-linha">
               {limites.exigeCategoria ? (
                 <div className="field">
-                  <label>Categoria</label>
+                  <label>{traduzir("Categoria")}</label>
                   <select className="input" value={r.categoria} onChange={(e) => setR((a) => ({ ...a, categoria: e.target.value }))} disabled={!editavelNaMeta}>
                     {CATEGORIAS_META.map((c) => (
                       <option key={c.valor} value={c.valor}>
@@ -321,7 +323,7 @@ export function EditorTemplate({
           {limites.botoesMaximo > 0 ? (
             <div className="field">
               <label>
-                Botões de resposta <span className="hint">(até {limites.botoesMaximo}, {limites.botaoMaximo} caracteres cada)</span>
+                {traduzir("Botões de resposta")} <span className="hint">(até {limites.botoesMaximo}, {limites.botaoMaximo} caracteres cada)</span>
               </label>
               <div className="tpl-botoes">
                 {r.botoes.map((b, i) => (

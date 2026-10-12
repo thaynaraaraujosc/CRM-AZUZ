@@ -4,6 +4,7 @@ import { DIAS_SEMANA, type DiaSemana } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
 import type { ConfiguracoesFluxo, FluxoAutomacao } from "@/lib/automation-flow/types";
 import { SeletorDeData } from "@/components/seletor-de-data";
+import { useIdioma } from "@/lib/idioma-context";
 
 const LIMITES: { valor: NonNullable<ConfiguracoesFluxo["limiteExecucao"]>; label: string }[] = [
   { valor: "sempre", label: "Sempre que o gatilho acontecer" },
@@ -24,6 +25,7 @@ export function ConfiguracoesGeraisForm({
   onChange: (patch: Partial<Pick<FluxoAutomacao, "nome" | "descricao" | "funilId" | "etapaId" | "categoria">>) => void;
   onChangeConfiguracoes: (patch: Partial<ConfiguracoesFluxo>) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const cfg = fluxo.configuracoes;
   const funilEscolhido = funis.find((f) => f.id === fluxo.funilId);
@@ -166,9 +168,9 @@ export function ConfiguracoesGeraisForm({
       <div className="field">
         <label>Prioridade</label>
         <select className="input" value={cfg.prioridade ?? "normal"} onChange={(e) => onChangeConfiguracoes({ prioridade: e.target.value as ConfiguracoesFluxo["prioridade"] })}>
-          <option value="baixa">Baixa</option>
+          <option value="baixa">{traduzir("Baixa")}</option>
           <option value="normal">Normal</option>
-          <option value="alta">Alta</option>
+          <option value="alta">{traduzir("Alta")}</option>
         </select>
       </div>
 
@@ -217,12 +219,12 @@ export function ConfiguracoesGeraisForm({
         </button>
       </div>
       <div className="toggle-row">
-        <span className="tl">Cancelar execução anterior ao reiniciar</span>
+        <span className="tl">{traduzir("Cancelar execução anterior ao reiniciar")}</span>
         <button
           type="button"
           role="switch"
           aria-checked={!!cfg.cancelarExecucaoAnterior}
-          aria-label="Cancelar execução anterior ao reiniciar"
+          aria-label={traduzir("Cancelar execução anterior ao reiniciar")}
           className={`toggle${cfg.cancelarExecucaoAnterior ? " on" : ""}`}
           onClick={() => onChangeConfiguracoes({ cancelarExecucaoAnterior: !cfg.cancelarExecucaoAnterior })}
         >

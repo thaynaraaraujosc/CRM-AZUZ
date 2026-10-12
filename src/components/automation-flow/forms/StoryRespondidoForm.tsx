@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Story = {
   id: string;
@@ -81,6 +82,7 @@ export function StoryRespondidoForm({
   data: Dados;
   onChange: (novo: Dados) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [stories, setStories] = useState<Story[] | null>(null);
   const [erroStories, setErroStories] = useState<string | null>(null);
   const [novaPalavra, setNovaPalavra] = useState("");
@@ -150,7 +152,7 @@ export function StoryRespondidoForm({
       </div>
 
       <div className="field">
-        <label>Como comparar</label>
+        <label>{traduzir("Como comparar")}</label>
         <select
           className="input"
           value={data.modoPalavra ?? "qualquer"}
@@ -207,7 +209,7 @@ export function StoryRespondidoForm({
               Não deu pra carregar seus stories: {erroStories} Dá pra seguir com qualquer story.
             </p>
           ) : stories === null ? (
-            <p className="hint">Carregando seus stories…</p>
+            <p className="hint">{traduzir("Carregando seus stories…")}</p>
           ) : stories.length === 0 ? (
             <p className="hint">
               Nenhum story seu está no ar agora. Poste um e abra este campo de novo pra escolher.

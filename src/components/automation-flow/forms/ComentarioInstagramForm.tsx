@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Publicacao = {
   id: string;
@@ -66,6 +67,7 @@ export function ComentarioInstagramForm({
   data: Dados;
   onChange: (novo: Dados) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [publicacoes, setPublicacoes] = useState<Publicacao[] | null>(null);
   const [erroPublicacoes, setErroPublicacoes] = useState<string | null>(null);
   const [novaPalavra, setNovaPalavra] = useState("");
@@ -132,7 +134,7 @@ export function ComentarioInstagramForm({
       </div>
 
       <div className="field">
-        <label>Como comparar</label>
+        <label>{traduzir("Como comparar")}</label>
         <select
           className="input"
           value={data.modoPalavra ?? "qualquer"}
@@ -167,7 +169,7 @@ export function ComentarioInstagramForm({
             publicação.
           </p>
         ) : publicacoes === null ? (
-          <p className="hint">Carregando suas publicações…</p>
+          <p className="hint">{traduzir("Carregando suas publicações…")}</p>
         ) : (
           <div className="ig-publicacoes">
             <button

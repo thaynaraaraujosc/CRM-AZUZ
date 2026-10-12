@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { PLANOS, type PlanoId } from "@/lib/assinatura/planos";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { IconCheck } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Assinatura = {
   plano: string;
@@ -69,6 +70,7 @@ function formatarData(iso: string | null): string {
  * traz o estado salvo + histórico de cobranças ao vivo; assinar/trocar de plano e cancelar chamam
  * as rotas que falam com a Asaas de verdade (sandbox por padrão, ver ASAAS_ENV). */
 export function PlanoSecao() {
+  const { t: traduzir } = useIdioma();
 
   const [carregando, setCarregando] = useState(true);
   const [assinatura, setAssinatura] = useState<Assinatura | null>(null);
@@ -243,7 +245,7 @@ export function PlanoSecao() {
           anexo que ainda estiver gravado dentro do banco. */}
       {armazenamento?.configurado ? (
         <div className="config-bloco">
-          <p className="config-bloco-titulo">Armazenamento de arquivos</p>
+          <p className="config-bloco-titulo">{traduzir("Armazenamento de arquivos")}</p>
           <div className="field">
             <div className="armazenamento-barra">
               <div
@@ -325,7 +327,7 @@ export function PlanoSecao() {
           </div>
 
           <div className="field">
-            <label>CPF/CNPJ do responsável pela cobrança</label>
+            <label>{traduzir("CPF/CNPJ do responsável pela cobrança")}</label>
             <input className="input" style={{ width: "100%" }} placeholder="000.000.000-00" value={cpfCnpj} onChange={(e) => setCpfCnpj(e.target.value)} required />
           </div>
 
@@ -345,17 +347,17 @@ export function PlanoSecao() {
                   <input className="input" style={{ width: "100%" }} placeholder="MM" value={validadeMes} onChange={(e) => setValidadeMes(e.target.value)} required />
                 </div>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
-                  <label>Ano</label>
+                  <label>{traduzir("Ano")}</label>
                   <input className="input" style={{ width: "100%" }} placeholder="AAAA" value={validadeAno} onChange={(e) => setValidadeAno(e.target.value)} required />
                 </div>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
-                  <label>CVV</label>
+                  <label>{traduzir("CVV")}</label>
                   <input className="input" style={{ width: "100%" }} inputMode="numeric" placeholder="123" value={cvv} onChange={(e) => setCvv(e.target.value)} required />
                 </div>
               </div>
               <div style={{ display: "flex", gap: 14, padding: "0 17px 14px" }}>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
-                  <label>CEP</label>
+                  <label>{traduzir("CEP")}</label>
                   <input className="input" style={{ width: "100%" }} placeholder="00000-000" value={cep} onChange={(e) => setCep(e.target.value)} required />
                 </div>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
@@ -378,7 +380,7 @@ export function PlanoSecao() {
 
           <div className="section-foot">
             <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={() => setPlanoEmEdicao(null)}>
-              Cancelar
+              {traduzir("Cancelar")}
             </button>
             <button type="submit" className="btn primary" style={{ flex: 1 }} disabled={enviando}>
               {enviando ? "Processando…" : "Confirmar pagamento"}
@@ -426,7 +428,7 @@ export function PlanoSecao() {
       {assinatura && assinatura.status !== "cancelada" ? (
         <div className="section-foot" style={{ paddingTop: 0 }}>
           <button type="button" className="btn danger block" onClick={cancelarPlano}>
-            Cancelar assinatura
+            {traduzir("Cancelar assinatura")}
           </button>
         </div>
       ) : null}

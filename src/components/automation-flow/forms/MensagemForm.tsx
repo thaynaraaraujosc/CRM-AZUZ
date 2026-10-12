@@ -178,7 +178,7 @@ export function MensagemForm({
           mesma coisa que apagar e recriar, sem obrigar a pessoa a fazer isso à mão. */}
       {node.type === "mensagem_texto" && onTrocarTipo ? (
         <div className="field">
-          <label>Botões</label>
+          <label>{traduzir("Botões")}</label>
           <button
             type="button"
             className="btn ghost block"
@@ -196,7 +196,7 @@ export function MensagemForm({
             + Botão de URL
           </button>
           <p className="hint mt8">
-            Com botão, a mensagem vira uma pergunta: ela para e espera a escolha do contato.
+            {traduzir("Com botão, a mensagem vira uma pergunta: ela para e espera a escolha do contato.")}
           </p>
         </div>
       ) : null}
@@ -209,7 +209,7 @@ export function MensagemForm({
           corpo={textoDaMensagem}
           variaveis={mapearVariaveis(textoDaMensagem)}
           assunto={temAssunto ? String(d.assunto ?? "") : null}
-          titulo="Como vai chegar"
+          titulo={traduzir("Como vai chegar")}
         />
       ) : null}
     </div>

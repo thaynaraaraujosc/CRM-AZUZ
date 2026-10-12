@@ -185,7 +185,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
         >
           <option value="contato">Contato</option>
           <option value="negocio">Negócio</option>
-          <option value="ambos">Ambos</option>
+          <option value="ambos">{traduzir("Ambos")}</option>
         </select>
       </div>
     </div>

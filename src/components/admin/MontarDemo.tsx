@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Resultado = {
   workspaceId: string;
@@ -30,6 +31,7 @@ type Resultado = {
  * espaçamento nenhum, com o rótulo grudado no campo. Componente de painel herda o painel.
  */
 export function MontarDemo() {
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
@@ -155,7 +157,7 @@ export function MontarDemo() {
           }}
           disabled={salvando}
         >
-          Cancelar
+          {traduzir("Cancelar")}
         </button>
       </div>
     </form>

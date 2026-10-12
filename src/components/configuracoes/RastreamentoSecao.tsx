@@ -73,7 +73,7 @@ export function RastreamentoSecao() {
             </span>
             <span className="rastreio-selo rastreio-selo-ativo">Funcionando</span>
           </div>
-          <h4>Anúncios da Meta</h4>
+          <h4>{traduzir("Anúncios da Meta")}</h4>
           <p>
             Não precisa de nada. Quando alguém clica num anúncio do Facebook ou do Instagram e cai na
             sua conversa, a Meta informa de qual anúncio a pessoa veio, e o CRM guarda no contato.
@@ -85,7 +85,7 @@ export function RastreamentoSecao() {
             <span className="rastreio-canal-icones rastreio-google">G</span>
             <span className="rastreio-selo">Um passo</span>
           </div>
-          <h4>Anúncios do Google</h4>
+          <h4>{traduzir("Anúncios do Google")}</h4>
           <p>
             A pessoa clica no anúncio, passa pelo seu site e só depois vai pro WhatsApp. Nesse pulo a
             informação do anúncio se perde — a menos que o botão do site aponte para o seu link.
@@ -202,13 +202,13 @@ export function RastreamentoSecao() {
       </div>
 
       <div className="config-bloco rastreio-passos">
-        <p className="config-bloco-titulo">Como instalar, em três passos</p>
+        <p className="config-bloco-titulo">{traduzir("Como instalar, em três passos")}</p>
         <ol>
           <li>
             <strong>Copie o link acima.</strong>
           </li>
           <li>
-            <strong>Abra o editor do seu site</strong> e encontre o botão ou link de WhatsApp.
+            <strong>{traduzir("Abra o editor do seu site")}</strong> e encontre o botão ou link de WhatsApp.
           </li>
           <li>
             <strong>Troque o endereço dele por esse.</strong> No Wix, no WordPress e no Shopify isso

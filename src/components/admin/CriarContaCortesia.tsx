@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Criada = { workspaceId: string; linkConvite: string; emailEnviado: boolean; motivoEmail?: string };
 
@@ -15,6 +16,7 @@ type Criada = { workspaceId: string; linkConvite: string; emailEnviado: boolean;
  * própria pessoa: nem o super-admin precisa ver ou inventar a senha de outro.
  */
 export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [empresa, setEmpresa] = useState("");
   const [nome, setNome] = useState("");
@@ -55,7 +57,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
       <div className="admin-bloco config-bloco">
         <p className="config-bloco-titulo">Conta criada e já liberada</p>
         <p className="hint">
-          A empresa <strong>{criada.workspaceId}</strong> foi criada com a assinatura ativa, sem
+          {traduzir("A empresa")} <strong>{criada.workspaceId}</strong> foi criada com a assinatura ativa, sem
           cobrança nenhuma por trás. Mande o link abaixo pra pessoa criar a senha dela. Ele vale 7
           dias e só funciona uma vez.
         </p>
@@ -145,7 +147,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
           Criar e liberar
         </button>
         <button type="button" className="btn ghost" onClick={() => setAberto(false)} disabled={salvando}>
-          Cancelar
+          {traduzir("Cancelar")}
         </button>
       </div>
     </form>

@@ -16,6 +16,7 @@ import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";
 import { AreaDeUpload } from "@/components/area-de-upload";
 import { IconClose, IconDoc, IconFolder, IconImage, IconMic, IconVideoCam } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 
 function tipoMidiaDoBloco(tipo: FlowNodeType): TipoMidiaArquivo {
@@ -90,6 +91,7 @@ export function MensagemMidiaForm({
   area: AreaAutomacao;
   onChange: (data: Record<string, unknown>) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const data = node.data as MensagemMidiaData;
   const tipoMidia = tipoMidiaDoBloco(node.type);
   const canais = canaisDaAreaParaBloco(area);
@@ -247,7 +249,7 @@ export function MensagemMidiaForm({
 
       {temArquivo ? (
         <div className="field">
-          <label>Arquivo escolhido</label>
+          <label>{traduzir("Arquivo escolhido")}</label>
           <div className="flow-midia-preview">
             {tipoMidia === "imagem" && urlPreview ? (
               // eslint-disable-next-line @next/next/no-img-element

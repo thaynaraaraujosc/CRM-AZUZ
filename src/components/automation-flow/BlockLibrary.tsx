@@ -11,6 +11,7 @@ import {
   type AreaAutomacao,
 } from "@/lib/canais/capacidades";
 import type { FlowNodeType } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Tipo MIME custom carregado no drag. O que a área do canvas lê no `onDrop`. */
 export const FLOW_DND_MIME = "application/x-flow-node-type";
@@ -45,6 +46,7 @@ export function BlockLibrary({
   onFechar: () => void;
   onAdicionarBloco: (tipo: FlowNodeType) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [busca, setBusca] = useState("");
   const [categoriasFechadas, setCategoriasFechadas] = useState<Set<string>>(new Set());
   const [iaDisponivel, setIaDisponivel] = useState(false);
@@ -121,7 +123,7 @@ export function BlockLibrary({
   if (!aberta) {
     return (
       <aside className="flow-lib-recolhida" aria-label="Biblioteca de blocos (recolhida)">
-        <button type="button" className="flow-lib-reabrir icon-btn" aria-label="Abrir biblioteca de blocos" onClick={onFechar}>
+        <button type="button" className="flow-lib-reabrir icon-btn" aria-label={traduzir("Abrir biblioteca de blocos")} onClick={onFechar}>
           ▶
         </button>
         <div className="flow-lib-recolhida-cats">
@@ -156,15 +158,15 @@ export function BlockLibrary({
   }
 
   return (
-    <aside className="flow-lib" aria-label="Biblioteca de blocos">
+    <aside className="flow-lib" aria-label={traduzir("Biblioteca de blocos")}>
       <div className="flow-lib-head">
         <input
           className="input"
           style={{ flex: 1 }}
-          placeholder="Buscar bloco…"
+          placeholder={traduzir("Buscar bloco…")}
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          aria-label="Buscar bloco"
+          aria-label={traduzir("Buscar bloco")}
         />
         <button type="button" className="icon-btn subtle" aria-label="Recolher biblioteca de blocos" onClick={onFechar}>
           ◀

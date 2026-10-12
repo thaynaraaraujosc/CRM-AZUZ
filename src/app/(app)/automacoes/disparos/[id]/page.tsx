@@ -11,6 +11,7 @@ import { descreverAudiencia, type Audiencia } from "@/lib/campanhas/audiencia-ti
 import { STATUS_CAMPANHA, STATUS_DESTINATARIO, formatarData } from "@/lib/campanhas/apresentacao";
 import type { MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { LIMITES } from "@/lib/templates/regras";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Destinatario = {
   id: string;
@@ -44,6 +45,7 @@ type Campanha = {
 
 /** Acompanhamento de um disparo: o que aconteceu com cada pessoa, e os controles. */
 export default function DetalheDisparoPage() {
+  const { t: traduzir } = useIdioma();
   const { id } = useParams<{ id: string }>();
   const [campanha, setCampanha] = useState<Campanha | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -129,7 +131,7 @@ export default function DetalheDisparoPage() {
             ) : null}
             {podeCancelar ? (
               <button type="button" className="btn ghost tpl-excluir" disabled={ocupado} onClick={() => void controlar("cancelar")}>
-                Cancelar disparo
+                {traduzir("Cancelar disparo")}
               </button>
             ) : null}
           </div>

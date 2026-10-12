@@ -49,7 +49,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
         >
           <option value="atual">Contato/lead atual da automação</option>
           <option value="outro">Selecionar outro contato do CRM</option>
-          <option value="campo_dinamico">Campo dinâmico</option>
+          <option value="campo_dinamico">{traduzir("Campo dinâmico")}</option>
         </select>
       </div>
 
@@ -58,7 +58,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
           <label>{traduzir("Buscar contato")}</label>
           <input
             className="input"
-            placeholder="Buscar por nome, telefone ou e-mail…"
+            placeholder={traduzir("Buscar por nome, telefone ou e-mail…")}
             value={busca}
             onChange={(e) => {
               setBusca(e.target.value);
@@ -101,7 +101,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
         <label>Para quem enviar?</label>
         <select className="input" value={data.destinoModo} onChange={(e) => onChange({ ...data, destinoModo: e.target.value as DestinoEnvioContato })}>
           <option value="conversa_atual">Contato atual da conversa</option>
-          <option value="atendente">Atendente específico</option>
+          <option value="atendente">{traduzir("Atendente específico")}</option>
           <option value="equipe">Equipe</option>
           <option value="numero">Número específico</option>
         </select>
@@ -109,7 +109,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
 
       {data.destinoModo === "atendente" ? (
         <div className="field">
-          <label>Atendente</label>
+          <label>{traduzir("Atendente")}</label>
           <select className="input" value={data.destinoAtendente ?? ""} onChange={(e) => onChange({ ...data, destinoAtendente: e.target.value })}>
             <option value="">{traduzir("Selecione…")}</option>
             {equipe.map((m) => (

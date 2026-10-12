@@ -2,6 +2,7 @@
 
 import { useCentralDia } from "@/lib/central-dia-context";
 import type { RecomendacaoDia } from "@/lib/central-dia/tipos";
+import { useIdioma } from "@/lib/idioma-context";
 
 const LABEL_IMPACTO: Record<RecomendacaoDia["impacto"], string> = {
   alto: "Impacto alto",
@@ -18,6 +19,7 @@ export function Recomendacoes({
   recomendacoes: RecomendacaoDia[];
   onVerItens: (filtro: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { avisar, recomendacoesIgnoradas, ignorarRecomendacao } = useCentralDia();
 
   const visiveis = recomendacoes.filter((r) => !recomendacoesIgnoradas.includes(r.id));
@@ -43,7 +45,7 @@ export function Recomendacoes({
                 Ver itens
               </button>
               <button type="button" className="btn ghost" onClick={() => avisar(`Simulado: "${r.acaoSugerida}" aplicado.`)}>
-                Aplicar simulação
+                {traduzir("Aplicar simulação")}
               </button>
               <button type="button" className="btn ghost" onClick={() => avisar("Tarefa criada a partir da recomendação.")}>
                 Criar tarefa

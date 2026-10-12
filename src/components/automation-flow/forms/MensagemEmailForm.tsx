@@ -27,7 +27,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
           <option value="outro_campo">Outro campo de e-mail do contato</option>
           <option value="especifico">E-mail específico</option>
           <option value="responsavel">Responsável do lead</option>
-          <option value="campo_personalizado">Campo personalizado</option>
+          <option value="campo_personalizado">{traduzir("Campo personalizado")}</option>
         </select>
         {data.destinatarioModo === "contato_email" ? (
           <p className="hint" style={{ marginTop: 6 }}>Será utilizado automaticamente o e-mail cadastrado na ficha do lead que estiver passando por esta automação.</p>
@@ -52,7 +52,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
           <input className="input" style={{ width: "100%" }} value={data.cc ?? ""} onChange={(e) => onChange({ ...data, cc: e.target.value })} />
         </div>
         <div style={{ flex: 1 }}>
-          <label>CCO</label>
+          <label>{traduzir("CCO")}</label>
           <input className="input" style={{ width: "100%" }} value={data.cco ?? ""} onChange={(e) => onChange({ ...data, cco: e.target.value })} />
         </div>
       </div>
@@ -103,7 +103,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
         <label>Quando enviar</label>
         <select className="input" value={data.quandoModo ?? "imediato"} onChange={(e) => onChange({ ...data, quandoModo: e.target.value as "imediato" | "apos_tempo" })}>
           <option value="imediato">Imediatamente</option>
-          <option value="apos_tempo">Após determinado tempo</option>
+          <option value="apos_tempo">{traduzir("Após determinado tempo")}</option>
         </select>
       </div>
 

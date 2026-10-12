@@ -7,6 +7,7 @@ import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blo
 import { blocoValeNaArea, grupoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { sugestoesApos } from "@/lib/automation-flow/sugestoes";
 import type { FlowNodeCategory, FlowNodeType } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * "Adicionar próximo passo": o painel que abre pela DIREITA quando se clica no "+" de uma saída.
@@ -39,6 +40,7 @@ export function PainelProximoPasso({
   onFollowUp: () => void;
   onFechar: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [busca, setBusca] = useState("");
   const termo = busca.trim().toLowerCase();
 
@@ -72,10 +74,10 @@ export function PainelProximoPasso({
   }, [candidatos, termo]);
 
   return (
-    <aside className="proximo-passo" role="dialog" aria-label="Adicionar próximo passo">
+    <aside className="proximo-passo" role="dialog" aria-label={traduzir("Adicionar próximo passo")}>
       <div className="proximo-passo-topo">
         <div>
-          <strong>Adicionar próximo passo</strong>
+          <strong>{traduzir("Adicionar próximo passo")}</strong>
           {rotuloDaSaida ? <span>depois de &quot;{rotuloDaSaida}&quot;</span> : null}
         </div>
         <button type="button" className="icon-btn subtle" aria-label="Fechar" onClick={onFechar}>
@@ -85,7 +87,7 @@ export function PainelProximoPasso({
 
       <input
         className="input"
-        placeholder="Buscar passo…"
+        placeholder={traduzir("Buscar passo…")}
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         autoFocus
@@ -96,7 +98,7 @@ export function PainelProximoPasso({
           <>
             <p className="proximo-passo-grupo">Sugeridos aqui</p>
             <button type="button" className="proximo-passo-item" onClick={onFollowUp}>
-              <strong>Adicionar follow-up</strong>
+              <strong>{traduzir("Adicionar follow-up")}</strong>
               <span>Espera a resposta por 2 horas e, se não vier, manda uma cobrança.</span>
             </button>
             {sugeridos.map((tipo) => {

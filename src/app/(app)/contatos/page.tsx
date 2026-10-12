@@ -564,7 +564,7 @@ function ContatosPageInner() {
                     {traduzir("Excluir contato")}
                   </button>
                   <button type="button" className="btn ghost" onClick={() => setConfirmandoExclusao(false)}>
-                    Cancelar
+                    {traduzir("Cancelar")}
                   </button>
                 </div>
               </div>
@@ -640,7 +640,7 @@ function ContatosPageInner() {
                     {traduzir("Salvar alterações")}
                   </button>
                   <button type="button" className="btn ghost" onClick={() => setEditandoContato(false)}>
-                    Cancelar
+                    {traduzir("Cancelar")}
                   </button>
                 </div>
               </>

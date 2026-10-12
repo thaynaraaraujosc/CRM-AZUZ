@@ -7,6 +7,7 @@ import { IconEnviar, IconSearch } from "@/components/icons";
 import type { ConversaInstagram } from "@/app/api/instagram/conversas/route";
 import type { MensagemInstagram } from "@/app/api/instagram/mensagens/route";
 import { INTERVALO_POLLING_MS } from "@/lib/conversas/polling";
+import { useIdioma } from "@/lib/idioma-context";
 
 function hora(iso: string | null): string {
   if (!iso) return "";
@@ -54,6 +55,7 @@ function Avatar({ nome, fotoUrl, tamanho = 38 }: { nome: string; fotoUrl: string
  * entre saber que a mensagem não vai sair antes de escrevê-la e descobrir depois.
  */
 export default function InstagramConversasPage() {
+  const { t: traduzir } = useIdioma();
   const [conversas, setConversas] = useState<ConversaInstagram[] | null>(null);
   const [aberta, setAberta] = useState<string | null>(null);
   // A resposta viaja com o nome da conversa: assim "carregando" é derivado (o que tenho não é da
@@ -265,7 +267,7 @@ export default function InstagramConversasPage() {
             <IconSearch width={14} height={14} aria-hidden="true" />
             <input
               className="input"
-              placeholder="Buscar por nome ou @"
+              placeholder={traduzir("Buscar por nome ou @")}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />

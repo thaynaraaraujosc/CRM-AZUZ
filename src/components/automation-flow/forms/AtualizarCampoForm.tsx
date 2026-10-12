@@ -2,6 +2,7 @@
 
 import type { AtualizarCampoData } from "@/lib/automation-flow/types";
 import { useConfiguracoes } from "@/lib/configuracoes-context";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * "Definir campo": qual campo do lead gravar e com que valor.
@@ -32,6 +33,7 @@ export function AtualizarCampoForm({
   data: AtualizarCampoData;
   onChange: (data: AtualizarCampoData) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { estado } = useConfiguracoes();
   // Só os campos do contato/lead: um campo de outro objeto não existe pra gravar aqui.
   const personalizados = (estado.camposPersonalizados ?? []).filter(
@@ -49,7 +51,7 @@ export function AtualizarCampoForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Campo</label>
+        <label>{traduzir("Campo")}</label>
         <select
           className="input"
           value={data.campoNome ?? ""}
@@ -57,7 +59,7 @@ export function AtualizarCampoForm({
         >
           <option value="">Escolha o campo</option>
           {sumiu ? <option value={data.campoNome}>{data.campoNome} (campo apagado)</option> : null}
-          <optgroup label="Campos do lead">
+          <optgroup label={traduzir("Campos do lead")}>
             {CAMPOS_NATIVOS.map((c) => (
               <option key={c.nome} value={c.nome}>
                 {c.label}
@@ -65,7 +67,7 @@ export function AtualizarCampoForm({
             ))}
           </optgroup>
           {personalizados.length ? (
-            <optgroup label="Campos personalizados">
+            <optgroup label={traduzir("Campos personalizados")}>
               {personalizados.map((c) => (
                 <option key={c.id} value={c.nome}>
                   {c.nome}
@@ -87,7 +89,7 @@ export function AtualizarCampoForm({
           className="input"
           value={data.valor ?? ""}
           onChange={(e) => onChange({ ...data, valor: e.target.value })}
-          placeholder="Aceita variáveis, ex.: {primeiro_nome}"
+          placeholder={traduzir("Aceita variáveis, ex.: {primeiro_nome}")}
         />
       </div>
     </div>

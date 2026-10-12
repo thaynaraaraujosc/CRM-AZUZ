@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 const CHAVE_TEMA = "azuz-crm-tema";
 type Tema = "light" | "dark";
@@ -9,6 +10,7 @@ type Tema = "light" | "dark";
  * `src/app/layout.tsx` antes do primeiro paint). Sem "Sistema": só as duas opções que a pessoa
  * escolhe de fato. */
 export function ThemeToggle() {
+  const { t: traduzir } = useIdioma();
   const [tema, setTema] = useState<Tema>(() => {
     if (typeof window === "undefined") return "light";
     return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
@@ -32,7 +34,7 @@ export function ThemeToggle() {
         aria-pressed={tema === "light"}
         onClick={() => escolher("light")}
       >
-        Claro
+        {traduzir("Claro")}
       </button>
       <button
         type="button"

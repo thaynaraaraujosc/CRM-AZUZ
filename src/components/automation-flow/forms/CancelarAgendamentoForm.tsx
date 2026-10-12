@@ -117,7 +117,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
             <label>Quando enviar</label>
             <select className="input" value={data.quandoModo ?? "imediato"} onChange={(e) => onChange({ ...data, quandoModo: e.target.value as "imediato" | "apos_tempo" })}>
               <option value="imediato">Imediatamente após o cancelamento</option>
-              <option value="apos_tempo">Após determinado tempo</option>
+              <option value="apos_tempo">{traduzir("Após determinado tempo")}</option>
             </select>
           </div>
           {data.quandoModo === "apos_tempo" ? (

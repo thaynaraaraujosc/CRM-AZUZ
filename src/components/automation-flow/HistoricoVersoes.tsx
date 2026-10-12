@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import type { VersaoFluxo } from "@/lib/automation-flow/types";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 function formatarData(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
@@ -30,6 +31,7 @@ export function HistoricoVersoes({
   onFechar: () => void;
   onRestaurar: (versao: VersaoFluxo) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [doServidor, setDoServidor] = useState<VersaoFluxo[] | null>(null);
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export function HistoricoVersoes({
               <div className="flow-versao-row" key={v.versao}>
                 <div>
                   <p className="n">
-                    Versão {v.versao} {v.versao === versaoAtual ? <span className="pill on">Atual</span> : null}
+                    Versão {v.versao} {v.versao === versaoAtual ? <span className="pill on">{traduzir("Atual")}</span> : null}
                   </p>
                   <p className="r">
                     Publicado em {formatarData(v.publicadoEm)} por {v.publicadoPor}

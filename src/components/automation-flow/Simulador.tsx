@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { EstadoSimulacao } from "@/lib/automacoes/simular";
 import type { AguardarData, FluxoAutomacao } from "@/lib/automation-flow/types";
 import { IconBloqueado, IconCheck, IconClose, IconErro, IconFrasco, IconPause, IconPular } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Situação de cada passo. Eram emojis: família tipográfica diferente da interface e cor fixa que
  * não acompanha o tema. */
@@ -37,6 +38,7 @@ const LABEL_SITUACAO: Record<string, string> = {
  * decisões: condição, caminho do botão, espera: são exatamente as mesmas.
  */
 export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar: () => void }) {
+  const { t: traduzir } = useIdioma();
   const [nome, setNome] = useState("Contato de teste");
   const [origem, setOrigem] = useState("Indicação");
   const [etiquetas, setEtiquetas] = useState("");
@@ -139,7 +141,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                   <input className="input" value={etiquetas} onChange={(e) => setEtiquetas(e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>Campo personalizado (opcional)</label>
+                  <label>{traduzir("Campo personalizado (opcional)")}</label>
                   <div style={{ display: "flex", gap: 6 }}>
                     <input className="input" style={{ flex: 1 }} placeholder="nome do campo" value={campoNome} onChange={(e) => setCampoNome(e.target.value)} />
                     <input className="input" style={{ flex: 1 }} placeholder="valor" value={campoValor} onChange={(e) => setCampoValor(e.target.value)} />

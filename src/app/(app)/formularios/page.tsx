@@ -360,7 +360,7 @@ export default function FormulariosPage() {
                   setMenuCompartilharAberto((v) => !v);
                 }}
               >
-                Compartilhar
+                {traduzir("Compartilhar")}
               </button>
               <button type="button" className="btn ghost" onClick={() => setPreviewAberto(true)}>
                 Pré-visualizar
@@ -517,7 +517,7 @@ export default function FormulariosPage() {
                         draggable
                         onDragStart={() => setPaginaArrastando(indice)}
                         onDragEnd={() => setPaginaArrastando(null)}
-                        title="Arraste pra reordenar"
+                        title={traduzir("Arraste pra reordenar")}
                       >
                         ⠿
                       </span>
@@ -608,7 +608,7 @@ export default function FormulariosPage() {
                                 setCampoSelecionadoId(pergunta.id);
                               }}
                             >
-                              <span className="form-campo-handle" title="Arraste pra reordenar">
+                              <span className="form-campo-handle" title={traduzir("Arraste pra reordenar")}>
                                 ⠿
                               </span>
                               <div className="form-campo-corpo">
@@ -1083,7 +1083,7 @@ function PainelCampo({
             </SecaoPainel>
           ) : null}
 
-          <SecaoPainel titulo="Aparência">
+          <SecaoPainel titulo={traduzir("Aparência")}>
             <div className="field">
               <label>{traduzir("Largura")}</label>
               <div className="filters-row" style={{ margin: 0 }}>
@@ -1176,7 +1176,7 @@ function PainelCampo({
             })()}
           </SecaoPainel>
 
-          <SecaoPainel titulo="Características">
+          <SecaoPainel titulo={traduzir("Características")}>
             <label className="hint" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
               <input type="checkbox" checked={pergunta.somenteLeitura} onChange={(e) => onAtualizar({ somenteLeitura: e.target.checked })} />
               Somente leitura
@@ -1202,7 +1202,7 @@ function PainelCampo({
             )}
           </SecaoPainel>
 
-          <SecaoPainel titulo="Campo do CRM">
+          <SecaoPainel titulo={traduzir("Campo do CRM")}>
             <div className="field">
               <label>Mapear resposta para</label>
               <select
@@ -1211,7 +1211,7 @@ function PainelCampo({
                 value={pergunta.mapeamentoCrm ?? ""}
                 onChange={(e) => onAtualizar({ mapeamentoCrm: e.target.value || undefined })}
               >
-                <option value="">Campo novo (não mapeado)</option>
+                <option value="">{traduzir("Campo novo (não mapeado)")}</option>
                 {CAMPOS_CRM_MAPEAVEIS.map((c) => (
                   <option key={c.campo} value={c.campo}>
                     {c.label}
@@ -1541,6 +1541,7 @@ function PainelDesign({
   onAtualizar: (patch: Partial<Formulario>) => void;
   onRestaurarVersao: (versaoId: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const { membros } = useEquipe();
 
@@ -1629,7 +1630,7 @@ function PainelDesign({
           <label>Tema</label>
           <div className="filters-row" style={{ margin: 0 }}>
             <button type="button" className={`fchip${!formulario.tema.temaEscuro ? " active" : ""}`} onClick={() => trocarTema(false)}>
-              Claro
+              {traduzir("Claro")}
             </button>
             <button type="button" className={`fchip${formulario.tema.temaEscuro ? " active" : ""}`} onClick={() => trocarTema(true)}>
               Escuro
@@ -1700,7 +1701,7 @@ function PainelDesign({
               <div className="form-banner-corte-legenda">
                 <span>Topo</span>
                 <span>Meio</span>
-                <span>Base</span>
+                <span>{traduzir("Base")}</span>
               </div>
             </div>
           }
@@ -1743,7 +1744,7 @@ function PainelDesign({
           </div>
         </div>
         <div className="field">
-          <label>Como quem responde vê</label>
+          <label>{traduzir("Como quem responde vê")}</label>
           <div className="filters-row" style={{ margin: 0 }}>
             <button
               type="button"

@@ -120,7 +120,7 @@ export default function InstagramContatosPage() {
               <IconSearch width={14} height={14} aria-hidden="true" />
               <input
                 className="input"
-                placeholder="Buscar por nome ou @"
+                placeholder={traduzir("Buscar por nome ou @")}
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
               />
@@ -188,8 +188,8 @@ export default function InstagramContatosPage() {
                   <th>Verificado</th>
                   <th>Segue você</th>
                   <th>Etiquetas</th>
-                  <th>Atualizado</th>
-                  <th aria-label="Ações" />
+                  <th>{traduzir("Atualizado")}</th>
+                  <th aria-label={traduzir("Ações")} />
                 </tr>
               </thead>
               <tbody>

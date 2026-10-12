@@ -19,6 +19,7 @@ import { IntegracoesSecao } from "@/components/configuracoes/IntegracoesSecao";
 import { RastreamentoSecao } from "@/components/configuracoes/RastreamentoSecao";
 import { ImportacaoSecao } from "@/components/configuracoes/ImportacaoSecao";
 import { PlanoSecao } from "@/components/configuracoes/PlanoSecao";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Painel administrativo de Configurações (item 18). Layout de 2 colunas (categorias agrupadas à
@@ -37,6 +38,7 @@ export default function ConfiguracoesPage() {
 }
 
 function ConfiguracoesConteudo() {
+  const { t: traduzir } = useIdioma();
   const searchParams = useSearchParams();
   // `?categoria=plano`: usado pelo redirect pós-cadastro (proxy manda direto pra tela de
   // pagamento, ver `src/app/cadastro/page.tsx`) pra não obrigar a pessoa a achar "Plano e
@@ -86,7 +88,7 @@ function ConfiguracoesConteudo() {
             {categoriaAtiva === "importacao" ? <ImportacaoSecao /> : null}
             {categoriaAtiva === "plano" ? <PlanoSecao /> : null}
 
-            {!categoria ? <p className="hint">Categoria não encontrada.</p> : null}
+            {!categoria ? <p className="hint">{traduzir("Categoria não encontrada.")}</p> : null}
           </div>
         </div>
       </div>

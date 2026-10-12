@@ -8,6 +8,7 @@ import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { MODELOS_AZUZ, type ModeloAzuz } from "@/lib/social/modelos-azuz";
 import { LIMITES } from "@/lib/templates/regras";
+import { useIdioma } from "@/lib/idioma-context";
 
 type TemplateSalvo = {
   id: string;
@@ -28,6 +29,7 @@ type TemplateSalvo = {
  * pelo canal, com o editor completo a um clique de distância.
  */
 export default function ModelosSociaisPage() {
+  const { t: traduzir } = useIdioma();
   const [meus, setMeus] = useState<TemplateSalvo[] | null>(null);
   const [copiando, setCopiando] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -80,7 +82,7 @@ export default function ModelosSociaisPage() {
         sub="Mensagens reutilizáveis do Direct"
         actions={
           <Link className="btn primary" href="/automacoes/templates">
-            Abrir editor de templates
+            {traduzir("Abrir editor de templates")}
           </Link>
         }
       />

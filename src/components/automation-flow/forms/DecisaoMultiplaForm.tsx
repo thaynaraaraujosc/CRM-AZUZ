@@ -2,6 +2,7 @@
 
 import type { CampoCondicao, DecisaoMultiplaData, OperadorCondicao } from "@/lib/automation-flow/types";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Configuração da decisão com vários caminhos.
@@ -36,6 +37,7 @@ export function DecisaoMultiplaForm({
   /** Remove também a aresta ligada. Senão sobra um caminho apontando pra uma saída que sumiu. */
   onRemoverCaminho?: (caminhoId: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const caminhos = data.caminhos ?? [];
 
   function alterar(indice: number, patch: Partial<DecisaoMultiplaData["caminhos"][number]>) {
@@ -88,7 +90,7 @@ export function DecisaoMultiplaForm({
       ) : null}
 
       <div className="field">
-        <label>Comparação</label>
+        <label>{traduzir("Comparação")}</label>
         <select
           className="input"
           value={data.operador ?? "igual"}
@@ -103,7 +105,7 @@ export function DecisaoMultiplaForm({
       </div>
 
       <div className="field">
-        <label>Caminhos</label>
+        <label>{traduzir("Caminhos")}</label>
         <p className="hint">
           Cada linha vira uma saída do bloco. O primeiro que bater ganha. Se dois valores se
           parecem (&quot;valor&quot; e &quot;valores&quot;), deixe o mais específico em cima.
@@ -132,7 +134,7 @@ export function DecisaoMultiplaForm({
         ))}
 
         <button type="button" className="btn ghost block" onClick={adicionar}>
-          Adicionar caminho
+          {traduzir("Adicionar caminho")}
         </button>
 
         <p className="hint" style={{ marginTop: 8 }}>

@@ -62,7 +62,7 @@ export default function EquipePage() {
                   <th>Papel</th>
                   <th>Leads atribuídos</th>
                   <th>O que enxerga</th>
-                  <th>Ativo</th>
+                  <th>{traduzir("Ativo")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -206,7 +206,7 @@ export default function EquipePage() {
             <div className="open-conv-body">
               <div>
                 <div className="panel-h">
-                  <h4>Acesso</h4>
+                  <h4>{traduzir("Acesso")}</h4>
                 </div>
                 <div className="field">
                   <label>E-mail cadastrado</label>
@@ -260,7 +260,7 @@ export default function EquipePage() {
                         {salvandoEmail ? "Salvando…" : "Salvar"}
                       </button>
                       <button type="button" className="btn ghost" onClick={() => setEmailEdit(null)} disabled={salvandoEmail}>
-                        Cancelar
+                        {traduzir("Cancelar")}
                       </button>
                     </div>
                   )}
@@ -327,7 +327,7 @@ export default function EquipePage() {
                 <div className="field">
                   <label>Senha</label>
                   {membro.convitePendente ? (
-                    <span className="pill">Ainda não definida: convite pendente</span>
+                    <span className="pill">{traduzir("Ainda não definida: convite pendente")}</span>
                   ) : senhaGerada ? (
                     <div className="key-row" style={{ padding: 0 }}>
                       <div className="key-box">{senhaGerada}</div>

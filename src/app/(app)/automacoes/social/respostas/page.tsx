@@ -222,7 +222,7 @@ export default function RespostasAutomaticasPage() {
                 Salvar e ligar
               </button>
               <button type="button" className="btn ghost" onClick={() => setEditando(null)}>
-                Cancelar
+                {traduzir("Cancelar")}
               </button>
             </div>
           </section>
@@ -239,7 +239,7 @@ export default function RespostasAutomaticasPage() {
                   <th>Nome</th>
                   <th>Quando</th>
                   <th>Situação</th>
-                  <th aria-label="Ações" />
+                  <th aria-label={traduzir("Ações")} />
                 </tr>
               </thead>
               <tbody>
@@ -268,7 +268,7 @@ export default function RespostasAutomaticasPage() {
                           title="Este fluxo tem passos que esta tela não sabe representar. Editar aqui apagaria o resto."
                           onClick={() => router.push(`/automacoes/editor/${fluxo.id}`)}
                         >
-                          Abrir no construtor
+                          {traduzir("Abrir no construtor")}
                         </button>
                       )}
                       {fluxo.status === "publicado" ? (

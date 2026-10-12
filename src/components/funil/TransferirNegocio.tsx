@@ -106,7 +106,7 @@ export function TransferirNegocio({
       rodape={
         <>
           <button type="button" className="btn ghost" onClick={aoFechar}>
-            Cancelar
+            {traduzir("Cancelar")}
           </button>
           <button type="button" className="btn" onClick={() => void confirmar()} disabled={salvando || !etapaId}>
             {salvando ? "Transferindo…" : "Transferir"}

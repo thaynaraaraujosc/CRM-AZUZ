@@ -253,7 +253,7 @@ export function CondicaoForm({
             className="input"
             value={regra.campo}
             onChange={(e) => atualizarRegra(regra.id, { campo: e.target.value as CampoCondicao })}
-            aria-label="Campo da condição"
+            aria-label={traduzir("Campo da condição")}
           >
             {CATEGORIAS_ORDEM.map((cat) => (
               <optgroup key={cat} label={cat}>

@@ -462,7 +462,7 @@ function JornadaClientePageInner() {
                 </button>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button type="button" className="btn ghost" onClick={() => setFiltrosAberto(false)}>
-                    Cancelar
+                    {traduzir("Cancelar")}
                   </button>
                   <button type="button" className="btn primary" onClick={() => setFiltrosAberto(false)}>
                     {traduzir("Aplicar")}

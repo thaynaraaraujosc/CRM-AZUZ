@@ -9,12 +9,14 @@ import { AssistenteDisparo } from "@/components/automacoes/AssistenteDisparo";
 import { descreverAudiencia } from "@/lib/campanhas/audiencia-tipos";
 import { STATUS_CAMPANHA, contagens, formatarData, type CampanhaResumo } from "@/lib/campanhas/apresentacao";
 import { LIMITES } from "@/lib/templates/regras";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Disparo em massa: cada disparo é um registro com contagens. Criar um novo abre o assistente em
  * passos; abrir um existente mostra destinatário por destinatário, com os erros.
  */
 export default function DisparosPage() {
+  const { t: traduzir } = useIdioma();
   const [campanhas, setCampanhas] = useState<CampanhaResumo[] | null>(null);
   const [assistente, setAssistente] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -178,7 +180,7 @@ export default function DisparosPage() {
               </p>
               <div className="modal-acoes">
                 <button type="button" className="btn" onClick={() => setAExcluir(null)} disabled={excluindo}>
-                  Cancelar
+                  {traduzir("Cancelar")}
                 </button>
                 <button type="button" className="btn danger" onClick={excluir} disabled={excluindo}>
                   {excluindo ? "Excluindo…" : "Excluir disparo"}

@@ -1108,13 +1108,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           >
             <Background gap={18} />
             <Controls showZoom={false} showFitView={false} showInteractive={false}>
-              <ControlButton title="Aumentar zoom" aria-label="Aumentar zoom" onClick={() => zoomIn({ duration: 200 })}>
+              <ControlButton title={traduzir("Aumentar zoom")} aria-label={traduzir("Aumentar zoom")} onClick={() => zoomIn({ duration: 200 })}>
                 +
               </ControlButton>
               <ControlButton title="Diminuir zoom" aria-label="Diminuir zoom" onClick={() => zoomOut({ duration: 200 })}>
                 −
               </ControlButton>
-              <ControlButton title="Centralizar fluxo" aria-label="Centralizar fluxo" onClick={() => centralizarTudo()}>
+              <ControlButton title={traduzir("Centralizar fluxo")} aria-label={traduzir("Centralizar fluxo")} onClick={() => centralizarTudo()}>
                 <IconExpandir width={13} height={13} />
               </ControlButton>
             </Controls>
@@ -1144,7 +1144,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                   {minimapaVisivel ? "Ocultar minimapa" : "Mostrar minimapa"}
                 </button>
                 <button type="button" className="btn ghost" onClick={() => centralizarTudo()}>
-                  Centralizar
+                  {traduzir("Centralizar")}
                 </button>
               </div>
             </Panel>
@@ -1184,7 +1184,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                 <div className="no-gatilho-vazio-corpo">
                   <h4>Gatilho para acionar a automação</h4>
                   <button type="button" className="no-gatilho-vazio-btn" onClick={() => setLibAberta(true)}>
-                    Adicionar gatilho +
+                    {traduzir("Adicionar gatilho +")}
                   </button>
                 </div>
               </div>
@@ -1215,7 +1215,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
           {modoConstrucao && rfNodes.length === 0 && area !== "social" && !inicioNoFunil ? (
             <div className="flow-inicio-vazio">
-              <p className="flow-inicio-vazio-titulo">Como esta automação deve começar?</p>
+              <p className="flow-inicio-vazio-titulo">{traduzir("Como esta automação deve começar?")}</p>
               <p className="flow-inicio-vazio-sub">Toda automação começa a partir de um gatilho.</p>
               <button type="button" className="btn primary" onClick={() => setEscolherGatilhoAberto(true)}>
                 + Escolher gatilho
@@ -1308,7 +1308,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                           setMenuContexto(null);
                         }}
                       >
-                        Adicionar depois
+                        {traduzir("Adicionar depois")}
                       </button>
                     ) : null}
                     <button

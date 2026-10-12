@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { contagem } from "@/lib/plural";
 import type { ExecucaoDetalhada } from "@/app/api/automacoes/execucoes/route";
+import { useIdioma } from "@/lib/idioma-context";
 
 const SITUACAO_LABEL: Record<string, string> = {
   em_andamento: "Rodando",
@@ -58,6 +59,7 @@ function faltam(iso: string): string {
  * não saiu virar meia noite de investigação.
  */
 export function TabelaExecucoes({ execucoes, vazio }: { execucoes: ExecucaoDetalhada[]; vazio: string }) {
+  const { t: traduzir } = useIdioma();
   const [aberta, setAberta] = useState<string | null>(null);
 
   if (!execucoes.length) return <p className="hint mt8">{vazio}</p>;
@@ -67,7 +69,7 @@ export function TabelaExecucoes({ execucoes, vazio }: { execucoes: ExecucaoDetal
       <table className="table">
         <thead>
           <tr>
-            <th>Começou</th>
+            <th>{traduzir("Começou")}</th>
             <th>Robô</th>
             <th>Contato</th>
             <th>Situação</th>

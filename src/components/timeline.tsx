@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import { EVENTO_CATEGORIA, type CategoriaEvento, type Evento } from "@/lib/timeline";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   IconAperto,
   IconAutomacoes,
@@ -37,6 +38,7 @@ const ICONE_CATEGORIA: Record<CategoriaEvento, typeof IconConversas> = {
  * Anotações), a mesma usada no relatório da jornada.
  */
 export function Timeline({ eventos }: { eventos: Evento[] }) {
+  const { t: traduzir } = useIdioma();
   const [filtro, setFiltro] = useState<CategoriaEvento | "todos">("todos");
 
   const categoriasPresentes = useMemo(() => {
@@ -51,7 +53,7 @@ export function Timeline({ eventos }: { eventos: Evento[] }) {
   );
 
   if (eventos.length === 0) {
-    return <p className="timeline-empty">Ainda não há eventos registrados para esse contato.</p>;
+    return <p className="timeline-empty">{traduzir("Ainda não há eventos registrados para esse contato.")}</p>;
   }
 
   return (

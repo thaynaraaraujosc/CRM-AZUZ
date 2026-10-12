@@ -20,6 +20,7 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   OPERADORES_LOGICA,
   labelTipoCampo,
@@ -56,6 +57,7 @@ type ResultadoRFNode = Node<ResultadoNodeData, "resultado">;
 type LogicaRFNode = CondicaoRFNode | ResultadoRFNode;
 
 function CondicaoNode({ data }: NodeProps<CondicaoRFNode>) {
+  const { t: traduzir } = useIdioma();
   const { regra, camposAnteriores, onMudar, onExcluir } = data;
   const escondeValor = regra.operador === "preenchido" || regra.operador === "vazio";
   return (
@@ -68,7 +70,7 @@ function CondicaoNode({ data }: NodeProps<CondicaoRFNode>) {
       </div>
       <div className="flow-node-body form-logica-node-corpo">
         <select className="input" value={regra.campoId} onChange={(e) => onMudar({ campoId: e.target.value })}>
-          <option value="">Campo…</option>
+          <option value="">{traduzir("Campo…")}</option>
           {camposAnteriores.map((c) => (
             <option key={c.id} value={c.id}>
               {c.rotulo || labelTipoCampo(c.tipo)}

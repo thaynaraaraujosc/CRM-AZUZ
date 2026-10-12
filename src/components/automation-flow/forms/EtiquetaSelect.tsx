@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useConfiguracoes } from "@/lib/configuracoes-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Lista de etiquetas pra escolher num bloco de automação. Junta as etiquetas já em uso em
@@ -37,6 +38,7 @@ export function EtiquetaSelect({
   value: string;
   onChange: (nome: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { adicionarEtiqueta } = useConfiguracoes();
   const etiquetas = useEtiquetasDisponiveis();
   const [criandoNova, setCriandoNova] = useState(false);
@@ -77,7 +79,7 @@ export function EtiquetaSelect({
             Criar
           </button>
           <button type="button" className="btn ghost" onClick={() => setCriandoNova(false)}>
-            Cancelar
+            {traduzir("Cancelar")}
           </button>
         </div>
       ) : (

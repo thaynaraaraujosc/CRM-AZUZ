@@ -390,7 +390,7 @@ export function ReportWizard({
         <div className="wizard-head">
           <div>
             <p className="n" style={{ fontFamily: "var(--display)", fontWeight: 700 }}>
-              Assistente de relatório
+              {traduzir("Assistente de relatório")}
             </p>
             <p className="hint">{nomeRelatorio}</p>
           </div>
@@ -582,7 +582,7 @@ export function ReportWizard({
               </div>
 
               <div className="field">
-                <label>Capa</label>
+                <label>{traduzir("Capa")}</label>
                 <div className="filters-row">
                   {(["nenhuma", "compacta", "completa", "personalizada"] as ModoCapa[]).map((m) => (
                     <button
@@ -669,7 +669,7 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Carta
+                    {traduzir("Carta")}
                   </button>
                 </div>
               </div>
@@ -801,7 +801,7 @@ export function ReportWizard({
                       disabled={temErroBloqueante}
                       title={temErroBloqueante ? "Corrija os erros antes de aprovar" : undefined}
                     >
-                      Aprovar relatório
+                      {traduzir("Aprovar relatório")}
                     </button>
                   </div>
                 </div>
@@ -852,10 +852,10 @@ export function ReportWizard({
                   ) : null}
 
                   <button type="button" className="btn primary block" onClick={baixarPdf} disabled={status === "gerando"}>
-                    Baixar PDF
+                    {traduzir("Baixar PDF")}
                   </button>
                   <button type="button" className="btn ghost block" onClick={baixarCsv} disabled={status === "gerando"}>
-                    Baixar Excel (CSV)
+                    {traduzir("Baixar Excel (CSV)")}
                   </button>
                   <button type="button" className="btn ghost block" onClick={salvarSemBaixar} disabled={status === "gerando"}>
                     Salvar relatório (sem baixar)
@@ -863,7 +863,7 @@ export function ReportWizard({
                   <button type="button" className="btn ghost block" onClick={() => irParaEtapa(2)}>
                     Voltar e editar
                   </button>
-                  <button type="button" className="btn ghost block" disabled title="Ainda não disponível nesta versão">
+                  <button type="button" className="btn ghost block" disabled title={traduzir("Ainda não disponível nesta versão")}>
                     Programar envio (indisponível: recurso em desenvolvimento)
                   </button>
                 </>
@@ -874,7 +874,7 @@ export function ReportWizard({
 
         <div className="wizard-foot">
           <button type="button" className="btn ghost" onClick={onFechar}>
-            Cancelar
+            {traduzir("Cancelar")}
           </button>
           <div style={{ display: "flex", gap: 8 }}>
             {etapa > 0 ? (

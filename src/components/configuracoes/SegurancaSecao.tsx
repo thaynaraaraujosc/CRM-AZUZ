@@ -110,7 +110,7 @@ export function SegurancaSecao() {
                 setErroEmail(null);
               }}
             >
-              Alterar e-mail
+              {traduzir("Alterar e-mail")}
             </button>
           </div>
         ) : (
@@ -129,7 +129,7 @@ export function SegurancaSecao() {
                 {salvandoEmail ? "Salvando…" : "Confirmar troca"}
               </button>
               <button type="button" className="btn ghost" onClick={() => setTrocandoEmail(false)} disabled={salvandoEmail}>
-                Cancelar
+                {traduzir("Cancelar")}
               </button>
             </div>
           </div>

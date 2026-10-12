@@ -203,6 +203,7 @@ function CampoCep({
   onMudarValor?: (valor: string) => void;
   aoAcharEndereco?: (endereco: EnderecoDoCep) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const ultimoBuscado = useRef("");
   const [buscando, setBuscando] = useState(false);
   const [semResultado, setSemResultado] = useState(false);
@@ -239,7 +240,7 @@ function CampoCep({
           ? { value: valor, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void aoDigitar(e.target.value) }
           : {})}
       />
-      {buscando ? <p className="form-pergunta-ajuda">Buscando o endereço…</p> : null}
+      {buscando ? <p className="form-pergunta-ajuda">{traduzir("Buscando o endereço…")}</p> : null}
       {semResultado ? (
         <p className="form-pergunta-ajuda">Não achamos esse CEP. Pode preencher o endereço na mão.</p>
       ) : null}

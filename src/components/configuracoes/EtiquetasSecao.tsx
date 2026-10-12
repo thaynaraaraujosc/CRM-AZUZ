@@ -8,6 +8,7 @@ import { useFunis } from "@/lib/funis-context";
 import { contagem } from "@/lib/plural";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 const CORES = ["#2e6bff", "#0f9d63", "#d8a400", "#d64545", "#8a3ffc", "#0891b2"];
 
@@ -23,6 +24,7 @@ const CORES = ["#2e6bff", "#0f9d63", "#d8a400", "#d64545", "#8a3ffc", "#0891b2"]
  * Agora vem dos contextos, que buscam da API do workspace de quem está logado.
  */
 export function EtiquetasSecao() {
+  const { t: traduzir } = useIdioma();
   const { estado, adicionarEtiqueta, removerEtiqueta } = useConfiguracoes();
   const { contatos } = useContatos();
   const { funis } = useFunis();
@@ -48,7 +50,7 @@ export function EtiquetasSecao() {
       <CabecalhoCategoria titulo="Etiquetas" descricao="Marcações usadas em contatos, negócios e automações." />
 
       <div className="config-bloco">
-        <input className="input" style={{ width: "100%", marginBottom: 12 }} placeholder="Buscar etiqueta…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        <input className="input" style={{ width: "100%", marginBottom: 12 }} placeholder={traduzir("Buscar etiqueta…")} value={busca} onChange={(e) => setBusca(e.target.value)} />
         <div className="config-etiquetas-lista">
           {todasEtiquetas.map((e) => (
             <div className="config-etiqueta-row" key={e.id}>

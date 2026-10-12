@@ -162,7 +162,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
           {enviando ? "Conectando…" : "Conectar"}
         </button>
         <button type="button" className="btn ghost" onClick={() => setAberto(false)} disabled={enviando}>
-          Cancelar
+          {traduzir("Cancelar")}
         </button>
       </div>
 

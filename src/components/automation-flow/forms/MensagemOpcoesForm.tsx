@@ -36,6 +36,7 @@ import { IconClose } from "@/components/icons";
 import { validarRegex } from "@/lib/automacoes/regex-seguro";
 import { CANAIS_DA_AREA, formatosDePergunta, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
+import { useIdioma } from "@/lib/idioma-context";
 
 
 /**
@@ -113,6 +114,7 @@ export function MensagemOpcoesForm({
   /** Chamado ANTES do onChange que tira a opção do array. Pra quem escuta remover a aresta correspondente. */
   onRemoverOpcao: (opcaoId: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const opcoes = data.opcoes ?? [];
   const formatoAtual = data.formatoResposta ?? "menu_numerado";
@@ -250,7 +252,7 @@ export function MensagemOpcoesForm({
               </button>
             </div>
             <details className="flow-opcao-avancado" open={temAjuste(opcao)}>
-              <summary>Ajustes desta opção</summary>
+              <summary>{traduzir("Ajustes desta opção")}</summary>
 
             <div className="flow-opcao-alternativas">
               <label>Como casar a resposta</label>

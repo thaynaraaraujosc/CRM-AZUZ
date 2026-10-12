@@ -42,7 +42,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
 
       {data.destino === "atendente" ? (
         <div className="field">
-          <label>Atendente</label>
+          <label>{traduzir("Atendente")}</label>
           <select className="input" value={data.atendenteNome ?? ""} onChange={(e) => onChange({ ...data, atendenteNome: e.target.value })}>
             <option value="">Selecionar atendente…</option>
             {membros.map((m) => (
@@ -115,7 +115,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
         <label>Quando executar</label>
         <select className="input" value={data.quandoModo ?? "imediato"} onChange={(e) => onChange({ ...data, quandoModo: e.target.value as "imediato" | "apos_tempo" })}>
           <option value="imediato">Imediatamente</option>
-          <option value="apos_tempo">Após determinado tempo</option>
+          <option value="apos_tempo">{traduzir("Após determinado tempo")}</option>
         </select>
       </div>
 

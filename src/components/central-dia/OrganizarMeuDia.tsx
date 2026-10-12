@@ -6,6 +6,7 @@ import { Drawer } from "@/components/ui";
 import { useCentralDia } from "@/lib/central-dia-context";
 import type { ItemDia } from "@/lib/central-dia/tipos";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 const MODULO_LABEL: Record<ItemDia["modulo"], string> = {
   conversa: "Conversas",
@@ -40,6 +41,7 @@ export function OrganizarMeuDia({
   onFechar: () => void;
   itensSugeridos: ItemDia[];
 }) {
+  const { t: traduzir } = useIdioma();
   const { iniciarOrganizacao, organizacao, avancarOrganizacao, voltarOrganizacao, cancelarOrganizacao, marcarConcluido, avisar } =
     useCentralDia();
   const [sequencia, setSequencia] = useState<ItemDia[]>(itensSugeridos.slice(0, 5));
@@ -102,7 +104,7 @@ export function OrganizarMeuDia({
         emExecucao ? (
           <>
             <button type="button" className="btn ghost" disabled={organizacao!.indiceAtual === 0} onClick={voltarOrganizacao}>
-              Anterior
+              {traduzir("Anterior")}
             </button>
             <button
               type="button"
@@ -113,13 +115,13 @@ export function OrganizarMeuDia({
               Próximo
             </button>
             <button type="button" className="btn primary" onClick={concluirAtual}>
-              Concluir item
+              {traduzir("Concluir item")}
             </button>
           </>
         ) : (
           <>
             <button type="button" className="btn ghost" onClick={onFechar}>
-              Cancelar
+              {traduzir("Cancelar")}
             </button>
             <button
               type="button"
@@ -130,7 +132,7 @@ export function OrganizarMeuDia({
               Salvar organização
             </button>
             <button type="button" className="btn primary" disabled={sequencia.length === 0} onClick={comecar}>
-              Começar
+              {traduzir("Começar")}
             </button>
           </>
         )

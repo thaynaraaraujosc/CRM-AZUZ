@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { FloatingDropdown } from "@/components/ui";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import type { PeriodoAdiamento } from "@/lib/central-dia-context";
+import { useIdioma } from "@/lib/idioma-context";
 
 const OPCOES: { periodo: PeriodoAdiamento; label: string }[] = [
   { periodo: "mais_tarde_hoje", label: "Mais tarde hoje" },
@@ -16,6 +17,7 @@ const OPCOES: { periodo: PeriodoAdiamento; label: string }[] = [
 /** Botão "Adiar": abre as opções do item 13 do pedido. Front-end apenas: guarda a escolha no
  * context (`adiarItem`), nunca agenda nada de verdade. */
 export function AdiarMenu({ onAdiar }: { onAdiar: (periodo: PeriodoAdiamento, data?: string, hora?: string) => void }) {
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const [escolhendoData, setEscolhendoData] = useState(false);
@@ -35,7 +37,7 @@ export function AdiarMenu({ onAdiar }: { onAdiar: (periodo: PeriodoAdiamento, da
           setAberto((v) => !v);
         }}
       >
-        Adiar
+        {traduzir("Adiar")}
       </button>
       {aberto ? (
         <FloatingDropdown anchorRect={anchorRect} align="right" onClose={() => setAberto(false)} width={240}>

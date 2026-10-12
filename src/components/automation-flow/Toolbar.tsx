@@ -100,7 +100,7 @@ export function Toolbar({
         */}
         {temPendencia ? (
           <span className="flow-pendencia">
-            <span className="flow-pendencia-aviso">Alterações não salvas</span>
+            <span className="flow-pendencia-aviso">{traduzir("Alterações não salvas")}</span>
             <button type="button" className="btn primary" onClick={onSalvarAlteracoes}>
               Salvar
             </button>
@@ -184,7 +184,7 @@ export function Toolbar({
             type="button"
             role="switch"
             aria-checked={ativa}
-            aria-label="Ativar ou pausar o fluxo"
+            aria-label={traduzir("Ativar ou pausar o fluxo")}
             className={`toggle${ativa ? " on" : ""}`}
             disabled={!podeAtivar}
             onClick={onToggleAtiva}

@@ -538,7 +538,7 @@ export function AutomacaoDoFunil({
                               type="button"
                               className="fauto-mini"
                               onClick={() => void abrirFluxograma(gatilho.fluxoId!, gatilho.etapaId)}
-                              title="Abrir o fluxograma deste robô"
+                              title={traduzir("Abrir o fluxograma deste robô")}
                             >
                               Gerenciar
                             </button>
@@ -575,7 +575,7 @@ export function AutomacaoDoFunil({
                         }`}
                         onClick={() => abrirNovo(coluna.id)}
                       >
-                        <span aria-hidden="true">+</span> Adicionar gatilho
+                        <span aria-hidden="true">+</span> {traduzir("Adicionar gatilho")}
                       </button>
                     )}
                   </div>
@@ -718,7 +718,7 @@ export function AutomacaoDoFunil({
                   onChange={(e) => mudarDados({ mensagemTexto: e.target.value })}
                   placeholder="Oi {primeiro_nome}, tudo bem?"
                 />
-                <p className="hint mt8">Aceita as mesmas variáveis dos blocos de mensagem.</p>
+                <p className="hint mt8">{traduzir("Aceita as mesmas variáveis dos blocos de mensagem.")}</p>
               </div>
             ) : null}
 
@@ -761,7 +761,7 @@ export function AutomacaoDoFunil({
             {rascunho.tipoAcao === "etiquetas" ? (
               <>
                 <div className="field">
-                  <label>Acrescentar etiquetas</label>
+                  <label>{traduzir("Acrescentar etiquetas")}</label>
                   <input
                     className="input"
                     value={(rascunho.acaoDados.etiquetasAdicionar ?? []).join(", ")}
@@ -815,14 +815,14 @@ export function AutomacaoDoFunil({
                   className="fauto-add"
                   onClick={() => setRascunho({ ...rascunho, condicao: grupoVazio() })}
                 >
-                  <span aria-hidden="true">+</span> Adicionar uma condição
+                  <span aria-hidden="true">+</span> {traduzir("Adicionar uma condição")}
                 </button>
               )}
               <p className="hint mt8">Sem condição, vale pra todo lead que entrar nesta etapa.</p>
             </div>
 
             <div className="field">
-              <label>Ativo</label>
+              <label>{traduzir("Ativo")}</label>
               <div className="fauto-dias">
                 {DIAS.map((d) => {
                   const marcado = rascunho.diasAtivos.includes(d.valor);
@@ -883,7 +883,7 @@ export function AutomacaoDoFunil({
                 {salvando ? "Salvando…" : "Pronto"}
               </button>
               <button type="button" className="btn ghost" onClick={() => setRascunho(null)}>
-                Cancelar
+                {traduzir("Cancelar")}
               </button>
             </div>
           </div>

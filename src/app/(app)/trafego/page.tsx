@@ -506,7 +506,7 @@ export default function TrafegoPage() {
           </div>
           <p className="hint trafego-aviso">
             As colunas à esquerda são o que a <strong>plataforma de anúncio</strong> informa: ela só
-            enxerga o que acontece dentro dela. As três da direita são o que o <strong>CRM</strong>{" "}
+            enxerga o que acontece dentro dela. As três da direita são o que o <strong>{traduzir("CRM")}</strong>{" "}
             registrou de verdade — lead que virou contato e negócio marcado como ganho no funil. O
             ROAS real cruza os dois: receita do seu funil dividida pelo que a plataforma cobrou.{" "}
             <strong>{traduzir("Assistida")}</strong> é venda em que a campanha participou sem ter trazido o lead —

@@ -67,7 +67,7 @@ export function FunisSecao() {
     <div className="config-secao">
       <CabecalhoCategoria
         titulo="Funis e etapas"
-        descricao="Como as negociações avançam no funil."
+        descricao={traduzir("Como as negociações avançam no funil.")}
         acoes={
           <button
             type="button"
@@ -95,7 +95,7 @@ export function FunisSecao() {
                     {f.colunas.length} etapas · {totalNegocios} negócios
                   </p>
                 </div>
-                <span className="pill on">Ativo</span>
+                <span className="pill on">{traduzir("Ativo")}</span>
               </button>
             );
           })}
@@ -110,13 +110,13 @@ export function FunisSecao() {
               <input className="input" value={funilAberto.nome} onChange={(e) => renomearFunil(funilAberto.id, e.target.value)} />
             </div>
             <div className="field">
-              <label>Ações</label>
+              <label>{traduzir("Ações")}</label>
               <div style={{ display: "flex", gap: 6 }}>
                 <button type="button" className="btn ghost" onClick={() => duplicarFunil(funilAberto.id)}>
                   Duplicar
                 </button>
                 <button type="button" className="btn danger" onClick={() => excluirFunil(funilAberto.id)}>
-                  Arquivar
+                  {traduzir("Arquivar")}
                 </button>
               </div>
             </div>
