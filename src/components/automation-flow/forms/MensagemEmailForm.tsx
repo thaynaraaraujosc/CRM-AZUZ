@@ -21,7 +21,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Destinatário</label>
+        <label>{traduzir("Destinatário")}</label>
         <select className="input" value={data.destinatarioModo} onChange={(e) => onChange({ ...data, destinatarioModo: e.target.value as DestinatarioEmailModo })}>
           <option value="contato_email">E-mail do contato deste fluxo</option>
           <option value="outro_campo">Outro campo de e-mail do contato</option>
@@ -58,9 +58,9 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
       </div>
 
       <div className="field">
-        <label>Conta de envio (remetente)</label>
+        <label>{traduzir("Conta de envio (remetente)")}</label>
         {CONTAS_EMAIL.length === 0 ? (
-          <p className="hint"><IconAlerta width={12} height={12} aria-hidden="true" /> Configure uma conta de e-mail antes de utilizar este bloco.</p>
+          <p className="hint"><IconAlerta width={12} height={12} aria-hidden="true" /> {traduzir("Configure uma conta de e-mail antes de utilizar este bloco.")}</p>
         ) : (
           <select className="input" value={data.remetente ?? ""} onChange={(e) => onChange({ ...data, remetente: e.target.value })}>
             <option value="">{traduzir("Selecione…")}</option>
@@ -77,7 +77,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
       </div>
 
       <div className="field">
-        <label>Corpo do e-mail</label>
+        <label>{traduzir("Corpo do e-mail")}</label>
         <textarea
           className="input"
           style={{ width: "100%", minHeight: 100, resize: "vertical" }}
@@ -120,7 +120,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
           <select className="input" style={{ flex: 1 }} value={data.tempoUnidade ?? "horas"} onChange={(e) => onChange({ ...data, tempoUnidade: e.target.value })}>
             <option value="minutos">Minutos</option>
             <option value="horas">Horas</option>
-            <option value="dias">Dias</option>
+            <option value="dias">{traduzir("Dias")}</option>
           </select>
         </div>
       ) : null}
@@ -128,9 +128,9 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
       <div className="field">
         <label>Se o contato não tiver e-mail</label>
         <select className="input" value={data.seSemEmail ?? "continuar"} onChange={(e) => onChange({ ...data, seSemEmail: e.target.value as SeSemEmailModo })}>
-          <option value="continuar">Continuar fluxo sem enviar</option>
+          <option value="continuar">{traduzir("Continuar fluxo sem enviar")}</option>
           <option value="encerrar">Encerrar fluxo</option>
-          <option value="criar_tarefa">Criar tarefa para o responsável</option>
+          <option value="criar_tarefa">{traduzir("Criar tarefa para o responsável")}</option>
           <option value="caminho_alternativo">Seguir por caminho alternativo</option>
         </select>
       </div>

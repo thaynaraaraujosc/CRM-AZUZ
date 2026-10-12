@@ -2,15 +2,17 @@
 
 import { useCentralDia } from "@/lib/central-dia-context";
 import { SecaoLista } from "./SecaoLista";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Área "Concluídos hoje" (item 15). Só o que foi resolvido nesta sessão/navegador, nunca apaga
  * dado real (o item continua existindo no módulo de origem, só sai da lista principal aqui). */
 export function ConcluidosHoje() {
+  const { t: traduzir } = useIdioma();
   const { concluidos, desfazerConcluido, limparConcluidos } = useCentralDia();
 
   return (
     <SecaoLista
-      titulo="Concluídos hoje"
+      titulo={traduzir("Concluídos hoje")}
       contagem={concluidos.length}
       abertaPadrao={false}
       vazio={<p className="hint">Nada concluído ainda hoje.</p>}
@@ -31,7 +33,7 @@ export function ConcluidosHoje() {
             </p>
           </div>
           <button type="button" className="btn ghost" onClick={() => desfazerConcluido(c.itemId)}>
-            Desfazer
+            {traduzir("Desfazer")}
           </button>
         </div>
       ))}

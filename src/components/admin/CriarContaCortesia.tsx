@@ -55,7 +55,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
   if (criada) {
     return (
       <div className="admin-bloco config-bloco">
-        <p className="config-bloco-titulo">Conta criada e já liberada</p>
+        <p className="config-bloco-titulo">{traduzir("Conta criada e já liberada")}</p>
         <p className="hint">
           {traduzir("A empresa")} <strong>{criada.workspaceId}</strong> foi criada com a assinatura ativa, sem
           cobrança nenhuma por trás. Mande o link abaixo pra pessoa criar a senha dela. Ele vale 7
@@ -64,7 +64,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
         <div className="filters-row" style={{ marginTop: 10 }}>
           <input className="input" style={{ flex: 1, fontFamily: "monospace" }} readOnly value={criada.linkConvite} />
           <button type="button" className="btn ghost" onClick={() => navigator.clipboard.writeText(criada.linkConvite)}>
-            Copiar link
+            {traduzir("Copiar link")}
           </button>
         </div>
         {!criada.emailEnviado ? (
@@ -77,7 +77,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
         )}
         <div className="config-acoes">
           <button type="button" className="btn ghost" onClick={() => setCriada(null)}>
-            Criar outra
+            {traduzir("Criar outra")}
           </button>
         </div>
       </div>
@@ -88,7 +88,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
     return (
       <div className="admin-acoes-topo">
         <button type="button" className="btn primary" onClick={() => setAberto(true)}>
-          Criar conta de cortesia
+          {traduzir("Criar conta de cortesia")}
         </button>
       </div>
     );
@@ -144,7 +144,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
 
       <div className="config-acoes">
         <button type="submit" className={`btn primary${salvando ? " loading" : ""}`} disabled={salvando}>
-          Criar e liberar
+          {traduzir("Criar e liberar")}
         </button>
         <button type="button" className="btn ghost" onClick={() => setAberto(false)} disabled={salvando}>
           {traduzir("Cancelar")}

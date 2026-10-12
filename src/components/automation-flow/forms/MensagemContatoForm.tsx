@@ -47,7 +47,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
           value={data.origemContato}
           onChange={(e) => onChange({ ...data, origemContato: e.target.value as OrigemContatoEnvio })}
         >
-          <option value="atual">Contato/lead atual da automação</option>
+          <option value="atual">{traduzir("Contato/lead atual da automação")}</option>
           <option value="outro">Selecionar outro contato do CRM</option>
           <option value="campo_dinamico">{traduzir("Campo dinâmico")}</option>
         </select>
@@ -84,7 +84,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
       ) : null}
 
       <div className="field">
-        <label>Dados que serão compartilhados</label>
+        <label>{traduzir("Dados que serão compartilhados")}</label>
         <div className="filters-row" style={{ margin: "0 0 6px" }}>
           <button type="button" className="fchip" onClick={() => onChange({ ...data, camposCompartilhados: CAMPOS_COMPARTILHAVEIS.map((c) => c.valor) })}>Selecionar tudo</button>
           <button type="button" className="fchip" onClick={() => onChange({ ...data, camposCompartilhados: [] })}>{traduzir("Limpar seleção")}</button>
@@ -100,7 +100,7 @@ export function MensagemContatoForm({ data, onChange }: { data: MensagemContatoD
       <div className="field">
         <label>Para quem enviar?</label>
         <select className="input" value={data.destinoModo} onChange={(e) => onChange({ ...data, destinoModo: e.target.value as DestinoEnvioContato })}>
-          <option value="conversa_atual">Contato atual da conversa</option>
+          <option value="conversa_atual">{traduzir("Contato atual da conversa")}</option>
           <option value="atendente">{traduzir("Atendente específico")}</option>
           <option value="equipe">Equipe</option>
           <option value="numero">Número específico</option>

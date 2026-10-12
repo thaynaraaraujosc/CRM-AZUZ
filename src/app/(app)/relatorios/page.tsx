@@ -89,7 +89,7 @@ function RelatoriosPageInner() {
                 <p className="hint" style={{ marginBottom: 10 }}>{t.descricao}</p>
                 <div className="report-type-actions">
                   <button type="button" className="btn ghost" onClick={() => abrirWizard(t.tipo)}>
-                    Configurar
+                    {traduzir("Configurar")}
                   </button>
                   <button type="button" className="btn primary" onClick={() => abrirWizard(t.tipo)}>
                     Gerar
@@ -126,7 +126,7 @@ function RelatoriosPageInner() {
                   <th>Contato</th>
                   <th>Período</th>
                   <th>{traduzir("Autor")}</th>
-                  <th>Data</th>
+                  <th>{traduzir("Data")}</th>
                   <th>Páginas</th>
                   <th>Formato</th>
                   <th></th>

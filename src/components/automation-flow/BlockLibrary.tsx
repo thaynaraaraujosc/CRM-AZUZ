@@ -122,7 +122,7 @@ export function BlockLibrary({
 
   if (!aberta) {
     return (
-      <aside className="flow-lib-recolhida" aria-label="Biblioteca de blocos (recolhida)">
+      <aside className="flow-lib-recolhida" aria-label={traduzir("Biblioteca de blocos (recolhida)")}>
         <button type="button" className="flow-lib-reabrir icon-btn" aria-label={traduzir("Abrir biblioteca de blocos")} onClick={onFechar}>
           ▶
         </button>

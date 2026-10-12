@@ -134,7 +134,7 @@ export default function AtividadesVendasPage() {
               <KpiCard label="Mensagens enviadas" value={String(mensagensEnviadas)} href="/conversas" />
               <KpiCard label="Mensagens recebidas" value={String(mensagensRecebidas)} href="/conversas" />
               <KpiCard
-                label="Contatos sem interação"
+                label={traduzir("Contatos sem interação")}
                 value={String(contatosSemInteracao.length)}
                 href="/contatos"
               />
@@ -162,7 +162,7 @@ export default function AtividadesVendasPage() {
                   <h4>Ligações</h4>
                 </div>
                 <div className="dados-nao-conectados" style={{ margin: 17 }}>
-                  Dados não conectados: o CRM ainda não tem telefonia integrada.
+                  {traduzir("Dados não conectados: o CRM ainda não tem telefonia integrada.")}
                 </div>
               </div>
               <div className="card">
@@ -170,7 +170,7 @@ export default function AtividadesVendasPage() {
                   <h4>Reuniões e e-mails</h4>
                 </div>
                 <div className="dados-nao-conectados" style={{ margin: 17 }}>
-                  Dados não conectados: conecte agenda/e-mail pra ver reuniões e e-mails aqui.
+                  {traduzir("Dados não conectados: conecte agenda/e-mail pra ver reuniões e e-mails aqui.")}
                 </div>
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function AtividadesVendasPage() {
                 <h4>Documentos enviados</h4>
               </div>
               <div className="dados-nao-conectados" style={{ margin: 17 }}>
-                Dados não conectados: vincule documentos a conversas pra ver esse total aqui.
+                {traduzir("Dados não conectados: vincule documentos a conversas pra ver esse total aqui.")}
               </div>
             </div>
           </>

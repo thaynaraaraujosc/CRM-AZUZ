@@ -38,7 +38,7 @@ export function IaClassificarForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Critério (opcional)</label>
+        <label>{traduzir("Critério (opcional)")}</label>
         <textarea
           className="input"
           rows={3}

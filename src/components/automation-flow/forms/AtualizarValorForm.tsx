@@ -15,7 +15,7 @@ export function AtualizarValorForm({ data, onChange }: { data: AtualizarValorDat
           value={data.modo ?? "definir"}
           onChange={(e) => onChange({ ...data, modo: e.target.value as ModoAtualizarValor })}
         >
-          <option value="definir">Definir novo valor</option>
+          <option value="definir">{traduzir("Definir novo valor")}</option>
           <option value="somar">Somar ao valor atual</option>
           <option value="subtrair">Subtrair do valor atual</option>
         </select>

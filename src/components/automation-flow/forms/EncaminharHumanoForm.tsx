@@ -32,7 +32,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Destino do atendimento</label>
+        <label>{traduzir("Destino do atendimento")}</label>
         <select className="input" value={data.destino} onChange={(e) => onChange({ ...data, destino: e.target.value as ModoDestinoAtendimento })}>
           {DESTINOS.map((d) => (
             <option key={d.valor} value={d.valor}>{d.label}</option>
@@ -132,7 +132,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
           <select className="input" style={{ flex: 1 }} value={data.tempoUnidade ?? "minutos"} onChange={(e) => onChange({ ...data, tempoUnidade: e.target.value })}>
             <option value="minutos">Minutos</option>
             <option value="horas">Horas</option>
-            <option value="dias">Dias</option>
+            <option value="dias">{traduzir("Dias")}</option>
           </select>
         </div>
       ) : null}

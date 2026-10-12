@@ -702,7 +702,7 @@ export function FilterBar({
                     Salvar
                   </button>
                   <button type="button" className="btn ghost" onClick={() => salvarVisaoAtual(true)}>
-                    Definir padrão
+                    {traduzir("Definir padrão")}
                   </button>
                 </div>
                 {visaoSalvaAgora ? (

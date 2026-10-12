@@ -94,7 +94,7 @@ function PerformanceVendasPageInner() {
           <div className="topbar-title-row">
             <h2>Performance</h2>
           </div>
-          <p className="sub">Desempenho e conversão da equipe no período</p>
+          <p className="sub">{traduzir("Desempenho e conversão da equipe no período")}</p>
         </div>
       </div>
 
@@ -149,7 +149,7 @@ function PerformanceVendasPageInner() {
 
         <div className="card mb14">
           <div className="panel-h">
-            <h4>Desempenho por responsável</h4>
+            <h4>{traduzir("Desempenho por responsável")}</h4>
           </div>
           <div style={{ padding: 17 }}>
             {porResponsavel.length === 0 ? (

@@ -117,7 +117,7 @@ export function SegurancaSecao() {
           <div className="config-grid-2">
             <div className="field">
               <label>Senha atual</label>
-              <input className="input" type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder="Confirme sua senha" />
+              <input className="input" type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder={traduzir("Confirme sua senha")} />
             </div>
             <div className="field">
               <label>Novo e-mail</label>

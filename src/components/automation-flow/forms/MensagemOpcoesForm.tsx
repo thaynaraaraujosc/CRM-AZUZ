@@ -255,7 +255,7 @@ export function MensagemOpcoesForm({
               <summary>{traduzir("Ajustes desta opção")}</summary>
 
             <div className="flow-opcao-alternativas">
-              <label>Como casar a resposta</label>
+              <label>{traduzir("Como casar a resposta")}</label>
               <select
                 className="input"
                 value={opcao.comparacao ?? "padrao"}

@@ -44,7 +44,7 @@ export function CompromissoCard({ compromisso }: { compromisso: CompromissoDia }
       <div className="central-dia-card-acoes">
         {status !== "Confirmado" && status !== "Cancelado" && status !== "Concluído" ? (
           <button type="button" className="btn primary" onClick={() => setStatus("Confirmado")}>
-            Confirmar
+            {traduzir("Confirmar")}
           </button>
         ) : null}
         {/* Link de verdade pra Agenda, onde o compromisso é aberto e remarcado arrastando.

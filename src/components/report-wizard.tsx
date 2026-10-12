@@ -543,7 +543,7 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Detalhado: todos os eventos/registros selecionados
+                    {traduzir("Detalhado: todos os eventos/registros selecionados")}
                   </button>
                 </div>
               </div>
@@ -602,7 +602,7 @@ export function ReportWizard({
 
               {capa === "personalizada" ? (
                 <div className="field">
-                  <label>Cor da capa</label>
+                  <label>{traduzir("Cor da capa")}</label>
                   <div className="filters-row">
                     {CORES_CAPA.map((c, i) => (
                       <button
@@ -841,7 +841,7 @@ export function ReportWizard({
                   ) : null}
                   {status === "sucesso" ? (
                     <p className="hint" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <IconCheck width={12} height={12} /> Concluído.
+                      <IconCheck width={12} height={12} /> {traduzir("Concluído.")}
                     </p>
                   ) : null}
                   {status === "erro" ? (
@@ -884,7 +884,7 @@ export function ReportWizard({
             ) : null}
             {etapa < ETAPAS.length - 1 && etapa !== 4 ? (
               <button type="button" className="btn primary" onClick={() => irParaEtapa(etapa + 1)}>
-                Continuar
+                {traduzir("Continuar")}
               </button>
             ) : null}
           </div>

@@ -43,7 +43,7 @@ export function ConfiguracoesGeraisForm({
         <input className="input" value={fluxo.nome} onChange={(e) => onChange({ nome: e.target.value })} />
       </div>
       <div className="field">
-        <label>Descrição</label>
+        <label>{traduzir("Descrição")}</label>
         <textarea
           className="input"
           style={{ width: "100%", minHeight: 60, resize: "vertical" }}
@@ -77,7 +77,7 @@ export function ConfiguracoesGeraisForm({
       ) : null}
 
       <div className="field">
-        <label>Dias ativos</label>
+        <label>{traduzir("Dias ativos")}</label>
         <div className="filters-row">
           {DIAS_SEMANA.map((d) => (
             <button
@@ -143,8 +143,8 @@ export function ConfiguracoesGeraisForm({
           value={cfg.foraDaJanela === "ignorar" ? "encerrar" : (cfg.foraDaJanela ?? "aguardar")}
           onChange={(e) => onChangeConfiguracoes({ foraDaJanela: e.target.value as ConfiguracoesFluxo["foraDaJanela"] })}
         >
-          <option value="aguardar">Aguardar e continuar quando abrir</option>
-          <option value="continuar">Continuar mesmo assim</option>
+          <option value="aguardar">{traduzir("Aguardar e continuar quando abrir")}</option>
+          <option value="continuar">{traduzir("Continuar mesmo assim")}</option>
           <option value="encerrar">Encerrar a execução</option>
         </select>
         <p className="hint">
@@ -157,11 +157,11 @@ export function ConfiguracoesGeraisForm({
       </div>
 
       <div className="field">
-        <label>Data de início</label>
+        <label>{traduzir("Data de início")}</label>
         <SeletorDeData valor={cfg.dataInicio ?? ""} onChange={(iso) => onChangeConfiguracoes({ dataInicio: iso })} />
       </div>
       <div className="field">
-        <label>Data de fim</label>
+        <label>{traduzir("Data de fim")}</label>
         <SeletorDeData valor={cfg.dataFim ?? ""} onChange={(iso) => onChangeConfiguracoes({ dataFim: iso })} />
       </div>
 

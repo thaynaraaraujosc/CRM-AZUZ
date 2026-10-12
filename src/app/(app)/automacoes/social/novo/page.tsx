@@ -51,7 +51,7 @@ export default function NovaAutomacaoSocialPage() {
 
   return (
     <>
-      <Topbar title="Criar automação" sub="Instagram" />
+      <Topbar title={traduzir("Criar automação")} sub="Instagram" />
       <AbasAutomacoes />
 
       <div className="content">
@@ -77,14 +77,14 @@ export default function NovaAutomacaoSocialPage() {
 
             <button type="button" className="social-caminho" onClick={doZero}>
               <IconAutomacoes width={26} height={26} aria-hidden="true" />
-              <strong>Criar do zero</strong>
-              <span>Canvas em branco. Você escolhe o gatilho e monta bloco a bloco, no seu ritmo.</span>
+              <strong>{traduzir("Criar do zero")}</strong>
+              <span>{traduzir("Canvas em branco. Você escolhe o gatilho e monta bloco a bloco, no seu ritmo.")}</span>
             </button>
 
             <div className="social-caminho desativado" aria-disabled="true">
               <span className="social-caminho-selo em-breve">Em breve</span>
               <IconSparkle width={26} height={26} aria-hidden="true" />
-              <strong>Descrever pra IA montar</strong>
+              <strong>{traduzir("Descrever pra IA montar")}</strong>
               <span>
                 Escrever o que você quer e receber a automação pronta. Ainda não está de pé, e por
                 isso está desligado em vez de aberto e sem nada atrás.

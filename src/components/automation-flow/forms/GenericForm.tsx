@@ -133,7 +133,7 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
               <select className="input" value={typeof valor === "string" ? valor : "horas"} onChange={(e) => set(chave, e.target.value)}>
                 <option value="minutos">Minutos</option>
                 <option value="horas">Horas</option>
-                <option value="dias">Dias</option>
+                <option value="dias">{traduzir("Dias")}</option>
               </select>
             </div>
           );

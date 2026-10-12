@@ -76,7 +76,7 @@ export function EtiquetaSelect({
             }}
           />
           <button type="button" className="btn primary" onClick={confirmarNovaEtiqueta}>
-            Criar
+            {traduzir("Criar")}
           </button>
           <button type="button" className="btn ghost" onClick={() => setCriandoNova(false)}>
             {traduzir("Cancelar")}

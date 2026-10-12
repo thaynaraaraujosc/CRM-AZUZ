@@ -48,7 +48,7 @@ export function Recomendacoes({
                 {traduzir("Aplicar simulação")}
               </button>
               <button type="button" className="btn ghost" onClick={() => avisar("Tarefa criada a partir da recomendação.")}>
-                Criar tarefa
+                {traduzir("Criar tarefa")}
               </button>
               <button type="button" className="btn ghost" onClick={() => ignorarRecomendacao(r.id)}>
                 Ignorar por hoje

@@ -483,7 +483,7 @@ export function Sidebar() {
                       rel="noopener noreferrer"
                       className="dropdown-item"
                       style={{ width: "100%", textAlign: "left" }}
-                      title="Abre numa aba nova: telão pra projetar no escritório"
+                      title={traduzir("Abre numa aba nova: telão pra projetar no escritório")}
                     >
                       <span className="n">{item.label}</span>
                       <span className="r">TV</span>

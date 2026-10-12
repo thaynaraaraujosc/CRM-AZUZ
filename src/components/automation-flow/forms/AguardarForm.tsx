@@ -1,6 +1,7 @@
 "use client";
 
 import type { AguardarData } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * "O que você quer aguardar?": a pergunta que o bloco responde.
@@ -35,6 +36,7 @@ const UNIDADES = [
 const DURACAO: AguardarData["modo"][] = ["minutos", "horas", "dias"];
 
 export function AguardarForm({ data, onChange }: { data: AguardarData; onChange: (novo: AguardarData) => void }) {
+  const { t: traduzir } = useIdioma();
   const ehDuracao = DURACAO.includes(data.modo);
   const escolhida = ehDuracao ? "horas" : data.modo;
   const ajuda = ESCOLHAS.find((e) => e.valor === escolhida)?.ajuda;
@@ -143,12 +145,12 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
             e a resposta dele ficava sem tratamento nenhum.
           */}
           <div className="toggle-row">
-            <span className="tl">Continuar antes se o contato responder</span>
+            <span className="tl">{traduzir("Continuar antes se o contato responder")}</span>
             <button
               type="button"
               role="switch"
               aria-checked={!!data.interromperSeResponder}
-              aria-label="Continuar antes se o contato responder"
+              aria-label={traduzir("Continuar antes se o contato responder")}
               className={`toggle${data.interromperSeResponder ? " on" : ""}`}
               onClick={() => onChange({ ...data, interromperSeResponder: !data.interromperSeResponder })}
             >
@@ -169,12 +171,12 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
           )}
 
           <div className="toggle-row">
-            <span className="tl">Contar só dias úteis</span>
+            <span className="tl">{traduzir("Contar só dias úteis")}</span>
             <button
               type="button"
               role="switch"
               aria-checked={!!data.apenasDiasUteis}
-              aria-label="Contar só dias úteis"
+              aria-label={traduzir("Contar só dias úteis")}
               className={`toggle${data.apenasDiasUteis ? " on" : ""}`}
               onClick={() => onChange({ ...data, apenasDiasUteis: !data.apenasDiasUteis })}
             >
@@ -195,12 +197,12 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
             </button>
           </div>
           <div className="toggle-row">
-            <span className="tl">Contar só o horário de expediente</span>
+            <span className="tl">{traduzir("Contar só o horário de expediente")}</span>
             <button
               type="button"
               role="switch"
               aria-checked={!!data.somenteExpediente}
-              aria-label="Contar só o horário de expediente"
+              aria-label={traduzir("Contar só o horário de expediente")}
               className={`toggle${data.somenteExpediente ? " on" : ""}`}
               onClick={() => onChange({ ...data, somenteExpediente: !data.somenteExpediente })}
             >

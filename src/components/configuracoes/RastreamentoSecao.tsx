@@ -192,7 +192,7 @@ export function RastreamentoSecao() {
             {/* O consentimento não é decisão do CRM: ele nasce no site do cliente. A tela explica
                 isso em vez de oferecer um botão que não teria o que ligar. */}
             <p className="hint rastreio-nota">
-              <strong>Aviso de cookies:</strong> se o site tiver um, ele pode informar ao CRM o que
+              <strong>{traduzir("Aviso de cookies:")}</strong> se o site tiver um, ele pode informar ao CRM o que
               a pessoa escolheu — basta o link carregar <code>consent=1</code> ou{" "}
               <code>consent=0</code>. O CRM repassa essa escolha junto da venda. Sem banner no site,
               nada muda: a escolha fica como <em>não informada</em>, que é o padrão hoje.
@@ -205,7 +205,7 @@ export function RastreamentoSecao() {
         <p className="config-bloco-titulo">{traduzir("Como instalar, em três passos")}</p>
         <ol>
           <li>
-            <strong>Copie o link acima.</strong>
+            <strong>{traduzir("Copie o link acima.")}</strong>
           </li>
           <li>
             <strong>{traduzir("Abra o editor do seu site")}</strong> e encontre o botão ou link de WhatsApp.

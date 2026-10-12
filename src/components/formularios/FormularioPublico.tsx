@@ -488,7 +488,7 @@ export function FormularioPublico({
           <h2>{formulario.paginaFinal.mensagem || MENSAGEM_FINAL_PADRAO}</h2>
           {formulario.paginaFinal.urlRedirecionamento ? (
             <a className="btn form-obrigado-botao" href={formulario.paginaFinal.urlRedirecionamento}>
-              Continuar
+              {traduzir("Continuar")}
             </a>
           ) : null}
         </div>

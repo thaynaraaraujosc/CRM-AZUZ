@@ -97,7 +97,7 @@ export default function MotivosPerdaPage() {
           <div className="topbar-title-row">
             <h2>Motivos de perda</h2>
           </div>
-          <p className="sub">Análise completa: a única página com o detalhamento inteiro de perdas</p>
+          <p className="sub">{traduzir("Análise completa: a única página com o detalhamento inteiro de perdas")}</p>
         </div>
       </div>
 
@@ -170,7 +170,7 @@ export default function MotivosPerdaPage() {
 
         <ChartCard title="Evolução das perdas no período">
           {serieDiaria.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>Ainda sem movimento suficiente pra traçar uma evolução.</p>
+            <p className="hint" style={{ padding: 17 }}>{traduzir("Ainda sem movimento suficiente pra traçar uma evolução.")}</p>
           ) : (
             <LineChart
               series={[
@@ -236,7 +236,7 @@ export default function MotivosPerdaPage() {
                 <th>{traduzir("Etapa")}</th>
                 <th>Origem</th>
                 <th>Valor</th>
-                <th>Data</th>
+                <th>{traduzir("Data")}</th>
               </tr>
             </thead>
             <tbody>

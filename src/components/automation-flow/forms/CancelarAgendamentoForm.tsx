@@ -87,7 +87,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
             <label>Origem da mensagem</label>
             <select className="input" value={data.origemMensagem ?? "criar_agora"} onChange={(e) => onChange({ ...data, origemMensagem: e.target.value as OrigemMensagemCancelamento })}>
               <option value="modelo">Mensagem pronta</option>
-              <option value="criar_agora">Criar mensagem agora</option>
+              <option value="criar_agora">{traduzir("Criar mensagem agora")}</option>
             </select>
           </div>
           {data.origemMensagem === "modelo" ? (
@@ -133,7 +133,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
               <select className="input" style={{ flex: 1 }} value={data.tempoUnidade ?? "minutos"} onChange={(e) => onChange({ ...data, tempoUnidade: e.target.value })}>
                 <option value="minutos">Minutos</option>
                 <option value="horas">Horas</option>
-                <option value="dias">Dias</option>
+                <option value="dias">{traduzir("Dias")}</option>
               </select>
             </div>
           ) : null}

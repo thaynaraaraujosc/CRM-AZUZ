@@ -12,7 +12,7 @@ export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaD
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Data e horário</label>
+        <label>{traduzir("Data e horário")}</label>
         <div style={{ display: "flex", gap: 6 }}>
           <SeletorDeData
             valor={data.data ?? ""}

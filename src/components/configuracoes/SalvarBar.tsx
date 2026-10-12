@@ -33,7 +33,7 @@ export function SalvarBar({
           <span className="hint">Você possui alterações não salvas.</span>
           <div className="config-salvar-bar-acoes">
             <button type="button" className="btn ghost" onClick={onDescartar}>
-              Descartar
+              {traduzir("Descartar")}
             </button>
             <button
               type="button"

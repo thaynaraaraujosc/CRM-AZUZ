@@ -245,7 +245,7 @@ export default function FormulariosPage() {
             <button type="button" className="form-scratch-card" onClick={abrirNovoFormulario}>
               <span className="form-scratch-icon">+</span>
               <span>
-                <span className="form-scratch-title">Criar formulário do zero</span>
+                <span className="form-scratch-title">{traduzir("Criar formulário do zero")}</span>
                 <span className="form-scratch-sub">
                   Monte páginas, campos e lógica do seu jeito. Como um construtor profissional.
                 </span>
@@ -330,7 +330,7 @@ export default function FormulariosPage() {
                 {traduzir("Editar")}
               </button>
               <button type="button" className={`topbar-tab${abaBuilder === "design" ? " active" : ""}`} onClick={() => setAbaBuilder("design")}>
-                Design
+                {traduzir("Design")}
               </button>
               <button type="button" className={`topbar-tab${abaBuilder === "respostas" ? " active" : ""}`} onClick={() => setAbaBuilder("respostas")}>
                 Respostas ({respostas.length})
@@ -826,6 +826,7 @@ function PainelPagina({
   camposAnteriores: PerguntaFormulario[];
   onAtualizar: (patch: Partial<PaginaFormulario>) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   return (
     <>
       <p className="hint" style={{ padding: "14px 14px 0" }}>
@@ -837,7 +838,7 @@ function PainelPagina({
           <input className="input" style={{ width: "100%" }} value={pagina.titulo} onChange={(e) => onAtualizar({ titulo: e.target.value })} />
         </div>
         <div className="field">
-          <label>Descrição (opcional)</label>
+          <label>{traduzir("Descrição (opcional)")}</label>
           <textarea
             className="input"
             style={{ width: "100%", minHeight: 60, resize: "vertical" }}
@@ -853,7 +854,7 @@ function PainelPagina({
           segunda, que é onde ela faz sentido: "mostrar esta página só se a resposta lá atrás
           foi tal". */}
       {camposAnteriores.length === 0 ? null : (
-        <SecaoPainel titulo="Condição de exibir">
+        <SecaoPainel titulo={traduzir("Condição de exibir")}>
           <>
             <div className="field">
               <label>Mostrar esta página só se</label>
@@ -950,7 +951,7 @@ function PainelCampo({
         {!ehLayout ? (
           <>
             <div className="field">
-              <label>Descrição (opcional)</label>
+              <label>{traduzir("Descrição (opcional)")}</label>
               <textarea
                 className="input"
                 style={{ width: "100%", minHeight: 50, resize: "vertical" }}
@@ -1104,7 +1105,7 @@ function PainelCampo({
                 <>
                   <div className="filters-row">
                     <div className="field" style={{ flex: 1 }}>
-                      <label>Cor de fundo</label>
+                      <label>{traduzir("Cor de fundo")}</label>
                       <input
                         type="color"
                         value={estilo.corFundo ?? "#ffffff"}
@@ -1113,7 +1114,7 @@ function PainelCampo({
                       />
                     </div>
                     <div className="field" style={{ flex: 1 }}>
-                      <label>Cor da borda</label>
+                      <label>{traduzir("Cor da borda")}</label>
                       <input
                         type="color"
                         value={estilo.corBorda ?? "#e2e2e2"}
@@ -1122,7 +1123,7 @@ function PainelCampo({
                       />
                     </div>
                     <div className="field" style={{ flex: 1 }}>
-                      <label>Cor do texto</label>
+                      <label>{traduzir("Cor do texto")}</label>
                       <input
                         type="color"
                         value={estilo.corTexto ?? "#1a1a1a"}
@@ -1269,6 +1270,7 @@ function SeletorDeCor({
   /** Quando existe, aparece a opção "Automático", que devolve `undefined` (segue o tema). */
   padraoQuandoVazio?: string;
 }) {
+  const { t: traduzir } = useIdioma();
   const [digitado, setDigitado] = useState<string | null>(null);
   const HEX_COMPLETO = /^#[0-9a-fA-F]{6}$/;
 
@@ -1279,7 +1281,7 @@ function SeletorDeCor({
           <button
             type="button"
             className={`cor-chip cor-chip-auto${!valor ? " active" : ""}`}
-            title="Automático: segue o tema claro/escuro"
+            title={traduzir("Automático: segue o tema claro/escuro")}
             onClick={() => {
               setDigitado(null);
               onMudar(undefined);
@@ -1308,7 +1310,7 @@ function SeletorDeCor({
           setDigitado(null);
           onMudar(e.target.value);
         }}
-        title="Cor personalizada"
+        title={traduzir("Cor personalizada")}
       />
       <input
         className="input form-cor-codigo"
@@ -1579,10 +1581,10 @@ function PainelDesign({
       <div className="form-builder-design">
       <div className="card" style={{ padding: 17 }}>
         <div className="panel-h" style={{ padding: 0, marginBottom: 12 }}>
-          <h4>Configurações do formulário</h4>
+          <h4>{traduzir("Configurações do formulário")}</h4>
         </div>
         <div className="field">
-          <label>Descrição</label>
+          <label>{traduzir("Descrição")}</label>
           <textarea
             className="input"
             style={{ width: "100%", minHeight: 60, resize: "vertical" }}
@@ -1638,7 +1640,7 @@ function PainelDesign({
           </div>
         </div>
         <div className="field">
-          <label>Cor principal (fundo)</label>
+          <label>{traduzir("Cor principal (fundo)")}</label>
           <SeletorDeCor
             valor={formulario.tema.corPrincipal}
             opcoes={formulario.tema.temaEscuro ? FUNDOS_ESCUROS : FUNDOS_CLAROS}
@@ -1646,7 +1648,7 @@ function PainelDesign({
           />
         </div>
         <div className="field">
-          <label>Cor do botão</label>
+          <label>{traduzir("Cor do botão")}</label>
           <SeletorDeCor
             valor={formulario.tema.corBotao}
             opcoes={CORES_TEMA_FORMULARIO}
@@ -1654,7 +1656,7 @@ function PainelDesign({
           />
         </div>
         <div className="field">
-          <label>Cor do texto</label>
+          <label>{traduzir("Cor do texto")}</label>
           <SeletorDeCor
             valor={formulario.tema.corTexto}
             opcoes={["#0b1533", "#3f4658", "#6b7280", "#ffffff", "#e7e9f2", "#a4adc4"]}
@@ -1791,7 +1793,7 @@ function PainelDesign({
               className={`fchip${formulario.tema.mostrarPaginas !== false ? " active" : ""}`}
               onClick={() => atualizarTema({ mostrarPaginas: formulario.tema.mostrarPaginas === false })}
             >
-              Contagem de páginas
+              {traduzir("Contagem de páginas")}
             </button>
             <button
               type="button"
@@ -1900,7 +1902,7 @@ function PainelDesign({
             onChange={(e) => atualizarIntegracoes({ tagGoogle: e.target.value.trim() || undefined })}
           />
           <p className="hint" style={{ marginTop: 6 }}>
-            Com o rótulo depois da barra, a resposta conta como conversão no Google Ads.
+            {traduzir("Com o rótulo depois da barra, a resposta conta como conversão no Google Ads.")}
           </p>
         </div>
       </div>

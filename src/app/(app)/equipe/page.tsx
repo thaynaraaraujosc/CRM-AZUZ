@@ -134,7 +134,7 @@ export default function EquipePage() {
                     </td>
                     <td>
                       {m.convitePendente ? (
-                        <span className="pill">Convite pendente</span>
+                        <span className="pill">{traduzir("Convite pendente")}</span>
                       ) : (
                         <Toggle
                           key={`${m.id}-${m.ativo}`}
@@ -272,7 +272,7 @@ export default function EquipePage() {
                     endereço errado), e sem o link a única saída era excluir e convidar de novo. */}
                 {membro.convitePendente ? (
                   <div className="field">
-                    <label>Convite</label>
+                    <label>{traduzir("Convite")}</label>
                     <button
                       type="button"
                       className="btn"

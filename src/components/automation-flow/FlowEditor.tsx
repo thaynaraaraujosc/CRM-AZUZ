@@ -1111,7 +1111,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               <ControlButton title={traduzir("Aumentar zoom")} aria-label={traduzir("Aumentar zoom")} onClick={() => zoomIn({ duration: 200 })}>
                 +
               </ControlButton>
-              <ControlButton title="Diminuir zoom" aria-label="Diminuir zoom" onClick={() => zoomOut({ duration: 200 })}>
+              <ControlButton title={traduzir("Diminuir zoom")} aria-label={traduzir("Diminuir zoom")} onClick={() => zoomOut({ duration: 200 })}>
                 −
               </ControlButton>
               <ControlButton title={traduzir("Centralizar fluxo")} aria-label={traduzir("Centralizar fluxo")} onClick={() => centralizarTudo()}>

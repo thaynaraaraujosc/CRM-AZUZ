@@ -119,7 +119,7 @@ export function NovaAutomacao({
             </div>
             <div className="nova-auto-fim">
               <button type="button" className="btn primary" onClick={() => setPasso("onde")}>
-                Continuar
+                {traduzir("Continuar")}
               </button>
               <button type="button" className="btn ghost" onClick={onCancelar}>
                 {traduzir("Cancelar")}

@@ -63,6 +63,7 @@ import { MensagemOpcoesForm } from "./forms/MensagemOpcoesForm";
 import { TarefaEventoForm } from "./forms/TarefaEventoForm";
 import { IconAlerta, IconErro } from "@/components/icons";
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
+import { useIdioma } from "@/lib/idioma-context";
 
 const TIPOS_OPCOES = new Set(["mensagem_botoes", "mensagem_lista"]);
 const TIPOS_MIDIA = new Set(["mensagem_imagem", "mensagem_video", "mensagem_audio", "mensagem_documento"]);
@@ -238,6 +239,7 @@ export function ConfigPanel({
   onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
   onSelecionarNode: (nodeId: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [aba, setAba] = useState<"configurar" | "problemas">("configurar");
   const node = selectedNodes.length === 1 ? selectedNodes[0] : null;
   const { funis } = useFunis();
@@ -246,7 +248,7 @@ export function ConfigPanel({
     <aside className="flow-config" aria-label="Painel de configuração">
       <div className="flow-config-tabs">
         <button type="button" className={`flow-tab${aba === "configurar" ? " on" : ""}`} onClick={() => setAba("configurar")}>
-          Configurar
+          {traduzir("Configurar")}
         </button>
         <button type="button" className={`flow-tab${aba === "problemas" ? " on" : ""}`} onClick={() => setAba("problemas")}>
           Problemas{problemas.length > 0 ? ` (${problemas.length})` : ""}
@@ -301,7 +303,7 @@ export function ConfigPanel({
               </div>
             </div>
             <div className="panel-h divided">
-              <h4>Configuração</h4>
+              <h4>{traduzir("Configuração")}</h4>
             </div>
             <FormularioDoNode node={node} area={fluxo?.area ?? "comercial"} fluxoAtualId={fluxo?.id} onTrocarTipo={onTrocarTipo} onUpdateNodeData={onUpdateNodeData} onRemoverOpcaoAresta={onRemoverOpcaoAresta} />
             <div className="panel-h divided">
@@ -316,7 +318,7 @@ export function ConfigPanel({
         ) : (
           <>
             <div className="panel-h">
-              <h4>Configurações gerais</h4>
+              <h4>{traduzir("Configurações gerais")}</h4>
             </div>
             <ConfiguracoesGeraisForm fluxo={fluxo} onChange={onUpdateFluxoMeta} onChangeConfiguracoes={onUpdateConfiguracoes} />
           </>

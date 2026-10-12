@@ -27,13 +27,13 @@ export default function AmostraPage() {
       <div className="topbar">
         <div>
           <div className="topbar-title-row">
-            <h2>Amostra do sistema visual</h2>
+            <h2>{traduzir("Amostra do sistema visual")}</h2>
           </div>
           <p className="sub">Todos os componentes, em todos os estados, numa tela só</p>
         </div>
         <div className="top-actions">
           <button type="button" className="btn primary" onClick={() => setModalAberto(true)}>
-            Abrir modal
+            {traduzir("Abrir modal")}
           </button>
         </div>
       </div>
@@ -71,7 +71,7 @@ export default function AmostraPage() {
             <button type="button" className="btn">Secundário</button>
             <button type="button" className="btn ghost">Fantasma</button>
             <button type="button" className="btn danger">Perigo</button>
-            <button type="button" className="btn primary" disabled>Desabilitado</button>
+            <button type="button" className="btn primary" disabled>{traduzir("Desabilitado")}</button>
           </div>
           <div className="amostra-linha">
             <button type="button" className="btn primary sm">Pequeno</button>
@@ -102,7 +102,7 @@ export default function AmostraPage() {
 
         {/* ------------------------------------------------------------ abas e chips */}
         <section className="amostra-secao">
-          <h3>Abas, chips e selos</h3>
+          <h3>{traduzir("Abas, chips e selos")}</h3>
           <div className="amostra-linha">
             {["elevacao", "tipografia", "cor"].map((chave) => (
               <button
@@ -141,7 +141,7 @@ export default function AmostraPage() {
 
         {/* ------------------------------------------------------------ mensagens */}
         <section className="amostra-secao">
-          <h3>Conversa</h3>
+          <h3>{traduzir("Conversa")}</h3>
           <p className="amostra-nota">
             Recebida e enviada precisam se distinguir de longe, sem duas cores quase iguais.
           </p>
@@ -185,7 +185,7 @@ export default function AmostraPage() {
           <div className="amostra-veu" onClick={() => setModalAberto(false)} aria-hidden="true" />
           <div className="amostra-modal" role="dialog" aria-label="Exemplo de modal">
             <div className="amostra-modal-h">
-              <h4>Desconectar o Google Ads?</h4>
+              <h4>{traduzir("Desconectar o Google Ads?")}</h4>
             </div>
             <div className="amostra-modal-corpo">
               <p>

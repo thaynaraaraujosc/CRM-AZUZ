@@ -240,7 +240,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
           </button>
           {passo < PASSOS.length - 1 ? (
             <button type="button" className="btn primary" disabled={!podeAvancar} onClick={() => setPasso((p) => p + 1)}>
-              Continuar
+              {traduzir("Continuar")}
             </button>
           ) : (
             <button type="button" className="btn primary" disabled={enviando || !previa} onClick={() => void confirmar()}>
@@ -305,7 +305,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       {passo === 1 && canal === "instagram" ? (
         <div className="disp-passo">
           {janela === null ? (
-            <p className="hint">Conferindo quem pode receber agora…</p>
+            <p className="hint">{traduzir("Conferindo quem pode receber agora…")}</p>
           ) : !janela.conectado ? (
             <p className="modelo-erro">
               O Instagram não está conectado. Conecte a conta em Configurações → Outras integrações.
@@ -504,7 +504,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
 
           <aside className="disp-resumo-publico card">
             {carregandoPrevia ? (
-              <p className="hint">Contando…</p>
+              <p className="hint">{traduzir("Contando…")}</p>
             ) : previa ? (
               <>
                 <strong className="disp-numero">{previa.receberao}</strong>
@@ -658,7 +658,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
           {quando === "agendar" ? (
             <div className="tpl-linha">
               <div className="field">
-                <label>Data</label>
+                <label>{traduzir("Data")}</label>
                 <SeletorDeData valor={data} onChange={setData} />
               </div>
               <div className="field">
@@ -682,7 +682,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
           <dl className="disp-revisao">
             <dt>Canal</dt>
             <dd>{canalLabel}</dd>
-            <dt>Destinatários</dt>
+            <dt>{traduzir("Destinatários")}</dt>
             <dd>{previa?.receberao ?? "…"} contatos{previa?.semDestino.length ? ` (${previa.semDestino.length} sem destino ficam de fora)` : ""}</dd>
             <dt>{usaTemplate ? "Template" : "Mensagem"}</dt>
             <dd>{usaTemplate ? templateEscolhido!.nome : corpoLivre.split("\n")[0].slice(0, 60)}</dd>

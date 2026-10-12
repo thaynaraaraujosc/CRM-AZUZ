@@ -194,10 +194,10 @@ export default function DetalheDisparoPage() {
                 <thead>
                   <tr>
                     <th>Contato</th>
-                    <th>Destino</th>
+                    <th>{traduzir("Destino")}</th>
                     <th>Situação</th>
                     <th>Quando</th>
-                    <th>Detalhe</th>
+                    <th>{traduzir("Detalhe")}</th>
                   </tr>
                 </thead>
                 <tbody>

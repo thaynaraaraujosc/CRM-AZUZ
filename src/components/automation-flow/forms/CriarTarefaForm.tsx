@@ -51,7 +51,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
       </div>
 
       <div className="field">
-        <label>Descrição</label>
+        <label>{traduzir("Descrição")}</label>
         <textarea
           className="input"
           style={{ width: "100%", minHeight: 60, resize: "vertical" }}
@@ -109,8 +109,8 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
           onChange={(e) => onChange({ ...data, modoPrazo: e.target.value as ModoPrazoTarefa })}
         >
           <option value="imediatamente">Imediatamente</option>
-          <option value="depois_de">Depois de…</option>
-          <option value="data_especifica">Data e horário específicos</option>
+          <option value="depois_de">{traduzir("Depois de…")}</option>
+          <option value="data_especifica">{traduzir("Data e horário específicos")}</option>
         </select>
       </div>
 
@@ -134,7 +134,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
             >
               <option value="minutos">Minutos</option>
               <option value="horas">Horas</option>
-              <option value="dias">Dias</option>
+              <option value="dias">{traduzir("Dias")}</option>
             </select>
           </div>
         </div>
@@ -142,7 +142,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
 
       {data.modoPrazo === "data_especifica" ? (
         <div className="field">
-          <label>Data e horário</label>
+          <label>{traduzir("Data e horário")}</label>
           <div style={{ display: "flex", gap: 6 }}>
             <SeletorDeData
               valor={data.data ?? ""}

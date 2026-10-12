@@ -105,7 +105,7 @@ export function Toolbar({
               Salvar
             </button>
             <button type="button" className="btn ghost" onClick={onDescartarAlteracoes}>
-              Descartar
+              {traduzir("Descartar")}
             </button>
           </span>
         ) : (
@@ -122,7 +122,7 @@ export function Toolbar({
             className={`flow-toolbar-modo-btn${modoConstrucao ? " active" : ""}`}
             onClick={() => !modoConstrucao && onAlternarModo()}
           >
-            Construir
+            {traduzir("Construir")}
           </button>
           <button
             type="button"
@@ -145,7 +145,7 @@ export function Toolbar({
             {traduzir("Visualizar")}
           </button>
         </div>
-        <button type="button" className="icon-btn subtle" aria-label="Desfazer" title="Desfazer (Ctrl+Z)" disabled={!podeDesfazer || !modoConstrucao} onClick={onUndo}>
+        <button type="button" className="icon-btn subtle" aria-label={traduzir("Desfazer")} title={traduzir("Desfazer (Ctrl+Z)")} disabled={!podeDesfazer || !modoConstrucao} onClick={onUndo}>
           ↶
         </button>
         <button type="button" className="icon-btn subtle" aria-label="Refazer" title="Refazer (Ctrl+Shift+Z)" disabled={!podeRefazer || !modoConstrucao} onClick={onRedo}>

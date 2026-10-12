@@ -115,7 +115,7 @@ export function ComentarioInstagramForm({
         </div>
         <input
           className="input"
-          placeholder="Digite e aperte Enter. Ex.: GUIA"
+          placeholder={traduzir("Digite e aperte Enter. Ex.: GUIA")}
           value={novaPalavra}
           onChange={(e) => setNovaPalavra(e.target.value)}
           onKeyDown={(e) => {

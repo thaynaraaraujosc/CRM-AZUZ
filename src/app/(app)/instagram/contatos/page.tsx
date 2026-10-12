@@ -257,7 +257,7 @@ export default function InstagramContatosPage() {
                               setAviso("@ copiado.");
                             }}
                           >
-                            Copiar @
+                            {traduzir("Copiar @")}
                           </button>
                           <button type="button" onClick={() => router.push(`/contatos?busca=${encodeURIComponent(c.nome)}`)}>
                             Ver ficha no CRM

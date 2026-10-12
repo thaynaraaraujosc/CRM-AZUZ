@@ -872,7 +872,7 @@ export function AutomacaoDoFunil({
                 checked={rascunho.aplicarAosAtuais}
                 onChange={(e) => setRascunho({ ...rascunho, aplicarAosAtuais: e.target.checked })}
               />
-              <span>Aplicar o gatilho aos leads que já estão nesta etapa</span>
+              <span>{traduzir("Aplicar o gatilho aos leads que já estão nesta etapa")}</span>
             </label>
 
             {erro ? <p className="hint" style={{ color: "var(--danger)" }}>{erro}</p> : null}

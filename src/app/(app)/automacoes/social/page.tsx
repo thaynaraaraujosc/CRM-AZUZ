@@ -291,7 +291,7 @@ export default function AutomacoesSociaisPage() {
                   <tr>
                     <th>{traduzir("Automação")}</th>
                     <th>Gatilho</th>
-                    <th>Criado</th>
+                    <th>{traduzir("Criado")}</th>
                     <th>Última publicação</th>
                     <th>Execuções</th>
                     <th>Situação</th>

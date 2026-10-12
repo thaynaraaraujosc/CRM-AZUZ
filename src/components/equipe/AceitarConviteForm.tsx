@@ -2,10 +2,12 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** `token` é o que autoriza o convite (ver `lib/equipe/convite.ts`). O id sozinho é adivinhável e
  * não vale como autorização; ele só diz de quem é o convite. */
 export function AceitarConviteForm({ id, email, token }: { id: string; email: string; token: string }) {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
@@ -48,7 +50,7 @@ export function AceitarConviteForm({ id, email, token }: { id: string; email: st
   }
 
   if (sucesso) {
-    return <p className="auth-sucesso">Conta ativada! Levando você pro login…</p>;
+    return <p className="auth-sucesso">{traduzir("Conta ativada! Levando você pro login…")}</p>;
   }
 
   return (
@@ -59,7 +61,7 @@ export function AceitarConviteForm({ id, email, token }: { id: string; email: st
       </div>
 
       <div className="field">
-        <label htmlFor="senha">Crie sua senha</label>
+        <label htmlFor="senha">{traduzir("Crie sua senha")}</label>
         <input
           id="senha"
           className="input"
@@ -75,7 +77,7 @@ export function AceitarConviteForm({ id, email, token }: { id: string; email: st
       </div>
 
       <div className="field">
-        <label htmlFor="senha2">Confirme sua senha</label>
+        <label htmlFor="senha2">{traduzir("Confirme sua senha")}</label>
         <input
           id="senha2"
           className="input"
@@ -92,7 +94,7 @@ export function AceitarConviteForm({ id, email, token }: { id: string; email: st
       {erro && <p className="auth-erro">{erro}</p>}
 
       <button type="submit" className={`btn primary block${carregando ? " loading" : ""}`} disabled={carregando}>
-        Criar senha e entrar
+        {traduzir("Criar senha e entrar")}
       </button>
     </form>
   );

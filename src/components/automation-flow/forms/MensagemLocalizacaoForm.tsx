@@ -39,7 +39,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
           <option value="salva">Localização salva</option>
           <option value="workspace">Localização do workspace</option>
           <option value="endereco">Informar endereço</option>
-          <option value="coordenadas">Coordenadas</option>
+          <option value="coordenadas">{traduzir("Coordenadas")}</option>
         </select>
       </div>
 
@@ -127,7 +127,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
       ) : null}
 
       <div className="toggle-row">
-        <span className="tl">Adicionar legenda/mensagem?</span>
+        <span className="tl">{traduzir("Adicionar legenda/mensagem?")}</span>
         <button
           type="button"
           role="switch"

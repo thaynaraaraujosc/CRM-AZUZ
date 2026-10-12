@@ -63,7 +63,7 @@ export function AdiarMenu({ onAdiar }: { onAdiar: (periodo: PeriodoAdiamento, da
           ) : (
             <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
               <div className="field">
-                <label>Data</label>
+                <label>{traduzir("Data")}</label>
                 <SeletorDeData valor={data} onChange={setData} />
               </div>
               <div className="field">
@@ -79,7 +79,7 @@ export function AdiarMenu({ onAdiar }: { onAdiar: (periodo: PeriodoAdiamento, da
                   setAberto(false);
                 }}
               >
-                Confirmar
+                {traduzir("Confirmar")}
               </button>
             </div>
           )}

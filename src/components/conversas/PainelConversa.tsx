@@ -440,7 +440,7 @@ export function PainelConversa({
             <div className="chat-input-wrap box">
               <input
                 className="chat-input-campo"
-                placeholder="Digite uma mensagem…"
+                placeholder={traduzir("Digite uma mensagem…")}
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
                 onKeyDown={(e) => {
