@@ -165,6 +165,36 @@ export function EmbeddedSignupWhatsApp({
       return Object.keys(campos).length > 0 ? campos : null;
     })();
 
+    /*
+     * O QUE REALMENTE VAI PRA META, impresso antes de chamar.
+     *
+     * A investigação estava presa em hipóteses sobre o painel da Meta porque faltava o dado mais
+     * básico: os parâmetros que o SDK recebe de fato. Isto imprime exatamente isso, do lado de
+     * dentro, sem depender de ler uma URL gigante na barra do popup.
+     *
+     * Nada aqui é segredo: `app_id` e `config_id` são identificadores públicos — o primeiro
+     * aparece na própria barra de endereço do diálogo — e nenhum token ou código de autorização
+     * existe neste ponto, que é ANTES da autorização acontecer.
+     */
+    const parametros = {
+      config_id: configId,
+      response_type: "code",
+      override_default_response_type: true,
+      extras: {
+        setup: negocioParaSetup ? { business: negocioParaSetup } : {},
+        featureType: "",
+        sessionInfoVersion: "3",
+      },
+    };
+    console.info("[meta] FB.login com:", JSON.stringify(parametros));
+    console.info(
+      "[meta] SDK:",
+      "appId:", appId,
+      "versão:", versaoGraph,
+      "FB carregado:", Boolean(window.FB),
+      "origem:", window.location.origin,
+    );
+
     window.FB.login(
       (resposta) => {
         const code = resposta.authResponse?.code;
@@ -200,13 +230,18 @@ export function EmbeddedSignupWhatsApp({
         response_type: "code",
         override_default_response_type: true,
         extras: {
-          // `setup` SÓ quando há o que pré-preencher. Sem dados, isto virava `{"business":{}}` no
-          // corpo enviado à Meta — um objeto vazio onde ela espera campos, que não há motivo pra
-          // mandar.
-          ...(negocioParaSetup ? { setup: { business: negocioParaSetup } } : {}),
-          // TEXTO, não número: é o formato que a documentação da Meta usa. Enviado como número a
-          // Meta já ignorou a versão em algumas contas, e sem ela o `session_info` não chega —
-          // que é justamente o dado sem o qual a conexão não fecha.
+          /*
+           * O TRECHO DOCUMENTADO PELA META, AO PÉ DA LETRA.
+           *
+           * Eu tinha passado a omitir `setup` quando não havia nada pra pré-preencher, achando que
+           * mandar objeto vazio era desnecessário. Mas o exemplo oficial do Cadastro Incorporado
+           * manda `setup: {}` SEMPRE, e `featureType: ''` junto — e divergir de um contrato que a
+           * gente não controla, por elegância, é como se cria diferença entre "o fluxo deles" e "o
+           * nosso". Nesta investigação, qualquer diferença é suspeita até prova em contrário.
+           */
+          setup: negocioParaSetup ? { business: negocioParaSetup } : {},
+          featureType: "",
+          // TEXTO, não número: é o formato que a documentação usa.
           sessionInfoVersion: "3",
         },
       },
