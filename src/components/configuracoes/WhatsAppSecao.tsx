@@ -7,6 +7,8 @@ import { ConexaoManualWhatsApp } from "./ConexaoManualWhatsApp";
 import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { ImportarConversas } from "./ImportarConversas";
+import { useSession } from "next-auth/react";
+
 import { useIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 import { ModeloDeRetomada } from "./ModeloDeRetomada";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
@@ -66,6 +68,7 @@ function SaudeConexaoOficial({ metadados }: { metadados: Record<string, unknown>
  * padrão saíram: a integração já é da conta que está logada, não faz sentido escolher "responsável"
  * separado: quem manda mensagem é quem está logado. */
 export function WhatsAppSecao() {
+  const { data: sessao } = useSession();
   const { integracao, desconectando, desconectar, erroDoRedirect, recarregar } = useIntegracaoMeta("meta_whatsapp");
   const naoOficial = useIntegracaoNaoOficial();
   const [painelNaoOficialAberto, setPainelNaoOficialAberto] = useState(false);
@@ -143,10 +146,12 @@ export function WhatsAppSecao() {
                 </p>
               </div>
               <EmbeddedSignupWhatsApp />
-              {/* Saída pra quem já tem a conta criada: o Embedded Signup acima só funciona com o
-                  app aprovado como Provedor de Tecnologia pela Meta, o que leva dias. Com a WABA
-                  já aprovada, conectar por token não depende de aprovação nenhuma. */}
-              <ConexaoManualWhatsApp aoConectar={recarregar} />
+              {/* Saída pra quem já tem a conta criada, e SÓ pro superadmin — mesma regra de
+                  `ConexaoWhatsAppOficial`, onde o motivo está escrito por extenso: conectar por
+                  token exige copiar identificadores do painel de desenvolvedor da Meta, que é
+                  trabalho de quem mantém o sistema. Os dois pontos de entrada precisam concordar,
+                  senão a opção reaparece pelo outro caminho. */}
+              {sessao?.user?.superAdmin ? <ConexaoManualWhatsApp aoConectar={recarregar} /> : null}
             </div>
 
             <div className="card" style={{ padding: 14 }}>

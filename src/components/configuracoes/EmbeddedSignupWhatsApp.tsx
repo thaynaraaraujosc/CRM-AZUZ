@@ -284,20 +284,17 @@ export function EmbeddedSignupWhatsApp({
         </p>
       ) : null}
       {/*
-        * ESTA LINHA APARECE SEMPRE, e isso é correção de um defeito.
+        * A LINHA COM APP ID E CONFIG ID SAIU DA TELA.
         *
-        * Ela só saía quando o CRM registrava um erro. Mas a falha mais comum aqui ("Falha ao
-        * iniciar sessão") acontece DENTRO do popup da Meta, antes de qualquer resposta voltar —
-        * e quando o popup falha assim, o retorno pode nunca chegar. Ou seja: exatamente no caso
-        * em que esta informação é necessária, ela ficava escondida, e a tela do CRM ficava muda.
+        * Ela nasceu durante a investigação da falha de conexão e cumpriu o papel dela. Mas esta é
+        * tela de CLIENTE: identificador de app e de configuração de login são detalhe de quem
+        * mantém o sistema, e mostrá-los só gera a pergunta "o que é isso?" para quem só quer
+        * ligar o WhatsApp.
         *
-        * Não há segredo aqui: os dois identificadores são variáveis `NEXT_PUBLIC_`, já vão pro
-        * navegador, e o App ID aparece até na barra de endereço do popup da Meta.
+        * Nada se perde no diagnóstico: os mesmos valores continuam indo pro console
+        * (`[meta] FB.login com:` e `[meta] SDK:`), que é onde se olha quando algo falha — e foi de
+        * lá que a tabulação invisível no `config_id` apareceu.
         */}
-      <p className="hint" style={{ marginTop: 8, fontSize: 11 }}>
-        App ID em uso: <b>{appId}</b> · Configuração de login: <b>{configId}</b> · Graph{" "}
-        <b>{versaoGraph}</b>. Os dois primeiros precisam ser do MESMO app no painel da Meta.
-      </p>
     </div>
   );
 }
