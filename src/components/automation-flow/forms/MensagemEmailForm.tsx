@@ -11,7 +11,7 @@ const CONTAS_EMAIL: string[] = [];
 const MODELOS_EMAIL = [
   { id: "proposta", nome: "Proposta pronta" },
   { id: "boas_vindas", nome: "Boas-vindas" },
-  { id: "cobranca", nome: "Cobrança" },
+  { id: "cobranca", nome: "Cobrança"},
 ];
 
 /** Ação "Enviar e-mail" (item 5). O destinatário precisa estar ligado dinamicamente ao lead da

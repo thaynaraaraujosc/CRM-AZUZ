@@ -147,7 +147,7 @@ export function StoryRespondidoForm({
         <p className="hint">
           {palavras.length === 0
             ? "Sem palavra nenhuma, QUALQUER resposta ao story dispara a automação."
-            : "Basta uma das palavras aparecer na resposta."}
+            : traduzir("Basta uma das palavras aparecer na resposta.")}
         </p>
       </div>
 

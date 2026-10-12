@@ -42,7 +42,7 @@ export function IaClassificarForm({
         <textarea
           className="input"
           rows={3}
-          placeholder="Ex.: se a pessoa pergunta valor, é orçamento; se reclama de atraso, é reclamação."
+          placeholder={traduzir("Ex.: se a pessoa pergunta valor, é orçamento; se reclama de atraso, é reclamação.")}
           value={data.instrucao ?? ""}
           onChange={(e) => onChange({ instrucao: e.target.value })}
         />

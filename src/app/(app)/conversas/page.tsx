@@ -108,7 +108,7 @@ import { SeletorDeData } from "@/components/seletor-de-data";
 
 const FILTROS_CONVERSA = [
   { valor: "tudo", label: "Tudo" },
-  { valor: "nao-lidas", label: "Não lidas" },
+  { valor: "nao-lidas", label: "Não lidas"},
   { valor: "favoritas", label: "Favoritas" },
 ] as const;
 
@@ -3622,7 +3622,7 @@ function ConversasPageInner() {
       }
     } catch (e) {
       aplicar(curtir ? undefined : "❤️");
-      setErroCurtir(e instanceof Error ? e.message : "Não foi possível curtir a mensagem.");
+      setErroCurtir(e instanceof Error ? e.message : traduzir("Não foi possível curtir a mensagem."));
     }
   }
 
@@ -3952,7 +3952,7 @@ function ConversasPageInner() {
                 setFiltroAberto((v) => !v);
               }}
             >
-              {filtroAtivo ? `Filtro · ${resumoDoFiltro}` : "Filtro"}
+              {filtroAtivo ? `Filtro · ${resumoDoFiltro}` : traduzir("Filtro")}
             </button>
           </div>
           <FloatingDropdown
@@ -4001,7 +4001,7 @@ function ConversasPageInner() {
                   className={`dropdown-item${canalAba === canal.valor ? " active" : ""}`}
                 style={{ width: "100%", textAlign: "left" }}
                   disabled={canal.emBreve}
-                  title={canal.emBreve ? "Ainda não disponível" : undefined}
+                  title={canal.emBreve ? traduzir("Ainda não disponível") : undefined}
                   onClick={() => {
                     setCanalAba(canal.valor);
                     setFiltroAberto(false);
@@ -4059,7 +4059,7 @@ function ConversasPageInner() {
                 ? "Carregando conversas…"
                 : conversas.length === 0
                   ? "Nenhuma conversa ainda: conecte um canal em Configurações para começar a receber mensagens de verdade."
-                  : "Nenhuma conversa encontrada. Digite o nome de um contato pra começar uma conversa com ele."}
+                  : traduzir("Nenhuma conversa encontrada. Digite o nome de um contato pra começar uma conversa com ele.")}
             </p>
           ) : (
             conversasFiltradas.map((c) => {
@@ -4298,7 +4298,7 @@ function ConversasPageInner() {
                   setMidiasAberto(true);
                 }
               }}
-              title={aberta.ehGrupo ? "Ver dados do grupo" : "Ver mídias e arquivos trocados nessa conversa"}
+              title={aberta.ehGrupo ? traduzir("Ver dados do grupo") : traduzir("Ver mídias e arquivos trocados nessa conversa")}
             >
               <div className="avatar">
                 {aberta.fotoUrl ? <img src={aberta.fotoUrl} alt="" className="wa-avatar-foto" /> : iniciaisExibidas(aberta.nome, aberta.initials)}
@@ -4557,7 +4557,7 @@ function ConversasPageInner() {
                   <button
                     type="button"
                     className="chat-audio-btn"
-                    aria-label={audioPausado ? "Continuar gravação" : "Pausar gravação"}
+                    aria-label={audioPausado ? traduzir("Continuar gravação") : traduzir("Pausar gravação")}
                     title={audioPausado ? "Continuar" : "Pausar"}
                     onClick={pausarOuContinuarGravacao}
                   >
@@ -4595,7 +4595,7 @@ function ConversasPageInner() {
                   <button
                     type="button"
                     className="chat-audio-btn"
-                    aria-label={audioPreviewTocando ? "Pausar prévia" : "Ouvir prévia"}
+                    aria-label={audioPreviewTocando ? traduzir("Pausar prévia") : traduzir("Ouvir prévia")}
                     title={audioPreviewTocando ? "Pausar" : "Ouvir"}
                     onClick={alternarPreviaAudio}
                   >
@@ -5726,7 +5726,7 @@ function ConversasPageInner() {
                       { id: "aparencia", label: "Aparência" },
                       { id: "privacidade", label: "Privacidade" },
                       { id: "notificacoes", label: "Notificações" },
-                      { id: "preferencias", label: "Preferências" },
+                      { id: "preferencias", label: traduzir("Preferências")},
                     ] as const
                   ).map((t) => (
                     <button
@@ -5943,7 +5943,7 @@ function ConversasPageInner() {
                           {(
                             [
                               { valor: "pequena", label: "Pequena" },
-                              { valor: "media", label: "Média" },
+                              { valor: "media", label: traduzir("Média")},
                               { valor: "grande", label: "Grande" },
                             ] as const
                           ).map((op) => (
@@ -5965,7 +5965,7 @@ function ConversasPageInner() {
                         <div className="filters-row">
                           {(
                             [
-                              { valor: "confortavel", label: "Confortável" },
+                              { valor: "confortavel", label: traduzir("Confortável")},
                               { valor: "compacta", label: "Compacta" },
                             ] as const
                           ).map((op) => (
@@ -5997,8 +5997,8 @@ function ConversasPageInner() {
                       <div className="wa-config-radio-lista">
                         {(
                           [
-                            { valor: "todos", label: "Ativar para todos os contatos" },
-                            { valor: "salvos", label: "Ativar apenas para números salvos" },
+                            { valor: "todos", label: traduzir("Ativar para todos os contatos")},
+                            { valor: "salvos", label: traduzir("Ativar apenas para números salvos")},
                             { valor: "desativado", label: "Desativar" },
                           ] as const
                         ).map((op) => (
@@ -6033,9 +6033,9 @@ function ConversasPageInner() {
                       </p>
                       {(
                         [
-                          { chave: "mostrarEstadoEnvio", label: "Mostrar estado de envio" },
-                          { chave: "mostrarEstadoEntrega", label: "Mostrar estado de entrega" },
-                          { chave: "mostrarEstadoLeitura", label: "Mostrar estado de leitura" },
+                          { chave: "mostrarEstadoEnvio", label: traduzir("Mostrar estado de envio")},
+                          { chave: "mostrarEstadoEntrega", label: traduzir("Mostrar estado de entrega")},
+                          { chave: "mostrarEstadoLeitura", label: traduzir("Mostrar estado de leitura")},
                           {
                             chave: "mostrarEstadoReproducao",
                             label: "Mostrar estado de reprodução de áudio",
@@ -6127,7 +6127,7 @@ function ConversasPageInner() {
                                 ? "Bloqueada nas configurações do navegador. Libere o site pra ativar."
                                 : configPermissaoNotificacao === "indisponivel"
                                   ? "Esse navegador não suporta notificações."
-                                  : "Precisa de permissão do navegador."}
+                                  : traduzir("Precisa de permissão do navegador.")}
                           </span>
                         </span>
                         {configPermissaoNotificacao === "granted" ? (
@@ -7765,7 +7765,7 @@ function ConversasPageInner() {
                     <div className="stat-row" key={email.id}>
                       <span className="sl">{email.assunto}</span>
                       <span className={`sv${email.aberto ? " wa-email-lido" : ""}`}>
-                        {email.aberto ? `Lido às ${email.abertoEm}` : "Enviado, ainda não lido"}
+                        {email.aberto ? `Lido às ${email.abertoEm}` : traduzir("Enviado, ainda não lido")}
                       </span>
                     </div>
                   ))}
@@ -8210,7 +8210,7 @@ function ConversasPageInner() {
                       <span
                         className={`sv${email.aberto ? " wa-email-lido" : ""}`}
                       >
-                        {email.aberto ? `Lido às ${email.abertoEm}` : "Enviado, ainda não lido"}
+                        {email.aberto ? `Lido às ${email.abertoEm}` : traduzir("Enviado, ainda não lido")}
                       </span>
                       <button
                         type="button"

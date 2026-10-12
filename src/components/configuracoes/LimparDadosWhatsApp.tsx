@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { IconAlerta } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Limpeza avulsa do que um WhatsApp já desconectado deixou para trás. Conversas, contatos criados
@@ -20,6 +21,7 @@ import { IconAlerta } from "@/components/icons";
 type Resumo = { conversas: number; mensagens: number; contatos: number; cards: number };
 
 export function LimparDadosWhatsApp({ aoLimpar }: { aoLimpar?: () => void }) {
+  const { t: traduzir } = useIdioma();
   const [limpando, setLimpando] = useState(false);
   const [resumo, setResumo] = useState<Resumo | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export function LimparDadosWhatsApp({ aoLimpar }: { aoLimpar?: () => void }) {
       setResumo(dados.limpeza ?? null);
       aoLimpar?.();
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Falha ao limpar.");
+      setErro(e instanceof Error ? e.message : traduzir("Falha ao limpar."));
     } finally {
       setLimpando(false);
     }
@@ -64,7 +66,7 @@ export function LimparDadosWhatsApp({ aoLimpar }: { aoLimpar?: () => void }) {
   return (
     <div style={{ marginTop: 10 }}>
       <button type="button" className="btn ghost" onClick={limpar} disabled={limpando}>
-        {limpando ? "Limpando…" : "Limpar dados do WhatsApp anterior"}
+        {limpando ? "Limpando…" : traduzir("Limpar dados do WhatsApp anterior")}
       </button>
       <p className="hint" style={{ margin: "6px 0 0" }}>
         Remove as conversas, contatos e cards de funil que sobraram de um WhatsApp já desconectado,

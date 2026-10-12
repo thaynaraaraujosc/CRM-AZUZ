@@ -10,8 +10,8 @@ import { useIdioma } from "@/lib/idioma-context";
 
 const FILTROS_RAPIDOS = ["Todos", "Meus itens", "Minha equipe", "Urgentes", "Conversas", "Tarefas", "Agenda", "Leads", "Automações"];
 const PERIODOS: { valor: "hoje" | "amanha" | "semana"; label: string }[] = [
-  { valor: "hoje", label: "Hoje" },
-  { valor: "amanha", label: "Amanhã" },
+  { valor: "hoje", label: "Hoje"},
+  { valor: "amanha", label: "Amanhã"},
   { valor: "semana", label: "Esta semana" },
 ];
 

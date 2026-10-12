@@ -54,7 +54,7 @@ export function ModeloDeRetomada() {
           : "Desligado. Fora das 24 horas a automação vai parar e dizer o motivo.",
       );
     } catch (erro) {
-      setAviso(erro instanceof Error ? erro.message : "Não deu pra salvar.");
+      setAviso(erro instanceof Error ? erro.message : traduzir("Não deu pra salvar."));
     } finally {
       setSalvando(false);
     }

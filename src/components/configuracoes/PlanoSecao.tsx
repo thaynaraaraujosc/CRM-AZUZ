@@ -227,7 +227,7 @@ export function PlanoSecao() {
                 ? "Última cobrança não foi paga. Regularize pra manter o acesso."
                 : assinatura?.proximoVencimento
                   ? `Cobrança mensal via Asaas · próxima em ${formatarData(assinatura.proximoVencimento)}`
-                  : "Cobrança mensal via Asaas."}
+                  : traduzir("Cobrança mensal via Asaas.")}
           </p>
         </div>
         {infoPlanoAtual ? (
@@ -268,7 +268,7 @@ export function PlanoSecao() {
               <p className="r" style={{ marginTop: 8 }}>
                 {armazenamento.pendentesNoBanco} mensagens ainda guardam o arquivo no banco de dados.{" "}
                 <button type="button" className="btn-link" onClick={moverArquivosParaNuvem} disabled={migrando}>
-                  {migrando ? "Movendo…" : "Mover para a nuvem"}
+                  {migrando ? "Movendo…" : traduzir("Mover para a nuvem")}
                 </button>
               </p>
             ) : null}
@@ -295,7 +295,7 @@ export function PlanoSecao() {
             className="btn primary block"
             onClick={() => { setPlanoEmEdicao("completo"); setErroEnvio(null); }}
           >
-            {assinatura?.status === "ativa" ? "Atualizar forma de pagamento" : "Assinar plano"}
+            {assinatura?.status === "ativa" ? traduzir("Atualizar forma de pagamento") : "Assinar plano"}
           </button>
           <div className="preco-recursos">
             <span className="preco-recursos-titulo">{traduzir("O que está incluído")}</span>
@@ -372,7 +372,7 @@ export function PlanoSecao() {
             </>
           ) : (
             <p className="config-bloco-titulo" style={{ padding: "0 17px 14px" }}>
-              {formaPagamento === "PIX" ? "O QR Code do PIX é gerado após confirmar." : "O boleto é gerado após confirmar."}
+              {formaPagamento === "PIX" ? traduzir("O QR Code do PIX é gerado após confirmar.") : traduzir("O boleto é gerado após confirmar.")}
             </p>
           )}
 

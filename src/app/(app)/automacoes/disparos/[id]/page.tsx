@@ -60,7 +60,7 @@ export default function DetalheDisparoPage() {
   }, [id]);
 
   useEffect(() => {
-    Promise.resolve().then(recarregar).catch((e) => setErro(e instanceof Error ? e.message : "Falha ao carregar."));
+    Promise.resolve().then(recarregar).catch((e) => setErro(e instanceof Error ? e.message : traduzir("Falha ao carregar.")));
     const intervalo = setInterval(() => {
       if (document.visibilityState === "visible") recarregar().catch(() => {});
     }, 15_000);
@@ -76,7 +76,7 @@ export default function DetalheDisparoPage() {
       if (!r.ok) throw new Error(dados.erro ?? "Não deu certo.");
       await recarregar();
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não deu certo.");
+      setErro(e instanceof Error ? e.message : traduzir("Não deu certo."));
     } finally {
       setOcupado(false);
     }

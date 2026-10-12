@@ -567,7 +567,7 @@ export function FormularioPublico({
               </button>
             ) : null}
             <button type="button" className="btn block" style={{ background: tema.corBotao, color: "#fff" }} onClick={avancar}>
-              {ehUltimaPagina ? "Enviar" : "Próxima"}
+              {ehUltimaPagina ? "Enviar" : traduzir("Próxima")}
             </button>
           </div>
         ) : null}

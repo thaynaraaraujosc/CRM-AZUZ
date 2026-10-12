@@ -13,12 +13,12 @@ import { useIdioma } from "@/lib/idioma-context";
  * três opções.
  */
 const CAMPOS: { valor: CampoCondicao; label: string; ajuda?: string }[] = [
-  { valor: "mensagem", label: "A resposta do contato", ajuda: "O que ele acabou de escrever" },
-  { valor: "origem", label: "A origem do lead" },
+  { valor: "mensagem", label: "A resposta do contato", ajuda: "O que ele acabou de escrever"},
+  { valor: "origem", label: "A origem do lead"},
   { valor: "etapa", label: "A etapa atual no funil" },
-  { valor: "responsavel", label: "O responsável pelo lead" },
-  { valor: "etiqueta", label: "As etiquetas do contato" },
-  { valor: "canal", label: "O canal da conversa" },
+  { valor: "responsavel", label: "O responsável pelo lead"},
+  { valor: "etiqueta", label: "As etiquetas do contato"},
+  { valor: "canal", label: "O canal da conversa"},
   { valor: "campo_personalizado", label: "Um campo personalizado" },
 ];
 

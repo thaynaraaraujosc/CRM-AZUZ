@@ -359,7 +359,7 @@ export default function TrafegoPage() {
               <strong>
                 {mostrarGoogle
                   ? "Conecte o Meta Ads ou o Google Ads para ver esta tela com dados."
-                  : "Conecte o Meta Ads para ver esta tela com dados."}
+                  : traduzir("Conecte o Meta Ads para ver esta tela com dados.")}
               </strong>
               <span>
                 Investimento, custo por lead, custo por venda e ROAS saem das suas campanhas. Sem a

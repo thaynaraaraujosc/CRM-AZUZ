@@ -109,7 +109,7 @@ export function Toolbar({
             </button>
           </span>
         ) : (
-          <span className="flow-save-indicator">{salvando ? "Salvando…" : "Todas as alterações foram salvas"}</span>
+          <span className="flow-save-indicator">{salvando ? "Salvando…" : traduzir("Todas as alterações foram salvas")}</span>
         )}
       </div>
 
@@ -178,7 +178,7 @@ export function Toolbar({
           {traduzir("Testar")}
         </button>
 
-        <div className="flow-toolbar-toggle" title={podeAtivar ? undefined : "Publique o fluxo pra poder ativar"}>
+        <div className="flow-toolbar-toggle" title={podeAtivar ? undefined : traduzir("Publique o fluxo pra poder ativar")}>
           <span className="tl">{ativa ? "Ativo" : "Pausado"}</span>
           <button
             type="button"

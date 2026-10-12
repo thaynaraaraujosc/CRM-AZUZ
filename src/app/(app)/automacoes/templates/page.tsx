@@ -53,17 +53,17 @@ export default function TemplatesPage() {
   }
 
   async function acao(t: TemplateSalvo, qual: "analise" | "duplicar" | "excluir") {
-    if (qual === "excluir" && !window.confirm(`Excluir "${t.nome}"? ${t.whatsappTemplateId ? "Ele também será apagado na Meta." : ""}`)) return;
+    if (qual === "excluir" && !window.confirm(`Excluir "${t.nome}"? ${t.whatsappTemplateId ? traduzir("Ele também será apagado na Meta.") : ""}`)) return;
     setOcupado(`${t.id}:${qual}`);
     try {
       const url = qual === "excluir" ? `/api/templates/${t.id}` : `/api/templates/${t.id}/${qual === "analise" ? "enviar-analise" : "duplicar"}`;
       const resposta = await fetch(url, { method: qual === "excluir" ? "DELETE" : "POST" });
       const dados = (await resposta.json()) as { erro?: string };
       if (!resposta.ok) throw new Error(dados.erro ?? "Não deu certo.");
-      avisar(qual === "analise" ? "Enviado pra análise da Meta." : qual === "duplicar" ? "Cópia criada." : "Template excluído.");
+      avisar(qual === "analise" ? traduzir("Enviado pra análise da Meta.") : qual === "duplicar" ? traduzir("Cópia criada.") : traduzir("Template excluído."));
       await recarregar();
     } catch (e) {
-      avisar(e instanceof Error ? e.message : "Não deu certo.");
+      avisar(e instanceof Error ? e.message : traduzir("Não deu certo."));
     } finally {
       setOcupado(null);
     }
@@ -81,7 +81,7 @@ export default function TemplatesPage() {
         title={traduzir("Templates")}
         sub={traduzir("Mensagens reutilizáveis para disparos e automações")}
         actions={
-          <button type="button" className="btn primary" onClick={() => setEditando("novo")} disabled={!algumCanal} title={!algumCanal ? "Conecte um canal em Configurações → Outras integrações" : undefined}>
+          <button type="button" className="btn primary" onClick={() => setEditando("novo")} disabled={!algumCanal} title={!algumCanal ? traduzir("Conecte um canal em Configurações → Outras integrações") : undefined}>
             + Novo template
           </button>
         }
@@ -136,7 +136,7 @@ export default function TemplatesPage() {
                     ) : null}
                     {podeAnalise ? (
                       <button type="button" className="btn ghost" disabled={ocupado === `${t.id}:analise`} onClick={() => void acao(t, "analise")}>
-                        {ocupado === `${t.id}:analise` ? "Enviando…" : "Enviar para análise"}
+                        {ocupado === `${t.id}:analise` ? "Enviando…" : traduzir("Enviar para análise")}
                       </button>
                     ) : null}
                     <button type="button" className="btn ghost" disabled={ocupado === `${t.id}:duplicar`} onClick={() => void acao(t, "duplicar")}>

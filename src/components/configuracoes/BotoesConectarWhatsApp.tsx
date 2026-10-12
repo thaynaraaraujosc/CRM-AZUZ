@@ -42,7 +42,7 @@ export function BotoesConectarWhatsApp() {
                 <p className="hint" style={{ margin: "6px 0 0" }}>
                   {aberto === "qrcode"
                     ? "Escaneia como o WhatsApp Web. Não passa pela verificação de negócio da Meta, e o número corre risco de ser banido por violar os termos de uso do WhatsApp."
-                    : "Canal oficial da Meta. Mantém o número em conformidade e não corre risco de banimento."}
+                    : traduzir("Canal oficial da Meta. Mantém o número em conformidade e não corre risco de banimento.")}
                 </p>
               </div>
               <button

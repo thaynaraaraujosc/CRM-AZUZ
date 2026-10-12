@@ -244,7 +244,7 @@ export default function NovaAutomacaoComercialPage() {
               <span>
                 {modelo.quandoSugerido
                   ? QUANDO_ROTULO[modelo.quandoSugerido]
-                  : "O gatilho vem dentro do fluxo, não da etapa: é uma varredura por tempo."}
+                  : traduzir("O gatilho vem dentro do fluxo, não da etapa: é uma varredura por tempo.")}
               </span>
               <span>{modelo.ajustar}</span>
             </div>
@@ -262,7 +262,7 @@ export default function NovaAutomacaoComercialPage() {
                 disabled={!etapaId || criando}
                 onClick={() => void criarDoModelo()}
               >
-                {criando ? "Criando…" : "Criar e abrir o robô"}
+                {criando ? "Criando…" : traduzir("Criar e abrir o robô")}
               </button>
               <button type="button" className="btn ghost" onClick={() => setModeloId(null)}>
                 {traduzir("Escolher outro modelo")}

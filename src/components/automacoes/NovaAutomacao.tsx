@@ -54,7 +54,7 @@ export function NovaAutomacao({
   const etapa = funil?.colunas.find((c) => c.id === etapaId);
 
   /** O nome sugerido conta o que a automação faz, que é melhor do que "Nova automação". */
-  const nomeFinal = nome.trim() || (etapa ? `Quando entrar em "${etapa.titulo}"` : "Novo robô");
+  const nomeFinal = nome.trim() || (etapa ? `Quando entrar em "${etapa.titulo}"` : traduzir("Novo robô"));
 
   async function criar() {
     setSalvando(true);
@@ -200,7 +200,7 @@ export function NovaAutomacao({
                 disabled={!semGatilho && !etapaId}
                 onClick={() => (semGatilho ? criar() : setPasso("quando"))}
               >
-                {semGatilho ? "Criar robô" : "Continuar"}
+                {semGatilho ? traduzir("Criar robô") : "Continuar"}
               </button>
               <button type="button" className="btn ghost" onClick={() => setPasso("nome")}>
                 {traduzir("Voltar")}
@@ -246,7 +246,7 @@ export function NovaAutomacao({
 
             <div className="nova-auto-fim">
               <button type="button" className="btn primary" onClick={criar} disabled={salvando}>
-                {salvando ? "Criando…" : "Criar e montar o robô"}
+                {salvando ? "Criando…" : traduzir("Criar e montar o robô")}
               </button>
               <button type="button" className="btn ghost" onClick={() => setPasso("onde")}>
                 {traduzir("Voltar")}

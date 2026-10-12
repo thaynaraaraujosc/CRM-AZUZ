@@ -70,7 +70,7 @@ export function ConvidarForm() {
         papel: nomePapelFinal,
         papelTipo: nomePapelFinal === "Administrador" ? "admin" : ehPersonalizado ? "custom" : "padrao",
         papelNota: ehPersonalizado ? "· personalizado" : undefined,
-        enxerga: permissoes.length === 0 ? "Nenhum módulo do CRM" : `${permissoes.length} permissões`,
+        enxerga: permissoes.length === 0 ? traduzir("Nenhum módulo do CRM") : `${permissoes.length} permissões`,
         permissoes,
       });
       router.push("/equipe");

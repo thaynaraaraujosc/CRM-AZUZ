@@ -394,7 +394,7 @@ export function CampoResposta({
       const IconRotuloVazio =
         pergunta.tipo === "imagem" ? IconImage : pergunta.tipo === "video" ? IconVideoCam : pergunta.tipo === "audio" ? IconMic : pergunta.tipo === "documento" ? IconDoc : IconAnexo;
       const textoRotuloVazio =
-        pergunta.tipo === "imagem" ? "Escolher imagem" : pergunta.tipo === "video" ? "Escolher vídeo" : pergunta.tipo === "audio" ? "Escolher áudio" : pergunta.tipo === "documento" ? "Escolher documento" : "Anexar arquivo";
+        pergunta.tipo === "imagem" ? "Escolher imagem" : pergunta.tipo === "video" ? traduzir("Escolher vídeo") : pergunta.tipo === "audio" ? traduzir("Escolher áudio") : pergunta.tipo === "documento" ? "Escolher documento" : "Anexar arquivo";
       // `valor` guarda "nomeDoArquivo|data:...;base64,...": o conteúdo real do arquivo, não só o
       // nome (que era tudo que se salvava antes: quem preenchia achava que tinha anexado o arquivo,
       // mas ele nunca chegava no CRM). Mesmo delimitador "|" já usado no campo de intervalo de datas.

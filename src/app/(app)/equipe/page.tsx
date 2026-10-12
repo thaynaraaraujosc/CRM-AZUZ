@@ -251,7 +251,7 @@ export default function EquipePage() {
                                 : "E-mail atualizado. É por ele que a pessoa entra no CRM a partir de agora.",
                             );
                           } catch (e) {
-                            setAvisoAcesso(e instanceof Error ? e.message : "Não deu pra salvar.");
+                            setAvisoAcesso(e instanceof Error ? e.message : traduzir("Não deu pra salvar."));
                           } finally {
                             setSalvandoEmail(false);
                           }
@@ -296,7 +296,7 @@ export default function EquipePage() {
                               : `O e-mail NÃO saiu: ${dados.motivoEmail ?? "o provedor recusou."} Mande o link abaixo pela pessoa por WhatsApp.`,
                           );
                         } catch (e) {
-                          setAvisoAcesso(e instanceof Error ? e.message : "Não deu pra reenviar.");
+                          setAvisoAcesso(e instanceof Error ? e.message : traduzir("Não deu pra reenviar."));
                         } finally {
                           setReenviando(false);
                         }

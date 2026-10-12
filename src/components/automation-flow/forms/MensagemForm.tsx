@@ -252,7 +252,7 @@ function EscolherFormulario({
       <p className="hint mt8">
         {formularios.length
           ? "O contato recebe o link público do formulário, o mesmo do botão Compartilhar."
-          : "Nenhum formulário criado ainda. Crie um em Formulários e volte aqui."}
+          : traduzir("Nenhum formulário criado ainda. Crie um em Formulários e volte aqui.")}
       </p>
     </>
   );

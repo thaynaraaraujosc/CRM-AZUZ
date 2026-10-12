@@ -86,7 +86,7 @@ export function RenomearOrigem({ aoRenomear }: { aoRenomear: () => void }) {
         onClick={renomear}
         disabled={renomeando}
       >
-        {renomeando ? "Renomeando…" : "Renomear para Salvo manualmente"}
+        {renomeando ? "Renomeando…" : traduzir("Renomear para Salvo manualmente")}
       </button>
       {erro ? (
         <p className="hint mt8" style={{ color: "var(--danger)" }}>

@@ -416,7 +416,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                   ? "Você ainda não salvou nenhum modelo. Abra um documento e use Arquivo → Salvar como modelo."
                   : abaModelos === "favoritos"
                   ? "Nenhum modelo favoritado ainda. Passe o mouse num modelo e clique na estrela pra favoritar."
-                  : "Nenhum modelo encontrado com esse filtro."}
+                  : traduzir("Nenhum modelo encontrado com esse filtro.")}
               </p>
             ) : (
               <div className="doc-modelos-grid" style={{ padding: "0 16px 16px" }}>
@@ -552,7 +552,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
             <p className="hint">
               {aba === "lixeira"
                 ? "Documentos excluídos aparecem aqui antes de sumir de vez."
-                : "Crie um documento do zero ou a partir de um modelo."}
+                : traduzir("Crie um documento do zero ou a partir de um modelo.")}
             </p>
           </div>
         ) : (
@@ -2529,16 +2529,16 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
   ];
 
   const menuVer: ("sep" | ItemMenu)[] = [
-    { label: estruturaAberta ? "Ocultar estrutura do documento" : "Mostrar estrutura do documento", onClick: () => setEstruturaAberta((v) => !v) },
+    { label: estruturaAberta ? traduzir("Ocultar estrutura do documento") : "Mostrar estrutura do documento", onClick: () => setEstruturaAberta((v) => !v) },
     {
-      label: mostrarNaoImprimiveis ? "Ocultar caracteres não imprimíveis" : "Mostrar caracteres não imprimíveis",
+      label: mostrarNaoImprimiveis ? traduzir("Ocultar caracteres não imprimíveis") : "Mostrar caracteres não imprimíveis",
       onClick: () => setMostrarNaoImprimiveis((v) => !v),
     },
-    { label: semPaginas ? "Ativar visualização paginada" : "Visualização sem páginas (modo contínuo)", onClick: () => setSemPaginas((v) => !v) },
-    { label: mostrarToolbar ? "Ocultar barra de ferramentas" : "Mostrar barra de ferramentas", onClick: () => setMostrarToolbar((v) => !v) },
+    { label: semPaginas ? traduzir("Ativar visualização paginada") : "Visualização sem páginas (modo contínuo)", onClick: () => setSemPaginas((v) => !v) },
+    { label: mostrarToolbar ? traduzir("Ocultar barra de ferramentas") : "Mostrar barra de ferramentas", onClick: () => setMostrarToolbar((v) => !v) },
     "sep",
     {
-      label: telaCheia ? "Sair da tela cheia" : "Tela cheia",
+      label: telaCheia ? traduzir("Sair da tela cheia") : "Tela cheia",
       onClick: () => {
         if (document.fullscreenElement) document.exitFullscreen?.().catch(() => undefined);
         else document.documentElement.requestFullscreen?.().catch(() => undefined);
@@ -2603,7 +2603,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
     { label: `Corretor ortográfico: ${corretorAtivo ? "ativado" : "desativado"}`, onClick: () => setCorretorAtivo((v) => !v) },
     { label: "Contagem de palavras", atalho: "Ctrl+Shift+C", onClick: () => setContagemAberta(true) },
     { label: "Localizar e substituir", onClick: () => setLocalizarAberto(true) },
-    { label: gravandoVoz ? "Parar digitação por voz" : "Digitação por voz", onClick: alternarDigitacaoPorVoz },
+    { label: gravandoVoz ? traduzir("Parar digitação por voz") : "Digitação por voz", onClick: alternarDigitacaoPorVoz },
     "sep",
     { label: "Dicionário", onClick: () => window.alert("Dicionário exige um serviço externo. Não incluído nesse protótipo.") },
     { label: "Tradução do documento", onClick: () => window.alert("Tradução exige um serviço externo. Não incluído nesse protótipo.") },
@@ -2653,7 +2653,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <button
             type="button"
             className={`btn ghost${mostrarToolbar ? " active" : ""}`}
-            title={mostrarToolbar ? "Ocultar ferramentas de formatação" : "Mostrar ferramentas de formatação"}
+            title={mostrarToolbar ? traduzir("Ocultar ferramentas de formatação") : traduzir("Mostrar ferramentas de formatação")}
             onClick={() => setMostrarToolbar((v) => !v)}
             style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
           >
@@ -2848,7 +2848,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               className={`fchip${modo === m ? " active" : ""}`}
               onClick={() => (m === "sugestao" ? entrarModoSugestao() : setModo(m))}
             >
-              {m === "edicao" ? "Edição" : m === "sugestao" ? "Sugestão" : "Visualização"}
+              {m === "edicao" ? traduzir("Edição") : m === "sugestao" ? traduzir("Sugestão") : traduzir("Visualização")}
             </button>
           ))}
         </div>
@@ -3270,7 +3270,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               ? totalOcorrencias > 0
                 ? `${((buscaIndiceAtual % totalOcorrencias) + totalOcorrencias) % totalOcorrencias + 1} de ${totalOcorrencias} ocorrência(s)`
                 : "Nenhuma ocorrência encontrada"
-              : "Digite um termo pra buscar"}
+              : traduzir("Digite um termo pra buscar")}
           </p>
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
             <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={localizarAnterior}>◂ Anterior</button>
@@ -3356,7 +3356,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         <div className="modal-overlay" onClick={() => setCabecalhoRodapeAberto(null)}>
           <div className="modal" style={{ width: "min(480px, 100%)" }} onClick={(e) => e.stopPropagation()}>
             <div className="panel-h">
-              <h4>{cabecalhoRodapeAberto === "cabecalho" ? "Cabeçalho" : "Rodapé"}</h4>
+              <h4>{cabecalhoRodapeAberto === "cabecalho" ? "Cabeçalho" : traduzir("Rodapé")}</h4>
               <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setCabecalhoRodapeAberto(null)}><IconClose width={12} height={12} /></button>
             </div>
             <div style={{ padding: 20 }}>
@@ -4069,7 +4069,7 @@ function PainelImagem({
 
       <div className="field">
         <button type="button" className={`fchip${bloqueada ? " active" : ""}`} onClick={alternarBloqueio} style={{ width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-          {bloqueada ? <IconCadeadoAberto width={13} height={13} /> : <IconCadeado width={13} height={13} />} {bloqueada ? "Desbloquear posição" : "Bloquear posição"}
+          {bloqueada ? <IconCadeadoAberto width={13} height={13} /> : <IconCadeado width={13} height={13} />} {bloqueada ? traduzir("Desbloquear posição") : traduzir("Bloquear posição")}
         </button>
         {bloqueada ? <p className="hint" style={{ marginTop: 6 }}>{traduzir("Arrastar e redimensionar ficam desativados até desbloquear.")}</p> : null}
       </div>

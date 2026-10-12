@@ -247,7 +247,7 @@ export function ListaDePassos({
           <span>
             {inicio.category === "gatilho"
               ? resumoNo(inicio) || "Quando a automação começa"
-              : "Quem dispara este robô é a etapa do funil"}
+              : traduzir("Quem dispara este robô é a etapa do funil")}
           </span>
         </div>
       </div>

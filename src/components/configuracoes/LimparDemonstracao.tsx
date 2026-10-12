@@ -49,7 +49,7 @@ export function LimparDemonstracao({ aoLimpar }: { aoLimpar?: () => void }) {
       setResumo(dados.resumo ?? null);
       aoLimpar?.();
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Falha ao limpar.");
+      setErro(e instanceof Error ? e.message : traduzir("Falha ao limpar."));
     } finally {
       setLimpando(false);
     }

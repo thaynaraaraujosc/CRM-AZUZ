@@ -282,7 +282,7 @@ export function ReportWizard({
         setGerandoPrevia(false);
       } catch (e) {
         setGerandoPrevia(false);
-        setAvisos([{ nivel: "erro", mensagem: e instanceof Error ? e.message : "Não foi possível gerar a prévia." }]);
+        setAvisos([{ nivel: "erro", mensagem: e instanceof Error ? e.message : traduzir("Não foi possível gerar a prévia.")}]);
       }
     }, 350);
   }
@@ -337,7 +337,7 @@ export function ReportWizard({
         onGerado(registrar("PDF"));
       } catch (e) {
         setStatus("erro");
-        setMensagemErro(e instanceof Error ? e.message : "Não foi possível baixar o PDF.");
+        setMensagemErro(e instanceof Error ? e.message : traduzir("Não foi possível baixar o PDF."));
       }
     }, 400);
   }
@@ -366,7 +366,7 @@ export function ReportWizard({
         onGerado(registrar("CSV"));
       } catch (e) {
         setStatus("erro");
-        setMensagemErro(e instanceof Error ? e.message : "Não foi possível gerar o CSV.");
+        setMensagemErro(e instanceof Error ? e.message : traduzir("Não foi possível gerar o CSV."));
       }
     }, 300);
   }
@@ -730,7 +730,7 @@ export function ReportWizard({
                     {secoesFinais.length === 1 ? "seção" : "seções"} · {orientacao === "p" ? "retrato" : "paisagem"}
                   </p>
                   <button type="button" className="btn primary" onClick={gerarPrevia} disabled={gerandoPrevia}>
-                    {gerandoPrevia ? "Gerando prévia…" : "Gerar prévia"}
+                    {gerandoPrevia ? traduzir("Gerando prévia…") : traduzir("Gerar prévia")}
                   </button>
                 </div>
               ) : (
@@ -799,7 +799,7 @@ export function ReportWizard({
                       className="btn primary"
                       onClick={aprovarRelatorio}
                       disabled={temErroBloqueante}
-                      title={temErroBloqueante ? "Corrija os erros antes de aprovar" : undefined}
+                      title={temErroBloqueante ? traduzir("Corrija os erros antes de aprovar") : undefined}
                     >
                       {traduzir("Aprovar relatório")}
                     </button>

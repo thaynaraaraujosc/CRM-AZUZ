@@ -10,10 +10,10 @@ export const CATEGORIAS_TAREFA = ["Follow-up", "Ligação", "Reunião", "Consult
 
 const MODOS: { valor: FiltroTarefaModo; label: string }[] = [
   { valor: "qualquer", label: "Qualquer tarefa" },
-  { valor: "categoria", label: "Tarefa de determinada categoria" },
-  { valor: "titulo", label: "Tarefa com determinado título" },
-  { valor: "responsavel", label: "Tarefa criada para determinado responsável" },
-  { valor: "equipe", label: "Tarefa criada para determinada equipe" },
+  { valor: "categoria", label: "Tarefa de determinada categoria"},
+  { valor: "titulo", label: "Tarefa com determinado título"},
+  { valor: "responsavel", label: "Tarefa criada para determinado responsável"},
+  { valor: "equipe", label: "Tarefa criada para determinada equipe"},
   { valor: "funil", label: "Tarefa relacionada a determinado funil" },
 ];
 

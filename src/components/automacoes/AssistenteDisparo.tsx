@@ -40,8 +40,8 @@ const MODOS: { modo: ModoAudiencia; label: string }[] = [
   { modo: "etiqueta", label: "Por etiqueta" },
   { modo: "origem", label: "Por origem" },
   { modo: "funil", label: "Por funil" },
-  { modo: "etapa", label: "Por etapa do funil" },
-  { modo: "periodo", label: "Por data de cadastro" },
+  { modo: "etapa", label: "Por etapa do funil"},
+  { modo: "periodo", label: "Por data de cadastro"},
   { modo: "selecionados", label: "Escolher um a um" },
 ];
 
@@ -101,7 +101,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
         setOpcoes(o);
         setTemplates(Array.isArray(t) ? t : []);
       })
-      .catch((e) => setErro(e instanceof Error ? e.message : "Falha ao carregar."));
+      .catch((e) => setErro(e instanceof Error ? e.message : traduzir("Falha ao carregar.")));
   }, []);
 
   // A janela é buscada ao escolher o Instagram e RE-buscada ao voltar pro passo do público: ela
@@ -169,7 +169,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
         if (!r.ok) throw new Error(dados.erro ?? "Falha na prévia.");
         if (!cancelado) setPreviaResp({ chave: chavePrevia, dados });
       })
-      .catch((e) => !cancelado && setErro(e instanceof Error ? e.message : "Falha na prévia."));
+      .catch((e) => !cancelado && setErro(e instanceof Error ? e.message : traduzir("Falha na prévia.")));
     return () => {
       cancelado = true;
     };
@@ -220,7 +220,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       if (!resposta.ok || !dados.id) throw new Error(dados.erro ?? "Não foi possível criar o disparo.");
       aoConcluir(dados.id);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível criar o disparo.");
+      setErro(e instanceof Error ? e.message : traduzir("Não foi possível criar o disparo."));
       setEnviando(false);
     }
   }
@@ -563,7 +563,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                     onClick={() => escolherTemplate(templateId === t.id ? null : t)}
                   >
                     <strong>
-                      {t.nome} <span className={`badge ${disponivel ? "badge-success" : t.status === "em_analise" ? "badge-warning" : "badge-neutral"}`}>{disponivel ? "Aprovado" : t.status === "em_analise" ? "Em análise" : t.status === "rejeitado" ? "Rejeitado" : "Rascunho"}</span>
+                      {t.nome} <span className={`badge ${disponivel ? "badge-success" : t.status === "em_analise" ? "badge-warning" : "badge-neutral"}`}>{disponivel ? "Aprovado" : t.status === "em_analise" ? traduzir("Em análise") : t.status === "rejeitado" ? "Rejeitado" : "Rascunho"}</span>
                     </strong>
                     <span>{t.corpo.slice(0, 140)}</span>
                   </button>

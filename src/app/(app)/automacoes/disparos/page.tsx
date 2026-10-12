@@ -55,7 +55,7 @@ export default function DisparosPage() {
       // está no banco, e um erro de escrita não vira um sumiço que volta no F5.
       await recarregar();
     } catch (e) {
-      setAviso(e instanceof Error ? e.message : "Não deu pra excluir.");
+      setAviso(e instanceof Error ? e.message : traduzir("Não deu pra excluir."));
       setTimeout(() => setAviso(null), 6000);
     } finally {
       setExcluindo(false);

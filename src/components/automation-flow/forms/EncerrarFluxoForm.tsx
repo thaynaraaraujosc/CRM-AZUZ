@@ -11,8 +11,8 @@ import { useIdioma } from "@/lib/idioma-context";
  * Sem isso, todo fim de fluxo vira "concluída" e a diferença some.
  */
 const MOTIVOS: { valor: MotivoParada; label: string }[] = [
-  { valor: "concluido", label: "Concluído" },
-  { valor: "transferido", label: "Transferido para atendimento humano" },
+  { valor: "concluido", label: "Concluído"},
+  { valor: "transferido", label: "Transferido para atendimento humano"},
   { valor: "sem_resposta", label: "Sem resposta" },
   { valor: "desqualificado", label: "Lead desqualificado" },
   { valor: "erro", label: "Erro" },
