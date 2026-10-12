@@ -13,6 +13,7 @@ import { useNotificacoes } from "@/lib/notificacoes-context";
 import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-position";
 import { IconBell, IconSearch } from "@/components/icons";
 import { navEntries } from "@/components/sidebar";
+import { SeletorIdioma } from "@/components/seletor-idioma";
 
 type SearchResult = { label: string; sub: string; href: string };
 
@@ -169,6 +170,7 @@ export function AppHeader() {
     <header className={`app-header${naTelaInicio ? " app-header-transparente" : ""}`}>
       <GlobalSearch />
       <div className="app-header-right">
+        <SeletorIdioma />
         <NotificationsBell />
       </div>
 

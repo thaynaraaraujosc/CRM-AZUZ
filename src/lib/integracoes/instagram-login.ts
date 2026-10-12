@@ -31,6 +31,12 @@ export const ESCOPOS_INSTAGRAM_LOGIN = [
   "instagram_business_basic",
   "instagram_business_manage_messages",
   "instagram_business_manage_comments",
+  // Métricas do painel Social (alcance, contas que interagiram, interações, visitas ao perfil, ver
+  // `instagram-metricas.ts`). Esta lista é o que o Instagram desenha na tela de autorização: uma
+  // permissão que não está aqui NUNCA aparece pra pessoa aceitar, e portanto nunca entra no token.
+  // O painel pedia métricas com um token que não tinha direito a elas, e o bloco do Instagram só
+  // podia vir vazio. Também é o que a análise da Meta exige ver sendo concedido em tela.
+  "instagram_business_manage_insights",
 ];
 
 export function urlAutorizacao(redirectUri: string, state: string): string {

@@ -7,6 +7,7 @@ import Link from "next/link";
 
 import { IconEntrar } from "@/components/icons";
 import { ROTA_INICIAL } from "@/lib/rota-inicial";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Só deixa voltar pra um endereço DENTRO do CRM.
@@ -35,6 +36,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  const { t } = useIdioma();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -94,8 +96,8 @@ function LoginForm() {
         <span className="auth-selo" aria-hidden="true">
           <IconEntrar width={20} height={20} />
         </span>
-        <h1 className="auth-title">Acesse sua conta</h1>
-        <p className="auth-sub">Entre para continuar de onde parou no seu CRM.</p>
+        <h1 className="auth-title">{t("Acesse sua conta")}</h1>
+        <p className="auth-sub">{t("Entre para continuar de onde parou no seu CRM.")}</p>
 
         {/* O rótulo continua no HTML, escondido por CSS: o campo precisa dele pra leitor de tela,
             mesmo com o placeholder dizendo a mesma coisa visualmente. */}
@@ -114,12 +116,12 @@ function LoginForm() {
         </div>
 
         <div className="field">
-          <label htmlFor="senha">Senha</label>
+          <label htmlFor="senha">{t("Senha")}</label>
           <input
             id="senha"
             type="password"
             className="input"
-            placeholder="Senha"
+            placeholder={t("Senha")}
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             required
@@ -128,7 +130,7 @@ function LoginForm() {
         </div>
 
         <p className="auth-rodape" style={{ margin: "0 0 12px", textAlign: "right" }}>
-          <Link href="/esqueci-senha">Esqueci minha senha</Link>
+          <Link href="/esqueci-senha">{t("Esqueci minha senha")}</Link>
         </p>
 
         {erro && <p className="auth-erro">{erro}</p>}
@@ -138,7 +140,7 @@ function LoginForm() {
         </button>
 
         <p className="auth-rodape">
-          Não possui conta? <Link href="/cadastro">Criar conta</Link>
+          Não possui conta? <Link href="/cadastro">{t("Criar conta")}</Link>
         </p>
       </form>
     </div>

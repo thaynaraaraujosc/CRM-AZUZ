@@ -13,6 +13,7 @@ import { useIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 import { ModeloDeRetomada } from "./ModeloDeRetomada";
 import { useIntegracaoMeta } from "./useIntegracaoMeta";
 import { IconAlerta } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Semáforo de qualidade que a Meta atribui ao número. Cai pra amarelo/vermelho quando as pessoas
  * bloqueiam/denunciam, e vermelho por tempo demais leva a restrição de envio. */
@@ -68,6 +69,7 @@ function SaudeConexaoOficial({ metadados }: { metadados: Record<string, unknown>
  * padrão saíram: a integração já é da conta que está logada, não faz sentido escolher "responsável"
  * separado: quem manda mensagem é quem está logado. */
 export function WhatsAppSecao() {
+  const { t } = useIdioma();
   const { data: sessao } = useSession();
   const { integracao, desconectando, desconectar, erroDoRedirect, recarregar } = useIntegracaoMeta("meta_whatsapp");
   const naoOficial = useIntegracaoNaoOficial();
@@ -83,7 +85,7 @@ export function WhatsAppSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="WhatsApp" descricao="Conecte o número do WhatsApp que o CRM vai usar." />
+      <CabecalhoCategoria titulo="WhatsApp" descricao={t("Conecte o número do WhatsApp que o CRM vai usar.")} />
 
       <div className="config-bloco">
         {erroDoRedirect ? (
@@ -139,7 +141,7 @@ export function WhatsAppSecao() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div className="card" style={{ padding: 14 }}>
               <div>
-                <p className="int-title" style={{ margin: 0 }}>Conectar com a API oficial (Meta)</p>
+                <p className="int-title" style={{ margin: 0 }}>{t("Conectar com a API oficial (Meta)")}</p>
                 <p className="hint" style={{ margin: "4px 0 0" }}>
                   Abre o cadastro da própria Meta aqui dentro. Cria (ou conecta) sua conta do
                   WhatsApp Business sem sair do CRM e sem copiar token nenhum.
@@ -157,7 +159,7 @@ export function WhatsAppSecao() {
             <div className="card" style={{ padding: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <div>
-                  <p className="int-title" style={{ margin: 0 }}>Conectar com a API não oficial (QR Code)</p>
+                  <p className="int-title" style={{ margin: 0 }}>{t("Conectar com a API não oficial (QR Code)")}</p>
                   <p className="hint" style={{ margin: "4px 0 0" }}>
                     Escaneia como o WhatsApp Web. Não passa pela verificação de negócio da Meta,
                     e o número corre risco de ser banido por violar os termos de uso do WhatsApp.
@@ -192,7 +194,7 @@ export function WhatsAppSecao() {
                       {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pela Evolution API, não é asset estático */}
                       <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={200} height={200} />
                     </div>
-                    <p className="hint">Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.</p>
+                    <p className="hint">{t("Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.")}</p>
                   </div>
                 ) : (
                   <p className="hint" style={{ marginTop: 10 }}>

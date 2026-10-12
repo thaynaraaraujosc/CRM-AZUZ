@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+import { IdiomaProvider } from "@/lib/idioma-context";
 
 const SCRIPT_TEMA_INICIAL = `
 (function () {
@@ -46,7 +47,7 @@ export default function RootLayout({
         <Script id="tema-inicial" strategy="beforeInteractive">
           {SCRIPT_TEMA_INICIAL}
         </Script>
-        {children}
+        <IdiomaProvider>{children}</IdiomaProvider>
       </body>
     </html>
   );

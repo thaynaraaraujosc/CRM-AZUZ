@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { GRUPOS_CONFIGURACOES, type CategoriaId } from "@/lib/configuracoes/estrutura";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Coluna esquerda: busca + categorias agrupadas (itens 18/42). A busca filtra por nome/descrição da
  * categoria: resultado simples, mas real (não é só um placeholder decorativo). */
@@ -13,6 +14,7 @@ export function CategoriasNav({
   ativa: CategoriaId;
   onSelecionar: (id: CategoriaId) => void;
 }) {
+  const { t } = useIdioma();
   const [busca, setBusca] = useState("");
   const termo = busca.trim().toLowerCase();
 
@@ -20,10 +22,10 @@ export function CategoriasNav({
     <nav className="config-nav" aria-label="Categorias de configuração">
       <input
         className="input config-nav-busca"
-        placeholder="Buscar configuração…"
+        placeholder={t("Buscar configuração…")}
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
-        aria-label="Buscar configuração"
+        aria-label={t("Buscar configuração")}
       />
       {GRUPOS_CONFIGURACOES.map((grupo) => {
         const categoriasFiltradas = termo

@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useIntegracaoNaoOficial } from "./useIntegracaoNaoOficial";
 import { IconAlerta } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Fluxo de conexão por QR Code, isolado do resto da tela de Configurações.
@@ -14,6 +15,7 @@ import { IconAlerta } from "@/components/icons";
  * onde quer que ele esteja.
  */
 export function ConexaoQrCode({ aoConectar }: { aoConectar?: () => void }) {
+  const { t } = useIdioma();
   const naoOficial = useIntegracaoNaoOficial();
   const [aberto, setAberto] = useState(false);
 
@@ -73,7 +75,7 @@ export function ConexaoQrCode({ aoConectar }: { aoConectar?: () => void }) {
           <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={200} height={200} />
         </div>
         <p className="hint" style={{ margin: 0 }}>
-          Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.
+          {t("Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.")}
         </p>
       </div>
     );
