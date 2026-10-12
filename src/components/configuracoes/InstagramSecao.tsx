@@ -89,10 +89,10 @@ export function InstagramSecao() {
             <div className="int-row" style={{ padding: 0 }}>
               <div className="int-body">
                 <p className="int-title">{traduzir("Conta de anúncios")}</p>
-                <p className="int-sub">{anunciosConectados ? adAccountNome ?? "Conta conectada" : "Conecte em Tráfego, se quiser usar dados de anúncios"}</p>
+                <p className="int-sub">{anunciosConectados ? adAccountNome ?? "Conta conectada" : traduzir("Conecte em Tráfego, se quiser usar dados de anúncios")}</p>
               </div>
               <span className={`int-status ${anunciosConectados ? "connected" : "off"}`}>
-                {anunciosConectados ? "Conectado" : "Não conectado"}
+                {anunciosConectados ? "Conectado" : traduzir("Não conectado")}
               </span>
             </div>
 

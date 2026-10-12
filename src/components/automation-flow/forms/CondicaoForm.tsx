@@ -27,9 +27,9 @@ const CAMPOS: { valor: CampoCondicao; label: string; categoria: CategoriaCampo }
   { valor: "em_outra_automacao", label: "Está em outra automação", categoria: "Conversa" },
   { valor: "palavra_chave", label: "Palavra-chave", categoria: "Conversa" },
 
-  { valor: "etapa", label: "Etapa", categoria: "Funil / Negócio" },
-  { valor: "funil", label: "Funil", categoria: "Funil / Negócio" },
-  { valor: "valor_negocio", label: "Valor do negócio", categoria: "Funil / Negócio" },
+  { valor: "etapa", label: "Etapa", categoria: "Funil / Negócio"},
+  { valor: "funil", label: "Funil", categoria: "Funil / Negócio"},
+  { valor: "valor_negocio", label: "Valor do negócio", categoria: "Funil / Negócio"},
 
   { valor: "origem", label: "Origem", categoria: "Contato" },
   { valor: "etiqueta", label: "Etiqueta", categoria: "Contato" },
@@ -241,7 +241,7 @@ export function CondicaoForm({
               aria-pressed={grupo.tipo === tipo}
               onClick={() => onChange({ ...grupo, tipo })}
             >
-              {tipo === "NAO" ? "NÃO" : tipo}
+              {tipo === "NAO" ? traduzir("NÃO") : tipo}
             </button>
           ))}
         </div>

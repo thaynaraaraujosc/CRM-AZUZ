@@ -9,9 +9,9 @@ import { useIdioma } from "@/lib/idioma-context";
 
 const OPCOES: { periodo: PeriodoAdiamento; label: string }[] = [
   { periodo: "mais_tarde_hoje", label: "Mais tarde hoje" },
-  { periodo: "amanha", label: "Amanhã" },
-  { periodo: "proxima_semana", label: "Próxima semana" },
-  { periodo: "data_escolhida", label: "Escolher data e horário" },
+  { periodo: "amanha", label: "Amanhã"},
+  { periodo: "proxima_semana", label: "Próxima semana"},
+  { periodo: "data_escolhida", label: "Escolher data e horário"},
 ];
 
 /** Botão "Adiar": abre as opções do item 13 do pedido. Front-end apenas: guarda a escolha no

@@ -7,13 +7,13 @@ import { SeletorDeData } from "@/components/seletor-de-data";
 import { useIdioma } from "@/lib/idioma-context";
 
 const LIMITES: { valor: NonNullable<ConfiguracoesFluxo["limiteExecucao"]>; label: string }[] = [
-  { valor: "sempre", label: "Sempre que o gatilho acontecer" },
+  { valor: "sempre", label: "Sempre que o gatilho acontecer"},
   { valor: "uma_vez_por_contato", label: "Uma vez por contato" },
   { valor: "uma_vez_por_entrada", label: "Uma vez por entrada na etapa" },
   { valor: "uma_vez_por_dia", label: "Uma vez por dia" },
   { valor: "uma_vez_por_semana", label: "Uma vez por semana" },
-  { valor: "uma_vez_por_mes", label: "Uma vez por mês" },
-  { valor: "no_maximo", label: "No máximo X vezes por contato" },
+  { valor: "uma_vez_por_mes", label: "Uma vez por mês"},
+  { valor: "no_maximo", label: "No máximo X vezes por contato"},
 ];
 
 export function ConfiguracoesGeraisForm({

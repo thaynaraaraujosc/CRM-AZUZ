@@ -9,14 +9,14 @@ import { useIdioma } from "@/lib/idioma-context";
 const DESTINOS: { valor: ModoDestinoAtendimento; label: string }[] = [
   { valor: "atendente", label: "Atendente específico" },
   { valor: "equipe", label: "Equipe" },
-  { valor: "distribuicao", label: "Distribuição automática" },
-  { valor: "manter", label: "Manter responsável atual" },
+  { valor: "distribuicao", label: "Distribuição automática"},
+  { valor: "manter", label: "Manter responsável atual"},
 ];
 
 const METODOS: { valor: MetodoDistribuicaoAtendimento; label: string }[] = [
   { valor: "disponibilidade", label: "Por disponibilidade" },
-  { valor: "rodizio", label: "Rodízio" },
-  { valor: "menos_atendimentos", label: "Menor quantidade de atendimentos" },
+  { valor: "rodizio", label: "Rodízio"},
+  { valor: "menos_atendimentos", label: "Menor quantidade de atendimentos"},
   { valor: "prioridade", label: "Prioridade definida" },
 ];
 
@@ -102,7 +102,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
           <div className="field">
             <label>{traduzir("Etapa")}</label>
             <select className="input" value={data.etapaTitulo ?? ""} onChange={(e) => onChange({ ...data, etapaTitulo: e.target.value })} disabled={!funilEscolhido}>
-              <option value="">{funilEscolhido ? "Selecione uma etapa…" : "Escolha um funil primeiro"}</option>
+              <option value="">{funilEscolhido ? traduzir("Selecione uma etapa…") : "Escolha um funil primeiro"}</option>
               {(funilEscolhido?.colunas ?? []).map((c) => (
                 <option key={c.id} value={c.titulo}>{c.titulo}</option>
               ))}

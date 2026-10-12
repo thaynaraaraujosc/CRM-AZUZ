@@ -56,7 +56,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       setConectado(true);
       aoConectar?.();
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Falha ao conectar.");
+      setErro(e instanceof Error ? e.message : traduzir("Falha ao conectar."));
     } finally {
       setEnviando(false);
     }

@@ -16,11 +16,11 @@ import { useIdioma } from "@/lib/idioma-context";
  */
 const DIAS: { chave: keyof DiasDoExpediente; label: string }[] = [
   { chave: "1", label: "Segunda" },
-  { chave: "2", label: "Terça" },
+  { chave: "2", label: "Terça"},
   { chave: "3", label: "Quarta" },
   { chave: "4", label: "Quinta" },
   { chave: "5", label: "Sexta" },
-  { chave: "6", label: "Sábado" },
+  { chave: "6", label: "Sábado"},
   { chave: "7", label: "Domingo" },
 ];
 
@@ -77,7 +77,7 @@ export function ExpedienteSecao() {
       if (!resposta.ok) throw new Error(corpo.erro || "falhou");
       setAviso("Expediente salvo.");
     } catch (e) {
-      setErro(e instanceof Error && e.message !== "falhou" ? e.message : "Não deu pra salvar agora.");
+      setErro(e instanceof Error && e.message !== "falhou" ? e.message : traduzir("Não deu pra salvar agora."));
     } finally {
       setSalvando(false);
     }

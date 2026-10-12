@@ -69,7 +69,7 @@ export default function ModelosSociaisPage() {
       avisar("Copiado pros seus modelos. Edite antes de usar.");
       await recarregar();
     } catch (erro) {
-      avisar(erro instanceof Error ? erro.message : "Não deu certo.");
+      avisar(erro instanceof Error ? erro.message : traduzir("Não deu certo."));
     } finally {
       setCopiando(null);
     }

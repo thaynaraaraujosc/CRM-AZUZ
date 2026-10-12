@@ -146,7 +146,7 @@ export function EmbeddedSignupWhatsApp({
       if (dados.pin) setPin(dados.pin);
       aoConectar?.();
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Falha ao concluir a conexão.");
+      setErro(e instanceof Error ? e.message : traduzir("Falha ao concluir a conexão."));
     } finally {
       setConectando(false);
     }

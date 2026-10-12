@@ -17,7 +17,7 @@ export default function AzuzIaPage() {
     <>
       <Topbar
         title={traduzir("Azuz IA")}
-        sub="Sua assistente dentro do CRM. Pergunta qualquer coisa sobre leads, tarefas ou funil"
+        sub={traduzir("Sua assistente dentro do CRM. Pergunta qualquer coisa sobre leads, tarefas ou funil")}
       />
 
       <div className="content" style={{ justifyContent: "center", alignItems: "center", display: "flex" }}>

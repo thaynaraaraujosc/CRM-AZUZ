@@ -52,15 +52,15 @@ const DIAS = [
   { valor: 3, label: "Qua" },
   { valor: 4, label: "Qui" },
   { valor: 5, label: "Sex" },
-  { valor: 6, label: "Sáb" },
+  { valor: 6, label: "Sáb"},
   { valor: 7, label: "Dom" },
 ];
 
 const ACOES: { tipo: TipoAcaoGatilho; descricao: string }[] = [
-  { tipo: "robo", descricao: "Executa uma automação inteira, com mensagens, esperas e condições." },
-  { tipo: "mensagem", descricao: "Manda um texto pelo canal da conversa do lead." },
-  { tipo: "responsavel", descricao: "Passa o lead pra outra pessoa do time." },
-  { tipo: "etapa", descricao: "Move o lead pra outra etapa assim que entrar nesta." },
+  { tipo: "robo", descricao: "Executa uma automação inteira, com mensagens, esperas e condições."},
+  { tipo: "mensagem", descricao: "Manda um texto pelo canal da conversa do lead."},
+  { tipo: "responsavel", descricao: "Passa o lead pra outra pessoa do time."},
+  { tipo: "etapa", descricao: "Move o lead pra outra etapa assim que entrar nesta."},
   { tipo: "etiquetas", descricao: "Acrescenta ou tira etiquetas do contato." },
   { tipo: "webhook", descricao: "Avisa um sistema de fora que o lead chegou aqui." },
 ];
@@ -487,7 +487,7 @@ export function AutomacaoDoFunil({
                     ? `${porEtapa.get(coluna.id)!.length} gatilhos, nesta ordem`
                     : (porEtapa.get(coluna.id)?.length ?? 0) === 1
                       ? "1 gatilho"
-                      : "Sem automação"}
+                      : traduzir("Sem automação")}
                 </span>
               </div>
             ))}
@@ -689,7 +689,7 @@ export function AutomacaoDoFunil({
                   ))}
                 </select>
                 <button type="button" className="fauto-add mt8" onClick={criarRobo} disabled={criandoRobo}>
-                  <span aria-hidden="true">+</span> {criandoRobo ? "Criando…" : "Criar um novo robô"}
+                  <span aria-hidden="true">+</span> {criandoRobo ? "Criando…" : traduzir("Criar um novo robô")}
                 </button>
                 {rascunho.fluxoId ? (
                   <button

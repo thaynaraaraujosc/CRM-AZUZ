@@ -83,7 +83,7 @@ export function GenericForm({ node, onChange }: { node: FlowNode; onChange: (dat
             <div className="field" key={chave}>
               <label>{traduzir("Etapa")}</label>
               <select className="input" value={typeof valor === "string" ? valor : ""} onChange={(e) => set(chave, e.target.value)} disabled={!funilEscolhido}>
-                <option value="">{funilEscolhido ? "Selecione uma etapa…" : "Escolha um funil primeiro"}</option>
+                <option value="">{funilEscolhido ? traduzir("Selecione uma etapa…") : "Escolha um funil primeiro"}</option>
                 {(funilEscolhido?.colunas ?? []).map((c) => (
                   <option key={c.id} value={c.titulo}>
                     {c.titulo}

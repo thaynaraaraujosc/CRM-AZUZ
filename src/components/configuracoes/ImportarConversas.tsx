@@ -105,7 +105,7 @@ function Painel({
             ? "Não veio nenhuma conversa do celular nesta tentativa. Costuma ser a sessão do WhatsApp que ainda não terminou de montar a lista; buscar de novo resolve."
             : guardadas
               ? `As conversas recentes já estão aqui. Ainda há ${guardadas} conversa${guardadas > 1 ? "s" : ""} mais antiga${guardadas > 1 ? "s" : ""} no celular.`
-              : "As conversas do celular já foram trazidas. Se faltar algum grupo ou conversa antiga, busque de novo."}
+              : traduzir("As conversas do celular já foram trazidas. Se faltar algum grupo ou conversa antiga, busque de novo.")}
         </p>
         {guardadas ? (
           <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onTrazerMaisAntigas}>
@@ -131,7 +131,7 @@ function Painel({
   return (
     <div className="wa-historico-linha">
       <p className="hint" style={{ margin: 0 }}>
-        {pausado ? "Importação do histórico pausada" : "Trazendo as conversas do celular"}
+        {pausado ? traduzir("Importação do histórico pausada") : traduzir("Trazendo as conversas do celular")}
         {total != null ? `: ${historico.chatsProcessados} de ${total}` : "…"}
         {total != null ? "." : ""}
         {!pausado ? " Pode fechar esta tela: ela continua sozinha." : ""}

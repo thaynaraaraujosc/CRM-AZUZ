@@ -440,7 +440,7 @@ function ContatosPageInner() {
                   <tr>
                     <td colSpan={6}>
                       <p className="hint" style={{ padding: 17 }}>
-                        {busca.trim() ? "Nenhum contato encontrado com esse termo." : "Nenhum contato nessa origem ainda."}
+                        {busca.trim() ? traduzir("Nenhum contato encontrado com esse termo.") : "Nenhum contato nessa origem ainda."}
                       </p>
                     </td>
                   </tr>
@@ -576,7 +576,7 @@ function ContatosPageInner() {
             <div className="field">
               <label>{traduzir("Funil")}</label>
               <div className="input">
-                {noFunil ? noFunil.funil : "Ainda não entrou em nenhum funil"}
+                {noFunil ? noFunil.funil : traduzir("Ainda não entrou em nenhum funil")}
               </div>
             </div>
             <div className="field">

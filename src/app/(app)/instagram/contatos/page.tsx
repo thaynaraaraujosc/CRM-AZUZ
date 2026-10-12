@@ -103,7 +103,7 @@ export default function InstagramContatosPage() {
       setEscolhidos(new Set());
       await carregar();
     } catch (e) {
-      setAviso(e instanceof Error ? e.message : "Não deu certo.");
+      setAviso(e instanceof Error ? e.message : traduzir("Não deu certo."));
     } finally {
       setOcupado(false);
     }
@@ -169,7 +169,7 @@ export default function InstagramContatosPage() {
             <p className="hint mt16">{traduzir("Carregando…")}</p>
           ) : !visiveis.length ? (
             <p className="hint mt16">
-              {contatos.length ? "Ninguém com esse nome." : "Nenhum contato veio do Instagram ainda."}
+              {contatos.length ? traduzir("Ninguém com esse nome.") : traduzir("Nenhum contato veio do Instagram ainda.")}
             </p>
           ) : (
             <table className="table mt16">
@@ -221,8 +221,8 @@ export default function InstagramContatosPage() {
                       </span>
                     </td>
                     <td>{typeof c.seguidores === "number" ? c.seguidores.toLocaleString("pt-BR") : "—"}</td>
-                    <td>{c.verificado == null ? "—" : c.verificado ? "Sim" : "Não"}</td>
-                    <td>{c.segueVoce == null ? "—" : c.segueVoce ? "Sim" : "Não"}</td>
+                    <td>{c.verificado == null ? "—" : c.verificado ? traduzir("Sim") : "Não"}</td>
+                    <td>{c.segueVoce == null ? "—" : c.segueVoce ? traduzir("Sim") : "Não"}</td>
                     <td className="hint">{c.etiquetas.length ? c.etiquetas.join(", ") : "—"}</td>
                     <td className="hint">{quando(c.atualizadoEm)}</td>
                     <td style={{ textAlign: "right", position: "relative" }}>

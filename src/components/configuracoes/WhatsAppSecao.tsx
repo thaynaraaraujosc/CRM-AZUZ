@@ -100,7 +100,7 @@ export function WhatsAppSecao() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
               <div>
                 <p className="int-title" style={{ margin: 0 }}>
-                  {metaConectada ? "WhatsApp Business (API oficial da Meta)" : "WhatsApp (API não oficial, QR Code)"}
+                  {metaConectada ? traduzir("WhatsApp Business (API oficial da Meta)") : traduzir("WhatsApp (API não oficial, QR Code)")}
                 </p>
                 <p className="int-sub" style={{ margin: "4px 0 0" }}>Conectado • {numeroConectado}</p>
               </div>
@@ -193,7 +193,7 @@ export function WhatsAppSecao() {
                         aparecia por trás, dando aquele efeito de QR "com uma tela azul em cima". */}
                     <div style={{ background: "#fff", padding: 12, borderRadius: 8 }}>
                       {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pela Evolution API, não é asset estático */}
-                      <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={200} height={200} />
+                      <img src={naoOficial.estado.metadados.qrDataUrl} alt={traduzir("QR Code de conexão do WhatsApp")} width={200} height={200} />
                     </div>
                     <p className="hint">{traduzir("Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.")}</p>
                   </div>

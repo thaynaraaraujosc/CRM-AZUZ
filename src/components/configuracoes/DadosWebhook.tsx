@@ -52,6 +52,7 @@ function LinhaCopiavel({ rotulo, valor }: { rotulo: string; valor: string }) {
 /** Tira das conversas os "anexos" que na verdade são página HTML. Sobra do período em que o CRM
  * baixava a mídia do Instagram sem autenticação. Some daqui quando não houver mais nenhum. */
 function LimparAnexosInstagram() {
+  const { t: traduzir } = useIdioma();
   const [rodando, setRodando] = useState(false);
   const [resultado, setResultado] = useState<number | null>(null);
 
@@ -83,7 +84,7 @@ function LimparAnexosInstagram() {
   return (
     <div style={{ marginTop: 14 }}>
       <button type="button" className="btn ghost" onClick={limpar} disabled={rodando}>
-        {rodando ? "Limpando…" : "Limpar anexos quebrados do Instagram"}
+        {rodando ? "Limpando…" : traduzir("Limpar anexos quebrados do Instagram")}
       </button>
       <p className="hint" style={{ margin: "6px 0 0" }}>
         Tira das conversas os cards de arquivo que apareceram como “html · 669 KB”. O texto das
@@ -117,13 +118,13 @@ export function DadosWebhook() {
         por outro endereço, os valores podem ser outros: use sempre os que aparecem aqui.
       </p>
 
-      <LinhaCopiavel rotulo="URL do webhook do WhatsApp" valor={dados.urlWhatsapp} />
-      <LinhaCopiavel rotulo="URL do webhook do Instagram" valor={dados.urlInstagram} />
+      <LinhaCopiavel rotulo={traduzir("URL do webhook do WhatsApp")} valor={dados.urlWhatsapp} />
+      <LinhaCopiavel rotulo={traduzir("URL do webhook do Instagram")} valor={dados.urlInstagram} />
 
       <LimparAnexosInstagram />
 
       {dados.tokenVerificacao ? (
-        <LinhaCopiavel rotulo="Token de verificação (os dois usam o mesmo)" valor={dados.tokenVerificacao} />
+        <LinhaCopiavel rotulo={traduzir("Token de verificação (os dois usam o mesmo)")} valor={dados.tokenVerificacao} />
       ) : (
         <p className="hint" style={{ color: "var(--danger)", margin: "10px 0 0" }}>
           <IconAlerta width={12} height={12} aria-hidden="true" /> Este servidor está sem o token de verificação configurado (`META_WEBHOOK_VERIFY_TOKEN`).

@@ -39,12 +39,13 @@ export function AudioWaveformBars({
   progresso: number;
   onSeek?: (fracao: number) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const barras = waveform.length > 0 ? waveform : new Array(32).fill(0.15);
   return (
     <div
       className="audio-waveform"
       role={onSeek ? "slider" : undefined}
-      aria-label={onSeek ? "Progresso do áudio" : undefined}
+      aria-label={onSeek ? traduzir("Progresso do áudio") : undefined}
       aria-valuemin={onSeek ? 0 : undefined}
       aria-valuemax={onSeek ? 100 : undefined}
       aria-valuenow={onSeek ? Math.round(progresso * 100) : undefined}
@@ -150,7 +151,7 @@ export function AudioBubblePlayer({
         type="button"
         className="audio-player-btn"
         onClick={alternarTocar}
-        aria-label={tocando ? "Pausar áudio" : "Reproduzir áudio"}
+        aria-label={tocando ? traduzir("Pausar áudio") : traduzir("Reproduzir áudio")}
         title={tocando ? "Pausar" : "Reproduzir"}
       >
         {tocando ? <IconPause width={13} height={13} /> : <IconPlay width={13} height={13} />}

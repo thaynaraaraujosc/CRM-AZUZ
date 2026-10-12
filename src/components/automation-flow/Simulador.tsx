@@ -150,7 +150,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
               </div>
 
               <button type="button" className="btn primary block mt14" onClick={iniciar} disabled={ocupado}>
-                {ocupado ? "Rodando…" : "Rodar simulação"}
+                {ocupado ? "Rodando…" : traduzir("Rodar simulação")}
               </button>
 
               {erroSetup ? <p className="flow-problema erro mt14">{erroSetup}</p> : null}

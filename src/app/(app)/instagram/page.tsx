@@ -251,7 +251,7 @@ export default function InstagramConversasPage() {
       await carregarMensagens(aberta);
       await carregarConversas();
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não deu pra enviar.");
+      setErro(e instanceof Error ? e.message : traduzir("Não deu pra enviar."));
     } finally {
       setEnviando(false);
     }
@@ -278,7 +278,7 @@ export default function InstagramConversasPage() {
               <p className="hint ig-vazio">{traduzir("Carregando…")}</p>
             ) : !visiveis.length ? (
               <p className="hint ig-vazio">
-                {conversas.length ? "Ninguém com esse nome." : "Nenhuma conversa do Direct ainda."}
+                {conversas.length ? traduzir("Ninguém com esse nome.") : traduzir("Nenhuma conversa do Direct ainda.")}
               </p>
             ) : (
               visiveis.map((c) => (
@@ -385,11 +385,11 @@ export default function InstagramConversasPage() {
                   <span>{traduzir("Seguidores")}</span>
                 </div>
                 <div>
-                  <strong>{atual.perfil?.verificado == null ? "—" : atual.perfil.verificado ? "Sim" : "Não"}</strong>
+                  <strong>{atual.perfil?.verificado == null ? "—" : atual.perfil.verificado ? traduzir("Sim") : "Não"}</strong>
                   <span>{traduzir("Verificado")}</span>
                 </div>
                 <div>
-                  <strong>{atual.perfil?.segueVoce == null ? "—" : atual.perfil.segueVoce ? "Sim" : "Não"}</strong>
+                  <strong>{atual.perfil?.segueVoce == null ? "—" : atual.perfil.segueVoce ? traduzir("Sim") : "Não"}</strong>
                   <span>{traduzir("Segue você")}</span>
                 </div>
               </div>

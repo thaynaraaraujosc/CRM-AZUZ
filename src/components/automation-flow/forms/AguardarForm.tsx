@@ -21,9 +21,9 @@ const ESCOLHAS: { valor: AguardarData["modo"]; label: string; ajuda: string }[] 
     label: "A resposta do contato",
     ajuda: "Continua no instante em que ele responder. Com prazo, o bloco ganha duas saídas: respondeu e não respondeu.",
   },
-  { valor: "ate_horario", label: "Um horário do dia", ajuda: "Espera até chegar a hora marcada." },
-  { valor: "ate_data", label: "Uma data", ajuda: "Espera até o dia marcado." },
-  { valor: "ate_consulta", label: "A data da consulta", ajuda: "Espera até a consulta agendada do contato." },
+  { valor: "ate_horario", label: "Um horário do dia", ajuda: "Espera até chegar a hora marcada."},
+  { valor: "ate_data", label: "Uma data", ajuda: "Espera até o dia marcado."},
+  { valor: "ate_consulta", label: "A data da consulta", ajuda: "Espera até a consulta agendada do contato."},
 ];
 
 const UNIDADES = [
@@ -65,7 +65,7 @@ export function AguardarForm({ data, onChange }: { data: AguardarData; onChange:
             </option>
           ))}
         </select>
-        {ajuda ? <p className="hint">{ajuda}</p> : null}
+        {ajuda ? <p className="hint">{traduzir(ajuda)}</p> : null}
       </div>
 
       {ehDuracao ? (

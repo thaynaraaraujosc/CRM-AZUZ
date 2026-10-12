@@ -124,7 +124,7 @@ export function EditorTemplate({
       if (!resposta.ok) throw new Error(dados.erro ?? "Não foi possível salvar.");
       await aoSalvar(dados, enviarParaAnalise);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível salvar.");
+      setErro(e instanceof Error ? e.message : traduzir("Não foi possível salvar."));
       setSalvando(null);
     }
   }
@@ -158,7 +158,7 @@ export function EditorTemplate({
               onClick={() => void salvar(true)}
               title={traduzir("Salva e envia pra análise da Meta")}
             >
-              {salvando === "analise" ? "Enviando…" : "Salvar e enviar para análise"}
+              {salvando === "analise" ? "Enviando…" : traduzir("Salvar e enviar para análise")}
             </button>
           ) : null}
         </>
@@ -200,11 +200,11 @@ export function EditorTemplate({
                   type="button"
                   className={`tpl-canal${r.canal === c.canal ? " on" : ""}`}
                   disabled={!c.conectado || !!template}
-                  title={!c.conectado ? c.motivo : template ? "O canal não muda depois de criado; duplique se precisar." : undefined}
+                  title={!c.conectado ? c.motivo : template ? traduzir("O canal não muda depois de criado; duplique se precisar.") : undefined}
                   onClick={() => setR((a) => ({ ...a, canal: c.canal, botoes: LIMITES[c.canal].botoesMaximo ? a.botoes : [] }))}
                 >
                   <strong>{traduzir(c.label)}</strong>
-                  <span>{c.conectado ? c.detalhe || "Conectado" : "Não conectado"}</span>
+                  <span>{c.conectado ? c.detalhe || "Conectado" : traduzir("Não conectado")}</span>
                 </button>
                 ))}
             </div>

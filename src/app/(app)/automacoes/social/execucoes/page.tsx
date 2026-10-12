@@ -72,7 +72,7 @@ export default function ExecucoesSociaisPage() {
           ) : (
             <TabelaExecucoes
               execucoes={painel?.execucoes ?? []}
-              vazio={soErros ? "Nenhuma execução com erro. É a notícia boa." : "Nenhuma execução ainda."}
+              vazio={soErros ? traduzir("Nenhuma execução com erro. É a notícia boa.") : traduzir("Nenhuma execução ainda.")}
             />
           )}
         </section>

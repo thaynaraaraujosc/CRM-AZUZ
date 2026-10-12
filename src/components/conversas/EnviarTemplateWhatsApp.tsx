@@ -116,7 +116,7 @@ export function EnviarTemplateWhatsApp({
       aoEnviar(preencher(corpo, valores), dados.wamid);
       aoFechar();
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Falha ao enviar o modelo.");
+      setErro(e instanceof Error ? e.message : traduzir("Falha ao enviar o modelo."));
     } finally {
       setEnviando(false);
     }

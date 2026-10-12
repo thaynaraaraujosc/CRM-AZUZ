@@ -155,7 +155,7 @@ export function ConexaoInstagram() {
             : "A Meta não devolveu foto pra esse perfil. Veja o detalhe abaixo.";
       setDiagnostico(`${resumo}\n\n${JSON.stringify(dados, null, 2)}`);
     } catch (e) {
-      setDiagnostico(e instanceof Error ? e.message : "Falha ao testar.");
+      setDiagnostico(e instanceof Error ? e.message : traduzir("Falha ao testar."));
     } finally {
       setDiagnosticando(false);
     }
@@ -175,7 +175,7 @@ export function ConexaoInstagram() {
       // mudas: e isso precisa ser dito, não descoberto depois.
       setResultadoAssinatura(dados.aviso ?? "Recebimento reativado. Peça uma mensagem nova pra confirmar.");
     } catch (e) {
-      setResultadoAssinatura(e instanceof Error ? e.message : "Falha ao reativar.");
+      setResultadoAssinatura(e instanceof Error ? e.message : traduzir("Falha ao reativar."));
     } finally {
       setReassinando(false);
       recarregar();
@@ -223,7 +223,7 @@ export function ConexaoInstagram() {
             </p>
           ) : null}
           <button type="button" className="btn ghost" disabled={reassinando} onClick={() => void reassinar()}>
-            {reassinando ? "Reativando…" : "Reativar recebimento de mensagens"}
+            {reassinando ? "Reativando…" : traduzir("Reativar recebimento de mensagens")}
           </button>
           <p className="hint" style={{ margin: "4px 0 0" }}>
             {resultadoAssinatura ??
@@ -248,7 +248,7 @@ export function ConexaoInstagram() {
             disabled={diagnosticando}
             onClick={() => void rodarDiagnostico()}
           >
-            {diagnosticando ? "Testando…" : "Testar foto e @ do perfil"}
+            {diagnosticando ? "Testando…" : traduzir("Testar foto e @ do perfil")}
           </button>
           {diagnostico ? (
             <pre className="hint" style={{ margin: "6px 0 0", whiteSpace: "pre-wrap" }}>{diagnostico}</pre>
@@ -277,6 +277,7 @@ export function ConexaoInstagram() {
 }
 
 export function ConexaoMetaAds() {
+  const { t: traduzir } = useIdioma();
   const { integracao } = useIntegracaoMeta("meta_ads");
   const conta = integracao?.metadados?.adAccountNome as string | undefined;
 
@@ -284,8 +285,8 @@ export function ConexaoMetaAds() {
     <PainelOAuth
       provedor="meta_ads"
       href="/api/integracoes/meta/conectar?provedor=meta_ads"
-      descricao="Autoriza o CRM a ler suas campanhas. É o que faz a origem dos leads aparecer no painel de Tráfego."
-      rotuloConectado={conta ? `Conectado • ${conta}` : "Conta de anúncios conectada"}
+      descricao={traduzir("Autoriza o CRM a ler suas campanhas. É o que faz a origem dos leads aparecer no painel de Tráfego.")}
+      rotuloConectado={conta ? `Conectado • ${conta}` : traduzir("Conta de anúncios conectada")}
       rotuloDesconectar="Desconectar Meta Ads"
     />
   );
@@ -312,7 +313,7 @@ export function ConexaoGoogleAds() {
       <>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <p className="int-sub" style={{ margin: 0 }}>
-            {statusGoogle.contaId ? `Conectado • conta ${statusGoogle.contaId}` : "Conta de anúncios conectada"}
+            {statusGoogle.contaId ? `Conectado • conta ${statusGoogle.contaId}` : traduzir("Conta de anúncios conectada")}
           </p>
           <button type="button" className="btn danger" onClick={() => void desconectar()} disabled={desconectando}>
             {desconectando ? "Desconectando…" : "Desconectar Google Ads"}

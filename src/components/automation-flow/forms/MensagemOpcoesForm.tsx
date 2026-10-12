@@ -18,17 +18,17 @@ const COMPARACOES: { valor: TipoComparacao; label: string }[] = [
   // rolar pro lado. A explicação passou pra baixo do campo, onde cabe sem esticar nada.
   { valor: "padrao", label: "Padrão" },
   { valor: "igual", label: "Exatamente igual a" },
-  { valor: "contem", label: "Contém" },
-  { valor: "comeca_com", label: "Começa com" },
-  { valor: "termina_com", label: "Termina com" },
-  { valor: "numero", label: "É o número" },
-  { valor: "regex", label: "Expressão regular (avançado)" },
+  { valor: "contem", label: "Contém"},
+  { valor: "comeca_com", label: "Começa com"},
+  { valor: "termina_com", label: "Termina com"},
+  { valor: "numero", label: "É o número"},
+  { valor: "regex", label: "Expressão regular (avançado)"},
   { valor: "qualquer", label: "Qualquer resposta (pega o resto)" },
 ];
 
 const APOS_TENTATIVAS: { valor: AposTentativas; label: string }[] = [
   { valor: "outra_resposta", label: "Seguir pelo caminho \"Errou demais\"" },
-  { valor: "encerrar", label: "Encerrar a automação" },
+  { valor: "encerrar", label: "Encerrar a automação"},
 ];
 import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";

@@ -72,7 +72,7 @@ export function ConexaoQrCode({ aoConectar }: { aoConectar?: () => void }) {
             dando o efeito de QR "com uma tela azul em cima". */}
         <div style={{ background: "#fff", padding: 12, borderRadius: 8 }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pela Evolution API, não é asset estático */}
-          <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={200} height={200} />
+          <img src={naoOficial.estado.metadados.qrDataUrl} alt={traduzir("QR Code de conexão do WhatsApp")} width={200} height={200} />
         </div>
         <p className="hint" style={{ margin: 0 }}>
           {traduzir("Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.")}

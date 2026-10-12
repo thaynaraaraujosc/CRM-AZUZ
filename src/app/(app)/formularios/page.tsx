@@ -370,7 +370,7 @@ export default function FormulariosPage() {
                 className={`btn ${formularioAberto.status === "publicado" ? "ghost" : "primary"}`}
                 onClick={() => {
                   alternarPublicacao(formularioAberto.id);
-                  avisar(formularioAberto.status === "publicado" ? "Formulário voltou pra rascunho." : "Formulário publicado: o link já responde.");
+                  avisar(formularioAberto.status === "publicado" ? traduzir("Formulário voltou pra rascunho.") : traduzir("Formulário publicado: o link já responde."));
                 }}
               >
                 {formularioAberto.status === "publicado" ? "Despublicar" : "Publicar"}
@@ -408,7 +408,7 @@ export default function FormulariosPage() {
                             <p className="hint" style={{ marginTop: 6 }}>
                               {formularioAberto.senha
                                 ? "A senha já vai dentro do link: quem receber abre direto, quem não tem o link não entra."
-                                : "Digite uma senha aqui pra criar o link privado. Sem ela, este link é igual ao público."}
+                                : traduzir("Digite uma senha aqui pra criar o link privado. Sem ela, este link é igual ao público.")}
                             </p>
                           </div>
                           <div className="key-row" style={{ padding: 0 }}>
@@ -933,7 +933,7 @@ function PainelCampo({
 
       <SecaoPainel titulo={traduzir("Geral")}>
         <div className="field">
-          <label>{ehLayout ? "Texto" : "Rótulo"}</label>
+          <label>{ehLayout ? "Texto" : traduzir("Rótulo")}</label>
           <input className="input" style={{ width: "100%" }} value={pergunta.rotulo} onChange={(e) => onAtualizar({ rotulo: e.target.value })} />
         </div>
         {pergunta.tipo === "imagem_bloco" ? (
@@ -1390,7 +1390,7 @@ function CampoImagem({
       setNaoCarregou(false);
       onMudar(dados.url, dados.arquivo);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não deu pra enviar a imagem.");
+      setErro(e instanceof Error ? e.message : traduzir("Não deu pra enviar a imagem."));
     } finally {
       setEnviando(false);
     }
@@ -1404,7 +1404,7 @@ function CampoImagem({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt="" className="form-design-logo-previa" onError={() => setNaoCarregou(true)} />
         ) : (
-          <span className="form-design-logo-vazia">{url ? "Não carregou" : "Sem imagem"}</span>
+          <span className="form-design-logo-vazia">{url ? traduzir("Não carregou") : "Sem imagem"}</span>
         )}
         <div className="form-design-logo-acoes">
           <label className="btn ghost" style={{ cursor: enviando ? "wait" : "pointer" }}>
@@ -1711,7 +1711,7 @@ function PainelDesign({
           }
         />
         <CampoImagem
-          rotulo="Imagem de fundo"
+          rotulo={traduzir("Imagem de fundo")}
           tipo="fundo"
           formularioId={formulario.id}
           url={formulario.tema.imagemFundoUrl}

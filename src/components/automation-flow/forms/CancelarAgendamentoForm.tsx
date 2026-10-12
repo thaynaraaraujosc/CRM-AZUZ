@@ -8,17 +8,17 @@ const TIPOS_AGENDAMENTO = ["Consulta", "Reunião", "Retorno", "Visita", "Demonst
 
 // Mocado: modelos de mensagem de cancelamento prontos, sem integração real.
 const MODELOS_CANCELAMENTO = [
-  { id: "padrao", nome: "Cancelamento padrão" },
+  { id: "padrao", nome: "Cancelamento padrão"},
   { id: "indisponibilidade", nome: "Cancelamento por indisponibilidade" },
-  { id: "pedido_cliente", nome: "Cancelamento a pedido do cliente" },
+  { id: "pedido_cliente", nome: "Cancelamento a pedido do cliente"},
 ];
 
 const CRITERIOS: { valor: CriterioAgendamento; label: string }[] = [
-  { valor: "proximo", label: "Próximo agendamento do contato" },
-  { valor: "ultimo_criado", label: "Último agendamento criado" },
-  { valor: "tipo", label: "Agendamento de determinado tipo" },
-  { valor: "responsavel", label: "Agendamento com determinado responsável" },
-  { valor: "especifico", label: "Agendamento específico" },
+  { valor: "proximo", label: "Próximo agendamento do contato"},
+  { valor: "ultimo_criado", label: "Último agendamento criado"},
+  { valor: "tipo", label: "Agendamento de determinado tipo"},
+  { valor: "responsavel", label: "Agendamento com determinado responsável"},
+  { valor: "especifico", label: "Agendamento específico"},
 ];
 
 /** Ação "Cancelar agendamento" (item 2). Qual agendamento cancelar, e opcionalmente qual mensagem

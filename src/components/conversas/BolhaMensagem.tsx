@@ -139,7 +139,7 @@ export function BolhaMensagem({
   /** Botão que abre a publicação (ou a conversa) no Instagram. */
   const botaoExterno = msg.linkExterno ? (
     <a className="bubble-acao-externa" href={msg.linkExterno} target="_blank" rel="noopener noreferrer">
-      {msg.linkEhConversa ? "Abrir conversa no Instagram ↗" : "Ver publicação no Instagram ↗"}
+      {msg.linkEhConversa ? "Abrir conversa no Instagram ↗" : traduzir("Ver publicação no Instagram ↗")}
     </a>
   ) : null;
 
@@ -165,7 +165,7 @@ export function BolhaMensagem({
           <img
             className="bubble-localizacao-mapa"
             src={`https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=15&size=280x140&maptype=mapnik&markers=${lat},${lng},red-pushpin`}
-            alt="Mapa com a localização compartilhada"
+            alt={traduzir("Mapa com a localização compartilhada")}
             loading="lazy"
           />
           <div className="bubble-localizacao-info">
@@ -287,7 +287,7 @@ export function BolhaMensagem({
           // lá. "Baixar vídeo" aqui seria uma promessa falsa. Não há o que baixar.
           <a className="bubble-midia-externa" href={msg.linkExterno} target="_blank" rel="noopener noreferrer">
             <IconVideoCam width={18} height={18} />
-            {msg.linkEhConversa ? "Abrir conversa no Instagram" : "Ver publicação no Instagram"}
+            {msg.linkEhConversa ? "Abrir conversa no Instagram" : traduzir("Ver publicação no Instagram")}
           </a>
         ) : liberada("video") ? (
           <video className="bubble-video" src={msg.video.url} controls preload="metadata" muted={!msg.video.comAudio} />

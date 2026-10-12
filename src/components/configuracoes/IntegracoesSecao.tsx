@@ -24,8 +24,8 @@ import { useIdioma } from "@/lib/idioma-context";
 type AppFuturo = { nome: string; descricao: string; categoria: string };
 const APPS_EM_BREVE: AppFuturo[] = [
   { nome: "Google Agenda", descricao: "Sincronize compromissos com sua agenda pessoal.", categoria: "Agenda" },
-  { nome: "Gmail", descricao: "Envie e receba e-mails direto do CRM.", categoria: "Comunicação" },
-  { nome: "Outlook", descricao: "Sincronize sua caixa de entrada corporativa.", categoria: "Comunicação" },
+  { nome: "Gmail", descricao: "Envie e receba e-mails direto do CRM.", categoria: "Comunicação"},
+  { nome: "Outlook", descricao: "Sincronize sua caixa de entrada corporativa.", categoria: "Comunicação"},
   { nome: "Google Sheets", descricao: "Exporte relatórios direto pra uma planilha.", categoria: "Dados" },
 ];
 /* Derivada da lista, não escrita à mão. Com a lista fixa, tirar os apps de Pagamentos e
@@ -56,6 +56,7 @@ function LinhaReal({
   href?: string;
   painel?: React.ReactNode;
 }) {
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
 
   return (
@@ -67,7 +68,7 @@ function LinhaReal({
           <p className="int-sub">{sub}</p>
         </div>
         <span className={`int-status ${conectado ? "connected" : "off"}`}>
-          {conectado ? "Conectado" : "Não conectado"}
+          {conectado ? "Conectado" : traduzir("Não conectado")}
         </span>
         {painel ? (
           <button
@@ -207,7 +208,7 @@ export function IntegracoesSecao() {
           <LinhaReal
             icone={<IconCalendar width={19} height={19} style={{ color: "var(--blue)" }} />}
             titulo={traduzir("Meta Ads")}
-            sub={metaAds.integracao?.status === "conectado" ? "Alimenta o painel de Tráfego automaticamente" : "Conecte pra ver essa origem no painel de Tráfego"}
+            sub={metaAds.integracao?.status === "conectado" ? traduzir("Alimenta o painel de Tráfego automaticamente") : traduzir("Conecte pra ver essa origem no painel de Tráfego")}
             conectado={metaAds.integracao?.status === "conectado"}
             painel={<ConexaoMetaAds />}
           />

@@ -129,7 +129,7 @@ export function ComentarioInstagramForm({
         <p className="hint">
           {palavras.length === 0
             ? "Sem palavra nenhuma, QUALQUER comentário dispara a automação."
-            : "Basta uma das palavras aparecer no comentário."}
+            : traduzir("Basta uma das palavras aparecer no comentário.")}
         </p>
       </div>
 

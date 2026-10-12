@@ -104,10 +104,10 @@ export function MigrarGatilhos({ aoMigrar }: { aoMigrar: () => void }) {
 
       <div className="migrar-aviso-fim">
         <button type="button" className="btn ghost" onClick={() => setAberto((v) => !v)}>
-          {aberto ? "Esconder" : "Ver o que vai mudar"}
+          {aberto ? "Esconder" : traduzir("Ver o que vai mudar")}
         </button>
         <button type="button" className="btn primary" onClick={migrar} disabled={migrando}>
-          {migrando ? "Trazendo…" : "Trazer pra grade"}
+          {migrando ? "Trazendo…" : traduzir("Trazer pra grade")}
         </button>
       </div>
     </div>

@@ -99,7 +99,7 @@ export function OrganizarMeuDia({
       aberto={aberto}
       onFechar={onFechar}
       titulo={traduzir("Organizar meu dia")}
-      subtitulo={emExecucao ? "Modo execução: siga a sequência sugerida" : "Sequência sugerida a partir do que precisa de atenção hoje"}
+      subtitulo={emExecucao ? traduzir("Modo execução: siga a sequência sugerida") : traduzir("Sequência sugerida a partir do que precisa de atenção hoje")}
       rodape={
         emExecucao ? (
           <>

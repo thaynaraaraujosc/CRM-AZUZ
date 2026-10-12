@@ -77,8 +77,8 @@ function FunilPageInner() {
     limparErroSincronizacao,
   } = useFunis();
   const { fluxos } = useAutomationFlows();
-  const { contatos } = useContatos();
-  const { conversas } = useConversas();
+  const { contatos, excluirContato } = useContatos();
+  const { conversas, excluirConversa } = useConversas();
 
   /**
    * Última movimentação por contato: é o que o card mostra no canto e o que dá sentido ao botão
@@ -160,7 +160,7 @@ function FunilPageInner() {
       setDesalinhados(0);
       await recarregarFunis();
     } catch (erro) {
-      avisarAutomacao(erro instanceof Error ? erro.message : "Não foi possível alinhar funil e conversas.");
+      avisarAutomacao(erro instanceof Error ? erro.message : traduzir("Não foi possível alinhar funil e conversas."));
     } finally {
       setImportando(false);
     }
@@ -185,7 +185,7 @@ function FunilPageInner() {
       );
       await recarregarFunis();
     } catch (erro) {
-      avisarAutomacao(erro instanceof Error ? erro.message : "Não foi possível reordenar.");
+      avisarAutomacao(erro instanceof Error ? erro.message : traduzir("Não foi possível reordenar."));
     } finally {
       setReordenando(false);
     }
@@ -299,7 +299,7 @@ function FunilPageInner() {
       setDuplicados([]);
       await recarregarFunis();
     } catch (erro) {
-      avisarAutomacao(erro instanceof Error ? erro.message : "Não deu pra juntar os negócios agora.");
+      avisarAutomacao(erro instanceof Error ? erro.message : traduzir("Não deu pra juntar os negócios agora."));
     } finally {
       setJuntando(false);
     }
@@ -333,6 +333,50 @@ function FunilPageInner() {
     );
     setDesfechoMenu(null);
     setMotivoEscolhido("");
+  }
+
+  /**
+   * Tira o card do funil. O contato e a conversa FICAM.
+   *
+   * É o caso comum: o negócio não existe (duplicado, criado por engano, lead que nunca foi lead),
+   * mas a pessoa continua sendo alguém com quem já se falou. Apagar o contato junto seria perder
+   * histórico de atendimento por causa de um card errado.
+   */
+  function excluirNegocio(coluna: number, card: number) {
+    if (!funilAtivo) return;
+    setFunis((prev) =>
+      prev.map((f) => {
+        if (f.id !== funilAtivo.id) return f;
+        const colunas = f.colunas.map((c, i) =>
+          i !== coluna ? c : { ...c, cards: c.cards.filter((_, j) => j !== card), total: c.cards.length - 1 },
+        );
+        return { ...f, colunas };
+      }),
+    );
+    setDesfechoMenu(null);
+  }
+
+  /**
+   * Apaga o lead inteiro: o card, o contato e a conversa com as mensagens.
+   *
+   * Irreversível, e por isso pergunta antes dizendo exatamente o que sai. Contato e conversa são
+   * procurados pelo nome NORMALIZADO (`chaveDeContato`), que é como o resto do CRM casa as três
+   * coisas: o mesmo lead chega escrito de formas diferentes por canais diferentes.
+   */
+  function excluirLeadInteiro(coluna: number, card: number, nome: string) {
+    const confirmado = window.confirm(
+      `Apagar "${nome}" do CRM?\n\n` +
+        "Saem o card do funil, o contato e a conversa com todas as mensagens.\n\n" +
+        "Isso não tem como desfazer.",
+    );
+    if (!confirmado) return;
+
+    const chave = chaveDeContato(nome);
+    const contato = contatos.find((c) => chaveDeContato(c.nome) === chave);
+    if (contato) excluirContato(contato.id);
+    const conversa = conversas.find((c) => chaveDeContato(c.nome) === chave);
+    if (conversa) excluirConversa(conversa.id);
+    excluirNegocio(coluna, card);
   }
 
   function reabrirNegocio(coluna: number, card: number) {
@@ -632,7 +676,7 @@ function FunilPageInner() {
               onClick={() => setModoAutomatizar((v) => !v)}
               title={traduzir("Ver e configurar o que cada etapa dispara sozinha")}
             >
-              {modoAutomatizar ? "Ver negócios" : "Automatizar"}
+              {modoAutomatizar ? traduzir("Ver negócios") : "Automatizar"}
             </button>
             {funilAtivo ? (
               <div className="dropdown-anchor">
@@ -697,7 +741,7 @@ function FunilPageInner() {
                         <span className="r">
                           {funis.length <= 1
                             ? "Precisa ter pelo menos um funil"
-                            : "Remove esse funil e os negócios dele"}
+                            : traduzir("Remove esse funil e os negócios dele")}
                         </span>
                       </button>
                         </div>
@@ -1272,6 +1316,26 @@ function FunilPageInner() {
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
                   <IconErro width={13} height={13} /> {traduzir("Marcar como perdido")}
+                </button>
+
+                {/* Apagar fica por último e separado por uma linha: é o que não tem volta, e
+                    aparecer colado em "Marcar como ganho" convidaria ao clique errado. */}
+                <hr style={{ border: 0, borderTop: "1px solid var(--border)", margin: "2px 0 0" }} />
+                <button
+                  type="button"
+                  className="btn ghost block"
+                  onClick={() => excluirNegocio(desfechoMenu.coluna, desfechoMenu.card)}
+                  title={traduzir("Tira o card do funil. O contato e a conversa continuam no CRM.")}
+                >
+                  {traduzir("Excluir negócio")}
+                </button>
+                <button
+                  type="button"
+                  className="btn danger block"
+                  onClick={() => excluirLeadInteiro(desfechoMenu.coluna, desfechoMenu.card, cardAtual.nome)}
+                  title={traduzir("Apaga o card, o contato e a conversa com as mensagens.")}
+                >
+                  {traduzir("Excluir contato e conversa")}
                 </button>
               </div>
             );
