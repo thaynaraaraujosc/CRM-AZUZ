@@ -219,7 +219,7 @@ export function EditorTemplate({
                   <select className="input" value={r.categoria} onChange={(e) => setR((a) => ({ ...a, categoria: e.target.value }))} disabled={!editavelNaMeta}>
                     {CATEGORIAS_META.map((c) => (
                       <option key={c.valor} value={c.valor}>
-                        {c.label}
+                        {traduzir(c.label)}
                       </option>
                     ))}
                   </select>
@@ -232,7 +232,7 @@ export function EditorTemplate({
                   <select className="input" value={r.idioma} onChange={(e) => setR((a) => ({ ...a, idioma: e.target.value }))} disabled={!editavelNaMeta}>
                     {IDIOMAS.map((i) => (
                       <option key={i.valor} value={i.valor}>
-                        {i.label}
+                        {traduzir(i.label)}
                       </option>
                     ))}
                   </select>
@@ -300,7 +300,7 @@ export function EditorTemplate({
                     >
                       {ORIGENS_DO_CONTATO.map((o) => (
                         <option key={o.origem} value={o.origem}>
-                          {o.label} do contato
+                          {traduzir(o.label)} do contato
                         </option>
                       ))}
                       <option value="texto">{traduzir("Texto fixo (preencho no disparo)")}</option>

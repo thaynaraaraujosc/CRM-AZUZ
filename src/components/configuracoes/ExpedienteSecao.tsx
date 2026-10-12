@@ -109,7 +109,7 @@ export function ExpedienteSecao() {
               <div key={dia.chave} className="expediente-linha">
                 <label className="expediente-dia">
                   <input type="checkbox" checked={!!faixa} onChange={() => alternarDia(dia.chave)} />
-                  <span>{dia.label}</span>
+                  <span>{traduzir(dia.label)}</span>
                 </label>
                 {faixa ? (
                   <div className="expediente-horas">
@@ -118,7 +118,7 @@ export function ExpedienteSecao() {
                       className="input"
                       value={faixa.de}
                       onChange={(e) => mudarHora(dia.chave, "de", e.target.value)}
-                      aria-label={`Abre ${dia.label}`}
+                      aria-label={`Abre ${traduzir(dia.label)}`}
                     />
                     <span>às</span>
                     <input
@@ -126,7 +126,7 @@ export function ExpedienteSecao() {
                       className="input"
                       value={faixa.ate}
                       onChange={(e) => mudarHora(dia.chave, "ate", e.target.value)}
-                      aria-label={`Fecha ${dia.label}`}
+                      aria-label={`Fecha ${traduzir(dia.label)}`}
                     />
                   </div>
                 ) : (

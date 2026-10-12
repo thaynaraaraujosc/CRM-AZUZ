@@ -142,7 +142,7 @@ export function CondicaoForm({
           <option value="">{traduzir("Selecione…")}</option>
           {CANAIS.map((c) => (
             <option key={c.valor} value={c.valor}>
-              {c.label}
+              {traduzir(c.label)}
             </option>
           ))}
         </select>
@@ -282,7 +282,7 @@ export function CondicaoForm({
           >
             {OPERADORES.map((o) => (
               <option key={o.valor} value={o.valor}>
-                {o.label}
+                {traduzir(o.label)}
               </option>
             ))}
           </select>

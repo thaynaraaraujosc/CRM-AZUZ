@@ -20,7 +20,7 @@ export function AtualizarStatusForm({ data, onChange }: { data: AtualizarStatusD
           <option value="">{traduzir("Selecione…")}</option>
           {STATUS.map((s) => (
             <option key={s.valor} value={s.valor}>
-              {s.label}
+              {traduzir(s.label)}
             </option>
           ))}
         </select>

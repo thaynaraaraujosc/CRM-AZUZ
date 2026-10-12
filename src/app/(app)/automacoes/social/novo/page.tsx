@@ -106,7 +106,7 @@ export default function NovaAutomacaoSocialPage() {
               {MODELOS_SOCIAIS.map((m) => (
                 <button key={m.id} type="button" className="social-modelo" onClick={() => doModelo(m.id)}>
                   <strong>{m.nome}</strong>
-                  <span>{m.descricao}</span>
+                  <span>{traduzir(m.descricao)}</span>
                   <em>{m.ajustar}</em>
                 </button>
               ))}

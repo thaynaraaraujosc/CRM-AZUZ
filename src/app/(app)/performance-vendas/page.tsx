@@ -211,7 +211,7 @@ function PerformanceVendasPageInner() {
                   className={`fchip${metricaEvolucao === m.chave ? " active" : ""}`}
                   onClick={() => setMetricaEvolucao(m.chave)}
                 >
-                  {m.label}
+                  {traduzir(m.label)}
                 </button>
               ))}
             </div>

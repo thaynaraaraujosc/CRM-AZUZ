@@ -132,8 +132,8 @@ export function BlockLibrary({
               type="button"
               key={cat.id}
               className="flow-lib-recolhida-cat"
-              title={cat.label}
-              aria-label={`Abrir biblioteca na categoria ${cat.label}`}
+              title={traduzir(cat.label)}
+              aria-label={`${traduzir("Abrir biblioteca na categoria")} ${traduzir(cat.label)}`}
               onClick={() => {
                 setCategoriasFechadas((prev) => {
                   const novo = new Set(prev);
@@ -196,13 +196,13 @@ export function BlockLibrary({
                 <div className="flow-lib-cat" key={grupo.id} data-flow-lib-cat={grupo.id}>
                   <button type="button" className="flow-lib-cat-h" onClick={() => alternarCategoria(grupo.id)} aria-expanded={!fechada}>
                     <span className={`flow-cat-dot flow-cat-${grupo.cor}`} aria-hidden="true" />
-                    <span>{grupo.label}</span>
+                    <span>{traduzir(grupo.label)}</span>
                     <span className="flow-lib-cat-n">{blocos.length}</span>
                     <span className="flow-lib-cat-arrow">{fechada ? "▸" : "▾"}</span>
                   </button>
                   {fechada ? null : (
                     <>
-                      <p className="flow-lib-cat-ajuda">{grupo.ajuda}</p>
+                      <p className="flow-lib-cat-ajuda">{traduzir(grupo.ajuda)}</p>
                       <BlocoSecao blocos={blocos} onAdicionarBloco={onAdicionarBloco} />
                     </>
                   )}
@@ -242,6 +242,7 @@ function BlocoSecao({
   onAdicionarBloco: (tipo: FlowNodeType) => void;
   termoDestacado?: string;
 }) {
+  const { t: traduzir } = useIdioma();
   return (
     <div>
       {titulo ? <p className="flow-lib-secao-titulo">{titulo}</p> : null}
@@ -262,16 +263,16 @@ function BlocoSecao({
           </div>
           <div className="flow-lib-bloco-texto">
             <span className="flow-lib-bloco-label">
-              {termoDestacado ? destacarTermo(b.label, termoDestacado) : b.label}
+              {termoDestacado ? destacarTermo(b.label, termoDestacado) : traduzir(b.label)}
             </span>
             <span className="flow-lib-bloco-desc">
-              {termoDestacado ? destacarTermo(b.descricao, termoDestacado) : b.descricao}
+              {termoDestacado ? destacarTermo(b.descricao, termoDestacado) : traduzir(b.descricao)}
             </span>
           </div>
           <button
             type="button"
             className="icon-btn subtle"
-            aria-label={`Adicionar bloco ${b.label}`}
+            aria-label={`${traduzir("Adicionar bloco")} ${traduzir(b.label)}`}
             onClick={() => onAdicionarBloco(b.tipo)}
           >
             +

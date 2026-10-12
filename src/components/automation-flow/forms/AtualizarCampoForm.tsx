@@ -62,7 +62,7 @@ export function AtualizarCampoForm({
           <optgroup label={traduzir("Campos do lead")}>
             {CAMPOS_NATIVOS.map((c) => (
               <option key={c.nome} value={c.nome}>
-                {c.label}
+                {traduzir(c.label)}
               </option>
             ))}
           </optgroup>

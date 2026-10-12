@@ -136,11 +136,11 @@ function LoginForm() {
         {erro && <p className="auth-erro">{erro}</p>}
 
         <button type="submit" className={`btn primary block${carregando ? " loading" : ""}`} disabled={carregando}>
-          Entrar
+          {traduzir("Entrar")}
         </button>
 
         <p className="auth-rodape">
-          Não possui conta? <Link href="/cadastro">{traduzir("Criar conta")}</Link>
+          {traduzir("Não possui conta?")} <Link href="/cadastro">{traduzir("Criar conta")}</Link>
         </p>
       </form>
     </div>

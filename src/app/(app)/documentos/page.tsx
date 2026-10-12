@@ -525,7 +525,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
               aria-pressed={aba === a.valor}
               onClick={() => setAba(a.valor)}
             >
-              {a.label}
+              {traduzir(a.label)}
             </button>
           ))}
           {aba === "lixeira" && visiveis.length > 0 ? (
@@ -2691,7 +2691,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
       <div className="doc-toolbar doc-toolbar-rich" style={{ display: mostrarToolbar ? undefined : "none" }}>
         <select className="doc-toolbar-select" defaultValue={ESTILOS_PARAGRAFO[0].valor} aria-label={traduzir("Estilo do parágrafo")} onChange={(e) => aplicarFormatacao("formatBlock", e.target.value)}>
           {ESTILOS_PARAGRAFO.map((e) => (
-            <option key={e.valor} value={e.valor}>{e.label}</option>
+            <option key={e.valor} value={e.valor}>{traduzir(e.label)}</option>
           ))}
         </select>
         <SeletorFonte
@@ -2704,7 +2704,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
         />
         <select className="doc-toolbar-select" defaultValue={TAMANHOS_FONTE_DOC[1].valor} aria-label={traduzir("Tamanho da fonte")} onChange={(e) => aplicarFormatacao("fontSize", e.target.value)}>
           {TAMANHOS_FONTE_DOC.map((t) => (
-            <option key={t.label} value={t.valor}>{t.label}</option>
+            <option key={traduzir(t.label)} value={t.valor}>{traduzir(t.label)}</option>
           ))}
         </select>
         <span className="doc-toolbar-sep" />
@@ -2727,7 +2727,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <span className="n">▭ Caixa de texto</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => aplicarFormatacao("formatBlock", "H1")}>
-              <span className="n">H Título</span>
+              <span className="n">{traduzir("H Título")}</span>
             </button>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={() => aplicarFormatacao("insertUnorderedList")}>
               <span className="n">• Lista</span>
@@ -3030,7 +3030,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setComentariosAberto(false)}><IconClose width={12} height={12} /></button>
             </div>
             {doc.comentarios.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>Selecione um trecho de texto e use &quot;Inserir → Comentário&quot; pra comentar.</p>
+              <p className="hint" style={{ padding: 17 }}>{traduzir("Selecione um trecho de texto e use &quot;Inserir → Comentário&quot; pra comentar.")}</p>
             ) : (
               doc.comentarios.map((c) => (
                 <div className={`doc-comentario-item${c.resolvido ? " resolvido" : ""}`} key={c.id}>
@@ -3075,7 +3075,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   <label>{traduzir("Estilo do parágrafo")}</label>
                   <select className="input" defaultValue={ESTILOS_PARAGRAFO[0].valor} onChange={(e) => aplicarFormatacao("formatBlock", e.target.value)}>
                     {ESTILOS_PARAGRAFO.map((e) => (
-                      <option key={e.valor} value={e.valor}>{e.label}</option>
+                      <option key={e.valor} value={e.valor}>{traduzir(e.label)}</option>
                     ))}
                   </select>
                 </div>
@@ -3087,7 +3087,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   <label>{traduzir("Tamanho")}</label>
                   <select className="input" defaultValue={TAMANHOS_FONTE_DOC[1].valor} onChange={(e) => aplicarFormatacao("fontSize", e.target.value)}>
                     {TAMANHOS_FONTE_DOC.map((t) => (
-                      <option key={t.label} value={t.valor}>{t.label}</option>
+                      <option key={traduzir(t.label)} value={t.valor}>{traduzir(t.label)}</option>
                     ))}
                   </select>
                 </div>
@@ -4162,7 +4162,7 @@ function PainelImagem({
           <button type="button" className="fchip" onClick={() => onMudar((img) => { const a = parseInt(img.style.zIndex || "0", 10) || 0; img.style.zIndex = String(a - 1); })}>{traduzir("Recuar")}</button>
           <button type="button" className="fchip" onClick={() => onMudar((img) => { img.style.zIndex = "-1"; })}>⬇ Enviar pra trás</button>
         </div>
-        <p className="hint" style={{ marginTop: 6 }}>Só tem efeito visível quando a posição não é &quot;Em linha&quot;.</p>
+        <p className="hint" style={{ marginTop: 6 }}>{traduzir("Só tem efeito visível quando a posição não é &quot;Em linha&quot;.")}</p>
       </div>
 
       <div className="field">
@@ -4536,8 +4536,8 @@ function MenuContextoTexto({
       <button type="button" onClick={onRecortar} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconCut width={13} height={13} /> {traduzir("Recortar")}</button>
       <button type="button" onClick={onColar} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconPaste width={13} height={13} /> {traduzir("Colar")}</button>
       <div className="doc-context-menu-sep" />
-      <button type="button" style={{ fontWeight: 700 }} onMouseDown={(e) => e.preventDefault()} onClick={onNegrito}>N Negrito</button>
-      <button type="button" style={{ fontStyle: "italic" }} onMouseDown={(e) => e.preventDefault()} onClick={onItalico}>I Itálico</button>
+      <button type="button" style={{ fontWeight: 700 }} onMouseDown={(e) => e.preventDefault()} onClick={onNegrito}>{traduzir("N Negrito")}</button>
+      <button type="button" style={{ fontStyle: "italic" }} onMouseDown={(e) => e.preventDefault()} onClick={onItalico}>{traduzir("I Itálico")}</button>
       <button type="button" onClick={onLink} style={{ display: "flex", alignItems: "center", gap: 6 }}><IconLink width={13} height={13} /> {traduzir("Link")}</button>
       <div className="doc-context-menu-linha">
         {CORES_MENU_TEXTO.map((c) => (

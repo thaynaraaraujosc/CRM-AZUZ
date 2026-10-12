@@ -379,7 +379,7 @@ export default function TrafegoPage() {
           />
           <KpiCard label={traduzir("Vendas")} value={String(vendas)} href="/performance-vendas" />
           <KpiCard label={traduzir("Custo / venda")} value={formatarMoeda(custoPorVenda)} />
-          <KpiCard label="ROAS" value={roas.label} formula={roas.formula} />
+          <KpiCard label={traduzir("ROAS")} value={roas.label} formula={roas.formula} />
         </div>
         )}
 
@@ -549,7 +549,7 @@ export default function TrafegoPage() {
                 <span className="sv">{campanhaDetalhe.vendas ?? 0}</span>
               </div>
               <div className="stat-row">
-                <span className="sl">ROAS</span>
+                <span className="sl">{traduzir("ROAS")}</span>
                 <span className="sv">{campanhaDetalhe.roas}</span>
               </div>
               <div className="stat-row">

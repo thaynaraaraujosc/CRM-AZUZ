@@ -430,7 +430,7 @@ export function ReportWizard({
                 >
                   <span className="report-type-icon">{t.icone}</span>
                   <strong style={{ fontSize: 13 }}>{t.nome}</strong>
-                  <span className="hint">{t.descricao}</span>
+                  <span className="hint">{traduzir(t.descricao)}</span>
                 </button>
               ))}
               <div className="field" style={{ gridColumn: "1 / -1" }}>

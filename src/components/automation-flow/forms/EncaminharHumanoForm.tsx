@@ -35,7 +35,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
         <label>{traduzir("Destino do atendimento")}</label>
         <select className="input" value={data.destino} onChange={(e) => onChange({ ...data, destino: e.target.value as ModoDestinoAtendimento })}>
           {DESTINOS.map((d) => (
-            <option key={d.valor} value={d.valor}>{d.label}</option>
+            <option key={d.valor} value={d.valor}>{traduzir(d.label)}</option>
           ))}
         </select>
       </div>
@@ -69,7 +69,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
           <label>{traduzir("Método")}</label>
           <select className="input" value={data.metodoDistribuicao ?? "disponibilidade"} onChange={(e) => onChange({ ...data, metodoDistribuicao: e.target.value as MetodoDistribuicaoAtendimento })}>
             {METODOS.map((m) => (
-              <option key={m.valor} value={m.valor}>{m.label}</option>
+              <option key={m.valor} value={m.valor}>{traduzir(m.label)}</option>
             ))}
           </select>
         </div>

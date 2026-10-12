@@ -181,7 +181,7 @@ export default function NovaAutomacaoComercialPage() {
                   }}
                 >
                   <strong>{m.nome}</strong>
-                  <span>{m.descricao}</span>
+                  <span>{traduzir(m.descricao)}</span>
                   <em>{m.ajustar}</em>
                 </button>
               ))}

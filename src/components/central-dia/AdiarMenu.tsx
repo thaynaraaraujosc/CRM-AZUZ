@@ -57,7 +57,7 @@ export function AdiarMenu({ onAdiar }: { onAdiar: (periodo: PeriodoAdiamento, da
                   setAberto(false);
                 }}
               >
-                <span className="n">{o.label}</span>
+                <span className="n">{traduzir(o.label)}</span>
               </button>
             ))
           ) : (

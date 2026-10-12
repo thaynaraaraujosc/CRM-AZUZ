@@ -605,7 +605,7 @@ export function AutomacaoDoFunil({
                   }}
                 >
                   <strong>{ACAO_ROTULO[a.tipo]}</strong>
-                  <span>{a.descricao}</span>
+                  <span>{traduzir(a.descricao)}</span>
                 </button>
               ))}
             </div>
@@ -647,7 +647,7 @@ export function AutomacaoDoFunil({
                     "movido para esta etapa" e "quando um formulário for enviado" são coisas de
                     naturezas diferentes. */}
                 {CATEGORIAS_GATILHO.map((categoria) => (
-                  <optgroup key={categoria.titulo} label={categoria.titulo}>
+                  <optgroup key={traduzir(categoria.titulo)} label={traduzir(categoria.titulo)}>
                     {categoria.quandos.map((q) => (
                       <option key={q} value={q}>
                         {QUANDO_ROTULO[q]}
@@ -840,7 +840,7 @@ export function AutomacaoDoFunil({
                         })
                       }
                     >
-                      {d.label}
+                      {traduzir(d.label)}
                     </button>
                   );
                 })}
