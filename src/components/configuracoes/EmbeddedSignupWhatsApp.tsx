@@ -49,7 +49,22 @@ export function EmbeddedSignupWhatsApp({
 }) {
   const appId = process.env.NEXT_PUBLIC_META_APP_ID;
   const configId = process.env.NEXT_PUBLIC_META_CONFIG_ID;
-  const versaoGraph = process.env.NEXT_PUBLIC_META_GRAPH_VERSION ?? "v23.0";
+  /*
+   * A VERSÃO DO DIÁLOGO É SEPARADA DA VERSÃO DAS CHAMADAS DE SERVIDOR, e isso é a correção.
+   *
+   * O SDK era iniciado com `NEXT_PUBLIC_META_GRAPH_VERSION`, a MESMA constante que todas as
+   * chamadas de servidor usam (`META_GRAPH_VERSION`, em `lib/integracoes/meta.ts`), hoje em v23.0.
+   * Só que o diálogo de login e a API são coisas diferentes: a configuração de Login do Facebook
+   * para Empresas é criada mirando uma versão, e abrir o diálogo numa versão mais velha que a dela
+   * falha logo na entrada, com "Falha ao iniciar sessão" — antes de qualquer parâmetro nosso ser
+   * lido. É exatamente a diferença observada: o mesmo fluxo roda em v26.0 no painel da Meta e
+   * falhava em v23.0 aqui.
+   *
+   * Env var PRÓPRIA, de propósito: subir a versão das chamadas de servidor junto mexeria no
+   * Instagram e no WhatsApp que já funcionam, e não há motivo pra arriscar isso pra consertar um
+   * diálogo de login.
+   */
+  const versaoGraph = process.env.NEXT_PUBLIC_META_LOGIN_VERSION ?? "v26.0";
 
   // Inicialização preguiçosa em vez de `setState` dentro do efeito. O SDK pode já estar carregado
   // (outro componente montou antes), e nesse caso o botão precisa nascer habilitado.
@@ -138,6 +153,18 @@ export function EmbeddedSignupWhatsApp({
     sessionInfoRef.current = null;
     telaAbandonadaRef.current = null;
 
+    // Só os campos realmente preenchidos: chave com `undefined` some no JSON, mas montar aqui
+    // deixa explícito quando não há NADA pra mandar.
+    const negocioParaSetup = (() => {
+      const campos = {
+        ...(dadosDoNegocio?.nome ? { name: dadosDoNegocio.nome } : {}),
+        ...(dadosDoNegocio?.email ? { email: dadosDoNegocio.email } : {}),
+        ...(dadosDoNegocio?.telefone ? { phone: { number: dadosDoNegocio.telefone } } : {}),
+        ...(dadosDoNegocio?.site ? { website: dadosDoNegocio.site } : {}),
+      };
+      return Object.keys(campos).length > 0 ? campos : null;
+    })();
+
     window.FB.login(
       (resposta) => {
         const code = resposta.authResponse?.code;
@@ -156,17 +183,14 @@ export function EmbeddedSignupWhatsApp({
         response_type: "code",
         override_default_response_type: true,
         extras: {
-          setup: {
-            // Pré-preenche o que já sabemos do cadastro. Reduz telas que a pessoa tem que
-            // preencher no popup da Meta.
-            business: {
-              name: dadosDoNegocio?.nome,
-              email: dadosDoNegocio?.email,
-              phone: dadosDoNegocio?.telefone ? { number: dadosDoNegocio.telefone } : undefined,
-              website: dadosDoNegocio?.site,
-            },
-          },
-          sessionInfoVersion: 3,
+          // `setup` SÓ quando há o que pré-preencher. Sem dados, isto virava `{"business":{}}` no
+          // corpo enviado à Meta — um objeto vazio onde ela espera campos, que não há motivo pra
+          // mandar.
+          ...(negocioParaSetup ? { setup: { business: negocioParaSetup } } : {}),
+          // TEXTO, não número: é o formato que a documentação da Meta usa. Enviado como número a
+          // Meta já ignorou a versão em algumas contas, e sem ela o `session_info` não chega —
+          // que é justamente o dado sem o qual a conexão não fecha.
+          sessionInfoVersion: "3",
         },
       },
     );
@@ -200,19 +224,25 @@ export function EmbeddedSignupWhatsApp({
         {conectando ? "Conectando…" : sdkPronto ? "Conectar com a API oficial (Meta)" : "Carregando…"}
       </button>
       {erro ? (
-        <>
-          <p className="hint" style={{ color: "var(--danger)", marginTop: 8 }}>
-            <IconAlerta width={12} height={12} aria-hidden="true" /> {erro}
-          </p>
-          {/* O erro mais comum aqui ("Falha ao iniciar sessão", mostrado dentro do popup da Meta) é
-              a configuração de login pertencer a um App diferente do App ID que o site usa. Mostrar
-              os dois lado a lado deixa isso óbvio sem ter que abrir o console. */}
-          <p className="hint" style={{ marginTop: 4, fontSize: 11 }}>
-            App ID em uso: <b>{appId}</b> · Configuração de login: <b>{configId}</b> · Graph{" "}
-            <b>{versaoGraph}</b>. Os dois primeiros precisam ser do MESMO app no painel da Meta.
-          </p>
-        </>
+        <p className="hint" style={{ color: "var(--danger)", marginTop: 8 }}>
+          <IconAlerta width={12} height={12} aria-hidden="true" /> {erro}
+        </p>
       ) : null}
+      {/*
+        * ESTA LINHA APARECE SEMPRE, e isso é correção de um defeito.
+        *
+        * Ela só saía quando o CRM registrava um erro. Mas a falha mais comum aqui ("Falha ao
+        * iniciar sessão") acontece DENTRO do popup da Meta, antes de qualquer resposta voltar —
+        * e quando o popup falha assim, o retorno pode nunca chegar. Ou seja: exatamente no caso
+        * em que esta informação é necessária, ela ficava escondida, e a tela do CRM ficava muda.
+        *
+        * Não há segredo aqui: os dois identificadores são variáveis `NEXT_PUBLIC_`, já vão pro
+        * navegador, e o App ID aparece até na barra de endereço do popup da Meta.
+        */}
+      <p className="hint" style={{ marginTop: 8, fontSize: 11 }}>
+        App ID em uso: <b>{appId}</b> · Configuração de login: <b>{configId}</b> · Graph{" "}
+        <b>{versaoGraph}</b>. Os dois primeiros precisam ser do MESMO app no painel da Meta.
+      </p>
     </div>
   );
 }

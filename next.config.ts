@@ -26,7 +26,16 @@ const CSP = [
   "img-src 'self' data: blob: https:",
   "media-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://graph.facebook.com https://graph.instagram.com",
+  /*
+   * O SDK do Facebook fala com MAIS do que a Graph API.
+   *
+   * O console em produção mostrou dez violações de `connect-src` ao abrir o Cadastro Incorporado
+   * do WhatsApp: o `sdk.js` consulta `connect.facebook.net` e `www.facebook.com`, não só
+   * `graph.facebook.com`. A política está em modo RELATO, então isso não bloqueou nada até agora —
+   * mas no dia em que ela for aplicada de verdade, a conexão com a API oficial para de funcionar,
+   * e a causa seria dificílima de achar, porque o erro aparece dentro do popup da Meta.
+   */
+  "connect-src 'self' https://graph.facebook.com https://graph.instagram.com https://connect.facebook.net https://www.facebook.com https://web.facebook.com",
   "frame-src 'self' https://www.facebook.com https://web.facebook.com",
   // Ninguém pode embutir o CRM num iframe. É o que impede clickjacking (uma página falsa por cima
   // capturando cliques reais).
