@@ -79,7 +79,7 @@ export default function TemplatesPage() {
     <>
       <Topbar
         title="Templates"
-        sub="Mensagens reutilizáveis para disparos e automações"
+        sub={traduzir("Mensagens reutilizáveis para disparos e automações")}
         actions={
           <button type="button" className="btn primary" onClick={() => setEditando("novo")} disabled={!algumCanal} title={!algumCanal ? "Conecte um canal em Configurações → Outras integrações" : undefined}>
             + Novo template
@@ -103,7 +103,7 @@ export default function TemplatesPage() {
           <p className="hint">Carregando…</p>
         ) : visiveis.length === 0 ? (
           <div className="card tpl-vazio">
-            <strong>Nenhum template ainda.</strong>
+            <strong>{traduzir("Nenhum template ainda.")}</strong>
             <p className="hint">
               Um template é uma mensagem escrita uma vez e usada muitas: no Disparo em massa e, em breve, dentro das automações.
               {algumCanal ? " Comece pelo botão acima." : " Conecte um canal em Configurações → Outras integrações pra começar."}

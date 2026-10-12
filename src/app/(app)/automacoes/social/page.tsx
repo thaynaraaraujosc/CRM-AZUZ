@@ -222,7 +222,7 @@ export default function AutomacoesSociaisPage() {
 
             {!pastas.length ? (
               <p className="hint">
-                Nenhuma pasta. Com poucos robôs isso não faz falta; a partir de uma dezena, faz.
+                {traduzir("Nenhuma pasta. Com poucos robôs isso não faz falta; a partir de uma dezena, faz.")}
               </p>
             ) : (
               <div className="social-pastas">
@@ -355,7 +355,7 @@ export default function AutomacoesSociaisPage() {
                                 setMenuAberto(null);
                               }}
                             >
-                              Mover pra pasta
+                              {traduzir("Mover pra pasta")}
                             </button>
                             <button
                               type="button"

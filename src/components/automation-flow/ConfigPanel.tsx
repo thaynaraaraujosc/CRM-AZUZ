@@ -259,7 +259,7 @@ export function ConfigPanel({
         {aba === "problemas" ? (
           <div className="flow-form">
             {problemas.length === 0 ? (
-              <p className="hint">Nenhum problema encontrado: esse fluxo está pronto pra publicar.</p>
+              <p className="hint">{traduzir("Nenhum problema encontrado: esse fluxo está pronto pra publicar.")}</p>
             ) : (
               problemas.map((p) => (
                 <button

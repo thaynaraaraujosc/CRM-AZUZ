@@ -122,7 +122,7 @@ export function TabelaExecucoes({ execucoes, vazio }: { execucoes: ExecucaoDetal
                           {p.detalhe ? `: ${p.detalhe}` : ""}
                         </li>
                       ))}
-                      {!e.passos.length ? <li>Nenhum passo registrado.</li> : null}
+                      {!e.passos.length ? <li>{traduzir("Nenhum passo registrado.")}</li> : null}
                     </ol>
                   </td>
                 </tr>

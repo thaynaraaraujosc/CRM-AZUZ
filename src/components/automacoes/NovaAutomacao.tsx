@@ -87,10 +87,10 @@ export function NovaAutomacao({
   }
 
   return (
-    <div className="nova-auto-fundo" role="dialog" aria-modal="true" aria-label="Nova automação">
+    <div className="nova-auto-fundo" role="dialog" aria-modal="true" aria-label={traduzir("Nova automação")}>
       <div className="nova-auto">
         <div className="nova-auto-topo">
-          <strong>Nova automação</strong>
+          <strong>{traduzir("Nova automação")}</strong>
           <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar")} onClick={onCancelar}>
             <IconClose width={13} height={13} />
           </button>
@@ -146,7 +146,7 @@ export function NovaAutomacao({
                   className={`nova-auto-escolha${semGatilho ? " on" : ""}`}
                   onClick={() => setSemGatilho(true)}
                 >
-                  <strong>Nada por enquanto</strong>
+                  <strong>{traduzir("Nada por enquanto")}</strong>
                   <span>
                     Um robô solto, pra ligar numa etapa depois ou ser chamado por outro robô.
                   </span>

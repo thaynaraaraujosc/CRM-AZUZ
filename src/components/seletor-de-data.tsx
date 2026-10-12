@@ -178,7 +178,7 @@ export function SeletorDeData({
           style={posicaoDoPainel()}
         >
           <div className="seletor-data-topo">
-            <button type="button" onClick={() => irParaMes(-1)} aria-label="Mês anterior">
+            <button type="button" onClick={() => irParaMes(-1)} aria-label={traduzir("Mês anterior")}>
               ‹
             </button>
             <strong>

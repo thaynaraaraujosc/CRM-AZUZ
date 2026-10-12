@@ -87,7 +87,7 @@ export function ConvidarForm() {
         </div>
         <div className="field">
           <label>Nome</label>
-          <input className="input" style={{ width: "100%" }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome completo" />
+          <input className="input" style={{ width: "100%" }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder={traduzir("Nome completo")} />
         </div>
         <div className="field">
           <label>{traduzir("E-mail (vai ser o login dele)")}</label>

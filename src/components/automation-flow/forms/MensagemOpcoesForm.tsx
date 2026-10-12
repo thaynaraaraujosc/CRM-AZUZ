@@ -235,13 +235,13 @@ export function MensagemOpcoesForm({
                 onChange={(e) => atualizarOpcao(opcao.id, { rotulo: e.target.value })}
                 aria-label={`Rótulo da opção ${i + 1}`}
               />
-              <button type="button" className="icon-btn subtle" aria-label="Mover pra cima" disabled={i === 0} onClick={() => moverOpcao(i, -1)}>
+              <button type="button" className="icon-btn subtle" aria-label={traduzir("Mover pra cima")} disabled={i === 0} onClick={() => moverOpcao(i, -1)}>
                 ↑
               </button>
               <button
                 type="button"
                 className="icon-btn subtle"
-                aria-label="Mover pra baixo"
+                aria-label={traduzir("Mover pra baixo")}
                 disabled={i === opcoes.length - 1}
                 onClick={() => moverOpcao(i, 1)}
               >

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
 
 import type { ExecutarRoboData } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Escolha do robô que este bloco começa.
@@ -25,6 +26,7 @@ export function ExecutarRoboForm({
   fluxoAtualId?: string;
   onChange: (data: ExecutarRoboData) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [robos, setRobos] = useState<{ id: string; nome: string; status?: string; area?: string }[]>([]);
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export function ExecutarRoboForm({
             onChange({ ...data, fluxoId: e.target.value, fluxoNome: escolhido?.nome });
           }}
         >
-          <option value="">Nenhum robô selecionado</option>
+          <option value="">{traduzir("Nenhum robô selecionado")}</option>
           {disponiveis.map((r) => (
             <option key={r.id} value={r.id}>
               {r.nome}

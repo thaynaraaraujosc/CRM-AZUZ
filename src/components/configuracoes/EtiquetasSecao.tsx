@@ -47,7 +47,7 @@ export function EtiquetasSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="Etiquetas" descricao="Marcações usadas em contatos, negócios e automações." />
+      <CabecalhoCategoria titulo="Etiquetas" descricao={traduzir("Marcações usadas em contatos, negócios e automações.")} />
 
       <div className="config-bloco">
         <input className="input" style={{ width: "100%", marginBottom: 12 }} placeholder={traduzir("Buscar etiqueta…")} value={busca} onChange={(e) => setBusca(e.target.value)} />
@@ -66,11 +66,11 @@ export function EtiquetasSecao() {
               )}
             </div>
           ))}
-          {todasEtiquetas.length === 0 ? <p className="hint">Nenhuma etiqueta encontrada.</p> : null}
+          {todasEtiquetas.length === 0 ? <p className="hint">{traduzir("Nenhuma etiqueta encontrada.")}</p> : null}
         </div>
 
         <div style={{ display: "flex", gap: 8, marginTop: 14, alignItems: "center" }}>
-          <input className="input" placeholder="Nova etiqueta" style={{ flex: 1 }} value={nomeNovo} onChange={(e) => setNomeNovo(e.target.value)} />
+          <input className="input" placeholder={traduzir("Nova etiqueta")} style={{ flex: 1 }} value={nomeNovo} onChange={(e) => setNomeNovo(e.target.value)} />
           <input className="input" type="color" value={corNova} onChange={(e) => setCorNova(e.target.value)} style={{ width: 44 }} />
           <button
             type="button"

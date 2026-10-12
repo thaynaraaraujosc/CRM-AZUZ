@@ -17,7 +17,7 @@ export function NotificacoesSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="Notificações" descricao="Quando e como você é avisado sobre o que acontece no CRM." />
+      <CabecalhoCategoria titulo={traduzir("Notificações")} descricao="Quando e como você é avisado sobre o que acontece no CRM." />
 
       <div className="config-bloco">
         <div className="toggle-row">

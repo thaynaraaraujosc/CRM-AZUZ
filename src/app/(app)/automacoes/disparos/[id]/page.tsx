@@ -218,13 +218,13 @@ export default function DetalheDisparoPage() {
                   {visiveis.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="hint">
-                        Ninguém neste filtro.
+                        {traduzir("Ninguém neste filtro.")}
                       </td>
                     </tr>
                   ) : null}
                 </tbody>
               </table>
-              {campanha.destinatarios.length >= 1000 ? <p className="hint">Mostrando os primeiros 1.000 destinatários.</p> : null}
+              {campanha.destinatarios.length >= 1000 ? <p className="hint">{traduzir("Mostrando os primeiros 1.000 destinatários.")}</p> : null}
             </div>
           </div>
         )}

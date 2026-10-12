@@ -116,7 +116,7 @@ export default function AmostraPage() {
             ))}
           </div>
           <div className="amostra-linha">
-            <span className="amostra-selo">Neutro</span>
+            <span className="amostra-selo">{traduzir("Neutro")}</span>
             <span className="amostra-selo amostra-selo-acento">{traduzir("Ativo")}</span>
             <span className="amostra-selo amostra-selo-ok">Conectado</span>
             <span className="amostra-selo amostra-selo-erro">{traduzir("Perdido")}</span>

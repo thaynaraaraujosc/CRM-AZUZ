@@ -81,7 +81,7 @@ export function Toolbar({
             onChange={(e) => onChangeNome(e.target.value)}
             onBlur={() => setEditandoNome(false)}
             onKeyDown={(e) => e.key === "Enter" && setEditandoNome(false)}
-            aria-label="Nome do fluxo"
+            aria-label={traduzir("Nome do fluxo")}
           />
         ) : (
           <button type="button" className="flow-toolbar-nome" onClick={() => setEditandoNome(true)}>
@@ -114,7 +114,7 @@ export function Toolbar({
       </div>
 
       <div className="flow-toolbar-dir">
-        <div className="flow-toolbar-modo" role="tablist" aria-label="Modo do editor">
+        <div className="flow-toolbar-modo" role="tablist" aria-label={traduzir("Modo do editor")}>
           <button
             type="button"
             role="tab"

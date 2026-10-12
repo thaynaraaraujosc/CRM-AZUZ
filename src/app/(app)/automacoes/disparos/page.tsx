@@ -82,7 +82,7 @@ export default function DisparosPage() {
           <p className="hint">Carregando…</p>
         ) : campanhas.length === 0 ? (
           <div className="card tpl-vazio">
-            <strong>Nenhum disparo ainda.</strong>
+            <strong>{traduzir("Nenhum disparo ainda.")}</strong>
             <p className="hint">Escolha o canal, o público e a mensagem; o CRM envia aos poucos e mostra aqui o que aconteceu com cada pessoa.</p>
           </div>
         ) : (

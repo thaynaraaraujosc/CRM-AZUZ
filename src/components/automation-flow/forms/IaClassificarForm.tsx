@@ -61,7 +61,7 @@ export function IaClassificarForm({
               style={{ flex: 1 }}
               value={categoria}
               onChange={(e) => alterar(i, e.target.value)}
-              placeholder="Nome da categoria"
+              placeholder={traduzir("Nome da categoria")}
             />
             <button type="button" className="icon-btn subtle" aria-label={`Remover ${categoria}`} onClick={() => remover(i)}>
               <IconClose width={12} height={12} />

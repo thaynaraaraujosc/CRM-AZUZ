@@ -138,7 +138,7 @@ export function ListaDePassos({
                   <span>{b.descricao}</span>
                 </button>
               ))}
-              {blocosDoMenu.length === 0 ? <p className="hint">Nada com esse nome.</p> : null}
+              {blocosDoMenu.length === 0 ? <p className="hint">{traduzir("Nada com esse nome.")}</p> : null}
             </div>
           </div>
         ) : null}

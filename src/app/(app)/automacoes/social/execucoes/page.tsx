@@ -84,7 +84,7 @@ export default function ExecucoesSociaisPage() {
             conta perdeu, comentário sem autor. Quando o erro está aqui, o defeito não está no fluxo.
           </p>
           {!painel?.eventosComErro.length ? (
-            <p className="hint mt8">Nenhum. Tudo que chegou foi processado.</p>
+            <p className="hint mt8">{traduzir("Nenhum. Tudo que chegou foi processado.")}</p>
           ) : (
             <table className="table mt8">
               <thead>

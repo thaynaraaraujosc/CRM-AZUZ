@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Modelo = { id: string; nome: string; idioma: string; corpo: string };
 
@@ -17,6 +18,7 @@ type Modelo = { id: string; nome: string; idioma: string; corpo: string };
  * repetida a cada mensagem.
  */
 export function ModeloDeRetomada() {
+  const { t: traduzir } = useIdioma();
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [escolhido, setEscolhido] = useState("");
   const [carregando, setCarregando] = useState(true);
@@ -77,7 +79,7 @@ export function ModeloDeRetomada() {
         </p>
       ) : (
         <div className="field mt8">
-          <label htmlFor="modelo-retomada">Modelo usado na retomada</label>
+          <label htmlFor="modelo-retomada">{traduzir("Modelo usado na retomada")}</label>
           <select
             id="modelo-retomada"
             className="input"

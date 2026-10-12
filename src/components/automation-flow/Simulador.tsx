@@ -116,7 +116,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
         </div>
         <div className="flow-side-body">
           <p className="flow-sim-banner">
-            <IconFrasco width={13} height={13} aria-hidden="true" /> Modo de teste: nenhuma ação real será executada.
+            <IconFrasco width={13} height={13} aria-hidden="true" /> {traduzir("Modo de teste: nenhuma ação real será executada.")}
           </p>
           <p className="hint">
             Roda o mesmo motor das automações de verdade, só que sem enviar mensagem, sem mexer no
@@ -129,7 +129,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
             <>
               <div className="flow-form">
                 <div className="field">
-                  <label>Nome do contato (fictício)</label>
+                  <label>{traduzir("Nome do contato (fictício)")}</label>
                   <input className="input" value={nome} onChange={(e) => setNome(e.target.value)} />
                 </div>
                 <div className="field">

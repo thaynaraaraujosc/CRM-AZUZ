@@ -320,7 +320,7 @@ export default function InstagramConversasPage() {
                 {mensagens?.de !== atual.nome ? (
                   <p className="hint">Carregando…</p>
                 ) : !mensagens.lista.length ? (
-                  <p className="hint">Nenhuma mensagem nesta conversa.</p>
+                  <p className="hint">{traduzir("Nenhuma mensagem nesta conversa.")}</p>
                 ) : (
                   mensagens.lista.map((m) => (
                     <div key={m.id} className={`ig-bolha${m.tipo === "out" ? " nossa" : ""}`}>
@@ -369,7 +369,7 @@ export default function InstagramConversasPage() {
 
         <aside className="ig-perfil">
           {!atual ? (
-            <p className="hint ig-vazio">Nenhum contato aberto.</p>
+            <p className="hint ig-vazio">{traduzir("Nenhum contato aberto.")}</p>
           ) : (
             <>
               <header className="ig-perfil-topo">

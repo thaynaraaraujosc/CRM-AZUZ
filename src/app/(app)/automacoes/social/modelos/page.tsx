@@ -78,8 +78,8 @@ export default function ModelosSociaisPage() {
   return (
     <>
       <Topbar
-        title="Modelos do Instagram"
-        sub="Mensagens reutilizáveis do Direct"
+        title={traduzir("Modelos do Instagram")}
+        sub={traduzir("Mensagens reutilizáveis do Direct")}
         actions={
           <Link className="btn primary" href="/automacoes/templates">
             {traduzir("Abrir editor de templates")}
@@ -98,7 +98,7 @@ export default function ModelosSociaisPage() {
         ) : null}
 
         <section className="card">
-          <h3>Modelos AZUZ</h3>
+          <h3>{traduzir("Modelos AZUZ")}</h3>
           <p className="hint">
             Escritos aqui, prontos pra copiar. Copiar cria um modelo SEU, que você edita antes de
             usar. {LIMITES.instagram.explicacao}
@@ -128,12 +128,12 @@ export default function ModelosSociaisPage() {
         </section>
 
         <section className="card mt16">
-          <h3>Meus modelos</h3>
+          <h3>{traduzir("Meus modelos")}</h3>
           {meus === null ? (
             <p className="hint">Carregando…</p>
           ) : !meus.length ? (
             <p className="hint">
-              Nenhum ainda. Copie um da AZUZ acima, ou crie do zero no editor de templates.
+              {traduzir("Nenhum ainda. Copie um da AZUZ acima, ou crie do zero no editor de templates.")}
             </p>
           ) : (
             <table className="table">

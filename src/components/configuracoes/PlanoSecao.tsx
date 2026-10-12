@@ -338,12 +338,12 @@ export function PlanoSecao() {
                 <input className="input" style={{ width: "100%" }} inputMode="numeric" placeholder="0000 0000 0000 0000" value={numeroCartao} onChange={(e) => setNumeroCartao(e.target.value)} required />
               </div>
               <div className="field">
-                <label>Nome impresso no cartão</label>
+                <label>{traduzir("Nome impresso no cartão")}</label>
                 <input className="input" style={{ width: "100%" }} placeholder={traduzir("Ex.: ANA P FERREIRA")} value={nomeCartao} onChange={(e) => setNomeCartao(e.target.value)} required />
               </div>
               <div style={{ display: "flex", gap: 14, padding: "0 17px 14px" }}>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
-                  <label>Mês</label>
+                  <label>{traduzir("Mês")}</label>
                   <input className="input" style={{ width: "100%" }} placeholder="MM" value={validadeMes} onChange={(e) => setValidadeMes(e.target.value)} required />
                 </div>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
@@ -404,7 +404,7 @@ export function PlanoSecao() {
             <tbody>
               {cobrancas.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ color: "var(--text-muted)" }}>Nenhuma cobrança ainda.</td>
+                  <td colSpan={4} style={{ color: "var(--text-muted)" }}>{traduzir("Nenhuma cobrança ainda.")}</td>
                 </tr>
               ) : (
                 cobrancas.map((c) => (

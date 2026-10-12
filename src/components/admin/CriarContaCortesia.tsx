@@ -96,7 +96,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
 
   return (
     <form className="admin-bloco config-bloco" onSubmit={enviar}>
-      <p className="config-bloco-titulo">Nova conta de cortesia</p>
+      <p className="config-bloco-titulo">{traduzir("Nova conta de cortesia")}</p>
       <p className="hint">
         Cria uma empresa nova com essa pessoa como administradora e a assinatura já ativa. Não gera
         cobrança: nenhuma fatura, boleto ou cartão é criado. Pra encerrar depois, é só mudar o
@@ -116,7 +116,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
       </div>
 
       <div className="field">
-        <label htmlFor="cortesia-nome">Nome da pessoa</label>
+        <label htmlFor="cortesia-nome">{traduzir("Nome da pessoa")}</label>
         <input
           id="cortesia-nome"
           className="input"

@@ -99,7 +99,7 @@ export function MontarDemo() {
         </p>
         <div className="config-acoes">
           <button type="button" className="btn ghost" onClick={() => setAberto(true)}>
-            Montar ou remontar
+            {traduzir("Montar ou remontar")}
           </button>
         </div>
       </div>
@@ -108,7 +108,7 @@ export function MontarDemo() {
 
   return (
     <form className="admin-bloco config-bloco" onSubmit={enviar}>
-      <p className="config-bloco-titulo">Montar conta de demonstração</p>
+      <p className="config-bloco-titulo">{traduzir("Montar conta de demonstração")}</p>
       <p className="hint">
         Isso apaga e recria a conta de demonstração do zero. Nenhuma outra conta é tocada.
       </p>

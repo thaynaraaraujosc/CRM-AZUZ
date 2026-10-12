@@ -213,6 +213,7 @@ function Progresso({ numero, total, cor }: { numero: number; total: number; cor:
  * lista inteira aqui mentiria sobre a tela do cliente, que é o que a prévia existe pra não fazer.
  */
 export function PreviaUmaPorVez({ formulario }: { formulario: Formulario }) {
+  const { t: traduzir } = useIdioma();
   const passos = passosDoFormulario(formulario, {});
   // As setas (29/09/2026): antes a prévia mostrava a primeira pergunta e parava ali. Quem escolhe
   // "uma pergunta por vez" está justamente montando um caminho, e não dava pra ver o caminho sem
@@ -222,7 +223,7 @@ export function PreviaUmaPorVez({ formulario }: { formulario: Formulario }) {
   const atual = Math.min(indice, Math.max(0, passos.length - 1));
   const passo = passos[atual];
   if (!passo) {
-    return <p className="hint">Nenhuma pergunta ainda. Adicione uma na aba Editar pra ver aqui.</p>;
+    return <p className="hint">{traduzir("Nenhuma pergunta ainda. Adicione uma na aba Editar pra ver aqui.")}</p>;
   }
   const perguntas = passos.filter((p) => p.pergunta).length;
   const numeroDaPergunta = passos.slice(0, atual + 1).filter((p) => p.pergunta).length;

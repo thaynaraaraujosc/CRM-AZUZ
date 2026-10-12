@@ -136,7 +136,7 @@ export function PainelProximoPasso({
           </div>
         ))}
 
-        {!porGrupo.length ? <p className="hint">Nada com esse nome.</p> : null}
+        {!porGrupo.length ? <p className="hint">{traduzir("Nada com esse nome.")}</p> : null}
       </div>
     </aside>
   );

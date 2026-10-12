@@ -106,7 +106,7 @@ export function FunisSecao() {
         <div className="config-bloco">
           <div className="config-grid-2" style={{ marginBottom: 14 }}>
             <div className="field">
-              <label>Nome do funil</label>
+              <label>{traduzir("Nome do funil")}</label>
               <input className="input" value={funilAberto.nome} onChange={(e) => renomearFunil(funilAberto.id, e.target.value)} />
             </div>
             <div className="field">

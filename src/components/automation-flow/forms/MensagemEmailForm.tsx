@@ -92,7 +92,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
       <div className="field">
         <label>Usar modelo salvo</label>
         <select className="input" value={data.modeloId ?? ""} onChange={(e) => onChange({ ...data, modeloId: e.target.value })}>
-          <option value="">Nenhum</option>
+          <option value="">{traduzir("Nenhum")}</option>
           {MODELOS_EMAIL.map((m) => (
             <option key={m.id} value={m.id}>{m.nome}</option>
           ))}
@@ -118,7 +118,7 @@ export function MensagemEmailForm({ data, onChange }: { data: MensagemEmailData;
             onChange={(e) => onChange({ ...data, tempoValor: e.target.value ? Number(e.target.value) : undefined })}
           />
           <select className="input" style={{ flex: 1 }} value={data.tempoUnidade ?? "horas"} onChange={(e) => onChange({ ...data, tempoUnidade: e.target.value })}>
-            <option value="minutos">Minutos</option>
+            <option value="minutos">{traduzir("Minutos")}</option>
             <option value="horas">{traduzir("Horas")}</option>
             <option value="dias">{traduzir("Dias")}</option>
           </select>

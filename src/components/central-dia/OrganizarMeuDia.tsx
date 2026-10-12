@@ -139,7 +139,7 @@ export function OrganizarMeuDia({
       }
     >
       {sequencia.length === 0 ? (
-        <p className="hint">Nenhum item pra organizar agora. Tudo em dia por aqui.</p>
+        <p className="hint">{traduzir("Nenhum item pra organizar agora. Tudo em dia por aqui.")}</p>
       ) : (
         <div className="central-dia-organizar-lista">
           {sequencia.map((item, i) => {
@@ -156,13 +156,13 @@ export function OrganizarMeuDia({
                 </div>
                 {!emExecucao ? (
                   <div className="central-dia-organizar-acoes">
-                    <button type="button" className="icon-btn subtle" aria-label="Mover pra cima" disabled={i === 0} onClick={() => mover(i, -1)}>
+                    <button type="button" className="icon-btn subtle" aria-label={traduzir("Mover pra cima")} disabled={i === 0} onClick={() => mover(i, -1)}>
                       ↑
                     </button>
                     <button
                       type="button"
                       className="icon-btn subtle"
-                      aria-label="Mover pra baixo"
+                      aria-label={traduzir("Mover pra baixo")}
                       disabled={i === sequencia.length - 1}
                       onClick={() => mover(i, 1)}
                     >

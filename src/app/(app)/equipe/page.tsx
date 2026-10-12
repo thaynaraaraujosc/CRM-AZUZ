@@ -381,7 +381,7 @@ export default function EquipePage() {
                   <h4>{traduzir("Leads atribuídos")}</h4>
                 </div>
                 {leadsDoMembro.length === 0 ? (
-                  <p className="hint">Nenhum lead atribuído no momento.</p>
+                  <p className="hint">{traduzir("Nenhum lead atribuído no momento.")}</p>
                 ) : (
                   leadsDoMembro.map((c) => (
                     <div className="stat-row" key={c.nome}>

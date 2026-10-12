@@ -63,7 +63,7 @@ export function EtiquetaSelect({
           <input
             className="input"
             style={{ flex: 1 }}
-            placeholder="Nome da nova etiqueta"
+            placeholder={traduzir("Nome da nova etiqueta")}
             autoFocus
             value={nomeNovo}
             onChange={(e) => setNomeNovo(e.target.value)}

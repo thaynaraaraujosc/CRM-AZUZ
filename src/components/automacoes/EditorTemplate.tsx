@@ -175,7 +175,7 @@ export function EditorTemplate({
       <div className="tpl-editor">
         <div className="tpl-editor-form">
           <div className="field">
-            <label>Nome do template</label>
+            <label>{traduzir("Nome do template")}</label>
             <input
               className="input"
               value={r.nome}

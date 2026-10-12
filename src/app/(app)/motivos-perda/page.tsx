@@ -151,9 +151,9 @@ export default function MotivosPerdaPage() {
           />
         </div>
 
-        <ChartCard title="Motivos de perda no período">
+        <ChartCard title={traduzir("Motivos de perda no período")}>
           {distribuicaoMotivos.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>Nenhum motivo de perda registrado ainda.</p>
+            <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhum motivo de perda registrado ainda.")}</p>
           ) : (
             <BarList
               items={distribuicaoMotivos.map((m) => ({
@@ -186,14 +186,14 @@ export default function MotivosPerdaPage() {
         </ChartCard>
 
         <div className="grid split2">
-          <ChartCard title="Motivos por etapa">
+          <ChartCard title={traduzir("Motivos por etapa")}>
             {porEtapa.length === 0 ? (
               <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
             ) : (
               <BarList items={porEtapa.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
             )}
           </ChartCard>
-          <ChartCard title="Motivos por responsável">
+          <ChartCard title={traduzir("Motivos por responsável")}>
             {porResponsavel.length === 0 ? (
               <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
             ) : (
@@ -203,7 +203,7 @@ export default function MotivosPerdaPage() {
         </div>
 
         <div className="grid split2">
-          <ChartCard title="Motivos por origem">
+          <ChartCard title={traduzir("Motivos por origem")}>
             {porOrigem.length === 0 ? (
               <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
             ) : (
@@ -219,7 +219,7 @@ export default function MotivosPerdaPage() {
 
         <div className="card">
           <div className="panel-h">
-            <h4>Negociações perdidas</h4>
+            <h4>{traduzir("Negociações perdidas")}</h4>
             {motivoSelecionado ? (
               <button type="button" className="link" onClick={() => setMotivoSelecionado(null)}>
                 Limpar filtro: {motivoSelecionado} <IconClose width={11} height={11} />
@@ -230,9 +230,9 @@ export default function MotivosPerdaPage() {
           <table className="tbl">
             <thead>
               <tr>
-                <th>Negociação</th>
+                <th>{traduzir("Negociação")}</th>
                 <th>Responsável</th>
-                <th>Motivo</th>
+                <th>{traduzir("Motivo")}</th>
                 <th>{traduzir("Etapa")}</th>
                 <th>Origem</th>
                 <th>Valor</th>
@@ -243,7 +243,7 @@ export default function MotivosPerdaPage() {
               {perdasFiltradas.length === 0 ? (
                 <tr>
                   <td colSpan={7}>
-                    <p className="hint" style={{ padding: 17 }}>Nenhuma negociação perdida com esse filtro.</p>
+                    <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhuma negociação perdida com esse filtro.")}</p>
                   </td>
                 </tr>
               ) : null}

@@ -131,8 +131,8 @@ export default function AtividadesVendasPage() {
         {grupo === "Interações" ? (
           <>
             <div className="grid kpi4">
-              <KpiCard label="Mensagens enviadas" value={String(mensagensEnviadas)} href="/conversas" />
-              <KpiCard label="Mensagens recebidas" value={String(mensagensRecebidas)} href="/conversas" />
+              <KpiCard label={traduzir("Mensagens enviadas")} value={String(mensagensEnviadas)} href="/conversas" />
+              <KpiCard label={traduzir("Mensagens recebidas")} value={String(mensagensRecebidas)} href="/conversas" />
               <KpiCard
                 label={traduzir("Contatos sem interação")}
                 value={String(contatosSemInteracao.length)}
@@ -142,7 +142,7 @@ export default function AtividadesVendasPage() {
 
             <ChartCard title={traduzir("Interações por responsável (conversas atribuídas)")}>
               {equipe.every((m) => conversas.filter((c) => c.atendenteSelecionado === m.nome).length === 0) ? (
-                <p className="hint" style={{ padding: 17 }}>Nenhuma conversa atribuída a um responsável ainda.</p>
+                <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhuma conversa atribuída a um responsável ainda.")}</p>
               ) : (
                 <BarList
                   items={equipe

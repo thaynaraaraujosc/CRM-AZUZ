@@ -327,7 +327,7 @@ export function PainelConversa({
         <div className="painel-conversa-corpo">
           <div className="painel-conversa-mensagens chat-body">
             {mensagens.length === 0 ? (
-              <p className="hint">Nenhuma mensagem ainda.</p>
+              <p className="hint">{traduzir("Nenhuma mensagem ainda.")}</p>
             ) : (
               mensagens.map((msg, i) => {
                 // Mesmo separador de dia da tela de Conversas. Sem ele o histórico é um rolo
@@ -564,7 +564,7 @@ export function PainelConversa({
                         </span>
                       ))
                     ) : (
-                      <span className="hint">Nenhuma etiqueta</span>
+                      <span className="hint">{traduzir("Nenhuma etiqueta")}</span>
                     )}
                   </div>
                 </div>

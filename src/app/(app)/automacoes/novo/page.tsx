@@ -108,7 +108,7 @@ export default function NovaAutomacaoComercialPage() {
 
   return (
     <>
-      <Topbar title="Nova automação" sub={traduzir("Funil comercial, pelo WhatsApp")} />
+      <Topbar title={traduzir("Nova automação")} sub={traduzir("Funil comercial, pelo WhatsApp")} />
       <AbasAutomacoes />
 
       <div className="content">
@@ -117,7 +117,7 @@ export default function NovaAutomacaoComercialPage() {
             Automações
           </button>
           <span aria-hidden="true">›</span>
-          <strong>Nova automação</strong>
+          <strong>{traduzir("Nova automação")}</strong>
         </nav>
 
         {caminho === "escolher" ? (
@@ -127,7 +127,7 @@ export default function NovaAutomacaoComercialPage() {
               className="social-caminho destaque"
               onClick={() => setCaminho("modelos")}
             >
-              <span className="social-caminho-selo">Mais rápido</span>
+              <span className="social-caminho-selo">{traduzir("Mais rápido")}</span>
               <IconDoc width={26} height={26} aria-hidden="true" />
               <strong>{traduzir("Começar com um modelo AZUZ")}</strong>
               <span>
@@ -138,7 +138,7 @@ export default function NovaAutomacaoComercialPage() {
 
             <button type="button" className="social-caminho" onClick={() => setCaminho("zero")}>
               <IconAutomacoes width={26} height={26} aria-hidden="true" />
-              <strong>Montar do zero</strong>
+              <strong>{traduzir("Montar do zero")}</strong>
               <span>
                 Você escolhe a etapa e o momento, e monta bloco a bloco num canvas em branco.
               </span>

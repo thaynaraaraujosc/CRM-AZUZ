@@ -15,7 +15,7 @@ export function ConcluidosHoje() {
       titulo={traduzir("Concluídos hoje")}
       contagem={concluidos.length}
       abertaPadrao={false}
-      vazio={<p className="hint">Nada concluído ainda hoje.</p>}
+      vazio={<p className="hint">{traduzir("Nada concluído ainda hoje.")}</p>}
       acaoTopo={
         concluidos.length > 0 ? (
           <button type="button" className="btn ghost" onClick={limparConcluidos}>

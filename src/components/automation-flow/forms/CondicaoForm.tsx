@@ -268,10 +268,10 @@ export function CondicaoForm({
           {regra.campo === "campo_personalizado" ? (
             <input
               className="input"
-              placeholder="Nome do campo"
+              placeholder={traduzir("Nome do campo")}
               value={regra.campoPersonalizadoNome ?? ""}
               onChange={(e) => atualizarRegra(regra.id, { campoPersonalizadoNome: e.target.value })}
-              aria-label="Nome do campo personalizado"
+              aria-label={traduzir("Nome do campo personalizado")}
             />
           ) : null}
           <select

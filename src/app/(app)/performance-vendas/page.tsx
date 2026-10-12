@@ -134,7 +134,7 @@ function PerformanceVendasPageInner() {
           <KpiCard label="Receita" value={valorVendido.label} formula={valorVendido.formula} tom="acento" />
           <KpiCard label={traduzir("Ticket médio")} value={ticketMedio.label} formula={ticketMedio.formula} />
           <KpiCard
-            label="Meta do período"
+            label={traduzir("Meta do período")}
             value={`${percentualMeta}%`}
             sub={`${valorVendido.label} de ${formatarMoeda(meta)}`}
           />
@@ -153,7 +153,7 @@ function PerformanceVendasPageInner() {
           </div>
           <div style={{ padding: 17 }}>
             {porResponsavel.length === 0 ? (
-              <p className="hint">Nenhum negócio com responsável e desfecho registrado ainda.</p>
+              <p className="hint">{traduzir("Nenhum negócio com responsável e desfecho registrado ainda.")}</p>
             ) : (
               <BarList
                 items={porResponsavel.map((r) => {
@@ -245,7 +245,7 @@ function PerformanceVendasPageInner() {
           </div>
           <div style={{ padding: 17 }}>
             {valorPerdido.registros.length === 0 ? (
-              <p className="hint">Nenhum negócio perdido registrado ainda.</p>
+              <p className="hint">{traduzir("Nenhum negócio perdido registrado ainda.")}</p>
             ) : (
               <p className="hint">
                 {valorPerdido.label} perdidos no período · principal motivo: {motivoPrincipal.motivo} (

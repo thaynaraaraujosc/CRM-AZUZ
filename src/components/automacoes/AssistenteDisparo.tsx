@@ -416,7 +416,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                     </option>
                   ))}
                 </select>
-                {opcoes && opcoes.etiquetas.length === 0 ? <p className="hint">Nenhum contato tem etiqueta ainda.</p> : null}
+                {opcoes && opcoes.etiquetas.length === 0 ? <p className="hint">{traduzir("Nenhum contato tem etiqueta ainda.")}</p> : null}
               </div>
             ) : null}
 
@@ -541,7 +541,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
           <div>
             {canal === "whatsapp_oficial" ? (
               <p className="hint">
-                No WhatsApp API Oficial o disparo só sai com um template <strong>aprovado pela Meta</strong>. Os outros aparecem
+                {traduzir("No WhatsApp API Oficial o disparo só sai com um template")} <strong>aprovado pela Meta</strong>. Os outros aparecem
                 aqui com o status, mas não podem ser escolhidos.
               </p>
             ) : (
@@ -550,7 +550,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
 
             <div className="modelo-lista disp-templates">
               {templatesDoCanal.length === 0 ? (
-                <p className="hint">Nenhum template deste canal ainda. Crie em Automações → Templates.</p>
+                <p className="hint">{traduzir("Nenhum template deste canal ainda. Crie em Automações → Templates.")}</p>
               ) : null}
               {templatesDoCanal.map((t) => {
                 const disponivel = t.status === "aprovado";

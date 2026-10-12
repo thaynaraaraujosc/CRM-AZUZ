@@ -184,7 +184,7 @@ export function BlockLibrary({
         ) : (
           <>
             {maisUsados.length ? (
-              <BlocoSecao titulo="Mais usados" blocos={maisUsados} onAdicionarBloco={onAdicionarBloco} />
+              <BlocoSecao titulo={traduzir("Mais usados")} blocos={maisUsados} onAdicionarBloco={onAdicionarBloco} />
             ) : null}
             {gruposDaArea.map((grupo) => {
               const blocos = disponiveis.filter((b) => b.grupo === grupo.id);

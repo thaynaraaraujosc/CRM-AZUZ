@@ -86,13 +86,13 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
           <div className="field">
             <label>Origem da mensagem</label>
             <select className="input" value={data.origemMensagem ?? "criar_agora"} onChange={(e) => onChange({ ...data, origemMensagem: e.target.value as OrigemMensagemCancelamento })}>
-              <option value="modelo">Mensagem pronta</option>
+              <option value="modelo">{traduzir("Mensagem pronta")}</option>
               <option value="criar_agora">{traduzir("Criar mensagem agora")}</option>
             </select>
           </div>
           {data.origemMensagem === "modelo" ? (
             <div className="field">
-              <label>Modelo</label>
+              <label>{traduzir("Modelo")}</label>
               <select className="input" value={data.modeloId ?? ""} onChange={(e) => onChange({ ...data, modeloId: e.target.value })}>
                 <option value="">Selecione um modelo…</option>
                 {MODELOS_CANCELAMENTO.map((m) => (
@@ -131,7 +131,7 @@ export function CancelarAgendamentoForm({ data, onChange }: { data: CancelarAgen
                 onChange={(e) => onChange({ ...data, tempoValor: e.target.value ? Number(e.target.value) : undefined })}
               />
               <select className="input" style={{ flex: 1 }} value={data.tempoUnidade ?? "minutos"} onChange={(e) => onChange({ ...data, tempoUnidade: e.target.value })}>
-                <option value="minutos">Minutos</option>
+                <option value="minutos">{traduzir("Minutos")}</option>
                 <option value="horas">{traduzir("Horas")}</option>
                 <option value="dias">{traduzir("Dias")}</option>
               </select>

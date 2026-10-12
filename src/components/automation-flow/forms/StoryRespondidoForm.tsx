@@ -231,7 +231,7 @@ export function StoryRespondidoForm({
                 <span className="ig-publicacao-info">
                   <strong>{NOME_TIPO[story.tipo] ?? story.tipo}</strong>
                   <em>{horaDoStory(story.publicadoEm)}</em>
-                  <span>No ar agora</span>
+                  <span>{traduzir("No ar agora")}</span>
                 </span>
               </button>
             ))

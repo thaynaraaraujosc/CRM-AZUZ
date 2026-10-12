@@ -66,7 +66,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
 
       {data.destino === "distribuicao" ? (
         <div className="field">
-          <label>Método</label>
+          <label>{traduzir("Método")}</label>
           <select className="input" value={data.metodoDistribuicao ?? "disponibilidade"} onChange={(e) => onChange({ ...data, metodoDistribuicao: e.target.value as MetodoDistribuicaoAtendimento })}>
             {METODOS.map((m) => (
               <option key={m.valor} value={m.valor}>{m.label}</option>
@@ -76,7 +76,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
       ) : null}
 
       <div className="toggle-row">
-        <span className="tl">Mover o lead no funil após encaminhar?</span>
+        <span className="tl">{traduzir("Mover o lead no funil após encaminhar?")}</span>
         <button
           type="button"
           role="switch"
@@ -130,7 +130,7 @@ export function EncaminharHumanoForm({ data, onChange }: { data: EncaminharHuman
             onChange={(e) => onChange({ ...data, tempoValor: e.target.value ? Number(e.target.value) : undefined })}
           />
           <select className="input" style={{ flex: 1 }} value={data.tempoUnidade ?? "minutos"} onChange={(e) => onChange({ ...data, tempoUnidade: e.target.value })}>
-            <option value="minutos">Minutos</option>
+            <option value="minutos">{traduzir("Minutos")}</option>
             <option value="horas">{traduzir("Horas")}</option>
             <option value="dias">{traduzir("Dias")}</option>
           </select>

@@ -60,13 +60,13 @@ export default function NovaAutomacaoSocialPage() {
             Automações
           </button>
           <span aria-hidden="true">›</span>
-          <strong>Nova automação</strong>
+          <strong>{traduzir("Nova automação")}</strong>
         </nav>
 
         {!escolhendoModelo ? (
           <div className="social-caminhos">
             <button type="button" className="social-caminho destaque" onClick={() => setEscolhendoModelo(true)}>
-              <span className="social-caminho-selo">Mais rápido</span>
+              <span className="social-caminho-selo">{traduzir("Mais rápido")}</span>
               <IconDoc width={26} height={26} aria-hidden="true" />
               <strong>{traduzir("Começar com um modelo")}</strong>
               <span>

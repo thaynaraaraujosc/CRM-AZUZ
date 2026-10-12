@@ -30,7 +30,7 @@ export function EncerrarFluxoForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Motivo</label>
+        <label>{traduzir("Motivo")}</label>
         <select
           className="input"
           value={data.motivo ?? "concluido"}

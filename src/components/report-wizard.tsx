@@ -434,7 +434,7 @@ export function ReportWizard({
                 </button>
               ))}
               <div className="field" style={{ gridColumn: "1 / -1" }}>
-                <label>Nome do relatório</label>
+                <label>{traduzir("Nome do relatório")}</label>
                 <input
                   className="input"
                   style={{ width: "100%" }}

@@ -39,7 +39,7 @@ export function ConfiguracoesGeraisForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Nome do fluxo</label>
+        <label>{traduzir("Nome do fluxo")}</label>
         <input className="input" value={fluxo.nome} onChange={(e) => onChange({ nome: e.target.value })} />
       </div>
       <div className="field">
@@ -54,7 +54,7 @@ export function ConfiguracoesGeraisForm({
       <div className="field">
         <label>{traduzir("Funil relacionado")}</label>
         <select className="input" value={fluxo.funilId ?? ""} onChange={(e) => onChange({ funilId: e.target.value || undefined, etapaId: undefined })}>
-          <option value="">Nenhum específico</option>
+          <option value="">{traduzir("Nenhum específico")}</option>
           {funis.map((f) => (
             <option key={f.id} value={f.id}>
               {f.nome}
@@ -169,7 +169,7 @@ export function ConfiguracoesGeraisForm({
         <label>Prioridade</label>
         <select className="input" value={cfg.prioridade ?? "normal"} onChange={(e) => onChangeConfiguracoes({ prioridade: e.target.value as ConfiguracoesFluxo["prioridade"] })}>
           <option value="baixa">{traduzir("Baixa")}</option>
-          <option value="normal">Normal</option>
+          <option value="normal">{traduzir("Normal")}</option>
           <option value="alta">{traduzir("Alta")}</option>
         </select>
       </div>

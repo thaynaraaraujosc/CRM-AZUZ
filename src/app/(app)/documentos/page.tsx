@@ -358,7 +358,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
             + Novo documento
           </button>
           <button type="button" className="btn ghost" onClick={() => setModelosAberto((v) => !v)} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <IconDoc width={14} height={14} /> Modelos
+            <IconDoc width={14} height={14} /> {traduzir("Modelos")}
           </button>
           <label className="search" style={{ marginLeft: "auto", width: 240 }}>
             <IconSearch />
@@ -707,7 +707,7 @@ function ListaDocumentos({ onAbrir }: { onAbrir: (id: string) => void }) {
                           setAcaoAbertaId(null);
                         }}
                       >
-                        <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconLixeira width={13} height={13} /> Mover pra lixeira</span>
+                        <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconLixeira width={13} height={13} /> {traduzir("Mover pra lixeira")}</span>
                       </button>
                     </>
                   )}
@@ -2707,7 +2707,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           ))}
         </select>
         <span className="doc-toolbar-sep" />
-        <button type="button" className="doc-toolbar-btn" style={{ fontWeight: 700 }} title="Negrito" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("bold")}>N</button>
+        <button type="button" className="doc-toolbar-btn" style={{ fontWeight: 700 }} title={traduzir("Negrito")} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("bold")}>N</button>
         <button type="button" className="doc-toolbar-btn" style={{ fontStyle: "italic" }} title={traduzir("Itálico")} onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("italic")}>I</button>
         <button type="button" className="doc-toolbar-btn" style={{ textDecoration: "underline" }} title="Sublinhado" onMouseDown={(e) => e.preventDefault()} onClick={() => aplicarFormatacao("underline")}>S</button>
         <SeletorCor titulo={traduzir("Cor do texto")} cores={CORES_TEXTO} onEscolher={(c) => aplicarFormatacao("foreColor", c)} rotulo="A" />
@@ -2738,7 +2738,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
               <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconQuote width={13} height={13} /> {traduzir("Citação")}</span>
             </button>
 
-            <p className="doc-menu-categoria">Mídia</p>
+            <p className="doc-menu-categoria">{traduzir("Mídia")}</p>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left" }} onClick={inserirImagem}>
               <span className="n" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconImage width={13} height={13} /> Imagem</span>
             </button>
@@ -3107,9 +3107,9 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   </div>
                 </div>
                 <div className="field">
-                  <label>Maiúsculas / minúsculas</label>
+                  <label>{traduzir("Maiúsculas / minúsculas")}</label>
                   <div className="filters-row" style={{ margin: 0 }}>
-                    <button type="button" className="fchip" onClick={() => document.execCommand("insertText", false, (window.getSelection()?.toString() ?? "").toUpperCase())}>MAIÚSCULAS</button>
+                    <button type="button" className="fchip" onClick={() => document.execCommand("insertText", false, (window.getSelection()?.toString() ?? "").toUpperCase())}>{traduzir("MAIÚSCULAS")}</button>
                     <button type="button" className="fchip" onClick={() => document.execCommand("insertText", false, (window.getSelection()?.toString() ?? "").toLowerCase())}>minúsculas</button>
                   </div>
                 </div>
@@ -3182,19 +3182,19 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   </div>
                 </div>
                 <div className="field">
-                  <label>Margem superior (mm)</label>
+                  <label>{traduzir("Margem superior (mm)")}</label>
                   <input type="number" className="input" style={{ width: "100%" }} value={doc.config.margemSuperiorMm} onChange={(e) => atualizarConfigPagina(id, { margemSuperiorMm: Number(e.target.value) })} />
                 </div>
                 <div className="field">
-                  <label>Margem inferior (mm)</label>
+                  <label>{traduzir("Margem inferior (mm)")}</label>
                   <input type="number" className="input" style={{ width: "100%" }} value={doc.config.margemInferiorMm} onChange={(e) => atualizarConfigPagina(id, { margemInferiorMm: Number(e.target.value) })} />
                 </div>
                 <div className="field">
-                  <label>Margem esquerda (mm)</label>
+                  <label>{traduzir("Margem esquerda (mm)")}</label>
                   <input type="number" className="input" style={{ width: "100%" }} value={doc.config.margemEsquerdaMm} onChange={(e) => atualizarConfigPagina(id, { margemEsquerdaMm: Number(e.target.value) })} />
                 </div>
                 <div className="field">
-                  <label>Margem direita (mm)</label>
+                  <label>{traduzir("Margem direita (mm)")}</label>
                   <input type="number" className="input" style={{ width: "100%" }} value={doc.config.margemDireitaMm} onChange={(e) => atualizarConfigPagina(id, { margemDireitaMm: Number(e.target.value) })} />
                 </div>
                 <div className="field">
@@ -3219,7 +3219,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
                   <button type="button" className="btn ghost block" onClick={() => setCabecalhoRodapeAberto("rodape")}>{traduzir("Editar rodapé")}</button>
                 </div>
                 <div className="field">
-                  <button type="button" className="btn ghost block" onClick={() => setConfigPaginaAberto(true)}>Mais opções de página…</button>
+                  <button type="button" className="btn ghost block" onClick={() => setConfigPaginaAberto(true)}>{traduzir("Mais opções de página…")}</button>
                 </div>
               </>
             )}
@@ -3328,7 +3328,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
           <div className="doc-ajuda-conteudo">
             <p className="hint" style={{ marginTop: 0 }}>{traduzir("Atalhos de teclado")}</p>
             <div className="stat-row"><span className="sl">{traduzir("Desfazer / Refazer")}</span><span className="sv">Ctrl+Z / Ctrl+Y</span></div>
-            <div className="stat-row"><span className="sl">Negrito / Itálico / Sublinhado</span><span className="sv">Ctrl+B / Ctrl+I / Ctrl+U</span></div>
+            <div className="stat-row"><span className="sl">{traduzir("Negrito / Itálico / Sublinhado")}</span><span className="sv">Ctrl+B / Ctrl+I / Ctrl+U</span></div>
             <div className="stat-row"><span className="sl">Recortar / Copiar / Colar</span><span className="sv">Ctrl+X / Ctrl+C / Ctrl+V</span></div>
             <div className="stat-row"><span className="sl">{traduzir("Colar sem formatação")}</span><span className="sv">Ctrl+Shift+V</span></div>
             <div className="stat-row"><span className="sl">Selecionar tudo</span><span className="sv">Ctrl+A</span></div>
@@ -3432,7 +3432,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             </div>
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
               <div className="field">
-                <label>Nome do modelo</label>
+                <label>{traduzir("Nome do modelo")}</label>
                 <input className="input" style={{ width: "100%" }} value={nomeNovoModelo} onChange={(e) => setNomeNovoModelo(e.target.value)} />
               </div>
               <div className="field">
@@ -3500,7 +3500,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             </div>
           </div>
           <div className="field">
-            <label>Margens (mm): cada lado é independente</label>
+            <label>{traduzir("Margens (mm): cada lado é independente")}</label>
             <div className="doc-margens-grid">
               <label className="doc-margem-campo">
                 <span>Superior</span>
@@ -3663,7 +3663,7 @@ function EditorDocumento({ id, onFechar }: { id: string; onFechar: () => void })
             + Salvar versão atual
           </button>
           {doc.versoes.length === 0 ? (
-            <p className="hint">Nenhuma versão salva ainda.</p>
+            <p className="hint">{traduzir("Nenhuma versão salva ainda.")}</p>
           ) : (
             [...doc.versoes].reverse().map((v) => (
               <div className="stat-row" key={v.id}>
@@ -4107,7 +4107,7 @@ function PainelImagem({
       </div>
       <label className="hint" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         <input type="checkbox" checked={manterProporcao} onChange={(e) => setManterProporcao(e.target.checked)} />
-        Manter proporção
+        {traduzir("Manter proporção")}
       </label>
       {!bloqueada ? (
         <div
@@ -4136,7 +4136,7 @@ function PainelImagem({
           <button type="button" className="fchip" onClick={() => mudarPosicao("quebrar")}>Quebrar texto</button>
           <button type="button" className="fchip" onClick={() => mudarPosicao("acima-abaixo")}>{traduzir("Acima/abaixo")}</button>
           <button type="button" className="fchip" onClick={() => mudarPosicao("atras")}>{traduzir("Atrás do texto")}</button>
-          <button type="button" className="fchip" onClick={() => mudarPosicao("frente")}>Na frente</button>
+          <button type="button" className="fchip" onClick={() => mudarPosicao("frente")}>{traduzir("Na frente")}</button>
           <button type="button" className="fchip" onClick={() => mudarPosicao("fixa")}>Posição fixa (arrastável)</button>
         </div>
         {imagem.style.position === "absolute" ? (
@@ -4248,7 +4248,7 @@ function PainelImagem({
         <div className="filters-row" style={{ margin: 0 }}>
           <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("pb")}>Preto e branco</button>
           <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("sepia")}>Sépia</button>
-          <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("nenhum")}>Nenhum</button>
+          <button type="button" className="fchip" onClick={() => aplicarPresetEfeito("nenhum")}>{traduzir("Nenhum")}</button>
         </div>
         <label className="hint" style={{ display: "block", marginTop: 8 }}>{traduzir("Desfoque")}</label>
         <input type="range" min={0} max={10} value={efeitos.desfoque} onChange={(e) => aplicarEfeitos({ desfoque: Number(e.target.value) })} style={{ width: "100%" }} />
@@ -4674,7 +4674,7 @@ function SeletorFonte({
         </div>
         <div style={{ maxHeight: 250, overflowY: "auto" }}>
           {filtradas.length === 0 ? (
-            <p className="hint" style={{ padding: "8px 14px" }}>Nenhuma fonte encontrada.</p>
+            <p className="hint" style={{ padding: "8px 14px" }}>{traduzir("Nenhuma fonte encontrada.")}</p>
           ) : (
             filtradas.map((f) => (
               <button

@@ -14,6 +14,7 @@ import { useFloatingPosition, type AnchorRect } from "@/lib/use-floating-positio
 import { IconBell, IconSearch } from "@/components/icons";
 import { navEntries } from "@/components/sidebar";
 import { SeletorIdioma } from "@/components/seletor-idioma";
+import { useIdioma } from "@/lib/idioma-context";
 
 type SearchResult = { label: string; sub: string; href: string };
 
@@ -104,6 +105,7 @@ function GlobalSearch() {
 }
 
 function NotificationsBell() {
+  const { t: traduzir } = useIdioma();
   const [open, setOpen] = useState(false);
   const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null);
   const { ref: popRef, posicao } = useFloatingPosition(anchorRect, open, 8, () => setOpen(false));
@@ -133,7 +135,7 @@ function NotificationsBell() {
               style={{ position: "fixed", top: posicao.top, left: posicao.left, zIndex: 200 }}
             >
               <div className="panel-h">
-                <h4>Notificações</h4>
+                <h4>{traduzir("Notificações")}</h4>
               </div>
           {itens.map((n, i) => (
             <div

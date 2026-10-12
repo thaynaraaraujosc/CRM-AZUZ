@@ -68,7 +68,7 @@ export function CompromissoCard({ compromisso }: { compromisso: CompromissoDia }
               setConcluido(true);
             }}
           >
-            Marcar como concluído
+            {traduzir("Marcar como concluído")}
           </button>
         ) : null}
       </div>

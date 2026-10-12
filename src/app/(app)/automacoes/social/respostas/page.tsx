@@ -172,7 +172,7 @@ export default function RespostasAutomaticasPage() {
             </div>
 
             <div className="field">
-              <label>Mensagem no Direct</label>
+              <label>{traduzir("Mensagem no Direct")}</label>
               <textarea
                 className="input"
                 style={{ minHeight: 90, resize: "vertical" }}
@@ -231,7 +231,7 @@ export default function RespostasAutomaticasPage() {
         <section className="card">
           <h3>Suas respostas</h3>
           {!respostas.length ? (
-            <p className="hint">Nenhuma ainda.</p>
+            <p className="hint">{traduzir("Nenhuma ainda.")}</p>
           ) : (
             <table className="table">
               <thead>

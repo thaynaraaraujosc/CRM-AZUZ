@@ -79,7 +79,7 @@ export function DecisaoMultiplaForm({
 
       {data.campo === "campo_personalizado" ? (
         <div className="field">
-          <label>Nome do campo</label>
+          <label>{traduzir("Nome do campo")}</label>
           <input
             className="input"
             value={data.campoPersonalizadoNome ?? ""}
@@ -124,7 +124,7 @@ export function DecisaoMultiplaForm({
               className="input"
               value={caminho.rotulo}
               onChange={(e) => alterar(i, { rotulo: e.target.value })}
-              placeholder="Nome no canvas (ex.: Quero atendimento)"
+              placeholder={traduzir("Nome no canvas (ex.: Quero atendimento)")}
               aria-label={`Nome do caminho ${i + 1}`}
             />
             <button type="button" className="icon-btn subtle" aria-label={`Remover caminho ${i + 1}`} onClick={() => remover(i)}>

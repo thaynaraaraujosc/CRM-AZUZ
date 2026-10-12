@@ -466,7 +466,7 @@ export function AutomacaoDoFunil({
               </div>
             ))
           ) : (
-            <p className="hint">Nenhum canal conectado ainda.</p>
+            <p className="hint">{traduzir("Nenhum canal conectado ainda.")}</p>
           )}
           {/* `/integracoes` nunca existiu como rota: o link caía no vazio. As conexões moram em
               Configurações, e o parâmetro abre direto na categoria certa em vez de largar a pessoa
@@ -680,7 +680,7 @@ export function AutomacaoDoFunil({
                   value={rascunho.fluxoId}
                   onChange={(e) => setRascunho({ ...rascunho, fluxoId: e.target.value })}
                 >
-                  <option value="">Nenhum robô selecionado</option>
+                  <option value="">{traduzir("Nenhum robô selecionado")}</option>
                   {robos.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.nome}
@@ -729,14 +729,14 @@ export function AutomacaoDoFunil({
                   className="input"
                   value={rascunho.acaoDados.responsavel ?? ""}
                   onChange={(e) => mudarDados({ responsavel: e.target.value })}
-                  placeholder="Nome de quem assume"
+                  placeholder={traduzir("Nome de quem assume")}
                 />
               </div>
             ) : null}
 
             {rascunho.tipoAcao === "etapa" ? (
               <div className="field">
-                <label>Mover para</label>
+                <label>{traduzir("Mover para")}</label>
                 <select
                   className="input"
                   value={rascunho.acaoDados.etapaDestinoId ?? ""}

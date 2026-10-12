@@ -185,7 +185,7 @@ export function RastreamentoSecao() {
                 a devolução cobre os dois canais, que é o tipo de promessa pela metade que já
                 existiu nesta tela antes. */}
             <p className="hint rastreio-nota">
-              <strong>Meta:</strong> o envio já existe, mas a permissão de anúncios só vale para
+              <strong>{traduzir("Meta:")}</strong> o envio já existe, mas a permissão de anúncios só vale para
               quem tem cargo no app da Meta enquanto a análise não sair. Na prática, funciona na sua
               conta e ainda não nas dos seus clientes.
             </p>

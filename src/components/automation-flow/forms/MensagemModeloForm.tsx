@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import type { MensagemModeloWhatsappData } from "@/lib/automation-flow/types";
 import type { TemplateSalvo } from "@/components/automacoes/EditorTemplate";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Ação "Modelo aprovado do WhatsApp". Escolhe um template REAL do CRM (tela Automações →
@@ -11,6 +12,7 @@ import type { TemplateSalvo } from "@/components/automacoes/EditorTemplate";
  * que existe de verdade no workspace, e só o que a Meta já aprovou (o resto não pode ser enviado).
  */
 export function MensagemModeloForm({ data, onChange }: { data: MensagemModeloWhatsappData; onChange: (novo: MensagemModeloWhatsappData) => void }) {
+  const { t: traduzir } = useIdioma();
   const [templates, setTemplates] = useState<TemplateSalvo[] | null>(null);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export function MensagemModeloForm({ data, onChange }: { data: MensagemModeloWha
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Modelo</label>
+        <label>{traduzir("Modelo")}</label>
         <select
           className="input"
           value={data.templateId}

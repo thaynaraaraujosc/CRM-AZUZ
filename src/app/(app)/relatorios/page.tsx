@@ -97,7 +97,7 @@ function RelatoriosPageInner() {
                 </div>
                 {recentes.length > 0 ? (
                   <div style={{ marginTop: 10 }}>
-                    <p className="hint" style={{ marginBottom: 4 }}>Modelos recentes</p>
+                    <p className="hint" style={{ marginBottom: 4 }}>{traduzir("Modelos recentes")}</p>
                     {recentes.map((r) => (
                       <p key={r.id} className="hint" style={{ margin: "2px 0" }}>
                         {r.nome} · {r.data}
@@ -115,7 +115,7 @@ function RelatoriosPageInner() {
             <h4>Relatórios gerados</h4>
           </div>
           {historico.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>Nenhum relatório gerado ainda.</p>
+            <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhum relatório gerado ainda.")}</p>
           ) : (
             <div className="table-wrap">
             <table className="tbl">

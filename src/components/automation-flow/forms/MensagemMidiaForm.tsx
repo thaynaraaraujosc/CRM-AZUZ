@@ -282,7 +282,7 @@ export function MensagemMidiaForm({
       ) : null}
 
       <div className="field">
-        <label>Nome de exibição do arquivo</label>
+        <label>{traduzir("Nome de exibição do arquivo")}</label>
         <input
           className="input"
           placeholder={data.arquivoNome || "Ex.: Catálogo de Toldos"}
@@ -294,7 +294,7 @@ export function MensagemMidiaForm({
 
       <div className="field">
         <div className="flow-form-label-row">
-          <label style={{ marginBottom: 0 }}>Mensagem ou legenda</label>
+          <label style={{ marginBottom: 0 }}>{traduzir("Mensagem ou legenda")}</label>
           <VariavelDropdown onEscolher={(t) => set({ legenda: inserirTokenNoTexto(data.legenda ?? "", t, legendaRef.current) })} />
         </div>
         <textarea
@@ -367,7 +367,7 @@ export function MensagemMidiaForm({
                   a.nome.toLowerCase().includes(busca.trim().toLowerCase()),
               ).length === 0 ? (
                 <p className="hint" style={{ padding: 16 }}>
-                  Nenhum arquivo encontrado nessa categoria/tipo de mídia.
+                  {traduzir("Nenhum arquivo encontrado nessa categoria/tipo de mídia.")}
                 </p>
               ) : null}
             </div>

@@ -132,7 +132,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
               value={data.prazoUnidade ?? "horas"}
               onChange={(e) => onChange({ ...data, prazoUnidade: e.target.value })}
             >
-              <option value="minutos">Minutos</option>
+              <option value="minutos">{traduzir("Minutos")}</option>
               <option value="horas">{traduzir("Horas")}</option>
               <option value="dias">{traduzir("Dias")}</option>
             </select>
@@ -184,7 +184,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
           onChange={(e) => onChange({ ...data, relacionarA: e.target.value as RelacionarTarefaA })}
         >
           <option value="contato">Contato</option>
-          <option value="negocio">Negócio</option>
+          <option value="negocio">{traduzir("Negócio")}</option>
           <option value="ambos">{traduzir("Ambos")}</option>
         </select>
       </div>

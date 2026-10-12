@@ -696,7 +696,7 @@ export function FilterBar({
                   <input
                     className="input"
                     style={{ flex: 1 }}
-                    placeholder="Nome da visão…"
+                    placeholder={traduzir("Nome da visão…")}
                     value={nomeVisao}
                     onChange={(e) => setNomeVisao(e.target.value)}
                   />

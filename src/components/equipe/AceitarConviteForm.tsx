@@ -67,7 +67,7 @@ export function AceitarConviteForm({ id, email, token }: { id: string; email: st
           className="input"
           type="password"
           autoComplete="new-password"
-          placeholder="Mínimo 8 caracteres"
+          placeholder={traduzir("Mínimo 8 caracteres")}
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
           required
