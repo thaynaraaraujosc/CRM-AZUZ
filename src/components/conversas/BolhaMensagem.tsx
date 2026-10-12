@@ -6,6 +6,7 @@ import type { ConvMensagem } from "@/lib/data";
 import { AudioBubblePlayer } from "@/components/audio-player";
 import { IconDoc, IconImage, IconLocalizacao, IconVideoCam } from "@/components/icons";
 import { StatusMensagemIcone } from "./StatusMensagem";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Desenha UMA mensagem: em qualquer tela do CRM.
@@ -52,6 +53,7 @@ export function BolhaMensagem({
   /** Transforma o texto (links clicáveis, "Ler mais"). Padrão: texto puro. */
   renderizarTexto?: (texto: string) => ReactNode;
 }) {
+  const { t: traduzir } = useIdioma();
   const liberada = (tipo: "imagem" | "video" | "documento") =>
     midiaLiberada ? midiaLiberada(tipo, msg.id, msg.imagens?.[0]?.url ?? msg.video?.url) : true;
 
@@ -72,7 +74,7 @@ export function BolhaMensagem({
    * que saiu: clicar não faria nada e só geraria a expectativa de que faria.
    */
   const opcoesEnviadas = msg.botoes?.length ? (
-    <div className="wa-bolha-opcoes" aria-label="Opções enviadas com esta mensagem">
+    <div className="wa-bolha-opcoes" aria-label={traduzir("Opções enviadas com esta mensagem")}>
       {msg.botoes.map((rotulo, i) => (
         <span className="wa-bolha-opcao" key={`${rotulo}-${i}`}>
           {rotulo}
@@ -171,12 +173,12 @@ export function BolhaMensagem({
               className="bubble-localizacao-titulo"
               style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
             >
-              <IconLocalizacao width={12} height={12} /> Localização compartilhada
+              <IconLocalizacao width={12} height={12} /> {traduzir("Localização compartilhada")}
             </span>
             <span className="bubble-localizacao-endereco">
               {endereco ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`}
             </span>
-            <span className="bubble-localizacao-link">Abrir no mapa →</span>
+            <span className="bubble-localizacao-link">{traduzir("Abrir no mapa →")}</span>
           </div>
         </a>
         {rodape}
@@ -233,7 +235,7 @@ export function BolhaMensagem({
                   href={msg.linkExterno}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="Abrir a publicação no Instagram"
+                  title={traduzir("Abrir a publicação no Instagram")}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- anexo servido pelo próprio CRM */}
                   <img src={img.url} alt={img.nome ?? "imagem"} loading="lazy" decoding="async" />
@@ -292,7 +294,7 @@ export function BolhaMensagem({
         ) : (
           <button type="button" className="bubble-midia-bloqueada" onClick={() => aoLiberarMidia?.(msg.id)}>
             <IconVideoCam width={18} height={18} />
-            Baixar vídeo
+            {traduzir("Baixar vídeo")}
           </button>
         )}
         {msg.legendaPublicacao ? <p className="bubble-share-legenda">{msg.legendaPublicacao}</p> : null}

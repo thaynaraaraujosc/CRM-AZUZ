@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { PLANOS, type PlanoId } from "@/lib/assinatura/planos";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { IconCheck } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Assinatura = {
   plano: string;
@@ -69,6 +70,7 @@ function formatarData(iso: string | null): string {
  * traz o estado salvo + histórico de cobranças ao vivo; assinar/trocar de plano e cancelar chamam
  * as rotas que falam com a Asaas de verdade (sandbox por padrão, ver ASAAS_ENV). */
 export function PlanoSecao() {
+  const { t: traduzir } = useIdioma();
 
   const [carregando, setCarregando] = useState(true);
   const [assinatura, setAssinatura] = useState<Assinatura | null>(null);
@@ -199,7 +201,7 @@ export function PlanoSecao() {
   if (carregando) {
     return (
       <div className="config-secao">
-        <CabecalhoCategoria titulo="Plano e cobrança" descricao="Seu plano atual, armazenamento e forma de pagamento." />
+        <CabecalhoCategoria titulo={traduzir("Plano e cobrança")} descricao={traduzir("Seu plano atual, armazenamento e forma de pagamento.")} />
         <p className="config-bloco-titulo">Carregando…</p>
       </div>
     );
@@ -210,7 +212,7 @@ export function PlanoSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="Plano e cobrança" descricao="Seu plano atual, armazenamento e forma de pagamento." />
+      <CabecalhoCategoria titulo={traduzir("Plano e cobrança")} descricao={traduzir("Seu plano atual, armazenamento e forma de pagamento.")} />
 
       <div className="plano-card">
         <div>
@@ -243,7 +245,7 @@ export function PlanoSecao() {
           anexo que ainda estiver gravado dentro do banco. */}
       {armazenamento?.configurado ? (
         <div className="config-bloco">
-          <p className="config-bloco-titulo">Armazenamento de arquivos</p>
+          <p className="config-bloco-titulo">{traduzir("Armazenamento de arquivos")}</p>
           <div className="field">
             <div className="armazenamento-barra">
               <div
@@ -281,9 +283,9 @@ export function PlanoSecao() {
         <div className="preco-card">
           <div className="preco-topo">
             <span className="preco-nome">AZUZ CRM {PLANOS.completo.nome}</span>
-            {assinatura?.status === "ativa" ? <span className="pill on">Plano atual</span> : null}
+            {assinatura?.status === "ativa" ? <span className="pill on">{traduzir("Plano atual")}</span> : null}
           </div>
-          <p className="preco-desc">Tudo que o CRM faz, sem limite de funil e sem cobrar por usuário.</p>
+          <p className="preco-desc">{traduzir("Tudo que o CRM faz, sem limite de funil e sem cobrar por usuário.")}</p>
           <p className="preco-valor">
             {formatarMoeda(PLANOS.completo.valor)}
             <span className="preco-periodo">/mês</span>
@@ -296,7 +298,7 @@ export function PlanoSecao() {
             {assinatura?.status === "ativa" ? "Atualizar forma de pagamento" : "Assinar plano"}
           </button>
           <div className="preco-recursos">
-            <span className="preco-recursos-titulo">O que está incluído</span>
+            <span className="preco-recursos-titulo">{traduzir("O que está incluído")}</span>
             <ul>
               {PLANOS.completo.recursos.map((r) => (
                 <li key={r}>
@@ -325,41 +327,41 @@ export function PlanoSecao() {
           </div>
 
           <div className="field">
-            <label>CPF/CNPJ do responsável pela cobrança</label>
+            <label>{traduzir("CPF/CNPJ do responsável pela cobrança")}</label>
             <input className="input" style={{ width: "100%" }} placeholder="000.000.000-00" value={cpfCnpj} onChange={(e) => setCpfCnpj(e.target.value)} required />
           </div>
 
           {formaPagamento === "CREDIT_CARD" ? (
             <>
               <div className="field">
-                <label>Número do cartão</label>
+                <label>{traduzir("Número do cartão")}</label>
                 <input className="input" style={{ width: "100%" }} inputMode="numeric" placeholder="0000 0000 0000 0000" value={numeroCartao} onChange={(e) => setNumeroCartao(e.target.value)} required />
               </div>
               <div className="field">
-                <label>Nome impresso no cartão</label>
-                <input className="input" style={{ width: "100%" }} placeholder="Ex.: ANA P FERREIRA" value={nomeCartao} onChange={(e) => setNomeCartao(e.target.value)} required />
+                <label>{traduzir("Nome impresso no cartão")}</label>
+                <input className="input" style={{ width: "100%" }} placeholder={traduzir("Ex.: ANA P FERREIRA")} value={nomeCartao} onChange={(e) => setNomeCartao(e.target.value)} required />
               </div>
               <div style={{ display: "flex", gap: 14, padding: "0 17px 14px" }}>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
-                  <label>Mês</label>
+                  <label>{traduzir("Mês")}</label>
                   <input className="input" style={{ width: "100%" }} placeholder="MM" value={validadeMes} onChange={(e) => setValidadeMes(e.target.value)} required />
                 </div>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
-                  <label>Ano</label>
+                  <label>{traduzir("Ano")}</label>
                   <input className="input" style={{ width: "100%" }} placeholder="AAAA" value={validadeAno} onChange={(e) => setValidadeAno(e.target.value)} required />
                 </div>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
-                  <label>CVV</label>
+                  <label>{traduzir("CVV")}</label>
                   <input className="input" style={{ width: "100%" }} inputMode="numeric" placeholder="123" value={cvv} onChange={(e) => setCvv(e.target.value)} required />
                 </div>
               </div>
               <div style={{ display: "flex", gap: 14, padding: "0 17px 14px" }}>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
-                  <label>CEP</label>
+                  <label>{traduzir("CEP")}</label>
                   <input className="input" style={{ width: "100%" }} placeholder="00000-000" value={cep} onChange={(e) => setCep(e.target.value)} required />
                 </div>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
-                  <label>Número do endereço</label>
+                  <label>{traduzir("Número do endereço")}</label>
                   <input className="input" style={{ width: "100%" }} value={numeroEndereco} onChange={(e) => setNumeroEndereco(e.target.value)} required />
                 </div>
                 <div className="field" style={{ padding: 0, flex: 1 }}>
@@ -378,7 +380,7 @@ export function PlanoSecao() {
 
           <div className="section-foot">
             <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={() => setPlanoEmEdicao(null)}>
-              Cancelar
+              {traduzir("Cancelar")}
             </button>
             <button type="submit" className="btn primary" style={{ flex: 1 }} disabled={enviando}>
               {enviando ? "Processando…" : "Confirmar pagamento"}
@@ -388,21 +390,21 @@ export function PlanoSecao() {
       ) : null}
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Histórico</p>
+        <p className="config-bloco-titulo">{traduzir("Histórico")}</p>
         <div className="config-tabela-scroll">
           <table className="config-tabela-notif">
             <thead>
               <tr>
-                <th>Vencimento</th>
+                <th>{traduzir("Vencimento")}</th>
                 <th>Valor</th>
                 <th>Status</th>
-                <th>Fatura</th>
+                <th>{traduzir("Fatura")}</th>
               </tr>
             </thead>
             <tbody>
               {cobrancas.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ color: "var(--text-muted)" }}>Nenhuma cobrança ainda.</td>
+                  <td colSpan={4} style={{ color: "var(--text-muted)" }}>{traduzir("Nenhuma cobrança ainda.")}</td>
                 </tr>
               ) : (
                 cobrancas.map((c) => (
@@ -412,7 +414,7 @@ export function PlanoSecao() {
                     <td>{NOME_STATUS_COBRANCA[c.status] ?? c.status}</td>
                     <td>
                       <a className="btn ghost" href={c.invoiceUrl} target="_blank" rel="noreferrer">
-                        Ver fatura
+                        {traduzir("Ver fatura")}
                       </a>
                     </td>
                   </tr>
@@ -426,7 +428,7 @@ export function PlanoSecao() {
       {assinatura && assinatura.status !== "cancelada" ? (
         <div className="section-foot" style={{ paddingTop: 0 }}>
           <button type="button" className="btn danger block" onClick={cancelarPlano}>
-            Cancelar assinatura
+            {traduzir("Cancelar assinatura")}
           </button>
         </div>
       ) : null}

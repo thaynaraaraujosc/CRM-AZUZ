@@ -4,6 +4,7 @@ import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import type { FiltroTarefaModo, TarefaEventoData } from "@/lib/automation-flow/types";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
+import { useIdioma } from "@/lib/idioma-context";
 
 export const CATEGORIAS_TAREFA = ["Follow-up", "Ligação", "Reunião", "Consulta", "Retorno", "Visita", "Outro"];
 
@@ -20,6 +21,7 @@ const MODOS: { valor: FiltroTarefaModo; label: string }[] = [
  * tarefa; pergunta qual tipo de tarefa (já existente em outro lugar do fluxo) deve iniciar essa
  * automação. */
 export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; onChange: (novo: TarefaEventoData) => void }) {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const { membros: equipe } = useEquipe();
   const equipes = useEquipesDisponiveis();
@@ -27,7 +29,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Qual tarefa?</label>
+        <label>{traduzir("Qual tarefa?")}</label>
         <select
           className="input"
           value={data.filtroModo}
@@ -43,9 +45,9 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
 
       {data.filtroModo === "categoria" ? (
         <div className="field">
-          <label>Categoria</label>
+          <label>{traduzir("Categoria")}</label>
           <select className="input" value={data.categoria ?? ""} onChange={(e) => onChange({ ...data, categoria: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {CATEGORIAS_TAREFA.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -57,10 +59,10 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
 
       {data.filtroModo === "titulo" ? (
         <div className="field">
-          <label>Título contém</label>
+          <label>{traduzir("Título contém")}</label>
           <input
             className="input"
-            placeholder="Ex.: Retornar proposta"
+            placeholder={traduzir("Ex.: Retornar proposta")}
             value={data.tituloContem ?? ""}
             onChange={(e) => onChange({ ...data, tituloContem: e.target.value })}
           />
@@ -71,7 +73,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
         <div className="field">
           <label>Responsável</label>
           <select className="input" value={data.responsavel ?? ""} onChange={(e) => onChange({ ...data, responsavel: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {equipe.map((m) => (
               <option key={m.id} value={m.nome}>
                 {m.nome}
@@ -85,7 +87,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
         <div className="field">
           <label>Equipe</label>
           <select className="input" value={data.equipe ?? ""} onChange={(e) => onChange({ ...data, equipe: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {equipes.map((nome) => (
               <option key={nome} value={nome}>
                 {nome}
@@ -99,7 +101,7 @@ export function TarefaEventoForm({ data, onChange }: { data: TarefaEventoData; o
         <div className="field">
           <label>Funil</label>
           <select className="input" value={data.funilId ?? ""} onChange={(e) => onChange({ ...data, funilId: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {funis.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.nome}

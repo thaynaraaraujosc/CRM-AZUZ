@@ -14,6 +14,7 @@ import { useFunis } from "@/lib/funis-context";
 import { useMensagensExtra } from "@/lib/mensagens-extra-context";
 import { PERIODO_PADRAO, PeriodoPicker, periodoLabel, type PeriodoValor } from "@/components/ui";
 import { IconAlerta, IconCheck, IconClose, IconRelogio } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   estimarPaginas,
   gerarPdfRelatorio,
@@ -96,6 +97,7 @@ export function ReportWizard({
   onFechar: () => void;
   onGerado: (registro: RelatorioGerado) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const { funis } = useFunis();
   const { contatos } = useContatos();
@@ -388,7 +390,7 @@ export function ReportWizard({
         <div className="wizard-head">
           <div>
             <p className="n" style={{ fontFamily: "var(--display)", fontWeight: 700 }}>
-              Assistente de relatório
+              {traduzir("Assistente de relatório")}
             </p>
             <p className="hint">{nomeRelatorio}</p>
           </div>
@@ -398,7 +400,7 @@ export function ReportWizard({
             style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
             onClick={onFechar}
           >
-            Fechar <IconClose width={12} height={12} />
+            {traduzir("Fechar")} <IconClose width={12} height={12} />
           </button>
         </div>
 
@@ -432,7 +434,7 @@ export function ReportWizard({
                 </button>
               ))}
               <div className="field" style={{ gridColumn: "1 / -1" }}>
-                <label>Nome do relatório</label>
+                <label>{traduzir("Nome do relatório")}</label>
                 <input
                   className="input"
                   style={{ width: "100%" }}
@@ -449,7 +451,7 @@ export function ReportWizard({
           {etapa === 1 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <PeriodoPicker
-                label="Período"
+                label={traduzir("Período")}
                 value={periodo}
                 onChange={(v) => {
                   setPeriodo(v);
@@ -521,7 +523,7 @@ export function ReportWizard({
           {etapa === 2 ? (
             <div>
               <div className="field" style={{ marginBottom: 14 }}>
-                <label>Nível de detalhe</label>
+                <label>{traduzir("Nível de detalhe")}</label>
                 <div className="filters-row">
                   <button
                     type="button"
@@ -531,7 +533,7 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Resumido: indicadores principais, menos páginas
+                    {traduzir("Resumido: indicadores principais, menos páginas")}
                   </button>
                   <button
                     type="button"
@@ -541,7 +543,7 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Detalhado: todos os eventos/registros selecionados
+                    {traduzir("Detalhado: todos os eventos/registros selecionados")}
                   </button>
                 </div>
               </div>
@@ -561,7 +563,7 @@ export function ReportWizard({
           {etapa === 3 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <p className="hint" style={{ marginBottom: 8 }}>Reordenar seções</p>
+                <p className="hint" style={{ marginBottom: 8 }}>{traduzir("Reordenar seções")}</p>
                 {ordemSecoes
                   .filter((id) => secoesSelecionadas.has(id))
                   .map((id, i, arr) => {
@@ -580,7 +582,7 @@ export function ReportWizard({
               </div>
 
               <div className="field">
-                <label>Capa</label>
+                <label>{traduzir("Capa")}</label>
                 <div className="filters-row">
                   {(["nenhuma", "compacta", "completa", "personalizada"] as ModoCapa[]).map((m) => (
                     <button
@@ -600,7 +602,7 @@ export function ReportWizard({
 
               {capa === "personalizada" ? (
                 <div className="field">
-                  <label>Cor da capa</label>
+                  <label>{traduzir("Cor da capa")}</label>
                   <div className="filters-row">
                     {CORES_CAPA.map((c, i) => (
                       <button
@@ -621,7 +623,7 @@ export function ReportWizard({
               ) : null}
 
               <div className="field">
-                <label>Orientação</label>
+                <label>{traduzir("Orientação")}</label>
                 <div className="filters-row">
                   <button
                     type="button"
@@ -631,7 +633,7 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Retrato
+                    {traduzir("Retrato")}
                   </button>
                   <button
                     type="button"
@@ -641,13 +643,13 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Paisagem
+                    {traduzir("Paisagem")}
                   </button>
                 </div>
               </div>
 
               <div className="field">
-                <label>Tamanho do papel</label>
+                <label>{traduzir("Tamanho do papel")}</label>
                 <div className="filters-row">
                   <button
                     type="button"
@@ -667,7 +669,7 @@ export function ReportWizard({
                       invalidarPrevia();
                     }}
                   >
-                    Carta
+                    {traduzir("Carta")}
                   </button>
                 </div>
               </div>
@@ -681,7 +683,7 @@ export function ReportWizard({
                     invalidarPrevia();
                   }}
                 />
-                Incluir logotipo/marca
+                {traduzir("Incluir logotipo/marca")}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
                 <input
@@ -692,7 +694,7 @@ export function ReportWizard({
                     invalidarPrevia();
                   }}
                 />
-                Incluir cabeçalho em todas as páginas
+                {traduzir("Incluir cabeçalho em todas as páginas")}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
                 <input
@@ -703,17 +705,17 @@ export function ReportWizard({
                     invalidarPrevia();
                   }}
                 />
-                Incluir rodapé com paginação
+                {traduzir("Incluir rodapé com paginação")}
               </label>
 
               <div className="field">
-                <label>Observações (opcional)</label>
+                <label>{traduzir("Observações (opcional)")}</label>
                 <textarea
                   className="input"
                   style={{ width: "100%", minHeight: 60 }}
                   value={observacoesExtra}
                   onChange={(e) => setObservacoesExtra(e.target.value)}
-                  placeholder="Entra como uma seção extra no fim do documento…"
+                  placeholder={traduzir("Entra como uma seção extra no fim do documento…")}
                 />
               </div>
             </div>
@@ -770,17 +772,17 @@ export function ReportWizard({
                       disabled={paginaAtualPrevia >= totalPaginasPrevia}
                       onClick={() => setPaginaAtualPrevia((p) => p + 1)}
                     >
-                      Próxima página →
+                      {traduzir("Próxima página →")}
                     </button>
                     <button type="button" className="btn ghost" onClick={gerarPrevia}>
-                      Gerar nova prévia
+                      {traduzir("Gerar nova prévia")}
                     </button>
                   </div>
 
                   <iframe
                     key={previaUrl}
                     src={`${previaUrl}#page=${paginaAtualPrevia}&toolbar=1&view=FitH`}
-                    title="Pré-visualização do relatório"
+                    title={traduzir("Pré-visualização do relatório")}
                     style={{ width: "100%", height: 420, border: "1px solid var(--line)", borderRadius: 10 }}
                   />
                   <p className="hint">
@@ -790,7 +792,7 @@ export function ReportWizard({
 
                   <div className="filters-row" style={{ margin: 0 }}>
                     <button type="button" className="btn ghost" onClick={() => irParaEtapa(2)}>
-                      Voltar e editar
+                      {traduzir("Voltar e editar")}
                     </button>
                     <button
                       type="button"
@@ -799,7 +801,7 @@ export function ReportWizard({
                       disabled={temErroBloqueante}
                       title={temErroBloqueante ? "Corrija os erros antes de aprovar" : undefined}
                     >
-                      Aprovar relatório
+                      {traduzir("Aprovar relatório")}
                     </button>
                   </div>
                 </div>
@@ -817,7 +819,7 @@ export function ReportWizard({
               ) : (
                 <>
                   <div className="card" style={{ padding: 14 }}>
-                    <p className="hint" style={{ marginBottom: 4 }}>Relatório aprovado</p>
+                    <p className="hint" style={{ marginBottom: 4 }}>{traduzir("Relatório aprovado")}</p>
                     <p className="n" style={{ fontFamily: "var(--display)", fontWeight: 700, marginBottom: 6 }}>
                       {nomeRelatorio}
                     </p>
@@ -828,41 +830,41 @@ export function ReportWizard({
                       Arquivo: {nomeArquivoRelatorio(nomeRelatorio, periodoLabel(periodo))}
                     </p>
                     <button type="button" className="link" onClick={() => setEtapa(4)} style={{ marginTop: 6 }}>
-                      Visualizar novamente
+                      {traduzir("Visualizar novamente")}
                     </button>
                   </div>
 
                   {status === "gerando" ? (
                     <p className="hint" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <IconRelogio width={12} height={12} /> Preparando arquivo…
+                      <IconRelogio width={12} height={12} /> {traduzir("Preparando arquivo…")}
                     </p>
                   ) : null}
                   {status === "sucesso" ? (
                     <p className="hint" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <IconCheck width={12} height={12} /> Concluído.
+                      <IconCheck width={12} height={12} /> {traduzir("Concluído.")}
                     </p>
                   ) : null}
                   {status === "erro" ? (
                     <p className="hint" style={{ color: "var(--danger)", display: "flex", alignItems: "center", gap: 4 }}>
                       <IconClose width={12} height={12} /> {mensagemErro || "Algo deu errado."}{" "}
-                      <button type="button" className="link" onClick={baixarPdf}>Tentar novamente</button>
+                      <button type="button" className="link" onClick={baixarPdf}>{traduzir("Tentar novamente")}</button>
                     </p>
                   ) : null}
 
                   <button type="button" className="btn primary block" onClick={baixarPdf} disabled={status === "gerando"}>
-                    Baixar PDF
+                    {traduzir("Baixar PDF")}
                   </button>
                   <button type="button" className="btn ghost block" onClick={baixarCsv} disabled={status === "gerando"}>
-                    Baixar Excel (CSV)
+                    {traduzir("Baixar Excel (CSV)")}
                   </button>
                   <button type="button" className="btn ghost block" onClick={salvarSemBaixar} disabled={status === "gerando"}>
-                    Salvar relatório (sem baixar)
+                    {traduzir("Salvar relatório (sem baixar)")}
                   </button>
                   <button type="button" className="btn ghost block" onClick={() => irParaEtapa(2)}>
-                    Voltar e editar
+                    {traduzir("Voltar e editar")}
                   </button>
-                  <button type="button" className="btn ghost block" disabled title="Ainda não disponível nesta versão">
-                    Programar envio (indisponível: recurso em desenvolvimento)
+                  <button type="button" className="btn ghost block" disabled title={traduzir("Ainda não disponível nesta versão")}>
+                    {traduzir("Programar envio (indisponível: recurso em desenvolvimento)")}
                   </button>
                 </>
               )}
@@ -872,17 +874,17 @@ export function ReportWizard({
 
         <div className="wizard-foot">
           <button type="button" className="btn ghost" onClick={onFechar}>
-            Cancelar
+            {traduzir("Cancelar")}
           </button>
           <div style={{ display: "flex", gap: 8 }}>
             {etapa > 0 ? (
               <button type="button" className="btn ghost" onClick={() => irParaEtapa(etapa - 1)}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             ) : null}
             {etapa < ETAPAS.length - 1 && etapa !== 4 ? (
               <button type="button" className="btn primary" onClick={() => irParaEtapa(etapa + 1)}>
-                Continuar
+                {traduzir("Continuar")}
               </button>
             ) : null}
           </div>

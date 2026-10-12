@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { FlowEditor } from "@/components/automation-flow/FlowEditor";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * `id` é ou o id de um `FluxoAutomacao` existente, ou o literal "novo": nesse
@@ -14,6 +15,7 @@ import { useAutomationFlows } from "@/lib/automation-flow-context";
  * pro id de verdade, mas o editor já usa o id novo antes mesmo da URL virar.
  */
 export default function EditorFluxoPage({ params }: { params: Promise<{ id: string }> }) {
+  const { t: traduzir } = useIdioma();
   const { id } = use(params);
   const { fluxos, criarFluxo } = useAutomationFlows();
   const router = useRouter();
@@ -33,7 +35,7 @@ export default function EditorFluxoPage({ params }: { params: Promise<{ id: stri
   if (!fluxoId) {
     return (
       <div className="flow-shell-empty">
-        <p>Criando nova automação…</p>
+        <p>{traduzir("Criando nova automação…")}</p>
       </div>
     );
   }
@@ -41,7 +43,7 @@ export default function EditorFluxoPage({ params }: { params: Promise<{ id: stri
   if (id !== "novo" && !fluxos.some((f) => f.id === fluxoId)) {
     return (
       <div className="flow-shell-empty">
-        <p>Esse fluxo não existe (mais).</p>
+        <p>{traduzir("Esse fluxo não existe (mais).")}</p>
       </div>
     );
   }

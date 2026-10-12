@@ -11,6 +11,7 @@ import type {
 import { CATEGORIAS_TAREFA } from "./TarefaEventoForm";
 import { useEquipesDisponiveis } from "./useEquipesDisponiveis";
 import { SeletorDeData } from "@/components/seletor-de-data";
+import { useIdioma } from "@/lib/idioma-context";
 
 const PRIORIDADES: { valor: PrioridadeTarefa; label: string }[] = [
   { valor: "baixa", label: "Baixa" },
@@ -22,13 +23,14 @@ const PRIORIDADES: { valor: PrioridadeTarefa; label: string }[] = [
 /** Ação "Criar tarefa" (item 16). Tipo, título, descrição, responsável, prazo, prioridade e a que
  * relacionar, tudo configurável direto no bloco. */
 export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onChange: (novo: CriarTarefaData) => void }) {
+  const { t: traduzir } = useIdioma();
   const equipes = useEquipesDisponiveis();
   const { membros: equipe } = useEquipe();
 
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Tipo de tarefa</label>
+        <label>{traduzir("Tipo de tarefa")}</label>
         <select className="input" value={data.categoria ?? ""} onChange={(e) => onChange({ ...data, categoria: e.target.value })}>
           {CATEGORIAS_TAREFA.map((c) => (
             <option key={c} value={c}>
@@ -42,14 +44,14 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
         <label>Título</label>
         <input
           className="input"
-          placeholder="Ex.: Retornar contato"
+          placeholder={traduzir("Ex.: Retornar contato")}
           value={data.titulo}
           onChange={(e) => onChange({ ...data, titulo: e.target.value })}
         />
       </div>
 
       <div className="field">
-        <label>Descrição</label>
+        <label>{traduzir("Descrição")}</label>
         <textarea
           className="input"
           style={{ width: "100%", minHeight: 60, resize: "vertical" }}
@@ -65,17 +67,17 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
           value={data.modoResponsavel ?? "atual"}
           onChange={(e) => onChange({ ...data, modoResponsavel: e.target.value as ModoResponsavelTarefa })}
         >
-          <option value="atual">Responsável atual do lead</option>
-          <option value="pessoa">Selecionar pessoa</option>
-          <option value="equipe">Selecionar equipe</option>
+          <option value="atual">{traduzir("Responsável atual do lead")}</option>
+          <option value="pessoa">{traduzir("Selecionar pessoa")}</option>
+          <option value="equipe">{traduzir("Selecionar equipe")}</option>
         </select>
       </div>
 
       {data.modoResponsavel === "pessoa" ? (
         <div className="field">
-          <label>Pessoa</label>
+          <label>{traduzir("Pessoa")}</label>
           <select className="input" value={data.responsavel ?? ""} onChange={(e) => onChange({ ...data, responsavel: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {equipe.map((m) => (
               <option key={m.id} value={m.nome}>
                 {m.nome}
@@ -89,7 +91,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
         <div className="field">
           <label>Equipe</label>
           <select className="input" value={data.equipe ?? ""} onChange={(e) => onChange({ ...data, equipe: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {equipes.map((nome) => (
               <option key={nome} value={nome}>
                 {nome}
@@ -100,21 +102,21 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
       ) : null}
 
       <div className="field">
-        <label>Prazo</label>
+        <label>{traduzir("Prazo")}</label>
         <select
           className="input"
           value={data.modoPrazo ?? "depois_de"}
           onChange={(e) => onChange({ ...data, modoPrazo: e.target.value as ModoPrazoTarefa })}
         >
-          <option value="imediatamente">Imediatamente</option>
-          <option value="depois_de">Depois de…</option>
-          <option value="data_especifica">Data e horário específicos</option>
+          <option value="imediatamente">{traduzir("Imediatamente")}</option>
+          <option value="depois_de">{traduzir("Depois de…")}</option>
+          <option value="data_especifica">{traduzir("Data e horário específicos")}</option>
         </select>
       </div>
 
       {data.modoPrazo === "depois_de" ? (
         <div className="field">
-          <label>Quanto tempo depois</label>
+          <label>{traduzir("Quanto tempo depois")}</label>
           <div style={{ display: "flex", gap: 6 }}>
             <input
               className="input"
@@ -130,9 +132,9 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
               value={data.prazoUnidade ?? "horas"}
               onChange={(e) => onChange({ ...data, prazoUnidade: e.target.value })}
             >
-              <option value="minutos">Minutos</option>
-              <option value="horas">Horas</option>
-              <option value="dias">Dias</option>
+              <option value="minutos">{traduzir("Minutos")}</option>
+              <option value="horas">{traduzir("Horas")}</option>
+              <option value="dias">{traduzir("Dias")}</option>
             </select>
           </div>
         </div>
@@ -140,7 +142,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
 
       {data.modoPrazo === "data_especifica" ? (
         <div className="field">
-          <label>Data e horário</label>
+          <label>{traduzir("Data e horário")}</label>
           <div style={{ display: "flex", gap: 6 }}>
             <SeletorDeData
               valor={data.data ?? ""}
@@ -160,7 +162,7 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
       ) : null}
 
       <div className="field">
-        <label>Prioridade</label>
+        <label>{traduzir("Prioridade")}</label>
         <select
           className="input"
           value={data.prioridade ?? "normal"}
@@ -175,15 +177,15 @@ export function CriarTarefaForm({ data, onChange }: { data: CriarTarefaData; onC
       </div>
 
       <div className="field">
-        <label>Relacionar ao</label>
+        <label>{traduzir("Relacionar ao")}</label>
         <select
           className="input"
           value={data.relacionarA ?? "contato"}
           onChange={(e) => onChange({ ...data, relacionarA: e.target.value as RelacionarTarefaA })}
         >
           <option value="contato">Contato</option>
-          <option value="negocio">Negócio</option>
-          <option value="ambos">Ambos</option>
+          <option value="negocio">{traduzir("Negócio")}</option>
+          <option value="ambos">{traduzir("Ambos")}</option>
         </select>
       </div>
     </div>

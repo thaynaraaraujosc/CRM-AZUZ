@@ -28,7 +28,7 @@ type Conversoes = {
  * trabalho já está feita, senão a impressão é de que nada funciona até ela configurar tudo.
  */
 export function RastreamentoSecao() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const [dados, setDados] = useState<Resposta | null>(null);
   const [conversoes, setConversoes] = useState<Conversoes | null>(null);
   const [copiado, setCopiado] = useState(false);
@@ -60,7 +60,7 @@ export function RastreamentoSecao() {
   return (
     <div className="config-secao">
       <CabecalhoCategoria
-        titulo={t("Rastreamento de anúncios")}
+        titulo={traduzir("Rastreamento de anúncios")}
         descricao="Saber de qual anúncio veio cada lead, e devolver a venda para a plataforma de anúncio, para que ela procure mais gente parecida com quem compra."
       />
 
@@ -71,9 +71,9 @@ export function RastreamentoSecao() {
               <IconWhatsApp width={18} height={18} />
               <IconInstagram width={18} height={18} />
             </span>
-            <span className="rastreio-selo rastreio-selo-ativo">Funcionando</span>
+            <span className="rastreio-selo rastreio-selo-ativo">{traduzir("Funcionando")}</span>
           </div>
-          <h4>Anúncios da Meta</h4>
+          <h4>{traduzir("Anúncios da Meta")}</h4>
           <p>
             Não precisa de nada. Quando alguém clica num anúncio do Facebook ou do Instagram e cai na
             sua conversa, a Meta informa de qual anúncio a pessoa veio, e o CRM guarda no contato.
@@ -83,9 +83,9 @@ export function RastreamentoSecao() {
         <div className="rastreio-canal">
           <div className="rastreio-canal-h">
             <span className="rastreio-canal-icones rastreio-google">G</span>
-            <span className="rastreio-selo">Um passo</span>
+            <span className="rastreio-selo">{traduzir("Um passo")}</span>
           </div>
-          <h4>Anúncios do Google</h4>
+          <h4>{traduzir("Anúncios do Google")}</h4>
           <p>
             A pessoa clica no anúncio, passa pelo seu site e só depois vai pro WhatsApp. Nesse pulo a
             informação do anúncio se perde — a menos que o botão do site aponte para o seu link.
@@ -98,9 +98,9 @@ export function RastreamentoSecao() {
         <div className="rastreio-canal rastreio-canal-pronto">
           <div className="rastreio-canal-h">
             <span className="rastreio-canal-icones rastreio-google">F</span>
-            <span className="rastreio-selo rastreio-selo-ativo">Funcionando</span>
+            <span className="rastreio-selo rastreio-selo-ativo">{traduzir("Funcionando")}</span>
           </div>
-          <h4>Formulários do CRM</h4>
+          <h4>{traduzir("Formulários do CRM")}</h4>
           <p>
             Se o seu anúncio leva direto pra um formulário do CRM, não precisa de nada: o código do
             clique vem no endereço e o formulário guarda sozinho. Se ele leva pra uma página sua que
@@ -111,7 +111,7 @@ export function RastreamentoSecao() {
       </div>
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Seu link de rastreamento</p>
+        <p className="config-bloco-titulo">{traduzir("Seu link de rastreamento")}</p>
         {dados ? (
           <>
             <div className="rastreio-link-linha">
@@ -120,7 +120,7 @@ export function RastreamentoSecao() {
                 className="input rastreio-link-campo"
                 readOnly
                 value={dados.link}
-                aria-label="Seu link de rastreamento"
+                aria-label={traduzir("Seu link de rastreamento")}
                 onFocus={(e) => e.currentTarget.select()}
               />
               <button type="button" className="btn primary" onClick={() => void copiar()}>
@@ -129,7 +129,7 @@ export function RastreamentoSecao() {
             </div>
             {dados.temNumero ? (
               <p className="hint rastreio-nota">
-                Quem clicar cai no seu WhatsApp <strong>{dados.numero}</strong>, exatamente como
+                {traduzir("Quem clicar cai no seu WhatsApp")} <strong>{dados.numero}</strong>, exatamente como
                 antes. A diferença é que o CRM passa a saber de qual campanha a pessoa veio.
               </p>
             ) : (
@@ -148,13 +148,13 @@ export function RastreamentoSecao() {
           pedir — e recurso que roda escondido e não mostra resultado é indistinguível de recurso
           quebrado. Estes números são o que separa "está funcionando" de "parece que não faz nada". */}
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Vendas devolvidas para o Google</p>
+        <p className="config-bloco-titulo">{traduzir("Vendas devolvidas para o Google")}</p>
         {conversoes === null ? (
           <p className="hint rastreio-nota">Carregando…</p>
         ) : !conversoes.googleConectado ? (
           <p className="hint rastreio-nota">
             Conecte o Google Ads em{" "}
-            <Link href="/configuracoes?categoria=integracoes">{t("Integrações e aplicativos")}</Link> para
+            <Link href="/configuracoes?categoria=integracoes">{traduzir("Integrações e aplicativos")}</Link> para
             que o CRM possa avisar o Google quando um lead vira venda. Sem isso ele continua
             otimizando para conseguir cliques, e não clientes.
           </p>
@@ -171,7 +171,7 @@ export function RastreamentoSecao() {
               </span>
             </p>
             <p className="hint rastreio-nota">
-              Quando você marca um negócio como <strong>ganho</strong> no funil, o CRM avisa o Google
+              {traduzir("Quando você marca um negócio como")} <strong>ganho</strong> no funil, o CRM avisa o Google
               qual clique gerou aquela venda e quanto ela valeu. O envio acontece sozinho, em até
               meia hora. Na primeira vez, o CRM cria na sua conta do Google Ads uma conversão
               chamada <strong>“Venda · CRM AZUZ”</strong> — é ela que recebe esses valores.
@@ -185,14 +185,14 @@ export function RastreamentoSecao() {
                 a devolução cobre os dois canais, que é o tipo de promessa pela metade que já
                 existiu nesta tela antes. */}
             <p className="hint rastreio-nota">
-              <strong>Meta:</strong> o envio já existe, mas a permissão de anúncios só vale para
+              <strong>{traduzir("Meta:")}</strong> o envio já existe, mas a permissão de anúncios só vale para
               quem tem cargo no app da Meta enquanto a análise não sair. Na prática, funciona na sua
               conta e ainda não nas dos seus clientes.
             </p>
             {/* O consentimento não é decisão do CRM: ele nasce no site do cliente. A tela explica
                 isso em vez de oferecer um botão que não teria o que ligar. */}
             <p className="hint rastreio-nota">
-              <strong>Aviso de cookies:</strong> se o site tiver um, ele pode informar ao CRM o que
+              <strong>{traduzir("Aviso de cookies:")}</strong> se o site tiver um, ele pode informar ao CRM o que
               a pessoa escolheu — basta o link carregar <code>consent=1</code> ou{" "}
               <code>consent=0</code>. O CRM repassa essa escolha junto da venda. Sem banner no site,
               nada muda: a escolha fica como <em>não informada</em>, que é o padrão hoje.
@@ -202,16 +202,16 @@ export function RastreamentoSecao() {
       </div>
 
       <div className="config-bloco rastreio-passos">
-        <p className="config-bloco-titulo">Como instalar, em três passos</p>
+        <p className="config-bloco-titulo">{traduzir("Como instalar, em três passos")}</p>
         <ol>
           <li>
-            <strong>Copie o link acima.</strong>
+            <strong>{traduzir("Copie o link acima.")}</strong>
           </li>
           <li>
-            <strong>Abra o editor do seu site</strong> e encontre o botão ou link de WhatsApp.
+            <strong>{traduzir("Abra o editor do seu site")}</strong> e encontre o botão ou link de WhatsApp.
           </li>
           <li>
-            <strong>Troque o endereço dele por esse.</strong> No Wix, no WordPress e no Shopify isso
+            <strong>{traduzir("Troque o endereço dele por esse.")}</strong> No Wix, no WordPress e no Shopify isso
             é um campo de texto na edição do botão — não é preciso mexer em código. Se houver mais de
             um botão na página, troque todos.
           </li>

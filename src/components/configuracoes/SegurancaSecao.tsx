@@ -16,7 +16,7 @@ function formatarData(iso: string): string {
  * tentativa, que nunca chegaram a ser aplicados de verdade) e sessões ativas reais (`SessaoAtiva`,
  * criada no login em `src/lib/auth.ts`. Dispositivo/navegador parseados do User-Agent real). */
 export function SegurancaSecao() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const emailAtual = sessao?.user?.email ?? "";
 
@@ -81,13 +81,13 @@ export function SegurancaSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="Segurança" descricao="Senha, e-mail de acesso e sessões ativas." />
+      <CabecalhoCategoria titulo={traduzir("Segurança")} descricao={traduzir("Senha, e-mail de acesso e sessões ativas.")} />
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">{t("Senha")}</p>
+        <p className="config-bloco-titulo">{traduzir("Senha")}</p>
         <div className="toggle-row" style={{ padding: "6px 0" }}>
           <span className="tl">
-            Redefinir por e-mail: enviamos um link pra <strong>{emailAtual || "seu e-mail cadastrado"}</strong>, sem precisar digitar a senha atual.
+            {traduzir("Redefinir por e-mail: enviamos um link pra")} <strong>{emailAtual || "seu e-mail cadastrado"}</strong>, sem precisar digitar a senha atual.
           </span>
           <button type="button" className="btn ghost" onClick={pedirRedefinicaoSenha} disabled={enviandoReset || resetEnviado}>
             {resetEnviado ? "Link enviado" : enviandoReset ? "Enviando…" : "Redefinir senha"}
@@ -97,7 +97,7 @@ export function SegurancaSecao() {
       </div>
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">E-mail de acesso</p>
+        <p className="config-bloco-titulo">{traduzir("E-mail de acesso")}</p>
         {!trocandoEmail ? (
           <div className="toggle-row" style={{ padding: "6px 0" }}>
             <span className="tl">{emailAtual}</span>
@@ -110,14 +110,14 @@ export function SegurancaSecao() {
                 setErroEmail(null);
               }}
             >
-              Alterar e-mail
+              {traduzir("Alterar e-mail")}
             </button>
           </div>
         ) : (
           <div className="config-grid-2">
             <div className="field">
-              <label>Senha atual</label>
-              <input className="input" type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder="Confirme sua senha" />
+              <label>{traduzir("Senha atual")}</label>
+              <input className="input" type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder={traduzir("Confirme sua senha")} />
             </div>
             <div className="field">
               <label>Novo e-mail</label>
@@ -129,16 +129,16 @@ export function SegurancaSecao() {
                 {salvandoEmail ? "Salvando…" : "Confirmar troca"}
               </button>
               <button type="button" className="btn ghost" onClick={() => setTrocandoEmail(false)} disabled={salvandoEmail}>
-                Cancelar
+                {traduzir("Cancelar")}
               </button>
             </div>
           </div>
         )}
-        {emailAlterado ? <p className="hint">E-mail alterado. Use o novo e-mail (com a mesma senha) da próxima vez que entrar.</p> : null}
+        {emailAlterado ? <p className="hint">{traduzir("E-mail alterado. Use o novo e-mail (com a mesma senha) da próxima vez que entrar.")}</p> : null}
       </div>
 
       <div className="config-bloco">
-        <p className="config-bloco-titulo">Sessões ativas</p>
+        <p className="config-bloco-titulo">{traduzir("Sessões ativas")}</p>
         {sessoes === null ? (
           <p className="hint">Carregando…</p>
         ) : (
@@ -147,7 +147,7 @@ export function SegurancaSecao() {
               <div className="config-linha-clicavel" key={s.id} style={{ cursor: "default" }}>
                 <div>
                   <p className="n">
-                    {s.dispositivo} {s.atual ? <span className="pill on">Esta sessão</span> : null}
+                    {s.dispositivo} {s.atual ? <span className="pill on">{traduzir("Esta sessão")}</span> : null}
                   </p>
                   <p className="r">
                     {s.ip ? `${s.ip} · ` : ""}conectado desde {formatarData(s.criadoEm)}
@@ -155,7 +155,7 @@ export function SegurancaSecao() {
                 </div>
                 {!s.atual ? (
                   <button type="button" className="btn danger" onClick={() => encerrarSessao(s.id)}>
-                    Encerrar sessão
+                    {traduzir("Encerrar sessão")}
                   </button>
                 ) : null}
               </div>

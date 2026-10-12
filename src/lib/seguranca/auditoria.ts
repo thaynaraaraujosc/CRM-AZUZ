@@ -34,7 +34,10 @@ export type AcaoAuditada =
   | "workspace.alterado"
   // Remontar a conta de demonstracao APAGA e recria o workspace dela inteiro. Operacao
   // destrutiva, ainda que num alvo inofensivo: fica registrada como qualquer outra.
-  | "demo.remontada";
+  | "demo.remontada"
+  // Limpeza do conteudo semeado da demonstracao, preservando o que chegou de verdade. Tambem
+  // apaga, tambem e registrada.
+  | "demo.conteudo_limpo";
 
 type Entrada = {
   acao: AcaoAuditada;

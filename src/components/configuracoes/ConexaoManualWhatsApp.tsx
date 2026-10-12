@@ -15,7 +15,7 @@ import { useIdioma } from "@/lib/idioma-context";
  * devolve ele de volta, então o campo nunca é preenchido de novo com o valor salvo.
  */
 export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void }) {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [accessToken, setAccessToken] = useState("");
   const [wabaId, setWabaId] = useState("");
@@ -67,7 +67,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       <div style={{ marginTop: 10 }}>
         {pin ? (
           <>
-            <p className="int-title" style={{ margin: 0 }}>{t("Conectado! Guarde este PIN:")}</p>
+            <p className="int-title" style={{ margin: 0 }}>{traduzir("Conectado! Guarde este PIN:")}</p>
             <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: 4, margin: "8px 0" }}>{pin}</p>
             <p className="hint" style={{ margin: 0 }}>
               É o PIN de verificação em duas etapas do seu número na Meta. Ele não aparece de novo.
@@ -92,7 +92,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
   if (!aberto) {
     return (
       <button type="button" className="btn ghost" style={{ marginTop: 10 }} onClick={() => setAberto(true)}>
-        Já tenho conta na API oficial. Conectar com token
+        {traduzir("Já tenho conta na API oficial. Conectar com token")}
       </button>
     );
   }
@@ -109,7 +109,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       </p>
 
       <div className="field">
-        <label>Token de acesso permanente</label>
+        <label>{traduzir("Token de acesso permanente")}</label>
         <input
           className="input"
           type="password"
@@ -121,7 +121,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       </div>
 
       <div className="field">
-        <label>ID da conta do WhatsApp (WABA)</label>
+        <label>{traduzir("ID da conta do WhatsApp (WABA)")}</label>
         <input
           className="input"
           type="text"
@@ -133,7 +133,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       </div>
 
       <div className="field">
-        <label>ID do número de telefone</label>
+        <label>{traduzir("ID do número de telefone")}</label>
         <input
           className="input"
           type="text"
@@ -145,13 +145,13 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
       </div>
 
       <div className="field">
-        <label>PIN de verificação em duas etapas (só se o número já tiver um)</label>
+        <label>{traduzir("PIN de verificação em duas etapas (só se o número já tiver um)")}</label>
         <input
           className="input"
           type="text"
           inputMode="numeric"
           maxLength={6}
-          placeholder="opcional"
+          placeholder={traduzir("opcional")}
           value={pinExistente}
           onChange={(e) => setPinExistente(e.target.value)}
         />
@@ -162,7 +162,7 @@ export function ConexaoManualWhatsApp({ aoConectar }: { aoConectar?: () => void 
           {enviando ? "Conectando…" : "Conectar"}
         </button>
         <button type="button" className="btn ghost" onClick={() => setAberto(false)} disabled={enviando}>
-          Cancelar
+          {traduzir("Cancelar")}
         </button>
       </div>
 

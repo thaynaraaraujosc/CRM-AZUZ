@@ -4,6 +4,7 @@ import { DIAS_SEMANA, type DiaSemana } from "@/lib/data";
 import { useFunis } from "@/lib/funis-context";
 import type { ConfiguracoesFluxo, FluxoAutomacao } from "@/lib/automation-flow/types";
 import { SeletorDeData } from "@/components/seletor-de-data";
+import { useIdioma } from "@/lib/idioma-context";
 
 const LIMITES: { valor: NonNullable<ConfiguracoesFluxo["limiteExecucao"]>; label: string }[] = [
   { valor: "sempre", label: "Sempre que o gatilho acontecer" },
@@ -24,6 +25,7 @@ export function ConfiguracoesGeraisForm({
   onChange: (patch: Partial<Pick<FluxoAutomacao, "nome" | "descricao" | "funilId" | "etapaId" | "categoria">>) => void;
   onChangeConfiguracoes: (patch: Partial<ConfiguracoesFluxo>) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const cfg = fluxo.configuracoes;
   const funilEscolhido = funis.find((f) => f.id === fluxo.funilId);
@@ -37,11 +39,11 @@ export function ConfiguracoesGeraisForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Nome do fluxo</label>
+        <label>{traduzir("Nome do fluxo")}</label>
         <input className="input" value={fluxo.nome} onChange={(e) => onChange({ nome: e.target.value })} />
       </div>
       <div className="field">
-        <label>Descrição</label>
+        <label>{traduzir("Descrição")}</label>
         <textarea
           className="input"
           style={{ width: "100%", minHeight: 60, resize: "vertical" }}
@@ -50,9 +52,9 @@ export function ConfiguracoesGeraisForm({
         />
       </div>
       <div className="field">
-        <label>Funil relacionado</label>
+        <label>{traduzir("Funil relacionado")}</label>
         <select className="input" value={fluxo.funilId ?? ""} onChange={(e) => onChange({ funilId: e.target.value || undefined, etapaId: undefined })}>
-          <option value="">Nenhum específico</option>
+          <option value="">{traduzir("Nenhum específico")}</option>
           {funis.map((f) => (
             <option key={f.id} value={f.id}>
               {f.nome}
@@ -62,9 +64,9 @@ export function ConfiguracoesGeraisForm({
       </div>
       {funilEscolhido ? (
         <div className="field">
-          <label>Etapa relacionada</label>
+          <label>{traduzir("Etapa relacionada")}</label>
           <select className="input" value={fluxo.etapaId ?? ""} onChange={(e) => onChange({ etapaId: e.target.value || undefined })}>
-            <option value="">Qualquer etapa</option>
+            <option value="">{traduzir("Qualquer etapa")}</option>
             {funilEscolhido.colunas.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.titulo}
@@ -75,7 +77,7 @@ export function ConfiguracoesGeraisForm({
       ) : null}
 
       <div className="field">
-        <label>Dias ativos</label>
+        <label>{traduzir("Dias ativos")}</label>
         <div className="filters-row">
           {DIAS_SEMANA.map((d) => (
             <button
@@ -92,12 +94,12 @@ export function ConfiguracoesGeraisForm({
       </div>
 
       <div className="toggle-row">
-        <span className="tl">Restringir a um horário</span>
+        <span className="tl">{traduzir("Restringir a um horário")}</span>
         <button
           type="button"
           role="switch"
           aria-checked={!!cfg.usarHorario}
-          aria-label="Restringir a um horário"
+          aria-label={traduzir("Restringir a um horário")}
           className={`toggle${cfg.usarHorario ? " on" : ""}`}
           onClick={() => onChangeConfiguracoes({ usarHorario: !cfg.usarHorario })}
         >
@@ -106,7 +108,7 @@ export function ConfiguracoesGeraisForm({
       </div>
       {cfg.usarHorario ? (
         <div className="field">
-          <label>Janela de horário</label>
+          <label>{traduzir("Janela de horário")}</label>
           <div style={{ display: "flex", gap: 6 }}>
             <input
               className="input"
@@ -126,7 +128,7 @@ export function ConfiguracoesGeraisForm({
         </div>
       ) : null}
       <div className="field">
-        <label>Fuso horário</label>
+        <label>{traduzir("Fuso horário")}</label>
         <input
           className="input"
           placeholder="America/Sao_Paulo"
@@ -135,15 +137,15 @@ export function ConfiguracoesGeraisForm({
         />
       </div>
       <div className="field">
-        <label>Quando o gatilho acontecer fora desse horário</label>
+        <label>{traduzir("Quando o gatilho acontecer fora desse horário")}</label>
         <select
           className="input"
           value={cfg.foraDaJanela === "ignorar" ? "encerrar" : (cfg.foraDaJanela ?? "aguardar")}
           onChange={(e) => onChangeConfiguracoes({ foraDaJanela: e.target.value as ConfiguracoesFluxo["foraDaJanela"] })}
         >
-          <option value="aguardar">Aguardar e continuar quando abrir</option>
-          <option value="continuar">Continuar mesmo assim</option>
-          <option value="encerrar">Encerrar a execução</option>
+          <option value="aguardar">{traduzir("Aguardar e continuar quando abrir")}</option>
+          <option value="continuar">{traduzir("Continuar mesmo assim")}</option>
+          <option value="encerrar">{traduzir("Encerrar a execução")}</option>
         </select>
         <p className="hint">
           {cfg.foraDaJanela === "continuar"
@@ -155,25 +157,25 @@ export function ConfiguracoesGeraisForm({
       </div>
 
       <div className="field">
-        <label>Data de início</label>
+        <label>{traduzir("Data de início")}</label>
         <SeletorDeData valor={cfg.dataInicio ?? ""} onChange={(iso) => onChangeConfiguracoes({ dataInicio: iso })} />
       </div>
       <div className="field">
-        <label>Data de fim</label>
+        <label>{traduzir("Data de fim")}</label>
         <SeletorDeData valor={cfg.dataFim ?? ""} onChange={(iso) => onChangeConfiguracoes({ dataFim: iso })} />
       </div>
 
       <div className="field">
-        <label>Prioridade</label>
+        <label>{traduzir("Prioridade")}</label>
         <select className="input" value={cfg.prioridade ?? "normal"} onChange={(e) => onChangeConfiguracoes({ prioridade: e.target.value as ConfiguracoesFluxo["prioridade"] })}>
-          <option value="baixa">Baixa</option>
-          <option value="normal">Normal</option>
-          <option value="alta">Alta</option>
+          <option value="baixa">{traduzir("Baixa")}</option>
+          <option value="normal">{traduzir("Normal")}</option>
+          <option value="alta">{traduzir("Alta")}</option>
         </select>
       </div>
 
       <div className="field">
-        <label>Limite de execução</label>
+        <label>{traduzir("Limite de execução")}</label>
         <select
           className="input"
           value={cfg.limiteExecucao ?? "sempre"}
@@ -192,7 +194,7 @@ export function ConfiguracoesGeraisForm({
 
       {cfg.limiteExecucao === "no_maximo" ? (
         <div className="field">
-          <label>Quantas vezes no máximo</label>
+          <label>{traduzir("Quantas vezes no máximo")}</label>
           <input
             className="input"
             type="number"
@@ -204,12 +206,12 @@ export function ConfiguracoesGeraisForm({
       ) : null}
 
       <div className="toggle-row">
-        <span className="tl">Não iniciar se já estiver nesse fluxo</span>
+        <span className="tl">{traduzir("Não iniciar se já estiver nesse fluxo")}</span>
         <button
           type="button"
           role="switch"
           aria-checked={!!cfg.naoIniciarSeJaNoFluxo}
-          aria-label="Não iniciar se já estiver nesse fluxo"
+          aria-label={traduzir("Não iniciar se já estiver nesse fluxo")}
           className={`toggle${cfg.naoIniciarSeJaNoFluxo ? " on" : ""}`}
           onClick={() => onChangeConfiguracoes({ naoIniciarSeJaNoFluxo: !cfg.naoIniciarSeJaNoFluxo })}
         >
@@ -217,12 +219,12 @@ export function ConfiguracoesGeraisForm({
         </button>
       </div>
       <div className="toggle-row">
-        <span className="tl">Cancelar execução anterior ao reiniciar</span>
+        <span className="tl">{traduzir("Cancelar execução anterior ao reiniciar")}</span>
         <button
           type="button"
           role="switch"
           aria-checked={!!cfg.cancelarExecucaoAnterior}
-          aria-label="Cancelar execução anterior ao reiniciar"
+          aria-label={traduzir("Cancelar execução anterior ao reiniciar")}
           className={`toggle${cfg.cancelarExecucaoAnterior ? " on" : ""}`}
           onClick={() => onChangeConfiguracoes({ cancelarExecucaoAnterior: !cfg.cancelarExecucaoAnterior })}
         >
@@ -231,12 +233,12 @@ export function ConfiguracoesGeraisForm({
       </div>
 
       <div className="toggle-row">
-        <span className="tl">Esperas e botões de verdade</span>
+        <span className="tl">{traduzir("Esperas e botões de verdade")}</span>
         <button
           type="button"
           role="switch"
           aria-checked={cfg.motorNovo !== false}
-          aria-label="Esperas e botões de verdade"
+          aria-label={traduzir("Esperas e botões de verdade")}
           className={`toggle${cfg.motorNovo !== false ? " on" : ""}`}
           onClick={() => onChangeConfiguracoes({ motorNovo: cfg.motorNovo === false })}
         >

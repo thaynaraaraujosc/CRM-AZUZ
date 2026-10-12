@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Story = {
   id: string;
@@ -81,6 +82,7 @@ export function StoryRespondidoForm({
   data: Dados;
   onChange: (novo: Dados) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [stories, setStories] = useState<Story[] | null>(null);
   const [erroStories, setErroStories] = useState<string | null>(null);
   const [novaPalavra, setNovaPalavra] = useState("");
@@ -114,7 +116,7 @@ export function StoryRespondidoForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Palavras que disparam</label>
+        <label>{traduzir("Palavras que disparam")}</label>
         <div className="ig-palavras">
           {palavras.map((palavra) => (
             <span key={palavra} className="ig-palavra-chip">
@@ -131,7 +133,7 @@ export function StoryRespondidoForm({
         </div>
         <input
           className="input"
-          placeholder="Digite e aperte Enter. Ex.: GUIA"
+          placeholder={traduzir("Digite e aperte Enter. Ex.: GUIA")}
           value={novaPalavra}
           onChange={(e) => setNovaPalavra(e.target.value)}
           onKeyDown={(e) => {
@@ -150,7 +152,7 @@ export function StoryRespondidoForm({
       </div>
 
       <div className="field">
-        <label>Como comparar</label>
+        <label>{traduzir("Como comparar")}</label>
         <select
           className="input"
           value={data.modoPalavra ?? "qualquer"}
@@ -178,9 +180,9 @@ export function StoryRespondidoForm({
       </div>
 
       <div className="field">
-        <label>Em qual story</label>
+        <label>{traduzir("Em qual story")}</label>
         <p className="hint">
-          Story dura 24 horas. A lista abaixo é o que está no ar agora, buscado na hora.
+          {traduzir("Story dura 24 horas. A lista abaixo é o que está no ar agora, buscado na hora.")}
         </p>
 
         {escolhidoSumiu ? (
@@ -197,8 +199,8 @@ export function StoryRespondidoForm({
             onClick={() => onChange({ ...data, storyId: "" })}
           >
             <span className="ig-publicacao-info">
-              <strong>Qualquer story, de qualquer dia</strong>
-              <span>O robô fica valendo pra sempre, inclusive pros stories de amanhã.</span>
+              <strong>{traduzir("Qualquer story, de qualquer dia")}</strong>
+              <span>{traduzir("O robô fica valendo pra sempre, inclusive pros stories de amanhã.")}</span>
             </span>
           </button>
 
@@ -207,7 +209,7 @@ export function StoryRespondidoForm({
               Não deu pra carregar seus stories: {erroStories} Dá pra seguir com qualquer story.
             </p>
           ) : stories === null ? (
-            <p className="hint">Carregando seus stories…</p>
+            <p className="hint">{traduzir("Carregando seus stories…")}</p>
           ) : stories.length === 0 ? (
             <p className="hint">
               Nenhum story seu está no ar agora. Poste um e abra este campo de novo pra escolher.
@@ -229,7 +231,7 @@ export function StoryRespondidoForm({
                 <span className="ig-publicacao-info">
                   <strong>{NOME_TIPO[story.tipo] ?? story.tipo}</strong>
                   <em>{horaDoStory(story.publicadoEm)}</em>
-                  <span>No ar agora</span>
+                  <span>{traduzir("No ar agora")}</span>
                 </span>
               </button>
             ))

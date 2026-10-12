@@ -7,6 +7,7 @@ import { Topbar } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { TabelaExecucoes } from "@/components/automacoes/TabelaExecucoes";
 import type { PainelExecucoes } from "@/app/api/automacoes/execucoes/route";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * O que os robôs do funil fizeram, e o que deu errado.
@@ -16,6 +17,7 @@ import type { PainelExecucoes } from "@/app/api/automacoes/execucoes/route";
  * passo, o tempo todo. O motor sempre registrou; só não havia onde olhar.
  */
 export default function ExecucoesDoFunilPage() {
+  const { t: traduzir } = useIdioma();
   const [soErros, setSoErros] = useState(false);
   const [resposta, setResposta] = useState<{ paraErros: boolean; dados: PainelExecucoes | null } | null>(null);
 
@@ -41,14 +43,14 @@ export default function ExecucoesDoFunilPage() {
     <>
       <Topbar
         title="Execuções"
-        sub="O que cada robô do funil fez, lead por lead, passo por passo"
+        sub={traduzir("O que cada robô do funil fez, lead por lead, passo por passo")}
         actions={
           <div className="social-periodo">
             <button type="button" className={`seg-chip${soErros ? "" : " on"}`} onClick={() => setSoErros(false)}>
-              Todas
+              {traduzir("Todas")}
             </button>
             <button type="button" className={`seg-chip${soErros ? " on" : ""}`} onClick={() => setSoErros(true)}>
-              Só erros
+              {traduzir("Só erros")}
             </button>
           </div>
         }
@@ -66,7 +68,7 @@ export default function ExecucoesDoFunilPage() {
               </p>
             </div>
             <Link className="btn" href="/automacoes">
-              Voltar pras automações
+              {traduzir("Voltar pras automações")}
             </Link>
           </div>
 

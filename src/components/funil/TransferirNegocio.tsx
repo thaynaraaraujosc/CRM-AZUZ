@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
 import type { Funil } from "@/lib/data";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Transferir um negócio: responsável, funil e etapa: numa janela só, usada em todo o CRM.
@@ -45,6 +46,7 @@ export function TransferirNegocio({
   responsavelAtual?: string | null;
   aoFechar: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { funis, moverNegocio } = useFunis();
   const { membros: equipe } = useEquipe();
 
@@ -104,7 +106,7 @@ export function TransferirNegocio({
       rodape={
         <>
           <button type="button" className="btn ghost" onClick={aoFechar}>
-            Cancelar
+            {traduzir("Cancelar")}
           </button>
           <button type="button" className="btn" onClick={() => void confirmar()} disabled={salvando || !etapaId}>
             {salvando ? "Transferindo…" : "Transferir"}
@@ -115,7 +117,7 @@ export function TransferirNegocio({
       <div className="field">
         <label>Responsável</label>
         <select className="input" value={responsavel} onChange={(e) => setResponsavel(e.target.value)}>
-          <option value="">Sem responsável</option>
+          <option value="">{traduzir("Sem responsável")}</option>
           {equipe.map((membro) => (
             <option key={membro.id} value={membro.nome}>
               {membro.nome}
@@ -136,9 +138,9 @@ export function TransferirNegocio({
       </div>
 
       <div className="field">
-        <label>Etapa</label>
+        <label>{traduzir("Etapa")}</label>
         <select className="input" value={etapaId} onChange={(e) => setEtapaId(e.target.value)}>
-          <option value="">Escolha a etapa</option>
+          <option value="">{traduzir("Escolha a etapa")}</option>
           {/* Só as etapas do funil selecionado. Nunca as de outro funil misturadas. */}
           {etapasDoFunil.map((coluna) => (
             <option key={coluna.id} value={coluna.id}>

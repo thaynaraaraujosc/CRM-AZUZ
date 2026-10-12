@@ -19,7 +19,7 @@ import { useIdioma } from "@/lib/idioma-context";
  * não tem mais uma "Página do Facebook" junto: esse fluxo não passa por Página nenhuma.
  */
 export function InstagramSecao() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const { integracao, desconectando, desconectar, erroDoRedirect } = useIntegracaoMeta("meta_instagram");
   const anuncios = useIntegracaoMeta("meta_ads");
 
@@ -44,7 +44,7 @@ export function InstagramSecao() {
   return (
     <div className="config-secao">
       <CabecalhoCategoria
-        titulo={t("Instagram e Facebook")}
+        titulo={traduzir("Instagram e Facebook")}
         descricao="Conecte sua conta profissional do Instagram para receber mensagens e utilizar esse canal nas automações do CRM."
       />
 
@@ -68,13 +68,13 @@ export function InstagramSecao() {
             style={{ padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textDecoration: "none" }}
           >
             <div>
-              <p className="int-title" style={{ margin: 0 }}>{t("Conectar Instagram")}</p>
+              <p className="int-title" style={{ margin: 0 }}>{traduzir("Conectar Instagram")}</p>
               <p className="hint" style={{ margin: "4px 0 0" }}>
                 Autoriza o CRM a acessar sua conta profissional do Instagram. Sem precisar copiar
                 token nenhum.
               </p>
             </div>
-            <span className="btn primary">{t("Conectar")}</span>
+            <span className="btn primary">{traduzir("Conectar")}</span>
           </a>
         ) : (
           <div className="card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -83,12 +83,12 @@ export function InstagramSecao() {
                 <p className="int-title">Instagram</p>
                 <p className="int-sub">{instagramUsername ? `@${instagramUsername}` : "Conta conectada"}</p>
               </div>
-              <span className="int-status connected">{t("Conectado")}</span>
+              <span className="int-status connected">{traduzir("Conectado")}</span>
             </div>
 
             <div className="int-row" style={{ padding: 0 }}>
               <div className="int-body">
-                <p className="int-title">{t("Conta de anúncios")}</p>
+                <p className="int-title">{traduzir("Conta de anúncios")}</p>
                 <p className="int-sub">{anunciosConectados ? adAccountNome ?? "Conta conectada" : "Conecte em Tráfego, se quiser usar dados de anúncios"}</p>
               </div>
               <span className={`int-status ${anunciosConectados ? "connected" : "off"}`}>
@@ -107,12 +107,12 @@ export function InstagramSecao() {
 
       {conectado ? (
         <div className="config-bloco">
-          <p className="config-bloco-titulo">{t("Mensagens do Instagram")}</p>
+          <p className="config-bloco-titulo">{traduzir("Mensagens do Instagram")}</p>
           <div className="toggle-row" style={{ padding: "10px 0" }}>
-            <span className="tl">{t("Receber mensagens do Instagram no CRM")}</span>
+            <span className="tl">{traduzir("Receber mensagens do Instagram no CRM")}</span>
             <Toggle
               defaultOn={receberMensagens}
-              label={t("Receber mensagens do Instagram no CRM")}
+              label={traduzir("Receber mensagens do Instagram no CRM")}
               onToggle={(on) => void salvarPreferencia("receberMensagens", on)}
             />
           </div>

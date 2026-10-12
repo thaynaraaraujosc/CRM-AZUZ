@@ -8,6 +8,7 @@ import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MODELOS_SOCIAIS } from "@/lib/social/modelos-rapidos";
 import { IconAutomacoes, IconDoc, IconSparkle } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Como começar uma automação do Instagram.
@@ -21,6 +22,7 @@ import { IconAutomacoes, IconDoc, IconSparkle } from "@/components/icons";
  * quebrar a confiança na tela inteira: quem tenta uma vez e não funciona não tenta as outras duas.
  */
 export default function NovaAutomacaoSocialPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { criarFluxo } = useAutomationFlows();
   const [escolhendoModelo, setEscolhendoModelo] = useState(false);
@@ -49,24 +51,24 @@ export default function NovaAutomacaoSocialPage() {
 
   return (
     <>
-      <Topbar title="Criar automação" sub="Instagram" />
+      <Topbar title={traduzir("Criar automação")} sub="Instagram" />
       <AbasAutomacoes />
 
       <div className="content">
-        <nav className="social-migalhas" aria-label="Onde você está">
+        <nav className="social-migalhas" aria-label={traduzir("Onde você está")}>
           <button type="button" className="link" onClick={() => router.push("/automacoes/social")}>
             Automações
           </button>
           <span aria-hidden="true">›</span>
-          <strong>Nova automação</strong>
+          <strong>{traduzir("Nova automação")}</strong>
         </nav>
 
         {!escolhendoModelo ? (
           <div className="social-caminhos">
             <button type="button" className="social-caminho destaque" onClick={() => setEscolhendoModelo(true)}>
-              <span className="social-caminho-selo">Mais rápido</span>
+              <span className="social-caminho-selo">{traduzir("Mais rápido")}</span>
               <IconDoc width={26} height={26} aria-hidden="true" />
-              <strong>Começar com um modelo</strong>
+              <strong>{traduzir("Começar com um modelo")}</strong>
               <span>
                 Um robô inteiro já montado, feito só de gatilhos e blocos que existem no Instagram.
                 Você troca o texto e publica.
@@ -75,14 +77,14 @@ export default function NovaAutomacaoSocialPage() {
 
             <button type="button" className="social-caminho" onClick={doZero}>
               <IconAutomacoes width={26} height={26} aria-hidden="true" />
-              <strong>Criar do zero</strong>
-              <span>Canvas em branco. Você escolhe o gatilho e monta bloco a bloco, no seu ritmo.</span>
+              <strong>{traduzir("Criar do zero")}</strong>
+              <span>{traduzir("Canvas em branco. Você escolhe o gatilho e monta bloco a bloco, no seu ritmo.")}</span>
             </button>
 
             <div className="social-caminho desativado" aria-disabled="true">
               <span className="social-caminho-selo em-breve">Em breve</span>
               <IconSparkle width={26} height={26} aria-hidden="true" />
-              <strong>Descrever pra IA montar</strong>
+              <strong>{traduzir("Descrever pra IA montar")}</strong>
               <span>
                 Escrever o que você quer e receber a automação pronta. Ainda não está de pé, e por
                 isso está desligado em vez de aberto e sem nada atrás.
@@ -92,9 +94,9 @@ export default function NovaAutomacaoSocialPage() {
         ) : (
           <section className="card">
             <div className="social-secao-topo">
-              <h3>Escolha o modelo</h3>
+              <h3>{traduzir("Escolha o modelo")}</h3>
               <button type="button" className="btn ghost" onClick={() => setEscolhendoModelo(false)}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             </div>
             <p className="hint">

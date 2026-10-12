@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { IconBloqueado, IconCheck, IconClose, IconErro, IconPause, IconPular } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * "Rodou? Parou onde?": a pergunta mais comum sobre automação, que até aqui não tinha resposta.
@@ -55,6 +56,7 @@ function quando(iso: string): string {
 }
 
 export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onFechar: () => void }) {
+  const { t: traduzir } = useIdioma();
   const [execucoes, setExecucoes] = useState<Execucao[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [aberta, setAberta] = useState<string | null>(null);
@@ -78,11 +80,11 @@ export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onF
   }, [fluxoId]);
 
   return (
-    <div className="flow-side-overlay" role="dialog" aria-label="Histórico de execuções" onClick={onFechar}>
+    <div className="flow-side-overlay" role="dialog" aria-label={traduzir("Histórico de execuções")} onClick={onFechar}>
       <div className="flow-side-panel" onClick={(e) => e.stopPropagation()}>
         <div className="panel-h">
-          <h4>Histórico de execuções</h4>
-          <button type="button" className="icon-btn subtle" aria-label="Fechar histórico" onClick={onFechar}>
+          <h4>{traduzir("Histórico de execuções")}</h4>
+          <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar histórico")} onClick={onFechar}>
             <IconClose width={13} height={13} />
           </button>
         </div>
@@ -124,7 +126,7 @@ export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onF
                       <p className="hint">Continua em {quando(execucao.aguardandoAte)}.</p>
                     ) : null}
                     {execucao.aguardandoEvento && !execucao.aguardandoAte ? (
-                      <p className="hint">Esperando o contato responder: sem prazo.</p>
+                      <p className="hint">{traduzir("Esperando o contato responder: sem prazo.")}</p>
                     ) : null}
 
                     <ul className="flow-sim-passos">
@@ -142,7 +144,7 @@ export function HistoricoExecucoes({ fluxoId, onFechar }: { fluxoId: string; onF
                           </li>
                         );
                       })}
-                      {execucao.passos.length === 0 ? <li><div><p className="r">Sem passos registrados.</p></div></li> : null}
+                      {execucao.passos.length === 0 ? <li><div><p className="r">{traduzir("Sem passos registrados.")}</p></div></li> : null}
                     </ul>
                   </>
                 ) : null}

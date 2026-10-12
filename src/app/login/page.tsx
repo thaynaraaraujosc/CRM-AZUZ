@@ -36,7 +36,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -96,8 +96,8 @@ function LoginForm() {
         <span className="auth-selo" aria-hidden="true">
           <IconEntrar width={20} height={20} />
         </span>
-        <h1 className="auth-title">{t("Acesse sua conta")}</h1>
-        <p className="auth-sub">{t("Entre para continuar de onde parou no seu CRM.")}</p>
+        <h1 className="auth-title">{traduzir("Acesse sua conta")}</h1>
+        <p className="auth-sub">{traduzir("Entre para continuar de onde parou no seu CRM.")}</p>
 
         {/* O rótulo continua no HTML, escondido por CSS: o campo precisa dele pra leitor de tela,
             mesmo com o placeholder dizendo a mesma coisa visualmente. */}
@@ -116,12 +116,12 @@ function LoginForm() {
         </div>
 
         <div className="field">
-          <label htmlFor="senha">{t("Senha")}</label>
+          <label htmlFor="senha">{traduzir("Senha")}</label>
           <input
             id="senha"
             type="password"
             className="input"
-            placeholder={t("Senha")}
+            placeholder={traduzir("Senha")}
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             required
@@ -130,7 +130,7 @@ function LoginForm() {
         </div>
 
         <p className="auth-rodape" style={{ margin: "0 0 12px", textAlign: "right" }}>
-          <Link href="/esqueci-senha">{t("Esqueci minha senha")}</Link>
+          <Link href="/esqueci-senha">{traduzir("Esqueci minha senha")}</Link>
         </p>
 
         {erro && <p className="auth-erro">{erro}</p>}
@@ -140,7 +140,7 @@ function LoginForm() {
         </button>
 
         <p className="auth-rodape">
-          Não possui conta? <Link href="/cadastro">{t("Criar conta")}</Link>
+          Não possui conta? <Link href="/cadastro">{traduzir("Criar conta")}</Link>
         </p>
       </form>
     </div>

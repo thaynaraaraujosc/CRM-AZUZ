@@ -13,6 +13,7 @@ import { IconGrade, IconLista, IconMaisOpcoes, IconNovaPasta, IconSearch } from 
 import type { PastaSalva } from "@/app/api/automacoes-pastas/route";
 import type { ConexaoSocial } from "@/app/api/social/conexoes/route";
 import type { FluxoAutomacao } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Visao = "lista" | "grade";
 type FiltroStatus = "todos" | "ativo" | "inativo" | "rascunho";
@@ -57,6 +58,7 @@ function gatilhoDoFluxo(fluxo: FluxoAutomacao): string {
  * funil, cria tarefa e chama um atendente igual ao outro, porque é o mesmo código rodando.
  */
 export default function AutomacoesSociaisPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { fluxos, atualizarFluxo, alternarAtivo, excluirFluxo, duplicarFluxo } = useAutomationFlows();
 
@@ -137,7 +139,7 @@ export default function AutomacoesSociaisPage() {
     <>
       <Topbar
         title="Instagram"
-        sub="Robôs que respondem comentário, Direct, story e menção"
+        sub={traduzir("Robôs que respondem comentário, Direct, story e menção")}
         actions={
           <button type="button" className="btn primary" onClick={() => router.push("/automacoes/social/novo")}>
             + Criar automação
@@ -164,21 +166,21 @@ export default function AutomacoesSociaisPage() {
               <IconSearch width={14} height={14} aria-hidden="true" />
               <input
                 className="input"
-                placeholder="Buscar por automações"
+                placeholder={traduzir("Buscar por automações")}
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
               />
             </div>
 
             <select className="input" value={status} onChange={(e) => setStatus(e.target.value as FiltroStatus)}>
-              <option value="todos">Status: todos</option>
-              <option value="ativo">Ligadas</option>
-              <option value="inativo">Pausadas</option>
-              <option value="rascunho">Rascunhos</option>
+              <option value="todos">{traduzir("Status: todos")}</option>
+              <option value="ativo">{traduzir("Ligadas")}</option>
+              <option value="inativo">{traduzir("Pausadas")}</option>
+              <option value="rascunho">{traduzir("Rascunhos")}</option>
             </select>
 
             <select className="input" value={gatilho} onChange={(e) => setGatilho(e.target.value)}>
-              <option value="todos">Gatilho: todos</option>
+              <option value="todos">{traduzir("Gatilho: todos")}</option>
               {GATILHOS_SOCIAIS.map((g) => (
                 <option key={g.tipo} value={g.tipo}>
                   {g.label}
@@ -190,7 +192,7 @@ export default function AutomacoesSociaisPage() {
               <button
                 type="button"
                 className={`icon-btn${visao === "lista" ? " on" : ""}`}
-                aria-label="Ver em lista"
+                aria-label={traduzir("Ver em lista")}
                 aria-pressed={visao === "lista"}
                 onClick={() => setVisao("lista")}
               >
@@ -199,7 +201,7 @@ export default function AutomacoesSociaisPage() {
               <button
                 type="button"
                 className={`icon-btn${visao === "grade" ? " on" : ""}`}
-                aria-label="Ver em grade"
+                aria-label={traduzir("Ver em grade")}
                 aria-pressed={visao === "grade"}
                 onClick={() => setVisao("grade")}
               >
@@ -211,16 +213,16 @@ export default function AutomacoesSociaisPage() {
           <section className="card">
             <div className="social-secao-topo">
               <h3>
-                Pastas <span className="social-contador">{pastas.length}</span>
+                {traduzir("Pastas")} <span className="social-contador">{pastas.length}</span>
               </h3>
               <button type="button" className="btn ghost" onClick={novaPasta}>
-                <IconNovaPasta width={14} height={14} aria-hidden="true" /> Nova pasta
+                <IconNovaPasta width={14} height={14} aria-hidden="true" /> {traduzir("Nova pasta")}
               </button>
             </div>
 
             {!pastas.length ? (
               <p className="hint">
-                Nenhuma pasta. Com poucos robôs isso não faz falta; a partir de uma dezena, faz.
+                {traduzir("Nenhuma pasta. Com poucos robôs isso não faz falta; a partir de uma dezena, faz.")}
               </p>
             ) : (
               <div className="social-pastas">
@@ -229,7 +231,7 @@ export default function AutomacoesSociaisPage() {
                   className={`social-pasta${pastaAberta === null ? " on" : ""}`}
                   onClick={() => setPastaAberta(null)}
                 >
-                  <strong>Todas</strong>
+                  <strong>{traduzir("Todas")}</strong>
                   <span>{fluxos.filter((f) => f.area === "social" && !f.arquivada).length}</span>
                 </button>
                 {pastas.map((p) => (
@@ -287,13 +289,13 @@ export default function AutomacoesSociaisPage() {
               <table className="table social-tabela">
                 <thead>
                   <tr>
-                    <th>Automação</th>
-                    <th>Gatilho</th>
-                    <th>Criado</th>
-                    <th>Última publicação</th>
+                    <th>{traduzir("Automação")}</th>
+                    <th>{traduzir("Gatilho")}</th>
+                    <th>{traduzir("Criado")}</th>
+                    <th>{traduzir("Última publicação")}</th>
                     <th>Execuções</th>
                     <th>Situação</th>
-                    <th aria-label="Ações" />
+                    <th aria-label={traduzir("Ações")} />
                   </tr>
                 </thead>
                 <tbody>
@@ -314,7 +316,7 @@ export default function AutomacoesSociaisPage() {
                       <td>{f.execucoes}</td>
                       <td>
                         {f.status === "rascunho" ? (
-                          <span className="badge badge-neutral">Rascunho</span>
+                          <span className="badge badge-neutral">{traduzir("Rascunho")}</span>
                         ) : (
                           <label className="social-toggle">
                             <input type="checkbox" checked={f.ativa} onChange={() => alternarAtivo(f.id)} />
@@ -334,7 +336,7 @@ export default function AutomacoesSociaisPage() {
                         {menuAberto === f.id ? (
                           <div className="social-menu-opcoes" role="menu">
                             <button type="button" onClick={() => router.push(`/automacoes/editor/${f.id}`)}>
-                              Abrir
+                              {traduzir("Abrir")}
                             </button>
                             <button
                               type="button"
@@ -344,7 +346,7 @@ export default function AutomacoesSociaisPage() {
                                 if (copia) router.push(`/automacoes/editor/${copia.id}`);
                               }}
                             >
-                              Duplicar
+                              {traduzir("Duplicar")}
                             </button>
                             <button
                               type="button"
@@ -353,7 +355,7 @@ export default function AutomacoesSociaisPage() {
                                 setMenuAberto(null);
                               }}
                             >
-                              Mover pra pasta
+                              {traduzir("Mover pra pasta")}
                             </button>
                             <button
                               type="button"
@@ -363,7 +365,7 @@ export default function AutomacoesSociaisPage() {
                                 if (window.confirm(`Excluir "${f.nome}"? Isso não volta.`)) excluirFluxo(f.id);
                               }}
                             >
-                              Excluir
+                              {traduzir("Excluir")}
                             </button>
                           </div>
                         ) : null}

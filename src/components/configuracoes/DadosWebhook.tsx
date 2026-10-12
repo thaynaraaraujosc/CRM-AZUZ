@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { IconAlerta } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Mostra o que copiar pro painel da Meta ao cadastrar um webhook. URL e token de verificação.
@@ -93,6 +94,7 @@ function LimparAnexosInstagram() {
 }
 
 export function DadosWebhook() {
+  const { t: traduzir } = useIdioma();
   const [dados, setDados] = useState<Dados | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -108,7 +110,7 @@ export function DadosWebhook() {
 
   return (
     <div className="config-bloco">
-      <p className="config-bloco-titulo">Dados para cadastrar o webhook na Meta</p>
+      <p className="config-bloco-titulo">{traduzir("Dados para cadastrar o webhook na Meta")}</p>
       <p className="hint" style={{ margin: "0 0 12px" }}>
         Copie daqui e cole no painel da Meta. Estes valores são deste servidor,{" "}
         <b>{dados.host}</b>, que é quem vai responder quando a Meta chamar. Se você acessar o CRM

@@ -2,6 +2,7 @@
 
 import type { IaClassificarData } from "@/lib/automation-flow/types";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Configuração do bloco "Classificar com IA".
@@ -19,6 +20,7 @@ export function IaClassificarForm({
   onChange: (data: Partial<IaClassificarData>) => void;
   onRemoverCategoria?: (categoria: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const categorias = data.categorias ?? [];
 
   function alterar(indice: number, valor: string) {
@@ -36,7 +38,7 @@ export function IaClassificarForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Critério (opcional)</label>
+        <label>{traduzir("Critério (opcional)")}</label>
         <textarea
           className="input"
           rows={3}
@@ -47,7 +49,7 @@ export function IaClassificarForm({
       </div>
 
       <div className="field">
-        <label>Categorias</label>
+        <label>{traduzir("Categorias")}</label>
         <p className="hint">
           Cada uma vira uma saída do bloco. Quando a IA não encaixa a conversa em nenhuma, o fluxo
           segue pela saída &quot;Não classificado&quot;. Ela não escolhe um caminho no chute.
@@ -59,7 +61,7 @@ export function IaClassificarForm({
               style={{ flex: 1 }}
               value={categoria}
               onChange={(e) => alterar(i, e.target.value)}
-              placeholder="Nome da categoria"
+              placeholder={traduzir("Nome da categoria")}
             />
             <button type="button" className="icon-btn subtle" aria-label={`Remover ${categoria}`} onClick={() => remover(i)}>
               <IconClose width={12} height={12} />
@@ -67,7 +69,7 @@ export function IaClassificarForm({
           </div>
         ))}
         <button type="button" className="btn ghost block" onClick={() => onChange({ categorias: [...categorias, ""] })}>
-          Adicionar categoria
+          {traduzir("Adicionar categoria")}
         </button>
       </div>
     </div>

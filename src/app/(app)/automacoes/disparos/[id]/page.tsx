@@ -11,6 +11,7 @@ import { descreverAudiencia, type Audiencia } from "@/lib/campanhas/audiencia-ti
 import { STATUS_CAMPANHA, STATUS_DESTINATARIO, formatarData } from "@/lib/campanhas/apresentacao";
 import type { MapeamentoVariavel } from "@/lib/campanhas/variaveis";
 import { LIMITES } from "@/lib/templates/regras";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Destinatario = {
   id: string;
@@ -44,6 +45,7 @@ type Campanha = {
 
 /** Acompanhamento de um disparo: o que aconteceu com cada pessoa, e os controles. */
 export default function DetalheDisparoPage() {
+  const { t: traduzir } = useIdioma();
   const { id } = useParams<{ id: string }>();
   const [campanha, setCampanha] = useState<Campanha | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -119,17 +121,17 @@ export default function DetalheDisparoPage() {
             </Link>
             {podePausar ? (
               <button type="button" className="btn ghost" disabled={ocupado} onClick={() => void controlar("pausar")}>
-                Pausar
+                {traduzir("Pausar")}
               </button>
             ) : null}
             {podeRetomar ? (
               <button type="button" className="btn ghost" disabled={ocupado} onClick={() => void controlar("retomar")}>
-                Retomar
+                {traduzir("Retomar")}
               </button>
             ) : null}
             {podeCancelar ? (
               <button type="button" className="btn ghost tpl-excluir" disabled={ocupado} onClick={() => void controlar("cancelar")}>
-                Cancelar disparo
+                {traduzir("Cancelar disparo")}
               </button>
             ) : null}
           </div>
@@ -157,13 +159,13 @@ export default function DetalheDisparoPage() {
               </div>
               {campanha.erroMensagem ? <p className="tpl-rejeicao">{campanha.erroMensagem}</p> : null}
               <div className="disp-metricas">
-                <Metrica valor={resumo.total} label="destinatários" />
-                <Metrica valor={resumo.enviadas} label="enviadas" />
-                <Metrica valor={resumo.entregues} label="entregues" />
-                <Metrica valor={resumo.lidas} label="lidas" />
-                <Metrica valor={resumo.respondidas} label="respondidas" />
-                <Metrica valor={resumo.falhas} label="falhas" destaque={resumo.falhas > 0} />
-                <Metrica valor={resumo.pendentes} label="na fila" />
+                <Metrica valor={resumo.total} label={traduzir("destinatários")} />
+                <Metrica valor={resumo.enviadas} label={traduzir("enviadas")} />
+                <Metrica valor={resumo.entregues} label={traduzir("entregues")} />
+                <Metrica valor={resumo.lidas} label={traduzir("lidas")} />
+                <Metrica valor={resumo.respondidas} label={traduzir("respondidas")} />
+                <Metrica valor={resumo.falhas} label={traduzir("falhas")} destaque={resumo.falhas > 0} />
+                <Metrica valor={resumo.pendentes} label={traduzir("na fila")} />
               </div>
               <PreviaMensagem
                 corpo={campanha.corpo}
@@ -192,10 +194,10 @@ export default function DetalheDisparoPage() {
                 <thead>
                   <tr>
                     <th>Contato</th>
-                    <th>Destino</th>
+                    <th>{traduzir("Destino")}</th>
                     <th>Situação</th>
-                    <th>Quando</th>
-                    <th>Detalhe</th>
+                    <th>{traduzir("Quando")}</th>
+                    <th>{traduzir("Detalhe")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -216,13 +218,13 @@ export default function DetalheDisparoPage() {
                   {visiveis.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="hint">
-                        Ninguém neste filtro.
+                        {traduzir("Ninguém neste filtro.")}
                       </td>
                     </tr>
                   ) : null}
                 </tbody>
               </table>
-              {campanha.destinatarios.length >= 1000 ? <p className="hint">Mostrando os primeiros 1.000 destinatários.</p> : null}
+              {campanha.destinatarios.length >= 1000 ? <p className="hint">{traduzir("Mostrando os primeiros 1.000 destinatários.")}</p> : null}
             </div>
           </div>
         )}

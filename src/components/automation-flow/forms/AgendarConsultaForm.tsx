@@ -3,14 +3,16 @@
 import { useEquipe } from "@/lib/equipe-context";
 import type { AgendarConsultaData } from "@/lib/automation-flow/types";
 import { SeletorDeData } from "@/components/seletor-de-data";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Ação "Agendar consulta": data, horário, profissional e tipo de serviço da consulta. */
 export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaData; onChange: (novo: AgendarConsultaData) => void }) {
+  const { t: traduzir } = useIdioma();
   const { membros: equipe } = useEquipe();
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Data e horário</label>
+        <label>{traduzir("Data e horário")}</label>
         <div style={{ display: "flex", gap: 6 }}>
           <SeletorDeData
             valor={data.data ?? ""}
@@ -31,7 +33,7 @@ export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaD
       <div className="field">
         <label>Profissional</label>
         <select className="input" value={data.profissional ?? ""} onChange={(e) => onChange({ ...data, profissional: e.target.value })}>
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {equipe.map((m) => (
             <option key={m.id} value={m.nome}>
               {m.nome}
@@ -41,10 +43,10 @@ export function AgendarConsultaForm({ data, onChange }: { data: AgendarConsultaD
       </div>
 
       <div className="field">
-        <label>Tipo de serviço</label>
+        <label>{traduzir("Tipo de serviço")}</label>
         <input
           className="input"
-          placeholder="Ex.: Consulta de retorno"
+          placeholder={traduzir("Ex.: Consulta de retorno")}
           value={data.tipoServico ?? ""}
           onChange={(e) => onChange({ ...data, tipoServico: e.target.value })}
         />

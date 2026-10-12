@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import type { VersaoFluxo } from "@/lib/automation-flow/types";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 function formatarData(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
@@ -30,6 +31,7 @@ export function HistoricoVersoes({
   onFechar: () => void;
   onRestaurar: (versao: VersaoFluxo) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [doServidor, setDoServidor] = useState<VersaoFluxo[] | null>(null);
 
   useEffect(() => {
@@ -48,30 +50,30 @@ export function HistoricoVersoes({
   const ordenadas = [...(doServidor ?? versoes)].sort((a, b) => b.versao - a.versao);
 
   return (
-    <div className="flow-side-overlay" role="dialog" aria-label="Histórico de versões" onClick={onFechar}>
+    <div className="flow-side-overlay" role="dialog" aria-label={traduzir("Histórico de versões")} onClick={onFechar}>
       <div className="flow-side-panel" onClick={(e) => e.stopPropagation()}>
         <div className="panel-h">
-          <h4>Histórico de versões</h4>
-          <button type="button" className="icon-btn subtle" aria-label="Fechar histórico" onClick={onFechar}>
+          <h4>{traduzir("Histórico de versões")}</h4>
+          <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar histórico")} onClick={onFechar}>
             <IconClose width={13} height={13} />
           </button>
         </div>
         <div className="flow-side-body">
           {ordenadas.length === 0 ? (
-            <p className="hint">Esse fluxo ainda não foi publicado. Não existe versão salva.</p>
+            <p className="hint">{traduzir("Esse fluxo ainda não foi publicado. Não existe versão salva.")}</p>
           ) : (
             ordenadas.map((v) => (
               <div className="flow-versao-row" key={v.versao}>
                 <div>
                   <p className="n">
-                    Versão {v.versao} {v.versao === versaoAtual ? <span className="pill on">Atual</span> : null}
+                    Versão {v.versao} {v.versao === versaoAtual ? <span className="pill on">{traduzir("Atual")}</span> : null}
                   </p>
                   <p className="r">
                     Publicado em {formatarData(v.publicadoEm)} por {v.publicadoPor}
                   </p>
                 </div>
                 <button type="button" className="btn ghost" onClick={() => onRestaurar(v)} disabled={v.versao === versaoAtual}>
-                  Restaurar
+                  {traduzir("Restaurar")}
                 </button>
               </div>
             ))

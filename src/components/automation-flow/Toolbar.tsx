@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { IconCheck } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 export function Toolbar({
   nome,
@@ -62,12 +63,13 @@ export function Toolbar({
   onModoPassos: (ligado: boolean) => void;
   onAlternarModo: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [editandoNome, setEditandoNome] = useState(false);
 
   return (
     <header className="flow-toolbar">
       <div className="flow-toolbar-esq">
-        <Link href="/automacoes" className="icon-btn subtle" aria-label="Voltar pra lista de automações">
+        <Link href="/automacoes" className="icon-btn subtle" aria-label={traduzir("Voltar pra lista de automações")}>
           ←
         </Link>
 
@@ -79,7 +81,7 @@ export function Toolbar({
             onChange={(e) => onChangeNome(e.target.value)}
             onBlur={() => setEditandoNome(false)}
             onKeyDown={(e) => e.key === "Enter" && setEditandoNome(false)}
-            aria-label="Nome do fluxo"
+            aria-label={traduzir("Nome do fluxo")}
           />
         ) : (
           <button type="button" className="flow-toolbar-nome" onClick={() => setEditandoNome(true)}>
@@ -98,12 +100,12 @@ export function Toolbar({
         */}
         {temPendencia ? (
           <span className="flow-pendencia">
-            <span className="flow-pendencia-aviso">Alterações não salvas</span>
+            <span className="flow-pendencia-aviso">{traduzir("Alterações não salvas")}</span>
             <button type="button" className="btn primary" onClick={onSalvarAlteracoes}>
-              Salvar
+              {traduzir("Salvar")}
             </button>
             <button type="button" className="btn ghost" onClick={onDescartarAlteracoes}>
-              Descartar
+              {traduzir("Descartar")}
             </button>
           </span>
         ) : (
@@ -112,7 +114,7 @@ export function Toolbar({
       </div>
 
       <div className="flow-toolbar-dir">
-        <div className="flow-toolbar-modo" role="tablist" aria-label="Modo do editor">
+        <div className="flow-toolbar-modo" role="tablist" aria-label={traduzir("Modo do editor")}>
           <button
             type="button"
             role="tab"
@@ -120,37 +122,37 @@ export function Toolbar({
             className={`flow-toolbar-modo-btn${modoConstrucao ? " active" : ""}`}
             onClick={() => !modoConstrucao && onAlternarModo()}
           >
-            Construir
+            {traduzir("Construir")}
           </button>
           <button
             type="button"
             role="tab"
             aria-selected={modoPassos}
             className={`flow-toolbar-modo-btn${modoPassos ? " active" : ""}`}
-            title="Ler a automação como uma lista de passos, na ordem em que a pessoa é atendida"
+            title={traduzir("Ler a automação como uma lista de passos, na ordem em que a pessoa é atendida")}
             onClick={() => onModoPassos(!modoPassos)}
           >
-            Passos
+            {traduzir("Passos")}
           </button>
           <button
             type="button"
             role="tab"
             aria-selected={!modoConstrucao}
             className={`flow-toolbar-modo-btn${!modoConstrucao ? " active" : ""}`}
-            title="Revisar o fluxo sem risco de mexer em nada sem querer"
+            title={traduzir("Revisar o fluxo sem risco de mexer em nada sem querer")}
             onClick={() => modoConstrucao && onAlternarModo()}
           >
-            Visualizar
+            {traduzir("Visualizar")}
           </button>
         </div>
-        <button type="button" className="icon-btn subtle" aria-label="Desfazer" title="Desfazer (Ctrl+Z)" disabled={!podeDesfazer || !modoConstrucao} onClick={onUndo}>
+        <button type="button" className="icon-btn subtle" aria-label={traduzir("Desfazer")} title={traduzir("Desfazer (Ctrl+Z)")} disabled={!podeDesfazer || !modoConstrucao} onClick={onUndo}>
           ↶
         </button>
-        <button type="button" className="icon-btn subtle" aria-label="Refazer" title="Refazer (Ctrl+Shift+Z)" disabled={!podeRefazer || !modoConstrucao} onClick={onRedo}>
+        <button type="button" className="icon-btn subtle" aria-label={traduzir("Refazer")} title={traduzir("Refazer (Ctrl+Shift+Z)")} disabled={!podeRefazer || !modoConstrucao} onClick={onRedo}>
           ↷
         </button>
         <button type="button" className="btn ghost" disabled={!modoConstrucao} onClick={onOrganizarAutomaticamente}>
-          Organizar automaticamente
+          {traduzir("Organizar automaticamente")}
         </button>
         <button
           type="button"
@@ -160,20 +162,20 @@ export function Toolbar({
         >
           {entenderFluxoAtivo ? (
             <>
-              <IconCheck width={12} height={12} aria-hidden="true" /> Entender fluxo
+              <IconCheck width={12} height={12} aria-hidden="true" /> {traduzir("Entender fluxo")}
             </>
           ) : (
             "Entender fluxo"
           )}
         </button>
         <button type="button" className="btn ghost" onClick={onAbrirHistorico}>
-          Histórico de versões
+          {traduzir("Histórico de versões")}
         </button>
         <button type="button" className="btn ghost" onClick={onAbrirExecucoes}>
           Execuções
         </button>
         <button type="button" className="btn ghost" onClick={onTestar}>
-          Testar
+          {traduzir("Testar")}
         </button>
 
         <div className="flow-toolbar-toggle" title={podeAtivar ? undefined : "Publique o fluxo pra poder ativar"}>
@@ -182,7 +184,7 @@ export function Toolbar({
             type="button"
             role="switch"
             aria-checked={ativa}
-            aria-label="Ativar ou pausar o fluxo"
+            aria-label={traduzir("Ativar ou pausar o fluxo")}
             className={`toggle${ativa ? " on" : ""}`}
             disabled={!podeAtivar}
             onClick={onToggleAtiva}
@@ -192,10 +194,10 @@ export function Toolbar({
         </div>
 
         <button type="button" className="btn ghost" onClick={onSalvarRascunho}>
-          Salvar rascunho
+          {traduzir("Salvar rascunho")}
         </button>
         <button type="button" className="btn primary" onClick={onPublicar}>
-          Publicar
+          {traduzir("Publicar")}
         </button>
       </div>
     </header>

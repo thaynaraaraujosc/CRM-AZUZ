@@ -9,6 +9,7 @@ import { CondicaoForm } from "@/components/automation-flow/forms/CondicaoForm";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
 import { MigrarGatilhos } from "./MigrarGatilhos";
 import type { GrupoCondicoes } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   ACAO_ROTULO,
   CATEGORIAS_GATILHO,
@@ -177,6 +178,7 @@ export function AutomacaoDoFunil({
   colunas: ColunaResumo[];
   onFechar?: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { recarregarFluxos } = useAutomationFlows();
   const [gatilhos, setGatilhos] = useState<GatilhoEtapaVisao[]>([]);
@@ -446,7 +448,7 @@ export function AutomacaoDoFunil({
         <strong>{funilNome ?? "Automação do funil"}</strong>
         {onFechar ? (
           <button type="button" className="btn ghost" onClick={onFechar}>
-            Voltar
+            {traduzir("Voltar")}
           </button>
         ) : null}
       </div>
@@ -455,7 +457,7 @@ export function AutomacaoDoFunil({
 
       <div className="fauto-corpo">
         <aside className="fauto-lado">
-          <h4>Fontes de lead</h4>
+          <h4>{traduzir("Fontes de lead")}</h4>
           {canais.length ? (
             canais.map((c) => (
               <div key={c.canal} className="fauto-fonte">
@@ -464,7 +466,7 @@ export function AutomacaoDoFunil({
               </div>
             ))
           ) : (
-            <p className="hint">Nenhum canal conectado ainda.</p>
+            <p className="hint">{traduzir("Nenhum canal conectado ainda.")}</p>
           )}
           {/* `/integracoes` nunca existiu como rota: o link caía no vazio. As conexões moram em
               Configurações, e o parâmetro abre direto na categoria certa em vez de largar a pessoa
@@ -507,7 +509,7 @@ export function AutomacaoDoFunil({
                             servidor e não existia na tela: quem punha "enviar mensagem" e "executar
                             robô" na mesma etapa não tinha como saber qual vinha primeiro. */}
                         {(porEtapa.get(coluna.id)?.length ?? 0) > 1 ? (
-                          <span className="fauto-gat-ordem" title="Ordem em que este gatilho roda nesta etapa">
+                          <span className="fauto-gat-ordem" title={traduzir("Ordem em que este gatilho roda nesta etapa")}>
                             {linha + 1}
                           </span>
                         ) : null}
@@ -536,9 +538,9 @@ export function AutomacaoDoFunil({
                               type="button"
                               className="fauto-mini"
                               onClick={() => void abrirFluxograma(gatilho.fluxoId!, gatilho.etapaId)}
-                              title="Abrir o fluxograma deste robô"
+                              title={traduzir("Abrir o fluxograma deste robô")}
                             >
-                              Gerenciar
+                              {traduzir("Gerenciar")}
                             </button>
                           ) : null}
                           <button
@@ -553,7 +555,7 @@ export function AutomacaoDoFunil({
                             type="button"
                             className="fauto-mini"
                             onClick={() => remover(gatilho.id)}
-                            title="Remover este gatilho"
+                            title={traduzir("Remover este gatilho")}
                           >
                             <IconClose width={10} height={10} />
                           </button>
@@ -573,7 +575,7 @@ export function AutomacaoDoFunil({
                         }`}
                         onClick={() => abrirNovo(coluna.id)}
                       >
-                        <span aria-hidden="true">+</span> Adicionar gatilho
+                        <span aria-hidden="true">+</span> {traduzir("Adicionar gatilho")}
                       </button>
                     )}
                   </div>
@@ -586,7 +588,7 @@ export function AutomacaoDoFunil({
         {escolhendoAcao ? (
           <div className="fauto-painel">
             <div className="fauto-painel-topo">
-              <strong>O que esta etapa faz?</strong>
+              <strong>{traduzir("O que esta etapa faz?")}</strong>
               <button type="button" className="fauto-mini" onClick={() => setEscolhendoAcao(null)}>
                 <IconClose width={11} height={11} />
               </button>
@@ -620,7 +622,7 @@ export function AutomacaoDoFunil({
             </div>
 
             <div className="field">
-              <label>Etapa</label>
+              <label>{traduzir("Etapa")}</label>
               <select
                 className="input"
                 value={rascunho.etapaId}
@@ -635,7 +637,7 @@ export function AutomacaoDoFunil({
             </div>
 
             <div className="field">
-              <label>Executar</label>
+              <label>{traduzir("Executar")}</label>
               <select
                 className="input"
                 value={rascunho.quando}
@@ -678,7 +680,7 @@ export function AutomacaoDoFunil({
                   value={rascunho.fluxoId}
                   onChange={(e) => setRascunho({ ...rascunho, fluxoId: e.target.value })}
                 >
-                  <option value="">Nenhum robô selecionado</option>
+                  <option value="">{traduzir("Nenhum robô selecionado")}</option>
                   {robos.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.nome}
@@ -696,7 +698,7 @@ export function AutomacaoDoFunil({
                     disabled={salvando}
                     onClick={() => void salvar(true)}
                   >
-                    Gerenciar
+                    {traduzir("Gerenciar")}
                   </button>
                 ) : null}
                 <p className="hint mt8">
@@ -716,7 +718,7 @@ export function AutomacaoDoFunil({
                   onChange={(e) => mudarDados({ mensagemTexto: e.target.value })}
                   placeholder="Oi {primeiro_nome}, tudo bem?"
                 />
-                <p className="hint mt8">Aceita as mesmas variáveis dos blocos de mensagem.</p>
+                <p className="hint mt8">{traduzir("Aceita as mesmas variáveis dos blocos de mensagem.")}</p>
               </div>
             ) : null}
 
@@ -727,20 +729,20 @@ export function AutomacaoDoFunil({
                   className="input"
                   value={rascunho.acaoDados.responsavel ?? ""}
                   onChange={(e) => mudarDados({ responsavel: e.target.value })}
-                  placeholder="Nome de quem assume"
+                  placeholder={traduzir("Nome de quem assume")}
                 />
               </div>
             ) : null}
 
             {rascunho.tipoAcao === "etapa" ? (
               <div className="field">
-                <label>Mover para</label>
+                <label>{traduzir("Mover para")}</label>
                 <select
                   className="input"
                   value={rascunho.acaoDados.etapaDestinoId ?? ""}
                   onChange={(e) => mudarDados({ etapaDestinoId: e.target.value })}
                 >
-                  <option value="">Escolha a etapa</option>
+                  <option value="">{traduzir("Escolha a etapa")}</option>
                   {colunas.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.titulo}
@@ -759,21 +761,21 @@ export function AutomacaoDoFunil({
             {rascunho.tipoAcao === "etiquetas" ? (
               <>
                 <div className="field">
-                  <label>Acrescentar etiquetas</label>
+                  <label>{traduzir("Acrescentar etiquetas")}</label>
                   <input
                     className="input"
                     value={(rascunho.acaoDados.etiquetasAdicionar ?? []).join(", ")}
                     onChange={(e) => mudarDados({ etiquetasAdicionar: paraLista(e.target.value) })}
-                    placeholder="Separe por vírgula"
+                    placeholder={traduzir("Separe por vírgula")}
                   />
                 </div>
                 <div className="field">
-                  <label>Tirar etiquetas</label>
+                  <label>{traduzir("Tirar etiquetas")}</label>
                   <input
                     className="input"
                     value={(rascunho.acaoDados.etiquetasRemover ?? []).join(", ")}
                     onChange={(e) => mudarDados({ etiquetasRemover: paraLista(e.target.value) })}
-                    placeholder="Separe por vírgula"
+                    placeholder={traduzir("Separe por vírgula")}
                   />
                 </div>
               </>
@@ -792,7 +794,7 @@ export function AutomacaoDoFunil({
             ) : null}
 
             <div className="field">
-              <label>Para todos os leads com</label>
+              <label>{traduzir("Para todos os leads com")}</label>
               {rascunho.condicao ? (
                 <>
                   <CondicaoForm
@@ -804,7 +806,7 @@ export function AutomacaoDoFunil({
                     className="fauto-mini"
                     onClick={() => setRascunho({ ...rascunho, condicao: null })}
                   >
-                    Tirar a condição
+                    {traduzir("Tirar a condição")}
                   </button>
                 </>
               ) : (
@@ -813,14 +815,14 @@ export function AutomacaoDoFunil({
                   className="fauto-add"
                   onClick={() => setRascunho({ ...rascunho, condicao: grupoVazio() })}
                 >
-                  <span aria-hidden="true">+</span> Adicionar uma condição
+                  <span aria-hidden="true">+</span> {traduzir("Adicionar uma condição")}
                 </button>
               )}
-              <p className="hint mt8">Sem condição, vale pra todo lead que entrar nesta etapa.</p>
+              <p className="hint mt8">{traduzir("Sem condição, vale pra todo lead que entrar nesta etapa.")}</p>
             </div>
 
             <div className="field">
-              <label>Ativo</label>
+              <label>{traduzir("Ativo")}</label>
               <div className="fauto-dias">
                 {DIAS.map((d) => {
                   const marcado = rascunho.diasAtivos.includes(d.valor);
@@ -870,7 +872,7 @@ export function AutomacaoDoFunil({
                 checked={rascunho.aplicarAosAtuais}
                 onChange={(e) => setRascunho({ ...rascunho, aplicarAosAtuais: e.target.checked })}
               />
-              <span>Aplicar o gatilho aos leads que já estão nesta etapa</span>
+              <span>{traduzir("Aplicar o gatilho aos leads que já estão nesta etapa")}</span>
             </label>
 
             {erro ? <p className="hint" style={{ color: "var(--danger)" }}>{erro}</p> : null}
@@ -881,7 +883,7 @@ export function AutomacaoDoFunil({
                 {salvando ? "Salvando…" : "Pronto"}
               </button>
               <button type="button" className="btn ghost" onClick={() => setRascunho(null)}>
-                Cancelar
+                {traduzir("Cancelar")}
               </button>
             </div>
           </div>

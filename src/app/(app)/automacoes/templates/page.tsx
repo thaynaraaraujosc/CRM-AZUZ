@@ -8,6 +8,7 @@ import { EditorTemplate, type TemplateSalvo } from "@/components/automacoes/Edit
 import { PreviaMensagem } from "@/components/automacoes/PreviaMensagem";
 import { CANAIS_TEMPLATE_OFERECIDOS, LIMITES, STATUS_LABEL, type CanalTemplate } from "@/lib/templates/regras";
 import type { CanalDisponivel } from "@/app/api/canais/route";
+import { useIdioma } from "@/lib/idioma-context";
 
 const BADGE_POR_STATUS: Record<string, string> = {
   rascunho: "badge-neutral",
@@ -24,6 +25,7 @@ const BADGE_POR_STATUS: Record<string, string> = {
  * o status vem da Meta; nos outros canais o template fica pronto ao salvar.
  */
 export default function TemplatesPage() {
+  const { t: traduzir } = useIdioma();
   const [templates, setTemplates] = useState<TemplateSalvo[] | null>(null);
   const [canais, setCanais] = useState<CanalDisponivel[]>([]);
   const [editando, setEditando] = useState<TemplateSalvo | null | "novo">(null);
@@ -76,8 +78,8 @@ export default function TemplatesPage() {
   return (
     <>
       <Topbar
-        title="Templates"
-        sub="Mensagens reutilizáveis para disparos e automações"
+        title={traduzir("Templates")}
+        sub={traduzir("Mensagens reutilizáveis para disparos e automações")}
         actions={
           <button type="button" className="btn primary" onClick={() => setEditando("novo")} disabled={!algumCanal} title={!algumCanal ? "Conecte um canal em Configurações → Outras integrações" : undefined}>
             + Novo template
@@ -101,7 +103,7 @@ export default function TemplatesPage() {
           <p className="hint">Carregando…</p>
         ) : visiveis.length === 0 ? (
           <div className="card tpl-vazio">
-            <strong>Nenhum template ainda.</strong>
+            <strong>{traduzir("Nenhum template ainda.")}</strong>
             <p className="hint">
               Um template é uma mensagem escrita uma vez e usada muitas: no Disparo em massa e, em breve, dentro das automações.
               {algumCanal ? " Comece pelo botão acima." : " Conecte um canal em Configurações → Outras integrações pra começar."}
@@ -129,7 +131,7 @@ export default function TemplatesPage() {
                   <footer className="tpl-card-acoes">
                     {podeEditar ? (
                       <button type="button" className="btn ghost" onClick={() => setEditando(t)}>
-                        Editar
+                        {traduzir("Editar")}
                       </button>
                     ) : null}
                     {podeAnalise ? (
@@ -138,10 +140,10 @@ export default function TemplatesPage() {
                       </button>
                     ) : null}
                     <button type="button" className="btn ghost" disabled={ocupado === `${t.id}:duplicar`} onClick={() => void acao(t, "duplicar")}>
-                      Duplicar
+                      {traduzir("Duplicar")}
                     </button>
                     <button type="button" className="btn ghost tpl-excluir" disabled={ocupado === `${t.id}:excluir`} onClick={() => void acao(t, "excluir")}>
-                      Excluir
+                      {traduzir("Excluir")}
                     </button>
                   </footer>
                 </article>

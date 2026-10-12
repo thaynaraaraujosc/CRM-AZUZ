@@ -6,10 +6,12 @@ import { useFunis } from "@/lib/funis-context";
 import type { ColunaFunil } from "@/lib/data";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Funis e etapas (item 24). Reaproveita `useFunis()` de verdade (mesmo dado usado em /funil), com
  * renomear/duplicar/arquivar de funil e reordenar etapas por drag-and-drop. */
 export function FunisSecao() {
+  const { t: traduzir } = useIdioma();
   const { funis, setFunis, excluirFunil } = useFunis();
   const [funilAbertoId, setFunilAbertoId] = useState<string | null>(funis[0]?.id ?? null);
   const [arrastando, setArrastando] = useState<string | null>(null);
@@ -64,8 +66,8 @@ export function FunisSecao() {
   return (
     <div className="config-secao">
       <CabecalhoCategoria
-        titulo="Funis e etapas"
-        descricao="Como as negociações avançam no funil."
+        titulo={traduzir("Funis e etapas")}
+        descricao={traduzir("Como as negociações avançam no funil.")}
         acoes={
           <button
             type="button"
@@ -93,7 +95,7 @@ export function FunisSecao() {
                     {f.colunas.length} etapas · {totalNegocios} negócios
                   </p>
                 </div>
-                <span className="pill on">Ativo</span>
+                <span className="pill on">{traduzir("Ativo")}</span>
               </button>
             );
           })}
@@ -104,23 +106,23 @@ export function FunisSecao() {
         <div className="config-bloco">
           <div className="config-grid-2" style={{ marginBottom: 14 }}>
             <div className="field">
-              <label>Nome do funil</label>
+              <label>{traduzir("Nome do funil")}</label>
               <input className="input" value={funilAberto.nome} onChange={(e) => renomearFunil(funilAberto.id, e.target.value)} />
             </div>
             <div className="field">
-              <label>Ações</label>
+              <label>{traduzir("Ações")}</label>
               <div style={{ display: "flex", gap: 6 }}>
                 <button type="button" className="btn ghost" onClick={() => duplicarFunil(funilAberto.id)}>
-                  Duplicar
+                  {traduzir("Duplicar")}
                 </button>
                 <button type="button" className="btn danger" onClick={() => excluirFunil(funilAberto.id)}>
-                  Arquivar
+                  {traduzir("Arquivar")}
                 </button>
               </div>
             </div>
           </div>
 
-          <p className="config-bloco-titulo">Etapas (arraste pra reordenar)</p>
+          <p className="config-bloco-titulo">{traduzir("Etapas (arraste pra reordenar)")}</p>
           <div className="config-etapas-lista">
             {funilAberto.colunas.map((etapa: ColunaFunil) => (
               <div
@@ -145,7 +147,7 @@ export function FunisSecao() {
                   onChange={(e) => renomearEtapa(funilAberto.id, etapa.id, e.target.value)}
                 />
                 <span className="r">{etapa.cards.length} negócios</span>
-                <button type="button" className="remove-chip" aria-label="Excluir etapa" onClick={() => excluirEtapa(funilAberto.id, etapa.id)}>
+                <button type="button" className="remove-chip" aria-label={traduzir("Excluir etapa")} onClick={() => excluirEtapa(funilAberto.id, etapa.id)}>
                   <IconClose width={13} height={13} />
                 </button>
               </div>

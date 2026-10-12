@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { IconCheck, IconClose, IconStar } from "./icons";
 import { SeletorDeData } from "./seletor-de-data";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Drawer lateral genérico: mesmo padrão CSS (`.flow-side-overlay`/`.flow-side-panel`) já usado
@@ -30,6 +31,7 @@ export function Drawer({
   rodape?: ReactNode;
   children: ReactNode;
 }) {
+  const { t: traduzir } = useIdioma();
   useEffect(() => {
     if (!aberto) return;
     function onKeyDown(e: KeyboardEvent) {
@@ -55,7 +57,7 @@ export function Drawer({
             <h4>{titulo}</h4>
             {subtitulo ? <p className="hint" style={{ marginTop: 2 }}>{subtitulo}</p> : null}
           </div>
-          <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}>
+          <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={onFechar}>
             <IconClose width={14} height={14} />
           </button>
         </div>
@@ -93,6 +95,7 @@ export function Modal({
   rodape?: ReactNode;
   children: ReactNode;
 }) {
+  const { t: traduzir } = useIdioma();
   const larguraFinal = largura ?? TAMANHOS_MODAL[tamanho];
   useEffect(() => {
     if (!aberto) return;
@@ -116,7 +119,7 @@ export function Modal({
       >
         <div className="panel-h">
           <h4>{titulo}</h4>
-          <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={onFechar}>
+          <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={onFechar}>
             <IconClose width={14} height={14} />
           </button>
         </div>
@@ -229,6 +232,7 @@ export function PeriodoPicker({
   value: PeriodoValor;
   onChange: (v: PeriodoValor) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [de, setDe] = useState(value.tipo === "personalizado" ? value.de : "");
@@ -268,7 +272,7 @@ export function PeriodoPicker({
           </button>
         ))}
         <div style={{ padding: "8px 12px 12px", borderTop: "1px solid var(--line)" }}>
-          <p className="hint" style={{ margin: "6px 0" }}>Ou personalize no calendário:</p>
+          <p className="hint" style={{ margin: "6px 0" }}>{traduzir("Ou personalize no calendário:")}</p>
           <div style={{ display: "flex", gap: 6 }}>
             <SeletorDeData valor={de} onChange={setDe} curto className="seletor-data-largo" />
             <SeletorDeData valor={ate} onChange={setAte} curto className="seletor-data-largo" />
@@ -282,7 +286,7 @@ export function PeriodoPicker({
               setAberto(false);
             }}
           >
-            Aplicar período
+            {traduzir("Aplicar período")}
           </button>
         </div>
       </FloatingDropdown>
@@ -552,6 +556,7 @@ export function FilterBar({
   /** Chave usada só pra rotular a visão salva (front-end, sem persistência real ainda). */
   viewKey?: string;
 }) {
+  const { t: traduzir } = useIdioma();
   const [principalAberto, setPrincipalAberto] = useState(false);
   const [principalRect, setPrincipalRect] = useState<DOMRect | null>(null);
 
@@ -584,7 +589,7 @@ export function FilterBar({
   return (
     <div>
       <div className="filterbar">
-        <PeriodoPicker label="Período" value={periodo} onChange={onPeriodoChange} />
+        <PeriodoPicker label={traduzir("Período")} value={periodo} onChange={onPeriodoChange} />
 
         {principalOpcoes && principalOpcoes.length > 0 ? (
           <>
@@ -672,44 +677,44 @@ export function FilterBar({
                       checked={!!compararAnterior}
                       onChange={(e) => onCompararChange(e.target.checked)}
                     />
-                    Comparar com o período anterior
+                    {traduzir("Comparar com o período anterior")}
                   </label>
                 ) : null}
                 <div className="filterbar-foot">
                   <button type="button" className="link" onClick={limparTudo}>
-                    Limpar tudo
+                    {traduzir("Limpar tudo")}
                   </button>
                   <button
                     type="button"
                     className="btn primary"
                     onClick={() => setMaisAberto(false)}
                   >
-                    Aplicar
+                    {traduzir("Aplicar")}
                   </button>
                 </div>
                 <div className="filterbar-salvar">
                   <input
                     className="input"
                     style={{ flex: 1 }}
-                    placeholder="Nome da visão…"
+                    placeholder={traduzir("Nome da visão…")}
                     value={nomeVisao}
                     onChange={(e) => setNomeVisao(e.target.value)}
                   />
                   <button type="button" className="btn ghost" onClick={() => salvarVisaoAtual(false)}>
-                    Salvar
+                    {traduzir("Salvar")}
                   </button>
                   <button type="button" className="btn ghost" onClick={() => salvarVisaoAtual(true)}>
-                    Definir padrão
+                    {traduzir("Definir padrão")}
                   </button>
                 </div>
                 {visaoSalvaAgora ? (
                   <p className="hint" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <IconCheck width={12} height={12} /> Visão salva
+                    <IconCheck width={12} height={12} /> {traduzir("Visão salva")}
                   </p>
                 ) : null}
                 {visoesSalvas.length > 0 ? (
                   <div>
-                    <p className="hint" style={{ marginBottom: 4 }}>Visões salvas</p>
+                    <p className="hint" style={{ marginBottom: 4 }}>{traduzir("Visões salvas")}</p>
                     {visoesSalvas.map((v) => (
                       <p className="hint" key={v.nome} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <IconStar width={12} height={12} /> {v.nome}
@@ -725,7 +730,7 @@ export function FilterBar({
 
         {onExportar ? (
           <button type="button" className="btn ghost" onClick={onExportar}>
-            Exportar
+            {traduzir("Exportar")}
           </button>
         ) : null}
       </div>
@@ -752,7 +757,7 @@ export function FilterBar({
           ))}
           {(filtrosAtivos.length > 0 || periodoAtivo) && onLimpar ? (
             <button type="button" className="link" onClick={limparTudo} style={{ fontSize: 11 }}>
-              Limpar
+              {traduzir("Limpar")}
             </button>
           ) : null}
         </div>

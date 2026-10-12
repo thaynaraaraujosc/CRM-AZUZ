@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Resultado = {
   workspaceId: string;
@@ -30,6 +31,7 @@ type Resultado = {
  * espaçamento nenhum, com o rótulo grudado no campo. Componente de painel herda o painel.
  */
 export function MontarDemo() {
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
@@ -67,7 +69,7 @@ export function MontarDemo() {
   if (pronto) {
     return (
       <div className="admin-bloco admin-bloco-info config-bloco">
-        <p className="config-bloco-titulo">Conta de demonstração pronta</p>
+        <p className="config-bloco-titulo">{traduzir("Conta de demonstração pronta")}</p>
         <p className="hint">
           {pronto.empresa}: {pronto.resumo.contatos} contatos, {pronto.resumo.conversas} conversas,{" "}
           {pronto.resumo.mensagens} mensagens, {pronto.resumo.tarefas} tarefas e {pronto.resumo.fechados} negócios
@@ -75,12 +77,12 @@ export function MontarDemo() {
           nessa conta.
         </p>
         <div className="field">
-          <label htmlFor="demo-acesso">Entre com este e-mail e a senha que você definiu</label>
+          <label htmlFor="demo-acesso">{traduzir("Entre com este e-mail e a senha que você definiu")}</label>
           <input id="demo-acesso" className="input" readOnly value={pronto.email} />
         </div>
         <div className="config-acoes">
           <button type="button" className="btn ghost" onClick={() => setPronto(null)}>
-            Fechar
+            {traduzir("Fechar")}
           </button>
         </div>
       </div>
@@ -90,14 +92,14 @@ export function MontarDemo() {
   if (!aberto) {
     return (
       <div className="admin-bloco admin-bloco-info config-bloco">
-        <p className="config-bloco-titulo">Conta de demonstração</p>
+        <p className="config-bloco-titulo">{traduzir("Conta de demonstração")}</p>
         <p className="hint">
           Empresa fictícia com contatos, conversas, funil, tarefas e negócios encerrados. Para gravar vídeo e
           mostrar o produto sem expor dado de cliente.
         </p>
         <div className="config-acoes">
           <button type="button" className="btn ghost" onClick={() => setAberto(true)}>
-            Montar ou remontar
+            {traduzir("Montar ou remontar")}
           </button>
         </div>
       </div>
@@ -106,13 +108,13 @@ export function MontarDemo() {
 
   return (
     <form className="admin-bloco config-bloco" onSubmit={enviar}>
-      <p className="config-bloco-titulo">Montar conta de demonstração</p>
+      <p className="config-bloco-titulo">{traduzir("Montar conta de demonstração")}</p>
       <p className="hint">
         Isso apaga e recria a conta de demonstração do zero. Nenhuma outra conta é tocada.
       </p>
 
       <div className="field">
-        <label htmlFor="demo-senha">Senha de acesso da conta de demonstração</label>
+        <label htmlFor="demo-senha">{traduzir("Senha de acesso da conta de demonstração")}</label>
         <input
           id="demo-senha"
           className="input"
@@ -122,12 +124,12 @@ export function MontarDemo() {
           minLength={8}
           required
           autoComplete="new-password"
-          placeholder="pelo menos 8 caracteres"
+          placeholder={traduzir("pelo menos 8 caracteres")}
         />
       </div>
 
       <div className="field">
-        <label htmlFor="demo-confirmar">Escreva MONTAR para confirmar</label>
+        <label htmlFor="demo-confirmar">{traduzir("Escreva MONTAR para confirmar")}</label>
         <input
           id="demo-confirmar"
           className="input"
@@ -155,7 +157,7 @@ export function MontarDemo() {
           }}
           disabled={salvando}
         >
-          Cancelar
+          {traduzir("Cancelar")}
         </button>
       </div>
     </form>

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useConfiguracoes } from "@/lib/configuracoes-context";
 import { useContatos } from "@/lib/contatos-context";
 import { useFunis } from "@/lib/funis-context";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Lista de etiquetas pra escolher num bloco de automação. Junta as etiquetas já em uso em
@@ -37,6 +38,7 @@ export function EtiquetaSelect({
   value: string;
   onChange: (nome: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { adicionarEtiqueta } = useConfiguracoes();
   const etiquetas = useEtiquetasDisponiveis();
   const [criandoNova, setCriandoNova] = useState(false);
@@ -61,7 +63,7 @@ export function EtiquetaSelect({
           <input
             className="input"
             style={{ flex: 1 }}
-            placeholder="Nome da nova etiqueta"
+            placeholder={traduzir("Nome da nova etiqueta")}
             autoFocus
             value={nomeNovo}
             onChange={(e) => setNomeNovo(e.target.value)}
@@ -74,16 +76,16 @@ export function EtiquetaSelect({
             }}
           />
           <button type="button" className="btn primary" onClick={confirmarNovaEtiqueta}>
-            Criar
+            {traduzir("Criar")}
           </button>
           <button type="button" className="btn ghost" onClick={() => setCriandoNova(false)}>
-            Cancelar
+            {traduzir("Cancelar")}
           </button>
         </div>
       ) : (
         <>
           <select className="input" value={value} onChange={(e) => onChange(e.target.value)}>
-            <option value="">Selecione uma etiqueta…</option>
+            <option value="">{traduzir("Selecione uma etiqueta…")}</option>
             {etiquetas.map((nome) => (
               <option key={nome} value={nome}>
                 {nome}

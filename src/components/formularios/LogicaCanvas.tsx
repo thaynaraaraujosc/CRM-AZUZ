@@ -20,6 +20,7 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   OPERADORES_LOGICA,
   labelTipoCampo,
@@ -56,11 +57,12 @@ type ResultadoRFNode = Node<ResultadoNodeData, "resultado">;
 type LogicaRFNode = CondicaoRFNode | ResultadoRFNode;
 
 function CondicaoNode({ data }: NodeProps<CondicaoRFNode>) {
+  const { t: traduzir } = useIdioma();
   const { regra, camposAnteriores, onMudar, onExcluir } = data;
   const escondeValor = regra.operador === "preenchido" || regra.operador === "vazio";
   return (
     <div className="flow-node form-logica-node">
-      <button type="button" className="form-logica-node-excluir" title="Excluir condição" onClick={onExcluir}>
+      <button type="button" className="form-logica-node-excluir" title={traduzir("Excluir condição")} onClick={onExcluir}>
         <IconClose width={13} height={13} />
       </button>
       <div className="flow-node-header">
@@ -68,7 +70,7 @@ function CondicaoNode({ data }: NodeProps<CondicaoRFNode>) {
       </div>
       <div className="flow-node-body form-logica-node-corpo">
         <select className="input" value={regra.campoId} onChange={(e) => onMudar({ campoId: e.target.value })}>
-          <option value="">Campo…</option>
+          <option value="">{traduzir("Campo…")}</option>
           {camposAnteriores.map((c) => (
             <option key={c.id} value={c.id}>
               {c.rotulo || labelTipoCampo(c.tipo)}
@@ -97,18 +99,19 @@ function CondicaoNode({ data }: NodeProps<CondicaoRFNode>) {
 }
 
 function ResultadoNode({ data }: NodeProps<ResultadoRFNode>) {
+  const { t: traduzir } = useIdioma();
   const { modo, rotuloCampo, onMudarModo } = data;
   return (
     <div className="flow-node form-logica-node form-logica-node-resultado">
       <Handle type="target" position={Position.Top} className="flow-handle" />
       <div className="flow-node-header">
-        <span className="flow-node-categoria">ENTÃO</span>
+        <span className="flow-node-categoria">{traduzir("ENTÃO")}</span>
       </div>
       <div className="flow-node-body form-logica-node-corpo">
         <select className="input" value={modo} onChange={(e) => onMudarModo(e.target.value as LogicaCampo["modo"])}>
-          <option value="mostrar_se">Mostrar este campo</option>
-          <option value="ocultar_se">Ocultar este campo</option>
-          <option value="obrigatorio_se">Tornar obrigatório</option>
+          <option value="mostrar_se">{traduzir("Mostrar este campo")}</option>
+          <option value="ocultar_se">{traduzir("Ocultar este campo")}</option>
+          <option value="obrigatorio_se">{traduzir("Tornar obrigatório")}</option>
         </select>
         <p className="hint" style={{ margin: "2px 0 0" }}>
           {rotuloCampo}

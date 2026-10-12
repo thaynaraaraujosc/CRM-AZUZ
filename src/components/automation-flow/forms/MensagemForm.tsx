@@ -10,6 +10,7 @@ import { inserirTokenNoTexto } from "./variaveis";
 import { useFormularios } from "@/lib/formularios-context";
 import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
 import type { AreaAutomacao } from "@/lib/canais/capacidades";
+import { useIdioma } from "@/lib/idioma-context";
 
 
 /**
@@ -30,6 +31,7 @@ export function MensagemForm({
   /** Trocar o tipo do bloco. É o que faz "+ Botão de ação" virar uma pergunta. */
   onTrocarTipo?: (nodeId: string, tipo: FlowNodeType, data: Record<string, unknown>) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const d = node.data as Record<string, unknown>;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const canais = canaisDaAreaParaBloco(area);
@@ -83,14 +85,14 @@ export function MensagemForm({
 
       {temFormularioOrigem ? (
         <div className="field">
-          <label>Origem do formulário</label>
+          <label>{traduzir("Origem do formulário")}</label>
           <select
             className="input"
             value={String(d.formularioOrigem ?? "interno")}
             onChange={(e) => set({ formularioOrigem: e.target.value })}
           >
-            <option value="interno">Formulário interno do CRM</option>
-            <option value="externo">Link externo</option>
+            <option value="interno">{traduzir("Formulário interno do CRM")}</option>
+            <option value="externo">{traduzir("Link externo")}</option>
           </select>
           {d.formularioOrigem === "externo" ? (
             <input
@@ -113,7 +115,7 @@ export function MensagemForm({
           <label>Modelo aprovado</label>
           <input
             className="input"
-            placeholder="ID do modelo no WhatsApp Business"
+            placeholder={traduzir("ID do modelo no WhatsApp Business")}
             value={String(d.templateId ?? "")}
             onChange={(e) => set({ templateId: e.target.value })}
           />
@@ -122,7 +124,7 @@ export function MensagemForm({
 
       {temNomeContato ? (
         <div className="field">
-          <label>Nome do contato</label>
+          <label>{traduzir("Nome do contato")}</label>
           <input className="input" value={String(d.nomeContato ?? "")} onChange={(e) => set({ nomeContato: e.target.value })} />
         </div>
       ) : null}
@@ -141,7 +143,7 @@ export function MensagemForm({
 
       {temParaEquipe ? (
         <div className="field">
-          <label>Para a equipe</label>
+          <label>{traduzir("Para a equipe")}</label>
           <input className="input" value={String(d.paraEquipe ?? "")} onChange={(e) => set({ paraEquipe: e.target.value })} />
         </div>
       ) : null}
@@ -176,7 +178,7 @@ export function MensagemForm({
           mesma coisa que apagar e recriar, sem obrigar a pessoa a fazer isso à mão. */}
       {node.type === "mensagem_texto" && onTrocarTipo ? (
         <div className="field">
-          <label>Botões</label>
+          <label>{traduzir("Botões")}</label>
           <button
             type="button"
             className="btn ghost block"
@@ -194,7 +196,7 @@ export function MensagemForm({
             + Botão de URL
           </button>
           <p className="hint mt8">
-            Com botão, a mensagem vira uma pergunta: ela para e espera a escolha do contato.
+            {traduzir("Com botão, a mensagem vira uma pergunta: ela para e espera a escolha do contato.")}
           </p>
         </div>
       ) : null}
@@ -207,7 +209,7 @@ export function MensagemForm({
           corpo={textoDaMensagem}
           variaveis={mapearVariaveis(textoDaMensagem)}
           assunto={temAssunto ? String(d.assunto ?? "") : null}
-          titulo="Como vai chegar"
+          titulo={traduzir("Como vai chegar")}
         />
       ) : null}
     </div>
@@ -229,6 +231,7 @@ function EscolherFormulario({
   formularioId: string;
   onEscolher: (id: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { formularios } = useFormularios();
   // O formulário escolhido pode ter sido apagado depois. Some da lista, e o bloco apontaria pra um
   // id invisível: melhor mostrar que ele sumiu do que parecer que nada foi escolhido.
@@ -237,7 +240,7 @@ function EscolherFormulario({
   return (
     <>
       <select className="input mt8" value={formularioId} onChange={(e) => onEscolher(e.target.value)}>
-        <option value="">Escolha um formulário</option>
+        <option value="">{traduzir("Escolha um formulário")}</option>
         {sumiu ? <option value={formularioId}>Formulário apagado ({formularioId})</option> : null}
         {formularios.map((f) => (
           <option key={f.id} value={f.id}>

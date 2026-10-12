@@ -6,6 +6,7 @@ import { FloatingDropdown } from "@/components/ui";
 import { FILTROS_PADRAO, useCentralDia } from "@/lib/central-dia-context";
 import { useEquipe } from "@/lib/equipe-context";
 import { useFunis } from "@/lib/funis-context";
+import { useIdioma } from "@/lib/idioma-context";
 
 const FILTROS_RAPIDOS = ["Todos", "Meus itens", "Minha equipe", "Urgentes", "Conversas", "Tarefas", "Agenda", "Leads", "Automações"];
 const PERIODOS: { valor: "hoje" | "amanha" | "semana"; label: string }[] = [
@@ -27,6 +28,7 @@ function contarFiltrosAtivos(filtros: typeof FILTROS_PADRAO): number {
 /** Barra de filtros da Central do Dia (item 2 do pedido). Chips rápidos + período (controlados,
  * pra dar pra "Limpar filtros" de fora) + painel "Mais filtros" com os campos adicionais. */
 export function FiltrosBar() {
+  const { t: traduzir } = useIdioma();
   const { filtros, setFiltros, limparFiltros } = useCentralDia();
   const { membros: equipe } = useEquipe();
   const { funis } = useFunis();
@@ -78,7 +80,7 @@ export function FiltrosBar() {
         </button>
         {ativos > 0 || filtros.rapido !== "Todos" || filtros.periodo !== "hoje" ? (
           <button type="button" className="btn ghost" onClick={limparFiltros}>
-            Limpar
+            {traduzir("Limpar")}
           </button>
         ) : null}
       </div>
@@ -109,12 +111,12 @@ export function FiltrosBar() {
               </select>
             </div>
             <div className="field">
-              <label>Prioridade</label>
+              <label>{traduzir("Prioridade")}</label>
               <select className="input" value={filtros.prioridade} onChange={(e) => setFiltros({ prioridade: e.target.value })}>
-                <option value="Todas">Todas</option>
-                <option value="urgente">Urgente</option>
-                <option value="atencao">Precisa de atenção</option>
-                <option value="oportunidade">Oportunidade</option>
+                <option value="Todas">{traduzir("Todas")}</option>
+                <option value="urgente">{traduzir("Urgente")}</option>
+                <option value="atencao">{traduzir("Precisa de atenção")}</option>
+                <option value="oportunidade">{traduzir("Oportunidade")}</option>
               </select>
             </div>
           </div>

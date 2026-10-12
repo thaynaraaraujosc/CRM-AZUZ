@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { AnexoAudio } from "@/lib/data";
 import { IconPause, IconPlay } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Só um áudio toca por vez no módulo inteiro. Quando um player começa a
@@ -95,6 +96,7 @@ export function AudioBubblePlayer({
   tipo: "in" | "out";
   velocidadeInicial?: 1 | 1.5 | 2;
 }) {
+  const { t: traduzir } = useIdioma();
   const audioElRef = useRef<HTMLAudioElement>(null);
   const [tocando, setTocando] = useState(false);
   const [progresso, setProgresso] = useState(0);
@@ -164,7 +166,7 @@ export function AudioBubblePlayer({
           setVelocidade((v) => VELOCIDADES[(VELOCIDADES.indexOf(v) + 1) % VELOCIDADES.length])
         }
         aria-label={`Velocidade de reprodução, atual ${velocidade}x: toque pra mudar`}
-        title="Mudar velocidade"
+        title={traduzir("Mudar velocidade")}
       >
         {velocidade}x
       </button>

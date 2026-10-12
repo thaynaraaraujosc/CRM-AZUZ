@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { ConexaoQrCode } from "./ConexaoQrCode";
 import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Atalhos de conexão no topo da tela de Conversas.
@@ -16,15 +17,16 @@ import { ConexaoWhatsAppOficial } from "./ConexaoWhatsAppOficial";
 type Canal = "oficial" | "qrcode" | null;
 
 export function BotoesConectarWhatsApp() {
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState<Canal>(null);
 
   return (
     <>
       <button type="button" className="fsel" onClick={() => setAberto("qrcode")}>
-        Conectar WhatsApp QR Code
+        {traduzir("Conectar WhatsApp QR Code")}
       </button>
       <button type="button" className="fsel" onClick={() => setAberto("oficial")}>
-        Conectar WhatsApp API oficial
+        {traduzir("Conectar WhatsApp API oficial")}
       </button>
 
       {aberto ? (
@@ -46,7 +48,7 @@ export function BotoesConectarWhatsApp() {
               <button
                 type="button"
                 className="modal-close-btn"
-                aria-label="Fechar"
+                aria-label={traduzir("Fechar")}
                 onClick={() => setAberto(null)}
               >
                 ×

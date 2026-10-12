@@ -17,6 +17,7 @@ import {
 } from "@/lib/metrics";
 import { slugId } from "@/lib/ids";
 import type { NegocioCard } from "@/lib/data";
+import { useIdioma } from "@/lib/idioma-context";
 
 const CORES_MOTIVO: Record<string, string> = {
   "Achou caro": "#d64545",
@@ -33,6 +34,7 @@ type PerdaComEtapa = NegocioCard & { etapa: string; funil: string };
  * Funil): sem dado fictício, workspace sem nenhuma perda registrada mostra vazio.
  */
 export default function MotivosPerdaPage() {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const { membros: equipe } = useEquipe();
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
@@ -95,7 +97,7 @@ export default function MotivosPerdaPage() {
           <div className="topbar-title-row">
             <h2>Motivos de perda</h2>
           </div>
-          <p className="sub">Análise completa: a única página com o detalhamento inteiro de perdas</p>
+          <p className="sub">{traduzir("Análise completa: a única página com o detalhamento inteiro de perdas")}</p>
         </div>
       </div>
 
@@ -129,29 +131,29 @@ export default function MotivosPerdaPage() {
 
         <div className="grid kpi4">
           <KpiCard
-            label="Valor perdido"
+            label={traduzir("Valor perdido")}
             value={valorPerdido.label}
             sub={`${perdasFiltradas.length} de ${totalPerdas} negociações`}
             formula={valorPerdido.formula}
           />
-          <KpiCard label="Quantidade perdida" value={String(perdasFiltradas.length)} />
+          <KpiCard label={traduzir("Quantidade perdida")} value={String(perdasFiltradas.length)} />
           <KpiCard
-            label="Principal motivo"
+            label={traduzir("Principal motivo")}
             value={motivoPrincipal.motivo}
             sub={totalPerdas > 0 ? `${motivoPrincipal.valor.toFixed(0)}% das perdas` : undefined}
             formula={motivoPrincipal.formula}
           />
           <KpiCard
-            label="Etapa mais afetada"
+            label={traduzir("Etapa mais afetada")}
             value={etapaMaisAfetada?.etapa ?? "-"}
             sub={etapaMaisAfetada ? `${etapaMaisAfetada.total} perdas` : undefined}
             href="/funil"
           />
         </div>
 
-        <ChartCard title="Motivos de perda no período">
+        <ChartCard title={traduzir("Motivos de perda no período")}>
           {distribuicaoMotivos.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>Nenhum motivo de perda registrado ainda.</p>
+            <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhum motivo de perda registrado ainda.")}</p>
           ) : (
             <BarList
               items={distribuicaoMotivos.map((m) => ({
@@ -166,9 +168,9 @@ export default function MotivosPerdaPage() {
           )}
         </ChartCard>
 
-        <ChartCard title="Evolução das perdas no período">
+        <ChartCard title={traduzir("Evolução das perdas no período")}>
           {serieDiaria.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>Ainda sem movimento suficiente pra traçar uma evolução.</p>
+            <p className="hint" style={{ padding: 17 }}>{traduzir("Ainda sem movimento suficiente pra traçar uma evolução.")}</p>
           ) : (
             <LineChart
               series={[
@@ -184,16 +186,16 @@ export default function MotivosPerdaPage() {
         </ChartCard>
 
         <div className="grid split2">
-          <ChartCard title="Motivos por etapa">
+          <ChartCard title={traduzir("Motivos por etapa")}>
             {porEtapa.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
+              <p className="hint" style={{ padding: 17 }}>{traduzir("Sem dado ainda.")}</p>
             ) : (
               <BarList items={porEtapa.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
             )}
           </ChartCard>
-          <ChartCard title="Motivos por responsável">
+          <ChartCard title={traduzir("Motivos por responsável")}>
             {porResponsavel.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
+              <p className="hint" style={{ padding: 17 }}>{traduzir("Sem dado ainda.")}</p>
             ) : (
               <BarList items={porResponsavel.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
             )}
@@ -201,14 +203,14 @@ export default function MotivosPerdaPage() {
         </div>
 
         <div className="grid split2">
-          <ChartCard title="Motivos por origem">
+          <ChartCard title={traduzir("Motivos por origem")}>
             {porOrigem.length === 0 ? (
-              <p className="hint" style={{ padding: 17 }}>Sem dado ainda.</p>
+              <p className="hint" style={{ padding: 17 }}>{traduzir("Sem dado ainda.")}</p>
             ) : (
               <BarList items={porOrigem.map((g) => ({ chave: g.chave, label: g.chave, quantidade: g.total }))} />
             )}
           </ChartCard>
-          <ChartCard title="Produtos ou serviços mais afetados">
+          <ChartCard title={traduzir("Produtos ou serviços mais afetados")}>
             <div className="dados-nao-conectados">
               Dados não conectados: cadastre produtos/serviços nas negociações pra ver essa análise aqui.
             </div>
@@ -217,7 +219,7 @@ export default function MotivosPerdaPage() {
 
         <div className="card">
           <div className="panel-h">
-            <h4>Negociações perdidas</h4>
+            <h4>{traduzir("Negociações perdidas")}</h4>
             {motivoSelecionado ? (
               <button type="button" className="link" onClick={() => setMotivoSelecionado(null)}>
                 Limpar filtro: {motivoSelecionado} <IconClose width={11} height={11} />
@@ -228,20 +230,20 @@ export default function MotivosPerdaPage() {
           <table className="tbl">
             <thead>
               <tr>
-                <th>Negociação</th>
+                <th>{traduzir("Negociação")}</th>
                 <th>Responsável</th>
-                <th>Motivo</th>
-                <th>Etapa</th>
+                <th>{traduzir("Motivo")}</th>
+                <th>{traduzir("Etapa")}</th>
                 <th>Origem</th>
                 <th>Valor</th>
-                <th>Data</th>
+                <th>{traduzir("Data")}</th>
               </tr>
             </thead>
             <tbody>
               {perdasFiltradas.length === 0 ? (
                 <tr>
                   <td colSpan={7}>
-                    <p className="hint" style={{ padding: 17 }}>Nenhuma negociação perdida com esse filtro.</p>
+                    <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhuma negociação perdida com esse filtro.")}</p>
                   </td>
                 </tr>
               ) : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import type { EncerrarFluxoData, MotivoParada } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Por que a automação parou aqui.
@@ -25,10 +26,11 @@ export function EncerrarFluxoForm({
   data: EncerrarFluxoData;
   onChange: (data: EncerrarFluxoData) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Motivo</label>
+        <label>{traduzir("Motivo")}</label>
         <select
           className="input"
           value={data.motivo ?? "concluido"}
@@ -48,9 +50,9 @@ export function EncerrarFluxoForm({
           className="input"
           value={data.observacao ?? ""}
           onChange={(e) => onChange({ ...data, observacao: e.target.value })}
-          placeholder="Opcional: o que aconteceu, em uma linha"
+          placeholder={traduzir("Opcional: o que aconteceu, em uma linha")}
         />
-        <p className="hint mt8">Aparece no histórico da execução, junto com o motivo.</p>
+        <p className="hint mt8">{traduzir("Aparece no histórico da execução, junto com o motivo.")}</p>
       </div>
     </div>
   );

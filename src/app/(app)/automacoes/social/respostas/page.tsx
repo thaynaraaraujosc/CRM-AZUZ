@@ -8,6 +8,7 @@ import { Topbar } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { useAutomationFlows } from "@/lib/automation-flow-context";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   CATEGORIA_RESPOSTA,
   OPCOES_QUANDO,
@@ -34,6 +35,7 @@ function vazia(): RespostaAutomatica {
  * pro construtor, em vez de mostrar uma versão empobrecida que apagaria o resto ao salvar.
  */
 export default function RespostasAutomaticasPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { data: sessao } = useSession();
   const { fluxos, criarFluxo, atualizarFluxo, publicarFluxo, alternarAtivo, excluirFluxo } = useAutomationFlows();
@@ -95,8 +97,8 @@ export default function RespostasAutomaticasPage() {
   return (
     <>
       <Topbar
-        title="Respostas automáticas"
-        sub="Uma frase que o robô responde sozinho, sem abrir o construtor"
+        title={traduzir("Respostas automáticas")}
+        sub={traduzir("Uma frase que o robô responde sozinho, sem abrir o construtor")}
         actions={
           <button type="button" className="btn primary" onClick={() => abrir(null)}>
             + Nova resposta
@@ -123,7 +125,7 @@ export default function RespostasAutomaticasPage() {
             </div>
 
             <div className="field">
-              <label>Quando</label>
+              <label>{traduzir("Quando")}</label>
               <select
                 className="input"
                 value={d.quando}
@@ -150,11 +152,11 @@ export default function RespostasAutomaticasPage() {
             </div>
 
             <div className="field">
-              <label>Só quando tiver estas palavras (opcional)</label>
+              <label>{traduzir("Só quando tiver estas palavras (opcional)")}</label>
               <input
                 className="input"
                 value={d.palavras.join(", ")}
-                placeholder="quero, preço, valor"
+                placeholder={traduzir("quero, preço, valor")}
                 onChange={(e) =>
                   setEditando({
                     ...editando,
@@ -170,7 +172,7 @@ export default function RespostasAutomaticasPage() {
             </div>
 
             <div className="field">
-              <label>Mensagem no Direct</label>
+              <label>{traduzir("Mensagem no Direct")}</label>
               <textarea
                 className="input"
                 style={{ minHeight: 90, resize: "vertical" }}
@@ -183,7 +185,7 @@ export default function RespostasAutomaticasPage() {
 
             {d.quando === "comentario" ? (
               <div className="field">
-                <label>Responder o comentário em público (opcional)</label>
+                <label>{traduzir("Responder o comentário em público (opcional)")}</label>
                 <input
                   className="input"
                   value={d.respostaPublica ?? ""}
@@ -198,11 +200,11 @@ export default function RespostasAutomaticasPage() {
             ) : null}
 
             <div className="field">
-              <label>Etiquetar o contato (opcional)</label>
+              <label>{traduzir("Etiquetar o contato (opcional)")}</label>
               <input
                 className="input"
                 value={d.etiqueta ?? ""}
-                placeholder="Veio do Instagram"
+                placeholder={traduzir("Veio do Instagram")}
                 onChange={(e) => setEditando({ ...editando, dados: { ...d, etiqueta: e.target.value } })}
               />
             </div>
@@ -217,27 +219,27 @@ export default function RespostasAutomaticasPage() {
 
             <div className="mt8">
               <button type="button" className="btn primary" onClick={salvar}>
-                Salvar e ligar
+                {traduzir("Salvar e ligar")}
               </button>
               <button type="button" className="btn ghost" onClick={() => setEditando(null)}>
-                Cancelar
+                {traduzir("Cancelar")}
               </button>
             </div>
           </section>
         ) : null}
 
         <section className="card">
-          <h3>Suas respostas</h3>
+          <h3>{traduzir("Suas respostas")}</h3>
           {!respostas.length ? (
-            <p className="hint">Nenhuma ainda.</p>
+            <p className="hint">{traduzir("Nenhuma ainda.")}</p>
           ) : (
             <table className="table">
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Quando</th>
+                  <th>{traduzir("Quando")}</th>
                   <th>Situação</th>
-                  <th aria-label="Ações" />
+                  <th aria-label={traduzir("Ações")} />
                 </tr>
               </thead>
               <tbody>
@@ -257,7 +259,7 @@ export default function RespostasAutomaticasPage() {
                     <td style={{ textAlign: "right" }}>
                       {resposta ? (
                         <button type="button" className="btn ghost" onClick={() => abrir(fluxo.id)}>
-                          Editar
+                          {traduzir("Editar")}
                         </button>
                       ) : (
                         <button
@@ -266,7 +268,7 @@ export default function RespostasAutomaticasPage() {
                           title="Este fluxo tem passos que esta tela não sabe representar. Editar aqui apagaria o resto."
                           onClick={() => router.push(`/automacoes/editor/${fluxo.id}`)}
                         >
-                          Abrir no construtor
+                          {traduzir("Abrir no construtor")}
                         </button>
                       )}
                       {fluxo.status === "publicado" ? (
@@ -281,7 +283,7 @@ export default function RespostasAutomaticasPage() {
                           if (window.confirm(`Excluir "${fluxo.nome}"? Isso não volta.`)) excluirFluxo(fluxo.id);
                         }}
                       >
-                        Excluir
+                        {traduzir("Excluir")}
                       </button>
                     </td>
                   </tr>

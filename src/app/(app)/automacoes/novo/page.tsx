@@ -11,6 +11,7 @@ import { useFunis } from "@/lib/funis-context";
 import { MODELOS_COMERCIAIS } from "@/lib/automacoes/modelos-comerciais";
 import { QUANDO_ROTULO } from "@/lib/funil/gatilhos-etapa-tipos";
 import { IconAutomacoes, IconDoc, IconSparkle } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Como começar uma automação do funil.
@@ -25,6 +26,7 @@ import { IconAutomacoes, IconDoc, IconSparkle } from "@/components/icons";
  * e a rota de gatilhos recusa um fluxo que ainda não existe.
  */
 export default function NovaAutomacaoComercialPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { recarregarFluxos } = useAutomationFlows();
   const { funis } = useFunis();
@@ -106,16 +108,16 @@ export default function NovaAutomacaoComercialPage() {
 
   return (
     <>
-      <Topbar title="Nova automação" sub="Funil comercial, pelo WhatsApp" />
+      <Topbar title={traduzir("Nova automação")} sub={traduzir("Funil comercial, pelo WhatsApp")} />
       <AbasAutomacoes />
 
       <div className="content">
-        <nav className="social-migalhas" aria-label="Onde você está">
+        <nav className="social-migalhas" aria-label={traduzir("Onde você está")}>
           <button type="button" className="link" onClick={() => router.push("/automacoes")}>
             Automações
           </button>
           <span aria-hidden="true">›</span>
-          <strong>Nova automação</strong>
+          <strong>{traduzir("Nova automação")}</strong>
         </nav>
 
         {caminho === "escolher" ? (
@@ -125,9 +127,9 @@ export default function NovaAutomacaoComercialPage() {
               className="social-caminho destaque"
               onClick={() => setCaminho("modelos")}
             >
-              <span className="social-caminho-selo">Mais rápido</span>
+              <span className="social-caminho-selo">{traduzir("Mais rápido")}</span>
               <IconDoc width={26} height={26} aria-hidden="true" />
-              <strong>Começar com um modelo AZUZ</strong>
+              <strong>{traduzir("Começar com um modelo AZUZ")}</strong>
               <span>
                 Um robô inteiro já montado, com as mensagens, as esperas e as etiquetas ligadas.
                 Você troca o texto e publica.
@@ -136,16 +138,16 @@ export default function NovaAutomacaoComercialPage() {
 
             <button type="button" className="social-caminho" onClick={() => setCaminho("zero")}>
               <IconAutomacoes width={26} height={26} aria-hidden="true" />
-              <strong>Montar do zero</strong>
+              <strong>{traduzir("Montar do zero")}</strong>
               <span>
-                Você escolhe a etapa e o momento, e monta bloco a bloco num canvas em branco.
+                {traduzir("Você escolhe a etapa e o momento, e monta bloco a bloco num canvas em branco.")}
               </span>
             </button>
 
             <div className="social-caminho desativado" aria-disabled="true">
               <span className="social-caminho-selo em-breve">Em breve</span>
               <IconSparkle width={26} height={26} aria-hidden="true" />
-              <strong>Descrever pra IA montar</strong>
+              <strong>{traduzir("Descrever pra IA montar")}</strong>
               <span>
                 Escrever o que você quer e receber a automação pronta. Ainda não está de pé, e por
                 isso está desligado em vez de aberto e sem nada atrás.
@@ -157,9 +159,9 @@ export default function NovaAutomacaoComercialPage() {
         {caminho === "modelos" && !modelo ? (
           <section className="card">
             <div className="social-secao-topo">
-              <h3>Escolha o modelo</h3>
+              <h3>{traduzir("Escolha o modelo")}</h3>
               <button type="button" className="btn ghost" onClick={() => setCaminho("escolher")}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             </div>
             <p className="hint">
@@ -192,13 +194,13 @@ export default function NovaAutomacaoComercialPage() {
             <div className="social-secao-topo">
               <h3>{modelo.nome}</h3>
               <button type="button" className="btn ghost" onClick={() => setModeloId(null)}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             </div>
             <p className="hint">{modelo.descricao}</p>
 
             <div className="field">
-              <label htmlFor="modelo-funil">Em qual funil</label>
+              <label htmlFor="modelo-funil">{traduzir("Em qual funil")}</label>
               <select
                 id="modelo-funil"
                 className="input"
@@ -217,14 +219,14 @@ export default function NovaAutomacaoComercialPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="modelo-etapa">Em qual etapa ele começa</label>
+              <label htmlFor="modelo-etapa">{traduzir("Em qual etapa ele começa")}</label>
               <select
                 id="modelo-etapa"
                 className="input"
                 value={etapaId}
                 onChange={(e) => setEtapaId(e.target.value)}
               >
-                <option value="">Escolha a etapa</option>
+                <option value="">{traduzir("Escolha a etapa")}</option>
                 {etapas.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.titulo}
@@ -263,7 +265,7 @@ export default function NovaAutomacaoComercialPage() {
                 {criando ? "Criando…" : "Criar e abrir o robô"}
               </button>
               <button type="button" className="btn ghost" onClick={() => setModeloId(null)}>
-                Escolher outro modelo
+                {traduzir("Escolher outro modelo")}
               </button>
             </div>
           </section>

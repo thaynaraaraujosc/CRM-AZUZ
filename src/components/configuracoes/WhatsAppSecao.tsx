@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CabecalhoCategoria } from "./CabecalhoCategoria";
 import { ConexaoManualWhatsApp } from "./ConexaoManualWhatsApp";
 import { LimparDadosWhatsApp } from "./LimparDadosWhatsApp";
+import { LimparDemonstracao } from "./LimparDemonstracao";
 import { EmbeddedSignupWhatsApp } from "./EmbeddedSignupWhatsApp";
 import { ImportarConversas } from "./ImportarConversas";
 import { useSession } from "next-auth/react";
@@ -69,7 +70,7 @@ function SaudeConexaoOficial({ metadados }: { metadados: Record<string, unknown>
  * padrão saíram: a integração já é da conta que está logada, não faz sentido escolher "responsável"
  * separado: quem manda mensagem é quem está logado. */
 export function WhatsAppSecao() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const { integracao, desconectando, desconectar, erroDoRedirect, recarregar } = useIntegracaoMeta("meta_whatsapp");
   const naoOficial = useIntegracaoNaoOficial();
@@ -85,7 +86,7 @@ export function WhatsAppSecao() {
 
   return (
     <div className="config-secao">
-      <CabecalhoCategoria titulo="WhatsApp" descricao={t("Conecte o número do WhatsApp que o CRM vai usar.")} />
+      <CabecalhoCategoria titulo="WhatsApp" descricao={traduzir("Conecte o número do WhatsApp que o CRM vai usar.")} />
 
       <div className="config-bloco">
         {erroDoRedirect ? (
@@ -141,7 +142,7 @@ export function WhatsAppSecao() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div className="card" style={{ padding: 14 }}>
               <div>
-                <p className="int-title" style={{ margin: 0 }}>{t("Conectar com a API oficial (Meta)")}</p>
+                <p className="int-title" style={{ margin: 0 }}>{traduzir("Conectar com a API oficial (Meta)")}</p>
                 <p className="hint" style={{ margin: "4px 0 0" }}>
                   Abre o cadastro da própria Meta aqui dentro. Cria (ou conecta) sua conta do
                   WhatsApp Business sem sair do CRM e sem copiar token nenhum.
@@ -159,7 +160,7 @@ export function WhatsAppSecao() {
             <div className="card" style={{ padding: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <div>
-                  <p className="int-title" style={{ margin: 0 }}>{t("Conectar com a API não oficial (QR Code)")}</p>
+                  <p className="int-title" style={{ margin: 0 }}>{traduzir("Conectar com a API não oficial (QR Code)")}</p>
                   <p className="hint" style={{ margin: "4px 0 0" }}>
                     Escaneia como o WhatsApp Web. Não passa pela verificação de negócio da Meta,
                     e o número corre risco de ser banido por violar os termos de uso do WhatsApp.
@@ -194,7 +195,7 @@ export function WhatsAppSecao() {
                       {/* eslint-disable-next-line @next/next/no-img-element -- data: URL gerado on-the-fly pela Evolution API, não é asset estático */}
                       <img src={naoOficial.estado.metadados.qrDataUrl} alt="QR Code de conexão do WhatsApp" width={200} height={200} />
                     </div>
-                    <p className="hint">{t("Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.")}</p>
+                    <p className="hint">{traduzir("Abra o WhatsApp no celular → Aparelhos conectados → Conectar um aparelho.")}</p>
                   </div>
                 ) : (
                   <p className="hint" style={{ marginTop: 10 }}>
@@ -210,6 +211,11 @@ export function WhatsAppSecao() {
             com OUTRO canal já conectado. Foi o que aconteceu ao conectar a API oficial por cima do
             QR Code: e era exatamente aí que o botão sumia, sem forma nenhuma de limpar. */}
         <LimparDadosWhatsApp aoLimpar={() => window.location.reload()} />
+
+        {/* Só renderiza dentro da conta de demonstração (o próprio componente confere). Fica
+            aqui, junto da outra limpeza, porque é o mesmo tipo de decisão: tirar do CRM o que
+            não deve aparecer numa gravação. */}
+        <LimparDemonstracao aoLimpar={() => window.location.reload()} />
       </div>
     </div>
   );

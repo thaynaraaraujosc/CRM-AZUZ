@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEquipe } from "@/lib/equipe-context";
 import { FUNCOES_PADRAO, PERMISSOES_POR_MODULO } from "@/lib/configuracoes/permissoes";
 import { RadioList, Toggle } from "@/components/ui";
+import { useIdioma } from "@/lib/idioma-context";
 
 const OPCAO_PERSONALIZADO = "Papel personalizado";
 
@@ -16,6 +17,7 @@ const OPCAO_PERSONALIZADO = "Papel personalizado";
  * zero). `convidarMembro` já persiste na API de verdade (ver `equipe-context.tsx`).
  */
 export function ConvidarForm() {
+  const { t: traduzir } = useIdioma();
   const { convidarMembro } = useEquipe();
   const router = useRouter();
 
@@ -81,14 +83,14 @@ export function ConvidarForm() {
     <div className="grid rep-grid">
       <div className="card">
         <div className="panel-h">
-          <h4>Dados</h4>
+          <h4>{traduzir("Dados")}</h4>
         </div>
         <div className="field">
           <label>Nome</label>
-          <input className="input" style={{ width: "100%" }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome completo" />
+          <input className="input" style={{ width: "100%" }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder={traduzir("Nome completo")} />
         </div>
         <div className="field">
-          <label>E-mail (vai ser o login dele)</label>
+          <label>{traduzir("E-mail (vai ser o login dele)")}</label>
           <input
             className="input"
             style={{ width: "100%" }}
@@ -107,7 +109,7 @@ export function ConvidarForm() {
               style={{ width: "100%" }}
               value={nomePapelCustom}
               onChange={(e) => setNomePapelCustom(e.target.value)}
-              placeholder="Ex.: Estoquista, Financeiro…"
+              placeholder={traduzir("Ex.: Estoquista, Financeiro…")}
             />
           ) : null}
         </div>

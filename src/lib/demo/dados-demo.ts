@@ -20,9 +20,10 @@
  * no vídeo) sem precisar de banco nenhum no teste.
  */
 
-export const WORKSPACE_DEMO = "demonstracao";
-export const EMAIL_DEMO = "demo@azuzcrm.com.br";
-export const EMPRESA_DEMO = "Clínica Aurora";
+// Reexportados de `identidade.ts`: lá eles ficam sozinhos, pra tela poder saber se está na
+// demonstração sem puxar este arquivo de dados inteiro pro navegador.
+export { WORKSPACE_DEMO, EMAIL_DEMO, EMPRESA_DEMO } from "@/lib/demo/identidade";
+import { WORKSPACE_DEMO } from "@/lib/demo/identidade";
 
 /** Telefones da demonstração começam aqui e seguem em sequência. Ver o aviso no topo. */
 const TELEFONE_BASE = 8_800_001;

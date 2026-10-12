@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { contagem } from "@/lib/plural";
 import type { ExecucaoDetalhada } from "@/app/api/automacoes/execucoes/route";
+import { useIdioma } from "@/lib/idioma-context";
 
 const SITUACAO_LABEL: Record<string, string> = {
   em_andamento: "Rodando",
@@ -58,6 +59,7 @@ function faltam(iso: string): string {
  * não saiu virar meia noite de investigação.
  */
 export function TabelaExecucoes({ execucoes, vazio }: { execucoes: ExecucaoDetalhada[]; vazio: string }) {
+  const { t: traduzir } = useIdioma();
   const [aberta, setAberta] = useState<string | null>(null);
 
   if (!execucoes.length) return <p className="hint mt8">{vazio}</p>;
@@ -67,12 +69,12 @@ export function TabelaExecucoes({ execucoes, vazio }: { execucoes: ExecucaoDetal
       <table className="table">
         <thead>
           <tr>
-            <th>Começou</th>
+            <th>{traduzir("Começou")}</th>
             <th>Robô</th>
             <th>Contato</th>
             <th>Situação</th>
-            <th>Esperando até</th>
-            <th aria-label="Passos" />
+            <th>{traduzir("Esperando até")}</th>
+            <th aria-label={traduzir("Passos")} />
           </tr>
         </thead>
         <tbody>
@@ -120,7 +122,7 @@ export function TabelaExecucoes({ execucoes, vazio }: { execucoes: ExecucaoDetal
                           {p.detalhe ? `: ${p.detalhe}` : ""}
                         </li>
                       ))}
-                      {!e.passos.length ? <li>Nenhum passo registrado.</li> : null}
+                      {!e.passos.length ? <li>{traduzir("Nenhum passo registrado.")}</li> : null}
                     </ol>
                   </td>
                 </tr>

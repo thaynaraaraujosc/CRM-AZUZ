@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReagirMensagemData } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * O emoji da reação.
@@ -17,10 +18,11 @@ export function ReagirMensagemForm({
   data: ReagirMensagemData;
   onChange: (data: ReagirMensagemData) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Emoji</label>
+        <label>{traduzir("Emoji")}</label>
         <div className="reagir-rapidos">
           {RAPIDOS.map((e) => (
             <button
@@ -38,7 +40,7 @@ export function ReagirMensagemForm({
           className="input mt8"
           value={data.emoji ?? ""}
           onChange={(e) => onChange({ ...data, emoji: e.target.value })}
-          placeholder="Ou cole outro emoji"
+          placeholder={traduzir("Ou cole outro emoji")}
           maxLength={8}
         />
         <p className="hint mt8">

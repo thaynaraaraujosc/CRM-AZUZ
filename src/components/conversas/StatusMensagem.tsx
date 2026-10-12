@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import type { StatusMensagem } from "@/lib/data";
 import { IconCheck, IconCheckDuplo, IconErro, IconMic, IconRelogio } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Os tiquinhos de status de uma mensagem enviada.
@@ -22,6 +23,7 @@ export function StatusMensagemIcone({
   status?: StatusMensagem;
   onTentarNovamente?: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   if (!status) return null;
 
   if (status === "erro") {
@@ -29,14 +31,14 @@ export function StatusMensagemIcone({
       <span className="msg-status msg-status-erro">
         <span
           className="msg-status-icone"
-          title="Não enviada: toque para tentar de novo"
-          aria-label="Mensagem não enviada"
+          title={traduzir("Não enviada: toque para tentar de novo")}
+          aria-label={traduzir("Mensagem não enviada")}
         >
           <IconErro width={13} height={13} />
         </span>
         {onTentarNovamente ? (
           <button type="button" className="msg-status-retry" onClick={onTentarNovamente}>
-            Tentar novamente
+            {traduzir("Tentar novamente")}
           </button>
         ) : null}
       </span>

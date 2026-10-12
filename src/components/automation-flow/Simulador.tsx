@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { EstadoSimulacao } from "@/lib/automacoes/simular";
 import type { AguardarData, FluxoAutomacao } from "@/lib/automation-flow/types";
 import { IconBloqueado, IconCheck, IconClose, IconErro, IconFrasco, IconPause, IconPular } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Situação de cada passo. Eram emojis: família tipográfica diferente da interface e cor fixa que
  * não acompanha o tema. */
@@ -37,6 +38,7 @@ const LABEL_SITUACAO: Record<string, string> = {
  * decisões: condição, caminho do botão, espera: são exatamente as mesmas.
  */
 export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar: () => void }) {
+  const { t: traduzir } = useIdioma();
   const [nome, setNome] = useState("Contato de teste");
   const [origem, setOrigem] = useState("Indicação");
   const [etiquetas, setEtiquetas] = useState("");
@@ -104,17 +106,17 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
   const esperaData = aguardandoEspera && noParado ? (noParado.data as AguardarData) : undefined;
 
   return (
-    <div className="flow-side-overlay" role="dialog" aria-label="Testar automação" onClick={onFechar}>
+    <div className="flow-side-overlay" role="dialog" aria-label={traduzir("Testar automação")} onClick={onFechar}>
       <div className="flow-side-panel" onClick={(e) => e.stopPropagation()}>
         <div className="panel-h">
-          <h4>Testar automação</h4>
-          <button type="button" className="icon-btn subtle" aria-label="Fechar simulador" onClick={onFechar}>
+          <h4>{traduzir("Testar automação")}</h4>
+          <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar simulador")} onClick={onFechar}>
             <IconClose width={13} height={13} />
           </button>
         </div>
         <div className="flow-side-body">
           <p className="flow-sim-banner">
-            <IconFrasco width={13} height={13} aria-hidden="true" /> Modo de teste: nenhuma ação real será executada.
+            <IconFrasco width={13} height={13} aria-hidden="true" /> {traduzir("Modo de teste: nenhuma ação real será executada.")}
           </p>
           <p className="hint">
             Roda o mesmo motor das automações de verdade, só que sem enviar mensagem, sem mexer no
@@ -127,7 +129,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
             <>
               <div className="flow-form">
                 <div className="field">
-                  <label>Nome do contato (fictício)</label>
+                  <label>{traduzir("Nome do contato (fictício)")}</label>
                   <input className="input" value={nome} onChange={(e) => setNome(e.target.value)} />
                 </div>
                 <div className="field">
@@ -135,14 +137,14 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                   <input className="input" value={origem} onChange={(e) => setOrigem(e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>Etiquetas (separadas por vírgula)</label>
+                  <label>{traduzir("Etiquetas (separadas por vírgula)")}</label>
                   <input className="input" value={etiquetas} onChange={(e) => setEtiquetas(e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>Campo personalizado (opcional)</label>
+                  <label>{traduzir("Campo personalizado (opcional)")}</label>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <input className="input" style={{ flex: 1 }} placeholder="nome do campo" value={campoNome} onChange={(e) => setCampoNome(e.target.value)} />
-                    <input className="input" style={{ flex: 1 }} placeholder="valor" value={campoValor} onChange={(e) => setCampoValor(e.target.value)} />
+                    <input className="input" style={{ flex: 1 }} placeholder={traduzir("nome do campo")} value={campoNome} onChange={(e) => setCampoNome(e.target.value)} />
+                    <input className="input" style={{ flex: 1 }} placeholder={traduzir("valor")} value={campoValor} onChange={(e) => setCampoValor(e.target.value)} />
                   </div>
                 </div>
               </div>
@@ -156,7 +158,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
           ) : (
             <div className="mt14">
               <p className="n">
-                Resultado: <strong>{LABEL_SITUACAO[estado.situacao] ?? estado.situacao}</strong>
+                {traduzir("Resultado:")} <strong>{LABEL_SITUACAO[estado.situacao] ?? estado.situacao}</strong>
                 {estado.erro ? ` (${estado.erro})` : ""}
               </p>
 
@@ -179,7 +181,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
 
               {aguardandoOpcoes ? (
                 <div className="flow-sim-continuar">
-                  <p className="n">Qual resposta o contato dá?</p>
+                  <p className="n">{traduzir("Qual resposta o contato dá?")}</p>
                   <div className="flow-sim-opcoes">
                     {(esperando?.opcoes ?? []).map((op) => (
                       <button key={op.id} type="button" className="btn ghost" disabled={ocupado} onClick={() => responder(op.rotulo)}>
@@ -189,7 +191,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                     {/* Manda um texto que de propósito não bate com opção nenhuma: é assim que dá
                         pra ver o que acontece quando a pessoa responde qualquer outra coisa. */}
                     <button type="button" className="btn ghost" disabled={ocupado} onClick={() => responder("(qualquer outra coisa)")}>
-                      Outra resposta
+                      {traduzir("Outra resposta")}
                     </button>
                   </div>
                 </div>
@@ -204,7 +206,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
                     </button>
                     {esperaData?.tempoMaximo ? (
                       <button type="button" className="btn ghost" disabled={ocupado} onClick={() => seguirPor("timeout")}>
-                        Simular tempo esgotado
+                        {traduzir("Simular tempo esgotado")}
                       </button>
                     ) : null}
                   </div>
@@ -213,7 +215,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
 
               {estado.intencoes.length > 0 ? (
                 <>
-                  <p className="n mt14">O que teria acontecido de verdade</p>
+                  <p className="n mt14">{traduzir("O que teria acontecido de verdade")}</p>
                   <ul className="flow-sim-log">
                     {estado.intencoes.map((linha, i) => (
                       <li key={i}>{linha}</li>
@@ -225,7 +227,7 @@ export function Simulador({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar
               {erroSetup ? <p className="flow-problema erro mt14">{erroSetup}</p> : null}
 
               <button type="button" className="btn ghost block mt14" onClick={reiniciar}>
-                Reiniciar teste
+                {traduzir("Reiniciar teste")}
               </button>
             </div>
           )}

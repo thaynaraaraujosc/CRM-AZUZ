@@ -9,6 +9,7 @@ import { IconClose } from "@/components/icons";
 import { PERMISSOES_POR_MODULO } from "@/lib/configuracoes/permissoes";
 import { Toggle, Topbar } from "@/components/ui";
 import { ehVazio } from "@/lib/vazio";
+import { useIdioma } from "@/lib/idioma-context";
 
 const LABEL_PERMISSAO: Record<string, string> = Object.fromEntries(
   PERMISSOES_POR_MODULO.flatMap((grupo) => grupo.permissoes.map((p) => [p.id, `${grupo.modulo} · ${p.label}`])),
@@ -20,6 +21,7 @@ function classePapel(papel: string) {
 }
 
 export default function EquipePage() {
+  const { t: traduzir } = useIdioma();
   const { membros: equipe, alternarAtivo, removerMembro, resetarSenha, editarMembro } = useEquipe();
   const { contatos } = useContatos();
   const [selecionado, setSelecionado] = useState<string | null>(null);
@@ -58,9 +60,9 @@ export default function EquipePage() {
                 <tr>
                   <th>Nome</th>
                   <th>Papel</th>
-                  <th>Leads atribuídos</th>
-                  <th>O que enxerga</th>
-                  <th>Ativo</th>
+                  <th>{traduzir("Leads atribuídos")}</th>
+                  <th>{traduzir("O que enxerga")}</th>
+                  <th>{traduzir("Ativo")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -132,7 +134,7 @@ export default function EquipePage() {
                     </td>
                     <td>
                       {m.convitePendente ? (
-                        <span className="pill">Convite pendente</span>
+                        <span className="pill">{traduzir("Convite pendente")}</span>
                       ) : (
                         <Toggle
                           key={`${m.id}-${m.ativo}`}
@@ -190,29 +192,29 @@ export default function EquipePage() {
                   setSelecionado(null);
                 }}
               >
-                Excluir
+                {traduzir("Excluir")}
               </button>
               <span
                 className="close"
                 style={{ cursor: "pointer" }}
                 onClick={() => setSelecionado(null)}
               >
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </span>
             </div>
 
             <div className="open-conv-body">
               <div>
                 <div className="panel-h">
-                  <h4>Acesso</h4>
+                  <h4>{traduzir("Acesso")}</h4>
                 </div>
                 <div className="field">
-                  <label>E-mail cadastrado</label>
+                  <label>{traduzir("E-mail cadastrado")}</label>
                   {emailEdit === null ? (
                     <div className="equipe-email-linha">
                       <div className="input">{membro.email}</div>
                       <button type="button" className="btn ghost" onClick={() => setEmailEdit(membro.email)}>
-                        Editar
+                        {traduzir("Editar")}
                       </button>
                     </div>
                   ) : (
@@ -222,7 +224,7 @@ export default function EquipePage() {
                         type="email"
                         value={emailEdit}
                         onChange={(e) => setEmailEdit(e.target.value)}
-                        aria-label="E-mail do membro"
+                        aria-label={traduzir("E-mail do membro")}
                       />
                       <button
                         type="button"
@@ -258,7 +260,7 @@ export default function EquipePage() {
                         {salvandoEmail ? "Salvando…" : "Salvar"}
                       </button>
                       <button type="button" className="btn ghost" onClick={() => setEmailEdit(null)} disabled={salvandoEmail}>
-                        Cancelar
+                        {traduzir("Cancelar")}
                       </button>
                     </div>
                   )}
@@ -270,7 +272,7 @@ export default function EquipePage() {
                     endereço errado), e sem o link a única saída era excluir e convidar de novo. */}
                 {membro.convitePendente ? (
                   <div className="field">
-                    <label>Convite</label>
+                    <label>{traduzir("Convite")}</label>
                     <button
                       type="button"
                       className="btn"
@@ -325,7 +327,7 @@ export default function EquipePage() {
                 <div className="field">
                   <label>Senha</label>
                   {membro.convitePendente ? (
-                    <span className="pill">Ainda não definida: convite pendente</span>
+                    <span className="pill">{traduzir("Ainda não definida: convite pendente")}</span>
                   ) : senhaGerada ? (
                     <div className="key-row" style={{ padding: 0 }}>
                       <div className="key-box">{senhaGerada}</div>
@@ -333,7 +335,7 @@ export default function EquipePage() {
                         Copiar
                       </button>
                       <button type="button" className="btn ghost" onClick={() => setSenhaGerada(null)}>
-                        Fechar
+                        {traduzir("Fechar")}
                       </button>
                     </div>
                   ) : (
@@ -359,7 +361,7 @@ export default function EquipePage() {
                 </div>
 
                 <div className="panel-h divided">
-                  <h4>O que ela pode ver</h4>
+                  <h4>{traduzir("O que ela pode ver")}</h4>
                 </div>
                 {membro.permissoes.length === 0 ? (
                   <p className="hint">
@@ -376,10 +378,10 @@ export default function EquipePage() {
 
               <div>
                 <div className="panel-h">
-                  <h4>Leads atribuídos</h4>
+                  <h4>{traduzir("Leads atribuídos")}</h4>
                 </div>
                 {leadsDoMembro.length === 0 ? (
-                  <p className="hint">Nenhum lead atribuído no momento.</p>
+                  <p className="hint">{traduzir("Nenhum lead atribuído no momento.")}</p>
                 ) : (
                   leadsDoMembro.map((c) => (
                     <div className="stat-row" key={c.nome}>

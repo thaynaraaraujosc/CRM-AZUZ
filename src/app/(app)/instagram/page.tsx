@@ -7,6 +7,7 @@ import { IconEnviar, IconSearch } from "@/components/icons";
 import type { ConversaInstagram } from "@/app/api/instagram/conversas/route";
 import type { MensagemInstagram } from "@/app/api/instagram/mensagens/route";
 import { INTERVALO_POLLING_MS } from "@/lib/conversas/polling";
+import { useIdioma } from "@/lib/idioma-context";
 
 function hora(iso: string | null): string {
   if (!iso) return "";
@@ -54,6 +55,7 @@ function Avatar({ nome, fotoUrl, tamanho = 38 }: { nome: string; fotoUrl: string
  * entre saber que a mensagem não vai sair antes de escrevê-la e descobrir depois.
  */
 export default function InstagramConversasPage() {
+  const { t: traduzir } = useIdioma();
   const [conversas, setConversas] = useState<ConversaInstagram[] | null>(null);
   const [aberta, setAberta] = useState<string | null>(null);
   // A resposta viaja com o nome da conversa: assim "carregando" é derivado (o que tenho não é da
@@ -257,7 +259,7 @@ export default function InstagramConversasPage() {
 
   return (
     <>
-      <Topbar title="Instagram" sub="Direct, respostas a story e comentários" />
+      <Topbar title="Instagram" sub={traduzir("Direct, respostas a story e comentários")} />
 
       <div className="content ig-layout">
         <aside className="ig-lista">
@@ -265,7 +267,7 @@ export default function InstagramConversasPage() {
             <IconSearch width={14} height={14} aria-hidden="true" />
             <input
               className="input"
-              placeholder="Buscar por nome ou @"
+              placeholder={traduzir("Buscar por nome ou @")}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -303,7 +305,7 @@ export default function InstagramConversasPage() {
 
         <section className="ig-conversa">
           {!atual ? (
-            <p className="hint ig-vazio">Escolha uma conversa à esquerda.</p>
+            <p className="hint ig-vazio">{traduzir("Escolha uma conversa à esquerda.")}</p>
           ) : (
             <>
               <header className="ig-conversa-topo">
@@ -318,7 +320,7 @@ export default function InstagramConversasPage() {
                 {mensagens?.de !== atual.nome ? (
                   <p className="hint">Carregando…</p>
                 ) : !mensagens.lista.length ? (
-                  <p className="hint">Nenhuma mensagem nesta conversa.</p>
+                  <p className="hint">{traduzir("Nenhuma mensagem nesta conversa.")}</p>
                 ) : (
                   mensagens.lista.map((m) => (
                     <div key={m.id} className={`ig-bolha${m.tipo === "out" ? " nossa" : ""}`}>
@@ -343,7 +345,7 @@ export default function InstagramConversasPage() {
                 <div className="ig-escrever-linha">
                   <textarea
                     className="input"
-                    placeholder="Escreva a resposta…"
+                    placeholder={traduzir("Escreva a resposta…")}
                     value={texto}
                     maxLength={1000}
                     disabled={!atual.dentroDaJanela || enviando}
@@ -367,7 +369,7 @@ export default function InstagramConversasPage() {
 
         <aside className="ig-perfil">
           {!atual ? (
-            <p className="hint ig-vazio">Nenhum contato aberto.</p>
+            <p className="hint ig-vazio">{traduzir("Nenhum contato aberto.")}</p>
           ) : (
             <>
               <header className="ig-perfil-topo">
@@ -376,7 +378,7 @@ export default function InstagramConversasPage() {
                 {atual.username ? <span>@{atual.username.replace(/^@/, "")}</span> : null}
               </header>
 
-              <h4>Informações do perfil</h4>
+              <h4>{traduzir("Informações do perfil")}</h4>
               <div className="ig-perfil-numeros">
                 <div>
                   <strong>{numero(atual.perfil?.seguidores ?? null)}</strong>
@@ -384,11 +386,11 @@ export default function InstagramConversasPage() {
                 </div>
                 <div>
                   <strong>{atual.perfil?.verificado == null ? "—" : atual.perfil.verificado ? "Sim" : "Não"}</strong>
-                  <span>Verificado</span>
+                  <span>{traduzir("Verificado")}</span>
                 </div>
                 <div>
                   <strong>{atual.perfil?.segueVoce == null ? "—" : atual.perfil.segueVoce ? "Sim" : "Não"}</strong>
-                  <span>Segue você</span>
+                  <span>{traduzir("Segue você")}</span>
                 </div>
               </div>
               <p className="hint">

@@ -2,6 +2,7 @@
 
 import type { MensagemLocalizacaoData, OrigemLocalizacao } from "@/lib/automation-flow/types";
 import { IconLocalizacao } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 // Mocado: localizações salvas do workspace, sem integração real com mapa.
 const LOCALIZACOES_SALVAS = [
@@ -15,6 +16,7 @@ const LOCALIZACAO_WORKSPACE = { nome: "Sede", endereco: "Av. Exemplo, 123", cida
 
 /** Ação "Enviar localização" (item 4). De onde vem a localização enviada ao contato. */
 export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLocalizacaoData; onChange: (novo: MensagemLocalizacaoData) => void }) {
+  const { t: traduzir } = useIdioma();
   const salva = LOCALIZACOES_SALVAS.find((l) => l.id === data.localSalvoId);
 
   let preview: { nome: string; endereco?: string; cidadeEstado?: string } | null = null;
@@ -32,20 +34,20 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Origem da localização</label>
+        <label>{traduzir("Origem da localização")}</label>
         <select className="input" value={data.origem} onChange={(e) => onChange({ ...data, origem: e.target.value as OrigemLocalizacao })}>
-          <option value="salva">Localização salva</option>
-          <option value="workspace">Localização do workspace</option>
-          <option value="endereco">Informar endereço</option>
-          <option value="coordenadas">Coordenadas</option>
+          <option value="salva">{traduzir("Localização salva")}</option>
+          <option value="workspace">{traduzir("Localização do workspace")}</option>
+          <option value="endereco">{traduzir("Informar endereço")}</option>
+          <option value="coordenadas">{traduzir("Coordenadas")}</option>
         </select>
       </div>
 
       {data.origem === "salva" ? (
         <div className="field">
-          <label>Localização salva</label>
+          <label>{traduzir("Localização salva")}</label>
           <select className="input" value={data.localSalvoId ?? ""} onChange={(e) => onChange({ ...data, localSalvoId: e.target.value })}>
-            <option value="">Selecione…</option>
+            <option value="">{traduzir("Selecione…")}</option>
             {LOCALIZACOES_SALVAS.map((l) => (
               <option key={l.id} value={l.id}>{l.nome}</option>
             ))}
@@ -60,8 +62,8 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
       {data.origem === "endereco" ? (
         <>
           <div className="field">
-            <label>Nome do local</label>
-            <input className="input" placeholder="Ex.: Sede" value={data.nomeLocal ?? ""} onChange={(e) => onChange({ ...data, nomeLocal: e.target.value })} />
+            <label>{traduzir("Nome do local")}</label>
+            <input className="input" placeholder={traduzir("Ex.: Sede")} value={data.nomeLocal ?? ""} onChange={(e) => onChange({ ...data, nomeLocal: e.target.value })} />
           </div>
           <div className="field">
             <label>Endereço</label>
@@ -69,16 +71,16 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
           </div>
           <div className="field" style={{ display: "flex", gap: 8 }}>
             <div style={{ flex: 1 }}>
-              <label>Número</label>
+              <label>{traduzir("Número")}</label>
               <input className="input" style={{ width: "100%" }} value={data.numero ?? ""} onChange={(e) => onChange({ ...data, numero: e.target.value })} />
             </div>
             <div style={{ flex: 1 }}>
-              <label>Complemento</label>
+              <label>{traduzir("Complemento")}</label>
               <input className="input" style={{ width: "100%" }} value={data.complemento ?? ""} onChange={(e) => onChange({ ...data, complemento: e.target.value })} />
             </div>
           </div>
           <div className="field">
-            <label>Bairro</label>
+            <label>{traduzir("Bairro")}</label>
             <input className="input" value={data.bairro ?? ""} onChange={(e) => onChange({ ...data, bairro: e.target.value })} />
           </div>
           <div className="field" style={{ display: "flex", gap: 8 }}>
@@ -87,12 +89,12 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
               <input className="input" style={{ width: "100%" }} value={data.cidade ?? ""} onChange={(e) => onChange({ ...data, cidade: e.target.value })} />
             </div>
             <div style={{ flex: 1 }}>
-              <label>Estado</label>
+              <label>{traduzir("Estado")}</label>
               <input className="input" style={{ width: "100%" }} value={data.estado ?? ""} onChange={(e) => onChange({ ...data, estado: e.target.value })} />
             </div>
           </div>
           <div className="field">
-            <label>CEP</label>
+            <label>{traduzir("CEP")}</label>
             <input className="input" value={data.cep ?? ""} onChange={(e) => onChange({ ...data, cep: e.target.value })} />
           </div>
         </>
@@ -101,11 +103,11 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
       {data.origem === "coordenadas" ? (
         <div className="field" style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <label>Latitude</label>
+            <label>{traduzir("Latitude")}</label>
             <input className="input" style={{ width: "100%" }} value={data.latitude ?? ""} onChange={(e) => onChange({ ...data, latitude: e.target.value })} />
           </div>
           <div style={{ flex: 1 }}>
-            <label>Longitude</label>
+            <label>{traduzir("Longitude")}</label>
             <input className="input" style={{ width: "100%" }} value={data.longitude ?? ""} onChange={(e) => onChange({ ...data, longitude: e.target.value })} />
           </div>
         </div>
@@ -113,7 +115,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
 
       {preview ? (
         <div className="field">
-          <label>Pré-visualização</label>
+          <label>{traduzir("Pré-visualização")}</label>
           <div className="hint" style={{ border: "1px solid var(--line-soft)", borderRadius: 8, padding: 10 }}>
             <strong>
             <IconLocalizacao width={13} height={13} aria-hidden="true" /> {preview.nome}
@@ -125,7 +127,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
       ) : null}
 
       <div className="toggle-row">
-        <span className="tl">Adicionar legenda/mensagem?</span>
+        <span className="tl">{traduzir("Adicionar legenda/mensagem?")}</span>
         <button
           type="button"
           role="switch"
@@ -142,7 +144,7 @@ export function MensagemLocalizacaoForm({ data, onChange }: { data: MensagemLoca
           <textarea
             className="input"
             style={{ width: "100%", minHeight: 60, resize: "vertical" }}
-            placeholder="Ex.: Estamos te esperando neste endereço."
+            placeholder={traduzir("Ex.: Estamos te esperando neste endereço.")}
             value={data.mensagem ?? ""}
             onChange={(e) => onChange({ ...data, mensagem: e.target.value })}
           />

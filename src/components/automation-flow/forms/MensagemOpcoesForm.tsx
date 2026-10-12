@@ -36,6 +36,7 @@ import { IconClose } from "@/components/icons";
 import { validarRegex } from "@/lib/automacoes/regex-seguro";
 import { CANAIS_DA_AREA, formatosDePergunta, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { avisoDeJanela, canaisDaAreaParaBloco } from "./canais";
+import { useIdioma } from "@/lib/idioma-context";
 
 
 /**
@@ -113,6 +114,7 @@ export function MensagemOpcoesForm({
   /** Chamado ANTES do onChange que tira a opção do array. Pra quem escuta remover a aresta correspondente. */
   onRemoverOpcao: (opcaoId: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const opcoes = data.opcoes ?? [];
   const formatoAtual = data.formatoResposta ?? "menu_numerado";
@@ -161,7 +163,7 @@ export function MensagemOpcoesForm({
 
       <div className="field">
         <div className="flow-form-label-row">
-          <label style={{ marginBottom: 0 }}>Texto</label>
+          <label style={{ marginBottom: 0 }}>{traduzir("Texto")}</label>
           <VariavelDropdown onEscolher={(t) => onChange({ ...data, texto: inserirTokenNoTexto(data.texto, t, textareaRef.current) })} />
         </div>
         <textarea
@@ -175,7 +177,7 @@ export function MensagemOpcoesForm({
 
       <div className="field">
         <div className="flow-form-label-row">
-          <label style={{ marginBottom: 0 }}>Formato de resposta</label>
+          <label style={{ marginBottom: 0 }}>{traduzir("Formato de resposta")}</label>
           <span
             className="hint"
             title="Alguns recursos interativos dependem do provedor e do tipo de conexão configurado."
@@ -210,7 +212,7 @@ export function MensagemOpcoesForm({
 
       {formatoAtual === "menu_numerado" && opcoes.length > 0 ? (
         <div className="field">
-          <label>Prévia (como o contato veria em texto puro)</label>
+          <label>{traduzir("Prévia (como o contato veria em texto puro)")}</label>
           <pre className="flow-menu-numerado-previa">{previaMenuNumerado(data.texto, opcoes)}</pre>
         </div>
       ) : null}
@@ -233,27 +235,27 @@ export function MensagemOpcoesForm({
                 onChange={(e) => atualizarOpcao(opcao.id, { rotulo: e.target.value })}
                 aria-label={`Rótulo da opção ${i + 1}`}
               />
-              <button type="button" className="icon-btn subtle" aria-label="Mover pra cima" disabled={i === 0} onClick={() => moverOpcao(i, -1)}>
+              <button type="button" className="icon-btn subtle" aria-label={traduzir("Mover pra cima")} disabled={i === 0} onClick={() => moverOpcao(i, -1)}>
                 ↑
               </button>
               <button
                 type="button"
                 className="icon-btn subtle"
-                aria-label="Mover pra baixo"
+                aria-label={traduzir("Mover pra baixo")}
                 disabled={i === opcoes.length - 1}
                 onClick={() => moverOpcao(i, 1)}
               >
                 ↓
               </button>
-              <button type="button" className="remove-chip" aria-label="Remover opção" onClick={() => removerOpcao(opcao.id)}>
+              <button type="button" className="remove-chip" aria-label={traduzir("Remover opção")} onClick={() => removerOpcao(opcao.id)}>
                 <IconClose width={13} height={13} />
               </button>
             </div>
             <details className="flow-opcao-avancado" open={temAjuste(opcao)}>
-              <summary>Ajustes desta opção</summary>
+              <summary>{traduzir("Ajustes desta opção")}</summary>
 
             <div className="flow-opcao-alternativas">
-              <label>Como casar a resposta</label>
+              <label>{traduzir("Como casar a resposta")}</label>
               <select
                 className="input"
                 value={opcao.comparacao ?? "padrao"}
@@ -268,7 +270,7 @@ export function MensagemOpcoesForm({
               </select>
               {(opcao.comparacao ?? "padrao") === "padrao" ? (
                 <p className="hint mt8">
-                  Aceita o número da opção, o texto dela e as respostas alternativas abaixo.
+                  {traduzir("Aceita o número da opção, o texto dela e as respostas alternativas abaixo.")}
                 </p>
               ) : null}
               {(opcao.comparacao ?? "padrao") !== "padrao" && opcao.comparacao !== "qualquer" ? (
@@ -303,7 +305,7 @@ export function MensagemOpcoesForm({
               ) : null}
             </div>
             <div className="flow-opcao-alternativas">
-              <label>Endereço do link</label>
+              <label>{traduzir("Endereço do link")}</label>
               <input
                 className="input"
                 placeholder="https://…"
@@ -312,7 +314,7 @@ export function MensagemOpcoesForm({
                 aria-label={`Endereço da opção ${i + 1}`}
               />
               {!opcao.url?.trim() ? (
-                <p className="hint mt8">Vazio = a opção é uma resposta normal, com caminho no fluxo.</p>
+                <p className="hint mt8">{traduzir("Vazio = a opção é uma resposta normal, com caminho no fluxo.")}</p>
               ) : null}
               {opcao.url?.trim() ? (
                 <p className="hint mt8">
@@ -324,7 +326,7 @@ export function MensagemOpcoesForm({
             </div>
             {formatoAtual === "menu_numerado" && !opcao.url?.trim() ? (
               <div className="flow-opcao-alternativas">
-                <label>Outras respostas aceitas</label>
+                <label>{traduzir("Outras respostas aceitas")}</label>
                 <input
                   className="input"
                   placeholder={`ex.: número ${i + 1}, opcao ${i + 1}, ${(opcao.rotulo || "palavra-chave").toLowerCase()}`}
@@ -362,7 +364,7 @@ export function MensagemOpcoesForm({
           + Botão de URL
         </button>
         <p className="hint mt8">
-          <b>O que cada conexão entrega:</b> no WhatsApp oficial, até 3 opções viram botões e de 4 a
+          <b>{traduzir("O que cada conexão entrega:")}</b> no WhatsApp oficial, até 3 opções viram botões e de 4 a
           10 viram lista. Na conexão por QR Code não existe botão confiável, então a pergunta sai
           como menu numerado (&quot;1 - …&quot;, &quot;2 - …&quot;) e a pessoa responde digitando o
           número. Os dois casos funcionam: o casamento da resposta aceita o número e o texto.
@@ -375,14 +377,14 @@ export function MensagemOpcoesForm({
       </div>
 
       <div className="field">
-        <label>Esperar a resposta por</label>
+        <label>{traduzir("Esperar a resposta por")}</label>
         <div className="funil-auto-horas">
           <input
             type="number"
             min={0}
             className="input"
             value={data.esperaMinutos ?? ""}
-            placeholder="Sem prazo"
+            placeholder={traduzir("Sem prazo")}
             onChange={(e) =>
               onChange({ ...data, esperaMinutos: e.target.value ? Number(e.target.value) : undefined })
             }
@@ -396,13 +398,13 @@ export function MensagemOpcoesForm({
       </div>
 
       <div className="field">
-        <label>Tolerar quantas respostas fora das opções</label>
+        <label>{traduzir("Tolerar quantas respostas fora das opções")}</label>
         <input
           type="number"
           min={0}
           className="input"
           value={data.tentativasMaximas ?? ""}
-          placeholder="Sem limite"
+          placeholder={traduzir("Sem limite")}
           onChange={(e) =>
             onChange({ ...data, tentativasMaximas: e.target.value ? Number(e.target.value) : undefined })
           }
@@ -427,7 +429,7 @@ export function MensagemOpcoesForm({
             </p>
           </>
         ) : (
-          <p className="hint mt8">Vazio = repete a pergunta pra sempre enquanto a pessoa errar.</p>
+          <p className="hint mt8">{traduzir("Vazio = repete a pergunta pra sempre enquanto a pessoa errar.")}</p>
         )}
       </div>
     </div>

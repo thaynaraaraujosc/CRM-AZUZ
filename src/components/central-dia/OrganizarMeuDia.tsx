@@ -6,6 +6,7 @@ import { Drawer } from "@/components/ui";
 import { useCentralDia } from "@/lib/central-dia-context";
 import type { ItemDia } from "@/lib/central-dia/tipos";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 const MODULO_LABEL: Record<ItemDia["modulo"], string> = {
   conversa: "Conversas",
@@ -40,6 +41,7 @@ export function OrganizarMeuDia({
   onFechar: () => void;
   itensSugeridos: ItemDia[];
 }) {
+  const { t: traduzir } = useIdioma();
   const { iniciarOrganizacao, organizacao, avancarOrganizacao, voltarOrganizacao, cancelarOrganizacao, marcarConcluido, avisar } =
     useCentralDia();
   const [sequencia, setSequencia] = useState<ItemDia[]>(itensSugeridos.slice(0, 5));
@@ -96,13 +98,13 @@ export function OrganizarMeuDia({
     <Drawer
       aberto={aberto}
       onFechar={onFechar}
-      titulo="Organizar meu dia"
+      titulo={traduzir("Organizar meu dia")}
       subtitulo={emExecucao ? "Modo execução: siga a sequência sugerida" : "Sequência sugerida a partir do que precisa de atenção hoje"}
       rodape={
         emExecucao ? (
           <>
             <button type="button" className="btn ghost" disabled={organizacao!.indiceAtual === 0} onClick={voltarOrganizacao}>
-              Anterior
+              {traduzir("Anterior")}
             </button>
             <button
               type="button"
@@ -110,16 +112,16 @@ export function OrganizarMeuDia({
               disabled={organizacao!.indiceAtual >= organizacao!.itens.length - 1}
               onClick={avancarOrganizacao}
             >
-              Próximo
+              {traduzir("Próximo")}
             </button>
             <button type="button" className="btn primary" onClick={concluirAtual}>
-              Concluir item
+              {traduzir("Concluir item")}
             </button>
           </>
         ) : (
           <>
             <button type="button" className="btn ghost" onClick={onFechar}>
-              Cancelar
+              {traduzir("Cancelar")}
             </button>
             <button
               type="button"
@@ -127,17 +129,17 @@ export function OrganizarMeuDia({
               onClick={() => avisar("Organização do dia salva.")}
               disabled={sequencia.length === 0}
             >
-              Salvar organização
+              {traduzir("Salvar organização")}
             </button>
             <button type="button" className="btn primary" disabled={sequencia.length === 0} onClick={comecar}>
-              Começar
+              {traduzir("Começar")}
             </button>
           </>
         )
       }
     >
       {sequencia.length === 0 ? (
-        <p className="hint">Nenhum item pra organizar agora. Tudo em dia por aqui.</p>
+        <p className="hint">{traduzir("Nenhum item pra organizar agora. Tudo em dia por aqui.")}</p>
       ) : (
         <div className="central-dia-organizar-lista">
           {sequencia.map((item, i) => {
@@ -154,19 +156,19 @@ export function OrganizarMeuDia({
                 </div>
                 {!emExecucao ? (
                   <div className="central-dia-organizar-acoes">
-                    <button type="button" className="icon-btn subtle" aria-label="Mover pra cima" disabled={i === 0} onClick={() => mover(i, -1)}>
+                    <button type="button" className="icon-btn subtle" aria-label={traduzir("Mover pra cima")} disabled={i === 0} onClick={() => mover(i, -1)}>
                       ↑
                     </button>
                     <button
                       type="button"
                       className="icon-btn subtle"
-                      aria-label="Mover pra baixo"
+                      aria-label={traduzir("Mover pra baixo")}
                       disabled={i === sequencia.length - 1}
                       onClick={() => mover(i, 1)}
                     >
                       ↓
                     </button>
-                    <button type="button" className="remove-chip" aria-label="Remover etapa" onClick={() => remover(item.id)}>
+                    <button type="button" className="remove-chip" aria-label={traduzir("Remover etapa")} onClick={() => remover(item.id)}>
                       <IconClose width={13} height={13} />
                     </button>
                   </div>

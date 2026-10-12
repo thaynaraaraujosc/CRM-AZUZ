@@ -8,6 +8,7 @@ import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AbasSocial } from "@/components/social/AbasSocial";
 import { MODELOS_AZUZ, type ModeloAzuz } from "@/lib/social/modelos-azuz";
 import { LIMITES } from "@/lib/templates/regras";
+import { useIdioma } from "@/lib/idioma-context";
 
 type TemplateSalvo = {
   id: string;
@@ -28,6 +29,7 @@ type TemplateSalvo = {
  * pelo canal, com o editor completo a um clique de distância.
  */
 export default function ModelosSociaisPage() {
+  const { t: traduzir } = useIdioma();
   const [meus, setMeus] = useState<TemplateSalvo[] | null>(null);
   const [copiando, setCopiando] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -76,11 +78,11 @@ export default function ModelosSociaisPage() {
   return (
     <>
       <Topbar
-        title="Modelos do Instagram"
-        sub="Mensagens reutilizáveis do Direct"
+        title={traduzir("Modelos do Instagram")}
+        sub={traduzir("Mensagens reutilizáveis do Direct")}
         actions={
           <Link className="btn primary" href="/automacoes/templates">
-            Abrir editor de templates
+            {traduzir("Abrir editor de templates")}
           </Link>
         }
       />
@@ -96,7 +98,7 @@ export default function ModelosSociaisPage() {
         ) : null}
 
         <section className="card">
-          <h3>Modelos AZUZ</h3>
+          <h3>{traduzir("Modelos AZUZ")}</h3>
           <p className="hint">
             Escritos aqui, prontos pra copiar. Copiar cria um modelo SEU, que você edita antes de
             usar. {LIMITES.instagram.explicacao}
@@ -126,12 +128,12 @@ export default function ModelosSociaisPage() {
         </section>
 
         <section className="card mt16">
-          <h3>Meus modelos</h3>
+          <h3>{traduzir("Meus modelos")}</h3>
           {meus === null ? (
             <p className="hint">Carregando…</p>
           ) : !meus.length ? (
             <p className="hint">
-              Nenhum ainda. Copie um da AZUZ acima, ou crie do zero no editor de templates.
+              {traduzir("Nenhum ainda. Copie um da AZUZ acima, ou crie do zero no editor de templates.")}
             </p>
           ) : (
             <table className="table">

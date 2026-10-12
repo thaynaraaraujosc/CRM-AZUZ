@@ -14,6 +14,7 @@ import {
 } from "@/lib/templates/regras";
 import type { CanalDisponivel } from "@/app/api/canais/route";
 import { PreviaMensagem } from "./PreviaMensagem";
+import { useIdioma } from "@/lib/idioma-context";
 
 export type TemplateSalvo = {
   id: string;
@@ -73,6 +74,7 @@ export function EditorTemplate({
   aoFechar: () => void;
   aoSalvar: (salvo: TemplateSalvo, enviarParaAnalise: boolean) => Promise<void>;
 }) {
+  const { t: traduzir } = useIdioma();
   const canalPadrao = (canais.find((c) => c.conectado && !c.emBreve)?.canal ?? "whatsapp_oficial") as CanalTemplate;
   const [r, setR] = useState<Rascunho>(() => rascunhoDe(template, canalPadrao));
   const [salvando, setSalvando] = useState<"salvar" | "analise" | null>(null);
@@ -138,7 +140,7 @@ export function EditorTemplate({
       rodape={
         <>
           <button type="button" className="btn ghost" onClick={aoFechar}>
-            Cancelar
+            {traduzir("Cancelar")}
           </button>
           <button
             type="button"
@@ -154,7 +156,7 @@ export function EditorTemplate({
               className="btn primary"
               disabled={!!salvando || problemas.length > 0 || !editavelNaMeta}
               onClick={() => void salvar(true)}
-              title="Salva e envia pra análise da Meta"
+              title={traduzir("Salva e envia pra análise da Meta")}
             >
               {salvando === "analise" ? "Enviando…" : "Salvar e enviar para análise"}
             </button>
@@ -164,7 +166,7 @@ export function EditorTemplate({
     >
       {!editavelNaMeta ? (
         <p className="tpl-aviso">
-          Este template já está na Meta. Pra mudar o texto, feche e use <strong>Duplicar</strong>: a cópia pode ser
+          {traduzir("Este template já está na Meta. Pra mudar o texto, feche e use")} <strong>{traduzir("Duplicar")}</strong>: a cópia pode ser
           editada e enviada pra análise como um modelo novo.
         </p>
       ) : null}
@@ -173,11 +175,11 @@ export function EditorTemplate({
       <div className="tpl-editor">
         <div className="tpl-editor-form">
           <div className="field">
-            <label>Nome do template</label>
+            <label>{traduzir("Nome do template")}</label>
             <input
               className="input"
               value={r.nome}
-              placeholder="Ex.: Retomar atendimento"
+              placeholder={traduzir("Ex.: Retomar atendimento")}
               onChange={(e) => setR((a) => ({ ...a, nome: e.target.value }))}
               disabled={!editavelNaMeta}
             />
@@ -213,7 +215,7 @@ export function EditorTemplate({
             <div className="tpl-linha">
               {limites.exigeCategoria ? (
                 <div className="field">
-                  <label>Categoria</label>
+                  <label>{traduzir("Categoria")}</label>
                   <select className="input" value={r.categoria} onChange={(e) => setR((a) => ({ ...a, categoria: e.target.value }))} disabled={!editavelNaMeta}>
                     {CATEGORIAS_META.map((c) => (
                       <option key={c.valor} value={c.valor}>
@@ -258,7 +260,7 @@ export function EditorTemplate({
               disabled={!editavelNaMeta}
             />
             <div className="tpl-inserir">
-              <span className="hint">Inserir:</span>
+              <span className="hint">{traduzir("Inserir:")}</span>
               {ORIGENS_DO_CONTATO.slice(0, 5).map((o) => {
                 const chave = o.origem.slice("contato.".length);
                 return (
@@ -285,7 +287,7 @@ export function EditorTemplate({
 
           {r.variaveis.length ? (
             <div className="field">
-              <label>Variáveis</label>
+              <label>{traduzir("Variáveis")}</label>
               <div className="tpl-variaveis">
                 {r.variaveis.map((v) => (
                   <div key={v.chave} className="tpl-variavel">
@@ -301,12 +303,12 @@ export function EditorTemplate({
                           {o.label} do contato
                         </option>
                       ))}
-                      <option value="texto">Texto fixo (preencho no disparo)</option>
+                      <option value="texto">{traduzir("Texto fixo (preencho no disparo)")}</option>
                     </select>
                     {v.origem === "texto" ? (
                       <input
                         className="input"
-                        placeholder="Valor padrão (opcional)"
+                        placeholder={traduzir("Valor padrão (opcional)")}
                         value={v.valor ?? ""}
                         onChange={(e) => mudarVariavel(v.chave, { valor: e.target.value })}
                         disabled={!editavelNaMeta}
@@ -321,7 +323,7 @@ export function EditorTemplate({
           {limites.botoesMaximo > 0 ? (
             <div className="field">
               <label>
-                Botões de resposta <span className="hint">(até {limites.botoesMaximo}, {limites.botaoMaximo} caracteres cada)</span>
+                {traduzir("Botões de resposta")} <span className="hint">(até {limites.botoesMaximo}, {limites.botaoMaximo} caracteres cada)</span>
               </label>
               <div className="tpl-botoes">
                 {r.botoes.map((b, i) => (
@@ -330,12 +332,12 @@ export function EditorTemplate({
                       className="input"
                       value={b.texto}
                       maxLength={limites.botaoMaximo}
-                      placeholder="Ex.: Sim, quero continuar"
+                      placeholder={traduzir("Ex.: Sim, quero continuar")}
                       onChange={(e) => setR((a) => ({ ...a, botoes: a.botoes.map((x, j) => (j === i ? { texto: e.target.value } : x)) }))}
                       disabled={!editavelNaMeta}
                     />
                     <span className="hint">{b.texto.length}/{limites.botaoMaximo}</span>
-                    <button type="button" className="btn ghost" onClick={() => setR((a) => ({ ...a, botoes: a.botoes.filter((_, j) => j !== i) }))} disabled={!editavelNaMeta} aria-label="Remover botão">
+                    <button type="button" className="btn ghost" onClick={() => setR((a) => ({ ...a, botoes: a.botoes.filter((_, j) => j !== i) }))} disabled={!editavelNaMeta} aria-label={traduzir("Remover botão")}>
                       ×
                     </button>
                   </div>

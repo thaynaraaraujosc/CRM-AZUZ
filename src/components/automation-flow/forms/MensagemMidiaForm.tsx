@@ -16,6 +16,7 @@ import { VariavelDropdown } from "./VariavelDropdown";
 import { inserirTokenNoTexto } from "./variaveis";
 import { AreaDeUpload } from "@/components/area-de-upload";
 import { IconClose, IconDoc, IconFolder, IconImage, IconMic, IconVideoCam } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 
 function tipoMidiaDoBloco(tipo: FlowNodeType): TipoMidiaArquivo {
@@ -90,6 +91,7 @@ export function MensagemMidiaForm({
   area: AreaAutomacao;
   onChange: (data: Record<string, unknown>) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const data = node.data as MensagemMidiaData;
   const tipoMidia = tipoMidiaDoBloco(node.type);
   const canais = canaisDaAreaParaBloco(area);
@@ -198,14 +200,14 @@ export function MensagemMidiaForm({
       </div>
 
       <div className="field">
-        <label>Origem do arquivo</label>
+        <label>{traduzir("Origem do arquivo")}</label>
         <div className="flow-midia-origem">
           <button
             type="button"
             className="flow-midia-origem-btn"
             onClick={() => setModalAberto(true)}
           >
-            <IconFolder width={13} height={13} aria-hidden="true" /> Escolher da biblioteca
+            <IconFolder width={13} height={13} aria-hidden="true" /> {traduzir("Escolher da biblioteca")}
           </button>
           <button
             type="button"
@@ -247,7 +249,7 @@ export function MensagemMidiaForm({
 
       {temArquivo ? (
         <div className="field">
-          <label>Arquivo escolhido</label>
+          <label>{traduzir("Arquivo escolhido")}</label>
           <div className="flow-midia-preview">
             {tipoMidia === "imagem" && urlPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -267,20 +269,20 @@ export function MensagemMidiaForm({
           </div>
           <div className="flow-midia-preview-acoes">
             <button type="button" className="btn ghost" onClick={() => setModalAberto(true)}>
-              Substituir (biblioteca)
+              {traduzir("Substituir (biblioteca)")}
             </button>
             <button type="button" className="btn ghost" onClick={() => fileInputRef.current?.click()}>
-              Substituir (upload)
+              {traduzir("Substituir (upload)")}
             </button>
             <button type="button" className="btn ghost" onClick={removerArquivo}>
-              Remover arquivo
+              {traduzir("Remover arquivo")}
             </button>
           </div>
         </div>
       ) : null}
 
       <div className="field">
-        <label>Nome de exibição do arquivo</label>
+        <label>{traduzir("Nome de exibição do arquivo")}</label>
         <input
           className="input"
           placeholder={data.arquivoNome || "Ex.: Catálogo de Toldos"}
@@ -292,14 +294,14 @@ export function MensagemMidiaForm({
 
       <div className="field">
         <div className="flow-form-label-row">
-          <label style={{ marginBottom: 0 }}>Mensagem ou legenda</label>
+          <label style={{ marginBottom: 0 }}>{traduzir("Mensagem ou legenda")}</label>
           <VariavelDropdown onEscolher={(t) => set({ legenda: inserirTokenNoTexto(data.legenda ?? "", t, legendaRef.current) })} />
         </div>
         <textarea
           ref={legendaRef}
           className="input"
           style={{ width: "100%", minHeight: 70, resize: "vertical" }}
-          placeholder="Ex.: Vou te enviar nosso catálogo com os modelos que trabalhamos."
+          placeholder={traduzir("Ex.: Vou te enviar nosso catálogo com os modelos que trabalhamos.")}
           value={data.legenda ?? ""}
           onChange={(e) => set({ legenda: e.target.value })}
         />
@@ -309,15 +311,15 @@ export function MensagemMidiaForm({
         <div className="modal-overlay" onClick={() => setModalAberto(false)}>
           <div className="modal flow-biblioteca-modal" onClick={(e) => e.stopPropagation()}>
             <div className="panel-h">
-              <h4>Selecionar arquivo da biblioteca</h4>
-              <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={() => setModalAberto(false)}>
+              <h4>{traduzir("Selecionar arquivo da biblioteca")}</h4>
+              <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={() => setModalAberto(false)}>
                 <IconClose width={12} height={12} />
               </button>
             </div>
             <input
               className="input"
               style={{ width: "100%" }}
-              placeholder="Pesquisar arquivo…"
+              placeholder={traduzir("Pesquisar arquivo…")}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -365,7 +367,7 @@ export function MensagemMidiaForm({
                   a.nome.toLowerCase().includes(busca.trim().toLowerCase()),
               ).length === 0 ? (
                 <p className="hint" style={{ padding: 16 }}>
-                  Nenhum arquivo encontrado nessa categoria/tipo de mídia.
+                  {traduzir("Nenhum arquivo encontrado nessa categoria/tipo de mídia.")}
                 </p>
               ) : null}
             </div>

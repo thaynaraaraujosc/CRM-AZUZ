@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Criada = { workspaceId: string; linkConvite: string; emailEnviado: boolean; motivoEmail?: string };
 
@@ -15,6 +16,7 @@ type Criada = { workspaceId: string; linkConvite: string; emailEnviado: boolean;
  * própria pessoa: nem o super-admin precisa ver ou inventar a senha de outro.
  */
 export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
+  const { t: traduzir } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [empresa, setEmpresa] = useState("");
   const [nome, setNome] = useState("");
@@ -53,16 +55,16 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
   if (criada) {
     return (
       <div className="admin-bloco config-bloco">
-        <p className="config-bloco-titulo">Conta criada e já liberada</p>
+        <p className="config-bloco-titulo">{traduzir("Conta criada e já liberada")}</p>
         <p className="hint">
-          A empresa <strong>{criada.workspaceId}</strong> foi criada com a assinatura ativa, sem
+          {traduzir("A empresa")} <strong>{criada.workspaceId}</strong> foi criada com a assinatura ativa, sem
           cobrança nenhuma por trás. Mande o link abaixo pra pessoa criar a senha dela. Ele vale 7
           dias e só funciona uma vez.
         </p>
         <div className="filters-row" style={{ marginTop: 10 }}>
           <input className="input" style={{ flex: 1, fontFamily: "monospace" }} readOnly value={criada.linkConvite} />
           <button type="button" className="btn ghost" onClick={() => navigator.clipboard.writeText(criada.linkConvite)}>
-            Copiar link
+            {traduzir("Copiar link")}
           </button>
         </div>
         {!criada.emailEnviado ? (
@@ -71,11 +73,11 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
             funciona do mesmo jeito.
           </p>
         ) : (
-          <p className="hint">O e-mail com o convite também foi enviado.</p>
+          <p className="hint">{traduzir("O e-mail com o convite também foi enviado.")}</p>
         )}
         <div className="config-acoes">
           <button type="button" className="btn ghost" onClick={() => setCriada(null)}>
-            Criar outra
+            {traduzir("Criar outra")}
           </button>
         </div>
       </div>
@@ -86,7 +88,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
     return (
       <div className="admin-acoes-topo">
         <button type="button" className="btn primary" onClick={() => setAberto(true)}>
-          Criar conta de cortesia
+          {traduzir("Criar conta de cortesia")}
         </button>
       </div>
     );
@@ -94,7 +96,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
 
   return (
     <form className="admin-bloco config-bloco" onSubmit={enviar}>
-      <p className="config-bloco-titulo">Nova conta de cortesia</p>
+      <p className="config-bloco-titulo">{traduzir("Nova conta de cortesia")}</p>
       <p className="hint">
         Cria uma empresa nova com essa pessoa como administradora e a assinatura já ativa. Não gera
         cobrança: nenhuma fatura, boleto ou cartão é criado. Pra encerrar depois, é só mudar o
@@ -114,7 +116,7 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
       </div>
 
       <div className="field">
-        <label htmlFor="cortesia-nome">Nome da pessoa</label>
+        <label htmlFor="cortesia-nome">{traduzir("Nome da pessoa")}</label>
         <input
           id="cortesia-nome"
           className="input"
@@ -142,10 +144,10 @@ export function CriarContaCortesia({ aoCriar }: { aoCriar: () => void }) {
 
       <div className="config-acoes">
         <button type="submit" className={`btn primary${salvando ? " loading" : ""}`} disabled={salvando}>
-          Criar e liberar
+          {traduzir("Criar e liberar")}
         </button>
         <button type="button" className="btn ghost" onClick={() => setAberto(false)} disabled={salvando}>
-          Cancelar
+          {traduzir("Cancelar")}
         </button>
       </div>
     </form>

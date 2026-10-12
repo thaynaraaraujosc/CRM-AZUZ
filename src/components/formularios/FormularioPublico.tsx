@@ -24,6 +24,7 @@ import type { Rastreamento } from "@/lib/formularios/rastreamento";
 import { valoresDoEndereco } from "@/lib/formularios/preencher-endereco";
 import type { EnderecoDoCep } from "@/lib/formularios/documentos";
 import { IconCadeado, IconCheck } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 type OpcaoNome = { id: string; nome: string };
 
@@ -279,6 +280,7 @@ export function FormularioPublico({
    *  identificadores, nunca o resto das integrações (funil, etapa, responsável). */
   rastreamento?: Rastreamento;
 }) {
+  const { t: traduzir } = useIdioma();
   // Carregados só depois de montar (não no initializer do useState). Essa página é pré-renderizada
   // no servidor sem `id` disponível; ler direto no initializer faria o HTML da primeira renderização
   // no cliente divergir do HTML do servidor (hydration mismatch).
@@ -436,7 +438,7 @@ export function FormularioPublico({
     return (
       <div className="form-public-page">
         <div className="form-public-card" style={{ background: "#ffffff" }}>
-          <h2>Formulário não encontrado</h2>
+          <h2>{traduzir("Formulário não encontrado")}</h2>
           <p className="hint">O link pode estar incompleto ou o formulário pode ter sido removido. Peça um link novo pra quem te enviou.</p>
         </div>
       </div>
@@ -447,8 +449,8 @@ export function FormularioPublico({
     return (
       <div className="form-public-page">
         <div className="form-public-card" style={{ background: "#ffffff" }}>
-          <h2>Formulário indisponível</h2>
-          <p className="hint">Este formulário ainda está em rascunho. Publique-o no CRM pra receber respostas.</p>
+          <h2>{traduzir("Formulário indisponível")}</h2>
+          <p className="hint">{traduzir("Este formulário ainda está em rascunho. Publique-o no CRM pra receber respostas.")}</p>
         </div>
       </div>
     );
@@ -459,9 +461,9 @@ export function FormularioPublico({
       <div className="form-public-page">
         <div className="form-public-card" style={{ background: "#ffffff" }}>
           <h2>
-            <IconCadeado width={16} height={16} aria-hidden="true" /> Este link precisa de uma senha
+            <IconCadeado width={16} height={16} aria-hidden="true" /> {traduzir("Este link precisa de uma senha")}
           </h2>
-          <p className="hint">Peça o link completo (com a chave de acesso) pra quem te enviou.</p>
+          <p className="hint">{traduzir("Peça o link completo (com a chave de acesso) pra quem te enviou.")}</p>
         </div>
       </div>
     );
@@ -486,7 +488,7 @@ export function FormularioPublico({
           <h2>{formulario.paginaFinal.mensagem || MENSAGEM_FINAL_PADRAO}</h2>
           {formulario.paginaFinal.urlRedirecionamento ? (
             <a className="btn form-obrigado-botao" href={formulario.paginaFinal.urlRedirecionamento}>
-              Continuar
+              {traduzir("Continuar")}
             </a>
           ) : null}
         </div>
@@ -535,7 +537,7 @@ export function FormularioPublico({
             pessoa entende que não é ela que está fazendo algo errado, e ninguém envia em branco. */}
         {camposDaPagina.length === 0 ? (
           <p className="hint" style={{ margin: "10px 0" }}>
-            Este formulário ainda não tem perguntas. Avise quem te mandou o link.
+            {traduzir("Este formulário ainda não tem perguntas. Avise quem te mandou o link.")}
           </p>
         ) : null}
 
@@ -561,7 +563,7 @@ export function FormularioPublico({
           <div className="filters-row" style={{ marginTop: 14 }}>
             {paginaIndice > 0 ? (
               <button type="button" className="btn ghost" onClick={voltar}>
-                Voltar
+                {traduzir("Voltar")}
               </button>
             ) : null}
             <button type="button" className="btn block" style={{ background: tema.corBotao, color: "#fff" }} onClick={avancar}>

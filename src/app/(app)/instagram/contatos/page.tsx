@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 import { IconMaisOpcoes, IconSearch } from "@/components/icons";
 import type { ContatoInstagram } from "@/app/api/instagram/contatos/route";
+import { useIdioma } from "@/lib/idioma-context";
 
 function quando(iso: string): string {
   const minutos = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -40,6 +41,7 @@ function iniciais(nome: string): string {
  * em massa: o estrago de um clique errado numa seleção grande não tem desfazer.
  */
 export default function InstagramContatosPage() {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const [contatos, setContatos] = useState<ContatoInstagram[] | null>(null);
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
@@ -109,7 +111,7 @@ export default function InstagramContatosPage() {
 
   return (
     <>
-      <Topbar title="Contatos do Instagram" sub="Quem chegou pelo Direct, por comentário ou por story" />
+      <Topbar title="Contatos do Instagram" sub={traduzir("Quem chegou pelo Direct, por comentário ou por story")} />
 
       <div className="content">
         <section className="card ig-contatos-card">
@@ -118,7 +120,7 @@ export default function InstagramContatosPage() {
               <IconSearch width={14} height={14} aria-hidden="true" />
               <input
                 className="input"
-                placeholder="Buscar por nome ou @"
+                placeholder={traduzir("Buscar por nome ou @")}
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
               />
@@ -135,7 +137,7 @@ export default function InstagramContatosPage() {
               <strong>{escolhidos.size} escolhido(s)</strong>
               <input
                 className="input"
-                placeholder="Etiqueta"
+                placeholder={traduzir("Etiqueta")}
                 value={etiqueta}
                 onChange={(e) => setEtiqueta(e.target.value)}
               />
@@ -145,7 +147,7 @@ export default function InstagramContatosPage() {
                 disabled={ocupado || !etiqueta.trim()}
                 onClick={() => acaoEmMassa("etiquetar")}
               >
-                Etiquetar
+                {traduzir("Etiquetar")}
               </button>
               <button
                 type="button"
@@ -153,10 +155,10 @@ export default function InstagramContatosPage() {
                 disabled={ocupado || !etiqueta.trim()}
                 onClick={() => acaoEmMassa("desetiquetar")}
               >
-                Tirar etiqueta
+                {traduzir("Tirar etiqueta")}
               </button>
               <button type="button" className="btn ghost" onClick={() => setEscolhidos(new Set())}>
-                Limpar seleção
+                {traduzir("Limpar seleção")}
               </button>
             </div>
           ) : null}
@@ -178,16 +180,16 @@ export default function InstagramContatosPage() {
                       type="checkbox"
                       checked={todosMarcados}
                       onChange={alternarTodos}
-                      aria-label="Escolher todos"
+                      aria-label={traduzir("Escolher todos")}
                     />
                   </th>
                   <th>Nome</th>
                   <th>Seguidores</th>
-                  <th>Verificado</th>
-                  <th>Segue você</th>
+                  <th>{traduzir("Verificado")}</th>
+                  <th>{traduzir("Segue você")}</th>
                   <th>Etiquetas</th>
-                  <th>Atualizado</th>
-                  <th aria-label="Ações" />
+                  <th>{traduzir("Atualizado")}</th>
+                  <th aria-label={traduzir("Ações")} />
                 </tr>
               </thead>
               <tbody>
@@ -235,7 +237,7 @@ export default function InstagramContatosPage() {
                       {menuAberto === c.id ? (
                         <div className="social-menu-opcoes" role="menu">
                           <button type="button" onClick={() => router.push("/instagram")}>
-                            Abrir conversa
+                            {traduzir("Abrir conversa")}
                           </button>
                           <button
                             type="button"
@@ -244,7 +246,7 @@ export default function InstagramContatosPage() {
                               setMenuAberto(null);
                             }}
                           >
-                            Etiquetar só este
+                            {traduzir("Etiquetar só este")}
                           </button>
                           <button
                             type="button"
@@ -255,10 +257,10 @@ export default function InstagramContatosPage() {
                               setAviso("@ copiado.");
                             }}
                           >
-                            Copiar @
+                            {traduzir("Copiar @")}
                           </button>
                           <button type="button" onClick={() => router.push(`/contatos?busca=${encodeURIComponent(c.nome)}`)}>
-                            Ver ficha no CRM
+                            {traduzir("Ver ficha no CRM")}
                           </button>
                         </div>
                       ) : null}

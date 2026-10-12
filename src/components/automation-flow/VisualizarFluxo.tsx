@@ -19,6 +19,7 @@ import { Simulador } from "./Simulador";
 import { nodeTypes } from "./nodes";
 import { CORES_CATEGORIA, autoLayout, domainEdgesToRF, domainNodesToRF } from "./utils";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Lista "funcionalidades utilizadas": derivada AO VIVO dos nós reais do
@@ -69,6 +70,7 @@ function CanvasPreview({ fluxo }: { fluxo: FluxoAutomacao }) {
 }
 
 export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; onFechar: () => void }) {
+  const { t: traduzir } = useIdioma();
   const router = useRouter();
   const { duplicarFluxo } = useAutomationFlows();
   const [simuladorAberto, setSimuladorAberto] = useState(false);
@@ -104,7 +106,7 @@ export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; on
             <h4>{fluxo.nome}</h4>
             {fluxo.descricao ? <p className="r" style={{ marginTop: 2 }}>{fluxo.descricao}</p> : null}
           </div>
-          <button type="button" className="icon-btn subtle" aria-label="Fechar pré-visualização" onClick={onFechar}>
+          <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar pré-visualização")} onClick={onFechar}>
             <IconClose width={13} height={13} />
           </button>
         </div>
@@ -113,7 +115,7 @@ export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; on
           {fluxo.objetivo ? <p className="r">{fluxo.objetivo}</p> : null}
           {funcionalidades.length > 0 ? (
             <div className="flow-preview-tags">
-              <span className="hint" style={{ marginRight: 4 }}>Funcionalidades demonstradas:</span>
+              <span className="hint" style={{ marginRight: 4 }}>{traduzir("Funcionalidades demonstradas:")}</span>
               {funcionalidades.map((f) => (
                 <span key={f} className="pill secondary">
                   {f}
@@ -132,10 +134,10 @@ export function VisualizarFluxo({ fluxo, onFechar }: { fluxo: FluxoAutomacao; on
 
         <div className="section-foot">
           <button type="button" className="btn ghost" onClick={() => setSimuladorAberto(true)}>
-            Testar no simulador
+            {traduzir("Testar no simulador")}
           </button>
           <button type="button" className="btn ghost" onClick={editar}>
-            Editar
+            {traduzir("Editar")}
           </button>
           <button type="button" className="btn primary" disabled={duplicando} onClick={duplicarEUsar}>
             {duplicando ? "Duplicando…" : "Duplicar e usar"}

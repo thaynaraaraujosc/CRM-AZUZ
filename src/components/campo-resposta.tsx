@@ -12,6 +12,7 @@ import {
 import { IconAnexo, IconClose, IconDoc, IconImage, IconMic, IconStar, IconVideoCam } from "@/components/icons";
 import { SeletorDeData } from "@/components/seletor-de-data";
 import { AreaDeUpload } from "@/components/area-de-upload";
+import { useIdioma } from "@/lib/idioma-context";
 
 function lerComoDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -102,6 +103,7 @@ function CampoAssinatura({
   valor?: string;
   onMudarValor?: (valor: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const desenhandoRef = useRef(false);
 
@@ -164,7 +166,7 @@ function CampoAssinatura({
       )}
       {interativo ? (
         <button type="button" className="link" style={{ marginTop: 4 }} onClick={limpar}>
-          Limpar assinatura
+          {traduzir("Limpar assinatura")}
         </button>
       ) : null}
     </div>
@@ -202,6 +204,7 @@ function CampoCep({
   onMudarValor?: (valor: string) => void;
   aoAcharEndereco?: (endereco: EnderecoDoCep) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const ultimoBuscado = useRef("");
   const [buscando, setBuscando] = useState(false);
   const [semResultado, setSemResultado] = useState(false);
@@ -238,9 +241,9 @@ function CampoCep({
           ? { value: valor, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void aoDigitar(e.target.value) }
           : {})}
       />
-      {buscando ? <p className="form-pergunta-ajuda">Buscando o endereço…</p> : null}
+      {buscando ? <p className="form-pergunta-ajuda">{traduzir("Buscando o endereço…")}</p> : null}
       {semResultado ? (
-        <p className="form-pergunta-ajuda">Não achamos esse CEP. Pode preencher o endereço na mão.</p>
+        <p className="form-pergunta-ajuda">{traduzir("Não achamos esse CEP. Pode preencher o endereço na mão.")}</p>
       ) : null}
     </>
   );
@@ -264,6 +267,7 @@ export function CampoResposta({
   /** O CEP achou o endereço: quem desenha o formulário decide o que preencher com ele. */
   aoAcharEndereco?: (endereco: EnderecoDoCep) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const disabled = !interativo || pergunta.somenteLeitura;
   function aoMudar(v: string) {
     onMudarValor?.(pergunta.mascara ? aplicarMascara(v, pergunta.mascara) : v);
@@ -487,7 +491,7 @@ export function CampoResposta({
     case "lista_suspensa":
       return (
         <select className="input form-resposta-campo" style={{ width: "100%" }} disabled={disabled} {...props}>
-          <option value="">Selecione…</option>
+          <option value="">{traduzir("Selecione…")}</option>
           {(pergunta.opcoes ?? []).map((op, i) => (
             <option key={i} value={op}>
               {op}
@@ -604,7 +608,7 @@ export function CampoResposta({
     case "contato":
       return (
         <select className="input form-resposta-campo" style={{ width: "100%" }} disabled={disabled} {...props}>
-          <option value="">Selecione um contato…</option>
+          <option value="">{traduzir("Selecione um contato…")}</option>
           {contatosDisponiveis.map((c) => (
             <option key={c.id} value={c.nome}>
               {c.nome}
@@ -615,7 +619,7 @@ export function CampoResposta({
     case "responsavel":
       return (
         <select className="input form-resposta-campo" style={{ width: "100%" }} disabled={disabled} {...props}>
-          <option value="">Selecione um responsável…</option>
+          <option value="">{traduzir("Selecione um responsável…")}</option>
           {responsaveisDisponiveis.map((r) => (
             <option key={r.id} value={r.nome}>
               {r.nome}
@@ -637,7 +641,7 @@ export function CampoResposta({
         <img className="form-bloco-imagem" src={pergunta.placeholder} alt={pergunta.rotulo || ""} />
       ) : (
         <div className="form-bloco-imagem-vazia" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-          <IconImage width={14} height={14} /> Sem imagem definida
+          <IconImage width={14} height={14} /> {traduzir("Sem imagem definida")}
         </div>
       );
     default:

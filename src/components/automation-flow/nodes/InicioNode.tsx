@@ -3,6 +3,7 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 
 import type { FlowRFNode } from "../utils";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * "Iniciar robô": a pastilha verde que marca de onde o fluxo parte.
@@ -16,6 +17,7 @@ import type { FlowRFNode } from "../utils";
  * noutra tela.
  */
 export default function InicioNode({ data }: NodeProps<FlowRFNode>) {
+  const { t: traduzir } = useIdioma();
   const detalhe = (data as { detalheInicio?: string }).detalheInicio;
   return (
     <div className="no-inicio">
@@ -23,7 +25,7 @@ export default function InicioNode({ data }: NodeProps<FlowRFNode>) {
         ▶
       </span>
       <span className="no-inicio-texto">
-        <strong>Iniciar robô</strong>
+        <strong>{traduzir("Iniciar robô")}</strong>
         {detalhe ? <span>{detalhe}</span> : null}
       </span>
       {/* Só saída: nada entra aqui, porque este é o começo. */}

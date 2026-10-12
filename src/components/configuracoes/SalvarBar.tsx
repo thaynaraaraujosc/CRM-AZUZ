@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { IconCheck } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Barra de "alterações não salvas". Aparece fixa no rodapé do painel sempre que o rascunho local
@@ -20,6 +21,7 @@ export function SalvarBar({
   onDescartar: () => void;
   mensagemSalvo?: string;
 }) {
+  const { t: traduzir } = useIdioma();
   const [salvo, setSalvo] = useState(false);
 
   if (!dirty && !salvo) return null;
@@ -28,10 +30,10 @@ export function SalvarBar({
     <div className="config-salvar-bar">
       {dirty ? (
         <>
-          <span className="hint">Você possui alterações não salvas.</span>
+          <span className="hint">{traduzir("Você possui alterações não salvas.")}</span>
           <div className="config-salvar-bar-acoes">
             <button type="button" className="btn ghost" onClick={onDescartar}>
-              Descartar
+              {traduzir("Descartar")}
             </button>
             <button
               type="button"
@@ -42,7 +44,7 @@ export function SalvarBar({
                 setTimeout(() => setSalvo(false), 2500);
               }}
             >
-              Salvar alterações
+              {traduzir("Salvar alterações")}
             </button>
           </div>
         </>

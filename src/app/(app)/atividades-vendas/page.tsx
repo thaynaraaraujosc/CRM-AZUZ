@@ -9,6 +9,7 @@ import { useFunis } from "@/lib/funis-context";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { BarList, ChartCard } from "@/components/charts";
 import { calcularLeadsAguardando } from "@/lib/metrics";
+import { useIdioma } from "@/lib/idioma-context";
 
 const GRUPOS = ["Atendimento", "Interações"] as const;
 type Grupo = (typeof GRUPOS)[number];
@@ -23,6 +24,7 @@ type Grupo = (typeof GRUPOS)[number];
  * inventado.
  */
 export default function AtividadesVendasPage() {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const { membros: equipe } = useEquipe();
   const { conversas } = useConversas();
@@ -63,7 +65,7 @@ export default function AtividadesVendasPage() {
           <div className="topbar-title-row">
             <h2>Atividades</h2>
           </div>
-          <p className="sub">Como a equipe está se comportando. Atendimento e interações</p>
+          <p className="sub">{traduzir("Como a equipe está se comportando. Atendimento e interações")}</p>
         </div>
       </div>
 
@@ -104,10 +106,10 @@ export default function AtividadesVendasPage() {
         {grupo === "Atendimento" ? (
           <>
             <div className="grid kpi4">
-              <KpiCard label="Leads recebidos" value={String(leadsRecebidos)} href="/conversas" tom="acento" />
-              <KpiCard label="Leads atendidos" value={String(leadsAtendidos)} href="/conversas" tom="acento" />
+              <KpiCard label={traduzir("Leads recebidos")} value={String(leadsRecebidos)} href="/conversas" tom="acento" />
+              <KpiCard label={traduzir("Leads atendidos")} value={String(leadsAtendidos)} href="/conversas" tom="acento" />
               <KpiCard
-                label="Leads sem resposta"
+                label={traduzir("Leads sem resposta")}
                 value={leadsSemResposta.label}
                 formula={leadsSemResposta.formula}
                 href="/conversas"
@@ -116,7 +118,7 @@ export default function AtividadesVendasPage() {
 
             <div className="card">
               <div className="panel-h">
-                <h4>Tempo de primeira resposta por responsável</h4>
+                <h4>{traduzir("Tempo de primeira resposta por responsável")}</h4>
               </div>
               <div className="dados-nao-conectados" style={{ margin: 17 }}>
                 Dados não conectados: o CRM ainda não rastreia qual responsável atendeu cada
@@ -129,18 +131,18 @@ export default function AtividadesVendasPage() {
         {grupo === "Interações" ? (
           <>
             <div className="grid kpi4">
-              <KpiCard label="Mensagens enviadas" value={String(mensagensEnviadas)} href="/conversas" />
-              <KpiCard label="Mensagens recebidas" value={String(mensagensRecebidas)} href="/conversas" />
+              <KpiCard label={traduzir("Mensagens enviadas")} value={String(mensagensEnviadas)} href="/conversas" />
+              <KpiCard label={traduzir("Mensagens recebidas")} value={String(mensagensRecebidas)} href="/conversas" />
               <KpiCard
-                label="Contatos sem interação"
+                label={traduzir("Contatos sem interação")}
                 value={String(contatosSemInteracao.length)}
                 href="/contatos"
               />
             </div>
 
-            <ChartCard title="Interações por responsável (conversas atribuídas)">
+            <ChartCard title={traduzir("Interações por responsável (conversas atribuídas)")}>
               {equipe.every((m) => conversas.filter((c) => c.atendenteSelecionado === m.nome).length === 0) ? (
-                <p className="hint" style={{ padding: 17 }}>Nenhuma conversa atribuída a um responsável ainda.</p>
+                <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhuma conversa atribuída a um responsável ainda.")}</p>
               ) : (
                 <BarList
                   items={equipe
@@ -157,27 +159,27 @@ export default function AtividadesVendasPage() {
             <div className="grid split2">
               <div className="card">
                 <div className="panel-h">
-                  <h4>Ligações</h4>
+                  <h4>{traduzir("Ligações")}</h4>
                 </div>
                 <div className="dados-nao-conectados" style={{ margin: 17 }}>
-                  Dados não conectados: o CRM ainda não tem telefonia integrada.
+                  {traduzir("Dados não conectados: o CRM ainda não tem telefonia integrada.")}
                 </div>
               </div>
               <div className="card">
                 <div className="panel-h">
-                  <h4>Reuniões e e-mails</h4>
+                  <h4>{traduzir("Reuniões e e-mails")}</h4>
                 </div>
                 <div className="dados-nao-conectados" style={{ margin: 17 }}>
-                  Dados não conectados: conecte agenda/e-mail pra ver reuniões e e-mails aqui.
+                  {traduzir("Dados não conectados: conecte agenda/e-mail pra ver reuniões e e-mails aqui.")}
                 </div>
               </div>
             </div>
             <div className="card">
               <div className="panel-h">
-                <h4>Documentos enviados</h4>
+                <h4>{traduzir("Documentos enviados")}</h4>
               </div>
               <div className="dados-nao-conectados" style={{ margin: 17 }}>
-                Dados não conectados: vincule documentos a conversas pra ver esse total aqui.
+                {traduzir("Dados não conectados: vincule documentos a conversas pra ver esse total aqui.")}
               </div>
             </div>
           </>

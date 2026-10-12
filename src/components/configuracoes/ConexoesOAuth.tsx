@@ -31,6 +31,7 @@ function PainelOAuth({
   rotuloConectado: string;
   rotuloDesconectar: string;
 }) {
+  const { t: traduzir } = useIdioma();
   const { integracao, desconectando, desconectar } = useIntegracaoMeta(provedor);
   const conectado = integracao?.status === "conectado";
 
@@ -49,7 +50,7 @@ function PainelOAuth({
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
       <p className="hint" style={{ margin: 0 }}>{descricao}</p>
       <a href={href} className="btn primary" style={{ flex: "0 0 auto" }}>
-        Autorizar
+        {traduzir("Autorizar")}
       </a>
     </div>
   );
@@ -78,6 +79,7 @@ function ToggleDaIntegracao({
   descricao: string;
   aoSalvar: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [erro, setErro] = useState(false);
 
   async function alternar(ligado: boolean) {
@@ -106,7 +108,7 @@ function ToggleDaIntegracao({
       <p className="hint" style={{ margin: "4px 0 0" }}>{descricao}</p>
       {erro ? (
         <p className="hint" style={{ color: "var(--danger)", margin: "4px 0 0" }}>
-          <IconAlerta width={12} height={12} aria-hidden="true" /> Não foi possível salvar essa preferência. Tente de novo.
+          <IconAlerta width={12} height={12} aria-hidden="true" /> {traduzir("Não foi possível salvar essa preferência. Tente de novo.")}
         </p>
       ) : null}
     </div>
@@ -114,7 +116,7 @@ function ToggleDaIntegracao({
 }
 
 export function ConexaoInstagram() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const { integracao, recarregar } = useIntegracaoMeta("meta_instagram");
   const usuario = integracao?.metadados?.instagramUsername as string | undefined;
   const conectado = integracao?.status === "conectado";
@@ -193,9 +195,9 @@ export function ConexaoInstagram() {
       */}
       {!conectado ? (
         <div className="int-aviso-conflito" style={{ marginBottom: 10 }}>
-          <strong>{t("Antes de conectar, confira duas coisas na conta do Instagram:")}</strong>
+          <strong>{traduzir("Antes de conectar, confira duas coisas na conta do Instagram:")}</strong>
           <br />
-          1. Ela precisa ser <b>{t("Profissional")}</b> (Comercial ou Criador de conteúdo). Conta pessoal a
+          1. Ela precisa ser <b>{traduzir("Profissional")}</b> (Comercial ou Criador de conteúdo). Conta pessoal a
           Meta recusa.
           <br />
           2. Enquanto o nosso app estiver em análise na Meta, só contas <b>convidadas como
@@ -261,7 +263,7 @@ export function ConexaoInstagram() {
             chave="receberMensagens"
             valorAtual={receberMensagens}
             aoSalvar={recarregar}
-            titulo={t("Mostrar mensagens do Instagram nas Conversas")}
+            titulo={traduzir("Mostrar mensagens do Instagram nas Conversas")}
             descricao={
               receberMensagens
                 ? "As mensagens do Direct chegam na caixa de entrada, marcadas como Instagram."
@@ -301,7 +303,7 @@ export function ConexaoMetaAds() {
  * procurar gente parecida com quem comprou de verdade.
  */
 export function ConexaoGoogleAds() {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   const { statusGoogle, desconectando, desconectar } = useStatusGoogleAds();
   const conectado = statusGoogle.status === "conectado";
 
@@ -323,8 +325,8 @@ export function ConexaoGoogleAds() {
           </p>
         ) : null}
         <p className="hint" style={{ margin: "6px 0 0" }}>
-          Quando um negócio é marcado como <b>ganho</b> no funil, o CRM avisa o Google qual clique
-          gerou aquela venda. Os números dessa devolução ficam em <b>{t("Rastreamento de anúncios")}</b>.
+          {traduzir("Quando um negócio é marcado como")} <b>ganho</b> no funil, o CRM avisa o Google qual clique
+          gerou aquela venda. Os números dessa devolução ficam em <b>{traduzir("Rastreamento de anúncios")}</b>.
         </p>
       </>
     );
@@ -337,7 +339,7 @@ export function ConexaoGoogleAds() {
         token nenhum.
       </p>
       <a href="/api/integracoes/google-ads/conectar" className="btn primary" style={{ flex: "0 0 auto" }}>
-        Autorizar
+        {traduzir("Autorizar")}
       </a>
     </div>
   );

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import type { CompromissoDia, StatusCompromisso } from "@/lib/central-dia/tipos";
+import { useIdioma } from "@/lib/idioma-context";
 
 const CLASSE_STATUS: Record<StatusCompromisso, string> = {
   Confirmado: "is-confirmado",
@@ -18,6 +19,7 @@ const CLASSE_STATUS: Record<StatusCompromisso, string> = {
  * reagendar, cancelar), diferentes do card genérico de item do dia. Tudo local: mudar o status aqui
  * não mexe em nenhum agendamento real. */
 export function CompromissoCard({ compromisso }: { compromisso: CompromissoDia }) {
+  const { t: traduzir } = useIdioma();
   const [status, setStatus] = useState(compromisso.status);
   const [concluido, setConcluido] = useState(false);
 
@@ -42,7 +44,7 @@ export function CompromissoCard({ compromisso }: { compromisso: CompromissoDia }
       <div className="central-dia-card-acoes">
         {status !== "Confirmado" && status !== "Cancelado" && status !== "Concluído" ? (
           <button type="button" className="btn primary" onClick={() => setStatus("Confirmado")}>
-            Confirmar
+            {traduzir("Confirmar")}
           </button>
         ) : null}
         {/* Link de verdade pra Agenda, onde o compromisso é aberto e remarcado arrastando.
@@ -50,11 +52,11 @@ export function CompromissoCard({ compromisso }: { compromisso: CompromissoDia }
             de remarcação que não existe em lugar nenhum do produto. Botão que não faz nada é pior
             que botão ausente, porque ensina a pessoa a desconfiar dos outros. */}
         <Link className="btn ghost" href="/agenda">
-          Abrir na agenda
+          {traduzir("Abrir na agenda")}
         </Link>
         {status !== "Cancelado" && status !== "Concluído" ? (
           <button type="button" className="btn ghost" onClick={() => setStatus("Cancelado")}>
-            Cancelar
+            {traduzir("Cancelar")}
           </button>
         ) : null}
         {status !== "Concluído" ? (
@@ -66,7 +68,7 @@ export function CompromissoCard({ compromisso }: { compromisso: CompromissoDia }
               setConcluido(true);
             }}
           >
-            Marcar como concluído
+            {traduzir("Marcar como concluído")}
           </button>
         ) : null}
       </div>

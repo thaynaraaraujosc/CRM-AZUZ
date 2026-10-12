@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * A pílula de oferta que acompanha a rolagem.
@@ -19,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
  * vira adesivo. Fechou, some até recarregar.
  */
 export function PilulaDeOferta({ preco }: { preco: string }) {
+  const { t: traduzir } = useIdioma();
   const [visivel, setVisivel] = useState(false);
   const [fechada, setFechada] = useState(false);
   const jaObservou = useRef(false);
@@ -43,12 +45,12 @@ export function PilulaDeOferta({ preco }: { preco: string }) {
     <div className={`lp-oferta${visivel ? " lp-oferta-visivel" : ""}`} aria-hidden={!visivel}>
       <span className="lp-oferta-selo">{preco}/mês</span>
       <Link href="/cadastro" className="lp-oferta-link" tabIndex={visivel ? 0 : -1}>
-        Criar conta agora
+        {traduzir("Criar conta agora")}
       </Link>
       <button
         type="button"
         className="lp-oferta-fechar"
-        aria-label="Fechar oferta"
+        aria-label={traduzir("Fechar oferta")}
         tabIndex={visivel ? 0 : -1}
         onClick={() => setFechada(true)}
       >

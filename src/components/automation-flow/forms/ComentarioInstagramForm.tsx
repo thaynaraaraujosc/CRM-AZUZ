@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Publicacao = {
   id: string;
@@ -66,6 +67,7 @@ export function ComentarioInstagramForm({
   data: Dados;
   onChange: (novo: Dados) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [publicacoes, setPublicacoes] = useState<Publicacao[] | null>(null);
   const [erroPublicacoes, setErroPublicacoes] = useState<string | null>(null);
   const [novaPalavra, setNovaPalavra] = useState("");
@@ -96,7 +98,7 @@ export function ComentarioInstagramForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Palavras que disparam</label>
+        <label>{traduzir("Palavras que disparam")}</label>
         <div className="ig-palavras">
           {palavras.map((palavra) => (
             <span key={palavra} className="ig-palavra-chip">
@@ -113,7 +115,7 @@ export function ComentarioInstagramForm({
         </div>
         <input
           className="input"
-          placeholder="Digite e aperte Enter. Ex.: GUIA"
+          placeholder={traduzir("Digite e aperte Enter. Ex.: GUIA")}
           value={novaPalavra}
           onChange={(e) => setNovaPalavra(e.target.value)}
           onKeyDown={(e) => {
@@ -132,7 +134,7 @@ export function ComentarioInstagramForm({
       </div>
 
       <div className="field">
-        <label>Como comparar</label>
+        <label>{traduzir("Como comparar")}</label>
         <select
           className="input"
           value={data.modoPalavra ?? "qualquer"}
@@ -160,14 +162,14 @@ export function ComentarioInstagramForm({
       </div>
 
       <div className="field">
-        <label>Em qual publicação</label>
+        <label>{traduzir("Em qual publicação")}</label>
         {erroPublicacoes ? (
           <p className="hint">
             Não deu pra carregar suas publicações: {erroPublicacoes} A automação continua valendo pra qualquer
             publicação.
           </p>
         ) : publicacoes === null ? (
-          <p className="hint">Carregando suas publicações…</p>
+          <p className="hint">{traduzir("Carregando suas publicações…")}</p>
         ) : (
           <div className="ig-publicacoes">
             <button
@@ -175,7 +177,7 @@ export function ComentarioInstagramForm({
               className={`ig-publicacao${!data.publicacaoId ? " escolhida" : ""}`}
               onClick={() => onChange({ ...data, publicacaoId: "" })}
             >
-              <span className="ig-publicacao-todas">Qualquer publicação</span>
+              <span className="ig-publicacao-todas">{traduzir("Qualquer publicação")}</span>
             </button>
             {publicacoes.map((pub) => (
               <button

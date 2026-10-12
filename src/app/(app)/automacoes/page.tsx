@@ -8,6 +8,7 @@ import { Topbar } from "@/components/ui";
 import { AbasAutomacoes } from "@/components/automacoes/AbasAutomacoes";
 import { AutomacaoDoFunil } from "@/components/funil/AutomacaoDoFunil";
 import { useFunis } from "@/lib/funis-context";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Automações: a grade por etapa do funil, e só ela.
@@ -23,6 +24,7 @@ import { useFunis } from "@/lib/funis-context";
  * fizer falta, ele volta pra dentro desta tela, não pra uma segunda.
  */
 function AutomacoesConteudo() {
+  const { t: traduzir } = useIdioma();
   const params = useSearchParams();
   const { funis } = useFunis();
 
@@ -38,7 +40,7 @@ function AutomacoesConteudo() {
     <>
       <Topbar
         title="Automações"
-        sub="O que cada etapa do funil faz sozinha quando um lead entra"
+        sub={traduzir("O que cada etapa do funil faz sozinha quando um lead entra")}
         actions={
           <>
             {/* "Execuções" fica ao lado de "Nova automação" de propósito: é a resposta pra pergunta
@@ -66,7 +68,7 @@ function AutomacoesConteudo() {
           ficava solta, atravessando a tela sem separar nada.
         */}
         <div className="fauto-escolher-funil">
-          <label htmlFor="funil-a-automatizar">Qual funil você quer automatizar</label>
+          <label htmlFor="funil-a-automatizar">{traduzir("Qual funil você quer automatizar")}</label>
           <select
             id="funil-a-automatizar"
             className="input"
@@ -90,7 +92,7 @@ function AutomacoesConteudo() {
         ) : (
           <section className="card">
             <p className="hint">
-              Nenhum funil criado ainda. Crie um em Funil pra automatizar as etapas.
+              {traduzir("Nenhum funil criado ainda. Crie um em Funil pra automatizar as etapas.")}
             </p>
           </section>
         )}

@@ -13,6 +13,7 @@ import type { CanalDisponivel } from "@/app/api/canais/route";
 import type { JanelaDirect } from "@/app/api/social/janela/route";
 import type { TemplateSalvo } from "./EditorTemplate";
 import { PreviaMensagem } from "./PreviaMensagem";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Opcoes = {
   totalContatos: number;
@@ -60,6 +61,7 @@ function duracaoLegivel(p: Previa["previsao"]): string {
  * disparo real vai usar: a tela nunca inventa um número.
  */
 export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => void; aoConcluir: (id: string) => void }) {
+  const { t: traduzir } = useIdioma();
   const { contatos } = useContatos();
   const [passo, setPasso] = useState(0);
   const [canais, setCanais] = useState<CanalDisponivel[]>([]);
@@ -229,7 +231,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
     <Modal
       aberto
       onFechar={aoFechar}
-      titulo="Novo disparo em massa"
+      titulo={traduzir("Novo disparo em massa")}
       largura={920}
       rodape={
         <>
@@ -238,7 +240,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
           </button>
           {passo < PASSOS.length - 1 ? (
             <button type="button" className="btn primary" disabled={!podeAvancar} onClick={() => setPasso((p) => p + 1)}>
-              Continuar
+              {traduzir("Continuar")}
             </button>
           ) : (
             <button type="button" className="btn primary" disabled={enviando || !previa} onClick={() => void confirmar()}>
@@ -261,7 +263,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       {/* ------------------------------------------------------------------ 1. Canal */}
       {passo === 0 ? (
         <div className="disp-passo">
-          <p className="hint">Por onde a mensagem sai. Só aparece o que está conectado neste workspace.</p>
+          <p className="hint">{traduzir("Por onde a mensagem sai. Só aparece o que está conectado neste workspace.")}</p>
           {/* O Instagram é um canal como os outros AQUI. Ele tinha uma tela própria em
               Instagram → Disparos, que usava exatamente esta mesma API (`/api/campanhas`
               com `canal: "instagram"`): eram duas telas pro mesmo backend. Disparo agora é um
@@ -303,7 +305,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
       {passo === 1 && canal === "instagram" ? (
         <div className="disp-passo">
           {janela === null ? (
-            <p className="hint">Conferindo quem pode receber agora…</p>
+            <p className="hint">{traduzir("Conferindo quem pode receber agora…")}</p>
           ) : !janela.conectado ? (
             <p className="modelo-erro">
               O Instagram não está conectado. Conecte a conta em Configurações → Outras integrações.
@@ -311,7 +313,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
           ) : (
             <>
               <div className="disp-ig-conta">
-                <span className="hint">Instagram conectado</span>
+                <span className="hint">{traduzir("Instagram conectado")}</span>
                 <strong>{janela.conta ?? "conta conectada"}</strong>
               </div>
 
@@ -327,7 +329,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
               </div>
 
               <div className="disp-ig-regra">
-                <strong>Por que a diferença</strong>
+                <strong>{traduzir("Por que a diferença")}</strong>
                 <p className="hint mt8">
                   O Instagram só deixa mandar mensagem pra quem escreveu pra você nas últimas{" "}
                   {janela.janelaHoras} horas. É a janela de atendimento, e ela conta da ÚLTIMA
@@ -405,16 +407,16 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
 
             {audiencia.modo === "etiqueta" ? (
               <div className="field">
-                <label>Etiqueta</label>
+                <label>{traduzir("Etiqueta")}</label>
                 <select className="input" value={audiencia.valor ?? ""} onChange={(e) => setAudiencia({ modo: "etiqueta", valor: e.target.value })}>
-                  <option value="">Escolha…</option>
+                  <option value="">{traduzir("Escolha…")}</option>
                   {(opcoes?.etiquetas ?? []).map((e) => (
                     <option key={e.valor} value={e.valor}>
                       {e.valor} ({e.total})
                     </option>
                   ))}
                 </select>
-                {opcoes && opcoes.etiquetas.length === 0 ? <p className="hint">Nenhum contato tem etiqueta ainda.</p> : null}
+                {opcoes && opcoes.etiquetas.length === 0 ? <p className="hint">{traduzir("Nenhum contato tem etiqueta ainda.")}</p> : null}
               </div>
             ) : null}
 
@@ -422,7 +424,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
               <div className="field">
                 <label>Origem</label>
                 <select className="input" value={audiencia.valor ?? ""} onChange={(e) => setAudiencia({ modo: "origem", valor: e.target.value })}>
-                  <option value="">Escolha…</option>
+                  <option value="">{traduzir("Escolha…")}</option>
                   {(opcoes?.origens ?? []).map((o) => (
                     <option key={o.valor} value={o.valor}>
                       {o.valor} ({o.total})
@@ -436,7 +438,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
               <div className="field">
                 <label>{audiencia.modo === "funil" ? "Funil" : "Etapa"}</label>
                 <select className="input" value={audiencia.valor ?? ""} onChange={(e) => setAudiencia({ modo: audiencia.modo, valor: e.target.value })}>
-                  <option value="">Escolha…</option>
+                  <option value="">{traduzir("Escolha…")}</option>
                   {(opcoes?.funis ?? []).map((f) =>
                     audiencia.modo === "funil" ? (
                       <option key={f.id} value={f.id}>
@@ -459,7 +461,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
             {audiencia.modo === "periodo" ? (
               <div className="tpl-linha">
                 <div className="field">
-                  <label>Cadastrados de</label>
+                  <label>{traduzir("Cadastrados de")}</label>
                   <SeletorDeData valor={audiencia.de ?? ""} onChange={(iso) => setAudiencia((a) => ({ ...a, de: iso }))} />
                 </div>
                 <div className="field">
@@ -472,7 +474,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
             {audiencia.modo === "selecionados" ? (
               <div className="field">
                 <label>Contatos</label>
-                <input className="input" placeholder="Buscar pelo nome…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+                <input className="input" placeholder={traduzir("Buscar pelo nome…")} value={busca} onChange={(e) => setBusca(e.target.value)} />
                 <div className="disp-lista-contatos">
                   {contatosFiltrados.map((c) => {
                     const marcado = audiencia.nomes?.includes(c.nome) ?? false;
@@ -502,7 +504,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
 
           <aside className="disp-resumo-publico card">
             {carregandoPrevia ? (
-              <p className="hint">Contando…</p>
+              <p className="hint">{traduzir("Contando…")}</p>
             ) : previa ? (
               <>
                 <strong className="disp-numero">{previa.receberao}</strong>
@@ -527,7 +529,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                 ) : null}
               </>
             ) : (
-              <p className="hint">Escolha o público pra ver quantos recebem.</p>
+              <p className="hint">{traduzir("Escolha o público pra ver quantos recebem.")}</p>
             )}
           </aside>
         </div>
@@ -539,16 +541,16 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
           <div>
             {canal === "whatsapp_oficial" ? (
               <p className="hint">
-                No WhatsApp API Oficial o disparo só sai com um template <strong>aprovado pela Meta</strong>. Os outros aparecem
+                {traduzir("No WhatsApp API Oficial o disparo só sai com um template")} <strong>aprovado pela Meta</strong>. Os outros aparecem
                 aqui com o status, mas não podem ser escolhidos.
               </p>
             ) : (
-              <p className="hint">Escolha um template ou escreva a mensagem agora.</p>
+              <p className="hint">{traduzir("Escolha um template ou escreva a mensagem agora.")}</p>
             )}
 
             <div className="modelo-lista disp-templates">
               {templatesDoCanal.length === 0 ? (
-                <p className="hint">Nenhum template deste canal ainda. Crie em Automações → Templates.</p>
+                <p className="hint">{traduzir("Nenhum template deste canal ainda. Crie em Automações → Templates.")}</p>
               ) : null}
               {templatesDoCanal.map((t) => {
                 const disponivel = t.status === "aprovado";
@@ -587,7 +589,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                     onChange={(e) => mudarCorpoLivre(e.target.value)}
                   />
                   <div className="tpl-inserir">
-                    <span className="hint">Inserir:</span>
+                    <span className="hint">{traduzir("Inserir:")}</span>
                     {ORIGENS_DO_CONTATO.slice(0, 4).map((o) => (
                       <button key={o.origem} type="button" className="pill" onClick={() => mudarCorpoLivre(`${corpoLivre}{{${o.origem.slice("contato.".length)}}}`)}>
                         {o.label}
@@ -600,7 +602,7 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
 
             {variaveis.length ? (
               <div className="field">
-                <label>Como preencher cada variável</label>
+                <label>{traduzir("Como preencher cada variável")}</label>
                 <div className="tpl-variaveis">
                   {variaveis.map((v) => (
                     <div key={v.chave} className="tpl-variavel">
@@ -615,12 +617,12 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
                             {o.label} do contato
                           </option>
                         ))}
-                        <option value="texto">Texto fixo</option>
+                        <option value="texto">{traduzir("Texto fixo")}</option>
                       </select>
                       {v.origem === "texto" ? (
                         <input
                           className="input"
-                          placeholder="Valor pra todo mundo"
+                          placeholder={traduzir("Valor pra todo mundo")}
                           value={v.valor ?? ""}
                           onChange={(e) => setVariaveis((atual) => atual.map((x) => (x.chave === v.chave ? { ...x, valor: e.target.value } : x)))}
                         />
@@ -647,20 +649,20 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
         <div className="disp-passo">
           <div className="disp-modos">
             <button type="button" className={`pill${quando === "agora" ? " on" : ""}`} onClick={() => setQuando("agora")}>
-              Enviar agora
+              {traduzir("Enviar agora")}
             </button>
             <button type="button" className={`pill${quando === "agendar" ? " on" : ""}`} onClick={() => setQuando("agendar")}>
-              Agendar
+              {traduzir("Agendar")}
             </button>
           </div>
           {quando === "agendar" ? (
             <div className="tpl-linha">
               <div className="field">
-                <label>Data</label>
+                <label>{traduzir("Data")}</label>
                 <SeletorDeData valor={data} onChange={setData} />
               </div>
               <div className="field">
-                <label>Horário</label>
+                <label>{traduzir("Horário")}</label>
                 <input className="input" type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
               </div>
             </div>
@@ -680,13 +682,13 @@ export function AssistenteDisparo({ aoFechar, aoConcluir }: { aoFechar: () => vo
           <dl className="disp-revisao">
             <dt>Canal</dt>
             <dd>{canalLabel}</dd>
-            <dt>Destinatários</dt>
+            <dt>{traduzir("Destinatários")}</dt>
             <dd>{previa?.receberao ?? "…"} contatos{previa?.semDestino.length ? ` (${previa.semDestino.length} sem destino ficam de fora)` : ""}</dd>
             <dt>{usaTemplate ? "Template" : "Mensagem"}</dt>
             <dd>{usaTemplate ? templateEscolhido!.nome : corpoLivre.split("\n")[0].slice(0, 60)}</dd>
-            <dt>Quando</dt>
+            <dt>{traduzir("Quando")}</dt>
             <dd>{quando === "agora" ? "Agora" : `${data.split("-").reverse().join("/")} às ${hora}`}</dd>
-            <dt>Duração prevista</dt>
+            <dt>{traduzir("Duração prevista")}</dt>
             <dd>{previa ? duracaoLegivel(previa.previsao) : "…"}</dd>
           </dl>
           <PreviaMensagem corpo={corpo} variaveis={variaveis} botoes={botoes} assunto={limites?.exigeAssunto ? assunto : null} />

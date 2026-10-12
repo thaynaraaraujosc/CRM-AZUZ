@@ -3,11 +3,13 @@
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Faixa fixa mostrada só enquanto a sessão atual é um "entrar como" (super-admin vendo o CRM
  * como outro usuário): sem isso, dava pra esquecer que está impersonando e mexer em dado de
  * cliente pensando que é teste. */
 export function ImpersonandoBanner() {
+  const { t: traduzir } = useIdioma();
   const { data: sessao } = useSession();
   const router = useRouter();
   const [voltando, setVoltando] = useState(false);
@@ -36,7 +38,7 @@ export function ImpersonandoBanner() {
       }}
     >
       <span>
-        Você está vendo o CRM como <strong>{sessao.user.name}</strong> ({sessao.user.email}).
+        {traduzir("Você está vendo o CRM como")} <strong>{sessao.user.name}</strong> ({sessao.user.email}).
       </span>
       <button
         type="button"

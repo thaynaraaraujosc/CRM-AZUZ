@@ -2,6 +2,7 @@
 
 import type { CampoCondicao, DecisaoMultiplaData, OperadorCondicao } from "@/lib/automation-flow/types";
 import { IconClose } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Configuração da decisão com vários caminhos.
@@ -36,6 +37,7 @@ export function DecisaoMultiplaForm({
   /** Remove também a aresta ligada. Senão sobra um caminho apontando pra uma saída que sumiu. */
   onRemoverCaminho?: (caminhoId: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const caminhos = data.caminhos ?? [];
 
   function alterar(indice: number, patch: Partial<DecisaoMultiplaData["caminhos"][number]>) {
@@ -60,7 +62,7 @@ export function DecisaoMultiplaForm({
   return (
     <div className="flow-form">
       <div className="field">
-        <label>O que você quer verificar?</label>
+        <label>{traduzir("O que você quer verificar?")}</label>
         <select
           className="input"
           value={data.campo}
@@ -77,18 +79,18 @@ export function DecisaoMultiplaForm({
 
       {data.campo === "campo_personalizado" ? (
         <div className="field">
-          <label>Nome do campo</label>
+          <label>{traduzir("Nome do campo")}</label>
           <input
             className="input"
             value={data.campoPersonalizadoNome ?? ""}
             onChange={(e) => onChange({ campoPersonalizadoNome: e.target.value })}
-            placeholder="cidade, plano, cnpj…"
+            placeholder={traduzir("cidade, plano, cnpj…")}
           />
         </div>
       ) : null}
 
       <div className="field">
-        <label>Comparação</label>
+        <label>{traduzir("Comparação")}</label>
         <select
           className="input"
           value={data.operador ?? "igual"}
@@ -103,7 +105,7 @@ export function DecisaoMultiplaForm({
       </div>
 
       <div className="field">
-        <label>Caminhos</label>
+        <label>{traduzir("Caminhos")}</label>
         <p className="hint">
           Cada linha vira uma saída do bloco. O primeiro que bater ganha. Se dois valores se
           parecem (&quot;valor&quot; e &quot;valores&quot;), deixe o mais específico em cima.
@@ -115,14 +117,14 @@ export function DecisaoMultiplaForm({
               className="input"
               value={caminho.valor}
               onChange={(e) => alterar(i, { valor: e.target.value })}
-              placeholder="Valor (ex.: 1)"
+              placeholder={traduzir("Valor (ex.: 1)")}
               aria-label={`Valor do caminho ${i + 1}`}
             />
             <input
               className="input"
               value={caminho.rotulo}
               onChange={(e) => alterar(i, { rotulo: e.target.value })}
-              placeholder="Nome no canvas (ex.: Quero atendimento)"
+              placeholder={traduzir("Nome no canvas (ex.: Quero atendimento)")}
               aria-label={`Nome do caminho ${i + 1}`}
             />
             <button type="button" className="icon-btn subtle" aria-label={`Remover caminho ${i + 1}`} onClick={() => remover(i)}>
@@ -132,11 +134,11 @@ export function DecisaoMultiplaForm({
         ))}
 
         <button type="button" className="btn ghost block" onClick={adicionar}>
-          Adicionar caminho
+          {traduzir("Adicionar caminho")}
         </button>
 
         <p className="hint" style={{ marginTop: 8 }}>
-          Existe sempre uma saída <strong>&quot;Qualquer outra&quot;</strong>, e ela não some: um
+          {traduzir("Existe sempre uma saída")} <strong>&quot;Qualquer outra&quot;</strong>, e ela não some: um
           valor que ninguém previu precisa ter pra onde ir, senão a automação para em silêncio no
           meio da conversa.
         </p>

@@ -46,6 +46,7 @@ import { ListaDePassos } from "./ListaDePassos";
 import { PainelProximoPasso } from "./PainelProximoPasso";
 import { nodeTypes } from "./nodes";
 import { IconClose, IconExpandir } from "@/components/icons";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   CORES_CATEGORIA,
   autoLayout,
@@ -106,6 +107,7 @@ function explicacaoDoNo(flowNode: DomainFlowNode, funis: Funil[]): string {
 }
 
 function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
+  const { t: traduzir } = useIdioma();
   const { fluxos, carregado, recarregarFluxos, atualizarFluxo, publicarFluxo, restaurarVersao, alternarAtivo } =
     useAutomationFlows();
   const fluxo = fluxos.find((f) => f.id === fluxoId);
@@ -1106,13 +1108,13 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
           >
             <Background gap={18} />
             <Controls showZoom={false} showFitView={false} showInteractive={false}>
-              <ControlButton title="Aumentar zoom" aria-label="Aumentar zoom" onClick={() => zoomIn({ duration: 200 })}>
+              <ControlButton title={traduzir("Aumentar zoom")} aria-label={traduzir("Aumentar zoom")} onClick={() => zoomIn({ duration: 200 })}>
                 +
               </ControlButton>
-              <ControlButton title="Diminuir zoom" aria-label="Diminuir zoom" onClick={() => zoomOut({ duration: 200 })}>
+              <ControlButton title={traduzir("Diminuir zoom")} aria-label={traduzir("Diminuir zoom")} onClick={() => zoomOut({ duration: 200 })}>
                 −
               </ControlButton>
-              <ControlButton title="Centralizar fluxo" aria-label="Centralizar fluxo" onClick={() => centralizarTudo()}>
+              <ControlButton title={traduzir("Centralizar fluxo")} aria-label={traduzir("Centralizar fluxo")} onClick={() => centralizarTudo()}>
                 <IconExpandir width={13} height={13} />
               </ControlButton>
             </Controls>
@@ -1142,7 +1144,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                   {minimapaVisivel ? "Ocultar minimapa" : "Mostrar minimapa"}
                 </button>
                 <button type="button" className="btn ghost" onClick={() => centralizarTudo()}>
-                  Centralizar
+                  {traduzir("Centralizar")}
                 </button>
               </div>
             </Panel>
@@ -1150,16 +1152,16 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               <Panel position="top-center">
                 <div className="flow-selection-bar">
                   <span>{selectedNodeIds.length} selecionado(s)</span>
-                  <button type="button" className="btn ghost" title="Duplicar (Ctrl+D)" onClick={duplicarSelecionados}>
-                    Duplicar
+                  <button type="button" className="btn ghost" title={traduzir("Duplicar (Ctrl+D)")} onClick={duplicarSelecionados}>
+                    {traduzir("Duplicar")}
                   </button>
                   <button
                     type="button"
                     className="btn ghost"
-                    title="Excluir (Delete)"
+                    title={traduzir("Excluir (Delete)")}
                     onClick={() => removerNodes(selectedNodeIds)}
                   >
-                    Excluir
+                    {traduzir("Excluir")}
                   </button>
                 </div>
               </Panel>
@@ -1168,8 +1170,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
           {!modoConstrucao && rfNodes.length === 0 ? (
             <div className="flow-inicio-vazio">
-              <p className="flow-inicio-vazio-titulo">Esse fluxo ainda não tem nenhum bloco.</p>
-              <p className="flow-inicio-vazio-sub">Troque pro modo Construir pra montar a automação.</p>
+              <p className="flow-inicio-vazio-titulo">{traduzir("Esse fluxo ainda não tem nenhum bloco.")}</p>
+              <p className="flow-inicio-vazio-sub">{traduzir("Troque pro modo Construir pra montar a automação.")}</p>
             </div>
           ) : null}
 
@@ -1178,11 +1180,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
               {/* O cartão do gatilho vazio: o canvas em branco de uma automação nova precisa dizer
                   o que fazer primeiro, senão a tela é uma parede. */}
               <div className="no-gatilho-vazio">
-                <span className="no-gatilho-vazio-selo">Gatilho</span>
+                <span className="no-gatilho-vazio-selo">{traduzir("Gatilho")}</span>
                 <div className="no-gatilho-vazio-corpo">
-                  <h4>Gatilho para acionar a automação</h4>
+                  <h4>{traduzir("Gatilho para acionar a automação")}</h4>
                   <button type="button" className="no-gatilho-vazio-btn" onClick={() => setLibAberta(true)}>
-                    Adicionar gatilho +
+                    {traduzir("Adicionar gatilho +")}
                   </button>
                 </div>
               </div>
@@ -1213,8 +1215,8 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
 
           {modoConstrucao && rfNodes.length === 0 && area !== "social" && !inicioNoFunil ? (
             <div className="flow-inicio-vazio">
-              <p className="flow-inicio-vazio-titulo">Como esta automação deve começar?</p>
-              <p className="flow-inicio-vazio-sub">Toda automação começa a partir de um gatilho.</p>
+              <p className="flow-inicio-vazio-titulo">{traduzir("Como esta automação deve começar?")}</p>
+              <p className="flow-inicio-vazio-sub">{traduzir("Toda automação começa a partir de um gatilho.")}</p>
               <button type="button" className="btn primary" onClick={() => setEscolherGatilhoAberto(true)}>
                 + Escolher gatilho
               </button>
@@ -1226,11 +1228,11 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
             <div className="modal-overlay" onClick={() => setEscolherGatilhoAberto(false)}>
               <div className="modal flow-escolher-gatilho" onClick={(e) => e.stopPropagation()}>
                 <div className="panel-h">
-                  <h4>Quando isso deve acontecer?</h4>
+                  <h4>{traduzir("Quando isso deve acontecer?")}</h4>
                   <button
                     type="button"
                     className="modal-close-btn"
-                    aria-label="Fechar"
+                    aria-label={traduzir("Fechar")}
                     onClick={() => setEscolherGatilhoAberto(false)}
                   >
                     <IconClose width={13} height={13} />
@@ -1264,7 +1266,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                     setLibAberta(true);
                   }}
                 >
-                  Ver todos os gatilhos
+                  {traduzir("Ver todos os gatilhos")}
                 </button>
               </div>
             </div>
@@ -1306,7 +1308,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                           setMenuContexto(null);
                         }}
                       >
-                        Adicionar depois
+                        {traduzir("Adicionar depois")}
                       </button>
                     ) : null}
                     <button
@@ -1317,7 +1319,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                         setMenuContexto(null);
                       }}
                     >
-                      Duplicar
+                      {traduzir("Duplicar")}
                     </button>
                     <button
                       type="button"
@@ -1336,7 +1338,7 @@ function FlowEditorInner({ fluxoId }: { fluxoId: string }) {
                         setMenuContexto(null);
                       }}
                     >
-                      Excluir
+                      {traduzir("Excluir")}
                     </button>
                   </div>
                 );

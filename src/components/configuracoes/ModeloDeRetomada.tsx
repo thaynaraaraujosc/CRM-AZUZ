@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Modelo = { id: string; nome: string; idioma: string; corpo: string };
 
@@ -17,6 +18,7 @@ type Modelo = { id: string; nome: string; idioma: string; corpo: string };
  * repetida a cada mensagem.
  */
 export function ModeloDeRetomada() {
+  const { t: traduzir } = useIdioma();
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [escolhido, setEscolhido] = useState("");
   const [carregando, setCarregando] = useState(true);
@@ -64,7 +66,7 @@ export function ModeloDeRetomada() {
 
   return (
     <div className="config-bloco">
-      <p className="config-bloco-titulo">Retomar conversa depois de 24 horas</p>
+      <p className="config-bloco-titulo">{traduzir("Retomar conversa depois de 24 horas")}</p>
       <p className="hint">
         Passadas 24 horas sem resposta da pessoa, o WhatsApp só entrega modelo aprovado. Escolha um
         aqui e as automações passam a usá-lo sozinhas nessa hora, em vez de parar.
@@ -77,7 +79,7 @@ export function ModeloDeRetomada() {
         </p>
       ) : (
         <div className="field mt8">
-          <label htmlFor="modelo-retomada">Modelo usado na retomada</label>
+          <label htmlFor="modelo-retomada">{traduzir("Modelo usado na retomada")}</label>
           <select
             id="modelo-retomada"
             className="input"
@@ -85,7 +87,7 @@ export function ModeloDeRetomada() {
             disabled={salvando}
             onChange={(e) => void salvar(e.target.value)}
           >
-            <option value="">Não retomar: parar e avisar o motivo</option>
+            <option value="">{traduzir("Não retomar: parar e avisar o motivo")}</option>
             {modelos.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.nome}

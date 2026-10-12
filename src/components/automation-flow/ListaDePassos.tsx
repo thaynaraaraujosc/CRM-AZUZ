@@ -6,6 +6,7 @@ import { IconClose } from "@/components/icons";
 import { BLOCOS_DISPONIVEIS } from "@/lib/automation-flow/blocos";
 import { resumoNo, saidasDoNo } from "@/lib/automation-flow/resumo";
 import type { FlowEdge, FlowNode, FlowNodeType, ProblemaValidacao } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * O fluxo como uma LISTA NUMERADA de passos, na ordem em que a pessoa é atendida.
@@ -43,6 +44,7 @@ export function ListaDePassos({
   onAdicionar: (nodeOrigemId: string, handleId: string | undefined, tipo: FlowNodeType) => void;
   onRemover: (id: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [menuEm, setMenuEm] = useState<{ nodeId: string; handleId?: string } | null>(null);
   const [busca, setBusca] = useState("");
 
@@ -85,7 +87,7 @@ export function ListaDePassos({
   if (!inicio) {
     return (
       <div className="passos-vazio">
-        <strong>Não dá pra ler este fluxo como lista.</strong>
+        <strong>{traduzir("Não dá pra ler este fluxo como lista.")}</strong>
         <p>
           Ou ele não tem gatilho nenhum, ou tem mais de um bloco solto sem nada entrando. Abra o
           modo Construir, ligue os blocos soltos e volte aqui.
@@ -116,7 +118,7 @@ export function ListaDePassos({
           <div className="passos-menu">
             <input
               className="input"
-              placeholder="Buscar passo…"
+              placeholder={traduzir("Buscar passo…")}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               autoFocus
@@ -136,7 +138,7 @@ export function ListaDePassos({
                   <span>{b.descricao}</span>
                 </button>
               ))}
-              {blocosDoMenu.length === 0 ? <p className="hint">Nada com esse nome.</p> : null}
+              {blocosDoMenu.length === 0 ? <p className="hint">{traduzir("Nada com esse nome.")}</p> : null}
             </div>
           </div>
         ) : null}

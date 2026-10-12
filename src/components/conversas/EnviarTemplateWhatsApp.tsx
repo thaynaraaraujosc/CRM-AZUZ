@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { Modal } from "@/components/ui";
+import { useIdioma } from "@/lib/idioma-context";
 
 type Template = {
   id: string;
@@ -53,6 +54,7 @@ export function EnviarTemplateWhatsApp({
   aoFechar: () => void;
   aoEnviar: (texto: string, wamid?: string) => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [templates, setTemplates] = useState<Template[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [escolhido, setEscolhido] = useState<Template | null>(null);
@@ -124,12 +126,12 @@ export function EnviarTemplateWhatsApp({
     <Modal
       aberto
       onFechar={aoFechar}
-      titulo="Iniciar conversa com um modelo"
+      titulo={traduzir("Iniciar conversa com um modelo")}
       tamanho="lg"
       rodape={
         <>
           <button type="button" className="btn ghost" onClick={aoFechar}>
-            Cancelar
+            {traduzir("Cancelar")}
           </button>
           <button
             type="button"
@@ -150,7 +152,7 @@ export function EnviarTemplateWhatsApp({
       {erro ? <p className="modelo-erro">{erro}</p> : null}
 
       {templates === null ? (
-        <p className="hint">Carregando seus modelos…</p>
+        <p className="hint">{traduzir("Carregando seus modelos…")}</p>
       ) : aprovados.length === 0 ? (
         <p className="hint">
           Você ainda não tem nenhum modelo aprovado. Crie um no Gerenciador do WhatsApp (Modelos de
@@ -197,7 +199,7 @@ export function EnviarTemplateWhatsApp({
 
       {escolhido ? (
         <div className="modelo-previa">
-          <span className="hint">A pessoa vai receber:</span>
+          <span className="hint">{traduzir("A pessoa vai receber:")}</span>
           <p>{preencher(corpo, valores)}</p>
         </div>
       ) : null}

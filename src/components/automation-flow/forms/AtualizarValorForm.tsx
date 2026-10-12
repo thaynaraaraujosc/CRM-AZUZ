@@ -1,26 +1,28 @@
 "use client";
 
 import type { AtualizarValorData, ModoAtualizarValor } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 /** Ação "Atualizar valor do negócio". Definir um valor novo, ou somar/subtrair do valor atual. */
 export function AtualizarValorForm({ data, onChange }: { data: AtualizarValorData; onChange: (novo: AtualizarValorData) => void }) {
+  const { t: traduzir } = useIdioma();
   return (
     <div className="flow-form">
       <div className="field">
-        <label>Como atualizar</label>
+        <label>{traduzir("Como atualizar")}</label>
         <select
           className="input"
           value={data.modo ?? "definir"}
           onChange={(e) => onChange({ ...data, modo: e.target.value as ModoAtualizarValor })}
         >
-          <option value="definir">Definir novo valor</option>
-          <option value="somar">Somar ao valor atual</option>
-          <option value="subtrair">Subtrair do valor atual</option>
+          <option value="definir">{traduzir("Definir novo valor")}</option>
+          <option value="somar">{traduzir("Somar ao valor atual")}</option>
+          <option value="subtrair">{traduzir("Subtrair do valor atual")}</option>
         </select>
       </div>
 
       <div className="field">
-        <label>Valor (R$)</label>
+        <label>{traduzir("Valor (R$)")}</label>
         <input
           className="input"
           type="number"

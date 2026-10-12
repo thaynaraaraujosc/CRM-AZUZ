@@ -8,6 +8,7 @@ import { useFunis } from "@/lib/funis-context";
 import { FilterBar, KpiCard, PERIODO_PADRAO, type FiltroDef, type PeriodoValor } from "@/components/ui";
 import { IconClose } from "@/components/icons";
 import { BarList, ChartCard, LineChart } from "@/components/charts";
+import { useIdioma } from "@/lib/idioma-context";
 import {
   calcularMotivoPrincipalPerda,
   calcularPorResponsavel,
@@ -43,6 +44,7 @@ export default function PerformanceVendasPage() {
 }
 
 function PerformanceVendasPageInner() {
+  const { t: traduzir } = useIdioma();
   const { funis } = useFunis();
   const { membros: equipe } = useEquipe();
   const [periodo, setPeriodo] = useState<PeriodoValor>(PERIODO_PADRAO);
@@ -92,7 +94,7 @@ function PerformanceVendasPageInner() {
           <div className="topbar-title-row">
             <h2>Performance</h2>
           </div>
-          <p className="sub">Desempenho e conversão da equipe no período</p>
+          <p className="sub">{traduzir("Desempenho e conversão da equipe no período")}</p>
         </div>
       </div>
 
@@ -127,17 +129,17 @@ function PerformanceVendasPageInner() {
         ) : null}
 
         <div className="grid kpi4">
-          <KpiCard label="Total de negociações encerradas" value={String(totalOportunidades)} />
-          <KpiCard label="Taxa de conversão" value={taxaConversao.label} formula={taxaConversao.formula} tom="acento" />
-          <KpiCard label="Receita" value={valorVendido.label} formula={valorVendido.formula} tom="acento" />
-          <KpiCard label="Ticket médio" value={ticketMedio.label} formula={ticketMedio.formula} />
+          <KpiCard label={traduzir("Total de negociações encerradas")} value={String(totalOportunidades)} />
+          <KpiCard label={traduzir("Taxa de conversão")} value={taxaConversao.label} formula={taxaConversao.formula} tom="acento" />
+          <KpiCard label={traduzir("Receita")} value={valorVendido.label} formula={valorVendido.formula} tom="acento" />
+          <KpiCard label={traduzir("Ticket médio")} value={ticketMedio.label} formula={ticketMedio.formula} />
           <KpiCard
-            label="Meta do período"
+            label={traduzir("Meta do período")}
             value={`${percentualMeta}%`}
             sub={`${valorVendido.label} de ${formatarMoeda(meta)}`}
           />
           <KpiCard
-            label="Valor perdido"
+            label={traduzir("Valor perdido")}
             value={valorPerdido.label}
             sub={`Principal motivo: ${motivoPrincipal.motivo}`}
             href="/motivos-perda"
@@ -147,11 +149,11 @@ function PerformanceVendasPageInner() {
 
         <div className="card mb14">
           <div className="panel-h">
-            <h4>Desempenho por responsável</h4>
+            <h4>{traduzir("Desempenho por responsável")}</h4>
           </div>
           <div style={{ padding: 17 }}>
             {porResponsavel.length === 0 ? (
-              <p className="hint">Nenhum negócio com responsável e desfecho registrado ainda.</p>
+              <p className="hint">{traduzir("Nenhum negócio com responsável e desfecho registrado ainda.")}</p>
             ) : (
               <BarList
                 items={porResponsavel.map((r) => {
@@ -175,31 +177,31 @@ function PerformanceVendasPageInner() {
             <div className="panel-h">
               <h4>{pessoaAberta}</h4>
               <button type="button" className="link" onClick={() => setPessoaAberta(null)}>
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </button>
             </div>
             <div style={{ padding: 17 }}>
               <div className="stat-row">
-                <span className="sl">Vendas</span>
+                <span className="sl">{traduzir("Vendas")}</span>
                 <span className="sv">{pessoaDetalhe.vendidas}</span>
               </div>
               <div className="stat-row">
-                <span className="sl">Perdas</span>
+                <span className="sl">{traduzir("Perdas")}</span>
                 <span className="sv">{pessoaDetalhe.perdidas}</span>
               </div>
               <div className="stat-row">
-                <span className="sl">Receita</span>
+                <span className="sl">{traduzir("Receita")}</span>
                 <span className="sv">{formatarMoeda(pessoaDetalhe.receita)}</span>
               </div>
               <Link href={`/jornada-cliente`} className="link" style={{ display: "inline-block", marginTop: 8 }}>
-                Ver atividades desta pessoa →
+                {traduzir("Ver atividades desta pessoa →")}
               </Link>
             </div>
           </div>
         ) : null}
 
         <ChartCard
-          title="Evolução no período"
+          title={traduzir("Evolução no período")}
           action={
             <div className="filters-row" style={{ margin: 0 }}>
               {METRICAS_EVOLUCAO.map((m) => (
@@ -238,12 +240,12 @@ function PerformanceVendasPageInner() {
           <div className="panel-h">
             <h4>Motivos de perda</h4>
             <Link href="/motivos-perda" className="link">
-              Ver análise completa de perdas →
+              {traduzir("Ver análise completa de perdas →")}
             </Link>
           </div>
           <div style={{ padding: 17 }}>
             {valorPerdido.registros.length === 0 ? (
-              <p className="hint">Nenhum negócio perdido registrado ainda.</p>
+              <p className="hint">{traduzir("Nenhum negócio perdido registrado ainda.")}</p>
             ) : (
               <p className="hint">
                 {valorPerdido.label} perdidos no período · principal motivo: {motivoPrincipal.motivo} (

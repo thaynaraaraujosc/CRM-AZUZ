@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Primitivos de gráfico reutilizados em toda a Inteligência comercial.
@@ -83,6 +84,7 @@ export type SerieLinha = { chave: string; cor: string; label: string; pontos: { 
 
 /** Gráfico de linha/área com até algumas séries e tooltip ao passar o mouse. Usado pra "evolução no período" em qualquer tela. */
 export function LineChart({ series, altura = 200 }: { series: SerieLinha[]; altura?: number }) {
+  const { t: traduzir } = useIdioma();
   const largura = 800;
   const n = series[0]?.pontos.length ?? 0;
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -108,7 +110,7 @@ export function LineChart({ series, altura = 200 }: { series: SerieLinha[]; altu
     setHoverIndex(indice);
   }
 
-  if (n === 0) return <p className="hint">Sem dados suficientes no período.</p>;
+  if (n === 0) return <p className="hint">{traduzir("Sem dados suficientes no período.")}</p>;
 
   return (
     <div style={{ position: "relative" }}>

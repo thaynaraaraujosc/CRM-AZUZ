@@ -9,12 +9,14 @@ import { AssistenteDisparo } from "@/components/automacoes/AssistenteDisparo";
 import { descreverAudiencia } from "@/lib/campanhas/audiencia-tipos";
 import { STATUS_CAMPANHA, contagens, formatarData, type CampanhaResumo } from "@/lib/campanhas/apresentacao";
 import { LIMITES } from "@/lib/templates/regras";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Disparo em massa: cada disparo é um registro com contagens. Criar um novo abre o assistente em
  * passos; abrir um existente mostra destinatário por destinatário, com os erros.
  */
 export default function DisparosPage() {
+  const { t: traduzir } = useIdioma();
   const [campanhas, setCampanhas] = useState<CampanhaResumo[] | null>(null);
   const [assistente, setAssistente] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -63,8 +65,8 @@ export default function DisparosPage() {
   return (
     <>
       <Topbar
-        title="Disparo em massa"
-        sub="Uma mensagem para muitos contatos, enviada aos poucos"
+        title={traduzir("Disparo em massa")}
+        sub={traduzir("Uma mensagem para muitos contatos, enviada aos poucos")}
         actions={
           <button type="button" className="btn primary" onClick={() => setAssistente(true)}>
             + Novo disparo
@@ -80,7 +82,7 @@ export default function DisparosPage() {
           <p className="hint">Carregando…</p>
         ) : campanhas.length === 0 ? (
           <div className="card tpl-vazio">
-            <strong>Nenhum disparo ainda.</strong>
+            <strong>{traduzir("Nenhum disparo ainda.")}</strong>
             <p className="hint">Escolha o canal, o público e a mensagem; o CRM envia aos poucos e mostra aqui o que aconteceu com cada pessoa.</p>
           </div>
         ) : (
@@ -117,12 +119,12 @@ export default function DisparosPage() {
                             <button
                               type="button"
                               className="disp-menu-fundo"
-                              aria-label="Fechar menu"
+                              aria-label={traduzir("Fechar menu")}
                               onClick={() => setMenuAberto(null)}
                             />
                             <div className="disp-menu" role="menu">
                               <Link className="dropdown-item" href={`/automacoes/disparos/${c.id}`} role="menuitem">
-                                Ver detalhes
+                                {traduzir("Ver detalhes")}
                               </Link>
                               <button
                                 type="button"
@@ -133,7 +135,7 @@ export default function DisparosPage() {
                                   setAExcluir(c);
                                 }}
                               >
-                                Excluir disparo
+                                {traduzir("Excluir disparo")}
                               </button>
                             </div>
                           </>
@@ -142,12 +144,12 @@ export default function DisparosPage() {
                     </div>
                   </div>
                   <Link href={`/automacoes/disparos/${c.id}`} className="disp-metricas">
-                    <Metrica valor={n.total} label="destinatários" />
-                    <Metrica valor={n.enviadas} label="enviadas" />
-                    <Metrica valor={n.entregues} label="entregues" />
-                    <Metrica valor={n.lidas} label="lidas" />
-                    <Metrica valor={n.respondidas} label="respondidas" />
-                    <Metrica valor={n.falhas} label="falhas" destaque={n.falhas > 0} />
+                    <Metrica valor={n.total} label={traduzir("destinatários")} />
+                    <Metrica valor={n.enviadas} label={traduzir("enviadas")} />
+                    <Metrica valor={n.entregues} label={traduzir("entregues")} />
+                    <Metrica valor={n.lidas} label={traduzir("lidas")} />
+                    <Metrica valor={n.respondidas} label={traduzir("respondidas")} />
+                    <Metrica valor={n.falhas} label={traduzir("falhas")} destaque={n.falhas > 0} />
                   </Link>
                 </div>
               );
@@ -159,10 +161,10 @@ export default function DisparosPage() {
       {/* Reusa o modal que já existe no produto (`.modal-overlay`/`.modal`), em vez de um segundo
           conjunto de estilos que divergiria do primeiro na próxima correção de tema. */}
       {aExcluir ? (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Excluir disparo">
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label={traduzir("Excluir disparo")}>
           <div className="modal" style={{ width: "min(480px, 100%)" }}>
             <div className="modal-cabecalho">
-              <strong className="int-title">Excluir este disparo do histórico?</strong>
+              <strong className="int-title">{traduzir("Excluir este disparo do histórico?")}</strong>
             </div>
             <div className="modal-corpo">
               <p>
@@ -178,7 +180,7 @@ export default function DisparosPage() {
               </p>
               <div className="modal-acoes">
                 <button type="button" className="btn" onClick={() => setAExcluir(null)} disabled={excluindo}>
-                  Cancelar
+                  {traduzir("Cancelar")}
                 </button>
                 <button type="button" className="btn danger" onClick={excluir} disabled={excluindo}>
                   {excluindo ? "Excluindo…" : "Excluir disparo"}

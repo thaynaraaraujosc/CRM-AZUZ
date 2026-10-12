@@ -10,6 +10,7 @@ import { IconClose, IconConfiguracoes, IconDoc, IconEnviar, IconImage, IconLocal
 import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
 import { useFunis } from "@/lib/funis-context";
 import { ehVazio } from "@/lib/vazio";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Painel de conversa completo, em popup: a janela que abre ao clicar num card do Funil.
@@ -46,6 +47,7 @@ export function PainelConversa({
   etapaAtual?: string;
   aoFechar: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const { mensagensExtraPorContato, setMensagensExtraPorContato } = useMensagensExtra();
   const { contatos, salvarDadosContato } = useContatos();
 
@@ -277,7 +279,7 @@ export function PainelConversa({
             <span className="upload-area-icone">
               <IconUpload width={18} height={18} />
             </span>
-            <strong>Solte o arquivo para anexar</strong>
+            <strong>{traduzir("Solte o arquivo para anexar")}</strong>
           </div>
         ) : null}
         <header className="painel-conversa-topo">
@@ -316,7 +318,7 @@ export function PainelConversa({
             >
               <IconConfiguracoes width={15} height={15} />
             </button>
-            <button type="button" className="modal-close-btn" aria-label="Fechar" onClick={aoFechar}>
+            <button type="button" className="modal-close-btn" aria-label={traduzir("Fechar")} onClick={aoFechar}>
               <IconClose width={13} height={13} />
             </button>
           </div>
@@ -325,7 +327,7 @@ export function PainelConversa({
         <div className="painel-conversa-corpo">
           <div className="painel-conversa-mensagens chat-body">
             {mensagens.length === 0 ? (
-              <p className="hint">Nenhuma mensagem ainda.</p>
+              <p className="hint">{traduzir("Nenhuma mensagem ainda.")}</p>
             ) : (
               mensagens.map((msg, i) => {
                 // Mesmo separador de dia da tela de Conversas. Sem ele o histórico é um rolo
@@ -365,7 +367,7 @@ export function PainelConversa({
             )}
             <input
               className="input"
-              placeholder="Escreva uma legenda (opcional)"
+              placeholder={traduzir("Escreva uma legenda (opcional)")}
               value={legendaPrevia}
               onChange={(e) => setLegendaPrevia(e.target.value)}
               onKeyDown={(e) => {
@@ -374,7 +376,7 @@ export function PainelConversa({
             />
             <div className="painel-previa-acoes">
               <button type="button" className="btn ghost" onClick={() => setPrevia(null)} disabled={enviando}>
-                Remover
+                {traduzir("Remover")}
               </button>
               <button type="button" className="btn" onClick={() => void confirmarEnvioDaPrevia()} disabled={enviando}>
                 {enviando ? "Enviando…" : "Enviar"}
@@ -392,13 +394,13 @@ export function PainelConversa({
                 <span className="wa-anexo-icone wa-anexo-icone-imagem">
                   <IconImage width={17} height={17} />
                 </span>
-                <span className="wa-anexo-label">Foto ou vídeo</span>
+                <span className="wa-anexo-label">{traduzir("Foto ou vídeo")}</span>
               </button>
               <button type="button" className="wa-anexo-item" onClick={() => arquivoDocumentoRef.current?.click()}>
                 <span className="wa-anexo-icone wa-anexo-icone-documento">
                   <IconDoc width={17} height={17} />
                 </span>
-                <span className="wa-anexo-label">Documento</span>
+                <span className="wa-anexo-label">{traduzir("Documento")}</span>
               </button>
               <button type="button" className="wa-anexo-item" onClick={() => void compartilharLocalizacao()}>
                 <span className="wa-anexo-icone wa-anexo-icone-localizacao">
@@ -438,7 +440,7 @@ export function PainelConversa({
             <div className="chat-input-wrap box">
               <input
                 className="chat-input-campo"
-                placeholder="Digite uma mensagem…"
+                placeholder={traduzir("Digite uma mensagem…")}
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
                 onKeyDown={(e) => {
@@ -539,7 +541,7 @@ export function PainelConversa({
             {aba === "negociacao" ? (
               <>
                 <div className="field">
-                  <label>Etapa atual</label>
+                  <label>{traduzir("Etapa atual")}</label>
                   <div className="input">{etapaAtual ?? "Fora do funil"}</div>
                 </div>
                 <div className="field">
@@ -562,12 +564,12 @@ export function PainelConversa({
                         </span>
                       ))
                     ) : (
-                      <span className="hint">Nenhuma etiqueta</span>
+                      <span className="hint">{traduzir("Nenhuma etiqueta")}</span>
                     )}
                   </div>
                 </div>
                 <button type="button" className="btn ghost block" onClick={() => setTransferindo(true)}>
-                  Transferir de funil
+                  {traduzir("Transferir de funil")}
                 </button>
                 <p className="hint" style={{ margin: "8px 0 0" }}>
                   Arrastar o card no funil atrás desta janela também move. E nesse caminho a
@@ -582,11 +584,11 @@ export function PainelConversa({
                   {mensagens.length} {mensagens.length === 1 ? "mensagem" : "mensagens"} nesta conversa.
                 </p>
                 <div className="field">
-                  <label>Última mensagem</label>
+                  <label>{traduzir("Última mensagem")}</label>
                   <div className="input">{ultima ? `${ultima.hora} · ${resumo(ultima.texto)}` : "-"}</div>
                 </div>
                 <div className="field">
-                  <label>Recebidas / enviadas</label>
+                  <label>{traduzir("Recebidas / enviadas")}</label>
                   <div className="input">
                     {mensagens.filter((m) => m.tipo === "in").length} recebidas ·{" "}
                     {mensagens.filter((m) => m.tipo === "out").length} enviadas
@@ -627,7 +629,7 @@ export function PainelConversa({
                       ))
                   : null}
                 {linhaDoTempo.length === 0 && mensagens.length === 0 ? (
-                  <li className="hint">Sem histórico ainda.</li>
+                  <li className="hint">{traduzir("Sem histórico ainda.")}</li>
                 ) : null}
               </ol>
             ) : null}

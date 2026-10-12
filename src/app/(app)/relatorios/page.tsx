@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Topbar } from "@/components/ui";
 import { ReportWizard, type ConfiguracaoRelatorio, type RelatorioGerado } from "@/components/report-wizard";
 import { TIPOS_RELATORIO, type TipoRelatorio } from "@/lib/relatorio-conteudo";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * Central de relatórios: entra numa seleção clara de tipos (nunca direto
@@ -22,6 +23,7 @@ export default function RelatoriosPage() {
 }
 
 function RelatoriosPageInner() {
+  const { t: traduzir } = useIdioma();
   const searchParams = useSearchParams();
   const tipoQuery = searchParams.get("tipo") as TipoRelatorio | null;
 
@@ -72,7 +74,7 @@ function RelatoriosPageInner() {
 
   return (
     <>
-      <Topbar title="Relatórios" sub="Escolha o tipo de relatório. O conteúdo e os filtros você ajusta no assistente" />
+      <Topbar title="Relatórios" sub={traduzir("Escolha o tipo de relatório. O conteúdo e os filtros você ajusta no assistente")} />
 
       <div className="content">
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 14 }}>
@@ -87,15 +89,15 @@ function RelatoriosPageInner() {
                 <p className="hint" style={{ marginBottom: 10 }}>{t.descricao}</p>
                 <div className="report-type-actions">
                   <button type="button" className="btn ghost" onClick={() => abrirWizard(t.tipo)}>
-                    Configurar
+                    {traduzir("Configurar")}
                   </button>
                   <button type="button" className="btn primary" onClick={() => abrirWizard(t.tipo)}>
-                    Gerar
+                    {traduzir("Gerar")}
                   </button>
                 </div>
                 {recentes.length > 0 ? (
                   <div style={{ marginTop: 10 }}>
-                    <p className="hint" style={{ marginBottom: 4 }}>Modelos recentes</p>
+                    <p className="hint" style={{ marginBottom: 4 }}>{traduzir("Modelos recentes")}</p>
                     {recentes.map((r) => (
                       <p key={r.id} className="hint" style={{ margin: "2px 0" }}>
                         {r.nome} · {r.data}
@@ -110,23 +112,23 @@ function RelatoriosPageInner() {
 
         <div className="card mt14">
           <div className="panel-h">
-            <h4>Relatórios gerados</h4>
+            <h4>{traduzir("Relatórios gerados")}</h4>
           </div>
           {historico.length === 0 ? (
-            <p className="hint" style={{ padding: 17 }}>Nenhum relatório gerado ainda.</p>
+            <p className="hint" style={{ padding: 17 }}>{traduzir("Nenhum relatório gerado ainda.")}</p>
           ) : (
             <div className="table-wrap">
             <table className="tbl">
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Tipo</th>
+                  <th>{traduzir("Tipo")}</th>
                   <th>Contato</th>
-                  <th>Período</th>
-                  <th>Autor</th>
-                  <th>Data</th>
-                  <th>Páginas</th>
-                  <th>Formato</th>
+                  <th>{traduzir("Período")}</th>
+                  <th>{traduzir("Autor")}</th>
+                  <th>{traduzir("Data")}</th>
+                  <th>{traduzir("Páginas")}</th>
+                  <th>{traduzir("Formato")}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -143,13 +145,13 @@ function RelatoriosPageInner() {
                     <td>{r.formato}</td>
                     <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       <button type="button" className="link" onClick={() => duplicarConfiguracao(r)}>
-                        Gerar com dados atualizados
+                        {traduzir("Gerar com dados atualizados")}
                       </button>
                       <button type="button" className="link" onClick={() => duplicarConfiguracao(r)}>
-                        Duplicar configuração
+                        {traduzir("Duplicar configuração")}
                       </button>
                       <button type="button" className="link" onClick={() => excluir(r.id)} style={{ color: "var(--danger)" }}>
-                        Excluir
+                        {traduzir("Excluir")}
                       </button>
                     </td>
                   </tr>

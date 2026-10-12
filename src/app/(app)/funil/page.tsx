@@ -26,6 +26,7 @@ import { ChipFilters, FloatingDropdown, Topbar } from "@/components/ui";
 import { IconCheck, IconClose, IconErro } from "@/components/icons";
 import { TransferirNegocio } from "@/components/funil/TransferirNegocio";
 import { SeletorDeData } from "@/components/seletor-de-data";
+import { useIdioma } from "@/lib/idioma-context";
 
 const ORIGENS_NEGOCIO: NegocioCard["origem"][] = [
   "Instagram",
@@ -60,6 +61,7 @@ export default function FunilPage() {
 }
 
 function FunilPageInner() {
+  const { t: traduzir } = useIdioma();
   const searchParams = useSearchParams();
   const {
     funis,
@@ -555,7 +557,7 @@ function FunilPageInner() {
       {erroSincronizacao ? (
         <div className="funil-erro-sync" role="alert">
           <span>{erroSincronizacao}</span>
-          <button type="button" onClick={limparErroSincronizacao} aria-label="Fechar aviso">
+          <button type="button" onClick={limparErroSincronizacao} aria-label={traduzir("Fechar aviso")}>
             ×
           </button>
         </div>
@@ -628,7 +630,7 @@ function FunilPageInner() {
               type="button"
               className={`btn ghost${modoAutomatizar ? " active" : ""}`}
               onClick={() => setModoAutomatizar((v) => !v)}
-              title="Ver e configurar o que cada etapa dispara sozinha"
+              title={traduzir("Ver e configurar o que cada etapa dispara sozinha")}
             >
               {modoAutomatizar ? "Ver negócios" : "Automatizar"}
             </button>
@@ -666,9 +668,9 @@ function FunilPageInner() {
                         className="dropdown-item"
                         onClick={() => setConfigAberto(false)}
                       >
-                        <span className="n">Ver automações desse funil</span>
+                        <span className="n">{traduzir("Ver automações desse funil")}</span>
                         <span className="r">
-                          Abre o quadro de automações, uma por etapa
+                          {traduzir("Abre o quadro de automações, uma por etapa")}
                         </span>
                       </Link>
                       <button
@@ -691,7 +693,7 @@ function FunilPageInner() {
                           setConfigAberto(false);
                         }}
                       >
-                        <span className="n">Excluir funil</span>
+                        <span className="n">{traduzir("Excluir funil")}</span>
                         <span className="r">
                           {funis.length <= 1
                             ? "Precisa ter pelo menos um funil"
@@ -714,7 +716,7 @@ function FunilPageInner() {
           <section className="open-conv mb14">
             <div className="open-conv-h">
               <div>
-                <p className="n">Nova etapa</p>
+                <p className="n">{traduzir("Nova etapa")}</p>
                 <p className="s">
                   Entra como uma coluna nova no funil {funilAtivo?.nome}
                 </p>
@@ -724,18 +726,18 @@ function FunilPageInner() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovaEtapaAberta(false)}
               >
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
-              <label>Nome da etapa</label>
+              <label>{traduzir("Nome da etapa")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
                 type="text"
                 value={nomeNovaEtapa}
                 onChange={(e) => setNomeNovaEtapa(e.target.value)}
-                placeholder="Ex.: Retorno agendado"
+                placeholder={traduzir("Ex.: Retorno agendado")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") criarEtapa();
                 }}
@@ -747,7 +749,7 @@ function FunilPageInner() {
                 className="btn primary block"
                 onClick={criarEtapa}
               >
-                Criar etapa
+                {traduzir("Criar etapa")}
               </button>
             </div>
           </section>
@@ -757,7 +759,7 @@ function FunilPageInner() {
           <section className="open-conv mb14">
             <div className="open-conv-h">
               <div>
-                <p className="n">Novo funil</p>
+                <p className="n">{traduzir("Novo funil")}</p>
                 <p className="s">
                   Cada funil pertence a um atendente. As mensagens e tarefas
                   atribuídas a ele entram nesse funil. Já sai com o modelo
@@ -769,11 +771,11 @@ function FunilPageInner() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovoFunilAberto(false)}
               >
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
-              <label>Atendente responsável</label>
+              <label>{traduzir("Atendente responsável")}</label>
               <select
                 className="input"
                 style={{ width: "100%", cursor: "pointer" }}
@@ -787,7 +789,7 @@ function FunilPageInner() {
                 ))}
               </select>
               <p className="hint" style={{ marginTop: 6 }}>
-                Nome do funil: <strong>Funil - {atendenteNovoFunil}</strong>
+                {traduzir("Nome do funil:")} <strong>Funil - {atendenteNovoFunil}</strong>
               </p>
             </div>
             <div className="section-foot">
@@ -796,7 +798,7 @@ function FunilPageInner() {
                 className="btn primary block"
                 onClick={criarFunil}
               >
-                Criar funil
+                {traduzir("Criar funil")}
               </button>
             </div>
           </section>
@@ -806,7 +808,7 @@ function FunilPageInner() {
           <section className="open-conv mb14">
             <div className="open-conv-h">
               <div>
-                <p className="n">Criar negociação</p>
+                <p className="n">{traduzir("Criar negociação")}</p>
                 <p className="s">
                   Entra na etapa &quot;{funilAtivo?.colunas[0]?.titulo}&quot; do
                   funil {funilAtivo?.nome}
@@ -817,22 +819,22 @@ function FunilPageInner() {
                 style={{ cursor: "pointer" }}
                 onClick={() => setNovoNegocioAberto(false)}
               >
-                Fechar <IconClose width={11} height={11} />
+                {traduzir("Fechar")} <IconClose width={11} height={11} />
               </span>
             </div>
             <div className="field">
-              <label>Nome do contato</label>
+              <label>{traduzir("Nome do contato")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
                 type="text"
                 value={nomeNegocio}
                 onChange={(e) => setNomeNegocio(e.target.value)}
-                placeholder="Ex.: Marina Costa"
+                placeholder={traduzir("Ex.: Marina Costa")}
               />
             </div>
             <div className="field">
-              <label>Valor (opcional)</label>
+              <label>{traduzir("Valor (opcional)")}</label>
               <input
                 className="input"
                 style={{ width: "100%" }}
@@ -856,7 +858,7 @@ function FunilPageInner() {
                 className="btn primary block"
                 onClick={criarNegocio}
               >
-                Criar negociação
+                {traduzir("Criar negociação")}
               </button>
             </div>
           </section>
@@ -865,10 +867,10 @@ function FunilPageInner() {
         {filtroAberto ? (
           <section className="card mb14">
             <div className="panel-h">
-              <h4>Filtrar: qual origem e qual período</h4>
+              <h4>{traduzir("Filtrar: qual origem e qual período")}</h4>
             </div>
             <div className="field">
-              <label>Origem do lead: pode escolher mais de uma</label>
+              <label>{traduzir("Origem do lead: pode escolher mais de uma")}</label>
               <div className="filters-row">
                 <button
                   type="button"
@@ -876,7 +878,7 @@ function FunilPageInner() {
                   aria-pressed={origensFiltro.size === 0}
                   onClick={() => setOrigensFiltro(new Set())}
                 >
-                  Todas as origens
+                  {traduzir("Todas as origens")}
                 </button>
                 {ORIGENS_NEGOCIO.map((origem) => (
                   <button
@@ -905,7 +907,7 @@ function FunilPageInner() {
                 <SeletorDeData valor={dataDe} onChange={setDataDe} />
               </div>
               <div className="field" style={{ padding: 0, flex: "1 1 160px" }}>
-                <label>Até</label>
+                <label>{traduzir("Até")}</label>
                 <SeletorDeData valor={dataAte} onChange={setDataAte} />
               </div>
               {filtroAtivo ? (
@@ -918,7 +920,7 @@ function FunilPageInner() {
                     setDataAte("");
                   }}
                 >
-                  Limpar filtros
+                  {traduzir("Limpar filtros")}
                 </button>
               ) : null}
             </div>
@@ -994,7 +996,7 @@ function FunilPageInner() {
                         e.dataTransfer.effectAllowed = "move";
                       }}
                       onDragEnd={() => setColunaArrastando(null)}
-                      title="Arraste pra reordenar a etapa"
+                      title={traduzir("Arraste pra reordenar a etapa")}
                     >
                       ⠿
                     </span>
@@ -1015,7 +1017,7 @@ function FunilPageInner() {
                       <span
                         className="t"
                         style={{ cursor: "pointer" }}
-                        title="Clique pra renomear"
+                        title={traduzir("Clique pra renomear")}
                         onClick={() => {
                           setColunaRenomeando(colIndex);
                           setNomeRenomeando(coluna.titulo);
@@ -1033,7 +1035,7 @@ function FunilPageInner() {
                         role="button"
                         tabIndex={0}
                         aria-label={`Excluir etapa ${coluna.titulo}`}
-                        title="Excluir etapa"
+                        title={traduzir("Excluir etapa")}
                         style={{ cursor: "pointer", color: "var(--text-faint)" }}
                         onClick={() => excluirEtapa(colIndex)}
                         onKeyDown={(e) => {
@@ -1101,7 +1103,7 @@ function FunilPageInner() {
                         // estão guardadas sob o nome da conversa: abrir pelo do card mostrava o
                         // popup vazio.
                         onClick={() => setConversaAberta(conversaDoCard?.nome ?? card.nome)}
-                        title="Abrir a conversa deste lead"
+                        title={traduzir("Abrir a conversa deste lead")}
                         style={{ cursor: "grab" }}
                       >
                         <span className="lr1">
@@ -1109,7 +1111,7 @@ function FunilPageInner() {
                               abrir a conversa. Ter um comportamento no nome e outro dois
                               milímetros ao lado era a razão de ninguém achar a conversa. */}
                           <span className="lname lname-com-msg" draggable={false}>
-            {temMensagemNova ? <span className="msg-dot" aria-label="Mensagem nova" /> : null}
+            {temMensagemNova ? <span className="msg-dot" aria-label={traduzir("Mensagem nova")} /> : null}
                             {(() => {
                               const contato = contatos.find((c) => c.nome === card.nome);
                               return contato?.fotoUrl ? (
@@ -1142,8 +1144,8 @@ function FunilPageInner() {
                           <span
                             role="button"
                             tabIndex={0}
-                            aria-label="Marcar desfecho do negócio"
-                            title="Marcar como ganho/perdido"
+                            aria-label={traduzir("Marcar desfecho do negócio")}
+                            title={traduzir("Marcar como ganho/perdido")}
                             className="lead-card-menu-btn"
                             draggable={false}
                             onMouseDown={(e) => e.stopPropagation()}
@@ -1176,11 +1178,11 @@ function FunilPageInner() {
                               nenhuma num lugar onde a pessoa decide a quem ligar primeiro. Quando a
                               conversa existe, a data vem da última mensagem e está sempre certa. */}
                           {atividadePorNome.get(chaveDeContato(card.nome)) ? (
-                            <span className="days" title="Última mensagem deste contato">
+                            <span className="days" title={traduzir("Última mensagem deste contato")}>
                               {rotuloDeAtividade(atividadePorNome.get(chaveDeContato(card.nome)))}
                             </span>
                           ) : (
-                            <span className="days" title="Ainda não há mensagem deste contato no CRM">
+                            <span className="days" title={traduzir("Ainda não há mensagem deste contato no CRM")}>
                               sem conversa
                             </span>
                           )}
@@ -1190,10 +1192,10 @@ function FunilPageInner() {
                             chat
                           </span>
                           {card.statusFechamento === "ganho" ? (
-                            <span className="stage-tag won" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><IconCheck width={11} height={11} /> Ganho</span>
+                            <span className="stage-tag won" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><IconCheck width={11} height={11} /> {traduzir("Ganho")}</span>
                           ) : card.statusFechamento === "perdido" ? (
                             <span className="stage-tag" title={card.motivoPerda ?? undefined} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                              <IconErro width={11} height={11} /> Perdido
+                              <IconErro width={11} height={11} /> {traduzir("Perdido")}
                             </span>
                           ) : null}
                         </span>
@@ -1241,7 +1243,7 @@ function FunilPageInner() {
                     setDesfechoMenu(null);
                   }}
                 >
-                  Transferir de funil
+                  {traduzir("Transferir de funil")}
                 </button>
                 <button
                   type="button"
@@ -1249,12 +1251,12 @@ function FunilPageInner() {
                   onClick={() => marcarDesfecho(desfechoMenu.coluna, desfechoMenu.card, "ganho")}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
-                  <IconCheck width={13} height={13} /> Marcar como ganho
+                  <IconCheck width={13} height={13} /> {traduzir("Marcar como ganho")}
                 </button>
                 <div className="field" style={{ margin: 0 }}>
-                  <label>Motivo da perda</label>
+                  <label>{traduzir("Motivo da perda")}</label>
                   <select className="input" value={motivoEscolhido} onChange={(e) => setMotivoEscolhido(e.target.value)}>
-                    <option value="">Selecione…</option>
+                    <option value="">{traduzir("Selecione…")}</option>
                     {motivosPerda.map((m) => (
                       <option key={m} value={m}>
                         {m}
@@ -1269,7 +1271,7 @@ function FunilPageInner() {
                   onClick={() => marcarDesfecho(desfechoMenu.coluna, desfechoMenu.card, "perdido", motivoEscolhido)}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
-                  <IconErro width={13} height={13} /> Marcar como perdido
+                  <IconErro width={13} height={13} /> {traduzir("Marcar como perdido")}
                 </button>
               </div>
             );

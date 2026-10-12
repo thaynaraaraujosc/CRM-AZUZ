@@ -49,7 +49,7 @@ export function EmbeddedSignupWhatsApp({
   dadosDoNegocio?: DadosDoNegocio;
   aoConectar?: () => void;
 }) {
-  const { t } = useIdioma();
+  const { t: traduzir } = useIdioma();
   // `envLimpo`, e não `process.env` cru: uma TABULAÇÃO colada no início do `config_id` foi a causa
   // real da falha de conexão, e era invisível na tela. Ver `env-limpo.ts`.
   const appId = envLimpo(process.env.NEXT_PUBLIC_META_APP_ID);
@@ -265,7 +265,7 @@ export function EmbeddedSignupWhatsApp({
   if (pin) {
     return (
       <div style={{ marginTop: 10 }}>
-        <p className="int-title" style={{ margin: 0 }}>{t("Conectado! Guarde este PIN:")}</p>
+        <p className="int-title" style={{ margin: 0 }}>{traduzir("Conectado! Guarde este PIN:")}</p>
         <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: 4, margin: "8px 0" }}>{pin}</p>
         <p className="hint" style={{ margin: 0 }}>
           É o PIN de verificação em duas etapas do seu número na Meta. Ele não aparece de novo.

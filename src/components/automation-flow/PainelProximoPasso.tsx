@@ -7,6 +7,7 @@ import { BLOCOS_DISPONIVEIS, GRUPOS_BIBLIOTECA } from "@/lib/automation-flow/blo
 import { blocoValeNaArea, grupoValeNaArea, type AreaAutomacao } from "@/lib/canais/capacidades";
 import { sugestoesApos } from "@/lib/automation-flow/sugestoes";
 import type { FlowNodeCategory, FlowNodeType } from "@/lib/automation-flow/types";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * "Adicionar próximo passo": o painel que abre pela DIREITA quando se clica no "+" de uma saída.
@@ -39,6 +40,7 @@ export function PainelProximoPasso({
   onFollowUp: () => void;
   onFechar: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const [busca, setBusca] = useState("");
   const termo = busca.trim().toLowerCase();
 
@@ -72,20 +74,20 @@ export function PainelProximoPasso({
   }, [candidatos, termo]);
 
   return (
-    <aside className="proximo-passo" role="dialog" aria-label="Adicionar próximo passo">
+    <aside className="proximo-passo" role="dialog" aria-label={traduzir("Adicionar próximo passo")}>
       <div className="proximo-passo-topo">
         <div>
-          <strong>Adicionar próximo passo</strong>
+          <strong>{traduzir("Adicionar próximo passo")}</strong>
           {rotuloDaSaida ? <span>depois de &quot;{rotuloDaSaida}&quot;</span> : null}
         </div>
-        <button type="button" className="icon-btn subtle" aria-label="Fechar" onClick={onFechar}>
+        <button type="button" className="icon-btn subtle" aria-label={traduzir("Fechar")} onClick={onFechar}>
           <IconClose width={13} height={13} />
         </button>
       </div>
 
       <input
         className="input"
-        placeholder="Buscar passo…"
+        placeholder={traduzir("Buscar passo…")}
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         autoFocus
@@ -94,10 +96,10 @@ export function PainelProximoPasso({
       <div className="proximo-passo-lista">
         {sugeridos.length ? (
           <>
-            <p className="proximo-passo-grupo">Sugeridos aqui</p>
+            <p className="proximo-passo-grupo">{traduzir("Sugeridos aqui")}</p>
             <button type="button" className="proximo-passo-item" onClick={onFollowUp}>
-              <strong>Adicionar follow-up</strong>
-              <span>Espera a resposta por 2 horas e, se não vier, manda uma cobrança.</span>
+              <strong>{traduzir("Adicionar follow-up")}</strong>
+              <span>{traduzir("Espera a resposta por 2 horas e, se não vier, manda uma cobrança.")}</span>
             </button>
             {sugeridos.map((tipo) => {
               const bloco = BLOCOS_DISPONIVEIS.find((b) => b.tipo === tipo);
@@ -134,7 +136,7 @@ export function PainelProximoPasso({
           </div>
         ))}
 
-        {!porGrupo.length ? <p className="hint">Nada com esse nome.</p> : null}
+        {!porGrupo.length ? <p className="hint">{traduzir("Nada com esse nome.")}</p> : null}
       </div>
     </aside>
   );

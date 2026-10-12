@@ -2,6 +2,7 @@
 
 import { IconAlerta } from "@/components/icons";
 import type { HistoricoSync } from "@/lib/integracoes/historico-tipos";
+import { useIdioma } from "@/lib/idioma-context";
 
 /**
  * O estado da importação das conversas do celular, e os botões pra mexer nela.
@@ -64,6 +65,7 @@ function Painel({
   onTrazerMaisAntigas: () => void;
   onReimportar: () => void;
 }) {
+  const { t: traduzir } = useIdioma();
   const guardadas = historico.filaGuardada?.length ?? 0;
 
   /*
@@ -107,11 +109,11 @@ function Painel({
         </p>
         {guardadas ? (
           <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onTrazerMaisAntigas}>
-            Trazer as mais antigas
+            {traduzir("Trazer as mais antigas")}
           </button>
         ) : null}
         <button type="button" className="btn ghost" style={{ flex: "0 0 auto" }} onClick={onReimportar}>
-          Buscar conversas que faltam
+          {traduzir("Buscar conversas que faltam")}
         </button>
       </div>
     );
